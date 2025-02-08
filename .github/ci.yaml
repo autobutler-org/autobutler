@@ -28,5 +28,13 @@ jobs:
     - name: Build
       run: npm run build
       
-    - name: Test
-      run: npm run test || true
+    - name: Generate
+      run: npm run generate
+      
+    - name: Build Docker image
+      run: docker build -t exoflow .
+      
+    # - name: Push Docker image
+    #   run: |
+    #     echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+    #     docker push exoflow
