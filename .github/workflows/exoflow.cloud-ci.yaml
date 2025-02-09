@@ -1,0 +1,51 @@
+name: exoflow.cloud - CI
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+
+env:
+  WORKING_DIR: ${{ github.workspace }}/apps/exoflow.cloud
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: ${{ env.WORKING_DIR }}/.nvmrc
+        cache: npm
+
+    - name: Install dependencies
+      working-directory: ${{ env.WORKING_DIR }}
+      run: |
+        npm ci
+
+    - name: Lint
+      working-directory: ${{ env.WORKING_DIR }}
+      run: |
+        npm run lint
+
+    - name: Build
+      working-directory: ${{ env.WORKING_DIR }}
+      run: |
+        npm run build
+      
+    - name: Generate
+      working-directory: ${{ env.WORKING_DIR }}
+      run: |
+        npm run generate
+      
+    - name: Build Docker image
+      working-directory: ${{ env.WORKING_DIR }}
+      run: |
+        docker build -f Dockerfile.dev -t exoflow .
