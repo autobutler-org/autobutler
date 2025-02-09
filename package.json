@@ -1,0 +1,9 @@
+{
+  "name": "exoflow",
+  "version": "0.0.0",
+  "description": "Welcome to the Exoflow monorepo! This repository contains multiple projects that tie together the Exoflow ecosystem.",
+  "directories": {},
+  "scripts": {},
+  "author": "ExoKomodo",
+  "license": "CC0"
+}
