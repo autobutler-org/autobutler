@@ -26,50 +26,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Detect package manager
-        id: detect-package-manager
-        run: |
-          if [ -f "${{ env.WORKING_DIR }}/yarn.lock" ]; then
-            echo "manager=yarn" >> $GITHUB_OUTPUT
-            echo "command=install" >> $GITHUB_OUTPUT
-            exit 0
-          elif [ -f "${{ env.WORKING_DIR }}/package.json" ]; then
-            echo "manager=npm" >> $GITHUB_OUTPUT
-            echo "command=ci" >> $GITHUB_OUTPUT
-            exit 0
-          else
-            echo "Unable to determine package manager"
-            exit 1
-          fi
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version-file: apps/exoflow.cloud/.nvmrc
-          cache: ${{ steps.detect-package-manager.outputs.manager }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
           static_site_generator: nuxt
 
-      - name: Restore cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ env.WORKING_DIR }}/dist
-            ${{ env.WORKING_DIR }}/.nuxt
-          key: ${{ runner.os }}-nuxt-build-${{ hashFiles('dist') }}
-          restore-keys: |
-            ${{ runner.os }}-nuxt-build-
-
       - name: Install dependencies
+        working-directory: ${{ env.WORKING_DIR }}
         run: |
-          ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
+          npm ci
 
       - name: Static HTML export with Nuxt
+        working-directory: ${{ env.WORKING_DIR }}
         run: |
-          ${{ steps.detect-package-manager.outputs.manager }} run generate
+          npm run generate
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
