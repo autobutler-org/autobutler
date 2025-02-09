@@ -22,7 +22,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version-file: ${{ env.WORKING_DIR }}/.nvmrc
+        node-version-file: apps/exoflow.cloud/.nvmrc
         cache: npm
 
     - name: Install dependencies
