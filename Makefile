@@ -4,12 +4,16 @@ SHELL := /bin/bash
 .ONESHELL:
 
 .PHONY: setup
-setup: ## [all] Setup project
+setup: ## [all] Setup
 	@$(MAKE) setup/infra
 
 .PHONY: setup/infra
-setup/infra: ## [infra] Setup project
+setup/infra: ## [infra] Setup
 	@$(MAKE) -C infra setup
+
+.PHONY: lint
+lint: ## [all] Lint
+	@npm run lint
 
 .PHONY: help
 help: ## Displays help info

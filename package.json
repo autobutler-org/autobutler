@@ -3,7 +3,14 @@
   "version": "0.0.0",
   "description": "Welcome to the Exoflow monorepo! This repository contains multiple projects that tie together the Exoflow ecosystem.",
   "directories": {},
-  "scripts": {},
+  "scripts": {
+    "lint": "concurrently -m1 npm:lint:*",
+    "lint:md": "markdownlint-cli2 ."
+  },
   "author": "ExoKomodo",
-  "license": "CC0"
+  "license": "CC0",
+  "devDependencies": {
+    "markdownlint-cli2": "^0.17.2",
+    "concurrently": "9.1.2"
+  }
 }
