@@ -5,6 +5,10 @@ on:
     branches:
     - main
   workflow_dispatch:
+    inputs:
+      image-tag:
+        description: Image tag to run
+        type: string
 
 permissions:
   contents: read
@@ -18,38 +22,43 @@ concurrency:
 env:
   WORKING_DIR: ${{ github.workspace }}/apps/exoflow.cloud
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   package:
     runs-on: ubuntu-latest
+    container:
+      image: exokomodo/exoflow-devcontainer:${{ inputs.image-tag || 'latest' }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: apps/exoflow.cloud/.nvmrc
+    - uses: actions/setup-node@v4
+      with:
+        node-version-file: .nvmrc
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-        with:
-          static_site_generator: nuxt
+    - name: Setup Pages
+      uses: actions/configure-pages@v5
+      with:
+        static_site_generator: nuxt
 
-      - name: Install dependencies
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          npm ci
+    - name: Install dependencies
+      working-directory: ${{ env.WORKING_DIR }}
+      run: |
+        npm ci
 
-      - name: Static HTML export with Nuxt
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          npm run generate
+    - name: Static HTML export with Nuxt
+      working-directory: ${{ env.WORKING_DIR }}
+      run: |
+        npm run generate
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ${{ env.WORKING_DIR }}/dist
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ${{ env.WORKING_DIR }}/dist
 
   deploy:
     runs-on: ubuntu-latest
@@ -61,6 +70,6 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

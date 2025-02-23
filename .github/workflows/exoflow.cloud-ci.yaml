@@ -7,22 +7,32 @@ on:
   pull_request:
     branches:
     - main
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: Image tag to run
+        type: string
 
 env:
   WORKING_DIR: ${{ github.workspace }}/apps/exoflow.cloud
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: exokomodo/exoflow-devcontainer:${{ inputs.image-tag || 'latest' }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup Node
-      uses: actions/setup-node@v4
+    - uses: actions/setup-node@v4
       with:
-        node-version-file: apps/exoflow.cloud/.nvmrc
+        node-version-file: .nvmrc
 
     - name: Install dependencies
       working-directory: ${{ env.WORKING_DIR }}
