@@ -48,10 +48,13 @@ FROM ${IMAGE}:${TAG} AS install
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     apt-get install -y -qq \
         apt-transport-https \
+        build-essential \
         ca-certificates \
         curl \
         git \
         gnupg-agent \
+        llvm \
+        make \
         software-properties-common \
         sudo \
         zsh \
