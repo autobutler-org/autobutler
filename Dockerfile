@@ -33,7 +33,6 @@ RUN ./configure \
     --enable-experimental-jit=yes \
     --with-ensurepip=install \
     --with-lto=full \
-    --enable-bolt \
     --with-computed-gotos \
     > /dev/null
 RUN make -j > /dev/null 2>&1
