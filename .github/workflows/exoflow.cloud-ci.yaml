@@ -53,8 +53,3 @@ jobs:
       working-directory: ${{ env.WORKING_DIR }}
       run: |
         npm run generate
-      
-    - name: Build Docker image
-      working-directory: ${{ env.WORKING_DIR }}
-      run: |
-        docker build -f Dockerfile.dev -t exoflow .
