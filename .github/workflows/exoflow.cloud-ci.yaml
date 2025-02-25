@@ -24,7 +24,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: exokomodo/exoflow-devcontainer:${{ inputs.image-tag || (github.event_name == 'push' && 'latest') || format('{0}-devcontainer:{1}', github.repository, github.head_ref || github.ref_name) }}
+      image: exokomodo/exoflow-devcontainer:${{ inputs.image-tag || (github.event_name == 'push' && 'latest') || (github.head_ref || github.ref_name) }}
 
     steps:
     - name: Checkout code
