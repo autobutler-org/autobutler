@@ -1,5 +1,16 @@
 ARG IMAGE=ubuntu
 ARG TAG=24.04
+ARG MAKE_JOBS=2
+
+FROM ${IMAGE}:${TAG} AS node-builder
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
+    apt-get install -y -qq \
+        curl \
+        unzip \
+        > /dev/null 2>&1 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL https://bun.sh/install | bash
+
 
 FROM ${IMAGE}:${TAG} AS python-builder
 
@@ -29,8 +40,24 @@ WORKDIR /tmp/Python-${PYTHON_VERSION}
 RUN ./configure \
     --enable-optimizations \
     --without-system-libmpdec > /dev/null
-RUN make -j > /dev/null 2>&1
-RUN make install > /dev/null
+
+RUN if [ -z "$MAKE_JOBS" ]; then \
+        if [ -f /proc/cpuinfo ]; then \
+            CORES=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || echo 2); \
+        elif command -v nproc > /dev/null; then \
+            CORES=$(nproc 2>/dev/null || echo 2); \
+        elif command -v sysctl > /dev/null; then \
+            CORES=$(sysctl -n hw.ncpu 2>/dev/null || echo 2); \
+        else \
+            CORES=2; \
+        fi && \
+        MAKE_JOBS=$(( CORES * 1 / 2 > 2 ? 2 : CORES * 1 / 2 )); \
+        MAKE_JOBS=$(( MAKE_JOBS < 1 ? 1 : MAKE_JOBS )); \
+    fi && \
+    echo "Building with ${MAKE_JOBS} jobs" && \
+    make -j${MAKE_JOBS} > /dev/null 2>&1 && \
+    make install > /dev/null
+
 
 FROM ${IMAGE}:${TAG} AS go-builder
 
@@ -42,6 +69,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 
 ENV GO_VERSION=1.23.6
 RUN curl --fail -s https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz | tar -C /usr/local -xz
+
 
 FROM ${IMAGE}:${TAG} AS install
 
@@ -68,13 +96,13 @@ COPY --from=python-builder /usr/local/bin/pip3 /usr/local/bin/pip3
 
 COPY --from=go-builder /usr/local/go /usr/local/go
 
+COPY --from=node-builder /root/.bun/bin/bun /usr/local/bin/bun
+RUN ln -sf /usr/local/bin/bun /usr/local/bin/node && \
+    ln -sf /usr/local/bin/bun /usr/local/bin/npm && \
+    ln -sf /usr/local/bin/bun /usr/local/bin/npx
+    
 SHELL ["/usr/bin/zsh", "-o", "pipefail", "-c"]
 
-# Install NVM
-RUN curl --fail -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-COPY .nvmrc /root/.nvmrc
-RUN touch /root/.bashrc && echo ". /root/.nvm/nvm.sh" >> /root/.bashrc
-RUN touch /root/.zshrc && echo ". /root/.nvm/nvm.sh" >> /root/.zshrc
 
 FROM ${IMAGE}:${TAG} AS final
 

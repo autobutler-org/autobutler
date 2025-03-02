@@ -1,19 +1,10 @@
 <template>
-  <div class="app">
-    <ExoFlowHome />
-  </div>
+  <NuxtLayout>
+    <NuxtPage />
+  </NuxtLayout>
 </template>
 
-<script lang="ts">
-import ExoFlowHome from "./components/ExoFlowHome.vue";
-
-export default {
-  name: "App",
-  components: {
-    ExoFlowHome,
-  },
-};
-</script>
+<script setup lang="ts"></script>
 
 <style>
 body {
@@ -25,5 +16,13 @@ body {
 
 .app {
   font-family: Arial, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  width: 100%;
 }
 </style>
