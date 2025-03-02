@@ -1,7 +1,9 @@
 <template>
   <footer class="exo-footer">
     <div class="footer-content">
-      <p class="copyright">© {{ currentYear }} ExoFlow. All rights reserved.</p>
+      <p class="copyright">
+        © {{ currentYear }} ExoFlow. All rights reserved.
+      </p>
       <div class="footer-links">
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms</a>
@@ -12,9 +14,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from "vue";
 
-const currentYear = computed(() => new Date().getFullYear())
+const currentYear = computed(() => new Date().getFullYear());
 </script>
 
 <style scoped>
@@ -55,4 +57,4 @@ const currentYear = computed(() => new Date().getFullYear())
 .footer-links a:hover {
   color: #e0e0e0;
 }
-</style> 
+</style>

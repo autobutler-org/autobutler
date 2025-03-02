@@ -10,7 +10,9 @@
       </p>
       <h2>Key Features</h2>
       <ul class="features-list">
-        <li>Write platform-agnostic code that translates to the host platform</li>
+        <li>
+          Write platform-agnostic code that translates to the host platform
+        </li>
         <li>
           Define applications as networked microclouds using a single manifest
         </li>
@@ -22,7 +24,8 @@
           fails
         </li>
         <li>
-          Proxy-based API translation for seamless integration with cloud services
+          Proxy-based API translation for seamless integration with cloud
+          services
         </li>
       </ul>
     </div>
