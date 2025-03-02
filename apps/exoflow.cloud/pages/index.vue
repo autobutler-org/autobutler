@@ -12,4 +12,4 @@ import ExoFlowHome from "../components/ExoFlowHome.vue";
 .home {
   width: 100%;
 }
-</style> 
+</style>

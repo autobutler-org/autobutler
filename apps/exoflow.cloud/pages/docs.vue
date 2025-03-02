@@ -6,10 +6,16 @@
         <aside class="docs-sidebar">
           <nav>
             <ul>
-              <li><NuxtLink to="/docs/getting-started">Getting Started</NuxtLink></li>
+              <li>
+                <NuxtLink to="/docs/getting-started">Getting Started</NuxtLink>
+              </li>
               <li><NuxtLink to="/docs/installation">Installation</NuxtLink></li>
-              <li><NuxtLink to="/docs/configuration">Configuration</NuxtLink></li>
-              <li><NuxtLink to="/docs/api-reference">API Reference</NuxtLink></li>
+              <li>
+                <NuxtLink to="/docs/configuration">Configuration</NuxtLink>
+              </li>
+              <li>
+                <NuxtLink to="/docs/api-reference">API Reference</NuxtLink>
+              </li>
             </ul>
           </nav>
         </aside>
@@ -68,4 +74,4 @@
 .docs-main {
   min-height: 500px;
 }
-</style> 
+</style>

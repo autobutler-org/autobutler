@@ -1,17 +1,10 @@
 <template>
-  <div class="app">
-    <ExoHeader />
-    <main class="main-content">
-      <NuxtPage />
-    </main>
-    <ExoFooter />
-  </div>
+  <NuxtLayout>
+    <NuxtPage />
+  </NuxtLayout>
 </template>
 
-<script setup lang="ts">
-import ExoHeader from "./components/ExoHeader.vue";
-import ExoFooter from "./components/ExoFooter.vue";
-</script>
+<script setup lang="ts"></script>
 
 <style>
 body {
