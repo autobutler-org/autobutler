@@ -44,9 +44,8 @@ RUN ./configure \
     --enable-experimental-jit=yes \
     --with-ensurepip=install \
     --with-lto=full \
-    --with-computed-gotos \
-    > /dev/null
-    --without-system-libmpdec > /dev/null
+    --with-computed-gotos
+    # > /dev/null
 
 RUN if [ -z "$MAKE_JOBS" ]; then \
         if [ -f /proc/cpuinfo ]; then \
