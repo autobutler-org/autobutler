@@ -1,5 +1,5 @@
-ARG IMAGE=bitnami/minideb
-ARG TAG=bookworm
+ARG IMAGE=ubuntu
+ARG TAG=24.04
 ARG MAKE_JOBS=2
 
 FROM ${IMAGE}:${TAG} AS node-builder
