@@ -17,7 +17,6 @@ FROM ${IMAGE}:${TAG} AS python-builder
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     apt-get install -y -qq \
         build-essential \
-        clang-18 \
         libbz2-dev \
         libffi-dev \
         liblzma-dev \
