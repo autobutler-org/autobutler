@@ -82,6 +82,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
         gnupg-agent \
         make \
         software-properties-common \
+        sudo \
         zsh \
         > /dev/null 2>&1 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
