@@ -103,10 +103,9 @@ COPY --link --from=python-builder /usr/local/bin/pip3 /usr/local/bin/pip3
 COPY --from=go-builder /usr/local/go /usr/local/go
 
 COPY --link --from=node-builder /root/.bun/bin/bun /usr/local/bin/bun
-COPY --link --from=node-builder /root/.bun/bin/bun /usr/local/bin/bun
-COPY --link --from=node-builder /usr/local/bin/bun /usr/local/bin/node
-COPY --link --from=node-builder /usr/local/bin/bun /usr/local/bin/npm
-COPY --link --from=node-builder /usr/local/bin/bunx /usr/local/bin/npx
+COPY --link --from=node-builder /root/.bun/bin/bun /usr/local/bin/node
+COPY --link --from=node-builder /root/.bun/bin/bun /usr/local/bin/npm
+COPY --link --from=node-builder /root/.bun/bin/bunx /usr/local/bin/npx
 
 ENV PATH=/usr/local/go/bin:$PATH
 ENV PIP_ROOT_USER_ACTION=ignore
