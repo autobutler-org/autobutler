@@ -24,7 +24,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: exokomodo/exoflow-devcontainer:${{ inputs.image-tag || (github.event_name == 'push' && 'latest') || (github.head_ref || github.ref_name) }}
+      image: exokomodo/exoflow-devcontainer:${{ inputs.image-tag || (github.event_name == 'pull_request' && 'latest') || (github.head_ref || github.ref_name) }}
 
     steps:
     - name: Checkout code
@@ -48,3 +48,24 @@ jobs:
       working-directory: ${{ env.WORKING_DIR }}
       run: |
         npm run generate
+
+  pass:
+    name: Pass?
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+    - build
+
+    env:
+      RESULT: ${{ needs.build.result }}
+
+    steps:
+    - name: Pass
+      if: ${{ env.RESULT != 'failure' }}
+      run: |
+        echo "[PASS] Linting" >> ${GITHUB_STEP_SUMMARY}
+
+    - name: Fail
+      if: ${{ env.RESULT == 'failure' }}
+      run: |
+        echo "[FAIL] Linting" >> ${GITHUB_STEP_SUMMARY}

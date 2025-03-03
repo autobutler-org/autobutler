@@ -21,6 +21,11 @@ env:
 jobs:
   devcontainer:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platforms:
+        - linux/amd64
+        - linux/arm64
 
     steps:
       - name: Print env
@@ -38,9 +43,32 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          platforms: ${{ matrix.platforms }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           push: true
           tags: ${{ env.TAGS }}
+
+  pass:
+    name: Pass?
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+    - devcontainer
+
+    env:
+      RESULT: ${{ needs.devcontainer.result }}
+
+    steps:
+    - name: Pass
+      if: ${{ env.RESULT != 'failure' }}
+      run: |
+        echo "[PASS] Linting" >> ${GITHUB_STEP_SUMMARY}
+
+    - name: Fail
+      if: ${{ env.RESULT == 'failure' }}
+      run: |
+        echo "[FAIL] Linting" >> ${GITHUB_STEP_SUMMARY}

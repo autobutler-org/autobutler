@@ -4,9 +4,6 @@ on:
   pull_request:
     branches:
     - main
-  push:
-    branches:
-    - main
   workflow_dispatch:
     inputs:
       image-tag:
@@ -21,7 +18,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     container:
-      image: exokomodo/exoflow-devcontainer:${{ inputs.image-tag || (github.event_name == 'push' && 'latest') || (github.head_ref || github.ref_name) }}
+      image: exokomodo/exoflow-devcontainer:${{ inputs.image-tag || (github.event_name == 'pull_request' && 'latest') || (github.head_ref || github.ref_name) }}
 
     steps:
     - name: Checkout code
@@ -38,3 +35,24 @@ jobs:
     - name: Lint
       run: |
         make lint
+
+  pass:
+    name: Pass?
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+    - lint
+
+    env:
+      RESULT: ${{ needs.lint.result }}
+
+    steps:
+    - name: Pass
+      if: ${{ env.RESULT != 'failure' }}
+      run: |
+        echo "[PASS] Linting" >> ${GITHUB_STEP_SUMMARY}
+
+    - name: Fail
+      if: ${{ env.RESULT == 'failure' }}
+      run: |
+        echo "[FAIL] Linting" >> ${GITHUB_STEP_SUMMARY}
