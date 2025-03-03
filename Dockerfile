@@ -25,7 +25,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
         libreadline-dev \
         libsqlite3-dev \
         libssl-dev \
-        llvm \
         make \
         tk-dev \
         xz-utils \
