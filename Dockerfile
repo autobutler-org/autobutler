@@ -17,6 +17,7 @@ FROM ${IMAGE}:${TAG} AS python-builder
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     apt-get install -y -qq \
         build-essential \
+        clang-18 \
         libbz2-dev \
         libffi-dev \
         liblzma-dev \
@@ -60,7 +61,7 @@ RUN if [ -z "$MAKE_JOBS" ]; then \
         MAKE_JOBS=$(( CORES < 1 ? 1 : CORES )); \
     fi && \
     echo "Building with ${MAKE_JOBS} jobs" && \
-    make -j${MAKE_JOBS} > /dev/null 2>&1 && \
+    make -j${MAKE_JOBS} && \
     make install > /dev/null
 
 FROM ${IMAGE}:${TAG} AS go-builder
