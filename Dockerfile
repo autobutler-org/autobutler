@@ -105,15 +105,10 @@ COPY --from=node-builder /root/.bun/bin/bun /usr/local/bin/bun
 RUN ln -sf /usr/local/bin/bun /usr/local/bin/node && \
     ln -sf /usr/local/bin/bun /usr/local/bin/npm && \
     ln -sf /usr/local/bin/bun /usr/local/bin/npx
-    
-SHELL ["/usr/bin/zsh", "-o", "pipefail", "-c"]
-
-
-FROM ${IMAGE}:${TAG} AS final
-
-COPY --from=install / /
 
 ENV PATH=/usr/local/go/bin:$PATH
 ENV PIP_ROOT_USER_ACTION=ignore
+
+SHELL ["/usr/bin/zsh", "-o", "pipefail", "-c"]
 
 CMD /usr/bin/zsh
