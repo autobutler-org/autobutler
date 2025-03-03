@@ -1,5 +1,5 @@
-ARG IMAGE=ubuntu
-ARG TAG=24.04
+ARG IMAGE=bitnami/minideb
+ARG TAG=bookworm
 ARG MAKE_JOBS=2
 
 FROM ${IMAGE}:${TAG} AS node-builder
@@ -81,10 +81,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
         curl \
         git \
         gnupg-agent \
-        llvm \
         make \
         software-properties-common \
-        sudo \
         zsh \
         > /dev/null 2>&1 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
