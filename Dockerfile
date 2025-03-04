@@ -96,7 +96,8 @@ COPY --link --from=python-builder /usr/local/bin/python3 /usr/local/bin/python3
 COPY --link --from=python-builder /usr/local/lib/python3.13 /usr/local/lib/python3.13
 COPY --link --from=python-builder /usr/local/include/python3.13 /usr/local/include/python3.13
 COPY --link --from=python-builder /usr/local/bin/pip3 /usr/local/bin/pip3
-RUN curl --fail -s -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 /usr/local/bin/yq
+ARG TARGETARCH
+RUN curl --fail -s -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${TARGETARCH} /usr/local/bin/yq
 
 COPY --from=go-builder /usr/local/go /usr/local/go
 
