@@ -5,6 +5,7 @@
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
+    "prepare": "nuxt prepare",
     "lint:eslint": "eslint",
     "lint:types": "nuxt typecheck",
     "lint:prettier": "prettier --check .",

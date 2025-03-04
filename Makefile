@@ -20,13 +20,14 @@ fix/js/format:
 	fi
 	@npm run fix:prettier
 	@echo "[fix/format/js] end"
-fix/js/eslint/:
+fix/js/eslint:
 	@echo "[fix/js/eslint] begin"
 	for dir in $(JS_DIRS); do \
 		cd $${dir}; \
 		if ! [[ -d ./node_modules ]]; then \
 			npm ci; \
 		fi; \
+		npm run prepare; \
 		npm run fix:eslint; \
 		cd -; \
 	done

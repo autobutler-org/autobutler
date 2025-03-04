@@ -4,10 +4,12 @@
   "description": "Welcome to the Exoflow monorepo! This repository contains multiple projects that tie together the Exoflow ecosystem.",
   "directories": {},
   "scripts": {
+    "build": "echo Skipping...",
     "fix": "concurrently -m1 npm:fix:*",
     "fix:eslint": "echo Skipping...",
     "fix:md": "markdownlint-cli2 --fix .",
     "fix:prettier": "prettier --write .",
+    "prepare": "echo Skipping...",
     "lint": "concurrently -m1 npm:lint:*",
     "lint:eslint": "echo Skipping...",
     "lint:prettier": "prettier --check .",
