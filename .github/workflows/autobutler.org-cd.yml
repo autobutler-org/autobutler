@@ -1,4 +1,4 @@
-name: exoflow.cloud - CD
+name: autobutler.org - CD
 on:
   push:
     branches:
@@ -16,7 +16,7 @@ concurrency:
   group: pages
   cancel-in-progress: false
 env:
-  WORKING_DIR: ${{ github.workspace }}/apps/exoflow.cloud
+  WORKING_DIR: ${{ github.workspace }}/apps/autobutler.org
 defaults:
   run:
     shell: bash
@@ -28,9 +28,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
@@ -38,11 +35,11 @@ jobs:
       - name: Install dependencies
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          npm ci
+          bun install
       - name: Static HTML export with Nuxt
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          npm run generate
+          bun run generate
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

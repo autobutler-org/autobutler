@@ -1,4 +1,4 @@
-name: exoflow.cloud - CI
+name: autobutler.org - CI
 on:
   push:
     branches:
@@ -12,7 +12,7 @@ on:
         description: Image tag to run
         type: string
 env:
-  WORKING_DIR: ${{ github.workspace }}/apps/exoflow.cloud
+  WORKING_DIR: ${{ github.workspace }}/apps/autobutler.org
 defaults:
   run:
     shell: bash

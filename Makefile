@@ -6,6 +6,9 @@ SHELL := /bin/bash
 YAML_FILES := $(shell find . -not -path "*/node_modules/*" -type f -name '*.yml')
 JS_DIRS := $(shell find . -not -path "*/node_modules/*" -not -path "*/.*" -type f -name 'package.json' -exec dirname {} \;)
 
+JS_EXEC ?= bun
+JS_INSTALL ?= install
+
 .PHONY: $(MAKECMDGOALS)
 
 fix: fix/js fix/md fix/yaml ## [all] Fix format and lint errors
@@ -16,19 +19,19 @@ fix/js: fix/js/format fix/js/eslint ## [js] Fix
 fix/js/format:
 	@echo "[fix/format/js] begin"
 	@if ! [[ -d ./node_modules ]]; then \
-		npm ci; \
+		$(JS_EXEC) $(JS_INSTALL); \
 	fi
-	@npm run fix:prettier
+	@$(JS_EXEC) run fix:prettier
 	@echo "[fix/format/js] end"
 fix/js/eslint:
 	@echo "[fix/js/eslint] begin"
 	for dir in $(JS_DIRS); do \
 		cd $${dir}; \
 		if ! [[ -d ./node_modules ]]; then \
-			npm ci; \
+			$(JS_EXEC) $(JS_INSTALL); \
 		fi; \
-		npm run prepare; \
-		npm run fix:eslint; \
+		$(JS_EXEC) run build; \
+		$(JS_EXEC) run fix:eslint; \
 		cd -; \
 	done
 	@echo "[fix/js/eslint] end"
@@ -38,9 +41,9 @@ fix/md: fix/md/format ## [md] Fix
 fix/md/format:
 	@echo "[fix/format/md] begin"
 	@if ! [[ -d ./node_modules ]]; then \
-		npm ci; \
+		$(JS_EXEC) $(JS_INSTALL); \
 	fi
-	@npm run fix:md
+	@$(JS_EXEC) run fix:md
 	@echo "[fix/format/md] end"
 
 fix/yaml: fix/yaml/format ## [yaml] Format
@@ -54,32 +57,33 @@ fix/yaml/format:
 lint: lint/md lint/js lint/yaml ## [all] Lint
 lint/md: ## [all] Lint MD
 	@if ! [[ -d ./node_modules ]]; then \
-		npm ci; \
+		$(JS_EXEC) $(JS_INSTALL); \
 	fi
-	@npm run lint:md
+	@$(JS_EXEC) run lint:md
 
 lint/js: lint/js/format lint/js/eslint ## [all] Lint JS
 	@if ! [[ -d ./node_modules ]]; then \
-		npm ci; \
+		$(JS_EXEC) $(JS_INSTALL); \
 	fi
-	@npm run lint
+	@$(JS_EXEC) run lint
 lint/js/eslint:
 	@echo "[lint/eslint/js] begin"
 	for dir in $(JS_DIRS); do \
 		cd $${dir}; \
 		if ! [[ -d ./node_modules ]]; then \
-			npm ci; \
+			$(JS_EXEC) $(JS_INSTALL); \
 		fi; \
-		npm run lint:eslint; \
+		$(JS_EXEC) run build; \
+		$(JS_EXEC) run lint:eslint; \
 		cd -; \
 	done
 	@echo "[lint/check/js] end"
 lint/js/format:
 	@echo "[lint/format/js] begin"
 	@if ! [[ -d ./node_modules ]]; then \
-		npm ci; \
+		$(JS_EXEC) $(JS_INSTALL); \
 	fi
-	@npm run lint:prettier
+	@$(JS_EXEC) run lint:prettier
 	@echo "[lint/format/js] end"
 
 lint/yaml: lint/yaml/format ## [all] Lint YAML
