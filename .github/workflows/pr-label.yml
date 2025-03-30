@@ -8,6 +8,7 @@ on:
 jobs:
   pr-label:
     permissions:
+      contents: read
       pull-requests: write
     name: Label PR
     runs-on: ubuntu-latest
