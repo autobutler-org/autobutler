@@ -1,4 +1,4 @@
-# Autobutler
+# [Autobutler](https://autobutler.ai)
 
 Automated home assistant
 
