@@ -1,0 +1,35 @@
+name: Label PR
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+jobs:
+  pr-label:
+    permissions:
+      pull-requests: write
+    name: Label PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Check for changes in apps/autobutler
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            autobutler:
+              - 'apps/autobutler**'
+      - name: Add "autobutler" label if applicable
+        if: ${{ steps.filter.outputs.autobutler == 'true' }}
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['autobutler']
+            })
