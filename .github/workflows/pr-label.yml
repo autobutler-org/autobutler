@@ -21,7 +21,8 @@ jobs:
         with:
           filters: |
             autobutler:
-              - 'apps/autobutler**'
+              - 'apps/autobutler-app'
+              - 'apps/autobutler.ai'
       - name: Add "autobutler" label if applicable
         if: ${{ steps.filter.outputs.autobutler == 'true' }}
         uses: actions/github-script@v6
