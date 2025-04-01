@@ -19,6 +19,7 @@ jobs:
       - name: Workflow Dispatch
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.PAT }}
           script: |
             github.rest.actions.createWorkflowDispatch({
               owner: 'exokomodo',
