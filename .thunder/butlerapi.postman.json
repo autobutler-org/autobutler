@@ -1,0 +1,193 @@
+{
+    "info": {
+        "_postman_id": "d3be8324-e32d-46de-bb9f-abd87f62e1c4",
+        "name": "butlerapi",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "description": ""
+    },
+    "item": [
+        {
+            "name": "inventory: get",
+            "request": {
+                "method": "GET",
+                "url": {
+                    "raw": "http://0.0.0.0:8000/api/v1/inv",
+                    "path": [
+                        "api",
+                        "v1",
+                        "inv"
+                    ],
+                    "protocol": "http",
+                    "host": [
+                        "0",
+                        "0",
+                        "0",
+                        "0"
+                    ],
+                    "port": "8000"
+                }
+            }
+        },
+        {
+            "name": "inventory: update",
+            "request": {
+                "method": "PUT",
+                "url": {
+                    "raw": "http://0.0.0.0:8000/api/v1/inv",
+                    "path": [
+                        "api",
+                        "v1",
+                        "inv"
+                    ],
+                    "protocol": "http",
+                    "host": [
+                        "0",
+                        "0",
+                        "0",
+                        "0"
+                    ],
+                    "port": "8000"
+                },
+                "body": {
+                    "mode": "raw",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    },
+                    "raw": "{\n\"data\": \"123\"\n}"
+                }
+            }
+        },
+        {
+            "name": "device: get all",
+            "request": {
+                "method": "GET",
+                "url": {
+                    "raw": "http://0.0.0.0:8000/api/v1/dev",
+                    "path": [
+                        "api",
+                        "v1",
+                        "dev"
+                    ],
+                    "protocol": "http",
+                    "host": [
+                        "0",
+                        "0",
+                        "0",
+                        "0"
+                    ],
+                    "port": "8000"
+                }
+            }
+        },
+        {
+            "name": "device: get",
+            "request": {
+                "method": "GET",
+                "url": {
+                    "raw": "http://0.0.0.0:8000/api/v1/dev/123",
+                    "path": [
+                        "api",
+                        "v1",
+                        "dev",
+                        "123"
+                    ],
+                    "protocol": "http",
+                    "host": [
+                        "0",
+                        "0",
+                        "0",
+                        "0"
+                    ],
+                    "port": "8000"
+                }
+            }
+        },
+        {
+            "name": "device: add",
+            "request": {
+                "method": "POST",
+                "url": {
+                    "raw": "http://0.0.0.0:8000/api/v1/dev",
+                    "path": [
+                        "api",
+                        "v1",
+                        "dev"
+                    ],
+                    "protocol": "http",
+                    "host": [
+                        "0",
+                        "0",
+                        "0",
+                        "0"
+                    ],
+                    "port": "8000"
+                },
+                "body": {
+                    "mode": "raw",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    },
+                    "raw": "{\n\"data\": \"123\"\n}"
+                }
+            }
+        },
+        {
+            "name": "device: delete",
+            "request": {
+                "method": "DELETE",
+                "url": {
+                    "raw": "http://0.0.0.0:8000/api/v1/dev/123",
+                    "path": [
+                        "api",
+                        "v1",
+                        "dev",
+                        "123"
+                    ],
+                    "protocol": "http",
+                    "host": [
+                        "0",
+                        "0",
+                        "0",
+                        "0"
+                    ],
+                    "port": "8000"
+                }
+            }
+        },
+        {
+            "name": "device: update",
+            "request": {
+                "method": "PUT",
+                "url": {
+                    "raw": "http://0.0.0.0:8000/api/v1/dev",
+                    "path": [
+                        "api",
+                        "v1",
+                        "dev"
+                    ],
+                    "protocol": "http",
+                    "host": [
+                        "0",
+                        "0",
+                        "0",
+                        "0"
+                    ],
+                    "port": "8000"
+                },
+                "body": {
+                    "mode": "raw",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    },
+                    "raw": "{\n\"data\": \"123\"\n}"
+                }
+            }
+        }
+    ]
+}

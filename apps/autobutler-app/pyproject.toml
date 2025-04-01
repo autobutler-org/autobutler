@@ -21,3 +21,4 @@ dependencies = { file = "requirements.txt" }
 
 [project.scripts]
 butlerctl = "autobutler:main"
+butlerapi = "api:main"
