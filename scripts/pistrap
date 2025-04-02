@@ -29,6 +29,7 @@ ORG_LOCAL=${HOME}/github.com/${ORG}
 REPO_LOCAL=${ORG_LOCAL}/${REPO}
 mkdir -p ${ORG_LOCAL}
 if ! [[ -d "${REPO_LOCAL}" ]]; then
+	echo "Login with 'gh auth login'"
 	gh repo clone \
 		${ORG}/${REPO} \
 		${REPO_LOCAL} \
