@@ -33,7 +33,7 @@ echo \
 
 # Update package list again
 echo "Updating package list with Docker repository..."
-sudo apt-get update
+sudo apt-get update -y
 
 # Install Docker Engine
 echo "Installing Docker Engine..."
