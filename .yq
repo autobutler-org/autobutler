@@ -1,0 +1,7 @@
+# yq configuration file
+# Ignore Helm template files
+ignore:
+  - "**/templates/**/*.yaml"
+  - "**/templates/**/*.yml"
+  - "**/templates/**/*.json"
+  - "**/templates/**/*.tpl" 
