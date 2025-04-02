@@ -10,7 +10,8 @@ sudo apt-get install -y \
 	python3 \
 	python3-pip \
 	pipx \
-	gh
+	gh \
+	cgroupfs-mount
 
 vim --version
 git --version
@@ -40,5 +41,13 @@ if command -v docker >> /dev/null; then
 	echo "Skipping docker installation...already installed"
 else
 	${REPO_LOCAL}/apps/ab-home/autobutler-infra/install_docker_pi.sh
+fi
+
+CGROUP_ARGS="cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory"
+if grep -v "${CGROUP_ARGS}" /boot/firmware/cmdline.txt; then
+	sudo bash -c "echo '${CGROUP_ARGS}' >> /boot/firmware/cmdline.txt"
+	echo "Rebooting in 5 seconds..."
+	sleep 5
+	sudo shutdown -r now
 fi
 
