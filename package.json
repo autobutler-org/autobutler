@@ -5,7 +5,7 @@
   "directories": {},
   "private": true,
   "workspaces": [
-    "apps/autobutler.ai"
+    "apps/ab-public/autobutler.ai"
   ],
   "scripts": {
     "build": "echo Skipping...",
