@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: birchwood-cms
+  namespace: cms
+spec:
+  selector:
+    app: birchwood-cms
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80 
+      targetPort: 5173
+  type: ClusterIP

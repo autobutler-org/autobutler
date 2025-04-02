@@ -1,0 +1,34 @@
+postgresql:
+  # Authentication
+  auth:
+    postgresPassword: "postgres"  # Change this in production!
+    database: "postgres"
+    username: "postgres"
+  
+  # Primary PostgreSQL configuration
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+    
+  # Network configuration
+  service:
+    type: ClusterIP
+    ports:
+      postgresql: 5432
+
+  # Configure PostgreSQL settings
+  configuration:
+    max_connections: 100
+    shared_buffers: "128MB"
+    
+  # Enable metrics export (optional)
+  metrics:
+    enabled: false

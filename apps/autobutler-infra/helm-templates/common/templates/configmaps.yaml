@@ -1,0 +1,19 @@
+{{- if .Values.configMaps }}
+
+{{- $configMaps := .Values.configMaps }}
+{{- range $index, $cm := $configMaps }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $cm.name }}
+  namespace: {{ .Values.namespace }}
+
+data:
+  {{- range $key, $value := $cm.data }}
+  {{ $key }}: {{ $value }}
+  {{- end }}
+---
+
+{{- end }}
+{{- end }}

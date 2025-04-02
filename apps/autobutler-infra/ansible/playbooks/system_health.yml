@@ -1,0 +1,43 @@
+---
+- name: Check System Health
+  hosts: raspberry_pis
+  gather_facts: true
+
+  tasks:
+    - name: Get disk usage
+      shell: df -h /
+      register: disk_usage
+
+    - name: Get memory usage
+      shell: free -h
+      register: memory_usage
+
+    - name: Get CPU load
+      shell: uptime
+      register: cpu_load
+
+    - name: Get system temperature
+      shell: vcgencmd measure_temp
+      register: temperature
+      ignore_errors: true  # In case command not available
+
+    - name: Display system health information
+      debug:
+        msg: |
+          System Health Report for {{ inventory_hostname }}:
+          -------------------------
+          Disk Usage:
+          {{ disk_usage.stdout_lines[1] }}
+          
+          Memory Usage:
+          {{ memory_usage.stdout_lines[1] }}
+          
+          CPU Load:
+          {{ cpu_load.stdout }}
+          
+          Temperature:
+          {{ temperature.stdout if temperature.rc == 0 else 'Temperature sensor not available' }}
+          
+          System Uptime:
+          {{ ansible_uptime_seconds | int // 3600 }} hours
+          {{ (ansible_uptime_seconds | int % 3600) // 60 }} minutes 

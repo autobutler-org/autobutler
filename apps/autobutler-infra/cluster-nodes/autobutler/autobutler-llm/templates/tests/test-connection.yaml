@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "autobutler-llm.fullname" . }}-test-connection"
+  labels:
+    {{- include "autobutler-llm.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "autobutler-llm.fullname" . }}:{{ .Values.service.port }}']
+  restartPolicy: Never

@@ -1,0 +1,41 @@
+{{- $common := include "birchwood-templates.common" . -}}
+
+{{- if .Values.istioVirtualService }}
+
+{{- range $v := .Values.istioVirtualService }}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ $v.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  gateways:
+  {{- if $v.gateways }}
+  {{- range $gateway := $v.gateways }}
+  - "{{ $gateway }}"
+  {{- end }}
+  {{- else }}
+  - istio-gateway/default
+  {{- end }}
+  hosts:
+- {{ $.Values.subDomain }}.{{ $common.clusterTLD }}
+http:
+- name: {{ $v.name }}
+  {{- if $v.prefix }}
+  match:
+  - uri:
+      prefix: {{ $v.prefix }}
+  {{- end }}
+  route:
+  - destination:
+      {{- if $v.serviceNamespace }}
+      host: {{ $v.serviceName }}.{{ $v.serviceNamespace }}.svc.cluster.local
+      {{- else }}
+      host: {{ $v.serviceName }}.{{ $.Release.Namespace }}.svc.cluster.local
+      {{- end }}
+      port:
+        number: {{ $v.port }}
+---
+
+{{- end }}
+{{- end }}

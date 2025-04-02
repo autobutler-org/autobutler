@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: postgres
+  namespace: argo-cd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/brandonapol/birchwood-infra-k3s.git 
+    targetRevision: main
+    path: cluster-nodes/platform/postgres
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: shared 
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,36 @@
+---
+- name: Update System Packages
+  hosts: raspberry_pis
+  become: true  # This enables sudo
+  become_method: sudo
+  gather_facts: true
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: true
+        cache_valid_time: 3600  # Consider cache valid for 1 hour
+
+    - name: Upgrade all packages
+      apt:
+        upgrade: full
+        autoclean: true
+        autoremove: true
+      register: apt_upgrade
+
+    - name: Check if reboot is required
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    - name: Reboot system if required
+      reboot:
+        msg: "Rebooting due to system updates"
+        reboot_timeout: 300  # Wait up to 5 minutes for reboot
+        test_command: uptime
+      when: reboot_required.stat.exists
+      register: reboot_result
+
+    - name: Show reboot status
+      debug:
+        msg: "System was rebooted: {{ reboot_result.changed if reboot_required.stat.exists else 'No reboot was needed' }}" 

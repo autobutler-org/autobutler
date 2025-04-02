@@ -1,0 +1,22 @@
+apiVersion: v2
+name: istiod
+description: Helm chart for Istiod
+
+type: application
+
+version: 0.1.0
+
+appVersion: "1.24.2"
+
+sources:
+  - https://github.com/istio/istio/tree/master/manifests/charts/istiod
+
+dependencies:
+  - name: istiod
+    version: 1.24.2
+    repository: https://istio-release.storage.googleapis.com/charts
+
+
+# Kubernetes control plane is running at https://127.0.0.1:6443
+# CoreDNS is running at https://127.0.0.1:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+# Metrics-server is running at https://127.0.0.1:6443/api/v1/namespaces/kube-system/services/https:metrics-server:https/proxy

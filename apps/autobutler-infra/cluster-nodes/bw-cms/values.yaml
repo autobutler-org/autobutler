@@ -1,0 +1,16 @@
+replicaCount: 1
+
+image:
+  repository: birchwood-cms
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 5173
+
+ingress:
+  enabled: false
+
+resources: 

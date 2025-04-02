@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: birchwood-server
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/brandonapol/birchwood-infra-k3s
+        revision: main
+        directories:
+          - path: cluster-nodes/bw-server/*
+  template:
+    metadata:
+      name: 'bw-server-{{path.basename}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/brandonapol/birchwood-infra-k3s
+        targetRevision: main
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

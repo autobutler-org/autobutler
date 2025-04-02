@@ -1,0 +1,60 @@
+---
+- name: Uninstall k3s
+  hosts: raspberry_pis
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Stop k3s service
+      systemd:
+        name: "{{ 'k3s' if inventory_hostname == 'pi1' else 'k3s-agent' }}"
+        state: stopped
+      ignore_errors: true
+
+    - name: Uninstall k3s
+      shell: /usr/local/bin/k3s-uninstall.sh
+      args:
+        creates: /usr/local/bin/k3s
+      ignore_errors: true
+
+    - name: Clean up k3s directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /etc/rancher/k3s
+        - /var/lib/rancher/k3s
+        - /var/lib/cni
+        - /opt/cni
+        - /var/lib/kubelet
+        - /var/lib/etcd
+      ignore_errors: true
+
+    - name: Remove k3s binaries and scripts
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /usr/local/bin/k3s
+        - /usr/local/bin/k3s-uninstall.sh
+        - /usr/local/bin/k3s-killall.sh
+        - /tmp/k3s-install.sh
+      ignore_errors: true
+
+    - name: Remove k3s systemd service
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /etc/systemd/system/k3s.service
+        - /etc/systemd/system/k3s-agent.service
+      ignore_errors: true
+
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+      ignore_errors: true
+
+    - name: Display uninstallation status
+      debug:
+        msg: "K3s has been uninstalled from {{ inventory_hostname }}" 
