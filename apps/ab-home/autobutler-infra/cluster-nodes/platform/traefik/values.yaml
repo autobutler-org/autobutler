@@ -1,0 +1,60 @@
+replicaCount: 1
+
+image:
+  repository: traefik
+  pullPolicy: IfNotPresent
+  tag: "v2.10.7"
+
+
+service:
+  type: LoadBalancer
+  port: 80
+
+ports:
+  web:
+    port: 80
+    expose: true
+    exposedPort: 80
+    protocol: TCP
+  websecure:
+    port: 443
+    expose: true
+    exposedPort: 443
+    protocol: TCP
+
+# Enable dashboard and API
+dashboard:
+  enabled: true
+  ingressRoute: true
+
+# Configure providers
+providers:
+  kubernetesCRD:
+    enabled: true
+    ingressClass: traefik
+  kubernetesIngress:
+    enabled: true
+    publishedService:
+      enabled: true
+
+# Basic security settings
+globalArguments:
+  - "--global.checknewversion=false"
+  - "--global.sendanonymoususage=false"
+
+# Enable persistence for Let's Encrypt certificates
+persistence:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 128Mi
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "50Mi"
+  limits:
+    cpu: "300m"
+    memory: "150Mi"
+
+
+

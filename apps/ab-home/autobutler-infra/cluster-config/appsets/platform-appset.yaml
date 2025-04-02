@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: postgres
+  namespace: argo-cd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: postgres
+            namespace: argo-cd
+  template:
+    metadata:
+      name: 'postgres'
+    spec:
+      project: shared
+      source:
+        repoURL: 'https://charts.bitnami.com/bitnami'  # Bitnami Helm repository
+        chart: postgresql
+        targetRevision: 12.x 
+        helm:
+          valueFiles:
+            - /Users/brandonapol/Documents/code/birchwood-infra/cluster-nodes/platform/postgres/values.yaml
+          values: |
+            # Any additional values can go here
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{element.namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

@@ -1,0 +1,35 @@
+# Ansible inventory files with real IPs and credentials
+inventory/hosts
+
+# Vault files
+*.vault
+*.vault.*
+vault.yml
+vault.yaml
+
+# Private keys and certificates
+*.pem
+*.key
+*.crt
+*.cer
+*.priv
+
+# Retry files
+*.retry
+
+# Logs
+*.log
+
+# Runtime data
+*.pid
+*.sock
+
+# Sensitive variables files
+**/vars/secrets.yml
+**/vars/secrets.yaml
+**/group_vars/*/vault.yml
+**/host_vars/*/vault.yml
+
+# Local configuration
+ansible.cfg 
+k3s.yaml

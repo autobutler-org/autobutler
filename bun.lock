@@ -4,7 +4,7 @@
     "": {
       "name": "exoflow",
     },
-    "apps/autobutler.ai": {
+    "apps/ab-public/autobutler.ai": {
       "name": "homeflow",
       "dependencies": {
         "markdownlint-cli2": "^0.17.2",
@@ -887,7 +887,7 @@
 
     "he": ["he@1.2.0", "", { "bin": "bin/he" }, "sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw=="],
 
-    "homeflow": ["homeflow@workspace:apps/autobutler.ai"],
+    "homeflow": ["homeflow@workspace:apps/ab-public/autobutler.ai"],
 
     "hookable": ["hookable@5.5.3", "", {}, "sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ=="],
 

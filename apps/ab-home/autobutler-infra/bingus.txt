@@ -1,0 +1,12 @@
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bitnami-repos
+  namespace: argo-cd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  url: https://charts.bitnami.com/bitnami
+  type: helm
+EOF

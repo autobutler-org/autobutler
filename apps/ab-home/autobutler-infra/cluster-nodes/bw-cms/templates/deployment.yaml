@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: birchwood-cms
+  namespace: cms
+  labels:
+    app: birchwood-cms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: birchwood-cms
+  template:
+    metadata:
+      labels:
+        app: birchwood-cms
+    spec:
+      containers:
+      - name: birchwood-cms
+        image: birchwood-cms:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5173
+

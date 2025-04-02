@@ -1,0 +1,30 @@
+common:
+  subDomain: "birchwood-blog"
+  clusterTLD: "k8s.birchwood.lol"
+  namespace: "blog"
+  image:
+    name: "birchwood-blog"
+    tag: "latest"
+
+  containerPorts:
+  - name: http 
+    port: 3000
+    protocol: TCP 
+
+  services:
+  - name: "blog-service"
+    namespace: blog
+    ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 3000
+  
+  configMaps:
+    {}
+  volumeMounts:
+  - name: birchwood-blog-app-config
+    mountPath: /app/build/server/pages/config/appConfig.js
+    subPath: appConfig.js
+    useConfigMap: true
+    configMapName: app-config-birchwood-service

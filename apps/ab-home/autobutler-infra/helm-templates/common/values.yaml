@@ -1,0 +1,6 @@
+clusterProtocol: "http://"
+clusterTLD: "k8s.birchwood.lol"
+primaryGateway: "istio-gateway/default"
+
+services: ""
+virtualServices: "" 
