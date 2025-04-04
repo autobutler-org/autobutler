@@ -1,0 +1,54 @@
+name: autobutler.ai - CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: Image tag to run
+        type: string
+env:
+  WORKING_DIR: ${{ github.workspace }}/apps/autobutler.ai
+defaults:
+  run:
+    shell: bash
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: exokomodo/exoflow-devcontainer:${{ inputs.image-tag || (github.event_name == 'pull_request' && 'latest') || (github.head_ref || github.ref_name) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          bun install
+      - name: Build
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          bun run build
+      - name: Generate
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          bun run generate
+  pass-autobutler-org-ci:
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - build
+    env:
+      RESULT: ${{ needs.build.result }}
+    steps:
+      - name: Pass
+        if: ${{ env.RESULT != 'failure' }}
+        run: |
+          echo "[PASS] Linting" >> ${GITHUB_STEP_SUMMARY}
+      - name: Fail
+        if: ${{ env.RESULT == 'failure' }}
+        run: |
+          echo "[FAIL] Linting" >> ${GITHUB_STEP_SUMMARY}

@@ -1,0 +1,133 @@
+---
+- name: Setup CA and certificates for k3s
+  hosts: raspberry_pis
+  become: true
+  gather_facts: true
+  vars:
+    ca_dir: /etc/rancher/k3s/certs
+    ca_cert_path: '{{ ca_dir }}/ca.crt'
+    ca_key_path: '{{ ca_dir }}/ca.key'
+    cert_validity_days: 3650 # 10 years
+    k3s_server_cert_path: '{{ ca_dir }}/server.crt'
+    k3s_server_key_path: '{{ ca_dir }}/server.key'
+    k3s_client_cert_path: '{{ ca_dir }}/client.crt'
+    k3s_client_key_path: '{{ ca_dir }}/client.key'
+    sans_file: '{{ ca_dir }}/sans.cnf'
+  tasks:
+    - name: Create CA directory
+      file:
+        path: '{{ ca_dir }}'
+        state: directory
+        mode: "0755"
+      when: inventory_hostname == 'butler0'
+    - name: Generate CA private key
+      shell: |
+        openssl genrsa -out {{ ca_key_path }} 2048
+        chmod 600 {{ ca_key_path }}
+      args:
+        creates: '{{ ca_key_path }}'
+      when: inventory_hostname == 'butler0'
+    - name: Generate CA certificate
+      shell: |
+        openssl req -x509 -new -nodes \
+          -key {{ ca_key_path }} \
+          -sha256 -days {{ cert_validity_days }} \
+          -out {{ ca_cert_path }} \
+          -subj "/CN=k3s-ca"
+      args:
+        creates: '{{ ca_cert_path }}'
+      when: inventory_hostname == 'butler0'
+    - name: Generate server private key
+      shell: |
+        openssl genrsa -out {{ k3s_server_key_path }} 2048
+        chmod 600 {{ k3s_server_key_path }}
+      args:
+        creates: '{{ k3s_server_key_path }}'
+      when: inventory_hostname == 'butler0'
+    - name: Generate server CSR
+      shell: |
+        openssl req -new -key {{ k3s_server_key_path }} \
+          -out /tmp/server.csr \
+          -subj "/CN=k3s-server" \
+          -addext "subjectAltName=DNS:kubernetes,DNS:kubernetes.default,DNS:kubernetes.default.svc,DNS:kubernetes.default.svc.cluster.local,IP:{{ hostvars['butler0']['ansible_host'] }},IP:10.43.0.1"
+      when: inventory_hostname == 'butler0'
+    - name: Create SANs configuration file
+      copy:
+        content: |
+          [SAN]
+          subjectAltName=DNS:kubernetes,DNS:kubernetes.default,DNS:kubernetes.default.svc,DNS:kubernetes.default.svc.cluster.local,IP:{{ hostvars['butler0']['ansible_host'] }},IP:10.43.0.1
+        dest: '{{ sans_file }}'
+        mode: "0644"
+      when: inventory_hostname == 'butler0'
+    - name: Generate server certificate
+      shell: |
+        openssl x509 -req -CA {{ ca_cert_path }} \
+          -CAkey {{ ca_key_path }} \
+          -CAcreateserial \
+          -in /tmp/server.csr \
+          -out {{ k3s_server_cert_path }} \
+          -days {{ cert_validity_days }} \
+          -sha256 \
+          -extfile {{ sans_file }}
+      args:
+        creates: '{{ k3s_server_cert_path }}'
+      when: inventory_hostname == 'butler0'
+    - name: Generate client private key
+      shell: |
+        openssl genrsa -out {{ k3s_client_key_path }} 2048
+        chmod 600 {{ k3s_client_key_path }}
+      args:
+        creates: '{{ k3s_client_key_path }}'
+      when: inventory_hostname == 'butler0'
+    - name: Generate client CSR
+      shell: |
+        openssl req -new -key {{ k3s_client_key_path }} \
+          -out /tmp/client.csr \
+          -subj "/CN=k3s-client"
+      when: inventory_hostname == 'butler0'
+    - name: Generate client certificate
+      shell: |
+        openssl x509 -req -CA {{ ca_cert_path }} \
+          -CAkey {{ ca_key_path }} \
+          -CAcreateserial \
+          -in /tmp/client.csr \
+          -out {{ k3s_client_cert_path }} \
+          -days {{ cert_validity_days }} \
+          -sha256
+      args:
+        creates: '{{ k3s_client_cert_path }}'
+      when: inventory_hostname == 'butler0'
+    - name: Create cert directories on worker nodes
+      file:
+        path: '{{ ca_dir }}'
+        state: directory
+        mode: "0755"
+      when: inventory_hostname != 'butler0'
+    - name: Copy CA certificate to worker nodes
+      copy:
+        src: '{{ ca_cert_path }}'
+        dest: '{{ ca_cert_path }}'
+        mode: "0644"
+        remote_src: yes
+      when: inventory_hostname != 'butler0'
+    - name: Copy client certificates to worker nodes
+      copy:
+        src: '{{ item.src }}'
+        dest: '{{ item.dest }}'
+        mode: "0644"
+        remote_src: yes
+      with_items:
+        - src: '{{ k3s_client_cert_path }}'
+          dest: '{{ k3s_client_cert_path }}'
+        - src: '{{ k3s_client_key_path }}'
+          dest: '{{ k3s_client_key_path }}'
+      when: inventory_hostname != 'butler0'
+    - name: Clean up temporary files
+      file:
+        path: '{{ item }}'
+        state: absent
+      with_items:
+        - /tmp/server.csr
+        - /tmp/client.csr
+        - '{{ sans_file }}'
+      when: inventory_hostname == 'butler0'

@@ -1,0 +1,5 @@
+# Ignore all YAML files:
+**/*.yaml
+**/*.yml
+
+**/node_modules/
