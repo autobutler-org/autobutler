@@ -43,8 +43,9 @@ else
 	${REPO_LOCAL}/apps/ab-home/autobutler-infra/install_docker_pi.sh
 fi
 
+sudo swapoff -a
 CGROUP_ARGS="cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory"
-if grep -v "${CGROUP_ARGS}" /boot/firmware/cmdline.txt; then
+if ! grep "${CGROUP_ARGS}" /boot/firmware/cmdline.txt; then
 	sudo bash -c "echo '${CGROUP_ARGS}' >> /boot/firmware/cmdline.txt"
 	echo "Rebooting in 5 seconds..."
 	sleep 5

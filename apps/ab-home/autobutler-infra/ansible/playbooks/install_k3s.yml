@@ -5,7 +5,7 @@
   gather_facts: true
   vars:
     k3s_version: v1.32.3+k3s1
-    kubeconfig_path: /Users/brandonapol/Documents/code/birchwood-infra/ansible/k3s.yaml
+    kubeconfig_path: /etc/rancher/k3s/k3s.yaml
     k3s_token_path: /var/lib/rancher/k3s/server/node-token
     ca_dir: /etc/rancher/k3s/certs
     ca_cert_path: "{{ ca_dir }}/ca.crt"
