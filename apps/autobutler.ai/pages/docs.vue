@@ -5,31 +5,36 @@
         <nav>
           <ul>
             <li v-for="section in sections" :key="section">
-              <a href="#" @click.prevent="currentSection = section">{{ section }}</a>
+              <a href="#" @click.prevent="currentSection = section">{{
+                section
+              }}</a>
             </li>
           </ul>
         </nav>
       </aside>
       <main class="content">
         <h1>Documentation</h1>
-        <p>Welcome to the AutoButler documentation. Select a topic from the sidebar to begin.</p>
+        <p>
+          Welcome to the AutoButler documentation. Select a topic from the
+          sidebar to begin.
+        </p>
       </main>
     </div>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref } from "vue";
 
 const sections = [
-  'Getting Started',
-  'Installation',
-  'Configuration',
-  'API Reference',
-  'Examples'
+  "Getting Started",
+  "Installation",
+  "Configuration",
+  "API Reference",
+  "Examples",
 ];
 
-const currentSection = ref('Getting Started');
+const currentSection = ref("Getting Started");
 </script>
 
 <style scoped>
@@ -66,4 +71,4 @@ const currentSection = ref('Getting Started');
     rgba(0, 187, 255, 0.1)
   );
 }
-</style> 
+</style>

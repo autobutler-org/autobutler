@@ -2,26 +2,26 @@
   <PageContainer>
     <div class="login-container">
       <h1>Login</h1>
-      <form @submit.prevent="handleLogin" class="login-form">
+      <form class="login-form" @submit.prevent="handleLogin">
         <div class="form-group">
           <label for="email">Email</label>
-          <input 
-            type="email" 
-            id="email" 
-            v-model="email" 
+          <input
+            id="email"
+            v-model="email"
+            type="email"
             required
             placeholder="Enter your email"
-          >
+          />
         </div>
         <div class="form-group">
           <label for="password">Password</label>
-          <input 
-            type="password" 
-            id="password" 
-            v-model="password" 
+          <input
+            id="password"
+            v-model="password"
+            type="password"
             required
             placeholder="Enter your password"
-          >
+          />
         </div>
         <button type="submit" class="login-button">Sign In</button>
         <div class="form-footer">
@@ -34,14 +34,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref } from "vue";
 
-const email = ref('');
-const password = ref('');
+const email = ref("");
+const password = ref("");
 
 const handleLogin = () => {
   // Implement login logic
-  console.log('Login attempted', { email: email.value });
+  console.log("Login attempted", { email: email.value });
 };
 
 const forgotPassword = () => {
@@ -127,4 +127,4 @@ input:focus {
 .form-footer a:hover {
   color: #fff;
 }
-</style> 
+</style>

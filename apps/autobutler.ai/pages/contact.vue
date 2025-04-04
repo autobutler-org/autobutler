@@ -8,49 +8,51 @@
           <p>Have questions or need assistance? We're here to help!</p>
           <div class="contact-details">
             <p><strong>Email:</strong> support@autobutler.ai</p>
-            <p><strong>Hours:</strong> Monday - Friday, 9:00 AM - 5:00 PM EST</p>
+            <p>
+              <strong>Hours:</strong> Monday - Friday, 9:00 AM - 5:00 PM EST
+            </p>
           </div>
         </div>
 
         <form class="contact-form" @submit.prevent="handleSubmit">
           <div class="form-group">
             <label for="name">Name</label>
-            <input 
-              type="text" 
-              id="name" 
-              v-model="formData.name" 
+            <input
+              id="name"
+              v-model="formData.name"
+              type="text"
               required
               placeholder="Your name"
-            >
+            />
           </div>
 
           <div class="form-group">
             <label for="email">Email</label>
-            <input 
-              type="email" 
-              id="email" 
-              v-model="formData.email" 
+            <input
+              id="email"
+              v-model="formData.email"
+              type="email"
               required
               placeholder="your@email.com"
-            >
+            />
           </div>
 
           <div class="form-group">
             <label for="subject">Subject</label>
-            <input 
-              type="text" 
-              id="subject" 
-              v-model="formData.subject" 
+            <input
+              id="subject"
+              v-model="formData.subject"
+              type="text"
               required
               placeholder="How can we help?"
-            >
+            />
           </div>
 
           <div class="form-group">
             <label for="message">Message</label>
-            <textarea 
-              id="message" 
-              v-model="formData.message" 
+            <textarea
+              id="message"
+              v-model="formData.message"
               required
               rows="5"
               placeholder="Your message..."
@@ -65,18 +67,18 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { reactive } from "vue";
 
 const formData = reactive({
-  name: '',
-  email: '',
-  subject: '',
-  message: ''
+  name: "",
+  email: "",
+  subject: "",
+  message: "",
 });
 
 const handleSubmit = () => {
   // TODO: Implement form submission logic
-  console.log('Form submitted:', formData);
+  console.log("Form submitted:", formData);
 };
 </script>
 
@@ -139,7 +141,8 @@ label {
   font-size: 0.9rem;
 }
 
-input, textarea {
+input,
+textarea {
   width: 100%;
   padding: 0.8rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -149,7 +152,8 @@ input, textarea {
   font-size: 1rem;
 }
 
-input:focus, textarea:focus {
+input:focus,
+textarea:focus {
   outline: none;
   border-color: #4caf50;
   box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
@@ -171,4 +175,4 @@ input:focus, textarea:focus {
   background: linear-gradient(135deg, #45a049, #3d8b40);
   transform: translateY(-1px);
 }
-</style> 
+</style>

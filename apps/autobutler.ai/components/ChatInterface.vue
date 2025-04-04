@@ -1,32 +1,34 @@
 <template>
   <div class="chat-interface">
-    <div class="chat-messages" ref="messagesContainer">
-      <div 
-        v-for="message in messages" 
-        :key="message.id" 
+    <div ref="messagesContainer" class="chat-messages">
+      <div
+        v-for="message in messages"
+        :key="message.id"
         :class="['message', message.role]"
       >
         <div class="message-content">
           <div class="message-header">
-            {{ message.role === 'user' ? 'You' : 'AI Assistant' }}
+            {{ message.role === "user" ? "You" : "AI Assistant" }}
           </div>
           <div class="message-text">{{ message.content }}</div>
-          <div class="message-timestamp">{{ formatTime(message.timestamp) }}</div>
+          <div class="message-timestamp">
+            {{ formatTime(message.timestamp) }}
+          </div>
         </div>
       </div>
     </div>
-    
+
     <div class="chat-input">
       <textarea
         v-model="userInput"
-        @keydown.enter.prevent="sendMessage"
         placeholder="Type your message here..."
         rows="3"
+        @keydown.enter.prevent="sendMessage"
       ></textarea>
-      <button 
-        @click="sendMessage"
+      <button
         :disabled="!userInput.trim()"
         class="send-button"
+        @click="sendMessage"
       >
         Send
       </button>
@@ -35,25 +37,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch } from "vue";
 
 interface Message {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   timestamp: Date;
 }
 
 const messages = ref<Message[]>([]);
-const userInput = ref('');
+const userInput = ref("");
 const messagesContainer = ref<HTMLElement | null>(null);
 
-const formatTime = (date: Date) => {
-  return new Intl.DateTimeFormat('en-US', {
-    hour: '2-digit',
-    minute: '2-digit'
+const formatTime = (date: Date) =>
+  new Intl.DateTimeFormat("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(date);
-};
 
 const scrollToBottom = () => {
   if (messagesContainer.value) {
@@ -67,30 +68,32 @@ const sendMessage = async () => {
   // Add user message
   messages.value.push({
     id: crypto.randomUUID(),
-    role: 'user',
+    role: "user",
     content: userInput.value,
-    timestamp: new Date()
+    timestamp: new Date(),
   });
 
+  userInput.value = "";
   const userMessage = userInput.value;
-  userInput.value = '';
+  console.log("User message:", userMessage);
 
   // Simulate AI response (replace with actual API call later)
   try {
     // Placeholder for API call
     // const response = await callLLMAPI(userMessage);
-    
+
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     messages.value.push({
       id: crypto.randomUUID(),
-      role: 'assistant',
-      content: 'This is a placeholder response. Replace with actual LLM integration.',
-      timestamp: new Date()
+      role: "assistant",
+      content:
+        "This is a placeholder response. Replace with actual LLM integration.",
+      timestamp: new Date(),
     });
   } catch (error) {
-    console.error('Failed to get AI response:', error);
+    console.error("Failed to get AI response:", error);
   }
 };
 
@@ -240,4 +243,4 @@ textarea:focus {
 .chat-messages::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
-</style> 
+</style>

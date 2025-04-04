@@ -4,7 +4,9 @@
       <h1>Privacy Policy</h1>
       <div class="section">
         <h2>1. Information We Collect</h2>
-        <p>We collect information that you provide directly to us, including:</p>
+        <p>
+          We collect information that you provide directly to us, including:
+        </p>
         <ul>
           <li>Account information (name, email, password)</li>
           <li>Profile information</li>
@@ -24,12 +26,19 @@
 
       <div class="section">
         <h2>3. Data Security</h2>
-        <p>We implement appropriate security measures to protect your personal information from unauthorized access, alteration, disclosure, or destruction.</p>
+        <p>
+          We implement appropriate security measures to protect your personal
+          information from unauthorized access, alteration, disclosure, or
+          destruction.
+        </p>
       </div>
 
       <div class="section">
         <h2>4. Contact Us</h2>
-        <p>If you have any questions about this Privacy Policy, please contact us at:</p>
+        <p>
+          If you have any questions about this Privacy Policy, please contact us
+          at:
+        </p>
         <p>Email: privacy@autobutler.ai</p>
       </div>
     </div>
@@ -94,4 +103,4 @@ ul li::before {
   left: -1.5rem;
   font-size: 1.2rem;
 }
-</style> 
+</style>

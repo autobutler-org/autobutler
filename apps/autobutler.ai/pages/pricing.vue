@@ -20,35 +20,35 @@
 <script setup lang="ts">
 const plans = [
   {
-    name: 'Starter',
+    name: "Starter",
     price: 29,
     features: [
-      'Basic Automation',
-      '5 Workflows',
-      'Email Support',
-      'Basic Analytics'
-    ]
+      "Basic Automation",
+      "5 Workflows",
+      "Email Support",
+      "Basic Analytics",
+    ],
   },
   {
-    name: 'Professional',
+    name: "Professional",
     price: 99,
     features: [
-      'Advanced Automation',
-      'Unlimited Workflows',
-      'Priority Support',
-      'Advanced Analytics'
-    ]
+      "Advanced Automation",
+      "Unlimited Workflows",
+      "Priority Support",
+      "Advanced Analytics",
+    ],
   },
   {
-    name: 'Enterprise',
+    name: "Enterprise",
     price: 299,
     features: [
-      'Custom Solutions',
-      'Dedicated Support',
-      'SLA Guarantee',
-      'Custom Analytics'
-    ]
-  }
+      "Custom Solutions",
+      "Dedicated Support",
+      "SLA Guarantee",
+      "Custom Analytics",
+    ],
+  },
 ];
 </script>
 
@@ -118,4 +118,4 @@ const plans = [
     rgba(0, 187, 255, 0.3)
   );
 }
-</style> 
+</style>

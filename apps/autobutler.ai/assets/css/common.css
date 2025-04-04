@@ -15,9 +15,17 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
-    radial-gradient(circle at 20% 30%, rgba(32, 178, 170, 0.15) 0%, transparent 30%),
-    radial-gradient(circle at 80% 70%, rgba(210, 180, 140, 0.15) 0%, transparent 30%);
+  background:
+    radial-gradient(
+      circle at 20% 30%,
+      rgba(32, 178, 170, 0.15) 0%,
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 80% 70%,
+      rgba(210, 180, 140, 0.15) 0%,
+      transparent 30%
+    );
   z-index: 0;
 }
 
@@ -62,4 +70,4 @@ p {
 
 .btn:hover {
   background-color: rgba(255, 255, 255, 0.3);
-} 
+}

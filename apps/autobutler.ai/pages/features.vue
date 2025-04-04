@@ -2,7 +2,11 @@
   <PageContainer>
     <h1>Features</h1>
     <div class="features-grid">
-      <div v-for="feature in features" :key="feature.title" class="feature-card">
+      <div
+        v-for="feature in features"
+        :key="feature.title"
+        class="feature-card"
+      >
         <h3>{{ feature.title }}</h3>
         <p>{{ feature.description }}</p>
       </div>
@@ -14,15 +18,15 @@
 const features = [
   {
     title: "Automated Workflows",
-    description: "Streamline your processes with intelligent automation"
+    description: "Streamline your processes with intelligent automation",
   },
   {
     title: "Smart Integration",
-    description: "Seamlessly connect with your existing tools and services"
+    description: "Seamlessly connect with your existing tools and services",
   },
   {
     title: "Real-time Analytics",
-    description: "Get instant insights into your operations"
+    description: "Get instant insights into your operations",
   },
   // Add more features as needed
 ];
@@ -56,4 +60,4 @@ h1 {
   );
   border-color: rgba(0, 255, 170, 0.3);
 }
-</style> 
+</style>

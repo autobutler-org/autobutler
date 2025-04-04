@@ -4,12 +4,18 @@
       <h1>Terms of Service</h1>
       <div class="section">
         <h2>1. Acceptance of Terms</h2>
-        <p>By accessing and using AutoButler, you agree to be bound by these Terms of Service and all applicable laws and regulations.</p>
+        <p>
+          By accessing and using AutoButler, you agree to be bound by these
+          Terms of Service and all applicable laws and regulations.
+        </p>
       </div>
 
       <div class="section">
         <h2>2. Use License</h2>
-        <p>Permission is granted to temporarily access AutoButler for personal, non-commercial use only. This license does not include:</p>
+        <p>
+          Permission is granted to temporarily access AutoButler for personal,
+          non-commercial use only. This license does not include:
+        </p>
         <ul>
           <li>Modifying or copying the materials</li>
           <li>Using the materials for commercial purposes</li>
@@ -30,7 +36,14 @@
 
       <div class="section">
         <h2>4. Disclaimer</h2>
-        <p>The materials on AutoButler are provided on an 'as is' basis. We make no warranties, expressed or implied, and hereby disclaim all other warranties including, without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.</p>
+        <p>
+          The materials on AutoButler are provided on an 'as is' basis. We make
+          no warranties, expressed or implied, and hereby disclaim all other
+          warranties including, without limitation, implied warranties or
+          conditions of merchantability, fitness for a particular purpose, or
+          non-infringement of intellectual property or other violation of
+          rights.
+        </p>
       </div>
     </div>
   </main>
@@ -94,4 +107,4 @@ ul li::before {
   left: -1.5rem;
   font-size: 1.2rem;
 }
-</style> 
+</style>

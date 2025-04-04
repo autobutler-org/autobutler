@@ -4,7 +4,10 @@
     <div class="card">
       <h1>Your Private AI Home Assistant</h1>
       <p>
-        Meet AutoButler, your self-hosted, privacy-focused home assistant powered by DeepSeek and Home Assistant. Unlike cloud-based alternatives, your data stays in your home, giving you complete control over your smart home experience.
+        Meet AutoButler, your self-hosted, privacy-focused home assistant
+        powered by DeepSeek and Home Assistant. Unlike cloud-based alternatives,
+        your data stays in your home, giving you complete control over your
+        smart home experience.
       </p>
       <div class="features">
         <h2>Smart Features That Matter</h2>
@@ -12,12 +15,15 @@
           <li>Smart Grocery Management - Never run out of essentials</li>
           <li>Personalized Recipe Assistant - Get cooking inspiration</li>
           <li>Family Calendar Sync - Keep everyone in the loop</li>
-          <li>Intelligent Lighting - Automatically adjusts based on your presence</li>
+          <li>
+            Intelligent Lighting - Automatically adjusts based on your presence
+          </li>
           <li>Enhanced Home Security - Monitor and protect what matters</li>
         </ul>
       </div>
       <p class="highlight">
-        Your data, your control, your home. Experience the future of home automation without compromising your privacy.
+        Your data, your control, your home. Experience the future of home
+        automation without compromising your privacy.
       </p>
       <NuxtLink to="/about" class="btn">Get Started</NuxtLink>
     </div>
@@ -29,7 +35,7 @@
 </script>
 
 <style>
-@import '@/assets/css/common.css';
+@import "@/assets/css/common.css";
 
 .features {
   margin: 2rem 0;
@@ -74,4 +80,4 @@
   background: rgba(255, 255, 255, 0.3);
   transform: translateY(-2px);
 }
-</style> 
+</style>
