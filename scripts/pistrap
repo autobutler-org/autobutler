@@ -13,16 +13,20 @@ sudo apt-get install -y \
 	gh \
 	cgroupfs-mount
 
-vim --version
-git --version
+curl --fail https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
 curl --version
+git --version
+helm version
 python3 --version
 python3 -m pip --version
 python3 -m pipx --version
+vim --version
 
 python3 -m pipx ensurepath
 
 python3 -m pipx install --include-deps ansible
+
 
 ORG=exokomodo
 REPO=exoflow
@@ -50,5 +54,17 @@ if ! grep "${CGROUP_ARGS}" /boot/firmware/cmdline.txt; then
 	echo "Rebooting in 5 seconds..."
 	sleep 5
 	sudo shutdown -r now
+fi
+
+if [[ -f "${HOME}/.kube/config" ]]; then
+	helm repo add \
+		kubernetes-dashboard \
+		https://kubernetes.github.io/dashboard/
+	helm upgrade \
+		--install kubernetes-dashboard \
+		kubernetes-dashboard/kubernetes-dashboard \
+		--create-namespace \
+		--namespace kubernetes-dashboard
+	echo 'To access the dashboard: kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard-kong-proxy 8443:443'
 fi
 
