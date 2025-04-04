@@ -52,7 +52,7 @@
     <!-- Chat Input -->
     <div class="bg-white/5 backdrop-blur-lg border-t border-white/10 p-4">
       <div class="max-w-4xl mx-auto">
-        <form @submit.prevent="sendMessage" class="flex space-x-4">
+        <form class="flex space-x-4" @submit.prevent="sendMessage">
           <input
             v-model="newMessage"
             type="text"
@@ -82,9 +82,7 @@
   </div>
 </template>
 
-<script setup>
-import { ref } from "vue";
-
+<script lang="ts" setup>
 const messages = ref([
   {
     content:

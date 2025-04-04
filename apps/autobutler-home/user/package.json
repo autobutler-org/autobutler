@@ -17,7 +17,9 @@
     "fix": "concurrently -m1 npm:fix:*"
   },
   "dependencies": {
-    "nuxt": "^3.10.1"
+    "nuxt": "^3.10.1",
+    "vue": "latest",
+    "vue-router": "latest"
   },
   "devDependencies": {
     "@nuxtjs/tailwindcss": "^6.11.3",
