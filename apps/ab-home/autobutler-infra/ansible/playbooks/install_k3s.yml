@@ -17,7 +17,7 @@
   tasks:
     - name: Create k3s directories
       file:
-        path: '{{ item }}'
+        path: "{{ item }}"
         state: directory
         mode: "0755"
       with_items:
@@ -34,25 +34,25 @@
     - name: Generate random token for k3s
       shell: openssl rand -hex 32
       register: k3s_token
-      when: inventory_hostname == 'pi1'
+      when: inventory_hostname == 'hostname0'
 
     - name: Create token file on control node
       copy:
-        content: '{{ k3s_token.stdout }}'
-        dest: '{{ k3s_token_path }}'
+        content: "{{ k3s_token.stdout }}"
+        dest: "{{ k3s_token_path }}"
         mode: "0600"
-      when: inventory_hostname == 'pi1'
+      when: inventory_hostname == 'hostname0'
 
-    - name: Install k3s on control node (pi1)
+    - name: Install k3s on control node (hostname0)
       shell: |
         /tmp/k3s-install.sh server \
           --token-file {{ k3s_token_path }} \
-          --tls-san {{ hostvars['pi1']['ansible_host'] }} \
-          --tls-san pi1 \
+          --tls-san {{ hostvars['hostname0']['ansible_host'] }} \
+          --tls-san hostname0 \
           --node-label "node-role=control-plane" \
           --write-kubeconfig-mode 644 \
           --disable servicelb
-      when: inventory_hostname == 'pi1'
+      when: inventory_hostname == 'hostname0'
       register: k3s_install
       args:
         creates: /usr/local/bin/k3s
@@ -63,28 +63,28 @@
       until: k3s_status.rc == 0
       retries: 30
       delay: 10
-      when: inventory_hostname == 'pi1'
+      when: inventory_hostname == 'hostname0'
 
     - name: Set k3s token for other nodes
       set_fact:
-        k3s_token: '{{ hostvars[''pi1''][''k3s_token''].stdout }}'
-      when: inventory_hostname != 'pi1'
+        k3s_token: "{{ hostvars['hostname0']['k3s_token'].stdout }}"
+      when: inventory_hostname != 'hostname0'
 
     - name: Create token file on worker nodes
       copy:
-        content: '{{ k3s_token }}'
-        dest: '{{ k3s_token_path }}'
+        content: "{{ k3s_token }}"
+        dest: "{{ k3s_token_path }}"
         mode: "0600"
-      when: inventory_hostname != 'pi1'
+      when: inventory_hostname != 'hostname0'
 
     - name: Install k3s on worker nodes
       shell: |
         /tmp/k3s-install.sh agent \
-          --server https://{{ hostvars['pi1']['ansible_host'] }}:6443 \
+          --server https://{{ hostvars['hostname0']['ansible_host'] }}:6443 \
           --token-file {{ k3s_token_path }} \
           --node-label "node-role=worker" \
           --node-name {{ inventory_hostname }}
-      when: inventory_hostname != 'pi1'
+      when: inventory_hostname != 'hostname0'
       register: k3s_install
       args:
         creates: /usr/local/bin/k3s
@@ -95,7 +95,7 @@
       until: k3s_status.rc == 0 and inventory_hostname in k3s_status.stdout
       retries: 30
       delay: 10
-      when: inventory_hostname == 'pi1'
+      when: inventory_hostname == 'hostname0'
 
     - name: Wait for Traefik to be ready
       shell: kubectl get pods -n kube-system -l app.kubernetes.io/name=traefik
@@ -103,14 +103,14 @@
       until: traefik_status.rc == 0 and "Running" in traefik_status.stdout
       retries: 30
       delay: 10
-      when: inventory_hostname == 'pi1'
+      when: inventory_hostname == 'hostname0'
 
     - name: Fetch kubeconfig from control node
       fetch:
         src: /etc/rancher/k3s/k3s.yaml
-        dest: '{{ kubeconfig_path }}'
+        dest: "{{ kubeconfig_path }}"
         flat: yes
-      when: inventory_hostname == 'pi1'
+      when: inventory_hostname == 'hostname0'
 
     - name: Display setup instructions
       debug:
@@ -120,9 +120,9 @@
           To use kubectl from your MacBook:
           1. Copy the kubeconfig file:
              scp {{ kubeconfig_path }} ~/.kube/config
-          2. Update the server address in the kubeconfig to use pi1's IP:
-             sed -i '' 's/127.0.0.1/{{ hostvars['pi1']['ansible_host'] }}/' ~/.kube/config
+          2. Update the server address in the kubeconfig to use hostname0's IP:
+             sed -i '' 's/127.0.0.1/{{ hostvars['hostname0']['ansible_host'] }}/' ~/.kube/config
           3. Test the connection:
              kubectl get nodes
              kubectl get pods -n kube-system
-      when: inventory_hostname == 'pi1'
+      when: inventory_hostname == 'hostname0'
