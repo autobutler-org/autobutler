@@ -1,6 +1,0 @@
-dependencies:
-- name: birchwood-templates
-  repository: file://../../helm-templates/common
-  version: 0.1.0
-digest: sha256:48488080cc7893d56bbc7d2f82d8a13bbb1131f0f48a068f144ba40cfe61eb41
-generated: "2025-02-08T21:19:31.618937-05:00"
