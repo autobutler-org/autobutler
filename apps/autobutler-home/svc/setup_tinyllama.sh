@@ -14,7 +14,7 @@ python3 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
-pip install torch transformers
+pip install torch transformers flask
 
 echo "Creating Python API server..."
 cat > /opt/tinyllama/server.py << 'EOL'
