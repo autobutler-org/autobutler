@@ -42,7 +42,7 @@ fi
 if command -v docker >> /dev/null; then
 	echo "Skipping docker installation...already installed"
 else
-	${REPO_LOCAL}/apps/ab-home/autobutler-infra/install_docker_pi.sh
+	${REPO_LOCAL}/src/autobutler/infra/install_docker_pi.sh
 fi
 
 sudo swapoff -a
@@ -55,7 +55,7 @@ if ! grep "${CGROUP_ARGS}" /boot/firmware/cmdline.txt; then
 fi
 
 if ! [[ -f "${HOME}/.kube/config" ]]; then
-	pushd ${REPO_LOCAL}/apps/ab-home/autobutler-infra/ansible
+	pushd ${REPO_LOCAL}/src/autobutler/infra/ansible
 	ansible-playbook -i inventory/hosts ./playbooks/test_connection.yml
 	ansible-playbook -i inventory/hosts ./playbooks/install_k3s.yml
 	popd

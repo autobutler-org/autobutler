@@ -1,0 +1,33 @@
+---
+- name: Get sudo password
+  hosts: localhost
+  gather_facts: false
+  vars_prompt:
+    - name: sudo_pass
+      prompt: Enter sudo password
+      private: true
+  tasks:
+    - name: Set fact for sudo password
+      set_fact:
+        ansible_become_pass: '{{ sudo_pass }}'
+      delegate_to: '{{ item }}'
+      delegate_facts: true
+      with_items: '{{ groups[''raspberry_pis''] }}'
+- name: Setup k3s cluster with custom CA
+  hosts: raspberry_pis
+  gather_facts: false
+  become: true
+  become_method: sudo
+  become_user: root
+  vars:
+    ansible_become_pass: '{{ hostvars[inventory_hostname][''ansible_become_pass''] }}'
+  pre_tasks:
+    - name: Ensure SSH key is present on all nodes
+      authorized_key:
+        user: '{{ ansible_user }}'
+        state: present
+        key: '{{ lookup(''file'', ''~/.ssh/id_ed25519.pub'') }}'
+      become: false # This task doesn't need sudo
+- import_playbook: uninstall_k3s.yml
+- import_playbook: setup_ca.yml
+- import_playbook: install_k3s.yml

@@ -8,17 +8,20 @@ The repository is organized as follows:
 
 ```plaintext
 exoflow/
-├── app/
-│   ├── autobutler-app/
+├── src/
+│   ├── autobutler/
+|   |   ├── demo/
+|   |   ├── infra/
+|   |   ├── llm/
+|   |   ├── router/
+|   |   ├── ui/
 │   ├── autobutler.ai/
 ├── docs/
-├── infra/
 └── libs/
 ```
 
 ### Packages
 
-- [`apps/`](./apps/) - The core functionality and applications of Exoflow
-- [`docs/`](./docs/) - Documentation for the general project
-- [`infra/`](./infra/) - Infrastructure code for all Exoflow applications
-- [`libs/`](./libs/) - Shared libraries and code
+- [`src/`](./src/) - The applications and source code for all projects
+- [`docs/`](./docs/) - Documentation
+- [`libs/`](./libs/) - Shared libraries across multiple projects

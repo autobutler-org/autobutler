@@ -15,15 +15,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Check for changes in apps/ab-public/autobutler.ai
+      - name: Check for changes
         uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
             autobutler:
-              - 'apps/autobutler-app/**'
-              - 'apps/autobutler-home/**'
-              - 'apps/autobutler.ai/**'
+              - 'src/autobutler/**'
+              - 'src/autobutler.ai/**'
               - 'docs/autobutler/**'
       - name: Add "autobutler" label if applicable
         if: ${{ steps.filter.outputs.autobutler == 'true' }}

@@ -5,20 +5,20 @@
   "directories": {},
   "private": true,
   "workspaces": [
-    "apps/autobutler.ai",
-    "apps/autobutler-home/user"
+    "src/autobutler/ui",
+    "src/autobutler.ai"
   ],
   "scripts": {
     "build": "echo Skipping...",
     "fix": "concurrently -m1 npm:fix:*",
     "fix:eslint": "echo Skipping...",
-    "fix:md": "markdownlint-cli2 --fix *.{md,markdown} {apps,docs,infra,libs}/*.{md,markdown}",
+    "fix:md": "markdownlint-cli2 --fix *.{md,markdown} {src,docs,libs}/*.{md,markdown}",
     "fix:prettier": "prettier --write .",
     "prepare": "echo Skipping...",
     "lint": "concurrently -m1 npm:lint:*",
     "lint:eslint": "echo Skipping...",
     "lint:prettier": "prettier --check .",
-    "lint:md": "markdownlint-cli2 *.{md,markdown} {apps,docs,infra,libs}/*.{md,markdown}"
+    "lint:md": "markdownlint-cli2 *.{md,markdown} {src,docs,libs}/*.{md,markdown}"
   },
   "author": "ExoKomodo",
   "license": "CC0"
