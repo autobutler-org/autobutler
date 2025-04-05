@@ -1,5 +1,5 @@
 {
-  "name": "homeflow",
+  "name": "autobutler.ai",
   "type": "module",
   "engines": {
     "node": ">=20.0.0"
