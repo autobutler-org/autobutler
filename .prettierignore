@@ -3,3 +3,4 @@
 **/*.yml
 
 **/node_modules/
+**/venv/
