@@ -20,5 +20,5 @@ dynamic = ["dependencies"]
 dependencies = { file = "requirements.txt" }
 
 [project.scripts]
-butlerctl = "autobutler:main"
-butlerapi = "api:main"
+butlerctl = "autobutler.cli:main"
+butlerapi = "autobutler.api:main"
