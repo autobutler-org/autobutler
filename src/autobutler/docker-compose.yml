@@ -1,41 +1,45 @@
 version: "3.8"
 services:
-  llm:
-    build:
-      context: ./llm
-      dockerfile: Dockerfile
-    ports:
-      - 8081:8081
-    volumes:
-      - ./llm:/app
-    deploy:
-      resources:
-        limits:
-          memory: 4G
-    restart: unless-stopped
+  # llm:
+  #   build:
+  #     context: ./llm
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - 8081:8081
+  #   volumes:
+  #     - ./llm:/app
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 4G
+  #   restart: unless-stopped
   router:
     build:
       context: ./router
       dockerfile: Dockerfile
     ports:
-      - 8082:8082
+      - "127.0.0.1:8082:8080"
     volumes:
-      - ./router:/app
+      - ./router:/app/src
     environment:
-      - LLM_URL=http://llm:8081
-    depends_on:
-      - llm
+      - PATH=/usr/local/bin:$PATH
+    # environment:
+    #   - LLM_URL=http://llm:8081
+    # depends_on:
+    #   - llm
     restart: unless-stopped
   ui:
     build:
       context: ./ui
       dockerfile: Dockerfile
     ports:
-      - 8083:8083
+      - "127.0.0.1:8083:3000"
     volumes:
-      - ./ui:/app
+      - ./ui:/app/src
     environment:
       - ROUTER_URL=http://router:8082
+      - PATH=/usr/local/bin:$PATH
+      - HOST=0.0.0.0
     depends_on:
       - router
     restart: unless-stopped

@@ -1,35 +1,27 @@
-# Build stage
-FROM node:20-alpine AS builder
+FROM oven/bun:1 AS builder
 
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
 COPY bun.lock ./
 
-# Install dependencies
-RUN npm install
+RUN bun install
 
-# Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+RUN bun run build
 
-# Production stage
-FROM node:20-alpine AS production
+FROM oven/bun:1-slim AS production
 
 WORKDIR /app
 
-# Copy built application from builder
-COPY --from=builder /app/.output ./.output
+# Copy built files to a location not affected by volume mounting
+COPY --from=builder /app/.output /usr/local/app/.output
 
-# Expose the port the app runs on
 EXPOSE 3000
 
-# Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Command to run the application
-CMD ["node", ".output/server/index.mjs"] 
+# Use the absolute path to the entry point
+CMD ["bun", "/usr/local/app/.output/server/index.mjs"] 
