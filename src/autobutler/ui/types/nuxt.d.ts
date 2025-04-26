@@ -1,1 +1,1 @@
-declare function defineNuxtConfig(config: any): any; 
+declare function defineNuxtConfig(config: any): any;

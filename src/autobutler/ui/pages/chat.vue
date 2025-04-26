@@ -50,9 +50,17 @@
         <div v-if="isLoading" class="flex justify-start">
           <div class="bg-white/10 text-gray-100 rounded-lg p-4">
             <div class="flex space-x-2">
-              <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-              <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-              <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+              <div
+                class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+              ></div>
+              <div
+                class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                style="animation-delay: 0.2s"
+              ></div>
+              <div
+                class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                style="animation-delay: 0.4s"
+              ></div>
             </div>
           </div>
         </div>
@@ -95,8 +103,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
-import appConfig from '../config/appConfig';
+import { ref } from "vue";
+import appConfig from "../config/appConfig";
 
 // API endpoint for the dummy service
 const DUMMY_ENDPOINT = `${appConfig.apiUrl}/dummy`;
@@ -126,16 +134,16 @@ const sendMessage = async () => {
   // Store the message and clear the input
   const messageToSend = newMessage.value;
   newMessage.value = "";
-  
+
   // Show loading indicator
   isLoading.value = true;
 
   try {
     // Send message to the dummy endpoint
     const response = await fetch(DUMMY_ENDPOINT, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ message: messageToSend }),
     });
@@ -145,7 +153,7 @@ const sendMessage = async () => {
     }
 
     const data = await response.json();
-    
+
     // Add the response to the messages
     messages.value.push({
       content: data.response,
@@ -153,11 +161,12 @@ const sendMessage = async () => {
       timestamp: new Date().toLocaleTimeString(),
     });
   } catch (error) {
-    console.error('Error sending message:', error);
-    
+    console.error("Error sending message:", error);
+
     // Add error message
     messages.value.push({
-      content: "Sorry, I couldn't process your message. Please try again later.",
+      content:
+        "Sorry, I couldn't process your message. Please try again later.",
       isUser: false,
       timestamp: new Date().toLocaleTimeString(),
     });

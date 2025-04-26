@@ -20,6 +20,7 @@ Run the setup script to automatically configure WireGuard:
 ```
 
 This script will:
+
 1. Install WireGuard on the Raspberry Pi
 2. Configure the Pi as the WireGuard server
 3. Generate client configurations for your phone and macOS device
@@ -63,6 +64,7 @@ wireguard_monitor
 ```
 
 This will:
+
 - Check if WireGuard is running on the Raspberry Pi
 - Verify connectivity through the VPN
 - Show connected clients
@@ -71,10 +73,12 @@ This will:
 ## Configuration Details
 
 WireGuard uses the following IP ranges:
+
 - WireGuard server (Pi): 10.0.0.1/24
 - Clients: 10.0.0.2/24 onwards
 
 Client configs are stored in:
+
 - `./wireguard_configs/phone.conf`
 - `./wireguard_configs/macbook.conf`
 
@@ -83,6 +87,7 @@ Client configs are stored in:
 If you encounter issues:
 
 1. Check if the WireGuard service is running on the Pi:
+
    ```
    ssh brandonapol@192.168.1.195 "sudo systemctl status wg-quick@wg0"
    ```
@@ -92,6 +97,7 @@ If you encounter issues:
 3. Make sure your firewall allows UDP port 51820
 
 4. Check connectivity with:
+
    ```
    ping 10.0.0.1
    ```
@@ -106,4 +112,4 @@ If you encounter issues:
 - Keep your private keys secure
 - Regularly update your Raspberry Pi
 - Consider changing the default port (51820) to a non-standard port
-- Restrict SSH access to your Raspberry Pi 
+- Restrict SSH access to your Raspberry Pi

@@ -10,7 +10,6 @@ This is the backend service for the chat application that will integrate with a 
    go mod tidy
    ```
 
-
 ## Running the Service
 
 To run the service:
@@ -78,6 +77,7 @@ Response:
 ## Configuration
 
 The service uses the following configuration:
+
 - Server port: Specified via `PORT` environment variable (default: 8080)
 - LLM server URL: Specified via `LLM_URL` environment variable or urls.json config
 - API endpoints: Configured in urls.json

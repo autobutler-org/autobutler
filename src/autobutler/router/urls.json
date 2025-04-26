@@ -5,4 +5,4 @@
     "llm_server": "http://llm:8081/generate",
     "dummy": "/api/dummy"
   }
-} 
+}
