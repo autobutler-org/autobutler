@@ -1,5 +1,5 @@
 const appConfig = {
-  apiUrl: 'http://router:8082',
+  apiUrl: '/api',  // Will be handled by the NGINX proxy
 };
 
 export default appConfig;

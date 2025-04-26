@@ -96,10 +96,10 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue';
+import appConfig from '../config/appConfig';
 
 // API endpoint for the dummy service
-const API_URL = (import.meta as any).env.ROUTER_URL || 'http://localhost:8082';
-const DUMMY_ENDPOINT = `${API_URL}/api/dummy`;
+const DUMMY_ENDPOINT = `${appConfig.apiUrl}/dummy`;
 
 const messages = ref([
   {

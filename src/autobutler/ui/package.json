@@ -22,13 +22,14 @@
     "vue-router": "latest"
   },
   "devDependencies": {
-    "@nuxtjs/tailwindcss": "^6.11.3",
-    "postcss": "^8.4.35",
-    "autoprefixer": "^10.4.17",
     "@nuxt/eslint": "^0.7.2",
+    "@nuxtjs/tailwindcss": "^6.11.3",
     "@svrbc/eslint-config": "^1.2.7",
+    "@types/node": "^22.15.2",
+    "autoprefixer": "^10.4.17",
     "concurrently": "^9.1.2",
     "eslint": "^9.16.0",
+    "postcss": "^8.4.35",
     "prettier": "^3.5.3",
     "typescript": "^5.8.2",
     "vue-tsc": "^2.2.8"
