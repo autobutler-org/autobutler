@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 app = Flask(__name__)
+CORS(app)
 
 # Loading the tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-Chat-v1.0")

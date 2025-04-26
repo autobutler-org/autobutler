@@ -46,6 +46,24 @@
             </span>
           </div>
         </div>
+        <!-- Loading indicator -->
+        <div v-if="isLoading" class="flex justify-start">
+          <div class="bg-white/10 text-gray-100 rounded-lg p-4">
+            <div class="flex space-x-2">
+              <div
+                class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+              ></div>
+              <div
+                class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                style="animation-delay: 0.2s"
+              ></div>
+              <div
+                class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                style="animation-delay: 0.4s"
+              ></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -59,10 +77,12 @@
             placeholder="Type your message..."
             class="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             @keydown.enter.prevent="sendMessage"
+            :disabled="isLoading"
           />
           <button
             type="submit"
             class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors duration-200 flex items-center space-x-2"
+            :disabled="isLoading"
           >
             <span>Send</span>
             <svg
@@ -83,6 +103,12 @@
 </template>
 
 <script lang="ts" setup>
+import { ref } from "vue";
+import appConfig from "../config/appConfig";
+
+// API endpoint for the dummy service
+const DUMMY_ENDPOINT = `${appConfig.apiUrl}/dummy`;
+
 const messages = ref([
   {
     content:
@@ -93,9 +119,10 @@ const messages = ref([
 ]);
 
 const newMessage = ref("");
+const isLoading = ref(false);
 
-const sendMessage = () => {
-  if (!newMessage.value.trim()) return;
+const sendMessage = async () => {
+  if (!newMessage.value.trim() || isLoading.value) return;
 
   // Add user message
   messages.value.push({
@@ -104,16 +131,48 @@ const sendMessage = () => {
     timestamp: new Date().toLocaleTimeString(),
   });
 
-  // TODO: Implement actual API call to LLM service
-  // For now, just echo back a response
-  setTimeout(() => {
+  // Store the message and clear the input
+  const messageToSend = newMessage.value;
+  newMessage.value = "";
+
+  // Show loading indicator
+  isLoading.value = true;
+
+  try {
+    // Send message to the dummy endpoint
+    const response = await fetch(DUMMY_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message: messageToSend }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Add the response to the messages
     messages.value.push({
-      content: "I received your message: " + newMessage.value,
+      content: data.response,
       isUser: false,
       timestamp: new Date().toLocaleTimeString(),
     });
-  }, 1000);
+  } catch (error) {
+    console.error("Error sending message:", error);
 
-  newMessage.value = "";
+    // Add error message
+    messages.value.push({
+      content:
+        "Sorry, I couldn't process your message. Please try again later.",
+      isUser: false,
+      timestamp: new Date().toLocaleTimeString(),
+    });
+  } finally {
+    // Hide loading indicator
+    isLoading.value = false;
+  }
 };
 </script>

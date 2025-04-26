@@ -9,10 +9,6 @@ This is the backend service for the chat application that will integrate with a 
    ```bash
    go mod tidy
    ```
-3. Create a `.env` file (optional):
-   ```
-   PORT=8080
-   ```
 
 ## Running the Service
 
@@ -22,13 +18,13 @@ To run the service:
 go run main.go
 ```
 
-The server will start on port 8080 by default, or the port specified in your `.env` file.
+The server will start on port 8080 by default, or the port specified in your environment variable `PORT`.
 
 ## API Endpoints
 
 ### POST /api/chat
 
-Send a chat message to the service.
+Send a chat message to the service. This endpoint forwards the request to the LLM server.
 
 Request body:
 
@@ -46,6 +42,26 @@ Response:
 }
 ```
 
+### POST /api/dummy
+
+Test endpoint that returns a dummy response without calling the LLM.
+
+Request body:
+
+```json
+{
+  "message": "Your message here"
+}
+```
+
+Response:
+
+```json
+{
+  "response": "Hello World! This is a dummy response from the backend. Your message was: Your message here"
+}
+```
+
 ### GET /health
 
 Health check endpoint.
@@ -57,6 +73,20 @@ Response:
   "status": "ok"
 }
 ```
+
+## Configuration
+
+The service uses the following configuration:
+
+- Server port: Specified via `PORT` environment variable (default: 8080)
+- LLM server URL: Specified via `LLM_URL` environment variable or urls.json config
+- API endpoints: Configured in urls.json
+
+## API Documentation
+
+The API is documented using the OpenAPI Specification. You can find the specification in the `swagger.yaml` file.
+
+To view the API documentation interactively, you can use Swagger UI:
 
 ## Development
 
