@@ -34,7 +34,7 @@ func loadURLs() map[string]string {
 		"chat":       "/api/chat",
 		"health":     "/health",
 		"dummy":      "/api/dummy",
-		"llm_server": "http://llm:8081/generate",
+		"llm_server": "http://127.0.0.1:8081/generate",
 	}
 
 	// Try to read the file

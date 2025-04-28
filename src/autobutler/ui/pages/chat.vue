@@ -71,6 +71,11 @@
     <div class="bg-white/5 backdrop-blur-lg border-t border-white/10 p-4">
       <div class="max-w-4xl mx-auto">
         <form class="flex space-x-4" @submit.prevent="sendMessage">
+          <!-- Add a checkbox which, if toggled, causes a dummy response to be made -->
+          <label class="flex items-center space-x-2 text-white">
+            <span>Make dummy request?</span>
+            <input v-model="isDummy" type="checkbox" class="text-blue-600" />
+          </label>
           <input
             v-model="newMessage"
             type="text"
@@ -106,8 +111,8 @@
 import { ref } from "vue";
 import appConfig from "../config/appConfig";
 
-// API endpoint for the dummy service
 const DUMMY_ENDPOINT = `${appConfig.apiUrl}/dummy`;
+const CHAT_ENDPOINT = `${appConfig.apiUrl}/chat`;
 
 const messages = ref([
   {
@@ -120,6 +125,7 @@ const messages = ref([
 
 const newMessage = ref("");
 const isLoading = ref(false);
+const isDummy = false;
 
 const sendMessage = async () => {
   if (!newMessage.value.trim() || isLoading.value) return;
@@ -139,9 +145,9 @@ const sendMessage = async () => {
   isLoading.value = true;
 
   try {
-    // Send message to the dummy endpoint
-    console.log(`Sending message to ${DUMMY_ENDPOINT}: ${messageToSend}`);
-    const response = await fetch(DUMMY_ENDPOINT, {
+    const endpoint = isDummy ? DUMMY_ENDPOINT : CHAT_ENDPOINT;
+    console.debug(`Sending message to ${endpoint}: ${messageToSend}`);
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
