@@ -74,7 +74,7 @@
           <!-- Add a checkbox which, if toggled, causes a dummy response to be made -->
           <label class="flex items-center space-x-2 text-white">
             <span>Make dummy request?</span>
-            <input type="checkbox" v-model="isDummy" class="text-blue-600" />
+            <input v-model="isDummy" type="checkbox" class="text-blue-600" />
           </label>
           <input
             v-model="newMessage"
@@ -125,7 +125,7 @@ const messages = ref([
 
 const newMessage = ref("");
 const isLoading = ref(false);
-let isDummy = false;
+const isDummy = false;
 
 const sendMessage = async () => {
   if (!newMessage.value.trim() || isLoading.value) return;
