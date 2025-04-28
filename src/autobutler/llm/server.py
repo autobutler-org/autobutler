@@ -7,8 +7,11 @@ app = Flask(__name__)
 CORS(app)
 
 # Loading the tokenizer and model
+print("Loading TinyLlama tokenizer...")
 tokenizer = AutoTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-Chat-v1.0")
+print("Loading TinyLlama model...")
 model = AutoModelForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-Chat-v1.0")
+print("Loaded TinyLlama!")
 
 # Using CPU since we're on a Pi
 device = torch.device('cpu')
@@ -44,4 +47,5 @@ def generate():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
+    print("Setting up the api...")
     app.run(host='0.0.0.0', port=8081)
