@@ -74,11 +74,7 @@
           <!-- Add a checkbox which, if toggled, causes a dummy response to be made -->
           <label class="flex items-center space-x-2 text-white">
             <span>Make dummy request?</span>
-            <input
-              type="checkbox"
-              v-model="isDummy"
-              class="text-blue-600"
-            />
+            <input type="checkbox" v-model="isDummy" class="text-blue-600" />
           </label>
           <input
             v-model="newMessage"
