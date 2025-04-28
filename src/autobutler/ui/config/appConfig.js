@@ -1,5 +1,5 @@
 const appConfig = {
-  apiUrl: "http://127.0.0.1:8082/api"
+  apiUrl: "http://127.0.0.1:8082/api",
 };
 
 export default appConfig;
