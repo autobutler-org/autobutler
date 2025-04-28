@@ -1,21 +1,21 @@
 version: "3.8"
 services:
-  # llm:
-  #   build:
-  #     context: ./llm
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "127.0.0.1:8081:8081"
-  #   volumes:
-  #     - ./llm:/app
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         memory: 3G
-  #         cpus: '2'
-  #   environment:
-  #     - PATH=/usr/local/bin:$PATH
-  #   restart: unless-stopped
+  llm:
+    build:
+      context: ./llm
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:8081:8081"
+    volumes:
+      - ./llm:/app
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+          cpus: '2'
+    environment:
+      - PATH=/usr/local/bin:$PATH
+    restart: unless-stopped
   router:
     build:
       context: ./router
@@ -27,8 +27,8 @@ services:
     environment:
       - PATH=/usr/local/bin:$PATH
       - LLM_URL=http://llm:8081
-    # depends_on:
-    #   - llm
+    depends_on:
+      - llm
     restart: unless-stopped
   ui:
     build:
