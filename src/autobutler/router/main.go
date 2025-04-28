@@ -39,6 +39,7 @@ func main() {
 	})
 
 	// Chat endpoint
+
 	r.POST(cfg.URLs["chat"], func(c *gin.Context) {
 		handleChat(c, cfg)
 	})

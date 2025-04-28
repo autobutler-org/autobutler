@@ -140,6 +140,7 @@ const sendMessage = async () => {
 
   try {
     // Send message to the dummy endpoint
+    console.log(`Sending message to ${DUMMY_ENDPOINT}: ${messageToSend}`);
     const response = await fetch(DUMMY_ENDPOINT, {
       method: "POST",
       headers: {
