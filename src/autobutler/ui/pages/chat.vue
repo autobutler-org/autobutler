@@ -106,8 +106,8 @@
 import { ref } from "vue";
 import appConfig from "../config/appConfig";
 
-// API endpoint for the dummy service
 const DUMMY_ENDPOINT = `${appConfig.apiUrl}/dummy`;
+const CHAT_ENDPOINT = `${appConfig.apiUrl}/chat`;
 
 const messages = ref([
   {
@@ -140,8 +140,8 @@ const sendMessage = async () => {
 
   try {
     // Send message to the dummy endpoint
-    console.log(`Sending message to ${DUMMY_ENDPOINT}: ${messageToSend}`);
-    const response = await fetch(DUMMY_ENDPOINT, {
+    console.log(`Sending message to ${CHAT_ENDPOINT}: ${messageToSend}`);
+    const response = await fetch(CHAT_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
