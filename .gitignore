@@ -27,3 +27,4 @@ logs
 src/autobutler/nginx/ssl/*.crt
 src/autobutler/nginx/ssl/*.key
 src/autobutler/nginx/ssl/*.csr
+src/autobutler/router/router
