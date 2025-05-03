@@ -12,7 +12,7 @@ run: server.py ## Run the server
 	$(PYTHON) -m venv venv
 	. ./venv/bin/activate
 	pip install -r ./requirements.txt
-	$(PYTHON) $<
+	$(PYTHON) $< | tee ./service.log
 
 kill: ## Kill the server
 	@echo "Killing server..."
