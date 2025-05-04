@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/exoflow/autobutler/router/internal"
 )
 
 type ChatRequest struct {
@@ -21,7 +22,7 @@ type ChatResponse struct {
 
 func main() {
 	// Load configuration
-	cfg := NewConfig()
+	cfg := internal.NewConfig()
 
 	// Set up Gin router
 	r := gin.Default()
@@ -80,7 +81,7 @@ func handleDummy(c *gin.Context) {
 	c.JSON(200, response)
 }
 
-func handleChat(c *gin.Context, cfg *Config) {
+func handleChat(c *gin.Context, cfg *internal.Config) {
 	var req ChatRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, gin.H{"error": "Invalid request body"})
