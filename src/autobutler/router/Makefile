@@ -10,7 +10,7 @@ GIN_PORT ?= 8080
 router: cmd/main.go
 	go mod tidy
 	go get ./...
-	go build ./...
+	go build -o router ./cmd/main.go
 
 run: router
 	@echo "Running router..."

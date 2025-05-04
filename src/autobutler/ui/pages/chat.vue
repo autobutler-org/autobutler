@@ -37,6 +37,10 @@
               'max-w-[80%] rounded-lg p-4',
               message.isUser
                 ? 'bg-blue-600 text-white'
+                : message.isDummy
+                ? 'bg-orange-500/20 text-gray-100 border-2 border-orange-500'
+                : message.isError
+                ? 'bg-red-500/20 text-gray-100 border-2 border-red-500'
                 : 'bg-white/10 text-gray-100',
             ]"
           >
@@ -119,13 +123,15 @@ const messages = ref([
     content:
       "Hello! I'm AutoButler, your AI assistant. How can I help you today?",
     isUser: false,
+    isDummy: false,
+    isError: false,
     timestamp: new Date().toLocaleTimeString(),
   },
 ]);
 
 const newMessage = ref("");
 const isLoading = ref(false);
-const isDummy = false;
+const isDummy = ref(false);
 
 const sendMessage = async () => {
   if (!newMessage.value.trim() || isLoading.value) return;
@@ -134,6 +140,8 @@ const sendMessage = async () => {
   messages.value.push({
     content: newMessage.value,
     isUser: true,
+    isDummy: false,
+    isError: false,
     timestamp: new Date().toLocaleTimeString(),
   });
 
@@ -145,7 +153,7 @@ const sendMessage = async () => {
   isLoading.value = true;
 
   try {
-    const endpoint = isDummy ? DUMMY_ENDPOINT : CHAT_ENDPOINT;
+    const endpoint = isDummy.value ? DUMMY_ENDPOINT : CHAT_ENDPOINT;
     console.debug(`Sending message to ${endpoint}: ${messageToSend}`);
     const response = await fetch(endpoint, {
       method: "POST",
@@ -165,6 +173,8 @@ const sendMessage = async () => {
     messages.value.push({
       content: data.response,
       isUser: false,
+      isDummy: isDummy.value,
+      isError: false,
       timestamp: new Date().toLocaleTimeString(),
     });
   } catch (error) {
@@ -175,6 +185,8 @@ const sendMessage = async () => {
       content:
         "Sorry, I couldn't process your message. Please try again later.",
       isUser: false,
+      isDummy: false,
+      isError: true,
       timestamp: new Date().toLocaleTimeString(),
     });
   } finally {

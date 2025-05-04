@@ -10,7 +10,7 @@ PORT ?= 8081
 
 run: server.py ## Run the server
 	$(PYTHON) -m venv venv
-	. ./venv/bin/activate
+	. ./venv/bin/activate 
 	pip install -r ./requirements.txt
 	$(PYTHON) $< | tee ./service.log
 
