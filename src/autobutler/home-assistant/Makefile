@@ -10,22 +10,28 @@ PWD := $(shell pwd)
 UNAME_S := $(shell uname -s)
 
 run: ## Run home assistant
-	mkdir -p $(PWD)/config
-	docker compose up -d
-	sleep 2
+	@mkdir -p $(PWD)/config
+	@if command -v rsync >/dev/null 2>&1; then \
+		rsync -ar --delete $(PWD)/integrations/ $(PWD)/config/custom_components; \
+	else \
+		rm -rf $(PWD)/config/custom_components
+		cp -r $(PWD)/integrations $(PWD)/config/custom_components; \
+	fi
+	@docker compose up -d
+	@sleep 5
 ifeq ($(UNAME_S),Linux)
-	xdg-open http://localhost:8123 &
+	@xdg-open http://localhost:8123 &
 else
-	open http://localhost:8123 &
+	@open http://localhost:8123 &
 endif
-	docker compose logs -f
+	@docker compose logs -f
 
 kill: ## Kill home assistant
 	docker compose down
 
 clean: ## Clean home assistant
 	docker compose down --volumes --remove-orphans
-	rm -rf $(PWD)/config
+	sudo rm -rf $(PWD)/config
 
 .PHONY: help
 help: ## Displays help info

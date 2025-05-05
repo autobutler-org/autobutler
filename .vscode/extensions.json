@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "ms-python.black-formatter",
+    "ms-python.debugpy",
+    "ms-python.isort",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "golang.go",
+    "nuxtr.nuxt-vscode-extentions",
+    "ms-vscode-remote.remote-containers"
+  ]
+}
