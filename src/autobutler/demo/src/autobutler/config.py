@@ -11,5 +11,5 @@ OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")  # Ollama API URL
 TOPICS = {
     "fridge": ["sensor.fridge_milk", "sensor.fridge_eggs", "sensor.fridge_cheese"],
     "temperature": ["sensor.living_room_temperature", "sensor.bedroom_temperature"],
-    "light": True
+    "light": True,
 }

@@ -9,9 +9,11 @@ from enum import Enum
 
 SMARTBULB_ENTITY = os.getenv("SMARTBULB_ENTITY", "light.smartbulb")
 
+
 class LightState(Enum):
     OFF = "off"
     ON = "on"
+
 
 def call_light_service(service: str):
     """Call a Home Assistant light service."""
@@ -26,6 +28,7 @@ def call_light_service(service: str):
         print(f"Smart light {service.replace('_', ' ')} command executed.")
     else:
         print(f"Failed to execute command: {response.content}")
+
 
 def lightctl(state: LightState):
     """Turn the smart light on using Home Assistant service call."""

@@ -1,10 +1,10 @@
 services:
   homeassistant:
-    image: "ghcr.io/home-assistant/home-assistant:stable"
+    image: ghcr.io/home-assistant/home-assistant:stable
     volumes:
       - ./config:/config
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
     restart: unless-stopped
     ports:
-      - "8123:8123"
+      - 8123:8123

@@ -2,10 +2,7 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-docker-compose
 {
   "name": "Docker Compose",
-  "dockerComposeFile": [
-    "../docker-compose.yml",
-    "docker-compose.devcontainer.yml"
-  ],
+  "dockerComposeFile": ["../compose.yml", "compose.devcontainer.yml"],
   "service": "code",
   "workspaceFolder": "/code",
   "customizations": {

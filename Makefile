@@ -13,7 +13,7 @@ JS_INSTALL ?= install
 
 fix: fix/js fix/md fix/yaml ## [all] Fix format and lint errors
 
-format: fix/js/format fix/md/format fix/yaml/format ## [all] Format
+format: fix/js/format fix/md/format fix/python/format fix/yaml/format ## [all] Format
 
 fix/js: fix/js/format fix/js/eslint ## [js] Fix
 fix/js/format:
@@ -46,6 +46,20 @@ fix/md/format:
 	@$(JS_EXEC) run fix:md
 	@echo "[fix/format/md] end"
 
+fix/python: fix/python/format ## [python] Fix
+fix/python/format:
+	@SHOULD_INSTALL=0
+	@if ! [[ -d ./venv ]]; then \
+		python3 -m venv ./venv; \
+		SHOULD_INSTALL=1; \
+	fi
+	@. ./venv/bin/activate
+	@if [[ $${SHOULD_INSTALL} -eq 1 ]]; then \
+		pip install --upgrade pip; \
+		pip install -r ./requirements.dev.txt; \
+	fi
+	@black .
+
 fix/yaml: fix/yaml/format ## [yaml] Format
 fix/yaml/format:
 	@echo "[fix/format/yaml] begin"
@@ -54,7 +68,7 @@ fix/yaml/format:
 	done
 	@echo "[fix/format/yaml] end"
 
-lint: lint/md lint/js lint/yaml ## [all] Lint
+lint: lint/md lint/js lint/python lint/yaml ## [all] Lint
 lint/md: ## [all] Lint MD
 	@if ! [[ -d ./node_modules ]]; then \
 		$(JS_EXEC) $(JS_INSTALL); \
@@ -68,7 +82,7 @@ lint/js: lint/js/format lint/js/eslint ## [all] Lint JS
 	@$(JS_EXEC) run lint
 lint/js/eslint:
 	@echo "[lint/eslint/js] begin"
-	for dir in $(JS_DIRS); do \
+	@for dir in $(JS_DIRS); do \
 		cd $${dir}; \
 		if ! [[ -d ./node_modules ]]; then \
 			$(JS_EXEC) $(JS_INSTALL); \
@@ -86,6 +100,20 @@ lint/js/format:
 	@$(JS_EXEC) run lint:prettier
 	@echo "[lint/format/js] end"
 
+lint/python: lint/python/format ## [all] Lint Python
+lint/python/format:
+	@SHOULD_INSTALL=0
+	@if ! [[ -d ./venv ]]; then \
+		python3 -m venv ./venv; \
+		SHOULD_INSTALL=1; \
+	fi
+	@. ./venv/bin/activate
+	@if [[ $${SHOULD_INSTALL} -eq 1 ]]; then \
+		pip install --upgrade pip; \
+		pip install -r ./requirements.dev.txt; \
+	fi
+	@black --check .
+
 lint/yaml: lint/yaml/format ## [all] Lint YAML
 lint/yaml/format:
 	@echo "[lint/format/yaml] begin"
@@ -93,6 +121,14 @@ lint/yaml/format:
 		yq -P $${file} > /dev/null; \
 	done
 	@echo "[lint/format/yaml] end"
+
+setup: setup/js
+
+setup/js : ## [js] Setup JS
+	@if command -v bun &> /dev/null; then \
+		exit 0; \
+	fi
+	curl -fsSL https://bun.sh/install | bash
 
 .PHONY: help
 help: ## Displays help info

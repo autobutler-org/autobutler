@@ -38,10 +38,10 @@
               message.isUser
                 ? 'bg-blue-600 text-white'
                 : message.isDummy
-                ? 'bg-orange-500/20 text-gray-100 border-2 border-orange-500'
-                : message.isError
-                ? 'bg-red-500/20 text-gray-100 border-2 border-red-500'
-                : 'bg-white/10 text-gray-100',
+                  ? 'bg-orange-500/20 text-gray-100 border-2 border-orange-500'
+                  : message.isError
+                    ? 'bg-red-500/20 text-gray-100 border-2 border-red-500'
+                    : 'bg-white/10 text-gray-100',
             ]"
           >
             <p class="whitespace-pre-wrap">{{ message.content }}</p>

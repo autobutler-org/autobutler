@@ -4,6 +4,7 @@ import sys
 import autobutler.config as config
 from autobutler.device.light import LightState, lightctl
 
+
 def get_state(entity_id):
     """Fetch the state of an entity from Home Assistant."""
     url = f"{config.HA_URL}/api/states/{entity_id}"
@@ -39,6 +40,7 @@ def usage():
     print("Available topics:", file=sys.stderr)
     for topic in config.TOPICS:
         print(f"  - {topic}", file=sys.stderr)
+
 
 def main() -> int:
     is_running = True
