@@ -1,6 +1,6 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
 import torch
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 app = Flask(__name__)

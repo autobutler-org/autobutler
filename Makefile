@@ -59,6 +59,7 @@ fix/python/format:
 		pip install -r ./requirements.dev.txt; \
 	fi
 	@black .
+	@isort .
 
 fix/yaml: fix/yaml/format ## [yaml] Format
 fix/yaml/format:
@@ -113,6 +114,7 @@ lint/python/format:
 		pip install -r ./requirements.dev.txt; \
 	fi
 	@black --check .
+	@isort --check-only .
 
 lint/yaml: lint/yaml/format ## [all] Lint YAML
 lint/yaml/format:

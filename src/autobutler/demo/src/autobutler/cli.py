@@ -1,7 +1,7 @@
-import requests
 import sys
 
 import autobutler.config as config
+import requests
 from autobutler.device.light import LightState, lightctl
 
 

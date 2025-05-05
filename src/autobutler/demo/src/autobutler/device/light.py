@@ -1,11 +1,10 @@
 __all__ = ["lightctl", "LightState"]
 
 import os
-import requests
+from enum import Enum
 
 import autobutler.config as config
-
-from enum import Enum
+import requests
 
 SMARTBULB_ENTITY = os.getenv("SMARTBULB_ENTITY", "light.smartbulb")
 
