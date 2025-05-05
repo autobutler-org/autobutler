@@ -11,7 +11,7 @@ UNAME_S := $(shell uname -s)
 
 run: ## Run home assistant
 	mkdir -p $(PWD)/config
-	docker compose up -d
+	docker compose up
 	sleep 2
 ifeq ($(UNAME_S),Linux)
 	xdg-open http://localhost:8123 &
