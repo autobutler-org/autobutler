@@ -7,13 +7,13 @@ SHELL := /bin/bash
 
 run: ## Run all components
 	@echo "Running all components..."
-	$(MAKE) -C ./home-assistant run
+	# $(MAKE) -C ./home-assistant run
 	$(MAKE) -C ./ui run
 	$(MAKE) -C ./router run
 	$(MAKE) -C ./llm run
 
 kill:
-	$(MAKE) -C ./home-assistant kill
+	# $(MAKE) -C ./home-assistant kill
 	$(MAKE) -C ./llm kill
 	$(MAKE) -C ./router kill
 	$(MAKE) -C ./ui kill

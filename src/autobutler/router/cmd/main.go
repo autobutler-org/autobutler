@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/exoflow/autobutler/router/internal"
+	"github.com/gin-gonic/gin"
 )
 
 type ChatRequest struct {
@@ -90,7 +90,7 @@ func handleChat(c *gin.Context, cfg *internal.Config) {
 
 	// Forward request to LLM server
 	client := &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: 120 * time.Second,
 	}
 
 	jsonData, err := json.Marshal(req)

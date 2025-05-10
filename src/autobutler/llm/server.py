@@ -87,12 +87,9 @@ def generate():
         print("Starting generation...")
         outputs = model.generate(
             **inputs,
-            max_new_tokens=256,  # Reduced for faster testing
-            do_sample=True,
-            top_p=0.95,
-            top_k=50,
-            temperature=0.7,
-            num_beams=1,
+            max_new_tokens=128,  # Reduced from 256 for faster responses
+            do_sample=False,     # Disable sampling for faster generation
+            num_beams=1,         # Keep single beam for speed
             pad_token_id=tokenizer.eos_token_id,
             eos_token_id=tokenizer.eos_token_id
         )
@@ -121,5 +118,6 @@ def generate():
 
 if __name__ == "__main__":
     print("Setting up the api...")
-    app.run(host='0.0.0.0', port=8081)
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+    app.run(host='0.0.0.0', port=8081, threaded=True)
     print("api running")
