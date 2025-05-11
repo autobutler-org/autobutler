@@ -10,10 +10,7 @@ The repository is organized as follows:
 exoflow/
 ├── src/
 │   ├── autobutler/
-|   |   ├── demo/
-|   |   ├── infra/
-|   |   ├── llm/
-|   |   ├── router/
+|   |   ├── backend/
 |   |   ├── ui/
 │   ├── autobutler.ai/
 ├── docs/
