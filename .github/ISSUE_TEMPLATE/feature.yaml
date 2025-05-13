@@ -16,6 +16,7 @@ body:
       description: What component(s) would this apply to?
       multiple: true
       options:
+        - N/A
         - UI
         - Backend
         - LLM
@@ -28,7 +29,6 @@ body:
       label: What feature do you want?
       description: You can also ask that we remove things
       placeholder: Help us make money brother
-      value: "Come on..."
     validations:
       required: true
   - type: textarea
