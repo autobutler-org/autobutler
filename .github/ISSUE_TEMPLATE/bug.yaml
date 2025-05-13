@@ -19,7 +19,7 @@ body:
         - Backend
         - LLM
         - Home Assistant
-      default: UI
+      default: 0
     validations:
       required: true  
   - type: textarea
