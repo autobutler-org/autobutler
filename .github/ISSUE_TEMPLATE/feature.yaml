@@ -1,0 +1,38 @@
+name: Feature Request
+description: Request a new feature
+title: "[Feature]: "
+labels: ["enhancement"]
+projects: ["exokomodo/8"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for shoveling more work onto us!
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: What component(s) would this apply to?
+      multiple: true
+      options:
+        - UI
+        - Backend
+        - LLM
+        - Home Assistant
+    validations:
+      required: true  
+  - type: textarea
+    id: whaddaya-want
+    attributes:
+      label: What feature do you want?
+      description: You can also ask that we remove things
+      placeholder: Help us make money brother
+      value: "Come on..."
+    validations:
+      required: true
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Extra info
+      description: Tell us whatever, even drop an image of Bingus if you want
