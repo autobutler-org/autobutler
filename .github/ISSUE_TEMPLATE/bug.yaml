@@ -13,7 +13,8 @@ body:
     id: component
     attributes:
       label: Component
-      description: What component is affected by this?
+      description: What component(s) are affected by this?
+      multiple: true
       options:
         - N/A
         - UI
