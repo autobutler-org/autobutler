@@ -16,6 +16,7 @@ body:
       description: What component(s) would this apply to?
       multiple: true
       options:
+        - Product
         - N/A
         - UI
         - Backend
