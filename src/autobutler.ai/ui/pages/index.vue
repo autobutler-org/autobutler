@@ -9,7 +9,7 @@
       </p>
       <div class="cta-buttons">
         <NuxtLink to="/about" class="btn primary">Get Started</NuxtLink>
-        <NuxtLink to="/learn-more" class="btn secondary">Learn More</NuxtLink>
+        <NuxtLink to="/features" class="btn secondary">Learn More</NuxtLink>
       </div>
     </div>
 
