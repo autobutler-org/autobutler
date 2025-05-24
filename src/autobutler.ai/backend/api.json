@@ -1,220 +1,194 @@
 {
-    "openapi": "3.0.3",
-    "info": {
-      "title": "Customer API",
-      "description": "Customer-facing API for authentication, purchases, and account management",
-      "version": "1.0.0"
-    },
-    "servers": [
-      {
-        "url": "https://customers.yoursite.com/api/v1",
-        "description": "Production server"
-      }
-    ],
-    "security": [
-      {
-        "bearerAuth": []
-      }
-    ],
-    "paths": {
-      "/auth/callback": {
-        "post": {
-          "tags": ["Authentication"],
-          "summary": "Handle Auth0 callback",
-          "security": [],
-          "requestBody": {
-            "required": true,
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "string"
-                    },
-                    "state": {
-                      "type": "string"
-                    }
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Customer API",
+    "description": "Customer-facing API for authentication, purchases, and account management",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://customers.yoursite.com/api/v1",
+      "description": "Production server"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/auth/callback": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Handle Auth0 callback",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
                   },
-                  "required": ["code"]
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Authentication successful",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/AuthResponse"
+                  "state": {
+                    "type": "string"
                   }
-                }
-              }
-            }
-          }
-        }
-      },
-      "/auth/refresh": {
-        "post": {
-          "tags": ["Authentication"],
-          "summary": "Refresh access token",
-          "requestBody": {
-            "required": true,
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "refreshToken": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["refreshToken"]
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Token refreshed",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/AuthResponse"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "/auth/logout": {
-        "post": {
-          "tags": ["Authentication"],
-          "summary": "Logout user",
-          "responses": {
-            "200": {
-              "description": "Logged out successfully"
-            }
-          }
-        }
-      },
-      "/profile": {
-        "get": {
-          "tags": ["Profile"],
-          "summary": "Get customer profile",
-          "responses": {
-            "200": {
-              "description": "Customer profile",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/CustomerProfile"
-                  }
-                }
+                },
+                "required": ["code"]
               }
             }
           }
         },
-        "put": {
-          "tags": ["Profile"],
-          "summary": "Update customer profile",
-          "requestBody": {
-            "required": true,
+        "responses": {
+          "200": {
+            "description": "Authentication successful",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CustomerProfileUpdate"
+                  "$ref": "#/components/schemas/AuthResponse"
                 }
               }
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Profile updated",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/CustomerProfile"
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Refresh access token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refreshToken": {
+                    "type": "string"
                   }
+                },
+                "required": ["refreshToken"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token refreshed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Logout user",
+        "responses": {
+          "200": {
+            "description": "Logged out successfully"
+          }
+        }
+      }
+    },
+    "/profile": {
+      "get": {
+        "tags": ["Profile"],
+        "summary": "Get customer profile",
+        "responses": {
+          "200": {
+            "description": "Customer profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerProfile"
                 }
               }
             }
           }
         }
       },
-      "/checkout/create-session": {
-        "post": {
-          "tags": ["Checkout"],
-          "summary": "Create Stripe checkout session",
-          "requestBody": {
-            "required": true,
+      "put": {
+        "tags": ["Profile"],
+        "summary": "Update customer profile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerProfileUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
+                  "$ref": "#/components/schemas/CustomerProfile"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/checkout/create-session": {
+      "post": {
+        "tags": ["Checkout"],
+        "summary": "Create Stripe checkout session",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
                     "items": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "productType": {
-                            "type": "string",
-                            "enum": ["base_product"]
-                          },
-                          "quantity": {
-                            "type": "integer",
-                            "default": 1
-                          }
+                      "type": "object",
+                      "properties": {
+                        "productType": {
+                          "type": "string",
+                          "enum": ["base_product"]
                         },
-                        "required": ["productType"]
-                      }
-                    },
-                    "successUrl": {
-                      "type": "string",
-                      "format": "uri"
-                    },
-                    "cancelUrl": {
-                      "type": "string",
-                      "format": "uri"
+                        "quantity": {
+                          "type": "integer",
+                          "default": 1
+                        }
+                      },
+                      "required": ["productType"]
                     }
                   },
-                  "required": ["items", "successUrl", "cancelUrl"]
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Checkout session created",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object",
-                    "properties": {
-                      "sessionId": {
-                        "type": "string"
-                      },
-                      "url": {
-                        "type": "string",
-                        "format": "uri"
-                      }
-                    }
+                  "successUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "cancelUrl": {
+                    "type": "string",
+                    "format": "uri"
                   }
-                }
+                },
+                "required": ["items", "successUrl", "cancelUrl"]
               }
             }
           }
-        }
-      },
-      "/checkout/success": {
-        "post": {
-          "tags": ["Checkout"],
-          "summary": "Handle successful checkout",
-          "requestBody": {
-            "required": true,
+        },
+        "responses": {
+          "200": {
+            "description": "Checkout session created",
             "content": {
               "application/json": {
                 "schema": {
@@ -222,66 +196,10 @@
                   "properties": {
                     "sessionId": {
                       "type": "string"
-                    }
-                  },
-                  "required": ["sessionId"]
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Purchase processed",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/Purchase"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "/purchases": {
-        "get": {
-          "tags": ["Purchases"],
-          "summary": "Get purchase history",
-          "parameters": [
-            {
-              "name": "page",
-              "in": "query",
-              "schema": {
-                "type": "integer",
-                "default": 1
-              }
-            },
-            {
-              "name": "limit",
-              "in": "query",
-              "schema": {
-                "type": "integer",
-                "default": 20
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "Purchase history",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object",
-                    "properties": {
-                      "purchases": {
-                        "type": "array",
-                        "items": {
-                          "$ref": "#/components/schemas/Purchase"
-                        }
-                      },
-                      "pagination": {
-                        "$ref": "#/components/schemas/Pagination"
-                      }
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
                     }
                   }
                 }
@@ -289,80 +207,129 @@
             }
           }
         }
-      },
-      "/purchases/{purchaseId}": {
-        "get": {
-          "tags": ["Purchases"],
-          "summary": "Get purchase details",
-          "parameters": [
-            {
-              "name": "purchaseId",
-              "in": "path",
-              "required": true,
+      }
+    },
+    "/checkout/success": {
+      "post": {
+        "tags": ["Checkout"],
+        "summary": "Handle successful checkout",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
               "schema": {
-                "type": "string"
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "Purchase details",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/Purchase"
+                "type": "object",
+                "properties": {
+                  "sessionId": {
+                    "type": "string"
                   }
-                }
-              }
-            }
-          }
-        }
-      },
-      "/billing/payment-methods": {
-        "get": {
-          "tags": ["Billing"],
-          "summary": "Get payment methods",
-          "responses": {
-            "200": {
-              "description": "Payment methods",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/PaymentMethod"
-                    }
-                  }
-                }
+                },
+                "required": ["sessionId"]
               }
             }
           }
         },
-        "post": {
-          "tags": ["Billing"],
-          "summary": "Add payment method",
-          "requestBody": {
-            "required": true,
+        "responses": {
+          "200": {
+            "description": "Purchase processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Purchase"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/purchases": {
+      "get": {
+        "tags": ["Purchases"],
+        "summary": "Get purchase history",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Purchase history",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "paymentMethodId": {
-                      "type": "string"
+                    "purchases": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Purchase"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
                     }
-                  },
-                  "required": ["paymentMethodId"]
+                  }
                 }
               }
             }
-          },
-          "responses": {
-            "200": {
-              "description": "Payment method added",
-              "content": {
-                "application/json": {
-                  "schema": {
+          }
+        }
+      }
+    },
+    "/purchases/{purchaseId}": {
+      "get": {
+        "tags": ["Purchases"],
+        "summary": "Get purchase details",
+        "parameters": [
+          {
+            "name": "purchaseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Purchase details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Purchase"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/billing/payment-methods": {
+      "get": {
+        "tags": ["Billing"],
+        "summary": "Get payment methods",
+        "responses": {
+          "200": {
+            "description": "Payment methods",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
                     "$ref": "#/components/schemas/PaymentMethod"
                   }
                 }
@@ -371,321 +338,99 @@
           }
         }
       },
-      "/billing/payment-methods/{paymentMethodId}": {
-        "delete": {
-          "tags": ["Billing"],
-          "summary": "Remove payment method",
-          "parameters": [
-            {
-              "name": "paymentMethodId",
-              "in": "path",
-              "required": true,
+      "post": {
+        "tags": ["Billing"],
+        "summary": "Add payment method",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
               "schema": {
-                "type": "string"
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "Payment method removed"
-            }
-          }
-        }
-      },
-      "/billing/invoices": {
-        "get": {
-          "tags": ["Billing"],
-          "summary": "Get invoices",
-          "parameters": [
-            {
-              "name": "page",
-              "in": "query",
-              "schema": {
-                "type": "integer",
-                "default": 1
-              }
-            },
-            {
-              "name": "limit",
-              "in": "query",
-              "schema": {
-                "type": "integer",
-                "default": 20
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "Invoices",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object",
-                    "properties": {
-                      "invoices": {
-                        "type": "array",
-                        "items": {
-                          "$ref": "#/components/schemas/Invoice"
-                        }
-                      },
-                      "pagination": {
-                        "$ref": "#/components/schemas/Pagination"
-                      }
-                    }
+                "type": "object",
+                "properties": {
+                  "paymentMethodId": {
+                    "type": "string"
                   }
-                }
-              }
-            }
-          }
-        }
-      },
-      "/licenses": {
-        "get": {
-          "tags": ["Licenses"],
-          "summary": "Get license keys",
-          "responses": {
-            "200": {
-              "description": "License keys",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/License"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "/downloads": {
-        "get": {
-          "tags": ["Downloads"],
-          "summary": "Get available downloads",
-          "responses": {
-            "200": {
-              "description": "Available downloads",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/Download"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "/downloads/{downloadId}/url": {
-        "get": {
-          "tags": ["Downloads"],
-          "summary": "Get signed download URL",
-          "parameters": [
-            {
-              "name": "downloadId",
-              "in": "path",
-              "required": true,
-              "schema": {
-                "type": "string"
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "Signed download URL",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object",
-                    "properties": {
-                      "url": {
-                        "type": "string",
-                        "format": "uri"
-                      },
-                      "expiresAt": {
-                        "type": "string",
-                        "format": "date-time"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "/support/tickets": {
-        "get": {
-          "tags": ["Support"],
-          "summary": "Get support tickets",
-          "parameters": [
-            {
-              "name": "status",
-              "in": "query",
-              "schema": {
-                "type": "string",
-                "enum": ["open", "pending", "resolved", "closed"]
-              }
-            },
-            {
-              "name": "page",
-              "in": "query",
-              "schema": {
-                "type": "integer",
-                "default": 1
-              }
-            },
-            {
-              "name": "limit",
-              "in": "query",
-              "schema": {
-                "type": "integer",
-                "default": 20
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "Support tickets",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object",
-                    "properties": {
-                      "tickets": {
-                        "type": "array",
-                        "items": {
-                          "$ref": "#/components/schemas/SupportTicket"
-                        }
-                      },
-                      "pagination": {
-                        "$ref": "#/components/schemas/Pagination"
-                      }
-                    }
-                  }
-                }
+                },
+                "required": ["paymentMethodId"]
               }
             }
           }
         },
-        "post": {
-          "tags": ["Support"],
-          "summary": "Create support ticket",
-          "requestBody": {
-            "required": true,
+        "responses": {
+          "200": {
+            "description": "Payment method added",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "subject": {
-                      "type": "string",
-                      "maxLength": 200
-                    },
-                    "description": {
-                      "type": "string",
-                      "maxLength": 5000
-                    },
-                    "priority": {
-                      "type": "string",
-                      "enum": ["low", "medium", "high", "urgent"],
-                      "default": "medium"
-                    },
-                    "category": {
-                      "type": "string",
-                      "enum": ["technical", "billing", "general"]
-                    }
-                  },
-                  "required": ["subject", "description", "category"]
-                }
-              }
-            }
-          },
-          "responses": {
-            "201": {
-              "description": "Support ticket created",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/SupportTicket"
-                  }
+                  "$ref": "#/components/schemas/PaymentMethod"
                 }
               }
             }
           }
         }
-      },
-      "/support/tickets/{ticketId}": {
-        "get": {
-          "tags": ["Support"],
-          "summary": "Get support ticket details",
-          "parameters": [
-            {
-              "name": "ticketId",
-              "in": "path",
-              "required": true,
-              "schema": {
-                "type": "string"
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "Support ticket details",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/SupportTicketDetail"
-                  }
-                }
-              }
+      }
+    },
+    "/billing/payment-methods/{paymentMethodId}": {
+      "delete": {
+        "tags": ["Billing"],
+        "summary": "Remove payment method",
+        "parameters": [
+          {
+            "name": "paymentMethodId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment method removed"
+          }
         }
-      },
-      "/support/tickets/{ticketId}/messages": {
-        "post": {
-          "tags": ["Support"],
-          "summary": "Add message to support ticket",
-          "parameters": [
-            {
-              "name": "ticketId",
-              "in": "path",
-              "required": true,
-              "schema": {
-                "type": "string"
-              }
+      }
+    },
+    "/billing/invoices": {
+      "get": {
+        "tags": ["Billing"],
+        "summary": "Get invoices",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
             }
-          ],
-          "requestBody": {
-            "required": true,
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invoices",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": {
-                      "type": "string",
-                      "maxLength": 5000
+                    "invoices": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Invoice"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
                     }
-                  },
-                  "required": ["message"]
-                }
-              }
-            }
-          },
-          "responses": {
-            "201": {
-              "description": "Message added",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/SupportMessage"
                   }
                 }
               }
@@ -694,343 +439,598 @@
         }
       }
     },
-    "components": {
-      "securitySchemes": {
-        "bearerAuth": {
-          "type": "http",
-          "scheme": "bearer",
-          "bearerFormat": "JWT"
-        }
-      },
-      "schemas": {
-        "AuthResponse": {
-          "type": "object",
-          "properties": {
-            "accessToken": {
-              "type": "string"
-            },
-            "refreshToken": {
-              "type": "string"
-            },
-            "expiresIn": {
-              "type": "integer"
-            },
-            "user": {
-              "$ref": "#/components/schemas/CustomerProfile"
-            }
-          }
-        },
-        "CustomerProfile": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            },
-            "email": {
-              "type": "string",
-              "format": "email"
-            },
-            "name": {
-              "type": "string"
-            },
-            "phone": {
-              "type": "string"
-            },
-            "company": {
-              "type": "string"
-            },
-            "createdAt": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "updatedAt": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        },
-        "CustomerProfileUpdate": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "phone": {
-              "type": "string"
-            },
-            "company": {
-              "type": "string"
-            }
-          }
-        },
-        "Purchase": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            },
-            "stripeSessionId": {
-              "type": "string"
-            },
-            "amount": {
-              "type": "integer"
-            },
-            "currency": {
-              "type": "string"
-            },
-            "status": {
-              "type": "string",
-              "enum": ["pending", "completed", "failed", "refunded"]
-            },
-            "items": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "productType": {
-                    "type": "string",
-                    "enum": ["base_product"]
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "amount": {
-                    "type": "integer"
-                  },
-                  "quantity": {
-                    "type": "integer"
-                  }
-                }
-              }
-            },
-            "createdAt": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "updatedAt": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        },
-        "PaymentMethod": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            },
-            "type": {
-              "type": "string"
-            },
-            "card": {
-              "type": "object",
-              "properties": {
-                "brand": {
-                  "type": "string"
-                },
-                "last4": {
-                  "type": "string"
-                },
-                "expMonth": {
-                  "type": "integer"
-                },
-                "expYear": {
-                  "type": "integer"
-                }
-              }
-            },
-            "isDefault": {
-              "type": "boolean"
-            },
-            "createdAt": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        },
-        "Invoice": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            },
-            "stripeInvoiceId": {
-              "type": "string"
-            },
-            "number": {
-              "type": "string"
-            },
-            "amount": {
-              "type": "integer"
-            },
-            "currency": {
-              "type": "string"
-            },
-            "status": {
-              "type": "string",
-              "enum": ["draft", "open", "paid", "void", "uncollectible"]
-            },
-            "pdfUrl": {
-              "type": "string",
-              "format": "uri"
-            },
-            "dueDate": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "paidAt": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "createdAt": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        },
-        "License": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            },
-            "key": {
-              "type": "string"
-            },
-            "productType": {
-              "type": "string"
-            },
-            "status": {
-              "type": "string",
-              "enum": ["active", "expired", "revoked"]
-            },
-            "expiresAt": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "createdAt": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        },
-        "Download": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            },
-            "name": {
-              "type": "string"
-            },
-            "description": {
-              "type": "string"
-            },
-            "version": {
-              "type": "string"
-            },
-            "fileSize": {
-              "type": "integer"
-            },
-            "releaseDate": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        },
-        "SupportTicket": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            },
-            "ticketNumber": {
-              "type": "string"
-            },
-            "subject": {
-              "type": "string"
-            },
-            "status": {
-              "type": "string",
-              "enum": ["open", "pending", "resolved", "closed"]
-            },
-            "priority": {
-              "type": "string",
-              "enum": ["low", "medium", "high", "urgent"]
-            },
-            "category": {
-              "type": "string",
-              "enum": ["technical", "billing", "general"]
-            },
-            "createdAt": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "updatedAt": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        },
-        "SupportTicketDetail": {
-          "allOf": [
-            {
-              "$ref": "#/components/schemas/SupportTicket"
-            },
-            {
-              "type": "object",
-              "properties": {
-                "description": {
-                  "type": "string"
-                },
-                "messages": {
+    "/licenses": {
+      "get": {
+        "tags": ["Licenses"],
+        "summary": "Get license keys",
+        "responses": {
+          "200": {
+            "description": "License keys",
+            "content": {
+              "application/json": {
+                "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/SupportMessage"
+                    "$ref": "#/components/schemas/License"
                   }
                 }
               }
             }
-          ]
-        },
-        "SupportMessage": {
-          "type": "object",
-          "properties": {
-            "id": {
+          }
+        }
+      }
+    },
+    "/downloads": {
+      "get": {
+        "tags": ["Downloads"],
+        "summary": "Get available downloads",
+        "responses": {
+          "200": {
+            "description": "Available downloads",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Download"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/downloads/{downloadId}/url": {
+      "get": {
+        "tags": ["Downloads"],
+        "summary": "Get signed download URL",
+        "parameters": [
+          {
+            "name": "downloadId",
+            "in": "path",
+            "required": true,
+            "schema": {
               "type": "string"
-            },
-            "message": {
-              "type": "string"
-            },
-            "fromCustomer": {
-              "type": "boolean"
-            },
-            "author": {
-              "type": "string"
-            },
-            "createdAt": {
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed download URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/support/tickets": {
+      "get": {
+        "tags": ["Support"],
+        "summary": "Get support tickets",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
               "type": "string",
-              "format": "date-time"
+              "enum": ["open", "pending", "resolved", "closed"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Support tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tickets": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SupportTicket"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Support"],
+        "summary": "Create support ticket",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "subject": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 5000
+                  },
+                  "priority": {
+                    "type": "string",
+                    "enum": ["low", "medium", "high", "urgent"],
+                    "default": "medium"
+                  },
+                  "category": {
+                    "type": "string",
+                    "enum": ["technical", "billing", "general"]
+                  }
+                },
+                "required": ["subject", "description", "category"]
+              }
             }
           }
         },
-        "Pagination": {
-          "type": "object",
-          "properties": {
-            "page": {
-              "type": "integer"
-            },
-            "limit": {
-              "type": "integer"
-            },
-            "total": {
-              "type": "integer"
-            },
-            "pages": {
-              "type": "integer"
+        "responses": {
+          "201": {
+            "description": "Support ticket created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportTicket"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/support/tickets/{ticketId}": {
+      "get": {
+        "tags": ["Support"],
+        "summary": "Get support ticket details",
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Support ticket details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportTicketDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/support/tickets/{ticketId}/messages": {
+      "post": {
+        "tags": ["Support"],
+        "summary": "Add message to support ticket",
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "maxLength": 5000
+                  }
+                },
+                "required": ["message"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Message added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportMessage"
+                }
+              }
             }
           }
         }
       }
     }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "integer"
+          },
+          "user": {
+            "$ref": "#/components/schemas/CustomerProfile"
+          }
+        }
+      },
+      "CustomerProfile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CustomerProfileUpdate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          }
+        }
+      },
+      "Purchase": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "stripeSessionId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "integer"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "completed", "failed", "refunded"]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "productType": {
+                  "type": "string",
+                  "enum": ["base_product"]
+                },
+                "description": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "integer"
+                },
+                "quantity": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PaymentMethod": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "card": {
+            "type": "object",
+            "properties": {
+              "brand": {
+                "type": "string"
+              },
+              "last4": {
+                "type": "string"
+              },
+              "expMonth": {
+                "type": "integer"
+              },
+              "expYear": {
+                "type": "integer"
+              }
+            }
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Invoice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "stripeInvoiceId": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "integer"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "open", "paid", "void", "uncollectible"]
+          },
+          "pdfUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "License": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "productType": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "expired", "revoked"]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Download": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "fileSize": {
+            "type": "integer"
+          },
+          "releaseDate": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SupportTicket": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "ticketNumber": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["open", "pending", "resolved", "closed"]
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "urgent"]
+          },
+          "category": {
+            "type": "string",
+            "enum": ["technical", "billing", "general"]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SupportTicketDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SupportTicket"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "messages": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SupportMessage"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "SupportMessage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "fromCustomer": {
+            "type": "boolean"
+          },
+          "author": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "pages": {
+            "type": "integer"
+          }
+        }
+      }
+    }
   }
+}

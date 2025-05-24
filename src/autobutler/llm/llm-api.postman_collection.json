@@ -1,39 +1,35 @@
 {
-	"info": {
-		"_postman_id": "llm-api-collection",
-		"name": "LLM API",
-		"description": "Collection for testing the local LLM API endpoints",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "Generate Response",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"message\": \"Hello, how are you?\"\n}"
-				},
-				"url": {
-					"raw": "http://localhost:8081/generate",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8081",
-					"path": [
-						"generate"
-					]
-				},
-				"description": "Generate a response from the LLM model"
-			},
-			"response": []
-		}
-	]
-} 
+  "info": {
+    "_postman_id": "llm-api-collection",
+    "name": "LLM API",
+    "description": "Collection for testing the local LLM API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Generate Response",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"message\": \"Hello, how are you?\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8081/generate",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["generate"]
+        },
+        "description": "Generate a response from the LLM model"
+      },
+      "response": []
+    }
+  ]
+}

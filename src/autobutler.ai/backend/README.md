@@ -15,12 +15,14 @@ This is the customer-facing API for our SaaS platform. It handles authentication
 We use **Auth0** for authentication with JWT bearer tokens.
 
 ### Auth Flow
+
 1. User logs in through Auth0
 2. Auth0 redirects to `/auth/callback` with authorization code
 3. API exchanges code for JWT tokens
 4. Client uses bearer token for subsequent requests
 
 ### Endpoints
+
 - `POST /auth/callback` - Exchange Auth0 code for tokens
 - `POST /auth/refresh` - Refresh access token
 - `POST /auth/logout` - Logout user
@@ -28,31 +30,38 @@ We use **Auth0** for authentication with JWT bearer tokens.
 ## Core Features
 
 ### Customer Profile Management
+
 - `GET /profile` - Get customer profile
 - `PUT /profile` - Update profile (name, phone, company)
 
 ### Purchasing & Checkout
+
 - `POST /checkout/create-session` - Create Stripe checkout session
 - `POST /checkout/success` - Process successful payment
 
 ### Purchase History
+
 - `GET /purchases` - List all purchases (paginated)
 - `GET /purchases/{id}` - Get specific purchase details
 
 ### Billing & Payments
+
 - `GET /billing/payment-methods` - List saved payment methods
 - `POST /billing/payment-methods` - Add new payment method
 - `DELETE /billing/payment-methods/{id}` - Remove payment method
 - `GET /billing/invoices` - List invoices and receipts
 
 ### License Management
+
 - `GET /licenses` - Get license keys for purchased products
 
 ### Downloads
+
 - `GET /downloads` - List available software downloads
 - `GET /downloads/{id}/url` - Get signed download URL (expires after time limit)
 
 ### Customer Support
+
 - `GET /support/tickets` - List support tickets
 - `POST /support/tickets` - Create new support ticket
 - `GET /support/tickets/{id}` - Get ticket details with message history
@@ -61,16 +70,18 @@ We use **Auth0** for authentication with JWT bearer tokens.
 ## Product Types
 
 The API handles one product type:
+
 - `base_product` - The main $359 software
 
 ## Key Data Models
 
 ### Purchase
+
 ```json
 {
   "id": "purchase_123",
   "amount": 35900,
-  "currency": "usd", 
+  "currency": "usd",
   "status": "completed",
   "items": [
     {
@@ -85,6 +96,7 @@ The API handles one product type:
 ```
 
 ### License
+
 ```json
 {
   "id": "license_789",
@@ -98,16 +110,19 @@ The API handles one product type:
 ## Integration Points
 
 ### Stripe Integration
+
 - Checkout sessions for one-time purchases
 - Payment method management
 - Invoice generation
 
 ### Auth0 Integration
+
 - User authentication and registration
 - JWT token management
 - User profile synchronization
 
 ### Download Security
+
 - Signed URLs with expiration
 - License validation before download access
 - Version-based access control
@@ -115,6 +130,7 @@ The API handles one product type:
 ## Usage Examples
 
 ### Creating a Purchase
+
 ```bash
 # 1. Create checkout session
 curl -X POST /checkout/create-session \
@@ -133,6 +149,7 @@ curl -X POST /checkout/success \
 ```
 
 ### Getting Download Access
+
 ```bash
 # 1. Check available downloads
 curl -H "Authorization: Bearer {token}" /downloads
@@ -142,6 +159,7 @@ curl -H "Authorization: Bearer {token}" /downloads/software_v2/url
 ```
 
 ### Creating Support Ticket
+
 ```bash
 curl -X POST /support/tickets \
   -H "Authorization: Bearer {token}" \
@@ -156,6 +174,7 @@ curl -X POST /support/tickets \
 ## Error Handling
 
 All endpoints return standard HTTP status codes:
+
 - `200` - Success
 - `201` - Created
 - `400` - Bad Request
@@ -167,6 +186,7 @@ All endpoints return standard HTTP status codes:
 ## Rate Limiting
 
 API requests are rate limited per user:
+
 - 100 requests per minute for most endpoints
 - 10 requests per minute for checkout endpoints
 
@@ -181,6 +201,7 @@ API requests are rate limited per user:
 ## Related APIs
 
 This customer API works alongside our internal business operations API (separate subdomain) that handles:
+
 - Admin customer management
 - Financial reporting
 - Product management
