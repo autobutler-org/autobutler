@@ -1,7 +1,8 @@
-import autobutler.llm as llm
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+import autobutler.llm as llm
 
 origins = [
     "http://localhost",

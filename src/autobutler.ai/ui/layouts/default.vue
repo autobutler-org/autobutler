@@ -18,6 +18,8 @@ import ButlerHeader from "../components/ButlerHeader.vue";
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  position: relative;
+  padding-top: 4rem; /* Add padding for fixed header */
 }
 
 .page-container {
@@ -26,6 +28,8 @@ import ButlerHeader from "../components/ButlerHeader.vue";
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1rem;
+  position: relative;
+  z-index: 1;
 }
 
 /* Add responsive design */

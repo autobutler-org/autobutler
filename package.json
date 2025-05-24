@@ -6,7 +6,7 @@
   "private": true,
   "workspaces": [
     "src/autobutler/ui",
-    "src/autobutler.ai"
+    "src/autobutler.ai/ui"
   ],
   "scripts": {
     "build": "echo Skipping...",

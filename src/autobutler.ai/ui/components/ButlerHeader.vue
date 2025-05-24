@@ -23,10 +23,14 @@
 .header {
   width: 100%;
   padding: 1rem 0;
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
   background: rgba(28, 32, 34, 0.95);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .gradient-overlay {
@@ -41,6 +45,7 @@
     rgba(0, 187, 255, 0.02)
   );
   pointer-events: none;
+  z-index: -1;
 }
 
 .header-content {
@@ -51,6 +56,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  z-index: 1;
 }
 
 .logo-link {
