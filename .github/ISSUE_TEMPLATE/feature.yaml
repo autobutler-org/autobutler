@@ -4,6 +4,7 @@ title: "[Feature]: "
 labels: ["enhancement"]
 projects: ["exokomodo/8"]
 assignees: []
+type: Feature
 body:
   - type: markdown
     attributes:
