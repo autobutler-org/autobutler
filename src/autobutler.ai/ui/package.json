@@ -1,5 +1,5 @@
 {
-  "name": "autobutler.ai",
+  "name": "autobutler.ai/ui",
   "type": "module",
   "engines": {
     "node": ">=22.8.0"
@@ -17,6 +17,7 @@
     "fix": "concurrently -m1 npm:fix:*"
   },
   "dependencies": {
+    "@nuxt/content": "^3.5.1",
     "markdownlint-cli2": "^0.17.2",
     "nuxt": "^3.15.4",
     "vue": "latest",
