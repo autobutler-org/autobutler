@@ -3,7 +3,7 @@ title: Getting Started
 description: Get up and running quickly with AutoButler
 navigation: 
   title: Getting Started
-  order: 1
+  order: 2
 ---
 
 # Getting Started

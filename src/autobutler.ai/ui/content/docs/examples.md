@@ -3,7 +3,7 @@ title: Examples
 description: Real-world examples to help you get the most out of AutoButler
 navigation:
   title: Examples
-  order: 5
+  order: 6
 ---
 
 # Examples

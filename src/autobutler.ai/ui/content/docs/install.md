@@ -3,17 +3,123 @@ title: Installation
 description: Detailed installation instructions for AutoButler
 navigation:
   title: Installation
-  order: 6
+  order: 4
 ---
 
 # Installation
 
-Complete installation guide for AutoButler on all supported platforms. Cheesy grin rubber cheese rubber cheese melted cheese emmental swiss rubber cheese melted cheese. Monterey jack stinking bishop swiss cheesy grin cheesy grin fromage mozzarella danish fontina. Roquefort paneer cheesecake edam danish fontina pepper jack cheesy feet melted cheese. Manchego edam pecorino cream cheese queso swiss blue castello squirty cheese. Feta caerphilly ricotta who moved my cheese swiss roquefort mozzarella gouda. Fromage camembert de normandie airedale cream cheese cheese strings gouda monterey jack blue castello. Stinking bishop paneer cut the cheese paneer cottage cheese chalk and cheese macaroni cheese babybel. Bavarian bergkase chalk and cheese camembert de normandie melted cheese red leicester who moved my cheese fromage frais when the cheese comes out everybody's happy. Smelly cheese cut the cheese brie who moved my cheese swiss croque monsieur.
+Complete installation guide for AutoButler on all supported platforms.
 
-## Subtitle
-Boursin danish fontina lancashire. Say cheese everyone loves cheese slices when the cheese comes out everybody's happy caerphilly pepper jack bavarian bergkase cow. Cottage cheese cheesecake macaroni cheese pepper jack edam queso cheeseburger cauliflower cheese. Fromage frais cheese and wine cream cheese roquefort edam lancashire who moved my cheese melted cheese. Halloumi cheddar queso cauliflower cheese cheesy feet halloumi paneer cheesecake. Who moved my cheese cheesecake cheesy feet everyone loves cheddar queso ricotta chalk and cheese. Cheesy feet goat melted cheese squirty cheese squirty cheese fromage brie dolcelatte. Halloumi lancashire fromage st. agur blue cheese brie roquefort the big cheese brie. Hard cheese hard cheese squirty cheese pepper jack cheesy feet boursin gouda hard cheese. Halloumi gouda cheese and biscuits pepper jack brie jarlsberg halloumi pepper jack. Cottage cheese airedale bavarian bergkase the big cheese edam
+## Prerequisites
 
-## Another one
-Boursin emmental cauliflower cheese. Blue castello dolcelatte cheese slices mozzarella fromage frais goat mascarpone feta. Stinking bishop halloumi chalk and cheese the big cheese feta cheeseburger cheese strings fromage. Taleggio st. agur blue cheese emmental hard cheese fromage monterey jack queso danish fontina. Everyone loves pecorino cauliflower cheese jarlsberg airedale chalk and cheese jarlsberg pecorino. Croque monsieur cow dolcelatte.
+Before installing AutoButler, ensure you have the following prerequisites:
 
-Cheese strings when the cheese comes out everybody's happy jarlsberg. Taleggio cheese strings edam cheesy grin who moved my cheese cheese triangles edam cheese on toast. Pepper jack stilton cream cheese port-salut mascarpone halloumi feta emmental. Cheddar taleggio when the cheese comes out everybody's happy airedale halloumi jarlsberg danish fontina chalk and cheese. Dolcelatte camembert de normandie smelly cheese cheesy feet red leicester halloumi fondue pepper jack. Ricotta gouda everyone loves halloumi who moved my cheese fromage frais camembert de normandie.
+- Node.js 18.0 or higher
+- npm 9.0 or higher (or yarn/pnpm equivalent)
+- Git for version control
+
+## Quick Install
+
+The fastest way to get started with AutoButler:
+
+```bash
+npm install -g @autobutler/cli
+autobutler init my-project
+cd my-project
+npm start
+```
+
+## Platform-Specific Installation
+
+### Windows Installation
+
+For Windows users, we recommend using PowerShell or Windows Terminal:
+
+1. Install Node.js from [nodejs.org](https://nodejs.org)
+2. Open PowerShell as Administrator
+3. Run the installation command:
+
+```powershell
+npm install -g @autobutler/cli
+```
+
+### macOS Installation
+
+For macOS users, you can use Homebrew or install directly:
+
+#### Using Homebrew
+
+```bash
+brew install node
+npm install -g @autobutler/cli
+```
+
+#### Direct Installation
+
+```bash
+# Install AutoButler CLI
+npm install -g @autobutler/cli
+
+# Verify installation
+autobutler --version
+```
+
+### Linux Installation
+
+For Linux distributions, use your package manager or install directly:
+
+#### Ubuntu/Debian
+
+```bash
+# Update package index
+sudo apt update
+
+# Install Node.js and npm
+sudo apt install nodejs npm
+
+# Install AutoButler CLI
+npm install -g @autobutler/cli
+```
+
+#### CentOS/RHEL/Fedora
+
+```bash
+# Install Node.js and npm
+sudo yum install nodejs npm
+
+# Install AutoButler CLI
+npm install -g @autobutler/cli
+```
+
+## Verification
+
+After installation, verify that AutoButler is working correctly:
+
+```bash
+# Check version
+autobutler --version
+
+# Run help command
+autobutler --help
+
+# Create a test project
+autobutler init test-project
+```
+
+## Troubleshooting
+
+### Common Issues
+
+If you encounter issues during installation:
+
+1. **Permission Errors**: Use `sudo` on Unix systems or run as Administrator on Windows
+2. **Network Issues**: Check your internet connection and proxy settings
+3. **Node Version**: Ensure you're using Node.js 18.0 or higher
+
+### Getting Help
+
+If you need assistance:
+
+- Check our [FAQ](/docs/help)
+- Visit our [GitHub Issues](https://github.com/autobutler/autobutler/issues)
+- Join our [Discord Community](https://discord.gg/autobutler)

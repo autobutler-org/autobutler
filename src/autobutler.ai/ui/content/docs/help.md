@@ -3,7 +3,7 @@ title: Help & Support
 description: Get help and support for AutoButler
 navigation:
   title: Help
-  order: 7
+  order: 8
 ---
 
 # Help & Support

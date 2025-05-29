@@ -3,7 +3,7 @@ title: Quick Start
 description: Get AutoButler running in under 5 minutes
 navigation:
   title: Quick Start
-  order: 2
+  order: 3
 ---
 
 # Quick Start

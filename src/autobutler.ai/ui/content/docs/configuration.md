@@ -3,7 +3,7 @@ title: Configuration
 description: Configure AutoButler to work exactly how you need it
 navigation:
   title: Configuration
-  order: 3
+  order: 5
 ---
 
 # Configuration

@@ -3,7 +3,7 @@ title: API Reference
 description: Complete API documentation for AutoButler
 navigation:
   title: API Reference
-  order: 4
+  order: 7
 ---
 
 # API Reference

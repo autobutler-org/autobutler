@@ -21,7 +21,7 @@
         class="page-nav-toggle"
         @click="togglePageNav"
         aria-label="Toggle page navigation"
-        v-if="data?.body?.toc?.links?.length"
+        v-if="data"
       >
         <span>On this page</span>
         <svg 
@@ -64,11 +64,11 @@
       <aside 
         class="page-nav-drawer" 
         :class="{ 'page-nav-drawer-open': pageNavOpen }"
-        v-if="data?.body?.toc?.links?.length"
+        v-if="data"
       >
         <div class="page-nav-drawer-content">
           <h4>On this page</h4>
-          <ContentNavigation :links="data.body.toc.links" />
+          <TableOfContents />
         </div>
       </aside>
       
@@ -115,11 +115,11 @@
           <!-- Desktop page navigation -->
           <aside 
             class="page-nav desktop-only" 
-            v-if="data?.body?.toc?.links?.length"
+            v-if="data"
           >
             <div class="page-nav-content">
               <h4>On this page</h4>
-              <ContentNavigation :links="data.body.toc.links" />
+              <TableOfContents />
             </div>
           </aside>
         </div>
@@ -136,13 +136,35 @@ const pageNavOpen = ref(false)
 // Get route and params
 const route = useRoute()
 
-// Fetch all documentation files
-const { data: allDocs } = await queryContent('/docs').find()
+// Debug: Log the current route path
+console.log('Current route path:', route.path)
 
-// Get current document
-const { data, pending, error } = await queryContent()
-  .where({ _path: route.path })
-  .findOne()
+// Try different approaches to fetch content
+let allDocs = []
+let data = null
+let pending = false
+let error = null
+
+try {
+  // Fetch all documentation files with a more explicit query
+  const docsQuery = await queryContent('docs').find()
+  console.log('Docs query result:', docsQuery)
+  allDocs = docsQuery || []
+  
+  // Get current document with a more explicit path
+  const currentPath = route.path.replace('/docs/', 'docs/')
+  console.log('Querying for path:', currentPath)
+  
+  const currentDoc = await queryContent(currentPath).findOne()
+  console.log('Current doc result:', currentDoc)
+  data = currentDoc
+} catch (err) {
+  console.error('Content query error:', err)
+  error = err
+}
+
+console.log('Final allDocs:', allDocs)
+console.log('Final data:', data)
 
 // Computed properties
 const sortedDocs = computed(() => 
@@ -170,8 +192,14 @@ const closePageNav = () => {
 
 // SEO
 useSeoMeta({
-  title: computed(() => data.value?.title ? `${data.value.title} - AutoButler Docs` : 'AutoButler Documentation'),
-  description: computed(() => data.value?.description || 'Complete documentation for AutoButler automation platform'),
+  title: computed(() => {
+    const currentData = unref(data)
+    return currentData?.title ? `${currentData.title} - AutoButler Docs` : 'AutoButler Documentation'
+  }),
+  description: computed(() => {
+    const currentData = unref(data)
+    return currentData?.description || 'Complete documentation for AutoButler automation platform'
+  }),
 })
 </script>
 
