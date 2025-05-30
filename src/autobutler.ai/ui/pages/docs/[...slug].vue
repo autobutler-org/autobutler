@@ -68,7 +68,19 @@
       >
         <div class="page-nav-drawer-content">
           <h4>On this page</h4>
-          <ContentNavigation :links="data.body.toc.links" />
+          <nav class="toc-nav">
+            <ul>
+              <li v-for="link in data.body.toc.links" :key="link.id">
+                <a 
+                  :href="`#${link.id}`" 
+                  @click="closePageNav"
+                  :class="`toc-link depth-${link.depth}`"
+                >
+                  {{ link.text }}
+                </a>
+              </li>
+            </ul>
+          </nav>
         </div>
       </aside>
       
@@ -136,7 +148,18 @@
           >
             <div class="page-nav-content">
               <h4>On this page</h4>
-              <ContentNavigation :links="data.body.toc.links" />
+              <nav class="toc-nav">
+                <ul>
+                  <li v-for="link in data.body.toc.links" :key="link.id">
+                    <a 
+                      :href="`#${link.id}`" 
+                      :class="`toc-link depth-${link.depth}`"
+                    >
+                      {{ link.text }}
+                    </a>
+                  </li>
+                </ul>
+              </nav>
             </div>
           </aside>
         </div>
@@ -198,6 +221,7 @@ try {
 
 console.log('Final allDocs:', allDocs)
 console.log('Final data:', data)
+console.log('TOC links:', data?.body?.toc?.links)
 
 // Computed properties
 const sortedDocs = computed(() => 
@@ -652,5 +676,91 @@ useSeoMeta({
   .doc-card {
     padding: 1.25rem;
   }
+}
+
+/* Custom TOC navigation styles */
+.toc-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.toc-nav li {
+  margin: 0;
+}
+
+.toc-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.toc-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.toc-link:before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.toc-link:hover:before {
+  background: rgba(0, 255, 170, 0.8);
+  box-shadow: 0 0 8px rgba(0, 255, 170, 0.3);
+}
+
+/* Nested heading levels */
+.toc-link.depth-3 {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 0.25rem 0.5rem 0.25rem 1rem;
+}
+
+.toc-link.depth-3:before {
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.toc-link.depth-4 {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0.25rem 0.5rem 0.25rem 1.5rem;
+}
+
+.toc-link.depth-4:before {
+  width: 3px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* H2 level links get special styling */
+.toc-link.depth-2 {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+}
+
+.toc-link.depth-2:before {
+  width: 8px;
+  height: 8px;
+  background: rgba(0, 255, 170, 0.6);
 }
 </style> 
