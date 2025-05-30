@@ -21,7 +21,7 @@
         class="page-nav-toggle"
         @click="togglePageNav"
         aria-label="Toggle page navigation"
-        v-if="data"
+        v-if="data?.body?.toc?.links?.length"
       >
         <span>On this page</span>
         <svg 
@@ -64,11 +64,11 @@
       <aside 
         class="page-nav-drawer" 
         :class="{ 'page-nav-drawer-open': pageNavOpen }"
-        v-if="data"
+        v-if="data?.body?.toc?.links?.length"
       >
         <div class="page-nav-drawer-content">
           <h4>On this page</h4>
-          <TableOfContents />
+          <ContentNavigation :links="data.body.toc.links" />
         </div>
       </aside>
       
@@ -93,7 +93,24 @@
               <ContentRenderer :value="data" />
             </div>
             
-            <!-- Error state -->
+            <!-- Index page fallback with docs grid -->
+            <div v-else-if="isIndexPage" class="error-content">
+              <h1>Welcome to AutoButler Documentation</h1>
+              <p>Complete documentation for AutoButler automation platform.</p>
+              <div class="docs-grid">
+                <NuxtLink 
+                  v-for="doc in sortedDocs" 
+                  :key="doc._path"
+                  :to="doc._path"
+                  class="doc-card"
+                >
+                  <h3>{{ doc.navigation?.title || doc.title }}</h3>
+                  <p>{{ doc.description }}</p>
+                </NuxtLink>
+              </div>
+            </div>
+            
+            <!-- Error state for other pages -->
             <div v-else-if="error" class="error-content">
               <h1>Content Not Found</h1>
               <p>The requested documentation page could not be found.</p>
@@ -115,11 +132,11 @@
           <!-- Desktop page navigation -->
           <aside 
             class="page-nav desktop-only" 
-            v-if="data"
+            v-if="data?.body?.toc?.links?.length"
           >
             <div class="page-nav-content">
               <h4>On this page</h4>
-              <TableOfContents />
+              <ContentNavigation :links="data.body.toc.links" />
             </div>
           </aside>
         </div>
@@ -136,8 +153,15 @@ const pageNavOpen = ref(false)
 // Get route and params
 const route = useRoute()
 
+// Check if this is the index page (no slug or welcome slug)
+const isIndexPage = computed(() => {
+  return route.path === '/docs' || route.path === '/docs/' || 
+         (route.params.slug && route.params.slug[0] === 'welcome')
+})
+
 // Debug: Log the current route path
 console.log('Current route path:', route.path)
+console.log('Is index page:', isIndexPage.value)
 
 // Try different approaches to fetch content
 let allDocs = []
@@ -151,13 +175,22 @@ try {
   console.log('Docs query result:', docsQuery)
   allDocs = docsQuery || []
   
-  // Get current document with a more explicit path
-  const currentPath = route.path.replace('/docs/', 'docs/')
-  console.log('Querying for path:', currentPath)
-  
-  const currentDoc = await queryContent(currentPath).findOne()
-  console.log('Current doc result:', currentDoc)
-  data = currentDoc
+  // Get current document based on route
+  if (isIndexPage.value) {
+    // For index page, try to get welcome content
+    console.log('Fetching welcome content for index page')
+    const welcomeDoc = await queryContent('docs/welcome').findOne().catch(() => null)
+    console.log('Welcome doc result:', welcomeDoc)
+    data = welcomeDoc
+  } else {
+    // For other pages, get content based on slug
+    const currentPath = route.path.replace('/docs/', 'docs/')
+    console.log('Querying for path:', currentPath)
+    
+    const currentDoc = await queryContent(currentPath).findOne()
+    console.log('Current doc result:', currentDoc)
+    data = currentDoc
+  }
 } catch (err) {
   console.error('Content query error:', err)
   error = err
@@ -171,7 +204,13 @@ const sortedDocs = computed(() =>
   allDocs?.sort((a, b) => (a.navigation?.order || 999) - (b.navigation?.order || 999)) || []
 )
 
-const isCurrentPath = (path) => route.path === path
+const isCurrentPath = (path) => {
+  // For the welcome page, consider both /docs and /docs/welcome as current
+  if (path === '/docs/welcome' && (route.path === '/docs' || route.path === '/docs/')) {
+    return true
+  }
+  return route.path === path
+}
 
 // Navigation functions
 const toggleSidebar = () => {
@@ -194,10 +233,16 @@ const closePageNav = () => {
 useSeoMeta({
   title: computed(() => {
     const currentData = unref(data)
+    if (isIndexPage.value) {
+      return 'AutoButler Documentation'
+    }
     return currentData?.title ? `${currentData.title} - AutoButler Docs` : 'AutoButler Documentation'
   }),
   description: computed(() => {
     const currentData = unref(data)
+    if (isIndexPage.value) {
+      return 'Welcome to AutoButler - your intelligent automation platform'
+    }
     return currentData?.description || 'Complete documentation for AutoButler automation platform'
   }),
 })
@@ -290,7 +335,7 @@ useSeoMeta({
 
 .docs-layout {
   display: grid;
-  grid-template-columns: 250px 1fr;
+  grid-template-columns: 200px 1fr;
   gap: 2rem;
 }
 
@@ -340,7 +385,7 @@ useSeoMeta({
 
 .content-wrapper {
   display: grid;
-  grid-template-columns: 1fr 200px;
+  grid-template-columns: 1fr 250px;
   gap: 3rem;
 }
 
@@ -474,7 +519,45 @@ useSeoMeta({
   text-decoration: underline;
 }
 
-/* Mobile styles */
+/* Docs grid styles for index page fallback */
+.docs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.doc-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  display: block;
+}
+
+.doc-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 255, 170, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 255, 170, 0.1);
+}
+
+.doc-card h3 {
+  font-size: 1.375rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #fff;
+}
+
+.doc-card p {
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Mobile responsive styles */
 @media (max-width: 1024px) {
   .mobile-nav-bar {
     display: flex;
@@ -559,6 +642,15 @@ useSeoMeta({
   .hamburger-btn {
     padding: 0.5rem;
     font-size: 0.85rem;
+  }
+  
+  .docs-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .doc-card {
+    padding: 1.25rem;
   }
 }
 </style> 

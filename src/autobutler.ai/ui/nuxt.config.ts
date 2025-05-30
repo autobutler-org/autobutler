@@ -17,23 +17,29 @@ export default defineNuxtConfig({
     }
   },
   content: {
-    // Configure content module
+    // Configure content module for better TOC generation
     highlight: {
       theme: {
         default: 'github-dark',
         dark: 'github-dark',
         light: 'github-light'
       },
-      preload: ['json', 'js', 'ts', 'html', 'css', 'vue', 'bash', 'yaml']
+      preload: ['json', 'js', 'ts', 'html', 'css', 'vue', 'bash', 'yaml', 'markdown']
     },
     markdown: {
       // Enable anchor links for headings
-      anchorLinks: true,
-      // Enable table of contents
+      anchorLinks: {
+        depth: 6,
+        exclude: []
+      },
+      // Enable comprehensive table of contents
       toc: {
-        depth: 3,
-        searchDepth: 3
-      }
+        depth: 6,
+        searchDepth: 6
+      },
+      // Generate IDs for all headings
+      remarkPlugins: [],
+      rehypePlugins: []
     }
   }
 });
