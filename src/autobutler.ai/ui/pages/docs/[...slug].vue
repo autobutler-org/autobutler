@@ -173,6 +173,18 @@
     customScrollContainer=".content"
     :compact="true"
   />
+  
+  <!-- Mobile-only scroll to top button -->
+  <button 
+    v-if="showScrollToTop"
+    @click="scrollToTop"
+    class="scroll-to-top-btn mobile-only"
+    aria-label="Scroll to top"
+  >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M18 15l-6-6-6 6"/>
+    </svg>
+  </button>
 </template>
 
 <script setup>
@@ -182,6 +194,7 @@ import ButlerFooter from '~/components/ButlerFooter.vue'
 // Reactive state
 const sidebarOpen = ref(false)
 const pageNavOpen = ref(false)
+const showScrollToTop = ref(false)
 
 // Get route and params
 const route = useRoute()
@@ -263,6 +276,23 @@ const closePageNav = () => {
   pageNavOpen.value = false
 }
 
+// Scroll to top function for mobile
+const scrollToTop = () => {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  })
+}
+
+// Handle scroll detection for mobile scroll-to-top button
+const handleMobileScroll = () => {
+  const isDesktop = window.innerWidth >= 1024
+  if (isDesktop) return
+  
+  // Show button when scrolled down more than 300px
+  showScrollToTop.value = window.scrollY > 300
+}
+
 // Prevent page scrolling and redirect to content area
 onMounted(() => {
   // Only apply custom scroll handling on desktop screens (1024px and above)
@@ -270,6 +300,14 @@ onMounted(() => {
   
   if (!isDesktop()) {
     // On mobile/tablet, let browser handle scrolling normally
+    // But add scroll listener for scroll-to-top button
+    window.addEventListener('scroll', handleMobileScroll)
+    
+    // Cleanup on unmount for mobile
+    onUnmounted(() => {
+      window.removeEventListener('scroll', handleMobileScroll)
+    })
+    
     return
   }
   
@@ -950,5 +988,44 @@ useSeoMeta({
   width: 8px;
   height: 8px;
   background: rgba(0, 255, 170, 0.6);
+}
+
+/* Mobile scroll-to-top button */
+.scroll-to-top-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 3rem;
+  height: 3rem;
+  background: rgba(0, 255, 170, 0.9);
+  border: none;
+  border-radius: 50%;
+  color: #000;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 255, 170, 0.3);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.scroll-to-top-btn:hover {
+  background: rgba(0, 255, 170, 1);
+  box-shadow: 0 6px 20px rgba(0, 255, 170, 0.4);
+  transform: translateY(-2px);
+}
+
+.scroll-to-top-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 255, 170, 0.3);
+}
+
+/* Hide on desktop */
+@media (min-width: 1024px) {
+  .mobile-only {
+    display: none !important;
+  }
 }
 </style> 
