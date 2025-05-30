@@ -265,9 +265,30 @@ const closePageNav = () => {
 
 // Prevent page scrolling and redirect to content area
 onMounted(() => {
-  // Prevent page from scrolling and hide main scrollbar
-  document.body.style.overflow = 'hidden'
-  document.documentElement.style.overflow = 'hidden'
+  // Only apply custom scroll handling on desktop screens (1024px and above)
+  const isDesktop = () => window.innerWidth >= 1024
+  
+  if (!isDesktop()) {
+    // On mobile/tablet, let browser handle scrolling normally
+    return
+  }
+  
+  // Wait for content area to be properly loaded before preventing page scroll
+  const ensureContentReady = () => {
+    const contentArea = document.querySelector('.content')
+    if (!contentArea || contentArea.scrollHeight <= contentArea.clientHeight) {
+      // Content area doesn't exist or has no scrollable content yet, try again
+      setTimeout(ensureContentReady, 100)
+      return
+    }
+    
+    // Only prevent page scrolling once we confirm content area is ready
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+  }
+  
+  // Start checking for content readiness
+  ensureContentReady()
   
   const handleWheel = (e) => {
     e.preventDefault()
