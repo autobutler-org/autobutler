@@ -24,6 +24,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Install node-gyp
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          bun install node-gyp
       - name: Install dependencies
         working-directory: ${{ env.WORKING_DIR }}
         run: |
