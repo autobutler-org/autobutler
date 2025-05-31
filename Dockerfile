@@ -26,6 +26,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     libsqlite3-dev \
     libssl-dev \
     make \
+    sqlite3 \
     tk-dev \
     xz-utils \
     zlib1g-dev \

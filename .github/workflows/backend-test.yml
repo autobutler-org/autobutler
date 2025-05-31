@@ -7,6 +7,10 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      image-tag:
+        description: Image tag to run
+        type: string
 env:
   WORKING_DIR: ${{ github.workspace }}/src/autobutler/backend
 defaults:
@@ -15,23 +19,15 @@ defaults:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: exokomodo/exoflow-devcontainer:${{ inputs.image-tag || (github.event_name == 'pull_request' && 'latest') || (github.head_ref || github.ref_name) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.13'
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            sqlite3 \
-            libsqlite3-dev
       - name: Install autobutler backend
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          pip install -e .
+          pip3 install -e .
       - name: Test
         working-directory: ${{ env.WORKING_DIR }}
         run: |
