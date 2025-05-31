@@ -26,7 +26,6 @@
   "devDependencies": {
     "@nuxt/devtools": "^2.4.1",
     "@nuxt/eslint": "^1.4.1",
-    "@svrbc/eslint-config": "^1.2.7",
     "concurrently": "^9.1.2",
     "eslint": "^9.28.0",
     "prettier": "^3.5.3",
