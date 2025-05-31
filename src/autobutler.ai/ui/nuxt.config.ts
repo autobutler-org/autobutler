@@ -52,7 +52,7 @@ export default defineNuxtConfig({
       },
       // Enable comprehensive table of contents
       toc: {
-        depth: 6,
+        depth: 5,
         searchDepth: 6,
       },
       // Generate IDs for all headings
