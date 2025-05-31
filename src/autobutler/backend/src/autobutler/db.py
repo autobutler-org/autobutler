@@ -74,7 +74,7 @@ class Database:
             raise ValueError(
                 "Database not opened yet. Either use a 'with' statement or `self.open()`"
             )
-        results = None
+        results = []
         try:
             self.cursor = self.conn.cursor()
             self.cursor.execute(query)
