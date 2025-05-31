@@ -22,3 +22,10 @@ dependencies = { file = "requirements.txt" }
 [project.scripts]
 butlerctl = "autobutler.cli:main"
 butlerapi = "autobutler.api:main"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]

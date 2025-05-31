@@ -9,6 +9,8 @@ JS_DIRS := $(shell find . -not -path "*/node_modules/*" -not -path "*/.*" -type 
 JS_EXEC ?= bun
 JS_INSTALL ?= install
 
+UNAME_S := $(shell uname -s)
+
 .PHONY: $(MAKECMDGOALS)
 
 fix: fix/js fix/md fix/yaml ## [all] Fix format and lint errors
@@ -124,13 +126,24 @@ lint/yaml/format:
 	done
 	@echo "[lint/format/yaml] end"
 
-setup: setup/js
+setup: setup/js setup/db
 
 setup/js : ## [js] Setup JS
 	@if command -v bun &> /dev/null; then \
 		exit 0; \
 	fi
 	curl -fsSL https://bun.sh/install | bash
+
+setup/db: ## [db] Setup DB
+ifeq ($(UNAME_S),Linux)
+	@if ! command -v sqlite3 &> /dev/null; then \
+		sudo apt-get install -y sqlite3; \
+	fi
+else ifeq ($(UNAME_S),Darwin)
+	@if ! command -v sqlite3 &> /dev/null; then \
+		brew install sqlite; \
+	fi
+endif
 
 .PHONY: help
 help: ## Displays help info
