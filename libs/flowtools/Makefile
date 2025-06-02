@@ -12,6 +12,9 @@ venv/bin/pip: check/python-version
 venv/lib/python$(MIN_PYTHON_VERSION)/site-packages: venv/bin/pip
 	venv/bin/pip install -e .
 
+.PHONY: venv
+venv: venv/lib/python$(MIN_PYTHON_VERSION)/site-packages ## Create the virtual environment and install dependencies
+
 PYTEST_ARGS ?= -vv --tb=short
 
 .PHONY: test

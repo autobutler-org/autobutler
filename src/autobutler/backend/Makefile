@@ -14,6 +14,9 @@ venv/lib/python$(MIN_PYTHON_VERSION)/site-packages: venv/bin/pip
 	venv/bin/pip install -e ../../../libs/flowtools
 	venv/bin/pip install -e .
 
+.PHONY: venv
+venv: venv/lib/python$(MIN_PYTHON_VERSION)/site-packages ## Create the virtual environment and install dependencies
+
 export LLM_MAX_TOKENS ?= 1024
 
 .PHONY: run
