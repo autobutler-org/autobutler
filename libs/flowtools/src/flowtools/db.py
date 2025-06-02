@@ -5,7 +5,7 @@ __all__ = [
 import dbm.sqlite3 as dbm
 import sqlite3
 
-from autobutler.types import SupportsStr
+from flowtools.types import SupportsStr
 
 
 class Database:
