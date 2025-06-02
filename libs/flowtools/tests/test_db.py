@@ -9,7 +9,7 @@ def db():
     """
     Fixture to create a Database instance for testing.
     """
-    db_instance = Database("test.db")
+    db_instance = Database("test")
     db_instance.open()
 
     db_instance.query(
