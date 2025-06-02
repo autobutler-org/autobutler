@@ -31,7 +31,7 @@ jobs:
       - name: Install autobutler backend
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          make venv/bin/butlerapi
+          make venv
       - name: Test
         working-directory: ${{ env.WORKING_DIR }}
         run: |

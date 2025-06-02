@@ -6,12 +6,12 @@ build-backend = "setuptools.build_meta"
 package-dir = { "" = "src" }
 
 [project]
-name = "autobutler-demo"
+name = "flowtools"
 version = "0.1.0"
-description = "A description of your project"
+description = "Simple shared tools for Python applications."
 readme = "README.md"
-license-files = ["LICENSE"]
 requires-python = "~=3.13.0"
+license-files = ["LICENSE"]
 authors = [
     { name = "James Orson", email = "jamesaorson@gmail.com" },
     { name = "Brandon Apol", email = "brandonapol@pm.me"},
@@ -22,6 +22,9 @@ dynamic = ["dependencies"]
 # Configure setuptools to load dependencies from requirements.txt at build time.
 dependencies = { file = "requirements.txt" }
 
-[project.scripts]
-butlerctl = "autobutler.cli:main"
-butlerapi = "autobutler.api:main"
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]

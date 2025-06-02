@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from autobutler.db import Database
+from flowtools.db import Database
 
 
 @pytest.fixture
