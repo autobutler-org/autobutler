@@ -44,13 +44,19 @@
 
       <div class="docs-layout">
         <div class="left-content-container">
-          <aside class="sidebar" :class="{ 'sidebar-open': sidebarOpen }" aria-label="Documentation sidebar">
+          <aside
+            class="sidebar"
+            :class="{ 'sidebar-open': sidebarOpen }"
+            aria-label="Documentation sidebar"
+          >
             <nav aria-label="Documentation navigation">
               <ul>
                 <li v-for="doc in sortedDocs" :key="doc._path">
                   <NuxtLink
                     :to="doc._path || '/docs'"
-                    :class="{ 'sidebar-active': isCurrentPath(doc._path || '/docs') }"
+                    :class="{
+                      'sidebar-active': isCurrentPath(doc._path || '/docs'),
+                    }"
                     @click="closeSidebar"
                   >
                     {{ doc.navigation?.title || doc.title }}
@@ -211,13 +217,13 @@
 <script setup lang="ts">
 // Import the ButlerFooter component
 import ButlerFooter from "~/components/ButlerFooter.vue";
-import type { ParsedContent } from '@nuxt/content'
-import { 
-  createNavigationHelpers, 
-  scrollHelpers, 
-  pathHelpers, 
-  setupDesktopScrolling 
-} from '~/utils/docs/docsHelpers'
+import type { ParsedContent } from "@nuxt/content";
+import {
+  createNavigationHelpers,
+  scrollHelpers,
+  pathHelpers,
+  setupDesktopScrolling,
+} from "~/utils/docs/docsHelpers";
 
 // Reactive state
 const sidebarOpen = ref(false);
@@ -236,52 +242,49 @@ const isIndexPage = computed(
 );
 
 // Use proper Nuxt data fetching without top-level awaits
-const { data: allDocs } = await useAsyncData('all-docs', () => queryContent("docs").find());
+const { data: allDocs } = await useAsyncData("all-docs", () =>
+  queryContent("docs").find(),
+);
 
 // Get current document based on route
-const { data: currentData, error, pending } = await useAsyncData(
-  `doc-${route.path || '/docs'}`,
-  async () => {
-    if (isIndexPage.value) {
-      // For index page, try to get welcome content
-      try {
-        return await queryContent("docs/welcome").findOne();
-      } catch (err) {
-        return err;
-      }
-    } else {
-      // For other pages, get content based on slug
-      const currentPath = (route.path || "/docs").replace("/docs/", "docs/");
-      try {
-        return await queryContent(currentPath).findOne();
-      } catch (err) {
-        throw err;
-      }
+const {
+  data: currentData,
+  error,
+  pending,
+} = await useAsyncData(`doc-${route.path || "/docs"}`, async () => {
+  if (isIndexPage.value) {
+    // For index page, try to get welcome content
+    try {
+      return await queryContent("docs/welcome").findOne();
+    } catch (err) {
+      return err;
     }
+  } else {
+    // For other pages, get content based on slug
+    const currentPath = (route.path || "/docs").replace("/docs/", "docs/");
+    return await queryContent(currentPath).findOne();
   }
-);
+});
 
 // Use the data from composables - ParsedContent is auto-imported by Nuxt Content
 const data = currentData as Ref<ParsedContent | null>;
 
 // Computed properties
-const sortedDocs = computed(
-  () =>
-    ((allDocs.value || []) as ParsedContent[])
-      .slice()
-      .sort(
-        (a, b) => (a.navigation?.order || 999) - (b.navigation?.order || 999),
-      ),
+const sortedDocs = computed(() =>
+  ((allDocs.value || []) as ParsedContent[])
+    .slice()
+    .sort(
+      (a, b) => (a.navigation?.order || 999) - (b.navigation?.order || 999),
+    ),
 );
 
 // Create navigation helpers
-const { toggleSidebar, closeSidebar, togglePageNav, closePageNav } = createNavigationHelpers(
-  sidebarOpen,
-  pageNavOpen
-);
+const { toggleSidebar, closeSidebar, togglePageNav, closePageNav } =
+  createNavigationHelpers(sidebarOpen, pageNavOpen);
 
 // Path helper
-const isCurrentPath = (path: string) => pathHelpers.isCurrentPath(path, route.path);
+const isCurrentPath = (path: string) =>
+  pathHelpers.isCurrentPath(path, route.path);
 
 // Scroll functions
 const { scrollToTop } = scrollHelpers;

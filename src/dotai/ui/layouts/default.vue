@@ -9,8 +9,8 @@
 </template>
 
 <script setup lang="ts">
-import ButlerFooter from "../components/ButlerFooter.vue";
-import ButlerHeader from "../components/ButlerHeader.vue";
+import ButlerFooter from "~/components/ButlerFooter.vue";
+import ButlerHeader from "~/components/ButlerHeader.vue";
 
 // Get current route to conditionally show footer
 const route = useRoute();

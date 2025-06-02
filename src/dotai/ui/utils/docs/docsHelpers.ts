@@ -1,9 +1,9 @@
-import type { Ref } from 'vue'
+import type { Ref } from "vue";
 
 // Navigation helper functions
 export const createNavigationHelpers = (
   sidebarOpen: Ref<boolean>,
-  pageNavOpen: Ref<boolean>
+  pageNavOpen: Ref<boolean>,
 ) => ({
   toggleSidebar: () => {
     sidebarOpen.value = !sidebarOpen.value;
@@ -46,7 +46,10 @@ export const desktopScrollHandlers = {
     return new Promise((resolve) => {
       const checkContent = () => {
         const contentArea = document.querySelector(".content");
-        if (!contentArea || contentArea.scrollHeight <= contentArea.clientHeight) {
+        if (
+          !contentArea ||
+          contentArea.scrollHeight <= contentArea.clientHeight
+        ) {
           setTimeout(checkContent, 100);
           return;
         }
@@ -160,7 +163,9 @@ export const setupDesktopScrolling = async () => {
   await desktopScrollHandlers.ensureContentReady();
 
   // Add event listeners
-  window.addEventListener("wheel", desktopScrollHandlers.handleWheel, { passive: false });
+  window.addEventListener("wheel", desktopScrollHandlers.handleWheel, {
+    passive: false,
+  });
   window.addEventListener("keydown", desktopScrollHandlers.handleKeydown);
   document.addEventListener("click", desktopScrollHandlers.handleAnchorClick);
 
@@ -170,6 +175,9 @@ export const setupDesktopScrolling = async () => {
     document.documentElement.style.overflow = "";
     window.removeEventListener("wheel", desktopScrollHandlers.handleWheel);
     window.removeEventListener("keydown", desktopScrollHandlers.handleKeydown);
-    document.removeEventListener("click", desktopScrollHandlers.handleAnchorClick);
+    document.removeEventListener(
+      "click",
+      desktopScrollHandlers.handleAnchorClick,
+    );
   };
-}; 
+};
