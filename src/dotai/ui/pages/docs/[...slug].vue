@@ -249,13 +249,17 @@ const isIndexPage = computed(
 );
 
 // Use proper Nuxt data fetching without top-level awaits
-const { data: allDocs } = await useAsyncData('all-docs', () => queryContent("docs").find());
+const { data: allDocs } = await useAsyncData("all-docs", () =>
+  queryContent("docs").find(),
+);
 
 // Get current document based on route
-const { data: currentData, error, pending } = await useAsyncData(
-  `doc-${route.path || '/docs'}`,
-  async () => {
-    if (isIndexPage.value) {
+const {
+  data: currentData,
+  error,
+  pending,
+} = await useAsyncData(`doc-${route.path || "/docs"}`, async () => {
+  if (isIndexPage.value) {
     // For index page, try to get welcome content
     try {
       return await queryContent("docs/welcome").findOne();
@@ -280,6 +284,10 @@ const { data: currentData, error, pending } = await useAsyncData(
         code: "CONTENT_NOT_FOUND",
       };
     }
+  } else {
+    // For other pages, get content based on slug
+    const currentPath = (route.path || "/docs").replace("/docs/", "docs/");
+    return await queryContent(currentPath).findOne();
   }
 });
 
@@ -287,23 +295,21 @@ const { data: currentData, error, pending } = await useAsyncData(
 const data = currentData as Ref<ParsedContent | null>;
 
 // Computed properties
-const sortedDocs = computed(
-  () =>
-    ((allDocs.value || []) as ParsedContent[])
-      .slice()
-      .sort(
-        (a, b) => (a.navigation?.order || 999) - (b.navigation?.order || 999),
-      ),
+const sortedDocs = computed(() =>
+  ((allDocs.value || []) as ParsedContent[])
+    .slice()
+    .sort(
+      (a, b) => (a.navigation?.order || 999) - (b.navigation?.order || 999),
+    ),
 );
 
 // Create navigation helpers
-const { toggleSidebar, closeSidebar, togglePageNav, closePageNav } = createNavigationHelpers(
-  sidebarOpen,
-  pageNavOpen
-);
+const { toggleSidebar, closeSidebar, togglePageNav, closePageNav } =
+  createNavigationHelpers(sidebarOpen, pageNavOpen);
 
 // Path helper
-const isCurrentPath = (path: string) => pathHelpers.isCurrentPath(path, route.path);
+const isCurrentPath = (path: string) =>
+  pathHelpers.isCurrentPath(path, route.path);
 
 // Scroll functions
 const { scrollToTop } = scrollHelpers;
