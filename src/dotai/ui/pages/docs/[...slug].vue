@@ -19,7 +19,7 @@
 
         <!-- On this page dropdown button -->
         <button
-          v-if="data?.body?.toc?.links?.length"
+          v-if="data && !data._error && data.body?.toc?.links?.length"
           class="page-nav-toggle"
           aria-label="Toggle page navigation"
           @click="togglePageNav"
@@ -82,12 +82,12 @@
               </div>
 
               <!-- Document content -->
-              <div v-else-if="data" class="document-content">
+              <div v-else-if="data && !data._error" class="document-content">
                 <ContentRenderer :value="data" />
               </div>
 
               <!-- Index page fallback with docs grid -->
-              <div v-else-if="isIndexPage" class="error-content">
+              <div v-else-if="isIndexPage && (!data || data._error)" class="error-content">
                 <h1>Welcome to AutoButler Documentation</h1>
                 <p>
                   Complete documentation for AutoButler automation platform.
@@ -106,9 +106,10 @@
               </div>
 
               <!-- Error state for other pages -->
-              <div v-else-if="error" class="error-content">
+              <div v-else-if="error || (data && data._error)" class="error-content">
                 <h1>Content Not Found</h1>
                 <p>The requested documentation page could not be found.</p>
+                <p v-if="data && data._error">{{ data.message }}</p>
                 <p>Available pages:</p>
                 <ul>
                   <li v-for="doc in sortedDocs" :key="doc._path">
@@ -131,7 +132,7 @@
 
         <!-- Right-side page navigation drawer -->
         <aside
-          v-if="data?.body?.toc?.links?.length"
+          v-if="data && !data._error && data.body?.toc?.links?.length"
           class="page-nav-drawer"
           :class="{ 'page-nav-drawer-open': pageNavOpen }"
           aria-label="Page table of contents"
@@ -163,7 +164,7 @@
 
         <!-- Desktop page navigation -->
         <aside
-          v-if="data?.body?.toc?.links?.length"
+          v-if="data && !data._error && data.body?.toc?.links?.length"
           class="page-nav desktop-only"
           aria-label="Page table of contents"
         >
@@ -257,12 +258,26 @@ const {
     try {
       return await queryContent("docs/welcome").findOne();
     } catch (err) {
-      return err;
+      // Return a serializable error object instead of the raw Error
+      return {
+        _error: true,
+        message: err instanceof Error ? err.message : String(err),
+        code: 'CONTENT_NOT_FOUND'
+      };
     }
   } else {
     // For other pages, get content based on slug
     const currentPath = (route.path || "/docs").replace("/docs/", "docs/");
-    return await queryContent(currentPath).findOne();
+    try {
+      return await queryContent(currentPath).findOne();
+    } catch (err) {
+      // Return a serializable error object instead of the raw Error
+      return {
+        _error: true,
+        message: err instanceof Error ? err.message : String(err),
+        code: 'CONTENT_NOT_FOUND'
+      };
+    }
   }
 });
 
