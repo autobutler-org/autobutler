@@ -51,11 +51,11 @@
           >
             <nav aria-label="Documentation navigation">
               <ul>
-                <li v-for="doc in sortedDocs" :key="doc._path">
+                <li v-for="doc in sortedDocs" :key="doc.path">
                   <NuxtLink
-                    :to="doc._path || '/docs'"
+                    :to="doc.path || '/docs'"
                     :class="{
-                      'sidebar-active': isCurrentPath(doc._path || '/docs'),
+                      'sidebar-active': isCurrentPath(doc.path || '/docs'),
                     }"
                     @click="closeSidebar"
                   >
@@ -249,9 +249,10 @@ const isIndexPage = computed(
 );
 
 // Use proper Nuxt data fetching without top-level awaits
-const { data: allDocs } = await useAsyncData("all-docs", () =>
-  queryContent("docs").find(),
+const { data: allDocs } = await useAsyncData(route.path, () =>
+  queryCollection("content").all(),
 );
+console.log("All docs data:", allDocs.value);
 
 // Get current document based on route
 const {
@@ -262,7 +263,9 @@ const {
   if (isIndexPage.value) {
     // For index page, try to get welcome content
     try {
-      return await queryContent("docs/welcome").findOne();
+      const doc =  await queryCollection("content").path("/docs/welcome").first();
+      console.log("Index page content:", doc);
+      return doc;
     } catch (err) {
       // Return a serializable error object instead of the raw Error
       return {
@@ -273,9 +276,8 @@ const {
     }
   } else {
     // For other pages, get content based on slug
-    const currentPath = (route.path || "/docs").replace("/docs/", "docs/");
     try {
-      return await queryContent(currentPath).findOne();
+      return await queryCollection("content").path(route.path).first();
     } catch (err) {
       // Return a serializable error object instead of the raw Error
       return {
