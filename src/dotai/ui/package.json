@@ -1,13 +1,17 @@
 {
   "name": "autobutler-ai-ui",
   "type": "module",
+  "version": "1.0.0",
   "engines": {
     "node": ">=22.8.0"
   },
   "scripts": {
+    "prebuild": "node scripts/generate-build-info.js",
     "build": "nuxt build",
+    "pregenerate": "node scripts/generate-build-info.js",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
+    "generate-build-info": "node scripts/generate-build-info.js",
     "lint:eslint": "eslint",
     "lint:types": "nuxt typecheck",
     "lint:prettier": "prettier --check .",

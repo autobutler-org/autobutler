@@ -9,9 +9,12 @@
   >
     <div class="gradient-overlay" />
     <div class="footer-content">
-      <p class="copyright">
-        © {{ currentYear }} AutoButler. All rights reserved.
-      </p>
+      <div class="footer-info">
+        <p class="copyright">
+          © {{ currentYear }} AutoButler. All rights reserved.
+        </p>
+        <p class="version">{{ displayVersion }}</p>
+      </div>
       <div class="footer-links">
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms</a>
@@ -23,6 +26,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted, nextTick } from "vue";
+import { useVersion } from "~/composables/useVersion";
 
 // Props to control visibility
 interface Props {
@@ -37,6 +41,7 @@ const props = withDefaults(defineProps<Props>(), {
   compact: false,
 });
 
+const { displayVersion } = useVersion();
 const currentYear = computed(() => new Date().getFullYear());
 const isVisible = ref(!props.showOnBottom);
 
@@ -175,8 +180,19 @@ onUnmounted(() => {
   gap: 1rem;
 }
 
+.footer-compact .footer-info {
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+}
+
 .footer-compact .copyright {
   font-size: 0.8rem;
+  margin: 0;
+}
+
+.footer-compact .version {
+  font-size: 0.7rem;
   margin: 0;
 }
 
@@ -213,6 +229,12 @@ onUnmounted(() => {
   align-items: center;
 }
 
+.footer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .copyright {
   margin: 0;
   font-size: 0.9rem;
@@ -242,10 +264,22 @@ onUnmounted(() => {
   );
 }
 
+.version {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 300;
+}
+
 @media (max-width: 768px) {
   .footer-content {
     flex-direction: column;
     gap: 1rem;
+    text-align: center;
+  }
+
+  .footer-info {
+    align-items: center;
     text-align: center;
   }
 
