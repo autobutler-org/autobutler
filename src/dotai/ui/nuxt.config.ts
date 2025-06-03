@@ -7,9 +7,6 @@ export default defineNuxtConfig({
   nitro: {
     static: true,
   },
-  compilerOptions: {
-    moduleResolution: "Node",
-  },
   app: {
     head: {
       link: [
