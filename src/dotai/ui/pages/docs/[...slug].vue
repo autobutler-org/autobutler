@@ -252,7 +252,6 @@ const isIndexPage = computed(
 const { data: allDocs } = await useAsyncData(route.path, () =>
   queryCollection("content").all(),
 );
-console.log("All docs data:", allDocs.value);
 
 // Get current document based on route
 const {
@@ -263,9 +262,7 @@ const {
   if (isIndexPage.value) {
     // For index page, try to get welcome content
     try {
-      const doc =  await queryCollection("content").path("/docs/welcome").first();
-      console.log("Index page content:", doc);
-      return doc;
+      return await queryCollection("content").path("/docs/welcome").first();
     } catch (err) {
       // Return a serializable error object instead of the raw Error
       return {
