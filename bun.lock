@@ -26,6 +26,7 @@
     },
     "src/dotai/ui": {
       "name": "autobutler-ai-ui",
+      "version": "1.0.0",
       "dependencies": {
         "@nuxt/content": "^3.5.1",
         "markdownlint-cli2": "^0.18.1",

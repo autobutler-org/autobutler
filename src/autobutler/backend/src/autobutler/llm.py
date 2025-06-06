@@ -4,7 +4,7 @@ from pprint import pprint
 import autobutler.config as config
 import torch
 from pydantic import BaseModel, Field
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import pipeline
 
 
 class ChatRequest(BaseModel):
@@ -17,57 +17,38 @@ class LLM:
         Initialize the model and tokenizer.
         This function is called when the module is imported.
         """
-        print("Initializing TinyLlama model...")
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+        print(f"[DEBUG] Initializing {config.LLM.MODEL}...")
+        self.model = pipeline(
+            task="text-generation",
+            model=config.LLM.MODEL,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
         )
-        print("Loading TinyLlama model...")
-        self.model = AutoModelForCausalLM.from_pretrained(
-            "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
-        )
-        if torch.cuda.is_available():
-            print("GPU is available. Using GPU for inference.")
-            self.device = torch.device("cuda")
-        elif torch.backends.mps.is_available():
-            print("Metal Performance Shaders is available. Using MPS for inference.")
-            self.device = torch.device("mps")
-        else:
-            print("GPU not available. Using CPU for inference.")
-            self.device = torch.device("cpu")
-        self.model = self.model.to(self.device)
-        print("LLM loaded with the following config: ")
-        pprint(config.LLM)
+        print("[DEBUG] LLM loaded with the following config:", repr(config.LLM))
+        self.prompt = config.LLM.PROMPT
 
     def chat(self, request: ChatRequest) -> str:
         try:
-            print("Preparing input...")
-            prompt = config.LLM.PROMPT.format(
-                **{
-                    "context": "Be cordial, succinct, and helpful. Do not dump huge walls of text.",
-                    "prompt": request.prompt.strip(),
+            messages = config.LLM.PROMPT + [
+                {
+                    "role": "user",
+                    "content": request.prompt,
                 }
+            ]
+            print("[DEBUG] Applying chat template...")
+            prompt = self.model.tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
             )
-            print("Tokenizing input...")
-            inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
-
-            # Generate response
-            print("Generating response...")
-            outputs = self.model.generate(
-                **inputs,
+            print("[DEBUG] Generating response...")
+            outputs = self.model(
+                prompt,
                 max_new_tokens=config.LLM.MAX_TOKENS,
                 do_sample=True,
-                top_p=config.LLM.TOP_P,
-                top_k=config.LLM.TOP_K,
                 temperature=config.LLM.TEMPERATURE,
-                num_beams=config.LLM.NUM_BEAMS,
-                pad_token_id=self.tokenizer.eos_token_id,
+                top_k=config.LLM.TOP_K,
+                top_p=config.LLM.TOP_P,
             )
-
-            print("Decoding response...")
-            response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-
-            # Remove the prompt from the response
-            response = response[len(prompt) :].strip()
+            response = outputs[0]["generated_text"].split("<|assistant|>")[-1].strip()
             return response
         except Exception as e:
             print(e, file=sys.stderr)
