@@ -11,8 +11,9 @@ venv/bin/pip: check/python-version
 	python3 -m venv venv
 
 venv/lib/python$(MIN_PYTHON_VERSION)/site-packages: venv/bin/pip
-	venv/bin/pip install -e ../../../libs/flowtools
-	venv/bin/pip install -e .
+	. ./venv/bin/activate
+	pip install -e ../../../libs/flowtools
+	pip install -e .
 
 .PHONY: venv
 venv: venv/lib/python$(MIN_PYTHON_VERSION)/site-packages ## Create the virtual environment and install dependencies
