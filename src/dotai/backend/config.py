@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass
 
+
 @dataclass
 class DOTAIConfig:
     HOST: str = os.getenv("DOTAI_HOST", "localhost")
@@ -9,5 +10,6 @@ class DOTAIConfig:
     @property
     def endpoint(self) -> str:
         return f"http://{self.HOST}:{self.PORT}"
-    
+
+
 DOTAI = DOTAIConfig()

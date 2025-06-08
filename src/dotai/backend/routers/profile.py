@@ -10,7 +10,7 @@ router = APIRouter(prefix="/profile", tags=["Profile"])
 
 class ProfileUpdate(BaseModel):
     name: Optional[str] = None
-    phone: Optional[str] = None 
+    phone: Optional[str] = None
     company: Optional[str] = None
 
 
@@ -20,7 +20,7 @@ class ProfileResponse(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None
     company: Optional[str] = None
-    
+
     class Config:
         from_attributes = True
 
@@ -34,8 +34,8 @@ async def get_profile():
         id="user_123",
         email="john.doe@example.com",
         name="John Doe",
-        phone="+1234567890", 
-        company="ACME Inc"
+        phone="+1234567890",
+        company="ACME Inc",
     )
     return ProfileResponse.from_orm(mock_profile)
 
@@ -45,10 +45,9 @@ async def update_profile(profile_update: ProfileUpdate):
     """Update customer profile"""
     if not any([profile_update.name, profile_update.phone, profile_update.company]):
         raise HTTPException(
-            status_code=400,
-            detail="At least one field must be provided for update"
+            status_code=400, detail="At least one field must be provided for update"
         )
-    
+
     # TODO: Implement profile update in database
     # For now, return updated mock profile
     updated_profile = Profile(
@@ -56,6 +55,6 @@ async def update_profile(profile_update: ProfileUpdate):
         email="john.doe@example.com",
         name=profile_update.name or "John Doe",
         phone=profile_update.phone or "+1234567890",
-        company=profile_update.company or "ACME Inc"
+        company=profile_update.company or "ACME Inc",
     )
     return ProfileResponse.from_orm(updated_profile)
