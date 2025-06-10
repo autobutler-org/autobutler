@@ -29,7 +29,6 @@ class ProfileResponse(BaseModel):
 async def get_profile():
     """Get customer profile"""
     # TODO: Implement profile retrieval from database
-    # For now, return a mock profile
     mock_profile = Profile(
         id="user_123",
         email="john.doe@example.com",
@@ -49,7 +48,6 @@ async def update_profile(profile_update: ProfileUpdate):
         )
 
     # TODO: Implement profile update in database
-    # For now, return updated mock profile
     updated_profile = Profile(
         id="user_123",
         email="john.doe@example.com",

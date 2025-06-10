@@ -2,6 +2,8 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from dotai.backend.config import DOTAI
+
 origins = [
     "http://localhost",
     "http://localhost:3000",
@@ -28,4 +30,8 @@ async def health_check():
 def main():
     print("Starting DotAI API...")
     print("DotAI API started.")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=DOTAI.HOST, port=DOTAI.PORT)
+
+
+if __name__ == "__main__":
+    main()

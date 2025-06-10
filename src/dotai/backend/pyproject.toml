@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools==78.1.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[project]
+name = "dotai"
+version = "0.1.0"
+description = "DotAI API"
+readme = "README.md"
+requires-python = "~=3.13.0"
+license-files = ["LICENSE"]
+authors = [
+    { name = "James Orson", email = "jamesaorson@gmail.com" },
+    { name = "Brandon Apol", email = "brandonapol@pm.me"},
+]
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+# Configure setuptools to load dependencies from requirements.txt at build time.
+dependencies = { file = "requirements.txt" }
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+
+[project.scripts]
+dotai = "main:main"

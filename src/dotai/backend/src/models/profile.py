@@ -9,6 +9,7 @@ Base = declarative_base()
 
 
 class Profile(Base):
+    # relates to a specific table in the database
     __tablename__ = "profiles"
 
     id = Column(String, primary_key=True)
