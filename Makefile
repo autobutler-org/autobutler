@@ -145,25 +145,31 @@ else ifeq ($(UNAME_S),Darwin)
 	fi
 endif
 
-llm: env-AZURE_API_KEY env-SYSTEM_PROMPT ## Call LLM
-	@curl -X POST "https://autobutler-eus2.services.ai.azure.com/models/chat/completions?api-version=2024-05-01-preview" \
+export LLM_URL ?= https://autobutler-eus2.services.ai.azure.com/models/chat/completions
+LLM_ARGS := api-version=2024-05-01-preview
+LLM_MODEL := autobutler_Ministral-3B
+export LLM_TOP_P ?= 0.1
+export LLM_TEMP ?= 0.8
+export LLM_MAX_TOKENS ?= 2048
+llm: env-LLM_AZURE_API_KEY env-LLM_SYSTEM_PROMPT env-LLM_URL env-LLM_TOP_P env-LLM_TEMP env-LLM_MAX_TOKENS ## Call LLM
+	@curl -X POST "$(LLM_URL)?$(LLM_ARGS)" \
 	    -H "Content-Type: application/json" \
-	    -H "Authorization: Bearer $(AZURE_API_KEY)" \
+	    -H "Authorization: Bearer $(LLM_AZURE_API_KEY)" \
 	    -d '{
 	            "messages": [
 	                {
 	                    "role": "system",
-	                    "content": "$(SYSTEM_PROMPT)"
+	                    "content": "$(LLM_SYSTEM_PROMPT)"
 	                },
 	                {
 	                    "role": "user",
 	                    "content": "I am going to Paris, what should I see?"
 	                }
 	            ],
-	            "max_tokens": 2048,
-	            "temperature": 0.8,
-	            "top_p": 0.1,
-	            "model": "autobutler_Ministral-3B"
+	            "max_tokens": $(LLM_MAX_TOKENS),
+	            "temperature": $(LLM_TEMP),
+	            "top_p": $(LLM_TOP_P),
+	            "model": "$(LLM_MODEL)"
 	    }'
 
 .PHONY: help
