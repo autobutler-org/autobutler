@@ -145,6 +145,42 @@ else ifeq ($(UNAME_S),Darwin)
 	fi
 endif
 
+export LLM_URL ?= https://autobutler-eus2.services.ai.azure.com/models/chat/completions
+export LLM_SYSTEM_PROMPT_FILE ?= system.prompt
+LLM_ARGS := api-version=2024-05-01-preview
+LLM_MODEL := autobutler_Ministral-3B
+export LLM_TOP_P ?= 0.1
+export LLM_TEMP ?= 0.8
+export LLM_MAX_TOKENS ?= 2048
+llm: env-LLM_AZURE_API_KEY env-LLM_SYSTEM_PROMPT_FILE env-LLM_PROMPT env-LLM_URL env-LLM_TOP_P env-LLM_TEMP env-LLM_MAX_TOKENS ## Call LLM
+	@curl --silent -X POST "$(LLM_URL)?$(LLM_ARGS)" \
+	    -H "Content-Type: application/json" \
+	    -H "Authorization: Bearer $(LLM_AZURE_API_KEY)" \
+	    -d "{ \
+	            \"messages\": [ \
+	                { \
+	                    \"role\": \"system\", \
+	                    \"content\": \"$(shell cat $(LLM_SYSTEM_PROMPT_FILE))\" \
+	                }, \
+	                { \
+	                    \"role\": \"user\", \
+	                    \"content\": \"$(LLM_PROMPT)\" \
+	                } \
+	            ], \
+	            \"max_tokens\": $(LLM_MAX_TOKENS), \
+	            \"temperature\": $(LLM_TEMP), \
+	            \"top_p\": $(LLM_TOP_P), \
+	            \"model\": \"$(LLM_MODEL)\" \
+	    }"
+chat: env-LLM_AZURE_API_KEY env-LLM_SYSTEM_PROMPT_FILE env-LLM_PROMPT env-LLM_URL env-LLM_TOP_P env-LLM_TEMP env-LLM_MAX_TOKENS ## Parse the chat response from LLM
+	@$(MAKE) llm | jq -rc '.choices | .[0].message.content'
+
+env-%: ## Check for env var
+	@if [ -z "$($*)" ]; then \
+		echo "Error: Environment variable '$*' is not set."; \
+		exit 1; \
+	fi
+
 .PHONY: help
 help: ## Displays help info
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
