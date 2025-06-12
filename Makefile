@@ -151,7 +151,7 @@ LLM_MODEL := autobutler_Ministral-3B
 export LLM_TOP_P ?= 0.1
 export LLM_TEMP ?= 0.8
 export LLM_MAX_TOKENS ?= 2048
-llm: env-LLM_AZURE_API_KEY env-LLM_SYSTEM_PROMPT env-LLM_URL env-LLM_TOP_P env-LLM_TEMP env-LLM_MAX_TOKENS ## Call LLM
+llm: env-LLM_AZURE_API_KEY env-LLM_SYSTEM_PROMPT env-LLM_PROMPT env-LLM_URL env-LLM_TOP_P env-LLM_TEMP env-LLM_MAX_TOKENS ## Call LLM
 	@curl -X POST "$(LLM_URL)?$(LLM_ARGS)" \
 	    -H "Content-Type: application/json" \
 	    -H "Authorization: Bearer $(LLM_AZURE_API_KEY)" \
@@ -163,7 +163,7 @@ llm: env-LLM_AZURE_API_KEY env-LLM_SYSTEM_PROMPT env-LLM_URL env-LLM_TOP_P env-L
 	                },
 	                {
 	                    "role": "user",
-	                    "content": "I am going to Paris, what should I see?"
+	                    "content": "$(LLM_PROMPT)"
 	                }
 	            ],
 	            "max_tokens": $(LLM_MAX_TOKENS),
