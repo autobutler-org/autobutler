@@ -2,7 +2,8 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from dotai.backend.config import DOTAI
+from config import DOTAI
+from routers import profile
 
 origins = [
     "http://localhost",
@@ -17,6 +18,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(profile.router)
 
 
 @app.post("/api/v1/health")
