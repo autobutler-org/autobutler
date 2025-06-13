@@ -9,7 +9,7 @@ on:
         description: Image tag to run
         type: string
 jobs:
-  deploy:
+  dotai-cd:
     name: autobutler.ai - Trigger Deploy
     runs-on: ubuntu-latest
     steps:

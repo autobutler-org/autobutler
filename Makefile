@@ -18,10 +18,13 @@ UNAME_S := $(shell uname -s)
 
 fix: fix/js fix/md fix/yaml ## [all] Fix format and lint errors
 
-format: fix/js/format fix/md/format fix/python/format fix/yaml/format ## [all] Format
+format: format/go format/js format/md format/python format/yaml ## [all] Format
 
-fix/js: fix/js/format fix/js/eslint ## [js] Fix
-fix/js/format:
+format/go: ## [golang] Format
+	go fmt ./...
+
+fix/js: format/js fix/js/eslint ## [js] Fix
+format/js:
 	echo "[fix/format/js] begin"
 	if ! [[ -d ./node_modules ]]; then \
 		$(JS_EXEC) $(JS_INSTALL); \
@@ -41,9 +44,9 @@ fix/js/eslint:
 	done
 	echo "[fix/js/eslint] end"
 
-fix/md: fix/md/format ## [md] Fix
+fix/md: format/md ## [md] Fix
 
-fix/md/format:
+format/md:
 	echo "[fix/format/md] begin"
 	if ! [[ -d ./node_modules ]]; then \
 		$(JS_EXEC) $(JS_INSTALL); \
@@ -51,8 +54,8 @@ fix/md/format:
 	$(JS_EXEC) run fix:md
 	echo "[fix/format/md] end"
 
-fix/python: fix/python/format ## [python] Fix
-fix/python/format:
+fix/python: format/python ## [python] Fix
+format/python:
 	SHOULD_INSTALL=0
 	if ! [[ -d ./venv ]]; then \
 		python3 -m venv ./venv; \
@@ -66,20 +69,36 @@ fix/python/format:
 	black .
 	isort --profile black .
 
-fix/yaml: fix/yaml/format ## [yaml] Format
-fix/yaml/format:
+fix/yaml: format/yaml ## [yaml] Format
+format/yaml:
 	echo "[fix/format/yaml] begin"
 	for file in $(YAML_FILES); do \
 		yq -i -P $${file}; \
 	done
 	echo "[fix/format/yaml] end"
 
-lint: lint/md lint/js lint/python lint/yaml ## [all] Lint
+lint: lint/go lint/md lint/js lint/python lint/yaml ## [all] Lint
 lint/md: ## [all] Lint MD
 	if ! [[ -d ./node_modules ]]; then \
 		$(JS_EXEC) $(JS_INSTALL); \
 	fi
 	$(JS_EXEC) run lint:md
+
+lint/go: lint/go/format lint/go/vet ## [all] Lint Golang
+
+lint/go/format:
+	gofmt -s -w .
+
+lint/go/vet:
+	# iterate over al folders with go.mod
+	echo "[lint/vet/go] begin"
+	for dir in $(shell find . -type f -name 'go.mod' -exec dirname {} \;); do \
+		pushd $${dir}; \
+		echo "[lint/vet/go] running go vet in $${dir}"; \
+		go vet ./...; \
+		popd; \
+	done
+	echo "[lint/vet/go] end"
 
 lint/js: lint/js/format lint/js/eslint ## [all] Lint JS
 	if ! [[ -d ./node_modules ]]; then \

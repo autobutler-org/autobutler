@@ -17,7 +17,7 @@ defaults:
   run:
     shell: bash
 jobs:
-  build:
+  dotai-ci:
     runs-on: ubuntu-latest
     container:
       image: exokomodo/exoflow-devcontainer:${{ inputs.image-tag || (github.event_name == 'pull_request' && 'latest') || (github.head_ref || github.ref_name) }}
