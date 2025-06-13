@@ -24,5 +24,4 @@ jobs:
           go-version-file: ${{ env.WORKING_DIR }}/go.mod
       - name: Lint
         working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          make lint
+        run: make lint

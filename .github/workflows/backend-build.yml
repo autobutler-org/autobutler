@@ -28,5 +28,4 @@ jobs:
           go mod download
       - name: Build
         working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          make build
+        run: make build
