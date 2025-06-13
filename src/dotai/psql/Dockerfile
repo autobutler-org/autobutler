@@ -1,4 +1,4 @@
-FROM postgres:16.2
+FROM postgres:17.2
 
 # Set environment variables
 ENV POSTGRES_DB=dotai
