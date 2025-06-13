@@ -8,8 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func StartServer() error {
-	router := gin.Default()
+func (r *gin.Engine) UseMiddleware(router *gin.Engine) *gin.Engine {
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
 	config.AllowMethods = []string{"POST", "GET", "PUT", "OPTIONS"}
@@ -17,14 +16,17 @@ func StartServer() error {
 	config.ExposeHeaders = []string{"Content-Length"}
 	config.AllowCredentials = true
 	config.MaxAge = 12 * time.Hour
-	router.Use(cors.New(config))
+	r.Use(cors.New(config))
+	return r
+}
 
-	router.GET("/health", func(c *gin.Context) {
+func (r *gin.Engine) SetupRoutes() *gin.Engine {
+	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status": "ok",
 		})
 	})
-	router.GET("/chat", func(c *gin.Context) {
+	r.GET("/chat", func(c *gin.Context) {
 		prompt := c.Query("prompt")
 		response, err := llm.RemoteLLMRequest(prompt)
 		if err != nil {
@@ -35,6 +37,12 @@ func StartServer() error {
 		}
 		c.JSON(200, response)
 	})
+	return r
+}
+
+func StartServer() error {
+	router := gin.Default()
+	router.UseMiddleware().SetupRouter()
 	if err := router.Run(":8080"); err != nil {
 		return err
 	}
