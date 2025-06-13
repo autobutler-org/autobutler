@@ -13,6 +13,7 @@ on:
         type: string
 env:
   WORKING_DIR: ${{ github.workspace }}/src/autobutler/backend
+  GOFLAGS: -buildvcs=false
 defaults:
   run:
     shell: bash
@@ -26,8 +27,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Install dependencies
         working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          go mod download
+        run: go mod download
       - name: Build
         working-directory: ${{ env.WORKING_DIR }}
         run: make build

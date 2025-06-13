@@ -7,7 +7,8 @@ SHELL := /bin/bash
 .PHONY: $(MAKECMDGOALS)
 
 build: ## Build backend
-	go build -o ./build
+	mkdir -p ./build
+	go build -o ./build/ab
 
 format: ## Format code
 	go fmt ./...

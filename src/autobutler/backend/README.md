@@ -24,5 +24,5 @@ make serve
 
 ```shell
 make build
-./build/backend chat "How much milk is in my house?"
+./build/ab chat "How much milk is in my house?"
 ```
