@@ -1,6 +1,6 @@
 SHELL := /bin/bash
-.DEFAULT_GOAL := all
 .SHELLFLAGS = -e -c
+.DEFAULT_GOAL := help
 .ONESHELL:
 .SILENT:
 

@@ -2,6 +2,8 @@
 
 ## Usage
 
+Before any of these, set the `LLM_AZURE_API_KEY` environment variable to your Azure OpenAI API key
+
 ### Make an LLM call
 
 To make a call to the LLM, you can use the following command:
@@ -22,5 +24,5 @@ make serve
 
 ```shell
 make build
-go run main.go chat "How much milk is in my house?"
+./build/ab chat "How much milk is in my house?"
 ```

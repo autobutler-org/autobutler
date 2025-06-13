@@ -70,7 +70,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     > /dev/null 2>&1 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-ENV GO_VERSION=1.23.6
+ENV GO_VERSION=1.23.10
 RUN curl --fail -s https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz | tar -C /usr/local -xz
 
 
