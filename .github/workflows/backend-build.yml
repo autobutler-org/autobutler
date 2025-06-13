@@ -13,7 +13,7 @@ defaults:
   run:
     shell: bash
 jobs:
-  backend-lint:
+  backend-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
