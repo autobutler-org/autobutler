@@ -6,9 +6,8 @@ SHELL := /bin/bash
 
 .PHONY: $(MAKECMDGOALS)
 
-build: ## Build backend as `ab`
-	mkdir -p ./build
-	go build -o ./build/ab github.com/exokomodo/exoflow/autobutler/backend
+build: ## Build backend
+	go build -o ./build
 
 format: ## Format code
 	go fmt ./...
