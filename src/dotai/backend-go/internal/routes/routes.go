@@ -5,6 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"dotai-go-backend/internal/routes/profile"
+	"dotai-go-backend/internal/routes/purchases"
+	"dotai-go-backend/internal/database"
+	"context"
 )
 
 func SetupRoutes(router *gin.Engine) {
@@ -15,9 +18,10 @@ func SetupRoutes(router *gin.Engine) {
 	})
 
 	profile.SetupRoutes(router)
+	purchases.SetupRoutes(router)
 }
 
-func StartServer() error {
+func StartServer(ctx context.Context, db *database.DB) error {
 	router := gin.Default()
 	SetupRoutes(router)
 

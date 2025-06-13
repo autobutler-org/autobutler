@@ -22,6 +22,17 @@ func GetProfile(c *gin.Context) {
 	c.JSON(200, defaultProfile)
 }
 
+func UpdateProfile(c *gin.Context) {
+	var updatedProfile Profile
+	if err := c.ShouldBindJSON(&updatedProfile); err != nil {
+		c.JSON(400, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	c.JSON(200, updatedProfile)
+}
+
 func SetupRoutes(router *gin.Engine) {
 	router.GET("/profile", GetProfile)
+	router.PUT("/profile", UpdateProfile)
 }
