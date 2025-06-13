@@ -40,9 +40,9 @@ func SetupRoutes(router *gin.Engine) {
 
 func StartServer() error {
 	router := gin.Default()
-	// IMPORTANT: UseMiddleware MUST be called before SetupRouter
+	// IMPORTANT: UseMiddleware MUST be called before SetupRoutes
 	UseMiddleware(router)
-	SetupRouter(router)
+	SetupRoutes(router)
 	if err := router.Run(":8080"); err != nil {
 		return err
 	}
