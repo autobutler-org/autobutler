@@ -8,8 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func StartServer() error {
-	router := gin.Default()
+func UseMiddleware(router *gin.Engine) {
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
 	config.AllowMethods = []string{"POST", "GET", "PUT", "OPTIONS"}
@@ -18,7 +17,9 @@ func StartServer() error {
 	config.AllowCredentials = true
 	config.MaxAge = 12 * time.Hour
 	router.Use(cors.New(config))
+}
 
+func SetupRoutes(router *gin.Engine) {
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status": "ok",
@@ -35,6 +36,13 @@ func StartServer() error {
 		}
 		c.JSON(200, response)
 	})
+}
+
+func StartServer() error {
+	router := gin.Default()
+	// IMPORTANT: UseMiddleware MUST be called before SetupRoutes
+	UseMiddleware(router)
+	SetupRoutes(router)
 	if err := router.Run(":8080"); err != nil {
 		return err
 	}
