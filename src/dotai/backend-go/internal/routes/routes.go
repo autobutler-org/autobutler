@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"dotai-go-backend/internal/routes/profile"
 )
 
 func SetupRoutes(router *gin.Engine) {
@@ -12,6 +13,8 @@ func SetupRoutes(router *gin.Engine) {
 			"message": "Hello, World!",
 		})
 	})
+
+	profile.SetupRoutes(router)
 }
 
 func StartServer() error {
