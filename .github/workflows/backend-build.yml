@@ -24,6 +24,15 @@ jobs:
       - name: Build
         working-directory: ${{ env.WORKING_DIR }}
         run: make build
-      - name: Build all architectures
+      - name: Build [linux/arm64]
         working-directory: ${{ env.WORKING_DIR }}
-        run: make build/all
+        run: make build/linux/arm64
+      - name: Build [mac/arm64]
+        working-directory: ${{ env.WORKING_DIR }}
+        run: make build/mac/arm64
+      - name: Build [windows/amd64]
+        working-directory: ${{ env.WORKING_DIR }}
+        run: make build/windows/amd64
+      - name: Build [windows/arm64]
+        working-directory: ${{ env.WORKING_DIR }}
+        run: make build/windows/arm64

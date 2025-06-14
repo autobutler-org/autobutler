@@ -19,8 +19,6 @@ build/linux/arm64: ## Build linux backends
 	GOOS=linux GOARCH=arm64 go build -o ./build/ab-linux-arm64 main.go
 
 build/mac: build/mac/amd64 build/mac/arm64 ## Build macOS backends
-build/mac/amd64: ## Build macOS backends
-	GOOS=darwin GOARCH=amd64 go build -o ./build/ab-mac-amd64 main.go
 build/mac/arm64: ## Build macOS backends
 	GOOS=darwin GOARCH=arm64 go build -o ./build/ab-mac-arm64 main.go
 
