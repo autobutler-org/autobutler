@@ -13,15 +13,12 @@ on:
         type: string
 env:
   WORKING_DIR: ${{ github.workspace }}/src/autobutler/backend
-  GOFLAGS: -buildvcs=false
 defaults:
   run:
     shell: bash
 jobs:
   backend-build:
     runs-on: ubuntu-latest
-    container:
-      image: exokomodo/exoflow-devcontainer:${{ inputs.image-tag || (github.event_name == 'pull_request' && 'latest') || (github.head_ref || github.ref_name) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
