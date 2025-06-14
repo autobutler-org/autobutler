@@ -21,3 +21,5 @@
 # vendor/
 exercise.json
 build/
+# Added by goreleaser init:
+dist/

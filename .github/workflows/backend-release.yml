@@ -1,0 +1,35 @@
+name: Backend Release
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+env:
+  WORKING_DIR: ${{ github.workspace }}/src/autobutler/backend
+  GOFLAGS: -buildvcs=false
+defaults:
+  run:
+    shell: bash
+jobs:
+  backend-build:
+    runs-on: ubuntu-latest
+    container:
+      image: exokomodo/exoflow-devcontainer:${{ inputs.image-tag || (github.event_name == 'pull_request' && 'latest') || (github.head_ref || github.ref_name) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          # either 'goreleaser' (default) or 'goreleaser-pro'
+          distribution: goreleaser
+          # 'latest', 'nightly', or a semver
+          version: '~> v2'
+          args: release --clean
+          workdir: ${{ env.WORKING_DIR }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Upload assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: ab-release
+          path: ${{ env.WORKING_DIR }}/dist/*
