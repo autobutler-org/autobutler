@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/exokomodo/exoflow/autobutler/backend/pkg/llm"
+	"github.com/exokomodo/exoflow/autobutler/backend/pkg/update"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -35,6 +36,25 @@ func SetupRoutes(router *gin.Engine) {
 			return
 		}
 		c.JSON(200, response)
+	})
+	router.POST("/update", func(c *gin.Context) {
+		var r update.UpdateRequest
+		if err := c.BindJSON(&r); err != nil {
+			c.JSON(400, gin.H{
+				"error": "Invalid request body",
+			})
+			return
+		}
+		if err := update.Update(r.Version); err != nil {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		go update.RestartAutobutler(2 * time.Second)
+		c.JSON(200, gin.H{
+			"message": "Update successful, Autobutler will restart.",
+		})
 	})
 }
 
