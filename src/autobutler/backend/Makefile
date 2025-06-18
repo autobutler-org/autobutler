@@ -8,25 +8,25 @@ SHELL := /bin/bash
 
 build: ## Build backend
 	mkdir -p ./build
-	go build -o ./build/ab
+	go build -o ./build/autobutler
 
 build/all: build/linux build/mac build/windows ## Build all backends
 
 build/linux: build/linux/amd64 build/linux/arm64 ## Build linux backends
 build/linux/amd64: ## Build linux backends
-	GOOS=linux GOARCH=amd64 go build -o ./build/ab-linux-amd64 main.go
+	GOOS=linux GOARCH=amd64 go build -o ./build/autobutler-linux-amd64 main.go
 build/linux/arm64: ## Build linux backends
-	GOOS=linux GOARCH=arm64 go build -o ./build/ab-linux-arm64 main.go
+	GOOS=linux GOARCH=arm64 go build -o ./build/autobutler-linux-arm64 main.go
 
 build/mac: build/mac/amd64 build/mac/arm64 ## Build macOS backends
 build/mac/arm64: ## Build macOS backends
-	GOOS=darwin GOARCH=arm64 go build -o ./build/ab-mac-arm64 main.go
+	GOOS=darwin GOARCH=arm64 go build -o ./build/autobutler-mac-arm64 main.go
 
 build/windows: build/windows/amd64 build/windows/arm64 ## Build windows backends
 build/windows/amd64: ## Build windows backends
-	GOOS=windows GOARCH=amd64 go build -o ./build/ab-windows-amd64.exe main.go
+	GOOS=windows GOARCH=amd64 go build -o ./build/autobutler-windows-amd64.exe main.go
 build/windows/arm64: ## Build windows backends
-	GOOS=windows GOARCH=arm64 go build -o ./build/ab-windows-arm64.exe main.go
+	GOOS=windows GOARCH=arm64 go build -o ./build/autobutler-windows-arm64.exe main.go
 
 format: ## Format code
 	go fmt ./...

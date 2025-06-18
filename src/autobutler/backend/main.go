@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	rootCmd := &cobra.Command{Use: "ab"}
+	rootCmd := &cobra.Command{Use: "autobutler"}
 	rootCmd.AddCommand(cmd.Serve(), cmd.Chat(), cmd.Version(), cmd.Update())
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

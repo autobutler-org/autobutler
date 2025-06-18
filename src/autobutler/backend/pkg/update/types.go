@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"runtime"
 	"time"
 )
 
@@ -14,12 +15,16 @@ type UpdateRequest struct {
 	Version string `json:"version"`
 }
 
+const binaryName = "autobutler"
+var backupName = fmt.Sprintf("%s_backup", binaryName)
+var extractedName = fmt.Sprintf("%s_extracted", binaryName)
+
 func backupSelf() (string, error) {
 	execPath, err := os.Executable()
 	if err != nil {
 		return "", fmt.Errorf("failed to get executable path: %w", err)
 	}
-	tmpFile, err := os.CreateTemp("", "ab_backup_*")
+	tmpFile, err := os.CreateTemp("", backupName)
 	if err != nil {
 		return "", fmt.Errorf("failed to create temp file: %w", err)
 	}
@@ -40,19 +45,19 @@ func backupSelf() (string, error) {
 	return tmpFile.Name(), nil
 }
 
-func replaceSelf(resp *http.Response) error {
+func replaceSelf(body io.Reader) error {
 	execPath, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("failed to get executable path: %w", err)
 	}
-	tmpFile, err := os.CreateTemp("", "ab_update_*")
+	tmpFile, err := os.CreateTemp("", "autobutler_update_*")
 	if err != nil {
 		return fmt.Errorf("failed to create temp file for update: %w", err)
 	}
 	defer os.Remove(tmpFile.Name())
 	defer tmpFile.Close()
 
-	if _, err := tmpFile.ReadFrom(resp.Body); err != nil {
+	if _, err := tmpFile.ReadFrom(body); err != nil {
 		return fmt.Errorf("failed to write update to temp file: %w", err)
 	}
 	if err := tmpFile.Sync(); err != nil {
@@ -79,9 +84,8 @@ func replaceSelf(resp *http.Response) error {
 		if err != nil {
 			return fmt.Errorf("failed to read tar: %w", err)
 		}
-		// Look for the binary file (assume it's named "ab")
-		if header.Typeflag == tar.TypeReg && (header.Name == "ab" || header.Name == "./ab") {
-			binFile, err = os.CreateTemp("", "ab_extracted_*")
+		if header.Typeflag == tar.TypeReg && (header.Name == binaryName || header.Name == fmt.Sprintf("./%s", binaryName)) {
+			binFile, err = os.CreateTemp("", extractedName)
 			if err != nil {
 				return fmt.Errorf("failed to create temp file for extracted binary: %w", err)
 			}
@@ -118,7 +122,7 @@ func replaceSelf(resp *http.Response) error {
 	defer dst.Close()
 
 	if _, err := src.Seek(0, 0); err != nil {
-		return fmt.Errorf("failed to seek in temp update file: %w", err)
+		return fmt.Errorf("failed to seek in update file: %w", err)
 	}
 	if _, err := dst.ReadFrom(src); err != nil {
 		return fmt.Errorf("failed to overwrite executable: %w", err)
@@ -127,8 +131,7 @@ func replaceSelf(resp *http.Response) error {
 }
 
 func Update(version string) error {
-	// https://github.com/exokomodo/exoflow/releases/download/v0.0.0/ab_darwin_arm64.tar.gz
-    // Copy the current binary to some temporary system location.
+    // Copy the current binary to some temporary system location
     // Download the new release
     // Unpack the new release, replacing the currently running binary location
 	if version == "" {
@@ -138,8 +141,11 @@ func Update(version string) error {
 	if err != nil {
 		return fmt.Errorf("failed to copy current binary: %w", err)
 	}
-	// Download from the release URL: https://github.com/exokomodo/exoflow/releases/download/{version}/ab_darwin_arm64.tar.gz
-	url := "https://github.com/exokomodo/exoflow/releases/download/" + version + "/ab_darwin_arm64.tar.gz"
+	baseUrl := os.Getenv("AUTOBUTLER_UPDATE_URL")
+	if baseUrl == "" {
+		baseUrl = "https://github.com/exokomodo/autobutler.ai/releases/download"
+	}
+	url := fmt.Sprintf("%s/%s/autobutler_%s_%s.tar.gz", baseUrl, version, runtime.GOOS, runtime.GOARCH)
 	fmt.Println("Downloading update from", url)
 	resp, err := http.Get(url)
 	if err != nil {
@@ -149,7 +155,7 @@ func Update(version string) error {
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("failed to download update: %s", resp.Status)
 	}
-	if err := replaceSelf(resp); err != nil {
+	if err := replaceSelf(resp.Body); err != nil {
 		return fmt.Errorf("failed to replace self with update: %w", err)
 	}
 	fmt.Println("Update successful.")
