@@ -12,21 +12,18 @@ jobs:
   backend-release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+      - name: Workflow Dispatch
+        uses: actions/github-script@v7
         with:
-          # either 'goreleaser' (default) or 'goreleaser-pro'
-          distribution: goreleaser
-          # 'latest', 'nightly', or a semver
-          version: '~> v2'
-          args: release --clean
-          workdir: ${{ env.WORKING_DIR }}
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-      - name: Upload assets
-        uses: actions/upload-artifact@v4
-        with:
-          name: ab-release
-          path: ${{ env.WORKING_DIR }}/dist/*
+          github-token: ${{ secrets.FG_PAT }}
+          script: |
+            const tag = context.ref.replace('refs/tags/', '');
+            github.rest.actions.createWorkflowDispatch({
+              owner: 'exokomodo',
+              repo: 'autobutler.ai',
+              workflow_id: 'release.yml',
+              ref: 'main',
+              inputs: {
+                tag: tag,
+              }
+            });
