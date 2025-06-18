@@ -56,7 +56,7 @@ func Mcp() *cobra.Command {
 				return
 			}
 
-			cmd.Printf("Result: %v\n", result)
+			cmd.Printf("%v\n", result)
 		},
 	}
 
