@@ -24,7 +24,7 @@ func NewVersion(gitCommit, goVersion, buildDate string) Version {
 
 func (v Version) VersionString() string {
 	version := ""
-	if v.Semver == Semver {
+	if v.Semver == NoSemver {
 		version = v.GitCommit
 	} else {
 		version = v.Semver
