@@ -131,9 +131,9 @@ func replaceSelf(body io.Reader) error {
 }
 
 func Update(version string) error {
-    // Copy the current binary to some temporary system location
-    // Download the new release
-    // Unpack the new release, replacing the currently running binary location
+	// Copy the current binary to some temporary system location
+	// Download the new release
+	// Unpack the new release, replacing the currently running binary location
 	if version == "" {
 		return nil // No update needed
 	}
