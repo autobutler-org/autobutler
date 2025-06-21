@@ -1,0 +1,29 @@
+name: Backend Release
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+env:
+  WORKING_DIR: ${{ github.workspace }}/src/autobutler
+defaults:
+  run:
+    shell: bash
+jobs:
+  autobutler-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Workflow Dispatch
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.FG_PAT }}
+          script: |
+            const tag = context.ref.replace('refs/tags/', '');
+            github.rest.actions.createWorkflowDispatch({
+              owner: 'exokomodo',
+              repo: 'autobutler.ai',
+              workflow_id: 'release.yml',
+              ref: 'main',
+              inputs: {
+                tag: tag,
+              }
+            });

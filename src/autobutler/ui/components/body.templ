@@ -1,0 +1,12 @@
+package components
+
+templ Body() {
+    <body class="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
+        <main class="relative min-h-screen">
+            @GradientOverlays()
+            <div class="relative z-10">
+                { children... }
+            </div>
+        </main>
+    </body>
+}

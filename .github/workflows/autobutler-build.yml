@@ -1,0 +1,26 @@
+name: Autobutler Build
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+env:
+  WORKING_DIR: ${{ github.workspace }}/src/autobutler
+defaults:
+  run:
+    shell: bash
+jobs:
+  autobutler-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        working-directory: ${{ env.WORKING_DIR }}
+        run: go mod download
+      - name: Build
+        working-directory: ${{ env.WORKING_DIR }}
+        run: make build

@@ -1,0 +1,19 @@
+package chat
+
+templ spinner(id string) {
+    <div id={ id } class="my-4 flex justify-start htmx-indicator">
+        <div class="bg-white/10 text-gray-100 rounded-lg p-4">
+            <div class="flex space-x-2">
+            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+            <div
+                class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                style="animation-delay: 0.2s"
+            />
+            <div
+                class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                style="animation-delay: 0.4s"
+            />
+            </div>
+        </div>
+    </div>
+}

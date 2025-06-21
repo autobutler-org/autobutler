@@ -10,8 +10,6 @@ The repository is organized as follows:
 exoflow/
 ├── src/
 │   ├── autobutler/
-|   |   ├── backend/
-|   |   ├── ui/
 │   ├── dotai/
 ├── docs/
 └── libs/
