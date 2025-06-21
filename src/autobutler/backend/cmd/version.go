@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/exokomodo/exoflow/autobutler/backend/pkg/version"
+	"github.com/exokomodo/exoflow/autobutler/backend/internal/version"
 	"github.com/spf13/cobra"
 )
 

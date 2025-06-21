@@ -9,7 +9,7 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"github.com/exokomodo/exoflow/autobutler/backend/pkg/components"
+	"github.com/exokomodo/exoflow/autobutler/backend/ui/components"
 )
 
 func Index() templ.Component {

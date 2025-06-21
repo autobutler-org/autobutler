@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/exokomodo/exoflow/autobutler/backend/pkg/update"
+	"github.com/exokomodo/exoflow/autobutler/backend/internal/update"
 	"github.com/spf13/cobra"
 )
 

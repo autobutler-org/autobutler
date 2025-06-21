@@ -3,7 +3,7 @@ package cmd
 import (
 	"encoding/json"
 
-	"github.com/exokomodo/exoflow/autobutler/backend/pkg/llm"
+	"github.com/exokomodo/exoflow/autobutler/backend/internal/llm"
 	"github.com/spf13/cobra"
 )
 

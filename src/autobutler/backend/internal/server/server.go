@@ -3,9 +3,9 @@ package server
 import (
 	"time"
 
-	"github.com/exokomodo/exoflow/autobutler/backend/pkg/llm"
-	"github.com/exokomodo/exoflow/autobutler/backend/pkg/update"
-	"github.com/exokomodo/exoflow/autobutler/backend/pkg/views"
+	"github.com/exokomodo/exoflow/autobutler/backend/internal/llm"
+	"github.com/exokomodo/exoflow/autobutler/backend/internal/update"
+	"github.com/exokomodo/exoflow/autobutler/backend/ui/views"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
