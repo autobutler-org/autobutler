@@ -1,0 +1,17 @@
+package views
+
+import (
+"autobutler/ui/components"
+"autobutler/ui/components/hero"
+)
+
+templ Home() {
+    <!DOCTYPE html>
+    <html lang="en">
+        @components.Header()
+        @components.Body() {
+            @hero.Hero()
+        }
+        @components.Footer()
+    </html>
+}

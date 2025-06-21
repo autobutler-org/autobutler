@@ -1,0 +1,23 @@
+package views
+
+import (
+"time"
+"autobutler/ui/components"
+"autobutler/ui/components/chat"
+"autobutler/internal/llm"
+)
+
+templ Chat() {
+    <!DOCTYPE html>
+    <html lang="en">
+        @components.Header()
+        @components.Body() {
+            @chat.Chat(
+                []llm.ChatMessage{
+                    {Role: llm.ChatRoleSystem, Content: "Welcome to the Autobutler!", Timestamp: llm.GetTimestamp(time.Now())},
+                },
+            )
+        }
+        @components.Footer()
+    </html>
+}
