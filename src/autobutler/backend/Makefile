@@ -41,6 +41,12 @@ lint: ## Lint code
 serve: generate env-LLM_AZURE_API_KEY ## Serve backend
 	go run main.go serve
 
+watch: env-LLM_AZURE_API_KEY ## Watch backend for changes
+	go tool templ generate \
+		--watch \
+		--proxy="http://localhost:8080" \
+		--cmd="go run . serve"
+
 version: ## Print version
 	go run main.go version
 
