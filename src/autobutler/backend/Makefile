@@ -6,7 +6,10 @@ SHELL := /bin/bash
 
 .PHONY: $(MAKECMDGOALS)
 
-build: ## Build backend
+generate:
+	go tool templ generate
+
+build: generate ## Build backend
 	mkdir -p ./build
 	go build -o ./build/autobutler
 
@@ -35,7 +38,7 @@ lint: ## Lint code
 	gofmt -s -w .
 	go vet ./...
 
-serve: env-LLM_AZURE_API_KEY ## Serve backend
+serve: generate env-LLM_AZURE_API_KEY ## Serve backend
 	go run main.go serve
 
 version: ## Print version

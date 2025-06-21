@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/exokomodo/exoflow/autobutler/backend/pkg/api"
+	"github.com/exokomodo/exoflow/autobutler/backend/pkg/server"
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +15,7 @@ func Serve() *cobra.Command {
 		Long:  `The serve command starts the Autobutler server, allowing you to interact with the Autobutler system through its API.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("Starting Autobutler server...")
-			if err := api.StartServer(); err != nil {
+			if err := server.StartServer(); err != nil {
 				fmt.Fprintf(os.Stderr, "Error starting server: %v\n", err)
 				os.Exit(1)
 			}

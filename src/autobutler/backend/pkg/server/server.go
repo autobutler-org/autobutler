@@ -1,11 +1,11 @@
-package api
+package server
 
 import (
 	"time"
 
 	"github.com/exokomodo/exoflow/autobutler/backend/pkg/llm"
-	"github.com/exokomodo/exoflow/autobutler/backend/pkg/ui"
 	"github.com/exokomodo/exoflow/autobutler/backend/pkg/update"
+	"github.com/exokomodo/exoflow/autobutler/backend/pkg/views"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -27,9 +27,8 @@ func SetupRoutes(router *gin.Engine) {
 			"status": "ok",
 		})
 	})
-	helloComponent := ui.Hello("James")
-	router.GET("/hello", func(c *gin.Context) {
-		if err := helloComponent.Render(c.Request.Context(), c.Writer); err != nil {
+	router.GET("/", func(c *gin.Context) {
+		if err := views.Index().Render(c.Request.Context(), c.Writer); err != nil {
 			c.Status(400)
 			return
 		}
