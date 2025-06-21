@@ -62,4 +62,3 @@ insert into t values(42), (314);
 	fmt.Printf("%s size: %v\n", fn, fi.Size())
 	return nil
 }
-

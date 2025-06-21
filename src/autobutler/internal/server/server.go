@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
 func StartServer() error {
 	router := gin.Default()
 	// IMPORTANT: UseMiddleware MUST be called before SetupRoutes

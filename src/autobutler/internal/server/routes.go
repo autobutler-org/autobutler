@@ -87,26 +87,30 @@ func setupRoutes(router *gin.Engine) {
 	})
 }
 
-
 func apiV1Route(router *gin.Engine, method string, path string, handler func(c *gin.Context)) gin.IRoutes {
 	path = util.TrimLeading(path, '/')
 	route := fmt.Sprintf("/api/v1/%s", path)
 	switch method {
-	case "GET": {
-		return router.GET(route, handler)
-	}
-	case "POST": {
-		return router.POST(route, handler)
-	}
-	case "PUT": {
-		return router.PUT(route, handler)
-	}
-	case "DELETE": {
-		return router.DELETE(route, handler)
-	}
-	default: {
-		panic(fmt.Sprintf("Unsupported HTTP method: %s", method))
-	}
+	case "GET":
+		{
+			return router.GET(route, handler)
+		}
+	case "POST":
+		{
+			return router.POST(route, handler)
+		}
+	case "PUT":
+		{
+			return router.PUT(route, handler)
+		}
+	case "DELETE":
+		{
+			return router.DELETE(route, handler)
+		}
+	default:
+		{
+			panic(fmt.Sprintf("Unsupported HTTP method: %s", method))
+		}
 	}
 }
 

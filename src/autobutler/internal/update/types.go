@@ -16,6 +16,7 @@ type UpdateRequest struct {
 }
 
 const binaryName = "autobutler"
+
 var backupName = fmt.Sprintf("%s_backup", binaryName)
 var extractedName = fmt.Sprintf("%s_extracted", binaryName)
 

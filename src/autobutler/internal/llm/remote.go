@@ -9,7 +9,6 @@ import (
 	"os"
 )
 
-
 func RemoteLLMRequest(prompt string) (*ChatResponse, error) {
 	// Set defaults as per Makefile exports
 	llmURL := os.Getenv("LLM_URL")

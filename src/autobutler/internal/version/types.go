@@ -11,6 +11,7 @@ type Version struct {
 
 const NoCommit = "NOCOMMIT"
 const NoSemver = "NOSEMVER"
+
 var Semver string = NoSemver
 
 func NewVersion(gitCommit, goVersion, buildDate string) Version {

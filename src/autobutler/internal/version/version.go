@@ -13,10 +13,10 @@ func GetVersion() Version {
 	}
 	for _, setting := range info.Settings {
 		switch setting.Key {
-			case "vcs.revision":
-				version.GitCommit = setting.Value
-			case "vcs.time":
-				version.BuildDate = setting.Value
+		case "vcs.revision":
+			version.GitCommit = setting.Value
+		case "vcs.time":
+			version.BuildDate = setting.Value
 		}
 	}
 	return version
