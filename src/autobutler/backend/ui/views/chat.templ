@@ -1,0 +1,23 @@
+package views
+
+import (
+"github.com/exokomodo/exoflow/autobutler/backend/ui/components"
+)
+
+templ Chat() {
+    <!DOCTYPE html>
+    <html lang="en">
+        @components.Header()
+        @components.Body() {
+            @components.Chat(
+                []components.ChatMessage{
+                    {ID: "1", Role: components.ChatRoleSystem, Content: "Welcome to the Autobutler!", Timestamp: "2023-10-01T12:00:00Z"},
+                    {ID: "2", Role: components.ChatRoleUser, Content: "Hello, how can I use this?", Timestamp: "2023-10-01T12:01:00Z"},
+                    {ID: "3", Role: components.ChatRoleDummy, Content: "This is a dummy message for testing.", Timestamp: "2023-10-01T12:02:00Z"},
+                    {ID: "4", Role: components.ChatRoleError, Content: "An error occurred while processing your request.", Timestamp: "2023-10-01T12:03:00Z"},
+                },
+            )
+        }
+        @components.Footer()
+    </html>
+}

@@ -8,7 +8,7 @@ package components
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-func Header() templ.Component {
+func Hero() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -29,7 +29,7 @@ func Header() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<head><script src=\"https://cdn.jsdelivr.net/npm/htmx.org@2.0.5/dist/htmx.min.js\" crossorigin=\"anonymous\"></script><script src=\"https://cdn.tailwindcss.com\"></script><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Autobutler - Your home assistant</title><style>\n            html, body {\n                margin: 0;\n                padding: 0;\n                min-height: 100vh;\n                min-width: 100vw;\n                overflow-x: hidden;\n            }\n\n            * {\n                margin: 0;\n                padding: 0;\n                box-sizing: border-box;\n            }\n        </style></head>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"relative\"><img src=\"/public/butler.png\" alt=\"AutoButler Logo\" class=\"w-32 h-32 mx-auto mb-6\"><h1 class=\"text-5xl font-bold text-white mb-4\">AutoButler</h1><p class=\"text-xl text-gray-300 mb-8\">Your intelligent AI assistant powered by advanced language models</p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

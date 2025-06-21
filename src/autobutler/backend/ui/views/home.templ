@@ -4,14 +4,13 @@ import (
 "github.com/exokomodo/exoflow/autobutler/backend/ui/components"
 )
 
-templ Index() {
+templ Home() {
     <!DOCTYPE html>
     <html lang="en">
         @components.Header()
-        <body class="min-h-screen w-full">
-            <main>
-            </main>
-        </body>
+        @components.Body() {
+            @components.HeroSection()
+        }
         @components.Footer()
     </html>
 }
