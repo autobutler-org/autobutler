@@ -12,6 +12,7 @@ import (
 	"github.com/exokomodo/exoflow/autobutler/backend/internal/llm"
 	"github.com/exokomodo/exoflow/autobutler/backend/ui/components"
 	"github.com/exokomodo/exoflow/autobutler/backend/ui/components/chat"
+	"time"
 )
 
 func Chat() templ.Component {
@@ -57,10 +58,7 @@ func Chat() templ.Component {
 			ctx = templ.InitializeContext(ctx)
 			templ_7745c5c3_Err = chat.Chat(
 				[]llm.ChatMessage{
-					{ID: "1", Role: llm.ChatRoleSystem, Content: "Welcome to the Autobutler!", Timestamp: "2023-10-01T12:00:00Z"},
-					{ID: "2", Role: llm.ChatRoleUser, Content: "Hello, how can I use this?", Timestamp: "2023-10-01T12:01:00Z"},
-					{ID: "3", Role: llm.ChatRoleDummy, Content: "This is a dummy message for testing.", Timestamp: "2023-10-01T12:02:00Z"},
-					{ID: "4", Role: llm.ChatRoleError, Content: "An error occurred while processing your request.", Timestamp: "2023-10-01T12:03:00Z"},
+					{Role: llm.ChatRoleSystem, Content: "Welcome to the Autobutler!", Timestamp: llm.GetTimestamp(time.Now())},
 				},
 			).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {

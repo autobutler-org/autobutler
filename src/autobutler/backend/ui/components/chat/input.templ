@@ -1,36 +1,28 @@
 package chat
 
-templ input() {
+import "fmt"
+
+templ input(spinnerId string) {
     <div class="bg-white/5 backdrop-blur-lg border-t border-white/10 p-4">
       <div class="max-w-4xl mx-auto">
         // <form class="flex space-x-4" @submit.prevent="sendMessage"></form>
-        <form class="flex space-x-4">
-          <!-- Add a checkbox which, if toggled, causes a dummy response to be made -->
-          <label class="flex items-center space-x-2 text-white">
-            <span>Make dummy request?</span>
-            // <input v-model="isDummy" type="checkbox" class="text-blue-600" />
-            <input type="checkbox" class="text-blue-600" />
-          </label>
-          // <input
-          //   v-model="newMessage"
-          //   type="text"
-          //   placeholder="Type your message..."
-          //   class="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          //   :disabled="isLoading"
-          //   @keydown.enter.prevent="sendMessage"
-          // />
+        <div class="flex space-x-4">
           <input
+            id="messageInput"
             type="text"
             placeholder="Type your message..."
             class="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          // <button
-          //   type="submit"
-          //   class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors duration-200 flex items-center space-x-2"
-          //   :disabled="isLoading"
-          // >
           <button
-            type="submit"
+            hx-get="/api/v1/chat"
+            hx-trigger="click"
+            hx-target="#messages"
+            hx-swap="beforeend"
+            hx-headers='{"Accept": "text/html"}'
+            hx-indicator={fmt.Sprintf("#%s", spinnerId)}
+            hx-vals="js:{
+              prompt: document.getElementById('messageInput').value
+            }"
             class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors duration-200 flex items-center space-x-2"
           >
             <span>Send</span>
@@ -45,7 +37,7 @@ templ input() {
               />
             </svg>
           </button>
-        </form>
+        </div>
       </div>
     </div>
 }

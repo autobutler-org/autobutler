@@ -4,50 +4,19 @@ import (
     "github.com/exokomodo/exoflow/autobutler/backend/internal/llm"
 )
 
+const spinnerId = "spinner"
+
 templ Chat(messages []llm.ChatMessage) {
     <div class="h-screen flex flex-col">
         @header()
         <div class="flex-1 overflow-y-auto p-4">
-            <div class="max-w-4xl mx-auto space-y-4">
-                for _, message := range messages {
-                    <div class={ chatFlexClass(message) }>
-                        <div class={ chatMessageClass(message) }>
-                            <p class="whitespace-pre-wrap">{ message.Content }</p>
-                            <span class="text-xs mt-2 block opacity-70">
-                                { message.Timestamp }
-                            </span>
-                        </div>
-                    </div>
+            <div id="messages" class="max-w-4xl mx-auto space-y-4">
+                for _, msg := range messages {
+                    @Message(msg)
                 }
             </div>
+            @spinner(spinnerId)
         </div>
-        @input()
+        @input(spinnerId)
     </div>
 }
-
-func chatMessageClass(message llm.ChatMessage) string {
-    class := "max-w-[80%] rounded-lg p-4 "
-    switch message.Role {
-        case llm.ChatRoleUser:
-            class += "bg-blue-600 text-white"
-        case llm.ChatRoleSystem:
-            class += "bg-white/10 text-gray-100"
-        case llm.ChatRoleDummy:
-            class += "bg-orange-500/20 text-gray-100 border-2 border-orange-500"
-        case llm.ChatRoleError:
-            class += "bg-red-500/20 text-gray-100 border-2 border-red-500"
-    }
-    return class
-}
-
-func chatFlexClass(message llm.ChatMessage) string {
-    class := "flex "
-    switch message.Role {
-        case llm.ChatRoleUser:
-            class += "justify-end"
-        default:
-            class += "justify-start"
-    }
-    return class
-}
-

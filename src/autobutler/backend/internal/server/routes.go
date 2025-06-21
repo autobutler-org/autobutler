@@ -7,6 +7,7 @@ import (
 	"github.com/exokomodo/exoflow/autobutler/backend/internal/llm"
 	"github.com/exokomodo/exoflow/autobutler/backend/internal/update"
 	"github.com/exokomodo/exoflow/autobutler/backend/pkg/util"
+	"github.com/exokomodo/exoflow/autobutler/backend/ui/components/chat"
 	"github.com/exokomodo/exoflow/autobutler/backend/ui/views"
 	"github.com/gin-gonic/gin"
 )
@@ -37,15 +38,32 @@ func setupRoutes(router *gin.Engine) {
 		})
 	})
 	apiV1Route(router, "GET", "/chat", func(c *gin.Context) {
+		isHtml := c.GetHeader("Accept") == "text/html"
 		prompt := c.Query("prompt")
 		response, err := llm.RemoteLLMRequest(prompt)
 		if err != nil {
-			c.JSON(500, gin.H{
-				"error": err.Error(),
-			})
+			if isHtml {
+				messageComponent := chat.Message(llm.ErrorChatMessage())
+				if err := messageComponent.Render(c.Request.Context(), c.Writer); err != nil {
+					c.Status(500)
+					return
+				}
+			} else {
+				c.JSON(500, gin.H{
+					"error": err.Error(),
+				})
+			}
 			return
 		}
-		c.JSON(200, response)
+		if isHtml {
+			messageComponent := chat.Message(response.ToChatMessage())
+			if err := messageComponent.Render(c.Request.Context(), c.Writer); err != nil {
+				c.Status(500)
+				return
+			}
+		} else {
+			c.JSON(200, response)
+		}
 	})
 	apiV1Route(router, "POST", "/update", func(c *gin.Context) {
 		var r update.UpdateRequest
