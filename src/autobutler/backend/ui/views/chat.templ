@@ -2,6 +2,7 @@ package views
 
 import (
 "github.com/exokomodo/exoflow/autobutler/backend/ui/components"
+"github.com/exokomodo/exoflow/autobutler/backend/ui/components/chat"
 "github.com/exokomodo/exoflow/autobutler/backend/internal/llm"
 )
 
@@ -10,7 +11,7 @@ templ Chat() {
     <html lang="en">
         @components.Header()
         @components.Body() {
-            @components.Chat(
+            @chat.Chat(
                 []llm.ChatMessage{
                     {ID: "1", Role: llm.ChatRoleSystem, Content: "Welcome to the Autobutler!", Timestamp: "2023-10-01T12:00:00Z"},
                     {ID: "2", Role: llm.ChatRoleUser, Content: "Hello, how can I use this?", Timestamp: "2023-10-01T12:01:00Z"},

@@ -2,6 +2,7 @@ package views
 
 import (
 "github.com/exokomodo/exoflow/autobutler/backend/ui/components"
+"github.com/exokomodo/exoflow/autobutler/backend/ui/components/hero"
 )
 
 templ Home() {
@@ -9,7 +10,7 @@ templ Home() {
     <html lang="en">
         @components.Header()
         @components.Body() {
-            @components.HeroSection()
+            @hero.Hero()
         }
         @components.Footer()
     </html>
