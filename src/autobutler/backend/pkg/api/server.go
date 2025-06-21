@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/exokomodo/exoflow/autobutler/backend/pkg/llm"
+	"github.com/exokomodo/exoflow/autobutler/backend/pkg/ui"
 	"github.com/exokomodo/exoflow/autobutler/backend/pkg/update"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -25,6 +26,14 @@ func SetupRoutes(router *gin.Engine) {
 		c.JSON(200, gin.H{
 			"status": "ok",
 		})
+	})
+	helloComponent := ui.Hello("James")
+	router.GET("/hello", func(c *gin.Context) {
+		if err := helloComponent.Render(c.Request.Context(), c.Writer); err != nil {
+			c.Status(400)
+			return
+		}
+		c.Status(200)
 	})
 	router.GET("/chat", func(c *gin.Context) {
 		prompt := c.Query("prompt")
