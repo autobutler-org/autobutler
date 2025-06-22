@@ -14,6 +14,8 @@
     <dict>
         <key>LLM_AZURE_API_KEY</key>
         <string>$LLM_AZURE_API_KEY</string>
+        <key>PORT</key>
+        <string>8081</string>
     </dict>
     <key>RunAtLoad</key>
     <true/>
