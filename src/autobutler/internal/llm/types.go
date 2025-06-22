@@ -1,6 +1,9 @@
 package llm
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type ChatRole string
 
@@ -17,10 +20,10 @@ type ChatMessage struct {
 	Timestamp string   `json:"timestamp"` // ISO 8601 format
 }
 
-func ErrorChatMessage() ChatMessage {
+func ErrorChatMessage(err error) ChatMessage {
 	return ChatMessage{
 		Role:      ChatRoleError,
-		Content:   "An error occurred while processing your request",
+		Content:   fmt.Sprintf("An error occurred while processing your request: %v", err),
 		Timestamp: GetTimestamp(time.Now()),
 	}
 }

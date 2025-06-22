@@ -44,7 +44,7 @@ func setupRoutes(router *gin.Engine) {
 		response, err := llm.RemoteLLMRequest(prompt)
 		if err != nil {
 			if isHtml {
-				messageComponent := chat.Message(llm.ErrorChatMessage())
+				messageComponent := chat.Message(llm.ErrorChatMessage(err))
 				if err := messageComponent.Render(c.Request.Context(), c.Writer); err != nil {
 					c.Status(500)
 					return

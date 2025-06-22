@@ -1,22 +1,28 @@
-# Exoflow Monorepo
+# autobutler
 
-Welcome to the Exoflow monorepo! This repository contains multiple projects that tie together the Exoflow monorepo.
+## Usage
 
-## Repository Structure
+Before any of these, set the `LLM_AZURE_API_KEY` environment variable to your Azure OpenAI API key
 
-The repository is organized as follows:
+### Make an LLM call
 
-```plaintext
-exoflow/
-├── src/
-│   ├── autobutler/
-│   ├── dotai/
-├── docs/
-└── libs/
+To make a call to the LLM, you can use the following command:
+
+```shell
+go run main.go chat "How much milk is in my house?"
 ```
 
-### Packages
+### Run the backend
 
-- [`src/`](./src/) - The applications and source code for all projects
-- [`docs/`](./docs/) - Documentation
-- [`libs/`](./libs/) - Shared libraries across multiple projects
+To serve the backend, you can use the following command:
+
+```shell
+make serve
+```
+
+### Build the backend, make an LLM call
+
+```shell
+make build
+./build/autobutler chat "How much milk is in my house?"
+```

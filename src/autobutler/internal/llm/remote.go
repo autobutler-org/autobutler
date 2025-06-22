@@ -23,9 +23,9 @@ func RemoteLLMRequest(prompt string) (*ChatResponse, error) {
 	if apiKey == "" {
 		return nil, fmt.Errorf("LLM_AZURE_API_KEY environment variable is not set")
 	}
-	systemPromptFile := os.Getenv("LLM_SYSTEM_PROMPT_FILE")
-	if systemPromptFile == "" {
-		systemPromptFile = "system.prompt"
+	systemPrompt := os.Getenv("LLM_SYSTEM_PROMPT")
+	if systemPrompt == "" {
+		systemPrompt = SYSTEM_PROMPT
 	}
 	maxTokens := os.Getenv("LLM_MAX_TOKENS")
 	if maxTokens == "" {
@@ -42,11 +42,6 @@ func RemoteLLMRequest(prompt string) (*ChatResponse, error) {
 	model := os.Getenv("LLM_MODEL")
 	if model == "" {
 		model = "autobutler_Ministral-3B"
-	}
-
-	systemPrompt, err := os.ReadFile(systemPromptFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read system prompt file: %w", err)
 	}
 
 	maxTokensInt := 2048
