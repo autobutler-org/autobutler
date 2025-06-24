@@ -11,7 +11,20 @@ setup/templ: ## Install templ tool
 
 export INSTALL_VERSION?=$(shell git describe --tags --abbrev=0)
 
-install/mac: env-INSTALL_VERSION ## Install startup service
+install/linux: env-INSTALL_VERSION ## Install startup service on Linux
+	if ! [[ -f /usr/local/bin/autobutler ]]; then \
+		curl \
+			--fail \
+			-L \
+			https://github.com/exokomodo/autobutler.ai/releases/download/$(INSTALL_VERSION)/autobutler_darwin_arm64.tar.gz | sudo tar -x -C /usr/local/bin ; \
+	fi
+	sudo cp -f \
+		./deployments/autobutler.service \
+		/etc/systemd/system/
+	sudo systemctl restart autobutler
+	echo "Installed autobutler successfully. Will run at startup."
+
+install/mac: env-INSTALL_VERSION ## Install startup service on Mac
 	if ! [[ -f /Applications/autobutler ]]; then \
 		curl \
 			--fail \
