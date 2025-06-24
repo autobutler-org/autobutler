@@ -9,11 +9,6 @@ import (
 	"github.com/openai/openai-go"
 )
 
-func getFunctionName(fn interface{}) string {
-    strs := strings.Split((runtime.FuncForPC(reflect.ValueOf(fn).Pointer()).Name()), ".")
-    return strs[len(strs)-1]
-}
-
 // GenerateJSONSchema generates a JSON Schema for the given function's parameters and returns an openai.FunctionDefinitionParam.
 func GenerateJSONSchema(fn interface{}, description string) (*openai.FunctionDefinitionParam, error) {
 	t := reflect.TypeOf(fn)
@@ -29,20 +24,23 @@ func GenerateJSONSchema(fn interface{}, description string) (*openai.FunctionDef
 		params[paramName] = typeToSchema(paramType)
 		required = append(required, paramName)
 	}
-
 	schema := map[string]any{
 		"type":       "object",
 		"properties": params,
 		"required":   required,
 	}
-	name := getFunctionName(fn)
 
 	return &openai.FunctionDefinitionParam{
-		Name:        name,
+		Name:        getFunctionName(fn),
 		Strict:      openai.Bool(false),
 		Description: openai.String(description),
 		Parameters:  schema,
 	}, nil
+}
+
+func getFunctionName(fn interface{}) string {
+    strs := strings.Split((runtime.FuncForPC(reflect.ValueOf(fn).Pointer()).Name()), ".")
+    return strs[len(strs)-1]
 }
 
 func typeToSchema(t reflect.Type) map[string]any {
