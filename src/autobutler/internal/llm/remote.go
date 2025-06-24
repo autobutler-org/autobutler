@@ -27,7 +27,6 @@ func init() {
 }
 
 func RemoteLLMRequest(prompt string) (*openai.ChatCompletion, error) {
-	// Set defaults as per Makefile exports
 	llmURL := os.Getenv("LLM_URL")
 	if llmURL == "" {
 		llmURL = "https://autobutler-eus2.services.ai.azure.com/models/chat/completions"
