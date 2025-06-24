@@ -44,6 +44,7 @@ func setupUiRoutes(router *gin.Engine) {
 	})
 }
 
+
 func setupApiRoutes(router *gin.Engine) {
 	apiV1Group := router.Group("/api/v1")
 	apiRoute(apiV1Group, "GET", "/health", func(c *gin.Context) {

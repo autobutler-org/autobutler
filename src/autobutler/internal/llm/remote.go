@@ -11,39 +11,50 @@ import (
 	"github.com/openai/openai-go"
 )
 
+var (
+	llmURL string
+	llmArgs string
+	apiKey string
+	systemPrompt string
+	maxTokens string
+	temperature string
+	topP string
+	model string
+)
+
+
 func RemoteLLMRequest(prompt string) (*openai.ChatCompletion, error) {
-	// Set defaults as per Makefile exports
-	llmURL := os.Getenv("LLM_URL")
+	llmURL = os.Getenv("LLM_URL")
 	if llmURL == "" {
 		llmURL = "https://autobutler-eus2.services.ai.azure.com/models/chat/completions"
 	}
-	llmArgs := os.Getenv("LLM_ARGS")
+	llmArgs = os.Getenv("LLM_ARGS")
 	if llmArgs == "" {
 		llmArgs = "api-version=2024-05-01-preview"
 	}
-	apiKey := os.Getenv("LLM_AZURE_API_KEY")
+	apiKey = os.Getenv("LLM_AZURE_API_KEY")
 	if apiKey == "" {
 		return nil, fmt.Errorf("LLM_AZURE_API_KEY environment variable is not set")
 	}
-	systemPrompt := os.Getenv("LLM_SYSTEM_PROMPT")
+	systemPrompt = os.Getenv("LLM_SYSTEM_PROMPT")
 	if systemPrompt == "" {
 		systemPrompt = SYSTEM_PROMPT
 	}
-	maxTokens := os.Getenv("LLM_MAX_TOKENS")
+	maxTokens = os.Getenv("LLM_MAX_TOKENS")
 	if maxTokens == "" {
 		maxTokens = "2048"
 	}
-	temperature := os.Getenv("LLM_TEMP")
+	temperature = os.Getenv("LLM_TEMP")
 	if temperature == "" {
 		temperature = "0.8"
 	}
-	topP := os.Getenv("LLM_TOP_P")
+	topP = os.Getenv("LLM_TOP_P")
 	if topP == "" {
 		topP = "0.1"
 	}
-	model := os.Getenv("LLM_MODEL")
+	model = os.Getenv("LLM_MODEL")
 	if model == "" {
-		model = "autobutler_Ministral-3B"
+		model = "autobutler_gpt-4.1-nano"
 	}
 
 	maxTokensInt := 2048
@@ -62,13 +73,27 @@ func RemoteLLMRequest(prompt string) (*openai.ChatCompletion, error) {
 		Temperature: openai.Float(temperatureFloat),
 		TopP:        openai.Float(topPFloat),
 		Model:       model,
+		Tools: mcpRegistry.toCompletionToolParam(),
 	}
+	completion, err := makeRequest(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make LLM request: %w", err)
+	}
+	var values []any
+	if values, err = mcpRegistry.MakeToolCall(completion); err != nil {
+		return nil, fmt.Errorf("failed to handle tool calls: %w", err)
+	}
+	for _, value := range values {
+		completion.Choices[0].Message.Content += fmt.Sprintf("%v\n", value)
+	}
+	return completion, nil
+}
 
+func makeRequest(reqBody openai.ChatCompletionNewParams) (*openai.ChatCompletion, error) {
 	bodyBytes, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request body: %w", err)
 	}
-
 	url := llmURL
 	if llmArgs != "" {
 		url = fmt.Sprintf("%s?%s", llmURL, llmArgs)
@@ -87,7 +112,6 @@ func RemoteLLMRequest(prompt string) (*openai.ChatCompletion, error) {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
-
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)
