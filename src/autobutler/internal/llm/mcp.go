@@ -3,8 +3,6 @@ package llm
 import (
 	"autobutler/pkg/util"
 	"fmt"
-	"reflect"
-	"strings"
 
 	"github.com/openai/openai-go"
 )
