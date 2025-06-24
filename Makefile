@@ -170,7 +170,7 @@ endif
 export LLM_URL ?= https://autobutler-eus2.services.ai.azure.com/models/chat/completions
 export LLM_SYSTEM_PROMPT_FILE ?= system.prompt
 LLM_ARGS := api-version=2024-05-01-preview
-LLM_MODEL := autobutler_Ministral-3B
+LLM_MODEL := autobutler_gpt-4.1-nano
 export LLM_TOP_P ?= 0.1
 export LLM_TEMP ?= 0.8
 export LLM_MAX_TOKENS ?= 2048

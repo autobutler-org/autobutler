@@ -43,7 +43,7 @@ func RemoteLLMRequest(prompt string) (*openai.ChatCompletion, error) {
 	}
 	model := os.Getenv("LLM_MODEL")
 	if model == "" {
-		model = "autobutler_Ministral-3B"
+		model = "autobutler_gpt-4.1-nano"
 	}
 
 	maxTokensInt := 2048
@@ -66,16 +66,16 @@ func RemoteLLMRequest(prompt string) (*openai.ChatCompletion, error) {
 			{
 				Function: openai.FunctionDefinitionParam{
 					Name: "add",
-					Strict: openai.Bool(true),
+					Strict: openai.Bool(false),
 					Description: openai.String("Adds two numbers together"),
 					Parameters: openai.FunctionParameters{
 						"type": "object",
 						"properties": map[string]interface{}{
 							"x": map[string]string{
-								"type": "float",
+								"type": "number",
 							},
 							"y": map[string]string{
-								"type": "float",
+								"type": "number",
 							},
 						},
 						"required": []string{"x", "y"},
