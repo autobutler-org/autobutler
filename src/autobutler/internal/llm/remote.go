@@ -62,6 +62,27 @@ func RemoteLLMRequest(prompt string) (*openai.ChatCompletion, error) {
 		Temperature: openai.Float(temperatureFloat),
 		TopP:        openai.Float(topPFloat),
 		Model:       model,
+		Tools: []openai.ChatCompletionToolParam{
+			{
+				Function: openai.FunctionDefinitionParam{
+					Name: "add",
+					Strict: openai.Bool(true),
+					Description: openai.String("Adds two numbers together"),
+					Parameters: openai.FunctionParameters{
+						"type": "object",
+						"properties": map[string]interface{}{
+							"x": map[string]string{
+								"type": "float",
+							},
+							"y": map[string]string{
+								"type": "float",
+							},
+						},
+						"required": []string{"x", "y"},
+					},
+				},
+			},
+		},
 	}
 
 	bodyBytes, err := json.Marshal(reqBody)
