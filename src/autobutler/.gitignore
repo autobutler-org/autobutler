@@ -23,3 +23,5 @@ exercise.json
 build/
 # Added by goreleaser init:
 dist/
+
+__*
