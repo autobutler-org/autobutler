@@ -78,12 +78,21 @@ func RemoteLLMRequest(prompt string) (*openai.ChatCompletion, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to make LLM request: %w", err)
 	}
-	var values []any
-	if values, err = mcpRegistry.MakeToolCall(completion); err != nil {
-		return nil, fmt.Errorf("failed to handle tool calls: %w", err)
+	toolCalls := completion.Choices[0].Message.ToolCalls
+	if len(toolCalls) == 0 {
+		return completion, nil
 	}
-	for _, value := range values {
-		completion.Choices[0].Message.Content += fmt.Sprintf("%v\n", value)
+	completion.Choices[0].Message.Content = ""
+	for _, toolCall := range toolCalls {
+		result, err := mcpRegistry.makeToolCall(toolCalls[0])
+		if err != nil {
+			return nil, fmt.Errorf("failed to handle tool call %s: %w", toolCall.Function.Name, err)
+		}
+		output, err := mcpRegistry.Functions[toolCall.Function.Name].OutputHandler(result, toolCall.Function.Arguments)
+		if err != nil {
+			return nil, fmt.Errorf("failed to handle output for tool call %s: %w", toolCall.Function.Name, err)
+		}
+		completion.Choices[0].Message.Content += fmt.Sprintf("%s\n", output)
 	}
 	return completion, nil
 }

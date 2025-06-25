@@ -15,12 +15,30 @@ var (
 	}
 )
 
+type AddParams struct {
+		Param0 float64 `json:"param0"`
+		Param1 float64 `json:"param1"`
+}
 func (r McpRegistry) Add(param0 float64, param1 float64) float64 {
 	return param0 + param1
 }
 
+func unmarshalParamSchema[T any](paramSchema string) (*T, error) {
+	var params T
+	if err := json.Unmarshal([]byte(paramSchema), &params); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal parameters: %w", err)
+	}
+	return &params, nil
+}
+
 func init() {
-	addFn, err := NewMcpFunction(mcpRegistry.Add, "Adds two numbers together and returns the result.")
+	addFn, err := NewMcpFunction(mcpRegistry.Add, "Adds two numbers together and returns the result.", func (result any, paramSchema string) (string, error) {
+		parameters, err := unmarshalParamSchema[AddParams](paramSchema)
+		if err != nil {
+			return "", fmt.Errorf("failed to unmarshal parameters: %w", err)
+		}
+		return fmt.Sprintf("%f + %f = %f", parameters.Param0, parameters.Param1, result), nil
+	})
 	if err != nil {
 		panic(fmt.Sprintf("failed to generate JSON schema for add function: %v", err))
 	}
@@ -34,7 +52,7 @@ type McpRegistry struct {
 type McpFunction struct {
 	Definition openai.FunctionDefinitionParam
 	fn 	   interface{}
-	OutputHandler func(result any) (string, error)
+	OutputHandler func(result any, paramSchema string) (string, error)
 }
 
 func (f McpFunction) Name() string {
@@ -49,7 +67,7 @@ func (f McpFunction) Description() string {
 	return f.Definition.Description.String()
 }
 
-func NewMcpFunction(fn interface{}, description string) (*McpFunction, error) {
+func NewMcpFunction(fn interface{}, description string, outputHandler func (result any, paramSchema string) (string, error)) (*McpFunction, error) {
 	t := reflect.TypeOf(fn)
 	if t.Kind() != reflect.Func {
 		return nil, fmt.Errorf("expected a function, got %s", t.Kind())
@@ -57,7 +75,7 @@ func NewMcpFunction(fn interface{}, description string) (*McpFunction, error) {
 
 	params := map[string]any{}
 	required := []string{}
-	for i := 0; i < t.NumIn(); i++ {
+	for i := range t.NumIn() {
 		paramType := t.In(i)
 		paramName := fmt.Sprintf("param%d", i)
 		params[paramName] = util.TypeToJsonschema(paramType)
@@ -77,54 +95,48 @@ func NewMcpFunction(fn interface{}, description string) (*McpFunction, error) {
 			Parameters:  schema,
 		},
 		fn: fn,
+		OutputHandler: outputHandler,
 	}, nil
 }
 
-func (r McpRegistry) MakeToolCall(completion *openai.ChatCompletion) ([]any, error) {
-	toolCalls := completion.Choices[0].Message.ToolCalls
-	results := make([]any, 0, len(toolCalls))
-	if len(toolCalls) > 0 {
-		for _, toolCall := range toolCalls {
-			var args map[string]float64
-			if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal function arguments: %w", err)
-			}
-			if _, ok := r.Functions[toolCall.Function.Name]; !ok {
-				return nil, fmt.Errorf("function %s not found in registry", toolCall.Function.Name)
-			}
-			fnDef, ok := r.Functions[toolCall.Function.Name]
-			if !ok {
-				return nil, fmt.Errorf("function %s not found in registry", toolCall.Function.Name)
-			}
+func (r McpRegistry) makeToolCall(toolCall openai.ChatCompletionMessageToolCall) (any, error) {
+	var args map[string]float64
+	if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal function arguments: %w", err)
+	}
+	if _, ok := r.Functions[toolCall.Function.Name]; !ok {
+		return nil, fmt.Errorf("function %s not found in registry", toolCall.Function.Name)
+	}
+	fnDef, ok := r.Functions[toolCall.Function.Name]
+	if !ok {
+		return nil, fmt.Errorf("function %s not found in registry", toolCall.Function.Name)
+	}
 
-			// Prepare argument list in order as defined in fnDef.Parameters
-			var paramNames []string
-			if fnDef.Parameters() != nil {
-				if props, ok := fnDef.Parameters()["properties"].(map[string]interface{}); ok {
-					for name := range props {
-						paramNames = append(paramNames, name)
-					}
-				}
+	// Prepare argument list in order as defined in fnDef.Parameters
+	var paramNames []string
+	if fnDef.Parameters() != nil {
+		if props, ok := fnDef.Parameters()["properties"].(map[string]interface{}); ok {
+			for name := range props {
+				paramNames = append(paramNames, name)
 			}
-
-			var argValues []interface{}
-			for _, name := range paramNames {
-				val, exists := args[name]
-				if !exists {
-					return nil, fmt.Errorf("missing argument '%s' for function %s", name, toolCall.Function.Name)
-				}
-				argValues = append(argValues, val)
-			}
-
-			var returnValue any
-			var err error
-			if returnValue, err = r.callByName(toolCall.Function.Name, argValues...); err != nil {
-				return nil, fmt.Errorf("failed to call function %s: %w", toolCall.Function.Name, err)
-			}
-			results = append(results, returnValue)
 		}
 	}
-	return results, nil
+
+	var argValues []interface{}
+	for _, name := range paramNames {
+		val, exists := args[name]
+		if !exists {
+			return nil, fmt.Errorf("missing argument '%s' for function %s", name, toolCall.Function.Name)
+		}
+		argValues = append(argValues, val)
+	}
+
+	var returnValue any
+	var err error
+	if returnValue, err = r.callByName(toolCall.Function.Name, argValues...); err != nil {
+		return nil, fmt.Errorf("failed to call function %s: %w", toolCall.Function.Name, err)
+	}
+	return returnValue, nil
 }
 
 func (r McpRegistry) callByName(fnName string, args ...any) (any, error) {
