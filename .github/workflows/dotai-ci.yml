@@ -19,11 +19,11 @@ defaults:
 jobs:
   dotai-ci:
     runs-on: ubuntu-latest
-    container:
-      image: exokomodo/exoflow-devcontainer:${{ inputs.image-tag || (github.event_name == 'pull_request' && 'latest') || (github.head_ref || github.ref_name) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
       - name: Install node-gyp
         working-directory: ${{ env.WORKING_DIR }}
         run: |
