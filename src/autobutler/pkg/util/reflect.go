@@ -7,8 +7,8 @@ import (
 )
 
 func GetFunctionName(fn interface{}) string {
-    strs := strings.Split((runtime.FuncForPC(reflect.ValueOf(fn).Pointer()).Name()), ".")
-    return strings.Split(strs[len(strs)-1], "-")[0]
+	strs := strings.Split((runtime.FuncForPC(reflect.ValueOf(fn).Pointer()).Name()), ".")
+	return strings.Split(strs[len(strs)-1], "-")[0]
 }
 
 func TypeToJsonschema(t reflect.Type) map[string]any {

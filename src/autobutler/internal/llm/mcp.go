@@ -16,9 +16,10 @@ var (
 )
 
 type AddParams struct {
-		Param0 float64 `json:"param0"`
-		Param1 float64 `json:"param1"`
+	Param0 float64 `json:"param0"`
+	Param1 float64 `json:"param1"`
 }
+
 func (r McpRegistry) Add(param0 float64, param1 float64) float64 {
 	return param0 + param1
 }
@@ -32,7 +33,7 @@ func unmarshalParamSchema[T any](paramSchema string) (*T, error) {
 }
 
 func init() {
-	addFn, err := NewMcpFunction(mcpRegistry.Add, "Adds two numbers together and returns the result.", func (result any, paramSchema string) (string, error) {
+	addFn, err := NewMcpFunction(mcpRegistry.Add, "Adds two numbers together and returns the result.", func(result any, paramSchema string) (string, error) {
 		parameters, err := unmarshalParamSchema[AddParams](paramSchema)
 		if err != nil {
 			return "", fmt.Errorf("failed to unmarshal parameters: %w", err)
@@ -50,8 +51,8 @@ type McpRegistry struct {
 }
 
 type McpFunction struct {
-	Definition openai.FunctionDefinitionParam
-	fn 	   interface{}
+	Definition    openai.FunctionDefinitionParam
+	fn            interface{}
 	OutputHandler func(result any, paramSchema string) (string, error)
 }
 
@@ -67,7 +68,7 @@ func (f McpFunction) Description() string {
 	return f.Definition.Description.String()
 }
 
-func NewMcpFunction(fn interface{}, description string, outputHandler func (result any, paramSchema string) (string, error)) (*McpFunction, error) {
+func NewMcpFunction(fn interface{}, description string, outputHandler func(result any, paramSchema string) (string, error)) (*McpFunction, error) {
 	t := reflect.TypeOf(fn)
 	if t.Kind() != reflect.Func {
 		return nil, fmt.Errorf("expected a function, got %s", t.Kind())
@@ -94,7 +95,7 @@ func NewMcpFunction(fn interface{}, description string, outputHandler func (resu
 			Description: openai.String(description),
 			Parameters:  schema,
 		},
-		fn: fn,
+		fn:            fn,
 		OutputHandler: outputHandler,
 	}, nil
 }
@@ -161,12 +162,12 @@ func (r McpRegistry) callByName(fnName string, args ...any) (any, error) {
 	return out[0].Interface(), nil
 }
 
-func (r McpRegistry) toCompletionToolParam() []openai.ChatCompletionToolParam{
+func (r McpRegistry) toCompletionToolParam() []openai.ChatCompletionToolParam {
 	var tools []openai.ChatCompletionToolParam
 	for _, fn := range r.Functions {
 		tools = append(tools, openai.ChatCompletionToolParam{
-			Type:        "function",
-			Function:    fn.Definition,
+			Type:     "function",
+			Function: fn.Definition,
 		})
 	}
 	return tools
