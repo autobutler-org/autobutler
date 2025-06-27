@@ -24,6 +24,26 @@ func (r McpRegistry) Add(param0 float64, param1 float64) float64 {
 	return param0 + param1
 }
 
+type QueryInventoryParams struct {
+	// Item to query for
+	Param0 string `json:"param0"`
+}
+
+type QueryInventoryResponse struct {
+	Item 	string  `json:"item"`
+	Inventory float64 `json:"inventory"`
+	Unit string `json:"unit,omitempty"`
+}
+
+func (r McpRegistry) QueryInventory(param0 string) QueryInventoryResponse {
+	return QueryInventoryResponse{
+		Item:      param0, // Example static response
+		Inventory: 100.0, // Example static response
+		Unit:      "gallons", // Example static unit
+	}
+}
+
+
 func unmarshalParamSchema[T any](paramSchema string) (*T, error) {
 	var params T
 	if err := json.Unmarshal([]byte(paramSchema), &params); err != nil {
@@ -33,6 +53,7 @@ func unmarshalParamSchema[T any](paramSchema string) (*T, error) {
 }
 
 func init() {
+	// Add function
 	addFn, err := NewMcpFunction(mcpRegistry.Add, "Adds two numbers together and returns the result.", func(result any, paramSchema string) (string, error) {
 		parameters, err := unmarshalParamSchema[AddParams](paramSchema)
 		if err != nil {
@@ -41,9 +62,23 @@ func init() {
 		return fmt.Sprintf("%f + %f = %f", parameters.Param0, parameters.Param1, result), nil
 	})
 	if err != nil {
-		panic(fmt.Sprintf("failed to generate JSON schema for add function: %v", err))
+		panic(fmt.Sprintf("failed to generate JSON schema for Add function: %v", err))
 	}
 	mcpRegistry.Functions[addFn.Name()] = *addFn
+
+	// QueryInventory function
+	queryInventoryFn, err := NewMcpFunction(mcpRegistry.QueryInventory, "Queries the home inventory for amount of an item.", func(result any, paramSchema string) (string, error) {
+		parameters, err := unmarshalParamSchema[QueryInventoryParams](paramSchema)
+		if err != nil {
+			return "", fmt.Errorf("failed to unmarshal parameters: %w", err)
+		}
+		response := result.(QueryInventoryResponse)
+		return fmt.Sprintf("There are %f %s of %s", response.Inventory, response.Unit, parameters.Param0), nil
+	})
+	if err != nil {
+		panic(fmt.Sprintf("failed to generate JSON schema for QueryInventory function: %v", err))
+	}
+	mcpRegistry.Functions[queryInventoryFn.Name()] = *queryInventoryFn
 }
 
 type McpRegistry struct {
@@ -101,7 +136,7 @@ func NewMcpFunction(fn interface{}, description string, outputHandler func(resul
 }
 
 func (r McpRegistry) makeToolCall(toolCall openai.ChatCompletionMessageToolCall) (any, error) {
-	var args map[string]float64
+	var args map[string]any
 	if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal function arguments: %w", err)
 	}
