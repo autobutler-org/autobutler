@@ -5,8 +5,7 @@ import "fmt"
 templ input(spinnerId string) {
     <div class="bg-white/5 backdrop-blur-lg border-t border-white/10 p-4">
       <div class="max-w-4xl mx-auto">
-        // <form class="flex space-x-4" @submit.prevent="sendMessage"></form>
-        <div class="flex space-x-4">
+        <form class="flex space-x-4" onsubmit="return false;">
           <input
             id="messageInput"
             type="text"
@@ -37,7 +36,7 @@ templ input(spinnerId string) {
               />
             </svg>
           </button>
-        </div>
+        </form>
       </div>
     </div>
 }
