@@ -31,7 +31,7 @@ func input(spinnerId string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"bg-white/5 backdrop-blur-lg border-t border-white/10 p-4\"><div class=\"max-w-4xl mx-auto\"><form class=\"flex space-x-4\" @submit.prevent=\"sendMessage\"><input id=\"messageInput\" type=\"text\" placeholder=\"Type your message...\" class=\"flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500\"> <button hx-get=\"/api/v1/chat\" hx-trigger=\"click\" hx-target=\"#messages\" hx-swap=\"beforeend\" hx-headers='{\"Accept\": \"text/html\"}' hx-indicator=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"bg-white/5 backdrop-blur-lg border-t border-white/10 p-4\"><div class=\"max-w-4xl mx-auto\"><form class=\"flex space-x-4\" onsubmit=\"return false;\"><input id=\"messageInput\" type=\"text\" placeholder=\"Type your message...\" class=\"flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500\"> <button hx-get=\"/api/v1/chat\" hx-trigger=\"click\" hx-target=\"#messages\" hx-swap=\"beforeend\" hx-headers='{\"Accept\": \"text/html\"}' hx-indicator=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
