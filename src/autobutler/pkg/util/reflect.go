@@ -1,6 +1,8 @@
 package util
 
 import (
+	"encoding/json"
+	"fmt"
 	"reflect"
 	"runtime"
 	"strings"
@@ -50,4 +52,12 @@ func TypeToJsonschema(t reflect.Type) map[string]any {
 	default:
 		return map[string]any{"type": "string"}
 	}
+}
+
+func UnmarshalParamSchema[T any](paramSchema string) (*T, error) {
+	var params T
+	if err := json.Unmarshal([]byte(paramSchema), &params); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal parameters: %w", err)
+	}
+	return &params, nil
 }

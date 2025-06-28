@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 
+	"autobutler/internal/llm/mcp"
+
 	"github.com/openai/openai-go"
 )
 
@@ -72,7 +74,7 @@ func RemoteLLMRequest(prompt string) (*openai.ChatCompletion, error) {
 		Temperature: openai.Float(temperatureFloat),
 		TopP:        openai.Float(topPFloat),
 		Model:       model,
-		Tools:       mcpRegistry.toCompletionToolParam(),
+		Tools:       mcp.Registry.ToCompletionToolParam(),
 	}
 	completion, err := makeRequest(reqBody)
 	if err != nil {
@@ -84,11 +86,11 @@ func RemoteLLMRequest(prompt string) (*openai.ChatCompletion, error) {
 	}
 	completion.Choices[0].Message.Content = ""
 	for _, toolCall := range toolCalls {
-		result, err := mcpRegistry.makeToolCall(toolCalls[0])
+		result, err := mcp.Registry.MakeToolCall(toolCalls[0])
 		if err != nil {
 			return nil, fmt.Errorf("failed to handle tool call %s: %w", toolCall.Function.Name, err)
 		}
-		output, err := mcpRegistry.Functions[toolCall.Function.Name].OutputHandler(result, toolCall.Function.Arguments)
+		output, err := mcp.Registry.Functions[toolCall.Function.Name].OutputHandler(result, toolCall.Function.Arguments)
 		if err != nil {
 			return nil, fmt.Errorf("failed to handle output for tool call %s: %w", toolCall.Function.Name, err)
 		}

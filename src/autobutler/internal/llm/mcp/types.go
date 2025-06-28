@@ -1,4 +1,4 @@
-package llm
+package mcp
 
 import (
 	"autobutler/internal/db"
@@ -10,8 +10,52 @@ import (
 	"github.com/openai/openai-go"
 )
 
+func init() {
+	// QueryInventory function
+	queryInventoryFn, err := NewMcpFunction(Registry.QueryInventory, "Queries the home inventory for amount of an item.", func(result any, paramSchema string) (string, error) {
+		parameters, err := util.UnmarshalParamSchema[QueryInventoryParams](paramSchema)
+		if err != nil {
+			return "", fmt.Errorf("failed to unmarshal parameters: %w", err)
+		}
+		response := result.(QueryInventoryResponse)
+		return fmt.Sprintf("There are %f %s of %s", response.Inventory, response.Unit, parameters.ItemName), nil
+	})
+	if err != nil {
+		panic(fmt.Sprintf("failed to generate JSON schema for QueryInventory function: %v", err))
+	}
+	Registry.Functions[queryInventoryFn.Name()] = *queryInventoryFn
+
+	// AddToInventory function
+	addToInventoryFn, err := NewMcpFunction(Registry.AddToInventory, "Adds an item to the home inventory.", func(result any, paramSchema string) (string, error) {
+		parameters, err := util.UnmarshalParamSchema[AddToInventoryParams](paramSchema)
+		if err != nil {
+			return "", fmt.Errorf("failed to unmarshal parameters: %w", err)
+		}
+		response := result.(AddToInventoryResponse)
+		return fmt.Sprintf("Added %f %s of %s to the inventory, so now you have %f %s.", parameters.Amount, response.Item.Unit, response.Item.Name, response.Item.Amount, response.Item.Unit), nil
+	})
+	if err != nil {
+		panic(fmt.Sprintf("failed to generate JSON schema for AddToInventory function: %v", err))
+	}
+	Registry.Functions[addToInventoryFn.Name()] = *addToInventoryFn
+
+	// ReduceInventory function
+	reduceInventoryFn, err := NewMcpFunction(Registry.ReduceInventory, "Removes an item from the home inventory, such as when the user used some of the item.", func(result any, paramSchema string) (string, error) {
+		parameters, err := util.UnmarshalParamSchema[ReduceInventoryParams](paramSchema)
+		if err != nil {
+			return "", fmt.Errorf("failed to unmarshal parameters: %w", err)
+		}
+		response := result.(ReduceInventoryResponse)
+		return fmt.Sprintf("Removed %f %s of %s from the inventory, so now you have %f %s.", parameters.Amount, response.Item.Unit, response.Item.Name, response.Item.Amount, response.Item.Unit), nil
+	})
+	if err != nil {
+		panic(fmt.Sprintf("failed to generate JSON schema for ReduceInventory function: %v", err))
+	}
+	Registry.Functions[reduceInventoryFn.Name()] = *reduceInventoryFn
+}
+
 var (
-	mcpRegistry = &McpRegistry{
+	Registry = &McpRegistry{
 		Functions: make(map[string]McpFunction),
 	}
 )
@@ -78,42 +122,21 @@ func (r McpRegistry) AddToInventory(name string, amount float64, unit string) Ad
 	}
 }
 
-func unmarshalParamSchema[T any](paramSchema string) (*T, error) {
-	var params T
-	if err := json.Unmarshal([]byte(paramSchema), &params); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal parameters: %w", err)
-	}
-	return &params, nil
+type ReduceInventoryParams struct {
+    Name   string `json:"param0"`
+    Amount float64 `json:"param1"`
+    Unit   string `json:"param2"`
 }
 
-func init() {
-	// QueryInventory function
-	queryInventoryFn, err := NewMcpFunction(mcpRegistry.QueryInventory, "Queries the home inventory for amount of an item.", func(result any, paramSchema string) (string, error) {
-		parameters, err := unmarshalParamSchema[QueryInventoryParams](paramSchema)
-		if err != nil {
-			return "", fmt.Errorf("failed to unmarshal parameters: %w", err)
-		}
-		response := result.(QueryInventoryResponse)
-		return fmt.Sprintf("There are %f %s of %s", response.Inventory, response.Unit, parameters.ItemName), nil
-	})
-	if err != nil {
-		panic(fmt.Sprintf("failed to generate JSON schema for QueryInventory function: %v", err))
-	}
-	mcpRegistry.Functions[queryInventoryFn.Name()] = *queryInventoryFn
+type ReduceInventoryResponse struct {
+	Item 	db.Item  `json:"item"`
+}
 
-	// AddToInventory function
-	addToInventoryFn, err := NewMcpFunction(mcpRegistry.AddToInventory, "Adds an item to the home inventory.", func(result any, paramSchema string) (string, error) {
-		parameters, err := unmarshalParamSchema[AddToInventoryParams](paramSchema)
-		if err != nil {
-			return "", fmt.Errorf("failed to unmarshal parameters: %w", err)
-		}
-		response := result.(AddToInventoryResponse)
-		return fmt.Sprintf("Added %f %s of %s to the inventory, so now you have %f %s.", parameters.Amount, response.Item.Unit, response.Item.Name, response.Item.Amount, response.Item.Unit), nil
-	})
-	if err != nil {
-		panic(fmt.Sprintf("failed to generate JSON schema for AddToInventory function: %v", err))
+func (r McpRegistry) ReduceInventory(name string, amount float64, unit string) ReduceInventoryResponse {
+	response := r.AddToInventory(name, -amount, unit)
+	return ReduceInventoryResponse{
+		Item: response.Item,
 	}
-	mcpRegistry.Functions[addToInventoryFn.Name()] = *addToInventoryFn
 }
 
 type McpRegistry struct {
@@ -170,7 +193,7 @@ func NewMcpFunction(fn interface{}, description string, outputHandler func(resul
 	}, nil
 }
 
-func (r McpRegistry) makeToolCall(toolCall openai.ChatCompletionMessageToolCall) (any, error) {
+func (r McpRegistry) MakeToolCall(toolCall openai.ChatCompletionMessageToolCall) (any, error) {
 	var args map[string]any
 	if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal function arguments: %w", err)
@@ -232,7 +255,7 @@ func (r McpRegistry) callByName(fnName string, args ...any) (any, error) {
 	return out[0].Interface(), nil
 }
 
-func (r McpRegistry) toCompletionToolParam() []openai.ChatCompletionToolParam {
+func (r McpRegistry) ToCompletionToolParam() []openai.ChatCompletionToolParam {
 	var tools []openai.ChatCompletionToolParam
 	for _, fn := range r.Functions {
 		tools = append(tools, openai.ChatCompletionToolParam{
