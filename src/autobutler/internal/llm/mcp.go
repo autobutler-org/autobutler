@@ -1,6 +1,7 @@
 package llm
 
 import (
+	"autobutler/internal/db"
 	"autobutler/pkg/util"
 	"encoding/json"
 	"fmt"
@@ -16,17 +17,16 @@ var (
 )
 
 type AddParams struct {
-	Param0 float64 `json:"param0"`
-	Param1 float64 `json:"param1"`
+	X float64 `json:"param0"`
+	Y float64 `json:"param1"`
 }
 
-func (r McpRegistry) Add(param0 float64, param1 float64) float64 {
-	return param0 + param1
+func (r McpRegistry) Add(x float64, y float64) float64 {
+	return x + y
 }
 
 type QueryInventoryParams struct {
-	// Item to query for
-	Param0 string `json:"param0"`
+	ItemName string `json:"param0"`
 }
 
 type QueryInventoryResponse struct {
@@ -35,14 +35,48 @@ type QueryInventoryResponse struct {
 	Unit string `json:"unit,omitempty"`
 }
 
-func (r McpRegistry) QueryInventory(param0 string) QueryInventoryResponse {
+func (r McpRegistry) QueryInventory(itemName string) QueryInventoryResponse {
+	item, err := db.Instance.QueryInventory(itemName)
+	if err != nil {
+		panic(fmt.Sprintf("failed to query inventory for item %s: %v", itemName, err))
+	}
+	if item == nil {
+		return QueryInventoryResponse{
+			Item:      itemName,
+			Inventory: 0.0,
+			Unit:      "",
+		}
+	}
 	return QueryInventoryResponse{
-		Item:      param0, // Example static response
-		Inventory: 100.0, // Example static response
-		Unit:      "gallons", // Example static unit
+		Item:      item.Name,
+		Inventory: float64(item.Amount),
+		Unit:      item.Unit,
 	}
 }
 
+type AddToInventoryParams struct {
+    Name   string `json:"param0"`
+    Amount float64 `json:"param1"`
+    Unit   string `json:"param2"`
+}
+
+type AddToInventoryResponse struct {
+	Item 	db.Item  `json:"item"`
+}
+
+func (r McpRegistry) AddToInventory(name string, amount float64, unit string) AddToInventoryResponse {
+	item, err := db.Instance.AddToInventory(db.Item{
+		Name:   name,
+		Amount: amount,
+		Unit:   unit,
+	})
+	if err != nil {
+		panic(fmt.Sprintf("failed to add to inventory the item: %v", err))
+	}
+	return AddToInventoryResponse{
+		Item: *item,
+	}
+}
 
 func unmarshalParamSchema[T any](paramSchema string) (*T, error) {
 	var params T
@@ -53,19 +87,6 @@ func unmarshalParamSchema[T any](paramSchema string) (*T, error) {
 }
 
 func init() {
-	// Add function
-	addFn, err := NewMcpFunction(mcpRegistry.Add, "Adds two numbers together and returns the result.", func(result any, paramSchema string) (string, error) {
-		parameters, err := unmarshalParamSchema[AddParams](paramSchema)
-		if err != nil {
-			return "", fmt.Errorf("failed to unmarshal parameters: %w", err)
-		}
-		return fmt.Sprintf("%f + %f = %f", parameters.Param0, parameters.Param1, result), nil
-	})
-	if err != nil {
-		panic(fmt.Sprintf("failed to generate JSON schema for Add function: %v", err))
-	}
-	mcpRegistry.Functions[addFn.Name()] = *addFn
-
 	// QueryInventory function
 	queryInventoryFn, err := NewMcpFunction(mcpRegistry.QueryInventory, "Queries the home inventory for amount of an item.", func(result any, paramSchema string) (string, error) {
 		parameters, err := unmarshalParamSchema[QueryInventoryParams](paramSchema)
@@ -73,12 +94,26 @@ func init() {
 			return "", fmt.Errorf("failed to unmarshal parameters: %w", err)
 		}
 		response := result.(QueryInventoryResponse)
-		return fmt.Sprintf("There are %f %s of %s", response.Inventory, response.Unit, parameters.Param0), nil
+		return fmt.Sprintf("There are %f %s of %s", response.Inventory, response.Unit, parameters.ItemName), nil
 	})
 	if err != nil {
 		panic(fmt.Sprintf("failed to generate JSON schema for QueryInventory function: %v", err))
 	}
 	mcpRegistry.Functions[queryInventoryFn.Name()] = *queryInventoryFn
+
+	// AddToInventory function
+	addToInventoryFn, err := NewMcpFunction(mcpRegistry.AddToInventory, "Adds an item to the home inventory.", func(result any, paramSchema string) (string, error) {
+		parameters, err := unmarshalParamSchema[AddToInventoryParams](paramSchema)
+		if err != nil {
+			return "", fmt.Errorf("failed to unmarshal parameters: %w", err)
+		}
+		response := result.(AddToInventoryResponse)
+		return fmt.Sprintf("Added %f %s of %s to the inventory, so now you have %f %s.", parameters.Amount, response.Item.Unit, response.Item.Name, response.Item.Amount, response.Item.Unit), nil
+	})
+	if err != nil {
+		panic(fmt.Sprintf("failed to generate JSON schema for AddToInventory function: %v", err))
+	}
+	mcpRegistry.Functions[addToInventoryFn.Name()] = *addToInventoryFn
 }
 
 type McpRegistry struct {
