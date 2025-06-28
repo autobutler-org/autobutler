@@ -19,23 +19,20 @@ type McpRegistry struct {
 
 type McpFunction struct {
 	Definition    openai.FunctionDefinitionParam
-	fn            interface{}
+	fn            any
 	OutputHandler func(result any, paramSchema string) (string, error)
 }
-
 func (f McpFunction) Name() string {
 	return f.Definition.Name
 }
-
 func (f McpFunction) Parameters() openai.FunctionParameters {
 	return f.Definition.Parameters
 }
-
 func (f McpFunction) Description() string {
 	return f.Definition.Description.String()
 }
 
-func NewMcpFunction(fn interface{}, description string, outputHandler func(result any, paramSchema string) (string, error)) (*McpFunction, error) {
+func NewMcpFunction(fn any, description string, outputHandler func(result any, paramSchema string) (string, error)) (*McpFunction, error) {
 	t := reflect.TypeOf(fn)
 	if t.Kind() != reflect.Func {
 		return nil, fmt.Errorf("expected a function, got %s", t.Kind())
@@ -83,14 +80,14 @@ func (r McpRegistry) MakeToolCall(toolCall openai.ChatCompletionMessageToolCall)
 	// Prepare argument list in order as defined in fnDef.Parameters
 	var paramNames []string
 	if fnDef.Parameters() != nil {
-		if props, ok := fnDef.Parameters()["properties"].(map[string]interface{}); ok {
+		if props, ok := fnDef.Parameters()["properties"].(map[string]any); ok {
 			for name := range props {
 				paramNames = append(paramNames, name)
 			}
 		}
 	}
 
-	var argValues []interface{}
+	var argValues []any
 	for _, name := range paramNames {
 		val, exists := args[name]
 		if !exists {

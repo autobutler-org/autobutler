@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func GetFunctionName(fn interface{}) string {
+func GetFunctionName(fn any) string {
 	strs := strings.Split((runtime.FuncForPC(reflect.ValueOf(fn).Pointer()).Name()), ".")
 	return strings.Split(strs[len(strs)-1], "-")[0]
 }
