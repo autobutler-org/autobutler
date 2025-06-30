@@ -112,11 +112,6 @@ func init() {
 	}
 
 	initSchema()
-	Instance.AddToInventory(Item{
-		Name:   "milk",
-		Amount: 1000,
-		Unit:   "gallons",
-	})
 }
 
 func initSchema() error {
