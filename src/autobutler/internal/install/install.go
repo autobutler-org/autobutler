@@ -20,11 +20,7 @@ func installSystemdService() error {
 }
 
 func installPlistService() error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("failed to get user home directory: %w", err)
-	}
-	serviceFilePath := fmt.Sprintf("%s/Library/LaunchDaemons/%s", home, plistServiceName)
+	serviceFilePath := fmt.Sprintf("/Library/LaunchDaemons/%s", plistServiceName)
 	if err := os.WriteFile(serviceFilePath, []byte(plistServiceContent), 0644); err != nil {
 		return fmt.Errorf("failed to write plist service file: %w", err)
 	}
