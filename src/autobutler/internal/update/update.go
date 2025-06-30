@@ -16,7 +16,7 @@ func Update(version string) error {
 	// Download the new release
 	// Unpack the new release, replacing the currently running binary location
 	if version == "" {
-		return nil // No update needed
+		return fmt.Errorf("version cannot be empty")
 	}
 	_, err := backupSelf()
 	if err != nil {

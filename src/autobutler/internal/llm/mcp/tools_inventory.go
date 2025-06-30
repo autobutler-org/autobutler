@@ -6,17 +6,18 @@ import (
 )
 
 type AddToInventoryParams struct {
-    Name   string `json:"param0"`
-    Amount float64 `json:"param1"`
-    Unit   string `json:"param2"`
+	Name   string  `json:"param0"`
+	Amount float64 `json:"param1"`
+	Unit   string  `json:"param2"`
 }
+
 func (p AddToInventoryParams) Output(response any) (string, []any) {
 	resp := response.(AddToInventoryResponse)
 	return "Added %f %s of %s to the inventory, so now you have %f %s.", []any{p.Amount, resp.Item.Unit, resp.Item.Name, resp.Item.Amount, resp.Item.Unit}
 }
 
 type AddToInventoryResponse struct {
-	Item 	db.Item  `json:"item"`
+	Item db.Item `json:"item"`
 }
 
 func (r McpRegistry) AddToInventory(name string, amount float64, unit string) AddToInventoryResponse {
@@ -36,15 +37,16 @@ func (r McpRegistry) AddToInventory(name string, amount float64, unit string) Ad
 type QueryInventoryParams struct {
 	ItemName string `json:"param0"`
 }
+
 func (p QueryInventoryParams) Output(response any) (string, []any) {
 	resp := response.(QueryInventoryResponse)
 	return "There are %f %s of %s in the inventory.", []any{resp.Inventory, resp.Unit, resp.Item}
 }
 
 type QueryInventoryResponse struct {
-	Item 	string  `json:"item"`
+	Item      string  `json:"item"`
 	Inventory float64 `json:"inventory"`
-	Unit string `json:"unit,omitempty"`
+	Unit      string  `json:"unit,omitempty"`
 }
 
 func (r McpRegistry) QueryInventory(itemName string) QueryInventoryResponse {
@@ -67,17 +69,18 @@ func (r McpRegistry) QueryInventory(itemName string) QueryInventoryResponse {
 }
 
 type ReduceInventoryParams struct {
-    Name   string `json:"param0"`
-    Amount float64 `json:"param1"`
-    Unit   string `json:"param2"`
+	Name   string  `json:"param0"`
+	Amount float64 `json:"param1"`
+	Unit   string  `json:"param2"`
 }
+
 func (p ReduceInventoryParams) Output(response any) (string, []any) {
 	resp := response.(ReduceInventoryResponse)
 	return "Reduced %f %s of %s from the inventory, so now you have %f %s.", []any{p.Amount, resp.Item.Unit, resp.Item.Name, resp.Item.Amount, resp.Item.Unit}
 }
 
 type ReduceInventoryResponse struct {
-	Item 	db.Item  `json:"item"`
+	Item db.Item `json:"item"`
 }
 
 func (r McpRegistry) ReduceInventory(name string, amount float64, unit string) ReduceInventoryResponse {

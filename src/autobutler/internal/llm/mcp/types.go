@@ -22,6 +22,7 @@ type McpFunction struct {
 	fn            any
 	OutputHandler func(result any, paramSchema string) (string, error)
 }
+
 func (f McpFunction) Name() string {
 	return f.Definition.Name
 }

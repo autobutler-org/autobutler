@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	systemdServiceName = "autobutler.service"
+	systemdServiceName    = "autobutler.service"
 	systemdServiceContent = `[Unit]
 Description=AutoButler Service
 After=network.target
@@ -21,7 +21,7 @@ StandardError=append:/var/log/autobutler.err
 
 [Install]
 WantedBy=multi-user.target`
-	plistServiceName = "ai.autobutler.plist"
+	plistServiceName    = "ai.autobutler.plist"
 	plistServiceContent = `<!-- /Library/LaunchDaemons/ -->
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

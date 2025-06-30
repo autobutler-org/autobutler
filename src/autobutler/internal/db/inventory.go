@@ -6,15 +6,15 @@ import (
 )
 
 type Item struct {
-	ID    int
-	Name  string
+	ID     int
+	Name   string
 	Amount float64
-	Unit string
+	Unit   string
 }
 
 func NewItem(id int, name string, amount float64, unit string) *Item {
 	return &Item{
-		ID: id,
+		ID:     id,
 		Name:   name,
 		Amount: amount,
 		Unit:   unit,
@@ -35,5 +35,3 @@ func NewItemsFromRows(rows *sql.Rows) ([]*Item, error) {
 	}
 	return items, nil
 }
-
-
