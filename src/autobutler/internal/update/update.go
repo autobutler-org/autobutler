@@ -11,6 +11,43 @@ import (
 	"time"
 )
 
+func Update(version string) error {
+	// Copy the current binary to some temporary system location
+	// Download the new release
+	// Unpack the new release, replacing the currently running binary location
+	if version == "" {
+		return nil // No update needed
+	}
+	_, err := backupSelf()
+	if err != nil {
+		return fmt.Errorf("failed to copy current binary: %w", err)
+	}
+	baseUrl := os.Getenv("AUTOBUTLER_UPDATE_URL")
+	if baseUrl == "" {
+		baseUrl = "https://github.com/autobutler-ai/autobutler.ai/releases/download"
+	}
+	url := fmt.Sprintf("%s/%s/autobutler_%s_%s.tar.gz", baseUrl, version, runtime.GOOS, runtime.GOARCH)
+	fmt.Println("Downloading update from", url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("failed to download update: %s", resp.Status)
+	}
+	if err := replaceSelf(resp.Body); err != nil {
+		return fmt.Errorf("failed to replace self with update: %w", err)
+	}
+	fmt.Println("Update successful.")
+	return nil
+}
+
+func RestartAutobutler(delay time.Duration) {
+	time.Sleep(delay)
+	os.Exit(0)
+}
+
 const binaryName = "autobutler"
 
 var backupName = fmt.Sprintf("%s_backup", binaryName)
@@ -125,41 +162,4 @@ func replaceSelf(body io.Reader) error {
 		return fmt.Errorf("failed to overwrite executable: %w", err)
 	}
 	return nil
-}
-
-func Update(version string) error {
-	// Copy the current binary to some temporary system location
-	// Download the new release
-	// Unpack the new release, replacing the currently running binary location
-	if version == "" {
-		return nil // No update needed
-	}
-	_, err := backupSelf()
-	if err != nil {
-		return fmt.Errorf("failed to copy current binary: %w", err)
-	}
-	baseUrl := os.Getenv("AUTOBUTLER_UPDATE_URL")
-	if baseUrl == "" {
-		baseUrl = "https://github.com/autobutler-ai/autobutler.ai/releases/download"
-	}
-	url := fmt.Sprintf("%s/%s/autobutler_%s_%s.tar.gz", baseUrl, version, runtime.GOOS, runtime.GOARCH)
-	fmt.Println("Downloading update from", url)
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("failed to download update: %s", resp.Status)
-	}
-	if err := replaceSelf(resp.Body); err != nil {
-		return fmt.Errorf("failed to replace self with update: %w", err)
-	}
-	fmt.Println("Update successful.")
-	return nil
-}
-
-func RestartAutobutler(delay time.Duration) {
-	time.Sleep(delay)
-	os.Exit(0)
 }
