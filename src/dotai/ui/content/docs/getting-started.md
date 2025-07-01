@@ -19,38 +19,31 @@ Before you begin, make sure you have the following:
 
 ## Quick Installation
 
-To install autobutler, you simple need to download the binary for your hardware from
-[our releases page]()
+To install autobutler, you simply need to download the binary for your hardware from
+[our releases page](https://github.com/autobutler-ai/autobutler.ai/releases).
 
-## Basic Setup
+Once downloaded, you can extract the binary and run the `install` command with your
+API key, and `sudo` privileges.
 
-Roquefort paneer cheesecake edam danish fontina pepper jack cheesy feet melted cheese. Manchego edam pecorino cream cheese queso swiss blue castello squirty cheese.
-
-```javascript
-import { AutoButler } from "@autobutler/core";
-
-const butler = new AutoButler({
-  apiKey: "your-api-key",
-  environment: "production",
-});
+```bash
+API_KEY=your-api-key
+sudo /path/to/autobutler install $API_KEY
 ```
 
-## Your First Automation
+If you wish to install it via `curl`, you can run the following command:
 
-Feta caerphilly ricotta who moved my cheese swiss roquefort mozzarella gouda. Fromage camembert de normandie airedale cream cheese cheese strings gouda monterey jack blue castello.
-
-```javascript
-const result = await butler.run({
-  name: "hello-world",
-  steps: [{ action: "log", message: "Hello from AutoButler!" }],
-});
+```bash
+API_KEY=your-api-key
+VERSION=v0.0.0
+curl \
+  --fail \
+  -L "https://github.com/exokomodo/autobutler.ai/releases/download/${VERSION}/autobutler_darwin_arm64.tar.gz" | tar -xv
+sudo ./autobutler install $API_KEY
 ```
+
+It should now be running in the background, and you can check it out at [http://localhost:8081](http://localhost:8081).
 
 ## Next Steps
 
-Stinking bishop paneer cut the cheese paneer cottage cheese chalk and cheese macaroni cheese babybel. Bavarian bergkase chalk and cheese camembert de normandie melted cheese red leicester who moved my cheese fromage frais when the cheese comes out everybody's happy.
-
-- Read the [Configuration Guide](/docs/configuration) to customize your setup
 - Explore [Examples](/docs/examples) for common use cases
-- Check out the [API Reference](/docs/api-reference) for detailed documentation
-- Try the [Quick Start](/docs/quick-start) for a fast setup
+- Check out the [Help & Support](/docs/help) section for troubleshooting and community resources
