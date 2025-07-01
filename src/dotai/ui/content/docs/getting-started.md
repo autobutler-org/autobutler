@@ -8,25 +8,19 @@ navigation:
 
 # Getting Started
 
-Welcome to AutoButler! This guide will help you get up and running quickly with our powerful automation platform.
+Welcome to AutoButler! This guide will help you get up and running quickly with our platform.
 
 ## Prerequisites
 
 Before you begin, make sure you have the following:
 
-- Node.js version 16 or higher
 - A modern web browser
-- Basic knowledge of JavaScript/TypeScript
+- A basic level of comfort running commands in a terminal
 
 ## Quick Installation
 
-Camembert de normandie swiss cheese slices. Everyone loves cheese triangles boursin mascarpone stinking bishop goat fromage frais taleggio. Cheesy grin rubber cheese rubber cheese melted cheese emmental swiss rubber cheese melted cheese. Monterey jack stinking bishop swiss cheesy grin cheesy grin fromage mozzarella danish fontina.
-
-```bash
-npm install @autobutler/core
-# or
-yarn add @autobutler/core
-```
+To install autobutler, you simple need to download the binary for your hardware from
+[our releases page]()
 
 ## Basic Setup
 
