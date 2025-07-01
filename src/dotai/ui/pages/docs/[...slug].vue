@@ -502,7 +502,6 @@ useSeoMeta({
   min-width: 0;
   overflow-y: auto;
   height: calc(100vh - 12rem);
-  scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 255, 170, 0.3) transparent;
   margin-bottom: 4rem;

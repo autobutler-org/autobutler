@@ -27,24 +27,28 @@ export default defineNuxtConfig({
     },
   },
   content: {
-    // Configure content module for better TOC generation
-    highlight: {
-      theme: {
-        default: "github-dark",
-        dark: "github-dark",
-        light: "github-light",
+    build: {
+      markdown: {
+        // Configure content module for better TOC generation
+        highlight: {
+          theme: {
+            default: "catppuccin-mocha",
+            dark: "catppuccin-mocha",
+            light: "catppuccin-latte",
+          },
+          preload: [
+            "json",
+            "js",
+            "ts",
+            "html",
+            "css",
+            "vue",
+            "bash",
+            "yaml",
+            "markdown",
+          ],
+        },
       },
-      preload: [
-        "json",
-        "js",
-        "ts",
-        "html",
-        "css",
-        "vue",
-        "bash",
-        "yaml",
-        "markdown",
-      ],
     },
     markdown: {
       // Enable anchor links for headings

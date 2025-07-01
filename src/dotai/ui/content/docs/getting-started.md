@@ -8,55 +8,53 @@ navigation:
 
 # Getting Started
 
-Welcome to AutoButler! This guide will help you get up and running quickly with our powerful automation platform.
+Welcome to AutoButler! This guide will help you get up and running quickly with our platform.
 
 ## Prerequisites
 
 Before you begin, make sure you have the following:
 
-- Node.js version 16 or higher
 - A modern web browser
-- Basic knowledge of JavaScript/TypeScript
+- A basic level of comfort running commands in a terminal
 
 ## Quick Installation
 
-Camembert de normandie swiss cheese slices. Everyone loves cheese triangles boursin mascarpone stinking bishop goat fromage frais taleggio. Cheesy grin rubber cheese rubber cheese melted cheese emmental swiss rubber cheese melted cheese. Monterey jack stinking bishop swiss cheesy grin cheesy grin fromage mozzarella danish fontina.
+To install autobutler, you simply need to download the binary for your hardware from
+[our releases page](https://github.com/autobutler-ai/autobutler.ai/releases).
+
+Once downloaded, you can extract the binary and run the `install` command with your
+API key, and `sudo` privileges.
 
 ```bash
-npm install @autobutler/core
-# or
-yarn add @autobutler/core
+API_KEY=your-api-key
+sudo /path/to/autobutler install $API_KEY
 ```
 
-## Basic Setup
+If you wish to install it via `curl`, you can run the following command:
 
-Roquefort paneer cheesecake edam danish fontina pepper jack cheesy feet melted cheese. Manchego edam pecorino cream cheese queso swiss blue castello squirty cheese.
-
-```javascript
-import { AutoButler } from "@autobutler/core";
-
-const butler = new AutoButler({
-  apiKey: "your-api-key",
-  environment: "production",
-});
+```bash
+API_KEY=your-api-key
+VERSION=v0.0.0
+curl \
+  --fail \
+  -L "https://github.com/exokomodo/autobutler.ai/releases/download/${VERSION}/autobutler_darwin_arm64.tar.gz" | tar -xv
+sudo ./autobutler install $API_KEY
 ```
 
-## Your First Automation
+or if you prefer to use `wget`, you can run:
 
-Feta caerphilly ricotta who moved my cheese swiss roquefort mozzarella gouda. Fromage camembert de normandie airedale cream cheese cheese strings gouda monterey jack blue castello.
-
-```javascript
-const result = await butler.run({
-  name: "hello-world",
-  steps: [{ action: "log", message: "Hello from AutoButler!" }],
-});
+```bash
+API_KEY=your-api-key
+VERSION=v0.0.0
+wget \
+  -qO- \
+  "https://github.com/exokomodo/autobutler.ai/releases/download/${VERSION}/autobutler_darwin_arm64.tar.gz" | tar -xv
+sudo ./autobutler install $API_KEY
 ```
+
+Autobutler should now be running in the background, and you can check it out at [http://localhost:8081](http://localhost:8081).
 
 ## Next Steps
 
-Stinking bishop paneer cut the cheese paneer cottage cheese chalk and cheese macaroni cheese babybel. Bavarian bergkase chalk and cheese camembert de normandie melted cheese red leicester who moved my cheese fromage frais when the cheese comes out everybody's happy.
-
-- Read the [Configuration Guide](/docs/configuration) to customize your setup
 - Explore [Examples](/docs/examples) for common use cases
-- Check out the [API Reference](/docs/api-reference) for detailed documentation
-- Try the [Quick Start](/docs/quick-start) for a fast setup
+- Check out the [Help & Support](/docs/help) section for troubleshooting and community resources
