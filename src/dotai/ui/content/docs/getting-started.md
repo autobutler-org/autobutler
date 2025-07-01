@@ -56,5 +56,4 @@ Autobutler should now be running in the background, and you can check it out at 
 
 ## Next Steps
 
-- Explore [Examples](/docs/examples) for common use cases
 - Check out the [Help & Support](/docs/help) section for troubleshooting and community resources
