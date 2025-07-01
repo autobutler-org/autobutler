@@ -47,7 +47,7 @@ func (d *Database) QueryInventory(name string) (*Item, error) {
 		return nil, fmt.Errorf("error creating items from rows: %w", err)
 	}
 	if len(items) == 0 {
-		return nil, fmt.Errorf("no items found with name: %s", name)
+		return nil, nil
 	}
 	return items[0], nil
 }

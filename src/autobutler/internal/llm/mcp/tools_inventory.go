@@ -40,6 +40,12 @@ type QueryInventoryParams struct {
 
 func (p QueryInventoryParams) Output(response any) (string, []any) {
 	resp := response.(QueryInventoryResponse)
+	if resp.Inventory == 0 {
+		return "You have no %s.", []any{resp.Item}
+	}
+	if resp.Inventory < 0 {
+		return "You have a negative inventory of %f %s of %s, which is unusual.", []any{resp.Inventory, resp.Unit, resp.Item}
+	}
 	return "There are %f %s of %s in the inventory.", []any{resp.Inventory, resp.Unit, resp.Item}
 }
 
