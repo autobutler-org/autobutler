@@ -14,50 +14,16 @@ import (
 )
 
 var (
-	llmURL       string
-	llmArgs      string
-	apiKey       string
-	systemPrompt string
-	maxTokens    string
-	temperature  string
-	topP         string
-	model        string
+	llmURL = "https://autobutler-eus2.services.ai.azure.com/models/chat/completions"
+	llmArgs = "api-version=2024-05-01-preview"
+	systemPrompt = SYSTEM_PROMPT
+	maxTokens = "2048"
+	temperature = "0.8"
+	topP = "0.1"
+	model = "autobutler_gpt-4.1-nano"
 )
 
 func RemoteLLMRequest(prompt string) (*openai.ChatCompletion, error) {
-	llmURL = os.Getenv("LLM_URL")
-	if llmURL == "" {
-		llmURL = "https://autobutler-eus2.services.ai.azure.com/models/chat/completions"
-	}
-	llmArgs = os.Getenv("LLM_ARGS")
-	if llmArgs == "" {
-		llmArgs = "api-version=2024-05-01-preview"
-	}
-	apiKey = os.Getenv("LLM_AZURE_API_KEY")
-	if apiKey == "" {
-		return nil, fmt.Errorf("LLM_AZURE_API_KEY environment variable is not set")
-	}
-	systemPrompt = os.Getenv("LLM_SYSTEM_PROMPT")
-	if systemPrompt == "" {
-		systemPrompt = SYSTEM_PROMPT
-	}
-	maxTokens = os.Getenv("LLM_MAX_TOKENS")
-	if maxTokens == "" {
-		maxTokens = "2048"
-	}
-	temperature = os.Getenv("LLM_TEMP")
-	if temperature == "" {
-		temperature = "0.8"
-	}
-	topP = os.Getenv("LLM_TOP_P")
-	if topP == "" {
-		topP = "0.1"
-	}
-	model = os.Getenv("LLM_MODEL")
-	if model == "" {
-		model = "autobutler_gpt-4.1-nano"
-	}
-
 	maxTokensInt := 2048
 	fmt.Sscanf(maxTokens, "%d", &maxTokensInt)
 	temperatureFloat := 0.8
@@ -100,21 +66,22 @@ func RemoteLLMRequest(prompt string) (*openai.ChatCompletion, error) {
 }
 
 func makeRequest(reqBody openai.ChatCompletionNewParams) (*openai.ChatCompletion, error) {
+	apiKey := os.Getenv("LLM_AZURE_API_KEY")
+	if apiKey == "" {
+		return nil, fmt.Errorf("LLM_AZURE_API_KEY environment variable is not set")
+	}
 	bodyBytes, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request body: %w", err)
 	}
-	url := llmURL
-	if llmArgs != "" {
-		url = fmt.Sprintf("%s?%s", llmURL, llmArgs)
-	}
 
+	url := fmt.Sprintf("%s?%s", llmURL, llmArgs)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", apiKey))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
