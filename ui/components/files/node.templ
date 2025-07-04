@@ -1,0 +1,34 @@
+package files
+
+import (
+    "autobutler/ui/components/icons/folder"
+    "autobutler/ui/components/icons/generic"
+    "autobutler/ui/components/icons/pdf"
+    "autobutler/ui/components/icons/slideshow"
+    "autobutler/ui/components/icons/image"
+    "autobutler/pkg/util"
+)
+
+
+
+templ Node(filename string, size_bytes int64) {
+    <li class="flex items-center py-3">
+        // If file extension is .pdf, use pdf icon,
+        // if .pptx, use slideshow icon, if .png or .jpg, use image icon,
+        // if ending with /, use folder icon,
+        // otherwise use generic icon.
+        if util.IsFileType(filename, util.FileTypeFolder) {
+            @folder.Component()
+        } else if util.IsFileType(filename, util.FileTypePDF) {
+            @pdf.Component()
+        } else if util.IsFileType(filename, util.FileTypeSlideshow) {
+            @slideshow.Component()
+        } else if util.IsFileType(filename, util.FileTypeImage) {
+            @image.Component()
+        } else {
+            @generic.Component()
+        }
+        <span class="flex-1">{ filename }</span>
+        <span class="text-gray-400 text-sm">{util.SizeBytesToString(size_bytes)}</span>
+    </li>
+}

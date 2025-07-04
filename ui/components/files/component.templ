@@ -1,0 +1,12 @@
+package files
+
+templ Component(filenames []string, sizes []int64) {
+    <div class="max-w-2xl mx-auto mt-10 bg-white rounded shadow p-6">
+        <h2 class="text-2xl font-bold mb-4">File Explorer</h2>
+        <ul class="divide-y divide-gray-200">
+            for i, filename := range filenames {
+                @Node(filename, sizes[i])
+            }
+        </ul>
+    </div>
+}

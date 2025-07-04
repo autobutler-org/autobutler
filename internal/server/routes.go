@@ -44,6 +44,13 @@ func setupUiRoutes(router *gin.Engine) {
 		}
 		c.Status(200)
 	})
+	uiRoute(router, "/files", func(c *gin.Context) {
+		if err := views.Files().Render(c.Request.Context(), c.Writer); err != nil {
+			c.Status(400)
+			return
+		}
+		c.Status(200)
+	})
 }
 
 func setupApiRoutes(router *gin.Engine) {
