@@ -6,14 +6,15 @@ import (
     "autobutler/ui/components/footer"
 	"autobutler/ui/components/body"
     "autobutler/ui/components/file_explorer"
+	"path/filepath"
 )
 
-templ Files() {
+templ Files(rootDir string) {
     <!DOCTYPE html>
     <html lang="en">
         @header.Component()
         @body.Component() {
-            {{ files, err := util.StatFilesInDir(util.GetFilesDir()) }}
+            {{ files, err := util.StatFilesInDir(filepath.Join(util.GetFilesDir(), rootDir)) }}
             if err != nil {
                 <div class="text-red-500">Error loading files: {err.Error()}</div>
             } else {

@@ -14,9 +14,10 @@ import (
 	"autobutler/ui/components/file_explorer"
 	"autobutler/ui/components/footer"
 	"autobutler/ui/components/header"
+	"path/filepath"
 )
 
-func Files() templ.Component {
+func Files(rootDir string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -57,7 +58,7 @@ func Files() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			files, err := util.StatFilesInDir(util.GetFilesDir())
+			files, err := util.StatFilesInDir(filepath.Join(util.GetFilesDir(), rootDir))
 			if err != nil {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"text-red-500\">Error loading files: ")
 				if templ_7745c5c3_Err != nil {
@@ -66,7 +67,7 @@ func Files() templ.Component {
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(err.Error())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ui/views/files.templ`, Line: 18, Col: 75}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ui/views/files.templ`, Line: 19, Col: 75}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
