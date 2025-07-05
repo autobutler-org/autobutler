@@ -4,6 +4,10 @@ import (
 	"embed"
 	"fmt"
 	"html"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"autobutler/internal/llm"
@@ -117,6 +121,52 @@ func setupApiRoutes(router *gin.Engine) {
 		} else {
 			c.JSON(200, response)
 		}
+	})
+	apiRoute(apiV1Group, "POST", "/files/upload", func(c *gin.Context) {
+		isHtml := c.GetHeader("Accept") == "text/html"
+		// Parse the multipart form with a max memory size
+		err := c.Request.ParseMultipartForm(32 << 20)
+		if err != nil {
+			if isHtml {
+				c.Writer.WriteString(`<span class="text-red-500">Failed to parse multipart form: ` + html.EscapeString(err.Error()) + `</span>`)
+			} else {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse multipart form: " + err.Error()})
+			}
+			return
+		}
+
+		file, header, err := c.Request.FormFile("file")
+		if err != nil {
+			if isHtml {
+				c.Writer.WriteString(`<span class="text-red-500">Failed to get file: ` + html.EscapeString(err.Error()) + `</span>`)
+			} else {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get file: " + err.Error()})
+			}
+			return
+		}
+		defer file.Close()
+
+		fileDir := util.GetFilesDir()
+		newFilePath := filepath.Join(fileDir, header.Filename)
+		newFile, err := os.Create(newFilePath)
+		if err != nil {
+			if isHtml {
+				c.Writer.WriteString(`<span class="text-red-500">Failed to create file: ` + html.EscapeString(err.Error()) + `</span>`)
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create file: " + err.Error()})
+			}
+			return
+		}
+		defer newFile.Close()
+		if _, err := io.Copy(newFile, file); err != nil {
+			if isHtml {
+				c.Writer.WriteString(`<span class="text-red-500">Failed to write file: ` + html.EscapeString(err.Error()) + `</span>`)
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write file: " + err.Error()})
+			}
+			return
+		}
+		// TODO: Load the file view again
 	})
 	apiRoute(apiV1Group, "POST", "/update", func(c *gin.Context) {
 		isHtml := c.GetHeader("Accept") == "text/html"
