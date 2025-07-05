@@ -59,7 +59,7 @@ func TB(size float64) int64 {
 	return int64(GB(size) * 1024)
 }
 
-func GetFileType(file fs.FileInfo) FileType {
+func DetermineFileType(file fs.FileInfo) FileType {
 	if file.IsDir() {
 		return FileTypeFolder
 	}
@@ -77,7 +77,7 @@ func GetFileType(file fs.FileInfo) FileType {
 }
 
 func IsFileType(file fs.FileInfo, expected FileType) bool {
-	actual := GetFileType(file)
+	actual := DetermineFileType(file)
 	return actual == expected
 }
 

@@ -14,11 +14,7 @@ import (
 
 templ Node(file fs.FileInfo) {
     <li class="flex items-center py-3">
-        // If file extension is .pdf, use pdf icon,
-        // if .pptx, use slideshow icon, if .png or .jpg, use image icon,
-        // if ending with /, use folder icon,
-        // otherwise use generic icon.
-        {{ fileType := util.GetFileType(file) }}
+        {{ fileType := util.DetermineFileType(file) }}
         switch fileType {
         case util.FileTypeFolder:
             @folder.Component()
