@@ -11,6 +11,7 @@ templ Component(rootDir string, files []fs.FileInfo) {
         if len(files) == 0 {
             <span class="py-3 text-gray-500">No files found in { util.GetFilesDir() }</span>
         } else {
+            @upload()
             <ul class="divide-y divide-gray-200">
                 for _, file := range files {
                     @Node(rootDir, file)

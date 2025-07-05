@@ -1,0 +1,11 @@
+
+package file_explorer
+
+templ upload() {
+    <form id="form" hx-encoding="multipart/form-data" hx-post="/api/v1/files/upload">
+        <input type="file" name="file">
+        <button>
+            Upload
+        </button>
+    </form>
+}
