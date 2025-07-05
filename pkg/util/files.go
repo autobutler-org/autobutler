@@ -98,6 +98,23 @@ func SizeBytesToString(size_bytes int64) string {
     }
 }
 
+func GetFolderSize(dir string) (int64, error) {
+	var size int64
+	err := filepath.Walk(dir, func(_ string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return nil
+	})
+	if err != nil {
+		return 0, fmt.Errorf("error calculating folder size for %s: %w", dir, err)
+	}
+	return size, nil
+}
+
 func StatFilesInDir(dir string) ([]fs.FileInfo, error) {
 	entries, err := os.ReadDir(dir)
 	files := make([]fs.FileInfo, len(entries))
@@ -106,7 +123,11 @@ func StatFilesInDir(dir string) ([]fs.FileInfo, error) {
 	}
 	for i, entry := range entries {
 		if entry.IsDir() {
-			files[i] = NewCustomFileInfo(entry.Name()+"/", 0)
+			folderSize, err := GetFolderSize(filepath.Join(dir, entry.Name()))
+			if err != nil {
+				return nil, fmt.Errorf("error getting size for folder %s: %w", entry.Name(), err)
+			}
+			files[i] = NewCustomFileInfo(entry.Name()+"/", folderSize)
 		} else {
 			info, err := entry.Info()
 			if err != nil {
