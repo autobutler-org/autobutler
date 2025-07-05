@@ -1,0 +1,32 @@
+package views
+
+import (
+    "autobutler/pkg/util"
+	"autobutler/ui/components/header"
+    "autobutler/ui/components/footer"
+	"autobutler/ui/components/body"
+    "autobutler/ui/components/files"
+)
+
+templ Files() {
+    <!DOCTYPE html>
+    <html lang="en">
+        @header.Component()
+        @body.Component() {
+            @files.Component([]string{
+                "bingus-pics/",
+                "report.pdf",
+                "presentation.pptx",
+                "notes.txt",
+                "image.png",
+            }, []int64{
+                util.TB(1.2), // 1.2 TB
+                util.MB(1.1), // 1.1 MB
+                util.MB(3.4), // 3.4 MB
+                util.KB(8),   // 8 KB
+                util.KB(540), // 540 KB
+            })
+        }
+        @footer.Component()
+    </html>
+}
