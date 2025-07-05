@@ -29,7 +29,7 @@ func Component(filenames []string, sizes []int64) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"max-w-2xl mx-auto mt-10 bg-white rounded shadow p-6\"><h2 class=\"text-2xl font-bold mb-4\">File Explorer</h2><ul class=\"divide-y divide-gray-200\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"bg-white dark:bg-gray-900 max-w-2xl mx-auto mt-10 rounded shadow p-6\"><h2 class=\"text-2xl font-bold mb-4\">File Explorer</h2><ul class=\"divide-y divide-gray-200\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -29,7 +29,7 @@ func Component() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form class=\"flex space-x-4 items-center\" onsubmit=\"return false;\" hx-ext=\"json-enc\" hx-post=\"/api/v1/update\" hx-headers='{\"Accept\": \"text/html\"}' hx-target=\"#status\" hx-swap=\"innerHTML\"><div id=\"status\"></div><input id=\"versionInput\" type=\"text\" placeholder=\"v0.1.0 (Press enter to update)\" name=\"version\" class=\"flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500\"> <button type=\"submit\" class=\"invisible\"></button></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form class=\"flex space-x-4 items-center\" onsubmit=\"return false;\" hx-ext=\"json-enc\" hx-post=\"/api/v1/update\" hx-headers='{\"Accept\": \"text/html\"}' hx-target=\"#status\" hx-swap=\"innerHTML\"><div id=\"status\"></div><input id=\"versionInput\" type=\"text\" placeholder=\"v0.1.0 (Press enter to update)\" name=\"version\" class=\"flex-1 border bg-gray-400 dark:bg-white/10 border-gray/ dark:text-gray-100 dark:border-white/20 rounded-lg px-4 py-2 placeholder-gray-200 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500\"> <button type=\"submit\" class=\"invisible\"></button></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -8,18 +8,18 @@ import (
 
 templ header() {
     <!-- Chat Header -->
-    <div class="bg-white/5 backdrop-blur-lg border-b border-white/10 p-4">
+    <div class="bg-white/5 backdrop-blur-lg border-b border-gray/5 dark:border-white/10 p-4">
       <div class="max-w-4xl mx-auto flex items-center justify-between">
         if version.Semver == version.NoSemver {
-        <h1 class="text-xl font-semibold text-white">AutoButler Chat<span class="font-thin">{"@vX.Y.Z"}</span></h1>
+        <h1 class="text-xl font-semibold">AutoButler Chat<span class="font-thin">{"@vX.Y.Z"}</span></h1>
         } else {
-          <h1 class="text-xl font-semibold text-white">AutoButler Chat<span class="font-thin">{fmt.Sprintf("@%s", version.Semver)}</span></h1>
+          <h1 class="text-xl font-semibold">AutoButler Chat<span class="font-thin">{fmt.Sprintf("@%s", version.Semver)}</span></h1>
         }
         <div class="flex items-center space-x-4">
           <div id="updateMenu" class="invisible">
             @update.Component()
           </div>
-          <button class="text-gray-300 hover:text-white transition-colors"
+          <button class="dark:text-gray-300 hover:text-white transition-colors"
                   hx-on:click="htmx.toggleClass('#updateMenu', 'invisible')">
             <span class="sr-only">Update</span>
             <svg xmlns="http://www.w3.org/2000/svg"
@@ -31,7 +31,7 @@ templ header() {
                     d="M1.7507,16.0022 C3.3517,20.0982 7.3367,23.0002 11.9997,23.0002 C18.0747,23.0002 22.9997,18.0752 22.9997,12.0002 M22.2497,7.9982 C20.6487,3.9012 16.6627,1.0002 11.9997,1.0002 C5.9247,1.0002 0.9997,5.9252 0.9997,12.0002 M8.9997,16.0002 L0.9997,16.0002 L0.9997,24.0002 M22.9997,0.0002 L22.9997,8.0002 L14.9997,8.0002"></path>
             </svg>
           </button>
-          <button class="text-gray-300 hover:text-white transition-colors">
+          <button class="dark:text-gray-300 hover:text-white transition-colors">
             <span class="sr-only">Settings</span>
             <svg
               xmlns="http://www.w3.org/2000/svg"
