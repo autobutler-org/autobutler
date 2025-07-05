@@ -94,3 +94,25 @@ func SizeBytesToString(size_bytes int64) string {
         return fmt.Sprintf("%.1f TB", float64(size_bytes)/(1024*1024*1024*1024))
     }
 }
+
+func StatFilesInDir(dir string) ([]fs.FileInfo, error) {
+	fileInfos := make([]fs.FileInfo, 0)
+	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return fmt.Errorf("failed to access path %s: %w", path, err)
+		}
+		if d.IsDir() {
+			return nil
+		}
+		info, err := d.Info()
+		if err != nil {
+			return fmt.Errorf("failed to get file info for %s: %w", path, err)
+		}
+		fileInfos = append(fileInfos, info)
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error walking the path %s: %w", dir, err)
+	}
+	return fileInfos, nil
+}

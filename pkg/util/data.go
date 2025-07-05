@@ -32,3 +32,11 @@ func GetDataDir() string {
 		panic(fmt.Sprintf("unsupported OS: %s", runtime.GOOS))
 	}
 }
+
+func GetFilesDir() string {
+	filesPath := filepath.Join(GetDataDir(), "files")
+	if err := os.MkdirAll(filesPath, 0755); err != nil {
+		panic(fmt.Sprintf("failed to create files directory: %v", err))
+	}
+	return filesPath
+}

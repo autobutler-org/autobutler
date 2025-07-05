@@ -1,12 +1,11 @@
 package views
 
 import (
-	"io/fs"
     "autobutler/pkg/util"
 	"autobutler/ui/components/header"
     "autobutler/ui/components/footer"
 	"autobutler/ui/components/body"
-    "autobutler/ui/components/files"
+    "autobutler/ui/components/file_explorer"
 )
 
 templ Files() {
@@ -14,13 +13,12 @@ templ Files() {
     <html lang="en">
         @header.Component()
         @body.Component() {
-            @files.Component([]fs.FileInfo{
-                util.NewTestFileInfo("bingus-pics/",util.TB(1.2)),
-                util.NewTestFileInfo("report.pdf", util.MB(1.1)),
-                util.NewTestFileInfo("presentation.pptx", util.MB(3.4)),
-                util.NewTestFileInfo("notes.txt", util.KB(8)),
-                util.NewTestFileInfo("image.png", util.KB(540)),
-            })
+            {{ files, err := util.StatFilesInDir(util.GetFilesDir()) }}
+            if err != nil {
+                <div class="text-red-500">Error loading files: {err.Error()}</div>
+            } else {
+                @file_explorer.Component(files)
+            }
         }
         @footer.Component()
     </html>
