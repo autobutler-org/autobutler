@@ -1,0 +1,13 @@
+package load
+
+import (
+    "path/filepath"
+)
+
+templ Component(rootDir string) {
+    <div hx-trigger="load"
+         hx-get={filepath.Join("/api/v1/files/explorer", rootDir)}
+         hx-target="#file-explorer"
+         hx-swap="outerHTML"
+         hx-headers='{"Accept": "text/html"}'></div>
+}

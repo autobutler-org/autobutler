@@ -11,8 +11,6 @@ import (
 	"path/filepath"
 )
 
-
-
 templ Node(rootDir string, file fs.FileInfo) {
     <li class="flex items-center py-3">
         {{ fileType := util.DetermineFileType(file) }}

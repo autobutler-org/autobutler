@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "make: generate",
+      "type": "shell",
+      "command": "make",
+      "args": [
+        "generate",
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$go"
+      ],
+      "detail": "Generate code"
+    }
+  ]
+}

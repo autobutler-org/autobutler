@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 )
 
 func installSystemdService(apiKey string) error {
-	serviceFilePath := fmt.Sprintf("/etc/systemd/system/%s", systemdServiceName)
+	serviceFilePath := filepath.Join("/etc/systemd/system", systemdServiceName)
 	if err := os.WriteFile(serviceFilePath, []byte(buildServiceFile(apiKey)), 0644); err != nil {
 		return fmt.Errorf("failed to write systemd service file: %w", err)
 	}
@@ -20,7 +21,7 @@ func installSystemdService(apiKey string) error {
 }
 
 func installPlistService(apiKey string) error {
-	serviceFilePath := fmt.Sprintf("/Library/LaunchDaemons/%s", plistServiceName)
+	serviceFilePath := filepath.Join("/Library/LaunchDaemons", plistServiceName)
 	if err := os.WriteFile(serviceFilePath, []byte(buildServiceFile(apiKey)), 0644); err != nil {
 		return fmt.Errorf("failed to write plist service file: %w", err)
 	}
