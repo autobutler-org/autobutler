@@ -15,6 +15,8 @@ import (
 	"autobutler/pkg/util"
 	"autobutler/ui/components/chat/load"
 	"autobutler/ui/components/chat/message"
+	"autobutler/ui/components/file_explorer"
+	file_explorer_load "autobutler/ui/components/file_explorer/load"
 	"autobutler/ui/views"
 
 	"github.com/gin-contrib/static"
@@ -122,6 +124,36 @@ func setupApiRoutes(router *gin.Engine) {
 			c.JSON(200, response)
 		}
 	})
+	apiRoute(apiV1Group, "GET", "/files/explorer/*rootDir", func(c *gin.Context) {
+		isHtml := c.GetHeader("Accept") == "text/html"
+		rootDir := c.Param("rootDir")
+		if rootDir == "" {
+			rootDir = util.GetFilesDir()
+		} else {
+			rootDir = filepath.Join(util.GetFilesDir(), rootDir)
+		}
+		files, err := util.StatFilesInDir(rootDir)
+		if err != nil {
+			if isHtml {
+				c.Writer.WriteString(`<span class="text-red-500">Failed to load files: ` + html.EscapeString(err.Error()) + `</span>`)
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load files: " + err.Error()})
+			}
+			return
+		}
+		loadComponent := file_explorer.Component("fileExplorer", files)
+		if isHtml {
+			if err := loadComponent.Render(c.Request.Context(), c.Writer); err != nil {
+				c.Status(500)
+				return
+			}
+		} else {
+			c.JSON(200, gin.H{
+				"message": "File explorer loaded successfully",
+				"rootDir": rootDir,
+			})
+		}
+	})
 	apiRoute(apiV1Group, "POST", "/files/upload", func(c *gin.Context) {
 		isHtml := c.GetHeader("Accept") == "text/html"
 		// Parse the multipart form with a max memory size
@@ -166,7 +198,18 @@ func setupApiRoutes(router *gin.Engine) {
 			}
 			return
 		}
-		// TODO: Load the file view again
+		if isHtml {
+			loadComponent := file_explorer_load.Component("/")
+			if err := loadComponent.Render(c.Request.Context(), c.Writer); err != nil {
+				c.Status(500)
+				return
+			}
+		} else {
+			c.JSON(200, gin.H{
+				"message": "File uploaded successfully",
+				"file":    header.Filename,
+			})
+		}
 	})
 	apiRoute(apiV1Group, "POST", "/update", func(c *gin.Context) {
 		isHtml := c.GetHeader("Accept") == "text/html"

@@ -5,7 +5,9 @@ templ upload() {
     <form id="file-upload-form"
           hx-encoding="multipart/form-data"
           hx-post="/api/v1/files/upload"
-          hx-swap="none">
+          hx-headers='{"Accept": "text/html"}'
+          hx-swap="innerHTML"
+          hx-target="#file-explorer-status">
         <table>
             <tbody>
                 <tr>
