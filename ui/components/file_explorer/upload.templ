@@ -9,12 +9,13 @@ templ upload(rootDir string) {
           hx-post={filepath.Join("/api/v1/files/upload", rootDir)}
           hx-headers='{"Accept": "text/html"}'
           hx-swap="innerHTML"
-          hx-target="#file-explorer-status">
+          hx-target="#file-explorer-status"
+          class="max-w-md">
         <table>
             <tbody>
                 <tr>
                     <td>
-                        <input type="file" name="file" class="max-w-lg"
+                        <input type="file" name="file" class="max-w-md"
                                hx-on:change="this.form.querySelector('#file-upload-button').disabled = !this.files.length">
                     </td>
                 </tr>
