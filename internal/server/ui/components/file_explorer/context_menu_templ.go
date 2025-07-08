@@ -38,7 +38,7 @@ func contextMenu(rootDir string, file fs.FileInfo) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("showFileInfo", templ.JSExpression("event"), file.Name()))
+		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("showFileDetails", templ.JSExpression("event"), file.Name()))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -46,12 +46,12 @@ func contextMenu(rootDir string, file fs.FileInfo) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var2 templ.ComponentScript = templ.JSFuncCall("showFileInfo", templ.JSExpression("event"), file.Name())
+		var templ_7745c5c3_Var2 templ.ComponentScript = templ.JSFuncCall("showFileDetails", templ.JSExpression("event"), file.Name())
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2.Call)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\">File Info</button></li><li><button type=\"button\" class=\"w-full text-left px-4 py-2 bg-red-800 text-white hover:bg-red-600 text-sm\" hx-headers='{\"Accept\": \"text/html\"}' hx-target=\"#file-explorer\" hx-swap=\"outerHTML\" hx-delete=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\">File Details</button></li><li><button type=\"button\" class=\"w-full text-left px-4 py-2 bg-red-800 text-white hover:bg-red-600 text-sm\" hx-headers='{\"Accept\": \"text/html\"}' hx-target=\"#file-explorer\" hx-swap=\"outerHTML\" hx-delete=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
