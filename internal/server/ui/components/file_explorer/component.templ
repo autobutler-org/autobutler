@@ -2,7 +2,10 @@ package file_explorer
 
 import (
     "io/fs"
-	"autobutler/pkg/util"
+    "autobutler/pkg/util"
+
+    "path/filepath"
+    "strings"
 )
 
 templ Component(rootDir string, files []fs.FileInfo) {
@@ -11,6 +14,23 @@ templ Component(rootDir string, files []fs.FileInfo) {
         <div class="flex items-center mb-4">
             <h2 class="text-2xl font-bold mr-4 whitespace-nowrap">File Explorer</h2>
             @upload(rootDir)
+        </div>
+        <div id="breadcrumbs">
+            <nav class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-2" data-path={rootDir}>
+                {{ accumulatedDir := "" }}
+                for _, dir := range strings.Split(rootDir, "/") {
+                    <span class="text-gray-700 dark:text-gray-300">
+                        if dir == "" {
+                            {{ dir = "files" }}
+                        }
+                        {{ accumulatedDir = filepath.Join(accumulatedDir, dir) }}
+                        <a href={filepath.Join("/", accumulatedDir)} class="hover:underline">
+                            {dir}
+                        </a>
+                        <span>/</span>
+                    </span>
+                }
+            </nav>
         </div>
         <div id="file-explorer-status"></div>
         if len(files) == 0 {
