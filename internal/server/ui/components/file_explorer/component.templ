@@ -18,10 +18,13 @@ templ Component(rootDir string, files []fs.FileInfo) {
         <div id="breadcrumbs">
             <nav class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-2" data-path={rootDir}>
                 {{ accumulatedDir := "" }}
-                for _, dir := range strings.Split(rootDir, "/") {
+                for i, dir := range strings.Split(rootDir, "/") {
                     <span class="text-gray-700 dark:text-gray-300">
-                        if dir == "" {
+                        if i == 0 {
                             {{ dir = "files" }}
+                        }
+                        if i > 0 && dir == "" {
+                            {{ continue }}
                         }
                         {{ accumulatedDir = filepath.Join(accumulatedDir, dir) }}
                         <a href={filepath.Join("/", accumulatedDir)} class="hover:underline">
