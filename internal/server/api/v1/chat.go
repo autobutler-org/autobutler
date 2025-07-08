@@ -3,7 +3,7 @@ package v1
 import (
 	"autobutler/internal/llm"
 	"autobutler/internal/server/ui/components/chat/message"
-	"autobutler/internal/server/ui/components/file_explorer/load"
+	"autobutler/internal/server/ui/components/chat/load"
 
 	"github.com/gin-gonic/gin"
 )

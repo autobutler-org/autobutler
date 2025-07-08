@@ -1,0 +1,32 @@
+package file_explorer
+
+templ scripts() {
+    <script>
+    var contextMenuPosition = {
+        x: null,
+        y: null,
+    }
+    function showFileInfo(event, fileName) {
+        alert(fileName);
+    }
+
+    function toggleContextMenu(event, parentNode) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        const contextMenu = parentNode.querySelector('.context-menu');
+        contextMenu.style.left = null;
+        contextMenu.style.top = null;
+        contextMenu.classList.toggle('hidden');
+        return contextMenu;
+    }
+
+    function toggleFloatingContextMenu(event, parentNode) {
+        const contextMenu = toggleContextMenu(event, parentNode);
+        console.log(event.clientX, event.clientY);
+        contextMenu.style.left = `${event.clientX}px`;
+        contextMenu.style.top = `${event.clientY}px`;
+    }
+    </script>
+}
