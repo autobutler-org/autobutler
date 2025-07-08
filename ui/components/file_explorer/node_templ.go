@@ -40,7 +40,7 @@ func node(rootDir string, file fs.FileInfo) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<li class=\"flex items-center py-3 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer relative\" hx-on:contextmenu=\"toggleContextMenu(event, this)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<li class=\"flex items-center py-3 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer\" hx-on:contextmenu=\"toggleFloatingContextMenu(event, this)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

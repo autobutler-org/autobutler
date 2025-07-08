@@ -12,8 +12,8 @@ import (
 )
 
 templ node(rootDir string, file fs.FileInfo) {
-    <li class="flex items-center py-3 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer relative"
-        hx-on:contextmenu="toggleContextMenu(event, this)">
+    <li class="flex items-center py-3 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+        hx-on:contextmenu="toggleFloatingContextMenu(event, this)">
         {{ fileType := util.DetermineFileType(file) }}
         switch fileType {
         case util.FileTypeFolder:

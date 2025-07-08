@@ -6,9 +6,9 @@ import (
 )
 
 templ contextMenu(rootDir string, file fs.FileInfo) {
-    <div class="relative">
+    <div>
         <button
-            class="ml-2 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+            class="ml-2 p-1 rounded hover:xbg-gray-200 dark:hover:bg-gray-700"
             hx-on:click="toggleContextMenu(event, this.parentElement)"
             aria-label="Open context menu"
             type="button"
@@ -16,7 +16,7 @@ templ contextMenu(rootDir string, file fs.FileInfo) {
             &#x22EE;
         </button>
         <ul
-            class="context-menu hidden absolute right-0 mt-2 w-28 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-10"
+            class="context-menu hidden absolute mt-2 w-28 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-10"
             hx-on:mouseleave="toggleContextMenu(null, this.parentElement)"
         >
             <li>
