@@ -14,13 +14,13 @@ import (
 )
 
 var (
-	llmURL = "https://autobutler-eus2.services.ai.azure.com/models/chat/completions"
-	llmArgs = "api-version=2024-05-01-preview"
+	llmURL       = "https://autobutler-eus2.services.ai.azure.com/models/chat/completions"
+	llmArgs      = "api-version=2024-05-01-preview"
 	systemPrompt = SYSTEM_PROMPT
-	maxTokens = "2048"
-	temperature = "0.8"
-	topP = "0.1"
-	model = "autobutler_gpt-4.1-nano"
+	maxTokens    = "2048"
+	temperature  = "0.8"
+	topP         = "0.1"
+	model        = "autobutler_gpt-4.1-nano"
 )
 
 func RemoteLLMRequest(prompt string) (*openai.ChatCompletion, error) {

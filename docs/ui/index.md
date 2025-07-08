@@ -46,7 +46,7 @@ package chat
 import (
     "autobutler/internal/llm"
     // This chat component imports another public component for composition
-    "autobutler/ui/components/chat/message"
+    "autobutler/internal/server/ui/components/chat/message"
 )
 
 const spinnerId = "spinner"
@@ -79,10 +79,10 @@ import (
 	"time"
 	"autobutler/internal/llm"
 	// We import the public components here
-	"autobutler/ui/components/chat"
-	"autobutler/ui/components/header"
-	"autobutler/ui/components/footer"
-	"autobutler/ui/components/body"
+	"autobutler/internal/server/ui/components/chat"
+	"autobutler/internal/server/ui/components/header"
+	"autobutler/internal/server/ui/components/footer"
+	"autobutler/internal/server/ui/components/body"
 )
 
 templ Chat() {

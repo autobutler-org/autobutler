@@ -11,26 +11,27 @@ import (
 )
 
 type CustomFileInfo struct {
-    name string
-    size int64
+	name string
+	size int64
 }
+
 func (f CustomFileInfo) Name() string {
-    return f.name
+	return f.name
 }
 func (f CustomFileInfo) Size() int64 {
-    return f.size
+	return f.size
 }
 func (f CustomFileInfo) Mode() fs.FileMode {
-    return 0666
+	return 0666
 }
 func (f CustomFileInfo) ModTime() time.Time {
-    return time.Now()
+	return time.Now()
 }
 func (f CustomFileInfo) IsDir() bool {
-    return f.name[len(f.name)-1] == '/'
+	return f.name[len(f.name)-1] == '/'
 }
 func (f CustomFileInfo) Sys() any {
-    return nil
+	return nil
 }
 func NewCustomFileInfo(name string, size int64) fs.FileInfo {
 	return CustomFileInfo{name: name, size: size}
@@ -40,7 +41,7 @@ type FileType string
 
 const (
 	FileTypeGeneric   FileType = "generic"
-	FileTypePDF      FileType = "pdf"
+	FileTypePDF       FileType = "pdf"
 	FileTypeSlideshow FileType = "slideshow"
 	FileTypeImage     FileType = "image"
 	FileTypeFolder    FileType = "folder"
@@ -85,17 +86,17 @@ func IsFileType(file fs.FileInfo, expected FileType) bool {
 }
 
 func SizeBytesToString(size_bytes int64) string {
-    if size_bytes < 1024 {
-        return fmt.Sprintf("%d B", size_bytes)
-    } else if size_bytes < 1024*1024 {
-        return fmt.Sprintf("%.1f KB", float64(size_bytes)/1024)
-    } else if size_bytes < 1024*1024*1024 {
-        return fmt.Sprintf("%.1f MB", float64(size_bytes)/(1024*1024))
-    } else if size_bytes < 1024*1024*1024*1024 {
-        return fmt.Sprintf("%.1f GB", float64(size_bytes)/(1024*1024*1024))
-    } else {
-        return fmt.Sprintf("%.1f TB", float64(size_bytes)/(1024*1024*1024*1024))
-    }
+	if size_bytes < 1024 {
+		return fmt.Sprintf("%d B", size_bytes)
+	} else if size_bytes < 1024*1024 {
+		return fmt.Sprintf("%.1f KB", float64(size_bytes)/1024)
+	} else if size_bytes < 1024*1024*1024 {
+		return fmt.Sprintf("%.1f MB", float64(size_bytes)/(1024*1024))
+	} else if size_bytes < 1024*1024*1024*1024 {
+		return fmt.Sprintf("%.1f GB", float64(size_bytes)/(1024*1024*1024))
+	} else {
+		return fmt.Sprintf("%.1f TB", float64(size_bytes)/(1024*1024*1024*1024))
+	}
 }
 
 func GetFolderSize(dir string) (int64, error) {
