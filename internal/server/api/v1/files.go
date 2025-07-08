@@ -16,7 +16,45 @@ import (
 
 func SetupFilesRoutes(apiV1Group *gin.RouterGroup) {
 	deleteFileRoute(apiV1Group)
+	downloadFileRoute(apiV1Group)
 	uploadFileRoute(apiV1Group)
+}
+
+func deleteFileRoute(apiV1Group *gin.RouterGroup) {
+	apiRoute(apiV1Group, "DELETE", "/files/*filePath", func(c *gin.Context) {
+		filePath := c.Param("filePath")
+		rootDir := util.GetFilesDir()
+		fullPath := filepath.Join(rootDir, filePath)
+		if err := os.Remove(fullPath); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete file: " + err.Error()})
+			return
+		}
+		fileDir := filepath.Dir(filePath)
+		ui.RenderFileExplorer(c, fileDir)
+	})
+}
+
+func DownloadFile(c *gin.Context, filePath string) {
+	rootDir := util.GetFilesDir()
+	fullPath := filepath.Join(rootDir, filePath)
+
+	file, err := os.Open(fullPath)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "File not found: " + err.Error()})
+		return
+	}
+	defer file.Close()
+
+	c.Header("Content-Disposition", "attachment; filename="+filepath.Base(fullPath))
+	c.Header("Content-Type", "application/octet-stream")
+	c.File(fullPath)
+}
+
+func downloadFileRoute(apiV1Group *gin.RouterGroup) {
+	apiRoute(apiV1Group, "GET", "/files/*filePath", func(c *gin.Context) {
+		filePath := c.Param("filePath")
+		DownloadFile(c, filePath)
+	})
 }
 
 func uploadFileRoute(apiV1Group *gin.RouterGroup) {
@@ -77,19 +115,5 @@ func uploadFileRoute(apiV1Group *gin.RouterGroup) {
 				"file":    header.Filename,
 			})
 		}
-	})
-}
-
-func deleteFileRoute(apiV1Group *gin.RouterGroup) {
-	apiRoute(apiV1Group, "DELETE", "/files/*filePath", func(c *gin.Context) {
-		filePath := c.Param("filePath")
-		rootDir := util.GetFilesDir()
-		fullPath := filepath.Join(rootDir, filePath)
-		if err := os.Remove(fullPath); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete file: " + err.Error()})
-			return
-		}
-		fileDir := filepath.Dir(filePath)
-		ui.RenderFileExplorer(c, fileDir)
 	})
 }

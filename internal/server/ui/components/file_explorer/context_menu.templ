@@ -20,6 +20,15 @@ templ contextMenu(rootDir string, file fs.FileInfo) {
             hx-on:mouseleave="toggleContextMenu(null, this.parentElement)"
         >
             <li>
+                <a
+                    download
+                    class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm block"
+                    href={filepath.Join(`/api/v1/files`, rootDir, file.Name())}
+                >
+                    Download
+                </a>
+            </li>
+            <li>
                 <button
                     type="button"
                     class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
