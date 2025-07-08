@@ -38,9 +38,9 @@ func Component(rootDir string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/api/v1/files/explorer", rootDir))
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/components/files/explorer", rootDir))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ui/components/file_explorer/load/component.templ`, Line: 9, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ui/components/file_explorer/load/component.templ`, Line: 9, Col: 69}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {

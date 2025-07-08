@@ -9,7 +9,7 @@ import (
 
 func StartServer() error {
 	router := gin.Default()
-	// IMPORTANT: UseMiddleware MUST be called before SetupRoutes
+	// IMPORTANT: UseMiddleware MUST be called before setupRoutes
 	useMiddleware(router)
 	setupRoutes(router)
 	port := os.Getenv("PORT")
