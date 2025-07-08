@@ -34,20 +34,7 @@ func contextMenu(rootDir string, file fs.FileInfo) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div><button class=\"ml-2 p-1 rounded hover:xbg-gray-200 dark:hover:bg-gray-700\" hx-on:click=\"toggleContextMenu(event, this.parentElement)\" aria-label=\"Open context menu\" type=\"button\">&#x22EE;</button><ul class=\"context-menu hidden absolute mt-2 w-28 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-10\" hx-on:mouseleave=\"toggleContextMenu(null, this.parentElement)\"><li><button type=\"button\" class=\"w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm\" hx-headers='{\"Accept\": \"text/html\"}' hx-target=\"#file-explorer\" hx-swap=\"outerHTML\" hx-delete=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join(`/api/v1/files`, rootDir, file.Name()))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/context_menu.templ`, Line: 29, Col: 83}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\">Delete</button></li><li>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div><button class=\"ml-2 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700\" hx-on:click=\"toggleContextMenu(event, this.parentElement)\" aria-label=\"Open context menu\" type=\"button\">&#x22EE;</button><ul class=\"context-menu hidden absolute mt-2 w-28 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-10\" hx-on:mouseleave=\"toggleContextMenu(null, this.parentElement)\"><li>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -55,16 +42,29 @@ func contextMenu(rootDir string, file fs.FileInfo) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<button type=\"button\" class=\"w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm\" hx-on:click=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<button type=\"button\" class=\"w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm\" hx-on:click=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var3 templ.ComponentScript = templ.JSFuncCall("showFileInfo", templ.JSExpression("event"), file.Name())
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3.Call)
+		var templ_7745c5c3_Var2 templ.ComponentScript = templ.JSFuncCall("showFileInfo", templ.JSExpression("event"), file.Name())
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2.Call)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\">Info</button></li></ul></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\">File Info</button></li><li><button type=\"button\" class=\"w-full text-left px-4 py-2 bg-red-800 text-white hover:bg-red-600 text-sm\" hx-headers='{\"Accept\": \"text/html\"}' hx-target=\"#file-explorer\" hx-swap=\"outerHTML\" hx-delete=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var3 string
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join(`/api/v1/files`, rootDir, file.Name()))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/context_menu.templ`, Line: 38, Col: 83}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\">Delete</button></li></ul></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

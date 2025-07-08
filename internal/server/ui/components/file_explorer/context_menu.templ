@@ -8,7 +8,7 @@ import (
 templ contextMenu(rootDir string, file fs.FileInfo) {
     <div>
         <button
-            class="ml-2 p-1 rounded hover:xbg-gray-200 dark:hover:bg-gray-700"
+            class="ml-2 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
             hx-on:click="toggleContextMenu(event, this.parentElement)"
             aria-label="Open context menu"
             type="button"
@@ -23,21 +23,21 @@ templ contextMenu(rootDir string, file fs.FileInfo) {
                 <button
                     type="button"
                     class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                    hx-on:click={templ.JSFuncCall("showFileInfo", templ.JSExpression("event"), file.Name())}
+                >
+                    File Info
+                </button>
+            </li>
+            <li>
+                <button
+                    type="button"
+                    class="w-full text-left px-4 py-2 bg-red-800 text-white hover:bg-red-600 text-sm"
                     hx-headers='{"Accept": "text/html"}'
                     hx-target="#file-explorer"
                     hx-swap="outerHTML"
                     hx-delete={filepath.Join(`/api/v1/files`, rootDir, file.Name())}
                 >
                     Delete
-                </button>
-            </li>
-            <li>
-                <button
-                    type="button"
-                    class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
-                    hx-on:click={templ.JSFuncCall("showFileInfo", templ.JSExpression("event"), file.Name())}
-                >
-                    Info
                 </button>
             </li>
         </ul>
