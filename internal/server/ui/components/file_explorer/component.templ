@@ -33,11 +33,33 @@ templ Component(rootDir string, files []fs.FileInfo) {
                         <span>/</span>
                     </span>
                 }
+                // Add a plus button SVG
+                <button id="add-folder-btn"
+                        class="ml-2 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+                        title="Add Folder"
+                        type="button"
+                        hx-on:click="toggleFolderInput(event)">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                </button>
+                <input type="text"
+                        id="folder-input"
+                        name="folderName"
+                        class="hidden ml-2 p-1 border border-gray-300 rounded dark:bg-gray-800 dark:border-gray-700"
+                        placeholder="New folder name"
+                        hx-include="[name='folderName']"
+                        hx-put={filepath.Join("/api/v1/files", rootDir)}
+                        hx-target="#file-explorer"
+                        hx-headers='{"Accept": "text/html"}'
+                        hx-swap="outerHTML"
+                        hx-trigger="keydown[keyCode==13] from:body"
+                        hx-disabled-elt="this">
             </nav>
         </div>
         <div id="file-explorer-status"></div>
         if len(files) == 0 {
-            <span class="py-3 text-gray-500">No files found in { util.GetFilesDir() }</span>
+            <span class="py-3 text-gray-500">No files found in { filepath.Join(util.GetFilesDir(), rootDir) }</span>
         } else {
             <ul class="divide-y divide-gray-200">
                 for _, file := range files {

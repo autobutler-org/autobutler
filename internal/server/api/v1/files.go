@@ -17,6 +17,7 @@ import (
 func SetupFilesRoutes(apiV1Group *gin.RouterGroup) {
 	deleteFileRoute(apiV1Group)
 	downloadFileRoute(apiV1Group)
+	newFolderRoute(apiV1Group)
 	uploadFileRoute(apiV1Group)
 }
 
@@ -54,6 +55,23 @@ func downloadFileRoute(apiV1Group *gin.RouterGroup) {
 	apiRoute(apiV1Group, "GET", "/files/*filePath", func(c *gin.Context) {
 		filePath := c.Param("filePath")
 		DownloadFile(c, filePath)
+	})
+}
+
+func newFolderRoute(apiV1Group *gin.RouterGroup) {
+	apiRoute(apiV1Group, "PUT", "/files/*folderDir", func(c *gin.Context) {
+		folderDir := c.Param("folderDir")
+		folderName := c.PostForm("folderName")
+		rootDir := util.GetFilesDir()
+		fullPath := filepath.Join(rootDir, folderDir, folderName)
+
+		if err := os.MkdirAll(fullPath, 0755); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create folder: " + err.Error()})
+			return
+		}
+
+		newDir := filepath.Join(folderDir, folderName)
+		ui.RenderFileExplorer(c, newDir)
 	})
 }
 

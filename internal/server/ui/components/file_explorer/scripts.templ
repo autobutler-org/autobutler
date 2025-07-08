@@ -5,7 +5,8 @@ templ scripts() {
     var contextMenuPosition = {
         x: null,
         y: null,
-    }
+    };
+
     function showFileDetails(event, fileName) {
         alert(fileName);
     }
@@ -27,6 +28,14 @@ templ scripts() {
         console.log(event.clientX, event.clientY);
         contextMenu.style.left = `${event.clientX}px`;
         contextMenu.style.top = `${event.clientY}px`;
+    }
+
+    function toggleFolderInput(event) {
+        event.preventDefault();
+        const folderInput = document.getElementById('folder-input');
+        if (!folderInput.classList.toggle('hidden')) {
+            folderInput.focus();
+        }
     }
     </script>
 }
