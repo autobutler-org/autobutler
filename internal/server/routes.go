@@ -3,8 +3,8 @@ package server
 import (
 	"embed"
 
-	v1 "autobutler/internal/server/routes/api/v1"
-	"autobutler/internal/server/routes/ui"
+	v1 "autobutler/internal/server/api/v1"
+	"autobutler/internal/server/ui"
 
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
