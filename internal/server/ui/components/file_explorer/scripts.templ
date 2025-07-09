@@ -82,6 +82,9 @@ templ scripts() {
             case 'png':
                 fileViewerContent.innerHTML = `<img src="/api/v1${filePath}" alt="${filePath}" class="max-w-full max-h-full">`;
                 break;
+            case 'mp4':
+                fileViewerContent.innerHTML = `<video controls class="max-w-full max-h-full"><source src="/api/v1${filePath}" type="video/mp4">Your browser does not support the video tag.</video>`;
+                break;
             case 'pdf':
                 fileViewerContent.innerHTML = `<p>TODO: viewing pdf file: ${filePath}</p>`;
                 break;
