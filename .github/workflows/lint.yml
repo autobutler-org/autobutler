@@ -13,8 +13,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Setup bun
-        uses: oven-sh/setup-bun@v2
+      - name: Install templ
+        run: |
+          make setup/templ
       - name: Lint
         run: |
           make lint
+      - name: Check for uncommitted changes
+        run: |
+          if ! git diff --exit-code; then
+            echo "There are uncommitted changes after linting. Please fix them before committing.";
+            exit 1;
+          fi
