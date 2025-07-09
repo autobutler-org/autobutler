@@ -1,7 +1,4 @@
-ARG IMAGE=ubuntu
-ARG TAG=24.04
-
-FROM ${IMAGE}:${TAG}
+FROM ubuntu:24.04
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     apt-get install -y -qq \
