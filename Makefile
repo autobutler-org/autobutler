@@ -7,7 +7,7 @@ SHELL := /bin/bash
 .PHONY: $(MAKECMDGOALS)
 
 setup/templ: ## Install templ tool
-	go get -tool github.com/a-h/templ/cmd/templ
+	go get -tool github.com/a-h/templ/cmd/templ@latest
 
 export INSTALL_VERSION?=$(shell git describe --tags --abbrev=0)
 
