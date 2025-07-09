@@ -13,35 +13,42 @@ import (
 
 templ node(rootDir string, file fs.FileInfo) {
 	<li
-		class="flex items-center hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer hover:underline"
+		class="hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer hover:underline"
 		hx-on:contextmenu="toggleFloatingContextMenu(event, this)"
-		hx-on:click={ templ.JSFuncCall("viewFile", templ.JSExpression("event"), file.Name()) }
 	>
 		{{ fileType := util.DetermineFileType(file) }}
-		switch fileType {
-			case util.FileTypeFolder:
-				@folder.Component()
-			case util.FileTypePDF:
-				@pdf.Component()
-			case util.FileTypeSlideshow:
-				@slideshow.Component()
-			case util.FileTypeImage:
-				@image.Component()
-			default:
-				@generic.Component()
-		}
-		if fileType == util.FileTypeFolder {
-			<a href={ filepath.Join("/files", rootDir, file.Name()) } class="flex-1 py-3">
-				<span class="file-name">{ file.Name() }</span>
-			</a>
-		} else {
-			<div class="flex-1 py-3">
-				<span class="file-name">{ file.Name() }</span>
+		{{ filePath := filepath.Join("/files", rootDir, file.Name())}}
+		<div class="flex items-center">
+			<div class="flex flex-1 items-center"
+				hx-on:click={templ.JSFuncCall("viewFile", templ.JSExpression("event"), filePath, fileType)}>
+				switch fileType {
+					case util.FileTypeFolder:
+						@folder.Component()
+					case util.FileTypePDF:
+						@pdf.Component()
+					case util.FileTypeSlideshow:
+						@slideshow.Component()
+					case util.FileTypeImage:
+						@image.Component()
+					default:
+						@generic.Component()
+				}
+				if fileType == util.FileTypeFolder {
+					<a href={filePath} class="flex-1 py-3">
+						<span class="file-name">{ file.Name() }</span>
+					</a>
+				} else {
+					<div class="flex-1 py-3">
+						<span class="file-name">{ file.Name() }</span>
+					</div>
+				}
+				<span class="text-gray-600 dark:text-gray-200 text-sm">{ util.SizeBytesToString(file.Size()) }</span>
 			</div>
-		}
-		<span class="text-gray-600 dark:text-gray-200 text-sm">{ util.SizeBytesToString(file.Size()) }</span>
-		if fileType != util.FileTypeFolder {
-			@contextMenu(rootDir, file)
-		}
+			if fileType != util.FileTypeFolder {
+				<div class="justify-self-end">
+					@contextMenu(rootDir, file)
+				</div>
+			}
+		</div>
 	</li>
 }
