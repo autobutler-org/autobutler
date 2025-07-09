@@ -37,5 +37,66 @@ templ scripts() {
             folderInput.focus();
         }
     }
+
+    function viewFile(event, filePath, fileType) {
+        if (fileType === 'folder') {
+            return;
+        }
+        event.preventDefault();
+        console.log(filePath);
+        if (filePath.includes('.')) {
+            const extension = filePath.split('.').pop().toLowerCase();
+            console.log(extension);
+            viewAnyFile(event, filePath, extension);
+        } else {
+            viewFileFallback(event, filePath);
+        }
+    }
+
+    function viewFileFallback(event, filePath) {
+        event.preventDefault();
+        console.log(`Fallback logic: ${filePath}`);
+        // TODO: Implement fallback logic
+        openFileViewer(event, filePath);
+    }
+
+    function viewAnyFile(event, filePath, extension) {
+        event.preventDefault();
+        console.log(`Viewing file: ${filePath} with extension: ${extension}`);
+        // TODO: Implement logic to view file based on extension
+        openFileViewer(event, filePath, extension);
+    }
+
+    function openFileViewer(event, filePath, extension) {
+        event.preventDefault();
+        console.log(`Opening file modal for: ${filePath}`);
+        const fileViewer = document.getElementById('file-viewer');
+        const fileViewerContent = document.getElementById('file-viewer-content');
+        console.log(fileViewer);
+        switch (extension) {
+            case 'txt':
+            case 'md':
+                fileViewerContent.innerHTML = `<p>TODO: viewing text file: ${filePath}</p>`;
+                break;
+            case 'jpg':
+            case 'png':
+                fileViewerContent.innerHTML = `<img src="/api/v1${filePath}" alt="${filePath}" class="max-w-full max-h-full">`;
+                break;
+            case 'pdf':
+                fileViewerContent.innerHTML = `<p>TODO: viewing pdf file: ${filePath}</p>`;
+                break;
+            default:
+                fileViewerContent.innerHTML = `<p>Unsupported file type: ${extension}</p>`;
+                break
+        }
+        fileViewer.showModal();
+    }
+
+    function closeFileViewer(event) {
+        event.preventDefault();
+        console.log(`Closing file modal`);
+        const fileViewer = document.getElementById('file-viewer');
+        fileViewer.close();
+    }
     </script>
 }
