@@ -25,6 +25,6 @@ jobs:
       - name: Check for uncommitted changes
         run: |
           if ! git diff --exit-code; then
-            echo "There are uncommitted changes after linting. Please fix them before committing.";
+            echo "There are uncommitted changes after linting and generating. Please fix them before committing.";
             exit 1;
           fi
