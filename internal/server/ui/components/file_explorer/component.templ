@@ -1,6 +1,7 @@
 package file_explorer
 
 import (
+	"autobutler/internal/server/ui/components/file_viewer"
 	"autobutler/pkg/util"
 	"io/fs"
 
@@ -11,6 +12,7 @@ import (
 templ Component(rootDir string, files []fs.FileInfo) {
 	<div id="file-explorer" class="bg-white dark:bg-gray-900 max-w-2xl mx-auto mt-10 rounded shadow p-6">
 		@scripts()
+		@file_viewer.Component()
 		<div class="flex items-center mb-4">
 			<h2 class="text-2xl font-bold mr-4 whitespace-nowrap">File Explorer</h2>
 			@upload(rootDir)

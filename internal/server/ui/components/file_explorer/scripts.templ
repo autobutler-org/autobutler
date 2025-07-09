@@ -38,9 +38,8 @@ templ scripts() {
         }
     }
 
-    function viewFile(event) {
+    function viewFile(event, fileName) {
         event.preventDefault();
-        const fileName = event.currentTarget.querySelector('.file-name').textContent;
         console.log(fileName);
         if (fileName.includes('.')) {
             const extension = fileName.split('.').pop().toLowerCase();
@@ -55,12 +54,29 @@ templ scripts() {
         event.preventDefault();
         console.log(`Fallback logic: ${fileName}`);
         // TODO: Implement fallback logic
+        openFileViewer(event, fileName);
     }
 
     function viewAnyFile(event, fileName, extension) {
         event.preventDefault();
         console.log(`Viewing file: ${fileName} with extension: ${extension}`);
         // TODO: Implement logic to view file based on extension
+        openFileViewer(event, fileName);
+    }
+
+    function openFileViewer(event, fileName) {
+        event.preventDefault();
+        console.log(`Opening file modal for: ${fileName}`);
+        const fileViewer = document.getElementById('file-viewer');
+        fileViewer.innerHTML = `<p>Viewing file: ${fileName}</p>`;
+        fileViewer.showModal();
+    }
+
+    function closeFileViewer(event) {
+        event.preventDefault();
+        console.log(`Closing file modal`);
+        const fileViewer = document.getElementById('file-viewer');
+        fileViewer.close();
     }
     </script>
 }

@@ -13,8 +13,9 @@ import (
 
 templ node(rootDir string, file fs.FileInfo) {
 	<li
-		class="flex items-center py-3 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+		class="flex items-center hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer hover:underline"
 		hx-on:contextmenu="toggleFloatingContextMenu(event, this)"
+		hx-on:click={ templ.JSFuncCall("viewFile", templ.JSExpression("event"), file.Name()) }
 	>
 		{{ fileType := util.DetermineFileType(file) }}
 		switch fileType {
@@ -30,13 +31,16 @@ templ node(rootDir string, file fs.FileInfo) {
 				@generic.Component()
 		}
 		if fileType == util.FileTypeFolder {
-			<a href={ filepath.Join("/files", rootDir, file.Name()) } class="flex-1 hover:underline">
-				<span>{ file.Name() }</span>
+			<a href={ filepath.Join("/files", rootDir, file.Name()) } class="flex-1 py-3">
+				<span class="file-name">{ file.Name() }</span>
 			</a>
-			<span class="text-gray-600 dark:text-gray-200 text-sm">{ util.SizeBytesToString(file.Size()) }</span>
 		} else {
-			<span class="flex-1">{ file.Name() }</span>
-			<span class="text-gray-600 dark:text-gray-200 text-sm">{ util.SizeBytesToString(file.Size()) }</span>
+			<div class="flex-1 py-3">
+				<span class="file-name">{ file.Name() }</span>
+			</div>
+		}
+		<span class="text-gray-600 dark:text-gray-200 text-sm">{ util.SizeBytesToString(file.Size()) }</span>
+		if fileType != util.FileTypeFolder {
 			@contextMenu(rootDir, file)
 		}
 	</li>
