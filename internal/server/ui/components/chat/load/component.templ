@@ -1,17 +1,19 @@
 package load
 
 import (
-    "fmt"
-    "html"
+	"fmt"
+	"html"
 )
 
 templ Component(prompt string) {
-    <div hx-trigger="load"
-         hx-get="/api/v1/ai-chat"
-         hx-target="this"
-         hx-disabled-elt="#messageSubmit"
-         hx-swap="outerHTML"
-         hx-headers='{"Accept": "text/html"}'
-         hx-indicator="#spinner"
-         hx-vals={fmt.Sprintf(`{"prompt": "%s"}`, html.EscapeString(prompt))}></div>
+	<div
+		hx-trigger="load"
+		hx-get="/api/v1/ai-chat"
+		hx-target="this"
+		hx-disabled-elt="#messageSubmit"
+		hx-swap="outerHTML"
+		hx-headers='{"Accept": "text/html"}'
+		hx-indicator="#spinner"
+		hx-vals={ fmt.Sprintf(`{"prompt": "%s"}`, html.EscapeString(prompt)) }
+	></div>
 }

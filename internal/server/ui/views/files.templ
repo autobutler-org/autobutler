@@ -1,26 +1,26 @@
 package views
 
 import (
-    "autobutler/pkg/util"
-	"autobutler/internal/server/ui/components/header"
-    "autobutler/internal/server/ui/components/footer"
 	"autobutler/internal/server/ui/components/body"
-    "autobutler/internal/server/ui/components/file_explorer"
+	"autobutler/internal/server/ui/components/file_explorer"
+	"autobutler/internal/server/ui/components/footer"
+	"autobutler/internal/server/ui/components/header"
+	"autobutler/pkg/util"
 	"path/filepath"
 )
 
 templ Files(rootDir string) {
-    <!DOCTYPE html>
-    <html lang="en">
-        @header.Component()
-        @body.Component() {
-            {{ files, err := util.StatFilesInDir(filepath.Join(util.GetFilesDir(), rootDir)) }}
-            if err != nil {
-                <div class="text-red-500">Error loading files: {err.Error()}</div>
-            } else {
-                @file_explorer.Component(rootDir, files)
-            }
-        }
-        @footer.Component()
-    </html>
+	<!DOCTYPE html>
+	<html lang="en">
+		@header.Component()
+		@body.Component() {
+			{{ files, err := util.StatFilesInDir(filepath.Join(util.GetFilesDir(), rootDir)) }}
+			if err != nil {
+				<div class="text-red-500">Error loading files: { err.Error() }</div>
+			} else {
+				@file_explorer.Component(rootDir, files)
+			}
+		}
+		@footer.Component()
+	</html>
 }

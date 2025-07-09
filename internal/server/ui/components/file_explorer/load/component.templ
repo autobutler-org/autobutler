@@ -1,13 +1,13 @@
 package load
 
-import (
-    "path/filepath"
-)
+import "path/filepath"
 
 templ Component(rootDir string) {
-    <div hx-trigger="load"
-         hx-get={filepath.Join("/components/files/explorer", rootDir)}
-         hx-target="#file-explorer"
-         hx-swap="outerHTML"
-         hx-headers='{"Accept": "text/html"}'></div>
+	<div
+		hx-trigger="load"
+		hx-get={ filepath.Join("/components/files/explorer", rootDir) }
+		hx-target="#file-explorer"
+		hx-swap="outerHTML"
+		hx-headers='{"Accept": "text/html"}'
+	></div>
 }

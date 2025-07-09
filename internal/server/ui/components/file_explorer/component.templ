@@ -1,71 +1,75 @@
 package file_explorer
 
 import (
-    "io/fs"
-    "autobutler/pkg/util"
+	"autobutler/pkg/util"
+	"io/fs"
 
-    "path/filepath"
-    "strings"
+	"path/filepath"
+	"strings"
 )
 
 templ Component(rootDir string, files []fs.FileInfo) {
-    <div id="file-explorer" class="bg-white dark:bg-gray-900 max-w-2xl mx-auto mt-10 rounded shadow p-6">
-        @scripts()
-        <div class="flex items-center mb-4">
-            <h2 class="text-2xl font-bold mr-4 whitespace-nowrap">File Explorer</h2>
-            @upload(rootDir)
-        </div>
-        <div id="breadcrumbs">
-            <nav class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-2" data-path={rootDir}>
-                {{ accumulatedDir := "" }}
-                for i, dir := range strings.Split(rootDir, "/") {
-                    <span class="text-gray-700 dark:text-gray-300">
-                        if i == 0 {
-                            {{ dir = "files" }}
-                        }
-                        if i > 0 && dir == "" {
-                            {{ continue }}
-                        }
-                        {{ accumulatedDir = filepath.Join(accumulatedDir, dir) }}
-                        <a href={filepath.Join("/", accumulatedDir)} class="hover:underline">
-                            {dir}
-                        </a>
-                        <span>/</span>
-                    </span>
-                }
-                // Add a plus button SVG
-                <button id="add-folder-btn"
-                        class="ml-2 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-                        title="Add Folder"
-                        type="button"
-                        hx-on:click="toggleFolderInput(event)">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                </button>
-                <input type="text"
-                        id="folder-input"
-                        name="folderName"
-                        class="hidden ml-2 p-1 border border-gray-300 rounded dark:bg-gray-800 dark:border-gray-700"
-                        placeholder="New folder name"
-                        hx-include="[name='folderName']"
-                        hx-put={filepath.Join("/api/v1/files", rootDir)}
-                        hx-target="#file-explorer"
-                        hx-headers='{"Accept": "text/html"}'
-                        hx-swap="outerHTML"
-                        hx-trigger="keydown[keyCode==13] from:body"
-                        hx-disabled-elt="this">
-            </nav>
-        </div>
-        <div id="file-explorer-status"></div>
-        if len(files) == 0 {
-            <span class="py-3 text-gray-500">No files found in { filepath.Join(util.GetFilesDir(), rootDir) }</span>
-        } else {
-            <ul class="divide-y divide-gray-200">
-                for _, file := range files {
-                    @node(rootDir, file)
-                }
-            </ul>
-        }
-    </div>
+	<div id="file-explorer" class="bg-white dark:bg-gray-900 max-w-2xl mx-auto mt-10 rounded shadow p-6">
+		@scripts()
+		<div class="flex items-center mb-4">
+			<h2 class="text-2xl font-bold mr-4 whitespace-nowrap">File Explorer</h2>
+			@upload(rootDir)
+		</div>
+		<div id="breadcrumbs">
+			<nav class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-2" data-path={ rootDir }>
+				{{ accumulatedDir := "" }}
+				for i, dir := range strings.Split(rootDir, "/") {
+					<span class="text-gray-700 dark:text-gray-300">
+						if i == 0 {
+							{{ dir = "files" }}
+						}
+						if i > 0 && dir == "" {
+							{{ continue }}
+						}
+						{{ accumulatedDir = filepath.Join(accumulatedDir, dir) }}
+						<a href={ filepath.Join("/", accumulatedDir) } class="hover:underline">
+							{ dir }
+						</a>
+						<span>/</span>
+					</span>
+				}
+				// Add a plus button SVG
+				<button
+					id="add-folder-btn"
+					class="ml-2 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+					title="Add Folder"
+					type="button"
+					hx-on:click="toggleFolderInput(event)"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+					</svg>
+				</button>
+				<input
+					type="text"
+					id="folder-input"
+					name="folderName"
+					class="hidden ml-2 p-1 border border-gray-300 rounded dark:bg-gray-800 dark:border-gray-700"
+					placeholder="New folder name"
+					hx-include="[name='folderName']"
+					hx-put={ filepath.Join("/api/v1/files", rootDir) }
+					hx-target="#file-explorer"
+					hx-headers='{"Accept": "text/html"}'
+					hx-swap="outerHTML"
+					hx-trigger="keydown[keyCode==13] from:body"
+					hx-disabled-elt="this"
+				/>
+			</nav>
+		</div>
+		<div id="file-explorer-status"></div>
+		if len(files) == 0 {
+			<span class="py-3 text-gray-500">No files found in { filepath.Join(util.GetFilesDir(), rootDir) }</span>
+		} else {
+			<ul class="divide-y divide-gray-200">
+				for _, file := range files {
+					@node(rootDir, file)
+				}
+			</ul>
+		}
+	</div>
 }

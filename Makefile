@@ -65,10 +65,12 @@ build/windows/arm64: ## Build windows backends
 
 format: ## Format code
 	go fmt ./...
+	go tool templ fmt .
 
 lint: ## Lint code
 	gofmt -s -w .
 	go vet ./...
+	go tool templ fmt -fail .
 
 serve: generate env-LLM_AZURE_API_KEY ## Serve backend
 	go run main.go serve
