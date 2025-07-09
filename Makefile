@@ -6,6 +6,8 @@ SHELL := /bin/bash
 
 .PHONY: $(MAKECMDGOALS)
 
+setup: setup/templ ## Setup development environment
+
 setup/templ: ## Install templ tool
 	go get -tool github.com/a-h/templ/cmd/templ@latest
 
