@@ -7,7 +7,6 @@
     "ms-azuretools.vscode-containers",
     "ms-azuretools.vscode-docker",
     "editorconfig.editorconfig",
-    "docsmsft.docs-preview",
     "davidanson.vscode-markdownlint",
     "tyriar.sort-lines"
   ]
