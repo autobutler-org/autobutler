@@ -1,6 +1,6 @@
 {
   "name": "Devcontainer",
-  "dockerComposeFile": ["../compose.yml", "compose.devcontainer.yml"],
+  "dockerComposeFile": ["../compose.yml"],
   "service": "code",
   "workspaceFolder": "/code",
   "customizations": {
@@ -22,5 +22,11 @@
   "shutdownAction": "stopCompose",
   "containerEnv": {
     "SHELL": "/usr/bin/zsh"
-  }
+  },
+  "forwardPorts": [
+    // Live reload server
+    7331,
+    // Normal server port
+    8080
+  ]
 }
