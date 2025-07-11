@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -26,7 +27,8 @@ func Update(version string) error {
 	if baseUrl == "" {
 		baseUrl = "https://github.com/autobutler-ai/autobutler.ai/releases/download"
 	}
-	url := fmt.Sprintf("%s/%s/autobutler_%s_%s.tar.gz", baseUrl, version, runtime.GOOS, runtime.GOARCH)
+	goos := fmt.Sprintf("%s%s", strings.ToUpper(string(runtime.GOOS[0])), string(runtime.GOOS[1:]))
+	url := fmt.Sprintf("%s/%s/autobutler_%s_%s.tar.gz", baseUrl, version, goos, runtime.GOARCH)
 	fmt.Println("Downloading update from", url)
 	resp, err := http.Get(url)
 	if err != nil {
