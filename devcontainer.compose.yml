@@ -5,8 +5,6 @@ services:
       dockerfile: ./Dockerfile
     volumes:
       - .:/code
-      # Mount SSH dir to enable git
-      - ~/.ssh:/root/.ssh
     # [Optional] Required for ptrace-based debuggers like C++, Go, and Rust
     cap_add:
       - SYS_PTRACE
