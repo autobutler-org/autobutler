@@ -1,0 +1,26 @@
+{
+  "name": "Devcontainer",
+  "dockerComposeFile": ["../compose.yml", "compose.devcontainer.yml"],
+  "service": "code",
+  "workspaceFolder": "/code",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "a-h.templ",
+        "jasonnutter.vscode-codeowners",
+        "streetsidesoftware.code-spell-checker",
+        "bierner.color-info",
+        "ms-azuretools.vscode-containers",
+        "ms-azuretools.vscode-docker",
+        "editorconfig.editorconfig",
+        "docsmsft.docs-preview",
+        "davidanson.vscode-markdownlint",
+        "tyriar.sort-lines"
+      ]
+    }
+  },
+  "shutdownAction": "stopCompose",
+  "containerEnv": {
+    "SHELL": "/usr/bin/zsh"
+  }
+}
