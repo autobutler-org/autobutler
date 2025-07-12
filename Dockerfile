@@ -31,6 +31,7 @@ RUN curl \
   && chmod +x /usr/local/bin/yq
 
 ENV PATH=/usr/local/go/bin:$PATH
+ENV PATH=/root/go/bin:$PATH
 
 SHELL ["/usr/bin/zsh", "-o", "pipefail", "-c"]
 
