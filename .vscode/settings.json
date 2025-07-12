@@ -1,8 +1,9 @@
 {
   "[templ]": {
-    "editor.defaultFormatter": "a-h.templ"
+    "editor.defaultFormatter": "a-h.templ",
   },
   "tailwindCSS.includeLanguages": {
-    "templ": "html"
-  }
+    "templ": "html",
+  },
+  "workbench.iconTheme": "vscode-icons",
 }

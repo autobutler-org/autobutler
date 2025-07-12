@@ -10,6 +10,7 @@
     "davidanson.vscode-markdownlint",
     "tyriar.sort-lines",
     "golang.go",
-    "bradlc.vscode-tailwindcss"
+    "bradlc.vscode-tailwindcss",
+    "vscode-icons-team.vscode-icons"
   ]
 }
