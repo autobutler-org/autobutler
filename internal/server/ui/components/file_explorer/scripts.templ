@@ -150,11 +150,16 @@ templ scripts() {
         fileViewer.showModal();
     }
 
+    function clearFileViewer() {
+        const fileViewerContent = document.getElementById('file-viewer-content');
+        fileViewerContent.innerHTML = '';
+    }
+
     function closeFileViewer(event) {
         event.preventDefault();
-        console.log(`Closing file modal`);
         const fileViewer = document.getElementById('file-viewer');
         fileViewer.close();
+        clearFileViewer();
     }
     </script>
 }

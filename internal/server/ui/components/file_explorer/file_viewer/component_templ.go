@@ -29,7 +29,7 @@ func Component() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<dialog id=\"file-viewer\" class=\"fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2\"><button class=\"absolute top-2 right-2 p-2 rounded hover:bg-gray-200\" aria-label=\"Close\" hx-on:click=\"closeFileViewer(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" fill=\"none\" viewBox=\"0 0 20 20\"><path stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" d=\"M5 5l10 10M15 5l-10 10\"></path></svg></button><div id=\"file-viewer-content\" class=\"m-10\"></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<dialog id=\"file-viewer\" class=\"fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2\" hx-on:close=\"closeFileViewer(event)\"><button class=\"absolute top-2 right-2 p-2 rounded hover:bg-gray-200\" aria-label=\"Close\" hx-on:click=\"closeFileViewer(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" fill=\"none\" viewBox=\"0 0 20 20\"><path stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" d=\"M5 5l10 10M15 5l-10 10\"></path></svg></button><div id=\"file-viewer-content\" class=\"m-10\"></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
