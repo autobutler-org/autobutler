@@ -16,7 +16,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Install templ
+        run: |
+          make setup/templ
       - name: Install dependencies
-        run: go mod download
+        run: |
+          go mod download
       - name: Build
-        run: make build
+        run: |
+          make build
