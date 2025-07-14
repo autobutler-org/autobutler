@@ -1,7 +1,7 @@
 {
-  // "[templ]": {
-  //   "editor.defaultFormatter": "a-h.templ",
-  // },
+  "[templ]": {
+    "editor.defaultFormatter": "a-h.templ",
+  },
   "tailwindCSS.includeLanguages": {
     "templ": "html",
   },
