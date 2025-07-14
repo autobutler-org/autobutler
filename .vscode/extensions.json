@@ -7,8 +7,10 @@
     "ms-azuretools.vscode-containers",
     "ms-azuretools.vscode-docker",
     "editorconfig.editorconfig",
-    "docsmsft.docs-preview",
     "davidanson.vscode-markdownlint",
-    "tyriar.sort-lines"
+    "tyriar.sort-lines",
+    "golang.go",
+    "bradlc.vscode-tailwindcss",
+    "vscode-icons-team.vscode-icons"
   ]
 }

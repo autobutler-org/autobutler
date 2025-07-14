@@ -1,0 +1,13 @@
+name: Setup templ
+runs:
+  using: "composite"
+  steps:
+    - name: Install templ
+      shell: bash
+      run: |
+        make setup/templ
+
+    - name: Fix PATH
+      shell: bash
+      run: |
+        echo "${HOME}/go/bin" >> ${GITHUB_PATH}

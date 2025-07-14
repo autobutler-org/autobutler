@@ -6,10 +6,18 @@ SHELL := /bin/bash
 
 .PHONY: $(MAKECMDGOALS)
 
-setup: setup/templ ## Setup development environment
+setup: setup/gotools setup/templ ## Setup development environment
+
+setup/gotools: ## Install go tools
+	go install golang.org/x/tools/gopls@latest
+	go install github.com/cweill/gotests/gotests@v1.6.0
+	go install github.com/josharian/impl@v1.4.0
+	go install github.com/haya14busa/goplay/cmd/goplay@v1.0.0
+	go install github.com/go-delve/delve/cmd/dlv@latest
+	go install honnef.co/go/tools/cmd/staticcheck@latest
 
 setup/templ: ## Install templ tool
-	go get -tool github.com/a-h/templ/cmd/templ@latest
+	go install github.com/a-h/templ/cmd/templ@latest
 
 export INSTALL_VERSION?=$(shell git describe --tags --abbrev=0)
 
@@ -41,7 +49,7 @@ install/mac: env-INSTALL_VERSION ## Install startup service on Mac
 	echo "Installed autobutler successfully. Will run at startup."
 
 generate: ## Generate templ files
-	go tool templ generate
+	templ generate
 
 build: generate ## Build backend
 	mkdir -p ./build
@@ -67,12 +75,12 @@ build/windows/arm64: ## Build windows backends
 
 format: ## Format code
 	go fmt ./...
-	go tool templ fmt .
+	templ fmt .
 
 lint: ## Lint code
 	gofmt -s -w .
 	go vet ./...
-	go tool templ fmt -fail .
+	templ fmt -fail .
 
 upgrade: ## Upgrade dependencies
 	go get -u ./...
@@ -86,7 +94,7 @@ serve: generate env-LLM_AZURE_API_KEY ## Serve backend
 	go run main.go serve
 
 watch: env-LLM_AZURE_API_KEY ## Watch backend for changes
-	go tool templ generate \
+	templ generate \
 		--watch \
 		--proxy="http://localhost:8080" \
 		--cmd="go run . serve"
