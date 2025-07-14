@@ -16,9 +16,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Install templ
-        run: |
-          make setup/templ
+      - name: Setup Templ
+        uses: ./.github/actions/setup-templ
       - name: Install dependencies
         run: |
           go mod download
