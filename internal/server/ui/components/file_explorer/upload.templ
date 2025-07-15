@@ -13,6 +13,7 @@ templ upload(rootDir string) {
 		hx-indicator="#file-upload-progress"
 	>
 		<button
+			id="file-upload-button"
 			type="button"
 			class="p-2 rounded hover:bg-gray-200"
 			hx-on:click="document.getElementById('file-upload-input').click()"

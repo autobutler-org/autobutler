@@ -184,7 +184,6 @@ templ scripts() {
         uploadArea.classList.add('hidden');
         const files = event.dataTransfer.files;
         if (files.length > 0) {
-
             const formData = new FormData();
             for (let i = 0; i < files.length; i++) {
                 formData.append('files', files[i]);
@@ -192,10 +191,24 @@ templ scripts() {
             fetch(`/api/v1/files/${rootDir}`, {
                 method: 'POST',
                 body: formData,
+                headers: {
+                    'Accept': 'text/html',
+                },
             })
             .then(response => response.text())
             .then(html => {
-                document.getElementById('file-explorer-status').innerHTML = html;
+                console.log('Files uploaded successfully');
+                fetch(`/components/files/explorer/${rootDir}`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'text/html',
+                        },
+                    }
+                ).then(response => response.text())
+                .then(html => {
+                    document.getElementById('file-explorer').outerHTML = html;
+                });
             })
             .catch(error => {
                 console.error('Error uploading files:', error);
