@@ -188,30 +188,13 @@ templ scripts() {
             for (let i = 0; i < files.length; i++) {
                 formData.append('files', files[i]);
             }
-            fetch(`/api/v1/files/${rootDir}`, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Accept': 'text/html',
+            const uploadForm = document.getElementById('file-upload-form');
+            htmx.ajax('POST',
+                uploadForm.getAttribute('hx-post'), {
+                values: {
+                    files: formData.getAll('files')
                 },
-            })
-            .then(response => response.text())
-            .then(html => {
-                console.log('Files uploaded successfully');
-                fetch(`/components/files/explorer/${rootDir}`,
-                    {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'text/html',
-                        },
-                    }
-                ).then(response => response.text())
-                .then(html => {
-                    document.getElementById('file-explorer').outerHTML = html;
-                });
-            })
-            .catch(error => {
-                console.error('Error uploading files:', error);
+                source: uploadForm,
             });
         }
     }
