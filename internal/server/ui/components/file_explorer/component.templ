@@ -10,12 +10,17 @@ import (
 )
 
 templ Component(rootDir string, files []fs.FileInfo) {
-	<div id="file-explorer" class="bg-white dark:bg-gray-900 max-w-2xl mx-auto mt-10 rounded shadow p-6">
+	// TODO: This works on firefox, but not on chrome as it will rapidly open and close the upload area.
+	<div
+		id="file-explorer"
+		class="bg-white dark:bg-gray-900 max-full mx-24 mt-10 rounded shadow p-6"
+	>
 		@scripts()
 		@file_viewer.Component()
 		<div class="flex items-center mb-4">
 			<h2 class="text-2xl font-bold mr-4 whitespace-nowrap">File Explorer</h2>
 			@upload(rootDir)
+			@dnd(rootDir)
 		</div>
 		<div id="breadcrumbs">
 			<nav class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-2" data-path={ rootDir }>

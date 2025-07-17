@@ -96,7 +96,7 @@ func uploadFileRouteImpl(c *gin.Context, rootDir string) {
 		return
 	}
 
-	file, header, err := c.Request.FormFile("file")
+	form, err := c.MultipartForm()
 	if err != nil {
 		if isHtml {
 			c.Writer.WriteString(`<span class="text-red-500">Failed to get file: ` + html.EscapeString(err.Error()) + `</span>`)
@@ -105,27 +105,39 @@ func uploadFileRouteImpl(c *gin.Context, rootDir string) {
 		}
 		return
 	}
-	defer file.Close()
+	fileHeaders := form.File["files"]
+	for _, header := range fileHeaders {
+		file, err := header.Open()
+		if err != nil {
+			if isHtml {
+				c.Writer.WriteString(`<span class="text-red-500">Failed to open file: ` + html.EscapeString(err.Error()) + `</span>`)
+			} else {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to open file: " + err.Error()})
+			}
+			return
+		}
+		defer file.Close()
 
-	fileDir := util.GetFilesDir()
-	newFilePath := filepath.Join(fileDir, rootDir, header.Filename)
-	newFile, err := os.Create(newFilePath)
-	if err != nil {
-		if isHtml {
-			c.Writer.WriteString(`<span class="text-red-500">Failed to create file: ` + html.EscapeString(err.Error()) + `</span>`)
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create file: " + err.Error()})
+		fileDir := util.GetFilesDir()
+		newFilePath := filepath.Join(fileDir, rootDir, header.Filename)
+		newFile, err := os.Create(newFilePath)
+		if err != nil {
+			if isHtml {
+				c.Writer.WriteString(`<span class="text-red-500">Failed to create file: ` + html.EscapeString(err.Error()) + `</span>`)
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create file: " + err.Error()})
+			}
+			return
 		}
-		return
-	}
-	defer newFile.Close()
-	if _, err := io.Copy(newFile, file); err != nil {
-		if isHtml {
-			c.Writer.WriteString(`<span class="text-red-500">Failed to write file: ` + html.EscapeString(err.Error()) + `</span>`)
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write file: " + err.Error()})
+		defer newFile.Close()
+		if _, err := io.Copy(newFile, file); err != nil {
+			if isHtml {
+				c.Writer.WriteString(`<span class="text-red-500">Failed to write file: ` + html.EscapeString(err.Error()) + `</span>`)
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write file: " + err.Error()})
+			}
+			return
 		}
-		return
 	}
 	if isHtml {
 		loadComponent := load.Component(rootDir)
@@ -135,8 +147,7 @@ func uploadFileRouteImpl(c *gin.Context, rootDir string) {
 		}
 	} else {
 		c.JSON(200, gin.H{
-			"message": "File uploaded successfully",
-			"file":    header.Filename,
+			"message": "Files uploaded successfully",
 		})
 	}
 }

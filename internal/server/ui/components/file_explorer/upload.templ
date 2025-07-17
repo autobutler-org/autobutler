@@ -13,6 +13,7 @@ templ upload(rootDir string) {
 		hx-indicator="#file-upload-progress"
 	>
 		<button
+			id="file-upload-button"
 			type="button"
 			class="p-2 rounded hover:bg-gray-200"
 			hx-on:click="document.getElementById('file-upload-input').click()"
@@ -36,9 +37,10 @@ templ upload(rootDir string) {
 		<input
 			type="file"
 			id="file-upload-input"
-			name="file"
+			name="files"
 			class="max-w-sm hidden"
 			onchange="this.form.requestSubmit()"
+			multiple
 		/>
 		<progress
 			id="file-upload-progress"
@@ -47,16 +49,16 @@ templ upload(rootDir string) {
 			max="100"
 		></progress>
 		<script>
-          htmx.on(
-            '#file-upload-form',
-            'htmx:xhr:progress',
-            function(evt) {
-                htmx.find('#file-upload-progress').setAttribute(
-                  'value',
-                  evt.detail.loaded / evt.detail.total * 100,
-                );
-            }
-          );
-        </script>
+		htmx.on(
+			'#file-upload-form',
+			'htmx:xhr:progress',
+			function(evt) {
+				htmx.find('#file-upload-progress').setAttribute(
+				'value',
+				evt.detail.loaded / evt.detail.total * 100,
+				);
+			}
+		);
+		</script>
 	</form>
 }
