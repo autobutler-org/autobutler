@@ -1,15 +1,11 @@
 package file_explorer
 
 templ scripts() {
-	<script src="/public/scripts/vendor/epub.js/jszip.min.js"></script>
-	<script src="/public/scripts/vendor/epub.js/epub.min.js"></script>
 	<script>
     var contextMenuPosition = {
         x: null,
         y: null,
     };
-    var navigationListener = null;
-    var loadedBook = null;
 
     function preventDefault(event) {
         if (event) {
@@ -33,7 +29,6 @@ templ scripts() {
 
     function toggleFloatingContextMenu(event, parentNode) {
         const contextMenu = toggleContextMenu(event, parentNode);
-        console.log(event.clientX, event.clientY);
         contextMenu.style.left = `${event.clientX}px`;
         contextMenu.style.top = `${event.clientY}px`;
     }
@@ -43,178 +38,6 @@ templ scripts() {
         const folderInput = document.getElementById('folder-input');
         if (!folderInput.classList.toggle('hidden')) {
             folderInput.focus();
-        }
-    }
-
-    function viewFile(event, filePath, fileType) {
-        if (fileType === 'folder') {
-            return;
-        }
-        preventDefault(event);
-        console.log(filePath);
-        if (filePath.includes('.')) {
-            const extension = filePath.split('.').pop().toLowerCase();
-            console.log(extension);
-            viewAnyFile(event, filePath, extension);
-        } else {
-            viewFileFallback(event, filePath);
-        }
-    }
-
-    function viewFileFallback(event, filePath) {
-        preventDefault(event);
-        console.log(`Fallback logic: ${filePath}`);
-        // TODO: Implement fallback logic
-        openFileViewer(event, filePath);
-    }
-
-    function viewAnyFile(event, filePath, extension) {
-        preventDefault(event);
-        console.log(`Viewing file: ${filePath} with extension: ${extension}`);
-        // TODO: Implement logic to view file based on extension
-        openFileViewer(event, filePath, extension);
-    }
-
-    function openFileViewer(event, filePath, extension) {
-        preventDefault(event);
-        console.log(`Opening file modal for: ${filePath}`);
-        const fileViewer = document.getElementById('file-viewer');
-        const fileViewerContent = document.getElementById('file-viewer-content');
-        console.log(fileViewer);
-        switch (extension) {
-            case 'log':
-            case 'csv':
-            case 'json':
-            case 'yaml':
-            case 'yml':
-            case 'xml':
-            case 'ini':
-            case 'conf':
-            case 'config':
-            case 'env':
-            case 'toml':
-            case 'tsv':
-            case 'properties':
-            case 'bat':
-            case 'sh':
-            case 'bash':
-            case 'zsh':
-            case 'csh':
-            case 'fish':
-            case 'ps1':
-            case 'dockerfile':
-            case 'gitignore':
-            case 'gitattributes':
-            case 'editorconfig':
-            case 'txt':
-            case 'md':
-            case 'txt':
-            case 'md':
-                fetch(`/api/v1${filePath}`)
-                    .then(response => response.text())
-                    .then(text => {
-                        fileViewerContent.innerHTML = `<pre class="whitespace-pre-wrap">${text}</pre>`;
-                    })
-                    .catch(error => {
-                        fileViewerContent.innerHTML = `<p>Error loading file: ${error}</p>`;
-                    });
-                break;
-            case 'jpeg':
-            case 'jpe':
-            case 'jfif':
-            case 'pjpeg':
-            case 'pjp':
-            case 'gif':
-            case 'bmp':
-            case 'webp':
-            case 'svg':
-            case 'apng':
-            case 'ico':
-            case 'jpg':
-            case 'png':
-                fileViewerContent.innerHTML = `<img class="max-w-full max-h-full" src="/api/v1${filePath}" alt="${filePath}">`;
-                break;
-            case 'webm':
-                fileViewerContent.innerHTML = `<video class="max-w-full max-h-full" controls><source src="/api/v1${filePath}" type="video/webm">Your browser does not support the video tag.</video>`;
-                break;
-            case 'ogg':
-            case 'ogv':
-                fileViewerContent.innerHTML = `<video class="max-w-full max-h-full" controls><source src="/api/v1${filePath}" type="video/ogg">Your browser does not support the video tag.</video>`;
-                break;
-            case 'm4v':
-            case 'mp4':
-                fileViewerContent.innerHTML = `<video class="max-w-full max-h-full" controls><source src="/api/v1${filePath}" type="video/mp4">Your browser does not support the video tag.</video>`;
-                break;
-            case 'mov':
-                fileViewerContent.innerHTML = `<video class="max-w-full max-h-full" controls><source src="/api/v1${filePath}" type="video/quicktime">Your browser does not support the video tag.</video>`;
-                break;
-            case 'pdf':
-                fileViewerContent.innerHTML = `<iframe style="width: 90vw; height: 90vh;" src="/api/v1${filePath}" type="application/pdf"></iframe>`;
-                break;
-            case 'mobi':
-            case 'epub':
-                setupEbookViewer(fileViewerContent, filePath);
-                break;
-            default:
-                fileViewerContent.innerHTML = `<p>Unsupported file type: ${extension}</p>`;
-                break
-        }
-        fileViewer.showModal();
-    }
-
-    function setupEbookViewer(fileViewerContent, filePath) {
-        fileViewerContent.innerHTML = `
-        <div class="flex items-center justify-center" style="width: 80vw; height: 60vh;">
-            <div class="flex flex-col items-center">
-                <div class="mb-4">
-                    <button id="book-reader-prev" class="bg-gray-800 text-white px-4 py-2 rounded mr-2">Previous Page</button>
-                    <button id="book-reader-next" class="bg-gray-800 text-white px-4 py-2 rounded">Next Page</button>
-                </div>
-                <div id="book-reader"></div>
-            </div>
-        </div>`;
-        loadedBook = ePub(`/api/v1${filePath}`);
-        const rendition = loadedBook.renderTo("book-reader", {
-            method: "default",
-            flow: "paginated",
-            width: '80vw',
-            height: '60vh',
-        });
-                // Setup navigation controls
-        console.log("Setting up navigation controls");
-        const prevButton = document.getElementById('book-reader-prev');
-        const nextButton = document.getElementById('book-reader-next');
-        prevButton.addEventListener('click', () => {
-            rendition.prev();
-        });
-        nextButton.addEventListener('click', () => {
-            rendition.next();
-        });
-        navigationListener = (event) => {
-            console.log(`Key pressed: ${event.key}`);
-            switch (event.key) {
-                case 'ArrowLeft':
-                    rendition.prev();
-                    break;
-                case 'Enter':
-                case 'ArrowRight':
-                    rendition.next();
-                    break;
-                default:
-                    break;
-            }
-        };
-        addEventListener('keydown', navigationListener);
-        fileViewerContent.focus();
-        const displayed = rendition.display();
-        if (displayed) {
-            displayed.then(() => {
-                console.log("Book loaded successfully");
-            }).catch((error) => {
-                fileViewerContent.innerHTML = `<p>Error loading book: ${error}</p>`;
-            });
-        } else {
-            fileViewerContent.innerHTML = `<p>Error displaying book.</p>`;
         }
     }
 
@@ -261,7 +84,6 @@ templ scripts() {
     }
 
     function dropFiles(event, rootDir) {
-        console.log('Drop files event:', event);
         preventDefault(event);
         const files = event.dataTransfer.files;
         if (files.length > 0) {

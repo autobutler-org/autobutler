@@ -1,0 +1,27 @@
+package text_viewer
+
+import (
+	"autobutler/pkg/util"
+	"os"
+	"path/filepath"
+)
+
+func readFile(filePath string) (string, error) {
+	rootDir := util.GetFilesDir()
+	fullPath := filepath.Join(rootDir, filePath)
+	data, err := os.ReadFile(fullPath)
+	if err != nil {
+		return "", err
+	}
+	text := string(data)
+	return text, nil
+}
+
+templ Component(filePath string) {
+	{{ text, err := readFile(filePath) }}
+	if err != nil {
+		<p>Error reading file: { err.Error() }</p>
+	} else {
+		<pre class="whitespace-pre-wrap">{ text }</pre>
+	}
+}

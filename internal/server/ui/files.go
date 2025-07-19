@@ -2,12 +2,18 @@ package ui
 
 import (
 	"autobutler/internal/server/ui/components/file_explorer"
+	"autobutler/internal/server/ui/components/file_explorer/file_viewer/epub_viewer"
+	"autobutler/internal/server/ui/components/file_explorer/file_viewer/image_viewer"
+	"autobutler/internal/server/ui/components/file_explorer/file_viewer/pdf_viewer"
+	"autobutler/internal/server/ui/components/file_explorer/file_viewer/text_viewer"
+	"autobutler/internal/server/ui/components/file_explorer/file_viewer/video_viewer"
 	"autobutler/internal/server/ui/views"
 	"autobutler/pkg/util"
 	"html"
 	"net/http"
 	"path/filepath"
 
+	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 )
 
@@ -36,6 +42,7 @@ func setupFileView(router *gin.Engine) {
 
 func setupComponentRoutes(router *gin.Engine) {
 	setupComponentFileExplorer(router)
+	setupComponentFileViewers(router)
 }
 
 func RenderFileExplorer(c *gin.Context, fileDir string) {
@@ -72,5 +79,33 @@ func RenderFileExplorer(c *gin.Context, fileDir string) {
 func setupComponentFileExplorer(router *gin.Engine) {
 	uiRoute(router, "/components/files/explorer/*fileDir", func(c *gin.Context) {
 		RenderFileExplorer(c, c.Param("fileDir"))
+	})
+}
+
+func setupComponentFileViewers(router *gin.Engine) {
+	uiRoute(router, "/components/files/viewer/files/*filePath", func(c *gin.Context) {
+		filePath := c.Param("filePath")
+		fileType := util.DetermineFileTypeFromPath(filePath)
+		var viewer templ.Component
+		switch fileType {
+		case util.FileTypeImage:
+			viewer = image_viewer.Component(filePath)
+		case util.FileTypeVideo:
+			viewer = video_viewer.Component(filePath)
+		case util.FileTypePDF:
+			viewer = pdf_viewer.Component(filePath)
+		case util.FileTypeEpub:
+			viewer = epub_viewer.Component(filePath)
+		case util.FileTypeGeneric:
+			viewer = text_viewer.Component(filePath)
+		default:
+			c.Status(501)
+			return
+		}
+		if err := viewer.Render(c.Request.Context(), c.Writer); err != nil {
+			c.Status(500)
+			return
+		}
+		c.Status(200)
 	})
 }

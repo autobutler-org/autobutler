@@ -1,0 +1,66 @@
+package epub_viewer
+
+import "path/filepath"
+
+templ Component(filePath string) {
+	<div
+		class="flex items-center justify-center"
+		style="width: 80vw; height: 60vh;"
+	>
+		<div class="flex flex-col items-center">
+			<div class="mb-4">
+				<button
+					id="book-reader-prev"
+					class="bg-gray-800 text-white px-4 py-2 rounded mr-2"
+				>Previous Page</button>
+				<button
+					id="book-reader-next"
+					class="bg-gray-800 text-white px-4 py-2 rounded"
+				>Next Page</button>
+			</div>
+			<div id="book-reader"></div>
+		</div>
+	</div>
+	<script>
+		var navigationListener = null;
+		var fileViewerContent = document.getElementById('file-viewer-content');
+		var loadedBook = ePub({{ filepath.Join("/api/v1/files", filePath) }});
+        var rendition = loadedBook.renderTo("book-reader", {
+            method: "default",
+            flow: "paginated",
+            width: '80vw',
+            height: '60vh',
+        });
+        var prevButton = document.getElementById('book-reader-prev');
+        var nextButton = document.getElementById('book-reader-next');
+        prevButton.addEventListener('click', () => {
+            rendition.prev();
+        });
+        nextButton.addEventListener('click', () => {
+            rendition.next();
+        });
+        navigationListener = (event) => {
+            switch (event.key) {
+                case 'ArrowLeft':
+                    rendition.prev();
+                    break;
+                case 'Enter':
+                case 'ArrowRight':
+                    rendition.next();
+                    break;
+                default:
+                    break;
+            }
+        };
+        addEventListener('keydown', navigationListener);
+        fileViewerContent.focus();
+        var displayed = rendition.display();
+        if (displayed) {
+            displayed.then(() => {}).catch((error) => {
+                fileViewerContent.innerHTML = `<p>Error loading book: ${error}</p>`;
+            });
+        } else {
+            fileViewerContent.innerHTML = `<p>Error displaying book.</p>`;
+        }
+	</script>
+}

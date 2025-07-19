@@ -45,6 +45,8 @@ const (
 	FileTypeSlideshow FileType = "slideshow"
 	FileTypeImage     FileType = "image"
 	FileTypeFolder    FileType = "folder"
+	FileTypeVideo     FileType = "video"
+	FileTypeEpub      FileType = "epub"
 )
 
 func KB(size float64) int64 {
@@ -72,6 +74,10 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 		return FileTypeSlideshow
 	case ".png", ".jpg", ".jpeg", ".gif":
 		return FileTypeImage
+	case ".mp4", ".m4v", ".webm", ".ogg", ".avi", ".mov":
+		return FileTypeVideo
+	case ".epub":
+		return FileTypeEpub
 	case "/":
 		return FileTypeFolder
 	default:

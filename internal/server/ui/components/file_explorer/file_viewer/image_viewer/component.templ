@@ -1,0 +1,54 @@
+package image_viewer
+
+import (
+	"autobutler/pkg/util"
+	"encoding/base64"
+	"os"
+	"path/filepath"
+)
+
+func readImageAsBase64(filePath string) (string, error) {
+	rootDir := util.GetFilesDir()
+	fullPath := filepath.Join(rootDir, filePath)
+	data, err := os.ReadFile(fullPath)
+	if err != nil {
+		return "", err
+	}
+	encoded := base64.StdEncoding.EncodeToString(data)
+	extension := filepath.Ext(filePath)
+	switch extension {
+	case ".png":
+		return "data:image/png;base64," + encoded, nil
+	case ".gif":
+		return "data:image/gif;base64," + encoded, nil
+	case ".bmp":
+		return "data:image/bmp;base64," + encoded, nil
+	case ".webp":
+		return "data:image/webp;base64," + encoded, nil
+	case ".svg":
+		return "data:image/svg+xml;base64," + encoded, nil
+	case ".tiff", ".tif":
+		return "data:image/tiff;base64," + encoded, nil
+	case ".heic", ".heif":
+		return "data:image/heic;base64," + encoded, nil
+	case ".avif":
+		return "data:image/avif;base64," + encoded, nil
+	case ".ico":
+		return "data:image/x-icon;base64," + encoded, nil
+	default: // Default to JPEG for everything else
+		return "data:image/jpeg;base64," + encoded, nil
+	}
+}
+
+templ Component(filePath string) {
+	{{ imageData, err := readImageAsBase64(filePath) }}
+	if err != nil {
+		<p>Error reading image: { err.Error() }</p>
+	} else {
+		<img
+			class="max-w-full max-h-full"
+			src={ imageData }
+			alt={ filePath }
+		/>
+	}
+}

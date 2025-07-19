@@ -6,6 +6,8 @@ templ Component() {
 		class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
 		hx-on:close="closeFileViewer(event)"
 	>
+		<script src="/public/scripts/vendor/epub.js/jszip.min.js"></script>
+		<script src="/public/scripts/vendor/epub.js/epub.min.js"></script>
 		<button
 			class="absolute top-2 right-2 p-2 rounded hover:bg-gray-200"
 			aria-label="Close"

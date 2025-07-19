@@ -1,0 +1,32 @@
+package video_viewer
+
+import "path/filepath"
+
+func determineVideoType(filePath string) string {
+	extension := filepath.Ext(filePath)
+	switch extension {
+	case ".webm":
+		return "video/webm"
+	case ".ogg", ".ogv":
+		return "video/ogg"
+	case ".mov":
+		return "video/quicktime"
+	case ".avi":
+		return "video/avi"
+	default:
+		return "video/mp4" // Default to MP4 for now
+	}
+}
+
+templ Component(filePath string) {
+	<video
+		class="max-w-full max-h-full"
+		controls
+	>
+		<source
+			src={ filepath.Join("/api/v1/files", filePath) }
+			type={ determineVideoType(filePath) }
+		/>
+		Your browser does not support this video format.
+	</video>
+}
