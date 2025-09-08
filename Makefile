@@ -17,9 +17,10 @@ setup/gotools: ## Install go tools
 	go install honnef.co/go/tools/cmd/staticcheck@latest
 
 setup/templ: ## Install templ tool
-	go install github.com/a-h/templ/cmd/templ@latest
+	go install github.com/a-h/templ/cmd/templ@v0.3.906
 
 export INSTALL_VERSION?=$(shell git describe --tags --abbrev=0)
+export GOPROXY ?= https://proxy.golang.org,direct
 
 install/linux: env-INSTALL_VERSION ## Install startup service on Linux
 	if ! [[ -f /usr/local/bin/autobutler ]]; then \

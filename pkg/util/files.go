@@ -40,13 +40,14 @@ func NewCustomFileInfo(name string, size int64) fs.FileInfo {
 type FileType string
 
 const (
+	FileTypeDocx      FileType = "docx"
+	FileTypeEpub      FileType = "epub"
+	FileTypeFolder    FileType = "folder"
 	FileTypeGeneric   FileType = "generic"
+	FileTypeImage     FileType = "image"
 	FileTypePDF       FileType = "pdf"
 	FileTypeSlideshow FileType = "slideshow"
-	FileTypeImage     FileType = "image"
-	FileTypeFolder    FileType = "folder"
 	FileTypeVideo     FileType = "video"
-	FileTypeEpub      FileType = "epub"
 )
 
 func KB(size float64) int64 {
@@ -78,6 +79,8 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 		return FileTypeVideo
 	case ".epub":
 		return FileTypeEpub
+	case ".docx":
+		return FileTypeDocx
 	case "/":
 		return FileTypeFolder
 	default:

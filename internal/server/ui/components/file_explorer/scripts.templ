@@ -6,12 +6,23 @@ templ scripts() {
         x: null,
         y: null,
     };
+    // NOTE: Must be global so that it can be removed when the file viewer is closed.
+    var navigationListener = null;
+    var loadedBook = null;
 
     function preventDefault(event) {
         if (event) {
             event.preventDefault();
             event.stopPropagation();
         }
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
     }
 
     function showFileDetails(event, fileName) {
@@ -101,6 +112,19 @@ templ scripts() {
                 source: uploadForm,
             });
         }
+    }
+
+    function saveQuill(filePath) {
+        const delta = quill.getContents();
+        fetch(`/api/v1/files${filePath}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(delta)
+        }).catch(error => {
+            console.error('Error updating file:', error);
+        });
     }
     </script>
 }

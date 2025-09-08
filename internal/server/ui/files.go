@@ -2,6 +2,7 @@ package ui
 
 import (
 	"autobutler/internal/server/ui/components/file_explorer"
+	"autobutler/internal/server/ui/components/file_explorer/file_viewer/docx_viewer"
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer/epub_viewer"
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer/image_viewer"
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer/pdf_viewer"
@@ -83,6 +84,8 @@ func setupComponentFileViewers(router *gin.Engine) {
 			viewer = pdf_viewer.Component(filePath)
 		case util.FileTypeEpub:
 			viewer = epub_viewer.Component(filePath)
+		case util.FileTypeDocx:
+			viewer = docx_viewer.Component(filePath)
 		case util.FileTypeGeneric:
 			viewer = text_viewer.Component(filePath)
 		default:

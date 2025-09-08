@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"autobutler/internal/quill"
 	"autobutler/internal/server/ui"
 	"autobutler/internal/server/ui/components/file_explorer/load"
 
@@ -19,6 +20,7 @@ func SetupFilesRoutes(apiV1Group *gin.RouterGroup) {
 	deleteFileRoute(apiV1Group)
 	downloadFileRoute(apiV1Group)
 	newFolderRoute(apiV1Group)
+	updateFileRoute(apiV1Group)
 	uploadFileRoute(apiV1Group)
 }
 
@@ -80,6 +82,35 @@ func newFolderRoute(apiV1Group *gin.RouterGroup) {
 
 		newDir := filepath.Join(folderDir, folderName)
 		ui.RenderFileExplorer(c, newDir)
+	})
+}
+
+func updateFileRouteImpl(c *gin.Context, filePath string) {
+	fileType := util.DetermineFileTypeFromPath(filePath)
+	switch fileType {
+	case util.FileTypeDocx:
+		fmt.Println("Updating DOCX file:", filePath)
+		var delta quill.Delta
+		if err := c.BindJSON(&delta); err != nil {
+			c.Writer.WriteString(`<span class="text-red-500">Failed to parse delta: ` + html.EscapeString(err.Error()) + `</span>`)
+			c.Status(http.StatusBadRequest)
+			return
+		}
+		fullPath := filepath.Join(util.GetFilesDir(), filePath)
+		if err := delta.SaveDocxFile(fullPath); err != nil {
+			c.Writer.WriteString(`<span class="text-red-500">Failed to save DOCX file: ` + html.EscapeString(err.Error()) + `</span>`)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+	default:
+		panic(fmt.Sprintf("Unsupported file type for update: %s", fileType))
+	}
+}
+
+func updateFileRoute(apiV1Group *gin.RouterGroup) {
+	apiRoute(apiV1Group, "PUT", "/files/*filePath", func(c *gin.Context) {
+		filePath := c.Param("filePath")
+		updateFileRouteImpl(c, filePath)
 	})
 }
 

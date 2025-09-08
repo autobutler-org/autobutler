@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:o="urn:schemas-microsoft-com:office:office"
+    xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+    xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"
+    xmlns:cr="http://schemas.microsoft.com/office/comments/2020/reactions"
+    xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram"
+    xmlns:lc="http://schemas.openxmlformats.org/drawingml/2006/lockedCanvas"
+    xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"
+    xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"
+    xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+    xmlns:sl="http://schemas.openxmlformats.org/schemaLibrary/2006/main"
+    xmlns:v="urn:schemas-microsoft-com:vml"
+    xmlns:w10="urn:schemas-microsoft-com:office:word"
+    xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"
+    xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml"
+    xmlns:w16="http://schemas.microsoft.com/office/word/2018/wordml"
+    xmlns:w16cex="http://schemas.microsoft.com/office/word/2018/wordml/cex"
+    xmlns:w16cid="http://schemas.microsoft.com/office/word/2016/wordml/cid"
+    xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+    xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml"
+    xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+    xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup"
+    xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"
+    xmlns="http://schemas.microsoft.com/office/tasks/2019/documenttasks"
+>
+    <w:body>
+        <w:p w:rsidR="00000000" w:rsidDel="00000000" w:rsidP="00000000" w:rsidRDefault="00000000"
+            w:rsidRPr="00000000" w14:paraId="00000001">
+            <w:pPr>
+                <w:numPr>
+                    <w:ilvl w:val="0" />
+                    <w:numId w:val="1" />
+                </w:numPr>
+                <w:spacing w:after="0" w:afterAutospacing="0" />
+                <w:ind w:left="720" w:hanging="360" />
+                <w:rPr>
+                    <w:u w:val="none" />
+                </w:rPr>
+            </w:pPr>
+            <w:r w:rsidDel="00000000" w:rsidR="00000000" w:rsidRPr="00000000">
+                <w:rPr>
+                    <w:rtl w:val="0" />
+                </w:rPr>
+                <w:t xml:space="preserve">Something</w:t>
+            </w:r>
+        </w:p>
+        <w:p w:rsidR="00000000" w:rsidDel="00000000" w:rsidP="00000000" w:rsidRDefault="00000000"
+            w:rsidRPr="00000000" w14:paraId="00000002">
+            <w:pPr>
+                <w:pStyle w:val="Heading1" />
+                <w:numPr>
+                    <w:ilvl w:val="0" />
+                    <w:numId w:val="1" />
+                </w:numPr>
+                <w:spacing w:before="0" w:beforeAutospacing="0" />
+                <w:ind w:left="720" w:hanging="360" />
+            </w:pPr>
+            <w:bookmarkStart w:colFirst="0" w:colLast="0" w:name="_j4r4tezhf3qe" w:id="0" />
+            <w:bookmarkEnd w:id="0" />
+            <w:hyperlink r:id="rId6">
+                <w:r w:rsidDel="00000000" w:rsidR="00000000" w:rsidRPr="00000000">
+                    <w:rPr>
+                        <w:color w:val="1155cc" />
+                        <w:u w:val="single" />
+                        <w:rtl w:val="0" />
+                    </w:rPr>
+                    <w:t xml:space="preserve">Google</w:t>
+                </w:r>
+            </w:hyperlink>
+            <w:r w:rsidDel="00000000" w:rsidR="00000000" w:rsidRPr="00000000">
+                <w:rPr>
+                    <w:rtl w:val="0" />
+                </w:rPr>
+            </w:r>
+        </w:p>
+        <w:sectPr>
+            <w:pgSz w:h="15840" w:w="12240" w:orient="portrait" />
+            <w:pgMar w:bottom="1440" w:top="1440" w:left="1440" w:right="1440" w:header="720"
+                w:footer="720" />
+            <w:pgNumType w:start="1" />
+        </w:sectPr>
+    </w:body>
+</w:document>
