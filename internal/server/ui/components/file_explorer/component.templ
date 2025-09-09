@@ -6,12 +6,17 @@ import (
 	"io/fs"
 
 	"autobutler/internal/server/ui/types"
+	"fmt"
+	"golang.org/x/sys/unix"
 	"path/filepath"
 	"strings"
 )
 
 templ Component(pageState types.PageState, files []fs.FileInfo) {
 	// TODO: This works on firefox, but not on chrome as it will rapidly open and close the upload area.
+	{{ var stat unix.Statfs_t }}
+	{{ fileDir := util.GetFilesDir() }}
+	{{ unix.Statfs(fileDir, &stat) }}
 	<div
 		id="file-explorer"
 		class="bg-white dark:bg-gray-900 max-full mx-24 mt-10 rounded shadow p-6"
@@ -19,7 +24,10 @@ templ Component(pageState types.PageState, files []fs.FileInfo) {
 		@scripts()
 		@file_viewer.Component()
 		<div class="flex items-center mb-4">
-			<h2 class="text-2xl font-bold mr-4 whitespace-nowrap">File Explorer</h2>
+			<div>
+				<h2 class="text-2xl font-bold mr-4 whitespace-nowrap">File Explorer</h2>
+				<div class="text-gray-500">Available Space: { fmt.Sprintf("%.2fGB", util.BytesToGB(stat.Bavail * uint64(stat.Bsize))) }</div>
+			</div>
 			@upload(pageState)
 			@dnd(pageState)
 		</div>
