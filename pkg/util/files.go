@@ -84,6 +84,12 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 	case "/":
 		return FileTypeFolder
 	default:
+		stat, err := os.Stat(filePath)
+		if err == nil && stat != nil {
+			if stat.IsDir() {
+				return FileTypeFolder
+			}
+		}
 		return FileTypeGeneric
 	}
 }

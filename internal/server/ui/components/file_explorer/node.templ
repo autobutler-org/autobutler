@@ -54,10 +54,10 @@ templ node(rootDir string, file fs.FileInfo) {
 					</div>
 					<span class="text-gray-600 dark:text-gray-200 text-sm">{ util.SizeBytesToString(file.Size()) }</span>
 				</div>
-				<div class="justify-self-end">
-					@contextMenu(rootDir, file)
-				</div>
 			}
+			<div class="justify-self-end">
+				@contextMenu(rootDir, file)
+			</div>
 		</div>
 	</li>
 }
