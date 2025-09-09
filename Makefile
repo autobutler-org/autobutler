@@ -17,7 +17,7 @@ setup/gotools: ## Install go tools
 	go install honnef.co/go/tools/cmd/staticcheck@latest
 
 setup/templ: ## Install templ tool
-	go install github.com/a-h/templ/cmd/templ@v0.3.906
+	go install github.com/a-h/templ/cmd/templ@v0.3.943
 
 export INSTALL_VERSION?=$(shell git describe --tags --abbrev=0)
 export GOPROXY ?= https://proxy.golang.org,direct
