@@ -5,6 +5,8 @@ import (
 
 	v1 "autobutler/internal/server/api/v1"
 	"autobutler/internal/server/ui"
+	"autobutler/internal/server/ui/types"
+	"autobutler/internal/server/ui/views"
 
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
@@ -32,7 +34,17 @@ func setupStaticRoutes(router *gin.Engine) error {
 	if err != nil {
 		return err
 	}
-	router.NoRoute(static.Serve("/public", staticFS))
+	router.NoRoute(
+		static.Serve("/public", staticFS),
+		// TODO: have a proper 404 page
+		func(c *gin.Context) {
+			if err := views.NotFound(types.NewPageState()).Render(c.Request.Context(), c.Writer); err != nil {
+				c.Status(400)
+				return
+			}
+			c.Status(404)
+		},
+	)
 	return nil
 }
 
