@@ -6,18 +6,19 @@ import (
 	"autobutler/internal/server/ui/components/icons/image"
 	"autobutler/internal/server/ui/components/icons/pdf"
 	"autobutler/internal/server/ui/components/icons/slideshow"
+	"autobutler/internal/server/ui/types"
 	"autobutler/pkg/util"
 	"io/fs"
 	"path/filepath"
 )
 
-templ node(rootDir string, file fs.FileInfo) {
+templ node(pageState types.PageState, file fs.FileInfo) {
 	<li
 		class="hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer hover:underline"
 		hx-on:contextmenu="toggleFloatingContextMenu(event, this)"
 	>
-		{{ fileType := util.DetermineFileType(rootDir, file) }}
-		{{ filePath := filepath.Join("/files", rootDir, file.Name()) }}
+		{{ fileType := util.DetermineFileType(pageState.RootDir, file) }}
+		{{ filePath := filepath.Join("/files", pageState.RootDir, file.Name()) }}
 		<div class="flex items-center">
 			{{ /* Render the appropriate icon based on the file type */ }}
 			switch fileType {
@@ -56,7 +57,7 @@ templ node(rootDir string, file fs.FileInfo) {
 				</div>
 			}
 			<div class="justify-self-end">
-				@contextMenu(rootDir, file)
+				@contextMenu(pageState, file)
 			</div>
 		</div>
 	</li>

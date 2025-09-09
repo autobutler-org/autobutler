@@ -8,7 +8,9 @@ package file_explorer
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-func dnd(rootDir string) templ.Component {
+import "autobutler/internal/server/ui/types"
+
+func dnd(pageState types.PageState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -29,7 +31,7 @@ func dnd(rootDir string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("dropFiles", templ.JSExpression("event"), rootDir))
+		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("dropFiles", templ.JSExpression("event"), pageState.RootDir))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -37,7 +39,7 @@ func dnd(rootDir string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var2 templ.ComponentScript = templ.JSFuncCall("dropFiles", templ.JSExpression("event"), rootDir)
+		var templ_7745c5c3_Var2 templ.ComponentScript = templ.JSFuncCall("dropFiles", templ.JSExpression("event"), pageState.RootDir)
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2.Call)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err

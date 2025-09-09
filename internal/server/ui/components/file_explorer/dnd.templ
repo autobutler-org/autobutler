@@ -1,12 +1,14 @@
 package file_explorer
 
-templ dnd(rootDir string) {
+import "autobutler/internal/server/ui/types"
+
+templ dnd(pageState types.PageState) {
 	<div
 		id="file-upload-area"
 		class="text-white text-lg bg-opacity-100 ml-2 py-4 px-48 bg-gray-800 border rounded-lg z-10"
 		hx-on:dragover="activateDropZone(event)"
 		hx-on:dragleave="deactivateDropZone(event)"
-		hx-on:drop={ templ.JSFuncCall("dropFiles", templ.JSExpression("event"), rootDir) }
+		hx-on:drop={ templ.JSFuncCall("dropFiles", templ.JSExpression("event"), pageState.RootDir) }
 	>
 		Drop files here...
 	</div>

@@ -13,6 +13,7 @@ import (
 	"autobutler/internal/quill"
 	"autobutler/internal/server/ui"
 	"autobutler/internal/server/ui/components/file_explorer/load"
+	"autobutler/internal/server/ui/types"
 
 	"github.com/gin-gonic/gin"
 )
@@ -164,7 +165,7 @@ func uploadFileRouteImpl(c *gin.Context, rootDir string) {
 			return
 		}
 	}
-	loadComponent := load.Component(rootDir)
+	loadComponent := load.Component(types.NewPageState().WithRootDir(rootDir))
 	if err := loadComponent.Render(c.Request.Context(), c.Writer); err != nil {
 		c.Status(500)
 		return

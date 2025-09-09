@@ -1,11 +1,12 @@
 package file_explorer
 
 import (
+	"autobutler/internal/server/ui/types"
 	"io/fs"
 	"path/filepath"
 )
 
-templ contextMenu(rootDir string, file fs.FileInfo) {
+templ contextMenu(pageState types.PageState, file fs.FileInfo) {
 	<div>
 		<button
 			class="ml-2 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -23,7 +24,7 @@ templ contextMenu(rootDir string, file fs.FileInfo) {
 				<a
 					download
 					class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm block"
-					href={ filepath.Join(`/api/v1/files`, rootDir, file.Name()) }
+					href={ filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name()) }
 				>
 					Download
 				</a>
@@ -43,7 +44,7 @@ templ contextMenu(rootDir string, file fs.FileInfo) {
 					class="w-full text-left px-4 py-2 bg-red-800 text-white hover:bg-red-600 text-sm"
 					hx-target="#file-explorer"
 					hx-swap="outerHTML"
-					hx-delete={ filepath.Join(`/api/v1/files`, rootDir, file.Name()) }
+					hx-delete={ filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name()) }
 				>
 					Delete
 				</button>

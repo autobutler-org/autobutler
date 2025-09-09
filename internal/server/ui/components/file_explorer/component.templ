@@ -5,11 +5,12 @@ import (
 	"autobutler/pkg/util"
 	"io/fs"
 
+	"autobutler/internal/server/ui/types"
 	"path/filepath"
 	"strings"
 )
 
-templ Component(rootDir string, files []fs.FileInfo) {
+templ Component(pageState types.PageState, files []fs.FileInfo) {
 	// TODO: This works on firefox, but not on chrome as it will rapidly open and close the upload area.
 	<div
 		id="file-explorer"
@@ -19,13 +20,13 @@ templ Component(rootDir string, files []fs.FileInfo) {
 		@file_viewer.Component()
 		<div class="flex items-center mb-4">
 			<h2 class="text-2xl font-bold mr-4 whitespace-nowrap">File Explorer</h2>
-			@upload(rootDir)
-			@dnd(rootDir)
+			@upload(pageState)
+			@dnd(pageState)
 		</div>
 		<div id="breadcrumbs">
-			<nav class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-2" data-path={ rootDir }>
+			<nav class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-2" data-path={ pageState.RootDir }>
 				{{ accumulatedDir := "" }}
-				for i, dir := range strings.Split(rootDir, "/") {
+				for i, dir := range strings.Split(pageState.RootDir, "/") {
 					<span class="text-gray-700 dark:text-gray-300">
 						if i == 0 {
 							{{ dir = "files" }}
@@ -59,7 +60,7 @@ templ Component(rootDir string, files []fs.FileInfo) {
 					class="hidden ml-2 p-1 border border-gray-300 rounded dark:bg-gray-800 dark:border-gray-700"
 					placeholder="New folder name"
 					hx-include="[name='folderName']"
-					hx-post={ filepath.Join("/api/v1/folder/files", rootDir) }
+					hx-post={ filepath.Join("/api/v1/folder/files", pageState.RootDir) }
 					hx-target="#file-explorer"
 					hx-swap="outerHTML"
 					hx-trigger="keydown[keyCode==13] from:body"
@@ -69,11 +70,11 @@ templ Component(rootDir string, files []fs.FileInfo) {
 		</div>
 		<div id="file-explorer-status"></div>
 		if len(files) == 0 {
-			<span class="py-3 text-gray-500">No files found in { filepath.Join(util.GetFilesDir(), rootDir) }</span>
+			<span class="py-3 text-gray-500">No files found in { filepath.Join(util.GetFilesDir(), pageState.RootDir) }</span>
 		} else {
 			<ul class="divide-y divide-gray-200">
 				for _, file := range files {
-					@node(rootDir, file)
+					@node(pageState, file)
 				}
 			</ul>
 		}

@@ -10,16 +10,13 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"autobutler/internal/server/ui/components/body"
-	"autobutler/internal/server/ui/components/file_explorer"
 	"autobutler/internal/server/ui/components/footer"
 	"autobutler/internal/server/ui/components/header"
 	"autobutler/internal/server/ui/components/topnav"
 	"autobutler/internal/server/ui/types"
-	"autobutler/pkg/util"
-	"path/filepath"
 )
 
-func Files(pageState types.PageState) templ.Component {
+func NotFound(pageState types.PageState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -40,7 +37,6 @@ func Files(pageState types.PageState) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		pageState.CurrentRoute = types.RouteFiles
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -65,30 +61,9 @@ func Files(pageState types.PageState) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			files, err := util.StatFilesInDir(filepath.Join(util.GetFilesDir(), pageState.RootDir))
-			if err != nil {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"text-red-500\">Error loading files: ")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var3 string
-				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(err.Error())
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/views/files.templ`, Line: 23, Col: 64}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			} else {
-				templ_7745c5c3_Err = file_explorer.Component(pageState, files).Render(ctx, templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex flex-col items-center justify-center h-96\"><h1 class=\"text-6xl font-bold text-gray-800 dark:text-gray-200 mb-4\">404</h1><p class=\"text-xl text-gray-600 dark:text-gray-400 mb-8\">Page Not Found</p><a href=\"/\" class=\"px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700\">Go Home</a></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
 			return nil
 		})
@@ -100,7 +75,7 @@ func Files(pageState types.PageState) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -8,6 +8,7 @@ import (
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer/pdf_viewer"
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer/text_viewer"
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer/video_viewer"
+	"autobutler/internal/server/ui/types"
 	"autobutler/internal/server/ui/views"
 	"autobutler/pkg/util"
 	"html"
@@ -24,15 +25,14 @@ func SetupFileRoutes(router *gin.Engine) {
 
 func setupFileView(router *gin.Engine) {
 	uiRoute(router, "/files", func(c *gin.Context) {
-		if err := views.Files("").Render(c.Request.Context(), c.Writer); err != nil {
+		if err := views.Files(types.NewPageState()).Render(c.Request.Context(), c.Writer); err != nil {
 			c.Status(400)
 			return
 		}
 		c.Status(200)
 	})
 	uiRoute(router, "/files/*rootDir", func(c *gin.Context) {
-		rootDir := c.Param("rootDir")
-		if err := views.Files(rootDir).Render(c.Request.Context(), c.Writer); err != nil {
+		if err := views.Files(types.NewPageState().WithRootDir(c.Param("rootDir"))).Render(c.Request.Context(), c.Writer); err != nil {
 			c.Status(400)
 			return
 		}
@@ -45,19 +45,19 @@ func setupComponentRoutes(router *gin.Engine) {
 	setupComponentFileViewers(router)
 }
 
-func RenderFileExplorer(c *gin.Context, fileDir string) {
+func RenderFileExplorer(c *gin.Context, rootDir string) {
 	fullPathDir := ""
-	if fileDir == "" {
+	if rootDir == "" {
 		fullPathDir = util.GetFilesDir()
 	} else {
-		fullPathDir = filepath.Join(util.GetFilesDir(), fileDir)
+		fullPathDir = filepath.Join(util.GetFilesDir(), rootDir)
 	}
 	files, err := util.StatFilesInDir(fullPathDir)
 	if err != nil {
 		c.Writer.WriteString(`<span class="text-red-500">Failed to load files: ` + html.EscapeString(err.Error()) + `</span>`)
 		return
 	}
-	explorerComponent := file_explorer.Component(fileDir, files)
+	explorerComponent := file_explorer.Component(types.NewPageState().WithRootDir(rootDir), files)
 	if err := explorerComponent.Render(c.Request.Context(), c.Writer); err != nil {
 		c.Status(500)
 		return

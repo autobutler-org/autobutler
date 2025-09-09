@@ -5,20 +5,24 @@ import (
 	"autobutler/internal/server/ui/components/file_explorer"
 	"autobutler/internal/server/ui/components/footer"
 	"autobutler/internal/server/ui/components/header"
+	"autobutler/internal/server/ui/components/topnav"
+	"autobutler/internal/server/ui/types"
 	"autobutler/pkg/util"
 	"path/filepath"
 )
 
-templ Files(rootDir string) {
+templ Files(pageState types.PageState) {
+	{{ pageState.CurrentRoute = types.RouteFiles }}
 	<!DOCTYPE html>
 	<html lang="en">
 		@header.Component()
+		@topnav.Component(pageState)
 		@body.Component() {
-			{{ files, err := util.StatFilesInDir(filepath.Join(util.GetFilesDir(), rootDir)) }}
+			{{ files, err := util.StatFilesInDir(filepath.Join(util.GetFilesDir(), pageState.RootDir)) }}
 			if err != nil {
 				<div class="text-red-500">Error loading files: { err.Error() }</div>
 			} else {
-				@file_explorer.Component(rootDir, files)
+				@file_explorer.Component(pageState, files)
 			}
 		}
 		@footer.Component()

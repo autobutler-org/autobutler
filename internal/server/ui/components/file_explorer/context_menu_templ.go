@@ -9,11 +9,12 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"autobutler/internal/server/ui/types"
 	"io/fs"
 	"path/filepath"
 )
 
-func contextMenu(rootDir string, file fs.FileInfo) templ.Component {
+func contextMenu(pageState types.PageState, file fs.FileInfo) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -39,9 +40,9 @@ func contextMenu(rootDir string, file fs.FileInfo) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 templ.SafeURL
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinURLErrs(filepath.Join(`/api/v1/files`, rootDir, file.Name()))
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinURLErrs(filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/context_menu.templ`, Line: 26, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/context_menu.templ`, Line: 27, Col: 74}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -69,9 +70,9 @@ func contextMenu(rootDir string, file fs.FileInfo) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join(`/api/v1/files`, rootDir, file.Name()))
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/context_menu.templ`, Line: 46, Col: 69}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/context_menu.templ`, Line: 47, Col: 79}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {

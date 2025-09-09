@@ -1,12 +1,15 @@
 package file_explorer
 
-import "path/filepath"
+import (
+	"autobutler/internal/server/ui/types"
+	"path/filepath"
+)
 
-templ upload(rootDir string) {
+templ upload(pageState types.PageState) {
 	<form
 		id="file-upload-form"
 		hx-encoding="multipart/form-data"
-		hx-post={ filepath.Join("/api/v1/files", rootDir) }
+		hx-post={ filepath.Join("/api/v1/files", pageState.RootDir) }
 		hx-swap="innerHTML"
 		hx-target="#file-explorer-status"
 		hx-indicator="#file-upload-progress"

@@ -1,28 +1,24 @@
 package views
 
 import (
-	"autobutler/internal/llm"
 	"autobutler/internal/server/ui/components/body"
-	"autobutler/internal/server/ui/components/chat"
 	"autobutler/internal/server/ui/components/footer"
 	"autobutler/internal/server/ui/components/header"
 	"autobutler/internal/server/ui/components/topnav"
 	"autobutler/internal/server/ui/types"
-	"time"
 )
 
-templ Chat(pageState types.PageState) {
-	{{ pageState.CurrentRoute = types.RouteChat }}
+templ NotFound(pageState types.PageState) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@header.Component()
 		@topnav.Component(pageState)
 		@body.Component() {
-			@chat.Component(
-				[]llm.ChatMessage{
-					{Role: llm.ChatRoleSystem, Content: "Welcome to the Autobutler!", Timestamp: llm.GetTimestamp(time.Now())},
-				},
-			)
+			<div class="flex flex-col items-center justify-center h-96">
+				<h1 class="text-6xl font-bold text-gray-800 dark:text-gray-200 mb-4">404</h1>
+				<p class="text-xl text-gray-600 dark:text-gray-400 mb-8">Page Not Found</p>
+				<a href="/" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Go Home</a>
+			</div>
 		}
 		@footer.Component()
 	</html>

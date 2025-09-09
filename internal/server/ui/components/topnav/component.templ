@@ -1,0 +1,36 @@
+package topnav
+
+import "autobutler/internal/server/ui/types"
+
+type navLink struct {
+	Name types.RouteName
+	Href string
+}
+
+var navLinks = []navLink{
+	{types.RouteChat, "/chat"},
+	{types.RouteFiles, "/files"},
+}
+
+templ Component(pageState types.PageState) {
+	<nav class="bg-gray-800">
+		<ul class="flex">
+			<li class="p-4">
+				<a href="/" class="text-white hover:text-gray-300">
+					<img src="/public/img/butler.png" height="24" width="24"/>
+				</a>
+			</li>
+			for _, link := range navLinks {
+				if link.Name == pageState.CurrentRoute {
+					<li class="flex items-center text-white bg-gray-700 underline font-bold">
+						<a class="p-4" href={ link.Href } class="text-white hover:text-gray-300">{ link.Name }</a>
+					</li>
+				} else {
+					<li class="flex items-center text-white hover:bg-gray-600 hover:underline">
+						<a class="p-4" href={ link.Href } class="text-white hover:text-gray-300">{ link.Name }</a>
+					</li>
+				}
+			}
+		</ul>
+	</nav>
+}

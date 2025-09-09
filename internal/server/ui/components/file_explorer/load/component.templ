@@ -1,11 +1,14 @@
 package load
 
-import "path/filepath"
+import (
+	"autobutler/internal/server/ui/types"
+	"path/filepath"
+)
 
-templ Component(rootDir string) {
+templ Component(pageState types.PageState) {
 	<div
 		hx-trigger="load"
-		hx-get={ filepath.Join("/components/files/explorer", rootDir) }
+		hx-get={ filepath.Join("/components/files/explorer", pageState.RootDir) }
 		hx-target="#file-explorer"
 		hx-swap="outerHTML"
 	></div>
