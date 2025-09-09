@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"archive/zip"
 	"autobutler/pkg/util"
 	"fmt"
 	"html"
@@ -29,7 +30,7 @@ func deleteFileRoute(apiV1Group *gin.RouterGroup) {
 		filePath := c.Param("filePath")
 		rootDir := util.GetFilesDir()
 		fullPath := filepath.Join(rootDir, filePath)
-		if err := os.Remove(fullPath); err != nil {
+		if err := os.RemoveAll(fullPath); err != nil {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
@@ -42,23 +43,37 @@ func DownloadFile(c *gin.Context, filePath string) {
 	rootDir := util.GetFilesDir()
 	fullPath := filepath.Join(rootDir, filePath)
 
-	file, err := os.Open(fullPath)
-	if err != nil {
-		c.Status(http.StatusNotFound)
-		return
-	}
-	defer file.Close()
+	fileType := util.DetermineFileTypeFromPath(fullPath)
 
-	disposition := "inline"
-	contentType := "application/octet-stream"
-	if util.DetermineFileTypeFromPath(fullPath) == util.FileTypePDF {
-		disposition = "inline"
-		contentType = "application/pdf"
-	}
-	c.Header("Content-Disposition", fmt.Sprintf("%s; filename=%s", disposition, filepath.Base(fullPath)))
-	c.Header("Content-Type", contentType)
+	if fileType == util.FileTypeFolder {
+		zipWriter := zip.NewWriter(c.Writer)
+		defer zipWriter.Close()
+		dirFs := os.DirFS(fullPath)
+		err := zipWriter.AddFS(dirFs)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		c.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip", filepath.Base(fullPath)))
+		c.Writer.Header().Set("Content-Type", "application/zip")
+	} else {
+		file, err := os.Open(fullPath)
+		if err != nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		defer file.Close()
 
-	c.File(fullPath)
+		disposition := "inline"
+		contentType := "application/octet-stream"
+		if fileType == util.FileTypePDF {
+			disposition = "inline"
+			contentType = "application/pdf"
+		}
+		c.Header("Content-Disposition", fmt.Sprintf("%s; filename=%s", disposition, filepath.Base(fullPath)))
+		c.Header("Content-Type", contentType)
+		c.File(fullPath)
+	}
 }
 
 func downloadFileRoute(apiV1Group *gin.RouterGroup) {
