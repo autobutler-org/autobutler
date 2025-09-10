@@ -31,6 +31,14 @@ func deleteFilesRoute(apiV1Group *gin.RouterGroup) {
 		rootDir := c.Query("rootDir")
 		filePaths := c.QueryArray("filePaths")
 		fmt.Printf("Deleting multiple files: %s\n", filePaths)
+		fileDir := util.GetFilesDir()
+		for _, filePath := range filePaths {
+			fullPath := filepath.Join(fileDir, rootDir, filePath)
+			if err := os.RemoveAll(fullPath); err != nil {
+				c.Status(http.StatusInternalServerError)
+				return
+			}
+		}
 		ui.RenderFileExplorer(c, rootDir)
 	})
 }
