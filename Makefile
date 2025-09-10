@@ -83,13 +83,14 @@ lint: ## Lint code
 	go vet ./...
 	templ fmt -fail .
 
+fix: tidy format ## Fix code issues
+
 upgrade: ## Upgrade dependencies
 	go get -u ./...
-	go mod tidy
+	$(MAKE) tidy
 
-fix: ## Fix code issues
+tidy: ## Tidy go mod
 	go mod tidy
-	$(MAKE) format
 
 serve: generate env-LLM_AZURE_API_KEY ## Serve backend
 	go run main.go serve
