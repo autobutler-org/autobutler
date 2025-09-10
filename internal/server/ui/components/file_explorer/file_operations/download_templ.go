@@ -35,7 +35,7 @@ func download(pageState types.PageState) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<button id=\"file-download-button\" type=\"button\" class=\"p-2 rounded hover:bg-gray-200\" hx-on:click=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<button id=\"file-download-button\" disabled type=\"button\" class=\"p-2 rounded hover:bg-gray-200 disabled:bg-gray-800 disabled:cursor-not-allowed\" hx-on:click=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

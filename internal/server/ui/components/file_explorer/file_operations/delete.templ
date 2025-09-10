@@ -5,8 +5,9 @@ import "autobutler/internal/server/ui/types"
 templ delete(pageState types.PageState) {
 	<button
 		id="file-delete-button"
+		disabled
 		type="button"
-		class="p-2 rounded hover:bg-red-800 text-gray-600 hover:text-white"
+		class="disabled p-2 rounded hover:bg-red-800 text-gray-600 hover:text-white disabled:bg-gray-800 disabled:cursor-not-allowed disabled:hover:text-gray-600"
 		hx-on:click={ templ.JSFuncCall("deleteSelectedFiles", templ.JSExpression("event"), pageState.RootDir) }
 		title="Delete selected files"
 	>
