@@ -19,24 +19,19 @@ import (
 )
 
 func SetupFilesRoutes(apiV1Group *gin.RouterGroup) {
-	deleteFileRoute(apiV1Group)
+	deleteFilesRoute(apiV1Group)
 	downloadFileRoute(apiV1Group)
 	newFolderRoute(apiV1Group)
 	updateFileRoute(apiV1Group)
 	uploadFileRoute(apiV1Group)
 }
 
-func deleteFileRoute(apiV1Group *gin.RouterGroup) {
-	apiRoute(apiV1Group, "DELETE", "/files/*filePath", func(c *gin.Context) {
-		filePath := c.Param("filePath")
-		rootDir := util.GetFilesDir()
-		fullPath := filepath.Join(rootDir, filePath)
-		if err := os.RemoveAll(fullPath); err != nil {
-			c.Status(http.StatusInternalServerError)
-			return
-		}
-		fileDir := filepath.Dir(filePath)
-		ui.RenderFileExplorer(c, fileDir)
+func deleteFilesRoute(apiV1Group *gin.RouterGroup) {
+	apiRoute(apiV1Group, "DELETE", "/files", func(c *gin.Context) {
+		rootDir := c.Query("rootDir")
+		filePaths := c.QueryArray("filePaths")
+		fmt.Printf("Deleting multiple files: %s\n", filePaths)
+		ui.RenderFileExplorer(c, rootDir)
 	})
 }
 

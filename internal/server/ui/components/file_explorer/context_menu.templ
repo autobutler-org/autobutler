@@ -44,7 +44,8 @@ templ contextMenu(pageState types.PageState, file fs.FileInfo) {
 					class="w-full text-left px-4 py-2 bg-red-800 text-white hover:bg-red-600 text-sm"
 					hx-target="#file-explorer"
 					hx-swap="outerHTML"
-					hx-delete={ filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name()) }
+					hx-delete={ filepath.Join(`/api/v1/files`) }
+					hx-vals={ `{"rootDir":"` + pageState.RootDir + `", "filePaths":["` + file.Name() + `"]}` }
 				>
 					Delete
 				</button>

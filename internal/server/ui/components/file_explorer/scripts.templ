@@ -99,6 +99,15 @@ templ scripts() {
         selecto.continueSelect = false;
         console.log('Deleting files from', rootDir);
         console.log(selectedFiles);
+        htmx.ajax('DELETE',
+            '/api/v1/files', {
+            values: {
+                rootDir: rootDir,
+                filePaths: selectedFiles,
+            },
+            target: '#file-explorer',
+            swap: 'outerHTML',
+        });
     }
 
     function downloadSelectedFiles(event, rootDir) {
@@ -106,6 +115,17 @@ templ scripts() {
         selecto.continueSelect = false;
         console.log('Downloading files from', rootDir);
         console.log(selectedFiles);
+        selectedFiles.forEach(fileName => {
+            const link = document.createElement('a');
+            while (fileName.endsWith('/')) {
+                fileName = fileName.slice(0, -1);
+            }
+            link.href = `/api/v1/files${rootDir}/${fileName}`;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
     }
 
     function dropFiles(event, rootDir) {
