@@ -138,7 +138,8 @@ templ scripts() {
     }
 
     // SELECTO
-        var selecto = new Selecto({
+    var selectedFiles = [];
+    var selecto = new Selecto({
         // The container to add a selection element
         container: document.body,
         // Selecto's root container (No transformed container. (default: null)
@@ -172,10 +173,10 @@ templ scripts() {
         });
     });
     selecto.on('selectEnd', e => {
-        console.log('selectEnd:', e.selected);
         const hasSelectedFiles = e.selected.length > 0;
         document.getElementById('file-delete-button').disabled = !hasSelectedFiles;
         document.getElementById('file-download-button').disabled = !hasSelectedFiles;
+        selectedFiles = e.selected.map(el => el.dataset.name);
     });
     </script>
 }

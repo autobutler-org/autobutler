@@ -13,12 +13,13 @@ import (
 )
 
 templ node(pageState types.PageState, file fs.FileInfo) {
+	{{ fileType := util.DetermineFileType(pageState.RootDir, file) }}
+	{{ filePath := filepath.Join("/files", pageState.RootDir, file.Name()) }}
 	<li
 		class="file-node hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer hover:underline"
 		hx-on:contextmenu="toggleFloatingContextMenu(event, this)"
+		data-name={ file.Name() }
 	>
-		{{ fileType := util.DetermineFileType(pageState.RootDir, file) }}
-		{{ filePath := filepath.Join("/files", pageState.RootDir, file.Name()) }}
 		<div class="flex items-center">
 			{{ /* Render the appropriate icon based on the file type */ }}
 			switch fileType {
