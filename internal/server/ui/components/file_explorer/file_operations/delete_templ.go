@@ -10,7 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import "autobutler/internal/server/ui/types"
 
-func download(pageState types.PageState) templ.Component {
+func delete(pageState types.PageState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -31,20 +31,20 @@ func download(pageState types.PageState) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("downloadSelectedFiles", templ.JSExpression("event"), pageState.RootDir))
+		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("deleteSelectedFiles", templ.JSExpression("event"), pageState.RootDir))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<button id=\"file-download-button\" type=\"button\" class=\"p-2 rounded hover:bg-gray-200\" hx-on:click=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<button id=\"file-delete-button\" type=\"button\" class=\"p-2 rounded hover:bg-red-800 text-gray-600 hover:text-white\" hx-on:click=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var2 templ.ComponentScript = templ.JSFuncCall("downloadSelectedFiles", templ.JSExpression("event"), pageState.RootDir)
+		var templ_7745c5c3_Var2 templ.ComponentScript = templ.JSFuncCall("deleteSelectedFiles", templ.JSExpression("event"), pageState.RootDir)
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2.Call)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" title=\"Download selected files\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"inline w-6 h-6 text-gray-600\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M12 3a1 1 0 011 1v9.586l3.293-3.293a1 1 0 111.414 1.414l-5 5a1 1 0 01-1.414 0l-5-5a1 1 0 111.414-1.414L11 13.586V4a1 1 0 011-1z\"></path> <path d=\"M5 19a1 1 0 011-1h12a1 1 0 110 2H6a1 1 0 01-1-1z\"></path></svg></button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" title=\"Delete selected files\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"inline w-6 h-6\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 7h12\"></path> <path d=\"M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2\"></path> <path d=\"M19 7l-1 12a2 2 0 01-2 2H8a2 2 0 01-2-2L5 7\"></path> <path d=\"M10 11v8\"></path> <path d=\"M14 11v8\"></path></svg></button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

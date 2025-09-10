@@ -8,7 +8,7 @@ templ download(pageState types.PageState) {
 		type="button"
 		class="p-2 rounded hover:bg-gray-200"
 		hx-on:click={ templ.JSFuncCall("downloadSelectedFiles", templ.JSExpression("event"), pageState.RootDir) }
-		title="Upload file"
+		title="Download selected files"
 	>
 		<svg
 			xmlns="http://www.w3.org/2000/svg"

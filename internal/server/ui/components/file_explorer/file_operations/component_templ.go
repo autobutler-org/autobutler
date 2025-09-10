@@ -43,6 +43,10 @@ func Component(pageState types.PageState) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
+		templ_7745c5c3_Err = delete(pageState).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><progress id=\"file-upload-progress\" class=\"htmx-indicator \" value=\"0\" max=\"100\"></progress><script>\n\t\t\thtmx.on(\n\t\t\t\t'#file-upload-form',\n\t\t\t\t'htmx:xhr:progress',\n\t\t\t\tfunction(evt) {\n\t\t\t\t\thtmx.find('#file-upload-progress').setAttribute(\n\t\t\t\t\t'value',\n\t\t\t\t\tevt.detail.loaded / evt.detail.total * 100,\n\t\t\t\t\t);\n\t\t\t\t}\n\t\t\t);\n\t\t</script></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err

@@ -1,0 +1,30 @@
+package file_operations
+
+import "autobutler/internal/server/ui/types"
+
+templ delete(pageState types.PageState) {
+	<button
+		id="file-delete-button"
+		type="button"
+		class="p-2 rounded hover:bg-red-800 text-gray-600 hover:text-white"
+		hx-on:click={ templ.JSFuncCall("deleteSelectedFiles", templ.JSExpression("event"), pageState.RootDir) }
+		title="Delete selected files"
+	>
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			class="inline w-6 h-6"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="1.5"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+		>
+			<path d="M6 7h12"></path>
+			<path d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2"></path>
+			<path d="M19 7l-1 12a2 2 0 01-2 2H8a2 2 0 01-2-2L5 7"></path>
+			<path d="M10 11v8"></path>
+			<path d="M14 11v8"></path>
+		</svg>
+	</button>
+}
