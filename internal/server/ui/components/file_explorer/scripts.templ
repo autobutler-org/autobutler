@@ -10,6 +10,31 @@ templ scripts() {
     var navigationListener = null;
     var loadedBook = null;
 
+    var fileExplorerList = document.getElementById("file-explorer-list")
+    console.log(fileExplorerList);
+    var selecto = new Selecto({
+        // The container to add a selection element
+        container: fileExplorerList,
+        // Selecto's root container (No transformed container. (default: null)
+        rootContainer: null,
+        // The area to drag selection element (default: container)
+        dragContainer: Element,
+        // Targets to select. You can register a queryselector or an Element.
+        selectableTargets: [".target", document.querySelector(".target2")],
+        // Whether to select by click (default: true)
+        selectByClick: true,
+        // Whether to select from the target inside (default: true)
+        selectFromInside: true,
+        // After the select, whether to select the next target with the selected target (deselected if the target is selected again).
+        continueSelect: false,
+        // Determines which key to continue selecting the next target via keydown and keyup.
+        toggleContinueSelect: "shift",
+        // The container for keydown and keyup events
+        keyContainer: window,
+        // The rate at which the target overlaps the drag area to be selected. (default: 100)
+        hitRate: 100,
+    });
+
     function preventDefault(event) {
         if (event) {
             event.preventDefault();
@@ -126,5 +151,20 @@ templ scripts() {
             console.error('Error updating file:', error);
         });
     }
+
+
+    // SELECTO
+    selecto.on("select", e => {
+        e.added.forEach(el => {
+            el.classList.add("selected");
+            console.log("selected: ");
+            console.log(el);
+        });
+        e.removed.forEach(el => {
+            el.classList.remove("selected");
+            console.log("unselected: ");
+            console.log(el);
+        });
+    });
     </script>
 }

@@ -17,12 +17,11 @@ templ Component(pageState types.PageState, files []fs.FileInfo) {
 	{{ var stat unix.Statfs_t }}
 	{{ fileDir := util.GetFilesDir() }}
 	{{ unix.Statfs(fileDir, &stat) }}
-	<script src="/public/vendor/selecto/selecto.min.js"></script>
+	<script src="/public/vendor/selecto/selecto.js"></script>
 	<div
 		id="file-explorer"
 		class="bg-white dark:bg-gray-900 max-full mx-24 mt-10 rounded shadow p-6"
 	>
-		@scripts()
 		@file_viewer.Component()
 		<div class="flex items-center mb-4">
 			<div>
@@ -81,11 +80,12 @@ templ Component(pageState types.PageState, files []fs.FileInfo) {
 		if len(files) == 0 {
 			<span class="py-3 text-gray-500">No files found in { filepath.Join(util.GetFilesDir(), pageState.RootDir) }</span>
 		} else {
-			<ul class="divide-y divide-gray-200">
+			<ul id="file-explorer-list" class="divide-y divide-gray-200">
 				for _, file := range files {
 					@node(pageState, file)
 				}
 			</ul>
 		}
 	</div>
+	@scripts()
 }
