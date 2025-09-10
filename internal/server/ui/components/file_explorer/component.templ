@@ -17,7 +17,7 @@ templ Component(pageState types.PageState, files []fs.FileInfo) {
 	{{ var stat unix.Statfs_t }}
 	{{ fileDir := util.GetFilesDir() }}
 	{{ unix.Statfs(fileDir, &stat) }}
-	<script src="/public/vendor/selecto/selecto.js"></script>
+	<script src="/public/vendor/selecto/selecto.min.js"></script>
 	<div
 		id="file-explorer"
 		class="bg-white dark:bg-gray-900 max-full mx-24 mt-10 rounded shadow p-6"

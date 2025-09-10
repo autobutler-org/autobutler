@@ -14,7 +14,7 @@ import (
 
 templ node(pageState types.PageState, file fs.FileInfo) {
 	<li
-		class="hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer hover:underline"
+		class="file-node hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer hover:underline"
 		hx-on:contextmenu="toggleFloatingContextMenu(event, this)"
 	>
 		{{ fileType := util.DetermineFileType(pageState.RootDir, file) }}

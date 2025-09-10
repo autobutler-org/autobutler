@@ -44,7 +44,7 @@ func Component(pageState types.PageState, files []fs.FileInfo) templ.Component {
 		var stat unix.Statfs_t
 		fileDir := util.GetFilesDir()
 		unix.Statfs(fileDir, &stat)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script src=\"/public/vendor/selecto/selecto.js\"></script><div id=\"file-explorer\" class=\"bg-white dark:bg-gray-900 max-full mx-24 mt-10 rounded shadow p-6\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script src=\"/public/vendor/selecto/selecto.min.js\"></script><div id=\"file-explorer\" class=\"bg-white dark:bg-gray-900 max-full mx-24 mt-10 rounded shadow p-6\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

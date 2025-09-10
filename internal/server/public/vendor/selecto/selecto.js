@@ -3145,7 +3145,7 @@ version: 1.26.3
           // check codes
           var foundNamedKey = codes[nameOrCode.toLowerCase()];
           if (foundNamedKey) { return foundNamedKey === keyCode; }
-        
+
           // check aliases
           var foundNamedKey = aliases[nameOrCode.toLowerCase()];
           if (foundNamedKey) { return foundNamedKey === keyCode; }
