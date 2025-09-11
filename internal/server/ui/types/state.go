@@ -1,19 +1,25 @@
 package types
 
 type PageState struct {
-	CurrentRoute RouteName
-	RootDir      string
+	CurrentPageName PageName
+	RootDir         string
+	NavLinks        []Page
 }
 
 func NewPageState() PageState {
 	return PageState{
-		CurrentRoute: RouteHome,
-		RootDir:      "",
+		CurrentPageName: PageHome,
+		RootDir:         "",
+		NavLinks: []Page{
+			newPage(PageChat, "/chat"),
+			newPage(PageFiles, "/files"),
+			newPage(PageCalendar, "/calendar"),
+		},
 	}
 }
 
-func (p PageState) WithRoute(route RouteName) PageState {
-	p.CurrentRoute = route
+func (p PageState) WithRoute(pageName PageName) PageState {
+	p.CurrentPageName = pageName
 	return p
 }
 

@@ -12,7 +12,7 @@ import (
 )
 
 templ Files(pageState types.PageState) {
-	{{ pageState.CurrentRoute = types.RouteFiles }}
+	{{ pageState.CurrentPageName = types.PageFiles }}
 	<!DOCTYPE html>
 	<html lang="en">
 		@header.Component()

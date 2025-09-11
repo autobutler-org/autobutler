@@ -9,4 +9,8 @@
     "templ": "html",
   },
   "workbench.iconTheme": "vscode-icons",
+  "cSpell.words": [
+    "autobutler",
+    "templ"
+  ],
 }

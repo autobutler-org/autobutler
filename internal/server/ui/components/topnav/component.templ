@@ -5,16 +5,6 @@ import (
 	"autobutler/internal/version"
 )
 
-type navLink struct {
-	Name types.RouteName
-	Href string
-}
-
-var navLinks = []navLink{
-	{types.RouteChat, "/chat"},
-	{types.RouteFiles, "/files"},
-}
-
 templ Component(pageState types.PageState) {
 	<nav class="bg-gray-800">
 		<ul class="flex">
@@ -30,8 +20,8 @@ templ Component(pageState types.PageState) {
 					<span class="font-thin">{ version.Semver }</span>
 				}
 			</li>
-			for _, link := range navLinks {
-				if link.Name == pageState.CurrentRoute {
+			for _, link := range pageState.NavLinks {
+				if link.Name == pageState.CurrentPageName {
 					<li class="flex items-center text-white bg-gray-700 underline font-bold">
 						<a href={ link.Href } class="p-4 text-white hover:text-gray-300">{ link.Name }</a>
 					</li>

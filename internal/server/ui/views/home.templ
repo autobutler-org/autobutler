@@ -10,7 +10,7 @@ import (
 )
 
 templ Home(pageState types.PageState) {
-	{{ pageState.CurrentRoute = types.RouteHome }}
+	{{ pageState.CurrentPageName = types.PageHome }}
 	<!DOCTYPE html>
 	<html lang="en">
 		@header.Component()
