@@ -1,24 +1,8 @@
 package calendar
 
-import "time"
-
-type Weekday int
-
-const (
-	Sunday Weekday = iota
-	Monday
-	Tuesday
-	Wednesday
-	Thursday
-	Friday
-	Saturday
-)
-
-type WeekMode int
-
-const (
-	WeekModeStandard WeekMode = iota // Week starts on Sunday
-	WeekModeISO                      // Week starts on Monday
+import (
+	"autobutler/pkg/calendar"
+	"time"
 )
 
 type CalendarView int
@@ -47,4 +31,15 @@ func NewMonthInfo(now time.Time, totalDays int, totalDaysInMonth int, leadingEmp
 		TotalDays:     totalDays,
 		WeeksToRender: totalDays / 7,
 	}
+}
+
+func NewMonthInfoFromTime(now time.Time) MonthInfo {
+	firstOfMonth := calendar.GetFirstDayOfMonth(now)
+	totalDaysInMonth := int(time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, now.Location()).Day())
+	leadingEmptyDays := int(firstOfMonth.Weekday())
+	totalDays := leadingEmptyDays + totalDaysInMonth
+	if totalDays%7 != 0 {
+		totalDays += 7 - (totalDays % 7) // Round up to the nearest week
+	}
+	return NewMonthInfo(now, totalDays, totalDaysInMonth, leadingEmptyDays)
 }

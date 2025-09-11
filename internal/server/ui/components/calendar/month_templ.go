@@ -11,6 +11,8 @@ import templruntime "github.com/a-h/templ/runtime"
 import "time"
 import "fmt"
 
+import "autobutler/pkg/calendar"
+
 const defaultDayClass = "h-24 border align-top p-2"
 const invalidDayClass = "text-gray-400"
 
@@ -35,7 +37,7 @@ func MonthView(now time.Time) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		monthInfo := getMonthInfo(now)
+		monthInfo := NewMonthInfoFromTime(now)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h1 class=\"text-5xl font-bold mb-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -43,7 +45,7 @@ func MonthView(now time.Time) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(now.Month())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 11, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 13, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -56,7 +58,7 @@ func MonthView(now time.Time) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(now.Year())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 11, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 13, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -66,15 +68,15 @@ func MonthView(now time.Time) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for day := range Saturday + 1 {
+		for day := range calendar.Saturday + 1 {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<th class=\"py-2 px-4 border\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(weekdayToShortString(day, WeekModeStandard))
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(calendar.WeekdayToShortString(day, calendar.WeekModeStandard))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 16, Col: 79}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 18, Col: 97}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -90,7 +92,7 @@ func MonthView(now time.Time) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		previousMonth := now.AddDate(0, -1, 0)
-		endOfPreviousMonth := getFirstDayOfMonth(previousMonth).AddDate(0, 1, -1)
+		endOfPreviousMonth := calendar.GetFirstDayOfMonth(previousMonth).AddDate(0, 1, -1)
 		dayCounter := -monthInfo.LeadingDays
 		for _ = range monthInfo.WeeksToRender {
 			renderDay := monthInfo.StartOfMonth.AddDate(0, 0, dayCounter)
@@ -101,7 +103,7 @@ func MonthView(now time.Time) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(renderDay.Year())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 26, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 28, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -112,9 +114,9 @@ func MonthView(now time.Time) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var6 string
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(monthToInt(renderDay.Month()))
+			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(calendar.MonthToInt(renderDay.Month()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 26, Col: 81}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 28, Col: 90}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -124,17 +126,17 @@ func MonthView(now time.Time) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			for _ = range Saturday + 1 {
+			for _ = range calendar.Saturday + 1 {
 				renderClass := defaultDayClass
 				renderDay = monthInfo.StartOfMonth.AddDate(0, 0, dayCounter)
 				dayTitle := ""
 				if dayCounter < 0 {
 					renderDay = endOfPreviousMonth.AddDate(0, 0, dayCounter+1)
 					renderClass += (" " + invalidDayClass)
-					dayTitle = fmt.Sprintf("%s %d", shortMonth(renderDay.Month()), renderDay.Day())
+					dayTitle = fmt.Sprintf("%s %d", calendar.ShortMonth(renderDay.Month()), renderDay.Day())
 				} else if dayCounter >= monthInfo.MonthDays {
 					renderClass += (" " + invalidDayClass)
-					dayTitle = fmt.Sprintf("%s %d", shortMonth(renderDay.Month()), renderDay.Day())
+					dayTitle = fmt.Sprintf("%s %d", calendar.ShortMonth(renderDay.Month()), renderDay.Day())
 				} else {
 					dayTitle = fmt.Sprintf("%d", renderDay.Day())
 				}
@@ -167,7 +169,7 @@ func MonthView(now time.Time) templ.Component {
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(renderDay.Year())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 41, Col: 60}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 43, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -178,9 +180,9 @@ func MonthView(now time.Time) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var10 string
-				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(monthToInt(renderDay.Month()))
+				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(calendar.MonthToInt(renderDay.Month()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 41, Col: 105}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 43, Col: 114}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
@@ -193,7 +195,7 @@ func MonthView(now time.Time) templ.Component {
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(renderDay.Day())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 41, Col: 134}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 43, Col: 143}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -206,7 +208,7 @@ func MonthView(now time.Time) templ.Component {
 				var templ_7745c5c3_Var12 string
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(dayTitle)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 42, Col: 57}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/month.templ`, Line: 44, Col: 57}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {

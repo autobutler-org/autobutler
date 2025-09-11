@@ -3,42 +3,44 @@ package calendar
 import "time"
 import "fmt"
 
+import "autobutler/pkg/calendar"
+
 const defaultDayClass = "h-24 border align-top p-2"
 const invalidDayClass = "text-gray-400"
 
 templ MonthView(now time.Time) {
-	{{ monthInfo := getMonthInfo(now) }}
+	{{ monthInfo := NewMonthInfoFromTime(now) }}
 	<h1 class="text-5xl font-bold mb-4">{ now.Month() } { now.Year() } </h1>
 	<table class="table-fixed border-collapse w-full">
 		<thead>
 			<tr>
-				for day := range Saturday + 1 {
-					<th class="py-2 px-4 border">{ weekdayToShortString(day, WeekModeStandard) }</th>
+				for day := range calendar.Saturday + 1 {
+					<th class="py-2 px-4 border">{ calendar.WeekdayToShortString(day, calendar.WeekModeStandard) }</th>
 				}
 			</tr>
 		</thead>
 		<tbody>
 			{{ previousMonth := now.AddDate(0, -1, 0) }}
-			{{ endOfPreviousMonth := getFirstDayOfMonth(previousMonth).AddDate(0, 1, -1) }}
+			{{ endOfPreviousMonth := calendar.GetFirstDayOfMonth(previousMonth).AddDate(0, 1, -1) }}
 			{{ dayCounter := -monthInfo.LeadingDays }}
 			for _ = range monthInfo.WeeksToRender {
 				{{ renderDay := monthInfo.StartOfMonth.AddDate(0, 0, dayCounter) }}
-				<tr data-year={ renderDay.Year() } data-month={ monthToInt(renderDay.Month()) }>
-					for _ = range Saturday + 1 {
+				<tr data-year={ renderDay.Year() } data-month={ calendar.MonthToInt(renderDay.Month()) }>
+					for _ = range calendar.Saturday + 1 {
 						{{ renderClass := defaultDayClass }}
 						{{ renderDay = monthInfo.StartOfMonth.AddDate(0, 0, dayCounter) }}
 						{{ dayTitle := "" }}
 						if dayCounter < 0 {
 							{{ renderDay = endOfPreviousMonth.AddDate(0, 0, dayCounter+1) }}
 							{{ renderClass += (" " + invalidDayClass) }}
-							{{ dayTitle = fmt.Sprintf("%s %d", shortMonth(renderDay.Month()), renderDay.Day()) }}
+							{{ dayTitle = fmt.Sprintf("%s %d", calendar.ShortMonth(renderDay.Month()), renderDay.Day()) }}
 						} else if dayCounter >= monthInfo.MonthDays {
 							{{ renderClass += (" " + invalidDayClass) }}
-							{{ dayTitle = fmt.Sprintf("%s %d", shortMonth(renderDay.Month()), renderDay.Day()) }}
+							{{ dayTitle = fmt.Sprintf("%s %d", calendar.ShortMonth(renderDay.Month()), renderDay.Day()) }}
 						} else {
 							{{ dayTitle = fmt.Sprintf("%d", renderDay.Day()) }}
 						}
-						<td class={ renderClass } data-year={ renderDay.Year() } data-month={ monthToInt(renderDay.Month()) } data-day={ renderDay.Day() }>
+						<td class={ renderClass } data-year={ renderDay.Year() } data-month={ calendar.MonthToInt(renderDay.Month()) } data-day={ renderDay.Day() }>
 							<div class="text-sm font-semibold mb-1">{ dayTitle }</div>
 							<!-- Placeholder for events -->
 							<div class="text-xs text-gray-500">No Events</div>
