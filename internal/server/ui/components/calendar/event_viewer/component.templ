@@ -1,0 +1,22 @@
+package event_viewer
+
+import (
+	"autobutler/pkg/calendar"
+	"time"
+)
+
+templ Component(event *calendar.Event) {
+	<div>
+		<h2 class="text-lg font-bold mb-2">{ event.Title }</h2>
+		<p class="mb-1"><strong>Start:</strong> { event.StartTime.Format(time.RFC1123) }</p>
+		if event.EndTime != nil {
+			<p class="mb-1"><strong>End:</strong> { event.EndTime.Format(time.RFC1123) }</p>
+		}
+		if event.Description != "" {
+			<p class="mb-1"><strong>Description:</strong> { event.Description }</p>
+		}
+		if event.Location != "" {
+			<p class="mb-1"><strong>Location:</strong> { event.Location }</p>
+		}
+	</div>
+}

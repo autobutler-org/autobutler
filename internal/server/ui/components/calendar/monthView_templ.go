@@ -111,7 +111,7 @@ func monthView(now time.Time) templ.Component {
 		previousMonth := now.AddDate(0, -1, 0)
 		endOfPreviousMonth := calendar.GetFirstDayOfMonth(previousMonth).AddDate(0, 1, -1)
 		dayCounter := -monthInfo.LeadingDays
-		for _ = range monthInfo.WeeksToRender {
+		for range monthInfo.WeeksToRender {
 			renderDay := monthInfo.StartOfMonth.AddDate(0, 0, dayCounter)
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<tr data-year=\"")
 			if templ_7745c5c3_Err != nil {
@@ -143,7 +143,7 @@ func monthView(now time.Time) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			for _ = range calendar.Saturday + 1 {
+			for range calendar.Saturday + 1 {
 				renderDay = monthInfo.StartOfMonth.AddDate(0, 0, dayCounter)
 				dayTitle := ""
 				outsideOfMonth := false

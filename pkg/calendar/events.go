@@ -1,6 +1,9 @@
 package calendar
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type EventMap map[int][]*Event
 
@@ -40,4 +43,15 @@ func init() {
 func GetMonthEvents(_ time.Time) (EventMap, error) {
 	// TOOD: Query sqlite instead
 	return eventStore, nil
+}
+
+func GetEventByID(id string) (*Event, error) {
+	for _, events := range eventStore {
+		for _, event := range events {
+			if event.ID == id {
+				return event, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("event not found: %s", id)
 }

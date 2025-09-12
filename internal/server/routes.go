@@ -24,6 +24,7 @@ func setupRoutes(router *gin.Engine) {
 func setupApiRoutes(router *gin.Engine) {
 	apiV1Group := router.Group("/api/v1")
 	v1.SetupFilesRoutes(apiV1Group)
+	v1.SetupCalendarRoutes(apiV1Group)
 	v1.SetupChatRoutes(apiV1Group)
 	v1.SetupUpdateRoutes(apiV1Group)
 	v1.SetupHealthRoutes(apiV1Group)
