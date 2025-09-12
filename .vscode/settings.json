@@ -11,6 +11,7 @@
   "workbench.iconTheme": "vscode-icons",
   "cSpell.words": [
     "autobutler",
+    "Sprintf",
     "templ"
   ],
 }

@@ -4,8 +4,10 @@ import "time"
 
 type EventMap map[int][]*Event
 
-func GetMonthEvents(now time.Time) (EventMap, error) {
-	// Give placeholder events
+var eventStore EventMap
+
+func init() {
+	now := time.Now()
 	events := []*Event{
 		NewEvent(
 			"Meeting with Bingus",
@@ -25,13 +27,17 @@ func GetMonthEvents(now time.Time) (EventMap, error) {
 			time.Date(now.Year(), now.Month(), 20, 0, 0, 0, 0, time.UTC),
 		),
 	}
-	monthEvents := make(EventMap, 0)
+	eventStore = make(EventMap, 0)
 	for _, event := range events {
 		day := event.StartTime.Day()
-		if _, exists := monthEvents[day]; !exists {
-			monthEvents[day] = []*Event{}
+		if _, exists := eventStore[day]; !exists {
+			eventStore[day] = []*Event{}
 		}
-		monthEvents[day] = append(monthEvents[day], event)
+		eventStore[day] = append(eventStore[day], event)
 	}
-	return monthEvents, nil
+}
+
+func GetMonthEvents(_ time.Time) (EventMap, error) {
+	// TOOD: Query sqlite instead
+	return eventStore, nil
 }

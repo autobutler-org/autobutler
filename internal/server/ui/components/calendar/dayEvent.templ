@@ -1,6 +1,7 @@
 package calendar
 
 import "autobutler/pkg/calendar"
+import "fmt"
 
 func trimEventTitle(event calendar.Event, maxLen int) string {
 	title := event.Title
@@ -14,5 +15,12 @@ func trimEventTitle(event calendar.Event, maxLen int) string {
 }
 
 templ dayEvent(event calendar.Event) {
-	<div class="text-xs bg-blue-100 text-blue-800 rounded px-1 py-0.5 mb-0.5">{ trimEventTitle(event, 20) }</div>
+	<div
+		class="cursor-pointer text-xs bg-blue-100 text-blue-800 rounded px-1 py-0.5 mb-0.5"
+		hx-get={ fmt.Sprintf("/api/v1/calendar/event/%s", event.ID) }
+		hx-trigger="click"
+	>
+		{ trimEventTitle(event, 20) }
+	</div>
+	<div id={ fmt.Sprintf("event-viewer-%s", event.ID) }></div>
 }
