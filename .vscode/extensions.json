@@ -11,6 +11,8 @@
     "tyriar.sort-lines",
     "golang.go",
     "bradlc.vscode-tailwindcss",
-    "vscode-icons-team.vscode-icons"
+    "vscode-icons-team.vscode-icons",
+    "alexcvzz.vscode-sqlite",
+    "inferrinizzard.prettier-sql-vscode"
   ]
 }

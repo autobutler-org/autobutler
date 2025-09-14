@@ -4,10 +4,11 @@ import "time"
 import "fmt"
 
 import "autobutler/pkg/calendar"
+import "autobutler/internal/db"
 
 templ monthView(now time.Time) {
-	{{ monthInfo := NewMonthInfoFromTime(now) }}
-	{{ events, err := calendar.GetMonthEvents(now) }}
+	{{ monthInfo := calendar.NewMonthInfoFromTime(now) }}
+	{{ events, err := db.Instance.QueryCalendarEventsForMonth(db.DefaultCalendarId, now.Year(), now.Month(), true) }}
 	if err != nil {
 		<p class="text-red-500">Error loading events: { err.Error() }</p>
 	}
@@ -20,13 +21,13 @@ templ monthView(now time.Time) {
 				}
 			</tr>
 		</thead>
-		<tbody>
+		<tbody class="h-fit">
 			{{ previousMonth := now.AddDate(0, -1, 0) }}
 			{{ endOfPreviousMonth := calendar.GetFirstDayOfMonth(previousMonth).AddDate(0, 1, -1) }}
 			{{ dayCounter := -monthInfo.LeadingDays }}
 			for range monthInfo.WeeksToRender {
 				{{ renderDay := monthInfo.StartOfMonth.AddDate(0, 0, dayCounter) }}
-				<tr data-year={ renderDay.Year() } data-month={ calendar.MonthToInt(renderDay.Month()) }>
+				<tr class="h-fit" data-year={ renderDay.Year() } data-month={ calendar.MonthToInt(renderDay.Month()) }>
 					for range calendar.Saturday + 1 {
 						{{ renderDay = monthInfo.StartOfMonth.AddDate(0, 0, dayCounter) }}
 						{{ dayTitle := "" }}

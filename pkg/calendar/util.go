@@ -1,6 +1,8 @@
 package calendar
 
-import "time"
+import (
+	"time"
+)
 
 var days = []string{
 	"Sunday",

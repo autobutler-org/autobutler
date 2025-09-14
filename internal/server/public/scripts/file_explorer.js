@@ -91,20 +91,6 @@ function deactivateDropZone(event) {
     fileUploadArea.classList.add('bg-gray-800');
 }
 
-function deleteSelectedFiles(event, rootDir) {
-    preventDefault(event);
-    htmx.ajax('DELETE',
-        '/api/v1/files', {
-        values: {
-            rootDir: rootDir,
-            filePaths: selectedFiles,
-        },
-        target: '#file-explorer',
-        swap: 'outerHTML',
-    });
-    clearSelectedFiles();
-}
-
 function downloadSelectedFiles(event, rootDir) {
     preventDefault(event);
     selectedFiles.forEach(fileName => {

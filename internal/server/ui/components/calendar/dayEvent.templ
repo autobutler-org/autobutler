@@ -1,46 +1,45 @@
 package calendar
 
-import "autobutler/pkg/calendar"
-import "fmt"
+import (
+	"autobutler/pkg/calendar"
+	"fmt"
+	"time"
+)
 
-func trimEventTitle(event calendar.Event, maxLen int) string {
-	title := event.Title
-	if len(title) <= maxLen {
-		return title
-	}
-	if maxLen <= 3 {
-		return title[:maxLen]
-	}
-	return title[:maxLen-3] + "..."
+func getTimeString(t time.Time) string {
+	return t.Format("15:04")
 }
 
-templ dayEvent(event calendar.Event) {
-	<div
-		class="cursor-pointer text-xs bg-blue-100 text-blue-800 rounded px-1 py-0.5 mb-0.5"
-		hx-get={ fmt.Sprintf("/api/v1/calendar/%s", event.ID) }
-		hx-trigger="click"
-		hx-on-htmx-after-request={ fmt.Sprintf("showEventDialog('%s')", event.ID) }
-		hx-target={ fmt.Sprintf("#event-dialog-content-%s", event.ID) }
-		hx-swap="innerHTML"
-	>
-		{ trimEventTitle(event, 20) }
-	</div>
-	<dialog
-		id={ fmt.Sprintf("event-dialog-%s", event.ID) }
-		class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-	>
-		<button
-			class="absolute top-2 right-2 p-2 rounded hover:bg-gray-200"
-			aria-label="Close"
-			hx-on-click={ fmt.Sprintf("closeEventDialog('%s')", event.ID) }
-		>
-			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20">
-				<path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M5 5l10 10M15 5l-10 10"></path>
-			</svg>
-		</button>
+templ dayEvent(event calendar.CalendarEvent, outsideOfMonth bool) {
+	<div class="flex">
+		{{ renderClass := "cursor-pointer text-xs rounded px-1 py-0.5 mb-0.5" }}
+		if outsideOfMonth {
+			{{ renderClass += " hover:bg-gray-200 bg-gray-100 text-gray-400" }}
+		} else {
+			{{ renderClass += " hover:bg-blue-200 bg-blue-100 text-blue-800" }}
+		}
 		<div
-			id={ fmt.Sprintf("event-dialog-content-%s", event.ID) }
-			class="m-10"
-		></div>
-	</dialog>
+			style="min-width: 85%; max-width: 85%;"
+			class={ renderClass }
+		>
+			<div>{ getTimeString(event.StartTime) }</div>
+			<div
+				class="overflow-hidden text-ellipsis line-clamp-2"
+				hx-on::after-request={ templ.JSFuncCall("showEventDialog", templ.JSExpression("event"), event.ID) }
+				hx-get={ fmt.Sprintf("/api/v1/calendar/%d", event.ID) }
+				hx-target={ fmt.Sprintf("#event-dialog-%d", event.ID) }
+				hx-swap="innerHTML"
+			>
+				{ event.Title }
+			</div>
+		</div>
+		<span
+			class="cursor-pointer flex-grow"
+			hx-on:click="newCalendarEvent(event)"
+		></span>
+		<dialog
+			id={ fmt.Sprintf("event-dialog-%d", event.ID) }
+			class="bg-transparent fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+		></dialog>
+	</div>
 }

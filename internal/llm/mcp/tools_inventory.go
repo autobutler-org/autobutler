@@ -5,23 +5,23 @@ import (
 	"fmt"
 )
 
-type AddToInventoryParams struct {
+type UpsertItemParams struct {
 	Name   string  `json:"param0"`
 	Amount float64 `json:"param1"`
 	Unit   string  `json:"param2"`
 }
 
-func (p AddToInventoryParams) Output(response any) (string, []any) {
-	resp := response.(AddToInventoryResponse)
+func (p UpsertItemParams) Output(response any) (string, []any) {
+	resp := response.(UpsertItemResponse)
 	return "Added %f %s of %s to the inventory, so now you have %f %s.", []any{p.Amount, resp.Item.Unit, resp.Item.Name, resp.Item.Amount, resp.Item.Unit}
 }
 
-type AddToInventoryResponse struct {
+type UpsertItemResponse struct {
 	Item db.Item `json:"item"`
 }
 
-func (r McpRegistry) AddToInventory(name string, amount float64, unit string) AddToInventoryResponse {
-	item, err := db.Instance.AddToInventory(db.Item{
+func (r McpRegistry) UpsertItem(name string, amount float64, unit string) UpsertItemResponse {
+	item, err := db.Instance.UpsertItem(db.Item{
 		Name:   name,
 		Amount: amount,
 		Unit:   unit,
@@ -29,7 +29,7 @@ func (r McpRegistry) AddToInventory(name string, amount float64, unit string) Ad
 	if err != nil {
 		panic(fmt.Sprintf("failed to add to inventory the item: %v", err))
 	}
-	return AddToInventoryResponse{
+	return UpsertItemResponse{
 		Item: *item,
 	}
 }
@@ -56,7 +56,7 @@ type QueryInventoryResponse struct {
 }
 
 func (r McpRegistry) QueryInventory(itemName string) QueryInventoryResponse {
-	item, err := db.Instance.QueryInventory(itemName)
+	item, err := db.Instance.QueryInventoryByName(itemName)
 	if err != nil {
 		panic(fmt.Sprintf("failed to query inventory for item %s: %v", itemName, err))
 	}
@@ -90,7 +90,7 @@ type ReduceInventoryResponse struct {
 }
 
 func (r McpRegistry) ReduceInventory(name string, amount float64, unit string) ReduceInventoryResponse {
-	response := r.AddToInventory(name, -amount, unit)
+	response := r.UpsertItem(name, -amount, unit)
 	return ReduceInventoryResponse{
 		Item: response.Item,
 	}

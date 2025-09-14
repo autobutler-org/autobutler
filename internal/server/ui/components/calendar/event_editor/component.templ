@@ -1,0 +1,209 @@
+package event_editor
+
+import (
+	"autobutler/internal/server/ui/components/icons/trash"
+	"autobutler/pkg/calendar"
+	"fmt"
+)
+
+templ Component() {
+	{{ event := calendar.CalendarEvent{} }}
+	@ComponentWithEvent(event)
+}
+
+templ ComponentWithEvent(
+	event calendar.CalendarEvent,
+) {
+	{{ isNew := event.ID == 0 }}
+	<div class="rounded bg-white p-2 w-96">
+		<div class="flex justify-between items-center">
+			if !isNew {
+				<button
+					id={ fmt.Sprintf("event-delete-%d", event.ID) }
+					type="button"
+					class="p-2 rounded hover:bg-red-800 text-gray-600 hover:text-white"
+					title="Delete event"
+					hx-trigger="click"
+					hx-delete={ fmt.Sprintf("/api/v1/calendar/events/%d", event.ID) }
+					hx-target="#calendar"
+					hx-swap="outerHTML"
+					hx-on:keydown="if (event.key === 'Enter') { preventDefault(event); }"
+				>
+					@trash.Component()
+				</button>
+			} else {
+				// Spacer to keep close at the end no matter what
+				<div></div>
+			}
+			<button
+				class="top-2 right-2 p-2 rounded hover:bg-gray-200"
+				aria-label="Close"
+				hx-on:click="closeModal(event)"
+				hx-on:keydown="if (event.key === 'Enter') { preventDefault(event); }"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20">
+					<path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M5 5l10 10M15 5l-10 10"></path>
+				</svg>
+			</button>
+		</div>
+		<div>
+			<form
+				id="new-event-form"
+				onsubmit="return false;"
+				class="flex flex-col space-y-4"
+			>
+				<input
+					id="new-event-year"
+					type="hidden"
+					name="year"
+					value={ event.StartTime.Year() }
+				/>
+				<input
+					id="new-event-month"
+					type="hidden"
+					name="month"
+					value={ calendar.MonthToInt(event.StartTime.Month()) }
+				/>
+				<input
+					id="new-event-day"
+					type="hidden"
+					name="day"
+					value={ event.StartTime.Day() }
+				/>
+				<div class="m-0">
+					<label
+						for="title"
+						class="block text-sm font-medium text-gray-700"
+					>Title</label>
+					<input
+						type="text"
+						name="title"
+						id="title"
+						autofocus
+						required
+						hx-on:input="checkNewEventFormInputs(event)"
+						hx-on:keydown="if (event.key === 'Enter') { preventDefault(event); }"
+						class="mt-1 block border border-gray-300 rounded w-full"
+						value={ event.Title }
+					/>
+				</div>
+				<div>
+					<label
+						for="start-time"
+						class="block text-sm font-medium text-gray-700"
+					>Start Time</label>
+					<input
+						type="time"
+						name="start-time"
+						id="start-time"
+						required
+						hx-on:input="checkNewEventFormInputs(event)"
+						hx-on:keydown="if (event.key === 'Enter') { preventDefault(event); }"
+						class="mt-1 block border border-gray-300 rounded"
+						value={ event.StartTime.Format("15:04") }
+					/>
+				</div>
+				<div>
+					<label
+						for="end-time"
+						class="block text-sm font-medium text-gray-700"
+					>End Time</label>
+					if event.EndTime == nil {
+						<input
+							type="time"
+							name="end-time"
+							id="end-time"
+							hx-on:keydown="if (event.key === 'Enter') { preventDefault(event); }"
+							class="mt-1 block border border-gray-300 rounded"
+						/>
+					} else {
+						<input
+							type="time"
+							name="end-time"
+							id="end-time"
+							hx-on:keydown="if (event.key === 'Enter') { preventDefault(event); }"
+							class="mt-1 block border border-gray-300 rounded"
+							value={ event.StartTime.Format("15:04") }
+						/>
+					}
+				</div>
+				<div>
+					<label
+						for="description"
+						class="block text-sm font-medium text-gray-700"
+					>Description</label>
+					<textarea
+						name="description"
+						id="description"
+						rows="3"
+						class="mt-1 block w-full border border-gray-300 rounded"
+					>{ event.Description }</textarea>
+				</div>
+				<div>
+					<label
+						for="location"
+						class="block text-sm font-medium text-gray-700"
+					>Location</label>
+					<input
+						type="text"
+						name="location"
+						id="location"
+						hx-on:keydown="if (event.key === 'Enter') { preventDefault(event); }"
+						class="mt-1 block w-full border border-gray-300 rounded"
+						value={ event.Location }
+					/>
+				</div>
+				<div class="flex justify-end space-x-2">
+					<button
+						type="button"
+						class="px-4 py-2 bg-gray-300 text-gray-700 rounded"
+						hx-on:click="closeModal(event)"
+					>Cancel</button>
+					if isNew {
+						<input
+							type="submit"
+							value="New"
+							class="cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-400 px-4 py-2 bg-blue-600 text-white rounded"
+							disabled
+							hx-trigger="click"
+							hx-post="/api/v1/calendar/events"
+							hx-target="#calendar"
+							hx-swap="outerHTML"
+							hx-vals="js:{
+								year: document.getElementById('new-event-year').value,
+								month: document.getElementById('new-event-month').value,
+								day: document.getElementById('new-event-day').value,
+								title: document.getElementById('title').value,
+								startTime: document.getElementById('start-time').value,
+								endTime: document.getElementById('end-time').value,
+								description: document.getElementById('description').value,
+								location: document.getElementById('location').value,
+							}"
+						/>
+					} else {
+						<input
+							type="submit"
+							value="Save"
+							class="cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-400 px-4 py-2 bg-blue-600 text-white rounded"
+							hx-trigger="click"
+							hx-put="/api/v1/calendar/events"
+							hx-target="#calendar"
+							hx-swap="outerHTML"
+							hx-vals={ templ.JSExpression(fmt.Sprintf(`js:{
+								id: %d,
+								year: document.getElementById('new-event-year').value,
+								month: document.getElementById('new-event-month').value,
+								day: document.getElementById('new-event-day').value,
+								title: document.getElementById('title').value,
+								startTime: document.getElementById('start-time').value,
+								endTime: document.getElementById('end-time').value,
+								description: document.getElementById('description').value,
+								location: document.getElementById('location').value,
+							}`, event.ID)) }
+						/>
+					}
+				</div>
+			</form>
+		</div>
+	</div>
+}

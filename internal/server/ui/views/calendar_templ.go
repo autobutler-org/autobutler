@@ -10,11 +10,12 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"autobutler/internal/server/ui/components/body"
-	"autobutler/internal/server/ui/components/calendar"
+	cal "autobutler/internal/server/ui/components/calendar"
 	"autobutler/internal/server/ui/components/footer"
 	"autobutler/internal/server/ui/components/header"
 	"autobutler/internal/server/ui/components/topnav"
 	"autobutler/internal/server/ui/types"
+	"autobutler/pkg/calendar"
 )
 
 func Calendar(pageState types.PageState) templ.Component {
@@ -63,7 +64,7 @@ func Calendar(pageState types.PageState) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = calendar.Component(calendar.CalendarViewMonth).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = cal.Component(calendar.CalendarViewMonth).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

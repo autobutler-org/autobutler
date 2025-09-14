@@ -2,11 +2,12 @@ package views
 
 import (
 	"autobutler/internal/server/ui/components/body"
-	"autobutler/internal/server/ui/components/calendar"
+	cal "autobutler/internal/server/ui/components/calendar"
 	"autobutler/internal/server/ui/components/footer"
 	"autobutler/internal/server/ui/components/header"
 	"autobutler/internal/server/ui/components/topnav"
 	"autobutler/internal/server/ui/types"
+	"autobutler/pkg/calendar"
 )
 
 templ Calendar(pageState types.PageState) {
@@ -16,7 +17,7 @@ templ Calendar(pageState types.PageState) {
 		@header.Component()
 		@topnav.Component(pageState)
 		@body.Component() {
-			@calendar.Component(calendar.CalendarViewMonth)
+			@cal.Component(calendar.CalendarViewMonth)
 		}
 		@footer.Component()
 	</html>

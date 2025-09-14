@@ -13,7 +13,7 @@ var (
 
 func init() {
 	Register[QueryInventoryParams](Registry, Registry.QueryInventory, "Queries the home inventory for an item")
-	Register[AddToInventoryParams](Registry, Registry.AddToInventory, "Adds an item to the home inventory.")
+	Register[UpsertItemParams](Registry, Registry.UpsertItem, "Adds an item to the home inventory.")
 	Register[ReduceInventoryParams](Registry, Registry.ReduceInventory, "Removes an item from the home inventory, such as when the user used some of the item.")
 }
 

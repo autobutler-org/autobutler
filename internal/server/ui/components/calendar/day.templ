@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const defaultDayClass = "h-24 border align-top p-2"
+const defaultDayClass = "h-fit border align-top"
 const invalidDayClass = "text-gray-400"
 
 templ day(renderDay time.Time, dayTitle string, outsideOfMonth bool, events calendar.EventMap) {
@@ -13,15 +13,39 @@ templ day(renderDay time.Time, dayTitle string, outsideOfMonth bool, events cale
 	if outsideOfMonth {
 		{{ renderClass += (" " + invalidDayClass) }}
 	}
-	<td class={ renderClass } data-year={ renderDay.Year() } data-month={ calendar.MonthToInt(renderDay.Month()) } data-day={ renderDay.Day() }>
-		<div class="text-sm font-semibold mb-1">{ dayTitle }</div>
+	<td
+		class={ renderClass }
+		data-year={ renderDay.Year() }
+		data-month={ calendar.MonthToInt(renderDay.Month()) }
+		data-day={ renderDay.Day() }
+	>
 		{{ dayEvents, exists := events[renderDay.Day()] }}
-		if exists && len(dayEvents) > 0 {
-			for _, event := range dayEvents {
-				@dayEvent(*event)
+		<div
+			class="flex w-full h-full flex-col"
+		>
+			if !exists || len(dayEvents) == 0 {
+				<div
+					class="p-1 min-h-24 h-full cursor-pointer"
+					hx-on:click="newCalendarEvent(event)"
+				>
+					<div class="text-sm font-semibold mb-1">{ dayTitle }</div>
+					<div class="text-xs text-gray-500">No Events</div>
+				</div>
+			} else {
+				<div class="min-h-24 pt-1 pl-1">
+					<div
+						class="cursor-pointer text-sm font-semibold"
+						hx-on:click="newCalendarEvent(event)"
+					>{ dayTitle }</div>
+					for _, event := range dayEvents {
+						@dayEvent(*event, outsideOfMonth)
+					}
+				</div>
+				<div
+					class="cursor-pointer flex-grow"
+					hx-on:click="newCalendarEvent(event)"
+				></div>
 			}
-		} else {
-			<div class="text-xs text-gray-500">No Events</div>
-		}
+		</div>
 	</td>
 }

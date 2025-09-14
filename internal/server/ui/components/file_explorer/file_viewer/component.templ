@@ -6,7 +6,7 @@ templ Component() {
 		class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
 		hx-on:close="closeFileViewer(event)"
 		closedby="none"
-		onkeydown="if (event.key === 'Enter') { preventDefault(event); }"
+		hx-on:keydown="if (event.key === 'Enter') { preventDefault(event); }"
 	>
 		<script src="/public/vendor/epub.js/jszip.min.js"></script>
 		<script src="/public/vendor/epub.js/epub.min.js"></script>

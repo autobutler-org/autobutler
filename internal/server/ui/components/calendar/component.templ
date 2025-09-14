@@ -1,19 +1,30 @@
 package calendar
 
-import "time"
+import (
+	"autobutler/internal/server/ui/components/calendar/event_editor"
+	"autobutler/pkg/calendar"
+	"time"
+)
 
-templ Component(calendarView CalendarView) {
+templ Component(calendarView calendar.CalendarView) {
 	{{ now := time.Now() }}
-	<div class="h-screen flex flex-col m-4">
-		if calendarView == CalendarViewMonth {
-			@monthView(now)
-		} else if calendarView == CalendarViewWeek {
-			<p>Week View - Coming Soon</p>
-		} else if calendarView == CalendarViewDay {
-			<p>Day View - Coming Soon</p>
-		} else {
-			<p>Invalid Calendar View</p>
+	<div id="calendar" class="h-screen flex flex-col m-4">
+		switch calendarView {
+			case calendar.CalendarViewMonth:
+				@monthView(now)
+			case calendar.CalendarViewWeek:
+				<p>Week View - Coming Soon</p>
+			case calendar.CalendarViewDay:
+				<p>Day View - Coming Soon</p>
+			default:
+				<p>Invalid Calendar View</p>
 		}
+		<dialog
+			id="new-event-dialog"
+			class="bg-transparent fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+		>
+			@event_editor.Component()
+		</dialog>
 	</div>
 	<script src="/public/scripts/calendar.js"></script>
 }
