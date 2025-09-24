@@ -5,23 +5,29 @@ import (
 	"fmt"
 )
 
-type UpsertItemParams struct {
+type UpsertInventoryParams struct {
 	Name   string  `json:"param0"`
 	Amount float64 `json:"param1"`
 	Unit   string  `json:"param2"`
 }
 
-func (p UpsertItemParams) Output(response any) (string, []any) {
-	resp := response.(UpsertItemResponse)
-	return "Added %f %s of %s to the inventory, so now you have %f %s.", []any{p.Amount, resp.Item.Unit, resp.Item.Name, resp.Item.Amount, resp.Item.Unit}
+func (p UpsertInventoryParams) Output(response any) (string, []any) {
+	resp := response.(UpsertInventoryResponse)
+	return "Added %f %s of %s to the inventory, so now you have %f %s.", []any{
+		p.Amount,
+		resp.Inventory.Unit,
+		resp.Inventory.Name,
+		resp.Inventory.Amount,
+		resp.Inventory.Unit,
+	}
 }
 
-type UpsertItemResponse struct {
-	Item db.Item `json:"item"`
+type UpsertInventoryResponse struct {
+	Inventory db.Inventory `json:"inventory"`
 }
 
-func (r McpRegistry) UpsertItem(name string, amount float64, unit string) UpsertItemResponse {
-	item, err := db.Instance.UpsertItem(db.Item{
+func (r McpRegistry) UpsertInventory(name string, amount float64, unit string) UpsertInventoryResponse {
+	inventory, err := db.Instance.UpsertInventory(db.Inventory{
 		Name:   name,
 		Amount: amount,
 		Unit:   unit,
@@ -29,8 +35,8 @@ func (r McpRegistry) UpsertItem(name string, amount float64, unit string) Upsert
 	if err != nil {
 		panic(fmt.Sprintf("failed to add to inventory the item: %v", err))
 	}
-	return UpsertItemResponse{
-		Item: *item,
+	return UpsertInventoryResponse{
+		Inventory: *inventory,
 	}
 }
 
@@ -82,16 +88,20 @@ type ReduceInventoryParams struct {
 
 func (p ReduceInventoryParams) Output(response any) (string, []any) {
 	resp := response.(ReduceInventoryResponse)
-	return "Reduced %f %s of %s from the inventory, so now you have %f %s.", []any{p.Amount, resp.Item.Unit, resp.Item.Name, resp.Item.Amount, resp.Item.Unit}
+	return "Reduced %f %s of %s from the inventory, so now you have %f %s.", []any{
+		p.Amount,
+		resp.Inventory.Unit,
+		resp.Inventory.Name,
+		resp.Inventory.Amount,
+		resp.Inventory.Unit,
+	}
 }
 
 type ReduceInventoryResponse struct {
-	Item db.Item `json:"item"`
+	Inventory db.Inventory `json:"inventory"`
 }
 
 func (r McpRegistry) ReduceInventory(name string, amount float64, unit string) ReduceInventoryResponse {
-	response := r.UpsertItem(name, -amount, unit)
-	return ReduceInventoryResponse{
-		Item: response.Item,
-	}
+	response := r.UpsertInventory(name, -amount, unit)
+	return ReduceInventoryResponse(response)
 }

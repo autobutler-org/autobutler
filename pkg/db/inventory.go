@@ -1,30 +1,15 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 )
 
-type Item struct {
-	ID     int
-	Name   string
-	Amount float64
-	Unit   string
-}
-
-func NewItem(id int, name string, amount float64, unit string) *Item {
-	return &Item{
-		ID:     id,
-		Name:   name,
-		Amount: amount,
-		Unit:   unit,
-	}
-}
-
-func NewItemsFromRows(rows *sql.Rows) ([]*Item, error) {
-	var items []*Item
+func NewInventoryFromRows(rows *sql.Rows) ([]*Inventory, error) {
+	var items []*Inventory
 	for rows.Next() {
-		var item Item
+		var item Inventory
 		if err := rows.Scan(&item.ID, &item.Name, &item.Amount, &item.Unit); err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
@@ -36,7 +21,7 @@ func NewItemsFromRows(rows *sql.Rows) ([]*Item, error) {
 	return items, nil
 }
 
-func (d *Database) QueryInventory(id int) (*Item, error) {
+func (d *Database) QueryInventory(id int) (*Inventory, error) {
 	if d == nil {
 		return nil, fmt.Errorf("database not initialized")
 	}
@@ -46,7 +31,7 @@ func (d *Database) QueryInventory(id int) (*Item, error) {
 		return nil, fmt.Errorf("error executing query: %s", query)
 	}
 	defer rows.Close()
-	items, err := NewItemsFromRows(rows)
+	items, err := NewInventoryFromRows(rows)
 	if err != nil {
 		return nil, fmt.Errorf("error creating items from rows: %w", err)
 	}
@@ -56,7 +41,7 @@ func (d *Database) QueryInventory(id int) (*Item, error) {
 	return items[0], nil
 }
 
-func (d *Database) QueryInventoryByName(name string) (*Item, error) {
+func (d *Database) QueryInventoryByName(name string) (*Inventory, error) {
 	if d == nil {
 		return nil, fmt.Errorf("database not initialized")
 	}
@@ -66,7 +51,7 @@ func (d *Database) QueryInventoryByName(name string) (*Item, error) {
 		return nil, fmt.Errorf("error executing query: %s", query)
 	}
 	defer rows.Close()
-	items, err := NewItemsFromRows(rows)
+	items, err := NewInventoryFromRows(rows)
 	if err != nil {
 		return nil, fmt.Errorf("error creating items from rows: %w", err)
 	}
@@ -76,71 +61,41 @@ func (d *Database) QueryInventoryByName(name string) (*Item, error) {
 	return items[0], nil
 }
 
-func (d *Database) UpsertItem(newItem Item) (*Item, error) {
+func (d *Database) UpsertInventory(newInventory Inventory) (*Inventory, error) {
 	if d == nil {
 		return nil, fmt.Errorf("database not initialized")
 	}
 	// Start a transaction
-	{
-		tx, err := d.Db.Begin()
+	inventory, err := DatabaseQueries.GetInventory(context.Background(), newInventory.ID)
+	if err == nil {
+		// Item exists, update it
+		inventory.Amount += newInventory.Amount
+		inventory, err = DatabaseQueries.UpdateInventory(
+			context.Background(),
+			UpdateInventoryParams{
+				ID:     inventory.ID,
+				Name:   inventory.Name,
+				Amount: inventory.Amount,
+				Unit:   inventory.Unit,
+			},
+		)
 		if err != nil {
-			return nil, fmt.Errorf("error starting transaction: %w", err)
+			return nil, fmt.Errorf("error updating item: %w", err)
 		}
-		// Defer rollback or commit of transaction
-		defer func() {
-			if err != nil {
-				if rollbackErr := tx.Rollback(); rollbackErr != nil {
-					fmt.Printf("error rolling back transaction: %v\n", rollbackErr)
-				}
-			} else {
-				if commitErr := tx.Commit(); commitErr != nil {
-					fmt.Printf("error committing transaction: %v\n", commitErr)
-				}
-			}
-		}()
-		item, err := d.QueryInventory(newItem.ID)
-		if item != nil {
-			// Item exists, update it
-			item.Amount += newItem.Amount
-			_, err = d.Exec(
-				`UPDATE inventory SET
-					amount = ?
-						WHERE id = ?`,
-				newItem.Amount,
-				newItem.ID,
-			)
-			if err != nil {
-				return nil, fmt.Errorf("error updating item: %w", err)
-			}
-		} else {
-			// Item does not exist, insert it
-			result, err := d.Exec(
-				`INSERT INTO inventory (
-					name,
-					amount,
-					unit
-				) VALUES (
-				 	?,
-					?,
-					?
-				)`,
-				newItem.Name,
-				newItem.Amount,
-				newItem.Unit,
-			)
-			if err != nil {
-				return nil, fmt.Errorf("error inserting item: %w", err)
-			}
-			newId, err := result.LastInsertId()
-			if err != nil {
-				return nil, fmt.Errorf("error getting last insert id: %w", err)
-			}
-			newItem.ID = int(newId)
+	} else {
+		// Item does not exist, insert it
+		inventory, err = DatabaseQueries.CreateInventory(
+			context.Background(),
+			CreateInventoryParams{
+				Name:   inventory.Name,
+				Amount: inventory.Amount,
+				Unit:   inventory.Unit,
+			},
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error inserting item: %w", err)
 		}
+		newInventory.ID = inventory.ID
 	}
-	item, err := d.QueryInventory(newItem.ID)
-	if err != nil {
-		return nil, fmt.Errorf("error querying inventory after insert/update: %w", err)
-	}
-	return item, nil
+	return &inventory, nil
 }
