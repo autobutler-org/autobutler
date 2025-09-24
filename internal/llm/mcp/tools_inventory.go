@@ -1,7 +1,7 @@
 package mcp
 
 import (
-	"autobutler/internal/db"
+	"autobutler/pkg/db"
 	"fmt"
 )
 

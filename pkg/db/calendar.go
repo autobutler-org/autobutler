@@ -7,11 +7,6 @@ import (
 
 const DefaultCalendarId = 1
 
-type Calendar struct {
-	ID   int
-	Name string
-}
-
 func NewCalendar(name string) *Calendar {
 	return &Calendar{
 		Name: name,
@@ -33,7 +28,7 @@ func NewCalendarFromRows(rows *sql.Rows) ([]*Calendar, error) {
 	return calendars, nil
 }
 
-func (d *Database) QueryCalendar(id int) (*Calendar, error) {
+func (d *Database) QueryCalendar(id int64) (*Calendar, error) {
 	if d == nil {
 		return nil, fmt.Errorf("database not initialized")
 	}
@@ -105,7 +100,7 @@ func (d *Database) UpsertCalendar(newCalendar Calendar) (*Calendar, error) {
 			if err != nil {
 				return nil, fmt.Errorf("error getting last insert id: %w", err)
 			}
-			newCalendar.ID = int(newId)
+			newCalendar.ID = newId
 		}
 	}
 	calendar, err := d.QueryCalendar(newCalendar.ID)
