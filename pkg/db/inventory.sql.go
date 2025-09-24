@@ -105,14 +105,14 @@ func (q *Queries) ListInventories(ctx context.Context) ([]Inventory, error) {
 	return items, nil
 }
 
-const updateInventory = `-- name: UpdateInventory :one
+const updateInventory = `-- name: UpdateInventory :exec
 UPDATE inventory
 SET
     name = ?,
     amount = ?,
     unit = ?
 WHERE
-    id = ? RETURNING id, name, amount, unit
+    id = ?
 `
 
 type UpdateInventoryParams struct {
@@ -122,19 +122,12 @@ type UpdateInventoryParams struct {
 	ID     int64
 }
 
-func (q *Queries) UpdateInventory(ctx context.Context, arg UpdateInventoryParams) (Inventory, error) {
-	row := q.db.QueryRowContext(ctx, updateInventory,
+func (q *Queries) UpdateInventory(ctx context.Context, arg UpdateInventoryParams) error {
+	_, err := q.db.ExecContext(ctx, updateInventory,
 		arg.Name,
 		arg.Amount,
 		arg.Unit,
 		arg.ID,
 	)
-	var i Inventory
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Amount,
-		&i.Unit,
-	)
-	return i, err
+	return err
 }

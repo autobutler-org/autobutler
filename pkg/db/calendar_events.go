@@ -108,123 +108,65 @@ func (d *Database) UpsertCalendarEvent(newCalendarEvent calendar.CalendarEvent) 
 	if d == nil {
 		return nil, fmt.Errorf("database not initialized")
 	}
-	// Start a transaction
-	{
-		tx, err := d.Db.Begin()
-		if err != nil {
-			return nil, fmt.Errorf("error starting transaction: %w", err)
+	calendarEvent, err := DatabaseQueries.GetCalendarEvent(context.Background(), newCalendarEvent.ID)
+	if err == nil {
+		// Calendar event exists, update it
+		endTime := sql.NullTime{}
+		if newCalendarEvent.EndTime != nil {
+			endTime.Time = *newCalendarEvent.EndTime
+			endTime.Valid = true
 		}
-		// Defer rollback or commit of transaction
-		defer func() {
-			if err != nil {
-				if rollbackErr := tx.Rollback(); rollbackErr != nil {
-					fmt.Printf("error rolling back transaction: %v\n", rollbackErr)
-				}
-			} else {
-				if commitErr := tx.Commit(); commitErr != nil {
-					fmt.Printf("error committing transaction: %v\n", commitErr)
-				}
-			}
-		}()
-		calendarEvent, err := DatabaseQueries.GetCalendarEvent(context.Background(), newCalendarEvent.ID)
-		if err == nil {
-			// Calendar event exists, update it
-			endTime := sql.NullTime{}
-			if newCalendarEvent.EndTime != nil {
-				endTime.Time = *newCalendarEvent.EndTime
-				endTime.Valid = true
-			}
-			calendarEvent, err = DatabaseQueries.UpdateCalendarEvent(
-				context.Background(),
-				UpdateCalendarEventParams{
-					Title: newCalendarEvent.Title,
-					Description: sql.NullString{
-						String: newCalendarEvent.Description,
-						Valid:  true,
-					},
-					StartTime: newCalendarEvent.StartTime,
-					EndTime:   endTime,
-					AllDay:    newCalendarEvent.AllDay,
-					Location: sql.NullString{
-						String: newCalendarEvent.Location,
-						Valid:  newCalendarEvent.Location != "",
-					},
-					CalendarID: newCalendarEvent.CalendarID,
+		calendarEvent, err = DatabaseQueries.UpdateCalendarEvent(
+			context.Background(),
+			UpdateCalendarEventParams{
+				ID:    newCalendarEvent.ID,
+				Title: newCalendarEvent.Title,
+				Description: sql.NullString{
+					String: newCalendarEvent.Description,
+					Valid:  true,
 				},
-			)
-			if err != nil {
-				return nil, fmt.Errorf("error updating calendar event: %w", err)
-			}
-		} else {
-			// Calendar event does not exist, insert it
-			endTime := sql.NullTime{}
-			if newCalendarEvent.EndTime != nil {
-				endTime.Time = *newCalendarEvent.EndTime
-				endTime.Valid = true
-			}
-			calendarEvent, err = DatabaseQueries.CreateCalendarEvent(
-				context.Background(),
-				CreateCalendarEventParams{
-					Title: newCalendarEvent.Title,
-					Description: sql.NullString{
-						String: newCalendarEvent.Description,
-						Valid:  true,
-					},
-					StartTime: newCalendarEvent.StartTime,
-					EndTime:   endTime,
-					AllDay:    newCalendarEvent.AllDay,
-					Location: sql.NullString{
-						String: newCalendarEvent.Location,
-						Valid:  newCalendarEvent.Location != "",
-					},
-					CalendarID: newCalendarEvent.CalendarID,
+				StartTime: newCalendarEvent.StartTime,
+				EndTime:   endTime,
+				AllDay:    newCalendarEvent.AllDay,
+				Location: sql.NullString{
+					String: newCalendarEvent.Location,
+					Valid:  newCalendarEvent.Location != "",
 				},
-			)
-			if err != nil {
-				return nil, fmt.Errorf("error inserting calendar event: %w", err)
-			}
-			newCalendarEvent.ID = calendarEvent.ID
-		}
-		return &calendarEvent, nil
-	}
-}
-
-func seedTestCalendarEvents() error {
-	now := time.Now()
-	events := []*calendar.CalendarEvent{
-		calendar.NewCalendarEventWithEnd(
-			"Meeting with Bingus",
-			"Discuss project updates",
-			time.Date(now.Year(), now.Month(), 10, 14, 0, 0, 0, time.UTC),
-			time.Date(now.Year(), now.Month(), 10, 14, 1, 0, 0, time.UTC),
-			false,
-			"Somewhere",
-			DefaultCalendarId,
-		),
-		calendar.NewCalendarEventWithEnd(
-			"Meeting with Bingus's dumb cat",
-			"Discuss project updates",
-			time.Date(now.Year(), now.Month(), 10, 14, 1, 0, 0, time.UTC),
-			time.Date(now.Year(), now.Month(), 10, 15, 2, 0, 0, time.UTC),
-			false,
-			"Somewhere else",
-			DefaultCalendarId,
-		),
-		calendar.NewCalendarEvent(
-			"Conference",
-			"Annual tech conference",
-			time.Date(now.Year(), now.Month(), 20, 0, 0, 0, 0, time.UTC),
-			true,
-			"Convention Center",
-			DefaultCalendarId,
-		),
-	}
-	for i, event := range events {
-		event.ID = int64(i + 1)
-		_, err := Instance.UpsertCalendarEvent(*event)
+				CalendarID: newCalendarEvent.CalendarID,
+			},
+		)
 		if err != nil {
-			return fmt.Errorf("failed to insert test calendar event: %w", err)
+			return nil, fmt.Errorf("error updating calendar event: %w", err)
 		}
+	} else {
+		// Calendar event does not exist, insert it
+		endTime := sql.NullTime{}
+		if newCalendarEvent.EndTime != nil {
+			endTime.Time = *newCalendarEvent.EndTime
+			endTime.Valid = true
+		}
+		calendarEvent, err = DatabaseQueries.CreateCalendarEvent(
+			context.Background(),
+			CreateCalendarEventParams{
+				Title: newCalendarEvent.Title,
+				Description: sql.NullString{
+					String: newCalendarEvent.Description,
+					Valid:  true,
+				},
+				StartTime: newCalendarEvent.StartTime,
+				EndTime:   endTime,
+				AllDay:    newCalendarEvent.AllDay,
+				Location: sql.NullString{
+					String: newCalendarEvent.Location,
+					Valid:  newCalendarEvent.Location != "",
+				},
+				CalendarID: newCalendarEvent.CalendarID,
+			},
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error inserting calendar event: %w", err)
+		}
+		newCalendarEvent.ID = calendarEvent.ID
 	}
-	return nil
+	return &calendarEvent, nil
 }

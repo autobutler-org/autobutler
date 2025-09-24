@@ -30,19 +30,3 @@ func initSchema() error {
 	m.Up()
 	return nil
 }
-
-func seedData() error {
-	var err error
-	calendar := NewCalendar("Default")
-	// Make sure that we only create a first calendar, and not continue to make more
-	calendar.ID = DefaultCalendarId
-	calendar, err = Instance.UpsertCalendar(*calendar)
-	if err != nil || calendar == nil {
-		return fmt.Errorf("failed to insert/update default calendar: %w", err)
-	}
-	err = seedTestCalendarEvents()
-	if err != nil {
-		return fmt.Errorf("failed to seed test calendar events: %w", err)
-	}
-	return nil
-}

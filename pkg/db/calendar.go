@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 )
@@ -28,84 +29,33 @@ func NewCalendarFromRows(rows *sql.Rows) ([]*Calendar, error) {
 	return calendars, nil
 }
 
-func (d *Database) QueryCalendar(id int64) (*Calendar, error) {
-	if d == nil {
-		return nil, fmt.Errorf("database not initialized")
-	}
-	query := "SELECT * FROM calendars WHERE id = ?"
-	rows, err := d.Db.Query(query, id)
-	if err != nil {
-		return nil, fmt.Errorf("error executing query: %s", query)
-	}
-	defer rows.Close()
-	calendars, err := NewCalendarFromRows(rows)
-	if err != nil {
-		return nil, fmt.Errorf("error creating calendars from rows: %w", err)
-	}
-	if len(calendars) == 0 {
-		return nil, nil
-	}
-	return calendars[0], nil
-}
-
 func (d *Database) UpsertCalendar(newCalendar Calendar) (*Calendar, error) {
 	if d == nil {
 		return nil, fmt.Errorf("database not initialized")
 	}
-	// Start a transaction
-	{
-		tx, err := d.Db.Begin()
+	calendar, err := DatabaseQueries.GetCalendar(context.Background(), newCalendar.ID)
+	if err == nil {
+		// Calendar exists, update it
+		calendar, err = DatabaseQueries.UpdateCalendar(
+			context.Background(),
+			UpdateCalendarParams{
+				ID:   newCalendar.ID,
+				Name: newCalendar.Name,
+			},
+		)
 		if err != nil {
-			return nil, fmt.Errorf("error starting transaction: %w", err)
+			return nil, fmt.Errorf("error updating calendar: %w", err)
 		}
-		// Defer rollback or commit of transaction
-		defer func() {
-			if err != nil {
-				if rollbackErr := tx.Rollback(); rollbackErr != nil {
-					fmt.Printf("error rolling back transaction: %v\n", rollbackErr)
-				}
-			} else {
-				if commitErr := tx.Commit(); commitErr != nil {
-					fmt.Printf("error committing transaction: %v\n", commitErr)
-				}
-			}
-		}()
-		calendar, err := d.QueryCalendar(newCalendar.ID)
-		if calendar != nil {
-			// Calendar exists, update it
-			_, err = d.Exec(
-				`UPDATE calendars SET
-					name = ?
-						WHERE id = ?`,
-				newCalendar.Name,
-				newCalendar.ID,
-			)
-			if err != nil {
-				return nil, fmt.Errorf("error updating calendar: %w", err)
-			}
-		} else {
-			// Calendar does not exist, insert it
-			result, err := d.Exec(
-				`INSERT INTO calendars (
-					name
-				) VALUES (
-				 	?
-				)`,
-				newCalendar.Name,
-			)
-			if err != nil {
-				return nil, fmt.Errorf("error inserting calendar: %w", err)
-			}
-			newId, err := result.LastInsertId()
-			if err != nil {
-				return nil, fmt.Errorf("error getting last insert id: %w", err)
-			}
-			newCalendar.ID = newId
+	} else {
+		// Calendar does not exist, insert it
+		calendar, err = DatabaseQueries.CreateCalendar(
+			context.Background(),
+			newCalendar.Name,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error inserting calendar: %w", err)
 		}
+		newCalendar.ID = calendar.ID
 	}
-	calendar, err := d.QueryCalendar(newCalendar.ID)
-	if err != nil {
-		return nil, fmt.Errorf("error querying calendar after insert/update: %w", err)
-	}
-	return calendar, nil
+	return &calendar, nil
 }
