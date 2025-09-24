@@ -2,10 +2,30 @@ package db
 
 import (
 	"autobutler/pkg/calendar"
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
 )
+
+func NewCalendarEvent(
+	event CalendarEvent,
+) *calendar.CalendarEvent {
+	var endTime *time.Time = nil
+	if event.EndTime.Valid {
+		endTime = &event.EndTime.Time
+	}
+	return &calendar.CalendarEvent{
+		ID:          event.ID,
+		Title:       event.Title,
+		Description: event.Description.String,
+		StartTime:   event.StartTime,
+		EndTime:     endTime,
+		AllDay:      event.AllDay,
+		Location:    event.Location.String,
+		CalendarID:  event.CalendarID,
+	}
+}
 
 func NewCalendarEventFromRows(rows *sql.Rows) ([]*calendar.CalendarEvent, error) {
 	var calendarEvents []*calendar.CalendarEvent
@@ -40,26 +60,6 @@ func (d *Database) DeleteCalendarEvent(id int) error {
 		return fmt.Errorf("error deleting calendar event: %w", err)
 	}
 	return nil
-}
-
-func (d *Database) QueryCalendarEvent(id int) (*calendar.CalendarEvent, error) {
-	if d == nil {
-		return nil, fmt.Errorf("database not initialized")
-	}
-	query := "SELECT * FROM calendar_events WHERE id = ?"
-	rows, err := d.Db.Query(query, id)
-	if err != nil {
-		return nil, fmt.Errorf("error executing query: %s", query)
-	}
-	defer rows.Close()
-	calendarEvents, err := NewCalendarEventFromRows(rows)
-	if err != nil {
-		return nil, fmt.Errorf("error creating calendar_events from rows: %w", err)
-	}
-	if len(calendarEvents) == 0 {
-		return nil, nil
-	}
-	return calendarEvents[0], nil
 }
 
 func (d *Database) QueryCalendarEventsForMonth(calendarId int, year int, month time.Month, includeEnds bool) (calendar.EventMap, error) {
@@ -104,7 +104,7 @@ func (d *Database) QueryCalendarEventsForMonth(calendarId int, year int, month t
 	return eventMap, nil
 }
 
-func (d *Database) UpsertCalendarEvent(newCalendarEvent calendar.CalendarEvent) (*calendar.CalendarEvent, error) {
+func (d *Database) UpsertCalendarEvent(newCalendarEvent calendar.CalendarEvent) (*CalendarEvent, error) {
 	if d == nil {
 		return nil, fmt.Errorf("database not initialized")
 	}
@@ -126,74 +126,67 @@ func (d *Database) UpsertCalendarEvent(newCalendarEvent calendar.CalendarEvent) 
 				}
 			}
 		}()
-		calendarEvent, err := d.QueryCalendarEvent(newCalendarEvent.ID)
-		if calendarEvent != nil {
+		calendarEvent, err := DatabaseQueries.GetCalendarEvent(context.Background(), newCalendarEvent.ID)
+		if err == nil {
 			// Calendar event exists, update it
-			_, err = d.Exec(
-				`UPDATE calendar_events SET
-					title = ?,
-					description = ?,
-					start_time = ?,
-					end_time = ?,
-					all_day = ?,
-					location = ?,
-					calendar_id = ?
-						WHERE id = ?`,
-				newCalendarEvent.Title,
-				newCalendarEvent.Description,
-				newCalendarEvent.StartTime,
-				newCalendarEvent.EndTime,
-				newCalendarEvent.AllDay,
-				newCalendarEvent.Location,
-				newCalendarEvent.CalendarID,
-				newCalendarEvent.ID,
+			endTime := sql.NullTime{}
+			if newCalendarEvent.EndTime != nil {
+				endTime.Time = *newCalendarEvent.EndTime
+				endTime.Valid = true
+			}
+			calendarEvent, err = DatabaseQueries.UpdateCalendarEvent(
+				context.Background(),
+				UpdateCalendarEventParams{
+					Title: newCalendarEvent.Title,
+					Description: sql.NullString{
+						String: newCalendarEvent.Description,
+						Valid:  true,
+					},
+					StartTime: newCalendarEvent.StartTime,
+					EndTime:   endTime,
+					AllDay:    newCalendarEvent.AllDay,
+					Location: sql.NullString{
+						String: newCalendarEvent.Location,
+						Valid:  newCalendarEvent.Location != "",
+					},
+					CalendarID: newCalendarEvent.CalendarID,
+				},
 			)
 			if err != nil {
 				return nil, fmt.Errorf("error updating calendar event: %w", err)
 			}
 		} else {
 			// Calendar event does not exist, insert it
-			result, err := d.Exec(
-				`INSERT INTO calendar_events (
-					title,
-					description,
-					start_time,
-					end_time,
-					all_day,
-					location,
-					calendar_id
-				) VALUES (
-				 	?,
-					?,
-					?,
-					?,
-					?,
-					?,
-					?
-				)`,
-				newCalendarEvent.Title,
-				newCalendarEvent.Description,
-				newCalendarEvent.StartTime,
-				newCalendarEvent.EndTime,
-				newCalendarEvent.AllDay,
-				newCalendarEvent.Location,
-				newCalendarEvent.CalendarID,
+			endTime := sql.NullTime{}
+			if newCalendarEvent.EndTime != nil {
+				endTime.Time = *newCalendarEvent.EndTime
+				endTime.Valid = true
+			}
+			calendarEvent, err = DatabaseQueries.CreateCalendarEvent(
+				context.Background(),
+				CreateCalendarEventParams{
+					Title: newCalendarEvent.Title,
+					Description: sql.NullString{
+						String: newCalendarEvent.Description,
+						Valid:  true,
+					},
+					StartTime: newCalendarEvent.StartTime,
+					EndTime:   endTime,
+					AllDay:    newCalendarEvent.AllDay,
+					Location: sql.NullString{
+						String: newCalendarEvent.Location,
+						Valid:  newCalendarEvent.Location != "",
+					},
+					CalendarID: newCalendarEvent.CalendarID,
+				},
 			)
 			if err != nil {
 				return nil, fmt.Errorf("error inserting calendar event: %w", err)
 			}
-			newId, err := result.LastInsertId()
-			if err != nil {
-				return nil, fmt.Errorf("error getting last insert id: %w", err)
-			}
-			newCalendarEvent.ID = int(newId)
+			newCalendarEvent.ID = calendarEvent.ID
 		}
+		return &calendarEvent, nil
 	}
-	calendarEvent, err := d.QueryCalendarEvent(newCalendarEvent.ID)
-	if err != nil {
-		return nil, fmt.Errorf("error querying calendar event after insert/update: %w", err)
-	}
-	return calendarEvent, nil
 }
 
 func seedTestCalendarEvents() error {
@@ -227,7 +220,7 @@ func seedTestCalendarEvents() error {
 		),
 	}
 	for i, event := range events {
-		event.ID = i + 1
+		event.ID = int64(i + 1)
 		_, err := Instance.UpsertCalendarEvent(*event)
 		if err != nil {
 			return fmt.Errorf("failed to insert test calendar event: %w", err)

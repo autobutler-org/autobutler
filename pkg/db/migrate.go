@@ -1,12 +1,8 @@
 package db
 
 import (
-	"autobutler/pkg/util"
-	"database/sql"
 	"embed"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	_ "modernc.org/sqlite"
 
@@ -17,28 +13,6 @@ import (
 
 //go:embed migrations
 var migrations embed.FS
-
-func init() {
-	dataDir := util.GetDataDir()
-	err := os.MkdirAll(dataDir, 0755)
-	if err != nil {
-		panic(fmt.Sprintf("failed to create data directory: %v", err))
-	}
-
-	dataFilePath := filepath.Join(dataDir, "autobutler.db")
-
-	Instance.Db, err = sql.Open("sqlite", dataFilePath)
-	if err != nil {
-		panic(fmt.Sprintf("failed to open database: %v", err))
-	}
-
-	if err := initSchema(); err != nil {
-		panic(fmt.Sprintf("failed to initialize database schema: %v", err))
-	}
-	if err := seedData(); err != nil {
-		panic(fmt.Sprintf("failed to seed database: %v", err))
-	}
-}
 
 func initSchema() error {
 	driver, err := sqlite.WithInstance(Instance.Db, &sqlite.Config{})
