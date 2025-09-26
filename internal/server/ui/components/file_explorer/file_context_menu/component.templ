@@ -1,4 +1,4 @@
-package context_menu
+package file_context_menu
 
 import (
 	"autobutler/internal/server/ui/types"
@@ -10,7 +10,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 	<div>
 		<button
 			class="ml-2 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-			hx-on:click="toggleContextMenu(event, this.parentElement)"
+			hx-on:click="openContextMenu(event, this.parentElement)"
 			aria-label="Open context menu"
 			type="button"
 		>
@@ -18,7 +18,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 		</button>
 		<ul
 			class="context-menu hidden absolute mt-2 w-28 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-10"
-			hx-on:mouseleave="toggleContextMenu(null, this.parentElement)"
+			hx-on:mouseleave="closeContextMenu(null, this.parentElement)"
 		>
 			<li>
 				<a
@@ -28,6 +28,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 				>
 					Download
 				</a>
+				<hr/>
 			</li>
 			<li>
 				<button
@@ -37,6 +38,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 				>
 					File Details
 				</button>
+				<hr/>
 			</li>
 			<li>
 				<button

@@ -7,6 +7,7 @@ import (
 	"autobutler/pkg/util"
 	"io/fs"
 
+	"autobutler/internal/server/ui/components/file_explorer/explorer_context_menu"
 	"autobutler/internal/server/ui/types"
 	"fmt"
 	"path/filepath"
@@ -31,7 +32,12 @@ templ Component(pageState types.PageState, files []fs.FileInfo) {
 			@file_operations.Component(pageState)
 			@dnd(pageState)
 		</div>
-		<div id="file-explorer-selectable">
+		<div
+			id="file-explorer-selectable"
+			hx-on:contextmenu="toggleFloatingContextMenu(event, this)"
+			hx-on:mouseleave="closeContextMenu(null, this)"
+		>
+			@explorer_context_menu.Component(pageState)
 			<div id="breadcrumbs">
 				<nav class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-2" data-path={ pageState.RootDir }>
 					{{ accumulatedDir := "" }}

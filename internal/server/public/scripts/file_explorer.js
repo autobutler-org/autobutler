@@ -25,18 +25,27 @@ function showFileDetails(event, fileName) {
     alert(fileName);
 }
 
-function toggleContextMenu(event, parentNode) {
+function closeContextMenu(event, parentNode) {
+    preventDefault(event);
+    for (const contextMenu of parentNode.querySelectorAll('.context-menu')) {
+        contextMenu.style.left = null;
+        contextMenu.style.top = null;
+        contextMenu.classList.add('hidden');
+    }
+}
+
+function openContextMenu(event, parentNode) {
     preventDefault(event);
     clearSelectedFiles();
     const contextMenu = parentNode.querySelector('.context-menu');
     contextMenu.style.left = null;
     contextMenu.style.top = null;
-    contextMenu.classList.toggle('hidden');
+    contextMenu.classList.remove('hidden');
     return contextMenu;
 }
 
 function toggleFloatingContextMenu(event, parentNode) {
-    const contextMenu = toggleContextMenu(event, parentNode);
+    const contextMenu = openContextMenu(event, parentNode);
     contextMenu.style.left = `${event.clientX}px`;
     contextMenu.style.top = `${event.clientY}px`;
 }
@@ -161,6 +170,32 @@ function saveQuill(filePath) {
         console.error('Error updating file:', error);
     });
 }
+
+function newFile(event, rootDir) {
+    preventDefault(event);
+    const fileName = prompt("Enter the new file name (including extension):");
+    if (fileName) {
+        const uploadForm = document.getElementById('file-upload-form');
+        const formData = new FormData();
+        // NOTE: Creating an empty file
+        formData.append('files', new Blob([''], { type: 'text/plain' }), fileName);
+        htmx.ajax('POST',
+            uploadForm.getAttribute('hx-post') + rootDir, {
+            values: {
+                files: formData.getAll('files'),
+                returnDir: rootDir,
+            },
+            source: uploadForm,
+        });
+    }
+}
+
+function showFolderDetails(event) {
+    preventDefault(event);
+    alert("Folder details to be implemented.");
+}
+
+// SELECTO
 
 var SELECTABLE_TARGETS = ['.file-node'];
 

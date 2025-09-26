@@ -1,7 +1,8 @@
 package node
 
 import (
-	"autobutler/internal/server/ui/components/file_explorer/context_menu"
+	"autobutler/internal/server/ui/components/file_explorer/explorer_context_menu"
+	"autobutler/internal/server/ui/components/file_explorer/file_context_menu"
 	"autobutler/internal/server/ui/components/icons/folder"
 	"autobutler/internal/server/ui/components/icons/generic"
 	"autobutler/internal/server/ui/components/icons/image"
@@ -61,11 +62,14 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 						<span class="text-gray-600 dark:text-gray-200 text-sm">{ util.SizeBytesToString(file.Size()) }</span>
 					</div>
 					<div class="justify-self-end">
-						@context_menu.Component(pageState, file)
+						@file_context_menu.Component(pageState, file)
 					</div>
 				case util.FileTypeSpacer:
 					<div class="flex flex-1 items-center justify-center py-3 italic text-gray-400">
 						<span class="file-name">Drop files here&#8230;</span>
+					</div>
+					<div class="justify-self-end">
+						@explorer_context_menu.Component(pageState)
 					</div>
 				default:
 					{{ filePath := filepath.Join("/files", pageState.RootDir, fileName) }}
@@ -82,7 +86,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 						<span class="text-gray-600 dark:text-gray-200 text-sm">{ util.SizeBytesToString(file.Size()) }</span>
 					</div>
 					<div class="justify-self-end">
-						@context_menu.Component(pageState, file)
+						@file_context_menu.Component(pageState, file)
 					</div>
 			}
 		</div>
