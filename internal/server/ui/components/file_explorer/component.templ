@@ -83,7 +83,7 @@ templ Component(pageState types.PageState, files []fs.FileInfo) {
 			if len(files) == 0 {
 				<span class="py-3 text-gray-500">No files found in { filepath.Join(util.GetFilesDir(), pageState.RootDir) }</span>
 			} else {
-				<ul id="file-explorer-list" class="divide-y divide-gray-200">
+				<ul id="file-explorer-list" class="divide-y divide-gray-200 max-h-[70vh] overflow-y-auto pr-4">
 					for _, file := range files {
 						@node.Component(pageState, file)
 					}

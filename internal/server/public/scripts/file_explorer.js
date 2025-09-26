@@ -127,6 +127,8 @@ function downloadSelectedFiles(event, rootDir) {
 }
 
 function dropFiles(event, rootDir, returnDir) {
+    rootDir = rootDir || "";
+    returnDir = returnDir || "";
     preventDefault(event);
     const files = event.dataTransfer.files;
     if (files.length > 0) {
