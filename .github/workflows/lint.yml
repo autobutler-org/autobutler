@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Setup sqlc
+        uses: ./.github/actions/setup-sqlc
       - name: Setup Templ
         uses: ./.github/actions/setup-templ
       - name: Lint

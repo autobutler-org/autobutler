@@ -4,7 +4,7 @@ import "time"
 import "fmt"
 
 import "autobutler/pkg/calendar"
-import "autobutler/internal/db"
+import "autobutler/pkg/db"
 
 templ monthView(now time.Time) {
 	{{ monthInfo := calendar.NewMonthInfoFromTime(now) }}

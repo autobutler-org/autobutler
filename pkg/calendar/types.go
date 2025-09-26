@@ -32,14 +32,14 @@ const (
 )
 
 type CalendarEvent struct {
-	ID          int
+	ID          int64
 	Title       string
 	Description string
 	StartTime   time.Time
 	EndTime     *time.Time
 	AllDay      bool
 	Location    string
-	CalendarID  int
+	CalendarID  int64
 }
 
 type EventMap map[int][]*CalendarEvent
@@ -50,7 +50,7 @@ func NewCalendarEvent(
 	startTime time.Time,
 	allDay bool,
 	location string,
-	calendarId int,
+	calendarId int64,
 ) *CalendarEvent {
 	return &CalendarEvent{
 		Title:       title,
@@ -70,7 +70,7 @@ func NewCalendarEventWithEnd(
 	endTime time.Time,
 	allDay bool,
 	location string,
-	calendarId int,
+	calendarId int64,
 ) *CalendarEvent {
 	return &CalendarEvent{
 		Title:       title,

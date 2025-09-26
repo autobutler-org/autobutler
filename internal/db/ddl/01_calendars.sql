@@ -1,5 +1,0 @@
-CREATE TABLE
-    IF NOT EXISTS calendars (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL
-    );

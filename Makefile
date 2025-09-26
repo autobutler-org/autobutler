@@ -11,7 +11,7 @@ ifneq (,$(wildcard ./.env))
     export
 endif
 
-setup: setup/gotools setup/templ ## Setup development environment
+setup: setup/gotools setup/sqlc setup/templ ## Setup development environment
 
 setup/gotools: ## Install go tools
 	go install golang.org/x/tools/gopls@latest
@@ -20,6 +20,9 @@ setup/gotools: ## Install go tools
 	go install github.com/haya14busa/goplay/cmd/goplay@v1.0.0
 	go install github.com/go-delve/delve/cmd/dlv@latest
 	go install honnef.co/go/tools/cmd/staticcheck@latest
+
+setup/sqlc: ## Install sqlc tool
+	go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0
 
 setup/templ: ## Install templ tool
 	go install github.com/a-h/templ/cmd/templ@v0.3.943
@@ -54,7 +57,12 @@ install/mac: env-INSTALL_VERSION ## Install startup service on Mac
 	sudo launchctl load /Library/LaunchDaemons/com.autobutler.autobutler.plist
 	echo "Installed autobutler successfully. Will run at startup."
 
-generate: ## Generate templ files
+generate: generate/sqlc generate/templ ## Generate files
+
+generate/sqlc: ## Generate templ files
+	sqlc generate
+
+generate/templ: ## Generate templ files
 	templ generate
 
 build: generate ## Build backend
@@ -86,6 +94,7 @@ format: ## Format code
 lint: ## Lint code
 	gofmt -s -w .
 	go vet ./...
+	sqlc vet
 	templ fmt -fail .
 
 fix: tidy format ## Fix code issues

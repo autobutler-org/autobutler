@@ -16,11 +16,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Setup sqlc
+        uses: ./.github/actions/setup-sqlc
       - name: Setup Templ
         uses: ./.github/actions/setup-templ
-      - name: Install dependencies
-        run: |
-          go mod download
       - name: Build
         run: |
           make build

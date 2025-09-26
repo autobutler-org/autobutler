@@ -1,0 +1,13 @@
+name: Setup sqlc
+runs:
+  using: "composite"
+  steps:
+    - name: Install sqlc
+      shell: bash
+      run: |
+        make setup/sqlc
+
+    - name: Fix PATH
+      shell: bash
+      run: |
+        echo "${HOME}/go/bin" >> ${GITHUB_PATH}

@@ -1,10 +1,11 @@
 package v1
 
 import (
-	"autobutler/internal/db"
 	cal "autobutler/internal/server/ui/components/calendar"
 	"autobutler/internal/server/ui/components/calendar/event_editor"
 	"autobutler/pkg/calendar"
+	"autobutler/pkg/db"
+	"context"
 	"strconv"
 	"time"
 
@@ -46,13 +47,14 @@ func getCalendarEvent(apiV1Group *gin.RouterGroup) {
 			c.Status(400)
 			return
 		}
-		event, err := db.Instance.QueryCalendarEvent(eventId)
+
+		event, err := db.DatabaseQueries.GetCalendarEvent(context.Background(), int64(eventId))
 		if err != nil {
 			c.Writer.WriteString(`<span class="text-red-500">` + err.Error() + `</span>`)
 			c.Status(404)
 			return
 		}
-		if err := event_editor.ComponentWithEvent(*event).Render(c.Request.Context(), c.Writer); err != nil {
+		if err := event_editor.ComponentWithEvent(*db.NewCalendarEvent(event)).Render(c.Request.Context(), c.Writer); err != nil {
 			c.Status(500)
 			return
 		}
@@ -160,7 +162,8 @@ func updateCalendarEvent(apiV1Group *gin.RouterGroup) {
 			)
 		}
 		if eventId != "" {
-			calendarEvent.ID, err = strconv.Atoi(eventId)
+			eventId, err := strconv.Atoi(eventId)
+			calendarEvent.ID = int64(eventId)
 			if err != nil {
 				c.Writer.WriteString(`<span class="text-red-500">Invalid event ID</span>`)
 				c.Status(400)

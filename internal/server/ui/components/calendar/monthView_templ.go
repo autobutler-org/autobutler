@@ -12,7 +12,7 @@ import "time"
 import "fmt"
 
 import "autobutler/pkg/calendar"
-import "autobutler/internal/db"
+import "autobutler/pkg/db"
 
 func monthView(now time.Time) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
