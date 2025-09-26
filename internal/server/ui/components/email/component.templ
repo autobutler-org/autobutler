@@ -1,0 +1,67 @@
+package email
+
+templ Component() {
+	<div id="email" class="h-screen flex flex-col m-4">
+		<div class="flex flex-row h-full">
+			<!-- Email List -->
+			<div class="w-1/3 border-r overflow-y-auto">
+				<ul id="email-list">
+					<li id="email-0" class="p-4 border-b cursor-pointer bg-gray-600 underline hover:bg-gray-600" onclick="showEmail(0)">
+						<strong>Welcome to Autobutler</strong>
+						<br/>
+						<span class="text-sm text-gray-400">info@autobutler.ai</span>
+					</li>
+					<li id="email-1" class="p-4 border-b cursor-pointer hover:bg-gray-600" onclick="showEmail(1)">
+						<strong>Your Invoice</strong>
+						<br/>
+						<span class="text-sm text-gray-400">billing@autobutler.ai</span>
+					</li>
+					<li id="email-2" class="p-4 border-b cursor-pointer hover:bg-gray-600" onclick="showEmail(2)">
+						<strong>Service Reminder</strong>
+						<br/>
+						<span class="text-sm text-gray-400">service@autobutler.ai</span>
+					</li>
+				</ul>
+			</div>
+			<!-- Email Viewer -->
+			<div class="w-2/3 p-6" id="email-viewer">
+				<h2 class="text-xl font-bold mb-2" id="email-subject">Welcome to Autobutler</h2>
+				<p class="text-sm text-gray-400 mb-4" id="email-from">info@autobutler.ai</p>
+				<div id="email-body">
+					<p>Thank you for joining Autobutler. We're excited to have you on board!</p>
+				</div>
+			</div>
+		</div>
+		<script>
+		const emails = [
+			{
+				subject: "Welcome to Autobutler",
+				from: "info@autobutler.ai",
+				body: "Thank you for joining Autobutler. We're excited to have you on board!"
+			},
+			{
+				subject: "Your Invoice",
+				from: "billing@autobutler.ai",
+				body: "Please find attached your invoice for this month. Contact us if you have any questions."
+			},
+			{
+				subject: "Service Reminder",
+				from: "service@autobutler.ai",
+				body: "This is a reminder for your upcoming car service appointment. Let us know if you need to reschedule."
+			}
+		];
+		function showEmail(index) {
+			for (let i = 0; i < emails.length; i++) {
+				document.getElementById(`email-${i}`).classList.remove('bg-gray-600');
+				document.getElementById(`email-${i}`).classList.remove('underline');
+			}
+			document.getElementById(`email-${index}`).classList.add('bg-gray-600');
+			document.getElementById(`email-${index}`).classList.add('underline');
+			document.getElementById('email-subject').textContent = emails[index].subject;
+			document.getElementById('email-from').textContent = emails[index].from;
+			document.getElementById('email-body').innerHTML = `<p>${emails[index].body}</p>`;
+		}
+	</script>
+	</div>
+	<script src="/public/scripts/email.js"></script>
+}

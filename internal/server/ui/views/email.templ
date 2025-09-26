@@ -1,0 +1,23 @@
+package views
+
+import (
+	"autobutler/internal/server/ui/components/body"
+	"autobutler/internal/server/ui/components/email"
+	"autobutler/internal/server/ui/components/footer"
+	"autobutler/internal/server/ui/components/header"
+	"autobutler/internal/server/ui/components/topnav"
+	"autobutler/internal/server/ui/types"
+)
+
+templ Email(pageState types.PageState) {
+	{{ pageState.CurrentPageName = types.PageEmail }}
+	<!DOCTYPE html>
+	<html lang="en">
+		@header.Component()
+		@topnav.Component(pageState)
+		@body.Component() {
+			@email.Component()
+		}
+		@footer.Component()
+	</html>
+}

@@ -56,4 +56,5 @@ func setupUiRoutes(router *gin.Engine) {
 	ui.SetupCalendarRoutes(router)
 	ui.SetupChatRoutes(router)
 	ui.SetupFileRoutes(router)
+	ui.SetupEmailRoutes(router)
 }
