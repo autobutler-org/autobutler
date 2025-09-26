@@ -25,18 +25,27 @@ function showFileDetails(event, fileName) {
     alert(fileName);
 }
 
-function toggleContextMenu(event, parentNode) {
+function closeContextMenu(event, parentNode) {
+    preventDefault(event);
+    for (const contextMenu of parentNode.querySelectorAll('.context-menu')) {
+        contextMenu.style.left = null;
+        contextMenu.style.top = null;
+        contextMenu.classList.add('hidden');
+    }
+}
+
+function openContextMenu(event, parentNode) {
     preventDefault(event);
     clearSelectedFiles();
     const contextMenu = parentNode.querySelector('.context-menu');
     contextMenu.style.left = null;
     contextMenu.style.top = null;
-    contextMenu.classList.toggle('hidden');
+    contextMenu.classList.remove('hidden');
     return contextMenu;
 }
 
 function toggleFloatingContextMenu(event, parentNode) {
-    const contextMenu = toggleContextMenu(event, parentNode);
+    const contextMenu = openContextMenu(event, parentNode);
     contextMenu.style.left = `${event.clientX}px`;
     contextMenu.style.top = `${event.clientY}px`;
 }

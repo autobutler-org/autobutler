@@ -35,7 +35,7 @@ func Component(pageState types.PageState, file fs.FileInfo) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div><button class=\"ml-2 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700\" hx-on:click=\"toggleContextMenu(event, this.parentElement)\" aria-label=\"Open context menu\" type=\"button\">&#x22EE;</button><ul class=\"context-menu hidden absolute mt-2 w-28 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-10\" hx-on:mouseleave=\"toggleContextMenu(null, this.parentElement)\"><li><a download class=\"w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm block\" href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div><button class=\"ml-2 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700\" hx-on:click=\"openContextMenu(event, this.parentElement)\" aria-label=\"Open context menu\" type=\"button\">&#x22EE;</button><ul class=\"context-menu hidden absolute mt-2 w-28 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-10\" hx-on:mouseleave=\"closeContextMenu(null, this.parentElement)\"><li><a download class=\"w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm block\" href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
