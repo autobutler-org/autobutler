@@ -1,24 +1,33 @@
 package server
 
-import (
-	"fmt"
-	"os"
-
-	"github.com/gin-gonic/gin"
-)
-
 func StartServer() error {
-	router := gin.Default()
-	// IMPORTANT: UseMiddleware MUST be called before setupRoutes
-	useMiddleware(router)
-	setupRoutes(router)
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-	if err := router.Run(fmt.Sprintf(":%s", port)); err != nil {
-		return err
-	}
+	apiChannel := make(chan error)
+	go func() {
+		apiChannel <- serveApi()
+	}()
+	emailChannel := make(chan error)
+	go func() {
+		emailChannel <- serveEmail()
+	}()
 
+	isRunning := true
+	for isRunning {
+		select {
+		case err := <-apiChannel:
+			if err != nil {
+				go func() {
+					// Restart the server if it crashes
+					apiChannel <- serveApi()
+				}()
+			}
+		case err := <-emailChannel:
+			if err != nil {
+				go func() {
+					// Restart the email service if it crashes
+					emailChannel <- serveEmail()
+				}()
+			}
+		}
+	}
 	return nil
 }

@@ -37,9 +37,11 @@ func setupStaticRoutes(router *gin.Engine) error {
 	}
 	router.NoRoute(
 		static.Serve("/public", staticFS),
-		// TODO: have a proper 404 page
 		func(c *gin.Context) {
-			if err := views.NotFound(types.NewPageState()).Render(c.Request.Context(), c.Writer); err != nil {
+			if err := views.NotFound(
+				types.NewPageState()).Render(c.Request.Context(),
+				c.Writer,
+			); err != nil {
 				c.Status(400)
 				return
 			}
