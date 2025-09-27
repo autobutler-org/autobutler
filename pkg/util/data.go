@@ -33,6 +33,11 @@ func GetDataDir() string {
 	}
 }
 
+func GetDatabasePath() string {
+	dataDir := GetDataDir()
+	return filepath.Join(dataDir, "autobutler.db")
+}
+
 func GetFilesDir() string {
 	filesPath := filepath.Join(GetDataDir(), "files")
 	if err := os.MkdirAll(filesPath, 0755); err != nil {

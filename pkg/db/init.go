@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 )
 
@@ -19,10 +18,9 @@ func init() {
 	if err != nil {
 		panic(fmt.Sprintf("failed to create data directory: %v", err))
 	}
+	databasePath := util.GetDatabasePath()
 
-	dataFilePath := filepath.Join(dataDir, "autobutler.db")
-
-	Instance.Db, err = sql.Open("sqlite", dataFilePath)
+	Instance.Db, err = sql.Open("sqlite", databasePath)
 	if err != nil {
 		panic(fmt.Sprintf("failed to open database: %v", err))
 	}

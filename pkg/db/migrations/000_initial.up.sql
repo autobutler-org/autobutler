@@ -1,4 +1,26 @@
 CREATE TABLE
+    IF NOT EXISTS emails (
+        mail_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date DATETIME,
+        "to" TEXT,
+        "from" TEXT,
+        subject TEXT,
+        body TEXT,
+        mail TEXT,
+        spam_score REAL,
+        hash TEXT,
+        content_type TEXT,
+        recipient TEXT,
+        has_attach BOOLEAN,
+        ip_addr TEXT,
+        return_path TEXT,
+        is_tls BOOLEAN,
+        message_id TEXT,
+        reply_to TEXT,
+        sender TEXT
+    );
+
+CREATE TABLE
     IF NOT EXISTS inventory (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,

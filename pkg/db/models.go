@@ -25,6 +25,27 @@ type CalendarEvent struct {
 	CalendarID  int64
 }
 
+type Email struct {
+	MailID      int64
+	Date        sql.NullTime
+	To          sql.NullString
+	From        sql.NullString
+	Subject     sql.NullString
+	Body        sql.NullString
+	Mail        sql.NullString
+	SpamScore   sql.NullFloat64
+	Hash        sql.NullString
+	ContentType sql.NullString
+	Recipient   sql.NullString
+	HasAttach   sql.NullBool
+	IpAddr      sql.NullString
+	ReturnPath  sql.NullString
+	IsTls       sql.NullBool
+	MessageID   sql.NullString
+	ReplyTo     sql.NullString
+	Sender      sql.NullString
+}
+
 type Inventory struct {
 	ID     int64
 	Name   string

@@ -1,5 +1,7 @@
 package server
 
+var hasEmailServiceFailed = false
+
 func StartServer() error {
 	apiChannel := make(chan error)
 	go func() {
@@ -22,10 +24,7 @@ func StartServer() error {
 			}
 		case err := <-emailChannel:
 			if err != nil {
-				go func() {
-					// Restart the email service if it crashes
-					emailChannel <- serveEmail()
-				}()
+				hasEmailServiceFailed = true
 			}
 		}
 	}
