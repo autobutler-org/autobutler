@@ -18,9 +18,8 @@ func Install() *cobra.Command {
 				fmt.Println("Please specify an api key to install Autobutler.")
 				return
 			}
-			apiKey := args[0]
 			fmt.Println("Install Autobutler's system service")
-			if err := install.Install(apiKey); err != nil {
+			if err := install.Install(); err != nil {
 				fmt.Fprintf(os.Stderr, "Error install Autobutler as a system service: %v\n", err)
 				os.Exit(1)
 			}

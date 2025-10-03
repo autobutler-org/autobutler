@@ -1,7 +1,6 @@
 package install
 
 import (
-	"fmt"
 	"runtime"
 )
 
@@ -35,7 +34,6 @@ WantedBy=multi-user.target`
     </array>
     <key>EnvironmentVariables</key>
     <dict>
-        <string>%s</string>
         <key>PORT</key>
         <string>8081</string>
     </dict>
@@ -51,12 +49,12 @@ WantedBy=multi-user.target`
 </plist>`
 )
 
-func buildServiceFile(apiKey string) string {
+func buildServiceFile() string {
 	switch runtime.GOOS {
 	case "linux":
-		return fmt.Sprintf(systemdServiceContent, apiKey)
+		return systemdServiceContent
 	case "darwin":
-		return fmt.Sprintf(plistServiceContent, apiKey)
+		return plistServiceContent
 	default:
 		panic("unsupported operating system")
 	}

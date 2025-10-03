@@ -9,9 +9,9 @@ import (
 	"strings"
 )
 
-func installSystemdService(apiKey string) error {
+func installSystemdService() error {
 	serviceFilePath := filepath.Join("/etc/systemd/system", systemdServiceName)
-	if err := os.WriteFile(serviceFilePath, []byte(buildServiceFile(apiKey)), 0644); err != nil {
+	if err := os.WriteFile(serviceFilePath, []byte(buildServiceFile()), 0644); err != nil {
 		return fmt.Errorf("failed to write systemd service file: %w", err)
 	}
 	if err := exec.Command("systemctl", "start", strings.Split(systemdServiceName, ".")[0]).Run(); err != nil {
@@ -20,9 +20,9 @@ func installSystemdService(apiKey string) error {
 	return nil
 }
 
-func installPlistService(apiKey string) error {
+func installPlistService() error {
 	serviceFilePath := filepath.Join("/Library/LaunchDaemons", plistServiceName)
-	if err := os.WriteFile(serviceFilePath, []byte(buildServiceFile(apiKey)), 0644); err != nil {
+	if err := os.WriteFile(serviceFilePath, []byte(buildServiceFile()), 0644); err != nil {
 		return fmt.Errorf("failed to write plist service file: %w", err)
 	}
 	if err := exec.Command("launchctl", "load", serviceFilePath).Run(); err != nil {
@@ -31,7 +31,7 @@ func installPlistService(apiKey string) error {
 	return nil
 }
 
-func Install(apiKey string) error {
+func Install() error {
 	executable, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("failed to get executable path: %w", err)
@@ -41,12 +41,12 @@ func Install(apiKey string) error {
 		if err := exec.Command("cp", "-v", executable, "/usr/local/bin/autobutler").Run(); err != nil {
 			return fmt.Errorf("failed to copy binary to /usr/local/bin: %w", err)
 		}
-		return installSystemdService(apiKey)
+		return installSystemdService()
 	case "darwin":
 		if err := exec.Command("cp", "-v", executable, "/Applications/autobutler").Run(); err != nil {
 			return fmt.Errorf("failed to copy binary to /Applications: %w", err)
 		}
-		return installPlistService(apiKey)
+		return installPlistService()
 	default:
 		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
