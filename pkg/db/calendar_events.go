@@ -22,7 +22,7 @@ func NewCalendarEvent(
 		StartTime:   event.StartTime,
 		EndTime:     endTime,
 		AllDay:      event.AllDay,
-		Location:    event.Location.String,
+		Location:    event.Location,
 		CalendarID:  event.CalendarID,
 	}
 }
@@ -125,13 +125,10 @@ func (d *Database) UpsertCalendarEvent(newCalendarEvent calendar.CalendarEvent) 
 					String: newCalendarEvent.Description,
 					Valid:  true,
 				},
-				StartTime: newCalendarEvent.StartTime,
-				EndTime:   endTime,
-				AllDay:    newCalendarEvent.AllDay,
-				Location: sql.NullString{
-					String: newCalendarEvent.Location,
-					Valid:  newCalendarEvent.Location != "",
-				},
+				StartTime:  newCalendarEvent.StartTime,
+				EndTime:    endTime,
+				AllDay:     newCalendarEvent.AllDay,
+				Location:   newCalendarEvent.Location,
 				CalendarID: newCalendarEvent.CalendarID,
 			},
 		)
@@ -153,13 +150,10 @@ func (d *Database) UpsertCalendarEvent(newCalendarEvent calendar.CalendarEvent) 
 					String: newCalendarEvent.Description,
 					Valid:  true,
 				},
-				StartTime: newCalendarEvent.StartTime,
-				EndTime:   endTime,
-				AllDay:    newCalendarEvent.AllDay,
-				Location: sql.NullString{
-					String: newCalendarEvent.Location,
-					Valid:  newCalendarEvent.Location != "",
-				},
+				StartTime:  newCalendarEvent.StartTime,
+				EndTime:    endTime,
+				AllDay:     newCalendarEvent.AllDay,
+				Location:   newCalendarEvent.Location,
 				CalendarID: newCalendarEvent.CalendarID,
 			},
 		)

@@ -32,7 +32,7 @@ type CreateCalendarEventParams struct {
 	StartTime   time.Time
 	EndTime     sql.NullTime
 	AllDay      bool
-	Location    sql.NullString
+	Location    string
 	CalendarID  int64
 }
 
@@ -159,7 +159,7 @@ type UpdateCalendarEventParams struct {
 	StartTime   time.Time
 	EndTime     sql.NullTime
 	AllDay      bool
-	Location    sql.NullString
+	Location    string
 	CalendarID  int64
 	ID          int64
 }

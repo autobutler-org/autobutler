@@ -21,6 +21,6 @@ type CalendarEvent struct {
 	StartTime   time.Time
 	EndTime     sql.NullTime
 	AllDay      bool
-	Location    sql.NullString
+	Location    string
 	CalendarID  int64
 }
