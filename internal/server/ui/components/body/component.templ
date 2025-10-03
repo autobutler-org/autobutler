@@ -7,10 +7,10 @@ import (
 )
 
 templ Component(pageState types.PageState) {
-	<body class="bg-gradient-to-br from-gray-400 dark:from-gray-900 dark:to-gray-800">
-		<main class="text-black dark:text-white">
+	<body class="site-body">
+		<main class="site-main">
 			@gradient_overlays.Component()
-			<div class="max-h-screen min-h-screen flex flex-col">
+			<div class="site-fullscreen-col">
 				@topnav.Component(pageState)
 				{ children... }
 			</div>
