@@ -19,7 +19,6 @@ body:
       options:
         - N/A
         - Calendar
-        - Chat
         - Cirrus (Drive)
         - General UI
         - Backend

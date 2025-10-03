@@ -106,10 +106,10 @@ upgrade: ## Upgrade dependencies
 tidy: ## Tidy go mod
 	go mod tidy
 
-serve: generate env-LLM_AZURE_API_KEY ## Serve backend
+serve: generate ## Serve backend
 	go run main.go serve
 
-watch: env-LLM_AZURE_API_KEY ## Watch backend for changes
+watch: ## Watch backend for changes
 	templ generate \
 		-watch \
 		-watch-pattern='(.+\.go$$)|(.+\.templ$$)|(.+_templ\.txt$$)|(.+\.js$$)' \
@@ -118,17 +118,6 @@ watch: env-LLM_AZURE_API_KEY ## Watch backend for changes
 
 version: ## Print version
 	go run main.go version
-
-exercise: env-LLM_AZURE_API_KEY ## Exercise the backend chat feature
-	killall main || true
-	$(MAKE) serve &
-	sleep 5
-	echo ""
-	curl \
-		--silent \
-		-X GET \
-		"http://localhost:8080/chat?prompt=How+much+milk+is+in+the+house" | tee ./exercise.json
-	killall main || true
 
 env-%: ## Check for env var
 	if [ -z "$($*)" ]; then \
