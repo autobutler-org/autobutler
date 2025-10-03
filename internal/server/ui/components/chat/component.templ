@@ -8,15 +8,13 @@ import (
 const spinnerId = "spinner"
 
 templ Component(messages []llm.ChatMessage) {
-	<div class="h-screen flex flex-col">
-		<div class="flex-1 overflow-y-auto p-4">
-			<div id="messages" class="max-w-4xl mx-auto space-y-4">
-				for _, msg := range messages {
-					@message.Component(msg)
-				}
-			</div>
-			@spinner(spinnerId)
+	<div class="grow overflow-y-auto p-4">
+		<div id="messages" class="max-w-4xl mx-auto space-y-4">
+			for _, msg := range messages {
+				@message.Component(msg)
+			}
 		</div>
-		@input()
+		@spinner(spinnerId)
 	</div>
+	@input()
 }

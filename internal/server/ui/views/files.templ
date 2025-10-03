@@ -5,7 +5,6 @@ import (
 	"autobutler/internal/server/ui/components/file_explorer"
 	"autobutler/internal/server/ui/components/footer"
 	"autobutler/internal/server/ui/components/header"
-	"autobutler/internal/server/ui/components/topnav"
 	"autobutler/internal/server/ui/types"
 	"autobutler/pkg/util"
 	"path/filepath"
@@ -16,8 +15,7 @@ templ Files(pageState types.PageState) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@header.Component()
-		@topnav.Component(pageState)
-		@body.Component() {
+		@body.Component(pageState) {
 			{{ files, err := util.StatFilesInDir(filepath.Join(util.GetFilesDir(), pageState.RootDir)) }}
 			if err != nil {
 				<div class="text-red-500">Error loading files: { err.Error() }</div>

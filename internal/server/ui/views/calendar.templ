@@ -5,7 +5,6 @@ import (
 	cal "autobutler/internal/server/ui/components/calendar"
 	"autobutler/internal/server/ui/components/footer"
 	"autobutler/internal/server/ui/components/header"
-	"autobutler/internal/server/ui/components/topnav"
 	"autobutler/internal/server/ui/types"
 	"autobutler/pkg/calendar"
 )
@@ -15,8 +14,7 @@ templ Calendar(pageState types.PageState) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@header.Component()
-		@topnav.Component(pageState)
-		@body.Component() {
+		@body.Component(pageState) {
 			@cal.Component(calendar.CalendarViewMonth)
 		}
 		@footer.Component()

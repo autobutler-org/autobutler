@@ -1,12 +1,17 @@
 package body
 
-import "autobutler/internal/server/ui/components/gradient_overlays"
+import (
+	"autobutler/internal/server/ui/components/gradient_overlays"
+	"autobutler/internal/server/ui/components/topnav"
+	"autobutler/internal/server/ui/types"
+)
 
-templ Component() {
-	<body class="min-h-screen bg-gradient-to-br from-gray-300 from-gray-400 dark:from-gray-900 dark:to-gray-800">
-		<main class="min-h-screen text-black dark:text-white">
+templ Component(pageState types.PageState) {
+	<body class="bg-gradient-to-br from-gray-400 dark:from-gray-900 dark:to-gray-800">
+		<main class="text-black dark:text-white">
 			@gradient_overlays.Component()
-			<div>
+			<div class="max-h-screen min-h-screen flex flex-col">
+				@topnav.Component(pageState)
 				{ children... }
 			</div>
 		</main>

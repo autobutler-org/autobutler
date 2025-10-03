@@ -4,7 +4,6 @@ import (
 	"autobutler/internal/server/ui/components/body"
 	"autobutler/internal/server/ui/components/footer"
 	"autobutler/internal/server/ui/components/header"
-	"autobutler/internal/server/ui/components/topnav"
 	"autobutler/internal/server/ui/types"
 )
 
@@ -12,8 +11,7 @@ templ NotFound(pageState types.PageState) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@header.Component()
-		@topnav.Component(pageState)
-		@body.Component() {
+		@body.Component(pageState) {
 			<div class="flex flex-col items-center justify-center h-96">
 				<h1 class="text-6xl font-bold text-gray-800 dark:text-gray-200 mb-4">404</h1>
 				<p class="text-xl text-gray-600 dark:text-gray-400 mb-8">Page Not Found</p>
