@@ -57,34 +57,48 @@ func FromDocx(filename string) (Delta, error) {
 				}
 			}
 			property := para.Property
-			if property != nil && property.NumProp != nil && property.NumProp.NumID != nil {
+			//#region AI SLOP
+			// TODO: come back and actually understand this
+			// Only add a list stylingOp if the paragraph is actually part of a valid list
+			if property != nil && property.NumProp != nil && property.NumProp.NumID != nil &&
+				property.NumProp.NumID.Val > 0 &&
+				property.NumProp.ILvl != nil {
+
+				numID := property.NumProp.NumID.Val
+				iLvl := property.NumProp.ILvl.Val
 				isOrdered := false
-				// TODO: We need to eventually track individual list stylings and track multiple abstract num IDs
-				if doc.Numbering.HasNumberingLevel(property.NumProp.NumID.Val) {
-					for _, level := range doc.Numbering.AbstractNums[property.NumProp.NumID.Val-1].Levels {
-						if level.Level == property.NumProp.ILvl.Val {
+				hasList := false
+
+				if numID-1 < len(doc.Numbering.AbstractNums) && numID-1 >= 0 {
+					for _, level := range doc.Numbering.AbstractNums[numID-1].Levels {
+						if level.Level == iLvl {
+							hasList = true
 							isOrdered = level.NumFmt.Val == types.NumFmtDecimal
-							if err := doc.Numbering.SetNumberingLevel(property.NumProp.NumID.Val, isOrdered); err != nil {
+							if err := doc.Numbering.SetNumberingLevel(numID, isOrdered); err != nil {
 								return delta, fmt.Errorf("failed to set numbering level: %w", err)
 							}
 							break
 						}
 					}
 				}
-				var attrName string
-				if isOrdered {
-					attrName = "ordered"
-				} else {
-					attrName = "bullet"
-				}
-				stylingOp = &Op{
-					Insert: "\n",
-					Attributes: map[string]interface{}{
-						"indent": property.NumProp.ILvl.Val,
-						"list":   attrName,
-					},
+
+				if hasList {
+					var attrName string
+					if isOrdered {
+						attrName = "ordered"
+					} else {
+						attrName = "bullet"
+					}
+					stylingOp = &Op{
+						Insert: "\n",
+						Attributes: map[string]any{
+							"indent": iLvl,
+							"list":   attrName,
+						},
+					}
 				}
 			}
+			//#endregion AI SLOP
 			for j, paraChild := range para.Children {
 				var op Op = Op{}
 				var run *docx.Run = nil
@@ -117,7 +131,8 @@ func FromDocx(filename string) (Delta, error) {
 							if property.Italic != nil {
 								op.Attributes["italic"] = true
 							}
-							if property.Underline != nil {
+							if property.Underline != nil &&
+								property.Underline.Val != types.UnderlineNone {
 								op.Attributes["underline"] = true
 							}
 							if property.Color != nil {
