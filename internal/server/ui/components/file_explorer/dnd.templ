@@ -5,11 +5,12 @@ import "autobutler/internal/server/ui/types"
 templ dnd(pageState types.PageState) {
 	<div
 		id="file-upload-area"
-		class="text-white text-lg bg-opacity-100 ml-2 py-6 w-full bg-gray-800 border rounded-lg z-10 text-center"
+		class="cursor-pointer text-white text-lg bg-opacity-100 ml-2 py-6 w-full bg-gray-800 border rounded-lg z-10 text-center"
 		hx-on:dragenter="activateDropZone(event)"
 		hx-on:dragover="preventDefault(event)"
 		hx-on:dragleave="deactivateDropZone(event)"
 		hx-on:drop={ templ.JSFuncCall("dropFiles", templ.JSExpression("event"), "", pageState.RootDir) }
+		hx-on:click="document.getElementById('file-upload-input').click()"
 	>
 		Drop files here&#8230;
 	</div>

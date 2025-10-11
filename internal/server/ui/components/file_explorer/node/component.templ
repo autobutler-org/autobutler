@@ -68,7 +68,10 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 						@file_context_menu.Component(pageState, file)
 					</div>
 				case util.FileTypeSpacer:
-					<div class="flex flex-1 items-center justify-center py-3 italic text-gray-400">
+					<div
+						class="flex flex-1 items-center justify-center py-3 italic text-gray-400"
+						hx-on:click="document.getElementById('file-upload-input').click()"
+					>
 						<span class="file-name">Drop files here&#8230;</span>
 					</div>
 					<div class="justify-self-end">
