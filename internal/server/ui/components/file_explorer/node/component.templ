@@ -3,6 +3,7 @@ package node
 import (
 	"autobutler/internal/server/ui/components/file_explorer/explorer_context_menu"
 	"autobutler/internal/server/ui/components/file_explorer/file_context_menu"
+	"autobutler/internal/server/ui/components/icons/archive"
 	"autobutler/internal/server/ui/components/icons/folder"
 	"autobutler/internal/server/ui/components/icons/generic"
 	"autobutler/internal/server/ui/components/icons/image"
@@ -45,6 +46,8 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 					@slideshow.Component()
 				case util.FileTypeImage:
 					@image.Component()
+				case util.FileTypeArchive:
+					@archive.Component()
 				case util.FileTypeSpacer:
 					{{ /* Render nothing for spacer */ }}
 				default:

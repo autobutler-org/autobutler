@@ -7,6 +7,7 @@ import (
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer/image_viewer"
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer/pdf_viewer"
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer/text_viewer"
+	"autobutler/internal/server/ui/components/file_explorer/file_viewer/unsupported_viewer"
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer/video_viewer"
 	"autobutler/internal/server/ui/types"
 	"autobutler/internal/server/ui/views"
@@ -89,8 +90,7 @@ func setupComponentFileViewers(router *gin.Engine) {
 		case util.FileTypeGeneric:
 			viewer = text_viewer.Component(filePath)
 		default:
-			c.Status(501)
-			return
+			viewer = unsupported_viewer.Component(filePath)
 		}
 		if err := viewer.Render(c.Request.Context(), c.Writer); err != nil {
 			c.Status(500)

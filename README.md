@@ -1,5 +1,10 @@
 # autobutler
 
+## Important Links
+
+- [Source Code](https://github.com/autobutler-ai/autobutler)
+- [SVG Library](https://flowbite.com/icons/)
+
 ## Usage
 
 ### Watch the backend
