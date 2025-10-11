@@ -1,6 +1,7 @@
 package body
 
 import (
+	"autobutler/internal/server/ui/components/footer"
 	"autobutler/internal/server/ui/components/gradient_overlays"
 	"autobutler/internal/server/ui/components/topnav"
 	"autobutler/internal/server/ui/types"
@@ -13,6 +14,7 @@ templ Component(pageState types.PageState) {
 			<div class="site-fullscreen-col">
 				@topnav.Component(pageState)
 				{ children... }
+				@footer.Component()
 			</div>
 		</main>
 	</body>

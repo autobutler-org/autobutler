@@ -3,7 +3,6 @@ package views
 import (
 	"autobutler/internal/server/ui/components/body"
 	"autobutler/internal/server/ui/components/file_explorer"
-	"autobutler/internal/server/ui/components/footer"
 	"autobutler/internal/server/ui/components/header"
 	"autobutler/internal/server/ui/types"
 	"autobutler/pkg/util"
@@ -23,6 +22,5 @@ templ Files(pageState types.PageState) {
 				@file_explorer.Component(pageState, files)
 			}
 		}
-		@footer.Component()
 	</html>
 }

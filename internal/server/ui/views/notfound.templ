@@ -2,7 +2,6 @@ package views
 
 import (
 	"autobutler/internal/server/ui/components/body"
-	"autobutler/internal/server/ui/components/footer"
 	"autobutler/internal/server/ui/components/header"
 	"autobutler/internal/server/ui/types"
 )
@@ -18,6 +17,5 @@ templ NotFound(pageState types.PageState) {
 				<a href="/" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Go Home</a>
 			</div>
 		}
-		@footer.Component()
 	</html>
 }
