@@ -1,5 +1,7 @@
 package types
 
+import "strings"
+
 type PageState struct {
 	CurrentPageName PageName
 	RootDir         string
@@ -23,6 +25,9 @@ func (p PageState) WithRoute(pageName PageName) PageState {
 }
 
 func (p PageState) WithRootDir(rootDir string) PageState {
+	if !strings.HasPrefix(rootDir, "/") {
+		rootDir = "/" + rootDir
+	}
 	p.RootDir = rootDir
 	return p
 }
