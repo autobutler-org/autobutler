@@ -160,15 +160,32 @@ function dropFiles(event, rootDir, returnDir) {
 
 function saveQuill(filePath) {
     const delta = quill.getContents();
-    fetch(`/api/v1/files${filePath}`, {
-        method: 'PUT',
+    fetch(`/api/v1/docs${filePath}`, {
+        method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(delta)
     }).catch(error => {
-        console.error('Error updating file:', error);
+        console.error('Error saving file:', error);
     });
+}
+
+function renameFile(event, rootDir, fileName) {
+    preventDefault(event);
+    const filePath = `${rootDir}${fileName}`;
+    const newFileName = prompt("Enter the new file name (including extension):", fileName);
+    const newFilePath = `${rootDir}${newFileName}`;
+    if (newFileName && newFileName !== filePath) {
+        htmx.ajax('PUT',
+            `/api/v1/files/${filePath}`, {
+            values: {
+                newFilePath: newFilePath,
+            },
+            target: '#file-explorer',
+            swap: 'outerHTML',
+        });
+    }
 }
 
 function newFile(event, rootDir) {
