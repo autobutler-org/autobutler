@@ -10,5 +10,5 @@ import (
 func getAvailableSpaceInBytes(fileDir string) uint64 {
 	var stat unix.Statfs_t
 	unix.Statfs(fileDir, &stat)
-	return stat.Bavail
+	return stat.Bavail * uint64(stat.Bsize)
 }
