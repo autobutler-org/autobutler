@@ -160,15 +160,34 @@ function dropFiles(event, rootDir, returnDir) {
 
 function saveQuill(filePath) {
     const delta = quill.getContents();
-    fetch(`/api/v1/files${filePath}`, {
-        method: 'PUT',
+    fetch(`/api/v1/docs${filePath}`, {
+        method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(delta)
     }).catch(error => {
-        console.error('Error updating file:', error);
+        console.error('Error saving file:', error);
     });
+}
+
+function moveFile(event, rootDir, fileName) {
+    preventDefault(event);
+    while (rootDir && rootDir[0] == '/') {
+        rootDir = rootDir.slice(1);
+    }
+    const filePath = `${rootDir}/${fileName}`;
+    const newFilePath = prompt("Enter the preferred file name (including extension):", filePath);
+    if (newFilePath !== filePath) {
+        htmx.ajax('PUT',
+            `/api/v1/files/${filePath}`, {
+            values: {
+                newFilePath: newFilePath,
+            },
+            target: '#file-explorer',
+            swap: 'outerHTML',
+        });
+    }
 }
 
 function newFile(event, rootDir) {
