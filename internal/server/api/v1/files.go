@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"autobutler/internal/server/ui"
 	"autobutler/internal/server/ui/components/file_explorer/load"
@@ -125,6 +126,9 @@ func moveFileRoute(apiV1Group *gin.RouterGroup) {
 		newDir := filepath.Dir(newFilePath)
 		if newDir == "." {
 			newDir = ""
+		}
+		if !strings.HasPrefix(newDir, "/") {
+			newDir = "/" + newDir
 		}
 		ui.RenderFileExplorer(c, newDir)
 	})
