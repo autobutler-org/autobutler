@@ -187,7 +187,7 @@ func Component(pageState types.PageState, files []fs.FileInfo) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<ul id=\"file-explorer-list\" class=\"divide-y divide-gray-200 max-h-[70vh] overflow-y-auto pr-4\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div id=\"file-explorer-sort\" class=\"flex items-center\"><button id=\"sort-name\" class=\"flex flex-1 px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700\" type=\"button\" hx-on:click=\"sortFiles('name')\">Name</button> <button id=\"sort-size\" class=\"justify-self-end px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700\" type=\"button\" hx-on:click=\"sortFiles('size')\">Size</button></div><ul id=\"file-explorer-list\" class=\"divide-y divide-gray-200 max-h-[70vh] overflow-y-auto pr-4\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

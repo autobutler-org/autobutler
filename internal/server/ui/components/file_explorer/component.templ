@@ -87,6 +87,27 @@ templ Component(pageState types.PageState, files []fs.FileInfo) {
 			if len(files) == 0 {
 				<span class="py-3 text-gray-500">No files found in { filepath.Join(util.GetFilesDir(), pageState.RootDir) }</span>
 			} else {
+				<div
+					id="file-explorer-sort"
+					class="flex items-center"
+				>
+					<button
+						id="sort-name"
+						class="flex flex-1 px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+						type="button"
+						hx-on:click="sortFiles('name')"
+					>
+						Name
+					</button>
+					<button
+						id="sort-size"
+						class="justify-self-end px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+						type="button"
+						hx-on:click="sortFiles('size')"
+					>
+						Size
+					</button>
+				</div>
 				<ul id="file-explorer-list" class="divide-y divide-gray-200 max-h-[70vh] overflow-y-auto pr-4">
 					for _, file := range files {
 						@node.Component(pageState, file)
