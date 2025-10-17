@@ -1,0 +1,77 @@
+/**
+ * Calendar Component
+ * Monthly calendar view with events
+ */
+
+.calendar {
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
+	margin: var(--spacing-lg);
+}
+
+.calendar-title {
+	font-size: var(--font-size-5xl);
+	font-weight: bold;
+	margin-bottom: var(--spacing-lg);
+}
+
+.calendar-table {
+	table-layout: fixed;
+	border-collapse: collapse;
+	width: 100%;
+}
+
+.calendar-header {
+	padding: var(--spacing-sm) var(--spacing-lg);
+	border: 1px solid currentColor;
+}
+
+.calendar-body {
+	height: fit-content;
+}
+
+.calendar-row {
+	height: fit-content;
+}
+
+.calendar-day {
+	height: fit-content;
+	border: 1px solid currentColor;
+	vertical-align: top;
+	width: 14.28%; /* 100% / 7 days */
+}
+
+.calendar-day-content {
+	display: flex;
+	width: 100%;
+	height: 100%;
+	flex-direction: column;
+	padding: var(--spacing-xs);
+	min-height: 6rem;
+	cursor: pointer;
+}
+
+.calendar-day-title {
+	font-size: var(--font-size-sm);
+	font-weight: 600;
+	margin-bottom: var(--spacing-xs);
+}
+
+.calendar-day-empty {
+	font-size: var(--font-size-xs);
+	color: var(--color-gray-500);
+}
+
+.calendar-day--outside {
+	color: var(--color-gray-400);
+}
+
+.calendar-event {
+	display: flex;
+	cursor: pointer;
+	flex-grow: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	line-clamp: 2;
+}

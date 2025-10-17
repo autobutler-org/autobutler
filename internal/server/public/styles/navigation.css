@@ -1,0 +1,53 @@
+/**
+ * Navigation Components
+ * Top navigation bar and related elements
+ */
+
+.topnav {
+	background-color: var(--color-gray-800);
+}
+
+.topnav-list {
+	display: flex;
+	list-style: none;
+}
+
+.topnav-item {
+	display: flex;
+	align-items: center;
+}
+
+.topnav-item--active {
+	background-color: var(--color-gray-700);
+	text-decoration: underline;
+	font-weight: bold;
+	color: white;
+}
+
+.topnav-item--hover {
+	color: white;
+}
+
+.topnav-item--hover:hover {
+	background-color: var(--color-gray-600);
+	text-decoration: underline;
+}
+
+.topnav-item--end {
+	margin-left: auto;
+	margin-right: var(--spacing-lg);
+	align-items: center;
+	color: #f9fafb; /* gray-50 */
+}
+
+.topnav-link {
+	color: white;
+	text-decoration: none;
+	padding: var(--spacing-lg);
+	display: flex;
+	align-items: center;
+}
+
+.topnav-link:hover {
+	color: var(--color-gray-300);
+}

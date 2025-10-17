@@ -1,0 +1,71 @@
+/**
+ * Icon Components
+ * SVG icons with size and color variants
+ */
+
+.icon {
+	display: inline-block;
+	vertical-align: middle;
+}
+
+.icon--sm {
+	width: 0.75rem;
+	height: 0.75rem;
+}
+
+.icon--base {
+	width: 1.25rem;
+	height: 1.25rem;
+}
+
+.icon--lg {
+	width: 1.5rem;
+	height: 1.5rem;
+}
+
+/* File type icons */
+.icon--file {
+	color: var(--color-gray-500);
+	margin-right: var(--spacing-md);
+}
+
+.icon--folder {
+	color: var(--color-gray-500);
+	margin-right: var(--spacing-md);
+}
+
+.icon--pdf {
+	color: var(--color-red-600);
+	margin-right: var(--spacing-md);
+}
+
+.icon--image {
+	color: var(--color-purple-500);
+	margin-right: var(--spacing-md);
+}
+
+.icon--slideshow {
+	color: var(--color-yellow-600);
+	margin-right: var(--spacing-md);
+}
+
+/* Sort icons */
+.icon--sort {
+	color: var(--color-gray-400);
+}
+
+@media (prefers-color-scheme: dark) {
+	.icon--sort {
+		color: var(--color-gray-400);
+	}
+}
+
+.icon--sort-folder {
+	color: var(--color-yellow-600);
+}
+
+@media (prefers-color-scheme: dark) {
+	.icon--sort-folder {
+		color: var(--color-yellow-400);
+	}
+}
