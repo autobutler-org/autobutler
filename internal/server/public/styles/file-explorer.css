@@ -409,3 +409,125 @@
 .context-menu-item--danger:hover {
 	background-color: var(--color-red-600);
 }
+
+/* Context menu button/trigger */
+.context-menu-trigger {
+	margin-left: var(--spacing-sm);
+	padding: var(--spacing-xs);
+	border-radius: var(--border-radius);
+	border: none;
+	background: transparent;
+	cursor: pointer;
+}
+
+.context-menu-trigger:hover {
+	background-color: var(--color-gray-200);
+}
+
+@media (prefers-color-scheme: dark) {
+	.context-menu-trigger:hover {
+		background-color: var(--color-gray-700);
+	}
+}
+
+/* File viewer modal */
+.file-viewer {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.file-viewer-close {
+	position: absolute;
+	top: var(--spacing-sm);
+	right: var(--spacing-sm);
+	padding: var(--spacing-sm);
+	border-radius: var(--border-radius);
+	border: none;
+	background: transparent;
+	cursor: pointer;
+}
+
+.file-viewer-close:hover {
+	background-color: var(--color-gray-200);
+}
+
+@media (prefers-color-scheme: dark) {
+	.file-viewer-close:hover {
+		background-color: var(--color-gray-700);
+	}
+}
+
+.file-viewer-content {
+	margin: var(--spacing-3xl);
+}
+
+.file-viewer-media {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+/* EPUB viewer */
+.file-viewer-epub {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.file-viewer-epub-controls {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin-bottom: var(--spacing-lg);
+}
+
+.file-viewer-epub-btn {
+	background-color: var(--color-gray-800);
+	color: white;
+	padding: var(--spacing-md) var(--spacing-lg);
+	border-radius: var(--border-radius);
+	border: none;
+	cursor: pointer;
+	margin-right: var(--spacing-sm);
+}
+
+.file-viewer-epub-btn:hover {
+	background-color: var(--color-gray-700);
+}
+
+/* Unsupported file viewer */
+.file-viewer-download-btn {
+	color: white;
+	background-color: var(--color-primary-600);
+	padding: var(--spacing-md) var(--spacing-2xl);
+	border-radius: var(--border-radius-lg);
+	transition: background-color 0.2s ease;
+	display: inline-flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+	margin: var(--spacing-lg) auto 0;
+	width: fit-content;
+	text-decoration: none;
+	border: none;
+	cursor: pointer;
+}
+
+.file-viewer-download-btn:hover {
+	background-color: var(--color-primary-700);
+}
+
+/* Drag and drop overlay */
+.dnd-overlay {
+	cursor: pointer;
+	color: white;
+	font-size: var(--font-size-lg);
+	background-color: var(--color-gray-800);
+	margin-left: var(--spacing-sm);
+	padding: var(--spacing-xl) 0;
+	width: 100%;
+	border: 1px solid var(--color-gray-400);
+	border-radius: var(--border-radius-lg);
+	z-index: 10;
+	text-align: center;
+}

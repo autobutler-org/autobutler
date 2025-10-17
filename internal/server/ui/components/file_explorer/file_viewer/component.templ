@@ -3,7 +3,7 @@ package file_viewer
 templ Component() {
 	<dialog
 		id="file-viewer"
-		class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+		class="file-viewer"
 		hx-on:close="closeFileViewer(event)"
 		closedby="none"
 		hx-on:keydown="if (event.key === 'Enter') { preventDefault(event); }"
@@ -13,7 +13,7 @@ templ Component() {
 		<link href="/public/vendor/quill/quill.snow.css" rel="stylesheet"/>
 		<script src="/public/vendor/quill/quill.js"></script>
 		<button
-			class="absolute top-2 right-2 p-2 rounded hover:bg-gray-200"
+			class="file-viewer-close"
 			aria-label="Close"
 			hx-on:click="closeFileViewer(event)"
 		>
@@ -21,6 +21,6 @@ templ Component() {
 				<path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M5 5l10 10M15 5l-10 10"></path>
 			</svg>
 		</button>
-		<div id="file-viewer-content" class="m-10"></div>
+		<div id="file-viewer-content" class="file-viewer-content"></div>
 	</dialog>
 }

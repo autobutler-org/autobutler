@@ -5,7 +5,7 @@ import "autobutler/internal/server/ui/types"
 templ dnd(pageState types.PageState) {
 	<div
 		id="file-upload-area"
-		class="cursor-pointer text-white text-lg bg-opacity-100 ml-2 py-6 w-full bg-gray-800 border rounded-lg z-10 text-center"
+		class="dnd-overlay"
 		hx-on:dragenter="activateDropZone(event)"
 		hx-on:dragover="preventDefault(event)"
 		hx-on:dragleave="deactivateDropZone(event)"

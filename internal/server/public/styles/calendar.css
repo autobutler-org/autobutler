@@ -75,3 +75,47 @@
 	text-overflow: ellipsis;
 	line-clamp: 2;
 }
+
+/* ========== EVENT ITEMS ========== */
+
+.calendar-event-item {
+	min-width: 85%;
+	max-width: 85%;
+	cursor: pointer;
+	font-size: var(--font-size-xs);
+	border-radius: var(--border-radius);
+	padding: var(--spacing-xs) var(--spacing-xs);
+	margin-bottom: var(--spacing-xs);
+}
+
+.calendar-event-item--in-month {
+	background-color: var(--color-primary-100);
+	color: var(--color-primary-700);
+}
+
+.calendar-event-item--in-month:hover {
+	background-color: var(--color-primary-200);
+}
+
+.calendar-event-item--outside-month {
+	background-color: var(--color-gray-100);
+	color: var(--color-gray-400);
+}
+
+.calendar-event-item--outside-month:hover {
+	background-color: var(--color-gray-200);
+}
+
+.calendar-event-title {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	-webkit-box-orient: vertical;
+}
+
+.calendar-event-spacer {
+	cursor: pointer;
+	flex-grow: 1;
+}

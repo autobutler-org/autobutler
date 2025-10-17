@@ -4,18 +4,18 @@ import "path/filepath"
 
 templ Component(filePath string) {
 	<div
-		class="flex items-center justify-center"
+		class="file-viewer-epub"
 		style="width: 80vw; height: 60vh;"
 	>
-		<div class="flex flex-col items-center">
-			<div class="mb-4">
+		<div class="file-viewer-epub-controls">
+			<div style="margin-bottom: var(--spacing-lg);">
 				<button
 					id="book-reader-prev"
-					class="bg-gray-800 text-white px-4 py-2 rounded mr-2"
+					class="file-viewer-epub-btn"
 				>Previous Page</button>
 				<button
 					id="book-reader-next"
-					class="bg-gray-800 text-white px-4 py-2 rounded"
+					class="file-viewer-epub-btn"
 				>Next Page</button>
 			</div>
 			<div id="book-reader"></div>

@@ -11,12 +11,12 @@ func getTimeString(t time.Time) string {
 }
 
 templ dayEvent(event calendar.CalendarEvent, outsideOfMonth bool) {
-	<div class="flex">
-		{{ renderClass := "cursor-pointer text-xs rounded px-1 py-0.5 mb-0.5" }}
+	<div class="calendar-event">
+		{{ renderClass := "calendar-event-item" }}
 		if outsideOfMonth {
-			{{ renderClass += " hover:bg-gray-200 bg-gray-100 text-gray-400" }}
+			{{ renderClass += " calendar-event-item--outside-month" }}
 		} else {
-			{{ renderClass += " hover:bg-blue-200 bg-blue-100 text-blue-800" }}
+			{{ renderClass += " calendar-event-item--in-month" }}
 		}
 		<div
 			style="min-width: 85%; max-width: 85%;"
@@ -27,19 +27,17 @@ templ dayEvent(event calendar.CalendarEvent, outsideOfMonth bool) {
 			hx-swap="innerHTML"
 		>
 			<div>{ getTimeString(event.StartTime) }</div>
-			<div
-				class="overflow-hidden text-ellipsis line-clamp-2"
-			>
+			<div class="calendar-event-title">
 				{ event.Title }
 			</div>
 		</div>
 		<span
-			class="cursor-pointer flex-grow"
+			class="calendar-event-spacer"
 			hx-on:click="newCalendarEvent(event)"
 		></span>
 		<dialog
 			id={ fmt.Sprintf("event-dialog-%d", event.ID) }
-			class="bg-transparent fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+			class="modal-backdrop"
 		></dialog>
 	</div>
 }
