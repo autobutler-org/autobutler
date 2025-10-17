@@ -1,0 +1,22 @@
+package sort_button
+
+import (
+	"autobutler/internal/server/ui/components/icons/sort"
+	"fmt"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+)
+
+templ Component(columnName string) {
+	<button
+		id={ fmt.Sprintf("sort-%s", columnName) }
+		class="flex items-center justify-between h-full w-full px-2 py-1 text-left rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+		type="button"
+		hx-on-click={ fmt.Sprintf("sortFiles('%s'); updateSortArrows('%s')", columnName, columnName) }
+	>
+		<span>{ cases.Title(language.English).String(columnName) } </span>
+		<div class="flex flex-col ml-1">
+			@sort.Component(columnName)
+		</div>
+	</button>
+}

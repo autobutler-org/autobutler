@@ -4,6 +4,8 @@ import (
 	"autobutler/internal/server/ui/components/file_explorer/file_operations"
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer"
 	"autobutler/internal/server/ui/components/file_explorer/node"
+	"autobutler/internal/server/ui/components/file_explorer/sort_button"
+	"autobutler/internal/server/ui/components/file_explorer/sort_switcher"
 	"autobutler/pkg/util"
 	"io/fs"
 
@@ -87,12 +89,29 @@ templ Component(pageState types.PageState, files []fs.FileInfo) {
 			if len(files) == 0 {
 				<span class="py-3 text-gray-500">No files found in { filepath.Join(util.GetFilesDir(), pageState.RootDir) }</span>
 			} else {
-				<ul id="file-explorer-list" class="divide-y divide-gray-200 max-h-[70vh] overflow-y-auto pr-4">
-					for _, file := range files {
-						@node.Component(pageState, file)
-					}
-					@node.Component(pageState, nil)
-				</ul>
+				<div class="max-h-[70vh] overflow-y-auto">
+					<table id="file-explorer-table" class="w-full">
+						<thead class="bg-gray-50 dark:bg-gray-900 sticky top-0">
+							<tr>
+								<th class="text-left h-12">
+									@sort_button.Component("name")
+								</th>
+								<th class="text-right w-24 h-12">
+									@sort_button.Component("size")
+								</th>
+								<th class="w-16 h-12">
+									@sort_switcher.Component()
+								</th>
+							</tr>
+						</thead>
+						<tbody id="file-explorer-list" class="divide-y divide-gray-200 dark:divide-gray-700">
+							for _, file := range files {
+								@node.Component(pageState, file)
+							}
+							@node.Component(pageState, nil)
+						</tbody>
+					</table>
+				</div>
 			}
 		</div>
 	</div>

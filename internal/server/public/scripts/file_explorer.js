@@ -270,3 +270,130 @@ selecto.on("select", e => {
 selecto.on('selectEnd', e => {
     setSelectedFiles(e.selected.map(el => el.dataset.name));
 });
+
+// SORTING
+
+var currentSortColumn = null;
+var currentSortDirection = 'asc'; // 'asc' or 'desc'
+var mixedSorting = false; // false = folders first, true = mixed sorting
+
+function sortFiles(column) {
+    if (currentSortColumn === column) {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSortDirection = 'asc';
+    }
+    currentSortColumn = column;
+
+    const tbody = document.getElementById('file-explorer-list');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+
+    // Separate the spacer row (last row with "Drop files here...")
+    const spacerRow = rows.find(row => row.querySelector('.spacer'));
+    const fileRows = rows.filter(row => row !== spacerRow);
+
+    fileRows.sort((a, b) => {
+        let aValue, bValue;
+
+        if (column === 'name') {
+            aValue = a.dataset.name || '';
+            bValue = b.dataset.name || '';
+
+            // Sort folders first, then files (unless mixed sorting is enabled)
+            if (!mixedSorting) {
+                const aIsFolder = a.querySelector('td:first-child a[href]') !== null;
+                const bIsFolder = b.querySelector('td:first-child a[href]') !== null;
+
+                if (aIsFolder && !bIsFolder) return -1;
+                if (!aIsFolder && bIsFolder) return 1;
+            }
+
+            // Sort alphabetically
+            return currentSortDirection === 'asc'
+                ? aValue.localeCompare(bValue, undefined, { numeric: true, sensitivity: 'base' })
+                : bValue.localeCompare(aValue, undefined, { numeric: true, sensitivity: 'base' });
+        } else if (column === 'size') {
+            // Extract size text and convert to bytes for comparison
+            const aSizeText = a.querySelector('td:nth-child(2)')?.textContent?.trim() || '0 B';
+            const bSizeText = b.querySelector('td:nth-child(2)')?.textContent?.trim() || '0 B';
+
+            aValue = parseSize(aSizeText);
+            bValue = parseSize(bSizeText);
+
+            return currentSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+        }
+
+        return 0;
+    });
+
+    // Clear tbody and re-append sorted rows
+    tbody.innerHTML = '';
+    fileRows.forEach(row => tbody.appendChild(row));
+
+    // Add spacer row back at the end
+    if (spacerRow) {
+        tbody.appendChild(spacerRow);
+    }
+}
+
+function parseSize(sizeText) {
+    const units = { 'B': 1, 'KB': 1024, 'MB': 1024 * 1024, 'GB': 1024 * 1024 * 1024, 'TB': 1024 * 1024 * 1024 * 1024 };
+    const match = sizeText.match(/^([\d.]+)\s*([A-Z]+)$/);
+    if (!match) return 0;
+
+    const value = parseFloat(match[1]);
+    const unit = match[2];
+    return value * (units[unit] || 1);
+}
+
+function updateSortArrows(column) {
+    // Hide all arrows first
+    const allArrows = document.querySelectorAll('[id$="-sort-asc"], [id$="-sort-desc"]');
+    allArrows.forEach(arrow => {
+        arrow.classList.add('hidden');
+        arrow.classList.remove('text-gray-700', 'dark:text-gray-300');
+        arrow.classList.add('text-gray-400');
+    });
+
+    // Show the appropriate arrow for the current column and direction
+    const arrowId = `${column}-sort-${currentSortDirection}`;
+    const arrow = document.getElementById(arrowId);
+    if (arrow) {
+        arrow.classList.remove('hidden', 'text-gray-400');
+        arrow.classList.add('text-gray-700', 'dark:text-gray-300');
+    }
+}
+
+function toggleMixedSorting() {
+    mixedSorting = !mixedSorting;
+
+    // Update button appearance
+    const button = document.getElementById('mixed-sort-toggle');
+    const label = document.getElementById('mixed-sort-label');
+    const folderIcon = document.getElementById('sort-folder-icon');
+    const fileIcon = document.getElementById('sort-file-icon');
+
+    if (mixedSorting) {
+        // Mixed sorting enabled - show both icons
+        button.title = 'Currently: Mixed sorting (folders and files together)\nClick to switch to folders first';
+        label.textContent = 'Mixed';
+
+        // Show both folder and file icons
+        folderIcon.classList.remove('invisible');
+        fileIcon.classList.remove('invisible');
+    } else {
+        // Mixed sorting disabled - show only folder icon
+        button.title = 'Currently: Folders first sorting\nClick to switch to mixed sorting (folders and files together)';
+        label.textContent = 'Folders';
+
+        // Show only folder icon (file icon invisible but still takes space)
+        folderIcon.classList.remove('invisible');
+        fileIcon.classList.add('invisible');
+    }
+
+    // Re-sort if we have a current sort column
+    if (currentSortColumn) {
+        sortFiles(currentSortColumn);
+        updateSortArrows(currentSortColumn);
+    }
+}
