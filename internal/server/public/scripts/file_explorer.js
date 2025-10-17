@@ -366,13 +366,13 @@ function updateSortArrows(column) {
 
 function toggleMixedSorting() {
     mixedSorting = !mixedSorting;
-    
+
     // Update button appearance
     const button = document.getElementById('mixed-sort-toggle');
     const label = document.getElementById('mixed-sort-label');
     const folderIcon = document.getElementById('sort-folder-icon');
     const fileIcon = document.getElementById('sort-file-icon');
-    
+
     if (mixedSorting) {
         // Mixed sorting enabled - show both icons
         button.classList.add('bg-blue-100', 'dark:bg-blue-900', 'border-2', 'border-blue-300', 'dark:border-blue-600');
@@ -380,10 +380,10 @@ function toggleMixedSorting() {
         label.textContent = 'Mixed';
         label.classList.add('text-blue-700', 'dark:text-blue-300');
         label.classList.remove('text-gray-600', 'dark:text-gray-400');
-        
+
         // Show both folder and file icons
-        folderIcon.classList.remove('hidden');
-        fileIcon.classList.remove('hidden');
+        folderIcon.classList.remove('invisible');
+        fileIcon.classList.remove('invisible');
     } else {
         // Mixed sorting disabled - show only folder icon
         button.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'border-2', 'border-blue-300', 'dark:border-blue-600');
@@ -391,12 +391,12 @@ function toggleMixedSorting() {
         label.textContent = 'Folders';
         label.classList.remove('text-blue-700', 'dark:text-blue-300');
         label.classList.add('text-gray-600', 'dark:text-gray-400');
-        
-        // Show only folder icon
-        folderIcon.classList.remove('hidden');
-        fileIcon.classList.add('hidden');
+
+        // Show only folder icon (file icon invisible but still takes space)
+        folderIcon.classList.remove('invisible');
+        fileIcon.classList.add('invisible');
     }
-    
+
     // Re-sort if we have a current sort column
     if (currentSortColumn) {
         sortFiles(currentSortColumn);
