@@ -275,6 +275,7 @@ selecto.on('selectEnd', e => {
 
 var currentSortColumn = null;
 var currentSortDirection = 'asc'; // 'asc' or 'desc'
+var mixedSorting = false; // false = folders first, true = mixed sorting
 
 function sortFiles(column) {
     if (currentSortColumn === column) {
@@ -298,14 +299,16 @@ function sortFiles(column) {
             aValue = a.dataset.name || '';
             bValue = b.dataset.name || '';
 
-            // Sort folders first, then files
-            const aIsFolder = a.querySelector('td:first-child a[href]') !== null;
-            const bIsFolder = b.querySelector('td:first-child a[href]') !== null;
+            // Sort folders first, then files (unless mixed sorting is enabled)
+            if (!mixedSorting) {
+                const aIsFolder = a.querySelector('td:first-child a[href]') !== null;
+                const bIsFolder = b.querySelector('td:first-child a[href]') !== null;
 
-            if (aIsFolder && !bIsFolder) return -1;
-            if (!aIsFolder && bIsFolder) return 1;
+                if (aIsFolder && !bIsFolder) return -1;
+                if (!aIsFolder && bIsFolder) return 1;
+            }
 
-            // Both are same type, sort alphabetically
+            // Sort alphabetically
             return currentSortDirection === 'asc'
                 ? aValue.localeCompare(bValue, undefined, { numeric: true, sensitivity: 'base' })
                 : bValue.localeCompare(aValue, undefined, { numeric: true, sensitivity: 'base' });
@@ -358,5 +361,33 @@ function updateSortArrows(column) {
     if (arrow) {
         arrow.classList.remove('hidden', 'text-gray-400');
         arrow.classList.add('text-gray-700', 'dark:text-gray-300');
+    }
+}
+
+function toggleMixedSorting() {
+    mixedSorting = !mixedSorting;
+    
+    // Update button appearance
+    const button = document.getElementById('mixed-sort-toggle');
+    const icon = document.getElementById('mixed-sort-icon');
+    
+    if (mixedSorting) {
+        // Mixed sorting enabled - highlight button and change tooltip
+        button.classList.add('bg-blue-100', 'dark:bg-blue-900');
+        button.title = 'Mixed sorting enabled (folders and files together)';
+        icon.classList.add('text-blue-600', 'dark:text-blue-400');
+        icon.classList.remove('text-gray-600', 'dark:text-gray-400');
+    } else {
+        // Mixed sorting disabled - default appearance
+        button.classList.remove('bg-blue-100', 'dark:bg-blue-900');
+        button.title = 'Toggle mixed sorting (folders and files together)';
+        icon.classList.remove('text-blue-600', 'dark:text-blue-400');
+        icon.classList.add('text-gray-600', 'dark:text-gray-400');
+    }
+    
+    // Re-sort if we have a current sort column
+    if (currentSortColumn) {
+        sortFiles(currentSortColumn);
+        updateSortArrows(currentSortColumn);
     }
 }

@@ -204,7 +204,7 @@ func Component(pageState types.PageState, files []fs.FileInfo) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</th><th class=\"w-10\"><button id=\"refresh-button\" style=\"display: block ruby;\" class=\"w-full h-full flex items-center justify-center px-1 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700\" type=\"button\" title=\"Refresh\" hx-on:click=\"location.reload()\"><svg class=\"w-4 h-4 text-gray-600 dark:text-gray-400\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15\"></path></svg></button></th></tr></thead> <tbody id=\"file-explorer-list\" class=\"divide-y divide-gray-200 dark:divide-gray-700\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</th><th class=\"w-10\"><button id=\"mixed-sort-toggle\" class=\"w-full h-full flex items-center justify-center px-1 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700\" type=\"button\" title=\"Toggle mixed sorting (folders and files together)\" hx-on:click=\"toggleMixedSorting()\"><svg id=\"mixed-sort-icon\" class=\"w-4 h-4 text-gray-600 dark:text-gray-400\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4\"></path></svg></button></th></tr></thead> <tbody id=\"file-explorer-list\" class=\"divide-y divide-gray-200 dark:divide-gray-700\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
