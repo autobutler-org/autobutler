@@ -92,13 +92,13 @@ templ Component(pageState types.PageState, files []fs.FileInfo) {
 					<table id="file-explorer-table" class="w-full">
 						<thead class="bg-gray-50 dark:bg-gray-900 sticky top-0">
 							<tr>
-								<th class="text-left">
+								<th class="text-left h-12">
 									@sort_button.Component("name")
 								</th>
-								<th class="text-right w-24">
+								<th class="text-right w-24 h-12">
 									@sort_button.Component("size")
 								</th>
-								<th class="w-16">
+								<th class="w-16 h-12">
 									<button
 										id="mixed-sort-toggle"
 										class="w-full h-12 flex flex-col items-center justify-center px-1 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-xs"

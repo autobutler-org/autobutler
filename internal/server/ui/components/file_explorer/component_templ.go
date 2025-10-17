@@ -188,7 +188,7 @@ func Component(pageState types.PageState, files []fs.FileInfo) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div class=\"max-h-[70vh] overflow-y-auto\"><table id=\"file-explorer-table\" class=\"w-full\"><thead class=\"bg-gray-50 dark:bg-gray-900 sticky top-0\"><tr><th class=\"text-left\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div class=\"max-h-[70vh] overflow-y-auto\"><table id=\"file-explorer-table\" class=\"w-full\"><thead class=\"bg-gray-50 dark:bg-gray-900 sticky top-0\"><tr><th class=\"text-left h-12\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -196,7 +196,7 @@ func Component(pageState types.PageState, files []fs.FileInfo) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</th><th class=\"text-right w-24\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</th><th class=\"text-right w-24 h-12\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -204,7 +204,7 @@ func Component(pageState types.PageState, files []fs.FileInfo) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</th><th class=\"w-16\"><button id=\"mixed-sort-toggle\" class=\"w-full h-12 flex flex-col items-center justify-center px-1 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-xs\" type=\"button\" title=\"Toggle between 'Folders First' and 'Mixed' sorting modes\" hx-on:click=\"toggleMixedSorting()\"><div class=\"flex items-center justify-center space-x-1 mb-1 h-4\"><!-- Sort icon (always visible) --><svg class=\"w-3 h-3 text-gray-600 dark:text-gray-400\" fill=\"currentColor\" viewBox=\"0 0 24 24\"><path d=\"M7 8l5-5 5 5z\"></path> <path d=\"M7 16l5 5 5-5z\"></path></svg><!-- Folder icon (always present, visibility controlled) --><svg id=\"sort-folder-icon\" class=\"w-3 h-3 text-yellow-600 dark:text-yellow-400\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path d=\"M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z\"></path></svg><!-- File icon (always present, visibility controlled) --><svg id=\"sort-file-icon\" class=\"w-3 h-3 text-gray-500 dark:text-gray-300 invisible\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path fill-rule=\"evenodd\" d=\"M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z\" clip-rule=\"evenodd\"></path></svg></div><span id=\"mixed-sort-label\" class=\"text-gray-600 dark:text-gray-400 font-medium w-12 text-center\">Folders</span></button></th></tr></thead> <tbody id=\"file-explorer-list\" class=\"divide-y divide-gray-200 dark:divide-gray-700\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</th><th class=\"w-16 h-12\"><button id=\"mixed-sort-toggle\" class=\"w-full h-12 flex flex-col items-center justify-center px-1 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-xs\" type=\"button\" title=\"Toggle between 'Folders First' and 'Mixed' sorting modes\" hx-on:click=\"toggleMixedSorting()\"><div class=\"flex items-center justify-center space-x-1 mb-1 h-4\"><!-- Sort icon (always visible) --><svg class=\"w-3 h-3 text-gray-600 dark:text-gray-400\" fill=\"currentColor\" viewBox=\"0 0 24 24\"><path d=\"M7 8l5-5 5 5z\"></path> <path d=\"M7 16l5 5 5-5z\"></path></svg><!-- Folder icon (always present, visibility controlled) --><svg id=\"sort-folder-icon\" class=\"w-3 h-3 text-yellow-600 dark:text-yellow-400\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path d=\"M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z\"></path></svg><!-- File icon (always present, visibility controlled) --><svg id=\"sort-file-icon\" class=\"w-3 h-3 text-gray-500 dark:text-gray-300 invisible\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path fill-rule=\"evenodd\" d=\"M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z\" clip-rule=\"evenodd\"></path></svg></div><span id=\"mixed-sort-label\" class=\"text-gray-600 dark:text-gray-400 font-medium w-12 text-center\">Folders</span></button></th></tr></thead> <tbody id=\"file-explorer-list\" class=\"divide-y divide-gray-200 dark:divide-gray-700\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
