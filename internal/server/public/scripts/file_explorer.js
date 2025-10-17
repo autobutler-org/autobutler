@@ -369,20 +369,32 @@ function toggleMixedSorting() {
     
     // Update button appearance
     const button = document.getElementById('mixed-sort-toggle');
-    const icon = document.getElementById('mixed-sort-icon');
+    const label = document.getElementById('mixed-sort-label');
+    const folderIcon = document.getElementById('sort-folder-icon');
+    const fileIcon = document.getElementById('sort-file-icon');
     
     if (mixedSorting) {
-        // Mixed sorting enabled - highlight button and change tooltip
-        button.classList.add('bg-blue-100', 'dark:bg-blue-900');
-        button.title = 'Mixed sorting enabled (folders and files together)';
-        icon.classList.add('text-blue-600', 'dark:text-blue-400');
-        icon.classList.remove('text-gray-600', 'dark:text-gray-400');
+        // Mixed sorting enabled - show both icons
+        button.classList.add('bg-blue-100', 'dark:bg-blue-900', 'border-2', 'border-blue-300', 'dark:border-blue-600');
+        button.title = 'Currently: Mixed sorting (folders and files together)\nClick to switch to folders first';
+        label.textContent = 'Mixed';
+        label.classList.add('text-blue-700', 'dark:text-blue-300');
+        label.classList.remove('text-gray-600', 'dark:text-gray-400');
+        
+        // Show both folder and file icons
+        folderIcon.classList.remove('hidden');
+        fileIcon.classList.remove('hidden');
     } else {
-        // Mixed sorting disabled - default appearance
-        button.classList.remove('bg-blue-100', 'dark:bg-blue-900');
-        button.title = 'Toggle mixed sorting (folders and files together)';
-        icon.classList.remove('text-blue-600', 'dark:text-blue-400');
-        icon.classList.add('text-gray-600', 'dark:text-gray-400');
+        // Mixed sorting disabled - show only folder icon
+        button.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'border-2', 'border-blue-300', 'dark:border-blue-600');
+        button.title = 'Currently: Folders first sorting\nClick to switch to mixed sorting (folders and files together)';
+        label.textContent = 'Folders';
+        label.classList.remove('text-blue-700', 'dark:text-blue-300');
+        label.classList.add('text-gray-600', 'dark:text-gray-400');
+        
+        // Show only folder icon
+        folderIcon.classList.remove('hidden');
+        fileIcon.classList.add('hidden');
     }
     
     // Re-sort if we have a current sort column

@@ -98,17 +98,30 @@ templ Component(pageState types.PageState, files []fs.FileInfo) {
 								<th class="text-right w-24">
 									@sort_button.Component("size")
 								</th>
-								<th class="w-10">
+								<th class="w-16">
 									<button
 										id="mixed-sort-toggle"
-										class="w-full h-full flex items-center justify-center px-1 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+										class="w-full h-full flex flex-col items-center justify-center px-1 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-xs"
 										type="button"
-										title="Toggle mixed sorting (folders and files together)"
+										title="Toggle between 'Folders First' and 'Mixed' sorting modes"
 										hx-on:click="toggleMixedSorting()"
 									>
-										<svg id="mixed-sort-icon" class="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
-										</svg>
+										<div class="flex items-center space-x-1 mb-1">
+											<!-- Sort icon (always visible) -->
+											<svg class="w-3 h-3 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+												<path d="M7 8l5-5 5 5z"/>
+												<path d="M7 16l5 5 5-5z"/>
+											</svg>
+											<!-- Folder icon (show in folders mode) -->
+											<svg id="sort-folder-icon" class="w-3 h-3 text-yellow-600 dark:text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+												<path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
+											</svg>
+											<!-- File icon (show in mixed mode) -->
+											<svg id="sort-file-icon" class="w-3 h-3 text-gray-500 dark:text-gray-300 hidden" fill="currentColor" viewBox="0 0 20 20">
+												<path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
+											</svg>
+										</div>
+										<span id="mixed-sort-label" class="text-gray-600 dark:text-gray-400 font-medium">Folders</span>
 									</button>
 								</th>
 							</tr>
