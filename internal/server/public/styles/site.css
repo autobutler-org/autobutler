@@ -82,6 +82,41 @@ input[type=file]::file-selector-button {
 	display: none;
 }
 
+/* ========== FORM COMPONENTS ========== */
+
+/* Reset form fields to use browser defaults */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+textarea,
+select {
+	color-scheme: light;
+	color: initial;
+	background-color: initial;
+}
+
+@media (prefers-color-scheme: dark) {
+	input[type="text"],
+	input[type="email"],
+	input[type="password"],
+	input[type="number"],
+	input[type="tel"],
+	input[type="url"],
+	input[type="date"],
+	input[type="time"],
+	input[type="datetime-local"],
+	textarea,
+	select {
+		color-scheme: light;
+	}
+}
+
 /* ========== SITE LAYOUT COMPONENTS ========== */
 
 .site-body {
