@@ -284,6 +284,13 @@ function sortFiles(column) {
         currentSortDirection = 'asc';
     }
     currentSortColumn = column;
+    
+    applySorting();
+}
+
+function applySorting() {
+    const column = currentSortColumn;
+    if (!column) return;
 
     const tbody = document.getElementById('file-explorer-list');
     const rows = Array.from(tbody.querySelectorAll('tr'));
@@ -402,7 +409,7 @@ function toggleMixedSorting() {
 
     // Re-sort if we have a current sort column
     if (currentSortColumn) {
-        sortFiles(currentSortColumn);
+        applySorting();
         updateSortArrows(currentSortColumn);
     }
 }
@@ -481,9 +488,9 @@ function handleTableKeyNavigation(event) {
 document.addEventListener('keydown', handleTableKeyNavigation);
 
 // Add keyboard support for sort buttons
-document.addEventListener('keydown', function(event) {
+document.addEventListener('keydown', function (event) {
     const activeElement = document.activeElement;
-    
+
     if (event.key === 'Enter' || event.key === ' ') {
         // Check if focused element is a sort button
         if (activeElement && activeElement.classList.contains('sort-button')) {
@@ -491,16 +498,28 @@ document.addEventListener('keydown', function(event) {
             event.preventDefault();
             event.stopPropagation();
             event.stopImmediatePropagation();
-            
+
             // Extract column name from button id (format: "sort-{columnName}")
             const columnName = activeElement.id.replace('sort-', '');
-            
+
             if (columnName) {
                 console.log('Sorting by column:', columnName);
                 sortFiles(columnName);
                 updateSortArrows(columnName);
             }
-            
+
+            return false;
+        }
+
+        // Check if focused element is the mixed sort toggle
+        if (activeElement && activeElement.id === 'mixed-sort-toggle') {
+            console.log('Sort switcher keyboard event detected');
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+
+            toggleMixedSorting();
+
             return false;
         }
     }
