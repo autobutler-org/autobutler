@@ -23,13 +23,13 @@ templ Component(pageState types.PageState, files []fs.FileInfo) {
 	<script src="/public/vendor/selecto/selecto.min.js"></script>
 	<div
 		id="file-explorer"
-		class="bg-white dark:bg-gray-900 max-full mx-24 mt-10 rounded shadow p-6"
+		class="file-explorer"
 	>
 		@file_viewer.Component()
-		<div class="flex items-center mb-4">
+		<div class="file-explorer-header">
 			<div>
-				<h2 class="text-2xl font-bold mr-4 whitespace-nowrap">File Explorer</h2>
-				<div class="text-gray-500">Available Space: { fmt.Sprintf("%.2fGB", util.BytesToGB(availableBytes)) }</div>
+				<h2 class="file-explorer-title">File Explorer</h2>
+				<div class="file-explorer-space-info">Available Space: { fmt.Sprintf("%.2fGB", util.BytesToGB(availableBytes)) }</div>
 			</div>
 			@file_operations.Component(pageState)
 			@dnd(pageState)
@@ -41,7 +41,7 @@ templ Component(pageState types.PageState, files []fs.FileInfo) {
 		>
 			@explorer_context_menu.Component(pageState)
 			<div id="breadcrumbs">
-				<nav class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-2" data-path={ pageState.RootDir }>
+				<nav class="file-explorer-breadcrumbs" data-path={ pageState.RootDir }>
 					{{ accumulatedDir := "" }}
 					for i, dir := range strings.Split(pageState.RootDir, "/") {
 						if i == 0 {
@@ -50,61 +50,63 @@ templ Component(pageState types.PageState, files []fs.FileInfo) {
 						if i > 0 && dir == "" {
 							{{ continue }}
 						}
-						<span class="text-gray-700 dark:text-gray-300">
+						<span class="file-explorer-breadcrumb">
 							{{ accumulatedDir = filepath.Join(accumulatedDir, dir) }}
-							<a href={ filepath.Join("/", accumulatedDir) } class="hover:underline">
+							<a href={ filepath.Join("/", accumulatedDir) }>
 								{ dir }
 							</a>
 							<span>/</span>
 						</span>
 					}
-					// Add a plus button SVG
-					<button
-						id="add-folder-btn"
-						class="ml-2 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-						title="Add Folder"
-						type="button"
-						hx-on:click="toggleFolderInput(event)"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-						</svg>
-					</button>
-					<input
-						type="text"
-						id="folder-input"
-						name="folderName"
-						class="hidden ml-2 p-1 border border-gray-300 rounded dark:bg-gray-800 dark:border-gray-700"
-						placeholder="New folder name"
-						hx-include="[name='folderName']"
-						hx-post={ filepath.Join("/api/v1/folder/files", pageState.RootDir) }
-						hx-target="#file-explorer"
-						hx-swap="outerHTML"
-						hx-trigger="keydown[keyCode==13] from:body"
-						hx-disabled-elt="this"
-					/>
+					<div class="file-explorer-folder-controls">
+						// Add a plus button SVG
+						<button
+							id="add-folder-btn"
+							class="file-explorer-add-folder btn btn--icon"
+							title="Add Folder"
+							type="button"
+							hx-on:click="toggleFolderInput(event)"
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" class="icon icon--base" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--color-green-600);">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+							</svg>
+						</button>
+						<input
+							type="text"
+							id="folder-input"
+							name="folderName"
+							class="file-explorer-folder-input hidden"
+							placeholder="New folder name"
+							hx-include="[name='folderName']"
+							hx-post={ filepath.Join("/api/v1/folder/files", pageState.RootDir) }
+							hx-target="#file-explorer"
+							hx-swap="outerHTML"
+							hx-trigger="keydown[keyCode==13] from:body"
+							hx-disabled-elt="this"
+						/>
+					</div>
 				</nav>
 			</div>
 			<div id="file-explorer-status"></div>
 			if len(files) == 0 {
-				<span class="py-3 text-gray-500">No files found in { filepath.Join(util.GetFilesDir(), pageState.RootDir) }</span>
+				<span class="file-explorer-empty">No files found in { filepath.Join(util.GetFilesDir(), pageState.RootDir) }</span>
 			} else {
-				<div class="max-h-[70vh] overflow-y-auto">
-					<table id="file-explorer-table" class="w-full">
-						<thead class="bg-gray-50 dark:bg-gray-900 sticky top-0">
+				<div class="file-table-container">
+					<table id="file-explorer-table" class="file-table">
+						<thead class="file-table-header">
 							<tr>
-								<th class="text-left h-12">
+								<th class="file-table-header-cell file-table-header-cell--left">
 									@sort_button.Component("name")
 								</th>
-								<th class="text-right w-24 h-12">
+								<th class="file-table-header-cell file-table-header-cell--right">
 									@sort_button.Component("size")
 								</th>
-								<th class="w-16 h-12">
+								<th class="file-table-header-cell file-table-header-cell--toggle">
 									@sort_switcher.Component()
 								</th>
 							</tr>
 						</thead>
-						<tbody id="file-explorer-list" class="divide-y divide-gray-200 dark:divide-gray-700">
+						<tbody id="file-explorer-list" class="file-table-body">
 							for _, file := range files {
 								@node.Component(pageState, file)
 							}

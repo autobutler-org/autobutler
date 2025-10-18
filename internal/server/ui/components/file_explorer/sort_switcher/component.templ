@@ -9,16 +9,16 @@ import (
 templ Component() {
 	<button
 		id="mixed-sort-toggle"
-		class="w-full h-12 flex flex-col items-center justify-center px-1 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-xs"
+		class="sort-switcher"
 		type="button"
 		title="Toggle between 'Folders First' and 'Mixed' sorting modes"
 		hx-on:click="toggleMixedSorting()"
 	>
-		<div class="flex items-center justify-center space-x-1 mb-1 h-4">
+		<div class="sort-switcher-icons">
 			@sort_arrows.Component()
 			@sort_folder.Component("sort-folder-icon")
 			@sort_file.Component("sort-file-icon", "invisible")
 		</div>
-		<span id="mixed-sort-label" class="text-gray-600 dark:text-gray-400 font-medium w-12 text-center">Folders</span>
+		<span id="mixed-sort-label" class="sort-switcher-label">Folders</span>
 	</button>
 }

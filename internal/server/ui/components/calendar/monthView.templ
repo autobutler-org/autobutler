@@ -10,24 +10,24 @@ templ monthView(now time.Time) {
 	{{ monthInfo := calendar.NewMonthInfoFromTime(now) }}
 	{{ events, err := db.Instance.QueryCalendarEventsForMonth(db.DefaultCalendarId, now.Year(), now.Month(), true) }}
 	if err != nil {
-		<p class="text-red-500">Error loading events: { err.Error() }</p>
+		<p class="error-text">Error loading events: { err.Error() }</p>
 	}
-	<h1 class="text-5xl font-bold mb-4">{ now.Month() } { now.Year() } </h1>
-	<table class="table-fixed border-collapse w-full">
+	<h1 class="calendar-title">{ now.Month() } { now.Year() } </h1>
+	<table class="calendar-table">
 		<thead>
 			<tr>
 				for day := range calendar.Saturday + 1 {
-					<th class="py-2 px-4 border">{ calendar.WeekdayToShortString(day, calendar.WeekModeStandard) }</th>
+					<th class="calendar-header">{ calendar.WeekdayToShortString(day, calendar.WeekModeStandard) }</th>
 				}
 			</tr>
 		</thead>
-		<tbody class="h-fit">
+		<tbody class="calendar-body">
 			{{ previousMonth := now.AddDate(0, -1, 0) }}
 			{{ endOfPreviousMonth := calendar.GetFirstDayOfMonth(previousMonth).AddDate(0, 1, -1) }}
 			{{ dayCounter := -monthInfo.LeadingDays }}
 			for range monthInfo.WeeksToRender {
 				{{ renderDay := monthInfo.StartOfMonth.AddDate(0, 0, dayCounter) }}
-				<tr class="h-fit" data-year={ renderDay.Year() } data-month={ calendar.MonthToInt(renderDay.Month()) }>
+				<tr class="calendar-row" data-year={ renderDay.Year() } data-month={ calendar.MonthToInt(renderDay.Month()) }>
 					for range calendar.Saturday + 1 {
 						{{ renderDay = monthInfo.StartOfMonth.AddDate(0, 0, dayCounter) }}
 						{{ dayTitle := "" }}

@@ -7,15 +7,16 @@ templ download(pageState types.PageState) {
 		id="file-download-button"
 		disabled
 		type="button"
-		class="p-2 rounded text-gray-600 hover:bg-gray-200 disabled:bg-gray-800 disabled:cursor-not-allowed"
+		class="btn btn--icon btn--disabled"
 		hx-on:click={ templ.JSFuncCall("downloadSelectedFiles", templ.JSExpression("event"), pageState.RootDir) }
 		title="Download selected files"
 	>
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
-			class="inline w-6 h-6"
+			class="icon icon--lg"
 			viewBox="0 0 24 24"
 			fill="currentColor"
+			style="color: var(--color-gray-600);"
 		>
 			<path d="M12 3a1 1 0 011 1v9.586l3.293-3.293a1 1 0 111.414 1.414l-5 5a1 1 0 01-1.414 0l-5-5a1 1 0 111.414-1.414L11 13.586V4a1 1 0 011-1z"></path>
 			<path d="M5 19a1 1 0 011-1h12a1 1 0 110 2H6a1 1 0 01-1-1z"></path>

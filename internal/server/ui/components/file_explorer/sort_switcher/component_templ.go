@@ -35,7 +35,7 @@ func Component() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<button id=\"mixed-sort-toggle\" class=\"w-full h-12 flex flex-col items-center justify-center px-1 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-xs\" type=\"button\" title=\"Toggle between 'Folders First' and 'Mixed' sorting modes\" hx-on:click=\"toggleMixedSorting()\"><div class=\"flex items-center justify-center space-x-1 mb-1 h-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<button id=\"mixed-sort-toggle\" class=\"sort-switcher\" type=\"button\" title=\"Toggle between 'Folders First' and 'Mixed' sorting modes\" hx-on:click=\"toggleMixedSorting()\"><div class=\"sort-switcher-icons\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -51,7 +51,7 @@ func Component() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><span id=\"mixed-sort-label\" class=\"text-gray-600 dark:text-gray-400 font-medium w-12 text-center\">Folders</span></button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><span id=\"mixed-sort-label\" class=\"sort-switcher-label\">Folders</span></button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -61,14 +61,14 @@ func Files(pageState types.PageState) templ.Component {
 			ctx = templ.InitializeContext(ctx)
 			files, err := util.StatFilesInDir(filepath.Join(util.GetFilesDir(), pageState.RootDir))
 			if err != nil {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"text-red-500\">Error loading files: ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"error-text\">Error loading files: ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(err.Error())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/views/files.templ`, Line: 20, Col: 64}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/views/files.templ`, Line: 20, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {

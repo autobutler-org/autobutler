@@ -8,7 +8,7 @@ import (
 
 templ Component(calendarView calendar.CalendarView) {
 	{{ now := time.Now() }}
-	<div id="calendar" class="h-screen flex flex-col m-4">
+	<div id="calendar" class="calendar">
 		switch calendarView {
 			case calendar.CalendarViewMonth:
 				@monthView(now)
@@ -21,7 +21,7 @@ templ Component(calendarView calendar.CalendarView) {
 		}
 		<dialog
 			id="new-event-dialog"
-			class="bg-transparent fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+			class="modal-backdrop"
 		>
 			@event_editor.Component()
 		</dialog>

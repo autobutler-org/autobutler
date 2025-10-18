@@ -1,0 +1,128 @@
+/**
+ * Calendar Component
+ * Monthly calendar view with events
+ */
+
+.calendar {
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
+	margin: var(--spacing-lg);
+}
+
+.calendar-title {
+	font-size: var(--font-size-5xl);
+	font-weight: 800;
+	margin-bottom: var(--spacing-lg);
+	color: var(--color-gray-900);
+}
+
+@media (prefers-color-scheme: dark) {
+	.calendar-title {
+		color: white;
+	}
+}
+
+.calendar-table {
+	table-layout: fixed;
+	border-collapse: collapse;
+	width: 100%;
+}
+
+.calendar-header {
+	padding: var(--spacing-sm) var(--spacing-lg);
+	border: 1px solid currentColor;
+}
+
+.calendar-body {
+	height: fit-content;
+}
+
+.calendar-row {
+	height: fit-content;
+}
+
+.calendar-day {
+	height: fit-content;
+	border: 1px solid currentColor;
+	vertical-align: top;
+	width: 14.28%; /* 100% / 7 days */
+}
+
+.calendar-day-content {
+	display: flex;
+	width: 100%;
+	height: 100%;
+	flex-direction: column;
+	padding: var(--spacing-xs);
+	min-height: 6rem;
+	cursor: pointer;
+}
+
+.calendar-day-title {
+	font-size: var(--font-size-sm);
+	font-weight: 600;
+	margin-bottom: var(--spacing-xs);
+}
+
+.calendar-day-empty {
+	font-size: var(--font-size-xs);
+	color: var(--color-gray-500);
+}
+
+.calendar-day--outside {
+	color: var(--color-gray-400);
+}
+
+.calendar-event {
+	display: flex;
+	cursor: pointer;
+	flex-grow: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	line-clamp: 2;
+}
+
+/* ========== EVENT ITEMS ========== */
+
+.calendar-event-item {
+	min-width: 85%;
+	max-width: 85%;
+	cursor: pointer;
+	font-size: var(--font-size-xs);
+	border-radius: var(--border-radius);
+	padding: var(--spacing-xs) var(--spacing-xs);
+	margin-bottom: var(--spacing-xs);
+}
+
+.calendar-event-item--in-month {
+	background-color: var(--color-primary-100);
+	color: var(--color-primary-700);
+}
+
+.calendar-event-item--in-month:hover {
+	background-color: var(--color-primary-200);
+}
+
+.calendar-event-item--outside-month {
+	background-color: var(--color-gray-100);
+	color: var(--color-gray-400);
+}
+
+.calendar-event-item--outside-month:hover {
+	background-color: var(--color-gray-200);
+}
+
+.calendar-event-title {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	-webkit-box-orient: vertical;
+}
+
+.calendar-event-spacer {
+	cursor: pointer;
+	flex-grow: 1;
+}

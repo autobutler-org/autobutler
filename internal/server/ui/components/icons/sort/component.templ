@@ -3,10 +3,10 @@ package sort
 import "fmt"
 
 templ Component(name string) {
-	<svg id={ fmt.Sprintf("%s-sort-asc", name) } class="w-6 h-6 text-gray-400 hidden" fill="currentColor" viewBox="0 0 24 24">
+	<svg id={ fmt.Sprintf("%s-sort-asc", name) } class="icon icon--lg icon--sort hidden" fill="currentColor" viewBox="0 0 24 24">
 		<path d="M7 14l5-5 5 5z"></path>
 	</svg>
-	<svg id={ fmt.Sprintf("%s-sort-desc", name) } class="w-6 h-6 text-gray-400 hidden" fill="currentColor" viewBox="0 0 24 24">
+	<svg id={ fmt.Sprintf("%s-sort-desc", name) } class="icon icon--lg icon--sort hidden" fill="currentColor" viewBox="0 0 24 24">
 		<path d="M7 10l5 5 5-5z"></path>
 	</svg>
 }

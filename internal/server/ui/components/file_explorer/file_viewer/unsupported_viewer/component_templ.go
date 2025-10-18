@@ -42,7 +42,7 @@ func Component(filePath string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" class=\"text-white bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2 mx-auto mt-4 w-fit\" download>Download file</a></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" class=\"file-viewer-download-btn\" download>Download file</a></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

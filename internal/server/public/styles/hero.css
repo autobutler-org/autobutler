@@ -1,0 +1,70 @@
+/**
+ * Hero Section Component
+ * Landing page hero with icon and call-to-action
+ */
+
+.hero {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: var(--spacing-2xl);
+}
+
+.hero-content {
+	text-align: center;
+	max-width: 48rem; /* max-w-3xl */
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-2xl);
+}
+
+.hero-icon {
+	position: relative;
+}
+
+.hero-icon img {
+	width: 8rem;
+	height: 8rem;
+	margin: 0 auto var(--spacing-xl);
+	display: block;
+}
+
+.hero-title {
+	font-size: var(--font-size-5xl);
+	font-weight: 800;
+	margin-bottom: var(--spacing-lg);
+	color: var(--color-gray-900);
+}
+
+@media (prefers-color-scheme: dark) {
+	.hero-title {
+		color: white;
+	}
+}
+
+.hero-description {
+	font-size: var(--font-size-xl);
+	color: var(--color-gray-600);
+	margin-bottom: var(--spacing-2xl);
+	line-height: 1.6;
+}
+
+@media (prefers-color-scheme: dark) {
+	.hero-description {
+		color: var(--color-gray-400);
+	}
+}
+
+.hero-actions {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-lg);
+	justify-content: center;
+}
+
+@media (min-width: 640px) {
+	.hero-actions {
+		flex-direction: row;
+	}
+}

@@ -17,7 +17,7 @@ templ Files(pageState types.PageState) {
 		@body.Component(pageState) {
 			{{ files, err := util.StatFilesInDir(filepath.Join(util.GetFilesDir(), pageState.RootDir)) }}
 			if err != nil {
-				<div class="text-red-500">Error loading files: { err.Error() }</div>
+				<div class="error-text">Error loading files: { err.Error() }</div>
 			} else {
 				@file_explorer.Component(pageState, files)
 			}

@@ -29,7 +29,7 @@ func Component() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<svg class=\"w-3 h-3 text-gray-600 dark:text-gray-400\" fill=\"currentColor\" viewBox=\"0 0 24 24\"><path d=\"M7 8l5-5 5 5z\"></path> <path d=\"M7 16l5 5 5-5z\"></path></svg>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<svg class=\"icon icon--sm icon--sort\" fill=\"currentColor\" viewBox=\"0 0 24 24\"><path d=\"M7 8l5-5 5 5z\"></path> <path d=\"M7 16l5 5 5-5z\"></path></svg>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

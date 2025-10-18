@@ -39,7 +39,7 @@ func delete(pageState types.PageState) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<button id=\"file-delete-button\" disabled type=\"button\" class=\"disabled p-2 rounded hover:bg-red-800 text-gray-600 hover:text-white disabled:bg-gray-800 disabled:cursor-not-allowed disabled:hover:text-gray-600\" title=\"Delete selected files\" hx-trigger=\"click\" hx-delete=\"/api/v1/files\" hx-vals=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<button id=\"file-delete-button\" disabled type=\"button\" class=\"btn btn--icon btn--disabled\" title=\"Delete selected files\" hx-trigger=\"click\" hx-delete=\"/api/v1/files\" hx-vals=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

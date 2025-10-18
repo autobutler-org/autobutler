@@ -1,65 +1,13 @@
-/*
-	Canonical site stylesheet
-	Moved styles from: internal/server/ui/components/body/component.templ
-	Purpose: Centralize global UI rules (prefer using Tailwind utilities in components,
-	but keep site-wide overrides and dark-mode rules here per project convention).
-*/
-
-/* Body background: replicate Tailwind's
-	 bg-gradient-to-br from-gray-400 dark:from-gray-900 dark:to-gray-800 */
-.site-body {
-	/* light mode fallback */
-	--site-from: #9CA3AF; /* gray-400 */
-	--site-to: rgba(255,255,255,0); /* transparent-ish */
-	background: linear-gradient(135deg, var(--site-from) 0%, var(--site-to) 100%);
-	min-height: 100vh;
-}
-
-@media (prefers-color-scheme: dark) {
-	.site-body {
-		--site-from: #111827; /* gray-900 */
-		--site-to: #1f2937;   /* gray-800 */
-		color-scheme: dark;
-	}
-}
-
-/* Main text color that switches with dark mode (maps to text-black dark:text-white) */
-.site-main {
-	color: #000;
-}
-
-@media (prefers-color-scheme: dark) {
-	.site-main {
-		color: #fff;
-	}
-}
-
-/* Small utility to preserve the original layout intent from the template */
-.site-fullscreen-col {
-	max-height: 100vh;
-	min-height: 100vh;
-	display: flex;
-	flex-direction: column;
-}
-
-/* End of moved rules */
-
-/* Global resets moved from header template */
-html, body {
-	margin: 0;
-	padding: 0;
-	min-height: 100vh;
-	min-width: 100vw;
-	overflow-x: hidden;
-}
-
-* {
-	margin: 0;
-	padding: 0;
-	box-sizing: border-box;
-}
-
-/* Hide default file input button; components should provide a styled label */
-input[type=file]::file-selector-button {
-	display: none;
-}
+/* Import order matters for CSS cascade */
+@import url('variables.css');
+@import url('reset.css');
+@import url('forms.css');
+@import url('layout.css');
+@import url('navigation.css');
+@import url('buttons.css');
+@import url('icons.css');
+@import url('hero.css');
+@import url('file-explorer.css');
+@import url('calendar.css');
+@import url('modals.css');
+@import url('utility.css');

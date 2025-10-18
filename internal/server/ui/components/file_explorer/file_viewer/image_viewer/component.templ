@@ -46,7 +46,7 @@ templ Component(filePath string) {
 		<p>Error reading image: { err.Error() }</p>
 	} else {
 		<img
-			class="max-w-full max-h-full"
+			class="file-viewer-media"
 			src={ imageData }
 			alt={ filePath }
 		/>

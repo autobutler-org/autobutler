@@ -112,7 +112,7 @@ serve: generate ## Serve backend
 watch: ## Watch backend for changes
 	templ generate \
 		-watch \
-		-watch-pattern='(.+\.go$$)|(.+\.templ$$)|(.+_templ\.txt$$)|(.+\.js$$)' \
+		-watch-pattern='(.+\.go$$)|(.+\.templ$$)|(.+_templ\.txt$$)|(.+\.js$$)|(.+\.css$$)' \
 		-proxy="http://localhost:8080" \
 		-cmd="go run . serve"
 

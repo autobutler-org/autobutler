@@ -17,16 +17,17 @@ templ upload(pageState types.PageState) {
 		<button
 			id="file-upload-button"
 			type="button"
-			class="p-2 rounded hover:bg-gray-200"
+			class="btn btn--icon"
 			hx-on:click="document.getElementById('file-upload-input').click()"
 			title="Upload file"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
-				class="inline w-6 h-6 text-gray-600"
+				class="icon icon--lg"
 				fill="none"
 				viewBox="0 0 24 24"
 				stroke="currentColor"
+				style="color: var(--color-gray-600);"
 			>
 				<path
 					stroke-linecap="round"
@@ -40,7 +41,7 @@ templ upload(pageState types.PageState) {
 			type="file"
 			id="file-upload-input"
 			name="files"
-			class="max-w-sm hidden"
+			class="file-upload-input"
 			onchange="this.form.requestSubmit()"
 			multiple
 		/>

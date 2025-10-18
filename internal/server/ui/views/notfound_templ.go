@@ -55,7 +55,7 @@ func NotFound(pageState types.PageState) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex flex-col items-center justify-center h-96\"><h1 class=\"text-6xl font-bold text-gray-800 dark:text-gray-200 mb-4\">404</h1><p class=\"text-xl text-gray-600 dark:text-gray-400 mb-8\">Page Not Found</p><a href=\"/\" class=\"px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700\">Go Home</a></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"error-page\"><h1 class=\"error-code\">404</h1><p class=\"error-message\">Page Not Found</p><a href=\"/\" class=\"btn btn--primary\">Go Home</a></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

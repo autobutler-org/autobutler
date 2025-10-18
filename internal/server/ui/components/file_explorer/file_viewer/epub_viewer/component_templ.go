@@ -31,7 +31,7 @@ func Component(filePath string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex items-center justify-center\" style=\"width: 80vw; height: 60vh;\"><div class=\"flex flex-col items-center\"><div class=\"mb-4\"><button id=\"book-reader-prev\" class=\"bg-gray-800 text-white px-4 py-2 rounded mr-2\">Previous Page</button> <button id=\"book-reader-next\" class=\"bg-gray-800 text-white px-4 py-2 rounded\">Next Page</button></div><div id=\"book-reader\"></div></div></div><script>\n\t\tvar navigationListener = null;\n\t\tvar fileViewerContent = document.getElementById('file-viewer-content');\n\t\tvar loadedBook = ePub(")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"file-viewer-epub\" style=\"width: 80vw; height: 60vh;\"><div class=\"file-viewer-epub-controls\"><div style=\"margin-bottom: var(--spacing-lg);\"><button id=\"book-reader-prev\" class=\"file-viewer-epub-btn\">Previous Page</button> <button id=\"book-reader-next\" class=\"file-viewer-epub-btn\">Next Page</button></div><div id=\"book-reader\"></div></div></div><script>\n\t\tvar navigationListener = null;\n\t\tvar fileViewerContent = document.getElementById('file-viewer-content');\n\t\tvar loadedBook = ePub(")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

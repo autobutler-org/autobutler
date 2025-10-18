@@ -29,7 +29,7 @@ func Component() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"absolute inset-0 -z-10\"><div class=\"absolute top-0 left-0 w-1/3 h-1/3 bg-blue-500/10 rounded-full blur-3xl\"></div><div class=\"absolute bottom-0 right-0 w-1/3 h-1/3 bg-purple-500/10 rounded-full blur-3xl\"></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"gradient-overlays\"><div class=\"gradient-overlay gradient-overlay--top\"></div><div class=\"gradient-overlay gradient-overlay--bottom\"></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

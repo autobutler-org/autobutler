@@ -5,13 +5,14 @@ import "autobutler/internal/server/ui/types"
 templ Component(pageState types.PageState) {
 	<div>
 		<ul
-			class="context-menu hidden absolute mt-2 w-28 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-10"
+			class="context-menu hidden"
 			hx-on:mouseleave="closeContextMenu(null, this.parentElement)"
+			style="width: 7rem;"
 		>
 			<li>
 				<button
 					type="button"
-					class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+					class="context-menu-item"
 					hx-on:click={ templ.JSFuncCall("newFile", templ.JSExpression("event"), pageState.RootDir) }
 				>
 					New File
@@ -21,7 +22,7 @@ templ Component(pageState types.PageState) {
 			<li>
 				<button
 					type="button"
-					class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+					class="context-menu-item"
 					hx-on:click={ templ.JSFuncCall("showFolderDetails", templ.JSExpression("event")) }
 				>
 					Details

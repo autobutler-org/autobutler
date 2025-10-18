@@ -1,15 +1,14 @@
 package hero
 
 templ ctaButton() {
-	<div class="flex flex-col sm:flex-row gap-4 justify-center">
+	<div class="hero-actions">
 		<a
-			class="text-white bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2 mx-auto w-fit"
+			class="btn btn--primary"
 			href="/files"
 		>
 			<span>Browse files</span>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
-				class="h-5 w-5"
 				viewBox="0 0 20 20"
 				fill="currentColor"
 			>
@@ -19,13 +18,12 @@ templ ctaButton() {
 			</svg>
 		</a>
 		<a
-			class="text-white bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2 mx-auto w-fit"
+			class="btn btn--primary"
 			href="/calendar"
 		>
 			<span>Plan your year</span>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
-				class="h-5 w-5"
 				viewBox="0 0 20 20"
 				fill="currentColor"
 			>

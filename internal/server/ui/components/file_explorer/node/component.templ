@@ -22,9 +22,9 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 	if file != nil {
 		{{ fileName = file.Name() }}
 	}
-	{{ nodeClasses := "hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer hover:underline" }}
+	{{ nodeClasses := "" }}
 	if file != nil {
-		{{ nodeClasses += " file-node" }}
+		{{ nodeClasses = "file-table-row" }}
 	}
 	<tr
 		class={ nodeClasses }
@@ -38,31 +38,33 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 		switch fileType {
 			case util.FileTypeFolder:
 				{{ filePath := filepath.Join("/files", pageState.RootDir, fileName) }}
-				<td class="flex items-center py-3">
+				<td class="file-table-cell file-table-cell--content">
 					@folder.Component()
-					<a href={ filePath } class="flex-1 ml-2">
-						<span class="file-name">{ fileName }</span>
+					<a href={ filePath } class="file-table-link" tabindex="0">
+						<span>{ fileName }</span>
 					</a>
 				</td>
-				<td class="text-gray-600 dark:text-gray-200 text-sm text-right py-3">
+				<td class="file-table-cell file-table-size">
 					{ util.SizeBytesToString(file.Size()) }
 				</td>
-				<td class="py-3">
+				<td class="file-table-cell">
 					@file_context_menu.Component(pageState, file)
 				</td>
 			case util.FileTypeSpacer:
-				<td colspan="3" class="py-3 text-center italic text-gray-400" hx-on:click="document.getElementById('file-upload-input').click()">
-					<span class="spacer file-name">Drop files here&#8230;</span>
+				<td colspan="3" class="file-table-cell file-table-cell--spacer" hx-on:click="document.getElementById('file-upload-input').click()" tabindex="0" hx-on:keydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); document.getElementById('file-upload-input').click(); }">
+					<span class="spacer">Drop files here&#8230;</span>
 					@explorer_context_menu.Component(pageState)
 				</td>
 			default:
 				{{ filePath := filepath.Join("/files", pageState.RootDir, fileName) }}
 				<td
-					class="flex items-center py-3 cursor-pointer"
+					class="file-table-cell file-table-cell--clickable"
 					hx-get={ filepath.Join("/components/files/viewer", filePath) }
 					hx-target="#file-viewer-content"
 					hx-swap="innerHTML"
 					hx-on:click="document.getElementById('file-viewer').showModal();"
+					tabindex="0"
+					hx-on:keydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); document.getElementById('file-viewer').showModal(); htmx.ajax('GET', this.getAttribute('hx-get'), {target: '#file-viewer-content', swap: 'innerHTML'}); }"
 				>
 					{{ /* Render the appropriate icon based on the file type */ }}
 					switch fileType {
@@ -77,12 +79,12 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 						default:
 							@generic.Component()
 					}
-					<span class="file-name ml-2">{ fileName }</span>
+					<span>{ fileName }</span>
 				</td>
-				<td class="text-gray-600 dark:text-gray-200 text-sm text-right py-3">
+				<td class="file-table-cell file-table-size">
 					{ util.SizeBytesToString(file.Size()) }
 				</td>
-				<td class="py-3">
+				<td class="file-table-cell">
 					@file_context_menu.Component(pageState, file)
 				</td>
 		}

@@ -6,29 +6,29 @@ import (
 )
 
 templ Component(pageState types.PageState) {
-	<nav class="bg-gray-800">
-		<ul class="flex">
-			<li class="flex p-4">
-				<a href="/" class="text-white hover:text-gray-300">
+	<nav class="topnav">
+		<ul class="topnav-list">
+			<li class="topnav-item">
+				<a href="/" class="topnav-link">
 					<img src="/public/img/butler.png" height="24" width="24"/>
 				</a>
 			</li>
 			for _, link := range pageState.NavLinks {
 				if link.Name == pageState.CurrentPageName {
-					<li class="flex items-center text-white bg-gray-700 underline font-bold">
-						<a href={ link.Href } class="p-4 text-white hover:text-gray-300">{ link.Name }</a>
+					<li class="topnav-item topnav-item--active">
+						<a href={ link.Href } class="topnav-link">{ link.Name }</a>
 					</li>
 				} else {
-					<li class="flex items-center text-white hover:bg-gray-600 hover:underline">
-						<a href={ link.Href } class="p-4 text-white hover:text-gray-300">{ link.Name }</a>
+					<li class="topnav-item topnav-item--hover">
+						<a href={ link.Href } class="topnav-link">{ link.Name }</a>
 					</li>
 				}
 			}
-			<li class="flex ml-auto mr-4 items-center text-gray-50">
+			<li class="topnav-item topnav-item--end">
 				if version.Semver == version.NoSemver {
-					<span class="font-thin">vX.Y.Z</span>
+					<span style="font-weight: 100;">vX.Y.Z</span>
 				} else {
-					<span class="font-thin">{ version.Semver }</span>
+					<span style="font-weight: 100;">{ version.Semver }</span>
 				}
 			</li>
 		</ul>

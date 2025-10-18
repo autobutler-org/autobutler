@@ -10,12 +10,12 @@ import (
 templ Component(columnName string) {
 	<button
 		id={ fmt.Sprintf("sort-%s", columnName) }
-		class="flex items-center justify-between h-full w-full px-2 py-1 text-left rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+		class="sort-button"
 		type="button"
-		hx-on-click={ fmt.Sprintf("sortFiles('%s'); updateSortArrows('%s')", columnName, columnName) }
+		hx-on:click={ templ.JSUnsafeFuncCall(fmt.Sprintf("sortFiles('%s'); updateSortArrows('%s')", columnName, columnName)) }
 	>
 		<span>{ cases.Title(language.English).String(columnName) } </span>
-		<div class="flex flex-col ml-1">
+		<div class="sort-button-arrows">
 			@sort.Component(columnName)
 		</div>
 	</button>

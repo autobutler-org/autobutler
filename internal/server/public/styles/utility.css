@@ -1,0 +1,54 @@
+/**
+ * Utility Classes
+ * Minimal set of helper classes for common patterns
+ */
+
+.hidden {
+	display: none;
+}
+
+.invisible {
+	visibility: hidden;
+}
+
+.spacer {
+	flex: 1;
+}
+
+/* Error and message states */
+.error-page {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 24rem;
+}
+
+.error-code {
+	font-size: 3.75rem;
+	font-weight: bold;
+	color: var(--color-gray-800);
+	margin-bottom: var(--spacing-lg);
+}
+
+@media (prefers-color-scheme: dark) {
+	.error-code {
+		color: var(--color-gray-200);
+	}
+}
+
+.error-message {
+	font-size: var(--font-size-xl);
+	color: var(--color-gray-600);
+	margin-bottom: var(--spacing-2xl);
+}
+
+@media (prefers-color-scheme: dark) {
+	.error-message {
+		color: var(--color-gray-400);
+	}
+}
+
+.error-text {
+	color: var(--color-red-600);
+}

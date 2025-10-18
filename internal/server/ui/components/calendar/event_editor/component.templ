@@ -15,13 +15,13 @@ templ ComponentWithEvent(
 	event calendar.CalendarEvent,
 ) {
 	{{ isNew := event.ID == 0 }}
-	<div class="rounded bg-white p-2 w-96">
-		<div class="flex justify-between items-center">
+	<div class="event-editor-modal">
+		<div class="event-editor-header">
 			if !isNew {
 				<button
 					id={ fmt.Sprintf("event-delete-%d", event.ID) }
 					type="button"
-					class="p-2 rounded hover:bg-red-800 text-gray-600 hover:text-white"
+					class="event-editor-delete-btn"
 					title="Delete event"
 					hx-trigger="click"
 					hx-delete={ fmt.Sprintf("/api/v1/calendar/events/%d", event.ID) }
@@ -36,7 +36,7 @@ templ ComponentWithEvent(
 				<div></div>
 			}
 			<button
-				class="top-2 right-2 p-2 rounded hover:bg-gray-200"
+				class="event-editor-close-btn"
 				aria-label="Close"
 				hx-on:click="closeModal(event)"
 				hx-on:keydown="if (event.key === 'Enter') { preventDefault(event); }"
@@ -50,7 +50,7 @@ templ ComponentWithEvent(
 			<form
 				id="new-event-form"
 				onsubmit="return false;"
-				class="flex flex-col space-y-4"
+				class="event-editor-form"
 			>
 				<input
 					id="new-event-year"
@@ -70,10 +70,10 @@ templ ComponentWithEvent(
 					name="day"
 					value={ event.StartTime.Day() }
 				/>
-				<div class="m-0">
+				<div class="modal-field">
 					<label
 						for="title"
-						class="block text-sm font-medium text-gray-700"
+						class="modal-label"
 					>Title</label>
 					<input
 						type="text"
@@ -83,14 +83,14 @@ templ ComponentWithEvent(
 						required
 						hx-on:input="checkNewEventFormInputs(event)"
 						hx-on:keydown="if (event.key === 'Enter') { preventDefault(event); }"
-						class="mt-1 block border border-gray-300 rounded w-full"
+						class="modal-input"
 						value={ event.Title }
 					/>
 				</div>
 				<div>
 					<label
 						for="start-time"
-						class="block text-sm font-medium text-gray-700"
+						class="modal-label"
 					>Start Time</label>
 					<input
 						type="time"
@@ -99,14 +99,14 @@ templ ComponentWithEvent(
 						required
 						hx-on:input="checkNewEventFormInputs(event)"
 						hx-on:keydown="if (event.key === 'Enter') { preventDefault(event); }"
-						class="mt-1 block border border-gray-300 rounded"
+						class="modal-input"
 						value={ event.StartTime.Format("15:04") }
 					/>
 				</div>
 				<div>
 					<label
 						for="end-time"
-						class="block text-sm font-medium text-gray-700"
+						class="modal-label"
 					>End Time</label>
 					if event.EndTime == nil {
 						<input
@@ -114,7 +114,7 @@ templ ComponentWithEvent(
 							name="end-time"
 							id="end-time"
 							hx-on:keydown="if (event.key === 'Enter') { preventDefault(event); }"
-							class="mt-1 block border border-gray-300 rounded"
+							class="modal-input"
 						/>
 					} else {
 						<input
@@ -122,7 +122,7 @@ templ ComponentWithEvent(
 							name="end-time"
 							id="end-time"
 							hx-on:keydown="if (event.key === 'Enter') { preventDefault(event); }"
-							class="mt-1 block border border-gray-300 rounded"
+							class="modal-input"
 							value={ event.StartTime.Format("15:04") }
 						/>
 					}
@@ -130,40 +130,40 @@ templ ComponentWithEvent(
 				<div>
 					<label
 						for="description"
-						class="block text-sm font-medium text-gray-700"
+						class="modal-label"
 					>Description</label>
 					<textarea
 						name="description"
 						id="description"
 						rows="3"
-						class="mt-1 block w-full border border-gray-300 rounded"
+						class="modal-textarea"
 					>{ event.Description }</textarea>
 				</div>
 				<div>
 					<label
 						for="location"
-						class="block text-sm font-medium text-gray-700"
+						class="modal-label"
 					>Location</label>
 					<input
 						type="text"
 						name="location"
 						id="location"
 						hx-on:keydown="if (event.key === 'Enter') { preventDefault(event); }"
-						class="mt-1 block w-full border border-gray-300 rounded"
+						class="modal-input"
 						value={ event.Location }
 					/>
 				</div>
-				<div class="flex justify-end space-x-2">
+				<div class="event-editor-actions">
 					<button
 						type="button"
-						class="px-4 py-2 bg-gray-300 text-gray-700 rounded"
+						class="event-editor-cancel-btn"
 						hx-on:click="closeModal(event)"
 					>Cancel</button>
 					if isNew {
 						<input
 							type="submit"
 							value="New"
-							class="cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-400 px-4 py-2 bg-blue-600 text-white rounded"
+							class="event-editor-submit-btn"
 							disabled
 							hx-trigger="click"
 							hx-post="/api/v1/calendar/events"
@@ -184,7 +184,7 @@ templ ComponentWithEvent(
 						<input
 							type="submit"
 							value="Save"
-							class="cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-400 px-4 py-2 bg-blue-600 text-white rounded"
+							class="event-editor-submit-btn"
 							hx-trigger="click"
 							hx-put="/api/v1/calendar/events"
 							hx-target="#calendar"
