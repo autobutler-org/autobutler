@@ -313,6 +313,15 @@ function sortFiles(column) {
                 ? aValue.localeCompare(bValue, undefined, { numeric: true, sensitivity: 'base' })
                 : bValue.localeCompare(aValue, undefined, { numeric: true, sensitivity: 'base' });
         } else if (column === 'size') {
+            // Sort folders first, then files (unless mixed sorting is enabled)
+            if (!mixedSorting) {
+                const aIsFolder = a.querySelector('td:first-child a[href]') !== null;
+                const bIsFolder = b.querySelector('td:first-child a[href]') !== null;
+
+                if (aIsFolder && !bIsFolder) return -1;
+                if (!aIsFolder && bIsFolder) return 1;
+            }
+
             // Extract size text and convert to bytes for comparison
             const aSizeText = a.querySelector('td:nth-child(2)')?.textContent?.trim() || '0 B';
             const bSizeText = b.querySelector('td:nth-child(2)')?.textContent?.trim() || '0 B';
@@ -471,37 +480,31 @@ function handleTableKeyNavigation(event) {
 // Add event listener for keyboard navigation
 document.addEventListener('keydown', handleTableKeyNavigation);
 
-// Add keyboard support for sort buttons and controls
-document.addEventListener('keydown', function (event) {
+// Add keyboard support for sort buttons
+document.addEventListener('keydown', function(event) {
     const activeElement = document.activeElement;
-
+    
     if (event.key === 'Enter' || event.key === ' ') {
         // Check if focused element is a sort button
         if (activeElement && activeElement.classList.contains('sort-button')) {
+            console.log('Sort button keyboard event detected:', activeElement.id);
             event.preventDefault();
             event.stopPropagation();
             event.stopImmediatePropagation();
-
+            
             // Extract column name from button id (format: "sort-{columnName}")
             const columnName = activeElement.id.replace('sort-', '');
-
+            
             if (columnName) {
+                console.log('Sorting by column:', columnName);
                 sortFiles(columnName);
                 updateSortArrows(columnName);
             }
-            return false;
-        }
-
-        // Check if focused element is the mixed sort toggle
-        if (activeElement && activeElement.id === 'mixed-sort-toggle') {
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-            toggleMixedSorting();
+            
             return false;
         }
     }
-}, true); // Use capture phase to intercept before htmx
+}, true); // Use capture phase to intercept before other handlers
 
 // Add keyboard shortcut for creating new folder
 document.addEventListener('keydown', function (event) {
