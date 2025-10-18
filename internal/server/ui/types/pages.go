@@ -6,6 +6,7 @@ const (
 	PageCalendar PageName = "Calendar"
 	PageFiles    PageName = "Files"
 	PageHome     PageName = "Home"
+	PageDocs     PageName = "Docs"
 )
 
 type Page struct {
