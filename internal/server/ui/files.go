@@ -89,7 +89,7 @@ func renderFileExplorerHelper(c *gin.Context, rootDir string, viewContentOnly bo
 		c.Writer.WriteString(`<span class="text-red-500">Failed to load files: ` + html.EscapeString(err.Error()) + `</span>`)
 		return
 	}
-	
+
 	viewStr := c.Query("view")
 	if len(view) > 0 && view[0] != "" {
 		viewStr = view[0]
@@ -97,14 +97,14 @@ func renderFileExplorerHelper(c *gin.Context, rootDir string, viewContentOnly bo
 	if viewStr == "" {
 		viewStr = "list"
 	}
-	
+
 	var component templ.Component
 	if viewContentOnly {
 		component = file_explorer.ViewContent(types.NewPageState().WithRootDir(rootDir), files, viewStr)
 	} else {
 		component = file_explorer.Component(types.NewPageState().WithRootDir(rootDir), files, viewStr)
 	}
-	
+
 	if err := component.Render(c.Request.Context(), c.Writer); err != nil {
 		c.Status(500)
 		return
