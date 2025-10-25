@@ -20,8 +20,8 @@ templ delete(pageState types.PageState) {
 				filePaths: selectedFiles ,
 			}`, pageState.RootDir) }
 		hx-on::after-request={ templ.JSFuncCall("clearSelectedFiles") }
-		hx-target="#file-explorer"
-		hx-swap="outerHTML"
+		hx-target="#file-explorer-view-content"
+		hx-swap="innerHTML"
 	>
 		@trash.Component()
 	</button>

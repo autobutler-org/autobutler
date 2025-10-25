@@ -21,28 +21,18 @@ function setViewPreference(view) {
 
 function switchView(view) {
     setViewPreference(view);
-    // Reload the current page - server will read view from cookie
-    window.location.reload();
+    // Use HTMX to reload the content without a full page refresh
+    const currentPath = window.location.pathname;
+    htmx.ajax('GET', currentPath, {
+        target: '#file-explorer-view-content',
+        swap: 'innerHTML'
+    });
 }
 
 // Initialize - sync localStorage to cookie on page load
 document.addEventListener('DOMContentLoaded', function() {
     const view = getViewPreference();
     setViewPreference(view); // Ensures cookie is set
-    
-    // Check for pending preview after navigation
-    const pendingPreview = sessionStorage.getItem('pendingPreview');
-    if (pendingPreview) {
-        sessionStorage.removeItem('pendingPreview');
-        // Use HTMX to load the preview
-        const previewContent = document.getElementById('column-preview-content');
-        if (previewContent) {
-            htmx.ajax('GET', pendingPreview, {
-                target: '#column-preview-content',
-                swap: 'innerHTML'
-            });
-        }
-    }
 });
 
 // Send view preference in all HTMX requests via custom header
@@ -261,10 +251,19 @@ function showFolderDetails(event) {
 
 function navigateToParentAndPreview(event, parentPath, previewPath) {
     preventDefault(event);
-    // Store the preview path in sessionStorage so we can load it after navigation
-    sessionStorage.setItem('pendingPreview', previewPath);
-    // Navigate to parent path (removes child columns)
-    window.location.href = parentPath;
+    // Use HTMX to navigate to parent (removes child columns) without full page reload
+    htmx.ajax('GET', parentPath, {
+        target: '#file-explorer-view-content',
+        swap: 'innerHTML'
+    }).then(function() {
+        // After the file explorer updates, load the preview
+        htmx.ajax('GET', previewPath, {
+            target: '#column-preview-content',
+            swap: 'innerHTML'
+        });
+    });
+    // Update the URL
+    history.pushState({}, '', parentPath);
 }
 
 // SELECTO

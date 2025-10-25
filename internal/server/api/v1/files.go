@@ -38,7 +38,12 @@ func deleteFilesRoute(apiV1Group *gin.RouterGroup) {
 				return
 			}
 		}
-		ui.RenderFileExplorer(c, rootDir)
+		// Check if it's an HTMX request targeting just the content
+		if c.GetHeader("HX-Request") == "true" {
+			ui.RenderFileExplorerViewContentWithBreadcrumb(c, rootDir, "")
+		} else {
+			ui.RenderFileExplorer(c, rootDir)
+		}
 	})
 }
 
@@ -99,7 +104,12 @@ func newFolderRoute(apiV1Group *gin.RouterGroup) {
 		}
 
 		newDir := filepath.Join(folderDir, folderName)
-		ui.RenderFileExplorer(c, newDir)
+		// Check if it's an HTMX request targeting just the content
+		if c.GetHeader("HX-Request") == "true" {
+			ui.RenderFileExplorerViewContent(c, newDir, "")
+		} else {
+			ui.RenderFileExplorer(c, newDir)
+		}
 	})
 }
 
@@ -126,7 +136,12 @@ func moveFileRoute(apiV1Group *gin.RouterGroup) {
 		if newDir == "." {
 			newDir = ""
 		}
-		ui.RenderFileExplorer(c, newDir)
+		// Check if it's an HTMX request targeting just the content
+		if c.GetHeader("HX-Request") == "true" {
+			ui.RenderFileExplorerViewContent(c, newDir, "")
+		} else {
+			ui.RenderFileExplorer(c, newDir)
+		}
 	})
 }
 

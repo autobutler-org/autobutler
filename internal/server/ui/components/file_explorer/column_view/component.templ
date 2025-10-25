@@ -136,7 +136,14 @@ templ renderParentColumnItem(pageState types.PageState, parentPath string, file 
 		data-is-folder={ fmt.Sprintf("%t", isFolder) }
 	>
 		if isFolder {
-			<a href={ filePath } class="column-view-link">
+			<a
+				href={ filePath }
+				class="column-view-link"
+				hx-get={ filePath }
+				hx-target="#file-explorer-view-content"
+				hx-swap="innerHTML"
+				hx-push-url="true"
+			>
 				<span class="column-view-icon">
 					@folder.Component()
 				</span>
@@ -171,7 +178,14 @@ templ renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) {
 		data-is-folder={ fmt.Sprintf("%t", isFolder) }
 	>
 		if isFolder {
-			<a href={ filePath } class="column-view-link">
+			<a
+				href={ filePath }
+				class="column-view-link"
+				hx-get={ filePath }
+				hx-target="#file-explorer-view-content"
+				hx-swap="innerHTML"
+				hx-push-url="true"
+			>
 				<span class="column-view-icon">
 					@folder.Component()
 				</span>

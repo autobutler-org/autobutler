@@ -1,0 +1,117 @@
+package file_explorer
+
+import (
+	"autobutler/internal/server/ui/types"
+	"path/filepath"
+	"strings"
+)
+
+templ Breadcrumb(pageState types.PageState, view string) {
+	<nav id="breadcrumbs" class="file-explorer-breadcrumbs" data-path={ pageState.RootDir }>
+		{{ accumulatedDir := "" }}
+		for i, dir := range strings.Split(pageState.RootDir, "/") {
+			if i == 0 {
+				{{ dir = "files" }}
+			}
+			if i > 0 && dir == "" {
+				{{ continue }}
+			}
+			<span class="file-explorer-breadcrumb">
+				{{ accumulatedDir = filepath.Join(accumulatedDir, dir) }}
+				<a
+					href={ filepath.Join("/", accumulatedDir) }
+					hx-get={ filepath.Join("/", accumulatedDir) }
+					hx-target="#file-explorer-view-content"
+					hx-swap="innerHTML"
+					hx-push-url="true"
+				>
+					{ dir }
+				</a>
+				<span>/</span>
+			</span>
+		}
+		<div class="file-explorer-folder-controls">
+			// Add a plus button SVG
+			<button
+				id="add-folder-btn"
+				class="file-explorer-add-folder btn btn--icon"
+				title="Add Folder"
+				type="button"
+				hx-on:click="toggleFolderInput(event)"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="icon icon--base" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--color-green-600);">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+				</svg>
+			</button>
+			<input
+				type="text"
+				id="folder-input"
+				name="folderName"
+				class="file-explorer-folder-input hidden"
+				placeholder="New folder name"
+				hx-include="[name='folderName']"
+				hx-post={ filepath.Join("/api/v1/folder/files", pageState.RootDir) }
+				hx-target="#file-explorer-view-content"
+				hx-swap="innerHTML"
+				hx-trigger="keydown[keyCode==13] from:body"
+				hx-disabled-elt="this"
+			/>
+		</div>
+	</nav>
+}
+
+// BreadcrumbOOB renders the breadcrumb with out-of-band swap attribute
+templ BreadcrumbOOB(pageState types.PageState, view string) {
+	<nav id="breadcrumbs" class="file-explorer-breadcrumbs" data-path={ pageState.RootDir } hx-swap-oob="true">
+		{{ accumulatedDir := "" }}
+		for i, dir := range strings.Split(pageState.RootDir, "/") {
+			if i == 0 {
+				{{ dir = "files" }}
+			}
+			if i > 0 && dir == "" {
+				{{ continue }}
+			}
+			<span class="file-explorer-breadcrumb">
+				{{ accumulatedDir = filepath.Join(accumulatedDir, dir) }}
+				<a
+					href={ filepath.Join("/", accumulatedDir) }
+					hx-get={ filepath.Join("/", accumulatedDir) }
+					hx-target="#file-explorer-view-content"
+					hx-swap="innerHTML"
+					hx-push-url="true"
+				>
+					{ dir }
+				</a>
+				<span>/</span>
+			</span>
+		}
+		<div class="file-explorer-folder-controls">
+			// Add a plus button SVG
+			<button
+				id="add-folder-btn"
+				class="file-explorer-add-folder btn btn--icon"
+				title="Add Folder"
+				type="button"
+				hx-on:click="toggleFolderInput(event)"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="icon icon--base" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--color-green-600);">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+				</svg>
+			</button>
+			<input
+				type="text"
+				id="folder-input"
+				name="folderName"
+				class="file-explorer-folder-input hidden"
+				placeholder="New folder name"
+				hx-include="[name='folderName']"
+				hx-post={ filepath.Join("/api/v1/folder/files", pageState.RootDir) }
+				hx-target="#file-explorer-view-content"
+				hx-swap="innerHTML"
+				hx-trigger="keydown[keyCode==13] from:body"
+				hx-disabled-elt="this"
+			/>
+		</div>
+	</nav>
+}
+

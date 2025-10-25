@@ -45,9 +45,9 @@ func setupFileView(router *gin.Engine) {
 	uiRoute(router, "/files", func(c *gin.Context) {
 		view := getViewFromRequest(c)
 
-		// If this is an htmx request, return just the view content
+		// If this is an htmx request, return just the view content with OOB breadcrumb
 		if c.GetHeader("HX-Request") == "true" {
-			RenderFileExplorerViewContent(c, "", view)
+			RenderFileExplorerViewContentWithBreadcrumb(c, "", view)
 			return
 		}
 
@@ -61,9 +61,9 @@ func setupFileView(router *gin.Engine) {
 		rootDir := c.Param("rootDir")
 		view := getViewFromRequest(c)
 
-		// If this is an htmx request, return just the view content
+		// If this is an htmx request, return just the view content with OOB breadcrumb
 		if c.GetHeader("HX-Request") == "true" {
-			RenderFileExplorerViewContent(c, rootDir, view)
+			RenderFileExplorerViewContentWithBreadcrumb(c, rootDir, view)
 			return
 		}
 
@@ -88,7 +88,11 @@ func RenderFileExplorerViewContent(c *gin.Context, rootDir string, view string) 
 	renderFileExplorerHelper(c, rootDir, true, view)
 }
 
-func renderFileExplorerHelper(c *gin.Context, rootDir string, viewContentOnly bool, view ...string) {
+func RenderFileExplorerViewContentWithBreadcrumb(c *gin.Context, rootDir string, view string) {
+	renderFileExplorerHelper(c, rootDir, true, view, true)
+}
+
+func renderFileExplorerHelper(c *gin.Context, rootDir string, viewContentOnly bool, view ...interface{}) {
 	fullPathDir := ""
 	if rootDir == "" {
 		fullPathDir = util.GetFilesDir()
@@ -102,14 +106,28 @@ func renderFileExplorerHelper(c *gin.Context, rootDir string, viewContentOnly bo
 	}
 
 	viewStr := getViewFromRequest(c)
-	if len(view) > 0 && view[0] != "" {
-		viewStr = view[0]
+	withBreadcrumb := false
+
+	// Parse variadic args: first is view string, second (optional) is withBreadcrumb bool
+	if len(view) > 0 {
+		if v, ok := view[0].(string); ok && v != "" {
+			viewStr = v
+		}
+	}
+	if len(view) > 1 {
+		if wb, ok := view[1].(bool); ok {
+			withBreadcrumb = wb
+		}
 	}
 
 	var component templ.Component
 	pageState := types.NewPageState().WithRootDir(rootDir).WithView(viewStr)
 	if viewContentOnly {
-		component = file_explorer.ViewContent(pageState, files, viewStr)
+		if withBreadcrumb {
+			component = file_explorer.ViewContentWithBreadcrumb(pageState, files, viewStr)
+		} else {
+			component = file_explorer.ViewContent(pageState, files, viewStr)
+		}
 	} else {
 		component = file_explorer.Component(pageState, files, viewStr)
 	}

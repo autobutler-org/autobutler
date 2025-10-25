@@ -9,8 +9,6 @@ import (
 	"autobutler/internal/server/ui/components/file_explorer/explorer_context_menu"
 	"autobutler/internal/server/ui/types"
 	"fmt"
-	"path/filepath"
-	"strings"
 )
 
 templ Component(pageState types.PageState, files []fs.FileInfo, view string) {
@@ -36,55 +34,11 @@ templ Component(pageState types.PageState, files []fs.FileInfo, view string) {
 			hx-on:contextmenu="toggleFloatingContextMenu(event, this)"
 			hx-on:mouseleave="closeContextMenu(null, this)"
 		>
-			@explorer_context_menu.Component(pageState)
-			<div class="file-explorer-controls">
-				<div id="breadcrumbs">
-					<nav class="file-explorer-breadcrumbs" data-path={ pageState.RootDir }>
-						{{ accumulatedDir := "" }}
-						for i, dir := range strings.Split(pageState.RootDir, "/") {
-							if i == 0 {
-								{{ dir = "files" }}
-							}
-							if i > 0 && dir == "" {
-								{{ continue }}
-							}
-							<span class="file-explorer-breadcrumb">
-								{{ accumulatedDir = filepath.Join(accumulatedDir, dir) }}
-								<a href={ filepath.Join("/", accumulatedDir) }>
-									{ dir }
-								</a>
-								<span>/</span>
-							</span>
-						}
-						<div class="file-explorer-folder-controls">
-							// Add a plus button SVG
-							<button
-								id="add-folder-btn"
-								class="file-explorer-add-folder btn btn--icon"
-								title="Add Folder"
-								type="button"
-								hx-on:click="toggleFolderInput(event)"
-							>
-								<svg xmlns="http://www.w3.org/2000/svg" class="icon icon--base" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--color-green-600);">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-								</svg>
-							</button>
-							<input
-								type="text"
-								id="folder-input"
-								name="folderName"
-								class="file-explorer-folder-input hidden"
-								placeholder="New folder name"
-								hx-include="[name='folderName']"
-								hx-post={ filepath.Join("/api/v1/folder/files", pageState.RootDir) }
-								hx-target="#file-explorer"
-								hx-swap="outerHTML"
-								hx-trigger="keydown[keyCode==13] from:body"
-								hx-disabled-elt="this"
-							/>
-						</div>
-					</nav>
-				</div>
+		@explorer_context_menu.Component(pageState)
+		<div class="file-explorer-controls">
+			<div>
+				@Breadcrumb(pageState, view)
+			</div>
 				<div class="view-switcher">
 					<button
 						class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "list") }
@@ -105,7 +59,9 @@ templ Component(pageState types.PageState, files []fs.FileInfo, view string) {
 				</div>
 			</div>
 			<div id="file-explorer-status"></div>
-			@ViewContent(pageState, files, view)
+			<div id="file-explorer-view-content">
+				@ViewContent(pageState, files, view)
+			</div>
 		</div>
 	</div>
 	<script src="/public/scripts/file_explorer.js"></script>
