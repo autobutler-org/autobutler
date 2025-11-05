@@ -1,9 +1,11 @@
 package views
 
 import (
-	"autobutler/internal/server/ui/components/body"
+	"autobutler/internal/server/ui/components/gradient_overlays"
 	"autobutler/internal/server/ui/components/header"
 	"autobutler/internal/server/ui/components/hero"
+	"autobutler/internal/server/ui/components/landing_nav"
+	"autobutler/internal/server/ui/components/storage"
 	"autobutler/internal/server/ui/types"
 )
 
@@ -12,8 +14,15 @@ templ Home(pageState types.PageState) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@header.Component()
-		@body.Component(pageState) {
-			@hero.Component()
-		}
+		<body class="landing-body">
+			<main class="landing-main">
+				@gradient_overlays.Component()
+				<div class="landing-container">
+					@landing_nav.Component()
+					@hero.Component()
+					@storage.Component()
+				</div>
+			</main>
+		</body>
 	</html>
 }

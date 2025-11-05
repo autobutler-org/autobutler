@@ -1,0 +1,40 @@
+package landing_nav
+
+import "autobutler/internal/version"
+
+templ Component() {
+	<nav class="landing-nav">
+		<div class="landing-nav-left">
+			<a href="/" class="landing-nav-logo">
+				<img src="/public/img/butler.png" height="24" width="24" alt="AutoButler"/>
+			</a>
+			<a href="/files" class="landing-nav-link">Files</a>
+			<a href="/calendar" class="landing-nav-link">Calendar</a>
+			<a href="/photos" class="landing-nav-link">Photos</a>
+		</div>
+		<div class="landing-nav-right">
+			<button class="landing-nav-button" onclick="alert('Settings coming soon')" title="Settings">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<circle cx="12" cy="12" r="3"></circle>
+					<path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m-2 2l-4.2 4.2M23 12h-6m-6 0H5m13.2 5.2l-4.2-4.2m-2-2l-4.2-4.2"></path>
+				</svg>
+				<span>Settings</span>
+			</button>
+			<span class="landing-nav-version" title={ "Version " + version.Semver }>
+				if version.Semver == version.NoSemver {
+					vX.Y.Z
+				} else {
+					{ version.Semver }
+				}
+			</span>
+			<button class="landing-nav-button" onclick="alert('Devices coming soon')" title="Devices">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+					<line x1="8" y1="21" x2="16" y2="21"></line>
+					<line x1="12" y1="17" x2="12" y2="21"></line>
+				</svg>
+				<span>Devices</span>
+			</button>
+		</div>
+	</nav>
+}

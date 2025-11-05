@@ -1,0 +1,26 @@
+package storage
+
+import (
+	"autobutler/pkg/util"
+	"fmt"
+)
+
+// TODO: Add actual breakdown by category (Documents, Media, Backups, etc.)
+templ Component() {
+	{{ fileDir := util.GetFilesDir() }}
+	{{ availableBytes := util.GetAvailableSpaceInBytes(fileDir) }}
+	{{ totalBytes := uint64(200 * 1024 * 1024 * 1024) }} // 200GB for now - TODO: get from actual disk
+	{{ usedBytes := totalBytes - availableBytes }}
+	{{ usedGB := util.BytesToGB(usedBytes) }}
+	{{ totalGB := util.BytesToGB(totalBytes) }}
+	{{ percentUsed := int((float64(usedBytes) / float64(totalBytes)) * 100) }}
+	<div class="storage-component">
+		<h3 class="storage-title">Storage</h3>
+		<div class="storage-bar">
+			<div class="storage-bar-fill" style={ fmt.Sprintf("width: %d%%", percentUsed) }></div>
+		</div>
+		<div class="storage-info">
+			<span class="storage-text">{ fmt.Sprintf("%d%% used • %.0f GB of %.0f GB", percentUsed, usedGB, totalGB) }</span>
+		</div>
+	</div>
+}
