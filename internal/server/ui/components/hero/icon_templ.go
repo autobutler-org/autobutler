@@ -29,7 +29,7 @@ func icon() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"hero-icon\"><img src=\"/public/img/butler.png\" alt=\"AutoButler Logo\"><h1 class=\"hero-title\">AutoButler</h1><p class=\"hero-description\">Your intelligent assistant for files, planning, and everyday tasks — elegantly organized in one place.</p></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"hero-icon\"><img src=\"/public/img/butler.png\" alt=\"AutoButler Logo\"><h1 class=\"hero-title\">AutoButler</h1><p class=\"hero-description\">Your secure home cloud for files, planning, and everyday tasks — elegantly organized in one place.</p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
