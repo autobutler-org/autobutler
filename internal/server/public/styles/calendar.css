@@ -10,11 +10,23 @@
 	margin: var(--spacing-lg);
 }
 
+/* ========== CALENDAR HEADER WITH NAVIGATION ========== */
+
+.calendar-header-nav {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: var(--spacing-lg);
+	gap: var(--spacing-md);
+}
+
 .calendar-title {
 	font-size: var(--font-size-5xl);
 	font-weight: 800;
-	margin-bottom: var(--spacing-lg);
 	color: var(--color-gray-900);
+	margin: 0;
+	flex: 1;
+	text-align: center;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,6 +34,52 @@
 		color: white;
 	}
 }
+
+.calendar-nav-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	padding: var(--spacing-sm);
+	border: 1px solid var(--color-gray-300);
+	border-radius: var(--border-radius);
+	background-color: white;
+	color: var(--color-gray-700);
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.calendar-nav-btn:hover {
+	background-color: var(--color-gray-50);
+	border-color: var(--color-gray-400);
+	color: var(--color-gray-900);
+}
+
+.calendar-nav-btn:active {
+	transform: scale(0.95);
+}
+
+.calendar-nav-btn svg {
+	width: 1.25rem;
+	height: 1.25rem;
+}
+
+@media (prefers-color-scheme: dark) {
+	.calendar-nav-btn {
+		background-color: var(--color-gray-800);
+		border-color: var(--color-gray-600);
+		color: var(--color-gray-300);
+	}
+
+	.calendar-nav-btn:hover {
+		background-color: var(--color-gray-700);
+		border-color: var(--color-gray-500);
+		color: white;
+	}
+}
+
+/* ========== CALENDAR TABLE ========== */
 
 .calendar-table {
 	table-layout: fixed;
