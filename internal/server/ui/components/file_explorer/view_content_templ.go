@@ -10,6 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"autobutler/internal/server/ui/components/file_explorer/column_view"
+	"autobutler/internal/server/ui/components/file_explorer/grid_view"
 	"autobutler/internal/server/ui/components/file_explorer/list_view"
 	"autobutler/internal/server/ui/types"
 	"autobutler/pkg/util"
@@ -46,7 +47,7 @@ func ViewContent(pageState types.PageState, files []fs.FileInfo, view string) te
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join(util.GetFilesDir(), pageState.RootDir))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/view_content.templ`, Line: 14, Col: 108}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/view_content.templ`, Line: 15, Col: 108}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -59,6 +60,11 @@ func ViewContent(pageState types.PageState, files []fs.FileInfo, view string) te
 		} else {
 			if view == "column" {
 				templ_7745c5c3_Err = column_view.Component(pageState, files).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else if view == "grid" {
+				templ_7745c5c3_Err = grid_view.Component(pageState, files).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

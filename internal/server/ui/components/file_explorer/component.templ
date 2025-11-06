@@ -39,24 +39,32 @@ templ Component(pageState types.PageState, files []fs.FileInfo, view string) {
 				<div>
 					@Breadcrumb(pageState, view)
 				</div>
-				<div class="view-switcher">
-					<button
-						class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "list") }
-						onclick="switchView('list')"
-						title="List View"
-						type="button"
-					>
-						L
-					</button>
-					<button
-						class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "column") }
-						onclick="switchView('column')"
-						title="Column View"
-						type="button"
-					>
-						C
-					</button>
-				</div>
+			<div class="view-switcher">
+				<button
+					class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "list") }
+					onclick="switchView('list')"
+					title="List View"
+					type="button"
+				>
+					L
+				</button>
+				<button
+					class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "grid") }
+					onclick="switchView('grid')"
+					title="Grid View"
+					type="button"
+				>
+					G
+				</button>
+				<button
+					class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "column") }
+					onclick="switchView('column')"
+					title="Column View"
+					type="button"
+				>
+					C
+				</button>
+			</div>
 			</div>
 			<div id="file-explorer-status"></div>
 			<div id="file-explorer-view-content">

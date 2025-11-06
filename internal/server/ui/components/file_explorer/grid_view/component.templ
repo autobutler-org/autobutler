@@ -1,0 +1,136 @@
+package grid_view
+
+import (
+	"autobutler/internal/server/ui/components/icons/archive"
+	"autobutler/internal/server/ui/components/icons/folder"
+	"autobutler/internal/server/ui/components/icons/generic"
+	"autobutler/internal/server/ui/components/icons/image"
+	"autobutler/internal/server/ui/components/icons/pdf"
+	"autobutler/internal/server/ui/components/icons/slideshow"
+	"autobutler/internal/server/ui/types"
+	"autobutler/pkg/util"
+	"fmt"
+	"io/fs"
+	"path/filepath"
+)
+
+templ Component(pageState types.PageState, files []fs.FileInfo) {
+	<div class="grid-view-container">
+		<div class="grid-view-grid">
+			for _, file := range files {
+				@renderGridItem(pageState, file)
+			}
+		</div>
+	</div>
+}
+
+templ renderGridItem(pageState types.PageState, file fs.FileInfo) {
+	{{
+		fileType := util.DetermineFileType(pageState.RootDir, file)
+		fileName := file.Name()
+		isFolder := fileType == util.FileTypeFolder
+		filePath := filepath.Join("/files", pageState.RootDir, fileName)
+		fileSize := util.SizeBytesToString(file.Size())
+	}}
+	<div
+		class={ "grid-view-item file-node", templ.KV("grid-view-item--folder", isFolder) }
+		data-name={ fileName }
+		data-is-folder={ fmt.Sprintf("%t", isFolder) }
+	>
+		if isFolder {
+			<a
+				href={ templ.SafeURL(filePath) }
+				class="grid-view-link"
+				hx-get={ filePath }
+				hx-target="#file-explorer-view-content"
+				hx-swap="innerHTML"
+				hx-push-url="true"
+			>
+				<div class="grid-view-icon-container">
+					@folder.Component()
+				</div>
+				<div class="grid-view-details">
+					<div class="grid-view-name" title={ fileName }>{ fileName }</div>
+				</div>
+			</a>
+		} else {
+			<div
+				class="grid-view-link"
+				hx-get={ filepath.Join("/components/files/viewer", filePath) }
+				hx-target="#file-viewer-content"
+				hx-swap="innerHTML"
+				hx-on:click="document.getElementById('file-viewer').showModal();"
+			>
+				<div class="grid-view-icon-container">
+					@renderFileIcon(fileType)
+				</div>
+				<div class="grid-view-details">
+					<div class="grid-view-name" title={ fileName }>{ fileName }</div>
+					if !isFolder && fileSize != "" {
+						<div class="grid-view-size">{ fileSize }</div>
+					}
+				</div>
+			</div>
+		}
+		<div
+			class="grid-view-context-trigger"
+			hx-on:click="event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.grid-view-item'))"
+		>
+			⋮
+		</div>
+		@renderContextMenu(pageState, file)
+	</div>
+}
+
+templ renderFileIcon(fileType util.FileType) {
+	switch fileType {
+		case util.FileTypePDF:
+			@pdf.Component()
+		case util.FileTypeSlideshow:
+			@slideshow.Component()
+		case util.FileTypeImage:
+			@image.Component()
+		case util.FileTypeArchive:
+			@archive.Component()
+		default:
+			@generic.Component()
+	}
+}
+
+templ renderContextMenu(pageState types.PageState, file fs.FileInfo) {
+	{{
+		fileType := util.DetermineFileType(pageState.RootDir, file)
+		fileName := file.Name()
+		isFolder := fileType == util.FileTypeFolder
+		downloadPath := filepath.Join("/api/v1/files", pageState.RootDir, fileName)
+	}}
+	<div class="context-menu hidden">
+		if !isFolder {
+			<a
+				href={ templ.SafeURL(downloadPath) }
+				download
+				class="context-menu-item"
+			>
+				Download
+			</a>
+		}
+		<button
+			type="button"
+			class="context-menu-item"
+			hx-on:click={ templ.JSFuncCall("moveFile", templ.JSExpression("event"), pageState.RootDir, fileName) }
+		>
+			Rename/Move
+		</button>
+		<button
+			type="button"
+			class="context-menu-item context-menu-item--danger"
+			hx-target="#file-explorer"
+			hx-swap="outerHTML"
+			hx-delete={ filepath.Join(`/api/v1/files`) }
+			hx-vals={ `{"rootDir":"` + pageState.RootDir + `", "filePaths":["` + fileName + `"]}` }
+		>
+			Delete
+		</button>
+	</div>
+}
+
