@@ -120,7 +120,7 @@
           "appSettings": [
             {
               "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
-              "value": "true"
+              "value": "false"
             },
             {
               "name": "DOCKER_ENABLE_CI",
