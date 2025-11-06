@@ -17,71 +17,71 @@ type DarwinDetector struct{}
 func (d *DarwinDetector) DetectDevices() ([]Device, error) {
 	devices := []Device{}
 	seenContainers := make(map[string]bool) // Track APFS containers to avoid double-counting
-	
+
 	// Use df with byte output to get mounted filesystems - READ ONLY
 	cmd := exec.Command("df", "-k")
 	output, err := cmd.Output()
 	if err != nil {
 		return devices, fmt.Errorf("failed to run df: %w", err)
 	}
-	
+
 	// Parse df output
 	scanner := bufio.NewScanner(strings.NewReader(string(output)))
 	scanner.Scan() // Skip header
-	
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		fields := strings.Fields(line)
 		if len(fields) < 6 {
 			continue
 		}
-		
+
 		devicePath := fields[0]
 		mountPoint := fields[len(fields)-1]
-		
+
 		// Skip non-disk filesystems
 		if !strings.HasPrefix(devicePath, "/dev/disk") {
 			continue
 		}
-		
+
 		// Skip system volumes we don't want to show
 		if shouldSkipVolume(mountPoint) {
 			continue
 		}
-		
+
 		// Parse sizes from df (in KB, so multiply by 1024 for bytes)
 		totalKB, _ := strconv.ParseUint(fields[1], 10, 64)
 		usedKB, _ := strconv.ParseUint(fields[2], 10, 64)
 		availKB, _ := strconv.ParseUint(fields[3], 10, 64)
 		percentStr := strings.TrimSuffix(fields[4], "%")
 		percentUsed, _ := strconv.Atoi(percentStr)
-		
+
 		// Get detailed device info
 		device, err := d.GetDeviceInfo(devicePath)
 		if err != nil {
 			continue // Skip devices we can't read
 		}
-		
+
 		// Override with df values which are more accurate
 		device.TotalBytes = totalKB * 1024
 		device.UsedBytes = usedKB * 1024
 		device.AvailBytes = availKB * 1024
 		device.PercentUsed = percentUsed
 		device.MountPoint = mountPoint
-		
+
 		// Mark this container as seen (for deduplication in summary)
 		containerID := d.getContainerID(devicePath)
 		if containerID != "" {
 			device.Model = containerID // Store container ID in Model for now
 			seenContainers[containerID] = true
 		}
-		
+
 		// Recalculate categories with correct values
 		d.estimateCategories(device)
-		
+
 		devices = append(devices, *device)
 	}
-	
+
 	return devices, nil
 }
 
@@ -104,20 +104,20 @@ func (d *DarwinDetector) GetDeviceInfo(devicePath string) (*Device, error) {
 		Status:     "Online",
 		Categories: make(map[string]uint64),
 	}
-	
+
 	// Get device info using diskutil info - READ ONLY
 	cmd := exec.Command("diskutil", "info", devicePath)
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get device info: %w", err)
 	}
-	
+
 	info := string(output)
 	device.Name = extractValue(info, "Volume Name:")
 	device.MountPoint = extractValue(info, "Mount Point:")
 	device.FileSystem = extractValue(info, "Type \\(Bundle\\):")
 	device.Model = extractValue(info, "Device / Media Name:")
-	
+
 	// Parse sizes
 	if totalStr := extractValue(info, "Disk Size:"); totalStr != "" {
 		device.TotalBytes = parseSize(totalStr)
@@ -129,16 +129,16 @@ func (d *DarwinDetector) GetDeviceInfo(devicePath string) (*Device, error) {
 	if device.TotalBytes > 0 {
 		device.PercentUsed = int((float64(device.UsedBytes) / float64(device.TotalBytes)) * 100)
 	}
-	
+
 	// Determine device type and properties
 	device.IsInternal = strings.Contains(strings.ToLower(info), "internal: yes")
-	device.IsRemovable = strings.Contains(strings.ToLower(info), "removable media: yes") || 
-	                      strings.Contains(strings.ToLower(info), "ejectable: yes")
+	device.IsRemovable = strings.Contains(strings.ToLower(info), "removable media: yes") ||
+		strings.Contains(strings.ToLower(info), "ejectable: yes")
 	device.IsReadOnly = strings.Contains(strings.ToLower(info), "read-only volume: yes")
-	
+
 	// Set device type description
 	device.Type = d.determineDeviceType(device, info)
-	
+
 	// Set default name if empty
 	if device.Name == "" {
 		device.Name = filepath.Base(device.MountPoint)
@@ -146,13 +146,13 @@ func (d *DarwinDetector) GetDeviceInfo(devicePath string) (*Device, error) {
 			device.Name = "Macintosh HD"
 		}
 	}
-	
+
 	// Check SMART status for health - READ ONLY
 	device.Health = d.getHealthStatus(info)
-	
+
 	// Estimate categories (simplified for now)
 	d.estimateCategories(device)
-	
+
 	return device, nil
 }
 
@@ -161,13 +161,13 @@ func (d *DarwinDetector) GetDeviceInfo(devicePath string) (*Device, error) {
 func (d *DarwinDetector) CalculateSummary(devices []Device) Summary {
 	summary := Summary{}
 	seenContainers := make(map[string]Device) // Track unique APFS containers
-	
+
 	for _, device := range devices {
 		summary.TotalDevices++
-		
+
 		// Check if this device is part of an APFS container we've already counted
 		containerID := d.getContainerID(device.DevicePath)
-		
+
 		if containerID != "" {
 			// APFS volume - only count the container once
 			if existingDevice, seen := seenContainers[containerID]; seen {
@@ -177,11 +177,11 @@ func (d *DarwinDetector) CalculateSummary(devices []Device) Summary {
 					summary.TotalBytes -= existingDevice.TotalBytes
 					summary.UsedBytes -= existingDevice.UsedBytes
 					summary.AvailBytes -= existingDevice.AvailBytes
-					
+
 					summary.TotalBytes += device.TotalBytes
 					summary.UsedBytes += device.UsedBytes
 					summary.AvailBytes += device.AvailBytes
-					
+
 					seenContainers[containerID] = device
 				}
 				// If existing device has more used space, keep it and skip this one
@@ -199,11 +199,11 @@ func (d *DarwinDetector) CalculateSummary(devices []Device) Summary {
 			summary.AvailBytes += device.AvailBytes
 		}
 	}
-	
+
 	summary.TotalTB = BytesToTB(summary.TotalBytes)
 	summary.UsedTB = BytesToTB(summary.UsedBytes)
 	summary.AvailTB = BytesToTB(summary.AvailBytes)
-	
+
 	return summary
 }
 
@@ -221,13 +221,13 @@ func shouldSkipVolume(mountPoint string) bool {
 		"/private/var/vm",
 		"/dev",
 	}
-	
+
 	for _, prefix := range skipPrefixes {
 		if strings.HasPrefix(mountPoint, prefix) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -254,7 +254,7 @@ func parseSize(sizeStr string) uint64 {
 
 func (d *DarwinDetector) determineDeviceType(device *Device, info string) string {
 	var typeStr string
-	
+
 	// Determine connection type
 	if device.IsInternal {
 		if strings.Contains(info, "SSD") {
@@ -271,12 +271,12 @@ func (d *DarwinDetector) determineDeviceType(device *Device, info string) string
 	} else {
 		typeStr = "External"
 	}
-	
+
 	// Add filesystem
 	if device.FileSystem != "" {
 		typeStr += " • " + device.FileSystem
 	}
-	
+
 	return typeStr
 }
 
@@ -293,21 +293,21 @@ func (d *DarwinDetector) getHealthStatus(info string) string {
 func (d *DarwinDetector) estimateCategories(device *Device) {
 	// TODO: Implement detailed category scanning using du command
 	// For now, provide rough estimates based on common patterns
-	
+
 	// All categories must add up to TotalBytes (used + free = total)
-	
+
 	// If it's the main system volume
 	if device.MountPoint == "/" || device.MountPoint == "/System/Volumes/Data" {
 		// Calculate proportional estimates based on actual used space
-		device.Categories["system"] = uint64(float64(device.UsedBytes) * 0.10)      // ~10% of used = system
-		device.Categories["documents"] = uint64(float64(device.UsedBytes) * 0.15)   // ~15% of used = documents
-		device.Categories["media"] = uint64(float64(device.UsedBytes) * 0.30)       // ~30% of used = media
-		
+		device.Categories["system"] = uint64(float64(device.UsedBytes) * 0.10)    // ~10% of used = system
+		device.Categories["documents"] = uint64(float64(device.UsedBytes) * 0.15) // ~15% of used = documents
+		device.Categories["media"] = uint64(float64(device.UsedBytes) * 0.30)     // ~30% of used = media
+
 		// Other is the remaining used space
-		categoriesTotal := device.Categories["system"] + 
-			device.Categories["documents"] + 
+		categoriesTotal := device.Categories["system"] +
+			device.Categories["documents"] +
 			device.Categories["media"]
-		
+
 		if categoriesTotal <= device.UsedBytes {
 			device.Categories["other"] = device.UsedBytes - categoriesTotal
 		} else {
@@ -318,8 +318,7 @@ func (d *DarwinDetector) estimateCategories(device *Device) {
 		// For external drives, assume most is "other" usage
 		device.Categories["other"] = device.UsedBytes
 	}
-	
+
 	// Free space completes the total
 	device.Categories["free"] = device.AvailBytes
 }
-

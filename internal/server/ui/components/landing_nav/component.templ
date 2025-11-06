@@ -13,6 +13,13 @@ templ Component() {
 			<a href="/photos" class="landing-nav-link">Photos</a>
 		</div>
 		<div class="landing-nav-right">
+			<button class="landing-nav-button" onclick="alert('Settings coming soon')" title="Settings">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<circle cx="12" cy="12" r="3"></circle>
+					<path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m-2 2l-4.2 4.2M23 12h-6m-6 0H5m13.2 5.2l-4.2-4.2m-2-2l-4.2-4.2"></path>
+				</svg>
+				<span>Settings</span>
+			</button>
 			<span class="landing-nav-version" title={ "Version " + version.Semver }>
 				if version.Semver == version.NoSemver {
 					vX.Y.Z
@@ -20,6 +27,14 @@ templ Component() {
 					{ version.Semver }
 				}
 			</span>
+			<a href="/devices" class="landing-nav-button" title="Devices">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+					<line x1="8" y1="21" x2="16" y2="21"></line>
+					<line x1="12" y1="17" x2="12" y2="21"></line>
+				</svg>
+				<span>Devices</span>
+			</a>
 			<button class="landing-nav-hamburger" onclick="document.getElementById('mobile-menu').classList.toggle('mobile-menu--open')" aria-label="Menu">
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<line x1="3" y1="12" x2="21" y2="12"></line>

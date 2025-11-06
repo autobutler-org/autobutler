@@ -1,25 +1,23 @@
 package device_card
 
-import (
-	"fmt"
-)
+import "fmt"
 
 type Device struct {
-	Name           string
-	Type           string  // e.g., "Internal • ext4", "External USB 3.0 • NTFS"
-	DevicePath     string  // e.g., "/dev/sdc1", "/dev/sda1"
-	CapacityGB     float64
-	UsedGB         float64
-	PercentUsed    int
-	Mount          string
-	Health         string  // "Good", "Excellent", "Warning", etc.
-	Status         string  // "Online", "Offline"
+	Name        string
+	Type        string // e.g., "Internal • ext4", "External USB 3.0 • NTFS"
+	DevicePath  string // e.g., "/dev/sdc1", "/dev/sda1"
+	CapacityGB  float64
+	UsedGB      float64
+	PercentUsed int
+	Mount       string
+	Health      string // "Good", "Excellent", "Warning", etc.
+	Status      string // "Online", "Offline"
 	// Content breakdown - TODO: Get from actual disk analysis
-	SystemGB       float64
-	DocumentsGB    float64
-	MediaGB        float64
-	BackupsGB      float64
-	FreeGB         float64
+	SystemGB    float64
+	DocumentsGB float64
+	MediaGB     float64
+	BackupsGB   float64
+	FreeGB      float64
 }
 
 templ Component(device Device) {
@@ -49,26 +47,26 @@ templ Component(device Device) {
 					<span class="device-capacity-used">Used: { fmt.Sprintf("%d%%", device.PercentUsed) } • { fmt.Sprintf("%.2f GB", device.UsedGB) }</span>
 				</div>
 			</div>
-		<div class="device-storage-bar">
-			<!-- Calculate usable capacity (used + free) for accurate percentage display -->
-			{{ usableCapacity := device.UsedGB + device.FreeGB }}
-			<!-- TODO: Add actual breakdown by scanning disk -->
-			if device.SystemGB > 0 {
-				<div class="device-storage-segment device-storage-system" style={ fmt.Sprintf("width: %.1f%%", (device.SystemGB/usableCapacity)*100) } title={ fmt.Sprintf("System: %.2f GB", device.SystemGB) }></div>
-			}
-			if device.DocumentsGB > 0 {
-				<div class="device-storage-segment device-storage-documents" style={ fmt.Sprintf("width: %.1f%%", (device.DocumentsGB/usableCapacity)*100) } title={ fmt.Sprintf("Documents: %.2f GB", device.DocumentsGB) }></div>
-			}
-			if device.MediaGB > 0 {
-				<div class="device-storage-segment device-storage-media" style={ fmt.Sprintf("width: %.1f%%", (device.MediaGB/usableCapacity)*100) } title={ fmt.Sprintf("Media: %.2f GB", device.MediaGB) }></div>
-			}
-			if device.BackupsGB > 0 {
-				<div class="device-storage-segment device-storage-backups" style={ fmt.Sprintf("width: %.1f%%", (device.BackupsGB/usableCapacity)*100) } title={ fmt.Sprintf("Backups: %.2f GB", device.BackupsGB) }></div>
-			}
-			if device.FreeGB > 0 {
-				<div class="device-storage-segment device-storage-free" style={ fmt.Sprintf("width: %.1f%%", (device.FreeGB/usableCapacity)*100) } title={ fmt.Sprintf("Free: %.2f GB", device.FreeGB) }></div>
-			}
-		</div>
+			<div class="device-storage-bar">
+				<!-- Calculate usable capacity (used + free) for accurate percentage display -->
+				{{ usableCapacity := device.UsedGB + device.FreeGB }}
+				<!-- TODO: Add actual breakdown by scanning disk -->
+				if device.SystemGB > 0 {
+					<div class="device-storage-segment device-storage-system" style={ fmt.Sprintf("width: %.1f%%", (device.SystemGB/usableCapacity)*100) } title={ fmt.Sprintf("System: %.2f GB", device.SystemGB) }></div>
+				}
+				if device.DocumentsGB > 0 {
+					<div class="device-storage-segment device-storage-documents" style={ fmt.Sprintf("width: %.1f%%", (device.DocumentsGB/usableCapacity)*100) } title={ fmt.Sprintf("Documents: %.2f GB", device.DocumentsGB) }></div>
+				}
+				if device.MediaGB > 0 {
+					<div class="device-storage-segment device-storage-media" style={ fmt.Sprintf("width: %.1f%%", (device.MediaGB/usableCapacity)*100) } title={ fmt.Sprintf("Media: %.2f GB", device.MediaGB) }></div>
+				}
+				if device.BackupsGB > 0 {
+					<div class="device-storage-segment device-storage-backups" style={ fmt.Sprintf("width: %.1f%%", (device.BackupsGB/usableCapacity)*100) } title={ fmt.Sprintf("Backups: %.2f GB", device.BackupsGB) }></div>
+				}
+				if device.FreeGB > 0 {
+					<div class="device-storage-segment device-storage-free" style={ fmt.Sprintf("width: %.1f%%", (device.FreeGB/usableCapacity)*100) } title={ fmt.Sprintf("Free: %.2f GB", device.FreeGB) }></div>
+				}
+			</div>
 			<div class="device-card-categories">
 				if device.SystemGB > 0 {
 					<div class="device-category">
@@ -112,4 +110,3 @@ templ Component(device Device) {
 		</div>
 	</div>
 }
-

@@ -134,19 +134,9 @@
 	font-weight: 300;
 }
 
-/* Hamburger Menu Button */
+/* Hamburger Menu Button - Hidden on desktop */
 .landing-nav-hamburger {
 	display: none;
-	background: none;
-	border: none;
-	color: var(--color-gray-300);
-	cursor: pointer;
-	padding: var(--spacing-md);
-	transition: color 0.2s ease;
-	min-width: 48px;
-	min-height: 48px;
-	align-items: center;
-	justify-content: center;
 }
 
 .landing-nav-hamburger:hover {
@@ -629,6 +619,16 @@
 	/* Show hamburger menu and mobile menu */
 	.landing-nav-hamburger {
 		display: flex;
+		background: none;
+		border: none;
+		color: var(--color-gray-300);
+		cursor: pointer;
+		padding: var(--spacing-md);
+		transition: color 0.2s ease;
+		min-width: 48px;
+		min-height: 48px;
+		align-items: center;
+		justify-content: center;
 	}
 	
 	.mobile-menu {
@@ -657,7 +657,11 @@
 		gap: var(--spacing-sm);
 	}
 	
-	/* Hide version on mobile */
+	/* Hide Settings, Devices, and Version on mobile - they're in the hamburger menu */
+	.landing-nav-button {
+		display: none;
+	}
+	
 	.landing-nav-version {
 		display: none;
 	}

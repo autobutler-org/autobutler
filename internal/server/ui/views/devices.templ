@@ -20,36 +20,36 @@ templ Devices(pageState types.PageState, devices []device_card.Device, summary s
 				<div class="landing-container">
 					@landing_nav.Component()
 					<div class="devices-page">
-					<div class="devices-header">
-						<div class="devices-header-content">
-							<div>
-								<h1 class="devices-title">Storage Devices</h1>
-								<p class="devices-subtitle">Monitor capacity, usage, and content categories across all connected drives</p>
+						<div class="devices-header">
+							<div class="devices-header-content">
+								<div>
+									<h1 class="devices-title">Storage Devices</h1>
+									<p class="devices-subtitle">Monitor capacity, usage, and content categories across all connected drives</p>
+								</div>
+								<button
+									class="devices-refresh-button"
+									hx-get="/components/devices/list"
+									hx-target="#devices-content"
+									hx-swap="innerHTML"
+									hx-indicator="#refresh-spinner"
+									title="Refresh storage devices"
+								>
+									<svg id="refresh-spinner" class="refresh-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<polyline points="23 4 23 10 17 10"></polyline>
+										<polyline points="1 20 1 14 7 14"></polyline>
+										<path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+									</svg>
+									<span>Refresh</span>
+								</button>
 							</div>
-							<button 
-								class="devices-refresh-button"
-								hx-get="/components/devices/list"
-								hx-target="#devices-content"
-								hx-swap="innerHTML"
-								hx-indicator="#refresh-spinner"
-								title="Refresh storage devices">
-								<svg id="refresh-spinner" class="refresh-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-									<polyline points="23 4 23 10 17 10"></polyline>
-									<polyline points="1 20 1 14 7 14"></polyline>
-									<path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-								</svg>
-								<span>Refresh</span>
-							</button>
 						</div>
-					</div>
-					<!-- TODO: Add "Add Device" button to mount new devices -->
-					<div id="devices-content">
-						@DevicesContent(devices, summary)
-					</div>
+						<!-- TODO: Add "Add Device" button to mount new devices -->
+						<div id="devices-content">
+							@DevicesContent(devices, summary)
+						</div>
 					</div>
 				</div>
 			</main>
 		</body>
 	</html>
 }
-
