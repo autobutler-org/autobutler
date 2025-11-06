@@ -8,9 +8,7 @@ package bottomnav
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import (
-	"autobutler/internal/server/ui/types"
-)
+import "autobutler/internal/server/ui/types"
 
 func Component(pageState types.PageState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
