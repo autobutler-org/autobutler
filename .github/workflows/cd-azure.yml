@@ -13,11 +13,6 @@ on:
         options:
           - production
           - staging
-      docker-image-tag:
-        description: 'Docker image tag to deploy'
-        required: true
-        default: latest
-        type: string
       app-name:
         description: 'Azure App Service name'
         required: true
@@ -33,7 +28,6 @@ env:
   AZURE_RESOURCE_GROUP: autobutler
   ACR_NAME: autobutleracr
   ENVIRONMENT: ${{ inputs.environment || 'production' }}
-  DOCKER_IMAGE_TAG: ${{ inputs.docker-image-tag || 'latest' }}
   APP_NAME: ${{ inputs.app-name || 'autobutlerdemo' }}
   STORAGE_ACCOUNT_NAME: ${{ inputs.storage-account-name || 'autobutlerdemo' }}
 
@@ -89,13 +83,13 @@ jobs:
         working-directory: cd/azure
         run: |
           docker build \
-            -t ${{ env.ACR_NAME }}.azurecr.io/autobutler:${{ env.DOCKER_IMAGE_TAG }} \
+            -t ${{ env.ACR_NAME }}.azurecr.io/autobutler:latest \
             -t ${{ env.ACR_NAME }}.azurecr.io/autobutler:${{ steps.version.outputs.version }} \
             --build-arg VERSION=${{ steps.version.outputs.version }} \
             -f Dockerfile \
             ../..
 
-          docker push ${{ env.ACR_NAME }}.azurecr.io/autobutler:${{ env.DOCKER_IMAGE_TAG }}
+          docker push ${{ env.ACR_NAME }}.azurecr.io/autobutler:latest
           docker push ${{ env.ACR_NAME }}.azurecr.io/autobutler:${{ steps.version.outputs.version }}
 
       - name: Deploy/Update App Service
@@ -116,7 +110,7 @@ jobs:
             --parameters \
               appName=${{ env.APP_NAME }} \
               storageAccountName=${{ env.STORAGE_ACCOUNT_NAME }} \
-              dockerImageTag=${{ env.DOCKER_IMAGE_TAG }}
+              dockerImageTag=${{ steps.version.outputs.version }}
 
       - name: Get App Service URL
         id: app-url
@@ -133,7 +127,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Environment**: ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
           echo "- **App Name**: ${{ env.APP_NAME }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Docker Tag**: ${{ env.DOCKER_IMAGE_TAG }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Docker Tag**: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Version**: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "- **App URL**: ${{ steps.app-url.outputs.url }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Action**: ${{ steps.deploy-app.outputs.deployed == 'true' && 'New deployment' || 'Image update' }}" >> $GITHUB_STEP_SUMMARY
