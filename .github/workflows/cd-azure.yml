@@ -1,0 +1,135 @@
+name: Deploy to Azure
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: production
+        type: choice
+        options:
+          - production
+          - staging
+      app-name:
+        description: 'Azure App Service name'
+        required: true
+        default: autobutlerdemo
+        type: string
+      storage-account-name:
+        description: 'Azure Storage Account name'
+        required: true
+        default: autobutlerdemo
+        type: string
+
+env:
+  AZURE_RESOURCE_GROUP: autobutler
+  ACR_NAME: autobutleracr
+  ENVIRONMENT: ${{ inputs.environment || 'production' }}
+  APP_NAME: ${{ inputs.app-name || 'autobutlerdemo' }}
+  STORAGE_ACCOUNT_NAME: ${{ inputs.storage-account-name || 'autobutlerdemo' }}
+
+concurrency:
+  group: cd-azure-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Azure CLI
+        run: |
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          az version
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_SERVICE_PRINCIPAL_DEPLOY }}
+
+      - name: Build version from git tag
+        id: version
+        run: |
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "dev-${{ github.sha }}")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      - name: Deploy/Update ACR
+        working-directory: cd/azure
+        run: |
+          # Check if ACR exists
+          if ! az acr show --name ${{ env.ACR_NAME }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} &>/dev/null; then
+            echo "ACR does not exist, deploying..."
+          else
+            echo "ACR already exists, updating..."
+          fi
+          az deployment group create \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --template-file azuredeploy.acr.json \
+            --parameters azuredeploy.acr.parameters.json
+
+      - name: Login to Azure Container Registry
+        run: |
+          az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Build and push Docker image
+        working-directory: cd/azure
+        run: |
+          docker build \
+            -t ${{ env.ACR_NAME }}.azurecr.io/autobutler:latest \
+            -t ${{ env.ACR_NAME }}.azurecr.io/autobutler:${{ steps.version.outputs.version }} \
+            --build-arg VERSION=${{ steps.version.outputs.version }} \
+            -f Dockerfile \
+            ../..
+
+          docker push ${{ env.ACR_NAME }}.azurecr.io/autobutler:latest
+          docker push ${{ env.ACR_NAME }}.azurecr.io/autobutler:${{ steps.version.outputs.version }}
+
+      - name: Deploy/Update App Service
+        id: deploy-app
+        working-directory: cd/azure
+        run: |
+          # Check if App Service exists
+          if ! az webapp show --name ${{ env.APP_NAME }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} &>/dev/null; then
+            echo "App Service does not exist, deploying..."
+            echo "deployed=true" >> $GITHUB_OUTPUT
+          else
+            echo "App Service already exists, updating"
+            echo "deployed=false" >> $GITHUB_OUTPUT
+          fi
+          az deployment group create \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --template-file azuredeploy.json \
+            --parameters \
+              appName=${{ env.APP_NAME }} \
+              storageAccountName=${{ env.STORAGE_ACCOUNT_NAME }} \
+              dockerImageTag=${{ steps.version.outputs.version }}
+
+      - name: Get App Service URL
+        id: app-url
+        run: |
+          URL=$(az webapp show \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name ${{ env.APP_NAME }} \
+            --query defaultHostName -o tsv)
+          echo "url=https://$URL" >> $GITHUB_OUTPUT
+
+      - name: Deployment Summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **App Name**: ${{ env.APP_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Docker Tag**: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **App URL**: ${{ steps.app-url.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Action**: ${{ steps.deploy-app.outputs.deployed == 'true' && 'New deployment' || 'Image update' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Deployment completed successfully!" >> $GITHUB_STEP_SUMMARY

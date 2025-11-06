@@ -1,3 +1,5 @@
+var MAX_FILE_NAME_LENGTH = 255;
+
 var contextMenuPosition = {
     x: null,
     y: null,
@@ -213,7 +215,13 @@ function moveFile(event, rootDir, fileName) {
     }
     const filePath = `${rootDir}/${fileName}`;
     const newFilePath = prompt("Enter the preferred file name (including extension):", filePath);
-    if (newFilePath !== filePath) {
+    if (newFilePath && newFilePath !== filePath) {
+        // Extract just the filename from the path
+        const newFileName = newFilePath.split('/').pop();
+        if (newFileName.length > MAX_FILE_NAME_LENGTH) {
+            alert(`File name must be ${MAX_FILE_NAME_LENGTH} characters or less`);
+            return;
+        }
         htmx.ajax('PUT',
             `/api/v1/files/${filePath}`, {
             values: {
@@ -229,6 +237,10 @@ function newFile(event, rootDir) {
     preventDefault(event);
     const fileName = prompt("Enter the new file name (including extension):");
     if (fileName) {
+        if (fileName.length > MAX_FILE_NAME_LENGTH) {
+            alert(`File name must be ${MAX_FILE_NAME_LENGTH} characters or less`);
+            return;
+        }
         const uploadForm = document.getElementById('file-upload-form');
         const formData = new FormData();
         // NOTE: Creating an empty file

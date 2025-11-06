@@ -28,3 +28,25 @@ templ Component(calendarView calendar.CalendarView) {
 	</div>
 	<script src="/public/scripts/calendar.js"></script>
 }
+
+templ ComponentWithTime(calendarView calendar.CalendarView, targetTime time.Time) {
+	<div id="calendar" class="calendar">
+		switch calendarView {
+			case calendar.CalendarViewMonth:
+				@monthView(targetTime)
+			case calendar.CalendarViewWeek:
+				<p>Week View - Coming Soon</p>
+			case calendar.CalendarViewDay:
+				<p>Day View - Coming Soon</p>
+			default:
+				<p>Invalid Calendar View</p>
+		}
+		<dialog
+			id="new-event-dialog"
+			class="modal-backdrop"
+		>
+			@event_editor.Component()
+		</dialog>
+	</div>
+	<script src="/public/scripts/calendar.js"></script>
+}

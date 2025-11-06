@@ -6,6 +6,7 @@ import (
 	"autobutler/internal/server/ui/components/header"
 	"autobutler/internal/server/ui/types"
 	"autobutler/pkg/calendar"
+	"time"
 )
 
 templ Calendar(pageState types.PageState) {
@@ -15,6 +16,21 @@ templ Calendar(pageState types.PageState) {
 		@header.Component()
 		@body.Component(pageState) {
 			@cal.Component(calendar.CalendarViewMonth)
+		}
+	</html>
+}
+
+templ CalendarWithTime(pageState types.PageState, targetTime *time.Time) {
+	{{ pageState.CurrentPageName = types.PageCalendar }}
+	<!DOCTYPE html>
+	<html lang="en">
+		@header.Component()
+		@body.Component(pageState) {
+			if targetTime != nil {
+				@cal.ComponentWithTime(calendar.CalendarViewMonth, *targetTime)
+			} else {
+				@cal.Component(calendar.CalendarViewMonth)
+			}
 		}
 	</html>
 }

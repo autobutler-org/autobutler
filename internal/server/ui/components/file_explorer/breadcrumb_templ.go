@@ -113,14 +113,14 @@ func Breadcrumb(pageState types.PageState, view string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div class=\"file-explorer-folder-controls\"><button id=\"add-folder-btn\" class=\"file-explorer-add-folder btn btn--icon\" title=\"Add Folder\" type=\"button\" hx-on:click=\"toggleFolderInput(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"icon icon--base\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 4v16m8-8H4\"></path></svg></button> <input type=\"text\" id=\"folder-input\" name=\"folderName\" class=\"file-explorer-folder-input hidden\" placeholder=\"New folder name\" hx-include=\"[name='folderName']\" hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div class=\"file-explorer-folder-controls\"><button id=\"add-folder-btn\" class=\"file-explorer-add-folder btn btn--icon\" title=\"Add Folder\" type=\"button\" hx-on:click=\"toggleFolderInput(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"icon icon--base\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 4v16m8-8H4\"></path></svg></button> <input type=\"text\" id=\"folder-input\" name=\"folderName\" class=\"file-explorer-folder-input hidden\" placeholder=\"New folder name\" maxlength=\"255\" hx-include=\"[name='folderName']\" hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/api/v1/folder/files", pageState.RootDir))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/breadcrumb.templ`, Line: 53, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/breadcrumb.templ`, Line: 54, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -163,7 +163,7 @@ func BreadcrumbOOB(pageState types.PageState, view string) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(pageState.RootDir)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/breadcrumb.templ`, Line: 65, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/breadcrumb.templ`, Line: 66, Col: 86}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -197,7 +197,7 @@ func BreadcrumbOOB(pageState types.PageState, view string) templ.Component {
 			var templ_7745c5c3_Var9 templ.SafeURL
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinURLErrs(filepath.Join("/", accumulatedDir))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/breadcrumb.templ`, Line: 77, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/breadcrumb.templ`, Line: 78, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -210,7 +210,7 @@ func BreadcrumbOOB(pageState types.PageState, view string) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/", accumulatedDir))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/breadcrumb.templ`, Line: 78, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/breadcrumb.templ`, Line: 79, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -223,7 +223,7 @@ func BreadcrumbOOB(pageState types.PageState, view string) templ.Component {
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(dir)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/breadcrumb.templ`, Line: 83, Col: 10}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/breadcrumb.templ`, Line: 84, Col: 10}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -234,14 +234,14 @@ func BreadcrumbOOB(pageState types.PageState, view string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"file-explorer-folder-controls\"><button id=\"add-folder-btn\" class=\"file-explorer-add-folder btn btn--icon\" title=\"Add Folder\" type=\"button\" hx-on:click=\"toggleFolderInput(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"icon icon--base\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 4v16m8-8H4\"></path></svg></button> <input type=\"text\" id=\"folder-input\" name=\"folderName\" class=\"file-explorer-folder-input hidden\" placeholder=\"New folder name\" hx-include=\"[name='folderName']\" hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"file-explorer-folder-controls\"><button id=\"add-folder-btn\" class=\"file-explorer-add-folder btn btn--icon\" title=\"Add Folder\" type=\"button\" hx-on:click=\"toggleFolderInput(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"icon icon--base\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 4v16m8-8H4\"></path></svg></button> <input type=\"text\" id=\"folder-input\" name=\"folderName\" class=\"file-explorer-folder-input hidden\" placeholder=\"New folder name\" maxlength=\"255\" hx-include=\"[name='folderName']\" hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/api/v1/folder/files", pageState.RootDir))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/breadcrumb.templ`, Line: 108, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/breadcrumb.templ`, Line: 110, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
