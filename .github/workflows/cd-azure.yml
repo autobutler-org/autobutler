@@ -67,19 +67,19 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Building version: $VERSION"
 
-      - name: Deploy ACR (if not exists)
+      - name: Deploy/Update ACR
         working-directory: cd/azure
         run: |
           # Check if ACR exists
           if ! az acr show --name ${{ env.ACR_NAME }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} &>/dev/null; then
             echo "ACR does not exist, deploying..."
-            az deployment group create \
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --template-file azuredeploy.acr.json \
-              --parameters azuredeploy.acr.parameters.json
           else
-            echo "ACR already exists, skipping deployment"
+            echo "ACR already exists, updating..."
           fi
+          az deployment group create \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --template-file azuredeploy.acr.json \
+            --parameters azuredeploy.acr.parameters.json
 
       - name: Login to Azure Container Registry
         run: |
@@ -107,7 +107,7 @@ jobs:
             echo "App Service does not exist, deploying..."
             echo "deployed=true" >> $GITHUB_OUTPUT
           else
-            echo "App Service already exists, skipping ARM deployment"
+            echo "App Service already exists, updating"
             echo "deployed=false" >> $GITHUB_OUTPUT
           fi
           az deployment group create \
@@ -117,21 +117,6 @@ jobs:
               appName=${{ env.APP_NAME }} \
               storageAccountName=${{ env.STORAGE_ACCOUNT_NAME }} \
               dockerImageTag=${{ env.DOCKER_IMAGE_TAG }}
-
-      - name: Update container image (if app exists)
-        if: steps.deploy-app.outputs.deployed == 'false'
-        run: |
-          echo "Updating container image to ${{ env.DOCKER_IMAGE_TAG }}..."
-          az webapp config container set \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --name ${{ env.APP_NAME }} \
-            --container-image-name ${{ env.ACR_NAME }}.azurecr.io/autobutler:${{ env.DOCKER_IMAGE_TAG }}
-
-      - name: Restart App Service
-        run: |
-          az webapp restart \
-            --resource-group ${{env.AZURE_RESOURCE_GROUP }} \
-            --name ${{ env.APP_NAME }}
 
       - name: Get App Service URL
         id: app-url
