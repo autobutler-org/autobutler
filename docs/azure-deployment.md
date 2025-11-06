@@ -16,11 +16,11 @@ First, deploy the ACR with the static name `autobutleracr`:
 
 ```bash
 # Create a resource group
-az group create --name autobutler-rg --location eastus
+az group create --name autobutler --location eastus
 
 # Deploy the ACR template
 az deployment group create \
-  --resource-group autobutler-rg \
+  --resource-group autobutler \
   --template-file azuredeploy.acr.json \
   --parameters acrSku=Basic
 ```
@@ -45,7 +45,7 @@ docker push autobutleracr.azurecr.io/autobutler:latest
 ```bash
 # Deploy the app service template
 az deployment group create \
-  --resource-group autobutler-rg \
+  --resource-group autobutler \
   --template-file azuredeploy.json \
   --parameters \
     appName=<your-unique-app-name> \
@@ -113,12 +113,12 @@ docker push autobutleracr.azurecr.io/autobutler:$VERSION
 
 # Update the App Service to use the new tag
 az webapp config container set \
-  --resource-group autobutler-rg \
+  --resource-group autobutler \
   --name <your-app-name> \
   --docker-custom-image-name autobutleracr.azurecr.io/autobutler:$VERSION
 
 # Restart the app
-az webapp restart --resource-group autobutler-rg --name <your-app-name>
+az webapp restart --resource-group autobutler --name <your-app-name>
 ```
 
 ### Option 2: Enable Continuous Deployment
@@ -132,10 +132,10 @@ When you push a new image with the same tag to your registry, Azure will automat
 
 ```bash
 # Stream logs
-az webapp log tail --resource-group autobutler-rg --name <your-app-name>
+az webapp log tail --resource-group autobutler --name <your-app-name>
 
 # Download logs
-az webapp log download --resource-group autobutler-rg --name <your-app-name>
+az webapp log download --resource-group autobutler --name <your-app-name>
 ```
 
 ### Access the Application
@@ -150,7 +150,7 @@ https://<your-app-name>.azurewebsites.net
 
 ### Container won't start
 
-1. Check the logs: `az webapp log tail --resource-group autobutler-rg --name <your-app-name>`
+1. Check the logs: `az webapp log tail --resource-group autobutler --name <your-app-name>`
 2. Verify the container image exists and is accessible
 3. Ensure the `PORT` environment variable matches what the app listens on (8080)
 
@@ -172,7 +172,7 @@ Consider upgrading to a higher SKU:
 To remove all resources:
 
 ```bash
-az group delete --name autobutler-rg --yes --no-wait
+az group delete --name autobutler --yes --no-wait
 ```
 
 ## Custom Domain and SSL
@@ -182,13 +182,13 @@ To add a custom domain:
 ```bash
 # Add custom domain
 az webapp config hostname add \
-  --resource-group autobutler-rg \
+  --resource-group autobutler \
   --webapp-name <your-app-name> \
   --hostname <your-domain.com>
 
 # Enable SSL (Azure manages the certificate)
 az webapp config ssl bind \
-  --resource-group autobutler-rg \
+  --resource-group autobutler \
   --name <your-app-name> \
   --certificate-thumbprint auto \
   --ssl-type SNI
