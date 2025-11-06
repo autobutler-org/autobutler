@@ -125,7 +125,7 @@ jobs:
           az webapp config container set \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --name ${{ env.APP_NAME }} \
-            --docker-custom-image-name ${{ env.ACR_NAME }}.azurecr.io/autobutler:${{ env.DOCKER_IMAGE_TAG }}
+            --container-image-name ${{ env.ACR_NAME }}.azurecr.io/autobutler:${{ env.DOCKER_IMAGE_TAG }}
 
       - name: Restart App Service
         run: |
