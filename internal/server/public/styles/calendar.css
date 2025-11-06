@@ -71,7 +71,7 @@
 		border-color: var(--color-gray-600);
 		color: var(--color-gray-300);
 	}
-	
+
 	.calendar-nav-btn:hover {
 		background-color: var(--color-gray-700);
 		border-color: var(--color-gray-500);

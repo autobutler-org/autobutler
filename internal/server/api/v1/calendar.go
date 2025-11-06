@@ -67,21 +67,21 @@ func getCalendarMonth(apiV1Group *gin.RouterGroup) {
 	apiRoute(apiV1Group, "GET", "/calendar/month", func(c *gin.Context) {
 		yearStr := c.Query("year")
 		monthStr := c.Query("month")
-		
+
 		year, err := strconv.Atoi(yearStr)
 		if err != nil {
 			c.Writer.WriteString(`<span class="text-red-500">Invalid year</span>`)
 			c.Status(400)
 			return
 		}
-		
+
 		month, err := strconv.Atoi(monthStr)
 		if err != nil {
 			c.Writer.WriteString(`<span class="text-red-500">Invalid month</span>`)
 			c.Status(400)
 			return
 		}
-		
+
 		targetTime := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 		if err := cal.ComponentWithTime(calendar.CalendarViewMonth, targetTime).Render(c.Request.Context(), c.Writer); err != nil {
 			c.Status(500)
