@@ -71,7 +71,7 @@ func dayEvent(event calendar.CalendarEvent, outsideOfMonth bool) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" hx-on::after-request=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" hx-on:click=\"event.stopPropagation()\" hx-on::after-request=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -87,7 +87,7 @@ func dayEvent(event calendar.CalendarEvent, outsideOfMonth bool) templ.Component
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/api/v1/calendar/%d", event.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/dayEvent.templ`, Line: 25, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/dayEvent.templ`, Line: 26, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -100,7 +100,7 @@ func dayEvent(event calendar.CalendarEvent, outsideOfMonth bool) templ.Component
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("#event-dialog-%d", event.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/dayEvent.templ`, Line: 26, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/dayEvent.templ`, Line: 27, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -113,7 +113,7 @@ func dayEvent(event calendar.CalendarEvent, outsideOfMonth bool) templ.Component
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(getTimeString(event.StartTime))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/dayEvent.templ`, Line: 29, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/dayEvent.templ`, Line: 30, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -126,7 +126,7 @@ func dayEvent(event calendar.CalendarEvent, outsideOfMonth bool) templ.Component
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(event.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/dayEvent.templ`, Line: 31, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/dayEvent.templ`, Line: 32, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -139,7 +139,7 @@ func dayEvent(event calendar.CalendarEvent, outsideOfMonth bool) templ.Component
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("event-dialog-%d", event.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/dayEvent.templ`, Line: 39, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/dayEvent.templ`, Line: 40, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
