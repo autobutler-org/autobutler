@@ -130,7 +130,8 @@ jobs:
       - name: Restart App Service
         run: |
           az webapp restart \
-            --resource-group ${{env.APP_NAME }}
+            --resource-group ${{env.AZURE_RESOURCE_GROUP }} \
+            --name ${{ env.APP_NAME }}
 
       - name: Get App Service URL
         id: app-url
