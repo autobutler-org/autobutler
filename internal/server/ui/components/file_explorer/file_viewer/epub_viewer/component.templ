@@ -53,14 +53,20 @@ templ Component(filePath string) {
             }
         };
         addEventListener('keydown', navigationListener);
-        fileViewerContent.focus();
+        if (fileViewerContent) {
+            fileViewerContent.focus();
+        }
         var displayed = rendition.display();
         if (displayed) {
             displayed.then(() => {}).catch((error) => {
-                fileViewerContent.innerHTML = `<p>Error loading book: ${error}</p>`;
+                if (fileViewerContent) {
+                    fileViewerContent.innerHTML = `<p>Error loading book: ${error}</p>`;
+                }
             });
         } else {
-            fileViewerContent.innerHTML = `<p>Error displaying book.</p>`;
+            if (fileViewerContent) {
+                fileViewerContent.innerHTML = `<p>Error displaying book.</p>`;
+            }
         }
 	</script>
 }
