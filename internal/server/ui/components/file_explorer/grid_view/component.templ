@@ -63,7 +63,7 @@ templ renderGridItem(pageState types.PageState, file fs.FileInfo) {
 				hx-on:click="document.getElementById('file-viewer').showModal();"
 			>
 				if fileType == util.FileTypeImage {
-					{{thumbnailPath := filepath.Join("/api/v1/thumbnails", pageState.RootDir, fileName)}}
+					{{ thumbnailPath := filepath.Join("/api/v1/thumbnails", pageState.RootDir, fileName) }}
 					<div class="grid-view-thumbnail-container">
 						<img
 							class="grid-view-thumbnail"
