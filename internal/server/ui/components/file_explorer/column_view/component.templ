@@ -132,9 +132,10 @@ templ renderParentColumnItem(pageState types.PageState, parentPath string, file 
 		fileParentPath := filepath.Join("/files", parentPath)
 	}}
 	<li
-		class={ "column-view-item", templ.KV("column-view-item--selected", isSelected), templ.KV("column-view-item--folder", isFolder) }
+		class={ "column-view-item file-node", templ.KV("column-view-item--selected", isSelected), templ.KV("column-view-item--folder", isFolder) }
 		data-name={ fileName }
 		data-is-folder={ fmt.Sprintf("%t", isFolder) }
+		hx-on:contextmenu="toggleFloatingContextMenu(event, this)"
 	>
 		if isFolder {
 			<a
@@ -162,6 +163,13 @@ templ renderParentColumnItem(pageState types.PageState, parentPath string, file 
 				<span class="column-view-name">{ fileName }</span>
 			</div>
 		}
+		<div
+			class="column-view-context-trigger"
+			hx-on:click="event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.column-view-item'))"
+		>
+			⋮
+		</div>
+		@renderParentContextMenu(pageState, parentPath, file)
 	</li>
 }
 
@@ -174,9 +182,10 @@ templ renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) {
 		filePath := filepath.Join("/files", pageState.RootDir, fileName)
 	}}
 	<li
-		class={ "column-view-item", templ.KV("column-view-item--folder", isFolder) }
+		class={ "column-view-item file-node", templ.KV("column-view-item--folder", isFolder) }
 		data-name={ fileName }
 		data-is-folder={ fmt.Sprintf("%t", isFolder) }
+		hx-on:contextmenu="toggleFloatingContextMenu(event, this)"
 	>
 		if isFolder {
 			<a
@@ -206,6 +215,13 @@ templ renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) {
 				<span class="column-view-name">{ fileName }</span>
 			</div>
 		}
+		<div
+			class="column-view-context-trigger"
+			hx-on:click="event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.column-view-item'))"
+		>
+			⋮
+		</div>
+		@renderContextMenu(pageState, file)
 	</li>
 }
 
@@ -236,5 +252,79 @@ templ renderPreviewPane() {
 				<p class="column-view-preview-subtext">Select a file to preview</p>
 			</div>
 		</div>
+	</div>
+}
+
+templ renderContextMenu(pageState types.PageState, file fs.FileInfo) {
+	{{
+		fileType := util.DetermineFileType(pageState.RootDir, file)
+		fileName := file.Name()
+		isFolder := fileType == util.FileTypeFolder
+		downloadPath := filepath.Join("/api/v1/files", pageState.RootDir, fileName)
+	}}
+	<div class="context-menu hidden">
+		if !isFolder {
+			<a
+				href={ templ.SafeURL(downloadPath) }
+				download
+				class="context-menu-item"
+			>
+				Download
+			</a>
+		}
+		<button
+			type="button"
+			class="context-menu-item"
+			hx-on:click={ templ.JSFuncCall("moveFile", templ.JSExpression("event"), pageState.RootDir, fileName) }
+		>
+			Rename/Move
+		</button>
+		<button
+			type="button"
+			class="context-menu-item context-menu-item--danger"
+			hx-target="#file-explorer"
+			hx-swap="outerHTML"
+			hx-delete={ filepath.Join(`/api/v1/files`) }
+			hx-vals={ `{"rootDir":"` + pageState.RootDir + `", "filePaths":["` + fileName + `"]}` }
+		>
+			Delete
+		</button>
+	</div>
+}
+
+templ renderParentContextMenu(pageState types.PageState, parentPath string, file fs.FileInfo) {
+	{{
+		fileType := util.DetermineFileType(parentPath, file)
+		fileName := file.Name()
+		isFolder := fileType == util.FileTypeFolder
+		downloadPath := filepath.Join("/api/v1/files", parentPath, fileName)
+	}}
+	<div class="context-menu hidden">
+		if !isFolder {
+			<a
+				href={ templ.SafeURL(downloadPath) }
+				download
+				class="context-menu-item"
+			>
+				Download
+			</a>
+		}
+		<button
+			type="button"
+			class="context-menu-item"
+			hx-on:click={ templ.JSFuncCall("moveFile", templ.JSExpression("event"), parentPath, fileName) }
+		>
+			Rename/Move
+		</button>
+		<button
+			type="button"
+			class="context-menu-item context-menu-item--danger"
+			hx-target="#file-explorer"
+			hx-swap="outerHTML"
+			hx-delete={ filepath.Join(`/api/v1/files`) }
+			hx-vals={ `{"rootDir":"` + parentPath + `", "filePaths":["` + fileName + `"]}` }
+		>
+			Delete
+		</button>
 	</div>
 }

@@ -82,9 +82,46 @@ function openContextMenu(event, parentNode) {
 }
 
 function toggleFloatingContextMenu(event, parentNode) {
-    const contextMenu = openContextMenu(event, parentNode);
-    contextMenu.style.left = `${event.clientX}px`;
-    contextMenu.style.top = `${event.clientY}px`;
+    preventDefault(event);
+    const contextMenu = parentNode.querySelector('.context-menu');
+    if (!contextMenu) {
+        console.error('Context menu not found in', parentNode);
+        return;
+    }
+    
+    // Close any other open context menus first
+    document.querySelectorAll('.context-menu:not(.hidden)').forEach(menu => {
+        if (menu !== contextMenu) {
+            menu.classList.add('hidden');
+        }
+    });
+    
+    // Toggle this context menu
+    const isHidden = contextMenu.classList.contains('hidden');
+    contextMenu.classList.toggle('hidden');
+    
+    if (isHidden) {
+        // Position at click location
+        contextMenu.style.left = `${event.clientX}px`;
+        contextMenu.style.top = `${event.clientY}px`;
+        
+        // Ensure menu doesn't go off screen
+        requestAnimationFrame(() => {
+            const rect = contextMenu.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            // Adjust if menu goes off right edge
+            if (rect.right > viewportWidth) {
+                contextMenu.style.left = `${viewportWidth - rect.width - 10}px`;
+            }
+            
+            // Adjust if menu goes off bottom edge
+            if (rect.bottom > viewportHeight) {
+                contextMenu.style.top = `${viewportHeight - rect.height - 10}px`;
+            }
+        });
+    }
 }
 
 function toggleFolderInput(event) {
@@ -606,5 +643,42 @@ document.addEventListener('keydown', function (event) {
             // Click the button to show the input
             addFolderBtn.click();
         }
+    }
+});
+
+// COLUMN VIEW AUTO-SCROLL
+// Automatically scroll column view to show the rightmost (active) column
+function scrollColumnViewToRight() {
+    const columnViewColumns = document.querySelector('.column-view-columns');
+    if (columnViewColumns) {
+        // Scroll to the right to show the active column
+        columnViewColumns.scrollLeft = columnViewColumns.scrollWidth;
+    }
+}
+
+// Listen for HTMX content swaps to scroll column view
+document.body.addEventListener('htmx:afterSwap', function(event) {
+    // Check if we're in column view and the content was swapped
+    if (event.detail.target.id === 'file-explorer-view-content') {
+        // Small delay to ensure DOM is fully rendered
+        requestAnimationFrame(() => {
+            scrollColumnViewToRight();
+        });
+    }
+});
+
+// Also scroll on initial page load
+document.addEventListener('DOMContentLoaded', function() {
+    scrollColumnViewToRight();
+});
+
+// CONTEXT MENU GLOBAL HANDLERS
+// Close context menus when clicking outside
+document.addEventListener('click', function(event) {
+    // Check if click is outside any context menu
+    if (!event.target.closest('.context-menu') && !event.target.closest('.context-menu-trigger') && !event.target.closest('.grid-view-context-trigger') && !event.target.closest('.column-view-context-trigger')) {
+        document.querySelectorAll('.context-menu:not(.hidden)').forEach(menu => {
+            menu.classList.add('hidden');
+        });
     }
 });

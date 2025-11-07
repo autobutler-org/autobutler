@@ -3,6 +3,9 @@ package file_explorer
 import (
 	"autobutler/internal/server/ui/components/file_explorer/file_operations"
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer"
+	"autobutler/internal/server/ui/components/icons/column_view"
+	"autobutler/internal/server/ui/components/icons/grid_view"
+	"autobutler/internal/server/ui/components/icons/list_view"
 	"autobutler/pkg/util"
 	"io/fs"
 
@@ -46,7 +49,7 @@ templ Component(pageState types.PageState, files []fs.FileInfo, view string) {
 						title="List View"
 						type="button"
 					>
-						L
+						@list_view.Component()
 					</button>
 					<button
 						class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "grid") }
@@ -54,7 +57,7 @@ templ Component(pageState types.PageState, files []fs.FileInfo, view string) {
 						title="Grid View"
 						type="button"
 					>
-						G
+						@grid_view.Component()
 					</button>
 					<button
 						class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "column") }
@@ -62,7 +65,7 @@ templ Component(pageState types.PageState, files []fs.FileInfo, view string) {
 						title="Column View"
 						type="button"
 					>
-						C
+						@column_view.Component()
 					</button>
 				</div>
 			</div>
