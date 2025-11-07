@@ -8,6 +8,26 @@
 	vertical-align: middle;
 }
 
+/* View switcher icons */
+.view-icon {
+	color: var(--color-gray-500);
+	transition: color 0.2s ease;
+}
+
+.btn--primary .view-icon {
+	color: white;
+}
+
+@media (prefers-color-scheme: dark) {
+	.view-icon {
+		color: var(--color-gray-400);
+	}
+	
+	.btn--primary .view-icon {
+		color: white;
+	}
+}
+
 .icon--sm {
 	width: 0.75rem;
 	height: 0.75rem;

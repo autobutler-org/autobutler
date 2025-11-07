@@ -1,0 +1,45 @@
+package context_menu_items
+
+import (
+	"autobutler/internal/server/ui/types"
+	"autobutler/pkg/util"
+	"io/fs"
+	"path/filepath"
+)
+
+// Component renders just the context menu items (without wrapper or trigger)
+// Can be used in floating menus or inline menus
+templ Component(pageState types.PageState, file fs.FileInfo, rootDir string) {
+	{{
+		fileType := util.DetermineFileType(rootDir, file)
+		fileName := file.Name()
+		isFolder := fileType == util.FileTypeFolder
+		downloadPath := filepath.Join("/api/v1/files", rootDir, fileName)
+	}}
+	if !isFolder {
+		<a
+			href={ templ.SafeURL(downloadPath) }
+			download
+			class="context-menu-item"
+		>
+			Download
+		</a>
+	}
+	<button
+		type="button"
+		class="context-menu-item"
+		hx-on:click={ templ.JSFuncCall("moveFile", templ.JSExpression("event"), rootDir, fileName) }
+	>
+		Rename/Move
+	</button>
+	<button
+		type="button"
+		class="context-menu-item context-menu-item--danger"
+		hx-target="#file-explorer"
+		hx-swap="outerHTML"
+		hx-delete={ filepath.Join(`/api/v1/files`) }
+		hx-vals={ `{"rootDir":"` + rootDir + `", "filePaths":["` + fileName + `"]}` }
+	>
+		Delete
+	</button>
+}

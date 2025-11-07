@@ -1,6 +1,7 @@
 package column_view
 
 import (
+	"autobutler/internal/server/ui/components/file_explorer/context_menu_items"
 	"autobutler/internal/server/ui/components/icons/archive"
 	"autobutler/internal/server/ui/components/icons/folder"
 	"autobutler/internal/server/ui/components/icons/generic"
@@ -132,9 +133,10 @@ templ renderParentColumnItem(pageState types.PageState, parentPath string, file 
 		fileParentPath := filepath.Join("/files", parentPath)
 	}}
 	<li
-		class={ "column-view-item", templ.KV("column-view-item--selected", isSelected), templ.KV("column-view-item--folder", isFolder) }
+		class={ "column-view-item file-node", templ.KV("column-view-item--selected", isSelected), templ.KV("column-view-item--folder", isFolder) }
 		data-name={ fileName }
 		data-is-folder={ fmt.Sprintf("%t", isFolder) }
+		hx-on:contextmenu="toggleFloatingContextMenu(event, this)"
 	>
 		if isFolder {
 			<a
@@ -162,6 +164,15 @@ templ renderParentColumnItem(pageState types.PageState, parentPath string, file 
 				<span class="column-view-name">{ fileName }</span>
 			</div>
 		}
+		<div
+			class="column-view-context-trigger"
+			hx-on:click="event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.column-view-item'))"
+		>
+			⋮
+		</div>
+		<div class="context-menu hidden">
+			@context_menu_items.Component(pageState, file, parentPath)
+		</div>
 	</li>
 }
 
@@ -174,9 +185,10 @@ templ renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) {
 		filePath := filepath.Join("/files", pageState.RootDir, fileName)
 	}}
 	<li
-		class={ "column-view-item", templ.KV("column-view-item--folder", isFolder) }
+		class={ "column-view-item file-node", templ.KV("column-view-item--folder", isFolder) }
 		data-name={ fileName }
 		data-is-folder={ fmt.Sprintf("%t", isFolder) }
+		hx-on:contextmenu="toggleFloatingContextMenu(event, this)"
 	>
 		if isFolder {
 			<a
@@ -206,6 +218,15 @@ templ renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) {
 				<span class="column-view-name">{ fileName }</span>
 			</div>
 		}
+		<div
+			class="column-view-context-trigger"
+			hx-on:click="event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.column-view-item'))"
+		>
+			⋮
+		</div>
+		<div class="context-menu hidden">
+			@context_menu_items.Component(pageState, file, pageState.RootDir)
+		</div>
 	</li>
 }
 

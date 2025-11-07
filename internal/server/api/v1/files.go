@@ -38,12 +38,8 @@ func deleteFilesRoute(apiV1Group *gin.RouterGroup) {
 				return
 			}
 		}
-		// Check if it's an HTMX request targeting just the content
-		if c.GetHeader("HX-Request") == "true" {
-			ui.RenderFileExplorerViewContentWithBreadcrumb(c, rootDir, "")
-		} else {
-			ui.RenderFileExplorer(c, rootDir)
-		}
+		// Always render the full file explorer (button targets #file-explorer)
+		ui.RenderFileExplorer(c, rootDir)
 	})
 }
 
@@ -136,12 +132,8 @@ func moveFileRoute(apiV1Group *gin.RouterGroup) {
 		if newDir == "." {
 			newDir = ""
 		}
-		// Check if it's an HTMX request targeting just the content
-		if c.GetHeader("HX-Request") == "true" {
-			ui.RenderFileExplorerViewContent(c, newDir, "")
-		} else {
-			ui.RenderFileExplorer(c, newDir)
-		}
+		// Always render the full file explorer (JS function targets #file-explorer)
+		ui.RenderFileExplorer(c, newDir)
 	})
 }
 

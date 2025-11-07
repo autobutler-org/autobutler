@@ -11,16 +11,14 @@ import (
 )
 
 templ ViewContent(pageState types.PageState, files []fs.FileInfo, view string) {
-	if len(files) == 0 {
+	if view == "column" {
+		@column_view.Component(pageState, files)
+	} else if len(files) == 0 {
 		<span class="file-explorer-empty">No files found in { filepath.Join(util.GetFilesDir(), pageState.RootDir) }</span>
+	} else if view == "grid" {
+		@grid_view.Component(pageState, files)
 	} else {
-		if view == "column" {
-			@column_view.Component(pageState, files)
-		} else if view == "grid" {
-			@grid_view.Component(pageState, files)
-		} else {
-			@list_view.Component(pageState, files)
-		}
+		@list_view.Component(pageState, files)
 	}
 }
 

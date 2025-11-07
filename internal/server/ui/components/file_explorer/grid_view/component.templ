@@ -1,6 +1,7 @@
 package grid_view
 
 import (
+	"autobutler/internal/server/ui/components/file_explorer/context_menu_items"
 	"autobutler/internal/server/ui/components/icons/archive"
 	"autobutler/internal/server/ui/components/icons/folder"
 	"autobutler/internal/server/ui/components/icons/generic"
@@ -36,6 +37,7 @@ templ renderGridItem(pageState types.PageState, file fs.FileInfo) {
 		class={ "grid-view-item file-node", templ.KV("grid-view-item--folder", isFolder) }
 		data-name={ fileName }
 		data-is-folder={ fmt.Sprintf("%t", isFolder) }
+		hx-on:contextmenu="toggleFloatingContextMenu(event, this)"
 	>
 		if isFolder {
 			<a
@@ -61,9 +63,21 @@ templ renderGridItem(pageState types.PageState, file fs.FileInfo) {
 				hx-swap="innerHTML"
 				hx-on:click="document.getElementById('file-viewer').showModal();"
 			>
-				<div class="grid-view-icon-container">
-					@renderFileIcon(fileType)
-				</div>
+				if fileType == util.FileTypeImage {
+					{{ thumbnailPath := filepath.Join("/api/v1/thumbnails", pageState.RootDir, fileName) }}
+					<div class="grid-view-thumbnail-container">
+						<img
+							class="grid-view-thumbnail"
+							src={ thumbnailPath }
+							alt={ fileName }
+							loading="lazy"
+						/>
+					</div>
+				} else {
+					<div class="grid-view-icon-container">
+						@renderFileIcon(fileType)
+					</div>
+				}
 				<div class="grid-view-details">
 					<div class="grid-view-name" title={ fileName }>{ fileName }</div>
 					if !isFolder && fileSize != "" {
@@ -78,7 +92,9 @@ templ renderGridItem(pageState types.PageState, file fs.FileInfo) {
 		>
 			⋮
 		</div>
-		@renderContextMenu(pageState, file)
+		<div class="context-menu hidden">
+			@context_menu_items.Component(pageState, file, pageState.RootDir)
+		</div>
 	</div>
 }
 
@@ -95,41 +111,4 @@ templ renderFileIcon(fileType util.FileType) {
 		default:
 			@generic.Component()
 	}
-}
-
-templ renderContextMenu(pageState types.PageState, file fs.FileInfo) {
-	{{
-		fileType := util.DetermineFileType(pageState.RootDir, file)
-		fileName := file.Name()
-		isFolder := fileType == util.FileTypeFolder
-		downloadPath := filepath.Join("/api/v1/files", pageState.RootDir, fileName)
-	}}
-	<div class="context-menu hidden">
-		if !isFolder {
-			<a
-				href={ templ.SafeURL(downloadPath) }
-				download
-				class="context-menu-item"
-			>
-				Download
-			</a>
-		}
-		<button
-			type="button"
-			class="context-menu-item"
-			hx-on:click={ templ.JSFuncCall("moveFile", templ.JSExpression("event"), pageState.RootDir, fileName) }
-		>
-			Rename/Move
-		</button>
-		<button
-			type="button"
-			class="context-menu-item context-menu-item--danger"
-			hx-target="#file-explorer"
-			hx-swap="outerHTML"
-			hx-delete={ filepath.Join(`/api/v1/files`) }
-			hx-vals={ `{"rootDir":"` + pageState.RootDir + `", "filePaths":["` + fileName + `"]}` }
-		>
-			Delete
-		</button>
-	</div>
 }
