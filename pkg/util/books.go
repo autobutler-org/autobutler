@@ -60,4 +60,3 @@ func FindAllBooksRecursively(rootDir string) ([]RecursiveBookInfo, error) {
 
 	return books, nil
 }
-
