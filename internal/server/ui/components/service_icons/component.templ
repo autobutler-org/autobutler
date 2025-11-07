@@ -16,7 +16,7 @@ templ Component(icons []types.ServiceIcon) {
 						<span class="service-icon-label">{ icon.Label }</span>
 					</a>
 				} else {
-					<div class="service-icon-button service-icon-button--disabled">
+					<div class="service-icon-button service-icon-button--disabled" onclick="alert('Coming soon!')" style="cursor: pointer;">
 						<div class="service-icon-bg">
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 								@templ.Raw(icon.IconSVG)

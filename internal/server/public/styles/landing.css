@@ -410,9 +410,8 @@
 
 /* Disabled state for service icons */
 .service-icon-button--disabled {
-	cursor: not-allowed;
+	cursor: pointer;
 	opacity: 0.4;
-	pointer-events: none;
 }
 
 .service-icon-button--disabled:hover {
