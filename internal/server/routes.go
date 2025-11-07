@@ -57,4 +57,5 @@ func setupUiRoutes(router *gin.Engine) {
 	ui.SetupDevicesRoutes(router)
 	ui.SetupFileRoutes(router)
 	ui.SetupPhotoRoutes(router)
+	ui.SetupBookRoutes(router)
 }

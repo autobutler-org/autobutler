@@ -3,6 +3,7 @@ package types
 type PageName string
 
 const (
+	PageBooks    PageName = "Books"
 	PageCalendar PageName = "Calendar"
 	PageDevices  PageName = "Devices"
 	PageFiles    PageName = "Files"

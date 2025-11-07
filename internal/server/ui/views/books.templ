@@ -1,0 +1,26 @@
+package views
+
+import (
+	"autobutler/internal/server/ui/components/body"
+	"autobutler/internal/server/ui/components/books"
+	"autobutler/internal/server/ui/components/header"
+	"autobutler/internal/server/ui/types"
+	"autobutler/pkg/util"
+)
+
+templ Books(pageState types.PageState) {
+	{{ pageState.CurrentPageName = types.PageBooks }}
+	<!DOCTYPE html>
+	<html lang="en">
+		@header.Component()
+		@body.Component(pageState) {
+			{{ bookFiles, err := util.FindAllBooksRecursively(util.GetFilesDir()) }}
+			if err != nil {
+				<div class="error-text">Error loading books: { err.Error() }</div>
+			} else {
+				@books.Library(pageState, bookFiles)
+			}
+		}
+	</html>
+}
+
