@@ -103,7 +103,6 @@ button.mobile-menu-link:active,
 a.mobile-menu-link:active {
 	background-color: var(--color-primary-700) !important;
 	color: white !important;
-	transform: scale(0.98) translateX(2px) !important;
 	transition: none;
 }
 

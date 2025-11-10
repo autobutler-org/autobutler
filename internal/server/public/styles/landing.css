@@ -195,13 +195,8 @@
 	box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
 	display: flex;
 	flex-direction: column;
-	transform: translateX(-100%);
 	transition: transform 0.3s ease;
 	overflow: hidden;
-}
-
-.mobile-menu--open .mobile-menu-content {
-	transform: translateX(0);
 }
 
 @media (prefers-color-scheme: light) {
@@ -296,7 +291,6 @@
 .mobile-menu-link:hover {
 	background: rgba(255, 255, 255, 0.1);
 	color: white;
-	transform: translateX(4px);
 }
 
 .mobile-menu-link svg {
@@ -313,7 +307,6 @@
 	.mobile-menu-link:hover {
 		background: var(--color-gray-200);
 		color: var(--color-gray-900);
-		transform: translateX(4px);
 	}
 }
 
