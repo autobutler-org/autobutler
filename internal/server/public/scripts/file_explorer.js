@@ -23,10 +23,10 @@ function setViewPreference(view) {
 
 function switchView(view) {
     setViewPreference(view);
-    
+
     // Update button states immediately
     updateViewButtonStates(view);
-    
+
     // Use HTMX to reload the content without a full page refresh
     const currentPath = window.location.pathname;
     htmx.ajax('GET', currentPath, {
@@ -39,12 +39,12 @@ function updateViewButtonStates(activeView) {
     // Get all view switcher buttons
     const viewSwitcher = document.querySelector('.view-switcher');
     if (!viewSwitcher) return;
-    
+
     const buttons = viewSwitcher.querySelectorAll('button');
     buttons.forEach((button, index) => {
         const views = ['list', 'grid', 'column'];
         const buttonView = views[index];
-        
+
         if (buttonView === activeView) {
             // Make this button active
             button.classList.remove('btn--secondary');
@@ -115,34 +115,34 @@ function toggleFloatingContextMenu(event, parentNode) {
         console.error('Context menu not found in', parentNode);
         return;
     }
-    
+
     // Close any other open context menus first
     document.querySelectorAll('.context-menu:not(.hidden)').forEach(menu => {
         if (menu !== contextMenu) {
             menu.classList.add('hidden');
         }
     });
-    
+
     // Toggle this context menu
     const isHidden = contextMenu.classList.contains('hidden');
     contextMenu.classList.toggle('hidden');
-    
+
     if (isHidden) {
         // Position at click location
         contextMenu.style.left = `${event.clientX}px`;
         contextMenu.style.top = `${event.clientY}px`;
-        
+
         // Ensure menu doesn't go off screen
         requestAnimationFrame(() => {
             const rect = contextMenu.getBoundingClientRect();
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
-            
+
             // Adjust if menu goes off right edge
             if (rect.right > viewportWidth) {
                 contextMenu.style.left = `${viewportWidth - rect.width - 10}px`;
             }
-            
+
             // Adjust if menu goes off bottom edge
             if (rect.bottom > viewportHeight) {
                 contextMenu.style.top = `${viewportHeight - rect.height - 10}px`;
@@ -278,14 +278,154 @@ function moveFile(event, rootDir, fileName) {
         rootDir = rootDir.slice(1);
     }
     const filePath = `${rootDir}/${fileName}`;
-    const newFilePath = prompt("Enter the preferred file name (including extension):", filePath);
-    if (newFilePath && newFilePath !== filePath) {
-        // Extract just the filename from the path
+
+    // Create overlay and dialog HTML
+    const overlay = document.createElement('div');
+    overlay.className = 'ab-rename-overlay';
+    overlay.innerHTML = `
+        <div class="ab-rename-dialog">
+            <button class="ab-rename-close" aria-label="Close" id="ab-rename-close-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20">
+                    <path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M5 5l10 10M15 5l-10 10"></path>
+                </svg>
+            </button>
+            <div class="ab-rename-header">
+                <h3 class="ab-rename-title">Rename/Move File</h3>
+                <p class="ab-rename-subtitle">Current: ${filePath}</p>
+            </div>
+            <form class="ab-rename-form" id="ab-rename-form">
+                <div class="ab-rename-confirm ab-rename-hidden" id="ab-rename-confirm">
+                    <p class="ab-rename-confirm-text">Are you sure you want to rename/move this file?</p>
+                    <div class="ab-rename-confirm-path" id="ab-rename-confirm-from">From: ${filePath}</div>
+                    <div class="ab-rename-confirm-path" id="ab-rename-confirm-to"></div>
+                </div>
+                <div class="ab-rename-input-group" id="ab-rename-input-group">
+                    <label class="ab-rename-label" for="ab-rename-path-input">
+                        New path (including filename and extension):
+                    </label>
+                    <input
+                        type="text"
+                        id="ab-rename-path-input"
+                        class="ab-rename-input"
+                        value="${filePath}"
+                        maxlength="${MAX_FILE_NAME_LENGTH}"
+                        required
+                    />
+                </div>
+                <div class="ab-rename-actions">
+                    <button type="button" class="btn btn--secondary" id="ab-rename-cancel">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn--primary" id="ab-rename-submit">
+                        Continue
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const input = document.getElementById('ab-rename-path-input');
+    const form = document.getElementById('ab-rename-form');
+    const confirmBox = document.getElementById('ab-rename-confirm');
+    const inputGroup = document.getElementById('ab-rename-input-group');
+    const submitBtn = document.getElementById('ab-rename-submit');
+    const cancelBtn = document.getElementById('ab-rename-cancel');
+    const confirmTo = document.getElementById('ab-rename-confirm-to');
+    const closeBtn = document.getElementById('ab-rename-close-btn');
+
+    let isConfirming = false;
+
+    // Focus and select the input
+    setTimeout(() => {
+        input.focus();
+        // Select just the filename without extension for easy editing
+        const lastSlashIndex = input.value.lastIndexOf('/');
+        const lastDotIndex = input.value.lastIndexOf('.');
+        if (lastDotIndex > lastSlashIndex) {
+            input.setSelectionRange(lastSlashIndex + 1, lastDotIndex);
+        } else {
+            input.setSelectionRange(lastSlashIndex + 1, input.value.length);
+        }
+    }, 10);
+
+    // Handle overlay click to close
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
+
+    // Handle close button
+    closeBtn.addEventListener('click', () => {
+        overlay.remove();
+    });
+
+    // Handle cancel button
+    cancelBtn.addEventListener('click', () => {
+        overlay.remove();
+    });
+
+    // Handle Escape key
+    const escapeHandler = (e) => {
+        if (e.key === 'Escape') {
+            overlay.remove();
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+
+    // Handle form submission
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const newFilePath = input.value.trim();
+
+        // Validation
+        if (!newFilePath) {
+            input.focus();
+            return;
+        }
+
+        if (newFilePath === filePath) {
+            overlay.remove();
+            return;
+        }
+
         const newFileName = newFilePath.split('/').pop();
         if (newFileName.length > MAX_FILE_NAME_LENGTH) {
             alert(`File name must be ${MAX_FILE_NAME_LENGTH} characters or less`);
+            input.focus();
             return;
         }
+
+        // Show confirmation step
+        if (!isConfirming) {
+            isConfirming = true;
+            inputGroup.classList.add('ab-rename-hidden');
+            confirmBox.classList.remove('ab-rename-hidden');
+            confirmTo.textContent = `To: ${newFilePath}`;
+            submitBtn.textContent = 'Confirm';
+            cancelBtn.textContent = 'Go Back';
+
+            // Update cancel button to go back to editing
+            cancelBtn.onclick = () => {
+                isConfirming = false;
+                inputGroup.classList.remove('ab-rename-hidden');
+                confirmBox.classList.add('ab-rename-hidden');
+                submitBtn.textContent = 'Continue';
+                cancelBtn.textContent = 'Cancel';
+                cancelBtn.onclick = () => overlay.remove();
+                input.focus();
+            };
+            return;
+        }
+
+        // Actually perform the rename/move
+        overlay.remove();
+        document.removeEventListener('keydown', escapeHandler);
+
         htmx.ajax('PUT',
             `/api/v1/files/${filePath}`, {
             values: {
@@ -294,7 +434,7 @@ function moveFile(event, rootDir, fileName) {
             target: '#file-explorer',
             swap: 'outerHTML',
         });
-    }
+    });
 }
 
 function newFile(event, rootDir) {
