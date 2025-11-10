@@ -289,7 +289,7 @@
 }
 
 .mobile-menu-link:hover {
-	background: rgba(255, 255, 255, 0.1);
+	background: var(--color-primary-800);
 	color: white;
 }
 
@@ -305,8 +305,8 @@
 	}
 
 	.mobile-menu-link:hover {
-		background: var(--color-gray-200);
-		color: var(--color-gray-900);
+		background: var(--color-primary-100);
+		color: var(--color-primary-900);
 	}
 }
 
