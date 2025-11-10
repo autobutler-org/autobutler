@@ -405,11 +405,44 @@
 	align-items: center;
 	gap: var(--spacing-md);
 	text-decoration: none;
-	transition: transform 0.2s ease;
+	transition: transform 0.2s ease, background-color 0.2s ease;
+	padding: var(--spacing-md);
+	border-radius: var(--border-radius-lg);
 }
 
 .service-icon-button:hover {
-	transform: translateY(-4px);
+	background-color: rgba(255, 255, 255, 0.05);
+}
+
+@media (prefers-color-scheme: light) {
+	.service-icon-button:hover {
+		background-color: rgba(0, 0, 0, 0.03);
+	}
+}
+
+/* Active/tap state - highlight on click */
+.service-icon-button:active {
+	background-color: var(--color-primary-700);
+	transform: scale(0.96);
+	transition: none;
+}
+
+@media (prefers-color-scheme: light) {
+	.service-icon-button:active {
+		background-color: var(--color-primary-200);
+	}
+}
+
+.service-icon-button:active .service-icon-bg {
+	background: rgba(255, 255, 255, 0.3);
+	border-color: rgba(255, 255, 255, 0.5);
+}
+
+@media (prefers-color-scheme: light) {
+	.service-icon-button:active .service-icon-bg {
+		background: rgba(0, 0, 0, 0.1);
+		border-color: rgba(0, 0, 0, 0.2);
+	}
 }
 
 /* Disabled state for service icons */
