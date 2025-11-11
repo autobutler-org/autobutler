@@ -8,6 +8,190 @@ var contextMenuPosition = {
 var navigationListener = null;
 var loadedBook = null;
 
+// NAVIGATION HISTORY STATE
+let hasForwardHistory = false; // Track if forward navigation is available
+let wentBackward = false; // Track if we just went backward
+let isInFilesSection = false;
+
+function updateNavigationButtons() {
+    const backButton = document.querySelector('.file-nav-btn--back');
+    const forwardButton = document.querySelector('.file-nav-btn--forward');
+    
+    console.log('🔄 updateNavigationButtons', {
+        hasForwardHistory,
+        buttonsFound: !!(backButton && forwardButton)
+    });
+    
+    if (backButton && forwardButton) {
+        // Back button: enabled if there's browser history
+        const hasBrowserHistory = window.history.length > 1;
+        backButton.disabled = !hasBrowserHistory;
+        
+        // Forward button: enabled only if we have forward history (went back before)
+        forwardButton.disabled = !hasForwardHistory;
+        
+        console.log('🎮 Set button states:', {
+            backDisabled: backButton.disabled,
+            forwardDisabled: forwardButton.disabled
+        });
+    }
+}
+
+function navigateBack() {
+    console.log('⬅️ navigateBack called', {
+        historyLength: window.history.length,
+        currentPath: window.location.pathname
+    });
+    const hasBrowserHistory = window.history.length > 1;
+    if (hasBrowserHistory) {
+        // Mark that we're going back, so forward will be available
+        wentBackward = true;
+        console.log('✅ Set wentBackward = true, calling history.back()');
+        
+        // Use a timeout to ensure the flag is set before popstate fires
+        setTimeout(() => {
+            window.history.back();
+            console.log('📞 history.back() called');
+        }, 0);
+    } else {
+        console.log('❌ No history to go back to');
+    }
+}
+
+function navigateForward() {
+    if (hasForwardHistory) {
+        window.history.forward();
+    }
+}
+
+function initializeNavigationTracking() {
+    // Check if we're in the files section
+    isInFilesSection = window.location.pathname.startsWith('/files');
+    
+    if (isInFilesSection) {
+        // Check if we have forward history stored in state
+        if (window.history.state && typeof window.history.state.hasForwardHistory !== 'undefined') {
+            hasForwardHistory = window.history.state.hasForwardHistory;
+        } else {
+            hasForwardHistory = false;
+            // Initialize the state if it doesn't exist
+            window.history.replaceState({
+                ...window.history.state,
+                hasForwardHistory: false
+            }, '');
+        }
+        updateNavigationButtons();
+    }
+}
+
+// Listen for htmx navigation events
+document.body.addEventListener('htmx:pushedIntoHistory', function(evt) {
+    if (isInFilesSection && evt.detail.path.startsWith('/files')) {
+        // New navigation forward clears any forward history
+        hasForwardHistory = false;
+        
+        window.history.replaceState({
+            ...window.history.state,
+            hasForwardHistory: false
+        }, '');
+        
+        updateNavigationButtons();
+    }
+});
+
+// Update buttons after htmx content swaps
+document.body.addEventListener('htmx:afterSwap', function(evt) {
+    console.log('🔄 htmx:afterSwap', {
+        isInFilesSection,
+        path: window.location.pathname
+    });
+    if (isInFilesSection) {
+        // Small delay to ensure DOM is updated
+        setTimeout(updateNavigationButtons, 10);
+    }
+});
+
+// Listen for htmx history restore (when back/forward is used)
+document.body.addEventListener('htmx:historyRestore', function(evt) {
+    console.log('📜 htmx:historyRestore event', {
+        path: evt.detail.path || window.location.pathname
+    });
+    
+    // htmx is restoring history, treat like popstate
+    if (wentBackward) {
+        hasForwardHistory = true;
+        wentBackward = false;
+        console.log('✅ History restored after our back button, enabled forward');
+    }
+    updateNavigationButtons();
+});
+
+// Listen for popstate (browser back/forward)
+window.addEventListener('popstate', function(evt) {
+    console.log('🔙 popstate event fired', {
+        wentBackward,
+        newPath: window.location.pathname,
+        state: evt.state
+    });
+    
+    isInFilesSection = window.location.pathname.startsWith('/files');
+    
+    if (isInFilesSection) {
+        // If we explicitly went backward with our button, enable forward
+        if (wentBackward) {
+            hasForwardHistory = true;
+            wentBackward = false; // Reset flag
+            console.log('✅ wentBackward was true, set hasForwardHistory = true');
+        } else if (evt.state && typeof evt.state.hasForwardHistory !== 'undefined') {
+            // Restore from state (browser's back/forward button or page load)
+            hasForwardHistory = evt.state.hasForwardHistory;
+            console.log('📥 Restored hasForwardHistory from state:', hasForwardHistory);
+        } else {
+            // Popstate fired but no state - assume we might have forward history
+            // This happens when browser back button is used
+            hasForwardHistory = true;
+            console.log('🤷 No state, assuming hasForwardHistory = true');
+        }
+        
+        // Update the current state to remember forward availability
+        window.history.replaceState({
+            ...window.history.state,
+            hasForwardHistory: hasForwardHistory
+        }, '');
+        console.log('💾 Updated state, calling updateNavigationButtons');
+        
+        updateNavigationButtons();
+    } else {
+        // Left files section, reset
+        hasForwardHistory = false;
+        wentBackward = false;
+        console.log('🚪 Left files section');
+    }
+});
+
+// Listen for page visibility to detect when user navigates away
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        const wasInFilesSection = isInFilesSection;
+        isInFilesSection = window.location.pathname.startsWith('/files');
+        
+        // If we left files section and came back, reinitialize
+        if (!wasInFilesSection && isInFilesSection) {
+            initializeNavigationTracking();
+        } else if (!isInFilesSection) {
+            // Clear state when leaving files section
+            hasForwardHistory = false;
+        }
+    }
+});
+
+// Initialize on page load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeNavigationTracking);
+} else {
+    initializeNavigationTracking();
+}
+
 // VIEW STATE MANAGEMENT
 const VIEW_STORAGE_KEY = 'fileExplorerView';
 
@@ -835,7 +1019,7 @@ function scrollColumnViewToRight() {
 // Listen for HTMX content swaps to scroll column view
 document.body.addEventListener('htmx:afterSwap', function(event) {
     // Check if we're in column view and the content was swapped
-    if (event.detail.target.id === 'file-explorer-view-content') {
+    if (event.detail.target && event.detail.target.id === 'file-explorer-view-content') {
         // Small delay to ensure DOM is fully rendered
         requestAnimationFrame(() => {
             scrollColumnViewToRight();

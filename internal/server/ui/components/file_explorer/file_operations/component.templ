@@ -11,7 +11,7 @@ templ Component(pageState types.PageState) {
 			<button
 				type="button"
 				class="file-nav-btn file-nav-btn--back"
-				onclick="history.back()"
+				onclick="navigateBack()"
 				title="Go back"
 			>
 				<svg
@@ -32,7 +32,7 @@ templ Component(pageState types.PageState) {
 			<button
 				type="button"
 				class="file-nav-btn file-nav-btn--forward"
-				onclick="history.forward()"
+				onclick="navigateForward()"
 				title="Go forward"
 			>
 				<svg
