@@ -2,6 +2,8 @@
 .DS_Store
 
 # Binaries for programs and plugins
+autobutler
+
 *.exe
 *.exe~
 *.dll
@@ -26,3 +28,14 @@ dist/
 
 __*
 .env
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Javascript
+node_modules/
