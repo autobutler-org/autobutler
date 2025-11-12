@@ -102,8 +102,15 @@ function initializeTextEditor(filePath) {
 			fetch('/api/v1/files' + dirPath, {
 				method: 'POST',
 				body: formData
+			}).then(function(response) {
+				if (!response.ok) {
+					return response.text().then(function(text) {
+						toastr.error('Error saving file: ' + (text || response.statusText));
+					});
+				}
 			}).catch(function(error) {
 				console.error('Error saving file:', error);
+				toastr.error('Error saving file: ' + error.message);
 			});
 		}, 1000); // Save after 1 second of inactivity
 	});
