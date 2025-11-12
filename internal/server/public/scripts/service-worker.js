@@ -24,9 +24,13 @@ const STATIC_ASSETS = [
   '/public/vendor/htmx/htmx.min.js',
   '/public/scripts/pwa-init.js',
   
-  // Images and icons
+  // Images and icons - ensures all visual assets load instantly
   '/public/img/butler.png',
-  '/public/favicons/48x48.ico'
+  '/public/favicons/48x48.ico',
+  
+  // Note: SVG icons (book, settings, devices) are rendered inline via templ components
+  // and are automatically included in the cached HTML pages
+
 ];
 
 // Install event - cache critical static assets for instant page loads

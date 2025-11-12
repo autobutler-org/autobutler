@@ -9,6 +9,7 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"autobutler/internal/server/ui/components/icons/book"
 	"autobutler/internal/server/ui/types"
 	"autobutler/pkg/util"
 	"fmt"
@@ -44,7 +45,7 @@ func Library(pageState types.PageState, books []util.RecursiveBookInfo) templ.Co
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(formatBookCount(len(books)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 15, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 16, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -55,122 +56,146 @@ func Library(pageState types.PageState, books []util.RecursiveBookInfo) templ.Co
 			return templ_7745c5c3_Err
 		}
 		if len(books) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"books-empty\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" fill=\"currentColor\" stroke=\"none\" class=\"books-empty-icon\"><path d=\"M28.25 2c-0-0.69-0.56-1.25-1.25-1.25h-19.8c-0.028-0.001-0.061-0.001-0.093-0.001-1.817 0-3.297 1.443-3.357 3.246l-0 0.005v24.389c0.114 1.606 1.445 2.867 3.070 2.867 0.063 0 0.126-0.002 0.188-0.006l-0.009 0h20c0.69 0 1.25-0.56 1.25-1.25s-0.56-1.25-1.25-1.25v0h-19.8c-0.024 0.002-0.051 0.004-0.079 0.004-0.441 0-0.807-0.325-0.871-0.749l-0.001-0.005v-1.223c0-0.090 0.266-0.361 0.746-0.361l20.004 0.057c0 0 0 0 0.001 0 0.515 0 0.956-0.311 1.148-0.756l0.003-0.008 0.007-0.034c0.056-0.132 0.089-0.286 0.092-0.447v-0.001l-0-0.002 0-0.002zM25.75 23.969l-14.5-0.041v-20.678h14.5zM6.25 24v-20c0.064-0.429 0.43-0.754 0.871-0.754 0.028 0 0.055 0.001 0.082 0.004l-0.003-0h1.55v20.671l-1.75-0.005c-0.267 0.002-0.525 0.033-0.774 0.089l0.024-0.005zM14 8.25h9c0.69 0 1.25-0.56 1.25-1.25s-0.56-1.25-1.25-1.25v0h-9c-0.69 0-1.25 0.56-1.25 1.25s0.56 1.25 1.25 1.25v0zM23 9.75h-9c-0.69 0-1.25 0.56-1.25 1.25s0.56 1.25 1.25 1.25v0h9c0.69 0 1.25-0.56 1.25-1.25s-0.56-1.25-1.25-1.25v0z\"></path></svg><h2>No books found</h2><p>Add PDF or EPUB files to your files directory to see them here.</p></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"books-empty\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = book.Component().Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<h2>No books found</h2><p>Add PDF or EPUB files to your files directory to see them here.</p></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"books-grid\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"books-grid\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			for _, book := range books {
-				fileType := util.DetermineFileTypeFromPath(book.FileInfo.Name())
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"book-card\"><a href=\"")
+			for _, bookInfo := range books {
+				fileType := util.DetermineFileTypeFromPath(bookInfo.FileInfo.Name())
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"book-card\"><a href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var3 templ.SafeURL
-				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(filepath.Join("/books/reader?path=", book.RelPath)))
+				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(filepath.Join("/books/reader?path=", bookInfo.RelPath)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 30, Col: 77}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 29, Col: 81}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" class=\"book-card-link\"><div class=\"book-card-cover\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" class=\"book-card-link\"><div class=\"book-card-cover\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if fileType == util.FileTypePDF {
-					thumbnailPath := filepath.Join("/api/v1/thumbnails", book.RelPath)
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<img class=\"book-card-thumbnail\" src=\"")
+					thumbnailPath := filepath.Join("/api/v1/thumbnails", bookInfo.RelPath)
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<img class=\"book-card-thumbnail\" src=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var4 string
 					templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(thumbnailPath)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 36, Col: 29}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 35, Col: 29}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" alt=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" alt=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var5 string
-					templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(book.FileInfo.Name())
+					templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(bookInfo.FileInfo.Name())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 37, Col: 36}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 36, Col: 40}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" loading=\"lazy\" onerror=\"this.style.display='none'; this.nextElementSibling.style.display='flex';\"><div class=\"book-card-icon-fallback\" style=\"display: none;\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" fill=\"currentColor\" stroke=\"none\" class=\"book-card-icon\"><path d=\"M28.25 2c-0-0.69-0.56-1.25-1.25-1.25h-19.8c-0.028-0.001-0.061-0.001-0.093-0.001-1.817 0-3.297 1.443-3.357 3.246l-0 0.005v24.389c0.114 1.606 1.445 2.867 3.070 2.867 0.063 0 0.126-0.002 0.188-0.006l-0.009 0h20c0.69 0 1.25-0.56 1.25-1.25s-0.56-1.25-1.25-1.25v0h-19.8c-0.024 0.002-0.051 0.004-0.079 0.004-0.441 0-0.807-0.325-0.871-0.749l-0.001-0.005v-1.223c0-0.090 0.266-0.361 0.746-0.361l20.004 0.057c0 0 0 0 0.001 0 0.515 0 0.956-0.311 1.148-0.756l0.003-0.008 0.007-0.034c0.056-0.132 0.089-0.286 0.092-0.447v-0.001l-0-0.002 0-0.002zM25.75 23.969l-14.5-0.041v-20.678h14.5zM6.25 24v-20c0.064-0.429 0.43-0.754 0.871-0.754 0.028 0 0.055 0.001 0.082 0.004l-0.003-0h1.55v20.671l-1.75-0.005c-0.267 0.002-0.525 0.033-0.774 0.089l0.024-0.005zM14 8.25h9c0.69 0 1.25-0.56 1.25-1.25s-0.56-1.25-1.25-1.25v0h-9c-0.69 0-1.25 0.56-1.25 1.25s0.56 1.25 1.25 1.25v0zM23 9.75h-9c-0.69 0-1.25 0.56-1.25 1.25s0.56 1.25 1.25 1.25v0h9c0.69 0 1.25-0.56 1.25-1.25s-0.56-1.25-1.25-1.25v0z\"></path></svg></div><span class=\"book-card-badge\">PDF</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" loading=\"lazy\" onerror=\"this.style.display='none'; this.nextElementSibling.style.display='flex';\"><div class=\"book-card-icon-fallback\" style=\"display: none;\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = book.Component().Render(ctx, templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div><span class=\"book-card-badge\">PDF</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" fill=\"currentColor\" stroke=\"none\" class=\"book-card-icon\"><path d=\"M28.25 2c-0-0.69-0.56-1.25-1.25-1.25h-19.8c-0.028-0.001-0.061-0.001-0.093-0.001-1.817 0-3.297 1.443-3.357 3.246l-0 0.005v24.389c0.114 1.606 1.445 2.867 3.070 2.867 0.063 0 0.126-0.002 0.188-0.006l-0.009 0h20c0.69 0 1.25-0.56 1.25-1.25s-0.56-1.25-1.25-1.25v0h-19.8c-0.024 0.002-0.051 0.004-0.079 0.004-0.441 0-0.807-0.325-0.871-0.749l-0.001-0.005v-1.223c0-0.090 0.266-0.361 0.746-0.361l20.004 0.057c0 0 0 0 0.001 0 0.515 0 0.956-0.311 1.148-0.756l0.003-0.008 0.007-0.034c0.056-0.132 0.089-0.286 0.092-0.447v-0.001l-0-0.002 0-0.002zM25.75 23.969l-14.5-0.041v-20.678h14.5zM6.25 24v-20c0.064-0.429 0.43-0.754 0.871-0.754 0.028 0 0.055 0.001 0.082 0.004l-0.003-0h1.55v20.671l-1.75-0.005c-0.267 0.002-0.525 0.033-0.774 0.089l0.024-0.005zM14 8.25h9c0.69 0 1.25-0.56 1.25-1.25s-0.56-1.25-1.25-1.25v0h-9c-0.69 0-1.25 0.56-1.25 1.25s0.56 1.25 1.25 1.25v0zM23 9.75h-9c-0.69 0-1.25 0.56-1.25 1.25s0.56 1.25 1.25 1.25v0h9c0.69 0 1.25-0.56 1.25-1.25s-0.56-1.25-1.25-1.25v0z\"></path></svg> <span class=\"book-card-badge\">EPUB</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"book-card-icon\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = book.Component().Render(ctx, templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div><span class=\"book-card-badge\">EPUB</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div><div class=\"book-card-info\"><h3 class=\"book-card-title\" title=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div><div class=\"book-card-info\"><h3 class=\"book-card-title\" title=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var6 string
-				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(book.FileInfo.Name())
+				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(bookInfo.FileInfo.Name())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 55, Col: 64}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 52, Col: 68}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var7 string
-				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(cleanBookTitle(book.FileInfo.Name()))
+				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(cleanBookTitle(bookInfo.FileInfo.Name()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 56, Col: 47}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 53, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</h3><p class=\"book-card-size\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</h3><p class=\"book-card-size\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var8 string
-				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(util.SizeBytesToString(book.FileInfo.Size()))
+				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(util.SizeBytesToString(bookInfo.FileInfo.Size()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 58, Col: 80}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 55, Col: 84}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</p></div></a></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</p></div></a></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

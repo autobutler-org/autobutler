@@ -9,6 +9,9 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import "autobutler/internal/version"
+import "autobutler/internal/server/ui/components/icons/book"
+import "autobutler/internal/server/ui/components/icons/settings"
+import "autobutler/internal/server/ui/components/icons/devices"
 
 func Component() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
@@ -31,25 +34,33 @@ func Component() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<nav class=\"landing-nav\"><div class=\"landing-nav-left\"><a href=\"/\" class=\"landing-nav-logo\"><img src=\"/public/img/butler.png\" height=\"24\" width=\"24\" alt=\"AutoButler\"></a> <a href=\"/files\" class=\"landing-nav-link\">Files</a> <a href=\"/calendar\" class=\"landing-nav-link\">Calendar</a> <a href=\"/photos\" class=\"landing-nav-link\">Photos</a> <a href=\"/books\" class=\"landing-nav-link\">Books</a></div><div class=\"landing-nav-right\"><button class=\"landing-nav-button\" onclick=\"alert('Settings coming soon')\" title=\"Settings\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle> <path d=\"M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m-2 2l-4.2 4.2M23 12h-6m-6 0H5m13.2 5.2l-4.2-4.2m-2-2l-4.2-4.2\"></path></svg> <span>Settings</span></button> <span class=\"landing-nav-version\" title=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<nav class=\"landing-nav\"><div class=\"landing-nav-left\"><a href=\"/\" class=\"landing-nav-logo\"><img src=\"/public/img/butler.png\" height=\"24\" width=\"24\" alt=\"AutoButler\"></a> <a href=\"/files\" class=\"landing-nav-link\">Files</a> <a href=\"/calendar\" class=\"landing-nav-link\">Calendar</a> <a href=\"/photos\" class=\"landing-nav-link\">Photos</a> <a href=\"/books\" class=\"landing-nav-link\">Books</a></div><div class=\"landing-nav-right\"><button class=\"landing-nav-button\" onclick=\"alert('Settings coming soon')\" title=\"Settings\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = settings.Component().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</button> <span class=\"landing-nav-version\" title=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("Version " + version.Semver)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/landing_nav/component.templ`, Line: 24, Col: 72}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/landing_nav/component.templ`, Line: 23, Col: 72}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if version.Semver == version.NoSemver {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "vX.Y.Z")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "vX.Y.Z")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -57,38 +68,70 @@ func Component() templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(version.Semver)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/landing_nav/component.templ`, Line: 28, Col: 21}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/landing_nav/component.templ`, Line: 27, Col: 21}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</span> <a href=\"/devices\" class=\"landing-nav-button\" title=\"Devices\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"2\" y=\"3\" width=\"20\" height=\"14\" rx=\"2\" ry=\"2\"></rect> <line x1=\"8\" y1=\"21\" x2=\"16\" y2=\"21\"></line> <line x1=\"12\" y1=\"17\" x2=\"12\" y2=\"21\"></line></svg> <span>Devices</span></a> <button class=\"landing-nav-hamburger\" onclick=\"document.getElementById('mobile-menu').classList.toggle('mobile-menu--open')\" aria-label=\"Menu\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><line x1=\"3\" y1=\"12\" x2=\"21\" y2=\"12\"></line> <line x1=\"3\" y1=\"6\" x2=\"21\" y2=\"6\"></line> <line x1=\"3\" y1=\"18\" x2=\"21\" y2=\"18\"></line></svg></button></div></nav><div id=\"mobile-menu\" class=\"mobile-menu\" onclick=\"if(event.target === this) this.classList.remove('mobile-menu--open')\"><div class=\"mobile-menu-content\"><div class=\"mobile-menu-header\"><span class=\"mobile-menu-title\">Menu</span> <button class=\"mobile-menu-close\" onclick=\"document.getElementById('mobile-menu').classList.remove('mobile-menu--open')\" aria-label=\"Close menu\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line> <line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line></svg></button></div><nav class=\"mobile-menu-nav\"><a href=\"/\" class=\"mobile-menu-link\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6\"></path></svg> <span>Home</span></a> <a href=\"/files\" class=\"mobile-menu-link\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z\"></path></svg> <span>Files</span></a> <a href=\"/calendar\" class=\"mobile-menu-link\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z\"></path></svg> <span>Calendar</span></a> <a href=\"/photos\" class=\"mobile-menu-link\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z\"></path></svg> <span>Photos</span></a> <a href=\"/books\" class=\"mobile-menu-link\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" fill=\"currentColor\" stroke=\"none\"><path d=\"M28.25 2c-0-0.69-0.56-1.25-1.25-1.25h-19.8c-0.028-0.001-0.061-0.001-0.093-0.001-1.817 0-3.297 1.443-3.357 3.246l-0 0.005v24.389c0.114 1.606 1.445 2.867 3.070 2.867 0.063 0 0.126-0.002 0.188-0.006l-0.009 0h20c0.69 0 1.25-0.56 1.25-1.25s-0.56-1.25-1.25-1.25v0h-19.8c-0.024 0.002-0.051 0.004-0.079 0.004-0.441 0-0.807-0.325-0.871-0.749l-0.001-0.005v-1.223c0-0.090 0.266-0.361 0.746-0.361l20.004 0.057c0 0 0 0 0.001 0 0.515 0 0.956-0.311 1.148-0.756l0.003-0.008 0.007-0.034c0.056-0.132 0.089-0.286 0.092-0.447v-0.001l-0-0.002 0-0.002zM25.75 23.969l-14.5-0.041v-20.678h14.5zM6.25 24v-20c0.064-0.429 0.43-0.754 0.871-0.754 0.028 0 0.055 0.001 0.082 0.004l-0.003-0h1.55v20.671l-1.75-0.005c-0.267 0.002-0.525 0.033-0.774 0.089l0.024-0.005zM14 8.25h9c0.69 0 1.25-0.56 1.25-1.25s-0.56-1.25-1.25-1.25v0h-9c-0.69 0-1.25 0.56-1.25 1.25s0.56 1.25 1.25 1.25v0zM23 9.75h-9c-0.69 0-1.25 0.56-1.25 1.25s0.56 1.25 1.25 1.25v0h9c0.69 0 1.25-0.56 1.25-1.25s-0.56-1.25-1.25-1.25v0z\"></path></svg> <span>Books</span></a> <a href=\"/devices\" class=\"mobile-menu-link\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"2\" y=\"3\" width=\"20\" height=\"14\" rx=\"2\" ry=\"2\"></rect> <line x1=\"8\" y1=\"21\" x2=\"16\" y2=\"21\"></line> <line x1=\"12\" y1=\"17\" x2=\"12\" y2=\"21\"></line></svg> <span>Devices</span></a></nav><div class=\"mobile-menu-footer\"><button class=\"mobile-menu-link\" onclick=\"alert('Settings coming soon')\" title=\"Settings\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle> <path d=\"M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m-2 2l-4.2 4.2M23 12h-6m-6 0H5m13.2 5.2l-4.2-4.2m-2-2l-4.2-4.2\"></path></svg> <span>Settings</span></button><div class=\"mobile-menu-divider\"></div><span class=\"mobile-menu-version\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</span> <a href=\"/devices\" class=\"landing-nav-button\" title=\"Devices\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = devices.Component().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<span>Devices</span></a> <button class=\"landing-nav-hamburger\" onclick=\"document.getElementById('mobile-menu').classList.toggle('mobile-menu--open')\" aria-label=\"Menu\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><line x1=\"3\" y1=\"12\" x2=\"21\" y2=\"12\"></line> <line x1=\"3\" y1=\"6\" x2=\"21\" y2=\"6\"></line> <line x1=\"3\" y1=\"18\" x2=\"21\" y2=\"18\"></line></svg></button></div></nav><div id=\"mobile-menu\" class=\"mobile-menu\" onclick=\"if(event.target === this) this.classList.remove('mobile-menu--open')\"><div class=\"mobile-menu-content\"><div class=\"mobile-menu-header\"><span class=\"mobile-menu-title\">Menu</span> <button class=\"mobile-menu-close\" onclick=\"document.getElementById('mobile-menu').classList.remove('mobile-menu--open')\" aria-label=\"Close menu\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line> <line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line></svg></button></div><nav class=\"mobile-menu-nav\"><a href=\"/\" class=\"mobile-menu-link\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6\"></path></svg> <span>Home</span></a> <a href=\"/files\" class=\"mobile-menu-link\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z\"></path></svg> <span>Files</span></a> <a href=\"/calendar\" class=\"mobile-menu-link\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z\"></path></svg> <span>Calendar</span></a> <a href=\"/photos\" class=\"mobile-menu-link\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z\"></path></svg> <span>Photos</span></a> <a href=\"/books\" class=\"mobile-menu-link\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = book.Component().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<span>Books</span></a> <a href=\"/devices\" class=\"mobile-menu-link\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = devices.Component().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span>Devices</span></a></nav><div class=\"mobile-menu-footer\"><button class=\"mobile-menu-link\" onclick=\"alert('Settings coming soon')\" title=\"Settings\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = settings.Component().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<span>Settings</span></button><div class=\"mobile-menu-divider\"></div><span class=\"mobile-menu-version\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if version.Semver == version.NoSemver {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "Version: vX.Y.Z")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "Version: vX.Y.Z")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "Version: ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "Version: ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(version.Semver)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/landing_nav/component.templ`, Line: 112, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/landing_nav/component.templ`, Line: 98, Col: 31}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</span></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</span></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

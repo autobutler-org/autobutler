@@ -48,7 +48,7 @@ test.describe('Books Page', () => {
       await expect(emptyMessage).toBeVisible();
       await expect(emptyMessage).toContainText('Add PDF or EPUB files');
 
-      const emptyIcon = page.locator('.books-empty svg.books-empty-icon');
+      const emptyIcon = page.locator('.books-empty svg');
       await expect(emptyIcon).toBeVisible();
     }
   });
@@ -133,7 +133,7 @@ test.describe('Books Page', () => {
         const firstEpubCard = epubCards.first();
 
         // EPUB should show icon directly
-        const icon = firstEpubCard.locator('svg.book-card-icon');
+        const icon = firstEpubCard.locator('.book-card-icon svg');
         const iconCount = await icon.count();
 
         expect(iconCount).toBeGreaterThan(0);
