@@ -16,6 +16,7 @@
 @import url('modals.css');
 @import url('utility.css');
 @import url('touch-feedback.css');
+@import url('editor.css');
 
 /* Inline rename/move form - Used in file explorer for renaming files inline */
 .ab-rename-overlay {
@@ -74,7 +75,7 @@
 	.ab-rename-close {
 		color: var(--color-gray-400);
 	}
-	
+
 	.ab-rename-close:hover {
 		background-color: var(--color-gray-700);
 		color: white;
@@ -156,7 +157,7 @@
 		border-color: var(--color-gray-400);
 		color: var(--color-gray-900) !important;
 	}
-	
+
 	.ab-rename-input:focus {
 		border-color: var(--color-primary-400);
 	}
@@ -174,7 +175,7 @@
 	.ab-rename-actions {
 		flex-direction: column-reverse;
 	}
-	
+
 	.ab-rename-actions button {
 		width: 100%;
 	}

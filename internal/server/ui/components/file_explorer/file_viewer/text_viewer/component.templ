@@ -22,6 +22,14 @@ templ Component(filePath string) {
 	if err != nil {
 		<p>Error reading file: { err.Error() }</p>
 	} else {
-		<pre class="whitespace-pre-wrap">{ text }</pre>
+		<div class="ab-text-editor-container">
+			<div class="ab-text-editor-header">
+				<span class="ab-text-editor-filename">{ filepath.Base(filePath) }</span>
+			</div>
+			<div id="editor" class="ab-text-editor">{ text }</div>
+		</div>
+		<script>
+			initializeTextEditor({{ filePath }});
+		</script>
 	}
 }

@@ -284,6 +284,24 @@ function saveQuill(filePath) {
     });
 }
 
+function saveAceEditor(filePath, content) {
+    fetch(`/api/v1/files${filePath}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'text/plain'
+        },
+        body: content
+    }).then(response => {
+        if (response.ok) {
+            console.log('File saved successfully');
+        } else {
+            console.error('Error saving file:', response.statusText);
+        }
+    }).catch(error => {
+        console.error('Error saving file:', error);
+    });
+}
+
 function moveFile(event, rootDir, fileName) {
     preventDefault(event);
     while (rootDir && rootDir[0] == '/') {
@@ -361,6 +379,13 @@ function moveFile(event, rootDir, fileName) {
             input.setSelectionRange(lastSlashIndex + 1, input.value.length);
         }
     }, 10);
+
+    // Handle overlay click to close
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
 
     // Handle overlay click to close
     overlay.addEventListener('click', (e) => {
