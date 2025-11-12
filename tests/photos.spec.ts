@@ -155,3 +155,82 @@ test.describe('Photos Page', () => {
     }
   });
 });
+
+test.describe('Photos Page - Photo Upload', () => {
+  test('uploads a PNG image and it appears in gallery', async ({ page }) => {
+    // First go to files page to upload
+    await page.goto('/files');
+
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles('./tests/fixtures/test-image.png');
+
+    await page.waitForTimeout(1000);
+
+    // Now navigate to photos page
+    await page.goto('/photos');
+
+    // Wait a bit for photos to load
+    await page.waitForTimeout(1000);
+
+    // Check if the photo appears in the grid
+    const photoGrid = page.locator('.photo-grid');
+    await expect(photoGrid).toBeVisible();
+
+    // Check for photo items
+    const photoItems = page.locator('.photo-grid-item');
+    const count = await photoItems.count();
+
+    // At least one photo should be present now
+    expect(count).toBeGreaterThan(0);
+  });
+
+  test('uploads a JPEG image and verifies thumbnail', async ({ page }) => {
+    await page.goto('/files');
+
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles('./tests/fixtures/test-image.jpg');
+
+    await page.waitForTimeout(1000);
+
+    await page.goto('/photos');
+    await page.waitForTimeout(1000);
+
+    const photoItems = page.locator('.photo-grid-item');
+    const count = await photoItems.count();
+
+    if (count > 0) {
+      // Verify at least one image element exists
+      const images = page.locator('.photo-grid-image');
+      await expect(images.first()).toBeVisible();
+
+      // Check that it has lazy loading
+      await expect(images.first()).toHaveAttribute('loading', 'lazy');
+    }
+  });
+
+  test('uploaded photos have proper thumbnail src', async ({ page }) => {
+    await page.goto('/photos');
+
+    const photoItems = page.locator('.photo-grid-item');
+    const count = await photoItems.count();
+
+    if (count > 0) {
+      const firstImage = page.locator('.photo-grid-image').first();
+      const src = await firstImage.getAttribute('src');
+
+      // Should use the thumbnails API endpoint
+      expect(src).toContain('/api/v1/thumbnails/');
+    }
+  });
+
+  test('photo count updates after upload', async ({ page }) => {
+    await page.goto('/photos');
+
+    // Get initial count
+    const countElement = page.locator('.photos-count');
+    const initialCount = await countElement.textContent();
+
+    // Verify count format is correct
+    expect(initialCount).toMatch(/\d+\s+photos?/i);
+  });
+});

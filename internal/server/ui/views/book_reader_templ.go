@@ -63,17 +63,18 @@ func BookReader(bookPath string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if fileType == util.FileTypePDF {
+		switch fileType {
+		case util.FileTypePDF:
 			templ_7745c5c3_Err = pdf_viewer.Component(bookPath).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		} else if fileType == util.FileTypeEpub {
+		case util.FileTypeEpub:
 			templ_7745c5c3_Err = epub_viewer.Component(bookPath).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		} else {
+		default:
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"error-text\">Unsupported file type</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

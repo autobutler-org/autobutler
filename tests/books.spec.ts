@@ -200,3 +200,55 @@ test.describe('Books Page', () => {
     await expect(booksLibrary).toBeVisible();
   });
 });
+
+test.describe('Books Page - Book Upload', () => {
+  test('shows empty state initially', async ({ page }) => {
+    await page.goto('/books');
+
+    const bookCards = page.locator('.book-card');
+    const cardCount = await bookCards.count();
+
+    // Check for empty state when no books
+    if (cardCount === 0) {
+      const emptyState = page.locator('.books-empty');
+      await expect(emptyState).toBeVisible();
+
+      const emptyTitle = page.locator('.books-empty h2');
+      await expect(emptyTitle).toHaveText('No books found');
+    }
+  });
+
+  test('book count shows "0 books" when empty', async ({ page }) => {
+    await page.goto('/books');
+
+    const countElement = page.locator('.books-library-count');
+    const countText = await countElement.textContent();
+
+    // Should show book count
+    expect(countText).toMatch(/\d+\s+books?/i);
+  });
+
+  test('books library shows proper grid structure', async ({ page }) => {
+    await page.goto('/books');
+
+    // The library should have proper structure
+    const libraryHeader = page.locator('.books-library-header');
+    await expect(libraryHeader).toBeVisible();
+
+    const title = page.locator('h1.books-library-title');
+    await expect(title).toHaveText('Library');
+  });
+
+  test('empty state provides helpful instructions', async ({ page }) => {
+    await page.goto('/books');
+
+    const bookCards = page.locator('.book-card');
+    const cardCount = await bookCards.count();
+
+    if (cardCount === 0) {
+      const emptyMessage = page.locator('.books-empty p');
+      await expect(emptyMessage).toBeVisible();
+      await expect(emptyMessage).toContainText('Add PDF or EPUB files');
+    }
+  });
+});

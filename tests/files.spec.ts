@@ -111,8 +111,10 @@ test.describe('Files Page', () => {
     await page.goto('/files');
 
     // Context menu should exist in the DOM (may be hidden initially)
-    const contextMenu = page.locator('ul.context-menu');
-    await expect(contextMenu).toBeAttached();
+    // There can be multiple context menus (one per file), so just check at least one exists
+    const contextMenus = page.locator('ul.context-menu');
+    const count = await contextMenus.count();
+    expect(count).toBeGreaterThan(0);
   });
 
   test('file explorer status area exists', async ({ page }) => {
@@ -154,5 +156,90 @@ test.describe('Files Page', () => {
 
     // Upload area should exist
     expect(count).toBeGreaterThan(0);
+  });
+});
+
+test.describe('Files Page - File Upload', () => {
+  test('uploads a text file through file input', async ({ page }) => {
+    await page.goto('/files');
+
+    // Find the file input element
+    const fileInput = page.locator('input[type="file"]');
+
+    // Upload the test file
+    await fileInput.setInputFiles('./tests/fixtures/sample.txt');
+
+    // Wait for the upload to complete (progress bar or file to appear)
+    await page.waitForTimeout(1000);
+
+    // Verify the file appears in the file list
+    const fileName = page.locator('text=sample.txt');
+    await expect(fileName).toBeVisible({ timeout: 10000 });
+  });
+
+  test('uploads a JSON file and verifies it appears in list', async ({ page }) => {
+    await page.goto('/files');
+
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles('./tests/fixtures/data.json');
+
+    await page.waitForTimeout(1000);
+
+    const fileName = page.locator('text=data.json');
+    await expect(fileName).toBeVisible({ timeout: 10000 });
+  });
+
+  test('uploads a CSV file', async ({ page }) => {
+    await page.goto('/files');
+
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles('./tests/fixtures/users.csv');
+
+    await page.waitForTimeout(1000);
+
+    const fileName = page.locator('text=users.csv');
+    await expect(fileName).toBeVisible({ timeout: 10000 });
+  });
+
+  test('uploads a markdown file', async ({ page }) => {
+    await page.goto('/files');
+
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles('./tests/fixtures/test-document.md');
+
+    await page.waitForTimeout(1000);
+
+    const fileName = page.locator('text=test-document.md');
+    await expect(fileName).toBeVisible({ timeout: 10000 });
+  });
+
+  test('uploads an HTML file', async ({ page }) => {
+    await page.goto('/files');
+
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles('./tests/fixtures/sample.html');
+
+    await page.waitForTimeout(1000);
+
+    const fileName = page.locator('text=sample.html');
+    await expect(fileName).toBeVisible({ timeout: 10000 });
+  });
+
+  test('uploads multiple files at once', async ({ page }) => {
+    await page.goto('/files');
+
+    const fileInput = page.locator('input[type="file"]');
+
+    // Upload multiple files
+    await fileInput.setInputFiles([
+      './tests/fixtures/sample.txt',
+      './tests/fixtures/data.json'
+    ]);
+
+    await page.waitForTimeout(2000);
+
+    // Verify both files appear
+    await expect(page.locator('text=sample.txt')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=data.json')).toBeVisible({ timeout: 10000 });
   });
 });
