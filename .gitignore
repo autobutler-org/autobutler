@@ -3,6 +3,8 @@
 
 # Binaries for programs and plugins
 autobutler
+# Datlinks
+datalinks/mac
 
 *.exe
 *.exe~
