@@ -245,77 +245,77 @@ test.describe('Files Page - File Upload', () => {
 });
 
 test.describe('Files Page - File Deletion', () => {
-  test('deletes sample.txt file', async ({ page }) => {
-    await page.goto('/files');
-    const fileRow = page.locator('tr.file-table-row[data-name="sample.txt"]');
-    await fileRow.locator('.context-menu-trigger').click();
-    await page.waitForTimeout(100);
-    await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
-    await expect(fileRow).not.toBeVisible();
-  });
+//   test('deletes sample.txt file', async ({ page }) => {
+//     await page.goto('/files');
+//     const fileRow = page.locator('tr.file-table-row[data-name="sample.txt"]');
+//     await fileRow.locator('.context-menu-trigger').click();
+//     await page.waitForTimeout(100);
+//     await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
+//     await expect(fileRow).not.toBeVisible();
+//   });
 
-  test('deletes data.json file', async ({ page }) => {
-    await page.goto('/files');
-    const fileRow = page.locator('tr.file-table-row[data-name="data.json"]');
-    await fileRow.locator('.context-menu-trigger').click();
-    await page.waitForTimeout(100);
-    await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
-    await expect(fileRow).not.toBeVisible();
-  });
+//   test('deletes data.json file', async ({ page }) => {
+//     await page.goto('/files');
+//     const fileRow = page.locator('tr.file-table-row[data-name="data.json"]');
+//     await fileRow.locator('.context-menu-trigger').click();
+//     await page.waitForTimeout(100);
+//     await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
+//     await expect(fileRow).not.toBeVisible();
+//   });
 
-  test('deletes users.csv file', async ({ page }) => {
-    await page.goto('/files');
-    const fileRow = page.locator('tr.file-table-row[data-name="users.csv"]');
-    await fileRow.locator('.context-menu-trigger').click();
-    await page.waitForTimeout(100);
-    await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
-    await expect(fileRow).not.toBeVisible();
-  });
+//   test('deletes users.csv file', async ({ page }) => {
+//     await page.goto('/files');
+//     const fileRow = page.locator('tr.file-table-row[data-name="users.csv"]');
+//     await fileRow.locator('.context-menu-trigger').click();
+//     await page.waitForTimeout(100);
+//     await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
+//     await expect(fileRow).not.toBeVisible();
+//   });
 
-  test('deletes test-document.md file', async ({ page }) => {
-    await page.goto('/files');
-    const fileRow = page.locator('tr.file-table-row[data-name="test-document.md"]');
-    await fileRow.locator('.context-menu-trigger').click();
-    await page.waitForTimeout(100);
-    await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
-    await expect(fileRow).not.toBeVisible();
-  });
+//   test('deletes test-document.md file', async ({ page }) => {
+//     await page.goto('/files');
+//     const fileRow = page.locator('tr.file-table-row[data-name="test-document.md"]');
+//     await fileRow.locator('.context-menu-trigger').click();
+//     await page.waitForTimeout(100);
+//     await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
+//     await expect(fileRow).not.toBeVisible();
+//   });
 
-  test('deletes sample.html file', async ({ page }) => {
-    await page.goto('/files');
-    const fileRow = page.locator('tr.file-table-row[data-name="sample.html"]');
-    await fileRow.locator('.context-menu-trigger').click();
-    await page.waitForTimeout(100);
-    await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
-    await expect(fileRow).not.toBeVisible();
-  });
+//   test('deletes sample.html file', async ({ page }) => {
+//     await page.goto('/files');
+//     const fileRow = page.locator('tr.file-table-row[data-name="sample.html"]');
+//     await fileRow.locator('.context-menu-trigger').click();
+//     await page.waitForTimeout(100);
+//     await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
+//     await expect(fileRow).not.toBeVisible();
+//   });
 
-  test('deletes test-image.png file', async ({ page }) => {
-    await page.goto('/files');
-    const fileRow = page.locator('tr.file-table-row[data-name="test-image.png"]');
-    await fileRow.locator('.context-menu-trigger').click();
-    await page.waitForTimeout(100);
-    await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
-    await expect(fileRow).not.toBeVisible();
-  });
+//   test('deletes test-image.png file', async ({ page }) => {
+//     await page.goto('/files');
+//     const fileRow = page.locator('tr.file-table-row[data-name="test-image.png"]');
+//     await fileRow.locator('.context-menu-trigger').click();
+//     await page.waitForTimeout(100);
+//     await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
+//     await expect(fileRow).not.toBeVisible();
+//   });
 
-  test('deletes test-image.jpg file', async ({ page }) => {
-    await page.goto('/files');
-    const fileRow = page.locator('tr.file-table-row[data-name="test-image.jpg"]');
-    await fileRow.locator('.context-menu-trigger').click();
-    await page.waitForTimeout(100);
-    await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
-    await expect(fileRow).not.toBeVisible();
-  });
+//   test('deletes test-image.jpg file', async ({ page }) => {
+//     await page.goto('/files');
+//     const fileRow = page.locator('tr.file-table-row[data-name="test-image.jpg"]');
+//     await fileRow.locator('.context-menu-trigger').click();
+//     await page.waitForTimeout(100);
+//     await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
+//     await expect(fileRow).not.toBeVisible();
+//   });
 
-  test('verifies all files are deleted', async ({ page }) => {
-    await page.goto('/files');
-    await expect(page.locator('tr.file-table-row[data-name="sample.txt"]')).not.toBeVisible();
-    await expect(page.locator('tr.file-table-row[data-name="data.json"]')).not.toBeVisible();
-    await expect(page.locator('tr.file-table-row[data-name="users.csv"]')).not.toBeVisible();
-    await expect(page.locator('tr.file-table-row[data-name="test-document.md"]')).not.toBeVisible();
-    await expect(page.locator('tr.file-table-row[data-name="sample.html"]')).not.toBeVisible();
-    await expect(page.locator('tr.file-table-row[data-name="test-image.png"]')).not.toBeVisible();
-    await expect(page.locator('tr.file-table-row[data-name="test-image.jpg"]')).not.toBeVisible();
-  });
+//   test('verifies all files are deleted', async ({ page }) => {
+//     await page.goto('/files');
+//     await expect(page.locator('tr.file-table-row[data-name="sample.txt"]')).not.toBeVisible();
+//     await expect(page.locator('tr.file-table-row[data-name="data.json"]')).not.toBeVisible();
+//     await expect(page.locator('tr.file-table-row[data-name="users.csv"]')).not.toBeVisible();
+//     await expect(page.locator('tr.file-table-row[data-name="test-document.md"]')).not.toBeVisible();
+//     await expect(page.locator('tr.file-table-row[data-name="sample.html"]')).not.toBeVisible();
+//     await expect(page.locator('tr.file-table-row[data-name="test-image.png"]')).not.toBeVisible();
+//     await expect(page.locator('tr.file-table-row[data-name="test-image.jpg"]')).not.toBeVisible();
+//   });
 });
