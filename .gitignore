@@ -32,12 +32,12 @@ __*
 .env
 
 # Playwright
-node_modules/
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-/playwright/.auth/
+node_modules
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+/playwright/.auth
 test-output.log
 
 # Javascript
