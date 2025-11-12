@@ -65,7 +65,7 @@ test.describe('Files Page', () => {
 
     const listViewBtn = page.locator('button[title="List View"]');
     const classes = await listViewBtn.getAttribute('class');
-    
+
     expect(classes).toContain('btn--primary');
   });
 
@@ -95,7 +95,7 @@ test.describe('Files Page', () => {
   test('switching to column view via query parameter', async ({ page }) => {
     await page.goto('/files?view=column');
 
-    // Verify page loads successfully  
+    // Verify page loads successfully
     await expect(page).toHaveTitle(/Autobutler/);
     await expect(page.locator('#file-explorer')).toBeVisible();
   });
@@ -142,7 +142,7 @@ test.describe('Files Page', () => {
     // Check for HTMX attributes on interactive elements
     const htmxElements = page.locator('[hx-get], [hx-post], [hx-delete]');
     const count = await htmxElements.count();
-    
+
     expect(count).toBeGreaterThan(0);
   });
 
@@ -151,7 +151,7 @@ test.describe('Files Page', () => {
 
     const dndArea = page.locator('#file-upload-area, [class*="upload"]');
     const count = await dndArea.count();
-    
+
     // Upload area should exist
     expect(count).toBeGreaterThan(0);
   });

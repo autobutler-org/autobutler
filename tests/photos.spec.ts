@@ -36,7 +36,7 @@ test.describe('Photos Page', () => {
     await expect(countElement).toBeVisible();
 
     const countText = await countElement.textContent();
-    
+
     // Should show either "0 photos", "1 photo", or "N photos"
     expect(countText).toMatch(/\d+\s+photos?/i);
   });
@@ -64,11 +64,11 @@ test.describe('Photos Page', () => {
 
     if (itemCount > 0) {
       const firstItem = photoItems.first();
-      
+
       // Check for image element
       const img = firstItem.locator('img.photo-grid-image');
       await expect(img).toBeVisible();
-      
+
       // Check for proper attributes
       await expect(img).toHaveAttribute('loading', 'lazy');
       await expect(img).toHaveAttribute('alt');
@@ -84,7 +84,7 @@ test.describe('Photos Page', () => {
 
     if (itemCount > 0) {
       const firstItem = photoItems.first();
-      
+
       // Check HTMX attributes for opening viewer
       await expect(firstItem).toHaveAttribute('hx-get');
       await expect(firstItem).toHaveAttribute('hx-target', '#file-viewer-content');
@@ -101,7 +101,7 @@ test.describe('Photos Page', () => {
     if (itemCount > 0) {
       const firstImage = photoItems.first().locator('img.photo-grid-image');
       const src = await firstImage.getAttribute('src');
-      
+
       // Thumbnail path should use the API endpoint
       expect(src).toContain('/api/v1/thumbnails/');
     }
@@ -134,7 +134,7 @@ test.describe('Photos Page', () => {
 
     const countElement = page.locator('.photos-count');
     const countText = await countElement.textContent();
-    
+
     // When testing with no files, should show "0 photos"
     if (countText?.includes('0')) {
       expect(countText).toBe('0 photos');

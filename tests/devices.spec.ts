@@ -24,7 +24,7 @@ test.describe('Devices Page', () => {
 
     const refreshButton = page.locator('button[title="Refresh storage devices"]');
     await expect(refreshButton).toBeVisible();
-    
+
     // Check HTMX attributes for dynamic refresh
     await expect(refreshButton).toHaveAttribute('hx-get');
     await expect(refreshButton).toHaveAttribute('hx-target');
@@ -43,7 +43,7 @@ test.describe('Devices Page', () => {
     // Check if the total capacity title exists
     const totalCapacityTitle = page.locator('h3.devices-total-title');
     const titleCount = await totalCapacityTitle.count();
-    
+
     if (titleCount > 0) {
       await expect(totalCapacityTitle).toHaveText('Total Capacity');
     }
@@ -58,7 +58,7 @@ test.describe('Devices Page', () => {
     if (cardCount > 0) {
       const firstCard = deviceCards.first();
       await expect(firstCard).toBeVisible();
-      
+
       // Check for capacity information (GB/TB)
       const hasCapacityInfo = await firstCard.locator('text=/GB|TB/i').count() > 0;
       expect(hasCapacityInfo).toBe(true);
@@ -84,7 +84,7 @@ test.describe('Devices Page', () => {
     // Check that HTMX attributes are present
     const htmxElements = page.locator('[hx-get], [hx-post], [hx-target]');
     const count = await htmxElements.count();
-    
+
     expect(count).toBeGreaterThan(0);
   });
 

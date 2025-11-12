@@ -17,7 +17,7 @@ test.describe('Calendar Page', () => {
     // Check for navigation buttons
     const prevButton = page.locator('button.calendar-nav-btn--prev');
     const nextButton = page.locator('button.calendar-nav-btn--next');
-    
+
     await expect(prevButton).toBeVisible();
     await expect(nextButton).toBeVisible();
     await expect(prevButton).toHaveAttribute('aria-label', 'Previous month');
@@ -33,7 +33,7 @@ test.describe('Calendar Page', () => {
 
     const title = page.locator('h1.calendar-title');
     await expect(title).toBeVisible();
-    
+
     const titleText = await title.textContent();
     expect(titleText).toContain(monthName);
     expect(titleText).toContain(year.toString());
@@ -48,14 +48,14 @@ test.describe('Calendar Page', () => {
     // Check for header row with weekday names
     const headerRow = calendarTable.locator('thead tr');
     await expect(headerRow).toBeVisible();
-    
+
     const headers = calendarTable.locator('thead th.calendar-header');
     await expect(headers).toHaveCount(7); // 7 days of the week
 
     // Check for body with calendar rows
     const body = calendarTable.locator('tbody.calendar-body');
     await expect(body).toBeVisible();
-    
+
     const rows = body.locator('tr.calendar-row');
     const rowCount = await rows.count();
     expect(rowCount).toBeGreaterThanOrEqual(4); // At least 4 weeks
@@ -79,7 +79,7 @@ test.describe('Calendar Page', () => {
 
     const title = page.locator('h1.calendar-title');
     await expect(title).toBeVisible();
-    
+
     const titleText = await title.textContent();
     expect(titleText).toContain('January');
     expect(titleText).toContain('2025');
@@ -90,7 +90,7 @@ test.describe('Calendar Page', () => {
 
     const dialog = page.locator('dialog#new-event-dialog');
     await expect(dialog).toBeAttached();
-    
+
     // Dialog should not be visible initially
     const isVisible = await dialog.isVisible();
     expect(isVisible).toBe(false);
@@ -100,7 +100,7 @@ test.describe('Calendar Page', () => {
     await page.goto('/calendar');
 
     const prevButton = page.locator('button.calendar-nav-btn--prev');
-    
+
     // Check for HTMX attributes
     await expect(prevButton).toHaveAttribute('hx-get');
     await expect(prevButton).toHaveAttribute('hx-target', '#calendar');

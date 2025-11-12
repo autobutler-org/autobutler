@@ -26,7 +26,7 @@ test.describe('Books Page', () => {
     await expect(countElement).toBeVisible();
 
     const countText = await countElement.textContent();
-    
+
     // Should show either "0 books", "1 book", or "N books"
     expect(countText).toMatch(/\d+\s+books?/i);
   });
@@ -72,20 +72,20 @@ test.describe('Books Page', () => {
 
     if (cardCount > 0) {
       const firstCard = bookCards.first();
-      
+
       // Check for link
       const link = firstCard.locator('a.book-card-link');
       await expect(link).toBeVisible();
       await expect(link).toHaveAttribute('href');
-      
+
       // Check for cover
       const cover = firstCard.locator('.book-card-cover');
       await expect(cover).toBeVisible();
-      
+
       // Check for icon or thumbnail
       const hasIcon = await firstCard.locator('.book-card-icon').count() > 0;
       const hasThumbnail = await firstCard.locator('img.book-card-thumbnail').count() > 0;
-      
+
       expect(hasIcon || hasThumbnail).toBe(true);
     }
   });
@@ -102,16 +102,16 @@ test.describe('Books Page', () => {
 
       if (pdfCount > 0) {
         const firstPdfCard = pdfCards.first();
-        
+
         // Check for thumbnail with lazy loading
         const thumbnail = firstPdfCard.locator('img.book-card-thumbnail');
         await expect(thumbnail).toHaveAttribute('loading', 'lazy');
         await expect(thumbnail).toHaveAttribute('onerror');
-        
+
         // Check for fallback icon
         const fallback = firstPdfCard.locator('.book-card-icon-fallback');
         await expect(fallback).toBeAttached();
-        
+
         // Check for PDF badge
         const badge = firstPdfCard.locator('.book-card-badge');
         await expect(badge).toHaveText('PDF');
@@ -131,11 +131,11 @@ test.describe('Books Page', () => {
 
       if (epubCount > 0) {
         const firstEpubCard = epubCards.first();
-        
+
         // EPUB should show icon directly
         const icon = firstEpubCard.locator('svg.book-card-icon');
         const iconCount = await icon.count();
-        
+
         expect(iconCount).toBeGreaterThan(0);
       }
     }
@@ -150,7 +150,7 @@ test.describe('Books Page', () => {
     if (cardCount > 0) {
       const firstCardLink = bookCards.first().locator('a.book-card-link');
       const href = await firstCardLink.getAttribute('href');
-      
+
       expect(href).toContain('/books/reader?path=');
     }
   });
@@ -172,7 +172,7 @@ test.describe('Books Page', () => {
     await page.goto('/books/reader?path=/test/book.epub');
 
     const backButton = page.locator('button[title="Back to library"]');
-    
+
     if (await backButton.count() > 0) {
       await expect(backButton).toBeVisible();
       // Button uses onclick="history.back()" instead of href
@@ -184,7 +184,7 @@ test.describe('Books Page', () => {
     await page.goto('/books/reader?path=/test/sample.epub');
 
     const title = page.locator('.book-reader-title');
-    
+
     if (await title.count() > 0) {
       await expect(title).toBeVisible();
       // Should show the filename
