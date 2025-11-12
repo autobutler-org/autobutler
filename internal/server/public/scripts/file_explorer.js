@@ -387,6 +387,13 @@ function moveFile(event, rootDir, fileName) {
         }
     });
 
+    // Handle overlay click to close
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
+
     // Handle close button
     closeBtn.addEventListener('click', () => {
         overlay.remove();

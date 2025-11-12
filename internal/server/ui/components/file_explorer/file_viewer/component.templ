@@ -6,8 +6,8 @@ templ Component() {
 		class="file-viewer"
 		hx-on:close="closeFileViewer(event)"
 		closedby="none"
-		hx-on:keydown="if (event.key === 'Enter' && !event.target.closest('.ace_text-input, #editor')) { preventDefault(event); }"
-		hx-on:click="if (event.target === event.currentTarget) { closeFileViewer(event); }"
+		hx-on:keydown="if (event.key === 'Escape') { closeFileViewer(event); } else if (event.key === 'Enter' && !event.target.closest('.ace_text-input, #editor')) { preventDefault(event); }"
+		hx-on:mousedown="preventDefault(event)"
 	>
 		<script src="/public/vendor/epub.js/jszip.min.js"></script>
 		<script src="/public/vendor/epub.js/epub.min.js"></script>

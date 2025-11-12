@@ -513,6 +513,26 @@
 	height: 90vh;
 	max-width: 1400px;
 	max-height: 900px;
+	margin: 0;
+	border: none;
+	padding: 0;
+	background-color: var(--color-gray-100);
+	border-radius: var(--border-radius-lg);
+	box-shadow: var(--shadow-xl);
+	overflow: hidden;
+	/* Prevent dialog from being draggable */
+	-webkit-user-drag: none;
+	user-select: none;
+}
+
+.file-viewer::backdrop {
+	background-color: rgba(0, 0, 0, 0.75);
+}
+
+@media (prefers-color-scheme: dark) {
+	.file-viewer {
+		background-color: var(--color-gray-900);
+	}
 }
 
 .file-viewer-close {
