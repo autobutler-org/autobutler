@@ -78,6 +78,10 @@ function initializeTextEditor(filePath) {
 	var mode = getAceModeFromExtension(filePath);
 	editor.getSession().setMode('ace/mode/' + mode);
 
+	// Force editor to resize and render properly
+	editor.resize();
+	editor.renderer.updateFull();
+
 	// Debounced save function
 	let saveTimeout;
 	editor.getSession().on('change', function() {

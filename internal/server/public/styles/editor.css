@@ -4,12 +4,12 @@
     height: 100%;
 }
 
-/* Add padding to ACE editor content */
+/* Add horizontal padding to ACE editor content only */
 #editor .ace_scroller {
-    padding: var(--spacing-md) var(--spacing-lg);
+    padding-left: var(--spacing-lg);
+    padding-right: var(--spacing-lg);
 }
 
 #editor .ace_gutter {
-    padding-top: var(--spacing-md);
-    padding-bottom: var(--spacing-md);
+    padding-left: var(--spacing-sm);
 }
