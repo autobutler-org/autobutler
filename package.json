@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "## Important Links",
   "scripts": {
-    "test": "npx playwright test",
-    "test/report": "npx playwright show-report"
+    "test/e2e": "npx playwright test",
+    "test/e2e/report": "npx playwright show-report"
   },
   "keywords": [],
   "author": "",

@@ -87,6 +87,10 @@ build/windows/amd64: ## Build windows backends
 build/windows/arm64: ## Build windows backends
 	GOOS=windows GOARCH=arm64 go build -o ./build/autobutler-windows-arm64.exe main.go
 
+test: test/e2e
+test/e2e:
+	npm run test/e2e
+
 format: ## Format code
 	go fmt ./...
 	templ fmt .

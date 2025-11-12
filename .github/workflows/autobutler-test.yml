@@ -34,7 +34,7 @@ on:
         required: false
 
 env:
-  BASE_URL: ${{ inputs.is-remote && inputs.remote-url || 'http://127.0.0.1:8080' }}
+  BASE_URL: ${{ inputs.is-remote && inputs.remote-url || 'http://localhost:8080' }}
 
 jobs:
   test-e2e:
@@ -51,14 +51,6 @@ jobs:
         run-id: ${{ inputs.run-id }}
         github-token: ${{ github.token }}
 
-    - name: Check artifact
-      if: ${{ !inputs.is-remote }}
-      run: |
-        ls -al
-        ls -al ./artifact || true
-        ls -al ./build || true
-        exit 1
-
     - name: Setup node
       uses: actions/setup-node@v4
       with:
@@ -72,9 +64,15 @@ jobs:
       run: |
         npx playwright install --with-deps
 
-    - name: Run Playwright tests
+    - name: Start Autobutler
+      if: ${{ !inputs.is-remote }}
       run: |
-        npm run test
+        chmod +x ./artifact/autobutler
+        ./artifact/autobutler &
+
+    - name: Run E2E tests
+      run: |
+        make test/e2e
 
     - uses: actions/upload-artifact@v4
       with:
