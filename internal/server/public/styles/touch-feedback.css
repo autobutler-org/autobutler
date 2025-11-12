@@ -173,7 +173,10 @@ a.mobile-menu-link:active {
 }
 
 /* File viewer controls */
-.file-viewer-close:active,
+.file-viewer-close:active {
+	background-color: var(--color-gray-100);
+}
+
 .file-viewer-download-btn:active,
 .file-viewer-epub-btn:active {
 	transform: scale(0.90);
@@ -181,7 +184,10 @@ a.mobile-menu-link:active {
 }
 
 @media (prefers-color-scheme: dark) {
-	.file-viewer-close:active,
+	.file-viewer-close:active {
+		background-color: var(--color-gray-800);
+	}
+
 	.file-viewer-download-btn:active,
 	.file-viewer-epub-btn:active {
 		background-color: var(--color-gray-800);

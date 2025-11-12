@@ -257,6 +257,108 @@ test.describe('Files Page - File Interactions', () => {
     });
 });
 
+
+test.describe('Modal Dialog Behavior', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.goto('/files');
+
+        // Check if sample.txt exists, if not upload it
+        const existingFile = page.locator('tr.file-table-row[data-name="sample.txt"]');
+        const fileExists = await existingFile.count() > 0;
+
+        if (!fileExists) {
+            const fileInput = page.locator('input[type="file"]');
+            await fileInput.setInputFiles('./tests/fixtures/sample.txt');
+            await page.waitForTimeout(1000);
+        }
+
+        // Wait for file to appear
+        await expect(page.locator('text=sample.txt')).toBeVisible({ timeout: 10000 });
+    });
+
+    test('close button should properly close file viewer modal', async ({ page }) => {
+        // Open the file viewer
+        const fileRow = page.locator('tr.file-table-row[data-name="sample.txt"]');
+        const fileCell = fileRow.locator('.file-table-cell--clickable');
+        await fileCell.dispatchEvent('click');
+        await page.waitForTimeout(100);
+
+        const fileViewer = page.locator('#file-viewer');
+        await expect(fileViewer).toBeVisible();
+
+        // Click the close button
+        const closeButton = page.locator('.file-viewer-close');
+        await closeButton.click();
+
+        // Dialog should be closed (not visible)
+        await expect(fileViewer).not.toBeVisible();
+    });
+
+    test('clicking within dialog content should NOT close file viewer modal', async ({ page }) => {
+        // Open the file viewer
+        const fileRow = page.locator('tr.file-table-row[data-name="sample.txt"]');
+        const fileCell = fileRow.locator('.file-table-cell--clickable');
+        await fileCell.click();
+        await page.waitForTimeout(100);
+
+        const fileViewer = page.locator('#file-viewer');
+        await expect(fileViewer).toBeVisible();
+
+        // Click on the content area
+        const contentArea = page.locator('#file-viewer-content');
+        await contentArea.click();
+
+        // Dialog should still be visible
+        await expect(fileViewer).toBeVisible();
+    });
+
+    test('clicking outside of rename dialog should close rename modal', async ({ page }) => {
+        // Open context menu and click rename
+        const fileRow = page.locator('tr.file-table-row[data-name="sample.txt"]');
+        await fileRow.locator('.context-menu-trigger').click();
+        await page.waitForTimeout(100);
+
+        const renameButton = fileRow.locator('.context-menu-item:has-text("Rename")');
+        await renameButton.dispatchEvent('click');
+
+        // Wait for rename dialog to appear
+        const renameDialog = page.locator('.ab-rename-overlay');
+        await expect(renameDialog).toBeVisible();
+
+        // Get the dialog box (the inner dialog, not the overlay)
+        const dialogBox = page.locator('.ab-rename-dialog');
+        const dialogBoundingBox = await dialogBox.boundingBox();
+        expect(dialogBoundingBox).not.toBeNull();
+
+        await page.mouse.click(10, 10);
+
+        // Dialog should not be visible
+        await expect(renameDialog).not.toBeVisible();
+        await expect(dialogBox).not.toBeVisible();
+    });
+
+    test('close button should properly close rename dialog', async ({ page }) => {
+        // Open context menu and click rename
+        const fileRow = page.locator('tr.file-table-row[data-name="sample.txt"]');
+        await fileRow.locator('.context-menu-trigger').click();
+        await page.waitForTimeout(100);
+
+        const renameButton = fileRow.locator('.context-menu-item:has-text("Move/Rename")');
+        await renameButton.dispatchEvent('click');
+
+        // Wait for rename dialog to appear
+        const renameDialog = page.locator('.ab-rename-overlay');
+        await expect(renameDialog).toBeVisible();
+
+        // Click the close button
+        const closeButton = page.locator('.ab-rename-close');
+        await closeButton.click();
+
+        // Dialog should be closed
+        await expect(renameDialog).not.toBeVisible();
+    });
+});
+
 test.describe('Files Page - File Deletion', () => {
     test('deletes the uploaded file', async ({ page }) => {
         await page.goto('/files');
