@@ -19,7 +19,6 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 		</button>
 		<ul
 			class="context-menu hidden"
-			hx-on:mouseleave="closeContextMenu(null, this.parentElement)"
 		>
 			<li>
 				<a
@@ -59,6 +58,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 					hx-swap="outerHTML"
 					hx-delete={ filepath.Join(`/api/v1/files`) }
 					hx-vals={ `{"rootDir":"` + pageState.RootDir + `", "filePaths":["` + file.Name() + `"]}` }
+					hx-on:click="event.stopPropagation()"
 				>
 					Delete
 				</button>

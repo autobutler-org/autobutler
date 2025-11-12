@@ -35,12 +35,13 @@ templ BookReader(bookPath string) {
 					<div class="book-reader-content">
 						<script src="/public/vendor/epub.js/jszip.min.js"></script>
 						<script src="/public/vendor/epub.js/epub.min.js"></script>
-						if fileType == util.FileTypePDF {
-							@pdf_viewer.Component(bookPath)
-						} else if fileType == util.FileTypeEpub {
-							@epub_viewer.Component(bookPath)
-						} else {
-							<div class="error-text">Unsupported file type</div>
+						switch fileType {
+							case util.FileTypePDF:
+								@pdf_viewer.Component(bookPath)
+							case util.FileTypeEpub:
+								@epub_viewer.Component(bookPath)
+							default:
+								<div class="error-text">Unsupported file type</div>
 						}
 					</div>
 				</div>

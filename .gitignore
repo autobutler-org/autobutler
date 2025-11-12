@@ -3,6 +3,8 @@
 
 # Binaries for programs and plugins
 autobutler
+# Datlinks
+datalinks/mac
 
 *.exe
 *.exe~
@@ -30,12 +32,13 @@ __*
 .env
 
 # Playwright
-node_modules/
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-/playwright/.auth/
+node_modules
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+/playwright/.auth
+test-output.log
 
 # Javascript
 node_modules/
