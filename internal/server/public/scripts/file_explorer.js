@@ -159,6 +159,18 @@ function toggleFolderInput(event) {
     }
 }
 
+// Close context menus when clicking outside
+document.addEventListener('click', (event) => {
+    // Check if the click is outside any context menu and not on a context menu trigger
+    if (!event.target.closest('.context-menu') && !event.target.closest('.context-menu-trigger')) {
+        document.querySelectorAll('.context-menu:not(.hidden)').forEach(menu => {
+            menu.classList.add('hidden');
+            menu.style.left = null;
+            menu.style.top = null;
+        });
+    }
+});
+
 function clearFileViewer() {
     if (loadedBook) {
         loadedBook.destroy();

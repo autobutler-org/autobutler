@@ -414,7 +414,8 @@
 	border: 1px solid var(--color-gray-200);
 	border-radius: var(--border-radius);
 	box-shadow: var(--shadow-lg);
-	z-index: 1000;
+	z-index: 10000;
+	pointer-events: auto;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -427,6 +428,7 @@
 /* Hidden state - JavaScript toggles this class */
 .context-menu.hidden {
 	display: none;
+	pointer-events: none;
 }
 
 .context-menu-item {
