@@ -17,6 +17,7 @@
 @import url('utility.css');
 @import url('touch-feedback.css');
 @import url('editor.css');
+@import url('toastr.css');
 
 /* Inline rename/move form - Used in file explorer for renaming files inline */
 .ab-rename-overlay {

@@ -9,7 +9,7 @@ var navigationListener = null;
 var loadedBook = null;
 
 // VIEW STATE MANAGEMENT
-const VIEW_STORAGE_KEY = 'fileExplorerView';
+var VIEW_STORAGE_KEY = 'fileExplorerView';
 
 function getViewPreference() {
     return localStorage.getItem(VIEW_STORAGE_KEY) || 'list';
@@ -279,8 +279,17 @@ function saveQuill(filePath) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(delta)
+    }).then(response => {
+        if (response.ok) {
+            toastr.success('Document saved successfully');
+        } else {
+            return response.text().then(text => {
+                toastr.error('Error saving document: ' + (text || response.statusText));
+            });
+        }
     }).catch(error => {
         console.error('Error saving file:', error);
+        toastr.error('Error saving document: ' + error.message);
     });
 }
 
@@ -293,12 +302,17 @@ function saveAceEditor(filePath, content) {
         body: content
     }).then(response => {
         if (response.ok) {
+            toastr.success('File saved successfully');
             console.log('File saved successfully');
         } else {
-            console.error('Error saving file:', response.statusText);
+            return response.text().then(text => {
+                toastr.error('Error saving file: ' + (text || response.statusText));
+                console.error('Error saving file:', response.statusText);
+            });
         }
     }).catch(error => {
         console.error('Error saving file:', error);
+        toastr.error('Error saving file: ' + error.message);
     });
 }
 
