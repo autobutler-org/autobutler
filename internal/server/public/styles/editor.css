@@ -1,3 +1,39 @@
+/* Text editor container - fills the file viewer content area */
+.ab-text-editor-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-gray-900);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+/* Text editor header - displays filename */
+.ab-text-editor-header {
+    background-color: var(--color-gray-800);
+    border-bottom: 1px solid var(--color-gray-700);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    min-height: 2.5rem;
+}
+
+.ab-text-editor-filename {
+    color: var(--color-gray-300);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-mono);
+    font-weight: 500;
+}
+
+/* Ace editor wrapper - takes remaining height */
+.ab-text-editor {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    min-height: 0; /* Important for flex child to shrink */
+}
+
 #editor {
     position: relative;
     width: 100%;
