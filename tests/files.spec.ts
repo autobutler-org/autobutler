@@ -377,3 +377,54 @@ test.describe('Files Page - File Deletion', () => {
         await expect(page.locator('tr.file-table-row[data-name="sample.txt"]')).not.toBeVisible();
     });
 });
+
+test.describe('Files Page - Navigation', () => {
+    test('back button navigates from subfolder to parent folder', async ({ page }) => {
+        await page.goto('/files');
+
+        // Create a test folder
+        const addFolderBtn = page.locator('#add-folder-btn');
+        await addFolderBtn.click();
+        await page.waitForTimeout(100);
+        const folderInput = page.locator('#folder-input');
+        await folderInput.fill('test-nav-folder');
+        await folderInput.press('Enter');
+        await page.waitForTimeout(100);
+
+        // Verify folder was created
+        const folderRow = page.locator('tr.file-table-row[data-name="test-nav-folder/"]');
+        await expect(folderRow).toBeVisible();
+
+        // Navigate into the folder by clicking on it
+        const folderLink = folderRow.locator('a.file-table-link');
+        await folderLink.click();
+        await page.waitForTimeout(100);
+
+        // Verify we're in the subfolder (URL should change)
+        await expect(page).toHaveURL(/\/files\/test-nav-folder/);
+
+        // Find and click the back navigation button
+        const backButton = page.locator('#nav-back-btn');
+        await expect(backButton).toBeVisible();
+        await expect(backButton).not.toBeDisabled();
+        await backButton.click();
+        await page.waitForTimeout(100);
+
+        // Verify we're back at the root (URL should be /files)
+        await expect(page).toHaveURL(/^.*\/files\/?$/);
+
+        // Clean up: delete the test folder
+        const cleanupFolderRow = page.locator('tr.file-table-row[data-name="test-nav-folder/"]');
+        await cleanupFolderRow.locator('.context-menu-trigger').click();
+        await page.waitForTimeout(100);
+        await cleanupFolderRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
+    });
+
+    test('back button is disabled at root directory', async ({ page }) => {
+        await page.goto('/files');
+
+        const backButton = page.locator('#nav-back-btn');
+        await expect(backButton).toBeVisible();
+        await expect(backButton).toBeDisabled();
+    });
+});

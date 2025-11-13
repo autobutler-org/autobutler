@@ -33,7 +33,7 @@ func Component(pageState types.PageState) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		isAtRoot := pageState.RootDir == "" || pageState.RootDir == "/"
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"file-navigation\"><button class=\"btn btn--icon btn--secondary\" onclick=\"history.back()\" title=\"Go Back\" type=\"button\" aria-label=\"Navigate backward\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"file-navigation\"><button id=\"nav-back-btn\" class=\"btn btn--icon btn--secondary\" onclick=\"history.back()\" title=\"Go Back\" type=\"button\" aria-label=\"Navigate backward\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

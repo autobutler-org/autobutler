@@ -7,6 +7,7 @@ templ Component(pageState types.PageState) {
 	{{ isAtRoot := pageState.RootDir == "" || pageState.RootDir == "/" }}
 	<div class="file-navigation">
 		<button
+			id="nav-back-btn"
 			class="btn btn--icon btn--secondary"
 			onclick="history.back()"
 			title="Go Back"
