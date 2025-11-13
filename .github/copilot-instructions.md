@@ -34,16 +34,15 @@ If you cannot follow the rule
 ---------------------------
 - If a generated change absolutely requires a separate stylesheet (e.g., for a large, self-contained third-party bundle), add a short rationale in the PR description and keep it scoped to the feature directory. Prefer linking to and documenting that stylesheet in `internal/server/public/README.md`.
 
-Files
------
-- Canonical stylesheet (source): `internal/server/public/styles/site.css`
-- When linking from templates use: `/styles/site.css`
+Backend development assumptions
+-------------------------------
+- Assume the developer is running the backend via `make watch` and that it will auto-reload on code changes.
+- Never attempt to start, stop, or restart the backend server yourself.
+- Focus on code changes only; the running server will pick them up automatically.
 
-Example (Go template head)
---------------------------
-{{`<head>`}}
-	{{`<meta charset="utf-8">`}}
-	{{`<meta name="viewport" content="width=device-width,initial-scale=1">`}}
-	{{`<link rel="stylesheet" href="/styles/site.css">`}}
-{{`</head>`}}
-
+End-to-end testing requirements
+-------------------------------
+- Write end-to-end tests for any new UI features you implement. E2E tests should be added to the `tests/e2e` directory using Playwright.
+- When fixing UI bugs, always add an end-to-end test that validates the fix. This ensures the bug can be caught if it reappears in the future.
+- Follow the existing test patterns in `tests/e2e/*.spec.ts` for consistency.
+- End-to-end tests help maintain quality and prevent regressions in the UI.
