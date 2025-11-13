@@ -405,68 +405,6 @@ test.describe('Modal Dialog Behavior', () => {
     });
 });
 
-test.describe('Files Page - File Deletion', () => {
-    test('deletes the uploaded file', async ({ page }) => {
-        await page.goto('/files');
-
-        const fileRow = page.locator('tr.file-table-row[data-name="sample.txt"]');
-        await fileRow.locator('.context-menu-trigger').click();
-        await page.waitForTimeout(100);
-        await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
-
-        // Verify file is deleted
-        await expect(fileRow).not.toBeVisible();
-    });
-
-    test('verifies file is no longer present after deletion', async ({ page }) => {
-        await page.goto('/files');
-        await expect(page.locator('tr.file-table-row[data-name="sample.txt"]')).not.toBeVisible();
-    });
-});
-
-test.describe('Files Page - Navigation', () => {
-    test('back button navigates from subfolder to parent folder', async ({ page }) => {
-        await page.goto('/files');
-
-        // Create a test folder
-        const addFolderBtn = page.locator('#add-folder-btn');
-        await addFolderBtn.click();
-        await page.waitForTimeout(100);
-        const folderInput = page.locator('#folder-input');
-        await folderInput.fill('test-nav-folder');
-        await folderInput.press('Enter');
-        await page.waitForTimeout(100);
-
-        // Verify folder was created
-        const folderRow = page.locator('tr.file-table-row[data-name="test-nav-folder/"]');
-        await expect(folderRow).toBeVisible();
-
-        // Navigate into the folder by double-clicking on it
-        await folderRow.dblclick();
-        await page.waitForTimeout(100);
-
-        // Verify we're in the subfolder (URL should change)
-        await expect(page).toHaveURL(/\/files\/test-nav-folder/);
-
-        // Find and click the back navigation button
-        const backButton = page.locator('#nav-back-btn');
-        await expect(backButton).toBeVisible();
-        await expect(backButton).not.toBeDisabled();
-        await backButton.click();
-        await page.waitForTimeout(1000);
-
-        // Verify we're back at the root (URL should be /files)
-        await expect(page).toHaveURL(/^.*\/files\/?$/);
-    });
-
-    test('back button is disabled at root directory', async ({ page }) => {
-        await page.goto('/files');
-
-        const backButton = page.locator('#nav-back-btn');
-        await expect(backButton).toBeVisible();
-        await expect(backButton).toBeDisabled();
-    });
-});
 
 test.describe('File Selection (Google Drive Style)', () => {
     test('single click on file in list view selects it', async ({ page }) => {
@@ -662,5 +600,68 @@ test.describe('File Selection (Google Drive Style)', () => {
         // First still selected, second deselected
         await expect(fileRows.nth(0)).toHaveClass(/file-node--selected/);
         await expect(fileRows.nth(1)).not.toHaveClass(/file-node--selected/);
+    });
+});
+
+test.describe('Files Page - Navigation', () => {
+    test('back button navigates from subfolder to parent folder', async ({ page }) => {
+        await page.goto('/files');
+
+        // Create a test folder
+        const addFolderBtn = page.locator('#add-folder-btn');
+        await addFolderBtn.click();
+        await page.waitForTimeout(100);
+        const folderInput = page.locator('#folder-input');
+        await folderInput.fill('test-nav-folder');
+        await folderInput.press('Enter');
+        await page.waitForTimeout(100);
+
+        // Verify folder was created
+        const folderRow = page.locator('tr.file-table-row[data-name="test-nav-folder/"]');
+        await expect(folderRow).toBeVisible();
+
+        // Navigate into the folder by double-clicking on it
+        await folderRow.dblclick();
+        await page.waitForTimeout(100);
+
+        // Verify we're in the subfolder (URL should change)
+        await expect(page).toHaveURL(/\/files\/test-nav-folder/);
+
+        // Find and click the back navigation button
+        const backButton = page.locator('#nav-back-btn');
+        await expect(backButton).toBeVisible();
+        await expect(backButton).not.toBeDisabled();
+        await backButton.click();
+        await page.waitForTimeout(1000);
+
+        // Verify we're back at the root (URL should be /files)
+        await expect(page).toHaveURL(/^.*\/files\/?$/);
+    });
+
+    test('back button is disabled at root directory', async ({ page }) => {
+        await page.goto('/files');
+
+        const backButton = page.locator('#nav-back-btn');
+        await expect(backButton).toBeVisible();
+        await expect(backButton).toBeDisabled();
+    });
+});
+
+test.describe('Files Page - File Deletion', () => {
+    test('deletes the uploaded file', async ({ page }) => {
+        await page.goto('/files');
+
+        const fileRow = page.locator('tr.file-table-row[data-name="sample.txt"]');
+        await fileRow.locator('.context-menu-trigger').click();
+        await page.waitForTimeout(100);
+        await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
+
+        // Verify file is deleted
+        await expect(fileRow).not.toBeVisible();
+    });
+
+    test('verifies file is no longer present after deletion', async ({ page }) => {
+        await page.goto('/files');
+        await expect(page.locator('tr.file-table-row[data-name="sample.txt"]')).not.toBeVisible();
     });
 });
