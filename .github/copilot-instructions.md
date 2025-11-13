@@ -37,6 +37,7 @@ If you cannot follow the rule
 Backend development assumptions
 -------------------------------
 - Assume the developer is running the backend via `make watch` and that it will auto-reload on code changes.
+- Never ask to run the `make generate` target. Just assume the code is generated automatically as a part of `make watch`.
 - Never attempt to start, stop, or restart the backend server yourself.
 - Focus on code changes only; the running server will pick them up automatically.
 

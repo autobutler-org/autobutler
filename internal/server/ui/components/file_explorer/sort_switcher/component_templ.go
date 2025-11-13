@@ -35,7 +35,7 @@ func Component() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<button id=\"mixed-sort-toggle\" class=\"sort-switcher\" type=\"button\" title=\"Toggle between 'Folders First' and 'Mixed' sorting modes\" hx-on:click=\"toggleMixedSorting()\"><div class=\"sort-switcher-icons\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<button id=\"mixed-sort-toggle\" class=\"sort-switcher\" type=\"button\" title=\"Toggle between 'Folders First' and 'Mixed' sorting modes\" onclick=\"toggleMixedSorting()\"><div class=\"sort-switcher-icons\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

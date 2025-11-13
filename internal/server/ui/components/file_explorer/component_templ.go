@@ -83,7 +83,7 @@ func Component(pageState types.PageState, files []fs.FileInfo, view string) temp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><div id=\"file-explorer-selectable\" hx-on:contextmenu=\"toggleFloatingContextMenu(event, this)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><div id=\"file-explorer-selectable\" oncontextmenu=\"toggleFloatingContextMenu(event, this)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

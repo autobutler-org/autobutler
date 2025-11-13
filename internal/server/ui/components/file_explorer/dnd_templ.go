@@ -35,7 +35,7 @@ func dnd(pageState types.PageState) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"file-upload-area\" class=\"dnd-overlay\" hx-on:dragenter=\"activateDropZone(event)\" hx-on:dragover=\"preventDefault(event)\" hx-on:dragleave=\"deactivateDropZone(event)\" hx-on:drop=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"file-upload-area\" class=\"dnd-overlay\" ondragenter=\"activateDropZone(event)\" ondragover=\"preventDefault(event)\" ondragleave=\"deactivateDropZone(event)\" ondrop=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -44,7 +44,7 @@ func dnd(pageState types.PageState) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" hx-on:click=\"document.getElementById('file-upload-input').click()\">Drop files here&#8230;</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" onclick=\"document.getElementById('file-upload-input').click()\">Drop files here&#8230;</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

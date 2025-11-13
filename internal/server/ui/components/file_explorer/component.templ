@@ -36,7 +36,7 @@ templ Component(pageState types.PageState, files []fs.FileInfo, view string) {
 		</div>
 		<div
 			id="file-explorer-selectable"
-			hx-on:contextmenu="toggleFloatingContextMenu(event, this)"
+			oncontextmenu="toggleFloatingContextMenu(event, this)"
 		>
 			@explorer_context_menu.Component(pageState)
 			<div class="file-explorer-controls">

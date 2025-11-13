@@ -11,7 +11,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 	<div>
 		<button
 			class="context-menu-trigger"
-			hx-on:click="toggleFloatingContextMenu(event, this.parentElement)"
+			onclick="toggleFloatingContextMenu(event, this.parentElement)"
 			aria-label="Open context menu"
 			type="button"
 			tabindex="0"
@@ -26,7 +26,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 					download
 					class="context-menu-item"
 					href={ filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name()) }
-					hx-on:click="closeContextMenuFromItem(event)"
+					onclick="closeContextMenuFromItem(event)"
 				>
 					Download
 				</a>
@@ -36,7 +36,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 				<button
 					type="button"
 					class="context-menu-item"
-					hx-on:click={ templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); moveFile(event, '%s', '%s')", pageState.RootDir, file.Name())) }
+					onclick={ templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); moveFile(event, '%s', '%s')", pageState.RootDir, file.Name())) }
 				>
 					Move/Rename
 				</button>
@@ -46,7 +46,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 				<button
 					type="button"
 					class="context-menu-item"
-					hx-on:click={ templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); showFileDetails(event, '%s')", file.Name())) }
+					onclick={ templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); showFileDetails(event, '%s')", file.Name())) }
 				>
 					File Details
 				</button>
@@ -60,7 +60,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 					hx-swap="outerHTML"
 					hx-delete={ filepath.Join(`/api/v1/files`) }
 					hx-vals={ `{"rootDir":"` + pageState.RootDir + `", "filePaths":["` + file.Name() + `"]}` }
-					hx-on:click="closeContextMenuFromItem(event); event.stopPropagation()"
+					onclick="closeContextMenuFromItem(event); event.stopPropagation()"
 				>
 					Delete
 				</button>

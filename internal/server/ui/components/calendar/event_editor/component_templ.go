@@ -99,7 +99,7 @@ func ComponentWithEvent(
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" hx-target=\"#calendar\" hx-swap=\"outerHTML\" hx-on:keydown=\"if (event.key === 'Enter') { preventDefault(event); }\" hx-vals=\"js:{\n\t\t\t\t\t\tviewYear: document.getElementById('view-year').value,\n\t\t\t\t\t\tviewMonth: document.getElementById('view-month').value,\n\t\t\t\t\t}\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" hx-target=\"#calendar\" hx-swap=\"outerHTML\" onkeydown=\"if (event.key === 'Enter') { preventDefault(event); }\" hx-vals=\"js:{\n\t\t\t\t\t\tviewYear: document.getElementById('view-year').value,\n\t\t\t\t\t\tviewMonth: document.getElementById('view-month').value,\n\t\t\t\t\t}\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -117,7 +117,7 @@ func ComponentWithEvent(
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<button class=\"event-editor-close-btn\" aria-label=\"Close\" hx-on:click=\"closeModal(event)\" hx-on:keydown=\"if (event.key === 'Enter') { preventDefault(event); }\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" fill=\"none\" viewBox=\"0 0 20 20\"><path stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" d=\"M5 5l10 10M15 5l-10 10\"></path></svg></button></div><div><form id=\"new-event-form\" onsubmit=\"return false;\" class=\"event-editor-form\"><input id=\"new-event-year\" type=\"hidden\" name=\"year\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<button class=\"event-editor-close-btn\" aria-label=\"Close\" onclick=\"closeModal(event)\" onkeydown=\"if (event.key === 'Enter') { preventDefault(event); }\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" fill=\"none\" viewBox=\"0 0 20 20\"><path stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" d=\"M5 5l10 10M15 5l-10 10\"></path></svg></button></div><div><form id=\"new-event-form\" onsubmit=\"return false;\" class=\"event-editor-form\"><input id=\"new-event-year\" type=\"hidden\" name=\"year\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -156,7 +156,7 @@ func ComponentWithEvent(
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"> <input id=\"view-year\" type=\"hidden\" name=\"viewYear\" value=\"\"> <input id=\"view-month\" type=\"hidden\" name=\"viewMonth\" value=\"\"><div class=\"modal-field\"><label for=\"title\" class=\"modal-label\">Title</label> <input type=\"text\" name=\"title\" id=\"title\" autofocus required hx-on:input=\"checkNewEventFormInputs(event)\" hx-on:keydown=\"if (event.key === 'Enter') { preventDefault(event); }\" class=\"modal-input\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"> <input id=\"view-year\" type=\"hidden\" name=\"viewYear\" value=\"\"> <input id=\"view-month\" type=\"hidden\" name=\"viewMonth\" value=\"\"><div class=\"modal-field\"><label for=\"title\" class=\"modal-label\">Title</label> <input type=\"text\" name=\"title\" id=\"title\" autofocus required oninput=\"checkNewEventFormInputs(event)\" onkeydown=\"if (event.key === 'Enter') { preventDefault(event); }\" class=\"modal-input\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -169,7 +169,7 @@ func ComponentWithEvent(
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\"></div><div><label for=\"start-time\" class=\"modal-label\">Start Time</label> <input type=\"time\" name=\"start-time\" id=\"start-time\" required hx-on:input=\"checkNewEventFormInputs(event)\" hx-on:keydown=\"if (event.key === 'Enter') { preventDefault(event); }\" class=\"modal-input\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\"></div><div><label for=\"start-time\" class=\"modal-label\">Start Time</label> <input type=\"time\" name=\"start-time\" id=\"start-time\" required oninput=\"checkNewEventFormInputs(event)\" onkeydown=\"if (event.key === 'Enter') { preventDefault(event); }\" class=\"modal-input\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -187,12 +187,12 @@ func ComponentWithEvent(
 			return templ_7745c5c3_Err
 		}
 		if event.EndTime == nil {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<input type=\"time\" name=\"end-time\" id=\"end-time\" hx-on:keydown=\"if (event.key === 'Enter') { preventDefault(event); }\" class=\"modal-input\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<input type=\"time\" name=\"end-time\" id=\"end-time\" onkeydown=\"if (event.key === 'Enter') { preventDefault(event); }\" class=\"modal-input\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<input type=\"time\" name=\"end-time\" id=\"end-time\" hx-on:keydown=\"if (event.key === 'Enter') { preventDefault(event); }\" class=\"modal-input\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<input type=\"time\" name=\"end-time\" id=\"end-time\" onkeydown=\"if (event.key === 'Enter') { preventDefault(event); }\" class=\"modal-input\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -223,7 +223,7 @@ func ComponentWithEvent(
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</textarea></div><div><label for=\"location\" class=\"modal-label\">Location</label> <input type=\"text\" name=\"location\" id=\"location\" hx-on:keydown=\"if (event.key === 'Enter') { preventDefault(event); }\" class=\"modal-input\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</textarea></div><div><label for=\"location\" class=\"modal-label\">Location</label> <input type=\"text\" name=\"location\" id=\"location\" onkeydown=\"if (event.key === 'Enter') { preventDefault(event); }\" class=\"modal-input\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -236,7 +236,7 @@ func ComponentWithEvent(
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\"></div><div class=\"event-editor-actions\"><button type=\"button\" class=\"event-editor-cancel-btn\" hx-on:click=\"closeModal(event)\">Cancel</button> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\"></div><div class=\"event-editor-actions\"><button type=\"button\" class=\"event-editor-cancel-btn\" onclick=\"closeModal(event)\">Cancel</button> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -37,7 +37,7 @@ templ renderGridItem(pageState types.PageState, file fs.FileInfo) {
 		class={ "grid-view-item file-node", templ.KV("grid-view-item--folder", isFolder) }
 		data-name={ fileName }
 		data-is-folder={ fmt.Sprintf("%t", isFolder) }
-		hx-on:contextmenu="toggleFloatingContextMenu(event, this)"
+		oncontextmenu="toggleFloatingContextMenu(event, this)"
 	>
 		if isFolder {
 			<a
@@ -61,7 +61,7 @@ templ renderGridItem(pageState types.PageState, file fs.FileInfo) {
 				hx-get={ filepath.Join("/components/files/viewer", filePath) }
 				hx-target="#file-viewer-content"
 				hx-swap="innerHTML"
-				hx-on:click="document.getElementById('file-viewer').showModal();"
+				onclick="document.getElementById('file-viewer').showModal();"
 			>
 				if fileType == util.FileTypeImage {
 					{{ thumbnailPath := filepath.Join("/api/v1/thumbnails", pageState.RootDir, fileName) }}
@@ -88,7 +88,7 @@ templ renderGridItem(pageState types.PageState, file fs.FileInfo) {
 		}
 		<div
 			class="grid-view-context-trigger"
-			hx-on:click="event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.grid-view-item'))"
+			onclick="event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.grid-view-item'))"
 		>
 			⋮
 		</div>

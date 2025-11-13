@@ -100,7 +100,7 @@ func day(renderDay time.Time, dayTitle string, outsideOfMonth bool, events calen
 			return templ_7745c5c3_Err
 		}
 		dayEvents, exists := events[renderDay.Day()]
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"calendar-day-content\" hx-on:click=\"newCalendarEvent(event)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"calendar-day-content\" onclick=\"newCalendarEvent(event)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

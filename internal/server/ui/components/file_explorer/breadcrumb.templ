@@ -37,7 +37,7 @@ templ Breadcrumb(pageState types.PageState, view string) {
 				class="file-explorer-add-folder btn btn--icon"
 				title="Add Folder"
 				type="button"
-				hx-on:click="toggleFolderInput(event)"
+				onclick="toggleFolderInput(event)"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" class="icon icon--base" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -93,7 +93,7 @@ templ BreadcrumbOOB(pageState types.PageState, view string) {
 				class="file-explorer-add-folder btn btn--icon"
 				title="Add Folder"
 				type="button"
-				hx-on:click="toggleFolderInput(event)"
+				onclick="toggleFolderInput(event)"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" class="icon icon--base" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>

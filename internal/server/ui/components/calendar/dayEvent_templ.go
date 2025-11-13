@@ -71,7 +71,7 @@ func dayEvent(event calendar.CalendarEvent, outsideOfMonth bool, viewingMonth ti
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" hx-on:click=\"event.stopPropagation()\" hx-on::after-request=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" onclick=\"event.stopPropagation()\" hx-on::after-request=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -132,7 +132,7 @@ func dayEvent(event calendar.CalendarEvent, outsideOfMonth bool, viewingMonth ti
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div></div><span class=\"calendar-event-spacer\" hx-on:click=\"newCalendarEvent(event)\"></span> <dialog id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div></div><span class=\"calendar-event-spacer\" onclick=\"newCalendarEvent(event)\"></span> <dialog id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

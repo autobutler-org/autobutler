@@ -17,7 +17,7 @@ templ day(renderDay time.Time, dayTitle string, outsideOfMonth bool, events cale
 		data-day={ renderDay.Day() }
 	>
 		{{ dayEvents, exists := events[renderDay.Day()] }}
-		<div class="calendar-day-content" hx-on:click="newCalendarEvent(event)">
+		<div class="calendar-day-content" onclick="newCalendarEvent(event)">
 			if !exists || len(dayEvents) == 0 {
 				<div class="calendar-day-title">{ dayTitle }</div>
 				<div class="calendar-day-empty">No Events</div>
