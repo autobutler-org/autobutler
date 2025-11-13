@@ -455,18 +455,14 @@ test.describe('File Selection', () => {
         await page.goto('/files');
 
         // Find the first file row (not a folder)
-        const fileRow = page.locator('.file-table-row.file-node').first();
-        await fileRow.waitFor({ state: 'visible' });
-
-        // Single click on the file name cell
-        const fileCell = fileRow.locator('.file-table-cell--content');
-        await fileCell.click();
+        const file = page.locator('.file-table-row.file-node').first();
+        await file.click();
 
         // Wait a bit for the selection to be applied
         await page.waitForTimeout(100);
 
         // Verify the file is selected
-        await expect(fileRow).toHaveClass(/file-node--selected/);
+        await expect(file).toHaveClass(/file-node--selected/);
     });
 
     test('single click on second file deselects first and selects second', async ({ page }) => {
@@ -588,6 +584,26 @@ test.describe('File Selection', () => {
         // First still selected, second deselected
         await expect(files.nth(0)).toHaveClass(/file-node--selected/);
         await expect(files.nth(1)).not.toHaveClass(/file-node--selected/);
+    });
+
+    test('shift+click selects range of files', async ({ page }) => {
+        await page.goto('/files');
+
+        const files = page.locator('.file-table-row.file-node');
+
+        // Select first file with regular click
+        await files.nth(0).click();
+        await page.waitForTimeout(100);
+        await expect(files.nth(0)).toHaveClass(/file-node--selected/);
+
+        // Shift+click fourth file (should select range)
+        await files.nth(2).click({ modifiers: ['Shift'] });
+        await page.waitForTimeout(100);
+
+        // First through fourth should all be selected
+        await expect(files.nth(0)).toHaveClass(/file-node--selected/);
+        await expect(files.nth(1)).toHaveClass(/file-node--selected/);
+        await expect(files.nth(2)).toHaveClass(/file-node--selected/);
     });
 });
 
