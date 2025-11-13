@@ -98,6 +98,15 @@ function closeContextMenu(event, parentNode) {
     }
 }
 
+function closeContextMenuFromItem(event) {
+    const contextMenu = event.target.closest('.context-menu');
+    if (contextMenu) {
+        contextMenu.style.left = null;
+        contextMenu.style.top = null;
+        contextMenu.classList.add('hidden');
+    }
+}
+
 function openContextMenu(event, parentNode) {
     preventDefault(event);
     clearSelectedFiles();

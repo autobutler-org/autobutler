@@ -2,6 +2,7 @@ package file_context_menu
 
 import (
 	"autobutler/internal/server/ui/types"
+	"fmt"
 	"io/fs"
 	"path/filepath"
 )
@@ -25,6 +26,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 					download
 					class="context-menu-item"
 					href={ filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name()) }
+					hx-on:click="closeContextMenuFromItem(event)"
 				>
 					Download
 				</a>
@@ -34,7 +36,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 				<button
 					type="button"
 					class="context-menu-item"
-					hx-on:click={ templ.JSFuncCall("moveFile", templ.JSExpression("event"), pageState.RootDir, file.Name()) }
+					hx-on:click={ templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); moveFile(event, '%s', '%s')", pageState.RootDir, file.Name())) }
 				>
 					Move/Rename
 				</button>
@@ -44,7 +46,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 				<button
 					type="button"
 					class="context-menu-item"
-					hx-on:click={ templ.JSFuncCall("showFileDetails", templ.JSExpression("event"), file.Name()) }
+					hx-on:click={ templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); showFileDetails(event, '%s')", file.Name())) }
 				>
 					File Details
 				</button>
@@ -58,7 +60,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 					hx-swap="outerHTML"
 					hx-delete={ filepath.Join(`/api/v1/files`) }
 					hx-vals={ `{"rootDir":"` + pageState.RootDir + `", "filePaths":["` + file.Name() + `"]}` }
-					hx-on:click="event.stopPropagation()"
+					hx-on:click="closeContextMenuFromItem(event); event.stopPropagation()"
 				>
 					Delete
 				</button>

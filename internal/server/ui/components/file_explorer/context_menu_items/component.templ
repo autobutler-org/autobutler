@@ -3,6 +3,7 @@ package context_menu_items
 import (
 	"autobutler/internal/server/ui/types"
 	"autobutler/pkg/util"
+	"fmt"
 	"io/fs"
 	"path/filepath"
 )
@@ -21,6 +22,7 @@ templ Component(pageState types.PageState, file fs.FileInfo, rootDir string) {
 			href={ templ.SafeURL(downloadPath) }
 			download
 			class="context-menu-item"
+			hx-on:click="closeContextMenuFromItem(event)"
 		>
 			Download
 		</a>
@@ -28,7 +30,7 @@ templ Component(pageState types.PageState, file fs.FileInfo, rootDir string) {
 	<button
 		type="button"
 		class="context-menu-item"
-		hx-on:click={ templ.JSFuncCall("moveFile", templ.JSExpression("event"), rootDir, fileName) }
+		hx-on:click={ templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); moveFile(event, '%s', '%s')", rootDir, fileName)) }
 	>
 		Rename/Move
 	</button>
@@ -39,6 +41,7 @@ templ Component(pageState types.PageState, file fs.FileInfo, rootDir string) {
 		hx-swap="outerHTML"
 		hx-delete={ filepath.Join(`/api/v1/files`) }
 		hx-vals={ `{"rootDir":"` + rootDir + `", "filePaths":["` + fileName + `"]}` }
+		hx-on:click="closeContextMenuFromItem(event)"
 	>
 		Delete
 	</button>
