@@ -10,6 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"autobutler/internal/server/ui/components/file_explorer/file_navigation"
+	"autobutler/internal/server/ui/components/file_explorer/file_upload"
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer"
 	"autobutler/internal/server/ui/components/icons/column_view"
 	"autobutler/internal/server/ui/components/icons/grid_view"
@@ -60,7 +61,7 @@ func Component(pageState types.PageState, files []fs.FileInfo, view string) temp
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2fGB", util.BytesToGB(availableBytes)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/component.templ`, Line: 30, Col: 114}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/component.templ`, Line: 31, Col: 114}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -71,6 +72,10 @@ func Component(pageState types.PageState, files []fs.FileInfo, view string) temp
 			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Err = file_navigation.Component(pageState).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = file_upload.Component(pageState).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -1,0 +1,26 @@
+package file_upload
+
+import (
+	"autobutler/internal/server/ui/types"
+	"path/filepath"
+)
+
+templ Component(pageState types.PageState) {
+	<form
+		id="file-upload-form"
+		hx-encoding="multipart/form-data"
+		hx-post={ filepath.Join("/api/v1/files", pageState.RootDir) }
+		hx-swap="innerHTML"
+		hx-target="#file-explorer-status"
+		hx-indicator="#file-upload-progress"
+	>
+		<input
+			type="file"
+			id="file-upload-input"
+			name="files"
+			class="file-upload-input"
+			onchange="this.form.requestSubmit()"
+			multiple
+		/>
+	</form>
+}

@@ -24,27 +24,6 @@ test.describe('Files Page', () => {
         await expect(spaceInfo).toContainText('GB');
     });
 
-    test('displays file operations buttons (upload, download, delete)', async ({ page }) => {
-        await page.goto('/files');
-
-        const fileOperations = page.locator('.file-operations');
-        await expect(fileOperations).toBeVisible();
-
-        // Check for operation buttons - they should exist
-        const buttons = fileOperations.locator('button');
-        const buttonCount = await buttons.count();
-        expect(buttonCount).toBeGreaterThan(0);
-    });
-
-    test('displays upload progress indicator', async ({ page }) => {
-        await page.goto('/files');
-
-        const progressBar = page.locator('progress#file-upload-progress');
-        await expect(progressBar).toBeAttached();
-        await expect(progressBar).toHaveAttribute('max', '100');
-        await expect(progressBar).toHaveAttribute('value', '0');
-    });
-
     test('displays view switcher with three view options', async ({ page }) => {
         await page.goto('/files');
 

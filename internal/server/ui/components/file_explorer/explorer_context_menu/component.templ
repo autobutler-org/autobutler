@@ -1,6 +1,9 @@
 package explorer_context_menu
 
-import "autobutler/internal/server/ui/types"
+import (
+	"autobutler/internal/server/ui/types"
+	"fmt"
+)
 
 templ Component(pageState types.PageState) {
 	<div>
@@ -12,7 +15,7 @@ templ Component(pageState types.PageState) {
 				<button
 					type="button"
 					class="context-menu-item"
-					hx-on:click={ templ.JSFuncCall("newFile", templ.JSExpression("event"), pageState.RootDir) }
+					hx-on:click={ templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); newFile(event, '%s')", pageState.RootDir)) }
 				>
 					New File
 				</button>
@@ -22,7 +25,7 @@ templ Component(pageState types.PageState) {
 				<button
 					type="button"
 					class="context-menu-item"
-					hx-on:click={ templ.JSFuncCall("showFolderDetails", templ.JSExpression("event")) }
+					hx-on:click="closeContextMenuFromItem(event); showFolderDetails(event)"
 				>
 					Details
 				</button>
