@@ -387,8 +387,8 @@
 	}
 }
 
-/* File operations */
-.file-operations {
+/* File navigation - Forward and backward buttons */
+.file-navigation {
 	display: flex;
 	gap: var(--spacing-xs);
 }

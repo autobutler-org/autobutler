@@ -1,0 +1,21 @@
+package file_navigation
+
+import "autobutler/internal/server/ui/types"
+import "autobutler/internal/server/ui/components/icons/left_arrow"
+
+templ Component(pageState types.PageState) {
+	{{ isAtRoot := pageState.RootDir == "" || pageState.RootDir == "/" }}
+	<div class="file-navigation">
+		<button
+			id="nav-back-btn"
+			class="btn btn--icon btn--secondary"
+			onclick="history.back()"
+			title="Go Back"
+			type="button"
+			aria-label="Navigate backward"
+			disabled?={ isAtRoot }
+		>
+			@left_arrow.Component()
+		</button>
+	</div>
+}

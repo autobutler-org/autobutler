@@ -1,7 +1,7 @@
 package file_explorer
 
 import (
-	"autobutler/internal/server/ui/components/file_explorer/file_operations"
+	"autobutler/internal/server/ui/components/file_explorer/file_navigation"
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer"
 	"autobutler/internal/server/ui/components/icons/column_view"
 	"autobutler/internal/server/ui/components/icons/grid_view"
@@ -29,7 +29,7 @@ templ Component(pageState types.PageState, files []fs.FileInfo, view string) {
 				<h2 class="file-explorer-title">File Explorer</h2>
 				<div class="file-explorer-space-info">Available Space: { fmt.Sprintf("%.2fGB", util.BytesToGB(availableBytes)) }</div>
 			</div>
-			@file_operations.Component(pageState)
+			@file_navigation.Component(pageState)
 			@dnd(pageState)
 		</div>
 		<div

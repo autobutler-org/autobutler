@@ -99,12 +99,13 @@ func newFolderRoute(apiV1Group *gin.RouterGroup) {
 			return
 		}
 
-		newDir := filepath.Join(folderDir, folderName)
+		// Stay in the current directory instead of navigating into the new folder
+		currentDir := folderDir
 		// Check if it's an HTMX request targeting just the content
 		if c.GetHeader("HX-Request") == "true" {
-			ui.RenderFileExplorerViewContent(c, newDir, "")
+			ui.RenderFileExplorerViewContent(c, currentDir, "")
 		} else {
-			ui.RenderFileExplorer(c, newDir)
+			ui.RenderFileExplorer(c, currentDir)
 		}
 	})
 }

@@ -94,11 +94,11 @@
 	.btn--icon:hover {
 		background-color: var(--color-gray-700);
 	}
-	
+
 	.btn--icon.btn--secondary {
 		border-color: var(--color-gray-600);
 	}
-	
+
 	.btn--icon.btn--secondary:hover {
 		background-color: var(--color-gray-800);
 		border-color: var(--color-gray-500);
@@ -110,28 +110,44 @@
 	height: var(--spacing-xl);
 }
 
+/* Disabled button styles */
+.btn:disabled,
 .btn--disabled {
 	background-color: var(--color-gray-400);
 	cursor: not-allowed;
 	opacity: 0.6;
 }
 
+.btn:disabled:hover,
 .btn--disabled:hover {
 	background-color: var(--color-gray-400);
 }
 
+.btn--icon:disabled,
 .btn--icon.btn--disabled {
 	background-color: transparent;
-	color: var(--color-gray-600);
+	color: var(--color-gray-400);
 	cursor: not-allowed;
+	opacity: 0.5;
+	border-color: var(--color-gray-400);
 }
 
+.btn--icon:disabled:hover,
 .btn--icon.btn--disabled:hover {
-	background-color: var(--color-gray-200);
+	background-color: transparent;
+	border-color: var(--color-gray-400);
 }
 
 @media (prefers-color-scheme: dark) {
+	.btn--icon:disabled,
+	.btn--icon.btn--disabled {
+		color: var(--color-gray-600);
+		border-color: var(--color-gray-600);
+	}
+
+	.btn--icon:disabled:hover,
 	.btn--icon.btn--disabled:hover {
-		background-color: var(--color-gray-700);
+		background-color: transparent;
+		border-color: var(--color-gray-600);
 	}
 }
