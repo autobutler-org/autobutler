@@ -46,14 +46,14 @@ func BookReader(bookPath string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<body class=\"site-body book-reader-body\"><main class=\"site-main\"><div class=\"book-reader\"><div class=\"book-reader-nav\"><button class=\"book-reader-btn\" onclick=\"history.back()\" title=\"Back to library\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M19 12H5m0 0l7 7m-7-7l7-7\"></path></svg> <span>Library</span></button><div class=\"book-reader-info\"><span class=\"book-reader-title\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<body class=\"book-reader-body\"><div class=\"book-reader\"><div class=\"book-reader-nav\"><button class=\"book-reader-btn\" onclick=\"history.back()\" title=\"Back to library\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M19 12H5m0 0l7 7m-7-7l7-7\"></path></svg> <span>Library</span></button><div class=\"book-reader-info\"><span class=\"book-reader-title\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Base(bookPath))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/views/book_reader.templ`, Line: 31, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/views/book_reader.templ`, Line: 30, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -80,7 +80,7 @@ func BookReader(bookPath string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div></div></main></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

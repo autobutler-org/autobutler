@@ -13,39 +13,40 @@ templ BookReader(bookPath string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@header.Component()
-		<body class="site-body book-reader-body">
-			<main class="site-main">
-				<div class="book-reader">
-					<div class="book-reader-nav">
-						<button
-							class="book-reader-btn"
-							onclick="history.back()"
-							title="Back to library"
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<path d="M19 12H5m0 0l7 7m-7-7l7-7"></path>
-							</svg>
-							<span>Library</span>
-						</button>
-						<div class="book-reader-info">
-							<span class="book-reader-title">{ filepath.Base(bookPath) }</span>
-						</div>
-						<div class="book-reader-spacer"></div>
+		<body class="book-reader-body">
+			<div class="book-reader">
+				<div class="book-reader-nav">
+					<button
+						class="book-reader-btn"
+						onclick="history.back()"
+						title="Back to library"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M19 12H5m0 0l7 7m-7-7l7-7"></path>
+						</svg>
+						<span>Library</span>
+					</button>
+					<div class="book-reader-info">
+						<span class="book-reader-title">{ filepath.Base(bookPath) }</span>
 					</div>
-					<div class="book-reader-content">
-						<script src="/public/vendor/epub.js/jszip.min.js"></script>
-						<script src="/public/vendor/epub.js/epub.min.js"></script>
-						switch fileType {
-							case util.FileTypePDF:
-								@pdf_viewer.Component(bookPath)
-							case util.FileTypeEpub:
-								@epub_viewer.Component(bookPath)
-							default:
-								<div class="error-text">Unsupported file type</div>
-						}
-					</div>
+					<div class="book-reader-spacer"></div>
 				</div>
-			</main>
+				<div class="book-reader-content">
+					<script src="/public/vendor/epub.js/jszip.min.js"></script>
+					<script src="/public/vendor/epub.js/epub.min.js"></script>
+					switch fileType {
+						case util.FileTypePDF:
+							@pdf_viewer.Component(bookPath)
+						case util.FileTypeEpub:
+							@epub_viewer.Component(bookPath)
+						default:
+							<div class="error-text">Unsupported file type</div>
+					}
+				</div>
+			</div>
 		</body>
 	</html>
 }
+
+
+

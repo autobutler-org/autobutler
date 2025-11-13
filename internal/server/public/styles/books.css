@@ -170,14 +170,38 @@
 
 /* Book Reader Styles */
 
+/* Override base styles for book reader - with fallback for older browsers */
+.book-reader-body,
+.book-reader-body html {
+  height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height for mobile */
+  overflow: hidden;
+}
+
+/* Modern browsers with :has() support */
+html:has(.book-reader-body),
+html:has(.book-reader-body) body {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
 .book-reader-body {
   overflow: hidden;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height for mobile */
+  background: var(--bg-primary);
 }
 
 .book-reader {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height for mobile */
+  width: 100%;
   background: var(--bg-primary);
 }
 
@@ -247,6 +271,15 @@
   display: flex;
   flex-direction: column;
   background: var(--bg-primary);
+  position: relative;
+  min-height: 0;
+}
+
+.book-reader-pdf {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
 }
 
 .book-reader-frame {
@@ -288,7 +321,8 @@
   }
 
   .book-reader-nav {
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    gap: var(--spacing-sm);
   }
 
   .book-reader-btn span {
@@ -296,6 +330,13 @@
   }
 
   .book-reader-btn {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-xs);
+    min-width: 36px;
+    min-height: 36px;
+    justify-content: center;
+  }
+
+  .book-reader-title {
+    font-size: 0.85rem;
   }
 }
