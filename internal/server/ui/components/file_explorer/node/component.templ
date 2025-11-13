@@ -35,8 +35,8 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 		ondragover="preventDefault(event)"
 		ondragleave="deactivateDropZoneOnNode(event)"
 		ondrop={ templ.JSFuncCall("dropOnNode", templ.JSExpression("event"), pageState.RootDir) }
-		onclick={ templ.JSFuncCall("handleFileNodeClick", templ.JSExpression("event"), templ.JSExpression("this")) }
-		ondblclick={ templ.JSFuncCall("handleFileNodeDoubleClick", templ.JSExpression("event"), templ.JSExpression("this")) }
+		onclick="handleFileNodeClick(event, this)"
+		ondblclick="handleFileNodeDoubleClick(event, this)"
 		data-name={ fileName }
 		data-file-type={ fileType }
 	>

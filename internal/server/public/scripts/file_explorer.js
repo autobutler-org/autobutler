@@ -11,7 +11,7 @@ var loadedBook = null;
 // SELECTION STATE
 var selectedFiles = [];
 var clickTimer = null;
-var DOUBLE_CLICK_DELAY = 300; // ms
+var DOUBLE_CLICK_DELAY = 200; // ms
 
 // VIEW STATE MANAGEMENT
 var VIEW_STORAGE_KEY = 'fileExplorerView';
@@ -222,7 +222,15 @@ function clearSelectedFiles() {
  */
 function selectFileNode(node) {
     if (!node) return;
+
+    // Add selection class with temporary logging for debugging
     node.classList.add('file-node--selected');
+
+    // Temporarily log for debugging
+    if (window.location.search.includes('debug=1')) {
+        console.log('Selected node:', node, 'Classes:', node.className);
+    }
+
     const fileName = node.dataset.name;
     if (fileName && !selectedFiles.includes(fileName)) {
         selectedFiles.push(fileName);
@@ -247,8 +255,8 @@ function deselectFileNode(node) {
  */
 function handleFileNodeClick(event, node) {
     // Ignore if clicking on context menu trigger
-    if (event.target.closest('.context-menu-trigger') || 
-        event.target.closest('.grid-view-context-trigger') || 
+    if (event.target.closest('.context-menu-trigger') ||
+        event.target.closest('.grid-view-context-trigger') ||
         event.target.closest('.column-view-context-trigger')) {
         return;
     }
@@ -262,7 +270,7 @@ function handleFileNodeClick(event, node) {
     // Wait to see if this becomes a double-click
     clickTimer = setTimeout(() => {
         clickTimer = null;
-        
+
         // Single click behavior - toggle selection
         if (event.ctrlKey || event.metaKey) {
             // Ctrl/Cmd+Click: toggle this item's selection
@@ -298,7 +306,7 @@ function handleFileNodeDoubleClick(event, node) {
     preventDefault(event);
 
     const fileType = node.dataset.fileType;
-    
+
     if (fileType === 'folder') {
         // Navigate to folder
         const href = node.querySelector('[data-href]')?.dataset.href;
@@ -979,9 +987,9 @@ document.addEventListener('click', function(event) {
             menu.classList.add('hidden');
         });
     }
-    
+
     // Clear file selection when clicking on empty space (not on a file node)
-    if (!event.target.closest('.file-node') && 
+    if (!event.target.closest('.file-node') &&
         !event.target.closest('.context-menu') &&
         !event.target.closest('dialog')) {
         clearSelectedFiles();

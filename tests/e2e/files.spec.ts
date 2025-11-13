@@ -496,7 +496,7 @@ test.describe('File Selection (Google Drive Style)', () => {
 
         // Click second file
         await fileRows.nth(1).click();
-        
+
         // First should be deselected, second should be selected
         await expect(fileRows.nth(0)).not.toHaveClass(/file-node--selected/);
         await expect(fileRows.nth(1)).toHaveClass(/file-node--selected/);
@@ -506,8 +506,8 @@ test.describe('File Selection (Google Drive Style)', () => {
         await page.goto('/files');
 
         // Find a folder in the list
-        const folderRow = page.locator('.file-table-row.file-node').filter({ 
-            has: page.locator('[data-file-type="folder"]') 
+        const folderRow = page.locator('.file-table-row.file-node').filter({
+            has: page.locator('[data-file-type="folder"]')
         }).first();
 
         // Wait for the folder to be visible
@@ -525,7 +525,7 @@ test.describe('File Selection (Google Drive Style)', () => {
         // Verify we navigated (breadcrumb or URL should contain the folder name)
         const breadcrumb = page.locator('nav#breadcrumbs');
         const breadcrumbText = await breadcrumb.textContent();
-        
+
         // The breadcrumb should show we're in a subfolder now
         expect(breadcrumbText).toBeTruthy();
     });
@@ -534,8 +534,8 @@ test.describe('File Selection (Google Drive Style)', () => {
         await page.goto('/files');
 
         // Find a file (not folder) in the list
-        const fileRow = page.locator('.file-table-row.file-node').filter({ 
-            hasNot: page.locator('[data-file-type="folder"]') 
+        const fileRow = page.locator('.file-table-row.file-node').filter({
+            hasNot: page.locator('[data-file-type="folder"]')
         }).first();
 
         await fileRow.waitFor({ state: 'visible', timeout: 5000 });
@@ -578,8 +578,8 @@ test.describe('File Selection (Google Drive Style)', () => {
         await page.locator('.grid-view-container').waitFor({ state: 'visible' });
 
         // Find a folder in grid view
-        const folderItem = page.locator('.grid-view-item.file-node').filter({ 
-            has: page.locator('[data-is-folder="true"]') 
+        const folderItem = page.locator('.grid-view-item.file-node').filter({
+            has: page.locator('[data-is-folder="true"]')
         }).first();
 
         await folderItem.waitFor({ state: 'visible', timeout: 5000 });
@@ -602,8 +602,8 @@ test.describe('File Selection (Google Drive Style)', () => {
         await page.locator('.grid-view-container').waitFor({ state: 'visible' });
 
         // Find a non-folder file in grid view
-        const fileItem = page.locator('.grid-view-item.file-node').filter({ 
-            has: page.locator('[data-is-folder="false"]') 
+        const fileItem = page.locator('.grid-view-item.file-node').filter({
+            has: page.locator('[data-is-folder="false"]')
         }).first();
 
         await fileItem.waitFor({ state: 'visible', timeout: 5000 });
@@ -652,14 +652,14 @@ test.describe('File Selection (Google Drive Style)', () => {
 
         // Ctrl+click second file (should add to selection)
         await fileRows.nth(1).click({ modifiers: ['Control'] });
-        
+
         // Both should be selected
         await expect(fileRows.nth(0)).toHaveClass(/file-node--selected/);
         await expect(fileRows.nth(1)).toHaveClass(/file-node--selected/);
 
         // Ctrl+click second file again (should deselect it)
         await fileRows.nth(1).click({ modifiers: ['Control'] });
-        
+
         // First still selected, second deselected
         await expect(fileRows.nth(0)).toHaveClass(/file-node--selected/);
         await expect(fileRows.nth(1)).not.toHaveClass(/file-node--selected/);

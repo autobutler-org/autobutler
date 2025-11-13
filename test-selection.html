@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test File Selection</title>
+    <style>
+        /* Selected state for file nodes (Google Drive style) */
+        .file-node--selected {
+            background-color: #dbeafe !important;
+            border-left: 3px solid #3b82f6 !important;
+            box-shadow: inset 0 0 0 1px #bfdbfe !important;
+        }
+
+        .file-table-row {
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            margin: 2px 0;
+            cursor: pointer;
+        }
+
+        .file-table-row:hover {
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test File Selection</h1>
+
+    <div class="file-table-row file-node"
+         onclick="handleFileNodeClick(event, this)"
+         ondblclick="handleFileNodeDoubleClick(event, this)"
+         data-name="test-file-1.txt"
+         data-file-type="file">
+        📄 test-file-1.txt
+    </div>
+
+    <div class="file-table-row file-node"
+         onclick="handleFileNodeClick(event, this)"
+         ondblclick="handleFileNodeDoubleClick(event, this)"
+         data-name="test-file-2.txt"
+         data-file-type="file">
+        📄 test-file-2.txt
+    </div>
+
+    <div class="file-table-row file-node"
+         onclick="handleFileNodeClick(event, this)"
+         ondblclick="handleFileNodeDoubleClick(event, this)"
+         data-name="test-folder"
+         data-file-type="folder">
+        📁 test-folder/
+    </div>
+
+    <script>
+        // SELECTION STATE
+        var selectedFiles = [];
+        var clickTimer = null;
+        var DOUBLE_CLICK_DELAY = 200; // ms
+
+        /**
+         * Clear all selected files and remove visual selection
+         */
+        function clearSelectedFiles() {
+            console.log('Clearing selected files');
+            document.querySelectorAll('.file-node--selected').forEach(node => {
+                node.classList.remove('file-node--selected');
+            });
+            selectedFiles = [];
+        }
+
+        /**
+         * Select a single file node
+         */
+        function selectFileNode(node) {
+            if (!node) return;
+            console.log('Selecting file node:', node.dataset.name);
+            node.classList.add('file-node--selected');
+            const fileName = node.dataset.name;
+            if (fileName && !selectedFiles.includes(fileName)) {
+                selectedFiles.push(fileName);
+            }
+            console.log('Selected files:', selectedFiles);
+        }
+
+        /**
+         * Deselect a single file node
+         */
+        function deselectFileNode(node) {
+            if (!node) return;
+            node.classList.remove('file-node--selected');
+            const fileName = node.dataset.name;
+            if (fileName) {
+                selectedFiles = selectedFiles.filter(name => name !== fileName);
+            }
+        }
+
+        /**
+         * Handle single click on a file node
+         */
+        function handleFileNodeClick(event, node) {
+            console.log('File node clicked:', node.dataset.name, event.type);
+
+            // Clear any pending double-click timer
+            if (clickTimer) {
+                clearTimeout(clickTimer);
+                clickTimer = null;
+            }
+
+            // Wait to see if this becomes a double-click
+            clickTimer = setTimeout(() => {
+                console.log('Processing single click after delay');
+                clickTimer = null;
+
+                // Single click behavior - toggle selection
+                if (event.ctrlKey || event.metaKey) {
+                    // Ctrl/Cmd+Click: toggle this item's selection
+                    if (node.classList.contains('file-node--selected')) {
+                        deselectFileNode(node);
+                    } else {
+                        selectFileNode(node);
+                    }
+                } else if (event.shiftKey) {
+                    // Shift+Click: range selection (future enhancement)
+                    // For now, just select this item
+                    clearSelectedFiles();
+                    selectFileNode(node);
+                } else {
+                    // Regular click: select only this item
+                    clearSelectedFiles();
+                    selectFileNode(node);
+                }
+            }, DOUBLE_CLICK_DELAY);
+        }
+
+        /**
+         * Handle double-click on a file node
+         */
+        function handleFileNodeDoubleClick(event, node) {
+            // Cancel the single-click timer
+            if (clickTimer) {
+                clearTimeout(clickTimer);
+                clickTimer = null;
+            }
+
+            event.preventDefault();
+
+            console.log('Double-clicked on:', node.dataset.name);
+
+            const fileType = node.dataset.fileType;
+
+            if (fileType === 'folder') {
+                alert('Would navigate to folder: ' + node.dataset.name);
+            } else {
+                alert('Would open file: ' + node.dataset.name);
+            }
+        }
+
+        // Clear file selection when clicking on empty space
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.file-node')) {
+                clearSelectedFiles();
+            }
+        });
+    </script>
+</body>
+</html>
