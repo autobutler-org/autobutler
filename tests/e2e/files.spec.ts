@@ -155,6 +155,80 @@ test.describe('Files Page - File Upload', () => {
         const fileName = page.locator('text=sample.txt');
         await expect(fileName).toBeVisible({ timeout: 10000 });
     });
+
+    test('uploads duplicate file with numbered suffix', async ({ page }) => {
+        await page.goto('/files');
+
+        const fileInput = page.locator('input[type="file"]');
+
+        // Upload the first file
+        await fileInput.setInputFiles('./tests/e2e/fixtures/test-image.png');
+        await page.waitForTimeout(100);
+
+        // Verify the first file appears
+        const firstFile = page.locator('tr.file-table-row[data-name="test-image.png"]');
+        await expect(firstFile).toBeVisible({ timeout: 10000 });
+
+        // Upload the same file again
+        await fileInput.setInputFiles('./tests/e2e/fixtures/test-image.png');
+        await page.waitForTimeout(100);
+
+        // Verify the second file appears with _(1) suffix
+        const secondFile = page.locator('tr.file-table-row[data-name="test-image_(1).png"]');
+        await expect(secondFile).toBeVisible({ timeout: 10000 });
+
+        // Upload the same file a third time
+        await fileInput.setInputFiles('./tests/e2e/fixtures/test-image.png');
+        await page.waitForTimeout(100);
+
+        // Verify the third file appears with _(2) suffix
+        const thirdFile = page.locator('tr.file-table-row[data-name="test-image_(2).png"]');
+        await expect(thirdFile).toBeVisible({ timeout: 10000 });
+
+        // Clean up: delete the uploaded files
+        for (const fileName of ['test-image.png', 'test-image_(1).png', 'test-image_(2).png']) {
+            const fileRow = page.locator(`tr.file-table-row[data-name="${fileName}"]`);
+            if (await fileRow.count() > 0) {
+                await fileRow.locator('.context-menu-trigger').click();
+                await page.waitForTimeout(100);
+                await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
+                await page.waitForTimeout(500);
+            }
+        }
+    });
+
+    test('uploads duplicate file without extension with numbered suffix', async ({ page }) => {
+        await page.goto('/files');
+
+        const fileInput = page.locator('input[type="file"]');
+
+        // Upload a file without extension first time
+        await fileInput.setInputFiles('./tests/e2e/fixtures/data.json');
+        await page.waitForTimeout(1000);
+
+        // Verify the first file appears
+        const firstFile = page.locator('tr.file-table-row[data-name="data.json"]');
+        await expect(firstFile).toBeVisible({ timeout: 10000 });
+
+        // Upload the same file again
+        await fileInput.setInputFiles('./tests/e2e/fixtures/data.json');
+        await page.waitForTimeout(1000);
+
+        // Verify the second file appears with _(1) suffix before extension
+        const secondFile = page.locator('tr.file-table-row[data-name="data_(1).json"]');
+        await expect(secondFile).toBeVisible({ timeout: 10000 });
+
+        // Clean up: delete the uploaded files
+        for (const fileName of ['data.json', 'data_(1).json']) {
+            const fileRow = page.locator(`tr.file-table-row[data-name="${fileName}"]`);
+            if (await fileRow.count() > 0) {
+                await fileRow.locator('.context-menu-trigger').click();
+                await page.waitForTimeout(100);
+                await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
+                await page.waitForTimeout(500);
+            }
+        }
+    });
 });
 
 test.describe('Files Page - File Interactions', () => {
