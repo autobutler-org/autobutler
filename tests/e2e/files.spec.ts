@@ -450,7 +450,7 @@ test.describe('Modal Dialog Behavior', () => {
     });
 });
 
-test.describe('File Selection (Google Drive Style)', () => {
+test.describe('File Selection', () => {
     test('single click on file in list view selects it', async ({ page }) => {
         await page.goto('/files');
 
