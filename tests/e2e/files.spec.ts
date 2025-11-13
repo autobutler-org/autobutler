@@ -146,7 +146,7 @@ test.describe('Files Page - File Upload', () => {
         const fileInput = page.locator('input[type="file"]');
 
         // Upload the test file
-        await fileInput.setInputFiles('./tests/fixtures/sample.txt');
+        await fileInput.setInputFiles('./tests/e2e/fixtures/sample.txt');
 
         // Wait for the upload to complete
         await page.waitForTimeout(1000);
@@ -247,7 +247,7 @@ test.describe('Modal Dialog Behavior', () => {
 
         if (!fileExists) {
             const fileInput = page.locator('input[type="file"]');
-            await fileInput.setInputFiles('./tests/fixtures/sample.txt');
+            await fileInput.setInputFiles('./tests/e2e/fixtures/sample.txt');
             await page.waitForTimeout(1000);
         }
 
