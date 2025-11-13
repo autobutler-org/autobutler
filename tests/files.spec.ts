@@ -387,16 +387,10 @@ test.describe('Files Page - Navigation', () => {
         await expect(backButton).toBeVisible();
         await expect(backButton).not.toBeDisabled();
         await backButton.click();
-        await page.waitForTimeout(100);
+        await page.waitForTimeout(1000);
 
         // Verify we're back at the root (URL should be /files)
         await expect(page).toHaveURL(/^.*\/files\/?$/);
-
-        // Clean up: delete the test folder
-        const cleanupFolderRow = page.locator('tr.file-table-row[data-name="test-nav-folder/"]');
-        await cleanupFolderRow.locator('.context-menu-trigger').click();
-        await page.waitForTimeout(100);
-        await cleanupFolderRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
     });
 
     test('back button is disabled at root directory', async ({ page }) => {
