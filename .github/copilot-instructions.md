@@ -42,7 +42,7 @@ Backend development assumptions
 
 End-to-end testing requirements
 -------------------------------
-- Write end-to-end tests for any new UI features you implement. Tests should be added to the `tests/` directory using Playwright.
+- Write end-to-end tests for any new UI features you implement. E2E tests should be added to the `tests/e2e` directory using Playwright.
 - When fixing UI bugs, always add an end-to-end test that validates the fix. This ensures the bug can be caught if it reappears in the future.
-- Follow the existing test patterns in `tests/*.spec.ts` for consistency.
+- Follow the existing test patterns in `tests/e2e/*.spec.ts` for consistency.
 - End-to-end tests help maintain quality and prevent regressions in the UI.
