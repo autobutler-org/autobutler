@@ -162,7 +162,7 @@ test.describe('Photos Page - Photo Upload', () => {
     await page.goto('/files');
 
     const fileInput = page.locator('input[type="file"]');
-    await fileInput.setInputFiles('./tests/e2e/fixtures/test-image.png');
+    await fileInput.setInputFiles('./tests/e2e/data/test-image.png');
 
     await page.waitForTimeout(1000);
 
@@ -188,7 +188,7 @@ test.describe('Photos Page - Photo Upload', () => {
     await page.goto('/files');
 
     const fileInput = page.locator('input[type="file"]');
-    await fileInput.setInputFiles('./tests/e2e/fixtures/test-image.jpg');
+    await fileInput.setInputFiles('./tests/e2e/data/test-image.jpg');
 
     await page.waitForTimeout(1000);
 
