@@ -4,10 +4,10 @@ templ Component() {
 	<dialog
 		id="file-viewer"
 		class="file-viewer"
-		hx-on:close="closeFileViewer(event)"
+		onclose="closeFileViewer(event)"
 		closedby="none"
-		hx-on:keydown="if (event.key === 'Escape') { closeFileViewer(event); } else if (event.key === 'Enter' && !event.target.closest('.ace_text-input, #editor')) { preventDefault(event); }"
-		hx-on:mousedown="preventDefault(event)"
+		onkeydown="if (event.key === 'Escape') { closeFileViewer(event); } else if (event.key === 'Enter' && !event.target.closest('.ace_text-input, #editor')) { preventDefault(event); }"
+		onmousedown="preventDefault(event)"
 	>
 		<script src="/public/vendor/epub.js/jszip.min.js"></script>
 		<script src="/public/vendor/epub.js/epub.min.js"></script>
@@ -18,7 +18,7 @@ templ Component() {
 		<button
 			class="file-viewer-close"
 			aria-label="Close"
-			hx-on:click="closeFileViewer(event)"
+			onclick="closeFileViewer(event)"
 		>
 			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20">
 				<path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M5 5l10 10M15 5l-10 10"></path>

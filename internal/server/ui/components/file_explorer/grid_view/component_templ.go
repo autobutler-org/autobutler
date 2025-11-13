@@ -133,7 +133,7 @@ func renderGridItem(pageState types.PageState, file fs.FileInfo) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" hx-on:contextmenu=\"toggleFloatingContextMenu(event, this)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" oncontextmenu=\"toggleFloatingContextMenu(event, this)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -216,7 +216,7 @@ func renderGridItem(pageState types.PageState, file fs.FileInfo) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" hx-target=\"#file-viewer-content\" hx-swap=\"innerHTML\" hx-on:click=\"document.getElementById('file-viewer').showModal();\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" hx-target=\"#file-viewer-content\" hx-swap=\"innerHTML\" onclick=\"document.getElementById('file-viewer').showModal();\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -320,7 +320,7 @@ func renderGridItem(pageState types.PageState, file fs.FileInfo) templ.Component
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div class=\"grid-view-context-trigger\" hx-on:click=\"event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.grid-view-item'))\">⋮</div><div class=\"context-menu hidden\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div class=\"grid-view-context-trigger\" onclick=\"event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.grid-view-item'))\">⋮</div><div class=\"context-menu hidden\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

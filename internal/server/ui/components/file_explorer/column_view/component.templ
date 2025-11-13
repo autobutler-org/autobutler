@@ -136,7 +136,7 @@ templ renderParentColumnItem(pageState types.PageState, parentPath string, file 
 		class={ "column-view-item file-node", templ.KV("column-view-item--selected", isSelected), templ.KV("column-view-item--folder", isFolder) }
 		data-name={ fileName }
 		data-is-folder={ fmt.Sprintf("%t", isFolder) }
-		hx-on:contextmenu="toggleFloatingContextMenu(event, this)"
+		oncontextmenu="toggleFloatingContextMenu(event, this)"
 	>
 		if isFolder {
 			<a
@@ -166,7 +166,7 @@ templ renderParentColumnItem(pageState types.PageState, parentPath string, file 
 		}
 		<div
 			class="column-view-context-trigger"
-			hx-on:click="event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.column-view-item'))"
+			onclick="event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.column-view-item'))"
 		>
 			⋮
 		</div>
@@ -188,7 +188,7 @@ templ renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) {
 		class={ "column-view-item file-node", templ.KV("column-view-item--folder", isFolder) }
 		data-name={ fileName }
 		data-is-folder={ fmt.Sprintf("%t", isFolder) }
-		hx-on:contextmenu="toggleFloatingContextMenu(event, this)"
+		oncontextmenu="toggleFloatingContextMenu(event, this)"
 	>
 		if isFolder {
 			<a
@@ -220,7 +220,7 @@ templ renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) {
 		}
 		<div
 			class="column-view-context-trigger"
-			hx-on:click="event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.column-view-item'))"
+			onclick="event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.column-view-item'))"
 		>
 			⋮
 		</div>

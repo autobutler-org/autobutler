@@ -385,7 +385,7 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file f
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" hx-on:contextmenu=\"toggleFloatingContextMenu(event, this)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" oncontextmenu=\"toggleFloatingContextMenu(event, this)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -481,7 +481,7 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file f
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<div class=\"column-view-context-trigger\" hx-on:click=\"event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.column-view-item'))\">⋮</div><div class=\"context-menu hidden\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<div class=\"column-view-context-trigger\" onclick=\"event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.column-view-item'))\">⋮</div><div class=\"context-menu hidden\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -568,7 +568,7 @@ func renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) templ.
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\" hx-on:contextmenu=\"toggleFloatingContextMenu(event, this)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\" oncontextmenu=\"toggleFloatingContextMenu(event, this)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -664,7 +664,7 @@ func renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) templ.
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<div class=\"column-view-context-trigger\" hx-on:click=\"event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.column-view-item'))\">⋮</div><div class=\"context-menu hidden\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<div class=\"column-view-context-trigger\" onclick=\"event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.column-view-item'))\">⋮</div><div class=\"context-menu hidden\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

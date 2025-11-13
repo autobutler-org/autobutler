@@ -44,7 +44,7 @@ templ PhotoGridItem(pageState types.PageState, photo util.RecursivePhotoInfo) {
 		hx-get={ filepath.Join("/components/files/viewer", filePath) }
 		hx-target="#file-viewer-content"
 		hx-swap="innerHTML"
-		hx-on:click="document.getElementById('file-viewer').showModal();"
+		onclick="document.getElementById('file-viewer').showModal();"
 	>
 		<img
 			class="photo-grid-image"

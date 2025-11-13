@@ -159,7 +159,7 @@ func PhotoGridItem(pageState types.PageState, photo util.RecursivePhotoInfo) tem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" hx-target=\"#file-viewer-content\" hx-swap=\"innerHTML\" hx-on:click=\"document.getElementById('file-viewer').showModal();\"><img class=\"photo-grid-image\" src=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" hx-target=\"#file-viewer-content\" hx-swap=\"innerHTML\" onclick=\"document.getElementById('file-viewer').showModal();\"><img class=\"photo-grid-image\" src=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

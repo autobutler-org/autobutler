@@ -113,7 +113,7 @@ func Breadcrumb(pageState types.PageState, view string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div class=\"file-explorer-folder-controls\"><button id=\"add-folder-btn\" class=\"file-explorer-add-folder btn btn--icon\" title=\"Add Folder\" type=\"button\" hx-on:click=\"toggleFolderInput(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"icon icon--base\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 4v16m8-8H4\"></path></svg></button> <input type=\"text\" id=\"folder-input\" name=\"folderName\" class=\"file-explorer-folder-input hidden\" placeholder=\"New folder name\" maxlength=\"255\" hx-include=\"[name='folderName']\" hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div class=\"file-explorer-folder-controls\"><button id=\"add-folder-btn\" class=\"file-explorer-add-folder btn btn--icon\" title=\"Add Folder\" type=\"button\" onclick=\"toggleFolderInput(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"icon icon--base\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 4v16m8-8H4\"></path></svg></button> <input type=\"text\" id=\"folder-input\" name=\"folderName\" class=\"file-explorer-folder-input hidden\" placeholder=\"New folder name\" maxlength=\"255\" hx-include=\"[name='folderName']\" hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -234,7 +234,7 @@ func BreadcrumbOOB(pageState types.PageState, view string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"file-explorer-folder-controls\"><button id=\"add-folder-btn\" class=\"file-explorer-add-folder btn btn--icon\" title=\"Add Folder\" type=\"button\" hx-on:click=\"toggleFolderInput(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"icon icon--base\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 4v16m8-8H4\"></path></svg></button> <input type=\"text\" id=\"folder-input\" name=\"folderName\" class=\"file-explorer-folder-input hidden\" placeholder=\"New folder name\" maxlength=\"255\" hx-include=\"[name='folderName']\" hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"file-explorer-folder-controls\"><button id=\"add-folder-btn\" class=\"file-explorer-add-folder btn btn--icon\" title=\"Add Folder\" type=\"button\" onclick=\"toggleFolderInput(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"icon icon--base\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 4v16m8-8H4\"></path></svg></button> <input type=\"text\" id=\"folder-input\" name=\"folderName\" class=\"file-explorer-folder-input hidden\" placeholder=\"New folder name\" maxlength=\"255\" hx-include=\"[name='folderName']\" hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

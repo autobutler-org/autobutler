@@ -30,11 +30,11 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 	}
 	<tr
 		class={ nodeClasses }
-		hx-on:contextmenu="toggleFloatingContextMenu(event, this)"
-		hx-on:dragenter="activateDropZoneOnNode(event)"
-		hx-on:dragover="preventDefault(event)"
-		hx-on:dragleave="deactivateDropZoneOnNode(event)"
-		hx-on:drop={ templ.JSFuncCall("dropOnNode", templ.JSExpression("event"), pageState.RootDir) }
+		oncontextmenu="toggleFloatingContextMenu(event, this)"
+		ondragenter="activateDropZoneOnNode(event)"
+		ondragover="preventDefault(event)"
+		ondragleave="deactivateDropZoneOnNode(event)"
+		ondrop={ templ.JSFuncCall("dropOnNode", templ.JSExpression("event"), pageState.RootDir) }
 		data-name={ fileName }
 	>
 		switch fileType {
@@ -53,7 +53,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 					@file_context_menu.Component(pageState, file)
 				</td>
 			case util.FileTypeSpacer:
-				<td colspan="3" class="file-table-cell file-table-cell--spacer" hx-on:click="document.getElementById('file-upload-input').click()" tabindex="0" hx-on:keydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); document.getElementById('file-upload-input').click(); }">
+				<td colspan="3" class="file-table-cell file-table-cell--spacer" onclick="document.getElementById('file-upload-input').click()" tabindex="0" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); document.getElementById('file-upload-input').click(); }">
 					<span class="spacer">Drop files here&#8230;</span>
 					@explorer_context_menu.Component(pageState)
 				</td>
@@ -64,9 +64,9 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 					hx-get={ filepath.Join("/components/files/viewer", filePath) }
 					hx-target="#file-viewer-content"
 					hx-swap="innerHTML"
-					hx-on:click="document.getElementById('file-viewer').showModal();"
+					onclick="document.getElementById('file-viewer').showModal();"
 					tabindex="0"
-					hx-on:keydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); document.getElementById('file-viewer').showModal(); htmx.ajax('GET', this.getAttribute('hx-get'), {target: '#file-viewer-content', swap: 'innerHTML'}); }"
+					onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); document.getElementById('file-viewer').showModal(); htmx.ajax('GET', this.getAttribute('hx-get'), {target: '#file-viewer-content', swap: 'innerHTML'}); }"
 				>
 					{{ /* Render the appropriate icon based on the file type */ }}
 					switch fileType {

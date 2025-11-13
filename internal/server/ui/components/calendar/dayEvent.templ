@@ -21,7 +21,7 @@ templ dayEvent(event calendar.CalendarEvent, outsideOfMonth bool, viewingMonth t
 		<div
 			style="min-width: 85%; max-width: 85%;"
 			class={ renderClass }
-			hx-on:click="event.stopPropagation()"
+			onclick="event.stopPropagation()"
 			hx-on::after-request={ templ.JSFuncCall("showEventDialog", templ.JSExpression("event"), event.ID) }
 			hx-get={ fmt.Sprintf("/api/v1/calendar/%d", event.ID) }
 			hx-target={ fmt.Sprintf("#event-dialog-%d", event.ID) }
@@ -34,7 +34,7 @@ templ dayEvent(event calendar.CalendarEvent, outsideOfMonth bool, viewingMonth t
 		</div>
 		<span
 			class="calendar-event-spacer"
-			hx-on:click="newCalendarEvent(event)"
+			onclick="newCalendarEvent(event)"
 		></span>
 		<dialog
 			id={ fmt.Sprintf("event-dialog-%d", event.ID) }
