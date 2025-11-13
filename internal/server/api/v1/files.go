@@ -162,6 +162,19 @@ func uploadFileRouteImpl(c *gin.Context, rootDir string) {
 
 		fileDir := util.GetFilesDir()
 		newFilePath := filepath.Join(fileDir, rootDir, header.Filename)
+		if _, err := os.Stat(newFilePath); err == nil {
+			ext := filepath.Ext(header.Filename)
+			name := header.Filename[:len(header.Filename)-len(ext)]
+			i := 1
+			for {
+				newFileName := fmt.Sprintf("%s_(%d)%s", name, i, ext)
+				newFilePath = filepath.Join(fileDir, rootDir, newFileName)
+				if _, err := os.Stat(newFilePath); os.IsNotExist(err) {
+					break
+				}
+				i++
+			}
+		}
 		newFile, err := os.Create(newFilePath)
 		if err != nil {
 			c.Writer.WriteString(`<span class="text-red-500">Failed to create file: ` + html.EscapeString(err.Error()) + `</span>`)
