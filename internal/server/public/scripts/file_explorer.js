@@ -258,7 +258,7 @@ function deselectFileNode(node) {
 function updateDownloadButton() {
     const downloadBtn = document.getElementById('file-download-button');
     if (!downloadBtn) return;
-    
+
     if (selectedFiles.length > 0) {
         downloadBtn.disabled = false;
         downloadBtn.classList.remove('btn--disabled');
@@ -333,8 +333,15 @@ function handleFileNodeDoubleClick(event, node) {
         const contentCell = node.querySelector('[data-href]');
         const href = contentCell?.dataset.href;
         if (href) {
-            // Use window.location to navigate (simplest approach)
-            window.location.href = href;
+            // Use HTMX for smooth navigation without page reload
+            htmx.ajax('GET', href, {
+                target: '#file-explorer-view-content',
+                swap: 'innerHTML'
+            }).then(() => {
+                // Update the browser URL after successful navigation
+                window.history.pushState({}, '', href);
+                updateBackButton();
+            });
         }
     } else {
         // Open file viewer
@@ -396,18 +403,18 @@ function dropOnNode(event, returnDir) {
 
 function downloadSelectedFiles(event, rootDir) {
     preventDefault(event);
-    
+
     console.log('Download requested. Root dir:', rootDir, 'Selected files:', selectedFiles);
-    
+
     if (!rootDir) rootDir = '';
-    
+
     selectedFiles.forEach(fileName => {
         const link = document.createElement('a');
         let cleanFileName = fileName;
         while (cleanFileName.endsWith('/')) {
             cleanFileName = cleanFileName.slice(0, -1);
         }
-        
+
         // Construct the proper path - ensure no double slashes
         let filePath;
         if (rootDir && rootDir !== '/') {
@@ -417,9 +424,9 @@ function downloadSelectedFiles(event, rootDir) {
         } else {
             filePath = `/api/v1/files/${cleanFileName}`;
         }
-        
+
         console.log('Downloading:', filePath);
-        
+
         link.href = filePath;
         link.download = cleanFileName;
         document.body.appendChild(link);
@@ -1013,6 +1020,61 @@ document.body.addEventListener('htmx:afterSwap', function(event) {
 // Also scroll on initial page load
 document.addEventListener('DOMContentLoaded', function() {
     scrollColumnViewToRight();
+});
+
+// NAVIGATION MANAGEMENT
+
+/**
+ * Update the back button state based on current path
+ */
+function updateBackButton() {
+    const backBtn = document.getElementById('nav-back-btn');
+    if (!backBtn) return;
+    
+    const currentPath = window.location.pathname;
+    const isAtRoot = currentPath === '/files' || currentPath === '/files/';
+    
+    if (isAtRoot) {
+        backBtn.disabled = true;
+    } else {
+        backBtn.disabled = false;
+    }
+}
+
+/**
+ * Navigate back to previous folder
+ */
+function navigateBack() {
+    const currentPath = window.location.pathname;
+    
+    // Calculate parent directory
+    let parentPath = currentPath.replace(/\/$/, ''); // Remove trailing slash
+    const lastSlashIndex = parentPath.lastIndexOf('/');
+    parentPath = parentPath.substring(0, lastSlashIndex) || '/files';
+    
+    // Navigate to parent
+    window.history.pushState({}, '', parentPath);
+    htmx.ajax('GET', parentPath, {
+        target: '#file-explorer-view-content',
+        swap: 'innerHTML'
+    });
+    updateBackButton();
+}
+
+// Handle browser back/forward buttons
+window.addEventListener('popstate', function(event) {
+    // Reload the file explorer content for the current URL
+    const currentPath = window.location.pathname;
+    htmx.ajax('GET', currentPath, {
+        target: '#file-explorer-view-content',
+        swap: 'innerHTML'
+    });
+    updateBackButton();
+});
+
+// Update back button on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateBackButton();
 });
 
 // CONTEXT MENU GLOBAL HANDLERS
