@@ -12,7 +12,7 @@ templ Component(columnName string) {
 		id={ fmt.Sprintf("sort-%s", columnName) }
 		class="sort-button"
 		type="button"
-		hx-on:click={ templ.JSUnsafeFuncCall(fmt.Sprintf("sortFiles('%s'); updateSortArrows('%s')", columnName, columnName)) }
+		onclick={ templ.JSUnsafeFuncCall(fmt.Sprintf("sortFiles('%s'); updateSortArrows('%s')", columnName, columnName)) }
 	>
 		<span>{ cases.Title(language.English).String(columnName) } </span>
 		<div class="sort-button-arrows">

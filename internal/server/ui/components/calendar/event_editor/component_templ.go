@@ -156,7 +156,7 @@ func ComponentWithEvent(
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"> <input id=\"view-year\" type=\"hidden\" name=\"viewYear\" value=\"\"> <input id=\"view-month\" type=\"hidden\" name=\"viewMonth\" value=\"\"><div class=\"modal-field\"><label for=\"title\" class=\"modal-label\">Title</label> <input type=\"text\" name=\"title\" id=\"title\" autofocus required hx-on:input=\"checkNewEventFormInputs(event)\" hx-on:keydown=\"if (event.key === 'Enter') { preventDefault(event); }\" class=\"modal-input\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"> <input id=\"view-year\" type=\"hidden\" name=\"viewYear\" value=\"\"> <input id=\"view-month\" type=\"hidden\" name=\"viewMonth\" value=\"\"><div class=\"modal-field\"><label for=\"title\" class=\"modal-label\">Title</label> <input type=\"text\" name=\"title\" id=\"title\" autofocus required oninput=\"checkNewEventFormInputs(event)\" onkeydown=\"if (event.key === 'Enter') { preventDefault(event); }\" class=\"modal-input\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -223,7 +223,7 @@ func ComponentWithEvent(
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</textarea></div><div><label for=\"location\" class=\"modal-label\">Location</label> <input type=\"text\" name=\"location\" id=\"location\" hx-on:keydown=\"if (event.key === 'Enter') { preventDefault(event); }\" class=\"modal-input\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</textarea></div><div><label for=\"location\" class=\"modal-label\">Location</label> <input type=\"text\" name=\"location\" id=\"location\" onkeydown=\"if (event.key === 'Enter') { preventDefault(event); }\" class=\"modal-input\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

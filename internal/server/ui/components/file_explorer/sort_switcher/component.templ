@@ -12,7 +12,7 @@ templ Component() {
 		class="sort-switcher"
 		type="button"
 		title="Toggle between 'Folders First' and 'Mixed' sorting modes"
-		hx-on:click="toggleMixedSorting()"
+		onclick="toggleMixedSorting()"
 	>
 		<div class="sort-switcher-icons">
 			@sort_arrows.Component()

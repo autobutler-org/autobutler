@@ -92,14 +92,14 @@ templ ComponentWithEvent(
 						class="modal-label"
 					>Title</label>
 					<input
-						type="text"
-						name="title"
-						id="title"
-						autofocus
-						required
-						hx-on:input="checkNewEventFormInputs(event)"
-						hx-on:keydown="if (event.key === 'Enter') { preventDefault(event); }"
-						class="modal-input"
+					type="text"
+					name="title"
+					id="title"
+					autofocus
+					required
+					oninput="checkNewEventFormInputs(event)"
+					onkeydown="if (event.key === 'Enter') { preventDefault(event); }"
+					class="modal-input"
 						value={ event.Title }
 					/>
 				</div>
@@ -161,11 +161,11 @@ templ ComponentWithEvent(
 						class="modal-label"
 					>Location</label>
 					<input
-						type="text"
-						name="location"
-						id="location"
-						hx-on:keydown="if (event.key === 'Enter') { preventDefault(event); }"
-						class="modal-input"
+					type="text"
+					name="location"
+					id="location"
+					onkeydown="if (event.key === 'Enter') { preventDefault(event); }"
+					class="modal-input"
 						value={ event.Location }
 					/>
 				</div>
