@@ -1,6 +1,9 @@
 package v1
 
 import (
+	"autobutler/internal/serverutil"
+	"autobutler/pkg/api"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -9,7 +12,7 @@ func SetupHealthRoutes(apiV1Group *gin.RouterGroup) {
 }
 
 func healthRoute(apiV1Group *gin.RouterGroup) {
-	apiRoute(apiV1Group, "GET", "/health", func(c *gin.Context) {
-		c.Status(200)
+	serverutil.ApiRoute(apiV1Group, "GET", "/health", func(c *gin.Context) *api.Response {
+		return api.Ok()
 	})
 }

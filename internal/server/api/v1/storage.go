@@ -18,7 +18,7 @@ func SetupStorageRoutes(apiGroup *gin.RouterGroup) {
 // @Description Returns a list of all detected storage devices with usage information (READ-ONLY)
 // @Tags storage
 // @Produce json
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} map[string]any
 // @Router /api/v1/storage/devices [get]
 func getStorageDevices(c *gin.Context) {
 	detector := storage.NewDetector()

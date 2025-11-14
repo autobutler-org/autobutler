@@ -3,26 +3,62 @@ package health
 import "autobutler/internal/server/ui/types"
 
 templ Component(pageState types.PageState) {
-	<div style="display: flex; flex-direction: column; gap: 20px; padding: 20px;">
-		<h1 style="color: #FFF; margin: 0 0 10px 0; font-size: 32px; font-weight: 600;">Health Dashboard</h1>
-		<p style="color: rgba(255, 255, 255, 0.7); margin: 0 0 20px 0; font-size: 16px;">Golden signals monitoring for application health and performance</p>
-		<div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px;">
-			<canvas id="latencyPageChart"></canvas>
+	<div class="health-container">
+		<h1 class="health-title">Health Dashboard</h1>
+		<!-- Tab Navigation -->
+		<div class="health-tabs">
+			<button class="tab-button active" data-tab="errors">
+				Errors
+			</button>
+			<button class="tab-button" data-tab="latency">
+				Latency
+			</button>
+			<button class="tab-button" data-tab="traffic">
+				Traffic
+			</button>
+			<button class="tab-button" data-tab="saturation">
+				Saturation
+			</button>
 		</div>
-		<div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px;">
-			<canvas id="latencyApiChart"></canvas>
+		<!-- Tab Content -->
+		<div class="tab-content active" data-content="errors">
+			<div class="chart-container">
+				<canvas id="errorsPageChart"></canvas>
+			</div>
+			<div class="chart-container">
+				<canvas id="errorsApiChart"></canvas>
+			</div>
 		</div>
-		<div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px;">
-			<canvas id="trafficPageChart"></canvas>
+		<div class="tab-content" data-content="latency">
+			<div class="chart-container">
+				<canvas id="latencyPageChart"></canvas>
+			</div>
+			<div class="chart-container">
+				<canvas id="latencyApiChart"></canvas>
+			</div>
+			<div class="chart-container">
+				<canvas id="latencyPageP99Chart"></canvas>
+			</div>
+			<div class="chart-container">
+				<canvas id="latencyApiP99Chart"></canvas>
+			</div>
 		</div>
-		<div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px;">
-			<canvas id="trafficApiChart"></canvas>
+		<div class="tab-content" data-content="traffic">
+			<div class="chart-container">
+				<canvas id="trafficPageChart"></canvas>
+			</div>
+			<div class="chart-container">
+				<canvas id="trafficApiChart"></canvas>
+			</div>
 		</div>
-		<div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px;">
-			<canvas id="saturationChart"></canvas>
+		<div class="tab-content" data-content="saturation">
+			<div class="chart-container">
+				<canvas id="saturationChart"></canvas>
+			</div>
 		</div>
 	</div>
 	<script>
-			createGoldenSignalCharts();
-		</script>
+		initializeHealthTabs();
+		createGoldenSignalCharts();
+	</script>
 }

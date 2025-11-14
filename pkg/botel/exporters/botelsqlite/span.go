@@ -8,20 +8,20 @@ import (
 )
 
 // SpanToJSON converts a ReadOnlySpan to the JSON structure shown in types.go
-func SpanToJSON(span sdktrace.ReadOnlySpan) (map[string]interface{}, error) {
+func SpanToJSON(span sdktrace.ReadOnlySpan) (map[string]any, error) {
 	spanCtx := span.SpanContext()
 	parentCtx := span.Parent()
 
-	result := map[string]interface{}{
+	result := map[string]any{
 		"Name": span.Name(),
-		"SpanContext": map[string]interface{}{
+		"SpanContext": map[string]any{
 			"TraceID":    spanCtx.TraceID().String(),
 			"SpanID":     spanCtx.SpanID().String(),
 			"TraceFlags": fmt.Sprintf("%02x", spanCtx.TraceFlags()),
 			"TraceState": spanCtx.TraceState().String(),
 			"Remote":     spanCtx.IsRemote(),
 		},
-		"Parent": map[string]interface{}{
+		"Parent": map[string]any{
 			"TraceID":    parentCtx.TraceID().String(),
 			"SpanID":     parentCtx.SpanID().String(),
 			"TraceFlags": fmt.Sprintf("%02x", parentCtx.TraceFlags()),
@@ -38,11 +38,11 @@ func SpanToJSON(span sdktrace.ReadOnlySpan) (map[string]interface{}, error) {
 	}
 
 	// Convert attributes
-	attrs := []map[string]interface{}{}
+	attrs := []map[string]any{}
 	for _, attr := range span.Attributes() {
-		attrs = append(attrs, map[string]interface{}{
+		attrs = append(attrs, map[string]any{
 			"Key": string(attr.Key),
-			"Value": map[string]interface{}{
+			"Value": map[string]any{
 				"Type":  attr.Value.Type().String(),
 				"Value": attr.Value.AsInterface(),
 			},
@@ -51,19 +51,19 @@ func SpanToJSON(span sdktrace.ReadOnlySpan) (map[string]interface{}, error) {
 	result["Attributes"] = attrs
 
 	// Convert events
-	events := []map[string]interface{}{}
+	events := []map[string]any{}
 	for _, event := range span.Events() {
-		eventAttrs := []map[string]interface{}{}
+		eventAttrs := []map[string]any{}
 		for _, attr := range event.Attributes {
-			eventAttrs = append(eventAttrs, map[string]interface{}{
+			eventAttrs = append(eventAttrs, map[string]any{
 				"Key": string(attr.Key),
-				"Value": map[string]interface{}{
+				"Value": map[string]any{
 					"Type":  attr.Value.Type().String(),
 					"Value": attr.Value.AsInterface(),
 				},
 			})
 		}
-		events = append(events, map[string]interface{}{
+		events = append(events, map[string]any{
 			"Name":       event.Name,
 			"Time":       event.Time,
 			"Attributes": eventAttrs,
@@ -76,20 +76,20 @@ func SpanToJSON(span sdktrace.ReadOnlySpan) (map[string]interface{}, error) {
 	}
 
 	// Convert links
-	links := []map[string]interface{}{}
+	links := []map[string]any{}
 	for _, link := range span.Links() {
-		linkAttrs := []map[string]interface{}{}
+		linkAttrs := []map[string]any{}
 		for _, attr := range link.Attributes {
-			linkAttrs = append(linkAttrs, map[string]interface{}{
+			linkAttrs = append(linkAttrs, map[string]any{
 				"Key": string(attr.Key),
-				"Value": map[string]interface{}{
+				"Value": map[string]any{
 					"Type":  attr.Value.Type().String(),
 					"Value": attr.Value.AsInterface(),
 				},
 			})
 		}
-		links = append(links, map[string]interface{}{
-			"SpanContext": map[string]interface{}{
+		links = append(links, map[string]any{
+			"SpanContext": map[string]any{
 				"TraceID":    link.SpanContext.TraceID().String(),
 				"SpanID":     link.SpanContext.SpanID().String(),
 				"TraceFlags": fmt.Sprintf("%02x", link.SpanContext.TraceFlags()),
@@ -107,26 +107,27 @@ func SpanToJSON(span sdktrace.ReadOnlySpan) (map[string]interface{}, error) {
 
 	// Status
 	status := span.Status()
-	result["Status"] = map[string]interface{}{
+	result["Status"] = map[string]any{
 		"Code":        status.Code.String(),
 		"Description": status.Description,
 	}
 
 	// Check status code explicitly
-	if status.Code == codes.Unset {
-		result["Status"].(map[string]interface{})["Code"] = "Unset"
-	} else if status.Code == codes.Ok {
-		result["Status"].(map[string]interface{})["Code"] = "Ok"
-	} else if status.Code == codes.Error {
-		result["Status"].(map[string]interface{})["Code"] = "Error"
+	switch status.Code {
+	case codes.Unset:
+		result["Status"].(map[string]any)["Code"] = "Unset"
+	case codes.Ok:
+		result["Status"].(map[string]any)["Code"] = "Ok"
+	case codes.Error:
+		result["Status"].(map[string]any)["Code"] = "Error"
 	}
 
 	// Resource attributes
-	resourceAttrs := []map[string]interface{}{}
+	resourceAttrs := []map[string]any{}
 	for _, attr := range span.Resource().Attributes() {
-		resourceAttrs = append(resourceAttrs, map[string]interface{}{
+		resourceAttrs = append(resourceAttrs, map[string]any{
 			"Key": string(attr.Key),
-			"Value": map[string]interface{}{
+			"Value": map[string]any{
 				"Type":  attr.Value.Type().String(),
 				"Value": attr.Value.AsInterface(),
 			},
@@ -136,13 +137,13 @@ func SpanToJSON(span sdktrace.ReadOnlySpan) (map[string]interface{}, error) {
 
 	// Instrumentation scope
 	scope := span.InstrumentationScope()
-	scopeAttrs := []map[string]interface{}{}
+	scopeAttrs := []map[string]any{}
 	iter := scope.Attributes.Iter()
 	for iter.Next() {
 		attr := iter.Attribute()
-		scopeAttrs = append(scopeAttrs, map[string]interface{}{
+		scopeAttrs = append(scopeAttrs, map[string]any{
 			"Key": string(attr.Key),
-			"Value": map[string]interface{}{
+			"Value": map[string]any{
 				"Type":  attr.Value.Type().String(),
 				"Value": attr.Value.AsInterface(),
 			},
@@ -152,7 +153,7 @@ func SpanToJSON(span sdktrace.ReadOnlySpan) (map[string]interface{}, error) {
 		scopeAttrs = nil
 	}
 
-	result["InstrumentationScope"] = map[string]interface{}{
+	result["InstrumentationScope"] = map[string]any{
 		"Name":       scope.Name,
 		"Version":    scope.Version,
 		"SchemaURL":  scope.SchemaURL,

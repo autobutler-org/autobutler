@@ -17,6 +17,7 @@
     "iofs",
     "linecap",
     "modernc",
+    "serverutil",
     "Sprintf",
     "sqlc",
     "templ"

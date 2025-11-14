@@ -2,8 +2,9 @@ package v1
 
 import (
 	"autobutler/internal/server/ui/components/landing_nav"
+	"autobutler/internal/serverutil"
 	"autobutler/internal/update"
-	"fmt"
+	"autobutler/pkg/api"
 	"html"
 
 	"github.com/gin-gonic/gin"
@@ -15,27 +16,25 @@ func SetupUpdateRoutes(apiV1Group *gin.RouterGroup) {
 }
 
 func updateRoute(apiV1Group *gin.RouterGroup) {
-	apiRoute(apiV1Group, "POST", "/update", func(c *gin.Context) {
+	serverutil.ApiRoute(apiV1Group, "POST", "/update", func(c *gin.Context) *api.Response {
 		version := c.PostForm("version")
 		if err := update.Update(version); err != nil {
-			fmt.Fprintf(c.Writer, `<span class="text-red-500">%s</span>`, html.EscapeString(err.Error()))
-			return
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
 		}
 		go update.RestartAutobutler()
-		c.Writer.WriteString(`<span class="text-green-500">Update successful, Autobutler will restart.</span>`)
+		return api.Ok().WithData(`<span class="text-green-500">Update successful, Autobutler will restart.</span>`)
 	})
 }
 
 func listVersionsRoute(apiV1Group *gin.RouterGroup) {
-	apiRoute(apiV1Group, "GET", "/versions", func(c *gin.Context) {
+	serverutil.ApiRoute(apiV1Group, "GET", "/versions", func(c *gin.Context) *api.Response {
 		releases, err := update.ListPossibleUpdates()
 		if err != nil {
-			c.Writer.WriteString(`<div class="text-red-500">Failed to fetch versions</div>`)
-			return
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
 		}
 		if err := landing_nav.VersionDropdown(releases).Render(c.Request.Context(), c.Writer); err != nil {
-			c.Writer.WriteString(`<div class="text-red-500">Failed to render versions</div>`)
-			return
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
 		}
+		return api.Ok()
 	})
 }

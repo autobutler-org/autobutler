@@ -42,169 +42,311 @@ function createGoldenSignalCharts() {
         end: 0
     };
 
-    // Golden Signal 1: Page Latency
-    var latencyPageChart = new Chart(document.getElementById('latencyPageChart').getContext('2d'), {
-        type: 'line',
-        plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
-        options: {
-            ...commonOptions,
-            plugins: {
-                ...commonOptions.plugins,
-                title: {
-                    display: true,
-                    text: 'Latency - Page Request Duration (Non-API)',
-                    color: '#FFF',
-                    font: { size: 14 }
-                },
-                'datasource-prometheus': {
-                    prometheus: {
-                        endpoint: "http://localhost:8080",
-                        baseURL: "/metrics",
+    var errorCharts = {
+        page: new Chart(document.getElementById('errorsPageChart').getContext('2d'), {
+            type: 'line',
+            plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    title: {
+                        display: true,
+                        text: 'Errors - Page Request Failures (Max Latency)',
+                        color: '#FFF',
+                        font: { size: 14 }
                     },
-                    query: 'avg by (http.route) (http.server.request.duration{http.route!~"/api.*"})',
-                    timeRange: timeRange
-                }
-            },
-            scales: {
-                ...commonOptions.scales,
-                y: {
-                    ...commonOptions.scales.y,
-                    ticks: {
-                        ...commonOptions.scales.y.ticks,
-                        callback: function(value) {
-                            return (value * 1000).toFixed(2) + ' ms';
+                    'datasource-prometheus': {
+                        prometheus: {
+                            endpoint: "http://localhost:8080",
+                            baseURL: "/metrics",
+                        },
+                        query: 'max by (http.route) (http.server.request.duration{http.route!~"/api.*"})',
+                        timeRange: timeRange
+                    }
+                },
+                scales: {
+                    ...commonOptions.scales,
+                    y: {
+                        ...commonOptions.scales.y,
+                        ticks: {
+                            ...commonOptions.scales.y.ticks,
+                            callback: function (value) {
+                                return (value * 1000).toFixed(2) + ' ms';
+                            }
                         }
                     }
                 }
             }
-        }
-    });
-
-    // Golden Signal 2: API Latency
-    var latencyApiChart = new Chart(document.getElementById('latencyApiChart').getContext('2d'), {
-        type: 'line',
-        plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
-        options: {
-            ...commonOptions,
-            plugins: {
-                ...commonOptions.plugins,
-                title: {
-                    display: true,
-                    text: 'Latency - API Request Duration',
-                    color: '#FFF',
-                    font: { size: 14 }
-                },
-                'datasource-prometheus': {
-                    prometheus: {
-                        endpoint: "http://localhost:8080",
-                        baseURL: "/metrics",
+        }),
+        api: new Chart(document.getElementById('errorsApiChart').getContext('2d'), {
+            type: 'line',
+            plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    title: {
+                        display: true,
+                        text: 'Errors - API Request Failures (Max Latency)',
+                        color: '#FFF',
+                        font: { size: 14 }
                     },
-                    query: 'avg by (http.route) (http.server.request.duration{http.route=~"/api.*"})',
-                    timeRange: timeRange
-                }
-            },
-            scales: {
-                ...commonOptions.scales,
-                y: {
-                    ...commonOptions.scales.y,
-                    ticks: {
-                        ...commonOptions.scales.y.ticks,
-                        callback: function(value) {
-                            return (value * 1000).toFixed(2) + ' ms';
+                    'datasource-prometheus': {
+                        prometheus: {
+                            endpoint: "http://localhost:8080",
+                            baseURL: "/metrics",
+                        },
+                        query: 'max by (http.route) (http.server.request.duration{http.route=~"/api.*"})',
+                        timeRange: timeRange
+                    }
+                },
+                scales: {
+                    ...commonOptions.scales,
+                    y: {
+                        ...commonOptions.scales.y,
+                        ticks: {
+                            ...commonOptions.scales.y.ticks,
+                            callback: function (value) {
+                                return (value * 1000).toFixed(2) + ' ms';
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        })
+    };
 
-    // Golden Signal 3: Traffic (Non-API Routes)
-    var trafficPageChart = new Chart(document.getElementById('trafficPageChart').getContext('2d'), {
-        type: 'line',
-        plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
-        options: {
-            ...commonOptions,
-            plugins: {
-                ...commonOptions.plugins,
-                title: {
-                    display: true,
-                    text: 'Traffic - Page Request Count (Non-API)',
-                    color: '#FFF',
-                    font: { size: 14 }
-                },
-                'datasource-prometheus': {
-                    prometheus: {
-                        endpoint: "http://localhost:8080",
-                        baseURL: "/metrics",
+    var latencyCharts = {
+        page: new Chart(document.getElementById('latencyPageChart').getContext('2d'), {
+            type: 'line',
+            plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    title: {
+                        display: true,
+                        text: 'Latency - Slow Page Requests (>1s)',
+                        color: '#FFF',
+                        font: { size: 14 }
                     },
-                    query: 'count by (http.route) (http.server.request.duration{http.route!~"/api.*"})',
-                    timeRange: timeRange
+                    'datasource-prometheus': {
+                        prometheus: {
+                            endpoint: "http://localhost:8080",
+                            baseURL: "/metrics",
+                        },
+                        query: 'count by (http.route) (http.server.request.duration{http.route!~"/api.*"})',
+                        timeRange: timeRange
+                    }
                 }
             }
-        }
-    });
-
-    // Golden Signal 4: API Traffic
-    var trafficApiChart = new Chart(document.getElementById('trafficApiChart').getContext('2d'), {
-        type: 'line',
-        plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
-        options: {
-            ...commonOptions,
-            plugins: {
-                ...commonOptions.plugins,
-                title: {
-                    display: true,
-                    text: 'Traffic - API Request Count',
-                    color: '#FFF',
-                    font: { size: 14 }
-                },
-                'datasource-prometheus': {
-                    prometheus: {
-                        endpoint: "http://localhost:8080",
-                        baseURL: "/metrics",
+        }),
+        pageP99: new Chart(document.getElementById('latencyPageP99Chart').getContext('2d'), {
+            type: 'line',
+            plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    title: {
+                        display: true,
+                        text: 'Latency - Page Request Duration (p99)',
+                        color: '#FFF',
+                        font: { size: 14 }
                     },
-                    query: 'count by (http.route) (http.server.request.duration{http.route=~"/api.*"})',
-                    timeRange: timeRange
-                }
-            }
-        }
-    });
-
-    // Golden Signal 4: Saturation
-    var saturationChart = new Chart(document.getElementById('saturationChart').getContext('2d'), {
-        type: 'line',
-        plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
-        options: {
-            ...commonOptions,
-            plugins: {
-                ...commonOptions.plugins,
-                title: {
-                    display: true,
-                    text: 'Saturation - Memory Usage',
-                    color: '#FFF',
-                    font: { size: 14 }
+                    'datasource-prometheus': {
+                        prometheus: {
+                            endpoint: "http://localhost:8080",
+                            baseURL: "/metrics",
+                        },
+                        query: 'max by (http.route) (http.server.request.duration{http.route!~"/api.*"})',
+                        timeRange: timeRange
+                    }
                 },
-                'datasource-prometheus': {
-                    prometheus: {
-                        endpoint: "http://localhost:8080",
-                        baseURL: "/metrics",
-                    },
-                    query: 'go.memory.allocated',
-                    timeRange: timeRange
-                }
-            },
-            scales: {
-                ...commonOptions.scales,
-                y: {
-                    ...commonOptions.scales.y,
-                    ticks: {
-                        ...commonOptions.scales.y.ticks,
-                        callback: function(value) {
-                            return (value / 1024 / 1024).toFixed(2) + ' MB';
+                scales: {
+                    ...commonOptions.scales,
+                    y: {
+                        ...commonOptions.scales.y,
+                        ticks: {
+                            ...commonOptions.scales.y.ticks,
+                            callback: function (value) {
+                                return (value * 1000).toFixed(2) + ' ms';
+                            }
                         }
                     }
                 }
             }
-        }
+        }),
+        api: new Chart(document.getElementById('latencyApiChart').getContext('2d'), {
+            type: 'line',
+            plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    title: {
+                        display: true,
+                        text: 'Latency - Slow API Requests (>1s)',
+                        color: '#FFF',
+                        font: { size: 14 }
+                    },
+                    'datasource-prometheus': {
+                        prometheus: {
+                            endpoint: "http://localhost:8080",
+                            baseURL: "/metrics",
+                        },
+                        query: 'count by (http.route) (http.server.request.duration{http.route=~"/api.*"})',
+                        timeRange: timeRange
+                    }
+                }
+            }
+        }),
+        apiP99: new Chart(document.getElementById('latencyApiP99Chart').getContext('2d'), {
+            type: 'line',
+            plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    title: {
+                        display: true,
+                        text: 'Latency - API Request Duration (p99)',
+                        color: '#FFF',
+                        font: { size: 14 }
+                    },
+                    'datasource-prometheus': {
+                        prometheus: {
+                            endpoint: "http://localhost:8080",
+                            baseURL: "/metrics",
+                        },
+                        query: 'max by (http.route) (http.server.request.duration{http.route=~"/api.*"})',
+                        timeRange: timeRange
+                    }
+                },
+                scales: {
+                    ...commonOptions.scales,
+                    y: {
+                        ...commonOptions.scales.y,
+                        ticks: {
+                            ...commonOptions.scales.y.ticks,
+                            callback: function (value) {
+                                return (value * 1000).toFixed(2) + ' ms';
+                            }
+                        }
+                    }
+                }
+            }
+        })
+    };
+
+    var trafficCharts = {
+        page: new Chart(document.getElementById('trafficPageChart').getContext('2d'), {
+            type: 'line',
+            plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    title: {
+                        display: true,
+                        text: 'Traffic - Page Request Count',
+                        color: '#FFF',
+                        font: { size: 14 }
+                    },
+                    'datasource-prometheus': {
+                        prometheus: {
+                            endpoint: "http://localhost:8080",
+                            baseURL: "/metrics",
+                        },
+                        query: 'count by (http.route) (http.server.request.duration{http.route!~"/api.*"})',
+                        timeRange: timeRange
+                    }
+                }
+            }
+        }),
+        api: new Chart(document.getElementById('trafficApiChart').getContext('2d'), {
+            type: 'line',
+            plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    title: {
+                        display: true,
+                        text: 'Traffic - API Request Count',
+                        color: '#FFF',
+                        font: { size: 14 }
+                    },
+                    'datasource-prometheus': {
+                        prometheus: {
+                            endpoint: "http://localhost:8080",
+                            baseURL: "/metrics",
+                        },
+                        query: 'count by (http.route) (http.server.request.duration{http.route=~"/api.*"})',
+                        timeRange: timeRange
+                    }
+                }
+            }
+        })
+    };
+
+    var saturationCharts = {
+        memory: new Chart(document.getElementById('saturationChart').getContext('2d'), {
+            type: 'line',
+            plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    title: {
+                        display: true,
+                        text: 'Saturation - Memory Usage',
+                        color: '#FFF',
+                        font: { size: 14 }
+                    },
+                    'datasource-prometheus': {
+                        prometheus: {
+                            endpoint: "http://localhost:8080",
+                            baseURL: "/metrics",
+                        },
+                        query: 'go.memory.allocated',
+                        timeRange: timeRange
+                    }
+                },
+                scales: {
+                    ...commonOptions.scales,
+                    y: {
+                        ...commonOptions.scales.y,
+                        ticks: {
+                            ...commonOptions.scales.y.ticks,
+                            callback: function (value) {
+                                return (value / 1024 / 1024).toFixed(2) + ' MB';
+                            }
+                        }
+                    }
+                }
+            }
+        })
+    };
+}
+
+function initializeHealthTabs() {
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', function () {
+            const tabName = this.getAttribute('data-tab');
+
+            // Update button styles
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            this.classList.add('active');
+
+            // Show/hide content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelector(`.tab-content[data-content="${tabName}"]`).classList.add('active');
+        });
     });
 }

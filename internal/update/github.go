@@ -11,14 +11,14 @@ type GitHubRelease struct {
 	TagName string        `json:"tag_name"`
 	Assets  []GitHubAsset `json:"assets"`
 	// Rest stores all other fields we don't explicitly need
-	Rest map[string]interface{} `json:"-"`
+	Rest map[string]any `json:"-"`
 }
 
 // GitHubAsset represents a minimal GitHub release asset
 type GitHubAsset struct {
 	BrowserDownloadURL string `json:"browser_download_url"`
 	// Rest stores all other fields we don't explicitly need
-	Rest map[string]interface{} `json:"-"`
+	Rest map[string]any `json:"-"`
 }
 
 // UnmarshalJSON custom unmarshaller to capture all fields

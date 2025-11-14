@@ -3,15 +3,17 @@ package ui
 import (
 	"autobutler/internal/server/ui/types"
 	"autobutler/internal/server/ui/views"
+	"autobutler/internal/serverutil"
 	"autobutler/pkg/calendar"
 	"strconv"
 	"time"
 
+	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 )
 
 func SetupCalendarRoutes(router *gin.Engine) {
-	uiRoute(router, "/calendar", func(c *gin.Context) {
+	serverutil.UiRoute(router, "/calendar", func(c *gin.Context) templ.Component {
 		yearStr := c.Query("year")
 		monthStr := c.Query("month")
 
@@ -27,11 +29,6 @@ func SetupCalendarRoutes(router *gin.Engine) {
 				}
 			}
 		}
-
-		if err := views.CalendarWithTime(types.NewPageState(), targetTime).Render(c.Request.Context(), c.Writer); err != nil {
-			c.Status(400)
-			return
-		}
-		c.Status(200)
+		return views.CalendarWithTime(types.NewPageState(), targetTime)
 	})
 }

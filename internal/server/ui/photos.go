@@ -4,10 +4,12 @@ import (
 	"autobutler/internal/server/ui/components/photos"
 	"autobutler/internal/server/ui/types"
 	"autobutler/internal/server/ui/views"
+	"autobutler/internal/serverutil"
 	"autobutler/pkg/storage"
 	"autobutler/pkg/util"
 	"strconv"
 
+	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,7 +19,7 @@ func SetupPhotoRoutes(router *gin.Engine) {
 }
 
 func setupPhotoView(router *gin.Engine) {
-	uiRoute(router, "/photos", func(c *gin.Context) {
+	serverutil.UiRoute(router, "/photos", func(c *gin.Context) templ.Component {
 		// Get storage summary for the storage bar component
 		detector := storage.NewDetector()
 		devices, err := detector.DetectDevices()
@@ -29,13 +31,9 @@ func setupPhotoView(router *gin.Engine) {
 			summary = storage.Summary{}
 		}
 
-		if err := views.Photos(types.NewPageState(), summary).Render(c.Request.Context(), c.Writer); err != nil {
-			c.Status(400)
-			return
-		}
-		c.Status(200)
+		return views.Photos(types.NewPageState(), summary)
 	})
-	uiRoute(router, "/photos/*rootDir", func(c *gin.Context) {
+	serverutil.UiRoute(router, "/photos/*rootDir", func(c *gin.Context) templ.Component {
 		rootDir := c.Param("rootDir")
 		// Get storage summary for the storage bar component
 		detector := storage.NewDetector()
@@ -48,17 +46,13 @@ func setupPhotoView(router *gin.Engine) {
 			summary = storage.Summary{}
 		}
 
-		if err := views.Photos(types.NewPageState().WithRootDir(rootDir), summary).Render(c.Request.Context(), c.Writer); err != nil {
-			c.Status(400)
-			return
-		}
-		c.Status(200)
+		return views.Photos(types.NewPageState().WithRootDir(rootDir), summary)
 	})
 }
 
 func setupPhotoComponentRoutes(router *gin.Engine) {
 	// Endpoint for infinite scroll pagination
-	uiRoute(router, "/components/photos/grid", func(c *gin.Context) {
+	serverutil.UiRoute(router, "/components/photos/grid", func(c *gin.Context) templ.Component {
 		pageStr := c.Query("page")
 		page, err := strconv.Atoi(pageStr)
 		if err != nil || page < 1 {
@@ -71,9 +65,7 @@ func setupPhotoComponentRoutes(router *gin.Engine) {
 		// Get all photos
 		photoFiles, err := util.FindAllPhotosRecursively(util.GetFilesDir())
 		if err != nil {
-			println("❌ SERVER: Error loading photos:", err.Error())
-			c.Writer.WriteString(`<div class="error-text">Error loading photos</div>`)
-			return
+			return nil
 		}
 
 		totalPhotos := len(photoFiles)
@@ -83,12 +75,8 @@ func setupPhotoComponentRoutes(router *gin.Engine) {
 
 		println("📊 SERVER: Total photos:", totalPhotos, "StartIdx:", startIdx, "EndIdx:", endIdx)
 
-		// Check bounds
 		if startIdx >= totalPhotos {
-			// No more photos
-			println("⚠️  SERVER: No more photos to load (startIdx >= totalPhotos)")
-			c.Status(200)
-			return
+			return nil
 		}
 
 		if endIdx > totalPhotos {
@@ -102,9 +90,6 @@ func setupPhotoComponentRoutes(router *gin.Engine) {
 		c.Status(200)
 
 		// Render the page component
-		if err := photos.PhotoGridPage(types.NewPageState(), pagePhotos, page, totalPhotos).Render(c.Request.Context(), c.Writer); err != nil {
-			println("❌ SERVER: Error rendering template:", err.Error())
-			return
-		}
+		return photos.PhotoGridPage(types.NewPageState(), pagePhotos, page, totalPhotos)
 	})
 }
