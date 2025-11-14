@@ -20,13 +20,25 @@ templ Component() {
 			<button class="landing-nav-button" onclick="alert('Settings coming soon')" title="Settings">
 				@settings.Component()
 			</button>
-			<span class="landing-nav-version" title={ "Version " + version.Semver }>
-				if version.Semver == version.NoSemver {
-					vX.Y.Z
-				} else {
-					{ version.Semver }
-				}
-			</span>
+			<div class="version-container" id="version-container">
+				<button
+					class="landing-nav-version version-display"
+					title={ "Version " + version.Semver }
+					hx-get="/api/v1/versions"
+					hx-trigger="click"
+					hx-target="#version-dropdown-container"
+					hx-swap="innerHTML"
+					onclick="event.stopPropagation()"
+				>
+					if version.Semver == version.NoSemver {
+						vX.Y.Z
+					} else {
+						{ version.Semver }
+					}
+					<span style="margin-left: 0.25rem;">▾</span>
+				</button>
+				<div id="version-dropdown-container" onclick="event.stopPropagation()"></div>
+			</div>
 			<a href="/devices" class="landing-nav-button" title="Devices">
 				@devices.Component()
 				<span>Devices</span>
@@ -101,4 +113,14 @@ templ Component() {
 			</div>
 		</div>
 	</div>
+	<script>
+		// Close version dropdown when clicking outside
+		document.addEventListener('click', function(event) {
+			const container = document.getElementById('version-container');
+			const dropdown = document.getElementById('version-dropdown-container');
+			if (container && !container.contains(event.target) && dropdown) {
+				dropdown.innerHTML = '';
+			}
+		});
+	</script>
 }

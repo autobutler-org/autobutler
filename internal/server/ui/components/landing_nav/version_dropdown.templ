@@ -1,0 +1,35 @@
+package landing_nav
+
+import (
+	"autobutler/internal/update"
+	"autobutler/internal/version"
+)
+
+templ VersionDropdown(releases []update.GitHubRelease) {
+	<div class="version-dropdown">
+		if len(releases) == 0 {
+			<div class="version-option">
+				<span class="version-no-updates">No updates available</span>
+			</div>
+		} else {
+			for _, release := range releases {
+				<div class="version-option">
+					<button
+						class="version-button"
+						hx-post="/api/v1/update"
+						hx-vals={ "{\"version\": \"" + release.TagName + "\"}" }
+						hx-target="#update-status"
+						hx-swap="innerHTML"
+						hx-on::after-request="setTimeout(() => window.location.reload(), 5000)"
+					>
+						<span>{ release.TagName }</span>
+						if release.TagName == version.Semver {
+							<span class="version-current">(current)</span>
+						}
+					</button>
+				</div>
+			}
+			<div id="update-status" class="update-status"></div>
+		}
+	</div>
+}

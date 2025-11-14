@@ -5,13 +5,11 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"golang.org/x/sys/unix"
 )
 
 func GetDataDir() string {
-	// Depending on OS, return the appropriate data directory.
-	// For example, on Unix-like systems, it could be "/var/lib/autobutler/data",
-	// and on Windows, it could be "C:\\ProgramData\\Autobutler\\data", and MacOS could be "~/Library/Application Support/Autobutler/data".
-
 	// switch on os
 	switch runtime.GOOS {
 	case "linux":
@@ -39,4 +37,10 @@ func GetFilesDir() string {
 		panic(fmt.Sprintf("failed to create files directory: %v", err))
 	}
 	return filesPath
+}
+
+func getAvailableSpaceInBytes(fileDir string) uint64 {
+	var stat unix.Statfs_t
+	unix.Statfs(fileDir, &stat)
+	return stat.Bavail * uint64(stat.Bsize)
 }

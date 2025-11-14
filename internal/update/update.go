@@ -2,6 +2,7 @@ package update
 
 import (
 	"archive/tar"
+	"autobutler/internal/version"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -9,8 +10,31 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"time"
 )
+
+func ListPossibleUpdates() ([]GitHubRelease, error) {
+	releases, err := FetchGitHubReleases()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch releases: %w", err)
+	}
+	currentVersion := version.GetVersion()
+	if currentVersion.Semver == "" {
+		return releases, nil
+	}
+	var possibleUpdates []GitHubRelease
+	for _, release := range releases {
+		comparison := version.CompareVersions(
+			version.Version{
+				Semver: release.TagName,
+			},
+			currentVersion,
+		)
+		if comparison > 0 {
+			possibleUpdates = append(possibleUpdates, release)
+		}
+	}
+	return possibleUpdates, nil
+}
 
 func Update(version string) error {
 	// Copy the current binary to some temporary system location
@@ -36,17 +60,17 @@ func Update(version string) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("failed to download update: %s", resp.Status)
+		return fmt.Errorf("failed to download update from %s: %s", url, resp.Status)
 	}
 	if err := replaceSelf(resp.Body); err != nil {
-		return fmt.Errorf("failed to replace self with update: %w", err)
+		return fmt.Errorf("failed to replace self with update from %s: %w", url, err)
 	}
 	fmt.Println("Update successful.")
 	return nil
 }
 
-func RestartAutobutler(delay time.Duration) {
-	time.Sleep(delay)
+func RestartAutobutler() {
+	fmt.Println("Update complete. Exiting to allow process manager (launchctl/systemd) to restart...")
 	os.Exit(0)
 }
 

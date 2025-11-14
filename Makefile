@@ -78,7 +78,7 @@ build: generate ## Build backend
 	mkdir -p ./build
 	go build -o ./build/autobutler
 
-build/all: build/linux build/mac build/windows ## Build all backends
+build/all: build/linux build/mac ## Build all backends
 
 build/linux: build/linux/amd64 build/linux/arm64 ## Build linux backends
 build/linux/amd64: ## Build linux backends
@@ -89,12 +89,6 @@ build/linux/arm64: ## Build linux backends
 build/mac: build/mac/amd64 build/mac/arm64 ## Build macOS backends
 build/mac/arm64: ## Build macOS backends
 	GOOS=darwin GOARCH=arm64 go build -o ./build/autobutler-mac-arm64 main.go
-
-build/windows: build/windows/amd64 build/windows/arm64 ## Build windows backends
-build/windows/amd64: ## Build windows backends
-	GOOS=windows GOARCH=amd64 go build -o ./build/autobutler-windows-amd64.exe main.go
-build/windows/arm64: ## Build windows backends
-	GOOS=windows GOARCH=arm64 go build -o ./build/autobutler-windows-arm64.exe main.go
 
 test: test/e2e
 test/e2e:

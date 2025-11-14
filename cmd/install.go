@@ -14,10 +14,6 @@ func Install() *cobra.Command {
 		Short: "Install Autobutler's system service",
 		Long:  `The install command sets up Autobutler as a system service, allowing it to run in the background and start automatically on system boot.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if len(args) < 1 {
-				fmt.Println("Please specify an api key to install Autobutler.")
-				return
-			}
 			fmt.Println("Install Autobutler's system service")
 			if err := install.Install(); err != nil {
 				fmt.Fprintf(os.Stderr, "Error install Autobutler as a system service: %v\n", err)
