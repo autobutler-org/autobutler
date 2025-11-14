@@ -14,7 +14,7 @@ templ Component(pageState types.PageState) {
 			</a>
 			for _, link := range pageState.NavLinks {
 				<a href={ link.Href } class="landing-nav-link">{ link.Name }</a>
-}
+			}
 		</div>
 		<div class="landing-nav-right">
 			<button class="landing-nav-button" onclick="alert('Settings coming soon')" title="Settings">

@@ -3,17 +3,17 @@ package views
 import (
 	"autobutler/internal/server/ui/components/body"
 	"autobutler/internal/server/ui/components/header"
-	"autobutler/internal/server/ui/types"
 	"autobutler/internal/server/ui/components/health"
+	"autobutler/internal/server/ui/types"
 )
 
 templ Health(pageState types.PageState) {
 	{{ pageState.CurrentPageName = types.PageHealth }}
 	<!DOCTYPE html>
 	<html lang="en">
-	@header.Component()
-	@body.Component(pageState) {
-		@health.Component(pageState)
-	}
+		@header.Component()
+		@body.Component(pageState) {
+			@health.Component(pageState)
+		}
 	</html>
 }
