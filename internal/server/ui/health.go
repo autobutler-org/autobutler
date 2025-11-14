@@ -3,7 +3,9 @@ package ui
 import (
 	"autobutler/internal/server/ui/types"
 	"autobutler/internal/server/ui/views"
+	"autobutler/internal/serverutil"
 
+	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,11 +14,7 @@ func SetupHealthRoutes(router *gin.Engine) {
 }
 
 func setupHealthView(router *gin.Engine) {
-	uiRoute(router, "/health", func(c *gin.Context) {
-		if err := views.Health(types.NewPageState()).Render(c.Request.Context(), c.Writer); err != nil {
-			c.Status(500)
-			return
-		}
-		c.Status(200)
+	serverutil.UiRoute(router, "/health", func(c *gin.Context) templ.Component {
+		return views.Health(types.NewPageState())
 	})
 }

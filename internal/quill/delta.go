@@ -6,8 +6,8 @@ type Delta struct {
 
 var ExampleDelta = Delta{
 	Ops: []Op{
-		{Insert: "Gandalf", Attributes: map[string]interface{}{"bold": true}},
+		{Insert: "Gandalf", Attributes: map[string]any{"bold": true}},
 		{Insert: " the "},
-		{Insert: "Grey", Attributes: map[string]interface{}{"color": "#cccccc"}},
+		{Insert: "Grey", Attributes: map[string]any{"color": "#cccccc"}},
 	},
 }

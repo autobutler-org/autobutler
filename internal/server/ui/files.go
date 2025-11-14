@@ -11,6 +11,7 @@ import (
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer/video_viewer"
 	"autobutler/internal/server/ui/types"
 	"autobutler/internal/server/ui/views"
+	"autobutler/internal/serverutil"
 	"autobutler/pkg/util"
 	"html"
 	"path/filepath"
@@ -42,36 +43,26 @@ func getViewFromRequest(c *gin.Context) string {
 }
 
 func setupFileView(router *gin.Engine) {
-	uiRoute(router, "/files", func(c *gin.Context) {
+	serverutil.UiRoute(router, "/files", func(c *gin.Context) templ.Component {
 		view := getViewFromRequest(c)
 
 		// If this is an htmx request, return just the view content with OOB breadcrumb
 		if c.GetHeader("HX-Request") == "true" {
-			RenderFileExplorerViewContentWithBreadcrumb(c, "", view)
-			return
+			return GetFileExplorerViewContentWithBreadcrumb(c, "", view)
 		}
 
-		if err := views.Files(types.NewPageState().WithView(view)).Render(c.Request.Context(), c.Writer); err != nil {
-			c.Status(400)
-			return
-		}
-		c.Status(200)
+		return views.Files(types.NewPageState().WithView(view))
 	})
-	uiRoute(router, "/files/*rootDir", func(c *gin.Context) {
+	serverutil.UiRoute(router, "/files/*rootDir", func(c *gin.Context) templ.Component {
 		rootDir := c.Param("rootDir")
 		view := getViewFromRequest(c)
 
 		// If this is an htmx request, return just the view content with OOB breadcrumb
 		if c.GetHeader("HX-Request") == "true" {
-			RenderFileExplorerViewContentWithBreadcrumb(c, rootDir, view)
-			return
+			return GetFileExplorerViewContentWithBreadcrumb(c, rootDir, view)
 		}
 
-		if err := views.Files(types.NewPageState().WithRootDir(rootDir).WithView(view)).Render(c.Request.Context(), c.Writer); err != nil {
-			c.Status(400)
-			return
-		}
-		c.Status(200)
+		return views.Files(types.NewPageState().WithRootDir(rootDir).WithView(view))
 	})
 }
 
@@ -80,19 +71,19 @@ func setupComponentRoutes(router *gin.Engine) {
 	setupComponentFileViewers(router)
 }
 
-func RenderFileExplorer(c *gin.Context, rootDir string) {
-	renderFileExplorerHelper(c, rootDir, false)
+func GetFileExplorer(c *gin.Context, rootDir string) templ.Component {
+	return getFileExplorerComponent(c, rootDir, false)
 }
 
-func RenderFileExplorerViewContent(c *gin.Context, rootDir string, view string) {
-	renderFileExplorerHelper(c, rootDir, true, view)
+func GetFileExplorerViewContent(c *gin.Context, rootDir string, view string) templ.Component {
+	return getFileExplorerComponent(c, rootDir, true, view)
 }
 
-func RenderFileExplorerViewContentWithBreadcrumb(c *gin.Context, rootDir string, view string) {
-	renderFileExplorerHelper(c, rootDir, true, view, true)
+func GetFileExplorerViewContentWithBreadcrumb(c *gin.Context, rootDir string, view string) templ.Component {
+	return getFileExplorerComponent(c, rootDir, true, view, true)
 }
 
-func renderFileExplorerHelper(c *gin.Context, rootDir string, viewContentOnly bool, view ...interface{}) {
+func getFileExplorerComponent(c *gin.Context, rootDir string, viewContentOnly bool, view ...any) templ.Component {
 	fullPathDir := ""
 	if rootDir == "" {
 		fullPathDir = util.GetFilesDir()
@@ -102,7 +93,7 @@ func renderFileExplorerHelper(c *gin.Context, rootDir string, viewContentOnly bo
 	files, err := util.StatFilesInDir(fullPathDir)
 	if err != nil {
 		c.Writer.WriteString(`<span class="text-red-500">Failed to load files: ` + html.EscapeString(err.Error()) + `</span>`)
-		return
+		return nil
 	}
 
 	viewStr := getViewFromRequest(c)
@@ -131,21 +122,17 @@ func renderFileExplorerHelper(c *gin.Context, rootDir string, viewContentOnly bo
 	} else {
 		component = file_explorer.Component(pageState, files, viewStr)
 	}
-
-	if err := component.Render(c.Request.Context(), c.Writer); err != nil {
-		c.Status(500)
-		return
-	}
+	return component
 }
 
 func setupComponentFileExplorer(router *gin.Engine) {
-	uiRoute(router, "/components/files/explorer/*fileDir", func(c *gin.Context) {
-		RenderFileExplorer(c, c.Param("fileDir"))
+	serverutil.UiRoute(router, "/components/files/explorer/*fileDir", func(c *gin.Context) templ.Component {
+		return GetFileExplorer(c, c.Param("fileDir"))
 	})
 }
 
 func setupComponentFileViewers(router *gin.Engine) {
-	uiRoute(router, "/components/files/viewer/files/*filePath", func(c *gin.Context) {
+	serverutil.UiRoute(router, "/components/files/viewer/files/*filePath", func(c *gin.Context) templ.Component {
 		filePath := c.Param("filePath")
 		fileType := util.DetermineFileTypeFromPath(filePath)
 		var viewer templ.Component
@@ -165,10 +152,6 @@ func setupComponentFileViewers(router *gin.Engine) {
 		default:
 			viewer = unsupported_viewer.Component(filePath)
 		}
-		if err := viewer.Render(c.Request.Context(), c.Writer); err != nil {
-			c.Status(500)
-			return
-		}
-		c.Status(200)
+		return viewer
 	})
 }

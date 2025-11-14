@@ -27,7 +27,7 @@ type QueryRangeResponseData struct {
 
 type QueryResult struct {
 	Metric map[string]string `json:"metric"`
-	Values [][]interface{}   `json:"values"`
+	Values [][]any           `json:"values"`
 }
 
 func setupMetricsQueryRoutes(router *gin.Engine) {
@@ -149,7 +149,7 @@ func executeRangeQuery(ctx context.Context, query string, start, end, step int64
 
 	// Build label filter SQL
 	labelFilterSQL := ""
-	labelFilterArgs := []interface{}{}
+	labelFilterArgs := []any{}
 	if len(labelFilters) > 0 {
 		for key, filter := range labelFilters {
 			if filter.operator == "=~" {
@@ -174,7 +174,7 @@ func executeRangeQuery(ctx context.Context, query string, start, end, step int64
 
 	// Build SQL query based on aggregation
 	var sqlQuery string
-	var args []interface{}
+	var args []any
 
 	if aggregation != "" && groupBy != "" {
 		// Aggregated query with grouping
@@ -192,7 +192,7 @@ func executeRangeQuery(ctx context.Context, query string, start, end, step int64
 			GROUP BY label_value, ts / (? * 1000000000)
 			ORDER BY ts
 		`
-		args = append([]interface{}{groupBy, metricName, startNano, endNano}, labelFilterArgs...)
+		args = append([]any{groupBy, metricName, startNano, endNano}, labelFilterArgs...)
 		args = append(args, step)
 	} else if aggregation != "" {
 		// Aggregated query without grouping
@@ -207,7 +207,7 @@ func executeRangeQuery(ctx context.Context, query string, start, end, step int64
 			GROUP BY ts / (? * 1000000000)
 			ORDER BY ts
 		`
-		args = []interface{}{metricName, startNano, endNano, step}
+		args = []any{metricName, startNano, endNano, step}
 	} else {
 		// Simple query - get all data points grouped by attributes
 		sqlQuery = `
@@ -228,7 +228,7 @@ func executeRangeQuery(ctx context.Context, query string, start, end, step int64
 			FROM metric_labels
 			ORDER BY labels, ts
 		`
-		args = []interface{}{metricName, startNano, endNano}
+		args = []any{metricName, startNano, endNano}
 	}
 
 	rows, err := db.HealthInstance.Db.QueryContext(ctx, sqlQuery, args...)
@@ -284,12 +284,12 @@ func executeRangeQuery(ctx context.Context, query string, start, end, step int64
 		if _, exists := resultMap[labelKey]; !exists {
 			resultMap[labelKey] = &QueryResult{
 				Metric: labels,
-				Values: [][]interface{}{},
+				Values: [][]any{},
 			}
 		}
 
 		// Add timestamp and value
-		resultMap[labelKey].Values = append(resultMap[labelKey].Values, []interface{}{ts, fmt.Sprintf("%.6f", value)})
+		resultMap[labelKey].Values = append(resultMap[labelKey].Values, []any{ts, fmt.Sprintf("%.6f", value)})
 	}
 
 	// Convert map to slice
@@ -311,7 +311,7 @@ func executeInstantQuery(ctx context.Context, query string, queryTime time.Time)
 	queryNano := queryTime.UnixNano()
 
 	var sqlQuery string
-	var args []interface{}
+	var args []any
 
 	if aggregation != "" && groupBy != "" {
 		sqlQuery = `
@@ -324,14 +324,14 @@ func executeInstantQuery(ctx context.Context, query string, queryTime time.Time)
 				AND m.timestamp <= ?
 			GROUP BY label_value
 		`
-		args = []interface{}{groupBy, metricName, queryNano}
+		args = []any{groupBy, metricName, queryNano}
 	} else if aggregation != "" {
 		sqlQuery = `
 			SELECT ` + getAggregationSQL(aggregation) + `(m.value) as value
 			FROM metrics m
 			WHERE m.name = ? AND m.timestamp <= ?
 		`
-		args = []interface{}{metricName, queryNano}
+		args = []any{metricName, queryNano}
 	} else {
 		sqlQuery = `
 			WITH latest_metrics AS (
@@ -354,7 +354,7 @@ func executeInstantQuery(ctx context.Context, query string, queryTime time.Time)
 			WHERE lm.rn = 1
 			GROUP BY lm.id, lm.value
 		`
-		args = []interface{}{metricName, queryNano}
+		args = []any{metricName, queryNano}
 	}
 
 	rows, err := db.HealthInstance.Db.QueryContext(ctx, sqlQuery, args...)
@@ -401,7 +401,7 @@ func executeInstantQuery(ctx context.Context, query string, queryTime time.Time)
 
 		results = append(results, QueryResult{
 			Metric: labels,
-			Values: [][]interface{}{{ts, fmt.Sprintf("%.6f", value)}},
+			Values: [][]any{{ts, fmt.Sprintf("%.6f", value)}},
 		})
 	}
 

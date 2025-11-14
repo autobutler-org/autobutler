@@ -2,6 +2,7 @@ package v1
 
 import (
 	"archive/zip"
+	"autobutler/pkg/api"
 	"autobutler/pkg/util"
 	"fmt"
 	"html"
@@ -13,7 +14,9 @@ import (
 	"autobutler/internal/server/ui"
 	"autobutler/internal/server/ui/components/file_explorer/load"
 	"autobutler/internal/server/ui/types"
+	"autobutler/internal/serverutil"
 
+	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,7 +29,7 @@ func SetupFilesRoutes(apiV1Group *gin.RouterGroup) {
 }
 
 func deleteFilesRoute(apiV1Group *gin.RouterGroup) {
-	apiRoute(apiV1Group, "DELETE", "/files", func(c *gin.Context) {
+	serverutil.ApiRoute(apiV1Group, "DELETE", "/files", func(c *gin.Context) *api.Response {
 		rootDir := c.Query("rootDir")
 		filePaths := c.QueryArray("filePaths")
 		fmt.Printf("Deleting multiple files: %s\n", filePaths)
@@ -34,12 +37,15 @@ func deleteFilesRoute(apiV1Group *gin.RouterGroup) {
 		for _, filePath := range filePaths {
 			fullPath := filepath.Join(fileDir, rootDir, filePath)
 			if err := os.RemoveAll(fullPath); err != nil {
-				c.Status(http.StatusInternalServerError)
-				return
+				return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
 			}
 		}
 		// Always render the full file explorer (button targets #file-explorer)
-		ui.RenderFileExplorer(c, rootDir)
+		component := ui.GetFileExplorer(c, rootDir)
+		if err := component.Render(c.Request.Context(), c.Writer); err != nil {
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">Failed to render file explorer: ` + html.EscapeString(err.Error()) + `</span>`)
+		}
+		return api.Ok()
 	})
 }
 
@@ -81,37 +87,42 @@ func DownloadFile(c *gin.Context, filePath string) {
 }
 
 func downloadFileRoute(apiV1Group *gin.RouterGroup) {
-	apiRoute(apiV1Group, "GET", "/files/*filePath", func(c *gin.Context) {
+	serverutil.ApiRoute(apiV1Group, "GET", "/files/*filePath", func(c *gin.Context) *api.Response {
 		filePath := c.Param("filePath")
 		DownloadFile(c, filePath)
+		return api.Ok()
 	})
 }
 
 func newFolderRoute(apiV1Group *gin.RouterGroup) {
-	apiRoute(apiV1Group, "POST", "/folder/files/*folderDir", func(c *gin.Context) {
+	serverutil.ApiRoute(apiV1Group, "POST", "/folder/files/*folderDir", func(c *gin.Context) *api.Response {
 		folderDir := c.Param("folderDir")
 		folderName := c.PostForm("folderName")
 		rootDir := util.GetFilesDir()
 		fullPath := filepath.Join(rootDir, folderDir, folderName)
 
 		if err := os.MkdirAll(fullPath, 0755); err != nil {
-			c.Status(http.StatusInternalServerError)
-			return
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
 		}
 
 		// Stay in the current directory instead of navigating into the new folder
 		currentDir := folderDir
 		// Check if it's an HTMX request targeting just the content
+		var component templ.Component
 		if c.GetHeader("HX-Request") == "true" {
-			ui.RenderFileExplorerViewContent(c, currentDir, "")
+			component = ui.GetFileExplorerViewContent(c, currentDir, "")
 		} else {
-			ui.RenderFileExplorer(c, currentDir)
+			component = ui.GetFileExplorer(c, currentDir)
 		}
+		if err := component.Render(c.Request.Context(), c.Writer); err != nil {
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">Failed to render file explorer: ` + html.EscapeString(err.Error()) + `</span>`)
+		}
+		return api.Ok()
 	})
 }
 
 func moveFileRoute(apiV1Group *gin.RouterGroup) {
-	apiRoute(apiV1Group, "PUT", "/files/*filePath", func(c *gin.Context) {
+	serverutil.ApiRoute(apiV1Group, "PUT", "/files/*filePath", func(c *gin.Context) *api.Response {
 		filePath := c.Param("filePath")
 		newFilePath := c.PostForm("newFilePath")
 		filesDir := util.GetFilesDir()
@@ -120,21 +131,21 @@ func moveFileRoute(apiV1Group *gin.RouterGroup) {
 
 		newFullDir := filepath.Dir(newFullPath)
 		if err := os.MkdirAll(newFullDir, 0755); err != nil {
-			c.Writer.WriteString(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
-			c.Status(http.StatusInternalServerError)
-			return
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
 		}
 		if err := os.Rename(oldFullPath, newFullPath); err != nil {
-			c.Writer.WriteString(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
-			c.Status(http.StatusInternalServerError)
-			return
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
 		}
 		newDir := filepath.Dir(newFilePath)
 		if newDir == "." {
 			newDir = ""
 		}
 		// Always render the full file explorer (JS function targets #file-explorer)
-		ui.RenderFileExplorer(c, newDir)
+		component := ui.GetFileExplorer(c, newDir)
+		if err := component.Render(c.Request.Context(), c.Writer); err != nil {
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">Failed to render file explorer: ` + html.EscapeString(err.Error()) + `</span>`)
+		}
+		return api.Ok()
 	})
 }
 
@@ -198,11 +209,13 @@ func uploadFileRouteImpl(c *gin.Context, rootDir string) {
 }
 
 func uploadFileRoute(apiV1Group *gin.RouterGroup) {
-	apiRoute(apiV1Group, "POST", "/files", func(c *gin.Context) {
+	serverutil.ApiRoute(apiV1Group, "POST", "/files", func(c *gin.Context) *api.Response {
 		uploadFileRouteImpl(c, "")
+		return api.Ok()
 	})
-	apiRoute(apiV1Group, "POST", "/files/*rootDir", func(c *gin.Context) {
+	serverutil.ApiRoute(apiV1Group, "POST", "/files/*rootDir", func(c *gin.Context) *api.Response {
 		rootDir := c.Param("rootDir")
 		uploadFileRouteImpl(c, rootDir)
+		return api.Ok()
 	})
 }

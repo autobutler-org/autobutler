@@ -3,6 +3,8 @@ package v1
 import (
 	cal "autobutler/internal/server/ui/components/calendar"
 	"autobutler/internal/server/ui/components/calendar/event_editor"
+	"autobutler/internal/serverutil"
+	"autobutler/pkg/api"
 	"autobutler/pkg/calendar"
 	"autobutler/pkg/db"
 	"context"
@@ -21,21 +23,17 @@ func SetupCalendarRoutes(apiV1Group *gin.RouterGroup) {
 }
 
 func deleteCalendarEvent(apiV1Group *gin.RouterGroup) {
-	apiRoute(apiV1Group, "DELETE", "/calendar/events/:eventId", func(c *gin.Context) {
+	serverutil.ApiRoute(apiV1Group, "DELETE", "/calendar/events/:eventId", func(c *gin.Context) *api.Response {
 		eventId, err := strconv.Atoi(c.Param("eventId"))
 		if err != nil {
-			c.Writer.WriteString(`<span class="text-red-500">Invalid event ID</span>`)
-			c.Status(400)
-			return
+			return api.NewResponse().WithStatusCode(400).WithData(`<span class="text-red-500">Invalid event ID</span>`)
 		}
 
 		viewYearString := c.Query("viewYear")
 		viewMonthString := c.Query("viewMonth")
 
 		if err := db.Instance.DeleteCalendarEvent(eventId); err != nil {
-			c.Writer.WriteString(`<span class="text-red-500">` + err.Error() + `</span>`)
-			c.Status(500)
-			return
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + err.Error() + `</span>`)
 		}
 
 		// Return to the month the user was viewing
@@ -46,75 +44,64 @@ func deleteCalendarEvent(apiV1Group *gin.RouterGroup) {
 				if err == nil && viewMonth >= 1 && viewMonth <= 12 {
 					targetTime := time.Date(viewYear, time.Month(viewMonth), 1, 0, 0, 0, 0, time.UTC)
 					if err := cal.ComponentWithTime(calendar.CalendarViewMonth, targetTime).Render(c.Request.Context(), c.Writer); err != nil {
-						c.Status(400)
-						return
+						return api.NewResponse().WithStatusCode(400)
 					}
-					return
+					return api.Ok()
 				}
 			}
 		}
 
 		// Fallback to current month if no view context provided
 		if err := cal.Component(calendar.CalendarViewMonth).Render(c.Request.Context(), c.Writer); err != nil {
-			c.Status(400)
-			return
+			return api.NewResponse().WithStatusCode(400)
 		}
+		return api.Ok()
 	})
 }
 
 func getCalendarEvent(apiV1Group *gin.RouterGroup) {
-	apiRoute(apiV1Group, "GET", "/calendar/:eventId", func(c *gin.Context) {
+	serverutil.ApiRoute(apiV1Group, "GET", "/calendar/:eventId", func(c *gin.Context) *api.Response {
 		eventId, err := strconv.Atoi(c.Param("eventId"))
 		if err != nil {
-			c.Writer.WriteString(`<span class="text-red-500">Invalid event ID</span>`)
-			c.Status(400)
-			return
+			return api.NewResponse().WithStatusCode(400).WithData(`<span class="text-red-500">Invalid event ID</span>`)
 		}
 
 		event, err := db.DatabaseQueries.GetCalendarEvent(context.Background(), int64(eventId))
 		if err != nil {
-			c.Writer.WriteString(`<span class="text-red-500">` + err.Error() + `</span>`)
-			c.Status(404)
-			return
+			return api.NewResponse().WithStatusCode(404).WithData(`<span class="text-red-500">Event not found</span>`)
 		}
 		if err := event_editor.ComponentWithEvent(*db.NewCalendarEvent(event)).Render(c.Request.Context(), c.Writer); err != nil {
-			c.Status(500)
-			return
+			return api.NewResponse().WithStatusCode(500)
 		}
-		c.Status(200)
+		return api.Ok()
 	})
 }
 
 func getCalendarMonth(apiV1Group *gin.RouterGroup) {
-	apiRoute(apiV1Group, "GET", "/calendar/month", func(c *gin.Context) {
+	serverutil.ApiRoute(apiV1Group, "GET", "/calendar/month", func(c *gin.Context) *api.Response {
 		yearStr := c.Query("year")
 		monthStr := c.Query("month")
 
 		year, err := strconv.Atoi(yearStr)
 		if err != nil {
-			c.Writer.WriteString(`<span class="text-red-500">Invalid year</span>`)
-			c.Status(400)
-			return
+			return api.NewResponse().WithStatusCode(400).WithData(`<span class="text-red-500">Invalid year</span>`)
 		}
 
 		month, err := strconv.Atoi(monthStr)
 		if err != nil {
-			c.Writer.WriteString(`<span class="text-red-500">Invalid month</span>`)
-			c.Status(400)
-			return
+			return api.NewResponse().WithStatusCode(400).WithData(`<span class="text-red-500">Invalid month</span>`)
 		}
 
 		targetTime := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 		if err := cal.ComponentWithTime(calendar.CalendarViewMonth, targetTime).Render(c.Request.Context(), c.Writer); err != nil {
-			c.Status(500)
-			return
+			return api.NewResponse().WithStatusCode(500)
 		}
-		c.Status(200)
+		return api.Ok()
 	})
 }
 
 func newCalendarEvent(apiV1Group *gin.RouterGroup) {
-	apiRoute(apiV1Group, "POST", "/calendar/events", func(c *gin.Context) {
+	serverutil.ApiRoute(apiV1Group, "POST", "/calendar/events", func(c *gin.Context) *api.Response {
 		yearString := c.PostForm("year")
 		monthString := c.PostForm("month")
 		dayString := c.PostForm("day")
@@ -128,9 +115,7 @@ func newCalendarEvent(apiV1Group *gin.RouterGroup) {
 
 		startTime, err := makeTime(yearString, monthString, dayString, startTimeString)
 		if err != nil {
-			c.Writer.WriteString(`<span class="text-red-500">Invalid start time: ` + err.Error() + `</span>`)
-			c.Status(400)
-			return
+			return api.NewResponse().WithStatusCode(400).WithData(`<span class="text-red-500">Invalid start time: ` + err.Error() + `</span>`)
 		}
 		var calendarEvent *calendar.CalendarEvent
 		if endTimeString == "" {
@@ -145,9 +130,7 @@ func newCalendarEvent(apiV1Group *gin.RouterGroup) {
 		} else {
 			endTime, err := makeTime(yearString, monthString, dayString, endTimeString)
 			if err != nil {
-				c.Writer.WriteString(`<span class="text-red-500">Invalid end time: ` + err.Error() + `</span>`)
-				c.Status(400)
-				return
+				return api.NewResponse().WithStatusCode(400).WithData(`<span class="text-red-500">Invalid end time: ` + err.Error() + `</span>`)
 			}
 			calendarEvent = calendar.NewCalendarEventWithEnd(
 				title,
@@ -160,9 +143,7 @@ func newCalendarEvent(apiV1Group *gin.RouterGroup) {
 			)
 		}
 		if _, err := db.Instance.UpsertCalendarEvent(*calendarEvent); err != nil {
-			c.Writer.WriteString(`<span class="text-red-500">` + err.Error() + `</span>`)
-			c.Status(500)
-			return
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + err.Error() + `</span>`)
 		}
 
 		// Return to the month the user was viewing
@@ -173,24 +154,23 @@ func newCalendarEvent(apiV1Group *gin.RouterGroup) {
 				if err == nil && viewMonth >= 1 && viewMonth <= 12 {
 					targetTime := time.Date(viewYear, time.Month(viewMonth), 1, 0, 0, 0, 0, time.UTC)
 					if err := cal.ComponentWithTime(calendar.CalendarViewMonth, targetTime).Render(c.Request.Context(), c.Writer); err != nil {
-						c.Status(400)
-						return
+						return api.NewResponse().WithStatusCode(400)
 					}
-					return
+					return api.Ok()
 				}
 			}
 		}
 
 		// Fallback to current month if no view context provided
 		if err := cal.Component(calendar.CalendarViewMonth).Render(c.Request.Context(), c.Writer); err != nil {
-			c.Status(400)
-			return
+			return api.NewResponse().WithStatusCode(400)
 		}
+		return api.Ok()
 	})
 }
 
 func updateCalendarEvent(apiV1Group *gin.RouterGroup) {
-	apiRoute(apiV1Group, "PUT", "/calendar/events", func(c *gin.Context) {
+	serverutil.ApiRoute(apiV1Group, "PUT", "/calendar/events", func(c *gin.Context) *api.Response {
 		eventId := c.PostForm("id")
 		yearString := c.PostForm("year")
 		monthString := c.PostForm("month")
@@ -205,9 +185,7 @@ func updateCalendarEvent(apiV1Group *gin.RouterGroup) {
 
 		startTime, err := makeTime(yearString, monthString, dayString, startTimeString)
 		if err != nil {
-			c.Writer.WriteString(`<span class="text-red-500">Invalid start time: ` + err.Error() + `</span>`)
-			c.Status(400)
-			return
+			return api.NewResponse().WithStatusCode(400).WithData(`<span class="text-red-500">Invalid start time: ` + err.Error() + `</span>`)
 		}
 		var calendarEvent *calendar.CalendarEvent
 		if endTimeString == "" {
@@ -222,9 +200,7 @@ func updateCalendarEvent(apiV1Group *gin.RouterGroup) {
 		} else {
 			endTime, err := makeTime(yearString, monthString, dayString, endTimeString)
 			if err != nil {
-				c.Writer.WriteString(`<span class="text-red-500">Invalid end time: ` + err.Error() + `</span>`)
-				c.Status(400)
-				return
+				return api.NewResponse().WithStatusCode(400).WithData(`<span class="text-red-500">` + "Invalid end time: " + err.Error() + `</span>`)
 			}
 			calendarEvent = calendar.NewCalendarEventWithEnd(
 				title,
@@ -240,15 +216,11 @@ func updateCalendarEvent(apiV1Group *gin.RouterGroup) {
 			eventId, err := strconv.Atoi(eventId)
 			calendarEvent.ID = int64(eventId)
 			if err != nil {
-				c.Writer.WriteString(`<span class="text-red-500">Invalid event ID</span>`)
-				c.Status(400)
-				return
+				return api.NewResponse().WithStatusCode(400).WithData(`<span class="text-red-500">` + "Invalid event ID: " + err.Error() + `</span>`)
 			}
 		}
 		if _, err := db.Instance.UpsertCalendarEvent(*calendarEvent); err != nil {
-			c.Writer.WriteString(`<span class="text-red-500">` + err.Error() + `</span>`)
-			c.Status(500)
-			return
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + err.Error() + `</span>`)
 		}
 
 		// Return to the month the user was viewing
@@ -259,19 +231,18 @@ func updateCalendarEvent(apiV1Group *gin.RouterGroup) {
 				if err == nil && viewMonth >= 1 && viewMonth <= 12 {
 					targetTime := time.Date(viewYear, time.Month(viewMonth), 1, 0, 0, 0, 0, time.UTC)
 					if err := cal.ComponentWithTime(calendar.CalendarViewMonth, targetTime).Render(c.Request.Context(), c.Writer); err != nil {
-						c.Status(400)
-						return
+						return api.NewResponse().WithStatusCode(400)
 					}
-					return
+					return api.Ok()
 				}
 			}
 		}
 
 		// Fallback to current month if no view context provided
 		if err := cal.Component(calendar.CalendarViewMonth).Render(c.Request.Context(), c.Writer); err != nil {
-			c.Status(400)
-			return
+			return api.NewResponse().WithStatusCode(400)
 		}
+		return api.Ok()
 	})
 }
 

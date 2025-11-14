@@ -50,7 +50,7 @@ func FromDocx(filename string) (Delta, error) {
 					}
 					stylingOp = &Op{
 						Insert: "\n",
-						Attributes: map[string]interface{}{
+						Attributes: map[string]any{
 							"header": headerLevel,
 						},
 					}
@@ -108,7 +108,7 @@ func FromDocx(filename string) (Delta, error) {
 						return delta, fmt.Errorf("hyperlink ID is empty in paragraph %d, child %d", i, j)
 					}
 					relationship := findRelationshipByID(relationships, paraChild.Id)
-					op.Attributes = map[string]interface{}{
+					op.Attributes = map[string]any{
 						"link": relationship.Target,
 					}
 					run = paraChild.Run
@@ -123,7 +123,7 @@ func FromDocx(filename string) (Delta, error) {
 						op.Insert = runChild.Text
 						if property != nil {
 							if op.Attributes == nil {
-								op.Attributes = make(map[string]interface{})
+								op.Attributes = make(map[string]any)
 							}
 							if property.Bold != nil {
 								op.Attributes["bold"] = true
@@ -232,7 +232,7 @@ type stylable[T any] interface {
 	Color(string) T
 }
 
-func style[T stylable[T]](obj T, attributes map[string]interface{}) {
+func style[T stylable[T]](obj T, attributes map[string]any) {
 	if attributes == nil {
 		return
 	}
@@ -315,7 +315,7 @@ func (o Op) toDocx(doc *docx.RootDoc, stylingOp *Op, parsingState *opParsingStat
 		}
 	}
 	if o.Attributes == nil {
-		o.Attributes = make(map[string]interface{})
+		o.Attributes = make(map[string]any)
 	}
 	if p == nil {
 		p = doc.AddEmptyParagraph()

@@ -3,8 +3,10 @@ package ui
 import (
 	"autobutler/internal/server/ui/types"
 	"autobutler/internal/server/ui/views"
+	"autobutler/internal/serverutil"
 	"path/filepath"
 
+	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,31 +16,22 @@ func SetupBookRoutes(router *gin.Engine) {
 }
 
 func setupBooksView(router *gin.Engine) {
-	uiRoute(router, "/books", func(c *gin.Context) {
-		if err := views.Books(types.NewPageState()).Render(c.Request.Context(), c.Writer); err != nil {
-			c.Status(400)
-			return
-		}
-		c.Status(200)
+	serverutil.UiRoute(router, "/books", func(c *gin.Context) templ.Component {
+		return views.Books(types.NewPageState())
 	})
 }
 
 func setupBookReaderView(router *gin.Engine) {
-	uiRoute(router, "/books/reader", func(c *gin.Context) {
+	serverutil.UiRoute(router, "/books/reader", func(c *gin.Context) templ.Component {
 		// Get the book path from query parameter
 		bookPath := c.Query("path")
 		if bookPath == "" {
-			c.String(400, "Missing path parameter")
-			return
+			return nil
 		}
 
 		// Clean the path to prevent directory traversal
 		bookPath = filepath.Clean(bookPath)
 
-		if err := views.BookReader(bookPath).Render(c.Request.Context(), c.Writer); err != nil {
-			c.Status(500)
-			return
-		}
-		c.Status(200)
+		return views.BookReader(bookPath)
 	})
 }

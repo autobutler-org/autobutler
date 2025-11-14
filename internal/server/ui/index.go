@@ -3,13 +3,15 @@ package ui
 import (
 	"autobutler/internal/server/ui/types"
 	"autobutler/internal/server/ui/views"
+	"autobutler/internal/serverutil"
 	"autobutler/pkg/storage"
 
+	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 )
 
 func SetupIndexRoutes(router *gin.Engine) {
-	uiRoute(router, "/", func(c *gin.Context) {
+	serverutil.UiRoute(router, "/", func(c *gin.Context) templ.Component {
 		// Get storage summary for the storage bar component
 		detector := storage.NewDetector()
 		devices, err := detector.DetectDevices()
@@ -21,10 +23,6 @@ func SetupIndexRoutes(router *gin.Engine) {
 			summary = storage.Summary{}
 		}
 
-		if err := views.Home(types.NewPageState(), summary).Render(c.Request.Context(), c.Writer); err != nil {
-			c.Status(400)
-			return
-		}
-		c.Status(200)
+		return views.Home(types.NewPageState(), summary)
 	})
 }

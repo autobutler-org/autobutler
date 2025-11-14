@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"autobutler/internal/serverutil"
+	"autobutler/pkg/api"
 	"autobutler/pkg/util"
 	"fmt"
 	"image"
@@ -25,22 +27,20 @@ func SetupThumbnailRoutes(apiV1Group *gin.RouterGroup) {
 }
 
 func getThumbnailRoute(apiV1Group *gin.RouterGroup) {
-	apiRoute(apiV1Group, "GET", "/thumbnails/*filePath", func(c *gin.Context) {
+	serverutil.ApiRoute(apiV1Group, "GET", "/thumbnails/*filePath", func(c *gin.Context) *api.Response {
 		filePath := c.Param("filePath")
 		filesDir := util.GetFilesDir()
 		fullPath := filepath.Join(filesDir, filePath)
 
 		// Check if file exists
 		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-			c.Status(http.StatusNotFound)
-			return
+			return api.NewResponse().WithStatusCode(http.StatusNotFound)
 		}
 
 		// Open the original image
 		file, err := os.Open(fullPath)
 		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			return
+			return api.NewResponse().WithStatusCode(http.StatusInternalServerError)
 		}
 		defer file.Close()
 
@@ -49,7 +49,7 @@ func getThumbnailRoute(apiV1Group *gin.RouterGroup) {
 		if err != nil {
 			// If we can't decode it, just serve the original file
 			c.File(fullPath)
-			return
+			return api.Ok()
 		}
 
 		// Generate thumbnail
@@ -61,24 +61,20 @@ func getThumbnailRoute(apiV1Group *gin.RouterGroup) {
 		case ".png":
 			c.Header("Content-Type", "image/png")
 			if err := png.Encode(c.Writer, thumbnail); err != nil {
-				c.Status(http.StatusInternalServerError)
-				return
+				return api.NewResponse().WithStatusCode(http.StatusInternalServerError)
 			}
 		case ".jpg", ".jpeg":
 			c.Header("Content-Type", "image/jpeg")
 			if err := jpeg.Encode(c.Writer, thumbnail, &jpeg.Options{Quality: 85}); err != nil {
-				c.Status(http.StatusInternalServerError)
-				return
+				return api.NewResponse().WithStatusCode(http.StatusInternalServerError)
 			}
 		default:
 			// For other formats, try to encode as JPEG
 			c.Header("Content-Type", fmt.Sprintf("image/%s", format))
 			if err := jpeg.Encode(c.Writer, thumbnail, &jpeg.Options{Quality: 85}); err != nil {
-				c.Status(http.StatusInternalServerError)
-				return
+				return api.NewResponse().WithStatusCode(http.StatusInternalServerError)
 			}
 		}
-
-		c.Status(http.StatusOK)
+		return api.Ok()
 	})
 }

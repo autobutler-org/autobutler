@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -139,6 +141,23 @@ func (e *TraceExporter) ExportSpans(ctx context.Context, spans []sdktrace.ReadOn
 	return nil
 }
 
+func getStatusCodeFromAttributes(attributes []attribute.KeyValue) codes.Code {
+	for _, attr := range attributes {
+		if attr.Key == "http.response.status_code" {
+			switch attr.Value.Type() {
+			case attribute.INT64:
+				statusCode := attr.Value.AsInt64()
+				if statusCode >= 200 && statusCode < 500 {
+					return codes.Ok
+				} else {
+					return codes.Error
+				}
+			}
+		}
+	}
+	return codes.Unset
+}
+
 // exportSpan exports a single span to the database
 func (e *TraceExporter) exportSpan(ctx context.Context, tx *sql.Tx, span sdktrace.ReadOnlySpan) error {
 	spanCtx := span.SpanContext()
@@ -150,6 +169,7 @@ func (e *TraceExporter) exportSpan(ctx context.Context, tx *sql.Tx, span sdktrac
 		parentSpanID = &id
 	}
 
+	statusCode := getStatusCodeFromAttributes(span.Attributes())
 	// Insert main span record
 	_, err := tx.ExecContext(ctx, `
 		INSERT INTO traces (
@@ -165,7 +185,7 @@ func (e *TraceExporter) exportSpan(ctx context.Context, tx *sql.Tx, span sdktrac
 		span.SpanKind(),
 		span.StartTime().UnixNano(),
 		span.EndTime().UnixNano(),
-		span.Status().Code.String(),
+		statusCode.String(),
 		span.Status().Description,
 		span.DroppedAttributes(),
 		span.DroppedEvents(),
@@ -243,13 +263,17 @@ func (e *TraceExporter) exportSpan(ctx context.Context, tx *sql.Tx, span sdktrac
 
 // insertAttribute inserts a span attribute into the database
 func (e *TraceExporter) insertAttribute(ctx context.Context, tx *sql.Tx, spanID string, attr attribute.KeyValue) error {
-	valueType := attr.Value.Type().String()
+	valueType := attr.Value.Type()
 	value := attr.Value.AsString()
+	switch valueType {
+	case attribute.INT64:
+		value = strconv.Itoa(int(attr.Value.AsInt64()))
+	}
 
 	_, err := tx.ExecContext(ctx, `
 		INSERT INTO trace_attributes (span_id, key, value_type, value)
 		VALUES (?, ?, ?, ?)
-	`, spanID, string(attr.Key), valueType, value)
+	`, spanID, string(attr.Key), valueType.String(), value)
 	return err
 }
 
@@ -272,7 +296,7 @@ func (e *TraceExporter) Shutdown(ctx context.Context) error {
 }
 
 // MarshalLog is a helper to log the exporter (implements logr.Marshaler)
-func (e *TraceExporter) MarshalLog() interface{} {
+func (e *TraceExporter) MarshalLog() any {
 	return struct {
 		Type string
 	}{
@@ -670,13 +694,6 @@ func (e *TraceExporter) appendCustomMetrics(ctx context.Context, sb *strings.Bui
 		}
 
 		promType := info.metricType
-		if promType == "counter" {
-			promType = "counter"
-		} else if promType == "gauge" {
-			promType = "gauge"
-		} else if promType == "histogram" {
-			promType = "histogram"
-		}
 		sb.WriteString(fmt.Sprintf("# TYPE %s %s\n", name, promType))
 
 		// Write values with labels
