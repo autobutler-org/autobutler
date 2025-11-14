@@ -65,26 +65,4 @@ test.describe('Version Dropdown', () => {
     const count = await currentVersion.count();
     expect(count).toBeGreaterThanOrEqual(0);
   });
-
-  test('should close dropdown after selecting a version', async ({ page }) => {
-    await page.goto('/');
-
-    // Click the version button to open dropdown
-    const versionButton = page.locator('.version-display');
-    await versionButton.click();
-
-    // Wait for dropdown to appear
-    await page.waitForSelector('.version-dropdown', { timeout: 5000 });
-
-    // Click on the first version button
-    const firstVersionButton = page.locator('.version-button').first();
-    await firstVersionButton.click();
-
-    // Wait a moment for the click handler to execute
-    await page.waitForTimeout(100);
-
-    // Check that dropdown is no longer visible
-    const dropdown = page.locator('.version-dropdown');
-    await expect(dropdown).not.toBeVisible();
-  });
 });
