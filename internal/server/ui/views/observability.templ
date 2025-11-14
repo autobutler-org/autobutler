@@ -12,80 +12,25 @@ templ Observability(pageState types.PageState) {
 	<html lang="en">
 		@header.Component()
 		@body.Component(pageState) {
-			<canvas id="metricsChart"></canvas>
+			<div style="display: flex; flex-direction: column; gap: 20px; padding: 20px;">
+				<div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px;">
+					<canvas id="latencyPageChart"></canvas>
+				</div>
+				<div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px;">
+					<canvas id="latencyApiChart"></canvas>
+				</div>
+				<div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px;">
+					<canvas id="trafficPageChart"></canvas>
+				</div>
+				<div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px;">
+					<canvas id="trafficApiChart"></canvas>
+				</div>
+				<div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px;">
+					<canvas id="saturationChart"></canvas>
+				</div>
+			</div>
             <script>
-                var ctx = document.getElementById('metricsChart').getContext('2d');
-                Chart.registry.plugins.register(ChartDatasourcePrometheusPlugin);
-                Chart.defaults.backgroundColor = 'rgba(220, 220, 0, 0.5)';
-                Chart.defaults.color = '#FFF';
-
-                var backgroundColorPlugin = {
-                    id: 'customCanvasBackgroundColor',
-                    beforeDraw: (chart) => {
-                        const ctx = chart.ctx;
-                        ctx.fillStyle = 'rgba(128, 128, 128, 0.1)';
-                        ctx.fillRect(0, 0, chart.width, chart.height);
-                    }
-                };
-                var metricsChart = new Chart(ctx, {
-                    type: 'line',
-                    plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: 'Memory Allocation Over Time',
-                                color: '#FFF',
-                                font: {
-                                    size: 16
-                                }
-                            },
-                            legend: {
-                                display: true,
-                                labels: {
-                                    color: '#FFF'
-                                }
-                            },
-                            'datasource-prometheus': {
-                                prometheus: {
-                                    endpoint: "http://localhost:8080",
-                                    baseURL: "/metrics",
-                                },
-                                query: 'go.memory.allocated',
-                                timeRange: {
-                                    type: 'relative',
-                                    // from 1 hour ago to now
-                                    start: -1 * 60 * 60 * 1000,
-                                    end: 0,
-                                },
-                            },
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: false,
-                                ticks: {
-                                    color: '#FFF',
-                                    callback: function(value) {
-                                        return (value / 1024 / 1024).toFixed(2) + ' MB';
-                                    }
-                                },
-                                grid: {
-                                    color: 'rgba(255, 255, 255, 0.1)'
-                                }
-                            },
-                            x: {
-                                ticks: {
-                                    color: '#FFF'
-                                },
-                                grid: {
-                                    color: 'rgba(255, 255, 255, 0.1)'
-                                }
-                            }
-                        }
-                    },
-                });
-
+                createGoldenSignalCharts();
             </script>
 		}
 	</html>
