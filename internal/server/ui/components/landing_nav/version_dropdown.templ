@@ -20,6 +20,7 @@ templ VersionDropdown(releases []update.GitHubRelease) {
 						hx-vals={ "{\"version\": \"" + release.TagName + "\"}" }
 						hx-target="#update-status"
 						hx-swap="innerHTML"
+						hx-on::after-request="window.location.reload()"
 					>
 						<span>{ release.TagName }</span>
 						if release.TagName == version.Semver {
