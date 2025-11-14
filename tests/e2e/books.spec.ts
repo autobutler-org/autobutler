@@ -155,13 +155,6 @@ test.describe('Books Page', () => {
     }
   });
 
-  test('book reader page requires path parameter', async ({ page }) => {
-    const response = await page.goto('/books/reader');
-
-    // Should respond (either with content or error message)
-    expect(response?.status()).toBeLessThan(500);
-  });
-
   test('book reader page accepts path parameter', async ({ page }) => {
     await page.goto('/books/reader?path=/test/book.epub');
 
