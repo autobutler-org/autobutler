@@ -23,6 +23,10 @@ builds:
     goos:
       - linux
       - darwin
+        #
+    goarch:
+      - amd64
+      - arm64
     ldflags:
       - -s -w -X autobutler/internal/version.Semver=v{{.Version}}
 
