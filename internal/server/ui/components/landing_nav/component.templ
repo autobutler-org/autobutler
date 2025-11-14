@@ -3,18 +3,18 @@ package landing_nav
 import "autobutler/internal/version"
 import "autobutler/internal/server/ui/components/icons/book"
 import "autobutler/internal/server/ui/components/icons/settings"
+import "autobutler/internal/server/ui/types"
 import "autobutler/internal/server/ui/components/icons/devices"
 
-templ Component() {
+templ Component(pageState types.PageState) {
 	<nav class="landing-nav">
 		<div class="landing-nav-left">
 			<a href="/" class="landing-nav-logo">
 				<img src="/public/img/butler.png" height="24" width="24" alt="AutoButler"/>
 			</a>
-			<a href="/files" class="landing-nav-link">Files</a>
-			<a href="/calendar" class="landing-nav-link">Calendar</a>
-			<a href="/photos" class="landing-nav-link">Photos</a>
-			<a href="/books" class="landing-nav-link">Books</a>
+			for _, link := range pageState.NavLinks {
+				<a href={ link.Href } class="landing-nav-link">{ link.Name }</a>
+			}
 		</div>
 		<div class="landing-nav-right">
 			<button class="landing-nav-button" onclick="alert('Settings coming soon')" title="Settings">

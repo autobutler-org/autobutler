@@ -13,7 +13,7 @@ templ Component(pageState types.PageState) {
 		<main class="site-main">
 			@gradient_overlays.Component()
 			<div class="site-fullscreen-col">
-				@landing_nav.Component()
+				@landing_nav.Component(pageState)
 				{ children... }
 				@footer.Component()
 				@bottomnav.Component(pageState)

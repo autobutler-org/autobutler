@@ -17,7 +17,7 @@ templ Devices(pageState types.PageState, devices []storage.Device, summary stora
 			<main class="landing-main">
 				@gradient_overlays.Component()
 				<div class="landing-container">
-					@landing_nav.Component()
+					@landing_nav.Component(pageState)
 					<div class="devices-page">
 						<div class="devices-header">
 							<div class="devices-header-content">

@@ -9,6 +9,12 @@ templ Component() {
 		<script src="/public/vendor/jquery/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="></script>
 		<script src="/public/vendor/toastr/toastr.js"></script>
 		<script src="/public/scripts/toastr-init.js"></script>
+		<script src="/public/scripts/observability.js"></script>
+		<script src="/public/vendor/prometheus-query/prometheus-query.umd.min.js"></script>
+		<script src="/public/vendor/chartjs/chart.umd.min.js"></script>
+		<script src="/public/vendor/chartjs/chartjs-adapter-date-fns.bundle.min.js"></script>
+		<script src="/public/vendor/chartjs/chartjs-plugin-datasource-prometheus.umd.min.js"></script>
+		<script src="/public/vendor/pdfjs/pdf.min.mjs" type="module"></script>
 		<meta charset="UTF-8"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 		<meta name="theme-color" content="#4f46e5"/>
@@ -19,7 +25,6 @@ templ Component() {
 		<link rel="manifest" href="/public/manifest.json"/>
 		<link rel="stylesheet" href="/public/styles/site.css" type="text/css"/>
 		<link rel="stylesheet" href="/public/vendor/toastr/toastr.min.css" type="text/css"/>
-		<link rel="stylesheet" href="public/vendor/pdfjs/pdf.min.mjs" type="module"/>
-		<link rel="stylesheet" href="public/vendor/pdfjs/pdf_viewer.min.css" type="text/css"/>
+		<link rel="stylesheet" href="/public/vendor/pdfjs/pdf_viewer.min.css" type="text/css"/>
 	</head>
 }

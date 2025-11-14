@@ -9,6 +9,7 @@ const (
 	PageFiles    PageName = "Files"
 	PageHome     PageName = "Home"
 	PagePhotos   PageName = "Photos"
+	PageHealth   PageName = "Health"
 )
 
 type Page struct {

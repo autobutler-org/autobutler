@@ -19,7 +19,7 @@ templ Home(pageState types.PageState, summary storage.Summary) {
 			<main class="landing-main">
 				@gradient_overlays.Component()
 				<div class="landing-container">
-					@landing_nav.Component()
+					@landing_nav.Component(pageState)
 					@hero.Component()
 					@storage_bar.Component(summary)
 				</div>

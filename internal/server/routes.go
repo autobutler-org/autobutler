@@ -20,6 +20,9 @@ func setupRoutes(router *gin.Engine) {
 	// Metrics endpoint at root level
 	router.GET("/metrics", handleMetrics)
 
+	// Prometheus-compatible query API endpoints
+	setupMetricsQueryRoutes(router)
+
 	setupApiRoutes(router)
 	setupStaticRoutes(router)
 	setupUiRoutes(router)
@@ -72,6 +75,7 @@ func setupStaticRoutes(router *gin.Engine) error {
 }
 
 func setupUiRoutes(router *gin.Engine) {
+	ui.SetupHealthRoutes(router)
 	ui.SetupIndexRoutes(router)
 	ui.SetupCalendarRoutes(router)
 	ui.SetupDevicesRoutes(router)

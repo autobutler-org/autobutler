@@ -58,7 +58,7 @@ func Devices(pageState types.PageState, devices []storage.Device, summary storag
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = landing_nav.Component().Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = landing_nav.Component(pageState).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
