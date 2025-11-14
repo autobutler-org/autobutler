@@ -31,22 +31,58 @@ templ Observability(pageState types.PageState) {
                     type: 'line',
                     plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
                     options: {
+                        responsive: true,
                         plugins: {
+                            title: {
+                                display: true,
+                                text: 'Memory Allocation Over Time',
+                                color: '#FFF',
+                                font: {
+                                    size: 16
+                                }
+                            },
+                            legend: {
+                                display: true,
+                                labels: {
+                                    color: '#FFF'
+                                }
+                            },
                             'datasource-prometheus': {
                                 prometheus: {
                                     endpoint: "http://localhost:8080",
                                     baseURL: "/metrics",
                                 },
-                                query: 'avg by (http.route) (http.server.request.duration)',
+                                query: 'go.memory.allocated',
                                 timeRange: {
                                     type: 'relative',
-
-                                    // from 12 hours ago to now
-                                    start: -12 * 60 * 60 * 1000,
+                                    // from 1 hour ago to now
+                                    start: -1 * 60 * 60 * 1000,
                                     end: 0,
                                 },
                             },
                         },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                ticks: {
+                                    color: '#FFF',
+                                    callback: function(value) {
+                                        return (value / 1024 / 1024).toFixed(2) + ' MB';
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: '#FFF'
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            }
+                        }
                     },
                 });
 
