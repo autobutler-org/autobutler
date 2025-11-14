@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+var snapshotRegex = regexp.MustCompile(`/dev/disk\d+s\d+s\d+`)
+
 // DarwinDetector implements storage detection for macOS
 type DarwinDetector struct{}
 
@@ -60,6 +62,9 @@ func (d *DarwinDetector) DetectDevices() ([]Device, error) {
 		device, err := d.GetDeviceInfo(devicePath)
 		if err != nil {
 			continue // Skip devices we can't read
+		}
+		if snapshotRegex.MatchString(devicePath) {
+			continue // Skip APFS snapshot devices
 		}
 
 		// Override with df values which are more accurate
