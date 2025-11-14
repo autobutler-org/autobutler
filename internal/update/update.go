@@ -36,10 +36,10 @@ func Update(version string) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("failed to download update: %s", resp.Status)
+		return fmt.Errorf("failed to download update from %s: %s", url, resp.Status)
 	}
 	if err := replaceSelf(resp.Body); err != nil {
-		return fmt.Errorf("failed to replace self with update: %w", err)
+		return fmt.Errorf("failed to replace self with update from %s: %w", url, err)
 	}
 	fmt.Println("Update successful.")
 	return nil

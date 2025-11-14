@@ -17,7 +17,7 @@ func updateRoute(apiV1Group *gin.RouterGroup) {
 	apiRoute(apiV1Group, "POST", "/update", func(c *gin.Context) {
 		version := c.PostForm("version")
 		if err := update.Update(version); err != nil {
-			c.Writer.WriteString(fmt.Sprintf(`<span class="text-red-500">%s</span>`, html.EscapeString(err.Error())))
+			fmt.Fprintf(c.Writer, `<span class="text-red-500">%s</span>`, html.EscapeString(err.Error()))
 			return
 		}
 		go update.RestartAutobutler(2 * time.Second)
