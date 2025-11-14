@@ -41,6 +41,7 @@ templ renderGridItem(pageState types.PageState, file fs.FileInfo) {
 		oncontextmenu="toggleFloatingContextMenu(event, this)"
 		onclick="handleFileNodeClick(event, this)"
 		ondblclick="handleFileNodeDoubleClick(event, this)"
+		ontouchend="handleFileNodeTouch(event, this)"
 	>
 		if isFolder {
 			<div

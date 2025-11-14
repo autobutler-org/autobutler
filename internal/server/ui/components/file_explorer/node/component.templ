@@ -37,6 +37,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 		ondrop={ templ.JSFuncCall("dropOnNode", templ.JSExpression("event"), pageState.RootDir) }
 		onclick="handleFileNodeClick(event, this)"
 		ondblclick="handleFileNodeDoubleClick(event, this)"
+		ontouchend="handleFileNodeTouch(event, this)"
 		data-name={ fileName }
 		data-file-type={ fileType }
 	>
