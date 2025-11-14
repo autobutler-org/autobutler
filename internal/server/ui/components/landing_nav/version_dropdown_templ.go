@@ -58,7 +58,7 @@ func VersionDropdown(releases []update.GitHubRelease) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" hx-target=\"#update-status\" hx-swap=\"innerHTML\" hx-on::after-request=\"window.location.reload()\"><span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" hx-target=\"#update-status\" hx-swap=\"innerHTML\" hx-on::after-request=\"setTimeout(() => window.location.reload(), 5000)\"><span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
