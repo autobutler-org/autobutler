@@ -12,7 +12,7 @@ After=network.target
 
 [Service]
 ExecStart=/usr/local/bin/autobutler serve
-Environment="PORT=8081"
+Environment="PORT=80"
 Restart=always
 StandardOutput=append:/var/log/autobutler.app
 StandardError=append:/var/log/autobutler.err
@@ -35,7 +35,7 @@ WantedBy=multi-user.target`
     <key>EnvironmentVariables</key>
     <dict>
         <key>PORT</key>
-        <string>8081</string>
+        <string>80</string>
     </dict>
     <key>RunAtLoad</key>
     <true/>
