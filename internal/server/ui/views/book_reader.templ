@@ -1,8 +1,8 @@
 package views
 
 import (
+	"autobutler/internal/server/ui/components/books"
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer/epub_viewer"
-	"autobutler/internal/server/ui/components/file_explorer/file_viewer/pdf_viewer"
 	"autobutler/internal/server/ui/components/header"
 	"autobutler/pkg/util"
 	"path/filepath"
@@ -13,6 +13,9 @@ templ BookReader(bookPath string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@header.Component()
+		if fileType == util.FileTypePDF {
+			<link rel="stylesheet" href="/public/vendor/pdfjs/pdf_viewer.min.css"/>
+		}
 		<body class="book-reader-body">
 			<div class="book-reader">
 				<div class="book-reader-nav">
@@ -36,7 +39,7 @@ templ BookReader(bookPath string) {
 					<script src="/public/vendor/epub.js/epub.min.js"></script>
 					switch fileType {
 						case util.FileTypePDF:
-							@pdf_viewer.Component(bookPath)
+							@books.PDFJSViewer(bookPath)
 						case util.FileTypeEpub:
 							@epub_viewer.Component(bookPath)
 						default:
@@ -47,6 +50,3 @@ templ BookReader(bookPath string) {
 		</body>
 	</html>
 }
-
-
-

@@ -3,16 +3,9 @@ package pdf_viewer
 import "path/filepath"
 
 templ Component(filePath string) {
-	<object
-		class="book-reader-pdf"
-		data={ filepath.Join("/api/v1/files", filePath) }
+	<iframe
+		style="width: 90vw; height: 90vh;"
+		src={ filepath.Join("/api/v1/files", filePath) }
 		type="application/pdf"
-		aria-label="PDF Viewer"
-	>
-		<iframe
-			class="book-reader-pdf"
-			src={ filepath.Join("/api/v1/files", filePath) }
-			title="PDF Viewer"
-		></iframe>
-	</object>
+	></iframe>
 }

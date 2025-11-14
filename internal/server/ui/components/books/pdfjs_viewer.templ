@@ -1,0 +1,111 @@
+package books
+
+import "path/filepath"
+
+templ PDFJSViewer(filePath string) {
+	<div id="pdfjs-viewer-container" class="pdfjs-viewer-container">
+		<canvas id="pdfjs-canvas"></canvas>
+		<div class="pdfjs-controls">
+			<button id="pdfjs-prev" class="pdfjs-btn">‹ Prev</button>
+			<span id="pdfjs-page-info" class="pdfjs-page-info"></span>
+			<button id="pdfjs-next" class="pdfjs-btn">Next ›</button>
+		</div>
+	</div>
+	<script type="module">
+		import * as pdfjsLib from '/public/vendor/pdfjs/pdf.min.mjs';
+		
+		// Set worker path - PDF.js requires a worker for rendering
+		pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.149/pdf.worker.min.mjs';
+
+		const url = {{ filepath.Join("/api/v1/files", filePath) }};
+		const canvas = document.getElementById('pdfjs-canvas');
+		const ctx = canvas.getContext('2d');
+		const pageInfo = document.getElementById('pdfjs-page-info');
+		const prevBtn = document.getElementById('pdfjs-prev');
+		const nextBtn = document.getElementById('pdfjs-next');
+
+		let pdfDoc = null;
+		let pageNum = 1;
+		let pageRendering = false;
+		let pageNumPending = null;
+
+		// Calculate scale based on device
+		function getScale() {
+			const containerWidth = document.getElementById('pdfjs-viewer-container').clientWidth;
+			// Scale to fit container width, 612 is standard PDF page width in points
+			return containerWidth / 612;
+		}
+
+		let scale = getScale();
+
+		function renderPage(num) {
+			pageRendering = true;
+			pdfDoc.getPage(num).then(function(page) {
+				const viewport = page.getViewport({ scale: scale });
+				canvas.height = viewport.height;
+				canvas.width = viewport.width;
+
+				const renderContext = {
+					canvasContext: ctx,
+					viewport: viewport
+				};
+
+				const renderTask = page.render(renderContext);
+				renderTask.promise.then(function() {
+					pageRendering = false;
+					if (pageNumPending !== null) {
+						renderPage(pageNumPending);
+						pageNumPending = null;
+					}
+				});
+			});
+
+			pageInfo.textContent = `Page $${num} of $${pdfDoc.numPages}`;
+			prevBtn.disabled = (num <= 1);
+			nextBtn.disabled = (num >= pdfDoc.numPages);
+		}
+
+		function queueRenderPage(num) {
+			if (pageRendering) {
+				pageNumPending = num;
+			} else {
+				renderPage(num);
+			}
+		}
+
+		prevBtn.addEventListener('click', function() {
+			if (pageNum <= 1) return;
+			pageNum--;
+			queueRenderPage(pageNum);
+		});
+
+		nextBtn.addEventListener('click', function() {
+			if (pageNum >= pdfDoc.numPages) return;
+			pageNum++;
+			queueRenderPage(pageNum);
+		});
+
+		// Load PDF
+		const loadingTask = pdfjsLib.getDocument(url);
+		loadingTask.promise.then(function(pdf) {
+			pdfDoc = pdf;
+			renderPage(pageNum);
+		}).catch(function(error) {
+			console.error('Error loading PDF:', error);
+			document.getElementById('pdfjs-viewer-container').innerHTML = 
+				'<div style="padding: 2rem; text-align: center;">Error loading PDF. <a href="' + url + '" target="_blank">Download instead</a></div>';
+		});
+
+		// Handle resize
+		let resizeTimeout;
+		window.addEventListener('resize', function() {
+			clearTimeout(resizeTimeout);
+			resizeTimeout = setTimeout(function() {
+				scale = getScale();
+				if (pdfDoc) {
+					renderPage(pageNum);
+				}
+			}, 250);
+		});
+	</script>
+}

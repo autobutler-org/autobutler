@@ -9,8 +9,8 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"autobutler/internal/server/ui/components/books"
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer/epub_viewer"
-	"autobutler/internal/server/ui/components/file_explorer/file_viewer/pdf_viewer"
 	"autobutler/internal/server/ui/components/header"
 	"autobutler/pkg/util"
 	"path/filepath"
@@ -46,26 +46,32 @@ func BookReader(bookPath string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<body class=\"book-reader-body\"><div class=\"book-reader\"><div class=\"book-reader-nav\"><button class=\"book-reader-btn\" onclick=\"history.back()\" title=\"Back to library\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M19 12H5m0 0l7 7m-7-7l7-7\"></path></svg> <span>Library</span></button><div class=\"book-reader-info\"><span class=\"book-reader-title\">")
+		if fileType == util.FileTypePDF {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<link rel=\"stylesheet\" href=\"/public/vendor/pdfjs/pdf_viewer.min.css\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<body class=\"book-reader-body\"><div class=\"book-reader\"><div class=\"book-reader-nav\"><button class=\"book-reader-btn\" onclick=\"history.back()\" title=\"Back to library\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M19 12H5m0 0l7 7m-7-7l7-7\"></path></svg> <span>Library</span></button><div class=\"book-reader-info\"><span class=\"book-reader-title\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Base(bookPath))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/views/book_reader.templ`, Line: 30, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/views/book_reader.templ`, Line: 33, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span></div><div class=\"book-reader-spacer\"></div></div><div class=\"book-reader-content\"><script src=\"/public/vendor/epub.js/jszip.min.js\"></script><script src=\"/public/vendor/epub.js/epub.min.js\"></script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</span></div><div class=\"book-reader-spacer\"></div></div><div class=\"book-reader-content\"><script src=\"/public/vendor/epub.js/jszip.min.js\"></script><script src=\"/public/vendor/epub.js/epub.min.js\"></script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		switch fileType {
 		case util.FileTypePDF:
-			templ_7745c5c3_Err = pdf_viewer.Component(bookPath).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = books.PDFJSViewer(bookPath).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -75,12 +81,12 @@ func BookReader(bookPath string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		default:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"error-text\">Unsupported file type</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"error-text\">Unsupported file type</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
