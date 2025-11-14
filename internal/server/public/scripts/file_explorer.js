@@ -14,6 +14,11 @@ var clickTimer = null;
 var DOUBLE_CLICK_DELAY = 300; // ms
 var lastSelectedNode = null; // Track last selected node for range selection
 
+// TOUCH STATE for mobile double-tap detection
+var lastTapTime = 0;
+var lastTapNode = null;
+var DOUBLE_TAP_DELAY = 300; // ms
+
 // VIEW STATE MANAGEMENT
 var VIEW_STORAGE_KEY = 'fileExplorerView';
 
@@ -394,6 +399,38 @@ function handleFileNodeDoubleClick(event, node) {
                 });
             }
         }
+    }
+}
+
+/**
+ * Handle touch events for mobile double-tap detection
+ * On mobile, double-tap opens files (since dblclick doesn't work reliably)
+ */
+function handleFileNodeTouch(event, node) {
+    const currentTime = new Date().getTime();
+    const tapInterval = currentTime - lastTapTime;
+
+    // If this is a second tap on the same node within the delay window
+    if (lastTapNode === node && tapInterval < DOUBLE_TAP_DELAY && tapInterval > 0) {
+        // Prevent default to avoid zoom on double-tap
+        event.preventDefault();
+        
+        // Clear the single-tap timer if it's running
+        if (clickTimer) {
+            clearTimeout(clickTimer);
+            clickTimer = null;
+        }
+
+        // Trigger the double-click behavior
+        handleFileNodeDoubleClick(event, node);
+        
+        // Reset tap tracking
+        lastTapTime = 0;
+        lastTapNode = null;
+    } else {
+        // Record this tap for potential double-tap
+        lastTapTime = currentTime;
+        lastTapNode = node;
     }
 }
 
