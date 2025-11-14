@@ -16,9 +16,20 @@ templ Observability(pageState types.PageState) {
             <script>
                 var ctx = document.getElementById('metricsChart').getContext('2d');
                 Chart.registry.plugins.register(ChartDatasourcePrometheusPlugin);
-                var myChart = new Chart(ctx, {
+                Chart.defaults.backgroundColor = 'rgba(220, 220, 0, 0.5)';
+                Chart.defaults.color = '#FFF';
+
+                var backgroundColorPlugin = {
+                    id: 'customCanvasBackgroundColor',
+                    beforeDraw: (chart) => {
+                        const ctx = chart.ctx;
+                        ctx.fillStyle = 'rgba(128, 128, 128, 0.1)';
+                        ctx.fillRect(0, 0, chart.width, chart.height);
+                    }
+                };
+                var metricsChart = new Chart(ctx, {
                     type: 'line',
-                    plugins: [ChartDatasourcePrometheusPlugin],
+                    plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
                     options: {
                         plugins: {
                             'datasource-prometheus': {
@@ -26,7 +37,7 @@ templ Observability(pageState types.PageState) {
                                     endpoint: "http://localhost:8080",
                                     baseURL: "/metrics",
                                 },
-                                query: 'sum by (job) (go_gc_duration_seconds)',
+                                query: 'avg by (http.route) (http.server.request.duration)',
                                 timeRange: {
                                     type: 'relative',
 
@@ -38,6 +49,7 @@ templ Observability(pageState types.PageState) {
                         },
                     },
                 });
+
             </script>
 		}
 	</html>
