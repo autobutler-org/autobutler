@@ -41,6 +41,8 @@ templ dayEvent(event calendar.CalendarEvent, outsideOfMonth bool, viewingMonth t
 			class="modal-backdrop"
 			data-view-year={ viewingMonth.Year() }
 			data-view-month={ calendar.MonthToInt(viewingMonth.Month()) }
+			closedby="none"
+			onclick="if (event.target === event.currentTarget) { event.currentTarget.close(); }"
 		></dialog>
 	</div>
 }

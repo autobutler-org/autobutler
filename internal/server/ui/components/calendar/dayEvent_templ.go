@@ -171,7 +171,7 @@ func dayEvent(event calendar.CalendarEvent, outsideOfMonth bool, viewingMonth ti
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\"></dialog></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" closedby=\"none\" onclick=\"if (event.target === event.currentTarget) { event.currentTarget.close(); }\"></dialog></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

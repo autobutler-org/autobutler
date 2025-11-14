@@ -5,10 +5,17 @@
 
 .modal-backdrop {
 	background-color: transparent;
-	position: fixed;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
+	border: none;
+	padding: 0;
+	margin: auto;
+	max-width: min(90vw, 32rem);
+	max-height: 90vh;
+	overflow: auto;
+}
+
+.modal-backdrop::backdrop {
+	background-color: rgba(0, 0, 0, 0.5);
+	backdrop-filter: blur(2px);
 }
 
 .modal {

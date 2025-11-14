@@ -88,7 +88,7 @@ func Component(calendarView calendar.CalendarView) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" closedby=\"none\" onclick=\"if (event.target === event.currentTarget) { event.currentTarget.close(); }\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -158,7 +158,7 @@ func ComponentWithTime(calendarView calendar.CalendarView, targetTime time.Time)
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(targetTime.Year())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/component.templ`, Line: 49, Col: 37}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/component.templ`, Line: 51, Col: 37}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -171,13 +171,13 @@ func ComponentWithTime(calendarView calendar.CalendarView, targetTime time.Time)
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(calendar.MonthToInt(targetTime.Month()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/component.templ`, Line: 50, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/calendar/component.templ`, Line: 52, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" closedby=\"none\" onclick=\"if (event.target === event.currentTarget) { event.currentTarget.close(); }\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
