@@ -1,0 +1,44 @@
+package views
+
+import (
+	"autobutler/internal/server/ui/components/body"
+	"autobutler/internal/server/ui/components/header"
+	"autobutler/internal/server/ui/types"
+)
+
+templ Observability(pageState types.PageState) {
+	{{ pageState.CurrentPageName = types.PageObservability }}
+	<!DOCTYPE html>
+	<html lang="en">
+		@header.Component()
+		@body.Component(pageState) {
+			<canvas id="metricsChart"></canvas>
+            <script>
+                var ctx = document.getElementById('metricsChart').getContext('2d');
+                Chart.registry.plugins.register(ChartDatasourcePrometheusPlugin);
+                var myChart = new Chart(ctx, {
+                    type: 'line',
+                    plugins: [ChartDatasourcePrometheusPlugin],
+                    options: {
+                        plugins: {
+                            'datasource-prometheus': {
+                                prometheus: {
+                                    endpoint: "http://localhost:8080",
+                                    baseURL: "/metrics",
+                                },
+                                query: 'sum by (job) (go_gc_duration_seconds)',
+                                timeRange: {
+                                    type: 'relative',
+
+                                    // from 12 hours ago to now
+                                    start: -12 * 60 * 60 * 1000,
+                                    end: 0,
+                                },
+                            },
+                        },
+                    },
+                });
+            </script>
+		}
+	</html>
+}

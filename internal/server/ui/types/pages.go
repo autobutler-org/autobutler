@@ -3,12 +3,13 @@ package types
 type PageName string
 
 const (
-	PageBooks    PageName = "Books"
-	PageCalendar PageName = "Calendar"
-	PageDevices  PageName = "Devices"
-	PageFiles    PageName = "Files"
-	PageHome     PageName = "Home"
-	PagePhotos   PageName = "Photos"
+	PageBooks         PageName = "Books"
+	PageCalendar      PageName = "Calendar"
+	PageDevices       PageName = "Devices"
+	PageFiles         PageName = "Files"
+	PageHome          PageName = "Home"
+	PagePhotos        PageName = "Photos"
+	PageObservability PageName = "Observability"
 )
 
 type Page struct {
