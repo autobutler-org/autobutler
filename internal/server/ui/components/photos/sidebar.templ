@@ -1,11 +1,20 @@
 package photos
 
-templ Sidebar() {
+import (
+	"autobutler/internal/server/ui/components/storage_bar"
+	"autobutler/pkg/storage"
+)
+
+templ Sidebar(summary storage.Summary) {
 	<div class="photos-sidebar">
 		<div class="sidebar-section">
 			<h3 class="sidebar-title">Library</h3>
 			<nav class="sidebar-nav">
-				<a href="/photos" class="sidebar-link sidebar-link--active">
+				<a
+					href="/photos"
+					class="sidebar-link sidebar-link--active"
+					onclick="if (window.location.pathname === '/photos') { window.scrollTo({ top: 0, behavior: 'smooth' }); return false; }"
+				>
 					<svg xmlns="http://www.w3.org/2000/svg" class="sidebar-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
 					</svg>
@@ -61,38 +70,9 @@ templ Sidebar() {
 				</a>
 			</nav>
 		</div>
-		<div class="sidebar-section">
-			<h3 class="sidebar-title">Shared</h3>
-			<nav class="sidebar-nav">
-				<a href="#" class="sidebar-link" onclick="event.preventDefault()">
-					<svg xmlns="http://www.w3.org/2000/svg" class="sidebar-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-					</svg>
-					<span>Trip with Maya</span>
-					<span class="sidebar-badge">Shared</span>
-				</a>
-				<a href="#" class="sidebar-link" onclick="event.preventDefault()">
-					<svg xmlns="http://www.w3.org/2000/svg" class="sidebar-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-					</svg>
-					<span>Family 2023</span>
-					<span class="sidebar-badge">Shared</span>
-				</a>
-			</nav>
-		</div>
-		<!-- TODO: Implement actual storage calculation -->
+		<!-- Storage component -->
 		<div class="sidebar-section sidebar-storage">
-			<h3 class="sidebar-title">Storage</h3>
-			<div class="storage-bar">
-				<div class="storage-bar-fill" style="width: 48%"></div>
-			</div>
-			<div class="storage-info">
-				<span class="storage-text">48% used</span>
-				<span class="storage-text">128 GB Total</span>
-			</div>
-			<div class="storage-details">
-				<span class="storage-detail">61.4 GB Used</span>
-			</div>
+			@storage_bar.Component(summary)
 		</div>
 	</div>
 }
