@@ -1,0 +1,150 @@
+package storage_partition
+
+import (
+	"autobutler/pkg/storage"
+	"fmt"
+)
+
+// Component renders a storage bar showing breakdown within a single device/partition
+// Shows category breakdown proportional to percent_used from backend
+// Used in device cards to show per-partition breakdown (Scenario 3)
+templ Component(device storage.Device) {
+	{{ totalGB := float64(device.TotalBytes) / (1024 * 1024 * 1024) }}
+	{{ usedGB := float64(device.UsedBytes) / (1024 * 1024 * 1024) }}
+	{{ availGB := float64(device.AvailBytes) / (1024 * 1024 * 1024) }}
+	<div class="storage-partition-component">
+		<div class="storage-partition-info">
+			<span class="storage-partition-label">Capacity: { fmt.Sprintf("%.1f GB", totalGB) }</span>
+			<span class="storage-partition-used">{ fmt.Sprintf("%d%% used • %.1f GB", device.PercentUsed, usedGB) }</span>
+		</div>
+		<div class="storage-partition-bar">
+			<!-- Show category breakdown if available -->
+			if len(device.Categories) > 0 {
+				<!-- Calculate percentages based on used+available space (APFS-aware) -->
+				{{ totalForCalc := device.UsedBytes + device.AvailBytes }}
+				<!-- System -->
+				if systemBytes, ok := device.Categories[string(storage.CategorySystem)]; ok && systemBytes > 0 {
+					{{ systemPercent := float64(systemBytes) / float64(totalForCalc) * 100 }}
+					{{ systemGB := float64(systemBytes) / (1024 * 1024 * 1024) }}
+					<div
+						class="storage-partition-segment storage-partition-system"
+						style={ fmt.Sprintf("width: %.2f%%", systemPercent) }
+						title={ fmt.Sprintf("System: %.2f GB", systemGB) }
+					></div>
+				}
+				<!-- Documents -->
+				if docsBytes, ok := device.Categories[string(storage.CategoryDocuments)]; ok && docsBytes > 0 {
+					{{ docsPercent := float64(docsBytes) / float64(totalForCalc) * 100 }}
+					{{ docsGB := float64(docsBytes) / (1024 * 1024 * 1024) }}
+					<div
+						class="storage-partition-segment storage-partition-documents"
+						style={ fmt.Sprintf("width: %.2f%%", docsPercent) }
+						title={ fmt.Sprintf("Documents: %.2f GB", docsGB) }
+					></div>
+				}
+				<!-- Media -->
+				if mediaBytes, ok := device.Categories[string(storage.CategoryMedia)]; ok && mediaBytes > 0 {
+					{{ mediaPercent := float64(mediaBytes) / float64(totalForCalc) * 100 }}
+					{{ mediaGB := float64(mediaBytes) / (1024 * 1024 * 1024) }}
+					<div
+						class="storage-partition-segment storage-partition-media"
+						style={ fmt.Sprintf("width: %.2f%%", mediaPercent) }
+						title={ fmt.Sprintf("Media: %.2f GB", mediaGB) }
+					></div>
+				}
+				<!-- Backups -->
+				if backupsBytes, ok := device.Categories[string(storage.CategoryBackups)]; ok && backupsBytes > 0 {
+					{{ backupsPercent := float64(backupsBytes) / float64(totalForCalc) * 100 }}
+					{{ backupsGB := float64(backupsBytes) / (1024 * 1024 * 1024) }}
+					<div
+						class="storage-partition-segment storage-partition-backups"
+						style={ fmt.Sprintf("width: %.2f%%", backupsPercent) }
+						title={ fmt.Sprintf("Backups: %.2f GB", backupsGB) }
+					></div>
+				}
+				<!-- Other -->
+				if otherBytes, ok := device.Categories[string(storage.CategoryOther)]; ok && otherBytes > 0 {
+					{{ otherPercent := float64(otherBytes) / float64(totalForCalc) * 100 }}
+					{{ otherGB := float64(otherBytes) / (1024 * 1024 * 1024) }}
+					<div
+						class="storage-partition-segment storage-partition-other"
+						style={ fmt.Sprintf("width: %.2f%%", otherPercent) }
+						title={ fmt.Sprintf("Other: %.2f GB", otherGB) }
+					></div>
+				}
+				<!-- Free -->
+				if device.AvailBytes > 0 {
+					{{ freePercent := float64(device.AvailBytes) / float64(totalForCalc) * 100 }}
+					<div
+						class="storage-partition-segment storage-partition-free"
+						style={ fmt.Sprintf("width: %.2f%%", freePercent) }
+						title={ fmt.Sprintf("Free: %.1f GB", availGB) }
+					></div>
+				}
+			} else {
+				<!-- Fallback: Simple used/free if no categories -->
+				if device.PercentUsed > 0 {
+					<div
+						class="storage-partition-segment storage-partition-used"
+						style={ fmt.Sprintf("width: %d%%", device.PercentUsed) }
+						title={ fmt.Sprintf("Used: %.1f GB", usedGB) }
+					></div>
+				}
+				{{ freePercent := 100 - device.PercentUsed }}
+				if freePercent > 0 {
+					<div
+						class="storage-partition-segment storage-partition-free"
+						style={ fmt.Sprintf("width: %d%%", freePercent) }
+						title={ fmt.Sprintf("Free: %.1f GB", availGB) }
+					></div>
+				}
+			}
+		</div>
+		<!-- Category legend -->
+		if len(device.Categories) > 0 {
+			<div class="storage-partition-legend">
+				if systemBytes, ok := device.Categories[string(storage.CategorySystem)]; ok && systemBytes > 0 {
+					{{ systemGB := float64(systemBytes) / (1024 * 1024 * 1024) }}
+					<div class="storage-partition-legend-item">
+						<span class="storage-partition-dot storage-partition-system"></span>
+						<span class="storage-partition-legend-label">System { fmt.Sprintf("%.1f GB", systemGB) }</span>
+					</div>
+				}
+				if docsBytes, ok := device.Categories[string(storage.CategoryDocuments)]; ok && docsBytes > 0 {
+					{{ docsGB := float64(docsBytes) / (1024 * 1024 * 1024) }}
+					<div class="storage-partition-legend-item">
+						<span class="storage-partition-dot storage-partition-documents"></span>
+						<span class="storage-partition-legend-label">Documents { fmt.Sprintf("%.1f GB", docsGB) }</span>
+					</div>
+				}
+				if mediaBytes, ok := device.Categories[string(storage.CategoryMedia)]; ok && mediaBytes > 0 {
+					{{ mediaGB := float64(mediaBytes) / (1024 * 1024 * 1024) }}
+					<div class="storage-partition-legend-item">
+						<span class="storage-partition-dot storage-partition-media"></span>
+						<span class="storage-partition-legend-label">Media { fmt.Sprintf("%.1f GB", mediaGB) }</span>
+					</div>
+				}
+				if backupsBytes, ok := device.Categories[string(storage.CategoryBackups)]; ok && backupsBytes > 0 {
+					{{ backupsGB := float64(backupsBytes) / (1024 * 1024 * 1024) }}
+					<div class="storage-partition-legend-item">
+						<span class="storage-partition-dot storage-partition-backups"></span>
+						<span class="storage-partition-legend-label">Backups { fmt.Sprintf("%.1f GB", backupsGB) }</span>
+					</div>
+				}
+				if otherBytes, ok := device.Categories[string(storage.CategoryOther)]; ok && otherBytes > 0 {
+					{{ otherGB := float64(otherBytes) / (1024 * 1024 * 1024) }}
+					<div class="storage-partition-legend-item">
+						<span class="storage-partition-dot storage-partition-other"></span>
+						<span class="storage-partition-legend-label">Other { fmt.Sprintf("%.1f GB", otherGB) }</span>
+					</div>
+				}
+				if device.AvailBytes > 0 {
+					<div class="storage-partition-legend-item">
+						<span class="storage-partition-dot storage-partition-free"></span>
+						<span class="storage-partition-legend-label">Free { fmt.Sprintf("%.1f GB", availGB) }</span>
+					</div>
+				}
+			</div>
+		}
+	</div>
+}

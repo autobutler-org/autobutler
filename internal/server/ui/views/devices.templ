@@ -1,7 +1,6 @@
 package views
 
 import (
-	"autobutler/internal/server/ui/components/device_card"
 	"autobutler/internal/server/ui/components/gradient_overlays"
 	"autobutler/internal/server/ui/components/header"
 	"autobutler/internal/server/ui/components/landing_nav"
@@ -9,7 +8,7 @@ import (
 	"autobutler/pkg/storage"
 )
 
-templ Devices(pageState types.PageState, devices []device_card.Device, summary storage.Summary) {
+templ Devices(pageState types.PageState, devices []storage.Device, summary storage.Summary) {
 	{{ pageState.CurrentPageName = types.PageDevices }}
 	<!DOCTYPE html>
 	<html lang="en">

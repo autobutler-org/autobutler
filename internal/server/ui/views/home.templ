@@ -5,11 +5,12 @@ import (
 	"autobutler/internal/server/ui/components/header"
 	"autobutler/internal/server/ui/components/hero"
 	"autobutler/internal/server/ui/components/landing_nav"
-	"autobutler/internal/server/ui/components/storage"
+	"autobutler/internal/server/ui/components/storage_bar"
 	"autobutler/internal/server/ui/types"
+	"autobutler/pkg/storage"
 )
 
-templ Home(pageState types.PageState) {
+templ Home(pageState types.PageState, summary storage.Summary) {
 	{{ pageState.CurrentPageName = types.PageHome }}
 	<!DOCTYPE html>
 	<html lang="en">
@@ -20,7 +21,7 @@ templ Home(pageState types.PageState) {
 				<div class="landing-container">
 					@landing_nav.Component()
 					@hero.Component()
-					@storage.Component()
+					@storage_bar.Component(summary)
 				</div>
 			</main>
 		</body>

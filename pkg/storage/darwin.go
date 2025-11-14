@@ -97,6 +97,44 @@ func (d *DarwinDetector) getContainerID(devicePath string) string {
 	return ""
 }
 
+// getPhysicalDiskForContainer determines which physical disk a container is on
+// For APFS containers (disk3+), returns the likely physical disk (disk0, disk1, disk2)
+// For now, we assume disk3+ are synthesized APFS on disk0 (most common on Macs)
+func (d *DarwinDetector) getPhysicalDiskForContainer(containerID string) string {
+	// Extract disk number
+	re := regexp.MustCompile(`disk(\d+)`)
+	matches := re.FindStringSubmatch(containerID)
+	if len(matches) > 1 {
+		diskNum := matches[1]
+		// disk0, disk1, disk2 are typically physical disks
+		// disk3+ are typically synthesized APFS containers
+		if diskNum == "0" || diskNum == "1" || diskNum == "2" {
+			return containerID // Already a physical disk
+		}
+	}
+	// Default to disk0 for synthesized containers (most Macs)
+	return "disk0"
+}
+
+// getPhysicalDiskSize gets the actual physical size of a disk using diskutil
+func (d *DarwinDetector) getPhysicalDiskSize(diskID string) uint64 {
+	cmd := exec.Command("diskutil", "info", diskID)
+	output, err := cmd.Output()
+	if err != nil {
+		return 0
+	}
+
+	info := string(output)
+	// Look for "Disk Size" which gives the physical capacity
+	if sizeStr := extractValue(info, "Disk Size:"); sizeStr != "" {
+		return parseSize(sizeStr)
+	}
+	if sizeStr := extractValue(info, "Total Size:"); sizeStr != "" {
+		return parseSize(sizeStr)
+	}
+	return 0
+}
+
 // GetDeviceInfo retrieves detailed information about a specific device - READ ONLY
 func (d *DarwinDetector) GetDeviceInfo(devicePath string) (*Device, error) {
 	device := &Device{
@@ -161,6 +199,7 @@ func (d *DarwinDetector) GetDeviceInfo(devicePath string) (*Device, error) {
 func (d *DarwinDetector) CalculateSummary(devices []Device) Summary {
 	summary := Summary{}
 	seenContainers := make(map[string]Device) // Track unique APFS containers
+	physicalDisks := make(map[string]bool)    // Track which physical disks we've seen
 
 	for _, device := range devices {
 		summary.TotalDevices++
@@ -169,16 +208,17 @@ func (d *DarwinDetector) CalculateSummary(devices []Device) Summary {
 		containerID := d.getContainerID(device.DevicePath)
 
 		if containerID != "" {
+			// Track the physical disk this container is on
+			physicalDisks[d.getPhysicalDiskForContainer(containerID)] = true
+
 			// APFS volume - only count the container once
 			if existingDevice, seen := seenContainers[containerID]; seen {
 				// Container already seen, use the larger values (usually the Data volume has more used space)
 				if device.UsedBytes > existingDevice.UsedBytes {
 					// Remove old contribution and add new
-					summary.TotalBytes -= existingDevice.TotalBytes
 					summary.UsedBytes -= existingDevice.UsedBytes
 					summary.AvailBytes -= existingDevice.AvailBytes
 
-					summary.TotalBytes += device.TotalBytes
 					summary.UsedBytes += device.UsedBytes
 					summary.AvailBytes += device.AvailBytes
 
@@ -187,17 +227,34 @@ func (d *DarwinDetector) CalculateSummary(devices []Device) Summary {
 				// If existing device has more used space, keep it and skip this one
 			} else {
 				// First time seeing this container
-				summary.TotalBytes += device.TotalBytes
 				summary.UsedBytes += device.UsedBytes
 				summary.AvailBytes += device.AvailBytes
 				seenContainers[containerID] = device
 			}
 		} else {
-			// Not an APFS volume or couldn't determine container - count normally
+			// Not an APFS volume - track physical disk and count normally
+			diskID := d.getContainerID(device.DevicePath)
+			if diskID != "" {
+				physicalDisks[diskID] = true
+			}
 			summary.TotalBytes += device.TotalBytes
 			summary.UsedBytes += device.UsedBytes
 			summary.AvailBytes += device.AvailBytes
 		}
+	}
+
+	// For APFS systems, get actual physical disk capacity instead of df's allocatable space
+	// This gives us the real disk size (e.g., 251GB) instead of container size (e.g., 239GB)
+	for diskID := range physicalDisks {
+		diskSize := d.getPhysicalDiskSize(diskID)
+		if diskSize > 0 {
+			summary.TotalBytes += diskSize
+		}
+	}
+
+	// If we didn't get physical disk sizes, recalculate from available + used
+	if summary.TotalBytes == 0 {
+		summary.TotalBytes = summary.UsedBytes + summary.AvailBytes
 	}
 
 	summary.TotalTB = BytesToTB(summary.TotalBytes)

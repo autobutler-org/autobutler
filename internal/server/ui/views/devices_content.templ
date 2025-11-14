@@ -7,7 +7,7 @@ import (
 )
 
 // DevicesContent renders just the devices grid and summary (for HTMX updates)
-templ DevicesContent(devices []device_card.Device, summary storage.Summary) {
+templ DevicesContent(devices []storage.Device, summary storage.Summary) {
 	<div class="devices-grid">
 		if len(devices) == 0 {
 			<div class="devices-empty">

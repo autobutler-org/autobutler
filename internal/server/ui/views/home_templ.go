@@ -13,11 +13,12 @@ import (
 	"autobutler/internal/server/ui/components/header"
 	"autobutler/internal/server/ui/components/hero"
 	"autobutler/internal/server/ui/components/landing_nav"
-	"autobutler/internal/server/ui/components/storage"
+	"autobutler/internal/server/ui/components/storage_bar"
 	"autobutler/internal/server/ui/types"
+	"autobutler/pkg/storage"
 )
 
-func Home(pageState types.PageState) templ.Component {
+func Home(pageState types.PageState, summary storage.Summary) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -67,7 +68,7 @@ func Home(pageState types.PageState) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = storage.Component().Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = storage_bar.Component(summary).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

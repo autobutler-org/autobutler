@@ -1,0 +1,11 @@
+great. So I am attaching a screenshot - I have basically four scenarios here.
+
+1. General storage bar for the bottom of the landing page; I want this to be the aggregation of ALL storage that the filesystem is looking at collectively. If I have 3 hard drives plugged in, I want this bar to show how much storage is cumulatively available. However, I don't need any markings for partitions, or for file type - just a TOTAL storage and how much of it is used.
+
+2. The whole storage system, but including file types. The back end logic for this one should not run frequently (!!!) because it'll be super heavy trying to index it all the time. We will implement this in a later step.
+
+3. Partition storage. In the devices page, I want to visualize how storage is used _within a single device_. So if I plug in a hard drive, I want to see the breakdown of storage within just that drive - just that partition. NOT the global state.
+
+4. Just a non-bar version of the first one. When I look at my /files page I have the indicator in the top left of how much storage is used.
+
+FOR THIS THREAD, KEEP THE ABOVE IN CONTEXT, BUT WE WILL ONLY BE WORKING ON THE SECOND COMPONENT TYPE. We will put it in the internal/server/ui/components/storage_partition/component.templ 
