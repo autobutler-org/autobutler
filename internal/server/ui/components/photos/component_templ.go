@@ -52,14 +52,14 @@ func Component(pageState types.PageState, photos []util.RecursivePhotoInfo) temp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div id=\"photos-main\" class=\"photos-main\"><div class=\"photos-header\"><h2 class=\"photos-title\">All Photos</h2><div class=\"photos-count\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div id=\"mobile-photos-arrival-location\"></div><div id=\"photos-main\" class=\"photos-main\"><div class=\"photos-header\"><h2 class=\"photos-title\">All Photos</h2><div class=\"photos-count\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(formatPhotoCount(len(photos)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 18, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 19, Col: 62}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -73,7 +73,7 @@ func Component(pageState types.PageState, photos []util.RecursivePhotoInfo) temp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div></div></div><script src=\"/public/scripts/file_explorer.js\"></script><script>\n\t\t// On mobile, scroll to start at photos section\n\t\tif (window.innerWidth <= 768) {\n\t\t\tconst photosMain = document.getElementById('photos-main');\n\t\t\tif (photosMain) {\n\t\t\t\t// Scroll to the photos section immediately\n\t\t\t\tphotosMain.scrollIntoView({ behavior: 'instant', block: 'start' });\n\t\t\t}\n\t\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div></div></div><script src=\"/public/scripts/file_explorer.js\"></script><script>\n\t\t// On mobile, scroll to the arrival location\n\t\tif (window.innerWidth <= 768) {\n\t\t\tconst arrivalLocation = document.getElementById('mobile-photos-arrival-location');\n\t\t\tif (arrivalLocation) {\n\t\t\t\t// Scroll to the arrival location immediately\n\t\t\t\tarrivalLocation.scrollIntoView({ behavior: 'instant', block: 'start' });\n\t\t\t}\n\t\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -153,7 +153,7 @@ func PhotoGridItem(pageState types.PageState, photo util.RecursivePhotoInfo) tem
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/components/files/viewer", filePath))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 54, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 55, Col: 62}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -166,7 +166,7 @@ func PhotoGridItem(pageState types.PageState, photo util.RecursivePhotoInfo) tem
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(thumbnailPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 61, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 62, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -179,7 +179,7 @@ func PhotoGridItem(pageState types.PageState, photo util.RecursivePhotoInfo) tem
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fileName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 62, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 63, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {

@@ -249,6 +249,12 @@
 		border-bottom: 1px solid var(--color-gray-800);
 	}
 	
+	/* Mobile arrival location - spacer with navbar height */
+	#mobile-photos-arrival-location {
+		height: 56px; /* Match bottom navbar height */
+		width: 100%;
+	}
+	
 	.photos-main {
 		width: 100%;
 		padding: 0;

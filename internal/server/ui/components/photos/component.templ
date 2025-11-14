@@ -12,6 +12,7 @@ templ Component(pageState types.PageState, photos []util.RecursivePhotoInfo) {
 		@file_viewer.Component()
 		<div class="photos-container">
 			@Sidebar()
+			<div id="mobile-photos-arrival-location"></div>
 			<div id="photos-main" class="photos-main">
 				<div class="photos-header">
 					<h2 class="photos-title">All Photos</h2>
@@ -23,12 +24,12 @@ templ Component(pageState types.PageState, photos []util.RecursivePhotoInfo) {
 	</div>
 	<script src="/public/scripts/file_explorer.js"></script>
 	<script>
-		// On mobile, scroll to start at photos section
+		// On mobile, scroll to the arrival location
 		if (window.innerWidth <= 768) {
-			const photosMain = document.getElementById('photos-main');
-			if (photosMain) {
-				// Scroll to the photos section immediately
-				photosMain.scrollIntoView({ behavior: 'instant', block: 'start' });
+			const arrivalLocation = document.getElementById('mobile-photos-arrival-location');
+			if (arrivalLocation) {
+				// Scroll to the arrival location immediately
+				arrivalLocation.scrollIntoView({ behavior: 'instant', block: 'start' });
 			}
 		}
 	</script>
