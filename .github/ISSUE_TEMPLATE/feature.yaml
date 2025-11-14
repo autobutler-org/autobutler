@@ -19,6 +19,9 @@ body:
       options:
         - N/A
         - Calendar
+        - Photos
+        - Docs
+        - Books
         - Cirrus (Drive)
         - General UI
         - Backend
