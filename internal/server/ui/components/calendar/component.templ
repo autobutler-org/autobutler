@@ -24,6 +24,8 @@ templ Component(calendarView calendar.CalendarView) {
 			class="modal-backdrop"
 			data-view-year={ now.Year() }
 			data-view-month={ calendar.MonthToInt(now.Month()) }
+			closedby="none"
+			onclick="if (event.target === event.currentTarget) { event.currentTarget.close(); }"
 		>
 			@event_editor.Component()
 		</dialog>
@@ -48,6 +50,8 @@ templ ComponentWithTime(calendarView calendar.CalendarView, targetTime time.Time
 			class="modal-backdrop"
 			data-view-year={ targetTime.Year() }
 			data-view-month={ calendar.MonthToInt(targetTime.Month()) }
+			closedby="none"
+			onclick="if (event.target === event.currentTarget) { event.currentTarget.close(); }"
 		>
 			@event_editor.Component()
 		</dialog>
