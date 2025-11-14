@@ -3,22 +3,28 @@ package photos
 import (
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer"
 	"autobutler/internal/server/ui/types"
+	"autobutler/pkg/storage"
 	"autobutler/pkg/util"
+	"fmt"
 	"path/filepath"
 )
 
-templ Component(pageState types.PageState, photos []util.RecursivePhotoInfo) {
+templ Component(pageState types.PageState, photos []util.RecursivePhotoInfo, totalPhotos int, summary storage.Summary) {
 	<div id="photos-library" class="photos-library">
 		@file_viewer.Component()
 		<div class="photos-container">
-			@Sidebar()
+			@Sidebar(summary)
 			<div id="mobile-photos-arrival-location"></div>
 			<div id="photos-main" class="photos-main">
 				<div class="photos-header">
-					<h2 class="photos-title">All Photos</h2>
-					<div class="photos-count">{ formatPhotoCount(len(photos)) }</div>
+					<h2 
+						class="photos-title" 
+						onclick="console.error('📍 Scrolling to sidebar'); const sidebar = document.querySelector('.photos-sidebar'); if (sidebar) { sidebar.scrollIntoView({ behavior: 'smooth', block: 'start' }); } console.error('📍 Done'); return false;" 
+						style="cursor: pointer;"
+					>All Photos</h2>
+					<div class="photos-count">{ formatPhotoCount(totalPhotos) }</div>
 				</div>
-				@PhotoGrid(pageState, photos)
+				@PhotoGrid(pageState, photos, 1, totalPhotos)
 			</div>
 		</div>
 	</div>
@@ -35,12 +41,114 @@ templ Component(pageState types.PageState, photos []util.RecursivePhotoInfo) {
 	</script>
 }
 
-templ PhotoGrid(pageState types.PageState, photos []util.RecursivePhotoInfo) {
+templ PhotoGrid(pageState types.PageState, photos []util.RecursivePhotoInfo, page int, totalPhotos int) {
 	<div class="photo-grid">
 		for _, photo := range photos {
 			@PhotoGridItem(pageState, photo)
 		}
+		{{
+			// Calculate if there are more photos to load
+			pageSize := 50
+			photosLoaded := page * pageSize
+			hasMore := photosLoaded < totalPhotos
+		}}
+		<!-- Debug info -->
+		<div 
+			class="photo-grid-debug"
+			data-page={ fmt.Sprintf("%d", page) }
+			data-photos-in-page={ fmt.Sprintf("%d", len(photos)) }
+			data-total-photos={ fmt.Sprintf("%d", totalPhotos) }
+			data-photos-loaded={ fmt.Sprintf("%d", photosLoaded) }
+			data-has-more={ fmt.Sprintf("%t", hasMore) }
+			style="display:none"
+		></div>
+		<script type="text/javascript">
+			(function() {
+				const debug = document.querySelector('.photo-grid-debug:last-of-type');
+				if (debug) {
+					console.log('📸 PhotoGrid:', {
+						page: parseInt(debug.dataset.page),
+						photosInPage: parseInt(debug.dataset.photosInPage),
+						totalPhotos: parseInt(debug.dataset.totalPhotos),
+						photosLoaded: parseInt(debug.dataset.photosLoaded),
+						hasMore: debug.dataset.hasMore === 'true'
+					});
+				}
+			})();
+		</script>
+		if hasMore {
+			<!-- Infinite scroll trigger - loads next page when this becomes visible -->
+			<div
+				class="photo-grid-loader"
+				hx-get={ fmt.Sprintf("/components/photos/grid?page=%d", page+1) }
+				hx-trigger="revealed, load delay:2s"
+				hx-swap="beforebegin"
+				hx-on::before-request="console.log('🔄 HTMX: Requesting page', event.detail.pathInfo.requestPath)"
+				hx-on::after-request="console.log('✅ HTMX: Response received', event.detail.xhr.status)"
+				hx-on::after-swap="console.log('🎯 HTMX: Content swapped'); this.remove();"
+			>
+				<div class="loading-spinner">Loading more photos...</div>
+			</div>
+		} else {
+			<script type="text/javascript">console.log('🏁 No more photos to load')</script>
+		}
 	</div>
+}
+
+templ PhotoGridPage(pageState types.PageState, photos []util.RecursivePhotoInfo, page int, totalPhotos int) {
+	for _, photo := range photos {
+		@PhotoGridItem(pageState, photo)
+	}
+	{{
+		// Calculate if there are more photos to load
+		pageSize := 50
+		photosLoaded := page * pageSize
+		hasMore := photosLoaded < totalPhotos
+	}}
+	<!-- Debug info for pagination -->
+	<div 
+		class="photo-grid-debug"
+		data-page={ fmt.Sprintf("%d", page) }
+		data-photos-in-page={ fmt.Sprintf("%d", len(photos)) }
+		data-total-photos={ fmt.Sprintf("%d", totalPhotos) }
+		data-photos-loaded={ fmt.Sprintf("%d", photosLoaded) }
+		data-has-more={ fmt.Sprintf("%t", hasMore) }
+		style="display:none"
+	></div>
+	<script type="text/javascript">
+		(function() {
+			const debug = document.querySelector('.photo-grid-debug:last-of-type');
+			if (debug) {
+				console.log('📸 PhotoGrid Page ' + debug.dataset.page + ':', {
+					page: parseInt(debug.dataset.page),
+					photosInPage: parseInt(debug.dataset.photosInPage),
+					totalPhotos: parseInt(debug.dataset.totalPhotos),
+					photosLoaded: parseInt(debug.dataset.photosLoaded),
+					hasMore: debug.dataset.hasMore === 'true'
+				});
+			}
+		})();
+	</script>
+	if hasMore {
+		<!-- Infinite scroll trigger for next page -->
+		<div
+			class="photo-grid-loader"
+			hx-get={ fmt.Sprintf("/components/photos/grid?page=%d", page+1) }
+			hx-trigger="revealed, load delay:2s"
+			hx-swap="beforebegin"
+			hx-on::before-request="console.log('🔄 HTMX: Requesting page', event.detail.pathInfo.requestPath)"
+			hx-on::after-request="console.log('✅ HTMX: Response received', event.detail.xhr.status)"
+			hx-on::after-swap="console.log('🎯 HTMX: Content swapped'); this.remove();"
+		>
+			<div class="loading-spinner">Loading more photos...</div>
+		</div>
+	} else {
+		<script type="text/javascript">
+			(function() {
+				console.log('🏁 No more photos to load after page { fmt.Sprintf("%d", page) }');
+			})();
+		</script>
+	}
 }
 
 templ PhotoGridItem(pageState types.PageState, photo util.RecursivePhotoInfo) {

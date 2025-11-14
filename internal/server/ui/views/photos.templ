@@ -5,10 +5,12 @@ import (
 	"autobutler/internal/server/ui/components/header"
 	"autobutler/internal/server/ui/components/photos"
 	"autobutler/internal/server/ui/types"
+	"autobutler/pkg/storage"
 	"autobutler/pkg/util"
+	"fmt"
 )
 
-templ Photos(pageState types.PageState) {
+templ Photos(pageState types.PageState, summary storage.Summary) {
 	{{ pageState.CurrentPageName = types.PagePhotos }}
 	<!DOCTYPE html>
 	<html lang="en">
@@ -18,7 +20,35 @@ templ Photos(pageState types.PageState) {
 			if err != nil {
 				<div class="error-text">Error loading photos: { err.Error() }</div>
 			} else {
-				@photos.Component(pageState, photoFiles)
+				{{
+					// For initial load, only show first 50 photos
+					pageSize := 50
+					totalPhotos := len(photoFiles)
+					firstPage := photoFiles
+					if totalPhotos > pageSize {
+						firstPage = photoFiles[:pageSize]
+					}
+				}}
+				<div 
+					id="photo-debug-initial"
+					data-total={ fmt.Sprintf("%d", totalPhotos) }
+					data-first-page={ fmt.Sprintf("%d", len(firstPage)) }
+					data-page-size={ fmt.Sprintf("%d", pageSize) }
+					style="display:none"
+				></div>
+				<script type="text/javascript">
+					(function() {
+						const debug = document.getElementById('photo-debug-initial');
+						if (debug) {
+							console.log('🚀 Initial Photos Load:', {
+								totalPhotos: parseInt(debug.dataset.total),
+								firstPageCount: parseInt(debug.dataset.firstPage),
+								pageSize: parseInt(debug.dataset.pageSize)
+							});
+						}
+					})();
+				</script>
+				@photos.Component(pageState, firstPage, totalPhotos, summary)
 			}
 		}
 	</html>
