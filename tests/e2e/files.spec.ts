@@ -624,3 +624,49 @@ test.describe('Files Page - File Deletion', () => {
         await expect(page.locator('tr.file-table-row[data-name="sample.txt"]')).not.toBeVisible();
     });
 });
+
+test.describe('Files Page - Mobile Responsiveness', () => {
+    test('hides column view button on mobile sizes', async ({ page }) => {
+        // Set viewport to mobile size (iPhone SE dimensions)
+        await page.setViewportSize({ width: 375, height: 667 });
+        await page.goto('/files');
+
+        const viewSwitcher = page.locator('.view-switcher');
+        await expect(viewSwitcher).toBeVisible();
+
+        const listViewBtn = viewSwitcher.locator('button[title="List View"]');
+        const gridViewBtn = viewSwitcher.locator('button[title="Grid View"]');
+        const columnViewBtn = viewSwitcher.locator('button[title="Column View"]');
+
+        // List and grid view buttons should be visible
+        await expect(listViewBtn).toBeVisible();
+        await expect(gridViewBtn).toBeVisible();
+
+        // Column view button should be hidden via CSS
+        await expect(columnViewBtn).not.toBeVisible();
+    });
+
+    test('hides column view content when displayed on mobile', async ({ page }) => {
+        // Set viewport to mobile size
+        await page.setViewportSize({ width: 375, height: 667 });
+        await page.goto('/files');
+
+        // Try to switch to column view (via direct URL parameter)
+        await page.goto('/files?view=column');
+
+        // Column view container should be hidden via CSS
+        const columnViewContainer = page.locator('.column-view-container');
+        if (await columnViewContainer.count() > 0) {
+            await expect(columnViewContainer).not.toBeVisible();
+        }
+    });
+
+    test('shows column view button on tablet/desktop sizes', async ({ page }) => {
+        // Set viewport to tablet size (iPad dimensions)
+        await page.setViewportSize({ width: 769, height: 1024 });
+        await page.goto('/files');
+
+        const columnViewBtn = page.locator('button[title="Column View"]');
+        await expect(columnViewBtn).toBeVisible();
+    });
+});
