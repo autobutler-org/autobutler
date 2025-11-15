@@ -1,0 +1,19 @@
+package file_navigation
+
+import "autobutler/pkg/ui/types"
+import "autobutler/pkg/ui/components/icons/left_arrow"
+
+templ Component(pageState types.PageState) {
+	<div class="file-navigation">
+		<button
+			id="nav-back-btn"
+			class="btn btn--icon btn--secondary"
+			onclick="navigateBack()"
+			title="Go Back"
+			type="button"
+			aria-label="Navigate backward"
+		>
+			@left_arrow.Component()
+		</button>
+	</div>
+}

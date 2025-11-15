@@ -1,0 +1,268 @@
+package column_view
+
+import (
+	"autobutler/pkg/ui/components/file_explorer/context_menu_items"
+	"autobutler/pkg/ui/components/icons/archive"
+	"autobutler/pkg/ui/components/icons/folder"
+	"autobutler/pkg/ui/components/icons/generic"
+	"autobutler/pkg/ui/components/icons/image"
+	"autobutler/pkg/ui/components/icons/pdf"
+	"autobutler/pkg/ui/components/icons/slideshow"
+	"autobutler/pkg/ui/types"
+	"autobutler/pkg/util/fileutil"
+	"fmt"
+	"io/fs"
+	"path/filepath"
+	"strings"
+)
+
+templ Component(pageState types.PageState, files []fs.FileInfo) {
+	<div class="column-view-container">
+		@renderColumnLayout(pageState, files)
+	</div>
+}
+
+templ renderColumnLayout(pageState types.PageState, files []fs.FileInfo) {
+	{{ pathSegments := strings.Split(strings.Trim(pageState.RootDir, "/"), "/") }}
+	{{
+		// Filter out empty segments
+		var validSegments []string
+		for _, seg := range pathSegments {
+			if seg != "" {
+				validSegments = append(validSegments, seg)
+			}
+		}
+	}}
+	<div class="column-view-columns">
+		{{
+			// Build parent directories to show columns for each level
+			// For path /files/bingus, we want:
+			// - Column showing contents of /files (with bingus highlighted)
+			// - Column showing contents of /files/bingus
+			var parentPaths []string
+			accumulatedPath := ""
+			for i := 0; i < len(validSegments); i++ {
+				if i > 0 {
+					accumulatedPath = filepath.Join(accumulatedPath, validSegments[i-1])
+				}
+				parentPaths = append(parentPaths, accumulatedPath)
+			}
+		}}
+		// Render a column for each parent directory showing its contents
+		for i, parentPath := range parentPaths {
+			{{
+				nextSegment := ""
+				if i < len(validSegments) {
+					nextSegment = validSegments[i]
+				}
+			}}
+			@renderParentColumn(pageState, parentPath, i, nextSegment)
+		}
+		// Render the current directory column with its contents
+		@renderCurrentColumn(pageState, files, len(parentPaths))
+		// Render preview pane
+		@renderPreviewPane()
+	</div>
+}
+
+// renderParentColumn renders a parent directory column, highlighting the next segment in the path
+templ renderParentColumn(pageState types.PageState, dirPath string, columnIndex int, nextSegment string) {
+	{{
+		fullPath := fileutil.GetFilesDir()
+		if dirPath != "" {
+			fullPath = filepath.Join(fullPath, dirPath)
+		}
+		columnFiles, _ := fileutil.StatFilesInDir(fullPath)
+		columnTitle := "files"
+		if dirPath != "" {
+			columnTitle = filepath.Base(dirPath)
+		}
+	}}
+	<div class="column-view-column" data-column-index={ fmt.Sprintf("%d", columnIndex) }>
+		<div class="column-view-column-header">
+			<span class="column-view-column-title">{ columnTitle }</span>
+		</div>
+		<div class="column-view-column-content">
+			if len(columnFiles) == 0 {
+				<div class="column-view-empty">Empty folder</div>
+			} else {
+				<ul class="column-view-list">
+					for _, file := range columnFiles {
+						{{ isSelected := file.Name() == nextSegment }}
+						@renderParentColumnItem(pageState, dirPath, file, isSelected)
+					}
+				</ul>
+			}
+		</div>
+	</div>
+}
+
+// renderCurrentColumn renders the current directory being viewed
+templ renderCurrentColumn(pageState types.PageState, files []fs.FileInfo, columnIndex int) {
+	{{ columnTitle := filepath.Base(pageState.RootDir) }}
+	{{
+		if columnTitle == "" || columnTitle == "/" {
+			columnTitle = "files"
+		}
+	}}
+	<div class="column-view-column column-view-column--active" data-column-index={ fmt.Sprintf("%d", columnIndex) }>
+		<div class="column-view-column-header">
+			<span class="column-view-column-title">{ columnTitle }</span>
+		</div>
+		<div class="column-view-column-content">
+			if len(files) == 0 {
+				<div class="column-view-empty">Empty folder</div>
+			} else {
+				<ul class="column-view-list">
+					for _, file := range files {
+						@renderCurrentColumnItem(pageState, file)
+					}
+				</ul>
+			}
+		</div>
+	</div>
+}
+
+// renderParentColumnItem renders an item in a parent directory column
+templ renderParentColumnItem(pageState types.PageState, parentPath string, file fs.FileInfo, isSelected bool) {
+	{{
+		fileType := fileutil.DetermineFileType(parentPath, file)
+		fileName := file.Name()
+		isFolder := fileType == fileutil.FileTypeFolder
+		filePath := filepath.Join("/files", parentPath, fileName)
+		// For files in parent columns, navigate to parent dir (removing child columns)
+		fileParentPath := filepath.Join("/files", parentPath)
+		dataFileType := fileType
+		if isFolder {
+			dataFileType = "folder"
+		}
+	}}
+	<li
+		class={ "column-view-item file-node", templ.KV("column-view-item--selected", isSelected), templ.KV("column-view-item--folder", isFolder) }
+		data-name={ fileName }
+		data-is-folder={ fmt.Sprintf("%t", isFolder) }
+		data-file-type={ dataFileType }
+		oncontextmenu="toggleFloatingContextMenu(event, this)"
+		onclick="handleFileNodeClick(event, this)"
+		ondblclick="handleFileNodeDoubleClick(event, this)"
+		ontouchend="handleFileNodeTouch(event, this)"
+	>
+		if isFolder {
+			<div
+				class="column-view-link"
+				data-href={ filePath }
+			>
+				<span class="column-view-icon">
+					@folder.Component()
+				</span>
+				<span class="column-view-name">{ fileName }</span>
+				<span class="column-view-chevron">›</span>
+			</div>
+		} else {
+			<div
+				class="column-view-link column-view-link--file"
+				onclick={ templ.JSFuncCall("navigateToParentAndPreview", templ.JSExpression("event"), fileParentPath, filepath.Join("/components/files/viewer", filePath)) }
+			>
+				<span class="column-view-icon">
+					@renderFileIcon(fileType)
+				</span>
+				<span class="column-view-name">{ fileName }</span>
+			</div>
+		}
+		<div
+			class="column-view-context-trigger"
+			onclick="event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.column-view-item'))"
+		>
+			⋮
+		</div>
+		<div class="context-menu hidden">
+			@context_menu_items.Component(pageState, file, parentPath)
+		</div>
+	</li>
+}
+
+// renderCurrentColumnItem renders an item in the current directory column
+templ renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) {
+	{{
+		fileType := fileutil.DetermineFileType(pageState.RootDir, file)
+		fileName := file.Name()
+		isFolder := fileType == fileutil.FileTypeFolder
+		filePath := filepath.Join("/files", pageState.RootDir, fileName)
+		dataFileType := fileType
+		if isFolder {
+			dataFileType = "folder"
+		}
+	}}
+	<li
+		class={ "column-view-item file-node", templ.KV("column-view-item--folder", isFolder) }
+		data-name={ fileName }
+		data-is-folder={ fmt.Sprintf("%t", isFolder) }
+		data-file-type={ dataFileType }
+		oncontextmenu="toggleFloatingContextMenu(event, this)"
+		onclick="handleFileNodeClick(event, this)"
+		ondblclick="handleFileNodeDoubleClick(event, this)"
+		ontouchend="handleFileNodeTouch(event, this)"
+	>
+		if isFolder {
+			<div
+				class="column-view-link"
+				data-href={ filePath }
+			>
+				<span class="column-view-icon">
+					@folder.Component()
+				</span>
+				<span class="column-view-name">{ fileName }</span>
+				<span class="column-view-chevron">›</span>
+			</div>
+		} else {
+			<div
+				class="column-view-link column-view-link--file"
+				data-viewer-path={ filepath.Join("/components/files/viewer", filePath) }
+			>
+				<span class="column-view-icon">
+					@renderFileIcon(fileType)
+				</span>
+				<span class="column-view-name">{ fileName }</span>
+			</div>
+		}
+		<div
+			class="column-view-context-trigger"
+			onclick="event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.column-view-item'))"
+		>
+			⋮
+		</div>
+		<div class="context-menu hidden">
+			@context_menu_items.Component(pageState, file, pageState.RootDir)
+		</div>
+	</li>
+}
+
+templ renderFileIcon(fileType fileutil.FileType) {
+	switch fileType {
+		case fileutil.FileTypePDF:
+			@pdf.Component()
+		case fileutil.FileTypeSlideshow:
+			@slideshow.Component()
+		case fileutil.FileTypeImage:
+			@image.Component()
+		case fileutil.FileTypeArchive:
+			@archive.Component()
+		default:
+			@generic.Component()
+	}
+}
+
+templ renderPreviewPane() {
+	<div class="column-view-preview">
+		<div class="column-view-preview-content" id="column-preview-content">
+			<div class="column-view-preview-placeholder">
+				<svg xmlns="http://www.w3.org/2000/svg" class="column-view-preview-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+				</svg>
+				<p class="column-view-preview-text">File viewer window will go here</p>
+				<p class="column-view-preview-subtext">Select a file to preview</p>
+			</div>
+		</div>
+	</div>
+}

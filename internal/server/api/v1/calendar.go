@@ -1,11 +1,13 @@
 package v1
 
 import (
-	cal "autobutler/internal/server/ui/components/calendar"
-	"autobutler/internal/server/ui/components/calendar/event_editor"
+	"autobutler/internal/db"
 	"autobutler/pkg/api"
 	"autobutler/pkg/calendar"
-	"autobutler/pkg/db"
+	cal "autobutler/pkg/ui/components/calendar"
+	"autobutler/pkg/ui/components/calendar/event_editor"
+	"autobutler/pkg/util/ctxutil"
+	"autobutler/pkg/util/deputil"
 	"autobutler/pkg/util/serverutil"
 	"context"
 	"strconv"
@@ -24,6 +26,11 @@ func SetupCalendarRoutes(apiV1Group *gin.RouterGroup) {
 
 func deleteCalendarEvent(apiV1Group *gin.RouterGroup) {
 	serverutil.ApiRoute(apiV1Group, "DELETE", "/calendar/events/:eventId", func(c *gin.Context) *api.Response {
+		deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+		if !ok {
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">Internal server error</span>`)
+		}
+
 		eventId, err := strconv.Atoi(c.Param("eventId"))
 		if err != nil {
 			return api.NewResponse().WithStatusCode(400).WithData(`<span class="text-red-500">Invalid event ID</span>`)
@@ -32,7 +39,7 @@ func deleteCalendarEvent(apiV1Group *gin.RouterGroup) {
 		viewYearString := c.Query("viewYear")
 		viewMonthString := c.Query("viewMonth")
 
-		if err := db.Instance.DeleteCalendarEvent(eventId); err != nil {
+		if err := deps.Database().DeleteCalendarEvent(eventId); err != nil {
 			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + err.Error() + `</span>`)
 		}
 
@@ -43,7 +50,7 @@ func deleteCalendarEvent(apiV1Group *gin.RouterGroup) {
 				viewMonth, err := strconv.Atoi(viewMonthString)
 				if err == nil && viewMonth >= 1 && viewMonth <= 12 {
 					targetTime := time.Date(viewYear, time.Month(viewMonth), 1, 0, 0, 0, 0, time.UTC)
-					if err := cal.ComponentWithTime(calendar.CalendarViewMonth, targetTime).Render(c.Request.Context(), c.Writer); err != nil {
+					if err := cal.ComponentWithTime(deps, calendar.CalendarViewMonth, targetTime).Render(c.Request.Context(), c.Writer); err != nil {
 						return api.NewResponse().WithStatusCode(400)
 					}
 					return api.Ok()
@@ -52,7 +59,7 @@ func deleteCalendarEvent(apiV1Group *gin.RouterGroup) {
 		}
 
 		// Fallback to current month if no view context provided
-		if err := cal.Component(calendar.CalendarViewMonth).Render(c.Request.Context(), c.Writer); err != nil {
+		if err := cal.Component(deps, calendar.CalendarViewMonth).Render(c.Request.Context(), c.Writer); err != nil {
 			return api.NewResponse().WithStatusCode(400)
 		}
 		return api.Ok()
@@ -61,12 +68,17 @@ func deleteCalendarEvent(apiV1Group *gin.RouterGroup) {
 
 func getCalendarEvent(apiV1Group *gin.RouterGroup) {
 	serverutil.ApiRoute(apiV1Group, "GET", "/calendar/:eventId", func(c *gin.Context) *api.Response {
+		deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+		if !ok {
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">Internal server error</span>`)
+		}
+
 		eventId, err := strconv.Atoi(c.Param("eventId"))
 		if err != nil {
 			return api.NewResponse().WithStatusCode(400).WithData(`<span class="text-red-500">Invalid event ID</span>`)
 		}
 
-		event, err := db.DatabaseQueries.GetCalendarEvent(context.Background(), int64(eventId))
+		event, err := deps.Database().Queries.GetCalendarEvent(context.Background(), int64(eventId))
 		if err != nil {
 			return api.NewResponse().WithStatusCode(404).WithData(`<span class="text-red-500">Event not found</span>`)
 		}
@@ -79,6 +91,11 @@ func getCalendarEvent(apiV1Group *gin.RouterGroup) {
 
 func getCalendarMonth(apiV1Group *gin.RouterGroup) {
 	serverutil.ApiRoute(apiV1Group, "GET", "/calendar/month", func(c *gin.Context) *api.Response {
+		deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+		if !ok {
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">Internal server error</span>`)
+		}
+
 		yearStr := c.Query("year")
 		monthStr := c.Query("month")
 
@@ -93,7 +110,7 @@ func getCalendarMonth(apiV1Group *gin.RouterGroup) {
 		}
 
 		targetTime := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
-		if err := cal.ComponentWithTime(calendar.CalendarViewMonth, targetTime).Render(c.Request.Context(), c.Writer); err != nil {
+		if err := cal.ComponentWithTime(deps, calendar.CalendarViewMonth, targetTime).Render(c.Request.Context(), c.Writer); err != nil {
 			return api.NewResponse().WithStatusCode(500)
 		}
 		return api.Ok()
@@ -102,6 +119,11 @@ func getCalendarMonth(apiV1Group *gin.RouterGroup) {
 
 func newCalendarEvent(apiV1Group *gin.RouterGroup) {
 	serverutil.ApiRoute(apiV1Group, "POST", "/calendar/events", func(c *gin.Context) *api.Response {
+		deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+		if !ok {
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">Internal server error</span>`)
+		}
+
 		yearString := c.PostForm("year")
 		monthString := c.PostForm("month")
 		dayString := c.PostForm("day")
@@ -142,7 +164,7 @@ func newCalendarEvent(apiV1Group *gin.RouterGroup) {
 				db.DefaultCalendarId,
 			)
 		}
-		if _, err := db.Instance.UpsertCalendarEvent(*calendarEvent); err != nil {
+		if _, err := deps.Database().UpsertCalendarEvent(*calendarEvent); err != nil {
 			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + err.Error() + `</span>`)
 		}
 
@@ -153,7 +175,7 @@ func newCalendarEvent(apiV1Group *gin.RouterGroup) {
 				viewMonth, err := strconv.Atoi(viewMonthString)
 				if err == nil && viewMonth >= 1 && viewMonth <= 12 {
 					targetTime := time.Date(viewYear, time.Month(viewMonth), 1, 0, 0, 0, 0, time.UTC)
-					if err := cal.ComponentWithTime(calendar.CalendarViewMonth, targetTime).Render(c.Request.Context(), c.Writer); err != nil {
+					if err := cal.ComponentWithTime(deps, calendar.CalendarViewMonth, targetTime).Render(c.Request.Context(), c.Writer); err != nil {
 						return api.NewResponse().WithStatusCode(400)
 					}
 					return api.Ok()
@@ -162,7 +184,7 @@ func newCalendarEvent(apiV1Group *gin.RouterGroup) {
 		}
 
 		// Fallback to current month if no view context provided
-		if err := cal.Component(calendar.CalendarViewMonth).Render(c.Request.Context(), c.Writer); err != nil {
+		if err := cal.Component(deps, calendar.CalendarViewMonth).Render(c.Request.Context(), c.Writer); err != nil {
 			return api.NewResponse().WithStatusCode(400)
 		}
 		return api.Ok()
@@ -171,6 +193,11 @@ func newCalendarEvent(apiV1Group *gin.RouterGroup) {
 
 func updateCalendarEvent(apiV1Group *gin.RouterGroup) {
 	serverutil.ApiRoute(apiV1Group, "PUT", "/calendar/events", func(c *gin.Context) *api.Response {
+		deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+		if !ok {
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">Internal server error</span>`)
+		}
+
 		eventId := c.PostForm("id")
 		yearString := c.PostForm("year")
 		monthString := c.PostForm("month")
@@ -219,7 +246,7 @@ func updateCalendarEvent(apiV1Group *gin.RouterGroup) {
 				return api.NewResponse().WithStatusCode(400).WithData(`<span class="text-red-500">` + "Invalid event ID: " + err.Error() + `</span>`)
 			}
 		}
-		if _, err := db.Instance.UpsertCalendarEvent(*calendarEvent); err != nil {
+		if _, err := deps.Database().UpsertCalendarEvent(*calendarEvent); err != nil {
 			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + err.Error() + `</span>`)
 		}
 
@@ -230,7 +257,7 @@ func updateCalendarEvent(apiV1Group *gin.RouterGroup) {
 				viewMonth, err := strconv.Atoi(viewMonthString)
 				if err == nil && viewMonth >= 1 && viewMonth <= 12 {
 					targetTime := time.Date(viewYear, time.Month(viewMonth), 1, 0, 0, 0, 0, time.UTC)
-					if err := cal.ComponentWithTime(calendar.CalendarViewMonth, targetTime).Render(c.Request.Context(), c.Writer); err != nil {
+					if err := cal.ComponentWithTime(deps, calendar.CalendarViewMonth, targetTime).Render(c.Request.Context(), c.Writer); err != nil {
 						return api.NewResponse().WithStatusCode(400)
 					}
 					return api.Ok()
@@ -239,7 +266,7 @@ func updateCalendarEvent(apiV1Group *gin.RouterGroup) {
 		}
 
 		// Fallback to current month if no view context provided
-		if err := cal.Component(calendar.CalendarViewMonth).Render(c.Request.Context(), c.Writer); err != nil {
+		if err := cal.Component(deps, calendar.CalendarViewMonth).Render(c.Request.Context(), c.Writer); err != nil {
 			return api.NewResponse().WithStatusCode(400)
 		}
 		return api.Ok()

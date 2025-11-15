@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"net/http"
@@ -10,7 +9,8 @@ import (
 	"time"
 
 	"autobutler/pkg/botel/exporters/botelsqlite"
-	"autobutler/pkg/db"
+	"autobutler/pkg/util/ctxutil"
+	"autobutler/pkg/util/deputil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -85,7 +85,7 @@ func handleQueryRange(c *gin.Context) {
 	}
 
 	// Execute query
-	results, err := executeRangeQuery(c.Request.Context(), query, start, end, step)
+	results, err := executeRangeQuery(c, query, start, end, step)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -124,7 +124,7 @@ func handleInstantQuery(c *gin.Context) {
 	}
 
 	// Execute instant query (just get the latest value)
-	results, err := executeInstantQuery(c.Request.Context(), query, queryTime)
+	results, err := executeInstantQuery(c, query, queryTime)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -155,7 +155,12 @@ func parseTimestamp(ts string) (int64, error) {
 	return strconv.ParseInt(ts, 10, 64)
 }
 
-func executeRangeQuery(ctx context.Context, query string, start, end, step int64) ([]QueryResult, error) {
+func executeRangeQuery(c *gin.Context, query string, start, end, step int64) ([]QueryResult, error) {
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		return nil, fmt.Errorf("dependencies not found in context")
+	}
+
 	// Parse the query to extract metric name and aggregation
 	metricName, aggregation, groupBy, labelFilters := parsePromQLQuery(query)
 
@@ -172,7 +177,8 @@ func executeRangeQuery(ctx context.Context, query string, start, end, step int64
 	labelFilterArgs := []any{}
 	if len(labelFilters) > 0 {
 		for key, filter := range labelFilters {
-			if filter.operator == "=~" {
+			switch filter.operator {
+			case "=~":
 				labelFilterSQL += ` AND EXISTS (
 					SELECT 1 FROM metric_attributes ma2
 					WHERE ma2.metric_id = m.id
@@ -180,7 +186,7 @@ func executeRangeQuery(ctx context.Context, query string, start, end, step int64
 					AND ma2.value LIKE ?
 				)`
 				labelFilterArgs = append(labelFilterArgs, key, filter.value)
-			} else if filter.operator == "!~" {
+			case "!~":
 				labelFilterSQL += ` AND NOT EXISTS (
 					SELECT 1 FROM metric_attributes ma2
 					WHERE ma2.metric_id = m.id
@@ -251,7 +257,7 @@ func executeRangeQuery(ctx context.Context, query string, start, end, step int64
 		args = []any{metricName, startNano, endNano}
 	}
 
-	rows, err := db.HealthInstance.Db.QueryContext(ctx, sqlQuery, args...)
+	rows, err := deps.HealthDatabase().Db.QueryContext(c.Request.Context(), sqlQuery, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query metrics: %w", err)
 	}
@@ -321,9 +327,13 @@ func executeRangeQuery(ctx context.Context, query string, start, end, step int64
 	return results, nil
 }
 
-func executeInstantQuery(ctx context.Context, query string, queryTime time.Time) ([]QueryResult, error) {
-	metricName, aggregation, groupBy, _ := parsePromQLQuery(query)
+func executeInstantQuery(c *gin.Context, query string, queryTime time.Time) ([]QueryResult, error) {
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		return nil, fmt.Errorf("dependencies not found in context")
+	}
 
+	metricName, aggregation, groupBy, _ := parsePromQLQuery(query)
 	if metricName == "" {
 		return nil, fmt.Errorf("could not parse metric name from query")
 	}
@@ -377,7 +387,7 @@ func executeInstantQuery(ctx context.Context, query string, queryTime time.Time)
 		args = []any{metricName, queryNano}
 	}
 
-	rows, err := db.HealthInstance.Db.QueryContext(ctx, sqlQuery, args...)
+	rows, err := deps.HealthDatabase().Db.QueryContext(c.Request.Context(), sqlQuery, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query metrics: %w", err)
 	}

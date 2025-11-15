@@ -1,0 +1,46 @@
+package device_card
+
+import (
+	"autobutler/pkg/storage"
+	"autobutler/pkg/ui/components/storage_partition"
+)
+
+// Component renders a device card showing storage device information
+// Uses storage.Device from the backend and storage_partition component for visualization
+templ Component(device storage.Device) {
+	<div
+		class="device-card"
+		onclick="window.location.href = '/files'"
+	>
+		<div class="device-card-header">
+			<div class="device-card-icon">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+					<line x1="8" y1="21" x2="16" y2="21"></line>
+					<line x1="12" y1="17" x2="12" y2="21"></line>
+				</svg>
+			</div>
+			<div class="device-card-title-section">
+				<h3 class="device-card-title">{ device.Name }</h3>
+				<p class="device-card-type">{ device.Type } • { device.DevicePath }</p>
+			</div>
+			<div class="device-card-status">
+				<span class={ "device-status-badge", templ.KV("device-status-online", device.Status == "Online"), templ.KV("device-status-offline", device.Status == "Offline") }>
+					{ device.Status }
+				</span>
+			</div>
+		</div>
+		<div class="device-card-body">
+			<!-- Use the storage_partition component for the bar visualization -->
+			@storage_partition.Component(device)
+		</div>
+		<div class="device-card-footer">
+			<div class="device-card-mount">
+				<span class="device-mount-label">Mount: { device.MountPoint }</span>
+			</div>
+			<div class="device-card-health">
+				<span class="device-health-label">Health: <span class={ "device-health-status", templ.KV("device-health-good", device.Health == "Good"), templ.KV("device-health-excellent", device.Health == "Excellent") }>{ device.Health }</span></span>
+			</div>
+		</div>
+	</div>
+}

@@ -11,9 +11,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"autobutler/internal/server/ui"
-	"autobutler/internal/server/ui/components/file_explorer/load"
-	"autobutler/internal/server/ui/types"
+	"autobutler/pkg/ui"
+	"autobutler/pkg/ui/components/file_explorer/load"
+	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/serverutil"
 
 	"github.com/a-h/templ"

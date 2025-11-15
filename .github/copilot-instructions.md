@@ -25,7 +25,7 @@ Style additions best practices
 -----------------------------
 - Keep new selectors specific and prefixed if needed to avoid collisions (e.g., .ab- or .site-).
 - Add a short comment above any new section in `site.css` describing its purpose and where it's used.
-- When changing existing styles, search for usages in `internal/server/ui/` and other templates to avoid regressions.
+- When changing existing styles, search for usages in `pkg/ui/` and other templates to avoid regressions.
 
 Notes for Tailwind or other utilities
 -----------------------------------

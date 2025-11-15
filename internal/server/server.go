@@ -1,8 +1,9 @@
 package server
 
 import (
+	"autobutler/internal/db"
 	"autobutler/pkg/botel/exporters/botelsqlite"
-	"autobutler/pkg/db"
+	"autobutler/pkg/util/deputil"
 	"context"
 	"fmt"
 	"log"
@@ -19,8 +20,8 @@ import (
 
 var metricsExporter *botelsqlite.TraceExporter
 
-func initTracer() (*sdktrace.TracerProvider, error) {
-	exporter, err := botelsqlite.NewTraceExporter(db.HealthInstance.Db)
+func initTracer(deps deputil.Dependencies) (*sdktrace.TracerProvider, error) {
+	exporter, err := botelsqlite.NewTraceExporter(deps.HealthDatabase().Db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create SQLite exporter: %w", err)
 	}
@@ -40,8 +41,8 @@ func initTracer() (*sdktrace.TracerProvider, error) {
 	return tp, nil
 }
 
-func initMetrics() (*metric.MeterProvider, error) {
-	metricsExp, err := botelsqlite.NewMetricsExporter(db.HealthInstance.Db)
+func initMetrics(deps deputil.Dependencies) (*metric.MeterProvider, error) {
+	metricsExp, err := botelsqlite.NewMetricsExporter(deps.HealthDatabase().Db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create metrics exporter: %w", err)
 	}
@@ -61,12 +62,23 @@ func initMetrics() (*metric.MeterProvider, error) {
 }
 
 func StartServer() error {
-	tp, err := initTracer()
+	deps := deputil.NewDependencies()
+	if database, err := db.ConnectToDatabase(); err == nil {
+		deps.WithDatabase(database)
+	} else {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	if database, err := db.ConnectToHealthDatabase(); err == nil {
+		deps.WithHealthDatabase(database)
+	} else {
+		return fmt.Errorf("failed to connect to health database: %w", err)
+	}
+	tp, err := initTracer(deps)
 	if err != nil {
 		return fmt.Errorf("failed to initialize otel trace: %w", err)
 	}
 
-	mp, err := initMetrics()
+	mp, err := initMetrics(deps)
 	if err != nil {
 		return fmt.Errorf("failed to initialize otel metrics: %w", err)
 	}
@@ -82,7 +94,7 @@ func StartServer() error {
 
 	router := gin.Default()
 	// IMPORTANT: UseMiddleware MUST be called before setupRoutes
-	useMiddleware(router)
+	useMiddleware(router, deps)
 	setupRoutes(router)
 	port := os.Getenv("PORT")
 	if port == "" {

@@ -4,9 +4,9 @@ import (
 	"embed"
 
 	v1 "autobutler/internal/server/api/v1"
-	"autobutler/internal/server/ui"
-	"autobutler/internal/server/ui/types"
-	"autobutler/internal/server/ui/views"
+	"autobutler/pkg/ui"
+	"autobutler/pkg/ui/types"
+	"autobutler/pkg/ui/views"
 
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"

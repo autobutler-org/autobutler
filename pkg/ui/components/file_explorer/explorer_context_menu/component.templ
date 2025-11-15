@@ -1,0 +1,35 @@
+package explorer_context_menu
+
+import (
+	"autobutler/pkg/ui/types"
+	"fmt"
+)
+
+templ Component(pageState types.PageState) {
+	<div>
+		<ul
+			class="context-menu hidden"
+			style="width: 7rem;"
+		>
+			<li>
+				<button
+					type="button"
+					class="context-menu-item"
+					onclick={ templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); newFile(event, '%s')", pageState.RootDir)) }
+				>
+					New File
+				</button>
+				<hr/>
+			</li>
+			<li>
+				<button
+					type="button"
+					class="context-menu-item"
+					onclick="closeContextMenuFromItem(event); showFolderDetails(event)"
+				>
+					Details
+				</button>
+			</li>
+		</ul>
+	</div>
+}

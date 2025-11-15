@@ -8,4 +8,4 @@ great. So I am attaching a screenshot - I have basically four scenarios here.
 
 4. Just a non-bar version of the first one. When I look at my /files page I have the indicator in the top left of how much storage is used.
 
-FOR THIS THREAD, KEEP THE ABOVE IN CONTEXT, BUT WE WILL ONLY BE WORKING ON THE SECOND COMPONENT TYPE. We will put it in the internal/server/ui/components/storage_partition/component.templ 
+FOR THIS THREAD, KEEP THE ABOVE IN CONTEXT, BUT WE WILL ONLY BE WORKING ON THE SECOND COMPONENT TYPE. We will put it in the pkg/ui/components/storage_partition/component.templ
