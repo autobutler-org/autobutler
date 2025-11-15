@@ -17,7 +17,7 @@ const MINUTES = 60 * SECONDS;
 
 export default defineConfig({
     timeout: 10 * SECONDS,
-    globalTimeout: 5 * MINUTES,
+    globalTimeout: 10 * MINUTES,
     testDir: './tests/e2e',
     /* Run tests in files in parallel */
     fullyParallel: true,

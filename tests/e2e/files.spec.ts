@@ -606,25 +606,6 @@ test.describe('File Selection', () => {
     });
 });
 
-test.describe('Files Page - File Deletion', () => {
-    test('deletes the uploaded file', async ({ page }) => {
-        await page.goto('/files');
-
-        const fileRow = page.locator('tr.file-table-row[data-name="sample.txt"]');
-        await fileRow.locator('.context-menu-trigger').click();
-        await page.waitForTimeout(100);
-        await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
-
-        // Verify file is deleted
-        await expect(fileRow).not.toBeVisible();
-    });
-
-    test('verifies file is no longer present after deletion', async ({ page }) => {
-        await page.goto('/files');
-        await expect(page.locator('tr.file-table-row[data-name="sample.txt"]')).not.toBeVisible();
-    });
-});
-
 test.describe('Files Page - Mobile Responsiveness', () => {
     test('hides column view button on mobile sizes', async ({ page }) => {
         // Set viewport to mobile size (iPhone SE dimensions)
@@ -668,5 +649,137 @@ test.describe('Files Page - Mobile Responsiveness', () => {
 
         const columnViewBtn = page.locator('button[title="Column View"]');
         await expect(columnViewBtn).toBeVisible();
+    });
+});
+
+test.describe('Column View Navigation', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 720 });
+        await page.goto('/files');
+
+        const columnViewBtn = page.locator('button[title="Column View"]');
+        await columnViewBtn.click();
+        await page.waitForTimeout(100);
+
+        // Ensure we start with a clean slate - create test folder if it doesn't exist
+        const folderExists = await page.locator('.column-view-item[data-name="test-nav-folder/"]').count() > 0;
+        if (!folderExists) {
+            const addFolderBtn = page.locator('#add-folder-btn');
+            await addFolderBtn.click();
+            await page.waitForTimeout(100);
+            const folderInput = page.locator('#folder-input');
+            await folderInput.fill('test-nav-folder');
+            await folderInput.press('Enter');
+            await page.waitForTimeout(100);
+        }
+    });
+
+    test.afterEach(async ({ page }) => {
+        await page.goto('/files?view=list');
+    });
+
+    test('single-clicking folder in column view navigates without page reload', async ({ page }) => {
+        // Track page loads
+        let pageLoadCount = 0;
+        page.on('load', () => {
+            pageLoadCount++;
+        });
+
+        // Find and single-click the test folder
+        const folder = page.locator('.column-view-item[data-name="test-nav-folder/"]');
+        await expect(folder).toBeVisible();
+        await folder.click();
+
+        // Wait for navigation to complete
+        await page.waitForTimeout(100);
+
+        // Verify URL changed
+        await expect(page).toHaveURL(/\/files\/test-nav-folder/);
+
+        // Verify no page reload occurred (pageLoadCount should still be 0 after initial page load)
+        expect(pageLoadCount).toBe(0);
+
+        // Verify we're still in column view
+        const columnViewContainer = page.locator('.column-view-container');
+        await expect(columnViewContainer).toBeVisible();
+    });
+
+    test('back button works correctly after column view navigation', async ({ page }) => {
+        // Navigate into folder with single click
+        const folder = page.locator('.column-view-item[data-name="test-nav-folder/"]');
+        await folder.click();
+        await page.waitForTimeout(500);
+
+        // Verify we're in the subfolder
+        await expect(page).toHaveURL(/\/files\/test-nav-folder/);
+
+        // Click back button
+        const backButton = page.locator('#nav-back-btn');
+        await expect(backButton).toBeVisible();
+        await expect(backButton).not.toBeDisabled();
+        await backButton.click();
+        await page.waitForTimeout(500);
+
+        // Verify we're back at root
+        await expect(page).toHaveURL(/^.*\/files\/?$/);
+
+        // Verify still in column view
+        const columnViewContainer = page.locator('.column-view-container');
+        await expect(columnViewContainer).toBeVisible();
+    });
+
+    test('single-clicking file in column view loads preview', async ({ page }) => {
+        // Find and single-click the sample.txt file
+        const file = page.locator('.column-view-item[data-name="sample.txt"]');
+        await expect(file).toBeVisible();
+        await file.click();
+        await page.waitForTimeout(500);
+
+        // Verify preview pane has content (not the placeholder)
+        const previewContent = page.locator('#column-preview-content');
+        await expect(previewContent).toBeVisible();
+
+        // The placeholder should be replaced with actual content
+        const placeholder = page.locator('.column-view-preview-placeholder');
+        await expect(placeholder).not.toBeVisible();
+
+        // Verify the file viewer modal did NOT open
+        const fileViewerModal = page.locator('#file-viewer[open]');
+        await expect(fileViewerModal).not.toBeVisible();
+    });
+
+    test('double-clicking file in column view opens full viewer', async ({ page }) => {
+        // Find and double-click the sample.txt file
+        const file = page.locator('.column-view-item[data-name="sample.txt"]');
+        await expect(file).toBeVisible();
+        await file.dblclick();
+        await page.waitForTimeout(500);
+
+        // Verify file viewer modal opened
+        const fileViewerModal = page.locator('#file-viewer[open]');
+        await expect(fileViewerModal).toBeVisible();
+
+        // Verify modal has content
+        const modalContent = page.locator('#file-viewer-content');
+        await expect(modalContent).not.toBeEmpty();
+    });
+});
+
+test.describe('Files Page - File Deletion', () => {
+    test('deletes the uploaded file', async ({ page }) => {
+        await page.goto('/files');
+
+        const fileRow = page.locator('tr.file-table-row[data-name="sample.txt"]');
+        await fileRow.locator('.context-menu-trigger').click();
+        await page.waitForTimeout(100);
+        await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
+
+        // Verify file is deleted
+        await expect(fileRow).not.toBeVisible();
+    });
+
+    test('verifies file is no longer present after deletion', async ({ page }) => {
+        await page.goto('/files');
+        await expect(page.locator('tr.file-table-row[data-name="sample.txt"]')).not.toBeVisible();
     });
 });

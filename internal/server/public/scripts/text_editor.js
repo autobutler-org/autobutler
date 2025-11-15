@@ -1,10 +1,20 @@
+// Store the current editor instance globally to allow cleanup
+var currentEditorInstance = null;
+
 function initializeTextEditor(filePath) {
 	if (typeof ace === 'undefined') {
 		console.error('ACE editor not loaded');
 		return;
 	}
 
+	// Clean up existing editor instance if it exists
+	if (currentEditorInstance) {
+		currentEditorInstance.destroy();
+		currentEditorInstance = null;
+	}
+
 	var editor = ace.edit("editor");
+	currentEditorInstance = editor;
 	editor.setTheme("ace/theme/monokai");
 
 	// Determine ACE mode based on file extension

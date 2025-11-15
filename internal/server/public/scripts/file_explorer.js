@@ -310,6 +310,7 @@ function updateDownloadButton() {
 /**
  * Handle single click on a file node
  * Single click = select the file (Google Drive style)
+ * In column view: single click navigates/opens immediately (Finder style)
  */
 function handleFileNodeClick(event, node) {
     // Ignore if clicking on context menu trigger
@@ -319,6 +320,49 @@ function handleFileNodeClick(event, node) {
         return;
     }
 
+    // Check if we're in column view
+    const inColumnView = document.querySelector('.column-view-container') !== null;
+
+    // In column view, single click navigates/opens immediately
+    if (inColumnView) {
+        preventDefault(event);
+        const fileType = node.dataset.fileType;
+
+        if (fileType === 'folder') {
+            // Navigate to folder
+            const contentCell = node.querySelector('[data-href]');
+            const href = contentCell?.dataset.href;
+            if (href) {
+                htmx.ajax('GET', href, {
+                    target: '#file-explorer-view-content',
+                    swap: 'innerHTML'
+                }).then(() => {
+                    window.history.pushState({}, '', href);
+                    updateBackButton();
+                });
+            }
+        } else {
+            // Load file preview in preview pane
+            const viewerCell = node.querySelector('[data-viewer-path]');
+            const viewerPath = viewerCell?.dataset.viewerPath;
+            if (viewerPath) {
+                // Clear the preview content completely before loading new content
+                const previewContent = document.getElementById('column-preview-content');
+                if (previewContent) {
+                    previewContent.innerHTML = '';
+                }
+                
+                // Load the new preview content
+                htmx.ajax('GET', viewerPath, {
+                    target: '#column-preview-content',
+                    swap: 'innerHTML'
+                });
+            }
+        }
+        return;
+    }
+
+    // For list/grid views, use double-click delay and selection logic
     // Clear any pending double-click timer
     if (clickTimer) {
         clearTimeout(clickTimer);
@@ -414,7 +458,7 @@ function handleFileNodeTouch(event, node) {
     if (lastTapNode === node && tapInterval < DOUBLE_TAP_DELAY && tapInterval > 0) {
         // Prevent default to avoid zoom on double-tap
         event.preventDefault();
-        
+
         // Clear the single-tap timer if it's running
         if (clickTimer) {
             clearTimeout(clickTimer);
@@ -423,7 +467,7 @@ function handleFileNodeTouch(event, node) {
 
         // Trigger the double-click behavior
         handleFileNodeDoubleClick(event, node);
-        
+
         // Reset tap tracking
         lastTapTime = 0;
         lastTapNode = null;

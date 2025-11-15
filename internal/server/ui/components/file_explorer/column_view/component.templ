@@ -131,28 +131,32 @@ templ renderParentColumnItem(pageState types.PageState, parentPath string, file 
 		filePath := filepath.Join("/files", parentPath, fileName)
 		// For files in parent columns, navigate to parent dir (removing child columns)
 		fileParentPath := filepath.Join("/files", parentPath)
+		dataFileType := fileType
+		if isFolder {
+			dataFileType = "folder"
+		}
 	}}
 	<li
 		class={ "column-view-item file-node", templ.KV("column-view-item--selected", isSelected), templ.KV("column-view-item--folder", isFolder) }
 		data-name={ fileName }
 		data-is-folder={ fmt.Sprintf("%t", isFolder) }
+		data-file-type={ dataFileType }
 		oncontextmenu="toggleFloatingContextMenu(event, this)"
+		onclick="handleFileNodeClick(event, this)"
+		ondblclick="handleFileNodeDoubleClick(event, this)"
+		ontouchend="handleFileNodeTouch(event, this)"
 	>
 		if isFolder {
-			<a
-				href={ filePath }
+			<div
 				class="column-view-link"
-				hx-get={ filePath }
-				hx-target="#file-explorer-view-content"
-				hx-swap="innerHTML"
-				hx-push-url="true"
+				data-href={ filePath }
 			>
 				<span class="column-view-icon">
 					@folder.Component()
 				</span>
 				<span class="column-view-name">{ fileName }</span>
 				<span class="column-view-chevron">›</span>
-			</a>
+			</div>
 		} else {
 			<div
 				class="column-view-link column-view-link--file"
@@ -183,34 +187,36 @@ templ renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) {
 		fileName := file.Name()
 		isFolder := fileType == util.FileTypeFolder
 		filePath := filepath.Join("/files", pageState.RootDir, fileName)
+		dataFileType := fileType
+		if isFolder {
+			dataFileType = "folder"
+		}
 	}}
 	<li
 		class={ "column-view-item file-node", templ.KV("column-view-item--folder", isFolder) }
 		data-name={ fileName }
 		data-is-folder={ fmt.Sprintf("%t", isFolder) }
+		data-file-type={ dataFileType }
 		oncontextmenu="toggleFloatingContextMenu(event, this)"
+		onclick="handleFileNodeClick(event, this)"
+		ondblclick="handleFileNodeDoubleClick(event, this)"
+		ontouchend="handleFileNodeTouch(event, this)"
 	>
 		if isFolder {
-			<a
-				href={ filePath }
+			<div
 				class="column-view-link"
-				hx-get={ filePath }
-				hx-target="#file-explorer-view-content"
-				hx-swap="innerHTML"
-				hx-push-url="true"
+				data-href={ filePath }
 			>
 				<span class="column-view-icon">
 					@folder.Component()
 				</span>
 				<span class="column-view-name">{ fileName }</span>
 				<span class="column-view-chevron">›</span>
-			</a>
+			</div>
 		} else {
 			<div
 				class="column-view-link column-view-link--file"
-				hx-get={ filepath.Join("/components/files/viewer", filePath) }
-				hx-target="#column-preview-content"
-				hx-swap="innerHTML"
+				data-viewer-path={ filepath.Join("/components/files/viewer", filePath) }
 			>
 				<span class="column-view-icon">
 					@renderFileIcon(fileType)
