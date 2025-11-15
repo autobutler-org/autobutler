@@ -133,7 +133,7 @@ lint/css: ## Lint CSS files
 	npm run lint:css
 
 lint/yaml: ## Lint YAML files
-	which yamllint > /dev/null 2>&1 && yamllint -c .yamllint.yml . || echo "yamllint not installed, skipping YAML linting. Install with: pip install yamllint"
+	npm run lint:yaml
 
 fix: fix/go fix/js fix/ts fix/css ## Fix code issues
 
