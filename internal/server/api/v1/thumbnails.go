@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/KononK/resize"
 	"github.com/gin-gonic/gin"
-	"github.com/nfnt/resize"
 )
 
 const (

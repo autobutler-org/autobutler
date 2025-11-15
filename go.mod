@@ -3,21 +3,22 @@ module autobutler
 go 1.24.4
 
 require (
+	github.com/KononK/resize v0.0.0-20200801203131-21c514740ed6
 	github.com/a-h/templ v0.3.943
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-contrib/static v1.1.5
 	github.com/gin-gonic/gin v1.10.1
 	github.com/golang-migrate/migrate/v4 v4.19.0
 	github.com/nbio/xml v0.0.0-20250908152200-27e14820def6
-	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/spf13/cobra v1.10.1
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.63.0
 	go.opentelemetry.io/contrib/instrumentation/runtime v0.63.0
 	go.opentelemetry.io/otel v1.38.0
 	go.opentelemetry.io/otel/sdk v1.38.0
 	go.opentelemetry.io/otel/sdk/metric v1.38.0
+	golang.org/x/image v0.33.0
 	golang.org/x/sys v0.36.0
-	golang.org/x/text v0.29.0
+	golang.org/x/text v0.31.0
 	modernc.org/sqlite v1.38.2
 )
 

@@ -8,8 +8,10 @@ import (
 // Component renders a device card showing storage device information
 // Uses storage.Device from the backend and storage_partition component for visualization
 templ Component(device storage.Device) {
-	<div class="device-card"
-		onclick="window.location.href = '/files'">
+	<div
+		class="device-card"
+		onclick="window.location.href = '/files'"
+	>
 		<div class="device-card-header">
 			<div class="device-card-icon">
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
