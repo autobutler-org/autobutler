@@ -7,11 +7,11 @@ test.describe('Photo Thumbnails - EXIF Orientation', () => {
         await page.goto('/files');
 
         const fileInput = page.locator('input[type="file"]');
-        const testImagePath = path.join('./tests/e2e/data/test-image.jpg');
+        const testImagePath = path.join('./tests/e2e/data/flipped.jpg');
         await fileInput.setInputFiles(testImagePath);
 
         // Wait for upload to complete
-        await page.waitForTimeout(1500);
+        await page.waitForTimeout(100);
 
         // Now check the photos page
         await page.goto('/photos');
@@ -99,7 +99,7 @@ test.describe('Photo Thumbnails - EXIF Orientation', () => {
 
     test('direct thumbnail API request returns correctly oriented image', async ({ request }) => {
         // Test direct API call to thumbnails endpoint
-        const response = await request.get('/api/v1/thumbnails/test-image.jpg');
+        const response = await request.get('/api/v1/thumbnails/flipped.jpg');
 
         // Should return an image even if file doesn't exist (or 404)
         if (response.ok()) {
@@ -124,7 +124,7 @@ test.describe('Photo Thumbnails - EXIF Orientation', () => {
             await photoItems.first().click();
 
             // Wait for viewer to open
-            await page.waitForTimeout(500);
+            await page.waitForTimeout(100);
 
             // Check if viewer dialog exists and is visible
             const fileViewer = page.locator('dialog#file-viewer');
