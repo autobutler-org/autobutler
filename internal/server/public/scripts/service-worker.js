@@ -87,20 +87,32 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Cache-first strategy for static assets (CSS, JS, images)
+    // Stale-while-revalidate for HTML pages (fast PWA, auto-updates)
+    if (isNavigationRequest(request)) {
+        event.respondWith(staleWhileRevalidate(request));
+        return;
+    }
+
+    // Stale-while-revalidate for CSS/JS (fast load, auto-updates in background)
+    if (isCSSOrJS(request)) {
+        event.respondWith(staleWhileRevalidate(request));
+        return;
+    }
+
+    // Network-first strategy for API calls only
+    if (isAPIRequest(request)) {
+        event.respondWith(networkFirst(request));
+        return;
+    }
+
+    // Cache-first for images and other static assets (rarely change)
     if (isStaticAsset(request)) {
         event.respondWith(cacheFirst(request));
         return;
     }
 
-    // Network-first strategy for HTML pages and API calls
-    if (isNavigationRequest(request) || isAPIRequest(request)) {
-        event.respondWith(networkFirst(request));
-        return;
-    }
-
-    // Default: cache-first with network fallback
-    event.respondWith(cacheFirst(request));
+    // Default: stale-while-revalidate
+    event.respondWith(staleWhileRevalidate(request));
 });
 
 // Cache-first strategy: serve from cache, fallback to network
@@ -193,14 +205,64 @@ async function networkFirst(request) {
     }
 }
 
-// Helper: Check if request is for a static asset
+// Stale-while-revalidate strategy: serve from cache immediately, update cache in background
+async function staleWhileRevalidate(request) {
+    const cache = await caches.open(RUNTIME_CACHE);
+    const cachedResponse = await cache.match(request);
+
+    // Fetch from network in the background to update cache
+    const fetchPromise = fetch(request)
+        .then((response) => {
+            if (response && response.status === 200) {
+                // Update cache with fresh response
+                cache.put(request, response.clone());
+            }
+            return response;
+        })
+        .catch((error) => {
+            console.log('[Service Worker] Background fetch failed:', error);
+            return null;
+        });
+
+    // Return cached response immediately if available, otherwise wait for network
+    if (cachedResponse) {
+        console.log('[Service Worker] Serving from cache (stale-while-revalidate):', request.url);
+        return cachedResponse;
+    }
+
+    // No cache available, wait for network (first load)
+    console.log('[Service Worker] No cache, waiting for network:', request.url);
+    const networkResponse = await fetchPromise;
+    
+    if (networkResponse) {
+        return networkResponse;
+    }
+
+    // Network failed and no cache - return offline fallback
+    const staticCache = await caches.open(CACHE_NAME);
+    const fallback = await staticCache.match('/');
+    
+    return fallback || new Response('Offline', {
+        status: 503,
+        statusText: 'Service Unavailable',
+    });
+}
+
+// Helper: Check if request is for CSS or JS (needs frequent updates)
+function isCSSOrJS(request) {
+    const url = new URL(request.url);
+    const path = url.pathname;
+    return path.match(/\.(css|js)$/i);
+}
+
+// Helper: Check if request is for a static asset (images, fonts, etc.)
 function isStaticAsset(request) {
     const url = new URL(request.url);
     const path = url.pathname;
 
     return (
-        path.match(/\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/i) ||
-        path.startsWith('/public/')
+        path.match(/\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp)$/i) ||
+        (path.startsWith('/public/') && !isCSSOrJS(request))
     );
 }
 
