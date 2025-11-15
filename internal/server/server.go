@@ -15,13 +15,9 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	// Uncomment to use SQLite exporter:
-	// "autobutler/pkg/botel"
-	// "autobutler/pkg/db"
 )
 
 var metricsExporter *botelsqlite.TraceExporter
-var meterProvider *metric.MeterProvider
 
 func initTracer() (*sdktrace.TracerProvider, error) {
 	exporter, err := botelsqlite.NewTraceExporter(db.HealthInstance.Db)
@@ -74,7 +70,6 @@ func StartServer() error {
 	if err != nil {
 		return fmt.Errorf("failed to initialize otel metrics: %w", err)
 	}
-	meterProvider = mp
 
 	defer func() {
 		if err := tp.Shutdown(context.Background()); err != nil {

@@ -2,7 +2,12 @@ function createGoldenSignalCharts() {
     Chart.registry.plugins.register(ChartDatasourcePrometheusPlugin);
     Chart.defaults.color = '#FFF';
 
-    var backgroundColorPlugin = {
+    const prometheus = {
+        endpoint: "/api/v1",
+        baseURL: "/metrics",
+    }
+
+    const backgroundColorPlugin = {
         id: 'customCanvasBackgroundColor',
         beforeDraw: (chart) => {
             const ctx = chart.ctx;
@@ -42,7 +47,7 @@ function createGoldenSignalCharts() {
         end: 0
     };
 
-    var errorCharts = {
+    const errorCharts = {
         page: new Chart(document.getElementById('errorsPageChart').getContext('2d'), {
             type: 'line',
             plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
@@ -57,12 +62,9 @@ function createGoldenSignalCharts() {
                         font: { size: 14 }
                     },
                     'datasource-prometheus': {
-                        prometheus: {
-                            endpoint: "http://localhost:8080",
-                            baseURL: "/metrics",
-                        },
+                        prometheus,
                         query: 'max by (http.route) (http.server.request.duration{http.route!~"/api.*"})',
-                        timeRange: timeRange
+                        timeRange,
                     }
                 },
                 scales: {
@@ -93,12 +95,9 @@ function createGoldenSignalCharts() {
                         font: { size: 14 }
                     },
                     'datasource-prometheus': {
-                        prometheus: {
-                            endpoint: "http://localhost:8080",
-                            baseURL: "/metrics",
-                        },
+                        prometheus,
                         query: 'max by (http.route) (http.server.request.duration{http.route=~"/api.*"})',
-                        timeRange: timeRange
+                        timeRange,
                     }
                 },
                 scales: {
@@ -117,7 +116,7 @@ function createGoldenSignalCharts() {
         })
     };
 
-    var latencyCharts = {
+    const latencyCharts = {
         page: new Chart(document.getElementById('latencyPageChart').getContext('2d'), {
             type: 'line',
             plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
@@ -132,12 +131,9 @@ function createGoldenSignalCharts() {
                         font: { size: 14 }
                     },
                     'datasource-prometheus': {
-                        prometheus: {
-                            endpoint: "http://localhost:8080",
-                            baseURL: "/metrics",
-                        },
+                        prometheus,
                         query: 'count by (http.route) (http.server.request.duration{http.route!~"/api.*"})',
-                        timeRange: timeRange
+                        timeRange,
                     }
                 }
             }
@@ -156,12 +152,9 @@ function createGoldenSignalCharts() {
                         font: { size: 14 }
                     },
                     'datasource-prometheus': {
-                        prometheus: {
-                            endpoint: "http://localhost:8080",
-                            baseURL: "/metrics",
-                        },
+                        prometheus,
                         query: 'max by (http.route) (http.server.request.duration{http.route!~"/api.*"})',
-                        timeRange: timeRange
+                        timeRange,
                     }
                 },
                 scales: {
@@ -192,12 +185,9 @@ function createGoldenSignalCharts() {
                         font: { size: 14 }
                     },
                     'datasource-prometheus': {
-                        prometheus: {
-                            endpoint: "http://localhost:8080",
-                            baseURL: "/metrics",
-                        },
+                        prometheus,
                         query: 'count by (http.route) (http.server.request.duration{http.route=~"/api.*"})',
-                        timeRange: timeRange
+                        timeRange,
                     }
                 }
             }
@@ -216,12 +206,9 @@ function createGoldenSignalCharts() {
                         font: { size: 14 }
                     },
                     'datasource-prometheus': {
-                        prometheus: {
-                            endpoint: "http://localhost:8080",
-                            baseURL: "/metrics",
-                        },
+                        prometheus,
                         query: 'max by (http.route) (http.server.request.duration{http.route=~"/api.*"})',
-                        timeRange: timeRange
+                        timeRange,
                     }
                 },
                 scales: {
@@ -240,7 +227,7 @@ function createGoldenSignalCharts() {
         })
     };
 
-    var trafficCharts = {
+    const trafficCharts = {
         page: new Chart(document.getElementById('trafficPageChart').getContext('2d'), {
             type: 'line',
             plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
@@ -255,12 +242,9 @@ function createGoldenSignalCharts() {
                         font: { size: 14 }
                     },
                     'datasource-prometheus': {
-                        prometheus: {
-                            endpoint: "http://localhost:8080",
-                            baseURL: "/metrics",
-                        },
+                        prometheus,
                         query: 'count by (http.route) (http.server.request.duration{http.route!~"/api.*"})',
-                        timeRange: timeRange
+                        timeRange,
                     }
                 }
             }
@@ -279,19 +263,16 @@ function createGoldenSignalCharts() {
                         font: { size: 14 }
                     },
                     'datasource-prometheus': {
-                        prometheus: {
-                            endpoint: "http://localhost:8080",
-                            baseURL: "/metrics",
-                        },
+                        prometheus,
                         query: 'count by (http.route) (http.server.request.duration{http.route=~"/api.*"})',
-                        timeRange: timeRange
+                        timeRange,
                     }
                 }
             }
         })
     };
 
-    var saturationCharts = {
+    const saturationCharts = {
         memory: new Chart(document.getElementById('saturationChart').getContext('2d'), {
             type: 'line',
             plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
@@ -306,12 +287,9 @@ function createGoldenSignalCharts() {
                         font: { size: 14 }
                     },
                     'datasource-prometheus': {
-                        prometheus: {
-                            endpoint: "http://localhost:8080",
-                            baseURL: "/metrics",
-                        },
+                        prometheus,
                         query: 'go.memory.allocated',
-                        timeRange: timeRange
+                        timeRange,
                     }
                 },
                 scales: {

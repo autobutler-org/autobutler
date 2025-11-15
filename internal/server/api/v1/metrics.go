@@ -1,4 +1,4 @@
-package server
+package v1
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"autobutler/pkg/botel/exporters/botelsqlite"
 	"autobutler/pkg/db"
 
 	"github.com/gin-gonic/gin"
@@ -30,9 +31,28 @@ type QueryResult struct {
 	Values [][]any           `json:"values"`
 }
 
-func setupMetricsQueryRoutes(router *gin.Engine) {
+func SetupMetricsRoutes(router *gin.RouterGroup, metricsExporter *botelsqlite.TraceExporter) {
+	router.GET("/metrics", newMetricsHandler(metricsExporter))
 	router.GET("/metrics/query_range", handleQueryRange)
 	router.GET("/metrics/query", handleInstantQuery)
+}
+
+func newMetricsHandler(metricsExporter *botelsqlite.TraceExporter) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if metricsExporter == nil {
+			c.String(http.StatusServiceUnavailable, "# Metrics exporter not initialized\n")
+			return
+		}
+
+		metrics, err := metricsExporter.PrometheusMetrics(c.Request.Context())
+		if err != nil {
+			c.String(http.StatusInternalServerError, "# Error generating metrics: %s\n", err.Error())
+			return
+		}
+
+		c.Header("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+		c.String(http.StatusOK, metrics)
+	}
 }
 
 func handleQueryRange(c *gin.Context) {
