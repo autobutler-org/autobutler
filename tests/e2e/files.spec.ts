@@ -181,10 +181,12 @@ test.describe('Files Page - File Upload', () => {
         // Clean up: delete the uploaded files
         for (const fileName of ['test-image.png', 'test-image_(1).png', 'test-image_(2).png']) {
             const fileRow = page.locator(`tr.file-table-row[data-name="${fileName}"]`);
-            if (await fileRow.count() > 0) {
+            if ((await fileRow.count()) > 0) {
                 await fileRow.locator('.context-menu-trigger').click();
                 await page.waitForTimeout(100);
-                await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
+                await fileRow
+                    .locator('.context-menu-item--danger:has-text("Delete")')
+                    .dispatchEvent('click');
                 await page.waitForTimeout(500);
             }
         }
@@ -214,16 +216,17 @@ test.describe('Files Page - File Upload', () => {
         // Clean up: delete the uploaded files
         for (const fileName of ['data.json', 'data_(1).json']) {
             const fileRow = page.locator(`tr.file-table-row[data-name="${fileName}"]`);
-            if (await fileRow.count() > 0) {
+            if ((await fileRow.count()) > 0) {
                 await fileRow.locator('.context-menu-trigger').click();
                 await page.waitForTimeout(100);
-                await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
+                await fileRow
+                    .locator('.context-menu-item--danger:has-text("Delete")')
+                    .dispatchEvent('click');
                 await page.waitForTimeout(500);
             }
         }
     });
 });
-
 
 test.describe('Files Page - Navigation', () => {
     test('back button navigates from subfolder to parent folder', async ({ page }) => {
@@ -348,14 +351,13 @@ test.describe('Files Page - File Interactions', () => {
     });
 });
 
-
 test.describe('Modal Dialog Behavior', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/files');
 
         // Check if sample.txt exists, if not upload it
         const existingFile = page.locator('tr.file-table-row[data-name="sample.txt"]');
-        const fileExists = await existingFile.count() > 0;
+        const fileExists = (await existingFile.count()) > 0;
 
         if (!fileExists) {
             const fileInput = page.locator('input[type="file"]');
@@ -637,7 +639,7 @@ test.describe('Files Page - Mobile Responsiveness', () => {
 
         // Column view container should be hidden via CSS
         const columnViewContainer = page.locator('.column-view-container');
-        if (await columnViewContainer.count() > 0) {
+        if ((await columnViewContainer.count()) > 0) {
             await expect(columnViewContainer).not.toBeVisible();
         }
     });
@@ -662,7 +664,8 @@ test.describe('Column View Navigation', () => {
         await page.waitForTimeout(100);
 
         // Ensure we start with a clean slate - create test folder if it doesn't exist
-        const folderExists = await page.locator('.column-view-item[data-name="test-nav-folder/"]').count() > 0;
+        const folderExists =
+            (await page.locator('.column-view-item[data-name="test-nav-folder/"]').count()) > 0;
         if (!folderExists) {
             const addFolderBtn = page.locator('#add-folder-btn');
             await addFolderBtn.click();
@@ -678,7 +681,9 @@ test.describe('Column View Navigation', () => {
         await page.goto('/files?view=list');
     });
 
-    test('single-clicking folder in column view navigates without page reload', async ({ page }) => {
+    test('single-clicking folder in column view navigates without page reload', async ({
+        page,
+    }) => {
         // Track page loads
         let pageLoadCount = 0;
         page.on('load', () => {
@@ -772,7 +777,9 @@ test.describe('Files Page - File Deletion', () => {
         const fileRow = page.locator('tr.file-table-row[data-name="sample.txt"]');
         await fileRow.locator('.context-menu-trigger').click();
         await page.waitForTimeout(100);
-        await fileRow.locator('.context-menu-item--danger:has-text("Delete")').dispatchEvent('click');
+        await fileRow
+            .locator('.context-menu-item--danger:has-text("Delete")')
+            .dispatchEvent('click');
 
         // Verify file is deleted
         await expect(fileRow).not.toBeVisible();

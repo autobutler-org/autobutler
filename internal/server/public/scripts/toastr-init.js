@@ -1,30 +1,30 @@
 // Wait for DOM to be ready before initializing
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Configure toastr with global settings
     if (typeof toastr === 'undefined') {
         console.error('Toastr library not loaded');
         return;
     }
     toastr.options = {
-        'closeButton': true,
-        'debug': false,
-        'newestOnTop': true,
-        'progressBar': true,
-        'positionClass': 'toast-top-right',
-        'preventDuplicates': true,
-        'onclick': null,
-        'showDuration': '300',
-        'hideDuration': '1000',
-        'timeOut': '3000',
-        'extendedTimeOut': '1000',
-        'showEasing': 'swing',
-        'hideEasing': 'linear',
-        'showMethod': 'fadeIn',
-        'hideMethod': 'fadeOut'
+        closeButton: true,
+        debug: false,
+        newestOnTop: true,
+        progressBar: true,
+        positionClass: 'toast-top-right',
+        preventDuplicates: true,
+        onclick: null,
+        showDuration: '300',
+        hideDuration: '1000',
+        timeOut: '3000',
+        extendedTimeOut: '1000',
+        showEasing: 'swing',
+        hideEasing: 'linear',
+        showMethod: 'fadeIn',
+        hideMethod: 'fadeOut',
     };
 
     // Global HTMX event listeners for API responses
-    document.body.addEventListener('htmx:afterRequest', function(event) {
+    document.body.addEventListener('htmx:afterRequest', function (event) {
         const xhr = event.detail.xhr;
 
         // Only show success toasts for API requests (not component loads)
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Global error handler for failed HTMX requests
-    document.body.addEventListener('htmx:responseError', function(event) {
+    document.body.addEventListener('htmx:responseError', function (event) {
         const xhr = event.detail.xhr;
 
         // Only show error toasts for API requests
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 errorMessage = response.message;
             }
         } catch {
-        // Use status text if JSON parsing fails
+            // Use status text if JSON parsing fails
             if (xhr.statusText) {
                 errorMessage = `${errorMessage}: ${xhr.statusText}`;
             }
@@ -95,12 +95,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Network error handler for HTMX requests
-    document.body.addEventListener('htmx:sendError', function() {
+    document.body.addEventListener('htmx:sendError', function () {
         toastr.error('Network error: Unable to reach server');
     });
 
     // Timeout handler for HTMX requests
-    document.body.addEventListener('htmx:timeout', function() {
+    document.body.addEventListener('htmx:timeout', function () {
         toastr.error('Request timed out');
     });
 });

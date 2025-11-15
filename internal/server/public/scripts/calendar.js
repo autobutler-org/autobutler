@@ -82,5 +82,5 @@ function checkNewEventFormInputs(event) {
 
     // Check if all required inputs are filled
     const requiredInputs = Array.from(form.querySelectorAll('input[required], textarea[required]'));
-    submitButton.disabled = requiredInputs.some(input => !input.value);
+    submitButton.disabled = requiredInputs.some((input) => !input.value);
 }

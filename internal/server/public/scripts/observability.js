@@ -14,7 +14,7 @@ function createGoldenSignalCharts() {
             const ctx = chart.ctx;
             ctx.fillStyle = 'rgba(128, 128, 128, 0.1)';
             ctx.fillRect(0, 0, chart.width, chart.height);
-        }
+        },
     };
 
     const commonOptions = {
@@ -26,26 +26,26 @@ function createGoldenSignalCharts() {
                 display: true,
                 labels: {
                     color: '#FFF',
-                    font: { size: 11 }
-                }
-            }
+                    font: { size: 11 },
+                },
+            },
         },
         scales: {
             y: {
                 ticks: { color: '#FFF', font: { size: 10 } },
-                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                grid: { color: 'rgba(255, 255, 255, 0.1)' },
             },
             x: {
                 ticks: { color: '#FFF', font: { size: 10 } },
-                grid: { color: 'rgba(255, 255, 255, 0.1)' }
-            }
-        }
+                grid: { color: 'rgba(255, 255, 255, 0.1)' },
+            },
+        },
     };
 
     const timeRange = {
         type: 'relative',
         start: -1 * 60 * 60 * 1000,
-        end: 0
+        end: 0,
     };
 
     // eslint-disable-next-line no-unused-vars
@@ -61,13 +61,13 @@ function createGoldenSignalCharts() {
                         display: true,
                         text: 'Errors - Page Request Failures (Max Latency)',
                         color: '#FFF',
-                        font: { size: 14 }
+                        font: { size: 14 },
                     },
                     'datasource-prometheus': {
                         prometheus,
                         query: 'max by (http.route) (http.server.request.duration{http.route!~"/api.*"})',
                         timeRange,
-                    }
+                    },
                 },
                 scales: {
                     ...commonOptions.scales,
@@ -77,11 +77,11 @@ function createGoldenSignalCharts() {
                             ...commonOptions.scales.y.ticks,
                             callback: function (value) {
                                 return (value * 1000).toFixed(2) + ' ms';
-                            }
-                        }
-                    }
-                }
-            }
+                            },
+                        },
+                    },
+                },
+            },
         }),
         api: new Chart(document.getElementById('errorsApiChart').getContext('2d'), {
             type: 'line',
@@ -94,13 +94,13 @@ function createGoldenSignalCharts() {
                         display: true,
                         text: 'Errors - API Request Failures (Max Latency)',
                         color: '#FFF',
-                        font: { size: 14 }
+                        font: { size: 14 },
                     },
                     'datasource-prometheus': {
                         prometheus,
                         query: 'max by (http.route) (http.server.request.duration{http.route=~"/api.*"})',
                         timeRange,
-                    }
+                    },
                 },
                 scales: {
                     ...commonOptions.scales,
@@ -110,12 +110,12 @@ function createGoldenSignalCharts() {
                             ...commonOptions.scales.y.ticks,
                             callback: function (value) {
                                 return (value * 1000).toFixed(2) + ' ms';
-                            }
-                        }
-                    }
-                }
-            }
-        })
+                            },
+                        },
+                    },
+                },
+            },
+        }),
     };
 
     // eslint-disable-next-line no-unused-vars
@@ -131,15 +131,15 @@ function createGoldenSignalCharts() {
                         display: true,
                         text: 'Latency - Slow Page Requests (>1s)',
                         color: '#FFF',
-                        font: { size: 14 }
+                        font: { size: 14 },
                     },
                     'datasource-prometheus': {
                         prometheus,
                         query: 'count by (http.route) (http.server.request.duration{http.route!~"/api.*"})',
                         timeRange,
-                    }
-                }
-            }
+                    },
+                },
+            },
         }),
         pageP99: new Chart(document.getElementById('latencyPageP99Chart').getContext('2d'), {
             type: 'line',
@@ -152,13 +152,13 @@ function createGoldenSignalCharts() {
                         display: true,
                         text: 'Latency - Page Request Duration (p99)',
                         color: '#FFF',
-                        font: { size: 14 }
+                        font: { size: 14 },
                     },
                     'datasource-prometheus': {
                         prometheus,
                         query: 'max by (http.route) (http.server.request.duration{http.route!~"/api.*"})',
                         timeRange,
-                    }
+                    },
                 },
                 scales: {
                     ...commonOptions.scales,
@@ -168,11 +168,11 @@ function createGoldenSignalCharts() {
                             ...commonOptions.scales.y.ticks,
                             callback: function (value) {
                                 return (value * 1000).toFixed(2) + ' ms';
-                            }
-                        }
-                    }
-                }
-            }
+                            },
+                        },
+                    },
+                },
+            },
         }),
         api: new Chart(document.getElementById('latencyApiChart').getContext('2d'), {
             type: 'line',
@@ -185,15 +185,15 @@ function createGoldenSignalCharts() {
                         display: true,
                         text: 'Latency - Slow API Requests (>1s)',
                         color: '#FFF',
-                        font: { size: 14 }
+                        font: { size: 14 },
                     },
                     'datasource-prometheus': {
                         prometheus,
                         query: 'count by (http.route) (http.server.request.duration{http.route=~"/api.*"})',
                         timeRange,
-                    }
-                }
-            }
+                    },
+                },
+            },
         }),
         apiP99: new Chart(document.getElementById('latencyApiP99Chart').getContext('2d'), {
             type: 'line',
@@ -206,13 +206,13 @@ function createGoldenSignalCharts() {
                         display: true,
                         text: 'Latency - API Request Duration (p99)',
                         color: '#FFF',
-                        font: { size: 14 }
+                        font: { size: 14 },
                     },
                     'datasource-prometheus': {
                         prometheus,
                         query: 'max by (http.route) (http.server.request.duration{http.route=~"/api.*"})',
                         timeRange,
-                    }
+                    },
                 },
                 scales: {
                     ...commonOptions.scales,
@@ -222,12 +222,12 @@ function createGoldenSignalCharts() {
                             ...commonOptions.scales.y.ticks,
                             callback: function (value) {
                                 return (value * 1000).toFixed(2) + ' ms';
-                            }
-                        }
-                    }
-                }
-            }
-        })
+                            },
+                        },
+                    },
+                },
+            },
+        }),
     };
 
     // eslint-disable-next-line no-unused-vars
@@ -243,15 +243,15 @@ function createGoldenSignalCharts() {
                         display: true,
                         text: 'Traffic - Page Request Count',
                         color: '#FFF',
-                        font: { size: 14 }
+                        font: { size: 14 },
                     },
                     'datasource-prometheus': {
                         prometheus,
                         query: 'count by (http.route) (http.server.request.duration{http.route!~"/api.*"})',
                         timeRange,
-                    }
-                }
-            }
+                    },
+                },
+            },
         }),
         api: new Chart(document.getElementById('trafficApiChart').getContext('2d'), {
             type: 'line',
@@ -264,16 +264,16 @@ function createGoldenSignalCharts() {
                         display: true,
                         text: 'Traffic - API Request Count',
                         color: '#FFF',
-                        font: { size: 14 }
+                        font: { size: 14 },
                     },
                     'datasource-prometheus': {
                         prometheus,
                         query: 'count by (http.route) (http.server.request.duration{http.route=~"/api.*"})',
                         timeRange,
-                    }
-                }
-            }
-        })
+                    },
+                },
+            },
+        }),
     };
 
     // eslint-disable-next-line no-unused-vars
@@ -289,13 +289,13 @@ function createGoldenSignalCharts() {
                         display: true,
                         text: 'Saturation - Memory Usage',
                         color: '#FFF',
-                        font: { size: 14 }
+                        font: { size: 14 },
                     },
                     'datasource-prometheus': {
                         prometheus,
                         query: 'go.memory.allocated',
                         timeRange,
-                    }
+                    },
                 },
                 scales: {
                     ...commonOptions.scales,
@@ -305,32 +305,34 @@ function createGoldenSignalCharts() {
                             ...commonOptions.scales.y.ticks,
                             callback: function (value) {
                                 return (value / 1024 / 1024).toFixed(2) + ' MB';
-                            }
-                        }
-                    }
-                }
-            }
-        })
+                            },
+                        },
+                    },
+                },
+            },
+        }),
     };
 }
 
 // eslint-disable-next-line no-unused-vars
 function initializeHealthTabs() {
-    document.querySelectorAll('.tab-button').forEach(button => {
+    document.querySelectorAll('.tab-button').forEach((button) => {
         button.addEventListener('click', function () {
             const tabName = this.getAttribute('data-tab');
 
             // Update button styles
-            document.querySelectorAll('.tab-button').forEach(btn => {
+            document.querySelectorAll('.tab-button').forEach((btn) => {
                 btn.classList.remove('active');
             });
             this.classList.add('active');
 
             // Show/hide content
-            document.querySelectorAll('.tab-content').forEach(content => {
+            document.querySelectorAll('.tab-content').forEach((content) => {
                 content.classList.remove('active');
             });
-            document.querySelector(`.tab-content[data-content="${tabName}"]`).classList.add('active');
+            document
+                .querySelector(`.tab-content[data-content="${tabName}"]`)
+                .classList.add('active');
         });
     });
 }

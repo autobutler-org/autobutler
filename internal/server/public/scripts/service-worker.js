@@ -30,14 +30,14 @@ const STATIC_ASSETS = [
 
     // Note: SVG icons (book, settings, devices) are rendered inline via templ components
     // and are automatically included in the cached HTML pages
-
 ];
 
 // Install event - cache critical static assets for instant page loads
 self.addEventListener('install', (event) => {
     console.log('[Service Worker] Installing...');
     event.waitUntil(
-        caches.open(CACHE_NAME)
+        caches
+            .open(CACHE_NAME)
             .then((cache) => {
                 console.log('[Service Worker] Caching critical assets');
                 return cache.addAll(STATIC_ASSETS);
@@ -58,19 +58,22 @@ self.addEventListener('activate', (event) => {
     const cacheWhitelist = [CACHE_NAME, RUNTIME_CACHE];
 
     event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (!cacheWhitelist.includes(cacheName)) {
-                        console.log('[Service Worker] Deleting old cache:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        }).then(() => {
-            console.log('[Service Worker] Activated');
-            return self.clients.claim();
-        })
+        caches
+            .keys()
+            .then((cacheNames) => {
+                return Promise.all(
+                    cacheNames.map((cacheName) => {
+                        if (!cacheWhitelist.includes(cacheName)) {
+                            console.log('[Service Worker] Deleting old cache:', cacheName);
+                            return caches.delete(cacheName);
+                        }
+                    })
+                );
+            })
+            .then(() => {
+                console.log('[Service Worker] Activated');
+                return self.clients.claim();
+            })
     );
 });
 
@@ -137,8 +140,8 @@ async function cacheFirst(request) {
             status: 503,
             statusText: 'Service Unavailable',
             headers: new Headers({
-                'Content-Type': 'text/plain'
-            })
+                'Content-Type': 'text/plain',
+            }),
         });
     }
 }
@@ -185,7 +188,7 @@ async function networkFirst(request) {
 
         return new Response('Offline', {
             status: 503,
-            statusText: 'Service Unavailable'
+            statusText: 'Service Unavailable',
         });
     }
 }
@@ -195,14 +198,18 @@ function isStaticAsset(request) {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    return path.match(/\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/i) ||
-         path.startsWith('/public/');
+    return (
+        path.match(/\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/i) ||
+        path.startsWith('/public/')
+    );
 }
 
 // Helper: Check if request is a navigation request (HTML page)
 function isNavigationRequest(request) {
-    return request.mode === 'navigate' ||
-         (request.method === 'GET' && request.headers.get('accept')?.includes('text/html'));
+    return (
+        request.mode === 'navigate' ||
+        (request.method === 'GET' && request.headers.get('accept')?.includes('text/html'))
+    );
 }
 
 // Helper: Check if request is an API call
@@ -215,7 +222,7 @@ function isAPIRequest(request) {
 self.addEventListener('sync', (event) => {
     if (event.tag === 'sync-data') {
         console.log('[Service Worker] Background sync triggered');
-    // Implement background sync logic here
+        // Implement background sync logic here
     }
 });
 

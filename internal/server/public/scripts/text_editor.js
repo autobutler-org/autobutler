@@ -23,64 +23,64 @@ function initializeTextEditor(filePath) {
         var ext = filePath.split('.').pop().toLowerCase();
         var modeMap = {
             // Web languages
-            'js': 'javascript',
-            'jsx': 'javascript',
-            'ts': 'typescript',
-            'tsx': 'typescript',
-            'json': 'json',
-            'html': 'html',
-            'htm': 'html',
-            'xml': 'xml',
-            'css': 'css',
-            'scss': 'scss',
-            'sass': 'sass',
-            'less': 'less',
+            js: 'javascript',
+            jsx: 'javascript',
+            ts: 'typescript',
+            tsx: 'typescript',
+            json: 'json',
+            html: 'html',
+            htm: 'html',
+            xml: 'xml',
+            css: 'css',
+            scss: 'scss',
+            sass: 'sass',
+            less: 'less',
 
             // Programming languages
-            'py': 'python',
-            'rb': 'ruby',
-            'php': 'php',
-            'java': 'java',
-            'c': 'c_cpp',
-            'cpp': 'c_cpp',
-            'cc': 'c_cpp',
-            'h': 'c_cpp',
-            'hpp': 'c_cpp',
-            'cs': 'csharp',
-            'go': 'golang',
-            'rs': 'rust',
-            'swift': 'swift',
-            'kt': 'kotlin',
-            'scala': 'scala',
-            'r': 'r',
-            'lua': 'lua',
-            'pl': 'perl',
+            py: 'python',
+            rb: 'ruby',
+            php: 'php',
+            java: 'java',
+            c: 'c_cpp',
+            cpp: 'c_cpp',
+            cc: 'c_cpp',
+            h: 'c_cpp',
+            hpp: 'c_cpp',
+            cs: 'csharp',
+            go: 'golang',
+            rs: 'rust',
+            swift: 'swift',
+            kt: 'kotlin',
+            scala: 'scala',
+            r: 'r',
+            lua: 'lua',
+            pl: 'perl',
 
             // Shell/Config
-            'sh': 'sh',
-            'bash': 'sh',
-            'zsh': 'sh',
-            'fish': 'sh',
-            'yaml': 'yaml',
-            'yml': 'yaml',
-            'toml': 'toml',
-            'ini': 'ini',
-            'conf': 'ini',
-            'env': 'ini',
+            sh: 'sh',
+            bash: 'sh',
+            zsh: 'sh',
+            fish: 'sh',
+            yaml: 'yaml',
+            yml: 'yaml',
+            toml: 'toml',
+            ini: 'ini',
+            conf: 'ini',
+            env: 'ini',
 
             // Markup
-            'md': 'markdown',
-            'markdown': 'markdown',
-            'rst': 'rst',
-            'tex': 'latex',
+            md: 'markdown',
+            markdown: 'markdown',
+            rst: 'rst',
+            tex: 'latex',
 
             // Data
-            'sql': 'sql',
-            'csv': 'text',
+            sql: 'sql',
+            csv: 'text',
 
             // Other
-            'dockerfile': 'dockerfile',
-            'makefile': 'makefile'
+            dockerfile: 'dockerfile',
+            makefile: 'makefile',
         };
 
         return modeMap[ext] || 'text';
@@ -95,9 +95,9 @@ function initializeTextEditor(filePath) {
 
     // Debounced save function
     let saveTimeout;
-    editor.getSession().on('change', function() {
+    editor.getSession().on('change', function () {
         clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(function() {
+        saveTimeout = setTimeout(function () {
             var content = editor.getValue();
             var blob = new Blob([content], { type: 'text/plain' });
             var formData = new FormData();
@@ -112,17 +112,19 @@ function initializeTextEditor(filePath) {
             // POST to update the file
             fetch('/api/v1/files' + dirPath, {
                 method: 'POST',
-                body: formData
-            }).then(function(response) {
-                if (!response.ok) {
-                    return response.text().then(function(text) {
-                        toastr.error('Error saving file: ' + (text || response.statusText));
-                    });
-                }
-            }).catch(function(error) {
-                console.error('Error saving file:', error);
-                toastr.error('Error saving file: ' + error.message);
-            });
+                body: formData,
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        return response.text().then(function (text) {
+                            toastr.error('Error saving file: ' + (text || response.statusText));
+                        });
+                    }
+                })
+                .catch(function (error) {
+                    console.error('Error saving file:', error);
+                    toastr.error('Error saving file: ' + error.message);
+                });
         }, 1000); // Save after 1 second of inactivity
     });
 }
