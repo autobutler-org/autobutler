@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"embed"
 	"fmt"
 
@@ -10,6 +11,29 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
+
+var (
+	Instance       Database
+	HealthInstance Database
+)
+
+type Database struct {
+	Db *sql.DB
+}
+
+func (d *Database) Exec(query string, args ...any) (sql.Result, error) {
+	if d == nil {
+		return nil, fmt.Errorf("database not initialized")
+	}
+	return d.Db.Exec(query, args...)
+}
+
+func (d *Database) Query(query string, args ...any) (*sql.Rows, error) {
+	if d == nil {
+		return nil, fmt.Errorf("database not initialized")
+	}
+	return d.Query(query, args...)
+}
 
 //go:embed migrations
 var migrations embed.FS

@@ -19,26 +19,3 @@ type Device struct {
 	Model       string            `json:"model"`        // Device model name
 	Categories  map[string]uint64 `json:"categories"`   // Breakdown by category in bytes
 }
-
-// Summary represents overall storage summary
-type Summary struct {
-	TotalDevices int     `json:"total_devices"`
-	TotalBytes   uint64  `json:"total_bytes"`
-	UsedBytes    uint64  `json:"used_bytes"`
-	AvailBytes   uint64  `json:"avail_bytes"`
-	TotalTB      float64 `json:"total_tb"`
-	UsedTB       float64 `json:"used_tb"`
-	AvailTB      float64 `json:"avail_tb"`
-}
-
-// CategoryType represents storage category types
-type CategoryType string
-
-const (
-	CategorySystem    CategoryType = "system"
-	CategoryDocuments CategoryType = "documents"
-	CategoryMedia     CategoryType = "media"
-	CategoryBackups   CategoryType = "backups"
-	CategoryOther     CategoryType = "other"
-	CategoryFree      CategoryType = "free"
-)

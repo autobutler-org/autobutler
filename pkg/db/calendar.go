@@ -6,6 +6,11 @@ import (
 	"fmt"
 )
 
+type Calendar struct {
+	ID   int64
+	Name string
+}
+
 const DefaultCalendarId = 1
 
 func NewCalendar(name string) *Calendar {
