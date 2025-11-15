@@ -4,83 +4,83 @@
  */
 
 .site-body {
-	background-color: var(--color-gray-50);
-	min-height: 100vh;
-	color: var(--color-gray-900);
+    background-color: var(--color-gray-50);
+    min-height: 100vh;
+    color: var(--color-gray-900);
 }
 
 @media (prefers-color-scheme: dark) {
-	.site-body {
-		background: linear-gradient(135deg, var(--color-gray-900) 0%, var(--color-gray-800) 100%);
-		color: #fff;
-		color-scheme: dark;
-	}
+    .site-body {
+        background: linear-gradient(135deg, var(--color-gray-900) 0%, var(--color-gray-800) 100%);
+        color: #fff;
+        color-scheme: dark;
+    }
 }
 
 .site-main {
-	color: inherit;
+    color: inherit;
 }
 
 .site-fullscreen-col {
-	max-height: 100vh;
-	min-height: 100vh;
-	display: flex;
-	flex-direction: column;
+    max-height: 100vh;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Gradient overlays for decorative backgrounds */
 .gradient-overlays {
-	position: absolute;
-	inset: 0;
-	z-index: -10;
+    position: absolute;
+    inset: 0;
+    z-index: -10;
 }
 
 .gradient-overlay {
-	position: absolute;
-	width: 33.333333%;
-	height: 33.333333%;
-	border-radius: 50%;
-	filter: blur(3rem);
+    position: absolute;
+    width: 33.333333%;
+    height: 33.333333%;
+    border-radius: 50%;
+    filter: blur(3rem);
 }
 
 .gradient-overlay--top {
-	top: 0;
-	left: 0;
-	background-color: rgba(59, 130, 246, 0.1); /* blue-500/10 */
+    top: 0;
+    left: 0;
+    background-color: rgba(59, 130, 246, 0.1); /* blue-500/10 */
 }
 
 .gradient-overlay--bottom {
-	bottom: 0;
-	right: 0;
-	background-color: rgba(139, 92, 246, 0.1); /* purple-500/10 */
+    bottom: 0;
+    right: 0;
+    background-color: rgba(139, 92, 246, 0.1); /* purple-500/10 */
 }
 
 /* ========== MOBILE LAYOUT ADJUSTMENTS ========== */
 
 @media (max-width: 768px) {
-	.site-body {
-		min-height: 100vh;
-		padding-bottom: 0;
-	}
+    .site-body {
+        min-height: 100vh;
+        padding-bottom: 0;
+    }
 
-	.site-main {
-		overflow-x: hidden;
-	}
+    .site-main {
+        overflow-x: hidden;
+    }
 
-	.site-fullscreen-col {
-		min-height: 100vh;
-	}
+    .site-fullscreen-col {
+        min-height: 100vh;
+    }
 
-	/* Add safe area insets for devices with notches */
-	@supports (padding: max(0px)) {
-		.site-body {
-			padding-bottom: max(0px, env(safe-area-inset-bottom));
-		}
-	}
+    /* Add safe area insets for devices with notches */
+    @supports (padding: max(0px)) {
+        .site-body {
+            padding-bottom: max(0px, env(safe-area-inset-bottom));
+        }
+    }
 }
 
 @media (max-width: 480px) {
-	.site-body {
-		font-size: var(--font-size-sm);
-	}
+    .site-body {
+        font-size: var(--font-size-sm);
+    }
 }

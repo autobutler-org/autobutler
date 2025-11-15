@@ -100,9 +100,10 @@ templ renderParentColumn(pageState types.PageState, dirPath string, columnIndex 
 // renderCurrentColumn renders the current directory being viewed
 templ renderCurrentColumn(pageState types.PageState, files []fs.FileInfo, columnIndex int) {
 	{{ columnTitle := filepath.Base(pageState.RootDir) }}
-	{{if columnTitle == "" || columnTitle == "/" {
-	columnTitle = "files"
-}
+	{{
+		if columnTitle == "" || columnTitle == "/" {
+			columnTitle = "files"
+		}
 	}}
 	<div class="column-view-column column-view-column--active" data-column-index={ fmt.Sprintf("%d", columnIndex) }>
 		<div class="column-view-column-header">

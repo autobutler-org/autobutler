@@ -4,311 +4,311 @@
  */
 
 .modal-backdrop {
-	background-color: transparent;
-	border: none;
-	padding: 0;
-	margin: auto;
-	max-width: min(90vw, 32rem);
-	max-height: 90vh;
-	overflow: auto;
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    margin: auto;
+    max-width: min(90vw, 32rem);
+    max-height: 90vh;
+    overflow: auto;
 }
 
 .modal-backdrop::backdrop {
-	background-color: rgba(0, 0, 0, 0.5);
-	backdrop-filter: blur(2px);
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
 }
 
 .modal {
-	border-radius: var(--border-radius-lg);
-	background-color: white;
-	padding: var(--spacing-lg);
-	width: 24rem;
-	box-shadow: var(--shadow-lg);
-	border: 1px solid var(--color-gray-200);
+    border-radius: var(--border-radius-lg);
+    background-color: white;
+    padding: var(--spacing-lg);
+    width: 24rem;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--color-gray-200);
 }
 
 @media (prefers-color-scheme: dark) {
-	.modal {
-		background-color: var(--color-gray-800);
-	}
+    .modal {
+        background-color: var(--color-gray-800);
+    }
 }
 
 .modal-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: var(--spacing-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
 }
 
 .modal-close {
-	position: absolute;
-	top: var(--spacing-sm);
-	right: var(--spacing-sm);
+    position: absolute;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
 }
 
 .modal-form {
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
 }
 
 .modal-field {
-	margin: 0;
+    margin: 0;
 }
 
 .modal-label {
-	display: block;
-	font-size: var(--font-size-sm);
-	font-weight: 500;
-	color: var(--color-gray-700);
-	margin-bottom: var(--spacing-xs);
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-gray-700);
+    margin-bottom: var(--spacing-xs);
 }
 
 @media (prefers-color-scheme: dark) {
-	.modal-label {
-		color: var(--color-gray-200);
-	}
+    .modal-label {
+        color: var(--color-gray-200);
+    }
 }
 
 .modal-input {
-	margin-top: var(--spacing-xs);
-	display: block;
-	border: 1px solid var(--color-gray-300);
-	border-radius: var(--border-radius);
-	width: 100%;
-	padding: var(--spacing-sm);
+    margin-top: var(--spacing-xs);
+    display: block;
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--border-radius);
+    width: 100%;
+    padding: var(--spacing-sm);
 }
 
 @media (prefers-color-scheme: dark) {
-	.modal-input {
-		background-color: var(--color-gray-700);
-		border-color: var(--color-gray-600);
-		color: white;
-	}
+    .modal-input {
+        background-color: var(--color-gray-700);
+        border-color: var(--color-gray-600);
+        color: white;
+    }
 }
 
 .modal-textarea {
-	margin-top: var(--spacing-xs);
-	display: block;
-	width: 100%;
-	border: 1px solid var(--color-gray-300);
-	border-radius: var(--border-radius);
-	padding: var(--spacing-sm);
-	min-height: 4rem;
-	resize: vertical;
+    margin-top: var(--spacing-xs);
+    display: block;
+    width: 100%;
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-sm);
+    min-height: 4rem;
+    resize: vertical;
 }
 
 @media (prefers-color-scheme: dark) {
-	.modal-textarea {
-		background-color: var(--color-gray-700);
-		border-color: var(--color-gray-600);
-		color: white;
-	}
+    .modal-textarea {
+        background-color: var(--color-gray-700);
+        border-color: var(--color-gray-600);
+        color: white;
+    }
 }
 
 .modal-actions {
-	display: flex;
-	justify-content: flex-end;
-	gap: var(--spacing-sm);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
 }
 
 /* ========== CALENDAR EVENT EDITOR MODAL ========== */
 
 .event-editor-modal {
-	border-radius: var(--border-radius-lg);
-	background-color: white;
-	padding: var(--spacing-lg);
-	width: 24rem;
-	box-shadow: var(--shadow-lg);
-	border: 1px solid var(--color-gray-200);
+    border-radius: var(--border-radius-lg);
+    background-color: white;
+    padding: var(--spacing-lg);
+    width: 24rem;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--color-gray-200);
 }
 
 @media (prefers-color-scheme: dark) {
-	.event-editor-modal {
-		background-color: var(--color-gray-800);
-		color: white;
-	}
+    .event-editor-modal {
+        background-color: var(--color-gray-800);
+        color: white;
+    }
 }
 
 .event-editor-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .event-editor-delete-btn {
-	padding: var(--spacing-sm);
-	border-radius: var(--border-radius);
-	border: none;
-	background: transparent;
-	color: var(--color-gray-600);
-	cursor: pointer;
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius);
+    border: none;
+    background: transparent;
+    color: var(--color-gray-600);
+    cursor: pointer;
 }
 
 @media (prefers-color-scheme: dark) {
-	.event-editor-delete-btn {
-		color: var(--color-gray-400);
-	}
+    .event-editor-delete-btn {
+        color: var(--color-gray-400);
+    }
 }
 
 .event-editor-delete-btn:hover {
-	background-color: var(--color-red-800);
-	color: white;
+    background-color: var(--color-red-800);
+    color: white;
 }
 
 .event-editor-close-btn {
-	position: absolute;
-	top: var(--spacing-sm);
-	right: var(--spacing-sm);
-	padding: var(--spacing-sm);
-	border-radius: var(--border-radius);
-	border: none;
-	background: transparent;
-	cursor: pointer;
+    position: absolute;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius);
+    border: none;
+    background: transparent;
+    cursor: pointer;
 }
 
 .event-editor-close-btn:hover {
-	background-color: var(--color-gray-200);
+    background-color: var(--color-gray-200);
 }
 
 @media (prefers-color-scheme: dark) {
-	.event-editor-close-btn:hover {
-		background-color: var(--color-gray-700);
-	}
+    .event-editor-close-btn:hover {
+        background-color: var(--color-gray-700);
+    }
 }
 
 .event-editor-form {
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
 }
 
 /* Event editor form labels */
 .event-editor-form .modal-label {
-	display: block;
-	font-size: var(--font-size-sm);
-	font-weight: 500;
-	color: var(--color-gray-700);
-	margin-bottom: var(--spacing-xs);
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-gray-700);
+    margin-bottom: var(--spacing-xs);
 }
 
 @media (prefers-color-scheme: dark) {
-	.event-editor-form .modal-label {
-		color: var(--color-gray-200);
-	}
+    .event-editor-form .modal-label {
+        color: var(--color-gray-200);
+    }
 }
 
 /* Event editor form inputs */
 .event-editor-form .modal-input,
 .event-editor-form .modal-textarea {
-	margin-top: var(--spacing-xs);
-	display: block;
-	border: 1px solid var(--color-gray-300);
-	border-radius: var(--border-radius);
-	width: 100%;
-	padding: var(--spacing-sm);
+    margin-top: var(--spacing-xs);
+    display: block;
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--border-radius);
+    width: 100%;
+    padding: var(--spacing-sm);
 }
 
 .event-editor-form .modal-textarea {
-	min-height: 4rem;
-	resize: vertical;
+    min-height: 4rem;
+    resize: vertical;
 }
 
 @media (prefers-color-scheme: dark) {
-	.event-editor-form .modal-input,
-	.event-editor-form .modal-textarea {
-		background-color: var(--color-gray-700);
-		border-color: var(--color-gray-600);
-		color: white;
-	}
+    .event-editor-form .modal-input,
+    .event-editor-form .modal-textarea {
+        background-color: var(--color-gray-700);
+        border-color: var(--color-gray-600);
+        color: white;
+    }
 }
 
 .event-editor-actions {
-	display: flex;
-	justify-content: flex-end;
-	gap: var(--spacing-sm);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
 }
 
 .event-editor-cancel-btn {
-	padding: var(--spacing-md) var(--spacing-lg);
-	background-color: white;
-	color: var(--color-gray-700);
-	border-radius: var(--border-radius);
-	border: 1px solid var(--color-gray-300);
-	cursor: pointer;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background-color: white;
+    color: var(--color-gray-700);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--color-gray-300);
+    cursor: pointer;
 }
 
 .event-editor-cancel-btn:hover {
-	background-color: var(--color-gray-50);
-	border-color: var(--color-gray-400);
+    background-color: var(--color-gray-50);
+    border-color: var(--color-gray-400);
 }
 
 @media (prefers-color-scheme: dark) {
-	.event-editor-cancel-btn {
-		background-color: var(--color-gray-700);
-		color: var(--color-gray-200);
-		border-color: var(--color-gray-600);
-	}
+    .event-editor-cancel-btn {
+        background-color: var(--color-gray-700);
+        color: var(--color-gray-200);
+        border-color: var(--color-gray-600);
+    }
 
-	.event-editor-cancel-btn:hover {
-		background-color: var(--color-gray-600);
-	}
+    .event-editor-cancel-btn:hover {
+        background-color: var(--color-gray-600);
+    }
 }
 
 .event-editor-submit-btn {
-	cursor: pointer;
-	padding: var(--spacing-md) var(--spacing-lg);
-	background-color: var(--color-primary-600);
-	color: white;
-	border-radius: var(--border-radius);
-	border: none;
+    cursor: pointer;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background-color: var(--color-primary-600);
+    color: white;
+    border-radius: var(--border-radius);
+    border: none;
 }
 
 .event-editor-submit-btn:disabled {
-	cursor: not-allowed;
-	background-color: var(--color-gray-400);
+    cursor: not-allowed;
+    background-color: var(--color-gray-400);
 }
 
 /* ========== MOBILE RESPONSIVE ========== */
 
 @media (max-width: 768px) {
-	.modal {
-		width: calc(100vw - var(--spacing-2xl));
-		max-width: 400px;
-	}
+    .modal {
+        width: calc(100vw - var(--spacing-2xl));
+        max-width: 400px;
+    }
 
-	.event-editor-modal {
-		width: calc(100vw - var(--spacing-2xl));
-		max-width: 400px;
-	}
+    .event-editor-modal {
+        width: calc(100vw - var(--spacing-2xl));
+        max-width: 400px;
+    }
 }
 
 @media (max-width: 480px) {
-	.modal {
-		width: calc(100vw - var(--spacing-lg));
-		padding: var(--spacing-md);
-	}
+    .modal {
+        width: calc(100vw - var(--spacing-lg));
+        padding: var(--spacing-md);
+    }
 
-	.event-editor-modal {
-		width: calc(100vw - var(--spacing-lg));
-		padding: var(--spacing-md);
-	}
+    .event-editor-modal {
+        width: calc(100vw - var(--spacing-lg));
+        padding: var(--spacing-md);
+    }
 
-	.modal-actions {
-		flex-direction: column;
-		gap: var(--spacing-xs);
-	}
+    .modal-actions {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
 
-	.modal-actions button {
-		width: 100%;
-	}
+    .modal-actions button {
+        width: 100%;
+    }
 
-	.event-editor-actions {
-		flex-direction: column;
-		gap: var(--spacing-xs);
-	}
+    .event-editor-actions {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
 
-	.event-editor-actions button {
-		width: 100%;
-	}
+    .event-editor-actions button {
+        width: 100%;
+    }
 }

@@ -46,7 +46,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 				<button
 					type="button"
 					class="context-menu-item"
-					onclick={ templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); showFileDetails(event, '%s')", file.Name())) }
+					onclick={ templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); showFileDetails('%s')", file.Name())) }
 				>
 					File Details
 				</button>

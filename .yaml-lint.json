@@ -1,0 +1,12 @@
+{
+  "schema": "DEFAULT_SCHEMA",
+  "ignore": [
+    "node_modules/**",
+    ".git/**",
+    "build/**",
+    "dist/**",
+    "playwright-report/**",
+    "test-results/**",
+    "internal/**"
+  ]
+}

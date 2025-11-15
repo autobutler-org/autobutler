@@ -21,6 +21,7 @@
     "serverutil",
     "Sprintf",
     "sqlc",
-    "templ"
+    "templ",
+    "toastr"
   ],
 }

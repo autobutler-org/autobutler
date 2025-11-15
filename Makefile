@@ -34,7 +34,7 @@ setup/sqlc: ## Install sqlc tool
 	go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0
 
 setup/templ: ## Install templ tool
-	go install github.com/a-h/templ/cmd/templ@v0.3.943
+	go install github.com/a-h/templ/cmd/templ@latest
 
 export INSTALL_VERSION?=$(shell git describe --tags --abbrev=0)
 export GOPROXY ?= https://proxy.golang.org,direct
@@ -94,21 +94,72 @@ test: test/e2e
 test/e2e:
 	npm run test/e2e
 
-format: ## Format code
+format: format/go format/templ format/js format/ts format/css ## Format code
+
+format/go: ## Format Go code
+	go fmt ./...
+
+format/templ: ## Format templ files
+	templ fmt .
+
+format/js: ## Format JavaScript files
+	npm run format:js
+
+format/ts: ## Format TypeScript files
+	npm run format:ts
+
+format/css: ## Format CSS files
+	npm run format:css
+
+lint: lint/go lint/sqlc lint/templ lint/js lint/ts lint/css lint/yaml ## Lint code
+
+lint/go: ## Lint Go code
+	gofmt -s -w .
+	go vet ./...
+
+lint/sqlc: ## Lint sqlc
+	sqlc vet
+
+lint/templ: ## Lint templ files
+	templ fmt -fail .
+
+lint/js: ## Lint JavaScript files
+	npm run lint:js
+
+lint/ts: ## Lint TypeScript files
+	npm run lint:ts
+
+lint/css: ## Lint CSS files
+	npm run lint:css
+
+lint/yaml: ## Lint YAML files
+	npm run lint:yaml
+
+fix: fix/go fix/js fix/ts fix/css ## Fix code issues
+
+fix/go: ## Fix Go code issues
+	go mod tidy
 	go fmt ./...
 	templ fmt .
 
-lint: ## Lint code
-	gofmt -s -w .
-	go vet ./...
-	sqlc vet
-	templ fmt -fail .
+fix/js: ## Fix JavaScript code issues
+	npm run format:js
 
-fix: tidy format ## Fix code issues
+fix/ts: ## Fix TypeScript code issues
+	npm run format:ts
 
-upgrade: ## Upgrade dependencies
+fix/css: ## Fix CSS code issues
+	npm run format:css
+
+upgrade: upgrade/go upgrade/js ## Upgrade dependencies
+
+upgrade/go: generate ## Upgrade dependencies (go)
 	go get -u ./...
 	$(MAKE) tidy
+
+upgrade/js: ## Upgrade dependencies (js)
+	npm run check-updates
+	npm install
 
 tidy: ## Tidy go mod
 	go mod tidy

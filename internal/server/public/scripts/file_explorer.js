@@ -1,9 +1,5 @@
 var MAX_FILE_NAME_LENGTH = 255;
 
-var contextMenuPosition = {
-    x: null,
-    y: null,
-};
 // NOTE: Must be global so that it can be removed when the file viewer is closed.
 var navigationListener = null;
 var loadedBook = null;
@@ -32,6 +28,7 @@ function setViewPreference(view) {
     document.cookie = `fileExplorerView=${view}; path=/; max-age=31536000`; // 1 year
 }
 
+// eslint-disable-next-line no-unused-vars
 function switchView(view) {
     setViewPreference(view);
 
@@ -42,7 +39,7 @@ function switchView(view) {
     const currentPath = window.location.pathname;
     htmx.ajax('GET', currentPath, {
         target: '#file-explorer-view-content',
-        swap: 'innerHTML'
+        swap: 'innerHTML',
     });
 }
 
@@ -69,14 +66,14 @@ function updateViewButtonStates(activeView) {
 }
 
 // Initialize - sync localStorage to cookie on page load and update button states
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const view = getViewPreference();
     setViewPreference(view); // Ensures cookie is set
     updateViewButtonStates(view); // Ensure button states match the active view
 });
 
 // Send view preference in all HTMX requests via custom header
-document.body.addEventListener('htmx:configRequest', function(event) {
+document.body.addEventListener('htmx:configRequest', function (event) {
     const view = getViewPreference();
     event.detail.headers['X-File-Explorer-View'] = view;
 });
@@ -88,6 +85,7 @@ function preventDefault(event) {
     }
 }
 
+// eslint-disable-next-line no-unused-vars
 function debounce(func, wait) {
     let timeout;
     return (...args) => {
@@ -96,10 +94,12 @@ function debounce(func, wait) {
     };
 }
 
-function showFileDetails(event, fileName) {
+// eslint-disable-next-line no-unused-vars
+function showFileDetails(fileName) {
     alert(fileName);
 }
 
+// eslint-disable-next-line no-unused-vars
 function closeContextMenu(event, parentNode) {
     preventDefault(event);
     for (const contextMenu of parentNode.querySelectorAll('.context-menu')) {
@@ -109,6 +109,7 @@ function closeContextMenu(event, parentNode) {
     }
 }
 
+// eslint-disable-next-line no-unused-vars
 function closeContextMenuFromItem(event) {
     const contextMenu = event.target.closest('.context-menu');
     if (contextMenu) {
@@ -118,6 +119,7 @@ function closeContextMenuFromItem(event) {
     }
 }
 
+// eslint-disable-next-line no-unused-vars
 function openContextMenu(event, parentNode) {
     preventDefault(event);
     clearSelectedFiles();
@@ -128,6 +130,7 @@ function openContextMenu(event, parentNode) {
     return contextMenu;
 }
 
+// eslint-disable-next-line no-unused-vars
 function toggleFloatingContextMenu(event, parentNode) {
     preventDefault(event);
     const contextMenu = parentNode.querySelector('.context-menu');
@@ -137,7 +140,7 @@ function toggleFloatingContextMenu(event, parentNode) {
     }
 
     // Close any other open context menus first
-    document.querySelectorAll('.context-menu:not(.hidden)').forEach(menu => {
+    document.querySelectorAll('.context-menu:not(.hidden)').forEach((menu) => {
         if (menu !== contextMenu) {
             menu.classList.add('hidden');
         }
@@ -171,6 +174,7 @@ function toggleFloatingContextMenu(event, parentNode) {
     }
 }
 
+// eslint-disable-next-line no-unused-vars
 function toggleFolderInput(event) {
     event.preventDefault();
     const folderInput = document.getElementById('folder-input');
@@ -183,7 +187,7 @@ function toggleFolderInput(event) {
 document.addEventListener('click', (event) => {
     // Check if the click is outside any context menu and not on a context menu trigger
     if (!event.target.closest('.context-menu') && !event.target.closest('.context-menu-trigger')) {
-        document.querySelectorAll('.context-menu:not(.hidden)').forEach(menu => {
+        document.querySelectorAll('.context-menu:not(.hidden)').forEach((menu) => {
             menu.classList.add('hidden');
             menu.style.left = null;
             menu.style.top = null;
@@ -204,6 +208,7 @@ function clearFileViewer() {
     }
 }
 
+// eslint-disable-next-line no-unused-vars
 function closeFileViewer(event) {
     preventDefault(event);
     const fileViewer = document.getElementById('file-viewer');
@@ -244,7 +249,7 @@ function selectRange(startNode, endNode) {
  * Clear all selected files and remove visual selection
  */
 function clearSelectedFiles() {
-    document.querySelectorAll('.file-node--selected').forEach(node => {
+    document.querySelectorAll('.file-node--selected').forEach((node) => {
         node.classList.remove('file-node--selected');
     });
     selectedFiles = [];
@@ -284,7 +289,7 @@ function deselectFileNode(node) {
     node.classList.remove('file-node--selected');
     const fileName = node.dataset.name;
     if (fileName) {
-        selectedFiles = selectedFiles.filter(name => name !== fileName);
+        selectedFiles = selectedFiles.filter((name) => name !== fileName);
     }
     updateDownloadButton();
 }
@@ -312,11 +317,14 @@ function updateDownloadButton() {
  * Single click = select the file (Google Drive style)
  * In column view: single click navigates/opens immediately (Finder style)
  */
+// eslint-disable-next-line no-unused-vars
 function handleFileNodeClick(event, node) {
     // Ignore if clicking on context menu trigger
-    if (event.target.closest('.context-menu-trigger') ||
+    if (
+        event.target.closest('.context-menu-trigger') ||
         event.target.closest('.grid-view-context-trigger') ||
-        event.target.closest('.column-view-context-trigger')) {
+        event.target.closest('.column-view-context-trigger')
+    ) {
         return;
     }
 
@@ -335,7 +343,7 @@ function handleFileNodeClick(event, node) {
             if (href) {
                 htmx.ajax('GET', href, {
                     target: '#file-explorer-view-content',
-                    swap: 'innerHTML'
+                    swap: 'innerHTML',
                 }).then(() => {
                     window.history.pushState({}, '', href);
                     updateBackButton();
@@ -351,11 +359,11 @@ function handleFileNodeClick(event, node) {
                 if (previewContent) {
                     previewContent.innerHTML = '';
                 }
-                
+
                 // Load the new preview content
                 htmx.ajax('GET', viewerPath, {
                     target: '#column-preview-content',
-                    swap: 'innerHTML'
+                    swap: 'innerHTML',
                 });
             }
         }
@@ -422,7 +430,7 @@ function handleFileNodeDoubleClick(event, node) {
             // Use HTMX for smooth navigation without page reload
             htmx.ajax('GET', href, {
                 target: '#file-explorer-view-content',
-                swap: 'innerHTML'
+                swap: 'innerHTML',
             }).then(() => {
                 // Update the browser URL after successful navigation
                 window.history.pushState({}, '', href);
@@ -439,7 +447,7 @@ function handleFileNodeDoubleClick(event, node) {
                 fileViewer.showModal();
                 htmx.ajax('GET', viewerPath, {
                     target: '#file-viewer-content',
-                    swap: 'innerHTML'
+                    swap: 'innerHTML',
                 });
             }
         }
@@ -450,6 +458,7 @@ function handleFileNodeDoubleClick(event, node) {
  * Handle touch events for mobile double-tap detection
  * On mobile, double-tap opens files (since dblclick doesn't work reliably)
  */
+// eslint-disable-next-line no-unused-vars
 function handleFileNodeTouch(event, node) {
     const currentTime = new Date().getTime();
     const tapInterval = currentTime - lastTapTime;
@@ -478,6 +487,7 @@ function handleFileNodeTouch(event, node) {
     }
 }
 
+// eslint-disable-next-line no-unused-vars
 function supportsDirectoryUpload() {
     const supportsFileSystemAccessAPI = 'getAsFileSystemHandle' in DataTransferItem.prototype;
     const supportsWebkitGetAsEntry = 'webkitGetAsEntry' in DataTransferItem.prototype;
@@ -486,6 +496,7 @@ function supportsDirectoryUpload() {
     return supportsFileSystemAccessAPI || supportsWebkitGetAsEntry;
 }
 
+// eslint-disable-next-line no-unused-vars
 function activateDropZone(event) {
     preventDefault(event);
     const fileUploadArea = document.getElementById('file-upload-area');
@@ -493,6 +504,7 @@ function activateDropZone(event) {
     fileUploadArea.classList.remove('bg-gray-800');
 }
 
+// eslint-disable-next-line no-unused-vars
 function deactivateDropZone(event) {
     preventDefault(event);
     const fileUploadArea = document.getElementById('file-upload-area');
@@ -500,25 +512,29 @@ function deactivateDropZone(event) {
     fileUploadArea.classList.add('bg-gray-800');
 }
 
+// eslint-disable-next-line no-unused-vars
 function activateDropZoneOnNode(event) {
     preventDefault(event);
     event.currentTarget.classList.add('bg-blue-600');
 }
 
+// eslint-disable-next-line no-unused-vars
 function deactivateDropZoneOnNode(event) {
     preventDefault(event);
     event.currentTarget.classList.remove('bg-blue-600');
 }
 
+// eslint-disable-next-line no-unused-vars
 function dropOnNode(event, returnDir) {
     preventDefault(event);
     event.currentTarget.classList.remove('bg-blue-600');
     const li = event.currentTarget.closest('li');
     const dropDir = li.dataset.name;
     console.log(`Drop on node: ${dropDir}`);
-    return dropFiles(event, `/${dropDir}`, !!returnDir ? returnDir : "/");
+    return dropFiles(event, `/${dropDir}`, returnDir ? returnDir : '/');
 }
 
+// eslint-disable-next-line no-unused-vars
 function downloadSelectedFiles(event, rootDir) {
     preventDefault(event);
 
@@ -526,7 +542,7 @@ function downloadSelectedFiles(event, rootDir) {
 
     if (!rootDir) rootDir = '';
 
-    selectedFiles.forEach(fileName => {
+    selectedFiles.forEach((fileName) => {
         const link = document.createElement('a');
         let cleanFileName = fileName;
         while (cleanFileName.endsWith('/')) {
@@ -555,8 +571,8 @@ function downloadSelectedFiles(event, rootDir) {
 }
 
 function dropFiles(event, rootDir, returnDir) {
-    rootDir = rootDir || "";
-    returnDir = returnDir || "";
+    rootDir = rootDir || '';
+    returnDir = returnDir || '';
     preventDefault(event);
     const files = event.dataTransfer.files;
     if (files.length > 0) {
@@ -566,8 +582,7 @@ function dropFiles(event, rootDir, returnDir) {
         }
         const uploadForm = document.getElementById('file-upload-form');
         // NOTE: https://flaviocopes.com/htmx-send-files-using-htmxajax-call/
-        htmx.ajax('POST',
-            uploadForm.getAttribute('hx-post') + rootDir, {
+        htmx.ajax('POST', uploadForm.getAttribute('hx-post') + rootDir, {
             values: {
                 files: formData.getAll('files'),
                 returnDir: returnDir,
@@ -577,51 +592,58 @@ function dropFiles(event, rootDir, returnDir) {
     }
 }
 
+// eslint-disable-next-line no-unused-vars
 function saveQuill(filePath) {
     const delta = quill.getContents();
     fetch(`/api/v1/docs${filePath}`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
         },
-        body: JSON.stringify(delta)
-    }).then(response => {
-        if (response.ok) {
-            toastr.success('Document saved successfully');
-        } else {
-            return response.text().then(text => {
-                toastr.error('Error saving document: ' + (text || response.statusText));
-            });
-        }
-    }).catch(error => {
-        console.error('Error saving file:', error);
-        toastr.error('Error saving document: ' + error.message);
-    });
+        body: JSON.stringify(delta),
+    })
+        .then((response) => {
+            if (response.ok) {
+                toastr.success('Document saved successfully');
+            } else {
+                return response.text().then((text) => {
+                    toastr.error('Error saving document: ' + (text || response.statusText));
+                });
+            }
+        })
+        .catch((error) => {
+            console.error('Error saving file:', error);
+            toastr.error('Error saving document: ' + error.message);
+        });
 }
 
+// eslint-disable-next-line no-unused-vars
 function saveAceEditor(filePath, content) {
     fetch(`/api/v1/files${filePath}`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'text/plain'
+            'Content-Type': 'text/plain',
         },
-        body: content
-    }).then(response => {
-        if (response.ok) {
-            toastr.success('File saved successfully');
-            console.log('File saved successfully');
-        } else {
-            return response.text().then(text => {
-                toastr.error('Error saving file: ' + (text || response.statusText));
-                console.error('Error saving file:', response.statusText);
-            });
-        }
-    }).catch(error => {
-        console.error('Error saving file:', error);
-        toastr.error('Error saving file: ' + error.message);
-    });
+        body: content,
+    })
+        .then((response) => {
+            if (response.ok) {
+                toastr.success('File saved successfully');
+                console.log('File saved successfully');
+            } else {
+                return response.text().then((text) => {
+                    toastr.error('Error saving file: ' + (text || response.statusText));
+                    console.error('Error saving file:', response.statusText);
+                });
+            }
+        })
+        .catch((error) => {
+            console.error('Error saving file:', error);
+            toastr.error('Error saving file: ' + error.message);
+        });
 }
 
+// eslint-disable-next-line no-unused-vars
 function moveFile(event, rootDir, fileName) {
     preventDefault(event);
     while (rootDir && rootDir[0] == '/') {
@@ -783,8 +805,7 @@ function moveFile(event, rootDir, fileName) {
         overlay.remove();
         document.removeEventListener('keydown', escapeHandler);
 
-        htmx.ajax('PUT',
-            `/api/v1/files/${filePath}`, {
+        htmx.ajax('PUT', `/api/v1/files/${filePath}`, {
             values: {
                 newFilePath: newFilePath,
             },
@@ -794,9 +815,10 @@ function moveFile(event, rootDir, fileName) {
     });
 }
 
+// eslint-disable-next-line no-unused-vars
 function newFile(event, rootDir) {
     preventDefault(event);
-    const fileName = prompt("Enter the new file name (including extension):");
+    const fileName = prompt('Enter the new file name (including extension):');
     if (fileName) {
         if (fileName.length > MAX_FILE_NAME_LENGTH) {
             alert(`File name must be ${MAX_FILE_NAME_LENGTH} characters or less`);
@@ -806,8 +828,7 @@ function newFile(event, rootDir) {
         const formData = new FormData();
         // NOTE: Creating an empty file
         formData.append('files', new Blob([''], { type: 'text/plain' }), fileName);
-        htmx.ajax('POST',
-            uploadForm.getAttribute('hx-post') + rootDir, {
+        htmx.ajax('POST', uploadForm.getAttribute('hx-post') + rootDir, {
             values: {
                 files: formData.getAll('files'),
                 returnDir: rootDir,
@@ -817,28 +838,29 @@ function newFile(event, rootDir) {
     }
 }
 
+// eslint-disable-next-line no-unused-vars
 function showFolderDetails(event) {
     preventDefault(event);
-    alert("Folder details to be implemented.");
+    alert('Folder details to be implemented.');
 }
 
+// eslint-disable-next-line no-unused-vars
 function navigateToParentAndPreview(event, parentPath, previewPath) {
     preventDefault(event);
     // Use HTMX to navigate to parent (removes child columns) without full page reload
     htmx.ajax('GET', parentPath, {
         target: '#file-explorer-view-content',
-        swap: 'innerHTML'
-    }).then(function() {
+        swap: 'innerHTML',
+    }).then(function () {
         // After the file explorer updates, load the preview
         htmx.ajax('GET', previewPath, {
             target: '#column-preview-content',
-            swap: 'innerHTML'
+            swap: 'innerHTML',
         });
     });
     // Update the URL
     history.pushState({}, '', parentPath);
 }
-
 
 // SORTING
 
@@ -865,8 +887,8 @@ function applySorting() {
     const rows = Array.from(tbody.querySelectorAll('tr'));
 
     // Separate the spacer row (last row with "Drop files here...")
-    const spacerRow = rows.find(row => row.querySelector('.spacer'));
-    const fileRows = rows.filter(row => row !== spacerRow);
+    const spacerRow = rows.find((row) => row.querySelector('.spacer'));
+    const fileRows = rows.filter((row) => row !== spacerRow);
 
     fileRows.sort((a, b) => {
         let aValue, bValue;
@@ -913,7 +935,7 @@ function applySorting() {
 
     // Clear tbody and re-append sorted rows
     tbody.innerHTML = '';
-    fileRows.forEach(row => tbody.appendChild(row));
+    fileRows.forEach((row) => tbody.appendChild(row));
 
     // Add spacer row back at the end
     if (spacerRow) {
@@ -922,7 +944,13 @@ function applySorting() {
 }
 
 function parseSize(sizeText) {
-    const units = { 'B': 1, 'KB': 1024, 'MB': 1024 * 1024, 'GB': 1024 * 1024 * 1024, 'TB': 1024 * 1024 * 1024 * 1024 };
+    const units = {
+        B: 1,
+        KB: 1024,
+        MB: 1024 * 1024,
+        GB: 1024 * 1024 * 1024,
+        TB: 1024 * 1024 * 1024 * 1024,
+    };
     const match = sizeText.match(/^([\d.]+)\s*([A-Z]+)$/);
     if (!match) return 0;
 
@@ -934,7 +962,7 @@ function parseSize(sizeText) {
 function updateSortArrows(column) {
     // Hide all arrows first
     const allArrows = document.querySelectorAll('[id$="-sort-asc"], [id$="-sort-desc"]');
-    allArrows.forEach(arrow => {
+    allArrows.forEach((arrow) => {
         arrow.classList.add('hidden');
         arrow.classList.remove('text-gray-700', 'dark:text-gray-300');
         arrow.classList.add('text-gray-400');
@@ -960,7 +988,8 @@ function toggleMixedSorting() {
 
     if (mixedSorting) {
         // Mixed sorting enabled - show both icons
-        button.title = 'Currently: Mixed sorting (folders and files together)\nClick to switch to folders first';
+        button.title =
+            'Currently: Mixed sorting (folders and files together)\nClick to switch to folders first';
         label.textContent = 'Mixed';
 
         // Show both folder and file icons
@@ -968,7 +997,8 @@ function toggleMixedSorting() {
         fileIcon.classList.remove('invisible');
     } else {
         // Mixed sorting disabled - show only folder icon
-        button.title = 'Currently: Folders first sorting\nClick to switch to mixed sorting (folders and files together)';
+        button.title =
+            'Currently: Folders first sorting\nClick to switch to mixed sorting (folders and files together)';
         label.textContent = 'Folders';
 
         // Show only folder icon (file icon invisible but still takes space)
@@ -1013,7 +1043,8 @@ function handleTableKeyNavigation(event) {
             if (nextIndex >= allRows.length) {
                 nextIndex = 0; // Wrap to first row
             }
-        } else { // ArrowUp
+        } else {
+            // ArrowUp
             nextIndex = currentIndex - 1;
             if (nextIndex < 0) {
                 nextIndex = allRows.length - 1; // Wrap to last row
@@ -1042,7 +1073,8 @@ function handleTableKeyNavigation(event) {
             if (nextIndex >= focusableInRow.length) {
                 nextIndex = 0; // Wrap to first element in row
             }
-        } else { // ArrowLeft
+        } else {
+            // ArrowLeft
             nextIndex = currentIndex - 1;
             if (nextIndex < 0) {
                 nextIndex = focusableInRow.length - 1; // Wrap to last element in row
@@ -1057,50 +1089,62 @@ function handleTableKeyNavigation(event) {
 document.addEventListener('keydown', handleTableKeyNavigation);
 
 // Add keyboard support for sort buttons
-document.addEventListener('keydown', function (event) {
-    const activeElement = document.activeElement;
+document.addEventListener(
+    'keydown',
+    function (event) {
+        const activeElement = document.activeElement;
 
-    if (event.key === 'Enter' || event.key === ' ') {
-        // Check if focused element is a sort button
-        if (activeElement && activeElement.classList.contains('sort-button')) {
-            console.log('Sort button keyboard event detected:', activeElement.id);
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
+        if (event.key === 'Enter' || event.key === ' ') {
+            // Check if focused element is a sort button
+            if (activeElement && activeElement.classList.contains('sort-button')) {
+                console.log('Sort button keyboard event detected:', activeElement.id);
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
 
-            // Extract column name from button id (format: "sort-{columnName}")
-            const columnName = activeElement.id.replace('sort-', '');
+                // Extract column name from button id (format: "sort-{columnName}")
+                const columnName = activeElement.id.replace('sort-', '');
 
-            if (columnName) {
-                console.log('Sorting by column:', columnName);
-                sortFiles(columnName);
-                updateSortArrows(columnName);
+                if (columnName) {
+                    console.log('Sorting by column:', columnName);
+                    sortFiles(columnName);
+                    updateSortArrows(columnName);
+                }
+
+                return false;
             }
 
-            return false;
+            // Check if focused element is the mixed sort toggle
+            if (activeElement && activeElement.id === 'mixed-sort-toggle') {
+                console.log('Sort switcher keyboard event detected');
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+
+                toggleMixedSorting();
+
+                return false;
+            }
         }
-
-        // Check if focused element is the mixed sort toggle
-        if (activeElement && activeElement.id === 'mixed-sort-toggle') {
-            console.log('Sort switcher keyboard event detected');
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-
-            toggleMixedSorting();
-
-            return false;
-        }
-    }
-}, true); // Use capture phase to intercept before other handlers
+    },
+    true
+); // Use capture phase to intercept before other handlers
 
 // Add keyboard shortcut for creating new folder
 document.addEventListener('keydown', function (event) {
     // Check if the '+' key is pressed (can be '+' or '=' with shift)
-    if ((event.key === '+' || event.key === '=') && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    if (
+        (event.key === '+' || event.key === '=') &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey
+    ) {
         // Don't trigger if user is typing in an input field
         const activeElement = document.activeElement;
-        if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+        if (
+            activeElement &&
+            (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')
+        ) {
             return;
         }
 
@@ -1125,7 +1169,7 @@ function scrollColumnViewToRight() {
 }
 
 // Listen for HTMX content swaps to scroll column view
-document.body.addEventListener('htmx:afterSwap', function(event) {
+document.body.addEventListener('htmx:afterSwap', function (event) {
     // Check if we're in column view and the content was swapped
     if (event.detail.target.id === 'file-explorer-view-content') {
         // Small delay to ensure DOM is fully rendered
@@ -1136,7 +1180,7 @@ document.body.addEventListener('htmx:afterSwap', function(event) {
 });
 
 // Also scroll on initial page load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     scrollColumnViewToRight();
 });
 
@@ -1162,6 +1206,7 @@ function updateBackButton() {
 /**
  * Navigate back to previous folder
  */
+// eslint-disable-next-line no-unused-vars
 function navigateBack() {
     const currentPath = window.location.pathname;
 
@@ -1174,41 +1219,48 @@ function navigateBack() {
     window.history.pushState({}, '', parentPath);
     htmx.ajax('GET', parentPath, {
         target: '#file-explorer-view-content',
-        swap: 'innerHTML'
+        swap: 'innerHTML',
     });
     updateBackButton();
 }
 
 // Handle browser back/forward buttons
-window.addEventListener('popstate', function(event) {
+window.addEventListener('popstate', function () {
     // Reload the file explorer content for the current URL
     const currentPath = window.location.pathname;
     htmx.ajax('GET', currentPath, {
         target: '#file-explorer-view-content',
-        swap: 'innerHTML'
+        swap: 'innerHTML',
     });
     updateBackButton();
 });
 
 // Update back button on page load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     updateBackButton();
 });
 
 // CONTEXT MENU GLOBAL HANDLERS
 // Close context menus when clicking outside
-document.addEventListener('click', function(event) {
+document.addEventListener('click', function (event) {
     // Check if click is outside any context menu
-    if (!event.target.closest('.context-menu') && !event.target.closest('.context-menu-trigger') && !event.target.closest('.grid-view-context-trigger') && !event.target.closest('.column-view-context-trigger')) {
-        document.querySelectorAll('.context-menu:not(.hidden)').forEach(menu => {
+    if (
+        !event.target.closest('.context-menu') &&
+        !event.target.closest('.context-menu-trigger') &&
+        !event.target.closest('.grid-view-context-trigger') &&
+        !event.target.closest('.column-view-context-trigger')
+    ) {
+        document.querySelectorAll('.context-menu:not(.hidden)').forEach((menu) => {
             menu.classList.add('hidden');
         });
     }
 
     // Clear file selection when clicking on empty space (not on a file node)
-    if (!event.target.closest('.file-node') &&
+    if (
+        !event.target.closest('.file-node') &&
         !event.target.closest('.context-menu') &&
-        !event.target.closest('dialog')) {
+        !event.target.closest('dialog')
+    ) {
         clearSelectedFiles();
     }
 });

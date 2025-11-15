@@ -8,230 +8,241 @@
 
 /* Prevent tap highlight color on mobile (we'll handle it ourselves) */
 * {
-	-webkit-tap-highlight-color: transparent;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* Ensure touch actions are smooth */
-a, button, [role="button"], .clickable {
-	touch-action: manipulation;
+a,
+button,
+[role='button'],
+.clickable {
+    touch-action: manipulation;
 }
 
 /* ========== BUTTON TAP FEEDBACK ========== */
 
 /* All buttons get a subtle scale-down and brightness change on tap */
 .btn:active {
-	transform: scale(0.96);
-	filter: brightness(0.92);
-	transition: transform 0.05s ease, filter 0.05s ease;
+    transform: scale(0.96);
+    filter: brightness(0.92);
+    transition:
+        transform 0.05s ease,
+        filter 0.05s ease;
 }
 
 /* Primary button tap feedback */
 .btn--primary:active {
-	background-color: var(--color-primary-800);
-	transform: scale(0.96);
+    background-color: var(--color-primary-800);
+    transform: scale(0.96);
 }
 
 /* Secondary button tap feedback */
 .btn--secondary:active {
-	background-color: var(--color-gray-100);
-	border-color: var(--color-gray-500);
-	transform: scale(0.96);
+    background-color: var(--color-gray-100);
+    border-color: var(--color-gray-500);
+    transform: scale(0.96);
 }
 
 @media (prefers-color-scheme: dark) {
-	.btn--secondary:active {
-		background-color: var(--color-gray-800);
-	}
+    .btn--secondary:active {
+        background-color: var(--color-gray-800);
+    }
 }
 
 /* Icon button tap feedback */
 .btn--icon:active {
-	transform: scale(0.90);
-	background-color: var(--color-gray-300);
+    transform: scale(0.9);
+    background-color: var(--color-gray-300);
 }
 
 @media (prefers-color-scheme: dark) {
-	.btn--icon:active {
-		background-color: var(--color-gray-800);
-	}
+    .btn--icon:active {
+        background-color: var(--color-gray-800);
+    }
 }
 
 /* ========== NAVIGATION TAP FEEDBACK ========== */
 
 /* Bottom navigation items - pronounced feedback for primary navigation */
 .bottomnav-link:active {
-	transform: scale(0.92);
-	background-color: rgba(0, 0, 0, 0.05);
-	border-radius: var(--border-radius);
+    transform: scale(0.92);
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: var(--border-radius);
 }
 
 @media (prefers-color-scheme: dark) {
-	.bottomnav-link:active {
-		background-color: rgba(255, 255, 255, 0.1);
-	}
+    .bottomnav-link:active {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
 }
 
 /* Top navigation items */
 .topnav-link:active {
-	background-color: var(--color-gray-200);
-	transform: scale(0.98);
+    background-color: var(--color-gray-200);
+    transform: scale(0.98);
 }
 
 @media (prefers-color-scheme: dark) {
-	.topnav-link:active {
-		background-color: var(--color-gray-700);
-	}
+    .topnav-link:active {
+        background-color: var(--color-gray-700);
+    }
 }
 
 /* Hamburger menu button and close button */
 .landing-nav-hamburger:active,
 .mobile-menu-close:active {
-	transform: scale(0.90);
-	background-color: rgba(255, 255, 255, 0.2);
+    transform: scale(0.9);
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 @media (prefers-color-scheme: light) {
-	.landing-nav-hamburger:active,
-	.mobile-menu-close:active {
-		background-color: var(--color-gray-200);
-	}
+    .landing-nav-hamburger:active,
+    .mobile-menu-close:active {
+        background-color: var(--color-gray-200);
+    }
 }
 
 /* Mobile menu links - click highlighting before navigation */
 .mobile-menu-link:active,
 button.mobile-menu-link:active,
 a.mobile-menu-link:active {
-	background-color: var(--color-primary-700) !important;
-	color: white !important;
-	transition: none;
+    background-color: var(--color-primary-700) !important;
+    color: white !important;
+    transition: none;
 }
 
 @media (prefers-color-scheme: light) {
-	.mobile-menu-link:active,
-	button.mobile-menu-link:active,
-	a.mobile-menu-link:active {
-		background-color: var(--color-primary-200) !important;
-		color: var(--color-primary-900) !important;
-	}
+    .mobile-menu-link:active,
+    button.mobile-menu-link:active,
+    a.mobile-menu-link:active {
+        background-color: var(--color-primary-200) !important;
+        color: var(--color-primary-900) !important;
+    }
 }
 
 /* ========== FILE EXPLORER TAP FEEDBACK ========== */
 
 /* File/folder rows get a gentle scale effect */
 .file-table-row:active {
-	background-color: var(--color-primary-50);
-	transform: scale(0.99);
-	transition: transform 0.05s ease, background-color 0.05s ease;
+    background-color: var(--color-primary-50);
+    transform: scale(0.99);
+    transition:
+        transform 0.05s ease,
+        background-color 0.05s ease;
 }
 
 @media (prefers-color-scheme: dark) {
-	.file-table-row:active {
-		background-color: var(--color-gray-700);
-	}
+    .file-table-row:active {
+        background-color: var(--color-gray-700);
+    }
 }
 
 /* Breadcrumb links */
 .file-explorer-breadcrumb a:active {
-	color: var(--color-primary-800);
-	transform: scale(0.95);
+    color: var(--color-primary-800);
+    transform: scale(0.95);
 }
 
 /* Context menu items */
 .context-menu-item:active {
-	background-color: var(--color-primary-100);
-	transform: scale(0.98);
+    background-color: var(--color-primary-100);
+    transform: scale(0.98);
 }
 
 @media (prefers-color-scheme: dark) {
-	.context-menu-item:active {
-		background-color: var(--color-gray-700);
-	}
+    .context-menu-item:active {
+        background-color: var(--color-gray-700);
+    }
 }
 
 .context-menu-item--danger:active {
-	background-color: var(--color-red-100);
+    background-color: var(--color-red-100);
 }
 
 @media (prefers-color-scheme: dark) {
-	.context-menu-item--danger:active {
-		background-color: var(--color-red-900);
-	}
+    .context-menu-item--danger:active {
+        background-color: var(--color-red-900);
+    }
 }
 
 /* Sort buttons and controls */
 .sort-button:active,
 .sort-switcher:active {
-	background-color: var(--color-gray-200);
-	transform: scale(0.95);
+    background-color: var(--color-gray-200);
+    transform: scale(0.95);
 }
 
 @media (prefers-color-scheme: dark) {
-	.sort-button:active,
-	.sort-switcher:active {
-		background-color: var(--color-gray-700);
-	}
+    .sort-button:active,
+    .sort-switcher:active {
+        background-color: var(--color-gray-700);
+    }
 }
 
 /* File viewer controls */
 .file-viewer-close:active {
-	background-color: var(--color-gray-100);
+    background-color: var(--color-gray-100);
 }
 
 .file-viewer-download-btn:active,
 .file-viewer-epub-btn:active {
-	transform: scale(0.90);
-	background-color: var(--color-gray-100);
+    transform: scale(0.9);
+    background-color: var(--color-gray-100);
 }
 
 @media (prefers-color-scheme: dark) {
-	.file-viewer-close:active {
-		background-color: var(--color-gray-800);
-	}
+    .file-viewer-close:active {
+        background-color: var(--color-gray-800);
+    }
 
-	.file-viewer-download-btn:active,
-	.file-viewer-epub-btn:active {
-		background-color: var(--color-gray-800);
-	}
+    .file-viewer-download-btn:active,
+    .file-viewer-epub-btn:active {
+        background-color: var(--color-gray-800);
+    }
 }
 
 /* ========== PHOTO GRID TAP FEEDBACK ========== */
 
 /* Photo items get a subtle shrink effect on tap */
 .photo-grid-item:active {
-	transform: scale(0.95);
-	box-shadow: var(--shadow-md);
-	transition: transform 0.1s ease, box-shadow 0.1s ease;
+    transform: scale(0.95);
+    box-shadow: var(--shadow-md);
+    transition:
+        transform 0.1s ease,
+        box-shadow 0.1s ease;
 }
 
 /* Sidebar navigation */
 .sidebar-link:active {
-	background: var(--color-gray-700);
-	transform: scale(0.98);
+    background: var(--color-gray-700);
+    transform: scale(0.98);
 }
 
 .sidebar-link--active:active {
-	background: var(--color-primary-700);
+    background: var(--color-primary-700);
 }
 
 /* ========== CALENDAR TAP FEEDBACK ========== */
 
 /* Calendar event items */
 .calendar-event-item:active {
-	transform: scale(0.98);
-	filter: brightness(0.95);
-	transition: transform 0.05s ease, filter 0.05s ease;
+    transform: scale(0.98);
+    filter: brightness(0.95);
+    transition:
+        transform 0.05s ease,
+        filter 0.05s ease;
 }
 
 /* Calendar day cells (if clickable) */
 .calendar-day:active {
-	background-color: var(--color-primary-50);
-	transform: scale(0.98);
+    background-color: var(--color-primary-50);
+    transform: scale(0.98);
 }
 
 @media (prefers-color-scheme: dark) {
-	.calendar-day:active {
-		background-color: var(--color-gray-700);
-	}
+    .calendar-day:active {
+        background-color: var(--color-gray-700);
+    }
 }
 
 /* ========== DEVICE CARDS TAP FEEDBACK ========== */
@@ -239,123 +250,128 @@ a.mobile-menu-link:active {
 /* Device cards or any card-like clickable elements */
 .device-card:active,
 .card:active {
-	transform: scale(0.98);
-	box-shadow: var(--shadow-sm);
-	transition: transform 0.1s ease, box-shadow 0.1s ease;
+    transform: scale(0.98);
+    box-shadow: var(--shadow-sm);
+    transition:
+        transform 0.1s ease,
+        box-shadow 0.1s ease;
 }
 
 /* ========== FORM CONTROLS TAP FEEDBACK ========== */
 
 /* Checkbox and radio button visual feedback */
-input[type="checkbox"]:active,
-input[type="radio"]:active {
-	transform: scale(0.95);
+input[type='checkbox']:active,
+input[type='radio']:active {
+    transform: scale(0.95);
 }
 
 /* Select dropdowns */
 select:active {
-	transform: scale(0.99);
-	border-color: var(--color-primary-600);
+    transform: scale(0.99);
+    border-color: var(--color-primary-600);
 }
 
 /* ========== GENERIC CLICKABLE ELEMENTS ========== */
 
 /* Any element marked as clickable */
-[role="button"]:active,
+[role='button']:active,
 .clickable:active {
-	transform: scale(0.97);
-	opacity: 0.8;
+    transform: scale(0.97);
+    opacity: 0.8;
 }
 
 /* Links in content areas */
 a:not(.btn):not(.topnav-link):not(.bottomnav-link):not(.sidebar-link):active {
-	opacity: 0.7;
+    opacity: 0.7;
 }
 
 /* ========== RIPPLE EFFECT (CSS-only) ========== */
 
 /* Add a subtle flash effect using pseudo-elements for enhanced feedback */
 @media (hover: none) {
-	/* Only apply on touch devices */
+    /* Only apply on touch devices */
 
-	.btn::after,
-	.bottomnav-link::after,
-	.file-table-row::after,
-	.photo-grid-item::after,
-	.context-menu-item::after {
-		content: '';
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		width: 0;
-		height: 0;
-		border-radius: 50%;
-		background: rgba(255, 255, 255, 0.5);
-		transform: translate(-50%, -50%);
-		opacity: 0;
-		pointer-events: none;
-	}
+    .btn::after,
+    .bottomnav-link::after,
+    .file-table-row::after,
+    .photo-grid-item::after,
+    .context-menu-item::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.5);
+        transform: translate(-50%, -50%);
+        opacity: 0;
+        pointer-events: none;
+    }
 
-	@media (prefers-color-scheme: dark) {
-		.btn::after,
-		.bottomnav-link::after,
-		.file-table-row::after,
-		.photo-grid-item::after,
-		.context-menu-item::after {
-			background: rgba(255, 255, 255, 0.2);
-		}
-	}
+    @media (prefers-color-scheme: dark) {
+        .btn::after,
+        .bottomnav-link::after,
+        .file-table-row::after,
+        .photo-grid-item::after,
+        .context-menu-item::after {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    }
 
-	/* Ensure parent elements have position context for the ripple */
-	.btn,
-	.bottomnav-link,
-	.context-menu-item {
-		position: relative;
-		overflow: hidden;
-	}
+    /* Ensure parent elements have position context for the ripple */
+    .btn,
+    .bottomnav-link,
+    .context-menu-item {
+        position: relative;
+        overflow: hidden;
+    }
 }
 
 /* ========== MOBILE-SPECIFIC ENHANCEMENTS ========== */
 
 @media (max-width: 768px) {
-	/* Increase tap target sizes slightly for better mobile UX */
-	.btn--icon {
-		min-width: 44px;
-		min-height: 44px;
-	}
+    /* Increase tap target sizes slightly for better mobile UX */
+    .btn--icon {
+        min-width: 44px;
+        min-height: 44px;
+    }
 
-	/* More pronounced feedback on mobile */
-	.btn:active {
-		transform: scale(0.94);
-	}
+    /* More pronounced feedback on mobile */
+    .btn:active {
+        transform: scale(0.94);
+    }
 
-	.photo-grid-item:active {
-		transform: scale(0.93);
-	}
+    .photo-grid-item:active {
+        transform: scale(0.93);
+    }
 
-	/* Ensure smooth animations even on lower-end devices */
-	* {
-		-webkit-font-smoothing: antialiased;
-		-moz-osx-font-smoothing: grayscale;
-	}
+    /* Ensure smooth animations even on lower-end devices */
+    * {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
 }
 
 /* ========== ACCESSIBILITY ========== */
 
 /* Reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
-	*:active {
-		transform: none !important;
-		transition: opacity 0.05s ease, background-color 0.05s ease, filter 0.05s ease !important;
-	}
+    *:active {
+        transform: none !important;
+        transition:
+            opacity 0.05s ease,
+            background-color 0.05s ease,
+            filter 0.05s ease !important;
+    }
 
-	/* Keep opacity and color feedback, but remove transforms */
-	.btn:active {
-		opacity: 0.8;
-	}
+    /* Keep opacity and color feedback, but remove transforms */
+    .btn:active {
+        opacity: 0.8;
+    }
 
-	.bottomnav-link:active,
-	.topnav-link:active {
-		opacity: 0.7;
-	}
+    .bottomnav-link:active,
+    .topnav-link:active {
+        opacity: 0.7;
+    }
 }

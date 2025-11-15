@@ -1371,7 +1371,7 @@
     }
 
     /* Hide column view button on mobile */
-    .view-switcher button[title="Column View"] {
+    .view-switcher button[title='Column View'] {
         display: none;
     }
 
@@ -1447,7 +1447,7 @@
     }
 
     /* Hide column view button on mobile */
-    .view-switcher button[title="Column View"] {
+    .view-switcher button[title='Column View'] {
         display: none;
     }
 

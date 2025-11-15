@@ -25,213 +25,213 @@
 
 /* Inline rename/move form - Used in file explorer for renaming files inline */
 .ab-rename-overlay {
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	background-color: rgba(0, 0, 0, 0.5);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	z-index: 1000;
-	padding: var(--spacing-md);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: var(--spacing-md);
 }
 
 .ab-rename-dialog {
-	background-color: white;
-	border-radius: var(--border-radius-lg);
-	padding: var(--spacing-xl);
-	max-width: 500px;
-	width: 100%;
-	box-shadow: var(--shadow-lg);
-	border: 1px solid var(--color-gray-200);
-	position: relative;
+    background-color: white;
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-xl);
+    max-width: 500px;
+    width: 100%;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--color-gray-200);
+    position: relative;
 }
 
 @media (prefers-color-scheme: dark) {
-	.ab-rename-dialog {
-		background-color: var(--color-gray-800);
-		border-color: var(--color-gray-700);
-	}
+    .ab-rename-dialog {
+        background-color: var(--color-gray-800);
+        border-color: var(--color-gray-700);
+    }
 }
 
 .ab-rename-close {
-	position: absolute;
-	top: var(--spacing-sm);
-	right: var(--spacing-sm);
-	padding: var(--spacing-sm);
-	border-radius: var(--border-radius);
-	border: none;
-	background: transparent;
-	cursor: pointer;
-	color: var(--color-gray-600);
-	display: flex;
-	align-items: center;
-	justify-content: center;
+    position: absolute;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--color-gray-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .ab-rename-close:hover {
-	background-color: var(--color-gray-200);
-	color: var(--color-gray-900);
+    background-color: var(--color-gray-200);
+    color: var(--color-gray-900);
 }
 
 @media (prefers-color-scheme: dark) {
-	.ab-rename-close {
-		color: var(--color-gray-400);
-	}
+    .ab-rename-close {
+        color: var(--color-gray-400);
+    }
 
-	.ab-rename-close:hover {
-		background-color: var(--color-gray-700);
-		color: white;
-	}
+    .ab-rename-close:hover {
+        background-color: var(--color-gray-700);
+        color: white;
+    }
 }
 
 .ab-rename-header {
-	margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
 }
 
 .ab-rename-title {
-	font-size: var(--font-size-lg);
-	font-weight: 600;
-	color: var(--color-gray-900);
-	margin-bottom: var(--spacing-xs);
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-gray-900);
+    margin-bottom: var(--spacing-xs);
 }
 
 @media (prefers-color-scheme: dark) {
-	.ab-rename-title {
-		color: white;
-	}
+    .ab-rename-title {
+        color: white;
+    }
 }
 
 .ab-rename-subtitle {
-	font-size: var(--font-size-sm);
-	color: var(--color-gray-600);
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
 }
 
 @media (prefers-color-scheme: dark) {
-	.ab-rename-subtitle {
-		color: var(--color-gray-400);
-	}
+    .ab-rename-subtitle {
+        color: var(--color-gray-400);
+    }
 }
 
 .ab-rename-form {
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
 }
 
 .ab-rename-input-group {
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-xs);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
 }
 
 .ab-rename-label {
-	font-size: var(--font-size-sm);
-	font-weight: 500;
-	color: var(--color-gray-700);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-gray-700);
 }
 
 @media (prefers-color-scheme: dark) {
-	.ab-rename-label {
-		color: var(--color-gray-300);
-	}
+    .ab-rename-label {
+        color: var(--color-gray-300);
+    }
 }
 
 .ab-rename-input {
-	width: 100%;
-	padding: var(--spacing-sm);
-	border: 1px solid var(--color-gray-300);
-	border-radius: var(--border-radius);
-	font-size: var(--font-size-base);
-	color: var(--color-gray-900) !important;
-	background-color: white !important;
-	color-scheme: light !important;
+    width: 100%;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-base);
+    color: var(--color-gray-900) !important;
+    background-color: white !important;
+    color-scheme: light !important;
 }
 
 .ab-rename-input:focus {
-	outline: none;
-	border-color: var(--color-primary-400);
-	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+    border-color: var(--color-primary-400);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 @media (prefers-color-scheme: dark) {
-	.ab-rename-input {
-		background-color: var(--color-gray-100) !important;
-		border-color: var(--color-gray-400);
-		color: var(--color-gray-900) !important;
-	}
+    .ab-rename-input {
+        background-color: var(--color-gray-100) !important;
+        border-color: var(--color-gray-400);
+        color: var(--color-gray-900) !important;
+    }
 
-	.ab-rename-input:focus {
-		border-color: var(--color-primary-400);
-	}
+    .ab-rename-input:focus {
+        border-color: var(--color-primary-400);
+    }
 }
 
 .ab-rename-actions {
-	display: flex;
-	gap: var(--spacing-sm);
-	justify-content: flex-end;
-	margin-top: var(--spacing-md);
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: flex-end;
+    margin-top: var(--spacing-md);
 }
 
 /* Mobile-optimized buttons */
 @media (max-width: 640px) {
-	.ab-rename-actions {
-		flex-direction: column-reverse;
-	}
+    .ab-rename-actions {
+        flex-direction: column-reverse;
+    }
 
-	.ab-rename-actions button {
-		width: 100%;
-	}
+    .ab-rename-actions button {
+        width: 100%;
+    }
 }
 
 /* Confirmation dialog - appears after user submits rename */
 .ab-rename-confirm {
-	background-color: var(--color-blue-50);
-	border: 1px solid var(--color-blue-200);
-	border-radius: var(--border-radius);
-	padding: var(--spacing-md);
-	margin-bottom: var(--spacing-md);
+    background-color: var(--color-blue-50);
+    border: 1px solid var(--color-blue-200);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
 }
 
 @media (prefers-color-scheme: dark) {
-	.ab-rename-confirm {
-		background-color: rgba(59, 130, 246, 0.1);
-		border-color: var(--color-blue-700);
-	}
+    .ab-rename-confirm {
+        background-color: rgba(59, 130, 246, 0.1);
+        border-color: var(--color-blue-700);
+    }
 }
 
 .ab-rename-confirm-text {
-	font-size: var(--font-size-sm);
-	color: var(--color-gray-700);
-	margin-bottom: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-700);
+    margin-bottom: var(--spacing-sm);
 }
 
 @media (prefers-color-scheme: dark) {
-	.ab-rename-confirm-text {
-		color: var(--color-gray-200);
-	}
+    .ab-rename-confirm-text {
+        color: var(--color-gray-200);
+    }
 }
 
 .ab-rename-confirm-path {
-	font-family: monospace;
-	font-size: var(--font-size-sm);
-	background-color: white;
-	padding: var(--spacing-xs) var(--spacing-sm);
-	border-radius: var(--border-radius);
-	margin: var(--spacing-xs) 0;
-	word-break: break-all;
-	color: var(--color-gray-900);
+    font-family: monospace;
+    font-size: var(--font-size-sm);
+    background-color: white;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius);
+    margin: var(--spacing-xs) 0;
+    word-break: break-all;
+    color: var(--color-gray-900);
 }
 
 @media (prefers-color-scheme: dark) {
-	.ab-rename-confirm-path {
-		background-color: var(--color-gray-900);
-		color: white;
-	}
+    .ab-rename-confirm-path {
+        background-color: var(--color-gray-900);
+        color: white;
+    }
 }
 
 .ab-rename-hidden {
-	display: none;
+    display: none;
 }

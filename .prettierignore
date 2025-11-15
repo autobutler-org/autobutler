@@ -1,0 +1,7 @@
+node_modules/
+build/
+dist/
+playwright-report/
+test-results/
+*.min.css
+internal/server/public/vendor/
