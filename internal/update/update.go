@@ -169,13 +169,45 @@ func replaceSelf(body io.Reader) error {
 		return fmt.Errorf("failed to set executable permissions: %w", err)
 	}
 
-	// Close the file before renaming to avoid "text file busy" errors
+	// Close the file before operations
 	binFile.Close()
 
-	// Use atomic rename to replace the executable
-	// This avoids "text file busy" errors because the old file is unlinked
-	// and the new file is linked in its place atomically
-	if err := os.Rename(binFile.Name(), execPath); err != nil {
+	// Create a temporary file in the same directory as the target executable
+	// This ensures we're on the same filesystem for atomic rename
+	execDir := execPath[:strings.LastIndex(execPath, "/")]
+	tmpNew, err := os.CreateTemp(execDir, ".autobutler_new_*")
+	if err != nil {
+		return fmt.Errorf("failed to create temp file in target directory: %w", err)
+	}
+	tmpNewPath := tmpNew.Name()
+	defer os.Remove(tmpNewPath)
+
+	// Copy the new binary to the target filesystem
+	src, err := os.Open(binFile.Name())
+	if err != nil {
+		return fmt.Errorf("failed to open extracted binary: %w", err)
+	}
+	defer src.Close()
+
+	if _, err := io.Copy(tmpNew, src); err != nil {
+		tmpNew.Close()
+		return fmt.Errorf("failed to copy new binary: %w", err)
+	}
+
+	if err := tmpNew.Sync(); err != nil {
+		tmpNew.Close()
+		return fmt.Errorf("failed to sync new binary: %w", err)
+	}
+	tmpNew.Close()
+
+	// Set executable permissions on the new file
+	if err := os.Chmod(tmpNewPath, 0755); err != nil {
+		return fmt.Errorf("failed to set permissions on new binary: %w", err)
+	}
+
+	// Atomically rename the new binary over the old one
+	// This works even while the old binary is running
+	if err := os.Rename(tmpNewPath, execPath); err != nil {
 		return fmt.Errorf("failed to replace executable: %w", err)
 	}
 
