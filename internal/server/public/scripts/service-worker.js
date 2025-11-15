@@ -233,7 +233,7 @@ async function staleWhileRevalidate(request) {
     // No cache available, wait for network (first load)
     console.log('[Service Worker] No cache, waiting for network:', request.url);
     const networkResponse = await fetchPromise;
-    
+
     if (networkResponse) {
         return networkResponse;
     }
@@ -241,11 +241,14 @@ async function staleWhileRevalidate(request) {
     // Network failed and no cache - return offline fallback
     const staticCache = await caches.open(CACHE_NAME);
     const fallback = await staticCache.match('/');
-    
-    return fallback || new Response('Offline', {
-        status: 503,
-        statusText: 'Service Unavailable',
-    });
+
+    return (
+        fallback ||
+        new Response('Offline', {
+            status: 503,
+            statusText: 'Service Unavailable',
+        })
+    );
 }
 
 // Helper: Check if request is for CSS or JS (needs frequent updates)
