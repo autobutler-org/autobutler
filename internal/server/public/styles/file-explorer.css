@@ -1370,9 +1370,14 @@
         justify-content: center;
     }
 
-    /* Column view adjustments */
+    /* Hide column view button on mobile */
+    .view-switcher button[title="Column View"] {
+        display: none;
+    }
+
+    /* Hide column view content on mobile */
     .column-view-container {
-        height: calc(100vh - 280px);
+        display: none;
     }
 
     .column-view-column {
@@ -1439,6 +1444,16 @@
     .view-switcher-btn {
         padding: var(--spacing-sm);
         font-size: var(--font-size-xs);
+    }
+
+    /* Hide column view button on mobile */
+    .view-switcher button[title="Column View"] {
+        display: none;
+    }
+
+    /* Hide column view content on mobile */
+    .column-view-container {
+        display: none;
     }
 
     .column-view-column {
