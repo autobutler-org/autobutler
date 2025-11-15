@@ -163,29 +163,21 @@ func replaceSelf(body io.Reader) error {
 	}
 	defer os.Remove(binFile.Name())
 	defer binFile.Close()
-	// Rewind the extracted binary file for reading
-	if _, err := binFile.Seek(0, 0); err != nil {
-		return fmt.Errorf("failed to seek in extracted binary: %w", err)
+
+	// Make the extracted binary executable
+	if err := os.Chmod(binFile.Name(), 0755); err != nil {
+		return fmt.Errorf("failed to set executable permissions: %w", err)
 	}
 
-	// Overwrite the current executable with the new binary
-	src, err := os.Open(binFile.Name())
-	if err != nil {
-		return fmt.Errorf("failed to open temp update file: %w", err)
-	}
-	defer src.Close()
+	// Close the file before renaming to avoid "text file busy" errors
+	binFile.Close()
 
-	dst, err := os.OpenFile(execPath, os.O_WRONLY|os.O_TRUNC, 0755)
-	if err != nil {
-		return fmt.Errorf("failed to open executable for writing: %w", err)
+	// Use atomic rename to replace the executable
+	// This avoids "text file busy" errors because the old file is unlinked
+	// and the new file is linked in its place atomically
+	if err := os.Rename(binFile.Name(), execPath); err != nil {
+		return fmt.Errorf("failed to replace executable: %w", err)
 	}
-	defer dst.Close()
 
-	if _, err := src.Seek(0, 0); err != nil {
-		return fmt.Errorf("failed to seek in update file: %w", err)
-	}
-	if _, err := dst.ReadFrom(src); err != nil {
-		return fmt.Errorf("failed to overwrite executable: %w", err)
-	}
 	return nil
 }
