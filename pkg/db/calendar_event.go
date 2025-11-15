@@ -8,17 +8,6 @@ import (
 	"time"
 )
 
-type CalendarEvent struct {
-	ID          int64
-	Title       string
-	Description sql.NullString
-	StartTime   time.Time
-	EndTime     sql.NullTime
-	AllDay      bool
-	Location    string
-	CalendarID  int64
-}
-
 func NewCalendarEvent(
 	event CalendarEvent,
 ) *calendar.CalendarEvent {

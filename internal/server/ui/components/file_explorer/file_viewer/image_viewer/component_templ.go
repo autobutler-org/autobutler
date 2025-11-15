@@ -9,14 +9,14 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"encoding/base64"
 	"os"
 	"path/filepath"
 )
 
 func readImageAsBase64(filePath string) (string, error) {
-	rootDir := util.GetFilesDir()
+	rootDir := fileutil.GetFilesDir()
 	fullPath := filepath.Join(rootDir, filePath)
 	data, err := os.ReadFile(fullPath)
 	if err != nil {

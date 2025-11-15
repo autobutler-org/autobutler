@@ -1,13 +1,13 @@
 package text_viewer
 
 import (
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"os"
 	"path/filepath"
 )
 
 func readFile(filePath string) (string, error) {
-	rootDir := util.GetFilesDir()
+	rootDir := fileutil.GetFilesDir()
 	fullPath := filepath.Join(rootDir, filePath)
 	data, err := os.ReadFile(fullPath)
 	if err != nil {

@@ -8,7 +8,7 @@ import (
 	"autobutler/internal/server/ui/components/icons/column_view"
 	"autobutler/internal/server/ui/components/icons/grid_view"
 	"autobutler/internal/server/ui/components/icons/list_view"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"io/fs"
 
 	"autobutler/internal/server/ui/components/file_explorer/explorer_context_menu"
@@ -18,8 +18,8 @@ import (
 
 templ Component(pageState types.PageState, files []fs.FileInfo, view string) {
 	// TODO: This works on firefox, but not on chrome as it will rapidly open and close the upload area.
-	{{ fileDir := util.GetFilesDir() }}
-	{{ availableBytes := util.GetAvailableSpaceInBytes(fileDir) }}
+	{{ fileDir := fileutil.GetFilesDir() }}
+	{{ availableBytes := fileutil.GetAvailableSpaceInBytes(fileDir) }}
 	<div
 		id="file-explorer"
 		class="file-explorer"
@@ -28,7 +28,7 @@ templ Component(pageState types.PageState, files []fs.FileInfo, view string) {
 		<div class="file-explorer-header">
 			<div>
 				<h2 class="file-explorer-title">File Explorer</h2>
-				<div class="file-explorer-space-info">Available Space: { fmt.Sprintf("%.2fGB", util.BytesToGB(availableBytes)) }</div>
+				<div class="file-explorer-space-info">Available Space: { fmt.Sprintf("%.2fGB", fileutil.BytesToGB(availableBytes)) }</div>
 			</div>
 			<div style="display: flex; gap: 0.5rem; align-items: center;">
 				@file_navigation.Component(pageState)

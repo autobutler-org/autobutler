@@ -1,7 +1,7 @@
 package db
 
 import (
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"context"
 	"database/sql"
 	"fmt"
@@ -12,7 +12,7 @@ import (
 var DatabaseQueries *Queries
 
 func init() {
-	dataDir := util.GetDataDir()
+	dataDir := fileutil.GetDataDir()
 	err := os.MkdirAll(dataDir, 0755)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create data directory: %v", err))

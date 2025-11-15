@@ -2,9 +2,9 @@ package v1
 
 import (
 	"autobutler/internal/server/ui/components/landing_nav"
-	"autobutler/internal/serverutil"
 	"autobutler/internal/update"
 	"autobutler/pkg/api"
+	"autobutler/pkg/util/serverutil"
 	"html"
 
 	"github.com/gin-gonic/gin"

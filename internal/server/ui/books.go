@@ -3,7 +3,7 @@ package ui
 import (
 	"autobutler/internal/server/ui/types"
 	"autobutler/internal/server/ui/views"
-	"autobutler/internal/serverutil"
+	"autobutler/pkg/util/serverutil"
 	"path/filepath"
 
 	"github.com/a-h/templ"

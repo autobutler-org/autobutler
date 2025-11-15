@@ -13,7 +13,7 @@ import (
 	"autobutler/internal/server/ui/components/file_explorer"
 	"autobutler/internal/server/ui/components/header"
 	"autobutler/internal/server/ui/types"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"path/filepath"
 )
 
@@ -59,7 +59,7 @@ func Files(pageState types.PageState) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			files, err := util.StatFilesInDir(filepath.Join(util.GetFilesDir(), pageState.RootDir))
+			files, err := fileutil.StatFilesInDir(filepath.Join(fileutil.GetFilesDir(), pageState.RootDir))
 			if err != nil {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"error-text\">Error loading files: ")
 				if templ_7745c5c3_Err != nil {

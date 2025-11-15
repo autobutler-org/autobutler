@@ -11,8 +11,8 @@ import (
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer/video_viewer"
 	"autobutler/internal/server/ui/types"
 	"autobutler/internal/server/ui/views"
-	"autobutler/internal/serverutil"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/serverutil"
 	"html"
 	"path/filepath"
 
@@ -86,11 +86,11 @@ func GetFileExplorerViewContentWithBreadcrumb(c *gin.Context, rootDir string, vi
 func getFileExplorerComponent(c *gin.Context, rootDir string, viewContentOnly bool, view ...any) templ.Component {
 	fullPathDir := ""
 	if rootDir == "" {
-		fullPathDir = util.GetFilesDir()
+		fullPathDir = fileutil.GetFilesDir()
 	} else {
-		fullPathDir = filepath.Join(util.GetFilesDir(), rootDir)
+		fullPathDir = filepath.Join(fileutil.GetFilesDir(), rootDir)
 	}
-	files, err := util.StatFilesInDir(fullPathDir)
+	files, err := fileutil.StatFilesInDir(fullPathDir)
 	if err != nil {
 		c.Writer.WriteString(`<span class="text-red-500">Failed to load files: ` + html.EscapeString(err.Error()) + `</span>`)
 		return nil
@@ -134,20 +134,20 @@ func setupComponentFileExplorer(router *gin.Engine) {
 func setupComponentFileViewers(router *gin.Engine) {
 	serverutil.UiRoute(router, "/components/files/viewer/files/*filePath", func(c *gin.Context) templ.Component {
 		filePath := c.Param("filePath")
-		fileType := util.DetermineFileTypeFromPath(filePath)
+		fileType := fileutil.DetermineFileTypeFromPath(filePath)
 		var viewer templ.Component
 		switch fileType {
-		case util.FileTypeImage:
+		case fileutil.FileTypeImage:
 			viewer = image_viewer.Component(filePath)
-		case util.FileTypeVideo:
+		case fileutil.FileTypeVideo:
 			viewer = video_viewer.Component(filePath)
-		case util.FileTypePDF:
+		case fileutil.FileTypePDF:
 			viewer = pdf_viewer.Component(filePath)
-		case util.FileTypeEpub:
+		case fileutil.FileTypeEpub:
 			viewer = epub_viewer.Component(filePath)
-		case util.FileTypeDocx:
+		case fileutil.FileTypeDocx:
 			viewer = docx_viewer.Component(filePath)
-		case util.FileTypeGeneric:
+		case fileutil.FileTypeGeneric:
 			viewer = text_viewer.Component(filePath)
 		default:
 			viewer = unsupported_viewer.Component(filePath)

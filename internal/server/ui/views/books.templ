@@ -5,7 +5,8 @@ import (
 	"autobutler/internal/server/ui/components/books"
 	"autobutler/internal/server/ui/components/header"
 	"autobutler/internal/server/ui/types"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/bookutil"
+	"autobutler/pkg/util/fileutil"
 )
 
 templ Books(pageState types.PageState) {
@@ -14,7 +15,7 @@ templ Books(pageState types.PageState) {
 	<html lang="en">
 		@header.Component()
 		@body.Component(pageState) {
-			{{ bookFiles, err := util.FindAllBooksRecursively(util.GetFilesDir()) }}
+			{{ bookFiles, err := bookutil.FindAllBooksRecursively(fileutil.GetFilesDir()) }}
 			if err != nil {
 				<div class="error-text">Error loading books: { err.Error() }</div>
 			} else {

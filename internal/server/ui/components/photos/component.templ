@@ -4,12 +4,13 @@ import (
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer"
 	"autobutler/internal/server/ui/types"
 	"autobutler/pkg/storage"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/imageutil"
+	"autobutler/pkg/util/stringutil"
 	"fmt"
 	"path/filepath"
 )
 
-templ Component(pageState types.PageState, photos []util.RecursivePhotoInfo, totalPhotos int, summary storage.Summary) {
+templ Component(pageState types.PageState, photos []imageutil.RecursivePhotoInfo, totalPhotos int, summary storage.Summary) {
 	<div id="photos-library" class="photos-library">
 		@file_viewer.Component()
 		<div class="photos-container">
@@ -41,7 +42,7 @@ templ Component(pageState types.PageState, photos []util.RecursivePhotoInfo, tot
 	</script>
 }
 
-templ PhotoGrid(pageState types.PageState, photos []util.RecursivePhotoInfo, page int, totalPhotos int) {
+templ PhotoGrid(pageState types.PageState, photos []imageutil.RecursivePhotoInfo, page int, totalPhotos int) {
 	<div class="photo-grid">
 		for _, photo := range photos {
 			@PhotoGridItem(pageState, photo)
@@ -95,7 +96,7 @@ templ PhotoGrid(pageState types.PageState, photos []util.RecursivePhotoInfo, pag
 	</div>
 }
 
-templ PhotoGridPage(pageState types.PageState, photos []util.RecursivePhotoInfo, page int, totalPhotos int) {
+templ PhotoGridPage(pageState types.PageState, photos []imageutil.RecursivePhotoInfo, page int, totalPhotos int) {
 	for _, photo := range photos {
 		@PhotoGridItem(pageState, photo)
 	}
@@ -151,7 +152,7 @@ templ PhotoGridPage(pageState types.PageState, photos []util.RecursivePhotoInfo,
 	}
 }
 
-templ PhotoGridItem(pageState types.PageState, photo util.RecursivePhotoInfo) {
+templ PhotoGridItem(pageState types.PageState, photo imageutil.RecursivePhotoInfo) {
 	{{
 		fileName := photo.FileInfo.Name()
 		// Use the relative path from the photo
@@ -178,5 +179,5 @@ func formatPhotoCount(count int) string {
 	if count == 1 {
 		return "1 photo"
 	}
-	return util.FormatNumber(count) + " photos"
+	return stringutil.FormatNumber(count) + " photos"
 }

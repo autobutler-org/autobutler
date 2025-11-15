@@ -17,7 +17,7 @@ import (
 	"autobutler/internal/server/ui/components/icons/pdf"
 	"autobutler/internal/server/ui/components/icons/slideshow"
 	"autobutler/internal/server/ui/types"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -154,11 +154,11 @@ func renderParentColumn(pageState types.PageState, dirPath string, columnIndex i
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		fullPath := util.GetFilesDir()
+		fullPath := fileutil.GetFilesDir()
 		if dirPath != "" {
 			fullPath = filepath.Join(fullPath, dirPath)
 		}
-		columnFiles, _ := util.StatFilesInDir(fullPath)
+		columnFiles, _ := fileutil.StatFilesInDir(fullPath)
 		columnTitle := "files"
 		if dirPath != "" {
 			columnTitle = filepath.Base(dirPath)
@@ -330,9 +330,9 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file f
 			templ_7745c5c3_Var9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		fileType := util.DetermineFileType(parentPath, file)
+		fileType := fileutil.DetermineFileType(parentPath, file)
 		fileName := file.Name()
-		isFolder := fileType == util.FileTypeFolder
+		isFolder := fileType == fileutil.FileTypeFolder
 		filePath := filepath.Join("/files", parentPath, fileName)
 		// For files in parent columns, navigate to parent dir (removing child columns)
 		fileParentPath := filepath.Join("/files", parentPath)
@@ -518,9 +518,9 @@ func renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) templ.
 			templ_7745c5c3_Var19 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		fileType := util.DetermineFileType(pageState.RootDir, file)
+		fileType := fileutil.DetermineFileType(pageState.RootDir, file)
 		fileName := file.Name()
-		isFolder := fileType == util.FileTypeFolder
+		isFolder := fileType == fileutil.FileTypeFolder
 		filePath := filepath.Join("/files", pageState.RootDir, fileName)
 		dataFileType := fileType
 		if isFolder {
@@ -682,7 +682,7 @@ func renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) templ.
 	})
 }
 
-func renderFileIcon(fileType util.FileType) templ.Component {
+func renderFileIcon(fileType fileutil.FileType) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -704,22 +704,22 @@ func renderFileIcon(fileType util.FileType) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		switch fileType {
-		case util.FileTypePDF:
+		case fileutil.FileTypePDF:
 			templ_7745c5c3_Err = pdf.Component().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case util.FileTypeSlideshow:
+		case fileutil.FileTypeSlideshow:
 			templ_7745c5c3_Err = slideshow.Component().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case util.FileTypeImage:
+		case fileutil.FileTypeImage:
 			templ_7745c5c3_Err = image.Component().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case util.FileTypeArchive:
+		case fileutil.FileTypeArchive:
 			templ_7745c5c3_Err = archive.Component().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

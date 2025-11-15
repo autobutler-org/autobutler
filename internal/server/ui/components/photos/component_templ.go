@@ -12,12 +12,13 @@ import (
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer"
 	"autobutler/internal/server/ui/types"
 	"autobutler/pkg/storage"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/imageutil"
+	"autobutler/pkg/util/stringutil"
 	"fmt"
 	"path/filepath"
 )
 
-func Component(pageState types.PageState, photos []util.RecursivePhotoInfo, totalPhotos int, summary storage.Summary) templ.Component {
+func Component(pageState types.PageState, photos []imageutil.RecursivePhotoInfo, totalPhotos int, summary storage.Summary) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -61,7 +62,7 @@ func Component(pageState types.PageState, photos []util.RecursivePhotoInfo, tota
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(formatPhotoCount(totalPhotos))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 25, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 26, Col: 62}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -83,7 +84,7 @@ func Component(pageState types.PageState, photos []util.RecursivePhotoInfo, tota
 	})
 }
 
-func PhotoGrid(pageState types.PageState, photos []util.RecursivePhotoInfo, page int, totalPhotos int) templ.Component {
+func PhotoGrid(pageState types.PageState, photos []imageutil.RecursivePhotoInfo, page int, totalPhotos int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -125,7 +126,7 @@ func PhotoGrid(pageState types.PageState, photos []util.RecursivePhotoInfo, page
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", page))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 58, Col: 38}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 59, Col: 38}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -138,7 +139,7 @@ func PhotoGrid(pageState types.PageState, photos []util.RecursivePhotoInfo, page
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(photos)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 59, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 60, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -151,7 +152,7 @@ func PhotoGrid(pageState types.PageState, photos []util.RecursivePhotoInfo, page
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", totalPhotos))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 60, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 61, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -164,7 +165,7 @@ func PhotoGrid(pageState types.PageState, photos []util.RecursivePhotoInfo, page
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", photosLoaded))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 61, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 62, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -177,7 +178,7 @@ func PhotoGrid(pageState types.PageState, photos []util.RecursivePhotoInfo, page
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", hasMore))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 62, Col: 45}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 63, Col: 45}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -195,7 +196,7 @@ func PhotoGrid(pageState types.PageState, photos []util.RecursivePhotoInfo, page
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/components/photos/grid?page=%d", page+1))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 83, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 84, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -219,7 +220,7 @@ func PhotoGrid(pageState types.PageState, photos []util.RecursivePhotoInfo, page
 	})
 }
 
-func PhotoGridPage(pageState types.PageState, photos []util.RecursivePhotoInfo, page int, totalPhotos int) templ.Component {
+func PhotoGridPage(pageState types.PageState, photos []imageutil.RecursivePhotoInfo, page int, totalPhotos int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -257,7 +258,7 @@ func PhotoGridPage(pageState types.PageState, photos []util.RecursivePhotoInfo, 
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", page))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 111, Col: 37}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 112, Col: 37}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -270,7 +271,7 @@ func PhotoGridPage(pageState types.PageState, photos []util.RecursivePhotoInfo, 
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(photos)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 112, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 113, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -283,7 +284,7 @@ func PhotoGridPage(pageState types.PageState, photos []util.RecursivePhotoInfo, 
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", totalPhotos))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 113, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 114, Col: 52}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -296,7 +297,7 @@ func PhotoGridPage(pageState types.PageState, photos []util.RecursivePhotoInfo, 
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", photosLoaded))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 114, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 115, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -309,7 +310,7 @@ func PhotoGridPage(pageState types.PageState, photos []util.RecursivePhotoInfo, 
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", hasMore))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 115, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 116, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -327,7 +328,7 @@ func PhotoGridPage(pageState types.PageState, photos []util.RecursivePhotoInfo, 
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/components/photos/grid?page=%d", page+1))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 136, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 137, Col: 66}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -347,7 +348,7 @@ func PhotoGridPage(pageState types.PageState, photos []util.RecursivePhotoInfo, 
 	})
 }
 
-func PhotoGridItem(pageState types.PageState, photo util.RecursivePhotoInfo) templ.Component {
+func PhotoGridItem(pageState types.PageState, photo imageutil.RecursivePhotoInfo) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -379,7 +380,7 @@ func PhotoGridItem(pageState types.PageState, photo util.RecursivePhotoInfo) tem
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/components/files/viewer", filePath))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 163, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 164, Col: 62}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -392,7 +393,7 @@ func PhotoGridItem(pageState types.PageState, photo util.RecursivePhotoInfo) tem
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(thumbnailPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 170, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 171, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
@@ -405,7 +406,7 @@ func PhotoGridItem(pageState types.PageState, photo util.RecursivePhotoInfo) tem
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fileName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 171, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/photos/component.templ`, Line: 172, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -423,7 +424,7 @@ func formatPhotoCount(count int) string {
 	if count == 1 {
 		return "1 photo"
 	}
-	return util.FormatNumber(count) + " photos"
+	return stringutil.FormatNumber(count) + " photos"
 }
 
 var _ = templruntime.GeneratedTemplate

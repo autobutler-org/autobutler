@@ -13,7 +13,8 @@ import (
 	"autobutler/internal/server/ui/components/books"
 	"autobutler/internal/server/ui/components/header"
 	"autobutler/internal/server/ui/types"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/bookutil"
+	"autobutler/pkg/util/fileutil"
 )
 
 func Books(pageState types.PageState) templ.Component {
@@ -58,7 +59,7 @@ func Books(pageState types.PageState) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			bookFiles, err := util.FindAllBooksRecursively(util.GetFilesDir())
+			bookFiles, err := bookutil.FindAllBooksRecursively(fileutil.GetFilesDir())
 			if err != nil {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"error-text\">Error loading books: ")
 				if templ_7745c5c3_Err != nil {
@@ -67,7 +68,7 @@ func Books(pageState types.PageState) templ.Component {
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(err.Error())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/views/books.templ`, Line: 19, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/views/books.templ`, Line: 20, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {

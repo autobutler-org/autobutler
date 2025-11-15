@@ -6,7 +6,8 @@ import (
 	"autobutler/internal/server/ui/components/photos"
 	"autobutler/internal/server/ui/types"
 	"autobutler/pkg/storage"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/imageutil"
 	"fmt"
 )
 
@@ -16,7 +17,7 @@ templ Photos(pageState types.PageState, summary storage.Summary) {
 	<html lang="en">
 		@header.Component()
 		@body.Component(pageState) {
-			{{ photoFiles, err := util.FindAllPhotosRecursively(util.GetFilesDir()) }}
+			{{ photoFiles, err := imageutil.FindAllPhotosRecursively(fileutil.GetFilesDir()) }}
 			if err != nil {
 				<div class="error-text">Error loading photos: { err.Error() }</div>
 			} else {

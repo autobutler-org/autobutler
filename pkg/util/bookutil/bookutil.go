@@ -1,6 +1,7 @@
-package util
+package bookutil
 
 import (
+	"autobutler/pkg/util/fileutil"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -13,8 +14,8 @@ func FilterBookFiles(files []fs.FileInfo) []fs.FileInfo {
 		if file.IsDir() {
 			continue
 		}
-		fileType := DetermineFileTypeFromPath(file.Name())
-		if fileType == FileTypePDF || fileType == FileTypeEpub {
+		fileType := fileutil.DetermineFileTypeFromPath(file.Name())
+		if fileType == fileutil.FileTypePDF || fileType == fileutil.FileTypeEpub {
 			bookFiles = append(bookFiles, file)
 		}
 	}
@@ -39,8 +40,8 @@ func FindAllBooksRecursively(rootDir string) ([]RecursiveBookInfo, error) {
 			return nil
 		}
 
-		fileType := DetermineFileTypeFromPath(info.Name())
-		if fileType == FileTypePDF || fileType == FileTypeEpub {
+		fileType := fileutil.DetermineFileTypeFromPath(info.Name())
+		if fileType == fileutil.FileTypePDF || fileType == fileutil.FileTypeEpub {
 			// Get relative path from rootDir
 			relPath, err := filepath.Rel(rootDir, path)
 			if err != nil {

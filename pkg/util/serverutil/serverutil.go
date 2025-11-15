@@ -2,7 +2,7 @@ package serverutil
 
 import (
 	"autobutler/pkg/api"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/stringutil"
 	"fmt"
 	"net/http"
 	"path/filepath"
@@ -38,7 +38,7 @@ func wrapApiRoute(handler func(c *gin.Context) *api.Response) gin.HandlerFunc {
 }
 
 func ApiRoute(router *gin.RouterGroup, method string, route string, handler func(c *gin.Context) *api.Response) gin.IRoutes {
-	route = util.TrimLeading(route, '/')
+	route = stringutil.TrimLeading(route, '/')
 	wrapped := wrapApiRoute(handler)
 	switch method {
 	case "GET":
@@ -85,7 +85,7 @@ func wrapUiRoute(handler func(c *gin.Context) templ.Component) gin.HandlerFunc {
 }
 
 func UiRoute(router *gin.Engine, path string, handler func(c *gin.Context) templ.Component) gin.IRoutes {
-	path = util.TrimLeading(path, '/')
+	path = stringutil.TrimLeading(path, '/')
 	route := filepath.Join("/", path)
 	wrapped := wrapUiRoute(handler)
 	return router.GET(route, wrapped)

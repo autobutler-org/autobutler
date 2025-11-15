@@ -4,16 +4,16 @@ import (
 	"autobutler/internal/server/ui/components/books"
 	"autobutler/internal/server/ui/components/file_explorer/file_viewer/epub_viewer"
 	"autobutler/internal/server/ui/components/header"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"path/filepath"
 )
 
 templ BookReader(bookPath string) {
-	{{ fileType := util.DetermineFileTypeFromPath(bookPath) }}
+	{{ fileType := fileutil.DetermineFileTypeFromPath(bookPath) }}
 	<!DOCTYPE html>
 	<html lang="en">
 		@header.Component()
-		if fileType == util.FileTypePDF {
+		if fileType == fileutil.FileTypePDF {
 			<link rel="stylesheet" href="/public/vendor/pdfjs/pdf_viewer.min.css"/>
 		}
 		<body class="book-reader-body">
@@ -38,9 +38,9 @@ templ BookReader(bookPath string) {
 					<script src="/public/vendor/epub.js/jszip.min.js"></script>
 					<script src="/public/vendor/epub.js/epub.min.js"></script>
 					switch fileType {
-						case util.FileTypePDF:
+						case fileutil.FileTypePDF:
 							@books.PDFJSViewer(bookPath)
-						case util.FileTypeEpub:
+						case fileutil.FileTypeEpub:
 							@epub_viewer.Component(bookPath)
 						default:
 							<div class="error-text">Unsupported file type</div>

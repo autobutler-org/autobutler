@@ -5,7 +5,7 @@ import (
 	"autobutler/internal/server/ui/components/file_explorer/grid_view"
 	"autobutler/internal/server/ui/components/file_explorer/list_view"
 	"autobutler/internal/server/ui/types"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"io/fs"
 	"path/filepath"
 )
@@ -14,7 +14,7 @@ templ ViewContent(pageState types.PageState, files []fs.FileInfo, view string) {
 	if view == "column" {
 		@column_view.Component(pageState, files)
 	} else if len(files) == 0 {
-		<span class="file-explorer-empty">No files found in { filepath.Join(util.GetFilesDir(), pageState.RootDir) }</span>
+		<span class="file-explorer-empty">No files found in { filepath.Join(fileutil.GetFilesDir(), pageState.RootDir) }</span>
 	} else if view == "grid" {
 		@grid_view.Component(pageState, files)
 	} else {

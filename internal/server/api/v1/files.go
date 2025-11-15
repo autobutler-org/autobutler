@@ -3,7 +3,7 @@ package v1
 import (
 	"archive/zip"
 	"autobutler/pkg/api"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"fmt"
 	"html"
 	"io"
@@ -14,7 +14,7 @@ import (
 	"autobutler/internal/server/ui"
 	"autobutler/internal/server/ui/components/file_explorer/load"
 	"autobutler/internal/server/ui/types"
-	"autobutler/internal/serverutil"
+	"autobutler/pkg/util/serverutil"
 
 	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
@@ -33,7 +33,7 @@ func deleteFilesRoute(apiV1Group *gin.RouterGroup) {
 		rootDir := c.Query("rootDir")
 		filePaths := c.QueryArray("filePaths")
 		fmt.Printf("Deleting multiple files: %s\n", filePaths)
-		fileDir := util.GetFilesDir()
+		fileDir := fileutil.GetFilesDir()
 		for _, filePath := range filePaths {
 			fullPath := filepath.Join(fileDir, rootDir, filePath)
 			if err := os.RemoveAll(fullPath); err != nil {
@@ -50,12 +50,12 @@ func deleteFilesRoute(apiV1Group *gin.RouterGroup) {
 }
 
 func DownloadFile(c *gin.Context, filePath string) {
-	rootDir := util.GetFilesDir()
+	rootDir := fileutil.GetFilesDir()
 	fullPath := filepath.Join(rootDir, filePath)
 
-	fileType := util.DetermineFileTypeFromPath(fullPath)
+	fileType := fileutil.DetermineFileTypeFromPath(fullPath)
 
-	if fileType == util.FileTypeFolder {
+	if fileType == fileutil.FileTypeFolder {
 		zipWriter := zip.NewWriter(c.Writer)
 		defer zipWriter.Close()
 		dirFs := os.DirFS(fullPath)
@@ -76,7 +76,7 @@ func DownloadFile(c *gin.Context, filePath string) {
 
 		disposition := "inline"
 		contentType := "application/octet-stream"
-		if fileType == util.FileTypePDF {
+		if fileType == fileutil.FileTypePDF {
 			disposition = "inline"
 			contentType = "application/pdf"
 		}
@@ -98,7 +98,7 @@ func newFolderRoute(apiV1Group *gin.RouterGroup) {
 	serverutil.ApiRoute(apiV1Group, "POST", "/folder/files/*folderDir", func(c *gin.Context) *api.Response {
 		folderDir := c.Param("folderDir")
 		folderName := c.PostForm("folderName")
-		rootDir := util.GetFilesDir()
+		rootDir := fileutil.GetFilesDir()
 		fullPath := filepath.Join(rootDir, folderDir, folderName)
 
 		if err := os.MkdirAll(fullPath, 0755); err != nil {
@@ -125,7 +125,7 @@ func moveFileRoute(apiV1Group *gin.RouterGroup) {
 	serverutil.ApiRoute(apiV1Group, "PUT", "/files/*filePath", func(c *gin.Context) *api.Response {
 		filePath := c.Param("filePath")
 		newFilePath := c.PostForm("newFilePath")
-		filesDir := util.GetFilesDir()
+		filesDir := fileutil.GetFilesDir()
 		oldFullPath := filepath.Join(filesDir, filePath)
 		newFullPath := filepath.Join(filesDir, newFilePath)
 
@@ -171,7 +171,7 @@ func uploadFileRouteImpl(c *gin.Context, rootDir string) {
 		}
 		defer file.Close()
 
-		fileDir := util.GetFilesDir()
+		fileDir := fileutil.GetFilesDir()
 		newFilePath := filepath.Join(fileDir, rootDir, header.Filename)
 		if _, err := os.Stat(newFilePath); err == nil {
 			ext := filepath.Ext(header.Filename)

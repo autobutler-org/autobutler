@@ -3,13 +3,14 @@ package books
 import (
 	"autobutler/internal/server/ui/components/icons/book"
 	"autobutler/internal/server/ui/types"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/bookutil"
+	"autobutler/pkg/util/fileutil"
 	"fmt"
 	"path/filepath"
 	"strings"
 )
 
-templ Library(pageState types.PageState, books []util.RecursiveBookInfo) {
+templ Library(pageState types.PageState, books []bookutil.RecursiveBookInfo) {
 	<div class="books-library">
 		<div class="books-library-header">
 			<h1 class="books-library-title">Library</h1>
@@ -24,11 +25,11 @@ templ Library(pageState types.PageState, books []util.RecursiveBookInfo) {
 		} else {
 			<div class="books-grid">
 				for _, bookInfo := range books {
-					{{ fileType := util.DetermineFileTypeFromPath(bookInfo.FileInfo.Name()) }}
+					{{ fileType := fileutil.DetermineFileTypeFromPath(bookInfo.FileInfo.Name()) }}
 					<div class="book-card">
 						<a href={ templ.URL(filepath.Join("/books/reader?path=", bookInfo.RelPath)) } class="book-card-link">
 							<div class="book-card-cover">
-								if fileType == util.FileTypePDF {
+								if fileType == fileutil.FileTypePDF {
 									{{ thumbnailPath := filepath.Join("/api/v1/thumbnails", bookInfo.RelPath) }}
 									<img
 										class="book-card-thumbnail"
@@ -52,7 +53,7 @@ templ Library(pageState types.PageState, books []util.RecursiveBookInfo) {
 								<h3 class="book-card-title" title={ bookInfo.FileInfo.Name() }>
 									{ cleanBookTitle(bookInfo.FileInfo.Name()) }
 								</h3>
-								<p class="book-card-size">{ util.SizeBytesToString(bookInfo.FileInfo.Size()) }</p>
+								<p class="book-card-size">{ fileutil.SizeBytesToString(bookInfo.FileInfo.Size()) }</p>
 							</div>
 						</a>
 					</div>

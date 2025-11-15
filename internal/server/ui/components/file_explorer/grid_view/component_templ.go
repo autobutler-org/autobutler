@@ -17,7 +17,7 @@ import (
 	"autobutler/internal/server/ui/components/icons/pdf"
 	"autobutler/internal/server/ui/components/icons/slideshow"
 	"autobutler/internal/server/ui/types"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -83,11 +83,11 @@ func renderGridItem(pageState types.PageState, file fs.FileInfo) templ.Component
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		fileType := util.DetermineFileType(pageState.RootDir, file)
+		fileType := fileutil.DetermineFileType(pageState.RootDir, file)
 		fileName := file.Name()
-		isFolder := fileType == util.FileTypeFolder
+		isFolder := fileType == fileutil.FileTypeFolder
 		filePath := filepath.Join("/files", pageState.RootDir, fileName)
-		fileSize := util.SizeBytesToString(file.Size())
+		fileSize := fileutil.SizeBytesToString(file.Size())
 		var templ_7745c5c3_Var3 = []any{"grid-view-item file-node", templ.KV("grid-view-item--folder", isFolder)}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var3...)
 		if templ_7745c5c3_Err != nil {
@@ -219,7 +219,7 @@ func renderGridItem(pageState types.PageState, file fs.FileInfo) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if fileType == util.FileTypeImage {
+			if fileType == fileutil.FileTypeImage {
 				thumbnailPath := filepath.Join("/api/v1/thumbnails", pageState.RootDir, fileName)
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"grid-view-thumbnail-container\"><img class=\"grid-view-thumbnail\" src=\"")
 				if templ_7745c5c3_Err != nil {
@@ -335,7 +335,7 @@ func renderGridItem(pageState types.PageState, file fs.FileInfo) templ.Component
 	})
 }
 
-func renderFileIcon(fileType util.FileType) templ.Component {
+func renderFileIcon(fileType fileutil.FileType) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -357,22 +357,22 @@ func renderFileIcon(fileType util.FileType) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		switch fileType {
-		case util.FileTypePDF:
+		case fileutil.FileTypePDF:
 			templ_7745c5c3_Err = pdf.Component().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case util.FileTypeSlideshow:
+		case fileutil.FileTypeSlideshow:
 			templ_7745c5c3_Err = slideshow.Component().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case util.FileTypeImage:
+		case fileutil.FileTypeImage:
 			templ_7745c5c3_Err = image.Component().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case util.FileTypeArchive:
+		case fileutil.FileTypeArchive:
 			templ_7745c5c3_Err = archive.Component().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

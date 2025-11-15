@@ -13,7 +13,7 @@ import (
 	"autobutler/internal/server/ui/components/file_explorer/grid_view"
 	"autobutler/internal/server/ui/components/file_explorer/list_view"
 	"autobutler/internal/server/ui/types"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"io/fs"
 	"path/filepath"
 )
@@ -50,9 +50,9 @@ func ViewContent(pageState types.PageState, files []fs.FileInfo, view string) te
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var2 string
-			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join(util.GetFilesDir(), pageState.RootDir))
+			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join(fileutil.GetFilesDir(), pageState.RootDir))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/view_content.templ`, Line: 17, Col: 108}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/view_content.templ`, Line: 17, Col: 112}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {

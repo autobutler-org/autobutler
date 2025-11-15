@@ -9,7 +9,7 @@ import (
 	"autobutler/internal/server/ui/components/icons/pdf"
 	"autobutler/internal/server/ui/components/icons/slideshow"
 	"autobutler/internal/server/ui/types"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -68,11 +68,11 @@ templ renderColumnLayout(pageState types.PageState, files []fs.FileInfo) {
 // renderParentColumn renders a parent directory column, highlighting the next segment in the path
 templ renderParentColumn(pageState types.PageState, dirPath string, columnIndex int, nextSegment string) {
 	{{
-		fullPath := util.GetFilesDir()
+		fullPath := fileutil.GetFilesDir()
 		if dirPath != "" {
 			fullPath = filepath.Join(fullPath, dirPath)
 		}
-		columnFiles, _ := util.StatFilesInDir(fullPath)
+		columnFiles, _ := fileutil.StatFilesInDir(fullPath)
 		columnTitle := "files"
 		if dirPath != "" {
 			columnTitle = filepath.Base(dirPath)
@@ -126,9 +126,9 @@ templ renderCurrentColumn(pageState types.PageState, files []fs.FileInfo, column
 // renderParentColumnItem renders an item in a parent directory column
 templ renderParentColumnItem(pageState types.PageState, parentPath string, file fs.FileInfo, isSelected bool) {
 	{{
-		fileType := util.DetermineFileType(parentPath, file)
+		fileType := fileutil.DetermineFileType(parentPath, file)
 		fileName := file.Name()
-		isFolder := fileType == util.FileTypeFolder
+		isFolder := fileType == fileutil.FileTypeFolder
 		filePath := filepath.Join("/files", parentPath, fileName)
 		// For files in parent columns, navigate to parent dir (removing child columns)
 		fileParentPath := filepath.Join("/files", parentPath)
@@ -184,9 +184,9 @@ templ renderParentColumnItem(pageState types.PageState, parentPath string, file 
 // renderCurrentColumnItem renders an item in the current directory column
 templ renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) {
 	{{
-		fileType := util.DetermineFileType(pageState.RootDir, file)
+		fileType := fileutil.DetermineFileType(pageState.RootDir, file)
 		fileName := file.Name()
-		isFolder := fileType == util.FileTypeFolder
+		isFolder := fileType == fileutil.FileTypeFolder
 		filePath := filepath.Join("/files", pageState.RootDir, fileName)
 		dataFileType := fileType
 		if isFolder {
@@ -237,15 +237,15 @@ templ renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) {
 	</li>
 }
 
-templ renderFileIcon(fileType util.FileType) {
+templ renderFileIcon(fileType fileutil.FileType) {
 	switch fileType {
-		case util.FileTypePDF:
+		case fileutil.FileTypePDF:
 			@pdf.Component()
-		case util.FileTypeSlideshow:
+		case fileutil.FileTypeSlideshow:
 			@slideshow.Component()
-		case util.FileTypeImage:
+		case fileutil.FileTypeImage:
 			@image.Component()
-		case util.FileTypeArchive:
+		case fileutil.FileTypeArchive:
 			@archive.Component()
 		default:
 			@generic.Component()

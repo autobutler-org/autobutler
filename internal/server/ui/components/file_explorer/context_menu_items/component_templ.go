@@ -10,7 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"autobutler/internal/server/ui/types"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -39,9 +39,9 @@ func Component(pageState types.PageState, file fs.FileInfo, rootDir string) temp
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		fileType := util.DetermineFileType(rootDir, file)
+		fileType := fileutil.DetermineFileType(rootDir, file)
 		fileName := file.Name()
-		isFolder := fileType == util.FileTypeFolder
+		isFolder := fileType == fileutil.FileTypeFolder
 		downloadPath := filepath.Join("/api/v1/files", rootDir, fileName)
 		if !isFolder {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<a href=\"")

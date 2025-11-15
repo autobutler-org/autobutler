@@ -2,13 +2,13 @@ package v1
 
 import (
 	"autobutler/pkg/api"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"fmt"
 	"html"
 	"path/filepath"
 
 	"autobutler/internal/quill"
-	"autobutler/internal/serverutil"
+	"autobutler/pkg/util/serverutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,15 +20,15 @@ func SetupDocRoutes(apiV1Group *gin.RouterGroup) {
 func saveDocRoute(apiV1Group *gin.RouterGroup) {
 	serverutil.ApiRoute(apiV1Group, "POST", "/docs/*filePath", func(c *gin.Context) *api.Response {
 		filePath := c.Param("filePath")
-		fileType := util.DetermineFileTypeFromPath(filePath)
+		fileType := fileutil.DetermineFileTypeFromPath(filePath)
 		switch fileType {
-		case util.FileTypeDocx:
+		case fileutil.FileTypeDocx:
 			fmt.Println("Saving DOCX file:", filePath)
 			var delta quill.Delta
 			if err := c.BindJSON(&delta); err != nil {
 				return api.NewResponse().WithStatusCode(400).WithData(`<span class="text-red-500">Failed to parse delta: ` + html.EscapeString(err.Error()) + `</span>`)
 			}
-			fullPath := filepath.Join(util.GetFilesDir(), filePath)
+			fullPath := filepath.Join(fileutil.GetFilesDir(), filePath)
 			if err := delta.SaveDocxFile(fullPath); err != nil {
 				return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">Failed to save DOCX file: ` + html.EscapeString(err.Error()) + `</span>`)
 			}

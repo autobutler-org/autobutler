@@ -9,7 +9,7 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"fmt"
 )
 
@@ -35,12 +35,12 @@ func Component() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		fileDir := util.GetFilesDir()
-		availableBytes := util.GetAvailableSpaceInBytes(fileDir)
+		fileDir := fileutil.GetFilesDir()
+		availableBytes := fileutil.GetAvailableSpaceInBytes(fileDir)
 		totalBytes := uint64(200 * 1024 * 1024 * 1024)
 		usedBytes := totalBytes - availableBytes
-		usedGB := util.BytesToGB(usedBytes)
-		totalGB := util.BytesToGB(totalBytes)
+		usedGB := fileutil.BytesToGB(usedBytes)
+		totalGB := fileutil.BytesToGB(totalBytes)
 		percentUsed := int((float64(usedBytes) / float64(totalBytes)) * 100)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"storage-component\"><h3 class=\"storage-title\">Storage</h3><div class=\"storage-bar\"><div class=\"storage-bar-fill\" style=\"")
 		if templ_7745c5c3_Err != nil {

@@ -10,7 +10,7 @@ import (
 	"autobutler/internal/server/ui/components/icons/pdf"
 	"autobutler/internal/server/ui/components/icons/slideshow"
 	"autobutler/internal/server/ui/types"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"io/fs"
 	"path/filepath"
 )
@@ -19,7 +19,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 	// TODO: Refactor this into small parts, so we don't do so much spaghetti for folder vs file, but share common bits
 	// TODO: this is the page where the greater table is loaded in @brandon
 	// Get file type and name
-	{{ fileType := util.DetermineFileType(pageState.RootDir, file) }}
+	{{ fileType := fileutil.DetermineFileType(pageState.RootDir, file) }}
 	{{ fileName := "" }}
 	if file != nil {
 		{{ fileName = file.Name() }}
@@ -42,19 +42,19 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 		data-file-type={ fileType }
 	>
 		switch fileType {
-			case util.FileTypeFolder:
+			case fileutil.FileTypeFolder:
 				{{ filePath := filepath.Join("/files", pageState.RootDir, fileName) }}
 				<td class="file-table-cell file-table-cell--content" data-href={ filePath }>
 					@folder.Component()
 					<span class="file-table-name">{ fileName }</span>
 				</td>
 				<td class="file-table-cell file-table-size">
-					{ util.SizeBytesToString(file.Size()) }
+					{ fileutil.SizeBytesToString(file.Size()) }
 				</td>
 				<td class="file-table-cell">
 					@file_context_menu.Component(pageState, file)
 				</td>
-			case util.FileTypeSpacer:
+			case fileutil.FileTypeSpacer:
 				<td colspan="3" class="file-table-cell file-table-cell--spacer" onclick="document.getElementById('file-upload-input').click()" tabindex="0" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); document.getElementById('file-upload-input').click(); }">
 					<span class="spacer">Drop files here&#8230;</span>
 					@explorer_context_menu.Component(pageState)
@@ -69,13 +69,13 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 				>
 					{{ /* Render the appropriate icon based on the file type */ }}
 					switch fileType {
-						case util.FileTypePDF:
+						case fileutil.FileTypePDF:
 							@pdf.Component()
-						case util.FileTypeSlideshow:
+						case fileutil.FileTypeSlideshow:
 							@slideshow.Component()
-						case util.FileTypeImage:
+						case fileutil.FileTypeImage:
 							@image.Component()
-						case util.FileTypeArchive:
+						case fileutil.FileTypeArchive:
 							@archive.Component()
 						default:
 							@generic.Component()
@@ -83,7 +83,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 					<span class="file-table-name">{ fileName }</span>
 				</td>
 				<td class="file-table-cell file-table-size">
-					{ util.SizeBytesToString(file.Size()) }
+					{ fileutil.SizeBytesToString(file.Size()) }
 				</td>
 				<td class="file-table-cell">
 					@file_context_menu.Component(pageState, file)

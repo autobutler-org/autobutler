@@ -9,7 +9,7 @@ import (
 	"autobutler/internal/server/ui/components/icons/pdf"
 	"autobutler/internal/server/ui/components/icons/slideshow"
 	"autobutler/internal/server/ui/types"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -27,11 +27,11 @@ templ Component(pageState types.PageState, files []fs.FileInfo) {
 
 templ renderGridItem(pageState types.PageState, file fs.FileInfo) {
 	{{
-		fileType := util.DetermineFileType(pageState.RootDir, file)
+		fileType := fileutil.DetermineFileType(pageState.RootDir, file)
 		fileName := file.Name()
-		isFolder := fileType == util.FileTypeFolder
+		isFolder := fileType == fileutil.FileTypeFolder
 		filePath := filepath.Join("/files", pageState.RootDir, fileName)
-		fileSize := util.SizeBytesToString(file.Size())
+		fileSize := fileutil.SizeBytesToString(file.Size())
 	}}
 	<div
 		class={ "grid-view-item file-node", templ.KV("grid-view-item--folder", isFolder) }
@@ -60,7 +60,7 @@ templ renderGridItem(pageState types.PageState, file fs.FileInfo) {
 				class="grid-view-link"
 				data-viewer-path={ filepath.Join("/components/files/viewer", filePath) }
 			>
-				if fileType == util.FileTypeImage {
+				if fileType == fileutil.FileTypeImage {
 					{{ thumbnailPath := filepath.Join("/api/v1/thumbnails", pageState.RootDir, fileName) }}
 					<div class="grid-view-thumbnail-container">
 						<img
@@ -95,15 +95,15 @@ templ renderGridItem(pageState types.PageState, file fs.FileInfo) {
 	</div>
 }
 
-templ renderFileIcon(fileType util.FileType) {
+templ renderFileIcon(fileType fileutil.FileType) {
 	switch fileType {
-		case util.FileTypePDF:
+		case fileutil.FileTypePDF:
 			@pdf.Component()
-		case util.FileTypeSlideshow:
+		case fileutil.FileTypeSlideshow:
 			@slideshow.Component()
-		case util.FileTypeImage:
+		case fileutil.FileTypeImage:
 			@image.Component()
-		case util.FileTypeArchive:
+		case fileutil.FileTypeArchive:
 			@archive.Component()
 		default:
 			@generic.Component()

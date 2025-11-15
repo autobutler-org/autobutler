@@ -11,13 +11,14 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"autobutler/internal/server/ui/components/icons/book"
 	"autobutler/internal/server/ui/types"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/bookutil"
+	"autobutler/pkg/util/fileutil"
 	"fmt"
 	"path/filepath"
 	"strings"
 )
 
-func Library(pageState types.PageState, books []util.RecursiveBookInfo) templ.Component {
+func Library(pageState types.PageState, books []bookutil.RecursiveBookInfo) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -45,7 +46,7 @@ func Library(pageState types.PageState, books []util.RecursiveBookInfo) templ.Co
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(formatBookCount(len(books)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 16, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 17, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -74,7 +75,7 @@ func Library(pageState types.PageState, books []util.RecursiveBookInfo) templ.Co
 				return templ_7745c5c3_Err
 			}
 			for _, bookInfo := range books {
-				fileType := util.DetermineFileTypeFromPath(bookInfo.FileInfo.Name())
+				fileType := fileutil.DetermineFileTypeFromPath(bookInfo.FileInfo.Name())
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"book-card\"><a href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -82,7 +83,7 @@ func Library(pageState types.PageState, books []util.RecursiveBookInfo) templ.Co
 				var templ_7745c5c3_Var3 templ.SafeURL
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(filepath.Join("/books/reader?path=", bookInfo.RelPath)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 29, Col: 81}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 30, Col: 81}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -92,7 +93,7 @@ func Library(pageState types.PageState, books []util.RecursiveBookInfo) templ.Co
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if fileType == util.FileTypePDF {
+				if fileType == fileutil.FileTypePDF {
 					thumbnailPath := filepath.Join("/api/v1/thumbnails", bookInfo.RelPath)
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<img class=\"book-card-thumbnail\" src=\"")
 					if templ_7745c5c3_Err != nil {
@@ -101,7 +102,7 @@ func Library(pageState types.PageState, books []util.RecursiveBookInfo) templ.Co
 					var templ_7745c5c3_Var4 string
 					templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(thumbnailPath)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 35, Col: 29}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 36, Col: 29}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 					if templ_7745c5c3_Err != nil {
@@ -114,7 +115,7 @@ func Library(pageState types.PageState, books []util.RecursiveBookInfo) templ.Co
 					var templ_7745c5c3_Var5 string
 					templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(bookInfo.FileInfo.Name())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 36, Col: 40}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 37, Col: 40}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 					if templ_7745c5c3_Err != nil {
@@ -153,7 +154,7 @@ func Library(pageState types.PageState, books []util.RecursiveBookInfo) templ.Co
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(bookInfo.FileInfo.Name())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 52, Col: 68}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 53, Col: 68}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -166,7 +167,7 @@ func Library(pageState types.PageState, books []util.RecursiveBookInfo) templ.Co
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(cleanBookTitle(bookInfo.FileInfo.Name()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 53, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 54, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -177,9 +178,9 @@ func Library(pageState types.PageState, books []util.RecursiveBookInfo) templ.Co
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var8 string
-				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(util.SizeBytesToString(bookInfo.FileInfo.Size()))
+				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fileutil.SizeBytesToString(bookInfo.FileInfo.Size()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 55, Col: 84}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/books/library.templ`, Line: 56, Col: 88}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {

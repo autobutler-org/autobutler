@@ -3,8 +3,8 @@ package ui
 import (
 	"autobutler/internal/server/ui/types"
 	"autobutler/internal/server/ui/views"
-	"autobutler/internal/serverutil"
 	"autobutler/pkg/calendar"
+	"autobutler/pkg/util/serverutil"
 	"strconv"
 	"time"
 

@@ -1,8 +1,8 @@
 package v1
 
 import (
-	"autobutler/internal/serverutil"
 	"autobutler/pkg/api"
+	"autobutler/pkg/util/serverutil"
 
 	"github.com/gin-gonic/gin"
 )

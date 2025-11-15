@@ -3,7 +3,7 @@ package ui
 import (
 	"autobutler/internal/server/ui/types"
 	"autobutler/internal/server/ui/views"
-	"autobutler/internal/serverutil"
+	"autobutler/pkg/util/serverutil"
 
 	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"

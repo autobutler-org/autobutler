@@ -16,7 +16,7 @@ import (
 	"autobutler/internal/server/ui/components/icons/column_view"
 	"autobutler/internal/server/ui/components/icons/grid_view"
 	"autobutler/internal/server/ui/components/icons/list_view"
-	"autobutler/pkg/util"
+	"autobutler/pkg/util/fileutil"
 	"io/fs"
 
 	"autobutler/internal/server/ui/components/file_explorer/explorer_context_menu"
@@ -45,8 +45,8 @@ func Component(pageState types.PageState, files []fs.FileInfo, view string) temp
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		fileDir := util.GetFilesDir()
-		availableBytes := util.GetAvailableSpaceInBytes(fileDir)
+		fileDir := fileutil.GetFilesDir()
+		availableBytes := fileutil.GetAvailableSpaceInBytes(fileDir)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"file-explorer\" class=\"file-explorer\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -60,9 +60,9 @@ func Component(pageState types.PageState, files []fs.FileInfo, view string) temp
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2fGB", util.BytesToGB(availableBytes)))
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2fGB", fileutil.BytesToGB(availableBytes)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/component.templ`, Line: 31, Col: 114}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/components/file_explorer/component.templ`, Line: 31, Col: 118}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
