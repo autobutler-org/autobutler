@@ -1,0 +1,83 @@
+package file_explorer
+
+import (
+	"autobutler/pkg/ui/components/file_explorer/file_download"
+	"autobutler/pkg/ui/components/file_explorer/file_navigation"
+	"autobutler/pkg/ui/components/file_explorer/file_upload"
+	"autobutler/pkg/ui/components/file_explorer/file_viewer"
+	"autobutler/pkg/ui/components/icons/column_view"
+	"autobutler/pkg/ui/components/icons/grid_view"
+	"autobutler/pkg/ui/components/icons/list_view"
+	"autobutler/pkg/util/fileutil"
+	"io/fs"
+
+	"autobutler/pkg/ui/components/file_explorer/explorer_context_menu"
+	"autobutler/pkg/ui/types"
+	"fmt"
+)
+
+templ Component(pageState types.PageState, files []fs.FileInfo, view string) {
+	// TODO: This works on firefox, but not on chrome as it will rapidly open and close the upload area.
+	{{ fileDir := fileutil.GetFilesDir() }}
+	{{ availableBytes := fileutil.GetAvailableSpaceInBytes(fileDir) }}
+	<div
+		id="file-explorer"
+		class="file-explorer"
+	>
+		@file_viewer.Component()
+		<div class="file-explorer-header">
+			<div>
+				<h2 class="file-explorer-title">File Explorer</h2>
+				<div class="file-explorer-space-info">Available Space: { fmt.Sprintf("%.2fGB", fileutil.BytesToGB(availableBytes)) }</div>
+			</div>
+			<div style="display: flex; gap: 0.5rem; align-items: center;">
+				@file_navigation.Component(pageState)
+				@file_download.Component(pageState)
+			</div>
+			@file_upload.Component(pageState)
+			@dnd(pageState)
+		</div>
+		<div
+			id="file-explorer-selectable"
+			oncontextmenu="toggleFloatingContextMenu(event, this)"
+		>
+			@explorer_context_menu.Component(pageState)
+			<div class="file-explorer-controls">
+				<div>
+					@Breadcrumb(pageState, view)
+				</div>
+				<div class="view-switcher">
+					<button
+						class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "list") }
+						onclick="switchView('list')"
+						title="List View"
+						type="button"
+					>
+						@list_view.Component()
+					</button>
+					<button
+						class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "grid") }
+						onclick="switchView('grid')"
+						title="Grid View"
+						type="button"
+					>
+						@grid_view.Component()
+					</button>
+					<button
+						class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "column") }
+						onclick="switchView('column')"
+						title="Column View"
+						type="button"
+					>
+						@column_view.Component()
+					</button>
+				</div>
+			</div>
+			<div id="file-explorer-status"></div>
+			<div id="file-explorer-view-content">
+				@ViewContent(pageState, files, view)
+			</div>
+		</div>
+	</div>
+	<script src="/public/scripts/file_explorer.js"></script>
+}

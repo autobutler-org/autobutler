@@ -1,0 +1,19 @@
+package views
+
+import (
+	"autobutler/pkg/ui/components/body"
+	"autobutler/pkg/ui/components/header"
+	"autobutler/pkg/ui/components/health"
+	"autobutler/pkg/ui/types"
+)
+
+templ Health(pageState types.PageState) {
+	{{ pageState.CurrentPageName = types.PageHealth }}
+	<!DOCTYPE html>
+	<html lang="en">
+		@header.Component()
+		@body.Component(pageState) {
+			@health.Component(pageState)
+		}
+	</html>
+}

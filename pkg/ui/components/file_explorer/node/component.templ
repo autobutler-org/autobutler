@@ -1,0 +1,93 @@
+package node
+
+import (
+	"autobutler/pkg/ui/components/file_explorer/explorer_context_menu"
+	"autobutler/pkg/ui/components/file_explorer/file_context_menu"
+	"autobutler/pkg/ui/components/icons/archive"
+	"autobutler/pkg/ui/components/icons/folder"
+	"autobutler/pkg/ui/components/icons/generic"
+	"autobutler/pkg/ui/components/icons/image"
+	"autobutler/pkg/ui/components/icons/pdf"
+	"autobutler/pkg/ui/components/icons/slideshow"
+	"autobutler/pkg/ui/types"
+	"autobutler/pkg/util/fileutil"
+	"io/fs"
+	"path/filepath"
+)
+
+templ Component(pageState types.PageState, file fs.FileInfo) {
+	// TODO: Refactor this into small parts, so we don't do so much spaghetti for folder vs file, but share common bits
+	// TODO: this is the page where the greater table is loaded in @brandon
+	// Get file type and name
+	{{ fileType := fileutil.DetermineFileType(pageState.RootDir, file) }}
+	{{ fileName := "" }}
+	if file != nil {
+		{{ fileName = file.Name() }}
+	}
+	{{ nodeClasses := "" }}
+	if file != nil {
+		{{ nodeClasses = "file-table-row" }}
+	}
+	<tr
+		class={ nodeClasses, "file-node" }
+		oncontextmenu="toggleFloatingContextMenu(event, this)"
+		ondragenter="activateDropZoneOnNode(event)"
+		ondragover="preventDefault(event)"
+		ondragleave="deactivateDropZoneOnNode(event)"
+		ondrop={ templ.JSFuncCall("dropOnNode", templ.JSExpression("event"), pageState.RootDir) }
+		onclick="handleFileNodeClick(event, this)"
+		ondblclick="handleFileNodeDoubleClick(event, this)"
+		ontouchend="handleFileNodeTouch(event, this)"
+		data-name={ fileName }
+		data-file-type={ fileType }
+	>
+		switch fileType {
+			case fileutil.FileTypeFolder:
+				{{ filePath := filepath.Join("/files", pageState.RootDir, fileName) }}
+				<td class="file-table-cell file-table-cell--content" data-href={ filePath }>
+					@folder.Component()
+					<span class="file-table-name">{ fileName }</span>
+				</td>
+				<td class="file-table-cell file-table-size">
+					{ fileutil.SizeBytesToString(file.Size()) }
+				</td>
+				<td class="file-table-cell">
+					@file_context_menu.Component(pageState, file)
+				</td>
+			case fileutil.FileTypeSpacer:
+				<td colspan="3" class="file-table-cell file-table-cell--spacer" onclick="document.getElementById('file-upload-input').click()" tabindex="0" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); document.getElementById('file-upload-input').click(); }">
+					<span class="spacer">Drop files here&#8230;</span>
+					@explorer_context_menu.Component(pageState)
+				</td>
+			default:
+				{{ filePath := filepath.Join("/files", pageState.RootDir, fileName) }}
+				<td
+					class="file-table-cell file-table-cell--clickable"
+					data-viewer-path={ filepath.Join("/components/files/viewer", filePath) }
+					tabindex="0"
+					onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleFileNodeDoubleClick(event, this.closest('tr')); }"
+				>
+					{{ /* Render the appropriate icon based on the file type */ }}
+					switch fileType {
+						case fileutil.FileTypePDF:
+							@pdf.Component()
+						case fileutil.FileTypeSlideshow:
+							@slideshow.Component()
+						case fileutil.FileTypeImage:
+							@image.Component()
+						case fileutil.FileTypeArchive:
+							@archive.Component()
+						default:
+							@generic.Component()
+					}
+					<span class="file-table-name">{ fileName }</span>
+				</td>
+				<td class="file-table-cell file-table-size">
+					{ fileutil.SizeBytesToString(file.Size()) }
+				</td>
+				<td class="file-table-cell">
+					@file_context_menu.Component(pageState, file)
+				</td>
+		}
+	</tr>
+}

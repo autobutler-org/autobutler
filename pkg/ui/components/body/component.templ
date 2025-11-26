@@ -1,0 +1,23 @@
+package body
+
+import (
+	"autobutler/pkg/ui/components/bottomnav"
+	"autobutler/pkg/ui/components/footer"
+	"autobutler/pkg/ui/components/gradient_overlays"
+	"autobutler/pkg/ui/components/landing_nav"
+	"autobutler/pkg/ui/types"
+)
+
+templ Component(pageState types.PageState) {
+	<body class="site-body">
+		<main class="site-main">
+			@gradient_overlays.Component()
+			<div class="site-fullscreen-col">
+				@landing_nav.Component(pageState)
+				{ children... }
+				@footer.Component()
+				@bottomnav.Component(pageState)
+			</div>
+		</main>
+	</body>
+}

@@ -1,0 +1,56 @@
+package views
+
+import (
+	"autobutler/pkg/storage"
+	"autobutler/pkg/ui/components/body"
+	"autobutler/pkg/ui/components/header"
+	"autobutler/pkg/ui/components/photos"
+	"autobutler/pkg/ui/types"
+	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/imageutil"
+	"fmt"
+)
+
+templ Photos(pageState types.PageState, summary storage.Summary) {
+	{{ pageState.CurrentPageName = types.PagePhotos }}
+	<!DOCTYPE html>
+	<html lang="en">
+		@header.Component()
+		@body.Component(pageState) {
+			{{ photoFiles, err := imageutil.FindAllPhotosRecursively(fileutil.GetFilesDir()) }}
+			if err != nil {
+				<div class="error-text">Error loading photos: { err.Error() }</div>
+			} else {
+				{{
+					// For initial load, only show first 50 photos
+					pageSize := 50
+					totalPhotos := len(photoFiles)
+					firstPage := photoFiles
+					if totalPhotos > pageSize {
+						firstPage = photoFiles[:pageSize]
+					}
+				}}
+				<div
+					id="photo-debug-initial"
+					data-total={ fmt.Sprintf("%d", totalPhotos) }
+					data-first-page={ fmt.Sprintf("%d", len(firstPage)) }
+					data-page-size={ fmt.Sprintf("%d", pageSize) }
+					style="display:none"
+				></div>
+				<script type="text/javascript">
+					(function() {
+						const debug = document.getElementById('photo-debug-initial');
+						if (debug) {
+							console.log('🚀 Initial Photos Load:', {
+								totalPhotos: parseInt(debug.dataset.total),
+								firstPageCount: parseInt(debug.dataset.firstPage),
+								pageSize: parseInt(debug.dataset.pageSize)
+							});
+						}
+					})();
+				</script>
+				@photos.Component(pageState, firstPage, totalPhotos, summary)
+			}
+		}
+	</html>
+}

@@ -1,0 +1,16 @@
+package hero
+
+import (
+	"autobutler/pkg/ui/components/service_icons"
+	"autobutler/pkg/ui/types"
+)
+
+templ Component() {
+	<div class="hero">
+		<div class="hero-content">
+			@icon()
+			@ctaButton()
+			@service_icons.Component(types.GetDefaultServiceIcons())
+		</div>
+	</div>
+}

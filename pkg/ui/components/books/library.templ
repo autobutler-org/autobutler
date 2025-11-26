@@ -1,0 +1,78 @@
+package books
+
+import (
+	"autobutler/pkg/ui/components/icons/book"
+	"autobutler/pkg/ui/types"
+	"autobutler/pkg/util/bookutil"
+	"autobutler/pkg/util/fileutil"
+	"fmt"
+	"path/filepath"
+	"strings"
+)
+
+templ Library(pageState types.PageState, books []bookutil.RecursiveBookInfo) {
+	<div class="books-library">
+		<div class="books-library-header">
+			<h1 class="books-library-title">Library</h1>
+			<p class="books-library-count">{ formatBookCount(len(books)) }</p>
+		</div>
+		if len(books) == 0 {
+			<div class="books-empty">
+				@book.Component()
+				<h2>No books found</h2>
+				<p>Add PDF or EPUB files to your files directory to see them here.</p>
+			</div>
+		} else {
+			<div class="books-grid">
+				for _, bookInfo := range books {
+					{{ fileType := fileutil.DetermineFileTypeFromPath(bookInfo.FileInfo.Name()) }}
+					<div class="book-card">
+						<a href={ templ.URL(filepath.Join("/books/reader?path=", bookInfo.RelPath)) } class="book-card-link">
+							<div class="book-card-cover">
+								if fileType == fileutil.FileTypePDF {
+									{{ thumbnailPath := filepath.Join("/api/v1/thumbnails", bookInfo.RelPath) }}
+									<img
+										class="book-card-thumbnail"
+										src={ thumbnailPath }
+										alt={ bookInfo.FileInfo.Name() }
+										loading="lazy"
+										onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+									/>
+									<div class="book-card-icon-fallback" style="display: none;">
+										@book.Component()
+									</div>
+									<span class="book-card-badge">PDF</span>
+								} else {
+									<div class="book-card-icon">
+										@book.Component()
+									</div>
+									<span class="book-card-badge">EPUB</span>
+								}
+							</div>
+							<div class="book-card-info">
+								<h3 class="book-card-title" title={ bookInfo.FileInfo.Name() }>
+									{ cleanBookTitle(bookInfo.FileInfo.Name()) }
+								</h3>
+								<p class="book-card-size">{ fileutil.SizeBytesToString(bookInfo.FileInfo.Size()) }</p>
+							</div>
+						</a>
+					</div>
+				}
+			</div>
+		}
+	</div>
+}
+
+func formatBookCount(count int) string {
+	if count == 1 {
+		return "1 book"
+	}
+	return fmt.Sprintf("%d books", count)
+}
+
+func cleanBookTitle(filename string) string {
+	name := strings.TrimSuffix(filename, filepath.Ext(filename))
+	name = strings.ReplaceAll(name, "_", " ")
+	name = strings.ReplaceAll(name, "-", " ")
+	return name
+}

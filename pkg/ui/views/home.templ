@@ -1,0 +1,29 @@
+package views
+
+import (
+	"autobutler/pkg/storage"
+	"autobutler/pkg/ui/components/gradient_overlays"
+	"autobutler/pkg/ui/components/header"
+	"autobutler/pkg/ui/components/hero"
+	"autobutler/pkg/ui/components/landing_nav"
+	"autobutler/pkg/ui/components/storage_bar"
+	"autobutler/pkg/ui/types"
+)
+
+templ Home(pageState types.PageState, summary storage.Summary) {
+	{{ pageState.CurrentPageName = types.PageHome }}
+	<!DOCTYPE html>
+	<html lang="en">
+		@header.Component()
+		<body class="landing-body">
+			<main class="landing-main">
+				@gradient_overlays.Component()
+				<div class="landing-container">
+					@landing_nav.Component(pageState)
+					@hero.Component()
+					@storage_bar.Component(summary)
+				</div>
+			</main>
+		</body>
+	</html>
+}

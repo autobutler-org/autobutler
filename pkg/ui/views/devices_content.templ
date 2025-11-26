@@ -1,0 +1,37 @@
+package views
+
+import (
+	"autobutler/pkg/storage"
+	"autobutler/pkg/ui/components/device_card"
+	"fmt"
+)
+
+// DevicesContent renders just the devices grid and summary (for HTMX updates)
+templ DevicesContent(devices []storage.Device, summary storage.Summary) {
+	<div class="devices-grid">
+		if len(devices) == 0 {
+			<div class="devices-empty">
+				<p>No storage devices detected</p>
+			</div>
+		}
+		for _, device := range devices {
+			@device_card.Component(device)
+		}
+	</div>
+	if len(devices) > 0 {
+		<div class="devices-total">
+			<div class="devices-total-icon">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<circle cx="12" cy="12" r="10"></circle>
+					<path d="M12 6v6l4 2"></path>
+				</svg>
+			</div>
+			<div class="devices-total-info">
+				<h3 class="devices-total-title">Total Capacity</h3>
+				<p class="devices-total-capacity">{ fmt.Sprintf("%.2f TB", summary.TotalTB) }</p>
+				<p class="devices-total-used">{ fmt.Sprintf("%.2f TB used • %.2f TB free", summary.UsedTB, summary.AvailTB) }</p>
+			</div>
+			<!-- TODO: Add "Manage Mounts" button -->
+		</div>
+	}
+}

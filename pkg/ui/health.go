@@ -1,0 +1,20 @@
+package ui
+
+import (
+	"autobutler/pkg/ui/types"
+	"autobutler/pkg/ui/views"
+	"autobutler/pkg/util/serverutil"
+
+	"github.com/a-h/templ"
+	"github.com/gin-gonic/gin"
+)
+
+func SetupHealthRoutes(router *gin.Engine) {
+	setupHealthView(router)
+}
+
+func setupHealthView(router *gin.Engine) {
+	serverutil.UiRoute(router, "/health", func(c *gin.Context) templ.Component {
+		return views.Health(types.NewPageState())
+	})
+}

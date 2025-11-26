@@ -1,9 +1,9 @@
 package v1
 
 import (
-	"autobutler/internal/server/ui/components/landing_nav"
 	"autobutler/internal/update"
 	"autobutler/pkg/api"
+	"autobutler/pkg/ui/components/landing_nav"
 	"autobutler/pkg/util/serverutil"
 	"html"
 
