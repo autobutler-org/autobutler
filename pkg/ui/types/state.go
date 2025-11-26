@@ -15,7 +15,6 @@ func NewPageState() PageState {
 		RootDir:         "",
 		NavLinks: []Page{
 			newPage(PageFiles, "/files"),
-			newPage(PageCalendar, "/calendar"),
 			newPage(PagePhotos, "/photos"),
 			newPage(PageBooks, "/books"),
 			newPage(PageHealth, "/health"),

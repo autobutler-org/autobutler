@@ -1,7 +1,7 @@
 {
   "name": "Autobutler - Your Home Assistant",
   "short_name": "Autobutler",
-  "description": "Your personal home assistant for calendar, files, and photos",
+  "description": "Your personal home assistant for files and photos",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
