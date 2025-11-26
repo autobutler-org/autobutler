@@ -31,7 +31,6 @@ Your data lives in a fireproof, waterproof container in your home. Add external 
 ✅ **Your Own Private Cloud** - Stored physically in your home  
 ✅ **Document Editing & Spreadsheets** - Own it forever, no subscriptions  
 ✅ **File Storage & Photo Backup** - Automatic, private, secure  
-✅ **Calendar Management** - Your schedule, your data  
 ✅ **Fireproof, Waterproof Container** - Military-grade protection  
 ✅ **Expandable Storage** - Add external drives as needed  
 ✅ **Complete Data Ownership** - Do what you please with your data
@@ -76,7 +75,6 @@ AutoButler is built as a full-stack web application designed to run on dedicated
 
 - **Document Management** - View and organize documents (DOCX support with custom parser)
 - **Photo Library** - Browse, organize, and automatically backup photos with EXIF data support
-- **Calendar System** - Manage events and schedules with month/week views
 - **File Storage** - Cross-platform device detection and file browsing
 - **Device Management** - Track and manage connected storage devices
 - **Health Monitoring** - System health checks and status reporting
