@@ -17,9 +17,9 @@ templ Component(pageState types.PageState) {
 			}
 		</div>
 		<div class="landing-nav-right">
-			<button class="landing-nav-button" onclick="alert('Settings coming soon')" title="Settings">
+			<a href="/settings" class="landing-nav-button" title="Settings">
 				@settings.Component()
-			</button>
+			</a>
 			<div class="version-container" id="version-container">
 				<button
 					class="landing-nav-version version-display"
@@ -92,10 +92,10 @@ templ Component(pageState types.PageState) {
 				</a>
 			</nav>
 			<div class="mobile-menu-footer">
-				<button class="mobile-menu-link" onclick="alert('Settings coming soon')" title="Settings">
+				<a href="/settings" class="mobile-menu-link" title="Settings">
 					@settings.Component()
 					<span>Settings</span>
-				</button>
+				</a>
 				<div class="mobile-menu-divider"></div>
 				<span class="mobile-menu-version">
 					if versionutil.Semver == versionutil.NoSemver {
