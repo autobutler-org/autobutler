@@ -16,8 +16,10 @@
 @import url('navigation.css');
 @import url('observability.css');
 @import url('photos.css');
+@import url('settings.css');
 @import url('storage_bar.css');
 @import url('storage_partition.css');
+@import url('thanks.css');
 @import url('toastr.css');
 @import url('touch-feedback.css');
 @import url('utility.css');

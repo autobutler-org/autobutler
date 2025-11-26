@@ -71,7 +71,7 @@ func Component(pageState types.PageState) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><div class=\"landing-nav-right\"><button class=\"landing-nav-button\" onclick=\"alert('Settings coming soon')\" title=\"Settings\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><div class=\"landing-nav-right\"><a href=\"/settings\" class=\"landing-nav-button\" title=\"Settings\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -79,7 +79,7 @@ func Component(pageState types.PageState) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</button><div class=\"version-container\" id=\"version-container\"><button class=\"landing-nav-version version-display\" title=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</a><div class=\"version-container\" id=\"version-container\"><button class=\"landing-nav-version version-display\" title=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -140,7 +140,7 @@ func Component(pageState types.PageState) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<span>Devices</span></a></nav><div class=\"mobile-menu-footer\"><button class=\"mobile-menu-link\" onclick=\"alert('Settings coming soon')\" title=\"Settings\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<span>Devices</span></a></nav><div class=\"mobile-menu-footer\"><a href=\"/settings\" class=\"mobile-menu-link\" title=\"Settings\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -148,7 +148,7 @@ func Component(pageState types.PageState) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<span>Settings</span></button><div class=\"mobile-menu-divider\"></div><span class=\"mobile-menu-version\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<span>Settings</span></a><div class=\"mobile-menu-divider\"></div><span class=\"mobile-menu-version\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
