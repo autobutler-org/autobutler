@@ -1272,7 +1272,7 @@ var activeDevices = new Set();
 // Initialize active devices on page load
 function initializeDeviceFilter() {
     const deviceButtons = document.querySelectorAll('.device-filter-button');
-    deviceButtons.forEach(button => {
+    deviceButtons.forEach((button) => {
         const deviceName = button.getAttribute('data-device-name');
         if (button.classList.contains('device-filter-button--active')) {
             activeDevices.add(deviceName);
@@ -1305,14 +1305,14 @@ function applyDeviceFilter() {
 
     // If no devices are being filtered (no filter buttons or all inactive), show everything
     if (activeDevices.size === 0) {
-        fileNodes.forEach(node => {
+        fileNodes.forEach((node) => {
             node.setAttribute('data-device-filtered', 'false');
             node.style.display = '';
         });
         return;
     }
 
-    fileNodes.forEach(node => {
+    fileNodes.forEach((node) => {
         // Find device badge in this node
         const deviceBadge = node.querySelector('.device-badge-name');
 
@@ -1343,7 +1343,6 @@ document.body.addEventListener('htmx:afterSwap', initializeDeviceFilter);
 // DEVICE BADGE TOGGLE
 var DEVICE_BADGE_STORAGE_KEY = 'showDeviceBadges';
 
-// eslint-disable-next-line no-unused-vars
 function toggleDeviceBadges(show) {
     const fileExplorer = document.getElementById('file-explorer');
     if (!fileExplorer) return;

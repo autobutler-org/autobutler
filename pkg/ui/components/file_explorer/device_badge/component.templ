@@ -1,8 +1,6 @@
 package device_badge
 
-import (
-	"autobutler/pkg/util/fileutil"
-)
+import "autobutler/pkg/util/fileutil"
 
 templ Component(file *fileutil.DeviceFileInfo) {
 	if file != nil && file.DeviceName != "" {

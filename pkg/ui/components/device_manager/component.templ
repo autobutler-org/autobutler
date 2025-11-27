@@ -42,9 +42,7 @@ templ Component(devices []storage.Device, managedDevices []storage.ManagedDevice
 							{ device.Type } • { device.MountPoint } • { fmt.Sprintf("%.2f GB available", float64(device.AvailBytes)/(1024*1024*1024)) }
 						</p>
 						if isManaged {
-							{{
-								dataPath := device.MountPoint + "/.autobutler/data/files"
-							}}
+							{{ dataPath := device.MountPoint + "/.autobutler/data/files" }}
 							<p class="device-manager-item-status">
 								<svg class="device-manager-status-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 									<polyline points="20 6 9 17 4 12"></polyline>

@@ -98,7 +98,10 @@ test.describe('Device Management', () => {
             await expect(enableButton).toHaveAttribute('title', /\.autobutler\/data\/files/);
 
             // Check HTMX attributes
-            await expect(enableButton).toHaveAttribute('hx-post', /\/api\/v1\/storage\/managed\/.+/);
+            await expect(enableButton).toHaveAttribute(
+                'hx-post',
+                /\/api\/v1\/storage\/managed\/.+/
+            );
             await expect(enableButton).toHaveAttribute('hx-swap', 'none');
         }
     });

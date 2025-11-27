@@ -1638,7 +1638,7 @@
 }
 
 /* Hide files from filtered-out devices */
-.file-node[data-device-filtered="true"] {
+.file-node[data-device-filtered='true'] {
     display: none;
 }
 
@@ -1659,7 +1659,7 @@
     }
 }
 
-.device-badge-toggle input[type="checkbox"] {
+.device-badge-toggle input[type='checkbox'] {
     cursor: pointer;
 }
 
@@ -1667,4 +1667,3 @@
 .file-explorer.hide-device-badges .device-badge {
     display: none !important;
 }
-
