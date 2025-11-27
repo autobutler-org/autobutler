@@ -57,7 +57,7 @@ jobs:
       - name: Build version from git tag
         id: version
         run: |
-          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "dev-${{ github.sha }}")
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "dev-${GITHUB_SHA:0:7}")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Building version: $VERSION"
 
