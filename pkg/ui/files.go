@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"autobutler/pkg/storage"
 	"autobutler/pkg/ui/components/file_explorer"
 	"autobutler/pkg/ui/components/file_explorer/file_viewer/docx_viewer"
 	"autobutler/pkg/ui/components/file_explorer/file_viewer/epub_viewer"
@@ -84,16 +85,51 @@ func GetFileExplorerViewContentWithBreadcrumb(c *gin.Context, rootDir string, vi
 }
 
 func getFileExplorerComponent(c *gin.Context, rootDir string, viewContentOnly bool, view ...any) templ.Component {
-	fullPathDir := ""
-	if rootDir == "" {
-		fullPathDir = fileutil.GetFilesDir()
-	} else {
-		fullPathDir = filepath.Join(fileutil.GetFilesDir(), rootDir)
-	}
-	files, err := fileutil.StatFilesInDir(fullPathDir)
+	// Get all managed devices
+	managedDevices, err := storage.GetManagedDevices()
 	if err != nil {
-		c.Writer.WriteString(`<span class="text-red-500">Failed to load files: ` + html.EscapeString(err.Error()) + `</span>`)
+		c.Writer.WriteString(`<span class="text-red-500">Failed to load managed devices: ` + html.EscapeString(err.Error()) + `</span>`)
 		return nil
+	}
+
+	var files []*fileutil.DeviceFileInfo
+
+	// If no managed devices exist, fall back to single default device
+	if len(managedDevices) == 0 {
+		fullPathDir := ""
+		if rootDir == "" {
+			fullPathDir = fileutil.GetFilesDir()
+		} else {
+			fullPathDir = filepath.Join(fileutil.GetFilesDir(), rootDir)
+		}
+		// Get device info for the default files directory
+		deviceName, devicePath := fileutil.GetDeviceInfoForPath(fullPathDir)
+		files, err = fileutil.StatFilesInDir(fullPathDir, deviceName, devicePath)
+		if err != nil {
+			c.Writer.WriteString(`<span class="text-red-500">Failed to load files: ` + html.EscapeString(err.Error()) + `</span>`)
+			return nil
+		}
+	} else {
+		// Build list of directories to scan across all devices
+		var dirsToScan []fileutil.DirWithDevice
+		for _, device := range managedDevices {
+			dirPath := device.FilesDir
+			if rootDir != "" {
+				dirPath = filepath.Join(device.FilesDir, rootDir)
+			}
+			dirsToScan = append(dirsToScan, fileutil.DirWithDevice{
+				Dir:        dirPath,
+				DeviceName: device.Name,
+				DevicePath: device.MountPoint,
+			})
+		}
+
+		// Get unified file list across all devices
+		files, err = fileutil.StatFilesInMultipleDirs(dirsToScan)
+		if err != nil {
+			c.Writer.WriteString(`<span class="text-red-500">Failed to load files: ` + html.EscapeString(err.Error()) + `</span>`)
+			return nil
+		}
 	}
 
 	viewStr := getViewFromRequest(c)

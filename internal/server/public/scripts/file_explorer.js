@@ -1264,3 +1264,120 @@ document.addEventListener('click', function (event) {
         clearSelectedFiles();
     }
 });
+
+// DEVICE FILTERING
+// Track which devices are currently active/visible
+var activeDevices = new Set();
+
+// Initialize active devices on page load
+function initializeDeviceFilter() {
+    const deviceButtons = document.querySelectorAll('.device-filter-button');
+    deviceButtons.forEach((button) => {
+        const deviceName = button.getAttribute('data-device-name');
+        if (button.classList.contains('device-filter-button--active')) {
+            activeDevices.add(deviceName);
+        }
+    });
+    applyDeviceFilter();
+}
+
+// Toggle device filter when button is clicked
+// eslint-disable-next-line no-unused-vars
+function toggleDeviceFilter(button) {
+    const deviceName = button.getAttribute('data-device-name');
+
+    // Toggle active state
+    button.classList.toggle('device-filter-button--active');
+
+    if (activeDevices.has(deviceName)) {
+        activeDevices.delete(deviceName);
+    } else {
+        activeDevices.add(deviceName);
+    }
+
+    applyDeviceFilter();
+}
+
+// Apply the current device filter to all file nodes
+function applyDeviceFilter() {
+    // Get all file nodes
+    const fileNodes = document.querySelectorAll('.file-node');
+
+    // If no devices are being filtered (no filter buttons or all inactive), show everything
+    if (activeDevices.size === 0) {
+        fileNodes.forEach((node) => {
+            node.setAttribute('data-device-filtered', 'false');
+            node.style.display = '';
+        });
+        return;
+    }
+
+    fileNodes.forEach((node) => {
+        // Find device badge in this node
+        const deviceBadge = node.querySelector('.device-badge-name');
+
+        if (!deviceBadge) {
+            // No device badge means it's from the default/primary device
+            // Show it when filters are active (for backwards compatibility)
+            node.setAttribute('data-device-filtered', 'false');
+            node.style.display = '';
+        } else {
+            const deviceName = deviceBadge.textContent.trim();
+
+            // Show if device is in active set
+            if (activeDevices.has(deviceName)) {
+                node.setAttribute('data-device-filtered', 'false');
+                node.style.display = '';
+            } else {
+                node.setAttribute('data-device-filtered', 'true');
+                node.style.display = 'none';
+            }
+        }
+    });
+}
+
+// Initialize on page load and after HTMX swaps
+document.addEventListener('DOMContentLoaded', initializeDeviceFilter);
+document.body.addEventListener('htmx:afterSwap', initializeDeviceFilter);
+
+// DEVICE BADGE TOGGLE
+var DEVICE_BADGE_STORAGE_KEY = 'showDeviceBadges';
+
+function toggleDeviceBadges(show) {
+    const fileExplorer = document.getElementById('file-explorer');
+    if (!fileExplorer) return;
+
+    if (show) {
+        fileExplorer.classList.remove('hide-device-badges');
+        localStorage.setItem(DEVICE_BADGE_STORAGE_KEY, 'true');
+    } else {
+        fileExplorer.classList.add('hide-device-badges');
+        localStorage.setItem(DEVICE_BADGE_STORAGE_KEY, 'false');
+    }
+}
+
+// Initialize device badge visibility on page load
+function initializeDeviceBadgeToggle() {
+    const checkbox = document.getElementById('toggle-device-badges');
+    if (!checkbox) return;
+
+    // Check if there are multiple managed devices
+    const deviceFilterButtons = document.querySelectorAll('.device-filter-button');
+    const hasMultipleDevices = deviceFilterButtons.length > 1;
+
+    // Get stored preference, defaulting to "on" if multiple devices, "off" if single device
+    const storedPreference = localStorage.getItem(DEVICE_BADGE_STORAGE_KEY);
+    let showBadges;
+
+    if (storedPreference !== null) {
+        showBadges = storedPreference === 'true';
+    } else {
+        showBadges = hasMultipleDevices;
+    }
+
+    checkbox.checked = showBadges;
+    toggleDeviceBadges(showBadges);
+}
+
+document.addEventListener('DOMContentLoaded', initializeDeviceBadgeToggle);
+document.body.addEventListener('htmx:afterSwap', initializeDeviceBadgeToggle);

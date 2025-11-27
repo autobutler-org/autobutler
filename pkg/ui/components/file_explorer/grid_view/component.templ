@@ -2,6 +2,7 @@ package grid_view
 
 import (
 	"autobutler/pkg/ui/components/file_explorer/context_menu_items"
+	"autobutler/pkg/ui/components/file_explorer/device_badge"
 	"autobutler/pkg/ui/components/icons/archive"
 	"autobutler/pkg/ui/components/icons/folder"
 	"autobutler/pkg/ui/components/icons/generic"
@@ -11,11 +12,10 @@ import (
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/fileutil"
 	"fmt"
-	"io/fs"
 	"path/filepath"
 )
 
-templ Component(pageState types.PageState, files []fs.FileInfo) {
+templ Component(pageState types.PageState, files []*fileutil.DeviceFileInfo) {
 	<div class="grid-view-container">
 		<div class="grid-view-grid">
 			for _, file := range files {
@@ -25,19 +25,21 @@ templ Component(pageState types.PageState, files []fs.FileInfo) {
 	</div>
 }
 
-templ renderGridItem(pageState types.PageState, file fs.FileInfo) {
+templ renderGridItem(pageState types.PageState, file *fileutil.DeviceFileInfo) {
 	{{
 		fileType := fileutil.DetermineFileType(pageState.RootDir, file)
 		fileName := file.Name()
 		isFolder := fileType == fileutil.FileTypeFolder
 		filePath := filepath.Join("/files", pageState.RootDir, fileName)
 		fileSize := fileutil.SizeBytesToString(file.Size())
+		deviceName := file.DeviceName
 	}}
 	<div
 		class={ "grid-view-item file-node", templ.KV("grid-view-item--folder", isFolder) }
 		data-name={ fileName }
 		data-is-folder={ fmt.Sprintf("%t", isFolder) }
 		data-file-type={ fileType }
+		data-device-name={ deviceName }
 		oncontextmenu="toggleFloatingContextMenu(event, this)"
 		onclick="handleFileNodeClick(event, this)"
 		ondblclick="handleFileNodeDoubleClick(event, this)"
@@ -53,6 +55,7 @@ templ renderGridItem(pageState types.PageState, file fs.FileInfo) {
 				</div>
 				<div class="grid-view-details">
 					<div class="grid-view-name" title={ fileName }>{ fileName }</div>
+					@device_badge.Component(file)
 				</div>
 			</div>
 		} else {
@@ -80,6 +83,7 @@ templ renderGridItem(pageState types.PageState, file fs.FileInfo) {
 					if !isFolder && fileSize != "" {
 						<div class="grid-view-size">{ fileSize }</div>
 					}
+					@device_badge.Component(file)
 				</div>
 			</div>
 		}

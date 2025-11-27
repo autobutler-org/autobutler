@@ -5,10 +5,10 @@ import (
 	"autobutler/pkg/ui/components/file_explorer/sort_button"
 	"autobutler/pkg/ui/components/file_explorer/sort_switcher"
 	"autobutler/pkg/ui/types"
-	"io/fs"
+	"autobutler/pkg/util/fileutil"
 )
 
-templ Component(pageState types.PageState, files []fs.FileInfo) {
+templ Component(pageState types.PageState, files []*fileutil.DeviceFileInfo) {
 	<div class="file-table-container">
 		<table id="file-explorer-table" class="file-table">
 			<thead class="file-table-header">

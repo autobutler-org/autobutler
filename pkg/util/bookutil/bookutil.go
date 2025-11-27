@@ -7,21 +7,6 @@ import (
 	"path/filepath"
 )
 
-// FilterBookFiles filters a list of files to only include book files (PDF and EPUB)
-func FilterBookFiles(files []fs.FileInfo) []fs.FileInfo {
-	bookFiles := make([]fs.FileInfo, 0)
-	for _, file := range files {
-		if file.IsDir() {
-			continue
-		}
-		fileType := fileutil.DetermineFileTypeFromPath(file.Name())
-		if fileType == fileutil.FileTypePDF || fileType == fileutil.FileTypeEpub {
-			bookFiles = append(bookFiles, file)
-		}
-	}
-	return bookFiles
-}
-
 // RecursiveBookInfo stores a book with its relative path
 type RecursiveBookInfo struct {
 	FileInfo fs.FileInfo

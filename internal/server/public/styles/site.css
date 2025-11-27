@@ -4,6 +4,7 @@
 /* Order of imports below is not important */
 @import url('books.css');
 @import url('buttons.css');
+@import url('device-manager.css');
 @import url('devices.css');
 @import url('editor.css');
 @import url('file-explorer.css');

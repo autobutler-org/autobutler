@@ -14,11 +14,10 @@ import (
 	"autobutler/pkg/ui/components/file_explorer/list_view"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/fileutil"
-	"io/fs"
 	"path/filepath"
 )
 
-func ViewContent(pageState types.PageState, files []fs.FileInfo, view string) templ.Component {
+func ViewContent(pageState types.PageState, files []*fileutil.DeviceFileInfo, view string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -52,7 +51,7 @@ func ViewContent(pageState types.PageState, files []fs.FileInfo, view string) te
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join(fileutil.GetFilesDir(), pageState.RootDir))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/view_content.templ`, Line: 17, Col: 112}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/view_content.templ`, Line: 16, Col: 112}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -78,7 +77,7 @@ func ViewContent(pageState types.PageState, files []fs.FileInfo, view string) te
 }
 
 // ViewContentWithBreadcrumb is used for HTMX requests that need to update the breadcrumb via OOB swap
-func ViewContentWithBreadcrumb(pageState types.PageState, files []fs.FileInfo, view string) templ.Component {
+func ViewContentWithBreadcrumb(pageState types.PageState, files []*fileutil.DeviceFileInfo, view string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

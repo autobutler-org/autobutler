@@ -1,6 +1,7 @@
 package file_explorer
 
 import (
+	"autobutler/pkg/ui/components/file_explorer/device_filter"
 	"autobutler/pkg/ui/components/file_explorer/file_download"
 	"autobutler/pkg/ui/components/file_explorer/file_navigation"
 	"autobutler/pkg/ui/components/file_explorer/file_upload"
@@ -9,14 +10,13 @@ import (
 	"autobutler/pkg/ui/components/icons/grid_view"
 	"autobutler/pkg/ui/components/icons/list_view"
 	"autobutler/pkg/util/fileutil"
-	"io/fs"
 
 	"autobutler/pkg/ui/components/file_explorer/explorer_context_menu"
 	"autobutler/pkg/ui/types"
 	"fmt"
 )
 
-templ Component(pageState types.PageState, files []fs.FileInfo, view string) {
+templ Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, view string) {
 	// TODO: This works on firefox, but not on chrome as it will rapidly open and close the upload area.
 	{{ fileDir := fileutil.GetFilesDir() }}
 	{{ availableBytes := fileutil.GetAvailableSpaceInBytes(fileDir) }}
@@ -45,32 +45,43 @@ templ Component(pageState types.PageState, files []fs.FileInfo, view string) {
 			<div class="file-explorer-controls">
 				<div>
 					@Breadcrumb(pageState, view)
+					@device_filter.Component(pageState)
 				</div>
-				<div class="view-switcher">
-					<button
-						class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "list") }
-						onclick="switchView('list')"
-						title="List View"
-						type="button"
-					>
-						@list_view.Component()
-					</button>
-					<button
-						class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "grid") }
-						onclick="switchView('grid')"
-						title="Grid View"
-						type="button"
-					>
-						@grid_view.Component()
-					</button>
-					<button
-						class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "column") }
-						onclick="switchView('column')"
-						title="Column View"
-						type="button"
-					>
-						@column_view.Component()
-					</button>
+				<div style="display: flex; align-items: center; gap: 1rem;">
+					<label class="device-badge-toggle">
+						<input
+							type="checkbox"
+							id="toggle-device-badges"
+							onchange="toggleDeviceBadges(this.checked)"
+						/>
+						<span>Show device names</span>
+					</label>
+					<div class="view-switcher">
+						<button
+							class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "list") }
+							onclick="switchView('list')"
+							title="List View"
+							type="button"
+						>
+							@list_view.Component()
+						</button>
+						<button
+							class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "grid") }
+							onclick="switchView('grid')"
+							title="Grid View"
+							type="button"
+						>
+							@grid_view.Component()
+						</button>
+						<button
+							class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "column") }
+							onclick="switchView('column')"
+							title="Column View"
+							type="button"
+						>
+							@column_view.Component()
+						</button>
+					</div>
 				</div>
 			</div>
 			<div id="file-explorer-status"></div>
