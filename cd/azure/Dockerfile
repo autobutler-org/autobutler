@@ -14,7 +14,7 @@ COPY . .
 ARG VERSION=dev
 RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags="-s -w -X autobutler/pkg/util/versionutil.Semver=${VERSION}" \
-    -o autobutler .
+    -o autobutler ./cmd/autobutler/main.go
 
 # Runtime stage
 FROM alpine:latest
