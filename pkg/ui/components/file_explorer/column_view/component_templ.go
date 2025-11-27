@@ -10,6 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"autobutler/pkg/ui/components/file_explorer/context_menu_items"
+	"autobutler/pkg/ui/components/file_explorer/device_badge"
 	"autobutler/pkg/ui/components/icons/archive"
 	"autobutler/pkg/ui/components/icons/folder"
 	"autobutler/pkg/ui/components/icons/generic"
@@ -19,12 +20,11 @@ import (
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/fileutil"
 	"fmt"
-	"io/fs"
 	"path/filepath"
 	"strings"
 )
 
-func Component(pageState types.PageState, files []fs.FileInfo) templ.Component {
+func Component(pageState types.PageState, files []*fileutil.DeviceFileInfo) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -61,7 +61,7 @@ func Component(pageState types.PageState, files []fs.FileInfo) templ.Component {
 	})
 }
 
-func renderColumnLayout(pageState types.PageState, files []fs.FileInfo) templ.Component {
+func renderColumnLayout(pageState types.PageState, files []*fileutil.DeviceFileInfo) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -158,7 +158,8 @@ func renderParentColumn(pageState types.PageState, dirPath string, columnIndex i
 		if dirPath != "" {
 			fullPath = filepath.Join(fullPath, dirPath)
 		}
-		columnFiles, _ := fileutil.StatFilesInDir(fullPath)
+		deviceName, devicePath := fileutil.GetDeviceInfoForPath(fullPath)
+		columnFiles, _ := fileutil.StatFilesInDir(fullPath, deviceName, devicePath)
 		columnTitle := "files"
 		if dirPath != "" {
 			columnTitle = filepath.Base(dirPath)
@@ -170,7 +171,7 @@ func renderParentColumn(pageState types.PageState, dirPath string, columnIndex i
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", columnIndex))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 81, Col: 83}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 82, Col: 83}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -183,7 +184,7 @@ func renderParentColumn(pageState types.PageState, dirPath string, columnIndex i
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(columnTitle)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 83, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 84, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -224,7 +225,7 @@ func renderParentColumn(pageState types.PageState, dirPath string, columnIndex i
 }
 
 // renderCurrentColumn renders the current directory being viewed
-func renderCurrentColumn(pageState types.PageState, files []fs.FileInfo, columnIndex int) templ.Component {
+func renderCurrentColumn(pageState types.PageState, files []*fileutil.DeviceFileInfo, columnIndex int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -256,7 +257,7 @@ func renderCurrentColumn(pageState types.PageState, files []fs.FileInfo, columnI
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", columnIndex))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 108, Col: 110}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 109, Col: 110}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -269,7 +270,7 @@ func renderCurrentColumn(pageState types.PageState, files []fs.FileInfo, columnI
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(columnTitle)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 110, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 111, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -309,7 +310,7 @@ func renderCurrentColumn(pageState types.PageState, files []fs.FileInfo, columnI
 }
 
 // renderParentColumnItem renders an item in a parent directory column
-func renderParentColumnItem(pageState types.PageState, parentPath string, file fs.FileInfo, isSelected bool) templ.Component {
+func renderParentColumnItem(pageState types.PageState, parentPath string, file *fileutil.DeviceFileInfo, isSelected bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -365,7 +366,7 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file f
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fileName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 142, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 143, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -378,7 +379,7 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file f
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", isFolder))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 143, Col: 46}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 144, Col: 46}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -391,7 +392,7 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file f
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(dataFileType)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 144, Col: 31}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 145, Col: 31}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -409,7 +410,7 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file f
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(filePath)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 153, Col: 24}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 154, Col: 24}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -430,7 +431,7 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file f
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fileName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 158, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 159, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -469,9 +470,13 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file f
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fileName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 169, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 171, Col: 15}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = device_badge.Component(file).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -497,7 +502,7 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file f
 }
 
 // renderCurrentColumnItem renders an item in the current directory column
-func renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) templ.Component {
+func renderCurrentColumnItem(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -551,7 +556,7 @@ func renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) templ.
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fileName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 198, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 202, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
@@ -564,7 +569,7 @@ func renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) templ.
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", isFolder))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 199, Col: 46}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 203, Col: 46}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
@@ -577,7 +582,7 @@ func renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) templ.
 		var templ_7745c5c3_Var24 string
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(dataFileType)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 200, Col: 31}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 204, Col: 31}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
@@ -595,7 +600,7 @@ func renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) templ.
 			var templ_7745c5c3_Var25 string
 			templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(filePath)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 209, Col: 24}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 213, Col: 24}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 			if templ_7745c5c3_Err != nil {
@@ -616,7 +621,7 @@ func renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) templ.
 			var templ_7745c5c3_Var26 string
 			templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(fileName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 214, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 218, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 			if templ_7745c5c3_Err != nil {
@@ -634,7 +639,7 @@ func renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) templ.
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/components/files/viewer", filePath))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 220, Col: 74}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 224, Col: 74}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 			if templ_7745c5c3_Err != nil {
@@ -655,9 +660,13 @@ func renderCurrentColumnItem(pageState types.PageState, file fs.FileInfo) templ.
 			var templ_7745c5c3_Var28 string
 			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fileName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 225, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 230, Col: 15}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = device_badge.Component(file).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

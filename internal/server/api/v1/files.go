@@ -3,6 +3,7 @@ package v1
 import (
 	"archive/zip"
 	"autobutler/pkg/api"
+	"autobutler/pkg/storage"
 	"autobutler/pkg/util/fileutil"
 	"fmt"
 	"html"
@@ -33,13 +34,44 @@ func deleteFilesRoute(apiV1Group *gin.RouterGroup) {
 		rootDir := c.Query("rootDir")
 		filePaths := c.QueryArray("filePaths")
 		fmt.Printf("Deleting multiple files: %s\n", filePaths)
-		fileDir := fileutil.GetFilesDir()
-		for _, filePath := range filePaths {
-			fullPath := filepath.Join(fileDir, rootDir, filePath)
-			if err := os.RemoveAll(fullPath); err != nil {
-				return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
+
+		// Get managed devices
+		managedDevices, err := storage.GetManagedDevices()
+		if err != nil || len(managedDevices) == 0 {
+			// Fallback to single device
+			fileDir := fileutil.GetFilesDir()
+			for _, filePath := range filePaths {
+				fullPath := filepath.Join(fileDir, rootDir, filePath)
+				if err := os.RemoveAll(fullPath); err != nil {
+					return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
+				}
+			}
+		} else {
+			// Build list of device directories
+			var dirsToSearch []fileutil.DirWithDevice
+			for _, device := range managedDevices {
+				dirsToSearch = append(dirsToSearch, fileutil.DirWithDevice{
+					Dir:        device.FilesDir,
+					DeviceName: device.Name,
+					DevicePath: device.MountPoint,
+				})
+			}
+
+			// Delete files from all devices where they exist
+			for _, filePath := range filePaths {
+				relPath := filepath.Join(rootDir, filePath)
+				// Try to find and delete from each device
+				for _, dirInfo := range dirsToSearch {
+					fullPath := filepath.Join(dirInfo.Dir, relPath)
+					if _, err := os.Stat(fullPath); err == nil {
+						if err := os.RemoveAll(fullPath); err != nil {
+							return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
+						}
+					}
+				}
 			}
 		}
+
 		// Always render the full file explorer (button targets #file-explorer)
 		component := ui.GetFileExplorer(c, rootDir)
 		if err := component.Render(c.Request.Context(), c.Writer); err != nil {
@@ -50,8 +82,31 @@ func deleteFilesRoute(apiV1Group *gin.RouterGroup) {
 }
 
 func DownloadFile(c *gin.Context, filePath string) {
-	rootDir := fileutil.GetFilesDir()
-	fullPath := filepath.Join(rootDir, filePath)
+	var fullPath string
+
+	// Get managed devices
+	managedDevices, err := storage.GetManagedDevices()
+	if err != nil || len(managedDevices) == 0 {
+		// Fallback to single device
+		rootDir := fileutil.GetFilesDir()
+		fullPath = filepath.Join(rootDir, filePath)
+	} else {
+		// Search for file across all managed devices
+		var dirsToSearch []fileutil.DirWithDevice
+		for _, device := range managedDevices {
+			dirsToSearch = append(dirsToSearch, fileutil.DirWithDevice{
+				Dir:        device.FilesDir,
+				DeviceName: device.Name,
+				DevicePath: device.MountPoint,
+			})
+		}
+
+		fullPath, err = fileutil.FindFileAcrossDevices(dirsToSearch, filePath)
+		if err != nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+	}
 
 	fileType := fileutil.DetermineFileTypeFromPath(fullPath)
 

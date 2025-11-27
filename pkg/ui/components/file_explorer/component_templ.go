@@ -9,6 +9,7 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"autobutler/pkg/ui/components/file_explorer/device_filter"
 	"autobutler/pkg/ui/components/file_explorer/file_download"
 	"autobutler/pkg/ui/components/file_explorer/file_navigation"
 	"autobutler/pkg/ui/components/file_explorer/file_upload"
@@ -17,14 +18,13 @@ import (
 	"autobutler/pkg/ui/components/icons/grid_view"
 	"autobutler/pkg/ui/components/icons/list_view"
 	"autobutler/pkg/util/fileutil"
-	"io/fs"
 
 	"autobutler/pkg/ui/components/file_explorer/explorer_context_menu"
 	"autobutler/pkg/ui/types"
 	"fmt"
 )
 
-func Component(pageState types.PageState, files []fs.FileInfo, view string) templ.Component {
+func Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, view string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -108,7 +108,11 @@ func Component(pageState types.PageState, files []fs.FileInfo, view string) temp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><div class=\"view-switcher\">")
+		templ_7745c5c3_Err = device_filter.Component(pageState).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><div style=\"display: flex; align-items: center; gap: 1rem;\"><label class=\"device-badge-toggle\"><input type=\"checkbox\" id=\"toggle-device-badges\" onchange=\"toggleDeviceBadges(this.checked)\"> <span>Show device names</span></label><div class=\"view-switcher\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -198,7 +202,7 @@ func Component(pageState types.PageState, files []fs.FileInfo, view string) temp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</button></div></div><div id=\"file-explorer-status\"></div><div id=\"file-explorer-view-content\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</button></div></div></div><div id=\"file-explorer-status\"></div><div id=\"file-explorer-view-content\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

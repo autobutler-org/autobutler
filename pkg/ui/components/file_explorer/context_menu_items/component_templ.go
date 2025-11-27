@@ -12,13 +12,12 @@ import (
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/fileutil"
 	"fmt"
-	"io/fs"
 	"path/filepath"
 )
 
 // Component renders just the context menu items (without wrapper or trigger)
 // Can be used in floating menus or inline menus
-func Component(pageState types.PageState, file fs.FileInfo, rootDir string) templ.Component {
+func Component(pageState types.PageState, file *fileutil.DeviceFileInfo, rootDir string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -51,7 +50,7 @@ func Component(pageState types.PageState, file fs.FileInfo, rootDir string) temp
 			var templ_7745c5c3_Var2 templ.SafeURL
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(downloadPath))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/context_menu_items/component.templ`, Line: 22, Col: 37}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/context_menu_items/component.templ`, Line: 21, Col: 37}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -82,7 +81,7 @@ func Component(pageState types.PageState, file fs.FileInfo, rootDir string) temp
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join(`/api/v1/files`))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/context_menu_items/component.templ`, Line: 42, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/context_menu_items/component.templ`, Line: 41, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -95,7 +94,7 @@ func Component(pageState types.PageState, file fs.FileInfo, rootDir string) temp
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(`{"rootDir":"` + rootDir + `", "filePaths":["` + fileName + `"]}`)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/context_menu_items/component.templ`, Line: 43, Col: 77}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/context_menu_items/component.templ`, Line: 42, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {

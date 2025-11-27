@@ -2,12 +2,12 @@ package file_context_menu
 
 import (
 	"autobutler/pkg/ui/types"
+	"autobutler/pkg/util/fileutil"
 	"fmt"
-	"io/fs"
 	"path/filepath"
 )
 
-templ Component(pageState types.PageState, file fs.FileInfo) {
+templ Component(pageState types.PageState, file *fileutil.DeviceFileInfo) {
 	<div>
 		<button
 			class="context-menu-trigger"

@@ -6,11 +6,10 @@ import (
 	"autobutler/pkg/ui/components/file_explorer/list_view"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/fileutil"
-	"io/fs"
 	"path/filepath"
 )
 
-templ ViewContent(pageState types.PageState, files []fs.FileInfo, view string) {
+templ ViewContent(pageState types.PageState, files []*fileutil.DeviceFileInfo, view string) {
 	if view == "column" {
 		@column_view.Component(pageState, files)
 	} else if len(files) == 0 {
@@ -23,7 +22,7 @@ templ ViewContent(pageState types.PageState, files []fs.FileInfo, view string) {
 }
 
 // ViewContentWithBreadcrumb is used for HTMX requests that need to update the breadcrumb via OOB swap
-templ ViewContentWithBreadcrumb(pageState types.PageState, files []fs.FileInfo, view string) {
+templ ViewContentWithBreadcrumb(pageState types.PageState, files []*fileutil.DeviceFileInfo, view string) {
 	@ViewContent(pageState, files, view)
 	// Out-of-band swap to update breadcrumb
 	@BreadcrumbOOB(pageState, view)

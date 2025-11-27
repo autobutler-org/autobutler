@@ -1,6 +1,7 @@
 package node
 
 import (
+	"autobutler/pkg/ui/components/file_explorer/device_badge"
 	"autobutler/pkg/ui/components/file_explorer/explorer_context_menu"
 	"autobutler/pkg/ui/components/file_explorer/file_context_menu"
 	"autobutler/pkg/ui/components/icons/archive"
@@ -11,18 +12,21 @@ import (
 	"autobutler/pkg/ui/components/icons/slideshow"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/fileutil"
-	"io/fs"
 	"path/filepath"
 )
 
-templ Component(pageState types.PageState, file fs.FileInfo) {
+templ Component(pageState types.PageState, file *fileutil.DeviceFileInfo) {
 	// TODO: Refactor this into small parts, so we don't do so much spaghetti for folder vs file, but share common bits
 	// TODO: this is the page where the greater table is loaded in @brandon
 	// Get file type and name
 	{{ fileType := fileutil.DetermineFileType(pageState.RootDir, file) }}
 	{{ fileName := "" }}
+	{{ deviceName := "" }}
+	{{ fileSize := int64(0) }}
 	if file != nil {
 		{{ fileName = file.Name() }}
+		{{ deviceName = file.DeviceName }}
+		{{ fileSize = file.Size() }}
 	}
 	{{ nodeClasses := "" }}
 	if file != nil {
@@ -40,6 +44,7 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 		ontouchend="handleFileNodeTouch(event, this)"
 		data-name={ fileName }
 		data-file-type={ fileType }
+		data-device-name={ deviceName }
 	>
 		switch fileType {
 			case fileutil.FileTypeFolder:
@@ -47,9 +52,10 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 				<td class="file-table-cell file-table-cell--content" data-href={ filePath }>
 					@folder.Component()
 					<span class="file-table-name">{ fileName }</span>
+					@device_badge.Component(file)
 				</td>
 				<td class="file-table-cell file-table-size">
-					{ fileutil.SizeBytesToString(file.Size()) }
+					{ fileutil.SizeBytesToString(fileSize) }
 				</td>
 				<td class="file-table-cell">
 					@file_context_menu.Component(pageState, file)
@@ -81,9 +87,10 @@ templ Component(pageState types.PageState, file fs.FileInfo) {
 							@generic.Component()
 					}
 					<span class="file-table-name">{ fileName }</span>
+					@device_badge.Component(file)
 				</td>
 				<td class="file-table-cell file-table-size">
-					{ fileutil.SizeBytesToString(file.Size()) }
+					{ fileutil.SizeBytesToString(fileSize) }
 				</td>
 				<td class="file-table-cell">
 					@file_context_menu.Component(pageState, file)

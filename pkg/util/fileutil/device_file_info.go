@@ -1,0 +1,35 @@
+package fileutil
+
+import (
+	"io/fs"
+	"time"
+)
+
+// DeviceFileInfo wraps fs.FileInfo with device information
+type DeviceFileInfo struct {
+	fs.FileInfo
+	DeviceName string // Name of the device this file is on
+	DevicePath string // Mount point of the device
+	FullPath   string // Full path to the file
+}
+
+// NewDeviceFileInfo creates a DeviceFileInfo
+func NewDeviceFileInfo(info fs.FileInfo, deviceName, devicePath, fullPath string) *DeviceFileInfo {
+	return &DeviceFileInfo{
+		FileInfo:   info,
+		DeviceName: deviceName,
+		DevicePath: devicePath,
+		FullPath:   fullPath,
+	}
+}
+
+// Ensure DeviceFileInfo implements fs.FileInfo
+var _ fs.FileInfo = (*DeviceFileInfo)(nil)
+
+// Override methods to delegate to wrapped FileInfo
+func (d *DeviceFileInfo) Name() string       { return d.FileInfo.Name() }
+func (d *DeviceFileInfo) Size() int64        { return d.FileInfo.Size() }
+func (d *DeviceFileInfo) Mode() fs.FileMode  { return d.FileInfo.Mode() }
+func (d *DeviceFileInfo) ModTime() time.Time { return d.FileInfo.ModTime() }
+func (d *DeviceFileInfo) IsDir() bool        { return d.FileInfo.IsDir() }
+func (d *DeviceFileInfo) Sys() any           { return d.FileInfo.Sys() }

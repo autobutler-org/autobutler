@@ -271,6 +271,24 @@
     }
 }
 
+/* Section description */
+.settings-section-description {
+    margin-bottom: var(--spacing-xl);
+    color: var(--color-gray-400);
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+}
+
+@media (prefers-color-scheme: light) {
+    .settings-section-description {
+        color: var(--color-gray-600);
+    }
+}
+
+.settings-section-description p {
+    margin: 0;
+}
+
 /* Section toolbar with tabs/buttons */
 .settings-section-toolbar {
     display: flex;
