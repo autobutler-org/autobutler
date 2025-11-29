@@ -1,11 +1,11 @@
 package ui
 
 import (
-	"autobutler/pkg/util/storageutil"
 	"autobutler/pkg/ui/components/device_manager"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/ui/views"
 	"autobutler/pkg/util/serverutil"
+	"autobutler/pkg/util/storageutil"
 
 	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"

@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"autobutler/pkg/util/storageutil"
 	"autobutler/pkg/ui/components/file_explorer"
 	"autobutler/pkg/ui/components/file_explorer/file_viewer/docx_viewer"
 	"autobutler/pkg/ui/components/file_explorer/file_viewer/epub_viewer"
@@ -14,6 +13,7 @@ import (
 	"autobutler/pkg/ui/views"
 	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/serverutil"
+	"autobutler/pkg/util/storageutil"
 	"html"
 	"path/filepath"
 
