@@ -9,68 +9,8 @@ import (
 
 // SetupStorageRoutes configures storage-related API routes
 func SetupStorageRoutes(apiGroup *gin.RouterGroup) {
-	apiGroup.GET("/storage/devices", getStorageDevices)
-	apiGroup.GET("/storage/summary", getStorageSummary)
-	apiGroup.GET("/storage/managed", getManagedDevices)
 	apiGroup.GET("/storage/devices/status", getDeviceStatuses)
 	apiGroup.POST("/storage/managed", initializeManagedDevice)
-}
-
-func getStorageDevices(c *gin.Context) {
-	detector := storage.NewDetector()
-
-	// READ-ONLY: Detect devices using system commands
-	devices, err := detector.DetectDevices()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Failed to detect storage devices",
-			"details": err.Error(),
-		})
-		return
-	}
-
-	// Calculate summary
-	summary := detector.CalculateSummary(devices)
-
-	c.JSON(http.StatusOK, gin.H{
-		"devices": devices,
-		"summary": summary,
-	})
-}
-
-func getStorageSummary(c *gin.Context) {
-	detector := storage.NewDetector()
-
-	// READ-ONLY: Detect devices
-	devices, err := detector.DetectDevices()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Failed to detect storage devices",
-			"details": err.Error(),
-		})
-		return
-	}
-
-	// Calculate summary
-	summary := detector.CalculateSummary(devices)
-
-	c.JSON(http.StatusOK, summary)
-}
-
-func getManagedDevices(c *gin.Context) {
-	managedDevices, err := storage.GetManagedDevices()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Failed to get managed devices",
-			"details": err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"devices": managedDevices,
-		"count":   len(managedDevices),
-	})
 }
 
 func initializeManagedDevice(c *gin.Context) {
