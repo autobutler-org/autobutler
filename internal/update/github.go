@@ -21,57 +21,6 @@ type GitHubAsset struct {
 	Rest map[string]any `json:"-"`
 }
 
-// UnmarshalJSON custom unmarshaller to capture all fields
-func (r *GitHubRelease) unmarshalJSON(data []byte) error {
-	type Alias GitHubRelease
-	aux := &struct {
-		*Alias
-	}{
-		Alias: (*Alias)(r),
-	}
-
-	// First unmarshal into our struct
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-
-	// Then unmarshal into the Rest map to capture everything
-	if err := json.Unmarshal(data, &r.Rest); err != nil {
-		return err
-	}
-
-	// Remove the fields we explicitly handle
-	delete(r.Rest, "tag_name")
-	delete(r.Rest, "assets")
-
-	return nil
-}
-
-// UnmarshalJSON custom unmarshaller to capture all fields
-func (a *GitHubAsset) unmarshalJSON(data []byte) error {
-	type Alias GitHubAsset
-	aux := &struct {
-		*Alias
-	}{
-		Alias: (*Alias)(a),
-	}
-
-	// First unmarshal into our struct
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-
-	// Then unmarshal into the Rest map to capture everything
-	if err := json.Unmarshal(data, &a.Rest); err != nil {
-		return err
-	}
-
-	// Remove the fields we explicitly handle
-	delete(a.Rest, "browser_download_url")
-
-	return nil
-}
-
 // FetchGitHubReleases fetches all releases from the autobutler.org GitHub repository
 func FetchGitHubReleases() ([]GitHubRelease, error) {
 	url := "https://api.github.com/repos/autobutler-org/autobutler.org/releases"
