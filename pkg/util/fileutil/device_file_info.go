@@ -5,7 +5,8 @@ import (
 	"time"
 )
 
-// DeviceFileInfo wraps fs.FileInfo with device information
+// DeviceFileInfo wraps fs.FileInfo with device information. This is the output type
+// for all file functions Autobutler uses internally.
 type DeviceFileInfo struct {
 	fs.FileInfo
 	DeviceName string // Name of the device this file is on

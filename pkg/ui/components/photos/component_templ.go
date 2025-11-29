@@ -12,13 +12,13 @@ import (
 	"autobutler/pkg/storage"
 	"autobutler/pkg/ui/components/file_explorer/file_viewer"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/imageutil"
+	"autobutler/pkg/util/photoutil"
 	"autobutler/pkg/util/stringutil"
 	"fmt"
 	"path/filepath"
 )
 
-func Component(pageState types.PageState, photos []imageutil.RecursivePhotoInfo, totalPhotos int, summary storage.Summary) templ.Component {
+func Component(pageState types.PageState, photos []photoutil.PhotoInfo, totalPhotos int, summary storage.Summary) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -84,7 +84,7 @@ func Component(pageState types.PageState, photos []imageutil.RecursivePhotoInfo,
 	})
 }
 
-func PhotoGrid(pageState types.PageState, photos []imageutil.RecursivePhotoInfo, page int, totalPhotos int) templ.Component {
+func PhotoGrid(pageState types.PageState, photos []photoutil.PhotoInfo, page int, totalPhotos int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -220,7 +220,7 @@ func PhotoGrid(pageState types.PageState, photos []imageutil.RecursivePhotoInfo,
 	})
 }
 
-func PhotoGridPage(pageState types.PageState, photos []imageutil.RecursivePhotoInfo, page int, totalPhotos int) templ.Component {
+func PhotoGridPage(pageState types.PageState, photos []photoutil.PhotoInfo, page int, totalPhotos int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -348,7 +348,7 @@ func PhotoGridPage(pageState types.PageState, photos []imageutil.RecursivePhotoI
 	})
 }
 
-func PhotoGridItem(pageState types.PageState, photo imageutil.RecursivePhotoInfo) templ.Component {
+func PhotoGridItem(pageState types.PageState, photo photoutil.PhotoInfo) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

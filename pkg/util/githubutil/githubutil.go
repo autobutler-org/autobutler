@@ -6,21 +6,6 @@ import (
 	"net/http"
 )
 
-// GitHubAsset represents a minimal GitHub release asset
-type GitHubAsset struct {
-	BrowserDownloadURL string `json:"browser_download_url"`
-	// Rest stores all other fields we don't explicitly need
-	Rest map[string]any `json:"-"`
-}
-
-// GitHubRelease represents a minimal GitHub release with only the fields we need
-type GitHubRelease struct {
-	TagName string        `json:"tag_name"`
-	Assets  []GitHubAsset `json:"assets"`
-	// Rest stores all other fields we don't explicitly need
-	Rest map[string]any `json:"-"`
-}
-
 // FetchGitHubReleases fetches all releases from a GitHub repository
 func FetchGitHubReleases(organization string, repository string) ([]GitHubRelease, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases", organization, repository)

@@ -11,32 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func wrapApiRoute(handler func(c *gin.Context) *api.Response) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		resp := handler(c)
-		if resp.Data == nil && resp.Error == nil {
-			c.Status(resp.StatusCode)
-			return
-		}
-		switch resp.ContentType {
-		case api.ContentTypeHTML:
-			if resp.Error != nil {
-				c.String(resp.StatusCode, resp.Error.Error())
-			} else {
-				c.String(resp.StatusCode, "%v", resp.Data)
-			}
-		case api.ContentTypeJSON:
-			if resp.Error != nil {
-				c.JSON(resp.StatusCode, gin.H{"error": resp.Error.Error()})
-			} else {
-				c.JSON(resp.StatusCode, resp.Data)
-			}
-		default:
-			c.String(http.StatusInternalServerError, "Unsupported content type")
-		}
-	}
-}
-
 func ApiRoute(router *gin.RouterGroup, method string, route string, handler func(c *gin.Context) *api.Response) gin.IRoutes {
 	route = stringutil.TrimLeading(route, '/')
 	wrapped := wrapApiRoute(handler)
@@ -65,6 +39,39 @@ func ApiRoute(router *gin.RouterGroup, method string, route string, handler func
 	}
 }
 
+func UiRoute(router *gin.Engine, path string, handler func(c *gin.Context) templ.Component) gin.IRoutes {
+	path = stringutil.TrimLeading(path, '/')
+	route := filepath.Join("/", path)
+	wrapped := wrapUiRoute(handler)
+	return router.GET(route, wrapped)
+}
+
+func wrapApiRoute(handler func(c *gin.Context) *api.Response) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		resp := handler(c)
+		if resp.Data == nil && resp.Error == nil {
+			c.Status(resp.StatusCode)
+			return
+		}
+		switch resp.ContentType {
+		case api.ContentTypeHTML:
+			if resp.Error != nil {
+				c.String(resp.StatusCode, resp.Error.Error())
+			} else {
+				c.String(resp.StatusCode, "%v", resp.Data)
+			}
+		case api.ContentTypeJSON:
+			if resp.Error != nil {
+				c.JSON(resp.StatusCode, gin.H{"error": resp.Error.Error()})
+			} else {
+				c.JSON(resp.StatusCode, resp.Data)
+			}
+		default:
+			c.String(http.StatusInternalServerError, "Unsupported content type")
+		}
+	}
+}
+
 func wrapUiRoute(handler func(c *gin.Context) templ.Component) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		wrapped := wrapApiRoute(func(c *gin.Context) *api.Response {
@@ -82,11 +89,4 @@ func wrapUiRoute(handler func(c *gin.Context) templ.Component) gin.HandlerFunc {
 		}
 		wrapped(c)
 	}
-}
-
-func UiRoute(router *gin.Engine, path string, handler func(c *gin.Context) templ.Component) gin.IRoutes {
-	path = stringutil.TrimLeading(path, '/')
-	route := filepath.Join("/", path)
-	wrapped := wrapUiRoute(handler)
-	return router.GET(route, wrapped)
 }

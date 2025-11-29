@@ -4,13 +4,13 @@ import (
 	"autobutler/pkg/storage"
 	"autobutler/pkg/ui/components/file_explorer/file_viewer"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/imageutil"
+	"autobutler/pkg/util/photoutil"
 	"autobutler/pkg/util/stringutil"
 	"fmt"
 	"path/filepath"
 )
 
-templ Component(pageState types.PageState, photos []imageutil.RecursivePhotoInfo, totalPhotos int, summary storage.Summary) {
+templ Component(pageState types.PageState, photos []photoutil.PhotoInfo, totalPhotos int, summary storage.Summary) {
 	<div id="photos-library" class="photos-library">
 		@file_viewer.Component()
 		<div class="photos-container">
@@ -42,7 +42,7 @@ templ Component(pageState types.PageState, photos []imageutil.RecursivePhotoInfo
 	</script>
 }
 
-templ PhotoGrid(pageState types.PageState, photos []imageutil.RecursivePhotoInfo, page int, totalPhotos int) {
+templ PhotoGrid(pageState types.PageState, photos []photoutil.PhotoInfo, page int, totalPhotos int) {
 	<div class="photo-grid">
 		for _, photo := range photos {
 			@PhotoGridItem(pageState, photo)
@@ -96,7 +96,7 @@ templ PhotoGrid(pageState types.PageState, photos []imageutil.RecursivePhotoInfo
 	</div>
 }
 
-templ PhotoGridPage(pageState types.PageState, photos []imageutil.RecursivePhotoInfo, page int, totalPhotos int) {
+templ PhotoGridPage(pageState types.PageState, photos []photoutil.PhotoInfo, page int, totalPhotos int) {
 	for _, photo := range photos {
 		@PhotoGridItem(pageState, photo)
 	}
@@ -152,7 +152,7 @@ templ PhotoGridPage(pageState types.PageState, photos []imageutil.RecursivePhoto
 	}
 }
 
-templ PhotoGridItem(pageState types.PageState, photo imageutil.RecursivePhotoInfo) {
+templ PhotoGridItem(pageState types.PageState, photo photoutil.PhotoInfo) {
 	{{
 		fileName := photo.FileInfo.Name()
 		// Use the relative path from the photo

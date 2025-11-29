@@ -28,7 +28,7 @@ func ListPossibleUpdates() ([]githubutil.GitHubRelease, error) {
 			versionutil.Version{
 				Semver: release.TagName,
 			},
-			currentVersion,
+			*currentVersion,
 		)
 		if comparison > 0 {
 			possibleUpdates = append(possibleUpdates, release)

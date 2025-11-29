@@ -15,7 +15,7 @@ import (
 	"autobutler/pkg/ui/components/photos"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/fileutil"
-	"autobutler/pkg/util/imageutil"
+	"autobutler/pkg/util/photoutil"
 	"fmt"
 )
 
@@ -61,7 +61,7 @@ func Photos(pageState types.PageState, summary storage.Summary) templ.Component 
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			photoFiles, err := imageutil.FindAllPhotosRecursively(fileutil.GetFilesDir())
+			photoFiles, err := photoutil.FindAllPhotosRecursively(fileutil.GetFilesDir())
 			if err != nil {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"error-text\">Error loading photos: ")
 				if templ_7745c5c3_Err != nil {

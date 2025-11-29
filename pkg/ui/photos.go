@@ -6,7 +6,7 @@ import (
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/ui/views"
 	"autobutler/pkg/util/fileutil"
-	"autobutler/pkg/util/imageutil"
+	"autobutler/pkg/util/photoutil"
 	"autobutler/pkg/util/serverutil"
 	"strconv"
 
@@ -64,7 +64,7 @@ func setupPhotoComponentRoutes(router *gin.Engine) {
 		println("🔍 SERVER: Photo grid request - Page:", page)
 
 		// Get all photos
-		photoFiles, err := imageutil.FindAllPhotosRecursively(fileutil.GetFilesDir())
+		photoFiles, err := photoutil.FindAllPhotosRecursively(fileutil.GetFilesDir())
 		if err != nil {
 			return nil
 		}
