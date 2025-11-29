@@ -13,8 +13,8 @@ type DeviceFileInfo struct {
 	FullPath   string // Full path to the file
 }
 
-// NewDeviceFileInfo creates a DeviceFileInfo
-func NewDeviceFileInfo(info fs.FileInfo, deviceName, devicePath, fullPath string) *DeviceFileInfo {
+// NewDeviceFileInfo is a constructor
+func NewDeviceFileInfo(info fs.FileInfo, deviceName string, devicePath string, fullPath string) *DeviceFileInfo {
 	return &DeviceFileInfo{
 		FileInfo:   info,
 		DeviceName: deviceName,
@@ -23,10 +23,10 @@ func NewDeviceFileInfo(info fs.FileInfo, deviceName, devicePath, fullPath string
 	}
 }
 
-// Ensure DeviceFileInfo implements fs.FileInfo
+// Static check to ensure DeviceFileInfo implements fs.FileInfo
 var _ fs.FileInfo = (*DeviceFileInfo)(nil)
 
-// Override methods to delegate to wrapped FileInfo
+// Wrappers to embedded fs.FileInfo methods
 func (d *DeviceFileInfo) Name() string       { return d.FileInfo.Name() }
 func (d *DeviceFileInfo) Size() int64        { return d.FileInfo.Size() }
 func (d *DeviceFileInfo) Mode() fs.FileMode  { return d.FileInfo.Mode() }

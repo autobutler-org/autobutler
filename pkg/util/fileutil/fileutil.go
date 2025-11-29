@@ -8,37 +8,9 @@ import (
 	"runtime"
 	"slices"
 	"strings"
-	"time"
 
 	"golang.org/x/sys/unix"
 )
-
-type CustomFileInfo struct {
-	name string
-	size int64
-}
-
-func (f CustomFileInfo) Name() string {
-	return f.name
-}
-func (f CustomFileInfo) Size() int64 {
-	return f.size
-}
-func (f CustomFileInfo) Mode() fs.FileMode {
-	return 0666
-}
-func (f CustomFileInfo) ModTime() time.Time {
-	return time.Now()
-}
-func (f CustomFileInfo) IsDir() bool {
-	return f.name[len(f.name)-1] == '/'
-}
-func (f CustomFileInfo) Sys() any {
-	return nil
-}
-func NewCustomFileInfo(name string, size int64) fs.FileInfo {
-	return CustomFileInfo{name: name, size: size}
-}
 
 type FileType string
 
@@ -180,7 +152,7 @@ func StatFilesInDir(dir string, deviceName string, devicePath string) ([]*Device
 			if err != nil {
 				return nil, fmt.Errorf("error getting size for folder %s: %w", entry.Name(), err)
 			}
-			fileInfo = NewCustomFileInfo(entry.Name()+"/", folderSize)
+			fileInfo = NewCustomFileInfo().WithName(entry.Name()).WithSize(folderSize)
 		} else {
 			info, err := entry.Info()
 			if err != nil {
@@ -324,7 +296,7 @@ func StatFilesInMultipleDirs(dirsWithDeviceInfo []DirWithDevice) ([]*DeviceFileI
 				if err != nil {
 					continue
 				}
-				fileInfo = NewCustomFileInfo(entry.Name()+"/", folderSize)
+				fileInfo = NewCustomFileInfo().WithName(entry.Name()).WithSize(folderSize)
 			} else {
 				info, err := entry.Info()
 				if err != nil {
