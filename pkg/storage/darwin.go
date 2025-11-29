@@ -59,7 +59,7 @@ func (d *DarwinDetector) DetectDevices() ([]Device, error) {
 		percentUsed, _ := strconv.Atoi(percentStr)
 
 		// Get detailed device info
-		device, err := d.GetDeviceInfo(devicePath)
+		device, err := d.getDeviceInfo(devicePath)
 		if err != nil {
 			continue // Skip devices we can't read
 		}
@@ -81,8 +81,8 @@ func (d *DarwinDetector) DetectDevices() ([]Device, error) {
 			seenContainers[containerID] = true
 		}
 
-		// Recalculate categories with correct values
-		d.estimateCategories(device)
+		// Apply simple categorization for UI
+		device.ApplySimpleCategorization()
 
 		devices = append(devices, *device)
 	}
@@ -102,50 +102,10 @@ func (d *DarwinDetector) getContainerID(devicePath string) string {
 	return ""
 }
 
-// getPhysicalDiskForContainer determines which physical disk a container is on
-// For APFS containers (disk3+), returns the likely physical disk (disk0, disk1, disk2)
-// For now, we assume disk3+ are synthesized APFS on disk0 (most common on Macs)
-func (d *DarwinDetector) getPhysicalDiskForContainer(containerID string) string {
-	// Extract disk number
-	re := regexp.MustCompile(`disk(\d+)`)
-	matches := re.FindStringSubmatch(containerID)
-	if len(matches) > 1 {
-		diskNum := matches[1]
-		// disk0, disk1, disk2 are typically physical disks
-		// disk3+ are typically synthesized APFS containers
-		if diskNum == "0" || diskNum == "1" || diskNum == "2" {
-			return containerID // Already a physical disk
-		}
-	}
-	// Default to disk0 for synthesized containers (most Macs)
-	return "disk0"
-}
-
-// getPhysicalDiskSize gets the actual physical size of a disk using diskutil
-func (d *DarwinDetector) getPhysicalDiskSize(diskID string) uint64 {
-	cmd := exec.Command("diskutil", "info", diskID)
-	output, err := cmd.Output()
-	if err != nil {
-		return 0
-	}
-
-	info := string(output)
-	// Look for "Disk Size" which gives the physical capacity
-	if sizeStr := extractValue(info, "Disk Size:"); sizeStr != "" {
-		return parseSize(sizeStr)
-	}
-	if sizeStr := extractValue(info, "Total Size:"); sizeStr != "" {
-		return parseSize(sizeStr)
-	}
-	return 0
-}
-
-// GetDeviceInfo retrieves detailed information about a specific device - READ ONLY
-func (d *DarwinDetector) GetDeviceInfo(devicePath string) (*Device, error) {
+// getDeviceInfo retrieves detailed information about a specific device using diskutil
+func (d *DarwinDetector) getDeviceInfo(devicePath string) (*Device, error) {
 	device := &Device{
 		DevicePath: devicePath,
-		Status:     "Online",
-		Categories: make(map[string]uint64),
 	}
 
 	// Get device info using diskutil info - READ ONLY
@@ -180,7 +140,7 @@ func (d *DarwinDetector) GetDeviceInfo(devicePath string) (*Device, error) {
 	device.IsReadOnly = strings.Contains(strings.ToLower(info), "read-only volume: yes")
 
 	// Set device type description
-	device.Type = d.determineDeviceType(device, info)
+	device.Type = determineDeviceType(device, info)
 
 	// Set default name if empty
 	if device.Name == "" {
@@ -190,83 +150,7 @@ func (d *DarwinDetector) GetDeviceInfo(devicePath string) (*Device, error) {
 		}
 	}
 
-	// Check SMART status for health - READ ONLY
-	device.Health = d.getHealthStatus(info)
-
-	// Estimate categories (simplified for now)
-	d.estimateCategories(device)
-
 	return device, nil
-}
-
-// CalculateSummary calculates total storage summary from all devices
-// On macOS with APFS, multiple volumes can share the same container, so we deduplicate
-func (d *DarwinDetector) CalculateSummary(devices []Device) Summary {
-	summary := Summary{}
-	seenContainers := make(map[string]Device) // Track unique APFS containers
-	physicalDisks := make(map[string]bool)    // Track which physical disks we've seen
-
-	for _, device := range devices {
-		summary.TotalDevices++
-
-		// Check if this device is part of an APFS container we've already counted
-		containerID := d.getContainerID(device.DevicePath)
-
-		if containerID != "" {
-			// Track the physical disk this container is on
-			physicalDisks[d.getPhysicalDiskForContainer(containerID)] = true
-
-			// APFS volume - only count the container once
-			if existingDevice, seen := seenContainers[containerID]; seen {
-				// Container already seen, use the larger values (usually the Data volume has more used space)
-				if device.UsedBytes > existingDevice.UsedBytes {
-					// Remove old contribution and add new
-					summary.UsedBytes -= existingDevice.UsedBytes
-					summary.AvailBytes -= existingDevice.AvailBytes
-
-					summary.UsedBytes += device.UsedBytes
-					summary.AvailBytes += device.AvailBytes
-
-					seenContainers[containerID] = device
-				}
-				// If existing device has more used space, keep it and skip this one
-			} else {
-				// First time seeing this container
-				summary.UsedBytes += device.UsedBytes
-				summary.AvailBytes += device.AvailBytes
-				seenContainers[containerID] = device
-			}
-		} else {
-			// Not an APFS volume - track physical disk and count normally
-			diskID := d.getContainerID(device.DevicePath)
-			if diskID != "" {
-				physicalDisks[diskID] = true
-			}
-			summary.TotalBytes += device.TotalBytes
-			summary.UsedBytes += device.UsedBytes
-			summary.AvailBytes += device.AvailBytes
-		}
-	}
-
-	// For APFS systems, get actual physical disk capacity instead of df's allocatable space
-	// This gives us the real disk size (e.g., 251GB) instead of container size (e.g., 239GB)
-	for diskID := range physicalDisks {
-		diskSize := d.getPhysicalDiskSize(diskID)
-		if diskSize > 0 {
-			summary.TotalBytes += diskSize
-		}
-	}
-
-	// If we didn't get physical disk sizes, recalculate from available + used
-	if summary.TotalBytes == 0 {
-		summary.TotalBytes = summary.UsedBytes + summary.AvailBytes
-	}
-
-	summary.TotalTB = BytesToTB(summary.TotalBytes)
-	summary.UsedTB = BytesToTB(summary.UsedBytes)
-	summary.AvailTB = BytesToTB(summary.AvailBytes)
-
-	return summary
 }
 
 // Helper functions
@@ -314,7 +198,7 @@ func parseSize(sizeStr string) uint64 {
 	return 0
 }
 
-func (d *DarwinDetector) determineDeviceType(device *Device, info string) string {
+func determineDeviceType(device *Device, info string) string {
 	var typeStr string
 
 	// Determine connection type
@@ -340,47 +224,4 @@ func (d *DarwinDetector) determineDeviceType(device *Device, info string) string
 	}
 
 	return typeStr
-}
-
-func (d *DarwinDetector) getHealthStatus(info string) string {
-	// Check SMART status - READ ONLY
-	if strings.Contains(info, "S.M.A.R.T. Status: Verified") {
-		return "Excellent"
-	} else if strings.Contains(info, "S.M.A.R.T. Status: Not Supported") {
-		return "N/A"
-	}
-	return "Good"
-}
-
-func (d *DarwinDetector) estimateCategories(device *Device) {
-	// TODO: Implement detailed category scanning using du command
-	// For now, provide rough estimates based on common patterns
-
-	// All categories must add up to TotalBytes (used + free = total)
-
-	// If it's the main system volume
-	if device.MountPoint == "/" || device.MountPoint == "/System/Volumes/Data" {
-		// Calculate proportional estimates based on actual used space
-		device.Categories["system"] = uint64(float64(device.UsedBytes) * 0.10)    // ~10% of used = system
-		device.Categories["documents"] = uint64(float64(device.UsedBytes) * 0.15) // ~15% of used = documents
-		device.Categories["media"] = uint64(float64(device.UsedBytes) * 0.30)     // ~30% of used = media
-
-		// Other is the remaining used space
-		categoriesTotal := device.Categories["system"] +
-			device.Categories["documents"] +
-			device.Categories["media"]
-
-		if categoriesTotal <= device.UsedBytes {
-			device.Categories["other"] = device.UsedBytes - categoriesTotal
-		} else {
-			// Fallback if calculations are off
-			device.Categories["other"] = device.UsedBytes
-		}
-	} else {
-		// For external drives, assume most is "other" usage
-		device.Categories["other"] = device.UsedBytes
-	}
-
-	// Free space completes the total
-	device.Categories["free"] = device.AvailBytes
 }

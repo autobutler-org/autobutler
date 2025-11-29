@@ -26,7 +26,7 @@ func setupPhotoView(router *gin.Engine) {
 		devices, err := detector.DetectDevices()
 		var summary storage.Summary
 		if err == nil && len(devices) > 0 {
-			summary = detector.CalculateSummary(devices)
+			summary = storage.CalculateSummary(devices)
 		} else {
 			// Provide empty summary if detection fails
 			summary = storage.Summary{}
@@ -41,7 +41,7 @@ func setupPhotoView(router *gin.Engine) {
 		devices, err := detector.DetectDevices()
 		var summary storage.Summary
 		if err == nil && len(devices) > 0 {
-			summary = detector.CalculateSummary(devices)
+			summary = storage.CalculateSummary(devices)
 		} else {
 			// Provide empty summary if detection fails
 			summary = storage.Summary{}

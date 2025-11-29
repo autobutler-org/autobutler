@@ -66,61 +66,18 @@ func (l *LinuxDetector) DetectDevices() ([]Device, error) {
 			UsedBytes:   usedBytes,
 			AvailBytes:  availBytes,
 			PercentUsed: percentUsed,
-			Status:      "Online",
-			Categories:  make(map[string]uint64),
 		}
 
 		// Get additional device info
 		l.enrichDeviceInfo(device)
 
+		// Apply simple categorization for UI
+		device.ApplySimpleCategorization()
+
 		devices = append(devices, *device)
 	}
 
 	return devices, nil
-}
-
-// GetDeviceInfo retrieves detailed information about a specific device - READ ONLY
-func (l *LinuxDetector) GetDeviceInfo(devicePath string) (*Device, error) {
-	device := &Device{
-		DevicePath: devicePath,
-		Status:     "Online",
-		Categories: make(map[string]uint64),
-	}
-
-	// Get device info using lsblk - READ ONLY
-	cmd := exec.Command("lsblk", "-no", "NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,MODEL,HOTPLUG,RO", devicePath)
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get device info: %w", err)
-	}
-
-	fields := strings.Fields(string(output))
-	if len(fields) >= 5 {
-		device.Model = strings.Join(fields[5:], " ")
-		device.FileSystem = fields[4]
-		device.IsRemovable = fields[6] == "1"
-		device.IsReadOnly = fields[7] == "1"
-	}
-
-	return device, nil
-}
-
-// CalculateSummary calculates total storage summary from all devices
-func (l *LinuxDetector) CalculateSummary(devices []Device) Summary {
-	summary := Summary{}
-
-	for _, device := range devices {
-		summary.TotalDevices++
-		summary.TotalBytes += device.TotalBytes
-		summary.UsedBytes += device.UsedBytes
-		summary.AvailBytes += device.AvailBytes
-	}
-
-	summary.TotalTB = BytesToTB(summary.TotalBytes)
-	summary.UsedTB = BytesToTB(summary.UsedBytes)
-	summary.AvailTB = BytesToTB(summary.AvailBytes)
-
-	return summary
 }
 
 // Helper functions
@@ -168,14 +125,8 @@ func (l *LinuxDetector) enrichDeviceInfo(device *Device) {
 		}
 
 		// Determine device type
-		device.Type = l.determineDeviceType(device, fields)
+		device.Type = determineLinuxDeviceType(device, fields)
 	}
-
-	// Set health status
-	device.Health = "Good"
-
-	// Estimate categories
-	l.estimateCategories(device)
 }
 
 func extractBaseDevice(devicePath string) string {
@@ -189,7 +140,7 @@ func extractBaseDevice(devicePath string) string {
 	return devicePath
 }
 
-func (l *LinuxDetector) determineDeviceType(device *Device, fields []string) string {
+func determineLinuxDeviceType(device *Device, fields []string) string {
 	var typeStr string
 
 	if device.IsInternal {
@@ -217,24 +168,4 @@ func (l *LinuxDetector) determineDeviceType(device *Device, fields []string) str
 	}
 
 	return typeStr
-}
-
-func (l *LinuxDetector) estimateCategories(device *Device) {
-	// TODO: Implement detailed category scanning using du command
-	// For now, provide rough estimates
-
-	if device.MountPoint == "/" || device.MountPoint == "/home" {
-		// Rough estimates for system volume
-		device.Categories["system"] = uint64(float64(device.TotalBytes) * 0.10)
-		device.Categories["documents"] = uint64(float64(device.UsedBytes) * 0.15)
-		device.Categories["media"] = uint64(float64(device.UsedBytes) * 0.30)
-		device.Categories["other"] = device.UsedBytes -
-			device.Categories["system"] -
-			device.Categories["documents"] -
-			device.Categories["media"]
-	} else {
-		device.Categories["other"] = device.UsedBytes
-	}
-
-	device.Categories["free"] = device.AvailBytes
 }

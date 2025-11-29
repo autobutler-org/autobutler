@@ -25,7 +25,7 @@ func setupDevicesView(router *gin.Engine) {
 		}
 
 		// Calculate summary
-		summary := detector.CalculateSummary(devices)
+		summary := storage.CalculateSummary(devices)
 
 		return views.Devices(types.NewPageState(), devices, summary)
 	})
@@ -40,7 +40,7 @@ func setupDevicesComponents(router *gin.Engine) {
 		if err != nil {
 			devices = []storage.Device{} // Empty list on error
 		}
-		summary := detector.CalculateSummary(devices)
+		summary := storage.CalculateSummary(devices)
 		return views.DevicesContent(devices, summary)
 	})
 }
