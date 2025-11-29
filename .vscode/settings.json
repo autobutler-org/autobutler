@@ -21,6 +21,7 @@
     "EPUB",
     "exif",
     "fileutil",
+    "githubutil",
     "goexif",
     "gonic",
     "htmx",

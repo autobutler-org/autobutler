@@ -1,11 +1,12 @@
 package landing_nav
 
 import (
-	"autobutler/internal/update"
+
 	"autobutler/pkg/util/versionutil"
+	"autobutler/pkg/util/githubutil"
 )
 
-templ VersionDropdown(releases []update.GitHubRelease) {
+templ VersionDropdown(releases []githubutil.GitHubRelease) {
 	<div class="version-dropdown">
 		if len(releases) == 0 {
 			<div class="version-option">

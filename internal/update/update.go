@@ -2,6 +2,7 @@ package update
 
 import (
 	"archive/tar"
+	"autobutler/pkg/util/githubutil"
 	"autobutler/pkg/util/versionutil"
 	"compress/gzip"
 	"fmt"
@@ -12,8 +13,8 @@ import (
 	"strings"
 )
 
-func ListPossibleUpdates() ([]GitHubRelease, error) {
-	releases, err := FetchGitHubReleases()
+func ListPossibleUpdates() ([]githubutil.GitHubRelease, error) {
+	releases, err := githubutil.FetchGitHubReleases()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch releases: %w", err)
 	}
@@ -21,7 +22,7 @@ func ListPossibleUpdates() ([]GitHubRelease, error) {
 	if currentVersion.Semver == "" {
 		return releases, nil
 	}
-	var possibleUpdates []GitHubRelease
+	var possibleUpdates []githubutil.GitHubRelease
 	for _, release := range releases {
 		comparison := versionutil.CompareVersions(
 			versionutil.Version{

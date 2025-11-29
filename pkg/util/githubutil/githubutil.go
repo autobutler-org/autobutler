@@ -1,4 +1,4 @@
-package update
+package githubutil
 
 import (
 	"encoding/json"
