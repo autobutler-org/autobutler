@@ -1,13 +1,13 @@
 package device_manager
 
 import (
-	"autobutler/pkg/storage"
+	"autobutler/pkg/util/storageutil"
 	"fmt"
 )
 
 // Component renders a device management interface showing all detected devices
 // and allowing users to initialize them for autobutler
-templ Component(devices []storage.Device, managedDevices []storage.ManagedDevice) {
+templ Component(devices []storageutil.Device, managedDevices []storageutil.ManagedDevice) {
 	{{ managedMap := make(map[string]bool) }}
 	{{
 		for _, md := range managedDevices {

@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"autobutler/pkg/storage"
+	"autobutler/pkg/util/storageutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +23,7 @@ func initializeManagedDevice(c *gin.Context) {
 		return
 	}
 
-	err := storage.InitializeDeviceDataDir(mountPoint)
+	err := storageutil.InitializeDeviceDataDir(mountPoint)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to initialize device",
@@ -39,7 +39,7 @@ func initializeManagedDevice(c *gin.Context) {
 }
 
 func getDeviceStatuses(c *gin.Context) {
-	statuses, err := storage.GetDeviceStatuses()
+	statuses, err := storageutil.GetDeviceStatuses()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to get device statuses",

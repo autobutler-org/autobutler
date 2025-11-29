@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"autobutler/pkg/storage"
+	"autobutler/pkg/util/storageutil"
 	"autobutler/pkg/ui/components/photos"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/ui/views"
@@ -22,14 +22,14 @@ func SetupPhotoRoutes(router *gin.Engine) {
 func setupPhotoView(router *gin.Engine) {
 	serverutil.UiRoute(router, "/photos", func(c *gin.Context) templ.Component {
 		// Get storage summary for the storage bar component
-		detector := storage.NewDetector()
+		detector := storageutil.NewDetector()
 		devices, err := detector.DetectDevices()
-		var summary storage.Summary
+		var summary storageutil.Summary
 		if err == nil && len(devices) > 0 {
-			summary = storage.CalculateSummary(devices)
+			summary = storageutil.CalculateSummary(devices)
 		} else {
 			// Provide empty summary if detection fails
-			summary = storage.Summary{}
+			summary = storageutil.Summary{}
 		}
 
 		return views.Photos(types.NewPageState(), summary)
@@ -37,14 +37,14 @@ func setupPhotoView(router *gin.Engine) {
 	serverutil.UiRoute(router, "/photos/*rootDir", func(c *gin.Context) templ.Component {
 		rootDir := c.Param("rootDir")
 		// Get storage summary for the storage bar component
-		detector := storage.NewDetector()
+		detector := storageutil.NewDetector()
 		devices, err := detector.DetectDevices()
-		var summary storage.Summary
+		var summary storageutil.Summary
 		if err == nil && len(devices) > 0 {
-			summary = storage.CalculateSummary(devices)
+			summary = storageutil.CalculateSummary(devices)
 		} else {
 			// Provide empty summary if detection fails
-			summary = storage.Summary{}
+			summary = storageutil.Summary{}
 		}
 
 		return views.Photos(types.NewPageState().WithRootDir(rootDir), summary)

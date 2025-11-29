@@ -9,13 +9,13 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"autobutler/pkg/storage"
 	"autobutler/pkg/ui/components/device_card"
+	"autobutler/pkg/util/storageutil"
 	"fmt"
 )
 
 // DevicesContent renders just the devices grid and summary (for HTMX updates)
-func DevicesContent(devices []storage.Device, summary storage.Summary) templ.Component {
+func DevicesContent(devices []storageutil.Device, summary storageutil.Summary) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

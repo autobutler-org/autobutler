@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"autobutler/pkg/storage"
+	"autobutler/pkg/util/storageutil"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/ui/views"
 	"autobutler/pkg/util/serverutil"
@@ -13,14 +13,14 @@ import (
 func SetupIndexRoutes(router *gin.Engine) {
 	serverutil.UiRoute(router, "/", func(c *gin.Context) templ.Component {
 		// Get storage summary for the storage bar component
-		detector := storage.NewDetector()
+		detector := storageutil.NewDetector()
 		devices, err := detector.DetectDevices()
-		var summary storage.Summary
+		var summary storageutil.Summary
 		if err == nil && len(devices) > 0 {
-			summary = storage.CalculateSummary(devices)
+			summary = storageutil.CalculateSummary(devices)
 		} else {
 			// Provide empty summary if detection fails
-			summary = storage.Summary{}
+			summary = storageutil.Summary{}
 		}
 
 		return views.Home(types.NewPageState(), summary)

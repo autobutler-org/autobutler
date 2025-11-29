@@ -1,13 +1,13 @@
 package device_card
 
 import (
-	"autobutler/pkg/storage"
+	"autobutler/pkg/util/storageutil"
 	"autobutler/pkg/ui/components/storage_partition"
 )
 
 // Component renders a device card showing storage device information
-// Uses storage.Device from the backend and storage_partition component for visualization
-templ Component(device storage.Device) {
+// Uses storageutil.Device from the backend and storage_partition component for visualization
+templ Component(device storageutil.Device) {
 	<div
 		class="device-card"
 		onclick="window.location.href = '/files'"

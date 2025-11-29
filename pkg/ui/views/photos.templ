@@ -1,7 +1,7 @@
 package views
 
 import (
-	"autobutler/pkg/storage"
+	"autobutler/pkg/util/storageutil"
 	"autobutler/pkg/ui/components/body"
 	"autobutler/pkg/ui/components/header"
 	"autobutler/pkg/ui/components/photos"
@@ -11,7 +11,7 @@ import (
 	"fmt"
 )
 
-templ Photos(pageState types.PageState, summary storage.Summary) {
+templ Photos(pageState types.PageState, summary storageutil.Summary) {
 	{{ pageState.CurrentPageName = types.PagePhotos }}
 	<!DOCTYPE html>
 	<html lang="en">

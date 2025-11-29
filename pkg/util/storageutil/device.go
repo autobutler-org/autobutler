@@ -1,4 +1,4 @@
-package storage
+package storageutil
 
 // Device represents a storage device with its metadata and usage information
 type Device struct {

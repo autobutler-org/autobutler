@@ -1,7 +1,7 @@
 package views
 
 import (
-	"autobutler/pkg/storage"
+	"autobutler/pkg/util/storageutil"
 	"autobutler/pkg/ui/components/gradient_overlays"
 	"autobutler/pkg/ui/components/header"
 	"autobutler/pkg/ui/components/hero"
@@ -10,7 +10,7 @@ import (
 	"autobutler/pkg/ui/types"
 )
 
-templ Home(pageState types.PageState, summary storage.Summary) {
+templ Home(pageState types.PageState, summary storageutil.Summary) {
 	{{ pageState.CurrentPageName = types.PageHome }}
 	<!DOCTYPE html>
 	<html lang="en">

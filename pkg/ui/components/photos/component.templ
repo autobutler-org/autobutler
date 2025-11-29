@@ -1,7 +1,7 @@
 package photos
 
 import (
-	"autobutler/pkg/storage"
+	"autobutler/pkg/util/storageutil"
 	"autobutler/pkg/ui/components/file_explorer/file_viewer"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/photoutil"
@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 )
 
-templ Component(pageState types.PageState, photos []photoutil.PhotoInfo, totalPhotos int, summary storage.Summary) {
+templ Component(pageState types.PageState, photos []photoutil.PhotoInfo, totalPhotos int, summary storageutil.Summary) {
 	<div id="photos-library" class="photos-library">
 		@file_viewer.Component()
 		<div class="photos-container">

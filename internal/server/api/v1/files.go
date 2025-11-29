@@ -3,7 +3,7 @@ package v1
 import (
 	"archive/zip"
 	"autobutler/pkg/api"
-	"autobutler/pkg/storage"
+	"autobutler/pkg/util/storageutil"
 	"autobutler/pkg/util/fileutil"
 	"fmt"
 	"html"
@@ -36,7 +36,7 @@ func deleteFilesRoute(apiV1Group *gin.RouterGroup) {
 		fmt.Printf("Deleting multiple files: %s\n", filePaths)
 
 		// Get managed devices
-		managedDevices, err := storage.GetManagedDevices()
+		managedDevices, err := storageutil.GetManagedDevices()
 		if err != nil || len(managedDevices) == 0 {
 			// Fallback to single device
 			fileDir := fileutil.GetFilesDir()
@@ -85,7 +85,7 @@ func DownloadFile(c *gin.Context, filePath string) {
 	var fullPath string
 
 	// Get managed devices
-	managedDevices, err := storage.GetManagedDevices()
+	managedDevices, err := storageutil.GetManagedDevices()
 	if err != nil || len(managedDevices) == 0 {
 		// Fallback to single device
 		rootDir := fileutil.GetFilesDir()

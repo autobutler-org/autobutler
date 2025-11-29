@@ -1,12 +1,12 @@
 package device_filter
 
 import (
-	"autobutler/pkg/storage"
+	"autobutler/pkg/util/storageutil"
 	"autobutler/pkg/ui/types"
 )
 
 templ Component(pageState types.PageState) {
-	{{ managedDevices, err := storage.GetManagedDevices() }}
+	{{ managedDevices, err := storageutil.GetManagedDevices() }}
 	if err == nil && len(managedDevices) > 1 {
 		<div class="device-filter">
 			<label class="device-filter-label">Devices:</label>

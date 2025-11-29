@@ -1,13 +1,13 @@
 package views
 
 import (
-	"autobutler/pkg/storage"
+	"autobutler/pkg/util/storageutil"
 	"autobutler/pkg/ui/components/device_card"
 	"fmt"
 )
 
 // DevicesContent renders just the devices grid and summary (for HTMX updates)
-templ DevicesContent(devices []storage.Device, summary storage.Summary) {
+templ DevicesContent(devices []storageutil.Device, summary storageutil.Summary) {
 	<div class="devices-grid">
 		if len(devices) == 0 {
 			<div class="devices-empty">

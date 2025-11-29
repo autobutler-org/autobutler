@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"autobutler/pkg/storage"
+	"autobutler/pkg/util/storageutil"
 	"autobutler/pkg/ui/components/device_manager"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/ui/views"
@@ -32,16 +32,16 @@ func setupThanksView(router *gin.Engine) {
 func setupDeviceManagementComponent(router *gin.Engine) {
 	serverutil.UiRoute(router, "/components/settings/device-manager", func(c *gin.Context) templ.Component {
 		// Detect all storage devices
-		detector := storage.NewDetector()
+		detector := storageutil.NewDetector()
 		devices, err := detector.DetectDevices()
 		if err != nil {
-			devices = []storage.Device{}
+			devices = []storageutil.Device{}
 		}
 
 		// Get managed devices
-		managedDevices, err := storage.GetManagedDevices()
+		managedDevices, err := storageutil.GetManagedDevices()
 		if err != nil {
-			managedDevices = []storage.ManagedDevice{}
+			managedDevices = []storageutil.ManagedDevice{}
 		}
 
 		return device_manager.Component(devices, managedDevices)
