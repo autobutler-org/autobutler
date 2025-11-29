@@ -14,7 +14,7 @@ import (
 )
 
 func ListPossibleUpdates() ([]githubutil.GitHubRelease, error) {
-	releases, err := githubutil.FetchGitHubReleases()
+	releases, err := githubutil.FetchGitHubReleases("autobutler-org", "autobutler.org")
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch releases: %w", err)
 	}
