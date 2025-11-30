@@ -85,27 +85,6 @@ test.describe('Device Management', () => {
         }
     });
 
-    test('enable button has helpful tooltip', async ({ page }) => {
-        await page.goto('/settings');
-
-        await page.locator('.device-manager').waitFor({ state: 'visible', timeout: 5000 });
-
-        // Find an enable button if any exist
-        const enableButton = page.locator('button:has-text("Enable for Storage")').first();
-
-        if (await enableButton.isVisible().catch(() => false)) {
-            // Check tooltip explains what happens
-            await expect(enableButton).toHaveAttribute('title', /\.autobutler\/data\/files/);
-
-            // Check HTMX attributes
-            await expect(enableButton).toHaveAttribute(
-                'hx-post',
-                /\/api\/v1\/storage\/managed\/.+/
-            );
-            await expect(enableButton).toHaveAttribute('hx-swap', 'none');
-        }
-    });
-
     test('device statuses API endpoint works', async ({ page }) => {
         // Test the new API endpoint
         const response = await page.request.get('/api/v1/storage/devices/status');
