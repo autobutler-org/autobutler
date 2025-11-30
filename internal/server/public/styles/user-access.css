@@ -584,7 +584,7 @@
     position: relative;
 }
 
-.permission-checkbox input[type="checkbox"] {
+.permission-checkbox input[type='checkbox'] {
     position: absolute;
     opacity: 0;
     pointer-events: none;
@@ -609,12 +609,12 @@
     transition: color 0.2s ease;
 }
 
-.permission-checkbox input[type="checkbox"]:checked ~ .permission-checkbox-icon {
+.permission-checkbox input[type='checkbox']:checked ~ .permission-checkbox-icon {
     background: rgb(59, 130, 246);
     border-color: rgb(59, 130, 246);
 }
 
-.permission-checkbox input[type="checkbox"]:checked ~ .permission-checkbox-icon svg {
+.permission-checkbox input[type='checkbox']:checked ~ .permission-checkbox-icon svg {
     color: white;
 }
 
