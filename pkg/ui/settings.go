@@ -2,6 +2,7 @@ package ui
 
 import (
 	"autobutler/pkg/ui/components/device_manager"
+	"autobutler/pkg/ui/components/network_settings"
 	"autobutler/pkg/ui/components/user_access"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/ui/views"
@@ -15,9 +16,11 @@ import (
 func SetupSettingsRoutes(router *gin.Engine) {
 	setupSettingsView(router)
 	setupSettingsUsersView(router)
+	setupSettingsNetworkView(router)
 	setupThanksView(router)
 	setupDeviceManagementComponent(router)
 	setupUserAccessComponent(router)
+	setupNetworkSettingsComponent(router)
 }
 
 func setupSettingsView(router *gin.Engine) {
@@ -29,6 +32,12 @@ func setupSettingsView(router *gin.Engine) {
 func setupSettingsUsersView(router *gin.Engine) {
 	serverutil.UiRoute(router, "/settings/users", func(c *gin.Context) templ.Component {
 		return views.SettingsUsers(types.NewPageState())
+	})
+}
+
+func setupSettingsNetworkView(router *gin.Engine) {
+	serverutil.UiRoute(router, "/settings/network", func(c *gin.Context) templ.Component {
+		return views.SettingsNetwork(types.NewPageState())
 	})
 }
 
@@ -65,5 +74,17 @@ func setupUserAccessComponent(router *gin.Engine) {
 		permissions := user_access.GetMockPermissions()
 
 		return user_access.Component(users, roles, permissions)
+	})
+}
+
+func setupNetworkSettingsComponent(router *gin.Engine) {
+	serverutil.UiRoute(router, "/components/settings/network", func(c *gin.Context) templ.Component {
+		// Use mock data for UI display
+		status := network_settings.GetMockNetworkStatus()
+		devices := network_settings.GetMockTailnetDevices()
+		pending := network_settings.GetMockPendingDevices()
+		config := network_settings.GetMockNetworkConfig()
+
+		return network_settings.Component(status, devices, pending, config)
 	})
 }

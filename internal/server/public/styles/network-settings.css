@@ -1,0 +1,652 @@
+/**
+ * Network Settings Styles
+ * Styles for VPN/network configuration and device management
+ */
+
+/* Container */
+.network-settings-container {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-3xl);
+}
+
+/* Connection Status Section */
+.network-status-section {
+	padding: var(--spacing-xl);
+	background: rgba(255, 255, 255, 0.03);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--border-radius-lg);
+}
+
+.network-status-card {
+	margin-top: var(--spacing-lg);
+	padding: var(--spacing-xl);
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--border-radius-lg);
+}
+
+.network-status-indicator {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-lg);
+	margin-bottom: var(--spacing-xl);
+}
+
+.network-status-icon {
+	width: 80px;
+	height: 80px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.network-status-icon svg {
+	width: 40px;
+	height: 40px;
+}
+
+.network-status-icon--connected {
+	background: rgba(16, 185, 129, 0.1);
+	border: 2px solid rgba(16, 185, 129, 0.3);
+	color: rgb(16, 185, 129);
+}
+
+.network-status-icon--disconnected {
+	background: rgba(239, 68, 68, 0.1);
+	border: 2px solid rgba(239, 68, 68, 0.3);
+	color: rgb(239, 68, 68);
+}
+
+.network-status-text h3 {
+	font-size: var(--font-size-2xl);
+	font-weight: 600;
+	color: white;
+	margin: 0 0 var(--spacing-xs) 0;
+}
+
+.network-status-text p {
+	font-size: var(--font-size-md);
+	color: var(--color-gray-400);
+	margin: 0;
+}
+
+.network-status-details {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: var(--spacing-lg);
+	margin-bottom: var(--spacing-xl);
+	padding: var(--spacing-lg);
+	background: rgba(255, 255, 255, 0.03);
+	border-radius: var(--border-radius);
+}
+
+.network-status-detail-item {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-xs);
+}
+
+.network-status-label {
+	font-size: var(--font-size-xs);
+	color: var(--color-gray-400);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	font-weight: 600;
+}
+
+.network-status-value {
+	font-size: var(--font-size-lg);
+	color: white;
+	font-weight: 500;
+	font-family: monospace;
+}
+
+.network-status-actions {
+	display: flex;
+	gap: var(--spacing-md);
+}
+
+/* Network Configuration Section */
+.network-config-section {
+	padding: var(--spacing-xl);
+	background: rgba(255, 255, 255, 0.03);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--border-radius-lg);
+}
+
+.network-config-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	gap: var(--spacing-lg);
+	margin-top: var(--spacing-lg);
+}
+
+.network-config-card {
+	padding: var(--spacing-lg);
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--border-radius-lg);
+}
+
+.network-config-card h3 {
+	font-size: var(--font-size-lg);
+	font-weight: 600;
+	color: white;
+	margin: 0 0 var(--spacing-lg) 0;
+}
+
+/* Connected Devices Section */
+.network-devices-section {
+	padding: var(--spacing-xl);
+	background: rgba(255, 255, 255, 0.03);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--border-radius-lg);
+}
+
+.network-devices-empty {
+	text-align: center;
+	padding: var(--spacing-3xl);
+	color: var(--color-gray-400);
+}
+
+.network-devices-empty svg {
+	width: 64px;
+	height: 64px;
+	margin: 0 auto var(--spacing-lg);
+	opacity: 0.3;
+}
+
+.network-devices-empty h3 {
+	font-size: var(--font-size-xl);
+	margin: 0 0 var(--spacing-sm) 0;
+	color: var(--color-gray-300);
+}
+
+.network-devices-empty p {
+	margin: 0;
+	font-size: var(--font-size-md);
+}
+
+.network-devices-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: var(--spacing-lg);
+	margin-top: var(--spacing-lg);
+}
+
+.network-device-card {
+	padding: var(--spacing-lg);
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--border-radius-lg);
+	transition: all 0.2s ease;
+}
+
+.network-device-card:hover {
+	background: rgba(255, 255, 255, 0.07);
+	border-color: rgba(255, 255, 255, 0.2);
+	transform: translateY(-2px);
+}
+
+.network-device-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	margin-bottom: var(--spacing-md);
+}
+
+.network-device-icon {
+	width: 48px;
+	height: 48px;
+	border-radius: var(--border-radius);
+	background: rgba(59, 130, 246, 0.1);
+	border: 1px solid rgba(59, 130, 246, 0.2);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: rgb(59, 130, 246);
+}
+
+.network-device-icon svg {
+	width: 24px;
+	height: 24px;
+}
+
+.network-device-status {
+	display: flex;
+	align-items: center;
+}
+
+.network-device-status-dot {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.network-device-status-dot--online {
+	background: rgb(16, 185, 129);
+	box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.network-device-status-dot--offline {
+	background: var(--color-gray-500);
+	box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.2);
+	animation: none;
+}
+
+@keyframes pulse {
+	0%, 100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+
+.network-device-info {
+	flex: 1;
+}
+
+.network-device-info h4 {
+	font-size: var(--font-size-lg);
+	font-weight: 600;
+	color: white;
+	margin: 0 0 var(--spacing-sm) 0;
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+}
+
+.network-device-badge {
+	font-size: var(--font-size-xs);
+	padding: var(--spacing-xs) var(--spacing-sm);
+	background: rgba(59, 130, 246, 0.1);
+	color: rgb(59, 130, 246);
+	border: 1px solid rgba(59, 130, 246, 0.2);
+	border-radius: var(--border-radius-full);
+	font-weight: 500;
+}
+
+.network-device-details {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-xs);
+	margin-bottom: var(--spacing-sm);
+}
+
+.network-device-detail {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-xs);
+	font-size: var(--font-size-sm);
+	color: var(--color-gray-400);
+}
+
+.network-device-detail svg {
+	width: 14px;
+	height: 14px;
+	flex-shrink: 0;
+}
+
+.network-device-last-seen {
+	font-size: var(--font-size-xs);
+	color: var(--color-gray-500);
+}
+
+.network-device-online-text {
+	color: rgb(16, 185, 129);
+	font-weight: 500;
+}
+
+/* Setup Guide Section */
+.network-setup-section {
+	padding: var(--spacing-xl);
+	background: rgba(255, 255, 255, 0.03);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--border-radius-lg);
+}
+
+/* Pending Devices Section */
+.network-pending-section {
+	padding: var(--spacing-xl);
+	background: rgba(255, 255, 255, 0.03);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--border-radius-lg);
+}
+
+.network-pending-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-md);
+	margin-top: var(--spacing-lg);
+}
+
+.network-pending-card {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-lg);
+	padding: var(--spacing-lg);
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--border-radius-lg);
+	transition: all 0.2s ease;
+}
+
+.network-pending-card:hover {
+	background: rgba(255, 255, 255, 0.07);
+	border-color: rgba(255, 255, 255, 0.2);
+}
+
+.network-pending-icon {
+	width: 48px;
+	height: 48px;
+	border-radius: var(--border-radius);
+	background: rgba(251, 191, 36, 0.1);
+	border: 1px solid rgba(251, 191, 36, 0.2);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: rgb(251, 191, 36);
+	flex-shrink: 0;
+}
+
+.network-pending-icon svg {
+	width: 24px;
+	height: 24px;
+}
+
+.network-pending-info {
+	flex: 1;
+	min-width: 0;
+}
+
+.network-pending-info h4 {
+	font-size: var(--font-size-lg);
+	font-weight: 600;
+	color: white;
+	margin: 0 0 var(--spacing-xs) 0;
+}
+
+.network-pending-details {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-lg);
+	flex-wrap: wrap;
+}
+
+.network-pending-actions {
+	display: flex;
+	gap: var(--spacing-sm);
+	flex-shrink: 0;
+}
+
+/* Installation Section */
+.network-install-section {
+	padding: var(--spacing-xl);
+	background: rgba(255, 255, 255, 0.03);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--border-radius-lg);
+}
+
+.network-install-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	gap: var(--spacing-xl);
+	margin-top: var(--spacing-xl);
+}
+
+.network-install-card {
+	padding: var(--spacing-xl);
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--border-radius-lg);
+	transition: all 0.2s ease;
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-lg);
+}
+
+.network-install-card:hover {
+	background: rgba(255, 255, 255, 0.07);
+	border-color: rgba(255, 255, 255, 0.2);
+	transform: translateY(-2px);
+}
+
+.network-install-icon {
+	width: 64px;
+	height: 64px;
+	border-radius: var(--border-radius-lg);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 auto;
+}
+
+.network-install-icon svg {
+	width: 36px;
+	height: 36px;
+}
+
+.network-install-icon--ios {
+	background: rgba(0, 122, 255, 0.1);
+	border: 2px solid rgba(0, 122, 255, 0.3);
+	color: rgb(0, 122, 255);
+}
+
+.network-install-icon--android {
+	background: rgba(61, 220, 132, 0.1);
+	border: 2px solid rgba(61, 220, 132, 0.3);
+	color: rgb(61, 220, 132);
+}
+
+.network-install-icon--mac {
+	background: rgba(0, 122, 255, 0.1);
+	border: 2px solid rgba(0, 122, 255, 0.3);
+	color: rgb(0, 122, 255);
+}
+
+.network-install-icon--windows {
+	background: rgba(0, 120, 212, 0.1);
+	border: 2px solid rgba(0, 120, 212, 0.3);
+	color: rgb(0, 120, 212);
+}
+
+.network-install-icon--linux {
+	background: rgba(255, 204, 0, 0.1);
+	border: 2px solid rgba(255, 204, 0, 0.3);
+	color: rgb(255, 204, 0);
+}
+
+.network-install-icon--fire {
+	background: rgba(255, 153, 0, 0.1);
+	border: 2px solid rgba(255, 153, 0, 0.3);
+	color: rgb(255, 153, 0);
+}
+
+.network-install-card h3 {
+	font-size: var(--font-size-xl);
+	font-weight: 600;
+	color: white;
+	margin: 0;
+	text-align: center;
+}
+
+.network-install-steps {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+	flex: 1;
+}
+
+.network-install-steps li {
+	font-size: var(--font-size-sm);
+	color: var(--color-gray-400);
+	line-height: 1.6;
+	padding-left: var(--spacing-lg);
+	position: relative;
+}
+
+.network-install-steps li::before {
+	content: counter(item);
+	counter-increment: item;
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: rgba(59, 130, 246, 0.2);
+	color: rgb(59, 130, 246);
+	font-size: var(--font-size-xs);
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.network-install-steps {
+	counter-reset: item;
+}
+
+.network-install-steps li strong,
+.network-install-steps li code {
+	color: white;
+	font-weight: 600;
+}
+
+.network-install-steps li code {
+	background: rgba(255, 255, 255, 0.05);
+	padding: 2px 6px;
+	border-radius: var(--border-radius-sm);
+	font-family: monospace;
+	font-size: 0.9em;
+}
+
+.network-install-card .btn {
+	margin-top: auto;
+}
+
+/* Setup Guide Section */
+.network-setup-section {
+	padding: var(--spacing-xl);
+	background: rgba(255, 255, 255, 0.03);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--border-radius-lg);
+}
+
+.network-setup-steps {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-lg);
+	margin-top: var(--spacing-lg);
+}
+
+.network-setup-step {
+	display: flex;
+	gap: var(--spacing-lg);
+	padding: var(--spacing-lg);
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--border-radius-lg);
+}
+
+.network-setup-step-number {
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	background: rgba(59, 130, 246, 0.1);
+	border: 2px solid rgba(59, 130, 246, 0.3);
+	color: rgb(59, 130, 246);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: var(--font-size-lg);
+	font-weight: 700;
+	flex-shrink: 0;
+}
+
+.network-setup-step-content {
+	flex: 1;
+}
+
+.network-setup-step-content h4 {
+	font-size: var(--font-size-lg);
+	font-weight: 600;
+	color: white;
+	margin: 0 0 var(--spacing-xs) 0;
+}
+
+.network-setup-step-content p {
+	font-size: var(--font-size-sm);
+	color: var(--color-gray-400);
+	margin: 0;
+	line-height: 1.6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+	.network-status-indicator {
+		flex-direction: column;
+		text-align: center;
+	}
+
+	.network-status-details {
+		grid-template-columns: 1fr;
+	}
+
+	.network-status-actions {
+		flex-direction: column;
+	}
+
+	.network-config-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.network-devices-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Light mode */
+@media (prefers-color-scheme: light) {
+	.network-status-section,
+	.network-config-section,
+	.network-devices-section,
+	.network-setup-section {
+		background: white;
+		border-color: var(--color-gray-200);
+	}
+
+	.network-status-card,
+	.network-config-card,
+	.network-device-card,
+	.network-setup-step {
+		background: var(--color-gray-50);
+		border-color: var(--color-gray-200);
+	}
+
+	.network-status-card:hover,
+	.network-device-card:hover {
+		background: white;
+		border-color: var(--color-gray-300);
+	}
+
+	.network-status-text h3,
+	.network-status-value,
+	.network-config-card h3,
+	.network-device-info h4,
+	.network-setup-step-content h4 {
+		color: var(--color-gray-900);
+	}
+
+	.network-status-details {
+		background: white;
+	}
+}
