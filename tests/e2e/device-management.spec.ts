@@ -26,7 +26,7 @@ test.describe('Device Management', () => {
 
         // Check for description with technical details
         const description = deviceManager.locator('.device-manager-description');
-        await expect(description).toContainText('.autobutler/data/files');
+        await expect(description).toContainText('data/files');
         await expect(description).toContainText('Enabled devices');
     });
 
@@ -81,7 +81,7 @@ test.describe('Device Management', () => {
             const deviceItem = enabledBadge.locator('..').locator('..');
             const statusText = deviceItem.locator('.device-manager-item-status');
             await expect(statusText).toBeVisible();
-            await expect(statusText).toContainText('.autobutler/data/files');
+            await expect(statusText).toContainText('data/files');
         }
     });
 
@@ -105,7 +105,9 @@ test.describe('Device Management', () => {
             if (device.is_enabled) {
                 expect(device).toHaveProperty('data_dir');
                 expect(device).toHaveProperty('files_dir');
-                expect(device.data_dir).toContain('.autobutler');
+                // System devices use ~/Library/Application Support/Autobutler/data (macOS)
+                // or ~/autobutler/data (Linux), external devices use .autobutler/data
+                expect(device.data_dir).toMatch(/(\.autobutler|Autobutler\/data|autobutler\/data)/);
                 expect(device.files_dir).toContain('files');
             }
         }

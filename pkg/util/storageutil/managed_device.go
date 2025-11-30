@@ -50,5 +50,3 @@ func InitializeDeviceDataDir(mountPoint string) error {
 
 	return nil
 }
-
-
