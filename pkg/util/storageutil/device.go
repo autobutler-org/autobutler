@@ -1,4 +1,4 @@
-package storage
+package storageutil
 
 // Device represents a storage device with its metadata and usage information
 type Device struct {
@@ -14,8 +14,29 @@ type Device struct {
 	IsInternal  bool              `json:"is_internal"`  // True if internal drive
 	IsRemovable bool              `json:"is_removable"` // True if removable media
 	IsReadOnly  bool              `json:"is_read_only"` // True if read-only
-	Status      string            `json:"status"`       // "Online" or "Offline"
-	Health      string            `json:"health"`       // "Good", "Excellent", etc.
 	Model       string            `json:"model"`        // Device model name
-	Categories  map[string]uint64 `json:"categories"`   // Breakdown by category in bytes
+	Categories  map[string]uint64 `json:"categories"`   // Simple heuristic breakdown in bytes
+}
+
+// ApplySimpleCategorization applies a simple heuristic categorization for UI display
+// System volumes get a basic breakdown, external drives show as "other"
+func (d *Device) ApplySimpleCategorization() {
+	d.Categories = make(map[string]uint64)
+
+	// System volume heuristic: 10% system, 20% documents, 25% media, rest is other
+	if d.MountPoint == "/" || d.MountPoint == "/System/Volumes/Data" || d.MountPoint == "/home" {
+		d.Categories["system"] = d.UsedBytes / 10   // 10%
+		d.Categories["documents"] = d.UsedBytes / 5 // 20%
+		d.Categories["media"] = d.UsedBytes / 4     // 25%
+
+		categorized := d.Categories["system"] + d.Categories["documents"] + d.Categories["media"]
+		if categorized < d.UsedBytes {
+			d.Categories["other"] = d.UsedBytes - categorized
+		} else {
+			d.Categories["other"] = 0
+		}
+	} else {
+		// External/other volumes: everything is "other"
+		d.Categories["other"] = d.UsedBytes
+	}
 }

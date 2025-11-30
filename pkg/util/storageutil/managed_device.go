@@ -1,9 +1,9 @@
-package storage
+package storageutil
 
 import (
+	"autobutler/pkg/util/fileutil"
 	"os"
 	"path/filepath"
-	"runtime"
 )
 
 // ManagedDevice represents a storage device that has an autobutler data directory
@@ -23,7 +23,7 @@ func GetManagedDevices() ([]ManagedDevice, error) {
 
 	var managedDevices []ManagedDevice
 	for _, device := range devices {
-		dataDir := GetDataDirForDevice(device.MountPoint)
+		dataDir := fileutil.GetDataDirForDevice(device.MountPoint)
 		filesDir := filepath.Join(dataDir, "files")
 
 		// Check if this device has an autobutler data directory
@@ -41,7 +41,7 @@ func GetManagedDevices() ([]ManagedDevice, error) {
 
 // InitializeDeviceDataDir creates the autobutler data directory structure on a device
 func InitializeDeviceDataDir(mountPoint string) error {
-	dataDir := GetDataDirForDevice(mountPoint)
+	dataDir := fileutil.GetDataDirForDevice(mountPoint)
 	filesDir := filepath.Join(dataDir, "files")
 
 	if err := os.MkdirAll(filesDir, 0755); err != nil {
@@ -49,32 +49,4 @@ func InitializeDeviceDataDir(mountPoint string) error {
 	}
 
 	return nil
-}
-
-// GetDataDirForDevice returns the data directory path for a specific device mount point
-func GetDataDirForDevice(mountPoint string) string {
-	// For the main system device (root filesystem or /System/Volumes/Data on macOS),
-	// use the standard user-specific data directory location
-	isSystemDevice := mountPoint == "/" || mountPoint == "/System/Volumes/Data"
-
-	if isSystemDevice {
-		// Use platform-specific user directories (~/Library/Application Support/Autobutler/data on macOS)
-		switch runtime.GOOS {
-		case "darwin":
-			homeDir, err := os.UserHomeDir()
-			if err != nil {
-				homeDir = "/"
-			}
-			return filepath.Join(homeDir, "Library", "Application Support", "Autobutler", "data")
-		case "linux":
-			homeDir, err := os.UserHomeDir()
-			if err != nil {
-				homeDir = "/var/lib"
-			}
-			return filepath.Join(homeDir, "autobutler", "data")
-		}
-	}
-
-	// For external devices, use .autobutler directory on the device itself
-	return filepath.Join(mountPoint, ".autobutler", "data")
 }

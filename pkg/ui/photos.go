@@ -1,13 +1,13 @@
 package ui
 
 import (
-	"autobutler/pkg/storage"
 	"autobutler/pkg/ui/components/photos"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/ui/views"
 	"autobutler/pkg/util/fileutil"
-	"autobutler/pkg/util/imageutil"
+	"autobutler/pkg/util/photoutil"
 	"autobutler/pkg/util/serverutil"
+	"autobutler/pkg/util/storageutil"
 	"strconv"
 
 	"github.com/a-h/templ"
@@ -22,14 +22,14 @@ func SetupPhotoRoutes(router *gin.Engine) {
 func setupPhotoView(router *gin.Engine) {
 	serverutil.UiRoute(router, "/photos", func(c *gin.Context) templ.Component {
 		// Get storage summary for the storage bar component
-		detector := storage.NewDetector()
+		detector := storageutil.NewDetector()
 		devices, err := detector.DetectDevices()
-		var summary storage.Summary
+		var summary storageutil.Summary
 		if err == nil && len(devices) > 0 {
-			summary = detector.CalculateSummary(devices)
+			summary = storageutil.CalculateSummary(devices)
 		} else {
 			// Provide empty summary if detection fails
-			summary = storage.Summary{}
+			summary = storageutil.Summary{}
 		}
 
 		return views.Photos(types.NewPageState(), summary)
@@ -37,14 +37,14 @@ func setupPhotoView(router *gin.Engine) {
 	serverutil.UiRoute(router, "/photos/*rootDir", func(c *gin.Context) templ.Component {
 		rootDir := c.Param("rootDir")
 		// Get storage summary for the storage bar component
-		detector := storage.NewDetector()
+		detector := storageutil.NewDetector()
 		devices, err := detector.DetectDevices()
-		var summary storage.Summary
+		var summary storageutil.Summary
 		if err == nil && len(devices) > 0 {
-			summary = detector.CalculateSummary(devices)
+			summary = storageutil.CalculateSummary(devices)
 		} else {
 			// Provide empty summary if detection fails
-			summary = storage.Summary{}
+			summary = storageutil.Summary{}
 		}
 
 		return views.Photos(types.NewPageState().WithRootDir(rootDir), summary)
@@ -64,7 +64,7 @@ func setupPhotoComponentRoutes(router *gin.Engine) {
 		println("🔍 SERVER: Photo grid request - Page:", page)
 
 		// Get all photos
-		photoFiles, err := imageutil.FindAllPhotosRecursively(fileutil.GetFilesDir())
+		photoFiles, err := photoutil.FindAllPhotosRecursively(fileutil.GetFilesDir())
 		if err != nil {
 			return nil
 		}

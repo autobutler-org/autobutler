@@ -8,37 +8,9 @@ import (
 	"runtime"
 	"slices"
 	"strings"
-	"time"
 
 	"golang.org/x/sys/unix"
 )
-
-type CustomFileInfo struct {
-	name string
-	size int64
-}
-
-func (f CustomFileInfo) Name() string {
-	return f.name
-}
-func (f CustomFileInfo) Size() int64 {
-	return f.size
-}
-func (f CustomFileInfo) Mode() fs.FileMode {
-	return 0666
-}
-func (f CustomFileInfo) ModTime() time.Time {
-	return time.Now()
-}
-func (f CustomFileInfo) IsDir() bool {
-	return f.name[len(f.name)-1] == '/'
-}
-func (f CustomFileInfo) Sys() any {
-	return nil
-}
-func NewCustomFileInfo(name string, size int64) fs.FileInfo {
-	return CustomFileInfo{name: name, size: size}
-}
 
 type FileType string
 
@@ -180,7 +152,7 @@ func StatFilesInDir(dir string, deviceName string, devicePath string) ([]*Device
 			if err != nil {
 				return nil, fmt.Errorf("error getting size for folder %s: %w", entry.Name(), err)
 			}
-			fileInfo = NewCustomFileInfo(entry.Name()+"/", folderSize)
+			fileInfo = NewCustomFileInfo().WithName(entry.Name()).WithSize(folderSize)
 		} else {
 			info, err := entry.Info()
 			if err != nil {
@@ -207,23 +179,43 @@ func GetAvailableSpaceInBytes(fileDir string) uint64 {
 	return getAvailableSpaceInBytes(fileDir)
 }
 
+// GetDataDirForDevice returns the data directory path for a specific device mount point
+func GetDataDirForDevice(mountPoint string) string {
+	// For the main system device (root filesystem or /System/Volumes/Data on macOS),
+	// use the standard user-specific data directory location
+	isSystemDevice := mountPoint == "/" || mountPoint == "/System/Volumes/Data"
+
+	if isSystemDevice {
+		// Use platform-specific user directories (~/Library/Application Support/Autobutler/data on macOS)
+		switch runtime.GOOS {
+		case "darwin":
+			homeDir, err := os.UserHomeDir()
+			if err != nil {
+				homeDir = "/"
+			}
+			return filepath.Join(homeDir, "Library", "Application Support", "Autobutler", "data")
+		case "linux":
+			homeDir, err := os.UserHomeDir()
+			if err != nil {
+				homeDir = "/var/lib"
+			}
+			return filepath.Join(homeDir, "autobutler", "data")
+		}
+	}
+
+	// For external devices, use .autobutler directory on the device itself
+	return filepath.Join(mountPoint, ".autobutler", "data")
+}
+
 func GetDataDir() string {
-	// switch on os
+	// Get data directory for the system device
 	switch runtime.GOOS {
-	case "linux":
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			// Assume instead we are running as a system service, and default to a system-wide data directory.
-			homeDir = "/var/lib"
-		}
-		return filepath.Join(homeDir, "autobutler", "data")
 	case "darwin":
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			// Assume instead we are running as a system service, and default to a system-wide data directory.
-			homeDir = "/"
-		}
-		return filepath.Join(homeDir, "Library", "Application Support", "Autobutler", "data")
+		// On macOS, the system mount point can be / or /System/Volumes/Data
+		// Use / as the canonical reference
+		return GetDataDirForDevice("/")
+	case "linux":
+		return GetDataDirForDevice("/")
 	default:
 		panic(fmt.Sprintf("unsupported OS: %s", runtime.GOOS))
 	}
@@ -324,7 +316,7 @@ func StatFilesInMultipleDirs(dirsWithDeviceInfo []DirWithDevice) ([]*DeviceFileI
 				if err != nil {
 					continue
 				}
-				fileInfo = NewCustomFileInfo(entry.Name()+"/", folderSize)
+				fileInfo = NewCustomFileInfo().WithName(entry.Name()).WithSize(folderSize)
 			} else {
 				info, err := entry.Info()
 				if err != nil {

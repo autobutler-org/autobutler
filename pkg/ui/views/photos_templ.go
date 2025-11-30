@@ -9,17 +9,17 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"autobutler/pkg/storage"
 	"autobutler/pkg/ui/components/body"
 	"autobutler/pkg/ui/components/header"
 	"autobutler/pkg/ui/components/photos"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/fileutil"
-	"autobutler/pkg/util/imageutil"
+	"autobutler/pkg/util/photoutil"
+	"autobutler/pkg/util/storageutil"
 	"fmt"
 )
 
-func Photos(pageState types.PageState, summary storage.Summary) templ.Component {
+func Photos(pageState types.PageState, summary storageutil.Summary) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -61,7 +61,7 @@ func Photos(pageState types.PageState, summary storage.Summary) templ.Component 
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			photoFiles, err := imageutil.FindAllPhotosRecursively(fileutil.GetFilesDir())
+			photoFiles, err := photoutil.FindAllPhotosRecursively(fileutil.GetFilesDir())
 			if err != nil {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"error-text\">Error loading photos: ")
 				if templ_7745c5c3_Err != nil {

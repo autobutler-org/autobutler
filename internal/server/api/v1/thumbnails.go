@@ -3,7 +3,7 @@ package v1
 import (
 	"autobutler/pkg/api"
 	"autobutler/pkg/util/fileutil"
-	"autobutler/pkg/util/imageutil"
+	"autobutler/pkg/util/photoutil"
 	"autobutler/pkg/util/serverutil"
 	"fmt"
 	"image/jpeg"
@@ -35,7 +35,7 @@ func getThumbnailRoute(apiV1Group *gin.RouterGroup) {
 			return api.NewResponse().WithStatusCode(http.StatusNotFound)
 		}
 
-		thumbnail, format, err := imageutil.ImageToThumbnail(fullPath, thumbnailWidth, thumbnailHeight)
+		thumbnail, format, err := photoutil.ImageToThumbnail(fullPath, thumbnailWidth, thumbnailHeight)
 		if err != nil {
 			return api.NewResponse().WithStatusCode(http.StatusInternalServerError).WithError(err)
 		}

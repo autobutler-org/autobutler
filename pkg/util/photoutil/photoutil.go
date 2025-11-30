@@ -1,4 +1,4 @@
-package imageutil
+package photoutil
 
 import (
 	"autobutler/pkg/util/fileutil"
@@ -28,15 +28,9 @@ func FilterPhotoFiles(files []fs.FileInfo) []fs.FileInfo {
 	return photoFiles
 }
 
-// RecursivePhotoInfo stores a photo with its relative path
-type RecursivePhotoInfo struct {
-	FileInfo fs.FileInfo
-	RelPath  string
-}
-
 // FindAllPhotosRecursively finds all photo files in a directory and its subdirectories
-func FindAllPhotosRecursively(rootDir string) ([]RecursivePhotoInfo, error) {
-	photos := make([]RecursivePhotoInfo, 0)
+func FindAllPhotosRecursively(rootDir string) ([]PhotoInfo, error) {
+	photos := make([]PhotoInfo, 0)
 
 	err := filepath.Walk(rootDir, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
@@ -53,7 +47,7 @@ func FindAllPhotosRecursively(rootDir string) ([]RecursivePhotoInfo, error) {
 			if err != nil {
 				return err
 			}
-			photos = append(photos, RecursivePhotoInfo{
+			photos = append(photos, PhotoInfo{
 				FileInfo: info,
 				RelPath:  relPath,
 			})

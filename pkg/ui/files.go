@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"autobutler/pkg/storage"
 	"autobutler/pkg/ui/components/file_explorer"
 	"autobutler/pkg/ui/components/file_explorer/file_viewer/docx_viewer"
 	"autobutler/pkg/ui/components/file_explorer/file_viewer/epub_viewer"
@@ -14,6 +13,7 @@ import (
 	"autobutler/pkg/ui/views"
 	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/serverutil"
+	"autobutler/pkg/util/storageutil"
 	"html"
 	"path/filepath"
 
@@ -86,7 +86,7 @@ func GetFileExplorerViewContentWithBreadcrumb(c *gin.Context, rootDir string, vi
 
 func getFileExplorerComponent(c *gin.Context, rootDir string, viewContentOnly bool, view ...any) templ.Component {
 	// Get all managed devices
-	managedDevices, err := storage.GetManagedDevices()
+	managedDevices, err := storageutil.GetManagedDevices()
 	if err != nil {
 		c.Writer.WriteString(`<span class="text-red-500">Failed to load managed devices: ` + html.EscapeString(err.Error()) + `</span>`)
 		return nil
