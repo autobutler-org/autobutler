@@ -101,7 +101,7 @@ test/unit: ## Run unit tests
 		-coverprofile=coverage.out \
 		-covermode=atomic
 	# Apply coverage ignore directives
-	./scripts/apply-coverage-ignore.sh \
+	./scripts/apply-coverage-ignore.bash \
 		coverage.out
 	# Generate coverage report as HTMl
 	go tool cover \
