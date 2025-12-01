@@ -23,13 +23,13 @@ func setupRoutes(router *gin.Engine) {
 
 func setupApiRoutes(router *gin.Engine) {
 	apiV1Group := router.Group("/api/v1")
-	v1.SetupMetricsRoutes(apiV1Group, metricsExporter)
 	v1.SetupDocRoutes(apiV1Group)
 	v1.SetupFilesRoutes(apiV1Group)
-	v1.SetupStorageRoutes(apiV1Group)
-	v1.SetupUpdateRoutes(apiV1Group)
 	v1.SetupHealthRoutes(apiV1Group)
+	v1.SetupMetricsRoutes(apiV1Group)
+	v1.SetupStorageRoutes(apiV1Group)
 	v1.SetupThumbnailRoutes(apiV1Group)
+	v1.SetupUpdateRoutes(apiV1Group)
 }
 
 func setupStaticRoutes(router *gin.Engine) error {
@@ -39,7 +39,6 @@ func setupStaticRoutes(router *gin.Engine) error {
 	}
 	router.NoRoute(
 		static.Serve("/public", staticFS),
-		// TODO: have a proper 404 page
 		func(c *gin.Context) {
 			if err := views.NotFound(types.NewPageState()).Render(c.Request.Context(), c.Writer); err != nil {
 				c.Status(400)
@@ -52,11 +51,11 @@ func setupStaticRoutes(router *gin.Engine) error {
 }
 
 func setupUiRoutes(router *gin.Engine) {
-	ui.SetupHealthRoutes(router)
-	ui.SetupIndexRoutes(router)
+	ui.SetupBookRoutes(router)
 	ui.SetupDevicesRoutes(router)
 	ui.SetupFileRoutes(router)
+	ui.SetupHealthRoutes(router)
+	ui.SetupIndexRoutes(router)
 	ui.SetupPhotoRoutes(router)
-	ui.SetupBookRoutes(router)
 	ui.SetupSettingsRoutes(router)
 }

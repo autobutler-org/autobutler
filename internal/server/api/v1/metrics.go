@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"autobutler/pkg/botel/exporters/botelsqlite"
 	"autobutler/pkg/util/ctxutil"
 	"autobutler/pkg/util/deputil"
 
@@ -31,28 +30,33 @@ type QueryResult struct {
 	Values [][]any           `json:"values"`
 }
 
-func SetupMetricsRoutes(router *gin.RouterGroup, metricsExporter *botelsqlite.TraceExporter) {
-	router.GET("/metrics", newMetricsHandler(metricsExporter))
+func SetupMetricsRoutes(router *gin.RouterGroup) {
+	router.GET("/metrics", handleMetrics)
 	router.GET("/metrics/query_range", handleQueryRange)
 	router.GET("/metrics/query", handleInstantQuery)
 }
 
-func newMetricsHandler(metricsExporter *botelsqlite.TraceExporter) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if metricsExporter == nil {
-			c.String(http.StatusServiceUnavailable, "# Metrics exporter not initialized\n")
-			return
-		}
-
-		metrics, err := metricsExporter.PrometheusMetrics(c.Request.Context())
-		if err != nil {
-			c.String(http.StatusInternalServerError, "# Error generating metrics: %s\n", err.Error())
-			return
-		}
-
-		c.Header("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
-		c.String(http.StatusOK, metrics)
+func handleMetrics(c *gin.Context) {
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		c.String(http.StatusInternalServerError, "# Dependencies not found in context\n")
+		return
 	}
+
+	metricsExporter := deps.MetricsExporter()
+	if metricsExporter == nil {
+		c.String(http.StatusServiceUnavailable, "# Metrics exporter not initialized\n")
+		return
+	}
+
+	metrics, err := metricsExporter.PrometheusMetrics(c.Request.Context())
+	if err != nil {
+		c.String(http.StatusInternalServerError, "# Error generating metrics: %s\n", err.Error())
+		return
+	}
+
+	c.Header("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+	c.String(http.StatusOK, metrics)
 }
 
 func handleQueryRange(c *gin.Context) {
