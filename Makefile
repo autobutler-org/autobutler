@@ -92,7 +92,9 @@ build/mac: build/mac/amd64 build/mac/arm64 ## Build macOS backends
 build/mac/arm64: ## Build macOS backends
 	GOOS=darwin GOARCH=arm64 go build -o ./build/autobutler-mac-arm64 $(MAIN)
 
-test: test/e2e
+test: test/unit test/e2e
+test/unit:
+	go test -v ./... -coverprofile=coverage.out -covermode=atomic
 test/e2e:
 	npm run test/e2e
 
