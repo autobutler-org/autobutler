@@ -52,5 +52,6 @@ grep -rn '// coverage: ignore' . --include="*.go" 2>/dev/null | while IFS=: read
 done
 
 while read p || [ -n "$p" ]; do
-    sed -i '' "/${p//\//\\/}/d" "${IGNORED_FILE}"
+    # Use a portable sed approach that works on both macOS and Linux
+    sed "/${p//\//\\/}/d" "${IGNORED_FILE}" > "${IGNORED_FILE}.tmp" && mv "${IGNORED_FILE}.tmp" "${IGNORED_FILE}"
 done < ${SCRIPT_DIR}/coverage-excluded-packages.txt
