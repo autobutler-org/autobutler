@@ -2,13 +2,6 @@ package api
 
 import "net/http"
 
-type ContentType string
-
-const (
-	ContentTypeHTML ContentType = "text/html"
-	ContentTypeJSON ContentType = "application/json"
-)
-
 type Response struct {
 	StatusCode  int
 	Data        any
