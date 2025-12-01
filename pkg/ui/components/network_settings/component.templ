@@ -189,22 +189,23 @@ templ Component(status NetworkStatus, devices []TailnetDevice, pending []Pending
 						<div class="network-device-card">
 							<div class="network-device-header">
 								<div class="network-device-icon">
-									if device.OS == "macOS" || device.OS == "Windows" || device.OS == "Linux" {
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-											<rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-											<line x1="8" y1="21" x2="16" y2="21"></line>
-											<line x1="12" y1="17" x2="12" y2="21"></line>
-										</svg>
-									} else if device.OS == "iOS" || device.OS == "Android" {
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-											<rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-											<line x1="12" y1="18" x2="12.01" y2="18"></line>
-										</svg>
-									} else {
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-											<rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-											<path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"></path>
-										</svg>
+									switch device.OS {
+										case "macOS", "Windows", "Linux":
+											<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+												<rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+												<line x1="8" y1="21" x2="16" y2="21"></line>
+												<line x1="12" y1="17" x2="12" y2="21"></line>
+											</svg>
+										case "iOS", "Android":
+											<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+												<rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+												<line x1="12" y1="18" x2="12.01" y2="18"></line>
+											</svg>
+										default:
+											<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+												<rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+												<path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"></path>
+											</svg>
 									}
 								</div>
 								<div class="network-device-status">
@@ -270,17 +271,18 @@ templ Component(status NetworkStatus, devices []TailnetDevice, pending []Pending
 					for _, device := range pending {
 						<div class="network-pending-card">
 							<div class="network-pending-icon">
-								if device.OS == "macOS" || device.OS == "Windows" || device.OS == "Linux" {
-									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-										<rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-										<line x1="8" y1="21" x2="16" y2="21"></line>
-										<line x1="12" y1="17" x2="12" y2="21"></line>
-									</svg>
-								} else {
-									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-										<rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-										<line x1="12" y1="18" x2="12.01" y2="18"></line>
-									</svg>
+								switch device.OS {
+									case "macOS", "Windows", "Linux":
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+											<rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+											<line x1="8" y1="21" x2="16" y2="21"></line>
+											<line x1="12" y1="17" x2="12" y2="21"></line>
+										</svg>
+									default:
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+											<rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+											<line x1="12" y1="18" x2="12.01" y2="18"></line>
+										</svg>
 								}
 							</div>
 							<div class="network-pending-info">

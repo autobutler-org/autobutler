@@ -246,17 +246,18 @@ func Component(status NetworkStatus, devices []TailnetDevice, pending []PendingD
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if device.OS == "macOS" || device.OS == "Windows" || device.OS == "Linux" {
+				switch device.OS {
+				case "macOS", "Windows", "Linux":
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"2\" y=\"3\" width=\"20\" height=\"14\" rx=\"2\" ry=\"2\"></rect> <line x1=\"8\" y1=\"21\" x2=\"16\" y2=\"21\"></line> <line x1=\"12\" y1=\"17\" x2=\"12\" y2=\"21\"></line></svg>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-				} else if device.OS == "iOS" || device.OS == "Android" {
+				case "iOS", "Android":
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"5\" y=\"2\" width=\"14\" height=\"20\" rx=\"2\" ry=\"2\"></rect> <line x1=\"12\" y1=\"18\" x2=\"12.01\" y2=\"18\"></line></svg>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-				} else {
+				default:
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"2\" y=\"7\" width=\"20\" height=\"14\" rx=\"2\" ry=\"2\"></rect> <path d=\"M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16\"></path></svg>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
@@ -284,7 +285,7 @@ func Component(status NetworkStatus, devices []TailnetDevice, pending []PendingD
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(device.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 220, Col: 22}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 221, Col: 22}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -307,7 +308,7 @@ func Component(status NetworkStatus, devices []TailnetDevice, pending []PendingD
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(device.IPAddress)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 232, Col: 28}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 233, Col: 28}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -320,7 +321,7 @@ func Component(status NetworkStatus, devices []TailnetDevice, pending []PendingD
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(device.OS)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 240, Col: 21}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 241, Col: 21}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -343,7 +344,7 @@ func Component(status NetworkStatus, devices []TailnetDevice, pending []PendingD
 					var templ_7745c5c3_Var9 string
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(formatTimeAgo(device.LastSeen))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 247, Col: 52}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 248, Col: 52}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
@@ -374,12 +375,13 @@ func Component(status NetworkStatus, devices []TailnetDevice, pending []PendingD
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if device.OS == "macOS" || device.OS == "Windows" || device.OS == "Linux" {
+				switch device.OS {
+				case "macOS", "Windows", "Linux":
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"2\" y=\"3\" width=\"20\" height=\"14\" rx=\"2\" ry=\"2\"></rect> <line x1=\"8\" y1=\"21\" x2=\"16\" y2=\"21\"></line> <line x1=\"12\" y1=\"17\" x2=\"12\" y2=\"21\"></line></svg>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-				} else {
+				default:
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"5\" y=\"2\" width=\"14\" height=\"20\" rx=\"2\" ry=\"2\"></rect> <line x1=\"12\" y1=\"18\" x2=\"12.01\" y2=\"18\"></line></svg>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
@@ -392,7 +394,7 @@ func Component(status NetworkStatus, devices []TailnetDevice, pending []PendingD
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(device.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 287, Col: 25}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 289, Col: 25}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
@@ -405,7 +407,7 @@ func Component(status NetworkStatus, devices []TailnetDevice, pending []PendingD
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(device.OS)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 295, Col: 21}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 297, Col: 21}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -418,7 +420,7 @@ func Component(status NetworkStatus, devices []TailnetDevice, pending []PendingD
 				var templ_7745c5c3_Var12 string
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(formatTimeAgo(device.RequestedAt))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 298, Col: 55}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 300, Col: 55}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
@@ -431,7 +433,7 @@ func Component(status NetworkStatus, devices []TailnetDevice, pending []PendingD
 				var templ_7745c5c3_Var13 string
 				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/api/v1/network/devices/%s/authorize", device.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 303, Col: 121}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 305, Col: 121}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 				if templ_7745c5c3_Err != nil {
@@ -444,7 +446,7 @@ func Component(status NetworkStatus, devices []TailnetDevice, pending []PendingD
 				var templ_7745c5c3_Var14 string
 				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/api/v1/network/devices/%s", device.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 309, Col: 112}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/network_settings/component.templ`, Line: 311, Col: 112}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 				if templ_7745c5c3_Err != nil {
