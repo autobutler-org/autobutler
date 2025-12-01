@@ -4,6 +4,7 @@ import (
 	"autobutler/pkg/ui/components/gradient_overlays"
 	"autobutler/pkg/ui/components/header"
 	"autobutler/pkg/ui/components/landing_nav"
+	"autobutler/pkg/ui/components/mock_banner"
 	"autobutler/pkg/ui/types"
 )
 
@@ -18,6 +19,7 @@ templ SettingsNetwork(pageState types.PageState) {
 				<div class="landing-container">
 					@landing_nav.Component(pageState)
 					<div class="settings-page">
+						@mock_banner.Component()
 						<div class="settings-header">
 							<div class="settings-header-title">
 								<a href="/settings" class="settings-back-link">

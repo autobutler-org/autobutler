@@ -4,6 +4,8 @@ import (
 	"autobutler/pkg/ui/components/gradient_overlays"
 	"autobutler/pkg/ui/components/header"
 	"autobutler/pkg/ui/components/landing_nav"
+	"autobutler/pkg/ui/components/mock_badge"
+	"autobutler/pkg/ui/components/mock_banner"
 	"autobutler/pkg/ui/types"
 )
 
@@ -18,6 +20,7 @@ templ Settings(pageState types.PageState) {
 				<div class="landing-container">
 					@landing_nav.Component(pageState)
 					<div class="settings-page">
+						@mock_banner.Component()
 						<div class="settings-header">
 							<h1>Settings & Metrics</h1>
 							<div class="settings-header-actions">
@@ -129,7 +132,7 @@ templ Settings(pageState types.PageState) {
 										<h2>Storage Devices</h2>
 									</div>
 									<div class="settings-section-description">
-										<p>Manage which storage devices are enabled for Autobutler file storageutil.</p>
+										<p>Manage which storage devices are enabled for Autobutler file storage.</p>
 									</div>
 									<div
 										id="device-manager-content"
@@ -163,6 +166,7 @@ templ Settings(pageState types.PageState) {
 								</section>
 								<div class="settings-config-grid">
 									<div class="settings-config-card">
+										@mock_badge.Component()
 										<h3>Collector & Exporter</h3>
 										<p>Configure where telemetry is sent and how it's batched</p>
 										<div class="settings-checkbox-group">
@@ -242,6 +246,7 @@ templ Settings(pageState types.PageState) {
 										</div>
 									</div>
 									<div class="settings-config-card">
+										@mock_badge.Component()
 										<h3>Filter & Sampling</h3>
 										<p>Reduce noise with include/exclude rules and rates</p>
 										<div class="settings-form-group">
@@ -288,6 +293,7 @@ templ Settings(pageState types.PageState) {
 									</div>
 								</div>
 								<section class="settings-metrics-section">
+									@mock_badge.Component()
 									<h3>OpenTelemetry Metrics</h3>
 									<p>Live instrumentation snapshots for the NAS and file browser.</p>
 									<div class="settings-metrics-grid">
@@ -418,6 +424,7 @@ templ Settings(pageState types.PageState) {
 									</div>
 								</section>
 								<section class="settings-metrics-section">
+									@mock_badge.Component()
 									<h3>Recent Telemetry Events</h3>
 									<p>Latest exporter status, dropped spans, and warnings.</p>
 									<table class="settings-events-table">

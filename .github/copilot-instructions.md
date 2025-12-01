@@ -48,3 +48,9 @@ End-to-end testing requirements
 - When fixing UI bugs, always add an end-to-end test that validates the fix. This ensures the bug can be caught if it reappears in the future.
 - Follow the existing test patterns in `tests/e2e/*.spec.ts` for consistency.
 - End-to-end tests help maintain quality and prevent regressions in the UI.
+
+Mock UI Elements
+-------------------------------
+- When generating mock UI elements for testing or demonstration purposes, ensure they are clearly marked as mock components.
+- To mark a UI element as mock, use the `mock_badge` component.
+- If most of a page is a mock, use the `mock_banner` component.
