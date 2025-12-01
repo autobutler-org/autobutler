@@ -16,8 +16,7 @@ datalinks/mac
 *.test
 
 # Output of the go coverage tool
-coverage.out
-coverage.html
+coverage.*
 
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
