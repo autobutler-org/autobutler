@@ -51,6 +51,6 @@ grep -rn '// coverage: ignore' . --include="*.go" 2>/dev/null | while IFS=: read
     ' "${IGNORED_FILE}" > "${IGNORED_FILE}.new" && mv "${IGNORED_FILE}.new" "${IGNORED_FILE}"
 done
 
-while read package || [ -n "${package}" ]; do
-    sed -i '' "/${package//\//\\/}/d" "${IGNORED_FILE}"
+while read p || [ -n "$p" ]; do
+    sed -i '' "/${p//\//\\/}/d" "${IGNORED_FILE}"
 done < ${SCRIPT_DIR}/coverage-excluded-packages.txt
