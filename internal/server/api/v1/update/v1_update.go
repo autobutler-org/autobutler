@@ -1,9 +1,10 @@
-package v1_health
+package v1_update
 
 import (
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRoutes(group *gin.RouterGroup) {
-	healthRoute(group)
+	updateRoute(group)
+	listVersionsRoute(group)
 }

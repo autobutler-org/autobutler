@@ -9,5 +9,5 @@ func SetupRoutes(group *gin.RouterGroup) {
 	downloadFileRoute(group)
 	newFolderRoute(group)
 	moveFileRoute(group)
-	uploadFileRoute(group)
+	uploadFilesRoute(group)
 }

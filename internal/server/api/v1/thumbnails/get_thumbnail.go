@@ -21,10 +21,6 @@ const (
 	thumbnailHeight = 400
 )
 
-func SetupRoutes(group *gin.RouterGroup) {
-	getThumbnailRoute(group)
-}
-
 func getThumbnailRoute(group *gin.RouterGroup) {
 	serverutil.ApiRoute(group, "GET", "/thumbnails/*filePath", func(c *gin.Context) *api.Response {
 		filePath := c.Param("filePath")

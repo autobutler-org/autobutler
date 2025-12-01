@@ -15,19 +15,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func uploadFileRoute(group *gin.RouterGroup) {
+func uploadFilesRoute(group *gin.RouterGroup) {
 	serverutil.ApiRoute(group, "POST", "/files", func(c *gin.Context) *api.Response {
-		uploadFileImpl(c, "")
+		uploadFilesImpl(c, "")
 		return api.Ok()
 	})
 	serverutil.ApiRoute(group, "POST", "/files/*rootDir", func(c *gin.Context) *api.Response {
 		rootDir := c.Param("rootDir")
-		uploadFileImpl(c, rootDir)
+		uploadFilesImpl(c, rootDir)
 		return api.Ok()
 	})
 }
 
-func uploadFileImpl(c *gin.Context, rootDir string) {
+func uploadFilesImpl(c *gin.Context, rootDir string) {
 	// Parse the multipart form with a max memory size
 	err := c.Request.ParseMultipartForm(32 << 20)
 	if err != nil {

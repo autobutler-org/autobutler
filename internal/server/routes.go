@@ -4,7 +4,6 @@ import (
 	"embed"
 
 	v1_files "autobutler/internal/server/api/v1/files"
-	v1_health "autobutler/internal/server/api/v1/health"
 	v1_metrics "autobutler/internal/server/api/v1/metrics"
 	v1_storage "autobutler/internal/server/api/v1/storage"
 	v1_thumbnails "autobutler/internal/server/api/v1/thumbnails"
@@ -29,7 +28,6 @@ func setupRoutes(router *gin.Engine) {
 func setupApiRoutes(router *gin.Engine) {
 	group := router.Group("/api/v1")
 	v1_files.SetupRoutes(group)
-	v1_health.SetupRoutes(group)
 	v1_metrics.SetupRoutes(group)
 	v1_storage.SetupRoutes(group)
 	v1_thumbnails.SetupRoutes(group)

@@ -7,11 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(apiGroup *gin.RouterGroup) {
-	apiGroup.GET("/storage/devices/status", getDeviceStatuses)
-	apiGroup.POST("/storage/managed", initializeManagedDevice)
-}
-
 func initializeManagedDevice(c *gin.Context) {
 	mountPoint := c.PostForm("mountPoint")
 
@@ -34,21 +29,5 @@ func initializeManagedDevice(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message":    "Device initialized successfully",
 		"mountPoint": mountPoint,
-	})
-}
-
-func getDeviceStatuses(c *gin.Context) {
-	statuses, err := storageutil.GetDeviceStatuses()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Failed to get device statuses",
-			"details": err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"devices": statuses,
-		"count":   len(statuses),
 	})
 }
