@@ -1,2 +1,3 @@
+autobutler/cmd
 autobutler/pkg/ui/components
 autobutler/pkg/ui/views
