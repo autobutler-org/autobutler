@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
-func injectDependencies(deps deputil.Dependencies) gin.HandlerFunc {
+func inject(deps deputil.Dependencies) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c = ctxutil.With(c, "deps", deps)
 		c.Next()
@@ -29,5 +29,5 @@ func Use(router *gin.Engine, deps deputil.Dependencies) {
 	router.Use(otelgin.Middleware("autobutler-server"))
 	router.Use(cors.New(config))
 
-	router.Use(injectDependencies(deps))
+	router.Use(inject(deps))
 }
