@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"autobutler/pkg/botel/exporters/botelsqlite"
 	"autobutler/pkg/util/ctxutil"
 	"autobutler/pkg/util/deputil"
 
@@ -31,14 +30,21 @@ type QueryResult struct {
 	Values [][]any           `json:"values"`
 }
 
-func SetupMetricsRoutes(router *gin.RouterGroup, metricsExporter *botelsqlite.TraceExporter) {
-	router.GET("/metrics", newMetricsHandler(metricsExporter))
+func SetupMetricsRoutes(router *gin.RouterGroup) {
+	router.GET("/metrics", newMetricsHandler())
 	router.GET("/metrics/query_range", handleQueryRange)
 	router.GET("/metrics/query", handleInstantQuery)
 }
 
-func newMetricsHandler(metricsExporter *botelsqlite.TraceExporter) gin.HandlerFunc {
+func newMetricsHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+		if !ok {
+			c.String(http.StatusInternalServerError, "# Dependencies not found in context\n")
+			return
+		}
+
+		metricsExporter := deps.MetricsExporter()
 		if metricsExporter == nil {
 			c.String(http.StatusServiceUnavailable, "# Metrics exporter not initialized\n")
 			return
