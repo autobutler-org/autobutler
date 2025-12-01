@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(apiGroup *gin.RouterGroup) {
-	apiGroup.GET("/storage/devices/status", getDeviceStatuses)
-	apiGroup.POST("/storage/managed", initializeManagedDevice)
+func SetupRoutes(group *gin.RouterGroup) {
+	getDeviceStatusesRoute(group)
+	initializeManagedDeviceRoute(group)
 }
