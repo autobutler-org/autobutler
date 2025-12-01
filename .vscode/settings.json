@@ -57,6 +57,7 @@
     "Sprintf",
     "sqlc",
     "staticcheck",
+    "storageutil",
     "stringutil",
     "strs",
     "Tailnet",
