@@ -23,7 +23,6 @@ func setupRoutes(router *gin.Engine) {
 
 func setupApiRoutes(router *gin.Engine) {
 	apiV1Group := router.Group("/api/v1")
-	v1.SetupDocRoutes(apiV1Group)
 	v1.SetupFilesRoutes(apiV1Group)
 	v1.SetupHealthRoutes(apiV1Group)
 	v1.SetupMetricsRoutes(apiV1Group)

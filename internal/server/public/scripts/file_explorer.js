@@ -593,31 +593,6 @@ function dropFiles(event, rootDir, returnDir) {
 }
 
 // eslint-disable-next-line no-unused-vars
-function saveQuill(filePath) {
-    const delta = quill.getContents();
-    fetch(`/api/v1/docs${filePath}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(delta),
-    })
-        .then((response) => {
-            if (response.ok) {
-                toastr.success('Document saved successfully');
-            } else {
-                return response.text().then((text) => {
-                    toastr.error('Error saving document: ' + (text || response.statusText));
-                });
-            }
-        })
-        .catch((error) => {
-            console.error('Error saving file:', error);
-            toastr.error('Error saving document: ' + error.message);
-        });
-}
-
-// eslint-disable-next-line no-unused-vars
 function saveAceEditor(filePath, content) {
     fetch(`/api/v1/files${filePath}`, {
         method: 'POST',
