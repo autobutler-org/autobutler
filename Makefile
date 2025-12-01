@@ -94,7 +94,12 @@ build/mac/arm64: ## Build macOS backends
 
 test: test/unit test/e2e
 test/unit:
-	go test -v ./... -coverprofile=coverage.out -covermode=atomic
+	go test -v ./... \
+		-coverprofile=coverage.out \
+		-covermode=atomic
+	go tool cover \
+		-html=coverage.out \
+		-o coverage.html
 test/e2e:
 	npm run test/e2e
 
