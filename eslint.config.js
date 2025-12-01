@@ -30,7 +30,6 @@ export default [
                 Chart: 'readonly',
                 ChartDatasourcePrometheusPlugin: 'readonly',
                 ace: 'readonly',
-                quill: 'readonly',
             },
         },
         rules: {
