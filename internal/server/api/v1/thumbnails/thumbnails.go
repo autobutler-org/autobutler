@@ -1,4 +1,4 @@
-package v1
+package v1_thumbnails
 
 import (
 	"autobutler/pkg/api"
@@ -21,12 +21,12 @@ const (
 	thumbnailHeight = 400
 )
 
-func SetupThumbnailRoutes(apiV1Group *gin.RouterGroup) {
-	getThumbnailRoute(apiV1Group)
+func SetupRoutes(group *gin.RouterGroup) {
+	getThumbnailRoute(group)
 }
 
-func getThumbnailRoute(apiV1Group *gin.RouterGroup) {
-	serverutil.ApiRoute(apiV1Group, "GET", "/thumbnails/*filePath", func(c *gin.Context) *api.Response {
+func getThumbnailRoute(group *gin.RouterGroup) {
+	serverutil.ApiRoute(group, "GET", "/thumbnails/*filePath", func(c *gin.Context) *api.Response {
 		filePath := c.Param("filePath")
 		filesDir := fileutil.GetFilesDir()
 		fullPath := filepath.Join(filesDir, filePath)

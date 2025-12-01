@@ -1,4 +1,4 @@
-package v1
+package v1_metrics
 
 import (
 	"database/sql"
@@ -30,7 +30,7 @@ type QueryResult struct {
 	Values [][]any           `json:"values"`
 }
 
-func SetupMetricsRoutes(router *gin.RouterGroup) {
+func SetupRoutes(router *gin.RouterGroup) {
 	router.GET("/metrics", handleMetrics)
 	router.GET("/metrics/query_range", handleQueryRange)
 	router.GET("/metrics/query", handleInstantQuery)

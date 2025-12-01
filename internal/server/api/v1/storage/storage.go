@@ -1,4 +1,4 @@
-package v1
+package v1_storage
 
 import (
 	"autobutler/pkg/util/storageutil"
@@ -7,8 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SetupStorageRoutes configures storage-related API routes
-func SetupStorageRoutes(apiGroup *gin.RouterGroup) {
+func SetupRoutes(apiGroup *gin.RouterGroup) {
 	apiGroup.GET("/storage/devices/status", getDeviceStatuses)
 	apiGroup.POST("/storage/managed", initializeManagedDevice)
 }

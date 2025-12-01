@@ -1,4 +1,4 @@
-package v1
+package v1_files
 
 import (
 	"archive/zip"
@@ -21,16 +21,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupFilesRoutes(apiV1Group *gin.RouterGroup) {
-	deleteFilesRoute(apiV1Group)
-	downloadFileRoute(apiV1Group)
-	newFolderRoute(apiV1Group)
-	moveFileRoute(apiV1Group)
-	uploadFileRoute(apiV1Group)
+func SetupRoutes(group *gin.RouterGroup) {
+	deleteFilesRoute(group)
+	downloadFileRoute(group)
+	newFolderRoute(group)
+	moveFileRoute(group)
+	uploadFileRoute(group)
 }
 
-func deleteFilesRoute(apiV1Group *gin.RouterGroup) {
-	serverutil.ApiRoute(apiV1Group, "DELETE", "/files", func(c *gin.Context) *api.Response {
+func deleteFilesRoute(group *gin.RouterGroup) {
+	serverutil.ApiRoute(group, "DELETE", "/files", func(c *gin.Context) *api.Response {
 		rootDir := c.Query("rootDir")
 		filePaths := c.QueryArray("filePaths")
 		fmt.Printf("Deleting multiple files: %s\n", filePaths)
@@ -141,16 +141,16 @@ func DownloadFile(c *gin.Context, filePath string) {
 	}
 }
 
-func downloadFileRoute(apiV1Group *gin.RouterGroup) {
-	serverutil.ApiRoute(apiV1Group, "GET", "/files/*filePath", func(c *gin.Context) *api.Response {
+func downloadFileRoute(group *gin.RouterGroup) {
+	serverutil.ApiRoute(group, "GET", "/files/*filePath", func(c *gin.Context) *api.Response {
 		filePath := c.Param("filePath")
 		DownloadFile(c, filePath)
 		return api.Ok()
 	})
 }
 
-func newFolderRoute(apiV1Group *gin.RouterGroup) {
-	serverutil.ApiRoute(apiV1Group, "POST", "/folder/files/*folderDir", func(c *gin.Context) *api.Response {
+func newFolderRoute(group *gin.RouterGroup) {
+	serverutil.ApiRoute(group, "POST", "/folder/files/*folderDir", func(c *gin.Context) *api.Response {
 		folderDir := c.Param("folderDir")
 		folderName := c.PostForm("folderName")
 		rootDir := fileutil.GetFilesDir()
@@ -176,8 +176,8 @@ func newFolderRoute(apiV1Group *gin.RouterGroup) {
 	})
 }
 
-func moveFileRoute(apiV1Group *gin.RouterGroup) {
-	serverutil.ApiRoute(apiV1Group, "PUT", "/files/*filePath", func(c *gin.Context) *api.Response {
+func moveFileRoute(group *gin.RouterGroup) {
+	serverutil.ApiRoute(group, "PUT", "/files/*filePath", func(c *gin.Context) *api.Response {
 		filePath := c.Param("filePath")
 		newFilePath := c.PostForm("newFilePath")
 		filesDir := fileutil.GetFilesDir()
@@ -263,12 +263,12 @@ func uploadFileRouteImpl(c *gin.Context, rootDir string) {
 	}
 }
 
-func uploadFileRoute(apiV1Group *gin.RouterGroup) {
-	serverutil.ApiRoute(apiV1Group, "POST", "/files", func(c *gin.Context) *api.Response {
+func uploadFileRoute(group *gin.RouterGroup) {
+	serverutil.ApiRoute(group, "POST", "/files", func(c *gin.Context) *api.Response {
 		uploadFileRouteImpl(c, "")
 		return api.Ok()
 	})
-	serverutil.ApiRoute(apiV1Group, "POST", "/files/*rootDir", func(c *gin.Context) *api.Response {
+	serverutil.ApiRoute(group, "POST", "/files/*rootDir", func(c *gin.Context) *api.Response {
 		rootDir := c.Param("rootDir")
 		uploadFileRouteImpl(c, rootDir)
 		return api.Ok()

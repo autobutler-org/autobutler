@@ -1,4 +1,4 @@
-package v1
+package v1_update
 
 import (
 	"autobutler/internal/update"
@@ -10,13 +10,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupUpdateRoutes(apiV1Group *gin.RouterGroup) {
-	updateRoute(apiV1Group)
-	listVersionsRoute(apiV1Group)
+func SetupRoutes(group *gin.RouterGroup) {
+	updateRoute(group)
+	listVersionsRoute(group)
 }
 
-func updateRoute(apiV1Group *gin.RouterGroup) {
-	serverutil.ApiRoute(apiV1Group, "POST", "/update", func(c *gin.Context) *api.Response {
+func updateRoute(group *gin.RouterGroup) {
+	serverutil.ApiRoute(group, "POST", "/update", func(c *gin.Context) *api.Response {
 		version := c.PostForm("version")
 		if err := update.Update(version); err != nil {
 			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
@@ -26,8 +26,8 @@ func updateRoute(apiV1Group *gin.RouterGroup) {
 	})
 }
 
-func listVersionsRoute(apiV1Group *gin.RouterGroup) {
-	serverutil.ApiRoute(apiV1Group, "GET", "/versions", func(c *gin.Context) *api.Response {
+func listVersionsRoute(group *gin.RouterGroup) {
+	serverutil.ApiRoute(group, "GET", "/versions", func(c *gin.Context) *api.Response {
 		releases, err := update.ListPossibleUpdates()
 		if err != nil {
 			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
