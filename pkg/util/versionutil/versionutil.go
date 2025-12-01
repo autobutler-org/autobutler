@@ -16,13 +16,13 @@ func GetVersion() *Version {
 	info, ok := debug.ReadBuildInfo()
 	version := NewVersion(NoCommit, runtime.Version(), "")
 	if !ok || info == nil {
-		return version
+		return version // coverage: ignore
 	}
 	for _, setting := range info.Settings {
 		switch setting.Key {
-		case "vcs.revision":
+		case "vcs.revision": // coverage: ignore
 			version.GitCommit = setting.Value
-		case "vcs.time":
+		case "vcs.time": // coverage: ignore
 			version.BuildDate = setting.Value
 		}
 	}
@@ -33,7 +33,7 @@ func GetVersion() *Version {
 // It returns -1 if v1 < v2, 0 if v1 == v2, and 1 if v1 > v2.
 // If either version has NoSemver, it returns 2.
 func CompareVersions(v1, v2 Version) int {
-	if v1.Semver == NoSemver || v2.Semver == NoSemver {
+	if v1.Semver == NoSemver || v2.Semver == NoSemver || strings.HasPrefix(v1.Semver, "dev-") || strings.HasPrefix(v2.Semver, "dev-") {
 		return 2
 	}
 	v1Parts := strings.Split(strings.TrimPrefix(v1.Semver, "v"), ".")

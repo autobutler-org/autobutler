@@ -100,14 +100,17 @@ test/unit: ## Run unit tests
 	go test -v ./... \
 		-coverprofile=coverage.out \
 		-covermode=atomic
+	# Apply coverage ignore directives
+	./scripts/apply-coverage-ignore.sh \
+		coverage.out
 	# Generate coverage report as HTMl
 	go tool cover \
-		-html=coverage.out \
+		-html=coverage.out.ignored \
 		-o coverage.html
 	# Display coverage summary in terminal
 	if [[ "$(PRINT_COVERAGE)" = "1" || "$(PRINT_COVERAGE)" = "true" ]] ; then
 		go tool cover \
-			-func=coverage.out
+			-func=coverage.out.ignored
 	fi
 test/e2e:
 	npm run test/e2e
