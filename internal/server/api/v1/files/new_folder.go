@@ -1,0 +1,41 @@
+package v1_files
+
+import (
+	"autobutler/pkg/api"
+	"autobutler/pkg/ui"
+	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/serverutil"
+	"html"
+	"os"
+	"path/filepath"
+
+	"github.com/a-h/templ"
+	"github.com/gin-gonic/gin"
+)
+
+func newFolderRoute(group *gin.RouterGroup) {
+	serverutil.ApiRoute(group, "POST", "/folder/files/*folderDir", func(c *gin.Context) *api.Response {
+		folderDir := c.Param("folderDir")
+		folderName := c.PostForm("folderName")
+		rootDir := fileutil.GetFilesDir()
+		fullPath := filepath.Join(rootDir, folderDir, folderName)
+
+		if err := os.MkdirAll(fullPath, 0755); err != nil {
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
+		}
+
+		// Stay in the current directory instead of navigating into the new folder
+		currentDir := folderDir
+		// Check if it's an HTMX request targeting just the content
+		var component templ.Component
+		if c.GetHeader("HX-Request") == "true" {
+			component = ui.GetFileExplorerViewContent(c, currentDir, "")
+		} else {
+			component = ui.GetFileExplorer(c, currentDir)
+		}
+		if err := component.Render(c.Request.Context(), c.Writer); err != nil {
+			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">Failed to render file explorer: ` + html.EscapeString(err.Error()) + `</span>`)
+		}
+		return api.Ok()
+	})
+}
