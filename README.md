@@ -93,8 +93,6 @@ autobutler/
 ├── pkg/
 │   ├── calendar/            # Calendar domain logic
 │   ├── db/                  # Database layer with sqlc-generated code
-│   ├── docx/                # DOCX document parsing
-│   ├── quill/               # Rich text editing (Quill Delta format)
 │   ├── storage/             # Cross-platform storage detection
 │   └── util/                # Shared utilities
 ├── sql/queries/             # SQL queries for code generation
