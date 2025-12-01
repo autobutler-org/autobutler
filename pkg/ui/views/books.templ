@@ -4,6 +4,7 @@ import (
 	"autobutler/pkg/ui/components/body"
 	"autobutler/pkg/ui/components/books"
 	"autobutler/pkg/ui/components/header"
+	"autobutler/pkg/ui/components/mock_banner"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/bookutil"
 	"autobutler/pkg/util/fileutil"
@@ -15,6 +16,7 @@ templ Books(pageState types.PageState) {
 	<html lang="en">
 		@header.Component()
 		@body.Component(pageState) {
+			@mock_banner.Component()
 			{{ bookFiles, err := bookutil.FindAllBooksRecursively(fileutil.GetFilesDir()) }}
 			if err != nil {
 				<div class="error-text">Error loading books: { err.Error() }</div>

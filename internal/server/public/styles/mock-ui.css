@@ -1,0 +1,172 @@
+/**
+ * Mock UI Components
+ * Styles for components that mark non-functional/mock UI elements
+ */
+
+/* Mock Banner - Full-width banner for entire pages */
+.ab-mock-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    background-color: #fef3c7;
+    border: 1px solid #fbbf24;
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md) var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+    color: var(--color-gray-900);
+}
+
+@media (prefers-color-scheme: dark) {
+    .ab-mock-banner {
+        background-color: rgba(251, 191, 36, 0.15);
+        border-color: var(--color-yellow-600);
+        color: var(--color-gray-100);
+    }
+}
+
+.ab-mock-banner-icon {
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--color-yellow-600);
+}
+
+@media (prefers-color-scheme: dark) {
+    .ab-mock-banner-icon {
+        color: var(--color-yellow-400);
+    }
+}
+
+.ab-mock-banner-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+@media (min-width: 640px) {
+    .ab-mock-banner-content {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--spacing-sm);
+    }
+}
+
+.ab-mock-banner-title {
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+}
+
+.ab-mock-banner-text {
+    font-size: var(--font-size-sm);
+}
+
+/* Mock Badge - Inline badge for individual UI elements */
+.ab-mock-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: help;
+    vertical-align: middle;
+    margin-left: var(--spacing-xs);
+}
+
+.ab-mock-badge-icon {
+    width: 1rem;
+    height: 1rem;
+    color: var(--color-yellow-600);
+    transition: color 0.2s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+    .ab-mock-badge-icon {
+        color: var(--color-yellow-400);
+    }
+}
+
+.ab-mock-badge:hover .ab-mock-badge-icon {
+    color: var(--color-yellow-400);
+}
+
+@media (prefers-color-scheme: dark) {
+    .ab-mock-badge:hover .ab-mock-badge-icon {
+        color: var(--color-yellow-600);
+    }
+}
+
+/* Tooltip on hover */
+.ab-mock-badge::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background-color: var(--color-gray-900);
+    color: white;
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+    border-radius: var(--border-radius);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+    z-index: 1000;
+}
+
+@media (prefers-color-scheme: dark) {
+    .ab-mock-badge::before {
+        background-color: var(--color-gray-700);
+    }
+}
+
+/* Tooltip arrow */
+.ab-mock-badge::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-2px);
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 4px solid var(--color-gray-900);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+    z-index: 1000;
+}
+
+@media (prefers-color-scheme: dark) {
+    .ab-mock-badge::after {
+        border-top-color: var(--color-gray-700);
+    }
+}
+
+/* Show tooltip on hover */
+.ab-mock-badge:hover::before {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-4px);
+}
+
+.ab-mock-badge:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(2px);
+}
+
+/* Mobile: Use tap instead of hover */
+@media (hover: none) and (pointer: coarse) {
+    .ab-mock-badge:active::before {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-4px);
+    }
+
+    .ab-mock-badge:active::after {
+        opacity: 1;
+        transform: translateX(-50%) translateY(2px);
+    }
+}

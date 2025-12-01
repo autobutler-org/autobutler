@@ -2,6 +2,7 @@ package books
 
 import (
 	"autobutler/pkg/ui/components/icons/book"
+	"autobutler/pkg/ui/components/mock_badge"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/bookutil"
 	"autobutler/pkg/util/fileutil"
@@ -13,7 +14,10 @@ import (
 templ Library(pageState types.PageState, books []bookutil.RecursiveBookInfo) {
 	<div class="books-library">
 		<div class="books-library-header">
-			<h1 class="books-library-title">Library</h1>
+			<h1 class="books-library-title">
+				Library
+				@mock_badge.Component()
+			</h1>
 			<p class="books-library-count">{ formatBookCount(len(books)) }</p>
 		</div>
 		if len(books) == 0 {
