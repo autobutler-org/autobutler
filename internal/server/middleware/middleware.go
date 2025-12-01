@@ -1,4 +1,4 @@
-package server
+package middleware
 
 import (
 	"autobutler/pkg/util/ctxutil"
@@ -11,7 +11,14 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
-func useMiddleware(router *gin.Engine, deps deputil.Dependencies) {
+func injectDependencies(deps deputil.Dependencies) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c = ctxutil.With(c, "deps", deps)
+		c.Next()
+	}
+}
+
+func Use(router *gin.Engine, deps deputil.Dependencies) {
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
 	config.AllowMethods = []string{"POST", "GET", "PUT", "OPTIONS"}
@@ -22,8 +29,5 @@ func useMiddleware(router *gin.Engine, deps deputil.Dependencies) {
 	router.Use(otelgin.Middleware("autobutler-server"))
 	router.Use(cors.New(config))
 
-	router.Use(gin.HandlerFunc(func(c *gin.Context) {
-		c = ctxutil.With(c, "deps", deps)
-		c.Next()
-	}))
+	router.Use(injectDependencies(deps))
 }

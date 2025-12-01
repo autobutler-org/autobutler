@@ -1,6 +1,7 @@
 package server
 
 import (
+	"autobutler/internal/server/middleware"
 	"autobutler/pkg/botel"
 	"autobutler/pkg/util/deputil"
 	"context"
@@ -32,8 +33,8 @@ func StartServer(deps deputil.Dependencies) error {
 	}()
 
 	router := gin.Default()
-	// IMPORTANT: useMiddleware MUST be called before setupRoutes
-	useMiddleware(router, deps)
+	// IMPORTANT: middleware.Use MUST be called before setupRoutes
+	middleware.Use(router, deps)
 	setupRoutes(router)
 	port := os.Getenv("PORT")
 	if port == "" {
