@@ -2,6 +2,7 @@ package deputil
 
 import (
 	"autobutler/internal/db"
+	"fmt"
 )
 
 type Dependencies interface {
@@ -18,6 +19,21 @@ type dependencies struct {
 
 func NewDependencies() Dependencies {
 	return &dependencies{}
+}
+
+func DefaultDependencies() (Dependencies, error) {
+	deps := NewDependencies()
+	if database, err := db.ConnectToDatabase(); err == nil {
+		deps.WithDatabase(database)
+	} else {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+	if database, err := db.ConnectToHealthDatabase(); err == nil {
+		deps.WithHealthDatabase(database)
+	} else {
+		return nil, fmt.Errorf("failed to connect to health database: %w", err)
+	}
+	return deps, nil
 }
 
 func (d *dependencies) WithDatabase(database *db.DatabaseSqlc) Dependencies {

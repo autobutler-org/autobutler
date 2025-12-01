@@ -1,7 +1,6 @@
 package server
 
 import (
-	"autobutler/internal/db"
 	"autobutler/pkg/botel/exporters/botelsqlite"
 	"autobutler/pkg/util/deputil"
 	"context"
@@ -61,18 +60,7 @@ func initMetrics(deps deputil.Dependencies) (*metric.MeterProvider, error) {
 	return mp, nil
 }
 
-func StartServer() error {
-	deps := deputil.NewDependencies()
-	if database, err := db.ConnectToDatabase(); err == nil {
-		deps.WithDatabase(database)
-	} else {
-		return fmt.Errorf("failed to connect to database: %w", err)
-	}
-	if database, err := db.ConnectToHealthDatabase(); err == nil {
-		deps.WithHealthDatabase(database)
-	} else {
-		return fmt.Errorf("failed to connect to health database: %w", err)
-	}
+func StartServer(deps deputil.Dependencies) error {
 	tp, err := initTracer(deps)
 	if err != nil {
 		return fmt.Errorf("failed to initialize otel trace: %w", err)
@@ -93,7 +81,7 @@ func StartServer() error {
 	}()
 
 	router := gin.Default()
-	// IMPORTANT: UseMiddleware MUST be called before setupRoutes
+	// IMPORTANT: useMiddleware MUST be called before setupRoutes
 	useMiddleware(router, deps)
 	setupRoutes(router)
 	port := os.Getenv("PORT")
