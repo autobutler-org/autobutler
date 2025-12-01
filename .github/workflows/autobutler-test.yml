@@ -79,3 +79,23 @@ jobs:
         name: playwright-report
         path: playwright-report/
         retention-days: 30
+  test-unit:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Setup go
+      uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+    - name: Run unit tests
+      env:
+        PRINT_COVERAGE: true
+      run: |
+        make test/unit
+    - name: Upload Coverage Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: unit-test-coverage
+        path: coverage.*

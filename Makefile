@@ -92,7 +92,26 @@ build/mac: build/mac/amd64 build/mac/arm64 ## Build macOS backends
 build/mac/arm64: ## Build macOS backends
 	GOOS=darwin GOARCH=arm64 go build -o ./build/autobutler-mac-arm64 $(MAIN)
 
-test: test/e2e
+PRINT_COVERAGE ?= 0
+
+test: test/unit test/e2e
+test/unit: ## Run unit tests
+	# Generate coverage report for unit tests
+	go test -v ./... \
+		-coverprofile=coverage.out \
+		-covermode=atomic
+	# Apply coverage ignore directives
+	./scripts/apply-coverage-ignore.bash \
+		coverage.out
+	# Generate coverage report as HTMl
+	go tool cover \
+		-html=coverage.out.ignored \
+		-o coverage.html
+	# Display coverage summary in terminal
+	if [[ "$(PRINT_COVERAGE)" = "1" || "$(PRINT_COVERAGE)" = "true" ]] ; then
+		go tool cover \
+			-func=coverage.out.ignored
+	fi
 test/e2e:
 	npm run test/e2e
 

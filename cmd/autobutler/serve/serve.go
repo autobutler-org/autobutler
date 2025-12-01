@@ -2,7 +2,6 @@ package serve
 
 import (
 	"fmt"
-	"os"
 
 	"autobutler/internal/server"
 
@@ -14,12 +13,12 @@ func Cmd() *cobra.Command {
 		Use:   "serve",
 		Short: "Start the Autobutler server",
 		Long:  `The serve command starts the Autobutler server, allowing you to interact with the Autobutler system through its API.`,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println("Starting Autobutler server...")
 			if err := server.StartServer(); err != nil {
-				fmt.Fprintf(os.Stderr, "Error starting server: %v\n", err)
-				os.Exit(1)
+				return fmt.Errorf("failed to start server: %w", err)
 			}
+			return nil
 		},
 	}
 
