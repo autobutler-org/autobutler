@@ -1,0 +1,3 @@
+autobutler/pkg/docx
+autobutler/pkg/quill
+autobutler/pkg/ui/components/file_explorer/file_viewer/docx_viewer

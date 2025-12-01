@@ -4,6 +4,8 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
+
 COVERAGE_FILE="${1:-coverage.out}"
 
 if [[ ! -f "${COVERAGE_FILE}" ]]; then
@@ -46,5 +48,9 @@ grep -rn '// coverage: ignore' . --include="*.go" 2>/dev/null | while IFS=: read
         }
         print
     }
-    ' "$IGNORED_FILE" > "${IGNORED_FILE}.new" && mv "${IGNORED_FILE}.new" "$IGNORED_FILE"
+    ' "${IGNORED_FILE}" > "${IGNORED_FILE}.new" && mv "${IGNORED_FILE}.new" "${IGNORED_FILE}"
 done
+
+while read package || [ -n "${package}" ]; do
+    sed -i '' "/${package//\//\\/}/d" "${IGNORED_FILE}"
+done < ${SCRIPT_DIR}/coverage-excluded-packages.txt
