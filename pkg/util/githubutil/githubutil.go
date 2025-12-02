@@ -8,7 +8,7 @@ import (
 
 // FetchGitHubReleases fetches all releases from a GitHub repository
 func FetchGitHubReleases(organization string, repository string) ([]GitHubRelease, error) {
-	url := fmt.Sprintf("https://serverutil.github.com/repos/%s/%s/releases", organization, repository)
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases", organization, repository)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
