@@ -1,7 +1,6 @@
 package v1_storage
 
 import (
-	"autobutler/pkg/api"
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/storageutil"
 	"net/http"
@@ -9,12 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func getDeviceStatusesRoute(group *gin.RouterGroup) {
-	serverutil.ApiRoute(group, "GET", "/storage/devices/status", func(c *gin.Context) *api.Response {
+var getDeviceStatusesRoute = serverutil.ApiRoute(
+	"GET", "/storage/devices/status", func(c *gin.Context) *serverutil.Response {
 		statuses, err := storageutil.GetDeviceStatuses()
 		if err != nil {
-			return api.NewResponse().
-				WithContentType(api.ContentTypeJSON).
+			return serverutil.NewResponse().
+				WithContentType(serverutil.ContentTypeJSON).
 				WithStatusCode(http.StatusInternalServerError).
 				WithData(gin.H{
 					"error":   "Failed to get device statuses",
@@ -22,12 +21,12 @@ func getDeviceStatusesRoute(group *gin.RouterGroup) {
 				})
 		}
 
-		return api.NewResponse().
-			WithContentType(api.ContentTypeJSON).
+		return serverutil.NewResponse().
+			WithContentType(serverutil.ContentTypeJSON).
 			WithStatusCode(http.StatusOK).
 			WithData(gin.H{
 				"devices": statuses,
 				"count":   len(statuses),
 			})
-	})
-}
+	},
+)

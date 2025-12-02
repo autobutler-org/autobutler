@@ -1,8 +1,7 @@
 package v1_files
 
 import (
-	"autobutler/pkg/api"
-	"autobutler/pkg/ui"
+	view_files "autobutler/pkg/ui/views/files"
 	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/storageutil"
@@ -14,8 +13,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func deleteFilesRoute(group *gin.RouterGroup) {
-	serverutil.ApiRoute(group, "DELETE", "/files", func(c *gin.Context) *api.Response {
+var deleteFilesRoute = serverutil.ApiRoute(
+	"DELETE", "/files", func(c *gin.Context) *serverutil.Response {
 		rootDir := c.Query("rootDir")
 		filePaths := c.QueryArray("filePaths")
 		fmt.Printf("Deleting multiple files: %s\n", filePaths)
@@ -28,7 +27,7 @@ func deleteFilesRoute(group *gin.RouterGroup) {
 			for _, filePath := range filePaths {
 				fullPath := filepath.Join(fileDir, rootDir, filePath)
 				if err := os.RemoveAll(fullPath); err != nil {
-					return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
+					return serverutil.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
 				}
 			}
 		} else {
@@ -50,7 +49,7 @@ func deleteFilesRoute(group *gin.RouterGroup) {
 					fullPath := filepath.Join(dirInfo.Dir, relPath)
 					if _, err := os.Stat(fullPath); err == nil {
 						if err := os.RemoveAll(fullPath); err != nil {
-							return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
+							return serverutil.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
 						}
 					}
 				}
@@ -58,10 +57,10 @@ func deleteFilesRoute(group *gin.RouterGroup) {
 		}
 
 		// Always render the full file explorer (button targets #file-explorer)
-		component := ui.GetFileExplorer(c, rootDir)
+		component := view_files.GetFileExplorer(c, rootDir)
 		if err := component.Render(c.Request.Context(), c.Writer); err != nil {
-			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">Failed to render file explorer: ` + html.EscapeString(err.Error()) + `</span>`)
+			return serverutil.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">Failed to render file explorer: ` + html.EscapeString(err.Error()) + `</span>`)
 		}
-		return api.Ok()
-	})
-}
+		return serverutil.Ok()
+	},
+)

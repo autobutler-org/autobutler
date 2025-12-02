@@ -13,7 +13,7 @@ func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "serve",
 		Short: "Start the Autobutler server",
-		Long:  `The serve command starts the Autobutler server, allowing you to interact with the Autobutler system through its API.`,
+		Long:  `The serve command starts the Autobutler server, allowing you to interact with the Autobutler system through its serverutil.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println("Starting Autobutler server...")
 			deps, err := deputil.DefaultDependencies()

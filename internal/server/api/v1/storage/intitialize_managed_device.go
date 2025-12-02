@@ -1,7 +1,6 @@
 package v1_storage
 
 import (
-	"autobutler/pkg/api"
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/storageutil"
 	"net/http"
@@ -9,13 +8,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func initializeManagedDeviceRoute(group *gin.RouterGroup) {
-	serverutil.ApiRoute(group, "POST", "/storage/managed", func(c *gin.Context) *api.Response {
+var initializeManagedDeviceRoute = serverutil.ApiRoute(
+	"POST", "/storage/managed", func(c *gin.Context) *serverutil.Response {
 		mountPoint := c.PostForm("mountPoint")
 
 		if mountPoint == "" {
-			return api.NewResponse().
-				WithContentType(api.ContentTypeJSON).
+			return serverutil.NewResponse().
+				WithContentType(serverutil.ContentTypeJSON).
 				WithStatusCode(http.StatusBadRequest).
 				WithData(gin.H{
 					"error": "Mount point is required",
@@ -24,8 +23,8 @@ func initializeManagedDeviceRoute(group *gin.RouterGroup) {
 
 		err := storageutil.InitializeDeviceDataDir(mountPoint)
 		if err != nil {
-			return api.NewResponse().
-				WithContentType(api.ContentTypeJSON).
+			return serverutil.NewResponse().
+				WithContentType(serverutil.ContentTypeJSON).
 				WithStatusCode(http.StatusInternalServerError).
 				WithData(gin.H{
 					"error":   "Failed to initialize device",
@@ -33,12 +32,12 @@ func initializeManagedDeviceRoute(group *gin.RouterGroup) {
 				})
 		}
 
-		return api.NewResponse().
-			WithContentType(api.ContentTypeJSON).
+		return serverutil.NewResponse().
+			WithContentType(serverutil.ContentTypeJSON).
 			WithStatusCode(http.StatusOK).
 			WithData(gin.H{
 				"message":    "Device initialized successfully",
 				"mountPoint": mountPoint,
 			})
-	})
-}
+	},
+)

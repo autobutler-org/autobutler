@@ -8,9 +8,16 @@ import (
 	v1_storage "autobutler/internal/server/api/v1/storage"
 	v1_thumbnails "autobutler/internal/server/api/v1/thumbnails"
 	v1_update "autobutler/internal/server/api/v1/update"
-	"autobutler/pkg/ui"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/ui/views"
+	view_books "autobutler/pkg/ui/views/books"
+	view_devices "autobutler/pkg/ui/views/devices"
+	view_files "autobutler/pkg/ui/views/files"
+	view_health "autobutler/pkg/ui/views/health"
+	view_home "autobutler/pkg/ui/views/home"
+	view_not_found "autobutler/pkg/ui/views/not_found"
+	view_photos "autobutler/pkg/ui/views/photos"
+	view_settings "autobutler/pkg/ui/views/settings"
+	"autobutler/pkg/util/serverutil"
 
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
@@ -19,30 +26,47 @@ import (
 //go:embed public
 var public embed.FS
 
-func setupRoutes(router *gin.Engine) {
-	setupApiRoutes(router)
-	setupStaticRoutes(router)
-	setupUiRoutes(router)
+func setupRoutes(engine *gin.Engine) {
+	setupRouters(engine)
+	setupStaticRoutes(engine)
 }
 
-func setupApiRoutes(router *gin.Engine) {
-	group := router.Group("/api/v1")
-	v1_files.SetupRoutes(group)
-	v1_metrics.SetupRoutes(group)
-	v1_storage.SetupRoutes(group)
-	v1_thumbnails.SetupRoutes(group)
-	v1_update.SetupRoutes(group)
+func setupRouters(engine *gin.Engine) {
+	uiRouters := []serverutil.Router{
+		view_books.NewRouter(),
+		view_devices.NewRouter(),
+		view_files.NewRouter(),
+		view_health.NewRouter(),
+		view_home.NewRouter(),
+		view_photos.NewRouter(),
+		view_settings.NewRouter(),
+	}
+	for _, r := range uiRouters {
+		serverutil.RegisterRouter(engine, r)
+	}
+
+	group := engine.Group("/api/v1")
+	apiRouters := []serverutil.Router{
+		v1_files.NewRouter(),
+		v1_metrics.NewRouter(),
+		v1_storage.NewRouter(),
+		v1_thumbnails.NewRouter(),
+		v1_update.NewRouter(),
+	}
+	for _, r := range apiRouters {
+		serverutil.RegisterRouterWithGroup(group, r)
+	}
 }
 
-func setupStaticRoutes(router *gin.Engine) error {
+func setupStaticRoutes(engine *gin.Engine) error {
 	staticFS, err := static.EmbedFolder(public, "public")
 	if err != nil {
 		return err
 	}
-	router.NoRoute(
+	engine.NoRoute(
 		static.Serve("/public", staticFS),
 		func(c *gin.Context) {
-			if err := views.NotFound(types.NewPageState()).Render(c.Request.Context(), c.Writer); err != nil {
+			if err := view_not_found.NotFound(types.NewPageState()).Render(c.Request.Context(), c.Writer); err != nil {
 				c.Status(400)
 				return
 			}
@@ -50,14 +74,4 @@ func setupStaticRoutes(router *gin.Engine) error {
 		},
 	)
 	return nil
-}
-
-func setupUiRoutes(router *gin.Engine) {
-	ui.SetupBookRoutes(router)
-	ui.SetupDevicesRoutes(router)
-	ui.SetupFileRoutes(router)
-	ui.SetupHealthRoutes(router)
-	ui.SetupIndexRoutes(router)
-	ui.SetupPhotoRoutes(router)
-	ui.SetupSettingsRoutes(router)
 }

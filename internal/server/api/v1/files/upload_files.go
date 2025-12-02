@@ -1,7 +1,6 @@
 package v1_files
 
 import (
-	"autobutler/pkg/api"
 	"autobutler/pkg/ui/components/file_explorer/load"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/fileutil"
@@ -15,17 +14,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func uploadFilesRoute(group *gin.RouterGroup) {
-	serverutil.ApiRoute(group, "POST", "/files", func(c *gin.Context) *api.Response {
+var uploadRootFilesRoute = serverutil.ApiRoute(
+	"POST", "/files", func(c *gin.Context) *serverutil.Response {
 		uploadFilesImpl(c, "")
-		return api.Ok()
-	})
-	serverutil.ApiRoute(group, "POST", "/files/*rootDir", func(c *gin.Context) *api.Response {
+		return serverutil.Ok()
+	},
+)
+var uploadNestedFilesRoutes = serverutil.ApiRoute(
+	"POST", "/files/*rootDir", func(c *gin.Context) *serverutil.Response {
 		rootDir := c.Param("rootDir")
 		uploadFilesImpl(c, rootDir)
-		return api.Ok()
-	})
-}
+		return serverutil.Ok()
+	},
+)
 
 func uploadFilesImpl(c *gin.Context, rootDir string) {
 	// Parse the multipart form with a max memory size
