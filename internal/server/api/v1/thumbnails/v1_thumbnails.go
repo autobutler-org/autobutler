@@ -1,9 +1,15 @@
 package v1_thumbnails
 
-import (
-	"github.com/gin-gonic/gin"
-)
+import "autobutler/pkg/util/serverutil"
 
-func SetupRoutes(group *gin.RouterGroup) {
-	getThumbnailRoute(group)
+type router struct{}
+
+func NewRouter() serverutil.Router {
+	return &router{}
+}
+
+func (r *router) Routes() []*serverutil.Route {
+	return []*serverutil.Route{
+		getThumbnailRoute,
+	}
 }

@@ -1,8 +1,7 @@
 package v1_files
 
 import (
-	"autobutler/pkg/api"
-	"autobutler/pkg/ui"
+	view_files "autobutler/pkg/ui/views/files"
 	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/serverutil"
 	"html"
@@ -12,8 +11,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func moveFileRoute(group *gin.RouterGroup) {
-	serverutil.ApiRoute(group, "PUT", "/files/*filePath", func(c *gin.Context) *api.Response {
+var moveFileRoute = serverutil.ApiRoute(
+	"PUT", "/files/*filePath", func(c *gin.Context) *serverutil.Response {
 		filePath := c.Param("filePath")
 		newFilePath := c.PostForm("newFilePath")
 		filesDir := fileutil.GetFilesDir()
@@ -22,20 +21,20 @@ func moveFileRoute(group *gin.RouterGroup) {
 
 		newFullDir := filepath.Dir(newFullPath)
 		if err := os.MkdirAll(newFullDir, 0755); err != nil {
-			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
+			return serverutil.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
 		}
 		if err := os.Rename(oldFullPath, newFullPath); err != nil {
-			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
+			return serverutil.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
 		}
 		newDir := filepath.Dir(newFilePath)
 		if newDir == "." {
 			newDir = ""
 		}
 		// Always render the full file explorer (JS function targets #file-explorer)
-		component := ui.GetFileExplorer(c, newDir)
+		component := view_files.GetFileExplorer(c, newDir)
 		if err := component.Render(c.Request.Context(), c.Writer); err != nil {
-			return api.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">Failed to render file explorer: ` + html.EscapeString(err.Error()) + `</span>`)
+			return serverutil.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">Failed to render file explorer: ` + html.EscapeString(err.Error()) + `</span>`)
 		}
-		return api.Ok()
-	})
-}
+		return serverutil.Ok()
+	},
+)

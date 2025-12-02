@@ -1,11 +1,10 @@
 package v1_metrics
 
 import (
+	"autobutler/pkg/util/serverutil"
 	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/gin-gonic/gin"
 )
 
 type QueryRangeResponse struct {
@@ -28,10 +27,18 @@ type labelFilter struct {
 	value    string
 }
 
-func SetupRoutes(router *gin.RouterGroup) {
-	router.GET("/metrics", handleMetrics)
-	router.GET("/metrics/query_range", handleQueryRange)
-	router.GET("/metrics/query", handleQuery)
+type router struct{}
+
+func NewRouter() serverutil.Router {
+	return &router{}
+}
+
+func (r *router) Routes() []*serverutil.Route {
+	return []*serverutil.Route{
+		listMetricsRoute,
+		queryRangeRoute,
+		queryRoute,
+	}
 }
 
 func formatLabels(labels map[string]string) string {
@@ -90,7 +97,7 @@ func parsePromQLQuery(query string) (metricName, aggregation, groupBy string, la
 	query = strings.Trim(query, "()")
 	query = strings.TrimSpace(query)
 
-	// Extract label selectors like {http.route=~"/api.*"}
+	// Extract label selectors like {http.route=~"/serverutil.*"}
 	if idx := strings.Index(query, "{"); idx >= 0 {
 		metricName = strings.TrimSpace(query[:idx])
 		endIdx := strings.LastIndex(query, "}")

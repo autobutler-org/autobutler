@@ -3,6 +3,7 @@ package v1_metrics
 import (
 	"autobutler/pkg/util/ctxutil"
 	"autobutler/pkg/util/deputil"
+	"autobutler/pkg/util/serverutil"
 	"database/sql"
 	"fmt"
 	"net/http"
@@ -12,52 +13,54 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func handleQueryRange(c *gin.Context) {
-	query := c.Query("query")
-	startStr := c.Query("start")
-	endStr := c.Query("end")
-	stepStr := c.Query("step")
+var queryRangeRoute = serverutil.NewRoute(
+	"GET", "/metrics/query_range", func(c *gin.Context) {
+		query := c.Query("query")
+		startStr := c.Query("start")
+		endStr := c.Query("end")
+		stepStr := c.Query("step")
 
-	if query == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "query parameter is required"})
-		return
-	}
+		if query == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "query parameter is required"})
+			return
+		}
 
-	// Parse timestamps
-	start, err := parseTimestamp(startStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid start timestamp"})
-		return
-	}
+		// Parse timestamps
+		start, err := parseTimestamp(startStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid start timestamp"})
+			return
+		}
 
-	end, err := parseTimestamp(endStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid end timestamp"})
-		return
-	}
+		end, err := parseTimestamp(endStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid end timestamp"})
+			return
+		}
 
-	step, err := strconv.ParseInt(stepStr, 10, 64)
-	if err != nil || step <= 0 {
-		step = 60 // Default to 60 seconds
-	}
+		step, err := strconv.ParseInt(stepStr, 10, 64)
+		if err != nil || step <= 0 {
+			step = 60 // Default to 60 seconds
+		}
 
-	// Execute query
-	results, err := executeRangeQuery(c, query, start, end, step)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+		// Execute query
+		results, err := executeRangeQuery(c, query, start, end, step)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 
-	response := QueryRangeResponse{
-		Status: "success",
-		Data: QueryRangeResponseData{
-			ResultType: "matrix",
-			Result:     results,
-		},
-	}
+		response := QueryRangeResponse{
+			Status: "success",
+			Data: QueryRangeResponseData{
+				ResultType: "matrix",
+				Result:     results,
+			},
+		}
 
-	c.JSON(http.StatusOK, response)
-}
+		c.JSON(http.StatusOK, response)
+	},
+)
 
 func executeRangeQuery(c *gin.Context, query string, start, end, step int64) ([]QueryResult, error) {
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")

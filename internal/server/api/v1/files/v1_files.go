@@ -1,13 +1,20 @@
 package v1_files
 
-import (
-	"github.com/gin-gonic/gin"
-)
+import "autobutler/pkg/util/serverutil"
 
-func SetupRoutes(group *gin.RouterGroup) {
-	deleteFilesRoute(group)
-	downloadFileRoute(group)
-	newFolderRoute(group)
-	moveFileRoute(group)
-	uploadFilesRoute(group)
+type router struct{}
+
+func NewRouter() serverutil.Router {
+	return &router{}
+}
+
+func (r *router) Routes() []*serverutil.Route {
+	return []*serverutil.Route{
+		deleteFilesRoute,
+		downloadFileRoute,
+		newFolderRoute,
+		moveFileRoute,
+		uploadNestedFilesRoutes,
+		uploadRootFilesRoute,
+	}
 }

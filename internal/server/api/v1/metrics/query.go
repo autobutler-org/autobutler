@@ -3,6 +3,7 @@ package v1_metrics
 import (
 	"autobutler/pkg/util/ctxutil"
 	"autobutler/pkg/util/deputil"
+	"autobutler/pkg/util/serverutil"
 	"database/sql"
 	"fmt"
 	"net/http"
@@ -12,44 +13,46 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func handleQuery(c *gin.Context) {
-	query := c.Query("query")
-	timeStr := c.Query("time")
+var queryRoute = serverutil.NewRoute(
+	"GET", "/metrics/query", func(c *gin.Context) {
+		query := c.Query("query")
+		timeStr := c.Query("time")
 
-	if query == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "query parameter is required"})
-		return
-	}
-
-	var queryTime time.Time
-	if timeStr != "" {
-		ts, err := parseTimestamp(timeStr)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid time timestamp"})
+		if query == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "query parameter is required"})
 			return
 		}
-		queryTime = time.Unix(ts, 0)
-	} else {
-		queryTime = time.Now()
-	}
 
-	// Execute instant query (just get the latest value)
-	results, err := executeQuery(c, query, queryTime)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+		var queryTime time.Time
+		if timeStr != "" {
+			ts, err := parseTimestamp(timeStr)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid time timestamp"})
+				return
+			}
+			queryTime = time.Unix(ts, 0)
+		} else {
+			queryTime = time.Now()
+		}
 
-	response := QueryRangeResponse{
-		Status: "success",
-		Data: QueryRangeResponseData{
-			ResultType: "vector",
-			Result:     results,
-		},
-	}
+		// Execute instant query (just get the latest value)
+		results, err := executeQuery(c, query, queryTime)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 
-	c.JSON(http.StatusOK, response)
-}
+		response := QueryRangeResponse{
+			Status: "success",
+			Data: QueryRangeResponseData{
+				ResultType: "vector",
+				Result:     results,
+			},
+		}
+
+		c.JSON(http.StatusOK, response)
+	},
+)
 
 func executeQuery(c *gin.Context, query string, queryTime time.Time) ([]QueryResult, error) {
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")

@@ -2,7 +2,6 @@ package v1_files
 
 import (
 	"archive/zip"
-	"autobutler/pkg/api"
 	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/storageutil"
@@ -14,13 +13,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func downloadFileRoute(group *gin.RouterGroup) {
-	serverutil.ApiRoute(group, "GET", "/files/*filePath", func(c *gin.Context) *api.Response {
+var downloadFileRoute = serverutil.ApiRoute(
+	"GET", "/files/*filePath", func(c *gin.Context) *serverutil.Response {
 		filePath := c.Param("filePath")
 		downloadFileImpl(c, filePath)
-		return api.Ok()
-	})
-}
+		return serverutil.Ok()
+	},
+)
 
 func downloadFileImpl(c *gin.Context, filePath string) {
 	var fullPath string

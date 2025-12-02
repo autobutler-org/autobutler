@@ -1,7 +1,6 @@
 package v1_thumbnails
 
 import (
-	"autobutler/pkg/api"
 	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/photoutil"
 	"autobutler/pkg/util/serverutil"
@@ -21,19 +20,19 @@ const (
 	thumbnailHeight = 400
 )
 
-func getThumbnailRoute(group *gin.RouterGroup) {
-	serverutil.ApiRoute(group, "GET", "/thumbnails/*filePath", func(c *gin.Context) *api.Response {
+var getThumbnailRoute = serverutil.ApiRoute(
+	"GET", "/thumbnails/*filePath", func(c *gin.Context) *serverutil.Response {
 		filePath := c.Param("filePath")
 		filesDir := fileutil.GetFilesDir()
 		fullPath := filepath.Join(filesDir, filePath)
 
 		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-			return api.NewResponse().WithStatusCode(http.StatusNotFound)
+			return serverutil.NewResponse().WithStatusCode(http.StatusNotFound)
 		}
 
 		thumbnail, format, err := photoutil.ImageToThumbnail(fullPath, thumbnailWidth, thumbnailHeight)
 		if err != nil {
-			return api.NewResponse().WithStatusCode(http.StatusInternalServerError).WithError(err)
+			return serverutil.NewResponse().WithStatusCode(http.StatusInternalServerError).WithError(err)
 		}
 
 		ext := strings.ToLower(filepath.Ext(filePath))
@@ -41,20 +40,20 @@ func getThumbnailRoute(group *gin.RouterGroup) {
 		case ".png":
 			c.Header("Content-Type", "image/png")
 			if err := png.Encode(c.Writer, thumbnail); err != nil {
-				return api.NewResponse().WithStatusCode(http.StatusInternalServerError)
+				return serverutil.NewResponse().WithStatusCode(http.StatusInternalServerError)
 			}
 		case ".jpg", ".jpeg":
 			c.Header("Content-Type", "image/jpeg")
 			if err := jpeg.Encode(c.Writer, thumbnail, &jpeg.Options{Quality: 85}); err != nil {
-				return api.NewResponse().WithStatusCode(http.StatusInternalServerError)
+				return serverutil.NewResponse().WithStatusCode(http.StatusInternalServerError)
 			}
 		default:
 			// For other formats, try to encode as JPEG
 			c.Header("Content-Type", fmt.Sprintf("image/%s", format))
 			if err := jpeg.Encode(c.Writer, thumbnail, &jpeg.Options{Quality: 85}); err != nil {
-				return api.NewResponse().WithStatusCode(http.StatusInternalServerError)
+				return serverutil.NewResponse().WithStatusCode(http.StatusInternalServerError)
 			}
 		}
-		return api.Ok()
-	})
-}
+		return serverutil.Ok()
+	},
+)
