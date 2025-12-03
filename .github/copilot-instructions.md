@@ -65,8 +65,8 @@ API endpoint architecture
 - Business logic functions must live in `pkg/util/` packages (e.g., `pkg/util/fileutil/service.go`), NOT in API handler files.
 - Use the Params/Result pattern for service functions (similar to gRPC):
   - Define a `*Params` struct containing all input parameters
-  - Define a `*Result` struct containing all outputs (including errors)
-  - Example: `DeleteFiles(params DeleteFilesParams) DeleteFilesResult`
+  - Define a `*Result` struct containing all outputs (not including errors)
+  - Example: `DeleteFiles(params DeleteFilesParams) (DeleteFilesResult, error)`
 - This pattern ensures:
   - Business logic is testable in isolation without HTTP context
   - Service functions are reusable across different parts of the codebase (API, CLI, background jobs)

@@ -15,13 +15,13 @@ var newFolderRoute = serverutil.ApiRoute(
 		folderDir := c.Param("folderDir")
 		folderName := c.PostForm("folderName")
 
-		result := fileutil.CreateFolder(fileutil.CreateFolderParams{
+		result, err := fileutil.CreateFolder(fileutil.CreateFolderParams{
 			FolderDir:  folderDir,
 			FolderName: folderName,
 		})
 
-		if result.Error != nil {
-			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(result.Error.Error()))
+		if err != nil {
+			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(err.Error()))
 		}
 
 		// Check if it's an HTMX request targeting just the content

@@ -21,14 +21,14 @@ var deleteFilesRoute = serverutil.ApiRoute(
 			managedDevices = nil
 		}
 
-		result := fileutil.DeleteFiles(fileutil.DeleteFilesParams{
+		result, err := fileutil.DeleteFiles(fileutil.DeleteFilesParams{
 			RootDir:        rootDir,
 			FilePaths:      filePaths,
 			ManagedDevices: managedDevices,
 		})
 
-		if result.Error != nil {
-			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(result.Error.Error()))
+		if err != nil {
+			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(err.Error()))
 		}
 
 		// Always render the full file explorer (button targets #file-explorer)
