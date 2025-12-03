@@ -1,12 +1,12 @@
 package v1_files
 
 import (
+	"autobutler/pkg/ui/components/error_message"
 	"autobutler/pkg/ui/components/file_explorer/load"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/serverutil"
 	"fmt"
-	"html"
 	"io"
 	"os"
 	"path/filepath"
@@ -32,20 +32,20 @@ func uploadFilesImpl(c *gin.Context, rootDir string) {
 	// Parse the multipart form with a max memory size
 	err := c.Request.ParseMultipartForm(32 << 20)
 	if err != nil {
-		c.Writer.WriteString(`<span class="text-red-500">Failed to parse multipart form: ` + html.EscapeString(err.Error()) + `</span>`)
+		error_message.Component("Failed to parse multipart form: "+err.Error()).Render(c.Request.Context(), c.Writer)
 		return
 	}
 
 	form, err := c.MultipartForm()
 	if err != nil {
-		c.Writer.WriteString(`<span class="text-red-500">Failed to get file: ` + html.EscapeString(err.Error()) + `</span>`)
+		error_message.Component("Failed to get file: "+err.Error()).Render(c.Request.Context(), c.Writer)
 		return
 	}
 	fileHeaders := form.File["files"]
 	for _, header := range fileHeaders {
 		file, err := header.Open()
 		if err != nil {
-			c.Writer.WriteString(`<span class="text-red-500">Failed to open file: ` + html.EscapeString(err.Error()) + `</span>`)
+			error_message.Component("Failed to open file: "+err.Error()).Render(c.Request.Context(), c.Writer)
 			return
 		}
 		defer file.Close()
@@ -67,12 +67,12 @@ func uploadFilesImpl(c *gin.Context, rootDir string) {
 		}
 		newFile, err := os.Create(newFilePath)
 		if err != nil {
-			c.Writer.WriteString(`<span class="text-red-500">Failed to create file: ` + html.EscapeString(err.Error()) + `</span>`)
+			error_message.Component("Failed to create file: "+err.Error()).Render(c.Request.Context(), c.Writer)
 			return
 		}
 		defer newFile.Close()
 		if _, err := io.Copy(newFile, file); err != nil {
-			c.Writer.WriteString(`<span class="text-red-500">Failed to write file: ` + html.EscapeString(err.Error()) + `</span>`)
+			error_message.Component("Failed to write file: "+err.Error()).Render(c.Request.Context(), c.Writer)
 			return
 		}
 	}

@@ -1,12 +1,13 @@
 package v1_files
 
 import (
+	"autobutler/pkg/ui/components/error_message"
 	view_files "autobutler/pkg/ui/views/files"
 	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/storageutil"
+	"bytes"
 	"fmt"
-	"html"
 	"os"
 	"path/filepath"
 
@@ -27,7 +28,9 @@ var deleteFilesRoute = serverutil.ApiRoute(
 			for _, filePath := range filePaths {
 				fullPath := filepath.Join(fileDir, rootDir, filePath)
 				if err := os.RemoveAll(fullPath); err != nil {
-					return serverutil.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
+					var buf bytes.Buffer
+					error_message.Component(err.Error()).Render(c.Request.Context(), &buf)
+					return serverutil.NewResponse().WithStatusCode(500).WithData(buf.String())
 				}
 			}
 		} else {
@@ -49,7 +52,9 @@ var deleteFilesRoute = serverutil.ApiRoute(
 					fullPath := filepath.Join(dirInfo.Dir, relPath)
 					if _, err := os.Stat(fullPath); err == nil {
 						if err := os.RemoveAll(fullPath); err != nil {
-							return serverutil.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">` + html.EscapeString(err.Error()) + `</span>`)
+							var buf bytes.Buffer
+							error_message.Component(err.Error()).Render(c.Request.Context(), &buf)
+							return serverutil.NewResponse().WithStatusCode(500).WithData(buf.String())
 						}
 					}
 				}
@@ -59,7 +64,9 @@ var deleteFilesRoute = serverutil.ApiRoute(
 		// Always render the full file explorer (button targets #file-explorer)
 		component := view_files.GetFileExplorer(c, rootDir)
 		if err := component.Render(c.Request.Context(), c.Writer); err != nil {
-			return serverutil.NewResponse().WithStatusCode(500).WithData(`<span class="text-red-500">Failed to render file explorer: ` + html.EscapeString(err.Error()) + `</span>`)
+			var buf bytes.Buffer
+			error_message.Component("Failed to render file explorer: "+err.Error()).Render(c.Request.Context(), &buf)
+			return serverutil.NewResponse().WithStatusCode(500).WithData(buf.String())
 		}
 		return serverutil.Ok()
 	},
