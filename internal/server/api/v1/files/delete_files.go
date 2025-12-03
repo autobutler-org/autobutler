@@ -6,7 +6,6 @@ import (
 	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/storageutil"
-	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -28,9 +27,7 @@ var deleteFilesRoute = serverutil.ApiRoute(
 			for _, filePath := range filePaths {
 				fullPath := filepath.Join(fileDir, rootDir, filePath)
 				if err := os.RemoveAll(fullPath); err != nil {
-					var buf bytes.Buffer
-					error_message.Component(err.Error()).Render(c.Request.Context(), &buf)
-					return serverutil.NewResponse().WithStatusCode(500).WithData(buf.String())
+					return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(err.Error()))
 				}
 			}
 		} else {
@@ -52,9 +49,7 @@ var deleteFilesRoute = serverutil.ApiRoute(
 					fullPath := filepath.Join(dirInfo.Dir, relPath)
 					if _, err := os.Stat(fullPath); err == nil {
 						if err := os.RemoveAll(fullPath); err != nil {
-							var buf bytes.Buffer
-							error_message.Component(err.Error()).Render(c.Request.Context(), &buf)
-							return serverutil.NewResponse().WithStatusCode(500).WithData(buf.String())
+							return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(err.Error()))
 						}
 					}
 				}
@@ -64,9 +59,7 @@ var deleteFilesRoute = serverutil.ApiRoute(
 		// Always render the full file explorer (button targets #file-explorer)
 		component := view_files.GetFileExplorer(c, rootDir)
 		if err := component.Render(c.Request.Context(), c.Writer); err != nil {
-			var buf bytes.Buffer
-			error_message.Component("Failed to render file explorer: "+err.Error()).Render(c.Request.Context(), &buf)
-			return serverutil.NewResponse().WithStatusCode(500).WithData(buf.String())
+			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component("Failed to render file explorer: " + err.Error()))
 		}
 		return serverutil.Ok()
 	},

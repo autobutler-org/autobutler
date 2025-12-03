@@ -5,7 +5,6 @@ import (
 	view_files "autobutler/pkg/ui/views/files"
 	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/serverutil"
-	"bytes"
 	"os"
 	"path/filepath"
 
@@ -21,9 +20,7 @@ var newFolderRoute = serverutil.ApiRoute(
 		fullPath := filepath.Join(rootDir, folderDir, folderName)
 
 		if err := os.MkdirAll(fullPath, 0755); err != nil {
-			var buf bytes.Buffer
-			error_message.Component(err.Error()).Render(c.Request.Context(), &buf)
-			return serverutil.NewResponse().WithStatusCode(500).WithData(buf.String())
+			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(err.Error()))
 		}
 
 		// Stay in the current directory instead of navigating into the new folder
@@ -36,9 +33,7 @@ var newFolderRoute = serverutil.ApiRoute(
 			component = view_files.GetFileExplorer(c, currentDir)
 		}
 		if err := component.Render(c.Request.Context(), c.Writer); err != nil {
-			var buf bytes.Buffer
-			error_message.Component("Failed to render file explorer: "+err.Error()).Render(c.Request.Context(), &buf)
-			return serverutil.NewResponse().WithStatusCode(500).WithData(buf.String())
+			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component("Failed to render file explorer: " + err.Error()))
 		}
 		return serverutil.Ok()
 	},

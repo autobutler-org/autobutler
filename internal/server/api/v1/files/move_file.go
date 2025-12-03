@@ -5,7 +5,6 @@ import (
 	view_files "autobutler/pkg/ui/views/files"
 	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/serverutil"
-	"bytes"
 	"os"
 	"path/filepath"
 
@@ -22,14 +21,10 @@ var moveFileRoute = serverutil.ApiRoute(
 
 		newFullDir := filepath.Dir(newFullPath)
 		if err := os.MkdirAll(newFullDir, 0755); err != nil {
-			var buf bytes.Buffer
-			error_message.Component(err.Error()).Render(c.Request.Context(), &buf)
-			return serverutil.NewResponse().WithStatusCode(500).WithData(buf.String())
+			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(err.Error()))
 		}
 		if err := os.Rename(oldFullPath, newFullPath); err != nil {
-			var buf bytes.Buffer
-			error_message.Component(err.Error()).Render(c.Request.Context(), &buf)
-			return serverutil.NewResponse().WithStatusCode(500).WithData(buf.String())
+			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(err.Error()))
 		}
 		newDir := filepath.Dir(newFilePath)
 		if newDir == "." {
@@ -38,9 +33,7 @@ var moveFileRoute = serverutil.ApiRoute(
 		// Always render the full file explorer (JS function targets #file-explorer)
 		component := view_files.GetFileExplorer(c, newDir)
 		if err := component.Render(c.Request.Context(), c.Writer); err != nil {
-			var buf bytes.Buffer
-			error_message.Component("Failed to render file explorer: "+err.Error()).Render(c.Request.Context(), &buf)
-			return serverutil.NewResponse().WithStatusCode(500).WithData(buf.String())
+			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component("Failed to render file explorer: " + err.Error()))
 		}
 		return serverutil.Ok()
 	},
