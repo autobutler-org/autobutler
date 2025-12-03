@@ -1,6 +1,4 @@
-package storageutil
-
-import "autobutler/pkg/util/fileutil"
+package fileutil
 
 // Summary represents overall storage summary
 type Summary struct {
@@ -24,9 +22,9 @@ func CalculateSummary(devices []Device) Summary {
 		summary.AvailBytes += device.AvailBytes
 	}
 
-	summary.TotalTB = fileutil.BytesToTB(summary.TotalBytes)
-	summary.UsedTB = fileutil.BytesToTB(summary.UsedBytes)
-	summary.AvailTB = fileutil.BytesToTB(summary.AvailBytes)
+	summary.TotalTB = BytesToTB(summary.TotalBytes)
+	summary.UsedTB = BytesToTB(summary.UsedBytes)
+	summary.AvailTB = BytesToTB(summary.AvailBytes)
 
 	return summary
 }

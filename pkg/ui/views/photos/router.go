@@ -6,7 +6,6 @@ import (
 	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/photoutil"
 	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/storageutil"
 	"strconv"
 
 	"github.com/a-h/templ"
@@ -29,14 +28,14 @@ func (r *router) Routes() []*serverutil.Route {
 var photosRoute = serverutil.UiRoute(
 	"/photos", func(c *gin.Context) templ.Component {
 		// Get storage summary for the storage bar component
-		detector := storageutil.NewDetector()
+		detector := fileutil.NewDetector()
 		devices, err := detector.DetectDevices()
-		var summary storageutil.Summary
+		var summary fileutil.Summary
 		if err == nil && len(devices) > 0 {
-			summary = storageutil.CalculateSummary(devices)
+			summary = fileutil.CalculateSummary(devices)
 		} else {
 			// Provide empty summary if detection fails
-			summary = storageutil.Summary{}
+			summary = fileutil.Summary{}
 		}
 
 		return Photos(types.NewPageState(), summary)
@@ -47,14 +46,14 @@ var photosNestedRoute = serverutil.UiRoute(
 	"/photos/*rootDir", func(c *gin.Context) templ.Component {
 		rootDir := c.Param("rootDir")
 		// Get storage summary for the storage bar component
-		detector := storageutil.NewDetector()
+		detector := fileutil.NewDetector()
 		devices, err := detector.DetectDevices()
-		var summary storageutil.Summary
+		var summary fileutil.Summary
 		if err == nil && len(devices) > 0 {
-			summary = storageutil.CalculateSummary(devices)
+			summary = fileutil.CalculateSummary(devices)
 		} else {
 			// Provide empty summary if detection fails
-			summary = storageutil.Summary{}
+			summary = fileutil.Summary{}
 		}
 
 		return Photos(types.NewPageState().WithRootDir(rootDir), summary)

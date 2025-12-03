@@ -9,14 +9,14 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"autobutler/pkg/util/storageutil"
+	"autobutler/pkg/util/fileutil"
 	"fmt"
 )
 
 // Component renders a simple storage bar showing total cumulative storage across all devices
 // This is used for global storage overview (e.g., landing page footer)
 // Shows only: total capacity, used space, and percentage - no file type breakdown
-func Component(summary storageutil.Summary) templ.Component {
+func Component(summary fileutil.Summary) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

@@ -2,6 +2,7 @@ package view_files
 
 import (
 	"autobutler/pkg/ui/components/body"
+	"autobutler/pkg/ui/components/error_message"
 	"autobutler/pkg/ui/components/file_explorer"
 	"autobutler/pkg/ui/components/header"
 	"autobutler/pkg/ui/types"
@@ -21,7 +22,7 @@ templ Files(pageState types.PageState) {
 				files, err := fileutil.StatFilesInDir(fullPathDir, deviceName, devicePath)
 			}}
 			if err != nil {
-				<div class="error-text">Error loading files: { err.Error() }</div>
+				@error_message.Component("Error loading files: " + err.Error())
 			} else {
 				@file_explorer.Component(pageState, files, pageState.View)
 			}

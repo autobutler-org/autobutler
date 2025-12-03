@@ -9,14 +9,14 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"autobutler/pkg/util/storageutil"
+	"autobutler/pkg/util/fileutil"
 	"fmt"
 )
 
 // Component renders a storage bar showing breakdown within a single device/partition
 // Shows category breakdown proportional to percent_used from backend
 // Used in device cards to show per-partition breakdown (Scenario 3)
-func Component(device storageutil.Device) templ.Component {
+func Component(device fileutil.Device) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -80,7 +80,7 @@ func Component(device storageutil.Device) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if systemBytes, ok := device.Categories[string(storageutil.CategorySystem)]; ok && systemBytes > 0 {
+			if systemBytes, ok := device.Categories[string(fileutil.CategorySystem)]; ok && systemBytes > 0 {
 				systemPercent := float64(systemBytes) / float64(totalForCalc) * 100
 				systemGB := float64(systemBytes) / (1024 * 1024 * 1024)
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"storage-partition-segment storage-partition-system\" style=\"")
@@ -118,7 +118,7 @@ func Component(device storageutil.Device) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if docsBytes, ok := device.Categories[string(storageutil.CategoryDocuments)]; ok && docsBytes > 0 {
+			if docsBytes, ok := device.Categories[string(fileutil.CategoryDocuments)]; ok && docsBytes > 0 {
 				docsPercent := float64(docsBytes) / float64(totalForCalc) * 100
 				docsGB := float64(docsBytes) / (1024 * 1024 * 1024)
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"storage-partition-segment storage-partition-documents\" style=\"")
@@ -156,7 +156,7 @@ func Component(device storageutil.Device) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if mediaBytes, ok := device.Categories[string(storageutil.CategoryMedia)]; ok && mediaBytes > 0 {
+			if mediaBytes, ok := device.Categories[string(fileutil.CategoryMedia)]; ok && mediaBytes > 0 {
 				mediaPercent := float64(mediaBytes) / float64(totalForCalc) * 100
 				mediaGB := float64(mediaBytes) / (1024 * 1024 * 1024)
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"storage-partition-segment storage-partition-media\" style=\"")
@@ -194,7 +194,7 @@ func Component(device storageutil.Device) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if backupsBytes, ok := device.Categories[string(storageutil.CategoryBackups)]; ok && backupsBytes > 0 {
+			if backupsBytes, ok := device.Categories[string(fileutil.CategoryBackups)]; ok && backupsBytes > 0 {
 				backupsPercent := float64(backupsBytes) / float64(totalForCalc) * 100
 				backupsGB := float64(backupsBytes) / (1024 * 1024 * 1024)
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<div class=\"storage-partition-segment storage-partition-backups\" style=\"")
@@ -232,7 +232,7 @@ func Component(device storageutil.Device) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if otherBytes, ok := device.Categories[string(storageutil.CategoryOther)]; ok && otherBytes > 0 {
+			if otherBytes, ok := device.Categories[string(fileutil.CategoryOther)]; ok && otherBytes > 0 {
 				otherPercent := float64(otherBytes) / float64(totalForCalc) * 100
 				otherGB := float64(otherBytes) / (1024 * 1024 * 1024)
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div class=\"storage-partition-segment storage-partition-other\" style=\"")
@@ -387,7 +387,7 @@ func Component(device storageutil.Device) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if systemBytes, ok := device.Categories[string(storageutil.CategorySystem)]; ok && systemBytes > 0 {
+			if systemBytes, ok := device.Categories[string(fileutil.CategorySystem)]; ok && systemBytes > 0 {
 				systemGB := float64(systemBytes) / (1024 * 1024 * 1024)
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<div class=\"storage-partition-legend-item\"><span class=\"storage-partition-dot storage-partition-system\"></span> <span class=\"storage-partition-legend-label\">System ")
 				if templ_7745c5c3_Err != nil {
@@ -407,7 +407,7 @@ func Component(device storageutil.Device) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			if docsBytes, ok := device.Categories[string(storageutil.CategoryDocuments)]; ok && docsBytes > 0 {
+			if docsBytes, ok := device.Categories[string(fileutil.CategoryDocuments)]; ok && docsBytes > 0 {
 				docsGB := float64(docsBytes) / (1024 * 1024 * 1024)
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<div class=\"storage-partition-legend-item\"><span class=\"storage-partition-dot storage-partition-documents\"></span> <span class=\"storage-partition-legend-label\">Documents ")
 				if templ_7745c5c3_Err != nil {
@@ -427,7 +427,7 @@ func Component(device storageutil.Device) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			if mediaBytes, ok := device.Categories[string(storageutil.CategoryMedia)]; ok && mediaBytes > 0 {
+			if mediaBytes, ok := device.Categories[string(fileutil.CategoryMedia)]; ok && mediaBytes > 0 {
 				mediaGB := float64(mediaBytes) / (1024 * 1024 * 1024)
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<div class=\"storage-partition-legend-item\"><span class=\"storage-partition-dot storage-partition-media\"></span> <span class=\"storage-partition-legend-label\">Media ")
 				if templ_7745c5c3_Err != nil {
@@ -447,7 +447,7 @@ func Component(device storageutil.Device) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			if backupsBytes, ok := device.Categories[string(storageutil.CategoryBackups)]; ok && backupsBytes > 0 {
+			if backupsBytes, ok := device.Categories[string(fileutil.CategoryBackups)]; ok && backupsBytes > 0 {
 				backupsGB := float64(backupsBytes) / (1024 * 1024 * 1024)
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<div class=\"storage-partition-legend-item\"><span class=\"storage-partition-dot storage-partition-backups\"></span> <span class=\"storage-partition-legend-label\">Backups ")
 				if templ_7745c5c3_Err != nil {
@@ -467,7 +467,7 @@ func Component(device storageutil.Device) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			if otherBytes, ok := device.Categories[string(storageutil.CategoryOther)]; ok && otherBytes > 0 {
+			if otherBytes, ok := device.Categories[string(fileutil.CategoryOther)]; ok && otherBytes > 0 {
 				otherGB := float64(otherBytes) / (1024 * 1024 * 1024)
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<div class=\"storage-partition-legend-item\"><span class=\"storage-partition-dot storage-partition-other\"></span> <span class=\"storage-partition-legend-label\">Other ")
 				if templ_7745c5c3_Err != nil {

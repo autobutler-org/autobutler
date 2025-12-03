@@ -2,8 +2,8 @@ package view_devices
 
 import (
 	"autobutler/pkg/ui/types"
+	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/storageutil"
 
 	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
@@ -25,14 +25,14 @@ func (r *router) Routes() []*serverutil.Route {
 var devicesRoute = serverutil.UiRoute(
 	"/devices", func(c *gin.Context) templ.Component {
 		// Detect storage devices using READ-ONLY operations
-		detector := storageutil.NewDetector()
+		detector := fileutil.NewDetector()
 		devices, err := detector.DetectDevices()
 		if err != nil {
-			devices = []storageutil.Device{} // Empty list on error
+			devices = []fileutil.Device{} // Empty list on error
 		}
 
 		// Calculate summary
-		summary := storageutil.CalculateSummary(devices)
+		summary := fileutil.CalculateSummary(devices)
 
 		return Devices(types.NewPageState(), devices, summary)
 	},
@@ -41,12 +41,12 @@ var devicesRoute = serverutil.UiRoute(
 var devicesComponentRoute = serverutil.UiRoute(
 	"/components/devices/list", func(c *gin.Context) templ.Component {
 		// Re-detect storage devices (READ-ONLY)
-		detector := storageutil.NewDetector()
+		detector := fileutil.NewDetector()
 		devices, err := detector.DetectDevices()
 		if err != nil {
-			devices = []storageutil.Device{} // Empty list on error
+			devices = []fileutil.Device{} // Empty list on error
 		}
-		summary := storageutil.CalculateSummary(devices)
+		summary := fileutil.CalculateSummary(devices)
 		return DevicesContent(devices, summary)
 	},
 )

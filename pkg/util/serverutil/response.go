@@ -1,6 +1,12 @@
 package serverutil
 
-import "net/http"
+import (
+	"bytes"
+	"context"
+	"net/http"
+
+	"github.com/a-h/templ"
+)
 
 type Response struct {
 	StatusCode  int
@@ -34,5 +40,12 @@ func (r *Response) WithData(data any) *Response {
 
 func (r *Response) WithError(err error) *Response {
 	r.Error = err
+	return r
+}
+
+func (r *Response) WithComponent(component templ.Component) *Response {
+	var buf bytes.Buffer
+	component.Render(context.Background(), &buf)
+	r.Data = buf.String()
 	return r
 }

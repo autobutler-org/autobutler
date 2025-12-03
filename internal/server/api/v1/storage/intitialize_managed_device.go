@@ -1,8 +1,8 @@
 package v1_storage
 
 import (
+	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/storageutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -21,7 +21,7 @@ var initializeManagedDeviceRoute = serverutil.ApiRoute(
 				})
 		}
 
-		err := storageutil.InitializeDeviceDataDir(mountPoint)
+		err := fileutil.InitializeDeviceDataDir(mountPoint)
 		if err != nil {
 			return serverutil.NewResponse().
 				WithContentType(serverutil.ContentTypeJSON).
