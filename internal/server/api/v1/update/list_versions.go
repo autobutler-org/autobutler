@@ -11,10 +11,10 @@ import (
 
 var listVersionsRoute = serverutil.ApiRoute(
 	"GET", "/versions", func(c *gin.Context) *serverutil.Response {
-		result := updateutil.ListPossibleUpdates(updateutil.ListPossibleUpdatesParams{})
+		result, err := updateutil.ListPossibleUpdates(updateutil.ListPossibleUpdatesParams{})
 
-		if result.Error != nil {
-			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(result.Error.Error()))
+		if err != nil {
+			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(err.Error()))
 		}
 
 		if err := landing_nav.VersionDropdown(result.Releases).Render(c.Request.Context(), c.Writer); err != nil {

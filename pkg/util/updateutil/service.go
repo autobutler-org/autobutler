@@ -19,24 +19,20 @@ type ListPossibleUpdatesParams struct{}
 // ListPossibleUpdatesResult contains the result of listing possible updates
 type ListPossibleUpdatesResult struct {
 	Releases []githubutil.GitHubRelease
-	Error    error
 }
 
 // ListPossibleUpdates retrieves all available releases that are newer than the current version
-func ListPossibleUpdates(params ListPossibleUpdatesParams) ListPossibleUpdatesResult {
+func ListPossibleUpdates(params ListPossibleUpdatesParams) (*ListPossibleUpdatesResult, error) {
 	releases, err := githubutil.FetchGitHubReleases("autobutler-org", "autobutler.org")
 	if err != nil {
-		return ListPossibleUpdatesResult{
-			Error: fmt.Errorf("failed to fetch releases: %w", err),
-		}
+		return nil, fmt.Errorf("failed to fetch releases: %w", err)
 	}
 
 	currentVersion := versionutil.GetVersion()
 	if currentVersion.Semver == "" {
-		return ListPossibleUpdatesResult{
+		return &ListPossibleUpdatesResult{
 			Releases: releases,
-			Error:    nil,
-		}
+		}, nil
 	}
 
 	var possibleUpdates []githubutil.GitHubRelease
@@ -52,10 +48,9 @@ func ListPossibleUpdates(params ListPossibleUpdatesParams) ListPossibleUpdatesRe
 		}
 	}
 
-	return ListPossibleUpdatesResult{
+	return &ListPossibleUpdatesResult{
 		Releases: possibleUpdates,
-		Error:    nil,
-	}
+	}, nil
 }
 
 // UpdateParams contains parameters for updating the application
@@ -63,24 +58,15 @@ type UpdateParams struct {
 	Version string
 }
 
-// UpdateResult contains the result of an update operation
-type UpdateResult struct {
-	Error error
-}
-
 // Update downloads and installs a new version of the application
-func Update(params UpdateParams) UpdateResult {
+func Update(params UpdateParams) error {
 	if params.Version == "" {
-		return UpdateResult{
-			Error: fmt.Errorf("version cannot be empty"),
-		}
+		return fmt.Errorf("version cannot be empty")
 	}
 
 	_, err := backupSelf()
 	if err != nil {
-		return UpdateResult{
-			Error: fmt.Errorf("failed to copy current binary: %w", err),
-		}
+		return fmt.Errorf("failed to copy current binary: %w", err)
 	}
 
 	baseUrl := os.Getenv("AUTOBUTLER_UPDATE_URL")
@@ -94,28 +80,20 @@ func Update(params UpdateParams) UpdateResult {
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return UpdateResult{
-			Error: err,
-		}
+		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return UpdateResult{
-			Error: fmt.Errorf("failed to download update from %s: %s", url, resp.Status),
-		}
+		return fmt.Errorf("failed to download update from %s: %s", url, resp.Status)
 	}
 
 	if err := replaceSelf(resp.Body); err != nil {
-		return UpdateResult{
-			Error: fmt.Errorf("failed to replace self with update from %s: %w", url, err),
-		}
+		return fmt.Errorf("failed to replace self with update from %s: %w", url, err)
 	}
 
 	fmt.Println("Update successful.")
-	return UpdateResult{
-		Error: nil,
-	}
+	return nil
 }
 
 const binaryName = "autobutler"

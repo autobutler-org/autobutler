@@ -21,12 +21,12 @@ var downloadFileRoute = serverutil.ApiRoute(
 			managedDevices = nil
 		}
 
-		result := fileutil.DownloadFile(fileutil.DownloadFileParams{
+		result, err := fileutil.DownloadFile(fileutil.DownloadFileParams{
 			FilePath:       filePath,
 			ManagedDevices: managedDevices,
 		})
 
-		if result.Error != nil {
+		if err != nil {
 			c.Status(http.StatusNotFound)
 			return serverutil.Ok()
 		}

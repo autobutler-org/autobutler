@@ -19,21 +19,17 @@ type DeleteFilesParams struct {
 // DeleteFilesResult contains the result of a delete operation
 type DeleteFilesResult struct {
 	RootDir string
-	Error   error
 }
 
 // DeleteFiles removes files from the filesystem, handling both single and multi-device scenarios
-func DeleteFiles(params DeleteFilesParams) DeleteFilesResult {
+func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
 	if len(params.ManagedDevices) == 0 {
 		// Fallback to single device
 		fileDir := GetFilesDir()
 		for _, filePath := range params.FilePaths {
 			fullPath := filepath.Join(fileDir, params.RootDir, filePath)
 			if err := os.RemoveAll(fullPath); err != nil {
-				return DeleteFilesResult{
-					RootDir: params.RootDir,
-					Error:   fmt.Errorf("failed to delete %s: %w", filePath, err),
-				}
+				return nil, fmt.Errorf("failed to delete %s: %w", filePath, err)
 			}
 		}
 	} else {
@@ -55,20 +51,16 @@ func DeleteFiles(params DeleteFilesParams) DeleteFilesResult {
 				fullPath := filepath.Join(dirInfo.Dir, relPath)
 				if _, err := os.Stat(fullPath); err == nil {
 					if err := os.RemoveAll(fullPath); err != nil {
-						return DeleteFilesResult{
-							RootDir: params.RootDir,
-							Error:   fmt.Errorf("failed to delete %s from %s: %w", filePath, dirInfo.DeviceName, err),
-						}
+						return nil, fmt.Errorf("failed to delete %s from %s: %w", filePath, dirInfo.DeviceName, err)
 					}
 				}
 			}
 		}
 	}
 
-	return DeleteFilesResult{
+	return &DeleteFilesResult{
 		RootDir: params.RootDir,
-		Error:   nil,
-	}
+	}, nil
 }
 
 // MoveFileParams contains parameters for moving a file
@@ -80,26 +72,21 @@ type MoveFileParams struct {
 // MoveFileResult contains the result of a move operation
 type MoveFileResult struct {
 	NewDir string
-	Error  error
 }
 
 // MoveFile moves a file from one location to another
-func MoveFile(params MoveFileParams) MoveFileResult {
+func MoveFile(params MoveFileParams) (*MoveFileResult, error) {
 	filesDir := GetFilesDir()
 	oldFullPath := filepath.Join(filesDir, params.FilePath)
 	newFullPath := filepath.Join(filesDir, params.NewFilePath)
 
 	newFullDir := filepath.Dir(newFullPath)
 	if err := os.MkdirAll(newFullDir, 0755); err != nil {
-		return MoveFileResult{
-			Error: fmt.Errorf("failed to create directory: %w", err),
-		}
+		return nil, fmt.Errorf("failed to create directory: %w", err)
 	}
 
 	if err := os.Rename(oldFullPath, newFullPath); err != nil {
-		return MoveFileResult{
-			Error: fmt.Errorf("failed to move file: %w", err),
-		}
+		return nil, fmt.Errorf("failed to move file: %w", err)
 	}
 
 	newDir := filepath.Dir(params.NewFilePath)
@@ -107,10 +94,9 @@ func MoveFile(params MoveFileParams) MoveFileResult {
 		newDir = ""
 	}
 
-	return MoveFileResult{
+	return &MoveFileResult{
 		NewDir: newDir,
-		Error:  nil,
-	}
+	}, nil
 }
 
 // UploadFilesParams contains parameters for uploading files
@@ -123,17 +109,14 @@ type UploadFilesParams struct {
 // UploadFilesResult contains the result of an upload operation
 type UploadFilesResult struct {
 	RootDir string
-	Error   error
 }
 
 // UploadFiles saves uploaded files to the filesystem
-func UploadFiles(params UploadFilesParams) UploadFilesResult {
+func UploadFiles(params UploadFilesParams) (*UploadFilesResult, error) {
 	for _, header := range params.FileHeaders {
 		file, err := header.Open()
 		if err != nil {
-			return UploadFilesResult{
-				Error: fmt.Errorf("failed to open file %s: %w", header.Filename, err),
-			}
+			return nil, fmt.Errorf("failed to open file %s: %w", header.Filename, err)
 		}
 		defer file.Close()
 
@@ -157,16 +140,12 @@ func UploadFiles(params UploadFilesParams) UploadFilesResult {
 
 		newFile, err := os.Create(newFilePath)
 		if err != nil {
-			return UploadFilesResult{
-				Error: fmt.Errorf("failed to create file %s: %w", header.Filename, err),
-			}
+			return nil, fmt.Errorf("failed to create file %s: %w", header.Filename, err)
 		}
 		defer newFile.Close()
 
 		if _, err := io.Copy(newFile, file); err != nil {
-			return UploadFilesResult{
-				Error: fmt.Errorf("failed to write file %s: %w", header.Filename, err),
-			}
+			return nil, fmt.Errorf("failed to write file %s: %w", header.Filename, err)
 		}
 	}
 
@@ -175,10 +154,9 @@ func UploadFiles(params UploadFilesParams) UploadFilesResult {
 		returnDir = params.RootDir
 	}
 
-	return UploadFilesResult{
+	return &UploadFilesResult{
 		RootDir: returnDir,
-		Error:   nil,
-	}
+	}, nil
 }
 
 // CreateFolderParams contains parameters for creating a folder
@@ -190,24 +168,20 @@ type CreateFolderParams struct {
 // CreateFolderResult contains the result of a folder creation operation
 type CreateFolderResult struct {
 	CurrentDir string
-	Error      error
 }
 
 // CreateFolder creates a new folder in the filesystem
-func CreateFolder(params CreateFolderParams) CreateFolderResult {
+func CreateFolder(params CreateFolderParams) (*CreateFolderResult, error) {
 	rootDir := GetFilesDir()
 	fullPath := filepath.Join(rootDir, params.FolderDir, params.FolderName)
 
 	if err := os.MkdirAll(fullPath, 0755); err != nil {
-		return CreateFolderResult{
-			Error: fmt.Errorf("failed to create folder: %w", err),
-		}
+		return nil, fmt.Errorf("failed to create folder: %w", err)
 	}
 
-	return CreateFolderResult{
+	return &CreateFolderResult{
 		CurrentDir: params.FolderDir,
-		Error:      nil,
-	}
+	}, nil
 }
 
 // DownloadFileParams contains parameters for downloading a file
@@ -222,11 +196,10 @@ type DownloadFileResult struct {
 	FileType  FileType
 	IsFolder  bool
 	ZipWriter *zip.Writer
-	Error     error
 }
 
 // DownloadFile prepares a file for download, handling both files and folders (as zip)
-func DownloadFile(params DownloadFileParams) DownloadFileResult {
+func DownloadFile(params DownloadFileParams) (*DownloadFileResult, error) {
 	var fullPath string
 	var err error
 
@@ -247,18 +220,15 @@ func DownloadFile(params DownloadFileParams) DownloadFileResult {
 
 		fullPath, err = FindFileAcrossDevices(dirsToSearch, params.FilePath)
 		if err != nil {
-			return DownloadFileResult{
-				Error: fmt.Errorf("file not found: %w", err),
-			}
+			return nil, fmt.Errorf("file not found: %w", err)
 		}
 	}
 
 	fileType := DetermineFileTypeFromPath(fullPath)
 
-	return DownloadFileResult{
+	return &DownloadFileResult{
 		FullPath: fullPath,
 		FileType: fileType,
 		IsFolder: fileType == FileTypeFolder,
-		Error:    nil,
-	}
+	}, nil
 }

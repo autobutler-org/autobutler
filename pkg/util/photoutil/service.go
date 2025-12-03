@@ -16,21 +16,17 @@ type GenerateThumbnailParams struct {
 type GenerateThumbnailResult struct {
 	Thumbnail image.Image
 	Format    string
-	Error     error
 }
 
 // GenerateThumbnail creates a thumbnail image from a source file
-func GenerateThumbnail(params GenerateThumbnailParams) GenerateThumbnailResult {
+func GenerateThumbnail(params GenerateThumbnailParams) (*GenerateThumbnailResult, error) {
 	thumbnail, format, err := ImageToThumbnail(params.FilePath, params.Width, params.Height)
 	if err != nil {
-		return GenerateThumbnailResult{
-			Error: fmt.Errorf("failed to generate thumbnail: %w", err),
-		}
+		return nil, fmt.Errorf("failed to generate thumbnail: %w", err)
 	}
 
-	return GenerateThumbnailResult{
+	return &GenerateThumbnailResult{
 		Thumbnail: thumbnail,
 		Format:    format,
-		Error:     nil,
-	}
+	}, nil
 }

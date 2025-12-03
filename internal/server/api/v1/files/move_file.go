@@ -14,13 +14,13 @@ var moveFileRoute = serverutil.ApiRoute(
 		filePath := c.Param("filePath")
 		newFilePath := c.PostForm("newFilePath")
 
-		result := fileutil.MoveFile(fileutil.MoveFileParams{
+		result, err := fileutil.MoveFile(fileutil.MoveFileParams{
 			FilePath:    filePath,
 			NewFilePath: newFilePath,
 		})
 
-		if result.Error != nil {
-			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(result.Error.Error()))
+		if err != nil {
+			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(err.Error()))
 		}
 
 		// Always render the full file explorer (JS function targets #file-explorer)

@@ -14,12 +14,12 @@ var updateRoute = serverutil.ApiRoute(
 	"POST", "/update", func(c *gin.Context) *serverutil.Response {
 		version := c.PostForm("version")
 
-		result := updateutil.Update(updateutil.UpdateParams{
+		err := updateutil.Update(updateutil.UpdateParams{
 			Version: version,
 		})
 
-		if result.Error != nil {
-			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(result.Error.Error()))
+		if err != nil {
+			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(err.Error()))
 		}
 
 		go update.RestartAutobutler()

@@ -30,14 +30,14 @@ var getThumbnailRoute = serverutil.ApiRoute(
 			return serverutil.NewResponse().WithStatusCode(http.StatusNotFound)
 		}
 
-		result := photoutil.GenerateThumbnail(photoutil.GenerateThumbnailParams{
+		result, err := photoutil.GenerateThumbnail(photoutil.GenerateThumbnailParams{
 			FilePath: fullPath,
 			Width:    thumbnailWidth,
 			Height:   thumbnailHeight,
 		})
 
-		if result.Error != nil {
-			return serverutil.NewResponse().WithStatusCode(http.StatusInternalServerError).WithError(result.Error)
+		if err != nil {
+			return serverutil.NewResponse().WithStatusCode(http.StatusInternalServerError).WithError(err)
 		}
 
 		ext := strings.ToLower(filepath.Ext(filePath))

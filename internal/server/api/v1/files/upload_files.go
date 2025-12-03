@@ -43,14 +43,14 @@ func uploadFilesImpl(c *gin.Context, rootDir string) {
 		returnDir = form.Value["returnDir"][0]
 	}
 
-	result := fileutil.UploadFiles(fileutil.UploadFilesParams{
+	result, err := fileutil.UploadFiles(fileutil.UploadFilesParams{
 		RootDir:     rootDir,
 		FileHeaders: fileHeaders,
 		ReturnDir:   returnDir,
 	})
 
-	if result.Error != nil {
-		error_message.Component(result.Error.Error()).Render(c.Request.Context(), c.Writer)
+	if err != nil {
+		error_message.Component(err.Error()).Render(c.Request.Context(), c.Writer)
 		return
 	}
 
