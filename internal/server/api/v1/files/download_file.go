@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/storageutil"
 	"fmt"
 	"net/http"
 	"os"
@@ -17,16 +16,9 @@ var downloadFileRoute = serverutil.ApiRoute(
 	"GET", "/files/*filePath", func(c *gin.Context) *serverutil.Response {
 		filePath := c.Param("filePath")
 
-		var managedDevices []fileutil.ManagedDevice
-		storageDevices, err := storageutil.GetManagedDevices()
-		if err == nil {
-			for _, d := range storageDevices {
-				managedDevices = append(managedDevices, fileutil.ManagedDevice{
-					Name:       d.Name,
-					MountPoint: d.MountPoint,
-					FilesDir:   d.FilesDir,
-				})
-			}
+		managedDevices, err := fileutil.GetManagedDevices()
+		if err != nil {
+			managedDevices = nil
 		}
 
 		result := fileutil.DownloadFile(fileutil.DownloadFileParams{

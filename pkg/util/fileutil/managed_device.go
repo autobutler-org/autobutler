@@ -1,7 +1,6 @@
-package storageutil
+package fileutil
 
 import (
-	"autobutler/pkg/util/fileutil"
 	"os"
 	"path/filepath"
 )
@@ -23,7 +22,7 @@ func GetManagedDevices() ([]ManagedDevice, error) {
 
 	var managedDevices []ManagedDevice
 	for _, device := range devices {
-		dataDir := fileutil.GetDataDirForDevice(device.MountPoint)
+		dataDir := GetDataDirForDevice(device.MountPoint)
 		filesDir := filepath.Join(dataDir, "files")
 
 		// Check if this device has an autobutler data directory
@@ -41,7 +40,7 @@ func GetManagedDevices() ([]ManagedDevice, error) {
 
 // InitializeDeviceDataDir creates the autobutler data directory structure on a device
 func InitializeDeviceDataDir(mountPoint string) error {
-	dataDir := fileutil.GetDataDirForDevice(mountPoint)
+	dataDir := GetDataDirForDevice(mountPoint)
 	filesDir := filepath.Join(dataDir, "files")
 
 	if err := os.MkdirAll(filesDir, 0755); err != nil {

@@ -7,11 +7,10 @@ import (
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/photoutil"
-	"autobutler/pkg/util/storageutil"
 	"fmt"
 )
 
-templ Photos(pageState types.PageState, summary storageutil.Summary) {
+templ Photos(pageState types.PageState, summary fileutil.Summary) {
 	{{ pageState.CurrentPageName = types.PagePhotos }}
 	<!DOCTYPE html>
 	<html lang="en">

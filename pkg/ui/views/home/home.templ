@@ -7,10 +7,10 @@ import (
 	"autobutler/pkg/ui/components/landing_nav"
 	"autobutler/pkg/ui/components/storage_bar"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/storageutil"
+	"autobutler/pkg/util/fileutil"
 )
 
-templ Home(pageState types.PageState, summary storageutil.Summary) {
+templ Home(pageState types.PageState, summary fileutil.Summary) {
 	{{ pageState.CurrentPageName = types.PageHome }}
 	<!DOCTYPE html>
 	<html lang="en">

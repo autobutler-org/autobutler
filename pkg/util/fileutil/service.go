@@ -9,14 +9,6 @@ import (
 	"path/filepath"
 )
 
-// ManagedDevice represents a storage device with autobutler data
-// This is defined here to avoid import cycles with storageutil
-type ManagedDevice struct {
-	Name       string
-	MountPoint string
-	FilesDir   string
-}
-
 // DeleteFilesParams contains parameters for deleting files
 type DeleteFilesParams struct {
 	RootDir        string

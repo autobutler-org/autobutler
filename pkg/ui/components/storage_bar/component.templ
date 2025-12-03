@@ -1,14 +1,14 @@
 package storage_bar
 
 import (
-	"autobutler/pkg/util/storageutil"
+	"autobutler/pkg/util/fileutil"
 	"fmt"
 )
 
 // Component renders a simple storage bar showing total cumulative storage across all devices
 // This is used for global storage overview (e.g., landing page footer)
 // Shows only: total capacity, used space, and percentage - no file type breakdown
-templ Component(summary storageutil.Summary) {
+templ Component(summary fileutil.Summary) {
 	{{ percentUsed := int((summary.UsedTB / summary.TotalTB) * 100) }}
 	<div class="storage-bar-component">
 		<h3 class="storage-bar-title">Storage</h3>

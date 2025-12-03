@@ -1,4 +1,4 @@
-package storageutil
+package fileutil
 
 // Category represents storage category types
 type Category string

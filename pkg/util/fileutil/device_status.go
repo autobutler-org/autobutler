@@ -1,4 +1,4 @@
-package storageutil
+package fileutil
 
 // DeviceStatus represents the status of a storage device, including whether it's
 // enabled for Autobutler file management

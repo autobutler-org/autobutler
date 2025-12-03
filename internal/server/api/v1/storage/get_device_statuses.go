@@ -2,7 +2,7 @@ package v1_storage
 
 import (
 	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/storageutil"
+	"autobutler/pkg/util/fileutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,7 +10,7 @@ import (
 
 var getDeviceStatusesRoute = serverutil.ApiRoute(
 	"GET", "/storage/devices/status", func(c *gin.Context) *serverutil.Response {
-		statuses, err := storageutil.GetDeviceStatuses()
+		statuses, err := fileutil.GetDeviceStatuses()
 		if err != nil {
 			return serverutil.NewResponse().
 				WithContentType(serverutil.ContentTypeJSON).

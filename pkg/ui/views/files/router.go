@@ -11,7 +11,6 @@ import (
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/storageutil"
 	"html"
 	"path/filepath"
 
@@ -123,7 +122,7 @@ func GetFileExplorerViewContentWithBreadcrumb(c *gin.Context, rootDir string, vi
 
 func getFileExplorerComponent(c *gin.Context, rootDir string, viewContentOnly bool, view ...any) templ.Component {
 	// Get all managed devices
-	managedDevices, err := storageutil.GetManagedDevices()
+	managedDevices, err := fileutil.GetManagedDevices()
 	if err != nil {
 		c.Writer.WriteString(`<span class="text-red-500">Failed to load managed devices: ` + html.EscapeString(err.Error()) + `</span>`)
 		return nil

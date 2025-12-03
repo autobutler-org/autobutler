@@ -7,7 +7,7 @@ import (
 	"autobutler/pkg/ui/types"
 
 	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/storageutil"
+	"autobutler/pkg/util/fileutil"
 
 	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
@@ -51,16 +51,16 @@ var settingsNetworkRoute = serverutil.UiRoute(
 var deviceManagerComponentRoute = serverutil.UiRoute(
 	"/components/settings/device-manager", func(c *gin.Context) templ.Component {
 		// Detect all storage devices
-		detector := storageutil.NewDetector()
+		detector := fileutil.NewDetector()
 		devices, err := detector.DetectDevices()
 		if err != nil {
-			devices = []storageutil.Device{}
+			devices = []fileutil.Device{}
 		}
 
 		// Get managed devices
-		managedDevices, err := storageutil.GetManagedDevices()
+		managedDevices, err := fileutil.GetManagedDevices()
 		if err != nil {
-			managedDevices = []storageutil.ManagedDevice{}
+			managedDevices = []fileutil.ManagedDevice{}
 		}
 
 		return device_manager.Component(devices, managedDevices)

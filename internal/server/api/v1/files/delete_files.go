@@ -5,7 +5,6 @@ import (
 	view_files "autobutler/pkg/ui/views/files"
 	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/storageutil"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -17,16 +16,9 @@ var deleteFilesRoute = serverutil.ApiRoute(
 		filePaths := c.QueryArray("filePaths")
 		fmt.Printf("Deleting multiple files: %s\n", filePaths)
 
-		var managedDevices []fileutil.ManagedDevice
-		storageDevices, err := storageutil.GetManagedDevices()
-		if err == nil {
-			for _, d := range storageDevices {
-				managedDevices = append(managedDevices, fileutil.ManagedDevice{
-					Name:       d.Name,
-					MountPoint: d.MountPoint,
-					FilesDir:   d.FilesDir,
-				})
-			}
+		managedDevices, err := fileutil.GetManagedDevices()
+		if err != nil {
+			managedDevices = nil
 		}
 
 		result := fileutil.DeleteFiles(fileutil.DeleteFilesParams{

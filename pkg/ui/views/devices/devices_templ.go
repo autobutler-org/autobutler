@@ -13,10 +13,10 @@ import (
 	"autobutler/pkg/ui/components/header"
 	"autobutler/pkg/ui/components/landing_nav"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/storageutil"
+	"autobutler/pkg/util/fileutil"
 )
 
-func Devices(pageState types.PageState, devices []storageutil.Device, summary storageutil.Summary) templ.Component {
+func Devices(pageState types.PageState, devices []fileutil.Device, summary fileutil.Summary) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
