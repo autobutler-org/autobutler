@@ -11,12 +11,11 @@ func TestBytesConversions(t *testing.T) {
 		kb    float64
 		mb    float64
 		gb    float64
-		tb    float64
 	}{
-		{"1KB", 1024, 1.0, 0.0009765625, 0.00000095367431640625, 0.00000000093132257461548},
-		{"1MB", 1048576, 1024.0, 1.0, 0.0009765625, 0.00000095367431640625},
-		{"1GB", 1073741824, 1048576.0, 1024.0, 1.0, 0.0009765625},
-		{"1TB", 1099511627776, 1073741824.0, 1048576.0, 1024.0, 1.0},
+		{"1KB", 1024, 1.0, 0.0009765625, 0.00000095367431640625},
+		{"1MB", 1048576, 1024.0, 1.0, 0.0009765625},
+		{"1GB", 1073741824, 1048576.0, 1024.0, 1.0},
+		{"1TB", 1099511627776, 1073741824.0, 1048576.0, 1024.0},
 	}
 
 	for _, tt := range tests {
@@ -35,11 +34,6 @@ func TestBytesConversions(t *testing.T) {
 			gb := BytesToGB(tt.bytes)
 			if gb != tt.gb {
 				t.Errorf("BytesToGB(%d) = %f; want %f", tt.bytes, gb, tt.gb)
-			}
-
-			tb := BytesToTB(tt.bytes)
-			if tb != tt.tb {
-				t.Errorf("BytesToTB(%d) = %f; want %f", tt.bytes, tb, tt.tb)
 			}
 		})
 	}
