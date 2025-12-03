@@ -1,3 +1,4 @@
 autobutler/cmd
+autobutler/internal/server
 autobutler/pkg/ui/components
 autobutler/pkg/ui/views
