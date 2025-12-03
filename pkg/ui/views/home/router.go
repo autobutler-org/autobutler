@@ -2,8 +2,8 @@ package view_home
 
 import (
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/serverutil"
 
 	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
