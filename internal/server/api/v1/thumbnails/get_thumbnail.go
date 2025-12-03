@@ -30,27 +30,32 @@ var getThumbnailRoute = serverutil.ApiRoute(
 			return serverutil.NewResponse().WithStatusCode(http.StatusNotFound)
 		}
 
-		thumbnail, format, err := photoutil.ImageToThumbnail(fullPath, thumbnailWidth, thumbnailHeight)
-		if err != nil {
-			return serverutil.NewResponse().WithStatusCode(http.StatusInternalServerError).WithError(err)
+		result := photoutil.GenerateThumbnail(photoutil.GenerateThumbnailParams{
+			FilePath: fullPath,
+			Width:    thumbnailWidth,
+			Height:   thumbnailHeight,
+		})
+
+		if result.Error != nil {
+			return serverutil.NewResponse().WithStatusCode(http.StatusInternalServerError).WithError(result.Error)
 		}
 
 		ext := strings.ToLower(filepath.Ext(filePath))
 		switch ext {
 		case ".png":
 			c.Header("Content-Type", "image/png")
-			if err := png.Encode(c.Writer, thumbnail); err != nil {
+			if err := png.Encode(c.Writer, result.Thumbnail); err != nil {
 				return serverutil.NewResponse().WithStatusCode(http.StatusInternalServerError)
 			}
 		case ".jpg", ".jpeg":
 			c.Header("Content-Type", "image/jpeg")
-			if err := jpeg.Encode(c.Writer, thumbnail, &jpeg.Options{Quality: 85}); err != nil {
+			if err := jpeg.Encode(c.Writer, result.Thumbnail, &jpeg.Options{Quality: 85}); err != nil {
 				return serverutil.NewResponse().WithStatusCode(http.StatusInternalServerError)
 			}
 		default:
 			// For other formats, try to encode as JPEG
-			c.Header("Content-Type", fmt.Sprintf("image/%s", format))
-			if err := jpeg.Encode(c.Writer, thumbnail, &jpeg.Options{Quality: 85}); err != nil {
+			c.Header("Content-Type", fmt.Sprintf("image/%s", result.Format))
+			if err := jpeg.Encode(c.Writer, result.Thumbnail, &jpeg.Options{Quality: 85}); err != nil {
 				return serverutil.NewResponse().WithStatusCode(http.StatusInternalServerError)
 			}
 		}
