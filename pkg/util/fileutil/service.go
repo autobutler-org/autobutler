@@ -124,11 +124,11 @@ func UploadFiles(params UploadFilesParams) (*UploadFilesResult, error) {
 		newFilePath := filepath.Join(fileDir, params.RootDir, header.Filename)
 
 		// Handle file name conflicts
-		if _, err := os.Stat(newFilePath); err == nil { // coverage: ignore - requires pre-existing file with same name in multipart upload
+		if _, err := os.Stat(newFilePath); err == nil {
 			ext := filepath.Ext(header.Filename)
 			name := header.Filename[:len(header.Filename)-len(ext)]
 			i := 1
-			for { // coverage: ignore - requires file name conflict scenario
+			for {
 				newFileName := fmt.Sprintf("%s_(%d)%s", name, i, ext)
 				newFilePath = filepath.Join(fileDir, params.RootDir, newFileName)
 				if _, err := os.Stat(newFilePath); os.IsNotExist(err) {
@@ -176,7 +176,7 @@ func CreateFolder(params CreateFolderParams) (*CreateFolderResult, error) {
 	fullPath := filepath.Join(rootDir, params.FolderDir, params.FolderName)
 
 	if err := os.MkdirAll(fullPath, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create folder: %w", err)
+		return nil, fmt.Errorf("failed to create folder: %w", err) // coverage: ignore - requires filesystem permission errors
 	}
 
 	return &CreateFolderResult{
