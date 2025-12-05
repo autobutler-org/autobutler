@@ -632,6 +632,28 @@ func TestMoveFile_ToRootDirectory(t *testing.T) {
 	if result.NewDir != "test_move_root" {
 		t.Errorf("Expected NewDir 'test_move_root', got '%s'", result.NewDir)
 	}
+
+	// Now test the case where newDir == "." (moving to root)
+	testSourceFile2 := filepath.Join(testSourceDir, "subdir", "file2.txt")
+	os.WriteFile(testSourceFile2, []byte("content2"), 0644)
+
+	params3 := MoveFileParams{
+		FilePath:    "test_move_root/subdir/file2.txt",
+		NewFilePath: "rootfile.txt", // No directory path, filepath.Dir will return "."
+	}
+
+	result3, err := MoveFile(params3)
+	if err != nil {
+		t.Fatalf("MoveFile to root failed: %v", err)
+	}
+
+	// When filepath.Dir returns ".", it should be converted to ""
+	if result3.NewDir != "" {
+		t.Errorf("Expected NewDir to be empty string, got '%s'", result3.NewDir)
+	}
+
+	// Clean up the file we moved to root
+	os.Remove(filepath.Join(filesDir, "rootfile.txt"))
 }
 
 func TestUploadFiles_FileConflict(t *testing.T) {
