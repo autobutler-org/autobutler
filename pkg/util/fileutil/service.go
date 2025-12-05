@@ -28,7 +28,7 @@ func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
 		fileDir := GetFilesDir()
 		for _, filePath := range params.FilePaths {
 			fullPath := filepath.Join(fileDir, params.RootDir, filePath)
-			if err := os.RemoveAll(fullPath); err != nil {
+			if err := os.RemoveAll(fullPath); err != nil { // coverage: ignore - requires filesystem permission errors
 				return nil, fmt.Errorf("failed to delete %s: %w", filePath, err)
 			}
 		}
@@ -50,7 +50,7 @@ func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
 			for _, dirInfo := range dirsToSearch {
 				fullPath := filepath.Join(dirInfo.Dir, relPath)
 				if _, err := os.Stat(fullPath); err == nil {
-					if err := os.RemoveAll(fullPath); err != nil {
+					if err := os.RemoveAll(fullPath); err != nil { // coverage: ignore - requires filesystem permission errors
 						return nil, fmt.Errorf("failed to delete %s from %s: %w", filePath, dirInfo.DeviceName, err)
 					}
 				}
@@ -85,7 +85,7 @@ func MoveFile(params MoveFileParams) (*MoveFileResult, error) {
 		return nil, fmt.Errorf("failed to create directory: %w", err) // coverage: ignore - requires filesystem permission errors
 	}
 
-	if err := os.Rename(oldFullPath, newFullPath); err != nil {
+	if err := os.Rename(oldFullPath, newFullPath); err != nil { // coverage: ignore - requires filesystem permission errors or cross-device move
 		return nil, fmt.Errorf("failed to move file: %w", err)
 	}
 
