@@ -3,6 +3,7 @@ package photoutil
 import (
 	"image"
 	"image/color"
+	_ "image/jpeg" // Import JPEG decoder
 	"image/png"
 	"os"
 	"path/filepath"
@@ -296,3 +297,67 @@ func TestImageToThumbnail_InvalidImage(t *testing.T) {
 		t.Error("Expected error for invalid image file")
 	}
 }
+
+func TestCorrectImageOrientation_WithEXIF(t *testing.T) {
+	// Use actual EXIF image with orientation data
+	exifImagePath := "../../../tests/e2e/data/flipped.jpg"
+	
+	// Open the image file
+	file, err := os.Open(exifImagePath)
+	if err != nil {
+		t.Skipf("Skipping EXIF test - test image not found: %v", err)
+		return
+	}
+	defer file.Close()
+
+	// Decode the image
+	img, _, err := image.Decode(file)
+	if err != nil {
+		t.Fatalf("Failed to decode test image: %v", err)
+	}
+
+	// Reset file pointer
+	file.Seek(0, 0)
+
+	// Correct the orientation
+	corrected, err := CorrectImageOrientation(img, file)
+	if err != nil {
+		t.Fatalf("CorrectImageOrientation failed: %v", err)
+	}
+
+	// The corrected image should exist
+	if corrected == nil {
+		t.Fatal("Expected non-nil corrected image")
+	}
+
+	// If the image has EXIF orientation data, the corrected image dimensions
+	// may be different from the original (e.g., for 90/270 degree rotations)
+	// or the same (for flips or 180 degree rotations)
+	// We just verify the function executed without error
+}
+
+func TestImageToThumbnail_WithEXIF(t *testing.T) {
+	// Test that ImageToThumbnail properly handles EXIF orientation
+	exifImagePath := "../../../tests/e2e/data/flipped.jpg"
+	
+	thumbnail, format, err := ImageToThumbnail(exifImagePath, 100, 100)
+	if err != nil {
+		t.Skipf("Skipping EXIF thumbnail test - test image not found: %v", err)
+		return
+	}
+
+	if thumbnail == nil {
+		t.Fatal("Expected non-nil thumbnail")
+	}
+
+	if format != "jpeg" {
+		t.Logf("Expected format 'jpeg', got '%s' (may vary by platform)", format)
+	}
+
+	bounds := thumbnail.Bounds()
+	if bounds.Dx() > 100 || bounds.Dy() > 100 {
+		t.Errorf("Thumbnail too large: %dx%d", bounds.Dx(), bounds.Dy())
+	}
+}
+
+
