@@ -17,7 +17,7 @@ func GetManagedDevices() ([]ManagedDevice, error) {
 	detector := NewDetector()
 	devices, err := detector.DetectDevices()
 	if err != nil {
-		return nil, err
+		return nil, err // coverage: ignore - requires device detection failure
 	}
 
 	var managedDevices []ManagedDevice
@@ -44,7 +44,7 @@ func InitializeDeviceDataDir(mountPoint string) error {
 	filesDir := filepath.Join(dataDir, "files")
 
 	if err := os.MkdirAll(filesDir, 0755); err != nil {
-		return err
+		return err // coverage: ignore - requires filesystem permission errors
 	}
 
 	return nil

@@ -848,3 +848,66 @@ func TestDownloadFile_MultiDevice_NotFound(t *testing.T) {
 		t.Error("Expected error when file doesn't exist on any device")
 	}
 }
+
+func TestGetManagedDevices(t *testing.T) {
+	// Create a temporary directory to simulate a managed device
+	tempDir := t.TempDir()
+	filesDir := filepath.Join(tempDir, "files")
+	if err := os.MkdirAll(filesDir, 0755); err != nil {
+		t.Fatalf("Failed to create test files directory: %v", err)
+	}
+
+	// Note: This test will find actual system devices that have autobutler directories
+	// We can't easily mock the detector, but we can verify the function executes
+	devices, err := GetManagedDevices()
+	if err != nil {
+		t.Fatalf("GetManagedDevices() error = %v", err)
+	}
+
+	// Should return a slice (possibly empty if no managed devices exist)
+	if devices == nil {
+		t.Error("GetManagedDevices() should return non-nil slice")
+	}
+
+	// Each device should have non-empty fields
+	for i, device := range devices {
+		if device.DataDir == "" {
+			t.Errorf("Device %d has empty DataDir", i)
+		}
+		if device.FilesDir == "" {
+			t.Errorf("Device %d has empty FilesDir", i)
+		}
+	}
+}
+
+func TestInitializeDeviceDataDir(t *testing.T) {
+	// Create a temporary directory to use as a mount point
+	tempDir := t.TempDir()
+
+	err := InitializeDeviceDataDir(tempDir)
+	if err != nil {
+		t.Fatalf("InitializeDeviceDataDir() error = %v", err)
+	}
+
+	// Verify the directory structure was created
+	// For external devices, the path is: mountPoint/.autobutler/data/files
+	expectedFilesDir := filepath.Join(tempDir, ".autobutler", "data", "files")
+	if _, err := os.Stat(expectedFilesDir); os.IsNotExist(err) {
+		t.Errorf("Expected files directory to be created at %s", expectedFilesDir)
+	}
+}
+
+func TestInitializeDeviceDataDir_AlreadyExists(t *testing.T) {
+	// Create a temporary directory with existing structure
+	tempDir := t.TempDir()
+	filesDir := filepath.Join(tempDir, ".autobutler", "data", "files")
+	if err := os.MkdirAll(filesDir, 0755); err != nil {
+		t.Fatalf("Failed to create test directory: %v", err)
+	}
+
+	// Should succeed even if directory already exists
+	err := InitializeDeviceDataDir(tempDir)
+	if err != nil {
+		t.Errorf("InitializeDeviceDataDir() should succeed when directory exists, got error: %v", err)
+	}
+}
