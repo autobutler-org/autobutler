@@ -359,12 +359,19 @@ type DirWithDevice struct {
 	DevicePath string
 }
 
+// DoesFileExist checks if a file exists at the given path
+// Returns true if the file exists, false otherwise
+func DoesFileExist(fullPath string) bool {
+	_, err := os.Stat(fullPath)
+	return err == nil
+}
+
 // FindFileAcrossDevices searches for a file across multiple devices
 // Returns the full path to the first matching file
 func FindFileAcrossDevices(dirsWithDevice []DirWithDevice, relPath string) (string, error) {
 	for _, dirInfo := range dirsWithDevice {
 		fullPath := filepath.Join(dirInfo.Dir, relPath)
-		if _, err := os.Stat(fullPath); err == nil {
+		if DoesFileExist(fullPath) {
 			return fullPath, nil
 		}
 	}

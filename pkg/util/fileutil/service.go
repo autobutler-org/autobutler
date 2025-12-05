@@ -207,6 +207,9 @@ func DownloadFile(params DownloadFileParams) (*DownloadFileResult, error) {
 		// Fallback to single device
 		rootDir := GetFilesDir()
 		fullPath = filepath.Join(rootDir, params.FilePath)
+		if !DoesFileExist(fullPath) {
+			return nil, fmt.Errorf("file not found: %s", fullPath)
+		}
 	} else {
 		// Search for file across all managed devices
 		var dirsToSearch []DirWithDevice
