@@ -319,7 +319,7 @@ func TestImageToThumbnail_InvalidImage(t *testing.T) {
 func TestCorrectImageOrientation_WithEXIF(t *testing.T) {
 	// Use actual EXIF image with orientation data
 	exifImagePath := "../../../tests/e2e/data/flipped.jpg"
-	
+
 	// Open the image file
 	file, err := os.Open(exifImagePath)
 	if err != nil {
@@ -357,7 +357,7 @@ func TestCorrectImageOrientation_WithEXIF(t *testing.T) {
 func TestImageToThumbnail_WithEXIF(t *testing.T) {
 	// Test that ImageToThumbnail properly handles EXIF orientation
 	exifImagePath := "../../../tests/e2e/data/flipped.jpg"
-	
+
 	thumbnail, format, err := ImageToThumbnail(exifImagePath, 100, 100)
 	if err != nil {
 		t.Skipf("Skipping EXIF thumbnail test - test image not found: %v", err)
@@ -377,5 +377,3 @@ func TestImageToThumbnail_WithEXIF(t *testing.T) {
 		t.Errorf("Thumbnail too large: %dx%d", bounds.Dx(), bounds.Dy())
 	}
 }
-
-
