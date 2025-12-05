@@ -2,13 +2,16 @@ package serverutil_test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"autobutler/pkg/util/serverutil"
 
+	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 )
 
@@ -222,6 +225,142 @@ func TestWrapApiRoute_WithError(t *testing.T) {
 
 	if w.Code != http.StatusInternalServerError {
 		t.Errorf("expected status %d, got %d", http.StatusInternalServerError, w.Code)
+	}
+}
+
+func TestWrapApiRoute_StatusCodeOnly(t *testing.T) {
+	// Test when both Data and Error are nil
+	handler := func(c *gin.Context) *serverutil.Response {
+		return serverutil.NewResponse().WithStatusCode(http.StatusNoContent)
+	}
+
+	wrapped := serverutil.WrapApiRoute(handler)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	wrapped(c)
+
+	// Gin defaults to 200 when c.Status() is called without writing body
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+}
+
+func TestWrapApiRoute_HTMLError(t *testing.T) {
+	handler := func(c *gin.Context) *serverutil.Response {
+		return serverutil.NewResponse().
+			WithStatusCode(http.StatusBadRequest).
+			WithContentType(serverutil.ContentTypeHTML).
+			WithError(fmt.Errorf("bad request"))
+	}
+
+	wrapped := serverutil.WrapApiRoute(handler)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	wrapped(c)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+	}
+
+	if !strings.Contains(w.Body.String(), "bad request") {
+		t.Errorf("expected body to contain 'bad request', got: %s", w.Body.String())
+	}
+}
+
+func TestWrapApiRoute_HTMLData(t *testing.T) {
+	handler := func(c *gin.Context) *serverutil.Response {
+		return serverutil.NewResponse().
+			WithStatusCode(http.StatusOK).
+			WithContentType(serverutil.ContentTypeHTML).
+			WithData("Hello World")
+	}
+
+	wrapped := serverutil.WrapApiRoute(handler)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	wrapped(c)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+
+	if !strings.Contains(w.Body.String(), "Hello World") {
+		t.Errorf("expected body to contain 'Hello World', got: %s", w.Body.String())
+	}
+}
+
+func TestWrapApiRoute_JSONError(t *testing.T) {
+	handler := func(c *gin.Context) *serverutil.Response {
+		return serverutil.NewResponse().
+			WithStatusCode(http.StatusNotFound).
+			WithContentType(serverutil.ContentTypeJSON).
+			WithError(fmt.Errorf("not found"))
+	}
+
+	wrapped := serverutil.WrapApiRoute(handler)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	wrapped(c)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected status %d, got %d", http.StatusNotFound, w.Code)
+	}
+
+	if !strings.Contains(w.Body.String(), "not found") {
+		t.Errorf("expected body to contain 'not found', got: %s", w.Body.String())
+	}
+}
+
+func TestWrapApiRoute_UnsupportedContentType(t *testing.T) {
+	handler := func(c *gin.Context) *serverutil.Response {
+		resp := serverutil.NewResponse().
+			WithStatusCode(http.StatusOK).
+			WithData("test")
+		// Manually set an unsupported ContentType
+		resp.ContentType = "application/xml"
+		return resp
+	}
+
+	wrapped := serverutil.WrapApiRoute(handler)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	wrapped(c)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("expected status %d, got %d", http.StatusInternalServerError, w.Code)
+	}
+
+	if !strings.Contains(w.Body.String(), "Unsupported content type") {
+		t.Errorf("expected body to contain 'Unsupported content type', got: %s", w.Body.String())
+	}
+}
+
+func TestWrapUiRoute_NilComponent(t *testing.T) {
+	handler := func(c *gin.Context) templ.Component {
+		return nil
+	}
+
+	wrapped := serverutil.WrapUiRoute(handler)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	wrapped(c)
+
+	// The wrapped handler returns response with StatusCode 400 but no data/error,
+	// so Gin defaults to 200
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
 	}
 }
 
