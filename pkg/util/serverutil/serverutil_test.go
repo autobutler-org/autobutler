@@ -1,6 +1,8 @@
 package serverutil_test
 
 import (
+	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -108,6 +110,36 @@ func TestOk(t *testing.T) {
 	if resp.Error != nil {
 		t.Errorf("expected nil error, got %v", resp.Error)
 	}
+}
+
+func TestWithComponent(t *testing.T) {
+	// Create a simple mock component
+	mockComponent := &mockTemplComponent{content: "<div>Hello World</div>"}
+
+	resp := serverutil.NewResponse().WithComponent(mockComponent)
+
+	if resp.Data == nil {
+		t.Error("expected Data to be set after WithComponent")
+	}
+
+	dataStr, ok := resp.Data.(string)
+	if !ok {
+		t.Errorf("expected Data to be a string, got %T", resp.Data)
+	}
+
+	if dataStr != "<div>Hello World</div>" {
+		t.Errorf("expected Data to be '<div>Hello World</div>', got '%s'", dataStr)
+	}
+}
+
+// mockTemplComponent is a mock implementation of templ.Component for testing
+type mockTemplComponent struct {
+	content string
+}
+
+func (m *mockTemplComponent) Render(ctx context.Context, w io.Writer) error {
+	_, err := w.Write([]byte(m.content))
+	return err
 }
 
 func TestNewRoute(t *testing.T) {

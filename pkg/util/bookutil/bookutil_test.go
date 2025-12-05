@@ -123,4 +123,3 @@ func TestFindAllBooksRecursively_OnlyEPUBs(t *testing.T) {
 		t.Errorf("Expected 2 EPUB books, got %d", len(books))
 	}
 }
-
