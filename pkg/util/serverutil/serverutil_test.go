@@ -145,6 +145,13 @@ func (m *mockTemplComponent) Render(ctx context.Context, w io.Writer) error {
 	return err
 }
 
+// mockFailingComponent is a mock component that always fails to render
+type mockFailingComponent struct{}
+
+func (m *mockFailingComponent) Render(ctx context.Context, w io.Writer) error {
+	return fmt.Errorf("render failed")
+}
+
 func TestNewRoute(t *testing.T) {
 	handler := func(c *gin.Context) {
 		c.String(200, "OK")
@@ -354,6 +361,28 @@ func TestWrapUiRoute_NilComponent(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
+
+	wrapped(c)
+
+	// The wrapped handler returns response with StatusCode 400 but no data/error,
+	// so Gin defaults to 200
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+}
+
+func TestWrapUiRoute_RenderError(t *testing.T) {
+	// Create a component that fails to render
+	handler := func(c *gin.Context) templ.Component {
+		return &mockFailingComponent{}
+	}
+
+	wrapped := serverutil.WrapUiRoute(handler)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	// Need to set up a request with a valid context
+	c.Request = httptest.NewRequest("GET", "/", nil)
 
 	wrapped(c)
 
