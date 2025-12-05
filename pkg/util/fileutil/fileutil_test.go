@@ -575,59 +575,59 @@ func TestMoveFile_CreateDirectory(t *testing.T) {
 func TestMoveFile_ToRootDirectory(t *testing.T) {
 	// Test the newDir == "." condition by using a file in the current directory
 	// When NewFilePath has no directory component, filepath.Dir returns "."
-	
+
 	params := MoveFileParams{
 		FilePath:    "subdir/file.txt",
 		NewFilePath: "newfile.txt", // No directory component
 	}
-	
+
 	// This will fail because the file doesn't exist, but we can at least
 	// verify the NewDir logic would work correctly
 	result, err := MoveFile(params)
-	
+
 	// We expect an error because the file doesn't exist
 	if err == nil {
 		t.Fatal("Expected error when moving non-existent file")
 	}
-	
+
 	// Even though the move fails, we can test the logic separately
 	newDir := filepath.Dir("newfile.txt")
 	if newDir == "." {
 		newDir = ""
 	}
-	
+
 	if newDir != "" {
 		t.Errorf("Expected newDir to be empty string when filepath.Dir returns '.', got '%s'", newDir)
 	}
-	
+
 	// Also verify with an actual successful move
 	tmpDir := t.TempDir()
-	
+
 	// Create source file
 	sourceFile := filepath.Join(tmpDir, "subdir", "source.txt")
 	os.MkdirAll(filepath.Dir(sourceFile), 0755)
 	os.WriteFile(sourceFile, []byte("test"), 0644)
-	
+
 	// Get the current files dir and construct paths relative to it
 	filesDir := GetFilesDir()
-	
+
 	// Create test structure in actual filesDir
 	testSourceDir := filepath.Join(filesDir, "test_move_root")
 	testSourceFile := filepath.Join(testSourceDir, "subdir", "file.txt")
 	os.MkdirAll(filepath.Dir(testSourceFile), 0755)
 	os.WriteFile(testSourceFile, []byte("content"), 0644)
 	defer os.RemoveAll(testSourceDir)
-	
+
 	params2 := MoveFileParams{
 		FilePath:    "test_move_root/subdir/file.txt",
 		NewFilePath: "test_move_root/moved.txt",
 	}
-	
+
 	result, err = MoveFile(params2)
 	if err != nil {
 		t.Fatalf("MoveFile failed: %v", err)
 	}
-	
+
 	// NewDir should be "test_move_root"
 	if result.NewDir != "test_move_root" {
 		t.Errorf("Expected NewDir 'test_move_root', got '%s'", result.NewDir)
