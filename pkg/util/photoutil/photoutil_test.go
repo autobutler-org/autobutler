@@ -205,6 +205,24 @@ func TestGenerateThumbnail(t *testing.T) {
 	}
 }
 
+func TestGenerateThumbnail_Error(t *testing.T) {
+	// Test with non-existent file to trigger error
+	params := GenerateThumbnailParams{
+		FilePath: "/nonexistent/file.jpg",
+		Width:    50,
+		Height:   50,
+	}
+
+	result, err := GenerateThumbnail(params)
+	if err == nil {
+		t.Fatal("Expected error for non-existent file")
+	}
+
+	if result != nil {
+		t.Error("Expected nil result on error")
+	}
+}
+
 func TestCorrectImageOrientation_NoEXIF(t *testing.T) {
 	img := image.NewRGBA(image.Rect(0, 0, 10, 10))
 
