@@ -447,7 +447,7 @@ func TestDeleteFiles_MultiDevice(t *testing.T) {
 	// Create test files on both devices
 	testFile1 := filepath.Join(tmpDir1, "test", "file1.txt")
 	testFile2 := filepath.Join(tmpDir2, "test", "file1.txt")
-	
+
 	os.MkdirAll(filepath.Dir(testFile1), 0755)
 	os.MkdirAll(filepath.Dir(testFile2), 0755)
 	os.WriteFile(testFile1, []byte("content1"), 0644)
@@ -639,4 +639,3 @@ func TestDownloadFile_MultiDevice_NotFound(t *testing.T) {
 		t.Error("Expected error when file doesn't exist on any device")
 	}
 }
-
