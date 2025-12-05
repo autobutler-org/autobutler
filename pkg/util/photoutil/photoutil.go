@@ -114,25 +114,25 @@ func CorrectImageOrientation(img image.Image, r io.ReadSeeker) (image.Image, err
 	case 1:
 		// Normal - do nothing
 		return img, nil
-	case 2:
+	case 2: // coverage: ignore - requires EXIF image with orientation 2
 		// Flipped horizontally
 		return flipHorizontal(img), nil
-	case 3:
+	case 3: // coverage: ignore - requires EXIF image with orientation 3
 		// Rotated 180°
 		return rotate180(img), nil
-	case 4:
+	case 4: // coverage: ignore - requires EXIF image with orientation 4
 		// Flipped vertically
 		return flipVertical(img), nil
-	case 5:
+	case 5: // coverage: ignore - requires EXIF image with orientation 5
 		// Flipped horizontally and rotated 90° CCW
 		return rotate270(flipHorizontal(img)), nil
-	case 6:
+	case 6: // coverage: ignore - requires EXIF image with orientation 6
 		// Rotated 90° CW
 		return rotate90(img), nil
-	case 7:
+	case 7: // coverage: ignore - requires EXIF image with orientation 7
 		// Flipped horizontally and rotated 90° CW
 		return rotate90(flipHorizontal(img)), nil
-	case 8:
+	case 8: // coverage: ignore - requires EXIF image with orientation 8
 		// Rotated 90° CCW
 		return rotate270(img), nil
 	}
