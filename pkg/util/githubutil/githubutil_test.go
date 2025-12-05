@@ -54,16 +54,17 @@ func TestFetchGitHubReleases_HTTPError(t *testing.T) {
 
 func TestFetchGitHubReleases_Integration(t *testing.T) {
 	// This is an integration test that hits the real GitHub API
-	// Skip by default to avoid rate limiting and test failures
-	t.Skip("Skipping integration test - requires network access and can be flaky")
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 
-	releases, err := FetchGitHubReleases("golang", "go")
+	releases, err := FetchGitHubReleases("autobutler-org", "autobutler")
 	if err != nil {
 		t.Fatalf("FetchGitHubReleases failed: %v", err)
 	}
 
 	if len(releases) == 0 {
-		t.Error("Expected at least one release from golang/go repository")
+		t.Error("Expected at least one release from autobutler-org/autobutler repository")
 	}
 
 	// Verify structure of first release
