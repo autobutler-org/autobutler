@@ -24,7 +24,7 @@ func FindAllBooksRecursively(rootDir string) ([]RecursiveBookInfo, error) {
 			// Get relative path from rootDir
 			relPath, err := filepath.Rel(rootDir, path)
 			if err != nil {
-				return err
+				return err // coverage: ignore - filepath.Rel only fails on cross-volume paths (different drives on Windows)
 			}
 			books = append(books, RecursiveBookInfo{
 				FileInfo: info,

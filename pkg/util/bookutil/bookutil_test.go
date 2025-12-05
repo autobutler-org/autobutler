@@ -124,13 +124,3 @@ func TestFindAllBooksRecursively_OnlyEPUBs(t *testing.T) {
 	}
 }
 
-// Note: The error path in FindAllBooksRecursively where filepath.Rel returns an error
-// is extremely difficult to trigger in practice. filepath.Rel only fails when it cannot
-// construct a relative path between two paths, which typically requires:
-// - Different drive letters on Windows (e.g., C:\ vs D:\)
-// - Comparing paths with different volume names
-// - Other filesystem boundary issues
-// These scenarios cannot be easily simulated in a cross-platform unit test without
-// creating filesystem mocks or platform-specific tests. The error handling is present
-// for defensive programming but is not covered by tests.
-
