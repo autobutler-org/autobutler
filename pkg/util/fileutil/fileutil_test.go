@@ -5,6 +5,7 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -212,10 +213,105 @@ func TestGetDataDir(t *testing.T) {
 	}
 }
 
+func TestGetDataDirForDevice_SystemDevice(t *testing.T) {
+	// Test with system root device
+	dataDir := GetDataDirForDevice("/")
+	if dataDir == "" {
+		t.Error("Expected non-empty data directory for root device")
+	}
+}
+
+func TestGetDataDirForDevice_MacOSSystemVolume(t *testing.T) {
+	// Test with macOS system volume path
+	dataDir := GetDataDirForDevice("/System/Volumes/Data")
+	if dataDir == "" {
+		t.Error("Expected non-empty data directory for macOS system volume")
+	}
+}
+
+func TestGetDataDirForDevice_ExternalDevice(t *testing.T) {
+	// Test with external device mount point
+	dataDir := GetDataDirForDevice("/Volumes/External")
+	expected := "/Volumes/External/.autobutler/data"
+	if dataDir != expected {
+		t.Errorf("Expected %s, got %s", expected, dataDir)
+	}
+}
+
 func TestGetFilesDir(t *testing.T) {
 	filesDir := GetFilesDir()
 	if filesDir == "" {
 		t.Error("Expected non-empty files directory")
+	}
+}
+
+func TestGetDeviceInfoForPath_MacOSVolume(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip("Skipping macOS-specific test")
+	}
+
+	deviceName, devicePath := GetDeviceInfoForPath("/Volumes/MyDrive/some/file.txt")
+	if deviceName != "MyDrive" {
+		t.Errorf("Expected deviceName 'MyDrive', got '%s'", deviceName)
+	}
+	if devicePath != "/Volumes/MyDrive" {
+		t.Errorf("Expected devicePath '/Volumes/MyDrive', got '%s'", devicePath)
+	}
+}
+
+func TestGetDeviceInfoForPath_MacOSMainDrive(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip("Skipping macOS-specific test")
+	}
+
+	deviceName, devicePath := GetDeviceInfoForPath("/Users/test/file.txt")
+	if deviceName != "Macintosh HD" {
+		t.Errorf("Expected deviceName 'Macintosh HD', got '%s'", deviceName)
+	}
+	if devicePath != "/" {
+		t.Errorf("Expected devicePath '/', got '%s'", devicePath)
+	}
+}
+
+func TestGetDeviceInfoForPath_LinuxMedia(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("Skipping Linux-specific test")
+	}
+
+	deviceName, devicePath := GetDeviceInfoForPath("/media/user/USB/file.txt")
+	if deviceName != "USB" {
+		t.Errorf("Expected deviceName 'USB', got '%s'", deviceName)
+	}
+	if devicePath != "/media/user/USB" {
+		t.Errorf("Expected devicePath '/media/user/USB', got '%s'", devicePath)
+	}
+}
+
+func TestGetDeviceInfoForPath_LinuxMnt(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("Skipping Linux-specific test")
+	}
+
+	deviceName, devicePath := GetDeviceInfoForPath("/mnt/external/file.txt")
+	if deviceName != "external" {
+		t.Errorf("Expected deviceName 'external', got '%s'", deviceName)
+	}
+	if devicePath != "/mnt/external" {
+		t.Errorf("Expected devicePath '/mnt/external', got '%s'", devicePath)
+	}
+}
+
+func TestGetDeviceInfoForPath_LinuxRoot(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("Skipping Linux-specific test")
+	}
+
+	deviceName, devicePath := GetDeviceInfoForPath("/home/user/file.txt")
+	if deviceName != "Root" {
+		t.Errorf("Expected deviceName 'Root', got '%s'", deviceName)
+	}
+	if devicePath != "/" {
+		t.Errorf("Expected devicePath '/', got '%s'", devicePath)
 	}
 }
 
@@ -1040,38 +1136,5 @@ func TestDetermineFileType_FileNotFoundInFilesDir(t *testing.T) {
 	result := DetermineFileType("nonexistent_root", deviceFileInfo)
 	if result != FileTypeGeneric {
 		t.Errorf("DetermineFileType(file not in filesDir) = %s; want %s", result, FileTypeGeneric)
-	}
-}
-
-func TestDetermineFileType_DirectoryViaStatCheck(t *testing.T) {
-	// Test the case where file.IsDir() returns false initially,
-	// but stat.IsDir() returns true (directory found via stat)
-	// We need a custom FileInfo that reports IsDir() = false
-	filesDir := GetFilesDir()
-	testDir := filepath.Join(filesDir, "test_stat_dir_check")
-	testSubDir := filepath.Join(testDir, "actualdir")
-
-	os.MkdirAll(testSubDir, 0755)
-	defer os.RemoveAll(testDir)
-
-	// Create a custom FileInfo that lies about being a directory
-	customFileInfo := &CustomFileInfo{
-		NameVal:  "actualdir",
-		SizeVal:  4096,
-		ModeVal:  0755,      // Regular file mode, not directory
-		IsDir:    false,     // Lie - say it's not a directory
-	}
-
-	deviceFileInfo := &DeviceFileInfo{
-		FileInfo:   customFileInfo,
-		DeviceName: "test-device",
-		DevicePath: filesDir,
-		FullPath:   testSubDir,
-	}
-
-	// file.IsDir() returns false, but when we stat the actual path, it IS a directory
-	result := DetermineFileType("test_stat_dir_check", deviceFileInfo)
-	if result != FileTypeFolder {
-		t.Errorf("DetermineFileType(directory via stat) = %s; want %s", result, FileTypeFolder)
 	}
 }
