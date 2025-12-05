@@ -261,4 +261,3 @@ func TestRegisterRouterWithGroup(t *testing.T) {
 		t.Errorf("expected status 200 for GET /api/users, got %d", w.Code)
 	}
 }
-

@@ -296,4 +296,3 @@ func TestImageToThumbnail_InvalidImage(t *testing.T) {
 		t.Error("Expected error for invalid image file")
 	}
 }
-

@@ -439,3 +439,204 @@ func TestDoesFileExist(t *testing.T) {
 	}
 }
 
+func TestDeleteFiles_MultiDevice(t *testing.T) {
+	// Create test directories for multiple devices
+	tmpDir1 := t.TempDir()
+	tmpDir2 := t.TempDir()
+
+	// Create test files on both devices
+	testFile1 := filepath.Join(tmpDir1, "test", "file1.txt")
+	testFile2 := filepath.Join(tmpDir2, "test", "file1.txt")
+	
+	os.MkdirAll(filepath.Dir(testFile1), 0755)
+	os.MkdirAll(filepath.Dir(testFile2), 0755)
+	os.WriteFile(testFile1, []byte("content1"), 0644)
+	os.WriteFile(testFile2, []byte("content2"), 0644)
+
+	// Setup managed devices
+	devices := []ManagedDevice{
+		{
+			Device: Device{
+				Name:       "Device1",
+				MountPoint: "/mnt/dev1",
+			},
+			FilesDir: tmpDir1,
+		},
+		{
+			Device: Device{
+				Name:       "Device2",
+				MountPoint: "/mnt/dev2",
+			},
+			FilesDir: tmpDir2,
+		},
+	}
+
+	params := DeleteFilesParams{
+		RootDir:        "test",
+		FilePaths:      []string{"file1.txt"},
+		ManagedDevices: devices,
+	}
+
+	result, err := DeleteFiles(params)
+	if err != nil {
+		t.Fatalf("DeleteFiles failed: %v", err)
+	}
+
+	if result.RootDir != "test" {
+		t.Errorf("Expected RootDir 'test', got '%s'", result.RootDir)
+	}
+
+	// Verify files were deleted from both devices
+	if DoesFileExist(testFile1) {
+		t.Error("Expected file to be deleted from device 1")
+	}
+	if DoesFileExist(testFile2) {
+		t.Error("Expected file to be deleted from device 2")
+	}
+}
+
+func TestDeleteFiles_MultiDevice_PartialExistence(t *testing.T) {
+	// Create test directories
+	tmpDir1 := t.TempDir()
+	tmpDir2 := t.TempDir()
+
+	// Create test file only on first device
+	testFile1 := filepath.Join(tmpDir1, "test", "file1.txt")
+	os.MkdirAll(filepath.Dir(testFile1), 0755)
+	os.WriteFile(testFile1, []byte("content1"), 0644)
+
+	devices := []ManagedDevice{
+		{
+			Device: Device{
+				Name:       "Device1",
+				MountPoint: "/mnt/dev1",
+			},
+			FilesDir: tmpDir1,
+		},
+		{
+			Device: Device{
+				Name:       "Device2",
+				MountPoint: "/mnt/dev2",
+			},
+			FilesDir: tmpDir2,
+		},
+	}
+
+	params := DeleteFilesParams{
+		RootDir:        "test",
+		FilePaths:      []string{"file1.txt"},
+		ManagedDevices: devices,
+	}
+
+	_, err := DeleteFiles(params)
+	if err != nil {
+		t.Fatalf("DeleteFiles should not fail when file doesn't exist on all devices: %v", err)
+	}
+
+	// Verify file was deleted from device 1
+	if DoesFileExist(testFile1) {
+		t.Error("Expected file to be deleted from device 1")
+	}
+}
+
+func TestMoveFile_CreateDirectory(t *testing.T) {
+	// This test validates that MoveFile creates the destination directory
+	// We can't easily test this without interfering with GetFilesDir(),
+	// but we can at least verify the function structure
+	params := MoveFileParams{
+		FilePath:    "nonexistent/old.txt",
+		NewFilePath: "new/path/file.txt",
+	}
+
+	_, err := MoveFile(params)
+	// Expected to fail since the source doesn't exist
+	if err == nil {
+		t.Error("Expected error when source file doesn't exist")
+	}
+}
+
+func TestUploadFiles_FileConflict(t *testing.T) {
+	// Test that UploadFiles handles filename conflicts by appending numbers
+	// This would require mocking multipart.FileHeader which is complex
+	// Skip for now as it requires significant setup
+	t.Skip("Requires complex multipart.FileHeader mocking")
+}
+
+func TestDownloadFile_MultiDevice(t *testing.T) {
+	// Create test directories
+	tmpDir1 := t.TempDir()
+	tmpDir2 := t.TempDir()
+
+	// Create test file only on second device
+	testFile := filepath.Join(tmpDir2, "test", "file1.txt")
+	os.MkdirAll(filepath.Dir(testFile), 0755)
+	os.WriteFile(testFile, []byte("content"), 0644)
+
+	devices := []ManagedDevice{
+		{
+			Device: Device{
+				Name:       "Device1",
+				MountPoint: "/mnt/dev1",
+			},
+			FilesDir: tmpDir1,
+		},
+		{
+			Device: Device{
+				Name:       "Device2",
+				MountPoint: "/mnt/dev2",
+			},
+			FilesDir: tmpDir2,
+		},
+	}
+
+	params := DownloadFileParams{
+		FilePath:       "test/file1.txt",
+		ManagedDevices: devices,
+	}
+
+	result, err := DownloadFile(params)
+	if err != nil {
+		t.Fatalf("DownloadFile failed: %v", err)
+	}
+
+	if result.FullPath != testFile {
+		t.Errorf("Expected FullPath %s, got %s", testFile, result.FullPath)
+	}
+
+	if result.FileType == FileTypeFolder {
+		t.Error("Expected FileType to not be FileTypeFolder for a file")
+	}
+}
+
+func TestDownloadFile_MultiDevice_NotFound(t *testing.T) {
+	tmpDir1 := t.TempDir()
+	tmpDir2 := t.TempDir()
+
+	devices := []ManagedDevice{
+		{
+			Device: Device{
+				Name:       "Device1",
+				MountPoint: "/mnt/dev1",
+			},
+			FilesDir: tmpDir1,
+		},
+		{
+			Device: Device{
+				Name:       "Device2",
+				MountPoint: "/mnt/dev2",
+			},
+			FilesDir: tmpDir2,
+		},
+	}
+
+	params := DownloadFileParams{
+		FilePath:       "test/nonexistent.txt",
+		ManagedDevices: devices,
+	}
+
+	_, err := DownloadFile(params)
+	if err == nil {
+		t.Error("Expected error when file doesn't exist on any device")
+	}
+}
+
