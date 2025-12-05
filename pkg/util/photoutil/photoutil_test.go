@@ -225,3 +225,75 @@ func TestCorrectImageOrientation_NoEXIF(t *testing.T) {
 		t.Error("Expected original image to be returned when no EXIF data")
 	}
 }
+
+func TestFilterPhotoFiles_EmptyList(t *testing.T) {
+	result := FilterPhotoFiles([]os.FileInfo{})
+	if len(result) != 0 {
+		t.Errorf("Expected empty result, got %d items", len(result))
+	}
+}
+
+func TestFilterPhotoFiles_MixedFiles(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create test files
+	createTestImage(t, filepath.Join(tmpDir, "image.jpg"), 10, 10)
+	os.WriteFile(filepath.Join(tmpDir, "document.pdf"), []byte("pdf"), 0644)
+	os.Mkdir(filepath.Join(tmpDir, "subdir"), 0755)
+
+	entries, err := os.ReadDir(tmpDir)
+	if err != nil {
+		t.Fatalf("Failed to read directory: %v", err)
+	}
+
+	var fileInfos []os.FileInfo
+	for _, entry := range entries {
+		info, _ := entry.Info()
+		fileInfos = append(fileInfos, info)
+	}
+
+	photos := FilterPhotoFiles(fileInfos)
+
+	if len(photos) != 1 {
+		t.Errorf("Expected 1 photo file, got %d", len(photos))
+	}
+}
+
+func TestFindAllPhotosRecursively_EmptyDirectory(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	photos, err := FindAllPhotosRecursively(tmpDir)
+	if err != nil {
+		t.Fatalf("FindAllPhotosRecursively failed: %v", err)
+	}
+
+	if len(photos) != 0 {
+		t.Errorf("Expected 0 photos in empty directory, got %d", len(photos))
+	}
+}
+
+func TestFindAllPhotosRecursively_NonExistentDirectory(t *testing.T) {
+	_, err := FindAllPhotosRecursively("/nonexistent/path/that/does/not/exist")
+	if err == nil {
+		t.Error("Expected error for non-existent directory")
+	}
+}
+
+func TestImageToThumbnail_NonExistentFile(t *testing.T) {
+	_, _, err := ImageToThumbnail("/nonexistent/file.jpg", 50, 50)
+	if err == nil {
+		t.Error("Expected error for non-existent file")
+	}
+}
+
+func TestImageToThumbnail_InvalidImage(t *testing.T) {
+	tmpDir := t.TempDir()
+	invalidFile := filepath.Join(tmpDir, "invalid.jpg")
+	os.WriteFile(invalidFile, []byte("not an image"), 0644)
+
+	_, _, err := ImageToThumbnail(invalidFile, 50, 50)
+	if err == nil {
+		t.Error("Expected error for invalid image file")
+	}
+}
+

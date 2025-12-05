@@ -373,3 +373,69 @@ func TestGetFolderSize_WithSubdirectories(t *testing.T) {
 		t.Errorf("Expected size 8, got %d", size)
 	}
 }
+
+func TestCalculateSummary(t *testing.T) {
+	devices := []Device{
+		{
+			TotalBytes: 1000000000000, // 1TB
+			UsedBytes:  500000000000,  // 500GB
+			AvailBytes: 500000000000,  // 500GB
+		},
+		{
+			TotalBytes: 2000000000000, // 2TB
+			UsedBytes:  1000000000000, // 1TB
+			AvailBytes: 1000000000000, // 1TB
+		},
+	}
+
+	summary := CalculateSummary(devices)
+
+	if summary.TotalDevices != 2 {
+		t.Errorf("Expected 2 devices, got %d", summary.TotalDevices)
+	}
+
+	if summary.TotalBytes != 3000000000000 {
+		t.Errorf("Expected total bytes 3000000000000, got %d", summary.TotalBytes)
+	}
+
+	if summary.UsedBytes != 1500000000000 {
+		t.Errorf("Expected used bytes 1500000000000, got %d", summary.UsedBytes)
+	}
+
+	if summary.AvailBytes != 1500000000000 {
+		t.Errorf("Expected avail bytes 1500000000000, got %d", summary.AvailBytes)
+	}
+
+	// Check TB conversions (approximately)
+	if summary.TotalTB < 2.7 || summary.TotalTB > 2.8 {
+		t.Errorf("Expected TotalTB around 2.73, got %f", summary.TotalTB)
+	}
+}
+
+func TestCalculateSummary_EmptyDevices(t *testing.T) {
+	summary := CalculateSummary([]Device{})
+
+	if summary.TotalDevices != 0 {
+		t.Errorf("Expected 0 devices, got %d", summary.TotalDevices)
+	}
+
+	if summary.TotalBytes != 0 {
+		t.Errorf("Expected 0 total bytes, got %d", summary.TotalBytes)
+	}
+}
+
+func TestDoesFileExist(t *testing.T) {
+	tmpDir := t.TempDir()
+	existingFile := filepath.Join(tmpDir, "exists.txt")
+	os.WriteFile(existingFile, []byte("content"), 0644)
+
+	if !DoesFileExist(existingFile) {
+		t.Error("Expected file to exist")
+	}
+
+	nonExistentFile := filepath.Join(tmpDir, "does-not-exist.txt")
+	if DoesFileExist(nonExistentFile) {
+		t.Error("Expected file to not exist")
+	}
+}
+
