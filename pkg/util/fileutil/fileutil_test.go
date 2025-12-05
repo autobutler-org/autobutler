@@ -579,6 +579,18 @@ func TestUploadFiles_FileConflict(t *testing.T) {
 	t.Skip("Requires complex multipart.FileHeader mocking")
 }
 
+func TestUploadFiles_CreateFileError(t *testing.T) {
+	// Test error when creating file fails - add coverage ignore since it requires
+	// filesystem permissions manipulation which is difficult to test reliably
+	t.Skip("Creating file errors require filesystem permission manipulation")
+}
+
+func TestUploadFiles_CopyError(t *testing.T) {
+	// Test error when copying file content fails - add coverage ignore since it requires
+	// simulating I/O failures which is difficult to test
+	t.Skip("Copy errors require simulating I/O failures")
+}
+
 func TestDownloadFile_MultiDevice(t *testing.T) {
 	// Create test directories
 	tmpDir1 := t.TempDir()
