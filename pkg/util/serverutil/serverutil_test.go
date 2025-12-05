@@ -195,6 +195,26 @@ func TestApiRoute(t *testing.T) {
 	}
 }
 
+func TestUiRoute(t *testing.T) {
+	handler := func(c *gin.Context) templ.Component {
+		return &mockTemplComponent{content: "<h1>Test</h1>"}
+	}
+
+	route := serverutil.UiRoute("/page", handler)
+
+	if route.Method != "GET" {
+		t.Errorf("expected method GET, got %s", route.Method)
+	}
+
+	if route.Path != "/page" {
+		t.Errorf("expected path /page, got %s", route.Path)
+	}
+
+	if route.Handler == nil {
+		t.Error("expected handler to be non-nil")
+	}
+}
+
 func TestWrapApiRoute_WithData(t *testing.T) {
 	handler := func(c *gin.Context) *serverutil.Response {
 		return serverutil.NewResponse().
