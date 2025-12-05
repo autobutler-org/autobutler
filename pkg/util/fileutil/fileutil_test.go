@@ -585,7 +585,7 @@ func TestMoveFile_ToRootDirectory(t *testing.T) {
 
 	// This will fail because the file doesn't exist, but we can at least
 	// verify the NewDir logic would work correctly
-	result, err := MoveFile(params)
+	_, err := MoveFile(params)
 
 	// We expect an error because the file doesn't exist
 	if err == nil {
@@ -625,14 +625,14 @@ func TestMoveFile_ToRootDirectory(t *testing.T) {
 		NewFilePath: "test_move_root/moved.txt",
 	}
 
-	result, err = MoveFile(params2)
+	result2, err := MoveFile(params2)
 	if err != nil {
 		t.Fatalf("MoveFile failed: %v", err)
 	}
 
 	// NewDir should be "test_move_root"
-	if result.NewDir != "test_move_root" {
-		t.Errorf("Expected NewDir 'test_move_root', got '%s'", result.NewDir)
+	if result2.NewDir != "test_move_root" {
+		t.Errorf("Expected NewDir 'test_move_root', got '%s'", result2.NewDir)
 	}
 
 	// Now test the case where newDir == "." (moving to root)
@@ -909,5 +909,169 @@ func TestInitializeDeviceDataDir_AlreadyExists(t *testing.T) {
 	err := InitializeDeviceDataDir(tempDir)
 	if err != nil {
 		t.Errorf("InitializeDeviceDataDir() should succeed when directory exists, got error: %v", err)
+	}
+}
+
+func TestDetermineFileTypeFromPath_EmptyOrSlashPath(t *testing.T) {
+	// Test that "" and "/" are treated as folders
+	tests := []struct {
+		path string
+	}{
+		{""},
+		{"/"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			result := DetermineFileTypeFromPath(tt.path)
+			if result != FileTypeFolder {
+				t.Errorf("DetermineFileTypeFromPath(%q) = %s; want %s", tt.path, result, FileTypeFolder)
+			}
+		})
+	}
+}
+
+func TestDetermineFileTypeFromPath_DirectoryPath(t *testing.T) {
+	// Test a directory path (uses os.Stat and IsDir check)
+	tempDir := t.TempDir()
+
+	result := DetermineFileTypeFromPath(tempDir)
+	if result != FileTypeFolder {
+		t.Errorf("DetermineFileTypeFromPath(%s) = %s; want %s", tempDir, result, FileTypeFolder)
+	}
+}
+
+func TestDetermineFileTypeFromPath_NonexistentFile(t *testing.T) {
+	// Test a nonexistent file (os.Stat will fail, should return FileTypeGeneric)
+	result := DetermineFileTypeFromPath("/nonexistent/path/file.unknown")
+	if result != FileTypeGeneric {
+		t.Errorf("DetermineFileTypeFromPath(nonexistent) = %s; want %s", result, FileTypeGeneric)
+	}
+}
+
+func TestDetermineFileType_NilFile(t *testing.T) {
+	// Test with nil file - should return FileTypeSpacer
+	result := DetermineFileType("", nil)
+	if result != FileTypeSpacer {
+		t.Errorf("DetermineFileType(nil) = %s; want %s", result, FileTypeSpacer)
+	}
+}
+
+func TestDetermineFileType_Directory(t *testing.T) {
+	// Test with a directory DeviceFileInfo
+	tempDir := t.TempDir()
+	testDir := filepath.Join(tempDir, "testdir")
+	if err := os.Mkdir(testDir, 0755); err != nil {
+		t.Fatalf("Failed to create test directory: %v", err)
+	}
+
+	fileInfo, err := os.Stat(testDir)
+	if err != nil {
+		t.Fatalf("Failed to stat test directory: %v", err)
+	}
+
+	deviceFileInfo := &DeviceFileInfo{
+		FileInfo:   fileInfo,
+		DeviceName: "test-device",
+		DevicePath: tempDir,
+		FullPath:   testDir,
+	}
+
+	result := DetermineFileType("", deviceFileInfo)
+	if result != FileTypeFolder {
+		t.Errorf("DetermineFileType(directory) = %s; want %s", result, FileTypeFolder)
+	}
+}
+
+func TestDetermineFileType_RegularFile(t *testing.T) {
+	// Test with a regular file - should use DetermineFileTypeFromPath
+	// Create a test file in the actual filesDir
+	filesDir := GetFilesDir()
+	testDir := filepath.Join(filesDir, "test_determine_type")
+	testFile := filepath.Join(testDir, "test.pdf")
+
+	os.MkdirAll(testDir, 0755)
+	defer os.RemoveAll(testDir)
+
+	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	fileInfo, err := os.Stat(testFile)
+	if err != nil {
+		t.Fatalf("Failed to stat test file: %v", err)
+	}
+
+	deviceFileInfo := &DeviceFileInfo{
+		FileInfo:   fileInfo,
+		DeviceName: "test-device",
+		DevicePath: filesDir,
+		FullPath:   testFile,
+	}
+
+	result := DetermineFileType("test_determine_type", deviceFileInfo)
+	if result != FileTypePDF {
+		t.Errorf("DetermineFileType(test.pdf) = %s; want %s", result, FileTypePDF)
+	}
+}
+
+func TestDetermineFileType_FileNotFoundInFilesDir(t *testing.T) {
+	// Test when file.IsDir() is false but the file doesn't exist in filesDir
+	// This should return FileTypeGeneric
+	tempDir := t.TempDir()
+	testFile := filepath.Join(tempDir, "ghost.txt")
+	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	fileInfo, err := os.Stat(testFile)
+	if err != nil {
+		t.Fatalf("Failed to stat test file: %v", err)
+	}
+
+	deviceFileInfo := &DeviceFileInfo{
+		FileInfo:   fileInfo,
+		DeviceName: "test-device",
+		DevicePath: tempDir,
+		FullPath:   testFile,
+	}
+
+	// The file exists in tempDir but not in filesDir, so os.Stat will fail
+	result := DetermineFileType("nonexistent_root", deviceFileInfo)
+	if result != FileTypeGeneric {
+		t.Errorf("DetermineFileType(file not in filesDir) = %s; want %s", result, FileTypeGeneric)
+	}
+}
+
+func TestDetermineFileType_DirectoryViaStatCheck(t *testing.T) {
+	// Test the case where file.IsDir() returns false initially,
+	// but stat.IsDir() returns true (directory found via stat)
+	// We need a custom FileInfo that reports IsDir() = false
+	filesDir := GetFilesDir()
+	testDir := filepath.Join(filesDir, "test_stat_dir_check")
+	testSubDir := filepath.Join(testDir, "actualdir")
+
+	os.MkdirAll(testSubDir, 0755)
+	defer os.RemoveAll(testDir)
+
+	// Create a custom FileInfo that lies about being a directory
+	customFileInfo := &CustomFileInfo{
+		NameVal:  "actualdir",
+		SizeVal:  4096,
+		ModeVal:  0755,      // Regular file mode, not directory
+		IsDir:    false,     // Lie - say it's not a directory
+	}
+
+	deviceFileInfo := &DeviceFileInfo{
+		FileInfo:   customFileInfo,
+		DeviceName: "test-device",
+		DevicePath: filesDir,
+		FullPath:   testSubDir,
+	}
+
+	// file.IsDir() returns false, but when we stat the actual path, it IS a directory
+	result := DetermineFileType("test_stat_dir_check", deviceFileInfo)
+	if result != FileTypeFolder {
+		t.Errorf("DetermineFileType(directory via stat) = %s; want %s", result, FileTypeFolder)
 	}
 }

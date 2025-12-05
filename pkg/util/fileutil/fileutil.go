@@ -60,6 +60,11 @@ func TBToBytes(size float64) uint64 {
 }
 
 func DetermineFileTypeFromPath(filePath string) FileType {
+	// Empty string or "/" represents a folder
+	if filePath == "" || filePath == "/" {
+		return FileTypeFolder
+	}
+
 	ext := strings.ToLower(filepath.Ext(filePath))
 	switch ext {
 	case ".pdf":
@@ -76,8 +81,6 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 		return FileTypeDocx
 	case ".zip", ".rar", ".tar", ".gz", ".7z":
 		return FileTypeArchive
-	case "/":
-		return FileTypeFolder
 	default:
 		stat, err := os.Stat(filePath)
 		if err == nil && stat != nil {
@@ -100,9 +103,6 @@ func DetermineFileType(rootDir string, file *DeviceFileInfo) FileType {
 	stat, err := os.Stat(filepath.Join(filesDir, rootDir, file.Name()))
 	if err != nil || stat == nil {
 		return FileTypeGeneric // If we can't stat the file, treat it as generic
-	}
-	if stat.IsDir() {
-		return FileTypeFolder
 	}
 	return DetermineFileTypeFromPath(file.Name())
 }
