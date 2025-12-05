@@ -154,6 +154,23 @@ func TestCustomFileInfo(t *testing.T) {
 	if !fi.IsDir() {
 		t.Error("Expected IsDir() to be true")
 	}
+
+	// Test Mode()
+	mode := fi.Mode()
+	if mode != 0666 {
+		t.Errorf("Expected mode 0666, got %v", mode)
+	}
+
+	// Test ModTime()
+	modTime := fi.ModTime()
+	if modTime.IsZero() {
+		t.Error("Expected non-zero ModTime")
+	}
+
+	// Test Sys()
+	if fi.Sys() != nil {
+		t.Error("Expected Sys() to return nil")
+	}
 }
 
 func TestDeviceApplySimpleCategorization_SystemVolume(t *testing.T) {
