@@ -1192,9 +1192,9 @@ func TestDetermineFileType_FileNotFoundInFilesDir(t *testing.T) {
 func TestGetAvailableSpaceInBytes(t *testing.T) {
 	// Test that GetAvailableSpaceInBytes returns a non-zero value for a valid directory
 	tempDir := t.TempDir()
-	
+
 	availableSpace := GetAvailableSpaceInBytes(tempDir)
-	
+
 	// We just verify that it returns a reasonable value (greater than 0)
 	// The actual value will vary by system
 	if availableSpace == 0 {
