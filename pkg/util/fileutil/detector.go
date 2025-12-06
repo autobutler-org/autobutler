@@ -16,7 +16,7 @@ func NewDetector() Detector {
 		return &DarwinDetector{}
 	case "linux":
 		return &LinuxDetector{}
-	default:
+	default: // coverage: ignore - Unsupported OS
 		// Unsupported platforms return empty list
 		return &DarwinDetector{} // Safe fallback that returns empty list on error
 	}

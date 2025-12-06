@@ -1201,3 +1201,85 @@ func TestGetAvailableSpaceInBytes(t *testing.T) {
 		t.Errorf("GetAvailableSpaceInBytes() = 0; want > 0")
 	}
 }
+
+func TestNewDeviceFileInfo(t *testing.T) {
+	// Create a test file to get real FileInfo
+	tempDir := t.TempDir()
+	testFile := filepath.Join(tempDir, "test.txt")
+	if err := os.WriteFile(testFile, []byte("test content"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	fileInfo, err := os.Stat(testFile)
+	if err != nil {
+		t.Fatalf("Failed to stat test file: %v", err)
+	}
+
+	// Create DeviceFileInfo using constructor
+	deviceName := "TestDevice"
+	devicePath := "/test/path"
+	fullPath := testFile
+
+	deviceFileInfo := NewDeviceFileInfo(fileInfo, deviceName, devicePath, fullPath)
+
+	// Verify all fields are set correctly
+	if deviceFileInfo.DeviceName != deviceName {
+		t.Errorf("DeviceName = %s; want %s", deviceFileInfo.DeviceName, deviceName)
+	}
+	if deviceFileInfo.DevicePath != devicePath {
+		t.Errorf("DevicePath = %s; want %s", deviceFileInfo.DevicePath, devicePath)
+	}
+	if deviceFileInfo.FullPath != fullPath {
+		t.Errorf("FullPath = %s; want %s", deviceFileInfo.FullPath, fullPath)
+	}
+	if deviceFileInfo.FileInfo != fileInfo {
+		t.Errorf("FileInfo not set correctly")
+	}
+}
+
+func TestDeviceFileInfo_WrapperMethods(t *testing.T) {
+	// Create a test file to get real FileInfo
+	tempDir := t.TempDir()
+	testFile := filepath.Join(tempDir, "test.txt")
+	content := []byte("test content for wrapper methods")
+	if err := os.WriteFile(testFile, content, 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	fileInfo, err := os.Stat(testFile)
+	if err != nil {
+		t.Fatalf("Failed to stat test file: %v", err)
+	}
+
+	deviceFileInfo := NewDeviceFileInfo(fileInfo, "Device", "/device", testFile)
+
+	// Test Name() wrapper
+	if deviceFileInfo.Name() != fileInfo.Name() {
+		t.Errorf("Name() = %s; want %s", deviceFileInfo.Name(), fileInfo.Name())
+	}
+
+	// Test Size() wrapper
+	if deviceFileInfo.Size() != fileInfo.Size() {
+		t.Errorf("Size() = %d; want %d", deviceFileInfo.Size(), fileInfo.Size())
+	}
+
+	// Test Mode() wrapper
+	if deviceFileInfo.Mode() != fileInfo.Mode() {
+		t.Errorf("Mode() = %v; want %v", deviceFileInfo.Mode(), fileInfo.Mode())
+	}
+
+	// Test ModTime() wrapper
+	if !deviceFileInfo.ModTime().Equal(fileInfo.ModTime()) {
+		t.Errorf("ModTime() = %v; want %v", deviceFileInfo.ModTime(), fileInfo.ModTime())
+	}
+
+	// Test IsDir() wrapper
+	if deviceFileInfo.IsDir() != fileInfo.IsDir() {
+		t.Errorf("IsDir() = %v; want %v", deviceFileInfo.IsDir(), fileInfo.IsDir())
+	}
+
+	// Test Sys() wrapper
+	if deviceFileInfo.Sys() != fileInfo.Sys() {
+		t.Errorf("Sys() mismatch")
+	}
+}
