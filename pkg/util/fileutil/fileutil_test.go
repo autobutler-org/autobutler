@@ -1329,4 +1329,3 @@ func TestGetDeviceStatuses(t *testing.T) {
 		t.Error("GetDeviceStatuses() should have at least one enabled device")
 	}
 }
-
