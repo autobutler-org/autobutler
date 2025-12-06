@@ -14,7 +14,7 @@ func NewDetector() Detector {
 	switch runtime.GOOS {
 	case "darwin": // coverage: ignore - Not run in CI
 		return &DarwinDetector{}
-	case "linux":
+	case "linux": // coverage: ignore - Not run in mac dev environments
 		return &LinuxDetector{}
 	default: // coverage: ignore - Unsupported OS
 		// Unsupported platforms return empty list

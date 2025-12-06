@@ -1283,3 +1283,50 @@ func TestDeviceFileInfo_WrapperMethods(t *testing.T) {
 		t.Errorf("Sys() mismatch")
 	}
 }
+
+func TestGetDeviceStatuses(t *testing.T) {
+	// This test verifies that GetDeviceStatuses properly merges
+	// detected devices with managed devices to build status information
+	statuses, err := GetDeviceStatuses()
+	if err != nil {
+		t.Fatalf("GetDeviceStatuses() error = %v", err)
+	}
+
+	// Should return at least one device (the system device)
+	if len(statuses) == 0 {
+		t.Error("GetDeviceStatuses() returned no devices")
+	}
+
+	// Verify each status has required fields
+	for i, status := range statuses {
+		if status.Name == "" {
+			t.Errorf("statuses[%d].Name is empty", i)
+		}
+		if status.MountPoint == "" {
+			t.Errorf("statuses[%d].MountPoint is empty", i)
+		}
+
+		// If device is enabled, it should have DataDir and FilesDir
+		if status.IsEnabled {
+			if status.DataDir == "" {
+				t.Errorf("statuses[%d].DataDir is empty for enabled device %s", i, status.Name)
+			}
+			if status.FilesDir == "" {
+				t.Errorf("statuses[%d].FilesDir is empty for enabled device %s", i, status.Name)
+			}
+		}
+	}
+
+	// At least one device should be enabled (the system device)
+	hasEnabled := false
+	for _, status := range statuses {
+		if status.IsEnabled {
+			hasEnabled = true
+			break
+		}
+	}
+	if !hasEnabled {
+		t.Error("GetDeviceStatuses() should have at least one enabled device")
+	}
+}
+

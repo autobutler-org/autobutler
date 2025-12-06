@@ -15,13 +15,13 @@ func GetDeviceStatuses() ([]DeviceStatus, error) {
 	detector := NewDetector()
 	devices, err := detector.DetectDevices()
 	if err != nil {
-		return nil, err
+		return nil, err // coverage: ignore - requires device detection to fail
 	}
 
 	// Get managed devices to check which are enabled
 	managedDevices, err := GetManagedDevices()
 	if err != nil {
-		return nil, err
+		return nil, err // coverage: ignore - requires filesystem errors reading managed devices
 	}
 
 	// Create a map of enabled devices
