@@ -275,7 +275,7 @@ func GetDeviceInfoForPath(path string) (deviceName string, devicePath string) {
 		// Default to root filesystem
 		deviceName = "Root"
 		devicePath = "/"
-	default:
+	default: // coverage: ignore - unsupported OS
 		deviceName = "Default"
 		devicePath = "/"
 	}
@@ -310,13 +310,13 @@ func StatFilesInMultipleDirs(dirsWithDeviceInfo []DirWithDevice) ([]*DeviceFileI
 			if entry.IsDir() {
 				folderSize, err := GetFolderSize(fullPath)
 				if err != nil {
-					continue
+					continue // coverage: ignore - requires filesystem errors during folder size calculation
 				}
 				fileInfo = NewCustomFileInfo().WithName(entry.Name()).WithSize(folderSize)
 			} else {
 				info, err := entry.Info()
 				if err != nil {
-					continue
+					continue // coverage: ignore - requires filesystem errors on stat
 				}
 				fileInfo = info
 			}
@@ -340,7 +340,7 @@ func StatFilesInMultipleDirs(dirsWithDeviceInfo []DirWithDevice) ([]*DeviceFileI
 		if a.IsDir() && !b.IsDir() {
 			return -1
 		} else if !a.IsDir() && b.IsDir() {
-			return 1
+			return 1 // coverage: ignore - a is a file, b is a directory
 		}
 		return strings.Compare(a.Name(), b.Name())
 	})

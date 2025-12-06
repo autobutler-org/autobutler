@@ -315,6 +315,56 @@ func TestGetDeviceInfoForPath_LinuxRoot(t *testing.T) {
 	}
 }
 
+func TestStatFilesInMultipleDirs(t *testing.T) {
+	// Create temporary directories for multiple devices
+	tmpDir1 := t.TempDir()
+	tmpDir2 := t.TempDir()
+
+	// Create files in first directory
+	os.WriteFile(filepath.Join(tmpDir1, "file1.txt"), []byte("content1"), 0644)
+	os.Mkdir(filepath.Join(tmpDir1, "dir1"), 0755)
+
+	// Create files in second directory (including a duplicate name)
+	os.WriteFile(filepath.Join(tmpDir2, "file2.txt"), []byte("content2"), 0644)
+	os.WriteFile(filepath.Join(tmpDir2, "file1.txt"), []byte("different content"), 0644)
+
+	dirsWithDevice := []DirWithDevice{
+		{Dir: tmpDir1, DeviceName: "Device1", DevicePath: "/dev1"},
+		{Dir: tmpDir2, DeviceName: "Device2", DevicePath: "/dev2"},
+	}
+
+	files, err := StatFilesInMultipleDirs(dirsWithDevice)
+	if err != nil {
+		t.Fatalf("StatFilesInMultipleDirs failed: %v", err)
+	}
+
+	// Should have 4 entries: dir1, file1.txt (from dev1), file1.txt (from dev2), file2.txt
+	if len(files) != 4 {
+		t.Errorf("Expected 4 files, got %d", len(files))
+	}
+}
+
+func TestStatFilesInMultipleDirs_WithNonexistentDir(t *testing.T) {
+	// Test that nonexistent directories are skipped
+	tmpDir := t.TempDir()
+	os.WriteFile(filepath.Join(tmpDir, "file.txt"), []byte("content"), 0644)
+
+	dirsWithDevice := []DirWithDevice{
+		{Dir: "/nonexistent/path", DeviceName: "BadDevice", DevicePath: "/bad"},
+		{Dir: tmpDir, DeviceName: "GoodDevice", DevicePath: "/good"},
+	}
+
+	files, err := StatFilesInMultipleDirs(dirsWithDevice)
+	if err != nil {
+		t.Fatalf("StatFilesInMultipleDirs failed: %v", err)
+	}
+
+	// Should only have file from the valid directory
+	if len(files) != 1 {
+		t.Errorf("Expected 1 file, got %d", len(files))
+	}
+}
+
 func TestNewDetector(t *testing.T) {
 	detector := NewDetector()
 	if detector == nil {
@@ -1136,5 +1186,18 @@ func TestDetermineFileType_FileNotFoundInFilesDir(t *testing.T) {
 	result := DetermineFileType("nonexistent_root", deviceFileInfo)
 	if result != FileTypeGeneric {
 		t.Errorf("DetermineFileType(file not in filesDir) = %s; want %s", result, FileTypeGeneric)
+	}
+}
+
+func TestGetAvailableSpaceInBytes(t *testing.T) {
+	// Test that GetAvailableSpaceInBytes returns a non-zero value for a valid directory
+	tempDir := t.TempDir()
+	
+	availableSpace := GetAvailableSpaceInBytes(tempDir)
+	
+	// We just verify that it returns a reasonable value (greater than 0)
+	// The actual value will vary by system
+	if availableSpace == 0 {
+		t.Errorf("GetAvailableSpaceInBytes() = 0; want > 0")
 	}
 }
