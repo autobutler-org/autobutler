@@ -184,7 +184,7 @@ func GetDataDirForDevice(mountPoint string) string {
 	if isSystemDevice {
 		// Use platform-specific user directories (~/Library/Application Support/Autobutler/data on macOS)
 		switch runtime.GOOS {
-		case "darwin":
+		case "darwin": // coverage: ignore - Not run in CI
 			homeDir, err := os.UserHomeDir()
 			if err != nil {
 				homeDir = "/" // coverage: ignore - requires UserHomeDir to fail
@@ -206,7 +206,7 @@ func GetDataDirForDevice(mountPoint string) string {
 func GetDataDir() string {
 	// Get data directory for the system device
 	switch runtime.GOOS {
-	case "darwin":
+	case "darwin": // coverage: ignore - Not run in CI
 		// On macOS, the system mount point can be / or /System/Volumes/Data
 		// Use / as the canonical reference
 		return GetDataDirForDevice("/")
@@ -242,7 +242,7 @@ func GetDeviceInfoForPath(path string) (deviceName string, devicePath string) {
 	// For now, use a simple approach: check if path starts with common mount points
 	// This could be enhanced later to use actual device detection
 	switch runtime.GOOS {
-	case "darwin":
+	case "darwin": // coverage: ignore - Not run in CI
 		// On macOS, check if it's under /Volumes/
 		if strings.HasPrefix(absPath, "/Volumes/") {
 			parts := strings.Split(absPath, "/")

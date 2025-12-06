@@ -12,7 +12,7 @@ type Detector interface {
 // NewDetector creates a platform-specific storage detector
 func NewDetector() Detector {
 	switch runtime.GOOS {
-	case "darwin":
+	case "darwin": // coverage: ignore - Not run in CI
 		return &DarwinDetector{}
 	case "linux":
 		return &LinuxDetector{}
