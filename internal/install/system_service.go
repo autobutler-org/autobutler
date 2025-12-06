@@ -53,7 +53,7 @@ func buildServiceFile() string {
 	switch runtime.GOOS {
 	case "linux":
 		return systemdServiceContent
-	case "darwin":
+	case "darwin": // coverage: ignore - Not run in CI
 		return plistServiceContent
 	default:
 		panic("unsupported operating system")

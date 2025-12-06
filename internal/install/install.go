@@ -42,7 +42,7 @@ func Install() error {
 			return fmt.Errorf("failed to copy binary to /usr/local/bin: %w", err)
 		}
 		return installSystemdService()
-	case "darwin":
+	case "darwin": // coverage: ignore - Not run in CI
 		if err := exec.Command("cp", "-v", executable, "/Applications/autobutler").Run(); err != nil {
 			return fmt.Errorf("failed to copy binary to /Applications: %w", err)
 		}

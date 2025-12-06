@@ -26,18 +26,18 @@ func NewDependencies() Dependencies {
 }
 
 func DefaultDependencies() (Dependencies, error) {
-	deps := NewDependencies()
-	if database, err := db.ConnectToDatabase(); err == nil {
+	deps := NewDependencies()                                // coverage: ignore - requires database connection
+	if database, err := db.ConnectToDatabase(); err == nil { // coverage: ignore - requires database connection success
 		deps.WithDatabase(database)
-	} else {
+	} else { // coverage: ignore - requires database connection failure
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
-	if database, err := db.ConnectToHealthDatabase(); err == nil {
+	if database, err := db.ConnectToHealthDatabase(); err == nil { // coverage: ignore - requires health database connection success
 		deps.WithHealthDatabase(database)
-	} else {
+	} else { // coverage: ignore - requires health database connection failure
 		return nil, fmt.Errorf("failed to connect to health database: %w", err)
 	}
-	return deps, nil
+	return deps, nil // coverage: ignore - requires database connection
 }
 
 func (d *dependencies) WithDatabase(database *db.DatabaseSqlc) Dependencies {

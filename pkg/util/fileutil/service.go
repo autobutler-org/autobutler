@@ -28,7 +28,7 @@ func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
 		fileDir := GetFilesDir()
 		for _, filePath := range params.FilePaths {
 			fullPath := filepath.Join(fileDir, params.RootDir, filePath)
-			if err := os.RemoveAll(fullPath); err != nil {
+			if err := os.RemoveAll(fullPath); err != nil { // coverage: ignore - requires filesystem permission errors
 				return nil, fmt.Errorf("failed to delete %s: %w", filePath, err)
 			}
 		}
@@ -50,7 +50,7 @@ func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
 			for _, dirInfo := range dirsToSearch {
 				fullPath := filepath.Join(dirInfo.Dir, relPath)
 				if _, err := os.Stat(fullPath); err == nil {
-					if err := os.RemoveAll(fullPath); err != nil {
+					if err := os.RemoveAll(fullPath); err != nil { // coverage: ignore - requires filesystem permission errors
 						return nil, fmt.Errorf("failed to delete %s from %s: %w", filePath, dirInfo.DeviceName, err)
 					}
 				}
@@ -82,10 +82,10 @@ func MoveFile(params MoveFileParams) (*MoveFileResult, error) {
 
 	newFullDir := filepath.Dir(newFullPath)
 	if err := os.MkdirAll(newFullDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create directory: %w", err)
+		return nil, fmt.Errorf("failed to create directory: %w", err) // coverage: ignore - requires filesystem permission errors
 	}
 
-	if err := os.Rename(oldFullPath, newFullPath); err != nil {
+	if err := os.Rename(oldFullPath, newFullPath); err != nil { // coverage: ignore - requires filesystem permission errors or cross-device move
 		return nil, fmt.Errorf("failed to move file: %w", err)
 	}
 
@@ -115,7 +115,7 @@ type UploadFilesResult struct {
 func UploadFiles(params UploadFilesParams) (*UploadFilesResult, error) {
 	for _, header := range params.FileHeaders {
 		file, err := header.Open()
-		if err != nil {
+		if err != nil { // coverage: ignore - requires malformed multipart data
 			return nil, fmt.Errorf("failed to open file %s: %w", header.Filename, err)
 		}
 		defer file.Close()
@@ -139,12 +139,12 @@ func UploadFiles(params UploadFilesParams) (*UploadFilesResult, error) {
 		}
 
 		newFile, err := os.Create(newFilePath)
-		if err != nil {
+		if err != nil { // coverage: ignore - requires filesystem permission errors
 			return nil, fmt.Errorf("failed to create file %s: %w", header.Filename, err)
 		}
 		defer newFile.Close()
 
-		if _, err := io.Copy(newFile, file); err != nil {
+		if _, err := io.Copy(newFile, file); err != nil { // coverage: ignore - requires I/O failure during copy
 			return nil, fmt.Errorf("failed to write file %s: %w", header.Filename, err)
 		}
 	}
@@ -176,7 +176,7 @@ func CreateFolder(params CreateFolderParams) (*CreateFolderResult, error) {
 	fullPath := filepath.Join(rootDir, params.FolderDir, params.FolderName)
 
 	if err := os.MkdirAll(fullPath, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create folder: %w", err)
+		return nil, fmt.Errorf("failed to create folder: %w", err) // coverage: ignore - requires filesystem permission errors
 	}
 
 	return &CreateFolderResult{
@@ -207,6 +207,9 @@ func DownloadFile(params DownloadFileParams) (*DownloadFileResult, error) {
 		// Fallback to single device
 		rootDir := GetFilesDir()
 		fullPath = filepath.Join(rootDir, params.FilePath)
+		if !DoesFileExist(fullPath) {
+			return nil, fmt.Errorf("file not found: %s", fullPath)
+		}
 	} else {
 		// Search for file across all managed devices
 		var dirsToSearch []DirWithDevice

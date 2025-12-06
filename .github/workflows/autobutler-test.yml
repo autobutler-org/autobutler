@@ -94,6 +94,11 @@ jobs:
         PRINT_COVERAGE: true
       run: |
         make test/unit
+    - name: Print Coverage
+      run: |
+        echo "```" >> ${GITHUB_STEP_SUMMARY}
+        go tool cover -func=./coverage.out.ignored >> ${GITHUB_STEP_SUMMARY}
+        echo "```" >> ${GITHUB_STEP_SUMMARY}
     - name: Upload Coverage Report
       uses: actions/upload-artifact@v4
       with:

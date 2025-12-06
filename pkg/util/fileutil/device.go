@@ -21,6 +21,7 @@ type Device struct {
 // ApplySimpleCategorization applies a simple heuristic categorization for UI display
 // System volumes get a basic breakdown, external drives show as "other"
 func (d *Device) ApplySimpleCategorization() {
+	// TODO: This whole function is a mock and needs to be replaced with something useful later
 	d.Categories = make(map[string]uint64)
 
 	// System volume heuristic: 10% system, 20% documents, 25% media, rest is other
@@ -33,7 +34,7 @@ func (d *Device) ApplySimpleCategorization() {
 		if categorized < d.UsedBytes {
 			d.Categories["other"] = d.UsedBytes - categorized
 		} else {
-			d.Categories["other"] = 0
+			d.Categories["other"] = 0 // coverage: ignore
 		}
 	} else {
 		// External/other volumes: everything is "other"

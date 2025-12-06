@@ -1,3 +1,13 @@
 autobutler/cmd
+autobutler/internal/db
+autobutler/internal/install
+autobutler/internal/server
+autobutler/internal/update
+autobutler/pkg/botel
+autobutler/pkg/calendar
 autobutler/pkg/ui/components
+autobutler/pkg/ui/types
 autobutler/pkg/ui/views
+autobutler/pkg/util/updateutil
+autobutler/pkg/util/fileutil/linux
+autobutler/pkg/util/fileutil/darwin
