@@ -8,6 +8,8 @@ package file_viewer
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
+import "autobutler/pkg/ui/components/lib"
+
 func Component() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -29,7 +31,16 @@ func Component() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<dialog id=\"file-viewer\" class=\"file-viewer\" onclose=\"closeFileViewer(event)\" closedby=\"none\" onkeydown=\"if (event.key === 'Escape') { closeFileViewer(event); } else if (event.key === 'Enter' && !event.target.closest('.ace_text-input, #editor')) { preventDefault(event); }\" onmousedown=\"preventDefault(event)\"><script src=\"/public/vendor/epub.js/jszip.min.js\"></script><script src=\"/public/vendor/epub.js/epub.min.js\"></script><script src=\"/public/vendor/ace/ace.js\"></script><script src=\"/public/scripts/text_editor.js\"></script><button class=\"file-viewer-close\" aria-label=\"Close\" onclick=\"closeFileViewer(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" fill=\"none\" viewBox=\"0 0 20 20\"><path stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" d=\"M5 5l10 10M15 5l-10 10\"></path></svg></button><div id=\"file-viewer-content\" class=\"file-viewer-content\"></div></dialog>")
+		templ_7745c5c3_Err = lib.Dialog(
+			"file-viewer",
+			"",
+			[]string{
+				"/public/vendor/epub.js/jszip.min.js",
+				"/public/vendor/epub.js/epub.min.js",
+				"/public/vendor/ace/ace.js",
+				"/public/scripts/text_editor.js",
+			},
+		).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

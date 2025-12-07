@@ -196,6 +196,7 @@ type DownloadFileResult struct {
 	FileType  FileType
 	IsFolder  bool
 	ZipWriter *zip.Writer
+	MimeType  string
 }
 
 // DownloadFile prepares a file for download, handling both files and folders (as zip)
