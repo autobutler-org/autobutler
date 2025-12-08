@@ -13,8 +13,8 @@ import (
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/fileutil"
 	"autobutler/pkg/util/maputil"
-	// "fmt"
-	// "path/filepath"
+	"fmt"
+	"path/filepath"
 )
 
 func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.Component {
@@ -43,34 +43,28 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 			return templ_7745c5c3_Err
 		}
 		items := maputil.NewOrderedMapFromValues(
-			// []string{"Download", "Move/Rename", "File Details", "Delete"},
-			// []*lib.HandlerProps{
-			// 	&lib.HandlerProps{
-			// 		OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); window.location.href='%s';", filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name())),
-			// 	},
-			// 	&lib.HandlerProps{
-			// 		OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); moveFile(event, '%s', '%s');", pageState.RootDir, file.Name()),
-			// 	},
-			// 	&lib.HandlerProps{
-			// 		OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); showFileDetails('%s');", file.Name()),
-			// 	},
-			// 	&lib.HandlerProps{
-			// 		AdditionalClasses: "context-menu-item--danger",
-			// 		HTMXTarget:        "#file-explorer",
-			// 		HTMXSwap:          "outerHTML",
-			// 		HTMXMethod:        "DELETE",
-			// 		HTMXRequestPath:   filepath.Join(`/api/v1/files`),
-			// 		HTMXVals:          fmt.Sprintf(`{"rootDir":"%s", "filePaths":["%s"]}`, pageState.RootDir, file.Name()),
-			// 	},
-			// },
-			[]string{"Test"},
+			[]string{"Download", "Move/Rename", "File Details", "Delete"},
 			[]*lib.HandlerProps{
 				&lib.HandlerProps{
-					OnClickHandler: "console.log('Test item clicked');",
+					OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); window.location.href='%s';", filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name())),
+				},
+				&lib.HandlerProps{
+					OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); moveFile(event, '%s', '%s');", pageState.RootDir, file.Name()),
+				},
+				&lib.HandlerProps{
+					OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); showFileDetails('%s');", file.Name()),
+				},
+				&lib.HandlerProps{
+					AdditionalClasses: "context-menu-item--danger",
+					HTMXTarget:        "#file-explorer",
+					HTMXSwap:          "outerHTML",
+					HTMXMethod:        "DELETE",
+					HTMXRequestPath:   filepath.Join(`/api/v1/files`),
+					HTMXVals:          fmt.Sprintf(`{"rootDir":"%s", "filePaths":["%s"]}`, pageState.RootDir, file.Name()),
 				},
 			},
 		)
-		templ_7745c5c3_Err = lib.ContextMenu(items, true).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = lib.ContextMenu(items, false).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

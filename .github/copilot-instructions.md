@@ -20,6 +20,7 @@ Avoid
 -----
 - Do not add inline styles (style="...") for persistent UI design. Small one-off debug styles are allowed in development but should be moved into `site.css` before merging.
 - Do not introduce new global stylesheets at the project root. Keep site-wide styles centralized in `internal/server/public/styles/site.css`.
+- **NEVER add CSS transforms (transform: scale(), translateX(), etc.) to interactive elements unless explicitly requested.** Transforms on :active, :hover, or :focus states cause positioning bugs where clicks fail to register because elements move away from the cursor during interaction. This has caused numerous bugs.
 
 Style additions best practices
 -----------------------------
