@@ -111,15 +111,17 @@ function closeContextMenu(event, parentNode) {
 
 // eslint-disable-next-line no-unused-vars
 function closeContextMenuFromItem(event) {
+    console.log('closeContextMenuFromItem called - this means the onclick handler fired!');
+
+    preventDefault(event);
+
     const contextMenu = event.target.closest('.context-menu');
     if (contextMenu) {
         contextMenu.style.left = null;
         contextMenu.style.top = null;
         contextMenu.classList.add('hidden');
     }
-}
-
-// eslint-disable-next-line no-unused-vars
+}// eslint-disable-next-line no-unused-vars
 function openContextMenu(event, parentNode) {
     preventDefault(event);
     clearSelectedFiles();
@@ -182,18 +184,6 @@ function toggleFolderInput(event) {
         folderInput.focus();
     }
 }
-
-// Close context menus when clicking outside
-document.addEventListener('click', (event) => {
-    // Check if the click is outside any context menu and not on a context menu trigger
-    if (!event.target.closest('.context-menu') && !event.target.closest('.context-menu-trigger')) {
-        document.querySelectorAll('.context-menu:not(.hidden)').forEach((menu) => {
-            menu.classList.add('hidden');
-            menu.style.left = null;
-            menu.style.top = null;
-        });
-    }
-});
 
 function clearFileViewer() {
     if (loadedBook) {
@@ -1213,31 +1203,6 @@ window.addEventListener('popstate', function () {
 // Update back button on page load
 document.addEventListener('DOMContentLoaded', function () {
     updateBackButton();
-});
-
-// CONTEXT MENU GLOBAL HANDLERS
-// Close context menus when clicking outside
-document.addEventListener('click', function (event) {
-    // Check if click is outside any context menu
-    if (
-        !event.target.closest('.context-menu') &&
-        !event.target.closest('.context-menu-trigger') &&
-        !event.target.closest('.grid-view-context-trigger') &&
-        !event.target.closest('.column-view-context-trigger')
-    ) {
-        document.querySelectorAll('.context-menu:not(.hidden)').forEach((menu) => {
-            menu.classList.add('hidden');
-        });
-    }
-
-    // Clear file selection when clicking on empty space (not on a file node)
-    if (
-        !event.target.closest('.file-node') &&
-        !event.target.closest('.context-menu') &&
-        !event.target.closest('dialog')
-    ) {
-        clearSelectedFiles();
-    }
 });
 
 // DEVICE FILTERING
