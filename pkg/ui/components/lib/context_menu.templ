@@ -16,10 +16,14 @@ type HandlerProps struct {
 	HTMXVals          string
 }
 
-templ ContextMenu(onClickHandlers maputil.OrderedMap[string, *HandlerProps]) {
+templ ContextMenu(onClickHandlers maputil.OrderedMap[string, *HandlerProps], showMenu bool) {
 	<div>
+		{{ hiddenClass := "" }}
+		if !showMenu {
+			{{ hiddenClass = "hidden" }}
+		}
 		<ul
-			class="context-menu hidden"
+			class={fmt.Sprintf("context-menu %s", hiddenClass)}
 			style="width: 7rem;"
 		>
 			for name, props := range onClickHandlers.Range() {

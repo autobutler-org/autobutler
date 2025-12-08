@@ -64,7 +64,7 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 				},
 			},
 		)
-		templ_7745c5c3_Err = lib.ContextMenu(items).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = lib.ContextMenu(items, true).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

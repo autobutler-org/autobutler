@@ -36,19 +36,18 @@ func Component(pageState types.PageState) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = lib.ContextMenu(
-			maputil.NewOrderedMapFromValues(
-				[]string{"New File", "Details"},
-				[]*lib.HandlerProps{
-					&lib.HandlerProps{
-						OnClickHandler: fmt.Sprintf("newFile(event, '%s'); closeContextMenuFromItem(event);", pageState.RootDir),
-					},
-					&lib.HandlerProps{
-						OnClickHandler: "showFolderDetails(event); closeContextMenuFromItem(event);",
-					},
+		items := maputil.NewOrderedMapFromValues(
+			[]string{"New File", "Details"},
+			[]*lib.HandlerProps{
+				&lib.HandlerProps{
+					OnClickHandler: fmt.Sprintf("newFile(event, '%s'); closeContextMenuFromItem(event);", pageState.RootDir),
 				},
-			),
-		).Render(ctx, templ_7745c5c3_Buffer)
+				&lib.HandlerProps{
+					OnClickHandler: "showFolderDetails(event); closeContextMenuFromItem(event);",
+				},
+			},
+		)
+		templ_7745c5c3_Err = lib.ContextMenu(items, false).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
