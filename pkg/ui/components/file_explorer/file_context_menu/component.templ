@@ -1,8 +1,10 @@
 package file_context_menu
 
 import (
+	"autobutler/pkg/ui/components/lib"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/maputil"
 	"fmt"
 	"path/filepath"
 )
@@ -18,53 +20,30 @@ templ Component(pageState types.PageState, file *fileutil.DeviceFileInfo) {
 		>
 			&#x22EE;
 		</button>
-		<ul
-			class="context-menu hidden"
-		>
-			<li>
-				<a
-					download
-					class="context-menu-item"
-					href={ filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name()) }
-					onclick="closeContextMenuFromItem(event)"
-				>
-					Download
-				</a>
-				<hr/>
-			</li>
-			<li>
-				<button
-					type="button"
-					class="context-menu-item"
-					onclick={ templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); moveFile(event, '%s', '%s')", pageState.RootDir, file.Name())) }
-				>
-					Move/Rename
-				</button>
-				<hr/>
-			</li>
-			<li>
-				<button
-					type="button"
-					class="context-menu-item"
-					onclick={ templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); showFileDetails('%s')", file.Name())) }
-				>
-					File Details
-				</button>
-				<hr/>
-			</li>
-			<li>
-				<button
-					type="button"
-					class="context-menu-item context-menu-item--danger"
-					hx-target="#file-explorer"
-					hx-swap="outerHTML"
-					hx-delete={ filepath.Join(`/api/v1/files`) }
-					hx-vals={ `{"rootDir":"` + pageState.RootDir + `", "filePaths":["` + file.Name() + `"]}` }
-					onclick="closeContextMenuFromItem(event); event.stopPropagation()"
-				>
-					Delete
-				</button>
-			</li>
-		</ul>
+		{{
+			items := maputil.NewOrderedMapFromValues(
+				[]string{"Download", "Move/Rename", "File Details", "Delete"},
+				[]*lib.HandlerProps{
+					&lib.HandlerProps{
+						OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); window.location.href='%s';", filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name())),
+					},
+					&lib.HandlerProps{
+						OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); moveFile(event, '%s', '%s');", pageState.RootDir, file.Name()),
+					},
+					&lib.HandlerProps{
+						OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); showFileDetails('%s');", file.Name()),
+					},
+					&lib.HandlerProps{
+						AdditionalClasses: "context-menu-item--danger",
+						HTMXTarget:        "#file-explorer",
+						HTMXSwap:          "outerHTML",
+						HTMXMethod:        "DELETE",
+						HTMXRequestPath:   filepath.Join(`/api/v1/files`),
+						HTMXVals:          fmt.Sprintf(`{"rootDir":"%s", "filePaths":["%s"]}`, pageState.RootDir, file.Name()),
+					},
+				},
+			)
+		}}
+		@lib.ContextMenu(items)
 	</div>
 }
