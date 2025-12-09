@@ -513,7 +513,7 @@
     padding: var(--spacing-sm) var(--spacing-sm);
     border-radius: var(--border-radius);
     border: none;
-    background: var(--color-gray-100);
+    background: transparent;
     cursor: pointer;
     text-decoration: none;
 }
@@ -532,10 +532,6 @@
 }
 
 @media (prefers-color-scheme: dark) {
-    .context-menu-trigger {
-        background: var(--color-gray-700);
-    }
-
     .context-menu-trigger:hover {
         background-color: var(--color-gray-600);
     }
@@ -958,12 +954,19 @@
     width: 24px;
     height: 24px;
     padding: 0;
+    background: var(--color-gray-100);
     opacity: 0;
     transition: opacity 0.2s ease;
 }
 
 .column-view-item:hover .context-menu-trigger {
     opacity: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+    .column-view-item .context-menu-trigger {
+        background: var(--color-gray-700);
+    }
 }
 
 /* Preview Pane */
@@ -1263,12 +1266,19 @@
     width: 24px;
     height: 24px;
     padding: 0;
+    background: var(--color-gray-100);
     opacity: 0;
     transition: opacity 0.2s ease;
 }
 
 .grid-view-item:hover .context-menu-trigger {
     opacity: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+    .grid-view-item .context-menu-trigger {
+        background: var(--color-gray-700);
+    }
 }
 
 /* Grid View Scrollbar Styling */
