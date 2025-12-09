@@ -312,7 +312,6 @@ function handleFileNodeClick(event, node) {
     // Ignore if clicking on context menu trigger
     if (
         event.target.closest('.context-menu-trigger') ||
-        event.target.closest('.grid-view-context-trigger') ||
         event.target.closest('.column-view-context-trigger')
     ) {
         return;

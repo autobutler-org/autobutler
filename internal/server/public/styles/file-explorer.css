@@ -1229,30 +1229,19 @@
     transition: opacity 0.2s ease;
 }
 
-@media (prefers-color-scheme: dark) {
-    .grid-view-context-trigger {
-        background: var(--color-gray-700);
-        color: var(--color-gray-300);
-    }
-}
-
-.grid-view-item:hover .grid-view-context-trigger {
-    opacity: 1;
-}
-
-.grid-view-context-trigger:hover {
-    background: var(--color-gray-200);
-}
-
-@media (prefers-color-scheme: dark) {
-    .grid-view-context-trigger:hover {
-        background: var(--color-gray-600);
-    }
-}
-
 /* Grid View Context Menu */
 .grid-view-item .context-menu {
     min-width: 150px;
+}
+
+/* Hide context menu trigger in grid view by default, show on hover */
+.grid-view-item .context-menu-trigger {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.grid-view-item:hover .context-menu-trigger {
+    opacity: 1;
 }
 
 /* Grid View Scrollbar Styling */
