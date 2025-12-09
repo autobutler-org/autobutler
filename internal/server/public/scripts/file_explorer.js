@@ -1329,3 +1329,23 @@ function initializeDeviceBadgeToggle() {
 
 document.addEventListener('DOMContentLoaded', initializeDeviceBadgeToggle);
 document.body.addEventListener('htmx:afterSwap', initializeDeviceBadgeToggle);
+
+// Clear file selection when clicking on empty space
+function initializeFileSelectionClear() {
+    document.addEventListener('click', function (event) {
+        // Don't clear if clicking on a file node
+        if (event.target.closest('.file-node')) {
+            return;
+        }
+        
+        // Don't clear if clicking on the download button
+        if (event.target.closest('#file-download-button')) {
+            return;
+        }
+        
+        // Clear selections for any other click
+        clearSelectedFiles();
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initializeFileSelectionClear);
