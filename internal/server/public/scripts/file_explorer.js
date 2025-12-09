@@ -608,6 +608,16 @@ function saveAceEditor(filePath, content) {
 }
 
 // eslint-disable-next-line no-unused-vars
+function downloadFile(filePath) {
+    const link = document.createElement('a');
+    link.href = `/api/v1/files${filePath}`;
+    link.download = filePath.split('/').pop();
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// eslint-disable-next-line no-unused-vars
 function moveFile(event, rootDir, fileName) {
     preventDefault(event);
     while (rootDir && rootDir[0] == '/') {
