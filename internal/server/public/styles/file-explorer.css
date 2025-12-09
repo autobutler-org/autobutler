@@ -945,6 +945,16 @@
     min-width: 150px;
 }
 
+/* Hide context menu trigger in column view by default, show on hover */
+.column-view-item .context-menu-trigger {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.column-view-item:hover .context-menu-trigger {
+    opacity: 1;
+}
+
 /* Preview Pane */
 .column-view-preview {
     min-width: 300px;
