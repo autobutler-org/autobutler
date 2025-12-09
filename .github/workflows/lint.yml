@@ -28,12 +28,12 @@ jobs:
         uses: ./.github/actions/setup-sqlc
       - name: Setup Templ
         uses: ./.github/actions/setup-templ
-      - name: Lint
-        run: |
-          make lint
       - name: Generate code
         run: |
           make generate
+      - name: Lint
+        run: |
+          make lint
       - name: Tidy
         run: |
           go mod tidy
