@@ -312,7 +312,7 @@ test.describe('Files Page - File Interactions', () => {
         await expect(fileViewer).toBeVisible();
 
         // Click the close button
-        const closeButton = page.locator('.file-viewer-close');
+        const closeButton = page.locator('.dialog-close');
         await closeButton.click();
 
         // Modal should be closed
