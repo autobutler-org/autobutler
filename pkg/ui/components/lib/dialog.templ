@@ -10,9 +10,9 @@ templ Dialog(
 	<dialog
 		id={ id }
 		class={ fmt.Sprintf("dialog %s", additionalClass) }
-		onclose="closeDialog(event)"
+		onclose="window.ab_closeDialog(event)"
 		closedby="none"
-		onkeydown="if (event.key === 'Escape') { closeDialog(event); } else if (event.key === 'Enter') { preventDefault(event); }"
+		onkeydown="if (event.key === 'Escape') { window.ab_closeDialog(event); } else if (event.key === 'Enter') { preventDefault(event); }"
 		onmousedown="preventDefault(event)"
 	>
 		for _, script := range scripts {
@@ -21,7 +21,7 @@ templ Dialog(
 		<button
 			class={ fmt.Sprintf("dialog-close %s-close", additionalClass) }
 			aria-label="Close"
-			onclick="closeFileViewer(event)"
+			onclick="window.ab_closeDialog(event)"
 		>
 			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20">
 				<path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M5 5l10 10M15 5l-10 10"></path>
@@ -29,4 +29,20 @@ templ Dialog(
 		</button>
 		<div id={ fmt.Sprintf("%s-content", id) } class={ fmt.Sprintf("dialog-content %s-content", additionalClass) }></div>
 	</dialog>
+	<script type="text/javascript">
+		// Close dialog with optional cleanup
+		// eslint-disable-next-line no-unused-vars
+		window.ab_closeDialog = (event) => {
+			if (event) {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+
+			// Close closest dialog
+			const dialog = event.target.closest('dialog');
+			if (dialog) {
+				dialog.close();
+			}
+		}
+	</script>
 }

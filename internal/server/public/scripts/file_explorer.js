@@ -108,27 +108,6 @@ function toggleFolderInput(event) {
     }
 }
 
-function clearFileViewer() {
-    if (loadedBook) {
-        loadedBook.destroy();
-        loadedBook = null;
-    }
-    const fileViewerContent = document.getElementById('file-viewer-content');
-    fileViewerContent.innerHTML = '';
-    if (navigationListener) {
-        removeEventListener('keydown', navigationListener);
-        navigationListener = null;
-    }
-}
-
-// eslint-disable-next-line no-unused-vars
-function closeFileViewer(event) {
-    preventDefault(event);
-    const fileViewer = document.getElementById('file-viewer');
-    fileViewer.close();
-    clearFileViewer();
-}
-
 // SELECTION MANAGEMENT (Google Drive style)
 
 /**

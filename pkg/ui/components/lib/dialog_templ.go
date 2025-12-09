@@ -66,7 +66,7 @@ func Dialog(
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" onclose=\"closeDialog(event)\" closedby=\"none\" onkeydown=\"if (event.key === 'Escape') { closeDialog(event); } else if (event.key === 'Enter') { preventDefault(event); }\" onmousedown=\"preventDefault(event)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" onclose=\"window.ab_closeDialog(event)\" closedby=\"none\" onkeydown=\"if (event.key === 'Escape') { window.ab_closeDialog(event); } else if (event.key === 'Enter') { preventDefault(event); }\" onmousedown=\"preventDefault(event)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -107,7 +107,7 @@ func Dialog(
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" aria-label=\"Close\" onclick=\"closeFileViewer(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" fill=\"none\" viewBox=\"0 0 20 20\"><path stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" d=\"M5 5l10 10M15 5l-10 10\"></path></svg></button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" aria-label=\"Close\" onclick=\"window.ab_closeDialog(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" fill=\"none\" viewBox=\"0 0 20 20\"><path stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" d=\"M5 5l10 10M15 5l-10 10\"></path></svg></button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -142,7 +142,7 @@ func Dialog(
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"></div></dialog><script type=\"text/javascript\">\n\t\t// Close dialog with optional cleanup\n\t\t// eslint-disable-next-line no-unused-vars\n\t\twindow.ab_closeDialog = (event) => {\n\t\t\tif (event) {\n\t\t\t\tevent.preventDefault();\n\t\t\t\tevent.stopPropagation();\n\t\t\t}\n\n\t\t\t// Close closest dialog\n\t\t\tconst dialog = event.target.closest('dialog');\n\t\t\tif (dialog) {\n\t\t\t\tdialog.close();\n\t\t\t}\n\t\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
