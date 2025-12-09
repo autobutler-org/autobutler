@@ -519,7 +519,7 @@
 }
 
 .context-menu-trigger:hover {
-    background-color: var(--color-gray-200);
+    background-color: var(--color-gray-300);
 }
 
 .context-menu-trigger:focus {
@@ -816,7 +816,7 @@
 
 @media (prefers-color-scheme: dark) {
     .column-view-item:hover {
-        background: var(--color-gray-700);
+        background: var(--color-gray-800);
     }
 }
 
@@ -898,48 +898,6 @@
     font-weight: 300;
 }
 
-/* Column View Context Menu Trigger */
-.column-view-context-trigger {
-    position: absolute;
-    top: 50%;
-    right: var(--spacing-xs);
-    transform: translateY(-50%);
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--border-radius);
-    background: var(--color-gray-100);
-    color: var(--color-gray-600);
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-@media (prefers-color-scheme: dark) {
-    .column-view-context-trigger {
-        background: var(--color-gray-700);
-        color: var(--color-gray-300);
-    }
-}
-
-.column-view-item:hover .column-view-context-trigger {
-    opacity: 1;
-}
-
-.column-view-context-trigger:hover {
-    background: var(--color-gray-200);
-}
-
-@media (prefers-color-scheme: dark) {
-    .column-view-context-trigger:hover {
-        background: var(--color-gray-600);
-    }
-}
-
 /* Column View Context Menu */
 .column-view-item .context-menu {
     min-width: 150px;
@@ -954,19 +912,12 @@
     width: 24px;
     height: 24px;
     padding: 0;
-    background: var(--color-gray-100);
     opacity: 0;
     transition: opacity 0.2s ease;
 }
 
 .column-view-item:hover .context-menu-trigger {
     opacity: 1;
-}
-
-@media (prefers-color-scheme: dark) {
-    .column-view-item .context-menu-trigger {
-        background: var(--color-gray-700);
-    }
 }
 
 /* Preview Pane */
@@ -1078,14 +1029,12 @@
     padding: var(--spacing-md);
     border: 1px solid var(--color-gray-200);
     border-radius: var(--border-radius);
-    background: white;
     transition: all 0.15s ease;
     cursor: pointer;
 }
 
 @media (prefers-color-scheme: dark) {
     .grid-view-item {
-        background: var(--color-gray-800);
         border-color: var(--color-gray-700);
     }
 }
@@ -1098,7 +1047,7 @@
 
 @media (prefers-color-scheme: dark) {
     .grid-view-item:hover {
-        background: var(--color-gray-700);
+        background: var(--color-gray-800);
         border-color: var(--color-gray-600);
     }
 }
@@ -1266,19 +1215,12 @@
     width: 24px;
     height: 24px;
     padding: 0;
-    background: var(--color-gray-100);
     opacity: 0;
     transition: opacity 0.2s ease;
 }
 
 .grid-view-item:hover .context-menu-trigger {
     opacity: 1;
-}
-
-@media (prefers-color-scheme: dark) {
-    .grid-view-item .context-menu-trigger {
-        background: var(--color-gray-700);
-    }
 }
 
 /* Grid View Scrollbar Styling */

@@ -23,7 +23,7 @@ templ ContextMenu(onClickHandlers maputil.OrderedMap[string, *HandlerProps], sho
 			{{ hiddenClass = "hidden" }}
 		}
 		<ul
-			class={fmt.Sprintf("context-menu %s", hiddenClass)}
+			class={ fmt.Sprintf("context-menu %s", hiddenClass) }
 			style="width: 7rem;"
 		>
 			for name, props := range onClickHandlers.Range() {
