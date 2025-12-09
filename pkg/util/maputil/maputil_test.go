@@ -208,7 +208,7 @@ func TestRange_ConditionalBreak(t *testing.T) {
 	om.Set("d", 4)
 
 	var visitedKeys []string
-	for k, _ := range om.Range() {
+	for k := range om.Range() {
 		visitedKeys = append(visitedKeys, k)
 		if k == "stop" {
 			break
@@ -302,7 +302,7 @@ func TestRange_OrderPreservation(t *testing.T) {
 	}
 
 	var iteratedOrder []int
-	for k, _ := range om.Range() {
+	for k := range om.Range() {
 		iteratedOrder = append(iteratedOrder, k)
 	}
 
@@ -325,7 +325,7 @@ func TestRange_ModificationDuringIteration(t *testing.T) {
 
 	// Collect keys during iteration (not modifying the map being iterated)
 	var keys []string
-	for k, _ := range om.Range() {
+	for k := range om.Range() {
 		keys = append(keys, k)
 	}
 

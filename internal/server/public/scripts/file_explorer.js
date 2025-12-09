@@ -1337,12 +1337,12 @@ function initializeFileSelectionClear() {
         if (event.target.closest('.file-node')) {
             return;
         }
-        
+
         // Don't clear if clicking on the download button
         if (event.target.closest('#file-download-button')) {
             return;
         }
-        
+
         // Clear selections for any other click
         clearSelectedFiles();
     });
