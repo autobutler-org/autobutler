@@ -39,9 +39,12 @@ templ ContextMenu(onClickHandlers maputil.OrderedMap[string, *ContextMenuHandler
 	</ul>
 </div>
 <script type="text/javascript">
+	// Initialize autobutler namespace
+	window.ab = window.ab || {};
+
 	// Close context menu(s) within a parent node
 	// eslint-disable-next-line no-unused-vars
-	window.ab_closeContextMenu = (event, parentNode) => {
+	window.ab.closeContextMenu = (event, parentNode) => {
 		if (event) {
 			event.preventDefault();
 			event.stopPropagation();
@@ -55,7 +58,7 @@ templ ContextMenu(onClickHandlers maputil.OrderedMap[string, *ContextMenuHandler
 
 	// Close context menu from within the menu (e.g., after clicking an item)
 	// eslint-disable-next-line no-unused-vars
-	window.ab_closeContextMenuFromItem = (event) => {
+	window.ab.closeContextMenuFromItem = (event) => {
 		if (event) {
 			event.preventDefault();
 			event.stopPropagation();
@@ -71,7 +74,7 @@ templ ContextMenu(onClickHandlers maputil.OrderedMap[string, *ContextMenuHandler
 
 	// Toggle a floating context menu at cursor position
 	// eslint-disable-next-line no-unused-vars
-	window.ab_toggleFloatingContextMenu = (event, parentNode) => {
+	window.ab.toggleFloatingContextMenu = (event, parentNode) => {
 		if (event) {
 			event.preventDefault();
 			event.stopPropagation();

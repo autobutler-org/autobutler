@@ -52,8 +52,11 @@ templ Component() {
 		</div>
 	</dialog>
 	<script type="text/javascript">
+		// Initialize autobutler namespace
+		window.ab = window.ab || {};
+
 		// eslint-disable-next-line no-unused-vars
-		window.ab_openRenameDialog = (filePath) => {
+		window.ab.openRenameDialog = (filePath) => {
 			const dialog = document.getElementById('rename-dialog');
 			const input = document.getElementById('rename-path-input');
 			const currentPath = document.getElementById('rename-current-path');
