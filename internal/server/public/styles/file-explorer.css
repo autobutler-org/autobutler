@@ -563,27 +563,6 @@
     }
 }
 
-.file-viewer-close {
-    position: absolute;
-    top: var(--spacing-sm);
-    right: var(--spacing-sm);
-    padding: var(--spacing-sm);
-    border-radius: var(--border-radius);
-    border: none;
-    background: transparent;
-    cursor: pointer;
-}
-
-.file-viewer-close:hover {
-    background-color: var(--color-gray-200);
-}
-
-@media (prefers-color-scheme: dark) {
-    .file-viewer-close:hover {
-        background-color: var(--color-gray-700);
-    }
-}
-
 .file-viewer-content {
     margin: var(--spacing-3xl);
     width: calc(100% - (var(--spacing-3xl) * 2));
