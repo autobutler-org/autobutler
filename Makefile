@@ -75,6 +75,7 @@ generate/sqlc: ## Generate templ files
 
 generate/templ: ## Generate templ files
 	templ generate
+	$(MAKE) lint/go
 
 build: generate ## Build backend
 	mkdir -p ./build
@@ -118,7 +119,7 @@ test/e2e:
 format: format/go format/templ format/js format/ts format/css ## Format code
 
 format/go: ## Format Go code
-	go fmt ./...
+	gofmt -s -w .
 
 format/templ: ## Format templ files
 	templ fmt .
@@ -135,7 +136,7 @@ format/css: ## Format CSS files
 lint: lint/go lint/sqlc lint/templ lint/js lint/ts lint/css lint/yaml ## Lint code
 
 lint/go: ## Lint Go code
-	gofmt -s -w .
+	$(MAKE) format/go
 	go vet ./...
 
 lint/sqlc: ## Lint sqlc
