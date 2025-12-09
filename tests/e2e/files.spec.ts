@@ -380,7 +380,7 @@ test.describe('Modal Dialog Behavior', () => {
         await expect(fileViewer).toBeVisible();
 
         // Click the close button
-        const closeButton = page.locator('.file-viewer-close');
+        const closeButton = page.locator('.dialog-close');
         await closeButton.click();
 
         // Dialog should be closed (not visible)
@@ -517,7 +517,7 @@ test.describe('File Selection', () => {
         await expect(fileViewer).toBeVisible({ timeout: 3000 });
 
         // Close the viewer for cleanup
-        const closeBtn = fileViewer.locator('.file-viewer-close');
+        const closeBtn = fileViewer.locator('.dialog-close');
         if (await closeBtn.isVisible()) {
             await closeBtn.click();
         }
