@@ -1,9 +1,26 @@
 // Initialize autobutler namespace
 window.ab = window.ab || {};
 
+window.ab.preventDefault = (event) => {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+};
+
+window.ab.debounce = (func, wait) => {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+};
+
 // File explorer state
 window.ab.fileExplorer = {
-    // Constants
+    ///////////////
+    // Constants //
+    ///////////////
     MAX_FILE_NAME_LENGTH: 255,
     DOUBLE_CLICK_DELAY: 300, // ms
     DOUBLE_TAP_DELAY: 300, // ms
@@ -30,566 +47,605 @@ window.ab.fileExplorer = {
 
     // Device filtering state
     activeDevices: new Set(),
-};
 
-function getViewPreference() {
-    return localStorage.getItem(window.ab.fileExplorer.VIEW_STORAGE_KEY) || 'list';
-}
+    ///////////////
+    // Functions //
+    ///////////////
+    getViewPreference: () => {
+        return localStorage.getItem(window.ab.fileExplorer.VIEW_STORAGE_KEY) || 'list';
+    },
 
-function setViewPreference(view) {
-    localStorage.setItem(window.ab.fileExplorer.VIEW_STORAGE_KEY, view);
-    // Also set cookie so server can read it on regular page loads
-    document.cookie = `fileExplorerView=${view}; path=/; max-age=31536000`; // 1 year
-}
+    setViewPreference: (view) => {
+        localStorage.setItem(window.ab.fileExplorer.VIEW_STORAGE_KEY, view);
+        // Also set cookie so server can read it on regular page loads
+        document.cookie = `fileExplorerView=${view}; path=/; max-age=31536000`; // 1 year
+    },
 
-// eslint-disable-next-line no-unused-vars
-function switchView(view) {
-    setViewPreference(view);
+    switchView: (view) => {
+        window.ab.fileExplorer.setViewPreference(view);
 
-    // Update button states immediately
-    updateViewButtonStates(view);
+        // Update button states immediately
+        window.ab.fileExplorer.updateViewButtonStates(view);
 
-    // Use HTMX to reload the content without a full page refresh
-    const currentPath = window.location.pathname;
-    htmx.ajax('GET', currentPath, {
-        target: '#file-explorer-view-content',
-        swap: 'innerHTML',
-    });
-}
+        // Use HTMX to reload the content without a full page refresh
+        const currentPath = window.location.pathname;
+        htmx.ajax('GET', currentPath, {
+            target: '#file-explorer-view-content',
+            swap: 'innerHTML',
+        });
+    },
 
-function updateViewButtonStates(activeView) {
-    // Get all view switcher buttons
-    const viewSwitcher = document.querySelector('.view-switcher');
-    if (!viewSwitcher) return;
+    updateViewButtonStates: (activeView) => {
+        // Get all view switcher buttons
+        const viewSwitcher = document.querySelector('.view-switcher');
+        if (!viewSwitcher) return;
 
-    const buttons = viewSwitcher.querySelectorAll('button');
-    buttons.forEach((button, index) => {
-        const views = ['list', 'grid', 'column'];
-        const buttonView = views[index];
+        const buttons = viewSwitcher.querySelectorAll('button');
+        buttons.forEach((button, index) => {
+            const views = ['list', 'grid', 'column'];
+            const buttonView = views[index];
 
-        if (buttonView === activeView) {
-            // Make this button active
-            button.classList.remove('btn--secondary');
-            button.classList.add('btn--primary');
-        } else {
-            // Make this button inactive
-            button.classList.remove('btn--primary');
-            button.classList.add('btn--secondary');
-        }
-    });
-}
+            if (buttonView === activeView) {
+                // Make this button active
+                button.classList.remove('btn--secondary');
+                button.classList.add('btn--primary');
+            } else {
+                // Make this button inactive
+                button.classList.remove('btn--primary');
+                button.classList.add('btn--secondary');
+            }
+        });
+    },
 
-// Initialize - sync localStorage to cookie on page load and update button states
-document.addEventListener('DOMContentLoaded', function () {
-    const view = getViewPreference();
-    setViewPreference(view); // Ensures cookie is set
-    updateViewButtonStates(view); // Ensure button states match the active view
-});
+    showFileDetails: (fileName) => {
+        alert(fileName);
+    },
 
-// Send view preference in all HTMX requests via custom header
-document.body.addEventListener('htmx:configRequest', function (event) {
-    const view = getViewPreference();
-    event.detail.headers['X-File-Explorer-View'] = view;
-});
-
-function preventDefault(event) {
-    if (event) {
+    toggleFolderInput: (event) => {
         event.preventDefault();
-        event.stopPropagation();
-    }
-}
-
-// eslint-disable-next-line no-unused-vars
-function debounce(func, wait) {
-    let timeout;
-    return (...args) => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-}
-
-// eslint-disable-next-line no-unused-vars
-function showFileDetails(fileName) {
-    alert(fileName);
-}
-
-// eslint-disable-next-line no-unused-vars
-function toggleFolderInput(event) {
-    event.preventDefault();
-    const folderInput = document.getElementById('folder-input');
-    if (!folderInput.classList.toggle('hidden')) {
-        folderInput.focus();
-    }
-}
-
-// SELECTION MANAGEMENT (Google Drive style)
-
-/**
- * Get all file nodes in the current view in DOM order
- */
-function getAllFileNodes() {
-    return Array.from(document.querySelectorAll('.file-node'));
-}
-
-/**
- * Select a range of file nodes between two nodes (inclusive)
- */
-function selectRange(startNode, endNode) {
-    const allNodes = getAllFileNodes();
-    const startIndex = allNodes.indexOf(startNode);
-    const endIndex = allNodes.indexOf(endNode);
-
-    if (startIndex === -1 || endIndex === -1) return;
-
-    // Determine the range direction
-    const minIndex = Math.min(startIndex, endIndex);
-    const maxIndex = Math.max(startIndex, endIndex);
-
-    // Select all nodes in the range
-    for (let i = minIndex; i <= maxIndex; i++) {
-        selectFileNode(allNodes[i]);
-    }
-}
-
-/**
- * Clear all selected files and remove visual selection
- */
-function clearSelectedFiles() {
-    document.querySelectorAll('.file-node--selected').forEach((node) => {
-        node.classList.remove('file-node--selected');
-    });
-    window.ab.fileExplorer.selectedFiles = [];
-    updateDownloadButton();
-}
-
-/**
- * Select a single file node
- */
-function selectFileNode(node) {
-    if (!node) return;
-
-    // Add selection class with temporary logging for debugging
-    node.classList.add('file-node--selected');
-
-    // Temporarily log for debugging
-    if (window.location.search.includes('debug=1')) {
-        console.log('Selected node:', node, 'Classes:', node.className);
-    }
-
-    const fileName = node.dataset.name;
-    if (fileName && !window.ab.fileExplorer.selectedFiles.includes(fileName)) {
-        window.ab.fileExplorer.selectedFiles.push(fileName);
-    }
-
-    // Track this as the last selected node for range selection
-    window.ab.fileExplorer.lastSelectedNode = node;
-
-    updateDownloadButton();
-}
-
-/**
- * Deselect a single file node
- */
-function deselectFileNode(node) {
-    if (!node) return;
-    node.classList.remove('file-node--selected');
-    const fileName = node.dataset.name;
-    if (fileName) {
-        window.ab.fileExplorer.selectedFiles = window.ab.fileExplorer.selectedFiles.filter((name) => name !== fileName);
-    }
-    updateDownloadButton();
-}
-
-/**
- * Update the download button state based on selection
- */
-function updateDownloadButton() {
-    const downloadBtn = document.getElementById('file-download-button');
-    if (!downloadBtn) return;
-
-    if (window.ab.fileExplorer.selectedFiles.length > 0) {
-        downloadBtn.disabled = false;
-        downloadBtn.classList.remove('btn--disabled');
-        downloadBtn.classList.add('btn--secondary');
-    } else {
-        downloadBtn.disabled = true;
-        downloadBtn.classList.remove('btn--secondary');
-        downloadBtn.classList.add('btn--disabled');
-    }
-}
-
-/**
- * Handle single click on a file node
- * Single click = select the file (Google Drive style)
- * In column view: single click navigates/opens immediately (Finder style)
- */
-// eslint-disable-next-line no-unused-vars
-function handleFileNodeClick(event, node) {
-    // Ignore if clicking on context menu trigger
-    if (
-        event.target.closest('.context-menu-trigger')
-    ) {
-        return;
-    }
-
-    // Check if we're in column view
-    const inColumnView = document.querySelector('.column-view-container') !== null;
-
-    // In column view, single click navigates/opens immediately
-    if (inColumnView) {
-        preventDefault(event);
-        const fileType = node.dataset.fileType;
-
-        if (fileType === 'folder') {
-            // Navigate to folder
-            const contentCell = node.querySelector('[data-href]');
-            const href = contentCell?.dataset.href;
-            if (href) {
-                htmx.ajax('GET', href, {
-                    target: '#file-explorer-view-content',
-                    swap: 'innerHTML',
-                }).then(() => {
-                    window.history.pushState({}, '', href);
-                    updateBackButton();
-                });
-            }
-        } else {
-            // Load file preview in preview pane
-            const viewerCell = node.querySelector('[data-viewer-path]');
-            const viewerPath = viewerCell?.dataset.viewerPath;
-            if (viewerPath) {
-                // Clear the preview content completely before loading new content
-                const previewContent = document.getElementById('column-preview-content');
-                if (previewContent) {
-                    previewContent.innerHTML = '';
-                }
-
-                // Load the new preview content
-                htmx.ajax('GET', viewerPath, {
-                    target: '#column-preview-content',
-                    swap: 'innerHTML',
-                });
-            }
+        const folderInput = document.getElementById('folder-input');
+        if (!folderInput.classList.toggle('hidden')) {
+            folderInput.focus();
         }
-        return;
-    }
+    },
+    // DEVICE BADGE TOGGLE
 
-    // For list/grid views, use double-click delay and selection logic
-    // Clear any pending double-click timer
-    if (window.ab.fileExplorer.clickTimer) {
-        clearTimeout(window.ab.fileExplorer.clickTimer);
-        window.ab.fileExplorer.clickTimer = null;
-    }
+    toggleDeviceBadges: (show) => {
+        const fileExplorer = document.getElementById('file-explorer');
+        if (!fileExplorer) return;
 
-    // Wait to see if this becomes a double-click
-    window.ab.fileExplorer.clickTimer = setTimeout(() => {
-        window.ab.fileExplorer.clickTimer = null;
-
-        // Single click behavior - toggle selection
-        if (event.ctrlKey || event.metaKey) {
-            // Ctrl/Cmd+Click: toggle this item's selection
-            if (node.classList.contains('file-node--selected')) {
-                deselectFileNode(node);
-            } else {
-                selectFileNode(node);
-            }
-        } else if (event.shiftKey) {
-            // Shift+Click: range selection
-            if (window.ab.fileExplorer.lastSelectedNode && window.ab.fileExplorer.lastSelectedNode !== node) {
-                // Select range from last selected to current
-                selectRange(window.ab.fileExplorer.lastSelectedNode, node);
-            } else {
-                // No previous selection, just select this item
-                clearSelectedFiles();
-                selectFileNode(node);
-            }
+        if (show) {
+            fileExplorer.classList.remove('hide-device-badges');
+            localStorage.setItem(window.ab.fileExplorer.DEVICE_BADGE_STORAGE_KEY, 'true');
         } else {
-            // Regular click: select only this item
+            fileExplorer.classList.add('hide-device-badges');
+            localStorage.setItem(window.ab.fileExplorer.DEVICE_BADGE_STORAGE_KEY, 'false');
+        }
+    },
+
+    // Initialize device badge visibility on page load
+    initializeDeviceBadgeToggle: () => {
+        const checkbox = document.getElementById('toggle-device-badges');
+        if (!checkbox) return;
+
+        // Check if there are multiple managed devices
+        const deviceFilterButtons = document.querySelectorAll('.device-filter-button');
+        const hasMultipleDevices = deviceFilterButtons.length > 1;
+
+        // Get stored preference, defaulting to "on" if multiple devices, "off" if single device
+        const storedPreference = localStorage.getItem(window.ab.fileExplorer.DEVICE_BADGE_STORAGE_KEY);
+        let showBadges;
+
+        if (storedPreference !== null) {
+            showBadges = storedPreference === 'true';
+        } else {
+            showBadges = hasMultipleDevices;
+        }
+
+        checkbox.checked = showBadges;
+        window.ab.fileExplorer.toggleDeviceBadges(showBadges);
+    },
+
+    // Clear file selection when clicking on empty space
+    initializeFileSelectionClear: () => {
+        document.addEventListener('click', function (event) {
+            // Don't clear if clicking on a file node
+            if (event.target.closest('.file-node')) {
+                return;
+            }
+
+            // Don't clear if clicking on the download button
+            if (event.target.closest('#file-download-button')) {
+                return;
+            }
+
+            // Clear selections for any other click
             clearSelectedFiles();
-            selectFileNode(node);
-        }
-    }, window.ab.fileExplorer.DOUBLE_CLICK_DELAY);
-}
+        });
+    },
 
-/**
- * Handle double-click on a file node
- * Double-click = navigate/open the file (Google Drive style)
- */
-function handleFileNodeDoubleClick(event, node) {
-    // Cancel the single-click timer
-    if (window.ab.fileExplorer.clickTimer) {
-        clearTimeout(window.ab.fileExplorer.clickTimer);
-        window.ab.fileExplorer.clickTimer = null;
+    // SELECTION MANAGEMENT (Google Drive style)
+
+    /**
+     * Get all file nodes in the current view in DOM order
+     */
+    function getAllFileNodes() {
+        return Array.from(document.querySelectorAll('.file-node'));
     }
 
-    preventDefault(event);
+    /**
+     * Select a range of file nodes between two nodes (inclusive)
+     */
+    function selectRange(startNode, endNode) {
+        const allNodes = getAllFileNodes();
+        const startIndex = allNodes.indexOf(startNode);
+        const endIndex = allNodes.indexOf(endNode);
 
-    const fileType = node.dataset.fileType;
+        if (startIndex === -1 || endIndex === -1) return;
 
-    if (fileType === 'folder') {
-        // Navigate to folder - use the stored href
-        const contentCell = node.querySelector('[data-href]');
-        const href = contentCell?.dataset.href;
-        if (href) {
-            // Use HTMX for smooth navigation without page reload
-            htmx.ajax('GET', href, {
-                target: '#file-explorer-view-content',
-                swap: 'innerHTML',
-            }).then(() => {
-                // Update the browser URL after successful navigation
-                window.history.pushState({}, '', href);
-                updateBackButton();
-            });
+        // Determine the range direction
+        const minIndex = Math.min(startIndex, endIndex);
+        const maxIndex = Math.max(startIndex, endIndex);
+
+        // Select all nodes in the range
+        for (let i = minIndex; i <= maxIndex; i++) {
+            selectFileNode(allNodes[i]);
         }
-    } else {
-        // Open file viewer
-        const viewerCell = node.querySelector('[data-viewer-path]');
-        const viewerPath = viewerCell?.dataset.viewerPath;
-        if (viewerPath) {
-            const fileViewer = document.getElementById('file-viewer');
-            if (fileViewer) {
-                fileViewer.showModal();
-                htmx.ajax('GET', viewerPath, {
-                    target: '#file-viewer-content',
-                    swap: 'innerHTML',
-                });
+    }
+
+    /**
+     * Clear all selected files and remove visual selection
+     */
+    function clearSelectedFiles() {
+        document.querySelectorAll('.file-node--selected').forEach((node) => {
+            node.classList.remove('file-node--selected');
+        });
+        window.ab.fileExplorer.selectedFiles = [];
+        updateDownloadButton();
+    }
+
+    /**
+     * Select a single file node
+     */
+    function selectFileNode(node) {
+        if (!node) return;
+
+        // Add selection class with temporary logging for debugging
+        node.classList.add('file-node--selected');
+
+        // Temporarily log for debugging
+        if (window.location.search.includes('debug=1')) {
+            console.log('Selected node:', node, 'Classes:', node.className);
+        }
+
+        const fileName = node.dataset.name;
+        if (fileName && !window.ab.fileExplorer.selectedFiles.includes(fileName)) {
+            window.ab.fileExplorer.selectedFiles.push(fileName);
+        }
+
+        // Track this as the last selected node for range selection
+        window.ab.fileExplorer.lastSelectedNode = node;
+
+        updateDownloadButton();
+    }
+
+    /**
+     * Deselect a single file node
+     */
+    function deselectFileNode(node) {
+        if (!node) return;
+        node.classList.remove('file-node--selected');
+        const fileName = node.dataset.name;
+        if (fileName) {
+            window.ab.fileExplorer.selectedFiles = window.ab.fileExplorer.selectedFiles.filter((name) => name !== fileName);
+        }
+        updateDownloadButton();
+    }
+
+    /**
+     * Update the download button state based on selection
+     */
+    function updateDownloadButton() {
+        const downloadBtn = document.getElementById('file-download-button');
+        if (!downloadBtn) return;
+
+        if (window.ab.fileExplorer.selectedFiles.length > 0) {
+            downloadBtn.disabled = false;
+            downloadBtn.classList.remove('btn--disabled');
+            downloadBtn.classList.add('btn--secondary');
+        } else {
+            downloadBtn.disabled = true;
+            downloadBtn.classList.remove('btn--secondary');
+            downloadBtn.classList.add('btn--disabled');
+        }
+    }
+
+    /**
+     * Handle single click on a file node
+     * Single click = select the file (Google Drive style)
+     * In column view: single click navigates/opens immediately (Finder style)
+     */
+    // eslint-disable-next-line no-unused-vars
+    function handleFileNodeClick(event, node) {
+        // Ignore if clicking on context menu trigger
+        if (
+            event.target.closest('.context-menu-trigger')
+        ) {
+            return;
+        }
+
+        // Check if we're in column view
+        const inColumnView = document.querySelector('.column-view-container') !== null;
+
+        // In column view, single click navigates/opens immediately
+        if (inColumnView) {
+            window.ab.preventDefault(event);
+            const fileType = node.dataset.fileType;
+
+            if (fileType === 'folder') {
+                // Navigate to folder
+                const contentCell = node.querySelector('[data-href]');
+                const href = contentCell?.dataset.href;
+                if (href) {
+                    htmx.ajax('GET', href, {
+                        target: '#file-explorer-view-content',
+                        swap: 'innerHTML',
+                    }).then(() => {
+                        window.history.pushState({}, '', href);
+                        updateBackButton();
+                    });
+                }
+            } else {
+                // Load file preview in preview pane
+                const viewerCell = node.querySelector('[data-viewer-path]');
+                const viewerPath = viewerCell?.dataset.viewerPath;
+                if (viewerPath) {
+                    // Clear the preview content completely before loading new content
+                    const previewContent = document.getElementById('column-preview-content');
+                    if (previewContent) {
+                        previewContent.innerHTML = '';
+                    }
+
+                    // Load the new preview content
+                    htmx.ajax('GET', viewerPath, {
+                        target: '#column-preview-content',
+                        swap: 'innerHTML',
+                    });
+                }
             }
+            return;
         }
-    }
-}
 
-/**
- * Handle touch events for mobile double-tap detection
- * On mobile, double-tap opens files (since dblclick doesn't work reliably)
- */
-// eslint-disable-next-line no-unused-vars
-function handleFileNodeTouch(event, node) {
-    const currentTime = new Date().getTime();
-    const tapInterval = currentTime - window.ab.fileExplorer.lastTapTime;
-
-    // If this is a second tap on the same node within the delay window
-    if (window.ab.fileExplorer.lastTapNode === node && tapInterval < window.ab.fileExplorer.DOUBLE_TAP_DELAY && tapInterval > 0) {
-        // Prevent default to avoid zoom on double-tap
-        event.preventDefault();
-
-        // Clear the single-tap timer if it's running
+        // For list/grid views, use double-click delay and selection logic
+        // Clear any pending double-click timer
         if (window.ab.fileExplorer.clickTimer) {
             clearTimeout(window.ab.fileExplorer.clickTimer);
             window.ab.fileExplorer.clickTimer = null;
         }
 
-        // Trigger the double-click behavior
-        handleFileNodeDoubleClick(event, node);
+        // Wait to see if this becomes a double-click
+        window.ab.fileExplorer.clickTimer = setTimeout(() => {
+            window.ab.fileExplorer.clickTimer = null;
 
-        // Reset tap tracking
-        window.ab.fileExplorer.lastTapTime = 0;
-        window.ab.fileExplorer.lastTapNode = null;
-    } else {
-        // Record this tap for potential double-tap
-        window.ab.fileExplorer.lastTapTime = currentTime;
-        window.ab.fileExplorer.lastTapNode = node;
+            // Single click behavior - toggle selection
+            if (event.ctrlKey || event.metaKey) {
+                // Ctrl/Cmd+Click: toggle this item's selection
+                if (node.classList.contains('file-node--selected')) {
+                    deselectFileNode(node);
+                } else {
+                    selectFileNode(node);
+                }
+            } else if (event.shiftKey) {
+                // Shift+Click: range selection
+                if (window.ab.fileExplorer.lastSelectedNode && window.ab.fileExplorer.lastSelectedNode !== node) {
+                    // Select range from last selected to current
+                    selectRange(window.ab.fileExplorer.lastSelectedNode, node);
+                } else {
+                    // No previous selection, just select this item
+                    clearSelectedFiles();
+                    selectFileNode(node);
+                }
+            } else {
+                // Regular click: select only this item
+                clearSelectedFiles();
+                selectFileNode(node);
+            }
+        }, window.ab.fileExplorer.DOUBLE_CLICK_DELAY);
     }
-}
 
-// eslint-disable-next-line no-unused-vars
-function supportsDirectoryUpload() {
-    const supportsFileSystemAccessAPI = 'getAsFileSystemHandle' in DataTransferItem.prototype;
-    const supportsWebkitGetAsEntry = 'webkitGetAsEntry' in DataTransferItem.prototype;
-    // NOTE: I have found that none of my browsers support this, and likely is why Google Drive does not support
-    // folder upload without a separate input.
-    return supportsFileSystemAccessAPI || supportsWebkitGetAsEntry;
-}
-
-// eslint-disable-next-line no-unused-vars
-function activateDropZone(event) {
-    preventDefault(event);
-    const fileUploadArea = document.getElementById('file-upload-area');
-    fileUploadArea.classList.add('bg-blue-600');
-    fileUploadArea.classList.remove('bg-gray-800');
-}
-
-// eslint-disable-next-line no-unused-vars
-function deactivateDropZone(event) {
-    preventDefault(event);
-    const fileUploadArea = document.getElementById('file-upload-area');
-    fileUploadArea.classList.remove('bg-blue-600');
-    fileUploadArea.classList.add('bg-gray-800');
-}
-
-// eslint-disable-next-line no-unused-vars
-function activateDropZoneOnNode(event) {
-    preventDefault(event);
-    event.currentTarget.classList.add('bg-blue-600');
-}
-
-// eslint-disable-next-line no-unused-vars
-function deactivateDropZoneOnNode(event) {
-    preventDefault(event);
-    event.currentTarget.classList.remove('bg-blue-600');
-}
-
-// eslint-disable-next-line no-unused-vars
-function dropOnNode(event, returnDir) {
-    preventDefault(event);
-    event.currentTarget.classList.remove('bg-blue-600');
-    const li = event.currentTarget.closest('li');
-    const dropDir = li.dataset.name;
-    console.log(`Drop on node: ${dropDir}`);
-    return dropFiles(event, `/${dropDir}`, returnDir ? returnDir : '/');
-}
-
-// eslint-disable-next-line no-unused-vars
-function downloadSelectedFiles(event, rootDir) {
-    preventDefault(event);
-
-    console.log('Download requested. Root dir:', rootDir, 'Selected files:', window.ab.fileExplorer.selectedFiles);
-
-    if (!rootDir) rootDir = '';
-
-    window.ab.fileExplorer.selectedFiles.forEach((fileName) => {
-        const link = document.createElement('a');
-        let cleanFileName = fileName;
-        while (cleanFileName.endsWith('/')) {
-            cleanFileName = cleanFileName.slice(0, -1);
+    /**
+     * Handle double-click on a file node
+     * Double-click = navigate/open the file (Google Drive style)
+     */
+    function handleFileNodeDoubleClick(event, node) {
+        // Cancel the single-click timer
+        if (window.ab.fileExplorer.clickTimer) {
+            clearTimeout(window.ab.fileExplorer.clickTimer);
+            window.ab.fileExplorer.clickTimer = null;
         }
 
-        // Construct the proper path - ensure no double slashes
-        let filePath;
-        if (rootDir && rootDir !== '/') {
-            // Remove leading slash from rootDir if present
-            const cleanRootDir = rootDir.startsWith('/') ? rootDir.slice(1) : rootDir;
-            filePath = `/api/v1/files/${cleanRootDir}/${cleanFileName}`;
+        window.ab.preventDefault(event);
+
+        const fileType = node.dataset.fileType;
+
+        if (fileType === 'folder') {
+            // Navigate to folder - use the stored href
+            const contentCell = node.querySelector('[data-href]');
+            const href = contentCell?.dataset.href;
+            if (href) {
+                // Use HTMX for smooth navigation without page reload
+                htmx.ajax('GET', href, {
+                    target: '#file-explorer-view-content',
+                    swap: 'innerHTML',
+                }).then(() => {
+                    // Update the browser URL after successful navigation
+                    window.history.pushState({}, '', href);
+                    updateBackButton();
+                });
+            }
         } else {
-            filePath = `/api/v1/files/${cleanFileName}`;
+            // Open file viewer
+            const viewerCell = node.querySelector('[data-viewer-path]');
+            const viewerPath = viewerCell?.dataset.viewerPath;
+            if (viewerPath) {
+                const fileViewer = document.getElementById('file-viewer');
+                if (fileViewer) {
+                    fileViewer.showModal();
+                    htmx.ajax('GET', viewerPath, {
+                        target: '#file-viewer-content',
+                        swap: 'innerHTML',
+                    });
+                }
+            }
         }
+    }
 
-        console.log('Downloading:', filePath);
+    /**
+     * Handle touch events for mobile double-tap detection
+     * On mobile, double-tap opens files (since dblclick doesn't work reliably)
+     */
+    // eslint-disable-next-line no-unused-vars
+    function handleFileNodeTouch(event, node) {
+        const currentTime = new Date().getTime();
+        const tapInterval = currentTime - window.ab.fileExplorer.lastTapTime;
 
-        link.href = filePath;
-        link.download = cleanFileName;
+        // If this is a second tap on the same node within the delay window
+        if (window.ab.fileExplorer.lastTapNode === node && tapInterval < window.ab.fileExplorer.DOUBLE_TAP_DELAY && tapInterval > 0) {
+            // Prevent default to avoid zoom on double-tap
+            event.preventDefault();
+
+            // Clear the single-tap timer if it's running
+            if (window.ab.fileExplorer.clickTimer) {
+                clearTimeout(window.ab.fileExplorer.clickTimer);
+                window.ab.fileExplorer.clickTimer = null;
+            }
+
+            // Trigger the double-click behavior
+            handleFileNodeDoubleClick(event, node);
+
+            // Reset tap tracking
+            window.ab.fileExplorer.lastTapTime = 0;
+            window.ab.fileExplorer.lastTapNode = null;
+        } else {
+            // Record this tap for potential double-tap
+            window.ab.fileExplorer.lastTapTime = currentTime;
+            window.ab.fileExplorer.lastTapNode = node;
+        }
+    }
+
+    // eslint-disable-next-line no-unused-vars
+    function supportsDirectoryUpload() {
+        const supportsFileSystemAccessAPI = 'getAsFileSystemHandle' in DataTransferItem.prototype;
+        const supportsWebkitGetAsEntry = 'webkitGetAsEntry' in DataTransferItem.prototype;
+        // NOTE: I have found that none of my browsers support this, and likely is why Google Drive does not support
+        // folder upload without a separate input.
+        return supportsFileSystemAccessAPI || supportsWebkitGetAsEntry;
+    }
+
+    // eslint-disable-next-line no-unused-vars
+    function activateDropZone(event) {
+        window.ab.preventDefault(event);
+        const fileUploadArea = document.getElementById('file-upload-area');
+        fileUploadArea.classList.add('bg-blue-600');
+        fileUploadArea.classList.remove('bg-gray-800');
+    }
+
+    // eslint-disable-next-line no-unused-vars
+    function deactivateDropZone(event) {
+        window.ab.preventDefault(event);
+        const fileUploadArea = document.getElementById('file-upload-area');
+        fileUploadArea.classList.remove('bg-blue-600');
+        fileUploadArea.classList.add('bg-gray-800');
+    }
+
+    // eslint-disable-next-line no-unused-vars
+    function activateDropZoneOnNode(event) {
+        window.ab.preventDefault(event);
+        event.currentTarget.classList.add('bg-blue-600');
+    }
+
+    // eslint-disable-next-line no-unused-vars
+    function deactivateDropZoneOnNode(event) {
+        window.ab.preventDefault(event);
+        event.currentTarget.classList.remove('bg-blue-600');
+    }
+
+    // eslint-disable-next-line no-unused-vars
+    function dropOnNode(event, returnDir) {
+        window.ab.preventDefault(event);
+        event.currentTarget.classList.remove('bg-blue-600');
+        const li = event.currentTarget.closest('li');
+        const dropDir = li.dataset.name;
+        console.log(`Drop on node: ${dropDir}`);
+        return dropFiles(event, `/${dropDir}`, returnDir ? returnDir : '/');
+    }
+
+    // eslint-disable-next-line no-unused-vars
+    function downloadSelectedFiles(event, rootDir) {
+        window.ab.preventDefault(event);
+
+        console.log('Download requested. Root dir:', rootDir, 'Selected files:', window.ab.fileExplorer.selectedFiles);
+
+        if (!rootDir) rootDir = '';
+
+        window.ab.fileExplorer.selectedFiles.forEach((fileName) => {
+            const link = document.createElement('a');
+            let cleanFileName = fileName;
+            while (cleanFileName.endsWith('/')) {
+                cleanFileName = cleanFileName.slice(0, -1);
+            }
+
+            // Construct the proper path - ensure no double slashes
+            let filePath;
+            if (rootDir && rootDir !== '/') {
+                // Remove leading slash from rootDir if present
+                const cleanRootDir = rootDir.startsWith('/') ? rootDir.slice(1) : rootDir;
+                filePath = `/api/v1/files/${cleanRootDir}/${cleanFileName}`;
+            } else {
+                filePath = `/api/v1/files/${cleanFileName}`;
+            }
+
+            console.log('Downloading:', filePath);
+
+            link.href = filePath;
+            link.download = cleanFileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+        clearSelectedFiles();
+    }
+
+    function dropFiles(event, rootDir, returnDir) {
+        rootDir = rootDir || '';
+        returnDir = returnDir || '';
+        window.ab.preventDefault(event);
+        const files = event.dataTransfer.files;
+        if (files.length > 0) {
+            const formData = new FormData();
+            for (const file of files) {
+                formData.append('files', file);
+            }
+            const uploadForm = document.getElementById('file-upload-form');
+            // NOTE: https://flaviocopes.com/htmx-send-files-using-htmxajax-call/
+            htmx.ajax('POST', uploadForm.getAttribute('hx-post') + rootDir, {
+                values: {
+                    files: formData.getAll('files'),
+                    returnDir: returnDir,
+                },
+                source: uploadForm,
+            });
+        }
+    }
+
+    // eslint-disable-next-line no-unused-vars
+    function saveAceEditor(filePath, content) {
+        fetch(`/api/v1/files${filePath}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain',
+            },
+            body: content,
+        })
+            .then((response) => {
+                if (response.ok) {
+                    toastr.success('File saved successfully');
+                    console.log('File saved successfully');
+                } else {
+                    return response.text().then((text) => {
+                        toastr.error('Error saving file: ' + (text || response.statusText));
+                        console.error('Error saving file:', response.statusText);
+                    });
+                }
+            })
+            .catch((error) => {
+                console.error('Error saving file:', error);
+                toastr.error('Error saving file: ' + error.message);
+            });
+    }
+
+    // eslint-disable-next-line no-unused-vars
+    function downloadFile(filePath) {
+        const link = document.createElement('a');
+        link.href = `/api/v1/files${filePath}`;
+        link.download = filePath.split('/').pop();
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-    });
-    clearSelectedFiles();
-}
-
-function dropFiles(event, rootDir, returnDir) {
-    rootDir = rootDir || '';
-    returnDir = returnDir || '';
-    preventDefault(event);
-    const files = event.dataTransfer.files;
-    if (files.length > 0) {
-        const formData = new FormData();
-        for (const file of files) {
-            formData.append('files', file);
-        }
-        const uploadForm = document.getElementById('file-upload-form');
-        // NOTE: https://flaviocopes.com/htmx-send-files-using-htmxajax-call/
-        htmx.ajax('POST', uploadForm.getAttribute('hx-post') + rootDir, {
-            values: {
-                files: formData.getAll('files'),
-                returnDir: returnDir,
-            },
-            source: uploadForm,
-        });
     }
-}
 
-// eslint-disable-next-line no-unused-vars
-function saveAceEditor(filePath, content) {
-    fetch(`/api/v1/files${filePath}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'text/plain',
-        },
-        body: content,
-    })
-        .then((response) => {
-            if (response.ok) {
-                toastr.success('File saved successfully');
-                console.log('File saved successfully');
-            } else {
-                return response.text().then((text) => {
-                    toastr.error('Error saving file: ' + (text || response.statusText));
-                    console.error('Error saving file:', response.statusText);
-                });
+    // eslint-disable-next-line no-unused-vars
+    function moveFile(event, rootDir, fileName) {
+        window.ab.preventDefault(event);
+        while (rootDir && rootDir[0] == '/') {
+            rootDir = rootDir.slice(1);
+        }
+        const filePath = `${rootDir}/${fileName}`;
+
+        // Open the rename dialog
+        window.ab.openRenameDialog(filePath);
+    }
+
+    // eslint-disable-next-line no-unused-vars
+    function newFile(event, rootDir) {
+        window.ab.preventDefault(event);
+        const fileName = prompt('Enter the new file name (including extension):');
+        if (fileName) {
+            if (fileName.length > window.ab.fileExplorer.MAX_FILE_NAME_LENGTH) {
+                alert(`File name must be ${window.ab.fileExplorer.MAX_FILE_NAME_LENGTH} characters or less`);
+                return;
             }
-        })
-        .catch((error) => {
-            console.error('Error saving file:', error);
-            toastr.error('Error saving file: ' + error.message);
-        });
-}
-
-// eslint-disable-next-line no-unused-vars
-function downloadFile(filePath) {
-    const link = document.createElement('a');
-    link.href = `/api/v1/files${filePath}`;
-    link.download = filePath.split('/').pop();
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-// eslint-disable-next-line no-unused-vars
-function moveFile(event, rootDir, fileName) {
-    preventDefault(event);
-    while (rootDir && rootDir[0] == '/') {
-        rootDir = rootDir.slice(1);
-    }
-    const filePath = `${rootDir}/${fileName}`;
-
-    // Open the rename dialog
-    window.ab.openRenameDialog(filePath);
-}
-
-// eslint-disable-next-line no-unused-vars
-function newFile(event, rootDir) {
-    preventDefault(event);
-    const fileName = prompt('Enter the new file name (including extension):');
-    if (fileName) {
-        if (fileName.length > window.ab.fileExplorer.MAX_FILE_NAME_LENGTH) {
-            alert(`File name must be ${window.ab.fileExplorer.MAX_FILE_NAME_LENGTH} characters or less`);
-            return;
+            const uploadForm = document.getElementById('file-upload-form');
+            const formData = new FormData();
+            // NOTE: Creating an empty file
+            formData.append('files', new Blob([''], { type: 'text/plain' }), fileName);
+            htmx.ajax('POST', uploadForm.getAttribute('hx-post') + rootDir, {
+                values: {
+                    files: formData.getAll('files'),
+                    returnDir: rootDir,
+                },
+                source: uploadForm,
+            });
         }
-        const uploadForm = document.getElementById('file-upload-form');
-        const formData = new FormData();
-        // NOTE: Creating an empty file
-        formData.append('files', new Blob([''], { type: 'text/plain' }), fileName);
-        htmx.ajax('POST', uploadForm.getAttribute('hx-post') + rootDir, {
-            values: {
-                files: formData.getAll('files'),
-                returnDir: rootDir,
-            },
-            source: uploadForm,
-        });
     }
-}
 
-// eslint-disable-next-line no-unused-vars
-function showFolderDetails(event) {
-    preventDefault(event);
-    alert('Folder details to be implemented.');
-}
+    // eslint-disable-next-line no-unused-vars
+    function showFolderDetails(event) {
+        window.ab.preventDefault(event);
+        alert('Folder details to be implemented.');
+    }
 
-// eslint-disable-next-line no-unused-vars
-function navigateToParentAndPreview(event, parentPath, previewPath) {
-    preventDefault(event);
-    // Use HTMX to navigate to parent (removes child columns) without full page reload
-    htmx.ajax('GET', parentPath, {
-        target: '#file-explorer-view-content',
-        swap: 'innerHTML',
-    }).then(function () {
-        // After the file explorer updates, load the preview
-        htmx.ajax('GET', previewPath, {
-            target: '#column-preview-content',
+    // eslint-disable-next-line no-unused-vars
+    function navigateToParentAndPreview(event, parentPath, previewPath) {
+        window.ab.preventDefault(event);
+        // Use HTMX to navigate to parent (removes child columns) without full page reload
+        htmx.ajax('GET', parentPath, {
+            target: '#file-explorer-view-content',
             swap: 'innerHTML',
+        }).then(function () {
+            // After the file explorer updates, load the preview
+            htmx.ajax('GET', previewPath, {
+                target: '#column-preview-content',
+                swap: 'innerHTML',
+            });
         });
-    });
-    // Update the URL
-    history.pushState({}, '', parentPath);
-}
+        // Update the URL
+        history.pushState({}, '', parentPath);
+    }
+};
+
+// Initialize - sync localStorage to cookie on page load and update button states
+document.addEventListener('DOMContentLoaded', function () {
+    const view = window.ab.fileExplorer.getViewPreference();
+    window.ab.fileExplorer.setViewPreference(view); // Ensures cookie is set
+    window.ab.fileExplorer.updateViewButtonStates(view); // Ensure button states match the active view
+});
+
+// Send view preference in all HTMX requests via custom header
+document.body.addEventListener('htmx:configRequest', function (event) {
+    const view = window.ab.fileExplorer.getViewPreference();
+    event.detail.headers['X-File-Explorer-View'] = view;
+});
 
 // SORTING
 
@@ -623,7 +679,7 @@ function applySorting() {
             bValue = b.dataset.name || '';
 
             // Sort folders first, then files (unless mixed sorting is enabled)
-            if (!mixedSorting) {
+            if (!window.ab.fileExplorer.mixedSorting) {
                 const aIsFolder = a.querySelector('td:first-child a[href]') !== null;
                 const bIsFolder = b.querySelector('td:first-child a[href]') !== null;
 
@@ -1023,7 +1079,7 @@ function applyDeviceFilter() {
             const deviceName = deviceBadge.textContent.trim();
 
             // Show if device is in active set
-            if (activeDevices.has(deviceName)) {
+            if (window.ab.fileExplorer.activeDevices.has(deviceName)) {
                 node.setAttribute('data-device-filtered', 'false');
                 node.style.display = '';
             } else {
@@ -1038,63 +1094,9 @@ function applyDeviceFilter() {
 document.addEventListener('DOMContentLoaded', initializeDeviceFilter);
 document.body.addEventListener('htmx:afterSwap', initializeDeviceFilter);
 
-// DEVICE BADGE TOGGLE
-
-function toggleDeviceBadges(show) {
-    const fileExplorer = document.getElementById('file-explorer');
-    if (!fileExplorer) return;
-
-    if (show) {
-        fileExplorer.classList.remove('hide-device-badges');
-        localStorage.setItem(window.ab.fileExplorer.DEVICE_BADGE_STORAGE_KEY, 'true');
-    } else {
-        fileExplorer.classList.add('hide-device-badges');
-        localStorage.setItem(window.ab.fileExplorer.DEVICE_BADGE_STORAGE_KEY, 'false');
-    }
-}
-
-// Initialize device badge visibility on page load
-function initializeDeviceBadgeToggle() {
-    const checkbox = document.getElementById('toggle-device-badges');
-    if (!checkbox) return;
-
-    // Check if there are multiple managed devices
-    const deviceFilterButtons = document.querySelectorAll('.device-filter-button');
-    const hasMultipleDevices = deviceFilterButtons.length > 1;
-
-    // Get stored preference, defaulting to "on" if multiple devices, "off" if single device
-    const storedPreference = localStorage.getItem(window.ab.fileExplorer.DEVICE_BADGE_STORAGE_KEY);
-    let showBadges;
-
-    if (storedPreference !== null) {
-        showBadges = storedPreference === 'true';
-    } else {
-        showBadges = hasMultipleDevices;
-    }
-
-    checkbox.checked = showBadges;
-    toggleDeviceBadges(showBadges);
-}
-
 document.addEventListener('DOMContentLoaded', initializeDeviceBadgeToggle);
 document.body.addEventListener('htmx:afterSwap', initializeDeviceBadgeToggle);
 
-// Clear file selection when clicking on empty space
-function initializeFileSelectionClear() {
-    document.addEventListener('click', function (event) {
-        // Don't clear if clicking on a file node
-        if (event.target.closest('.file-node')) {
-            return;
-        }
 
-        // Don't clear if clicking on the download button
-        if (event.target.closest('#file-download-button')) {
-            return;
-        }
-
-        // Clear selections for any other click
-        clearSelectedFiles();
-    });
-}
 
 document.addEventListener('DOMContentLoaded', initializeFileSelectionClear);
