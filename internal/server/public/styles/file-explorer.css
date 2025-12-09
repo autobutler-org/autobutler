@@ -1257,6 +1257,12 @@
 
 /* Hide context menu trigger in grid view by default, show on hover */
 .grid-view-item .context-menu-trigger {
+    position: absolute;
+    top: var(--spacing-xs);
+    right: var(--spacing-xs);
+    width: 24px;
+    height: 24px;
+    padding: 0;
     opacity: 0;
     transition: opacity 0.2s ease;
 }
