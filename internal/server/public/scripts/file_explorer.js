@@ -615,17 +615,49 @@ function downloadFile(filePath) {
 }
 
 // eslint-disable-next-line no-unused-vars
+function openRenameDialog(filePath) {
+    const dialog = document.getElementById('rename-dialog');
+    const input = document.getElementById('rename-path-input');
+    const currentPath = document.getElementById('rename-current-path');
+    const confirmFrom = document.getElementById('rename-confirm-from');
+    const confirmBox = document.getElementById('rename-confirm');
+    const inputGroup = document.getElementById('rename-input-group');
+
+    // Reset dialog state
+    input.value = filePath;
+    currentPath.textContent = 'Current: ' + filePath;
+    confirmFrom.textContent = 'From: ' + filePath;
+    inputGroup.classList.remove('rename-hidden');
+    confirmBox.classList.add('rename-hidden');
+    document.getElementById('rename-submit').textContent = 'Rename';
+    document.getElementById('rename-cancel').textContent = 'Cancel';
+
+    // Show dialog
+    dialog.showModal();
+
+    // Focus and select the input
+    setTimeout(() => {
+        input.focus();
+        const lastSlashIndex = input.value.lastIndexOf('/');
+        const lastDotIndex = input.value.lastIndexOf('.');
+        if (lastDotIndex > lastSlashIndex) {
+            input.setSelectionRange(lastSlashIndex + 1, lastDotIndex);
+        } else {
+            input.setSelectionRange(lastSlashIndex + 1, input.value.length);
+        }
+    }, 10);
+}
+
+// eslint-disable-next-line no-unused-vars
 function moveFile(event, rootDir, fileName) {
     preventDefault(event);
     while (rootDir && rootDir[0] == '/') {
         rootDir = rootDir.slice(1);
     }
     const filePath = `${rootDir}/${fileName}`;
-    
+
     // Open the rename dialog
-    if (window.openRenameDialog) {
-        window.openRenameDialog(filePath);
-    }
+    openRenameDialog(filePath);
 }
 
 // eslint-disable-next-line no-unused-vars
