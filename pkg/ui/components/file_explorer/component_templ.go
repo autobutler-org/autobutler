@@ -14,6 +14,7 @@ import (
 	"autobutler/pkg/ui/components/file_explorer/file_navigation"
 	"autobutler/pkg/ui/components/file_explorer/file_upload"
 	"autobutler/pkg/ui/components/file_explorer/file_viewer"
+	"autobutler/pkg/ui/components/file_explorer/rename_dialog"
 	"autobutler/pkg/ui/components/icons/column_view"
 	"autobutler/pkg/ui/components/icons/grid_view"
 	"autobutler/pkg/ui/components/icons/list_view"
@@ -55,6 +56,10 @@ func Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, view
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
+		templ_7745c5c3_Err = rename_dialog.Component().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"file-explorer-header\"><div><h2 class=\"file-explorer-title\">File Explorer</h2><div class=\"file-explorer-space-info\">Available Space: ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -62,7 +67,7 @@ func Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, view
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2fGB", fileutil.BytesToGB(availableBytes)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/component.templ`, Line: 31, Col: 118}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/component.templ`, Line: 33, Col: 118}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {

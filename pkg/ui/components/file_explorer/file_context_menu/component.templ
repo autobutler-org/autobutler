@@ -24,16 +24,16 @@ templ Component(pageState types.PageState, file *fileutil.DeviceFileInfo) {
 			items := maputil.NewOrderedMapFromValues(
 				[]string{"Download", "Move/Rename", "File Details", "Delete"},
 				[]*lib.HandlerProps{
-					&lib.HandlerProps{
+					{
 						OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); downloadFile('%s');", filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name())),
 					},
-					&lib.HandlerProps{
+					{
 						OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); moveFile(event, '%s', '%s');", pageState.RootDir, file.Name()),
 					},
-					&lib.HandlerProps{
+					{
 						OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); showFileDetails('%s');", file.Name()),
 					},
-					&lib.HandlerProps{
+					{
 						AdditionalClasses: "context-menu-item--danger",
 						HTMXTarget:        "#file-explorer",
 						HTMXSwap:          "outerHTML",
