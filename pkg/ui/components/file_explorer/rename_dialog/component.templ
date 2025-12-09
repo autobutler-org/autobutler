@@ -53,7 +53,7 @@ templ Component() {
 	</dialog>
 	<script type="text/javascript">
 		// eslint-disable-next-line no-unused-vars
-		window.ab_openRenameDialog(filePath) {
+		window.ab_openRenameDialog = (filePath) => {
 			const dialog = document.getElementById('rename-dialog');
 			const input = document.getElementById('rename-path-input');
 			const currentPath = document.getElementById('rename-current-path');
