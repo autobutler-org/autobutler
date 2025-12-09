@@ -111,8 +111,6 @@ function closeContextMenu(event, parentNode) {
 
 // eslint-disable-next-line no-unused-vars
 function closeContextMenuFromItem(event) {
-    console.log('closeContextMenuFromItem called - this means the onclick handler fired!');
-
     preventDefault(event);
 
     const contextMenu = event.target.closest('.context-menu');
