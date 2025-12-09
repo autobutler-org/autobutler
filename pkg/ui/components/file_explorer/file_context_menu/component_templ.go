@@ -56,11 +56,12 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 				},
 				{
 					AdditionalClasses: "context-menu-item--danger",
-					HTMXTarget:        "#file-explorer",
-					HTMXSwap:          "outerHTML",
-					HTMXMethod:        "DELETE",
-					HTMXRequestPath:   filepath.Join(`/api/v1/files`),
-					HTMXVals:          fmt.Sprintf(`{"rootDir":"%s", "filePaths":["%s"]}`, pageState.RootDir, file.Name()),
+					ButtonAttributes: templ.Attributes{
+						"hx-target": "#file-explorer",
+						"hx-swap":   "outerHTML",
+						"hx-delete": filepath.Join(`/api/v1/files`),
+						"hx-vals":   fmt.Sprintf(`{"rootDir":"%s", "filePaths":["%s"]}`, pageState.RootDir, file.Name()),
+					},
 				},
 			},
 		)

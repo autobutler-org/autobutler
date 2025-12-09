@@ -3,17 +3,12 @@ package lib
 import (
 	"autobutler/pkg/util/maputil"
 	"fmt"
-	"strings"
 )
 
 type HandlerProps struct {
 	AdditionalClasses string
 	OnClickHandler    string
-	HTMXTarget        string
-	HTMXSwap          string
-	HTMXMethod        string
-	HTMXRequestPath   string
-	HTMXVals          string
+	ButtonAttributes  templ.Attributes
 }
 
 templ ContextMenu(onClickHandlers maputil.OrderedMap[string, *HandlerProps], showMenu bool) {
@@ -27,7 +22,6 @@ templ ContextMenu(onClickHandlers maputil.OrderedMap[string, *HandlerProps], sho
 			style="width: 7rem;"
 		>
 			for name, props := range onClickHandlers.Range() {
-				{{ method := strings.ToUpper(props.HTMXMethod) }}
 				<li>
 					<button
 						type="button"
@@ -35,30 +29,7 @@ templ ContextMenu(onClickHandlers maputil.OrderedMap[string, *HandlerProps], sho
 						if props.OnClickHandler != "" {
 							onclick={ templ.JSUnsafeFuncCall(props.OnClickHandler) }
 						}
-						if props.HTMXTarget != "" {
-							hx-target={ props.HTMXTarget }
-						}
-						if props.HTMXSwap != "" {
-							hx-swap={ props.HTMXSwap }
-						}
-						if props.HTMXVals != "" {
-							hx-vals={ props.HTMXVals }
-						}
-						if method == "GET" {
-							hx-get={ props.HTMXRequestPath }
-						}
-						if method == "POST" {
-							hx-post={ props.HTMXRequestPath }
-						}
-						if method == "DELETE" {
-							hx-delete={ props.HTMXRequestPath }
-						}
-						if method == "PUT" {
-							hx-put={ props.HTMXRequestPath }
-						}
-						if method == "PATCH" {
-							hx-patch={ props.HTMXRequestPath }
-						}
+						{ props.ButtonAttributes... }
 					>
 						{ name }
 					</button>
