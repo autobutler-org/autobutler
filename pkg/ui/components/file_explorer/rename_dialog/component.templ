@@ -5,6 +5,7 @@ templ Component() {
 		id="rename-dialog"
 		class="dialog rename-dialog"
 		onkeydown="if (event.key === 'Escape') { event.preventDefault(); this.close(); }"
+		onclick="if (event.target === this) { this.close(); }"
 	>
 		<button
 			class="dialog-close rename-dialog-close"
