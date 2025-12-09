@@ -44,7 +44,7 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 		}
 		items := maputil.NewOrderedMapFromValues(
 			[]string{"Download", "Move/Rename", "File Details", "Delete"},
-			[]*lib.HandlerProps{
+			[]*lib.ContextMenuHandlerProps{
 				{
 					OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); downloadFile('%s');", filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name())),
 				},

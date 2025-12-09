@@ -5,13 +5,13 @@ import (
 	"fmt"
 )
 
-type HandlerProps struct {
+type ContextMenuHandlerProps struct {
 	AdditionalClasses string
 	OnClickHandler    string
 	ButtonAttributes  templ.Attributes
 }
 
-templ ContextMenu(onClickHandlers maputil.OrderedMap[string, *HandlerProps], showMenu bool) {
+templ ContextMenu(onClickHandlers maputil.OrderedMap[string, *ContextMenuHandlerProps], showMenu bool) {
 	<div>
 		{{ hiddenClass := "" }}
 		if !showMenu {
