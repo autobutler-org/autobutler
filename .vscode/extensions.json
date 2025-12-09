@@ -14,6 +14,7 @@
     "vscode-icons-team.vscode-icons",
     "alexcvzz.vscode-sqlite",
     "inferrinizzard.prettier-sql-vscode",
-    "ms-playwright.playwright"
+    "ms-playwright.playwright",
+    "dbaeumer.vscode-eslint"
   ]
 }
