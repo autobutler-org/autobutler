@@ -550,7 +550,7 @@ test.describe('File Selection', () => {
         const fileCell = fileRow.locator('.file-table-cell--content');
         await fileCell.click();
         await page.waitForTimeout(100);
-        await expect(fileRow).toHaveClass(/file-node--selected/);
+        await expect(fileRow).toContainClass('file-node--selected');
 
         // Click on empty space in the file explorer
         const emptySpace = page.locator('.file-explorer');
@@ -558,7 +558,7 @@ test.describe('File Selection', () => {
         await page.waitForTimeout(100);
 
         // File should be deselected
-        await expect(fileRow).not.toHaveClass(/file-node--selected/);
+        await expect(fileRow).not.toContainClass('file-node--selected');
     });
 
     test('ctrl+click toggles file selection without deselecting others', async ({ page }) => {
