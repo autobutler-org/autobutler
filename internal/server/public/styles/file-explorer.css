@@ -513,7 +513,7 @@
     padding: var(--spacing-sm) var(--spacing-sm);
     border-radius: var(--border-radius);
     border: none;
-    background: transparent;
+    background: var(--color-gray-100);
     cursor: pointer;
     text-decoration: none;
 }
@@ -532,8 +532,12 @@
 }
 
 @media (prefers-color-scheme: dark) {
+    .context-menu-trigger {
+        background: var(--color-gray-700);
+    }
+
     .context-menu-trigger:hover {
-        background-color: var(--color-gray-700);
+        background-color: var(--color-gray-600);
     }
 }
 
