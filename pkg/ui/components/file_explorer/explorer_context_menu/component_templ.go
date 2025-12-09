@@ -9,7 +9,9 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"autobutler/pkg/ui/components/lib"
 	"autobutler/pkg/ui/types"
+	"autobutler/pkg/util/maputil"
 	"fmt"
 )
 
@@ -34,24 +36,18 @@ func Component(pageState types.PageState) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div><ul class=\"context-menu hidden\" style=\"width: 7rem;\"><li>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); newFile(event, '%s')", pageState.RootDir)))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<button type=\"button\" class=\"context-menu-item\" onclick=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var2 templ.ComponentScript = templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); newFile(event, '%s')", pageState.RootDir))
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2.Call)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\">New File</button><hr></li><li><button type=\"button\" class=\"context-menu-item\" onclick=\"closeContextMenuFromItem(event); showFolderDetails(event)\">Details</button></li></ul></div>")
+		items := maputil.NewOrderedMapFromValues(
+			[]string{"New File", "Details"},
+			[]*lib.HandlerProps{
+				{
+					OnClickHandler: fmt.Sprintf("newFile(event, '%s'); closeContextMenuFromItem(event);", pageState.RootDir),
+				},
+				{
+					OnClickHandler: "showFolderDetails(event); closeContextMenuFromItem(event);",
+				},
+			},
+		)
+		templ_7745c5c3_Err = lib.ContextMenu(items, false).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -1,0 +1,49 @@
+.dialog {
+    max-width: 100vw;
+    max-height: 100vh;
+    padding: 0;
+    margin: auto;
+    border: none;
+    background: transparent;
+    inset: 0;
+    background-color: var(--color-gray-100);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
+    /* Prevent dialog from being draggable */
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    .dialog {
+        background-color: var(--color-gray-900);
+    }
+}
+
+.dialog-close {
+    position: absolute;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.dialog-close:hover {
+    background-color: var(--color-gray-200);
+}
+
+@media (prefers-color-scheme: dark) {
+    .dialog-close:hover {
+        background-color: var(--color-gray-700);
+    }
+}
+
+.dialog-content {
+    margin: var(--spacing-3xl);
+    display: flex;
+    flex-direction: column;
+}

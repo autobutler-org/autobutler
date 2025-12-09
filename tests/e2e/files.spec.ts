@@ -312,7 +312,7 @@ test.describe('Files Page - File Interactions', () => {
         await expect(fileViewer).toBeVisible();
 
         // Click the close button
-        const closeButton = page.locator('.file-viewer-close');
+        const closeButton = page.locator('.dialog-close');
         await closeButton.click();
 
         // Modal should be closed
@@ -380,7 +380,7 @@ test.describe('Modal Dialog Behavior', () => {
         await expect(fileViewer).toBeVisible();
 
         // Click the close button
-        const closeButton = page.locator('.file-viewer-close');
+        const closeButton = page.locator('.dialog-close');
         await closeButton.click();
 
         // Dialog should be closed (not visible)
@@ -517,7 +517,7 @@ test.describe('File Selection', () => {
         await expect(fileViewer).toBeVisible({ timeout: 3000 });
 
         // Close the viewer for cleanup
-        const closeBtn = fileViewer.locator('.file-viewer-close');
+        const closeBtn = fileViewer.locator('.dialog-close');
         if (await closeBtn.isVisible()) {
             await closeBtn.click();
         }
@@ -550,7 +550,7 @@ test.describe('File Selection', () => {
         const fileCell = fileRow.locator('.file-table-cell--content');
         await fileCell.click();
         await page.waitForTimeout(100);
-        await expect(fileRow).toHaveClass(/file-node--selected/);
+        await expect(fileRow).toContainClass('file-node--selected');
 
         // Click on empty space in the file explorer
         const emptySpace = page.locator('.file-explorer');
@@ -558,7 +558,7 @@ test.describe('File Selection', () => {
         await page.waitForTimeout(100);
 
         // File should be deselected
-        await expect(fileRow).not.toHaveClass(/file-node--selected/);
+        await expect(fileRow).not.toContainClass('file-node--selected');
     });
 
     test('ctrl+click toggles file selection without deselecting others', async ({ page }) => {

@@ -122,13 +122,10 @@ a.mobile-menu-link:active {
 
 /* ========== FILE EXPLORER TAP FEEDBACK ========== */
 
-/* File/folder rows get a gentle scale effect */
+/* File/folder rows get a gentle background highlight */
 .file-table-row:active {
     background-color: var(--color-primary-50);
-    transform: scale(0.99);
-    transition:
-        transform 0.05s ease,
-        background-color 0.05s ease;
+    transition: background-color 0.05s ease;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -146,7 +143,6 @@ a.mobile-menu-link:active {
 /* Context menu items */
 .context-menu-item:active {
     background-color: var(--color-primary-100);
-    transform: scale(0.98);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -180,10 +176,6 @@ a.mobile-menu-link:active {
 }
 
 /* File viewer controls */
-.file-viewer-close:active {
-    background-color: var(--color-gray-100);
-}
-
 .file-viewer-download-btn:active,
 .file-viewer-epub-btn:active {
     transform: scale(0.9);
@@ -191,10 +183,6 @@ a.mobile-menu-link:active {
 }
 
 @media (prefers-color-scheme: dark) {
-    .file-viewer-close:active {
-        background-color: var(--color-gray-800);
-    }
-
     .file-viewer-download-btn:active,
     .file-viewer-epub-btn:active {
         background-color: var(--color-gray-800);

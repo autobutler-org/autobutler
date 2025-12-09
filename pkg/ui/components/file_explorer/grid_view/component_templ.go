@@ -9,8 +9,8 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"autobutler/pkg/ui/components/file_explorer/context_menu_items"
 	"autobutler/pkg/ui/components/file_explorer/device_badge"
+	"autobutler/pkg/ui/components/file_explorer/file_context_menu"
 	"autobutler/pkg/ui/components/icons/archive"
 	"autobutler/pkg/ui/components/icons/folder"
 	"autobutler/pkg/ui/components/icons/generic"
@@ -345,15 +345,11 @@ func renderGridItem(pageState types.PageState, file *fileutil.DeviceFileInfo) te
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<div class=\"grid-view-context-trigger\" onclick=\"event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.grid-view-item'))\">⋮</div><div class=\"context-menu hidden\">")
+		templ_7745c5c3_Err = file_context_menu.Component(pageState, file).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = context_menu_items.Component(pageState, file, pageState.RootDir).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -9,8 +9,10 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"autobutler/pkg/ui/components/lib"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/maputil"
 	"fmt"
 	"path/filepath"
 )
@@ -36,80 +38,37 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div><button class=\"context-menu-trigger\" onclick=\"toggleFloatingContextMenu(event, this.parentElement)\" aria-label=\"Open context menu\" type=\"button\" tabindex=\"0\">&#x22EE;</button><ul class=\"context-menu hidden\"><li><a download class=\"context-menu-item\" href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div><button class=\"context-menu-trigger\" onclick=\"toggleFloatingContextMenu(event, this.parentElement)\" aria-label=\"Open context menu\" type=\"button\" tabindex=\"0\">&#x22EE;</button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var2 templ.SafeURL
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinURLErrs(filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name()))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/file_context_menu/component.templ`, Line: 28, Col: 74}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" onclick=\"closeContextMenuFromItem(event)\">Download</a><hr></li><li>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); moveFile(event, '%s', '%s')", pageState.RootDir, file.Name())))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<button type=\"button\" class=\"context-menu-item\" onclick=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var3 templ.ComponentScript = templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); moveFile(event, '%s', '%s')", pageState.RootDir, file.Name()))
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3.Call)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\">Move/Rename</button><hr></li><li>")
+		items := maputil.NewOrderedMapFromValues(
+			[]string{"Download", "Move/Rename", "File Details", "Delete"},
+			[]*lib.HandlerProps{
+				{
+					OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); downloadFile('%s');", filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name())),
+				},
+				{
+					OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); moveFile(event, '%s', '%s');", pageState.RootDir, file.Name()),
+				},
+				{
+					OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); showFileDetails('%s');", file.Name()),
+				},
+				{
+					AdditionalClasses: "context-menu-item--danger",
+					HTMXTarget:        "#file-explorer",
+					HTMXSwap:          "outerHTML",
+					HTMXMethod:        "DELETE",
+					HTMXRequestPath:   filepath.Join(`/api/v1/files`),
+					HTMXVals:          fmt.Sprintf(`{"rootDir":"%s", "filePaths":["%s"]}`, pageState.RootDir, file.Name()),
+				},
+			},
+		)
+		templ_7745c5c3_Err = lib.ContextMenu(items, false).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); showFileDetails('%s')", file.Name())))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<button type=\"button\" class=\"context-menu-item\" onclick=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var4 templ.ComponentScript = templ.JSUnsafeFuncCall(fmt.Sprintf("closeContextMenuFromItem(event); showFileDetails('%s')", file.Name()))
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4.Call)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\">File Details</button><hr></li><li><button type=\"button\" class=\"context-menu-item context-menu-item--danger\" hx-target=\"#file-explorer\" hx-swap=\"outerHTML\" hx-delete=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var5 string
-		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join(`/api/v1/files`))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/file_context_menu/component.templ`, Line: 61, Col: 47}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" hx-vals=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var6 string
-		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(`{"rootDir":"` + pageState.RootDir + `", "filePaths":["` + file.Name() + `"]}`)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/file_context_menu/component.templ`, Line: 62, Col: 93}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" onclick=\"closeContextMenuFromItem(event); event.stopPropagation()\">Delete</button></li></ul></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

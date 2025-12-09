@@ -27,6 +27,8 @@
 @import url('user-access.css');
 @import url('network-settings.css');
 @import url('utility.css');
+/* Component-specific styles */
+@import url('component-dialog.css');
 
 /* Inline rename/move form - Used in file explorer for renaming files inline */
 .ab-rename-overlay {

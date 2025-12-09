@@ -507,7 +507,7 @@
 .context-menu-trigger {
     display: inline-flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     width: 100%;
     height: 100%;
     padding: var(--spacing-sm) var(--spacing-sm);
@@ -519,7 +519,7 @@
 }
 
 .context-menu-trigger:hover {
-    background-color: var(--color-gray-200);
+    background-color: var(--color-gray-300);
 }
 
 .context-menu-trigger:focus {
@@ -533,7 +533,7 @@
 
 @media (prefers-color-scheme: dark) {
     .context-menu-trigger:hover {
-        background-color: var(--color-gray-700);
+        background-color: var(--color-gray-600);
     }
 }
 
@@ -560,27 +560,6 @@
 @media (prefers-color-scheme: dark) {
     .file-viewer {
         background-color: var(--color-gray-900);
-    }
-}
-
-.file-viewer-close {
-    position: absolute;
-    top: var(--spacing-sm);
-    right: var(--spacing-sm);
-    padding: var(--spacing-sm);
-    border-radius: var(--border-radius);
-    border: none;
-    background: transparent;
-    cursor: pointer;
-}
-
-.file-viewer-close:hover {
-    background-color: var(--color-gray-200);
-}
-
-@media (prefers-color-scheme: dark) {
-    .file-viewer-close:hover {
-        background-color: var(--color-gray-700);
     }
 }
 
@@ -816,7 +795,7 @@
 
 @media (prefers-color-scheme: dark) {
     .column-view-item:hover {
-        background: var(--color-gray-700);
+        background: var(--color-gray-800);
     }
 }
 
@@ -898,51 +877,26 @@
     font-weight: 300;
 }
 
-/* Column View Context Menu Trigger */
-.column-view-context-trigger {
+/* Column View Context Menu */
+.column-view-item .context-menu {
+    min-width: 150px;
+}
+
+/* Hide context menu trigger in column view by default, show on hover */
+.column-view-item .context-menu-trigger {
     position: absolute;
     top: 50%;
     right: var(--spacing-xs);
     transform: translateY(-50%);
     width: 24px;
     height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--border-radius);
-    background: var(--color-gray-100);
-    color: var(--color-gray-600);
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
+    padding: 0;
     opacity: 0;
     transition: opacity 0.2s ease;
 }
 
-@media (prefers-color-scheme: dark) {
-    .column-view-context-trigger {
-        background: var(--color-gray-700);
-        color: var(--color-gray-300);
-    }
-}
-
-.column-view-item:hover .column-view-context-trigger {
+.column-view-item:hover .context-menu-trigger {
     opacity: 1;
-}
-
-.column-view-context-trigger:hover {
-    background: var(--color-gray-200);
-}
-
-@media (prefers-color-scheme: dark) {
-    .column-view-context-trigger:hover {
-        background: var(--color-gray-600);
-    }
-}
-
-/* Column View Context Menu */
-.column-view-item .context-menu {
-    min-width: 150px;
 }
 
 /* Preview Pane */
@@ -1054,14 +1008,12 @@
     padding: var(--spacing-md);
     border: 1px solid var(--color-gray-200);
     border-radius: var(--border-radius);
-    background: white;
     transition: all 0.15s ease;
     cursor: pointer;
 }
 
 @media (prefers-color-scheme: dark) {
     .grid-view-item {
-        background: var(--color-gray-800);
         border-color: var(--color-gray-700);
     }
 }
@@ -1074,7 +1026,7 @@
 
 @media (prefers-color-scheme: dark) {
     .grid-view-item:hover {
-        background: var(--color-gray-700);
+        background: var(--color-gray-800);
         border-color: var(--color-gray-600);
     }
 }
@@ -1229,30 +1181,25 @@
     transition: opacity 0.2s ease;
 }
 
-@media (prefers-color-scheme: dark) {
-    .grid-view-context-trigger {
-        background: var(--color-gray-700);
-        color: var(--color-gray-300);
-    }
-}
-
-.grid-view-item:hover .grid-view-context-trigger {
-    opacity: 1;
-}
-
-.grid-view-context-trigger:hover {
-    background: var(--color-gray-200);
-}
-
-@media (prefers-color-scheme: dark) {
-    .grid-view-context-trigger:hover {
-        background: var(--color-gray-600);
-    }
-}
-
 /* Grid View Context Menu */
 .grid-view-item .context-menu {
     min-width: 150px;
+}
+
+/* Hide context menu trigger in grid view by default, show on hover */
+.grid-view-item .context-menu-trigger {
+    position: absolute;
+    top: var(--spacing-xs);
+    right: var(--spacing-xs);
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.grid-view-item:hover .context-menu-trigger {
+    opacity: 1;
 }
 
 /* Grid View Scrollbar Styling */

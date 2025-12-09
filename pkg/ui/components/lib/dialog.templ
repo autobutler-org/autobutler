@@ -1,0 +1,32 @@
+package lib
+
+import "fmt"
+
+templ Dialog(
+	id string,
+	additionalClass string,
+	scripts []string,
+) {
+	<dialog
+		id={ id }
+		class={ fmt.Sprintf("dialog %s", additionalClass) }
+		onclose="closeDialog(event)"
+		closedby="none"
+		onkeydown="if (event.key === 'Escape') { closeDialog(event); } else if (event.key === 'Enter') { preventDefault(event); }"
+		onmousedown="preventDefault(event)"
+	>
+		for _, script := range scripts {
+			<script src={ script }></script>
+		}
+		<button
+			class={ fmt.Sprintf("dialog-close %s-close", additionalClass) }
+			aria-label="Close"
+			onclick="closeFileViewer(event)"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20">
+				<path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M5 5l10 10M15 5l-10 10"></path>
+			</svg>
+		</button>
+		<div id={ fmt.Sprintf("%s-content", id) } class={ fmt.Sprintf("dialog-content %s-content", additionalClass) }></div>
+	</dialog>
+}

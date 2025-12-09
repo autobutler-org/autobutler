@@ -1,8 +1,8 @@
 package column_view
 
 import (
-	"autobutler/pkg/ui/components/file_explorer/context_menu_items"
 	"autobutler/pkg/ui/components/file_explorer/device_badge"
+	"autobutler/pkg/ui/components/file_explorer/file_context_menu"
 	"autobutler/pkg/ui/components/icons/archive"
 	"autobutler/pkg/ui/components/icons/folder"
 	"autobutler/pkg/ui/components/icons/generic"
@@ -173,15 +173,7 @@ templ renderParentColumnItem(pageState types.PageState, parentPath string, file 
 				</span>
 			</div>
 		}
-		<div
-			class="column-view-context-trigger"
-			onclick="event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.column-view-item'))"
-		>
-			⋮
-		</div>
-		<div class="context-menu hidden">
-			@context_menu_items.Component(pageState, file, parentPath)
-		</div>
+		@file_context_menu.Component(pageState, file)
 	</li>
 }
 
@@ -232,15 +224,7 @@ templ renderCurrentColumnItem(pageState types.PageState, file *fileutil.DeviceFi
 				</span>
 			</div>
 		}
-		<div
-			class="column-view-context-trigger"
-			onclick="event.stopPropagation(); toggleFloatingContextMenu(event, this.closest('.column-view-item'))"
-		>
-			⋮
-		</div>
-		<div class="context-menu hidden">
-			@context_menu_items.Component(pageState, file, pageState.RootDir)
-		</div>
+		@file_context_menu.Component(pageState, file)
 	</li>
 }
 
