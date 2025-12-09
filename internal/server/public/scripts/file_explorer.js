@@ -615,136 +615,6 @@ function downloadFile(filePath) {
 }
 
 // eslint-disable-next-line no-unused-vars
-function openRenameDialog(filePath) {
-    const dialog = document.getElementById('rename-dialog');
-    const input = document.getElementById('rename-path-input');
-    const currentPath = document.getElementById('rename-current-path');
-    const confirmFrom = document.getElementById('rename-confirm-from');
-    const confirmBox = document.getElementById('rename-confirm');
-    const inputGroup = document.getElementById('rename-input-group');
-
-    // Reset dialog state
-    input.value = filePath;
-    currentPath.textContent = 'Current: ' + filePath;
-    confirmFrom.textContent = 'From: ' + filePath;
-    inputGroup.classList.remove('rename-hidden');
-    confirmBox.classList.add('rename-hidden');
-    document.getElementById('rename-submit').textContent = 'Rename';
-    document.getElementById('rename-cancel').textContent = 'Cancel';
-
-    // Show dialog
-    dialog.showModal();
-
-    // Focus and select the input
-    setTimeout(() => {
-        input.focus();
-        const lastSlashIndex = input.value.lastIndexOf('/');
-        const lastDotIndex = input.value.lastIndexOf('.');
-        if (lastDotIndex > lastSlashIndex) {
-            input.setSelectionRange(lastSlashIndex + 1, lastDotIndex);
-        } else {
-            input.setSelectionRange(lastSlashIndex + 1, input.value.length);
-        }
-    }, 10);
-}
-
-// Initialize rename dialog behavior
-(function initializeRenameDialog() {
-    const dialog = document.getElementById('rename-dialog');
-    if (!dialog) return; // Dialog not present on this page
-
-    const input = document.getElementById('rename-path-input');
-    const form = document.getElementById('rename-form');
-    const confirmBox = document.getElementById('rename-confirm');
-    const inputGroup = document.getElementById('rename-input-group');
-    const submitBtn = document.getElementById('rename-submit');
-    const cancelBtn = document.getElementById('rename-cancel');
-    const confirmTo = document.getElementById('rename-confirm-to');
-    const confirmFrom = document.getElementById('rename-confirm-from');
-
-    let isConfirming = false;
-    let originalFilePath = '';
-
-    // Handle cancel button
-    cancelBtn.addEventListener('click', () => {
-        isConfirming = false;
-        dialog.close();
-    });
-
-    // Track the file path when dialog opens
-    dialog.addEventListener('close', () => {
-        isConfirming = false;
-        originalFilePath = '';
-    });
-
-    // Store original file path when dialog is shown
-    const originalShowModal = dialog.showModal.bind(dialog);
-    dialog.showModal = function () {
-        originalFilePath = input.value;
-        isConfirming = false;
-        originalShowModal();
-    };
-
-    // Handle form submission
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-
-        const newFilePath = input.value.trim();
-
-        // Validation
-        if (!newFilePath) {
-            input.focus();
-            return;
-        }
-
-        if (newFilePath === originalFilePath) {
-            dialog.close();
-            return;
-        }
-
-        const newFileName = newFilePath.split('/').pop();
-        if (newFileName.length > MAX_FILE_NAME_LENGTH) {
-            alert(`File name must be ${MAX_FILE_NAME_LENGTH} characters or less`);
-            input.focus();
-            return;
-        }
-
-        // Show confirmation step
-        if (!isConfirming) {
-            isConfirming = true;
-            inputGroup.classList.add('rename-hidden');
-            confirmBox.classList.remove('rename-hidden');
-            confirmTo.textContent = `To: ${newFilePath}`;
-            submitBtn.textContent = 'Confirm';
-            cancelBtn.textContent = 'Go Back';
-
-            // Update cancel button to go back to editing
-            cancelBtn.onclick = () => {
-                isConfirming = false;
-                inputGroup.classList.remove('rename-hidden');
-                confirmBox.classList.add('rename-hidden');
-                submitBtn.textContent = 'Continue';
-                cancelBtn.textContent = 'Cancel';
-                cancelBtn.onclick = () => dialog.close();
-                input.focus();
-            };
-            return;
-        }
-
-        // Actually perform the rename/move
-        dialog.close();
-
-        htmx.ajax('PUT', `/api/v1/files/${originalFilePath}`, {
-            values: {
-                newFilePath: newFilePath,
-            },
-            target: '#file-explorer',
-            swap: 'outerHTML',
-        });
-    });
-})();
-
-// eslint-disable-next-line no-unused-vars
 function moveFile(event, rootDir, fileName) {
     preventDefault(event);
     while (rootDir && rootDir[0] == '/') {
@@ -753,7 +623,7 @@ function moveFile(event, rootDir, fileName) {
     const filePath = `${rootDir}/${fileName}`;
 
     // Open the rename dialog
-    openRenameDialog(filePath);
+    window.ab_openRenameDialog(filePath);
 }
 
 // eslint-disable-next-line no-unused-vars
