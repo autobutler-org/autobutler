@@ -670,13 +670,13 @@ window.ab = Object.assign(window.ab || {}, {
                 // Sort alphabetically
                 return window.ab.currentSortDirection === 'asc'
                     ? aValue.localeCompare(bValue, undefined, {
-                        numeric: true,
-                        sensitivity: 'base',
-                    })
+                          numeric: true,
+                          sensitivity: 'base',
+                      })
                     : bValue.localeCompare(aValue, undefined, {
-                        numeric: true,
-                        sensitivity: 'base',
-                    });
+                          numeric: true,
+                          sensitivity: 'base',
+                      });
             } else if (column === 'size') {
                 // Sort folders first, then files (unless mixed sorting is enabled)
                 if (!window.ab.mixedSorting) {
