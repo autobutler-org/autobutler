@@ -31,15 +31,15 @@ func dnd(pageState types.PageState) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("dropFiles", templ.JSExpression("event"), "", pageState.RootDir))
+		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("window.ab.dropFiles", templ.JSExpression("event"), "", pageState.RootDir))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"file-upload-area\" class=\"dnd-overlay\" ondragenter=\"activateDropZone(event)\" ondragover=\"preventDefault(event)\" ondragleave=\"deactivateDropZone(event)\" ondrop=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"file-upload-area\" class=\"dnd-overlay\" ondragenter=\"window.ab.activateDropZone(event)\" ondragover=\"window.ab.preventDefault(event)\" ondragleave=\"window.ab.deactivateDropZone(event)\" ondrop=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var2 templ.ComponentScript = templ.JSFuncCall("dropFiles", templ.JSExpression("event"), "", pageState.RootDir)
+		var templ_7745c5c3_Var2 templ.ComponentScript = templ.JSFuncCall("window.ab.dropFiles", templ.JSExpression("event"), "", pageState.RootDir)
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2.Call)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err

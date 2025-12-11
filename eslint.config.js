@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
+import eslintConfigPrettier from 'eslint-config-prettier';
 import globals from 'globals';
 
 export default [
@@ -67,4 +68,5 @@ export default [
             '@typescript-eslint/no-explicit-any': 'warn',
         },
     },
+    eslintConfigPrettier,
 ];

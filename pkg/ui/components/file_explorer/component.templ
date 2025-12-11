@@ -6,6 +6,7 @@ import (
 	"autobutler/pkg/ui/components/file_explorer/file_navigation"
 	"autobutler/pkg/ui/components/file_explorer/file_upload"
 	"autobutler/pkg/ui/components/file_explorer/file_viewer"
+	"autobutler/pkg/ui/components/file_explorer/rename_dialog"
 	"autobutler/pkg/ui/components/icons/column_view"
 	"autobutler/pkg/ui/components/icons/grid_view"
 	"autobutler/pkg/ui/components/icons/list_view"
@@ -25,6 +26,7 @@ templ Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, vie
 		class="file-explorer"
 	>
 		@file_viewer.Component()
+		@rename_dialog.Component()
 		<div class="file-explorer-header">
 			<div>
 				<h2 class="file-explorer-title">File Explorer</h2>
@@ -39,7 +41,7 @@ templ Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, vie
 		</div>
 		<div
 			id="file-explorer-selectable"
-			oncontextmenu="toggleFloatingContextMenu(event, this)"
+			oncontextmenu="window.ab.toggleFloatingContextMenu(event, this)"
 		>
 			@explorer_context_menu.Component(pageState)
 			<div class="file-explorer-controls">
@@ -52,14 +54,14 @@ templ Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, vie
 						<input
 							type="checkbox"
 							id="toggle-device-badges"
-							onchange="toggleDeviceBadges(this.checked)"
+							onchange="window.ab.toggleDeviceBadges(this.checked)"
 						/>
 						<span>Show device names</span>
 					</label>
 					<div class="view-switcher">
 						<button
 							class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "list") }
-							onclick="switchView('list')"
+							onclick="window.ab.switchView('list')"
 							title="List View"
 							type="button"
 						>
@@ -67,7 +69,7 @@ templ Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, vie
 						</button>
 						<button
 							class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "grid") }
-							onclick="switchView('grid')"
+							onclick="window.ab.switchView('grid')"
 							title="Grid View"
 							type="button"
 						>
@@ -75,7 +77,7 @@ templ Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, vie
 						</button>
 						<button
 							class={ "btn btn--icon btn--secondary", templ.KV("btn--primary", view == "column") }
-							onclick="switchView('column')"
+							onclick="window.ab.switchView('column')"
 							title="Column View"
 							type="button"
 						>

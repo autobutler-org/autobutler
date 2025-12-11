@@ -136,7 +136,6 @@ format/css: ## Format CSS files
 lint: lint/go lint/sqlc lint/templ lint/js lint/ts lint/css lint/yaml ## Lint code
 
 lint/go: ## Lint Go code
-	$(MAKE) format/go
 	go vet ./...
 
 lint/sqlc: ## Lint sqlc

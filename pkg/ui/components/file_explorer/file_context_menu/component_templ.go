@@ -38,29 +38,30 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div><button class=\"context-menu-trigger\" onclick=\"toggleFloatingContextMenu(event, this.parentElement)\" aria-label=\"Open context menu\" type=\"button\" tabindex=\"0\">&#x22EE;</button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div><button class=\"context-menu-trigger\" onclick=\"window.ab.toggleFloatingContextMenu(event, this.parentElement)\" aria-label=\"Open context menu\" type=\"button\" tabindex=\"0\">&#x22EE;</button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		items := maputil.NewOrderedMapFromValues(
 			[]string{"Download", "Move/Rename", "File Details", "Delete"},
-			[]*lib.HandlerProps{
+			[]*lib.ContextMenuHandlerProps{
 				{
-					OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); downloadFile('%s');", filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name())),
+					OnClickHandler: fmt.Sprintf("window.ab.closeContextMenuFromItem(event); window.ab.downloadFile('%s');", filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name())),
 				},
 				{
-					OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); moveFile(event, '%s', '%s');", pageState.RootDir, file.Name()),
+					OnClickHandler: fmt.Sprintf("window.ab.closeContextMenuFromItem(event); window.ab.moveFile(event, '%s', '%s');", pageState.RootDir, file.Name()),
 				},
 				{
-					OnClickHandler: fmt.Sprintf("closeContextMenuFromItem(event); showFileDetails('%s');", file.Name()),
+					OnClickHandler: fmt.Sprintf("window.ab.closeContextMenuFromItem(event); window.ab.showFileDetails('%s');", file.Name()),
 				},
 				{
 					AdditionalClasses: "context-menu-item--danger",
-					HTMXTarget:        "#file-explorer",
-					HTMXSwap:          "outerHTML",
-					HTMXMethod:        "DELETE",
-					HTMXRequestPath:   filepath.Join(`/api/v1/files`),
-					HTMXVals:          fmt.Sprintf(`{"rootDir":"%s", "filePaths":["%s"]}`, pageState.RootDir, file.Name()),
+					ButtonAttributes: templ.Attributes{
+						"hx-target": "#file-explorer",
+						"hx-swap":   "outerHTML",
+						"hx-delete": filepath.Join(`/api/v1/files`),
+						"hx-vals":   fmt.Sprintf(`{"rootDir":"%s", "filePaths":["%s"]}`, pageState.RootDir, file.Name()),
+					},
 				},
 			},
 		)

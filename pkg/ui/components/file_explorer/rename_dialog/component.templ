@@ -1,0 +1,186 @@
+package rename_dialog
+
+templ Component() {
+	<dialog
+		id="rename-dialog"
+		class="dialog rename-dialog"
+		onkeydown="if (event.key === 'Escape') { window.ab.preventDefault(event); this.close(); }"
+		onclick="if (event.target === this) { this.close(); }"
+	>
+		<button
+			class="dialog-close rename-dialog-close"
+			aria-label="Close"
+			onclick="document.getElementById('rename-dialog').close()"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20">
+				<path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M5 5l10 10M15 5l-10 10"></path>
+			</svg>
+		</button>
+		<div class="dialog-content rename-dialog-content">
+			<div class="rename-header">
+				<h3 class="rename-title">Rename/Move File</h3>
+				<p class="rename-subtitle" id="rename-current-path"></p>
+			</div>
+			<form class="rename-form" id="rename-form">
+				<div class="rename-confirm rename-hidden" id="rename-confirm">
+					<p class="rename-confirm-text">Are you sure you want to rename/move this file?</p>
+					<div class="rename-confirm-path" id="rename-confirm-from"></div>
+					<div class="rename-confirm-path" id="rename-confirm-to"></div>
+				</div>
+				<div class="rename-input-group" id="rename-input-group">
+					<label class="rename-label" for="rename-path-input">
+						New path (including filename and extension):
+					</label>
+					<input
+						type="text"
+						id="rename-path-input"
+						class="rename-input"
+						value=""
+						maxlength="255"
+						required
+					/>
+				</div>
+				<div class="rename-actions">
+					<button type="button" class="btn btn--secondary" id="rename-cancel">
+						Cancel
+					</button>
+					<button type="submit" class="btn btn--primary" id="rename-submit">
+						Rename
+					</button>
+				</div>
+			</form>
+		</div>
+	</dialog>
+	<script type="text/javascript">
+		window.ab = Object.assign(window.ab || {}, {
+			openRenameDialog: (filePath) => {
+				const dialog = document.getElementById('rename-dialog');
+				const input = document.getElementById('rename-path-input');
+				const currentPath = document.getElementById('rename-current-path');
+				const confirmFrom = document.getElementById('rename-confirm-from');
+				const confirmBox = document.getElementById('rename-confirm');
+				const inputGroup = document.getElementById('rename-input-group');
+
+				// Reset dialog state
+				input.value = filePath;
+				currentPath.textContent = 'Current: ' + filePath;
+				confirmFrom.textContent = 'From: ' + filePath;
+				inputGroup.classList.remove('rename-hidden');
+				confirmBox.classList.add('rename-hidden');
+				document.getElementById('rename-submit').textContent = 'Rename';
+				document.getElementById('rename-cancel').textContent = 'Cancel';
+
+				// Show dialog
+				dialog.showModal();
+
+				// Focus and select the input
+				setTimeout(() => {
+					input.focus();
+					const lastSlashIndex = input.value.lastIndexOf('/');
+					const lastDotIndex = input.value.lastIndexOf('.');
+					if (lastDotIndex > lastSlashIndex) {
+						input.setSelectionRange(lastSlashIndex + 1, lastDotIndex);
+					} else {
+						input.setSelectionRange(lastSlashIndex + 1, input.value.length);
+					}
+				}, 10);
+			},
+		});
+
+		// Initialize rename dialog behavior
+		(function initializeRenameDialog() {
+			const dialog = document.getElementById('rename-dialog');
+			if (!dialog) return; // Dialog not present on this page
+
+			const input = document.getElementById('rename-path-input');
+			const form = document.getElementById('rename-form');
+			const confirmBox = document.getElementById('rename-confirm');
+			const inputGroup = document.getElementById('rename-input-group');
+			const submitBtn = document.getElementById('rename-submit');
+			const cancelBtn = document.getElementById('rename-cancel');
+			const confirmTo = document.getElementById('rename-confirm-to');
+			const confirmFrom = document.getElementById('rename-confirm-from');
+
+			let isConfirming = false;
+			let originalFilePath = '';
+
+			// Handle cancel button
+			cancelBtn.addEventListener('click', () => {
+				isConfirming = false;
+				dialog.close();
+			});
+
+			// Track the file path when dialog opens
+			dialog.addEventListener('close', () => {
+				isConfirming = false;
+				originalFilePath = '';
+			});
+
+			// Store original file path when dialog is shown
+			const originalShowModal = dialog.showModal.bind(dialog);
+			dialog.showModal = function () {
+				originalFilePath = input.value;
+				isConfirming = false;
+				originalShowModal();
+			};
+
+			// Handle form submission
+			form.addEventListener('submit', (e) => {
+				window.ab.preventDefault(e);
+
+				const newFilePath = input.value.trim();
+
+				// Validation
+				if (!newFilePath) {
+					input.focus();
+					return;
+				}
+
+				if (newFilePath === originalFilePath) {
+					dialog.close();
+					return;
+				}
+
+				const newFileName = newFilePath.split('/').pop();
+				if (newFileName.length > 255) {
+					alert('File name must be 255 characters or less');
+					input.focus();
+					return;
+				}
+
+				// Show confirmation step
+				if (!isConfirming) {
+					isConfirming = true;
+					inputGroup.classList.add('rename-hidden');
+					confirmBox.classList.remove('rename-hidden');
+					confirmTo.textContent = `To: ${newFilePath}`;
+					submitBtn.textContent = 'Confirm';
+					cancelBtn.textContent = 'Go Back';
+
+					// Update cancel button to go back to editing
+					cancelBtn.onclick = () => {
+						isConfirming = false;
+						inputGroup.classList.remove('rename-hidden');
+						confirmBox.classList.add('rename-hidden');
+						submitBtn.textContent = 'Continue';
+						cancelBtn.textContent = 'Cancel';
+						cancelBtn.onclick = () => dialog.close();
+						input.focus();
+					};
+					return;
+				}
+
+				// Actually perform the rename/move
+				dialog.close();
+
+				htmx.ajax('PUT', `/api/v1/files/${originalFilePath}`, {
+					values: {
+						newFilePath: newFilePath,
+					},
+					target: '#file-explorer',
+					swap: 'outerHTML',
+				});
+			});
+		})();
+	</script>
+}

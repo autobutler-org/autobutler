@@ -311,11 +311,11 @@ test.describe('Files Page - File Interactions', () => {
         const fileViewer = page.locator('#file-viewer');
         await expect(fileViewer).toBeVisible();
 
-        // Click the close button
-        const closeButton = page.locator('.dialog-close');
+        // Click the close button (specifically for file viewer)
+        const closeButton = fileViewer.locator('.dialog-close');
         await closeButton.click();
 
-        // Modal should be closed
+        // Dialog should be closed (not visible)
         await expect(fileViewer).not.toBeVisible();
     });
 
@@ -379,8 +379,8 @@ test.describe('Modal Dialog Behavior', () => {
         const fileViewer = page.locator('#file-viewer');
         await expect(fileViewer).toBeVisible();
 
-        // Click the close button
-        const closeButton = page.locator('.dialog-close');
+        // Click the close button (specifically for file viewer)
+        const closeButton = fileViewer.locator('.dialog-close');
         await closeButton.click();
 
         // Dialog should be closed (not visible)
@@ -415,19 +415,17 @@ test.describe('Modal Dialog Behavior', () => {
         await renameButton.dispatchEvent('click');
 
         // Wait for rename dialog to appear
-        const renameDialog = page.locator('.ab-rename-overlay');
+        const renameDialog = page.locator('#rename-dialog');
         await expect(renameDialog).toBeVisible();
 
-        // Get the dialog box (the inner dialog, not the overlay)
-        const dialogBox = page.locator('.ab-rename-dialog');
-        const dialogBoundingBox = await dialogBox.boundingBox();
+        // Get the dialog box
+        const dialogBoundingBox = await renameDialog.boundingBox();
         expect(dialogBoundingBox).not.toBeNull();
 
         await page.mouse.click(10, 10);
 
         // Dialog should not be visible
         await expect(renameDialog).not.toBeVisible();
-        await expect(dialogBox).not.toBeVisible();
     });
 
     test('close button should properly close rename dialog', async ({ page }) => {
@@ -440,11 +438,11 @@ test.describe('Modal Dialog Behavior', () => {
         await renameButton.dispatchEvent('click');
 
         // Wait for rename dialog to appear
-        const renameDialog = page.locator('.ab-rename-overlay');
+        const renameDialog = page.locator('#rename-dialog');
         await expect(renameDialog).toBeVisible();
 
         // Click the close button
-        const closeButton = page.locator('.ab-rename-close');
+        const closeButton = renameDialog.locator('.dialog-close');
         await closeButton.click();
 
         // Dialog should be closed

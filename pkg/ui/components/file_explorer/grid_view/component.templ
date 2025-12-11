@@ -40,10 +40,10 @@ templ renderGridItem(pageState types.PageState, file *fileutil.DeviceFileInfo) {
 		data-is-folder={ fmt.Sprintf("%t", isFolder) }
 		data-file-type={ fileType }
 		data-device-name={ deviceName }
-		oncontextmenu="toggleFloatingContextMenu(event, this)"
-		onclick="handleFileNodeClick(event, this)"
-		ondblclick="handleFileNodeDoubleClick(event, this)"
-		ontouchend="handleFileNodeTouch(event, this)"
+		oncontextmenu="window.ab.toggleFloatingContextMenu(event, this)"
+		onclick="window.ab.handleFileNodeClick(event, this)"
+		ondblclick="window.ab.handleFileNodeDoubleClick(event, this)"
+		ontouchend="window.ab.handleFileNodeTouch(event, this)"
 	>
 		if isFolder {
 			<div

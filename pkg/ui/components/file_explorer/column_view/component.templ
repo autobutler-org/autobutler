@@ -143,10 +143,10 @@ templ renderParentColumnItem(pageState types.PageState, parentPath string, file 
 		data-name={ fileName }
 		data-is-folder={ fmt.Sprintf("%t", isFolder) }
 		data-file-type={ dataFileType }
-		oncontextmenu="toggleFloatingContextMenu(event, this)"
-		onclick="handleFileNodeClick(event, this)"
-		ondblclick="handleFileNodeDoubleClick(event, this)"
-		ontouchend="handleFileNodeTouch(event, this)"
+		oncontextmenu="window.ab.toggleFloatingContextMenu(event, this)"
+		onclick="window.ab.handleFileNodeClick(event, this)"
+		ondblclick="window.ab.handleFileNodeDoubleClick(event, this)"
+		ontouchend="window.ab.handleFileNodeTouch(event, this)"
 	>
 		if isFolder {
 			<div
@@ -194,10 +194,10 @@ templ renderCurrentColumnItem(pageState types.PageState, file *fileutil.DeviceFi
 		data-name={ fileName }
 		data-is-folder={ fmt.Sprintf("%t", isFolder) }
 		data-file-type={ dataFileType }
-		oncontextmenu="toggleFloatingContextMenu(event, this)"
-		onclick="handleFileNodeClick(event, this)"
-		ondblclick="handleFileNodeDoubleClick(event, this)"
-		ontouchend="handleFileNodeTouch(event, this)"
+		oncontextmenu="window.ab.toggleFloatingContextMenu(event, this)"
+		onclick="window.ab.handleFileNodeClick(event, this)"
+		ondblclick="window.ab.handleFileNodeDoubleClick(event, this)"
+		ontouchend="window.ab.handleFileNodeTouch(event, this)"
 	>
 		if isFolder {
 			<div

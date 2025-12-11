@@ -11,20 +11,15 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"autobutler/pkg/util/maputil"
 	"fmt"
-	"strings"
 )
 
-type HandlerProps struct {
+type ContextMenuHandlerProps struct {
 	AdditionalClasses string
 	OnClickHandler    string
-	HTMXTarget        string
-	HTMXSwap          string
-	HTMXMethod        string
-	HTMXRequestPath   string
-	HTMXVals          string
+	ButtonAttributes  templ.Attributes
 }
 
-func ContextMenu(onClickHandlers maputil.OrderedMap[string, *HandlerProps], showMenu bool) templ.Component {
+func ContextMenu(onClickHandlers maputil.OrderedMap[string, *ContextMenuHandlerProps], showMenu bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -76,7 +71,6 @@ func ContextMenu(onClickHandlers maputil.OrderedMap[string, *HandlerProps], show
 			return templ_7745c5c3_Err
 		}
 		for name, props := range onClickHandlers.Range() {
-			method := strings.ToUpper(props.HTMXMethod)
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -122,177 +116,29 @@ func ContextMenu(onClickHandlers maputil.OrderedMap[string, *HandlerProps], show
 					return templ_7745c5c3_Err
 				}
 			}
-			if props.HTMXTarget != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, " hx-target=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var7 string
-				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(props.HTMXTarget)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/lib/context_menu.templ`, Line: 39, Col: 35}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			if props.HTMXSwap != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, " hx-swap=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var8 string
-				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(props.HTMXSwap)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/lib/context_menu.templ`, Line: 42, Col: 31}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			if props.HTMXVals != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, " hx-vals=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var9 string
-				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(props.HTMXVals)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/lib/context_menu.templ`, Line: 45, Col: 31}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			if method == "GET" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, " hx-get=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var10 string
-				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(props.HTMXRequestPath)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/lib/context_menu.templ`, Line: 48, Col: 37}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			if method == "POST" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, " hx-post=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var11 string
-				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(props.HTMXRequestPath)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/lib/context_menu.templ`, Line: 51, Col: 38}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			if method == "DELETE" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, " hx-delete=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var12 string
-				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(props.HTMXRequestPath)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/lib/context_menu.templ`, Line: 54, Col: 40}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			if method == "PUT" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, " hx-put=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var13 string
-				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(props.HTMXRequestPath)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/lib/context_menu.templ`, Line: 57, Col: 37}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			if method == "PATCH" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, " hx-patch=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var14 string
-				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(props.HTMXRequestPath)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/lib/context_menu.templ`, Line: 60, Col: 39}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, ">")
+			templ_7745c5c3_Err = templ.RenderAttributes(ctx, templ_7745c5c3_Buffer, props.ButtonAttributes)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var15 string
-			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(name)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/lib/context_menu.templ`, Line: 63, Col: 12}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, ">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</button><hr></li>")
+			var templ_7745c5c3_Var7 string
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/lib/context_menu.templ`, Line: 34, Col: 12}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</button><hr></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</ul></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</ul></div><script type=\"text/javascript\">\n\t// Initialize autobutler namespace\n\twindow.ab = Object.assign(window.ab || {}, {\n\t\t// Close context menu(s) within a parent node\n\t\tcloseContextMenu: (event, parentNode) => {\n\t\t\tif (event) {\n\t\t\t\twindow.ab.preventDefault(event);\n\t\t\t}\n\t\t\tfor (const contextMenu of parentNode.querySelectorAll('.context-menu')) {\n\t\t\t\tcontextMenu.style.left = null;\n\t\t\t\tcontextMenu.style.top = null;\n\t\t\t\tcontextMenu.classList.add('hidden');\n\t\t\t}\n\t\t},\n\n\t\t// Close context menu from within the menu (e.g., after clicking an item)\n\t\tcloseContextMenuFromItem: (event) => {\n\t\t\tif (event) {\n\t\t\t\twindow.ab.preventDefault(event);\n\t\t\t}\n\n\t\t\tconst contextMenu = event.target.closest('.context-menu');\n\t\t\tif (contextMenu) {\n\t\t\t\tcontextMenu.style.left = null;\n\t\t\t\tcontextMenu.style.top = null;\n\t\t\t\tcontextMenu.classList.add('hidden');\n\t\t\t}\n\t\t},\n\n\t\t// Toggle a floating context menu at cursor position\n\t\ttoggleFloatingContextMenu: (event, parentNode) => {\n\t\t\tif (event) {\n\t\t\t\twindow.ab.preventDefault(event);\n\t\t\t}\n\t\t\tconst contextMenu = parentNode.querySelector('.context-menu');\n\t\t\tif (!contextMenu) {\n\t\t\t\tconsole.error('Context menu not found in', parentNode);\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t// Close any other open context menus first\n\t\t\tdocument.querySelectorAll('.context-menu:not(.hidden)').forEach((menu) => {\n\t\t\t\tif (menu !== contextMenu) {\n\t\t\t\t\tmenu.classList.add('hidden');\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Toggle this context menu\n\t\t\tconst isHidden = contextMenu.classList.contains('hidden');\n\t\t\tcontextMenu.classList.toggle('hidden');\n\n\t\t\tif (isHidden) {\n\t\t\t\t// Position at click location\n\t\t\t\tcontextMenu.style.left = `${event.clientX}px`;\n\t\t\t\tcontextMenu.style.top = `${event.clientY}px`;\n\n\t\t\t\t// Ensure menu doesn't go off screen\n\t\t\t\trequestAnimationFrame(() => {\n\t\t\t\t\tconst rect = contextMenu.getBoundingClientRect();\n\t\t\t\t\tconst viewportWidth = window.innerWidth;\n\t\t\t\t\tconst viewportHeight = window.innerHeight;\n\n\t\t\t\t\t// Adjust if menu goes off right edge\n\t\t\t\t\tif (rect.right > viewportWidth) {\n\t\t\t\t\t\tcontextMenu.style.left = `${viewportWidth - rect.width - 10}px`;\n\t\t\t\t\t}\n\n\t\t\t\t\t// Adjust if menu goes off bottom edge\n\t\t\t\t\tif (rect.bottom > viewportHeight) {\n\t\t\t\t\t\tcontextMenu.style.top = `${viewportHeight - rect.height - 10}px`;\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\t\t},\n\t});\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -38,12 +38,12 @@ func Component(pageState types.PageState) templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		items := maputil.NewOrderedMapFromValues(
 			[]string{"New File", "Details"},
-			[]*lib.HandlerProps{
+			[]*lib.ContextMenuHandlerProps{
 				{
-					OnClickHandler: fmt.Sprintf("newFile(event, '%s'); closeContextMenuFromItem(event);", pageState.RootDir),
+					OnClickHandler: fmt.Sprintf("newFile(event, '%s'); window.ab.closeContextMenuFromItem(event);", pageState.RootDir),
 				},
 				{
-					OnClickHandler: "showFolderDetails(event); closeContextMenuFromItem(event);",
+					OnClickHandler: "showFolderDetails(event); window.ab.closeContextMenuFromItem(event);",
 				},
 			},
 		)

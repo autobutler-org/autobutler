@@ -6,10 +6,10 @@ templ dnd(pageState types.PageState) {
 	<div
 		id="file-upload-area"
 		class="dnd-overlay"
-		ondragenter="activateDropZone(event)"
-		ondragover="preventDefault(event)"
-		ondragleave="deactivateDropZone(event)"
-		ondrop={ templ.JSFuncCall("dropFiles", templ.JSExpression("event"), "", pageState.RootDir) }
+		ondragenter="window.ab.activateDropZone(event)"
+		ondragover="window.ab.preventDefault(event)"
+		ondragleave="window.ab.deactivateDropZone(event)"
+		ondrop={ templ.JSFuncCall("window.ab.dropFiles", templ.JSExpression("event"), "", pageState.RootDir) }
 		onclick="document.getElementById('file-upload-input').click()"
 	>
 		Drop files here&#8230;

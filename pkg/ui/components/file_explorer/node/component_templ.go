@@ -62,7 +62,7 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("dropOnNode", templ.JSExpression("event"), pageState.RootDir))
+		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("window.ab.dropOnNode", templ.JSExpression("event"), pageState.RootDir))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -79,16 +79,16 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" oncontextmenu=\"toggleFloatingContextMenu(event, this)\" ondragenter=\"activateDropZoneOnNode(event)\" ondragover=\"preventDefault(event)\" ondragleave=\"deactivateDropZoneOnNode(event)\" ondrop=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" oncontextmenu=\"window.ab.toggleFloatingContextMenu(event, this)\" ondragenter=\"window.ab.activateDropZoneOnNode(event)\" ondragover=\"window.ab.preventDefault(event)\" ondragleave=\"window.ab.deactivateDropZoneOnNode(event)\" ondrop=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var4 templ.ComponentScript = templ.JSFuncCall("dropOnNode", templ.JSExpression("event"), pageState.RootDir)
+		var templ_7745c5c3_Var4 templ.ComponentScript = templ.JSFuncCall("window.ab.dropOnNode", templ.JSExpression("event"), pageState.RootDir)
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4.Call)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" onclick=\"handleFileNodeClick(event, this)\" ondblclick=\"handleFileNodeDoubleClick(event, this)\" ontouchend=\"handleFileNodeTouch(event, this)\" data-name=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" onclick=\"window.ab.handleFileNodeClick(event, this)\" ondblclick=\"window.ab.handleFileNodeDoubleClick(event, this)\" ontouchend=\"window.ab.handleFileNodeTouch(event, this)\" data-name=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -202,7 +202,7 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 				return templ_7745c5c3_Err
 			}
 		case fileutil.FileTypeSpacer:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<td colspan=\"3\" class=\"file-table-cell file-table-cell--spacer\" onclick=\"document.getElementById('file-upload-input').click()\" tabindex=\"0\" onkeydown=\"if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); document.getElementById('file-upload-input').click(); }\"><span class=\"spacer\">Drop files here&#8230;</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<td colspan=\"3\" class=\"file-table-cell file-table-cell--spacer\" onclick=\"document.getElementById('file-upload-input').click()\" tabindex=\"0\" onkeydown=\"if (event.key === 'Enter' || event.key === ' ') { window.ab.preventDefault(event); document.getElementById('file-upload-input').click(); }\"><span class=\"spacer\">Drop files here&#8230;</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -229,7 +229,7 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" tabindex=\"0\" onkeydown=\"if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleFileNodeDoubleClick(event, this.closest('tr')); }\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" tabindex=\"0\" onkeydown=\"if (event.key === 'Enter' || event.key === ' ') { window.ab.preventDefault(event); window.ab.handleFileNodeDoubleClick(event, this.closest('tr')); }\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
