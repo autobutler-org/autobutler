@@ -38,7 +38,6 @@ func Component() templ.Component {
 				"/public/vendor/epub.js/jszip.min.js",
 				"/public/vendor/epub.js/epub.min.js",
 				"/public/vendor/ace/ace.js",
-				"/public/scripts/text_editor.js",
 			},
 		).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {

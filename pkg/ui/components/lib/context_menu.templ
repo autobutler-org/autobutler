@@ -54,7 +54,6 @@ templ ContextMenu(onClickHandlers maputil.OrderedMap[string, *ContextMenuHandler
 		},
 
 		// Close context menu from within the menu (e.g., after clicking an item)
-		// eslint-disable-next-line no-unused-vars
 		closeContextMenuFromItem: (event) => {
 			if (event) {
 				window.ab.preventDefault(event);
@@ -69,7 +68,6 @@ templ ContextMenu(onClickHandlers maputil.OrderedMap[string, *ContextMenuHandler
 		},
 
 		// Toggle a floating context menu at cursor position
-		// eslint-disable-next-line no-unused-vars
 		toggleFloatingContextMenu: (event, parentNode) => {
 			if (event) {
 				window.ab.preventDefault(event);
