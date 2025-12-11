@@ -160,7 +160,7 @@ window.ab.fileExplorer = {
             }
 
             // Clear selections for any other click
-            clearSelectedFiles();
+            window.ab.fileExplorer.clearSelectedFiles();
         });
     },
 
@@ -169,15 +169,15 @@ window.ab.fileExplorer = {
     /**
      * Get all file nodes in the current view in DOM order
      */
-    function getAllFileNodes() {
+    getAllFileNodes: () =>  {
         return Array.from(document.querySelectorAll('.file-node'));
-    }
+    },
 
     /**
      * Select a range of file nodes between two nodes (inclusive)
      */
-    function selectRange(startNode, endNode) {
-        const allNodes = getAllFileNodes();
+    selectRange: (startNode, endNode) =>  {
+        const allNodes = window.ab.fileExplorer.getAllFileNodes();
         const startIndex = allNodes.indexOf(startNode);
         const endIndex = allNodes.indexOf(endNode);
 
@@ -189,25 +189,25 @@ window.ab.fileExplorer = {
 
         // Select all nodes in the range
         for (let i = minIndex; i <= maxIndex; i++) {
-            selectFileNode(allNodes[i]);
+            window.ab.fileExplorer.selectFileNode(allNodes[i]);
         }
-    }
+    },
 
     /**
      * Clear all selected files and remove visual selection
      */
-    function clearSelectedFiles() {
+    clearSelectedFiles: () =>  {
         document.querySelectorAll('.file-node--selected').forEach((node) => {
             node.classList.remove('file-node--selected');
         });
         window.ab.fileExplorer.selectedFiles = [];
-        updateDownloadButton();
-    }
+        window.ab.fileExplorer.updateDownloadButton();
+    },
 
     /**
      * Select a single file node
      */
-    function selectFileNode(node) {
+    selectFileNode: (node) =>  {
         if (!node) return;
 
         // Add selection class with temporary logging for debugging
@@ -226,26 +226,26 @@ window.ab.fileExplorer = {
         // Track this as the last selected node for range selection
         window.ab.fileExplorer.lastSelectedNode = node;
 
-        updateDownloadButton();
-    }
+        window.ab.fileExplorer.updateDownloadButton();
+    },
 
     /**
      * Deselect a single file node
      */
-    function deselectFileNode(node) {
+    deselectFileNode: (node) =>  {
         if (!node) return;
         node.classList.remove('file-node--selected');
         const fileName = node.dataset.name;
         if (fileName) {
             window.ab.fileExplorer.selectedFiles = window.ab.fileExplorer.selectedFiles.filter((name) => name !== fileName);
         }
-        updateDownloadButton();
-    }
+        window.ab.fileExplorer.updateDownloadButton();
+    },
 
     /**
      * Update the download button state based on selection
      */
-    function updateDownloadButton() {
+    updateDownloadButton: () =>  {
         const downloadBtn = document.getElementById('file-download-button');
         if (!downloadBtn) return;
 
@@ -258,15 +258,14 @@ window.ab.fileExplorer = {
             downloadBtn.classList.remove('btn--secondary');
             downloadBtn.classList.add('btn--disabled');
         }
-    }
+    },
 
     /**
      * Handle single click on a file node
      * Single click = select the file (Google Drive style)
      * In column view: single click navigates/opens immediately (Finder style)
      */
-    // eslint-disable-next-line no-unused-vars
-    function handleFileNodeClick(event, node) {
+    handleFileNodeClick: (event, node) =>  {
         // Ignore if clicking on context menu trigger
         if (
             event.target.closest('.context-menu-trigger')
@@ -292,7 +291,7 @@ window.ab.fileExplorer = {
                         swap: 'innerHTML',
                     }).then(() => {
                         window.history.pushState({}, '', href);
-                        updateBackButton();
+                        window.ab.fileExplorer.updateBackButton();
                     });
                 }
             } else {
@@ -331,33 +330,33 @@ window.ab.fileExplorer = {
             if (event.ctrlKey || event.metaKey) {
                 // Ctrl/Cmd+Click: toggle this item's selection
                 if (node.classList.contains('file-node--selected')) {
-                    deselectFileNode(node);
+                    window.ab.fileExplorer.deselectFileNode(node);
                 } else {
-                    selectFileNode(node);
+                    window.ab.fileExplorer.selectFileNode(node);
                 }
             } else if (event.shiftKey) {
                 // Shift+Click: range selection
                 if (window.ab.fileExplorer.lastSelectedNode && window.ab.fileExplorer.lastSelectedNode !== node) {
                     // Select range from last selected to current
-                    selectRange(window.ab.fileExplorer.lastSelectedNode, node);
+                    window.ab.fileExplorer.selectRange(window.ab.fileExplorer.lastSelectedNode, node);
                 } else {
                     // No previous selection, just select this item
-                    clearSelectedFiles();
-                    selectFileNode(node);
+                    window.ab.fileExplorer.clearSelectedFiles();
+                    window.ab.fileExplorer.selectFileNode(node);
                 }
             } else {
                 // Regular click: select only this item
-                clearSelectedFiles();
-                selectFileNode(node);
+                window.ab.fileExplorer.clearSelectedFiles();
+                window.ab.fileExplorer.selectFileNode(node);
             }
         }, window.ab.fileExplorer.DOUBLE_CLICK_DELAY);
-    }
+    },
 
     /**
      * Handle double-click on a file node
      * Double-click = navigate/open the file (Google Drive style)
      */
-    function handleFileNodeDoubleClick(event, node) {
+    handleFileNodeDoubleClick: (event, node) =>  {
         // Cancel the single-click timer
         if (window.ab.fileExplorer.clickTimer) {
             clearTimeout(window.ab.fileExplorer.clickTimer);
@@ -380,7 +379,7 @@ window.ab.fileExplorer = {
                 }).then(() => {
                     // Update the browser URL after successful navigation
                     window.history.pushState({}, '', href);
-                    updateBackButton();
+                    window.ab.fileExplorer.updateBackButton();
                 });
             }
         } else {
@@ -398,14 +397,13 @@ window.ab.fileExplorer = {
                 }
             }
         }
-    }
+    },
 
     /**
      * Handle touch events for mobile double-tap detection
      * On mobile, double-tap opens files (since dblclick doesn't work reliably)
      */
-    // eslint-disable-next-line no-unused-vars
-    function handleFileNodeTouch(event, node) {
+    handleFileNodeTouch: (event, node) =>  {
         const currentTime = new Date().getTime();
         const tapInterval = currentTime - window.ab.fileExplorer.lastTapTime;
 
@@ -421,7 +419,7 @@ window.ab.fileExplorer = {
             }
 
             // Trigger the double-click behavior
-            handleFileNodeDoubleClick(event, node);
+            window.ab.fileExplorer.handleFileNodeDoubleClick(event, node);
 
             // Reset tap tracking
             window.ab.fileExplorer.lastTapTime = 0;
@@ -431,57 +429,50 @@ window.ab.fileExplorer = {
             window.ab.fileExplorer.lastTapTime = currentTime;
             window.ab.fileExplorer.lastTapNode = node;
         }
-    }
+    },
 
-    // eslint-disable-next-line no-unused-vars
-    function supportsDirectoryUpload() {
+    supportsDirectoryUpload: () =>  {
         const supportsFileSystemAccessAPI = 'getAsFileSystemHandle' in DataTransferItem.prototype;
         const supportsWebkitGetAsEntry = 'webkitGetAsEntry' in DataTransferItem.prototype;
         // NOTE: I have found that none of my browsers support this, and likely is why Google Drive does not support
         // folder upload without a separate input.
         return supportsFileSystemAccessAPI || supportsWebkitGetAsEntry;
-    }
+    },
 
-    // eslint-disable-next-line no-unused-vars
-    function activateDropZone(event) {
+    activateDropZone: (event) =>  {
         window.ab.preventDefault(event);
         const fileUploadArea = document.getElementById('file-upload-area');
         fileUploadArea.classList.add('bg-blue-600');
         fileUploadArea.classList.remove('bg-gray-800');
-    }
+    },
 
-    // eslint-disable-next-line no-unused-vars
-    function deactivateDropZone(event) {
+    deactivateDropZone: (event) =>  {
         window.ab.preventDefault(event);
         const fileUploadArea = document.getElementById('file-upload-area');
         fileUploadArea.classList.remove('bg-blue-600');
         fileUploadArea.classList.add('bg-gray-800');
-    }
+    },
 
-    // eslint-disable-next-line no-unused-vars
-    function activateDropZoneOnNode(event) {
+    activateDropZoneOnNode: (event) =>  {
         window.ab.preventDefault(event);
         event.currentTarget.classList.add('bg-blue-600');
-    }
+    },
 
-    // eslint-disable-next-line no-unused-vars
-    function deactivateDropZoneOnNode(event) {
+    deactivateDropZoneOnNode: (event) =>  {
         window.ab.preventDefault(event);
         event.currentTarget.classList.remove('bg-blue-600');
-    }
+    },
 
-    // eslint-disable-next-line no-unused-vars
-    function dropOnNode(event, returnDir) {
+    dropOnNode: (event, returnDir) =>  {
         window.ab.preventDefault(event);
         event.currentTarget.classList.remove('bg-blue-600');
         const li = event.currentTarget.closest('li');
         const dropDir = li.dataset.name;
         console.log(`Drop on node: ${dropDir}`);
-        return dropFiles(event, `/${dropDir}`, returnDir ? returnDir : '/');
-    }
+        return window.ab.fileExplorer.dropFiles(event, `/${dropDir}`, returnDir ? returnDir : '/');
+    },
 
-    // eslint-disable-next-line no-unused-vars
-    function downloadSelectedFiles(event, rootDir) {
+    downloadSelectedFiles: (event, rootDir) =>  {
         window.ab.preventDefault(event);
 
         console.log('Download requested. Root dir:', rootDir, 'Selected files:', window.ab.fileExplorer.selectedFiles);
@@ -513,10 +504,10 @@ window.ab.fileExplorer = {
             link.click();
             document.body.removeChild(link);
         });
-        clearSelectedFiles();
-    }
+        window.ab.fileExplorer.clearSelectedFiles();
+    },
 
-    function dropFiles(event, rootDir, returnDir) {
+    dropFiles: (event, rootDir, returnDir) =>  {
         rootDir = rootDir || '';
         returnDir = returnDir || '';
         window.ab.preventDefault(event);
@@ -536,10 +527,9 @@ window.ab.fileExplorer = {
                 source: uploadForm,
             });
         }
-    }
+    },
 
-    // eslint-disable-next-line no-unused-vars
-    function saveAceEditor(filePath, content) {
+    saveAceEditor: (filePath, content) =>  {
         fetch(`/api/v1/files${filePath}`, {
             method: 'POST',
             headers: {
@@ -562,20 +552,18 @@ window.ab.fileExplorer = {
                 console.error('Error saving file:', error);
                 toastr.error('Error saving file: ' + error.message);
             });
-    }
+    },
 
-    // eslint-disable-next-line no-unused-vars
-    function downloadFile(filePath) {
+    downloadFile: (filePath) =>  {
         const link = document.createElement('a');
         link.href = `/api/v1/files${filePath}`;
         link.download = filePath.split('/').pop();
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-    }
+    },
 
-    // eslint-disable-next-line no-unused-vars
-    function moveFile(event, rootDir, fileName) {
+    moveFile: (event, rootDir, fileName) =>  {
         window.ab.preventDefault(event);
         while (rootDir && rootDir[0] == '/') {
             rootDir = rootDir.slice(1);
@@ -584,10 +572,9 @@ window.ab.fileExplorer = {
 
         // Open the rename dialog
         window.ab.openRenameDialog(filePath);
-    }
+    },
 
-    // eslint-disable-next-line no-unused-vars
-    function newFile(event, rootDir) {
+    newFile: (event, rootDir) =>  {
         window.ab.preventDefault(event);
         const fileName = prompt('Enter the new file name (including extension):');
         if (fileName) {
@@ -607,16 +594,14 @@ window.ab.fileExplorer = {
                 source: uploadForm,
             });
         }
-    }
+    },
 
-    // eslint-disable-next-line no-unused-vars
-    function showFolderDetails(event) {
+    showFolderDetails: (event) =>  {
         window.ab.preventDefault(event);
         alert('Folder details to be implemented.');
-    }
+    },
 
-    // eslint-disable-next-line no-unused-vars
-    function navigateToParentAndPreview(event, parentPath, previewPath) {
+    navigateToParentAndPreview: (event, parentPath, previewPath) =>  {
         window.ab.preventDefault(event);
         // Use HTMX to navigate to parent (removes child columns) without full page reload
         htmx.ajax('GET', parentPath, {
@@ -631,7 +616,342 @@ window.ab.fileExplorer = {
         });
         // Update the URL
         history.pushState({}, '', parentPath);
-    }
+    },
+
+    // SORTING
+
+    sortFiles: (column) => {
+        if (window.ab.fileExplorer.currentSortColumn === column) {
+            window.ab.fileExplorer.currentSortDirection = window.ab.fileExplorer.currentSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            window.ab.fileExplorer.currentSortDirection = 'asc';
+        }
+        window.ab.fileExplorer.currentSortColumn = column;
+
+        window.ab.fileExplorer.applySorting();
+    },
+
+    applySorting: () => {
+        const column = window.ab.fileExplorer.currentSortColumn;
+        if (!column) return;
+
+        const tbody = document.getElementById('file-explorer-list');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+
+        // Separate the spacer row (last row with "Drop files here...")
+        const spacerRow = rows.find((row) => row.querySelector('.spacer'));
+        const fileRows = rows.filter((row) => row !== spacerRow);
+
+        fileRows.sort((a, b) => {
+            let aValue, bValue;
+
+            if (column === 'name') {
+                aValue = a.dataset.name || '';
+                bValue = b.dataset.name || '';
+
+                // Sort folders first, then files (unless mixed sorting is enabled)
+                if (!window.ab.fileExplorer.mixedSorting) {
+                    const aIsFolder = a.querySelector('td:first-child a[href]') !== null;
+                    const bIsFolder = b.querySelector('td:first-child a[href]') !== null;
+
+                    if (aIsFolder && !bIsFolder) return -1;
+                    if (!aIsFolder && bIsFolder) return 1;
+                }
+
+                // Sort alphabetically
+                return window.ab.fileExplorer.currentSortDirection === 'asc'
+                    ? aValue.localeCompare(bValue, undefined, { numeric: true, sensitivity: 'base' })
+                    : bValue.localeCompare(aValue, undefined, { numeric: true, sensitivity: 'base' });
+            } else if (column === 'size') {
+                // Sort folders first, then files (unless mixed sorting is enabled)
+                if (!window.ab.fileExplorer.mixedSorting) {
+                    const aIsFolder = a.querySelector('td:first-child a[href]') !== null;
+                    const bIsFolder = b.querySelector('td:first-child a[href]') !== null;
+
+                    if (aIsFolder && !bIsFolder) return -1;
+                    if (!aIsFolder && bIsFolder) return 1;
+                }
+
+                // Extract size text and convert to bytes for comparison
+                const aSizeText = a.querySelector('td:nth-child(2)')?.textContent?.trim() || '0 B';
+                const bSizeText = b.querySelector('td:nth-child(2)')?.textContent?.trim() || '0 B';
+
+                aValue = window.ab.fileExplorer.parseSize(aSizeText);
+                bValue = window.ab.fileExplorer.parseSize(bSizeText);
+
+                return window.ab.fileExplorer.currentSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+            }
+
+            return 0;
+        });
+
+        // Clear tbody and re-append sorted rows
+        tbody.innerHTML = '';
+        fileRows.forEach((row) => tbody.appendChild(row));
+
+        // Add spacer row back at the end
+        if (spacerRow) {
+            tbody.appendChild(spacerRow);
+        }
+    },
+
+    parseSize: (sizeText) => {
+        const units = {
+            B: 1,
+            KB: 1024,
+            MB: 1024 * 1024,
+            GB: 1024 * 1024 * 1024,
+            TB: 1024 * 1024 * 1024 * 1024,
+        };
+        const match = sizeText.match(/^([\d.]+)\s*([A-Z]+)$/);
+        if (!match) return 0;
+
+        const value = parseFloat(match[1]);
+        const unit = match[2];
+        return value * (units[unit] || 1);
+    },
+
+    updateSortArrows: (column) => {
+        // Hide all arrows first
+        const allArrows = document.querySelectorAll('[id$="-sort-asc"], [id$="-sort-desc"]');
+        allArrows.forEach((arrow) => {
+            arrow.classList.add('hidden');
+            arrow.classList.remove('text-gray-700', 'dark:text-gray-300');
+            arrow.classList.add('text-gray-400');
+        });
+
+        // Show the appropriate arrow for the current column and direction
+        const arrowId = `${column}-sort-${window.ab.fileExplorer.currentSortDirection}`;
+        const arrow = document.getElementById(arrowId);
+        if (arrow) {
+            arrow.classList.remove('hidden', 'text-gray-400');
+            arrow.classList.add('text-gray-700', 'dark:text-gray-300');
+        }
+    },
+
+    toggleMixedSorting: () => {
+        window.ab.fileExplorer.mixedSorting = !window.ab.fileExplorer.mixedSorting;
+
+        // Update button appearance
+        const button = document.getElementById('mixed-sort-toggle');
+        const label = document.getElementById('mixed-sort-label');
+        const folderIcon = document.getElementById('sort-folder-icon');
+        const fileIcon = document.getElementById('sort-file-icon');
+
+        if (window.ab.fileExplorer.mixedSorting) {
+            // Mixed sorting enabled - show both icons
+            button.title =
+                'Currently: Mixed sorting (folders and files together)\nClick to switch to folders first';
+            label.textContent = 'Mixed';
+
+            // Show both folder and file icons
+            folderIcon.classList.remove('invisible');
+            fileIcon.classList.remove('invisible');
+        } else {
+            // Mixed sorting disabled - show only folder icon
+            button.title =
+                'Currently: Folders first sorting\nClick to switch to mixed sorting (folders and files together)';
+            label.textContent = 'Folders';
+
+            // Show only folder icon (file icon invisible but still takes space)
+            folderIcon.classList.remove('invisible');
+            fileIcon.classList.add('invisible');
+        }
+
+        // Re-sort if we have a current sort column
+        if (window.ab.fileExplorer.currentSortColumn) {
+            window.ab.fileExplorer.applySorting();
+            window.ab.fileExplorer.updateSortArrows(window.ab.fileExplorer.currentSortColumn);
+        }
+    },
+
+    // Keyboard navigation for file table
+    handleTableKeyNavigation: (event) => {
+        if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+            return;
+        }
+
+        const currentElement = document.activeElement;
+        const table = document.getElementById('file-explorer-list');
+        if (!table || !table.contains(currentElement)) {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            // Up/Down: Navigate between file rows (focusing on the file name)
+            const currentRow = currentElement.closest('tr');
+            if (!currentRow) return;
+
+            const allRows = Array.from(table.querySelectorAll('tr'));
+            const currentIndex = allRows.indexOf(currentRow);
+
+            if (currentIndex === -1) return;
+
+            let nextIndex;
+            if (event.key === 'ArrowDown') {
+                nextIndex = currentIndex + 1;
+                if (nextIndex >= allRows.length) {
+                    nextIndex = 0; // Wrap to first row
+                }
+            } else {
+                // ArrowUp
+                nextIndex = currentIndex - 1;
+                if (nextIndex < 0) {
+                    nextIndex = allRows.length - 1; // Wrap to last row
+                }
+            }
+
+            // Focus on the file name (first focusable element in the row)
+            const nextRow = allRows[nextIndex];
+            const firstFocusable = nextRow.querySelector('[tabindex="0"]');
+            if (firstFocusable) {
+                firstFocusable.focus();
+            }
+        } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            // Left/Right: Navigate between elements in the same row
+            const currentRow = currentElement.closest('tr');
+            if (!currentRow) return;
+
+            const focusableInRow = Array.from(currentRow.querySelectorAll('[tabindex="0"]'));
+            const currentIndex = focusableInRow.indexOf(currentElement);
+
+            if (currentIndex === -1) return;
+
+            let nextIndex;
+            if (event.key === 'ArrowRight') {
+                nextIndex = currentIndex + 1;
+                if (nextIndex >= focusableInRow.length) {
+                    nextIndex = 0; // Wrap to first element in row
+                }
+            } else {
+                // ArrowLeft
+                nextIndex = currentIndex - 1;
+                if (nextIndex < 0) {
+                    nextIndex = focusableInRow.length - 1; // Wrap to last element in row
+                }
+            }
+
+            focusableInRow[nextIndex].focus();
+        }
+    },
+
+    // NAVIGATION MANAGEMENT
+
+    // Automatically scroll column view to show the rightmost (active) column
+    scrollColumnViewToRight: () => {
+        const columnViewColumns = document.querySelector('.column-view-columns');
+        if (columnViewColumns) {
+            // Scroll to the right to show the active column
+            columnViewColumns.scrollLeft = columnViewColumns.scrollWidth;
+        }
+    },
+
+    /**
+     * Update the back button state based on current path
+     */
+    updateBackButton: () => {
+        const backBtn = document.getElementById('nav-back-btn');
+        if (!backBtn) return;
+
+        const currentPath = window.location.pathname;
+        const isAtRoot = currentPath === '/files' || currentPath === '/files/';
+
+        if (isAtRoot) {
+            backBtn.disabled = true;
+        } else {
+            backBtn.disabled = false;
+        }
+    },
+
+    /**
+     * Navigate back to previous folder
+     */
+    navigateBack: () => {
+        const currentPath = window.location.pathname;
+
+        // Calculate parent directory
+        let parentPath = currentPath.replace(/\/$/, ''); // Remove trailing slash
+        const lastSlashIndex = parentPath.lastIndexOf('/');
+        parentPath = parentPath.substring(0, lastSlashIndex) || '/files';
+
+        // Navigate to parent
+        window.history.pushState({}, '', parentPath);
+        htmx.ajax('GET', parentPath, {
+            target: '#file-explorer-view-content',
+            swap: 'innerHTML',
+        });
+        window.ab.fileExplorer.updateBackButton();
+    },
+
+    // DEVICE FILTERING
+
+    // Initialize active devices on page load
+    initializeDeviceFilter: () => {
+        const deviceButtons = document.querySelectorAll('.device-filter-button');
+        deviceButtons.forEach((button) => {
+            const deviceName = button.getAttribute('data-device-name');
+            if (button.classList.contains('device-filter-button--active')) {
+                window.ab.fileExplorer.activeDevices.add(deviceName);
+            }
+        });
+        window.ab.fileExplorer.applyDeviceFilter();
+    },
+
+    // Toggle device filter when button is clicked
+    toggleDeviceFilter: (button) => {
+        const deviceName = button.getAttribute('data-device-name');
+
+        // Toggle active state
+        button.classList.toggle('device-filter-button--active');
+
+        if (window.ab.fileExplorer.activeDevices.has(deviceName)) {
+            window.ab.fileExplorer.activeDevices.delete(deviceName);
+        } else {
+            window.ab.fileExplorer.activeDevices.add(deviceName);
+        }
+
+        window.ab.fileExplorer.applyDeviceFilter();
+    },
+
+    // Apply the current device filter to all file nodes
+    applyDeviceFilter: () => {
+        // Get all file nodes
+        const fileNodes = document.querySelectorAll('.file-node');
+
+        // If no devices are being filtered (no filter buttons or all inactive), show everything
+        if (window.ab.fileExplorer.activeDevices.size === 0) {
+            fileNodes.forEach((node) => {
+                node.setAttribute('data-device-filtered', 'false');
+                node.style.display = '';
+            });
+            return;
+        }
+
+        fileNodes.forEach((node) => {
+            // Find device badge in this node
+            const deviceBadge = node.querySelector('.device-badge-name');
+
+            if (!deviceBadge) {
+                // No device badge means it's from the default/primary device
+                // Show it when filters are active (for backwards compatibility)
+                node.setAttribute('data-device-filtered', 'false');
+                node.style.display = '';
+            } else {
+                const deviceName = deviceBadge.textContent.trim();
+
+                // Show if device is in active set
+                if (window.ab.fileExplorer.activeDevices.has(deviceName)) {
+                    node.setAttribute('data-device-filtered', 'false');
+                    node.style.display = '';
+                } else {
+                    node.setAttribute('data-device-filtered', 'true');
+                    node.style.display = 'none';
+                }
+            }
+        });
+    },
 };
 
 // Initialize - sync localStorage to cookie on page load and update button states
@@ -647,227 +967,8 @@ document.body.addEventListener('htmx:configRequest', function (event) {
     event.detail.headers['X-File-Explorer-View'] = view;
 });
 
-// SORTING
-
-function sortFiles(column) {
-    if (window.ab.fileExplorer.currentSortColumn === column) {
-        window.ab.fileExplorer.currentSortDirection = window.ab.fileExplorer.currentSortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-        window.ab.fileExplorer.currentSortDirection = 'asc';
-    }
-    window.ab.fileExplorer.currentSortColumn = column;
-
-    applySorting();
-}
-
-function applySorting() {
-    const column = window.ab.fileExplorer.currentSortColumn;
-    if (!column) return;
-
-    const tbody = document.getElementById('file-explorer-list');
-    const rows = Array.from(tbody.querySelectorAll('tr'));
-
-    // Separate the spacer row (last row with "Drop files here...")
-    const spacerRow = rows.find((row) => row.querySelector('.spacer'));
-    const fileRows = rows.filter((row) => row !== spacerRow);
-
-    fileRows.sort((a, b) => {
-        let aValue, bValue;
-
-        if (column === 'name') {
-            aValue = a.dataset.name || '';
-            bValue = b.dataset.name || '';
-
-            // Sort folders first, then files (unless mixed sorting is enabled)
-            if (!window.ab.fileExplorer.mixedSorting) {
-                const aIsFolder = a.querySelector('td:first-child a[href]') !== null;
-                const bIsFolder = b.querySelector('td:first-child a[href]') !== null;
-
-                if (aIsFolder && !bIsFolder) return -1;
-                if (!aIsFolder && bIsFolder) return 1;
-            }
-
-            // Sort alphabetically
-            return window.ab.fileExplorer.currentSortDirection === 'asc'
-                ? aValue.localeCompare(bValue, undefined, { numeric: true, sensitivity: 'base' })
-                : bValue.localeCompare(aValue, undefined, { numeric: true, sensitivity: 'base' });
-        } else if (column === 'size') {
-            // Sort folders first, then files (unless mixed sorting is enabled)
-            if (!window.ab.fileExplorer.mixedSorting) {
-                const aIsFolder = a.querySelector('td:first-child a[href]') !== null;
-                const bIsFolder = b.querySelector('td:first-child a[href]') !== null;
-
-                if (aIsFolder && !bIsFolder) return -1;
-                if (!aIsFolder && bIsFolder) return 1;
-            }
-
-            // Extract size text and convert to bytes for comparison
-            const aSizeText = a.querySelector('td:nth-child(2)')?.textContent?.trim() || '0 B';
-            const bSizeText = b.querySelector('td:nth-child(2)')?.textContent?.trim() || '0 B';
-
-            aValue = parseSize(aSizeText);
-            bValue = parseSize(bSizeText);
-
-            return window.ab.fileExplorer.currentSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
-        }
-
-        return 0;
-    });
-
-    // Clear tbody and re-append sorted rows
-    tbody.innerHTML = '';
-    fileRows.forEach((row) => tbody.appendChild(row));
-
-    // Add spacer row back at the end
-    if (spacerRow) {
-        tbody.appendChild(spacerRow);
-    }
-}
-
-function parseSize(sizeText) {
-    const units = {
-        B: 1,
-        KB: 1024,
-        MB: 1024 * 1024,
-        GB: 1024 * 1024 * 1024,
-        TB: 1024 * 1024 * 1024 * 1024,
-    };
-    const match = sizeText.match(/^([\d.]+)\s*([A-Z]+)$/);
-    if (!match) return 0;
-
-    const value = parseFloat(match[1]);
-    const unit = match[2];
-    return value * (units[unit] || 1);
-}
-
-function updateSortArrows(column) {
-    // Hide all arrows first
-    const allArrows = document.querySelectorAll('[id$="-sort-asc"], [id$="-sort-desc"]');
-    allArrows.forEach((arrow) => {
-        arrow.classList.add('hidden');
-        arrow.classList.remove('text-gray-700', 'dark:text-gray-300');
-        arrow.classList.add('text-gray-400');
-    });
-
-    // Show the appropriate arrow for the current column and direction
-    const arrowId = `${column}-sort-${window.ab.fileExplorer.currentSortDirection}`;
-    const arrow = document.getElementById(arrowId);
-    if (arrow) {
-        arrow.classList.remove('hidden', 'text-gray-400');
-        arrow.classList.add('text-gray-700', 'dark:text-gray-300');
-    }
-}
-
-function toggleMixedSorting() {
-    window.ab.fileExplorer.mixedSorting = !window.ab.fileExplorer.mixedSorting;
-
-    // Update button appearance
-    const button = document.getElementById('mixed-sort-toggle');
-    const label = document.getElementById('mixed-sort-label');
-    const folderIcon = document.getElementById('sort-folder-icon');
-    const fileIcon = document.getElementById('sort-file-icon');
-
-    if (window.ab.fileExplorer.mixedSorting) {
-        // Mixed sorting enabled - show both icons
-        button.title =
-            'Currently: Mixed sorting (folders and files together)\nClick to switch to folders first';
-        label.textContent = 'Mixed';
-
-        // Show both folder and file icons
-        folderIcon.classList.remove('invisible');
-        fileIcon.classList.remove('invisible');
-    } else {
-        // Mixed sorting disabled - show only folder icon
-        button.title =
-            'Currently: Folders first sorting\nClick to switch to mixed sorting (folders and files together)';
-        label.textContent = 'Folders';
-
-        // Show only folder icon (file icon invisible but still takes space)
-        folderIcon.classList.remove('invisible');
-        fileIcon.classList.add('invisible');
-    }
-
-    // Re-sort if we have a current sort column
-    if (window.ab.fileExplorer.currentSortColumn) {
-        applySorting();
-        updateSortArrows(window.ab.fileExplorer.currentSortColumn);
-    }
-}
-
-// Keyboard navigation for file table
-function handleTableKeyNavigation(event) {
-    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-        return;
-    }
-
-    const currentElement = document.activeElement;
-    const table = document.getElementById('file-explorer-list');
-    if (!table || !table.contains(currentElement)) {
-        return;
-    }
-
-    event.preventDefault();
-
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-        // Up/Down: Navigate between file rows (focusing on the file name)
-        const currentRow = currentElement.closest('tr');
-        if (!currentRow) return;
-
-        const allRows = Array.from(table.querySelectorAll('tr'));
-        const currentIndex = allRows.indexOf(currentRow);
-
-        if (currentIndex === -1) return;
-
-        let nextIndex;
-        if (event.key === 'ArrowDown') {
-            nextIndex = currentIndex + 1;
-            if (nextIndex >= allRows.length) {
-                nextIndex = 0; // Wrap to first row
-            }
-        } else {
-            // ArrowUp
-            nextIndex = currentIndex - 1;
-            if (nextIndex < 0) {
-                nextIndex = allRows.length - 1; // Wrap to last row
-            }
-        }
-
-        // Focus on the file name (first focusable element in the row)
-        const nextRow = allRows[nextIndex];
-        const firstFocusable = nextRow.querySelector('[tabindex="0"]');
-        if (firstFocusable) {
-            firstFocusable.focus();
-        }
-    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-        // Left/Right: Navigate between elements in the same row
-        const currentRow = currentElement.closest('tr');
-        if (!currentRow) return;
-
-        const focusableInRow = Array.from(currentRow.querySelectorAll('[tabindex="0"]'));
-        const currentIndex = focusableInRow.indexOf(currentElement);
-
-        if (currentIndex === -1) return;
-
-        let nextIndex;
-        if (event.key === 'ArrowRight') {
-            nextIndex = currentIndex + 1;
-            if (nextIndex >= focusableInRow.length) {
-                nextIndex = 0; // Wrap to first element in row
-            }
-        } else {
-            // ArrowLeft
-            nextIndex = currentIndex - 1;
-            if (nextIndex < 0) {
-                nextIndex = focusableInRow.length - 1; // Wrap to last element in row
-            }
-        }
-
-        focusableInRow[nextIndex].focus();
-    }
-}
-
 // Add event listener for keyboard navigation
-document.addEventListener('keydown', handleTableKeyNavigation);
+document.addEventListener('keydown', window.ab.fileExplorer.handleTableKeyNavigation);
 
 // Add keyboard support for sort buttons
 document.addEventListener(
@@ -888,8 +989,8 @@ document.addEventListener(
 
                 if (columnName) {
                     console.log('Sorting by column:', columnName);
-                    sortFiles(columnName);
-                    updateSortArrows(columnName);
+                    window.ab.fileExplorer.sortFiles(columnName);
+                    window.ab.fileExplorer.updateSortArrows(columnName);
                 }
 
                 return false;
@@ -902,7 +1003,7 @@ document.addEventListener(
                 event.stopPropagation();
                 event.stopImmediatePropagation();
 
-                toggleMixedSorting();
+                window.ab.fileExplorer.toggleMixedSorting();
 
                 return false;
             }
@@ -939,71 +1040,19 @@ document.addEventListener('keydown', function (event) {
     }
 });
 
-// COLUMN VIEW AUTO-SCROLL
-// Automatically scroll column view to show the rightmost (active) column
-function scrollColumnViewToRight() {
-    const columnViewColumns = document.querySelector('.column-view-columns');
-    if (columnViewColumns) {
-        // Scroll to the right to show the active column
-        columnViewColumns.scrollLeft = columnViewColumns.scrollWidth;
-    }
-}
-
 // Listen for HTMX content swaps to scroll column view
 document.body.addEventListener('htmx:afterSwap', function (event) {
     // Check if we're in column view and the content was swapped
     if (event.detail.target.id === 'file-explorer-view-content') {
         // Small delay to ensure DOM is fully rendered
         requestAnimationFrame(() => {
-            scrollColumnViewToRight();
+            window.ab.fileExplorer.scrollColumnViewToRight();
         });
     }
 });
 
 // Also scroll on initial page load
-document.addEventListener('DOMContentLoaded', function () {
-    scrollColumnViewToRight();
-});
-
-// NAVIGATION MANAGEMENT
-
-/**
- * Update the back button state based on current path
- */
-function updateBackButton() {
-    const backBtn = document.getElementById('nav-back-btn');
-    if (!backBtn) return;
-
-    const currentPath = window.location.pathname;
-    const isAtRoot = currentPath === '/files' || currentPath === '/files/';
-
-    if (isAtRoot) {
-        backBtn.disabled = true;
-    } else {
-        backBtn.disabled = false;
-    }
-}
-
-/**
- * Navigate back to previous folder
- */
-// eslint-disable-next-line no-unused-vars
-function navigateBack() {
-    const currentPath = window.location.pathname;
-
-    // Calculate parent directory
-    let parentPath = currentPath.replace(/\/$/, ''); // Remove trailing slash
-    const lastSlashIndex = parentPath.lastIndexOf('/');
-    parentPath = parentPath.substring(0, lastSlashIndex) || '/files';
-
-    // Navigate to parent
-    window.history.pushState({}, '', parentPath);
-    htmx.ajax('GET', parentPath, {
-        target: '#file-explorer-view-content',
-        swap: 'innerHTML',
-    });
-    updateBackButton();
-}
+document.addEventListener('DOMContentLoaded', window.ab.fileExplorer.scrollColumnViewToRight);
 
 // Handle browser back/forward buttons
 window.addEventListener('popstate', function () {
@@ -1013,90 +1062,19 @@ window.addEventListener('popstate', function () {
         target: '#file-explorer-view-content',
         swap: 'innerHTML',
     });
-    updateBackButton();
+    window.ab.fileExplorer.updateBackButton();
 });
 
 // Update back button on page load
 document.addEventListener('DOMContentLoaded', function () {
-    updateBackButton();
+    window.ab.fileExplorer.updateBackButton();
 });
 
-// DEVICE FILTERING
-
-// Initialize active devices on page load
-function initializeDeviceFilter() {
-    const deviceButtons = document.querySelectorAll('.device-filter-button');
-    deviceButtons.forEach((button) => {
-        const deviceName = button.getAttribute('data-device-name');
-        if (button.classList.contains('device-filter-button--active')) {
-            window.ab.fileExplorer.activeDevices.add(deviceName);
-        }
-    });
-    applyDeviceFilter();
-}
-
-// Toggle device filter when button is clicked
-// eslint-disable-next-line no-unused-vars
-function toggleDeviceFilter(button) {
-    const deviceName = button.getAttribute('data-device-name');
-
-    // Toggle active state
-    button.classList.toggle('device-filter-button--active');
-
-    if (window.ab.fileExplorer.activeDevices.has(deviceName)) {
-        window.ab.fileExplorer.activeDevices.delete(deviceName);
-    } else {
-        window.ab.fileExplorer.activeDevices.add(deviceName);
-    }
-
-    applyDeviceFilter();
-}
-
-// Apply the current device filter to all file nodes
-function applyDeviceFilter() {
-    // Get all file nodes
-    const fileNodes = document.querySelectorAll('.file-node');
-
-    // If no devices are being filtered (no filter buttons or all inactive), show everything
-    if (window.ab.fileExplorer.activeDevices.size === 0) {
-        fileNodes.forEach((node) => {
-            node.setAttribute('data-device-filtered', 'false');
-            node.style.display = '';
-        });
-        return;
-    }
-
-    fileNodes.forEach((node) => {
-        // Find device badge in this node
-        const deviceBadge = node.querySelector('.device-badge-name');
-
-        if (!deviceBadge) {
-            // No device badge means it's from the default/primary device
-            // Show it when filters are active (for backwards compatibility)
-            node.setAttribute('data-device-filtered', 'false');
-            node.style.display = '';
-        } else {
-            const deviceName = deviceBadge.textContent.trim();
-
-            // Show if device is in active set
-            if (window.ab.fileExplorer.activeDevices.has(deviceName)) {
-                node.setAttribute('data-device-filtered', 'false');
-                node.style.display = '';
-            } else {
-                node.setAttribute('data-device-filtered', 'true');
-                node.style.display = 'none';
-            }
-        }
-    });
-}
-
 // Initialize on page load and after HTMX swaps
-document.addEventListener('DOMContentLoaded', initializeDeviceFilter);
-document.body.addEventListener('htmx:afterSwap', initializeDeviceFilter);
+document.addEventListener('DOMContentLoaded', window.ab.fileExplorer.initializeDeviceFilter);
+document.body.addEventListener('htmx:afterSwap', window.ab.fileExplorer.initializeDeviceFilter);
 
-document.addEventListener('DOMContentLoaded', initializeDeviceBadgeToggle);
-document.body.addEventListener('htmx:afterSwap', initializeDeviceBadgeToggle);
+document.addEventListener('DOMContentLoaded', window.ab.fileExplorer.initializeDeviceBadgeToggle);
+document.body.addEventListener('htmx:afterSwap', window.ab.fileExplorer.initializeDeviceBadgeToggle);
 
-
-
-document.addEventListener('DOMContentLoaded', initializeFileSelectionClear);
+document.addEventListener('DOMContentLoaded', window.ab.fileExplorer.initializeFileSelectionClear);
