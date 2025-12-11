@@ -1,8 +1,7 @@
 // eslint-disable-next-line no-unused-vars
 function closeDialog(event) {
     if (event) {
-        event.preventDefault();
-        event.stopPropagation();
+        window.ab.preventDefault(event);
     }
 
     // Close closest dialog

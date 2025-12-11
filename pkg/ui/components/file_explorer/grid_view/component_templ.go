@@ -159,7 +159,7 @@ func renderGridItem(pageState types.PageState, file *fileutil.DeviceFileInfo) te
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" oncontextmenu=\"toggleFloatingContextMenu(event, this)\" onclick=\"handleFileNodeClick(event, this)\" ondblclick=\"handleFileNodeDoubleClick(event, this)\" ontouchend=\"handleFileNodeTouch(event, this)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" oncontextmenu=\"window.ab.toggleFloatingContextMenu(event, this)\" onclick=\"window.ab.fileExplorer.handleFileNodeClick(event, this)\" ondblclick=\"window.ab.fileExplorer.handleFileNodeDoubleClick(event, this)\" ontouchend=\"window.ab.fileExplorer.handleFileNodeTouch(event, this)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

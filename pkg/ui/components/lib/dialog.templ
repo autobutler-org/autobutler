@@ -12,8 +12,8 @@ templ Dialog(
 		class={ fmt.Sprintf("dialog %s", additionalClass) }
 		onclose="window.ab.closeDialog(event)"
 		closedby="none"
-		onkeydown="if (event.key === 'Escape') { window.ab.closeDialog(event); } else if (event.key === 'Enter') { preventDefault(event); }"
-		onmousedown="preventDefault(event)"
+		onkeydown="if (event.key === 'Escape') { window.ab.closeDialog(event); } else if (event.key === 'Enter') { window.ab.preventDefault(event); }"
+		onmousedown="window.ab.preventDefault(event)"
 	>
 		for _, script := range scripts {
 			<script src={ script }></script>
@@ -37,8 +37,7 @@ templ Dialog(
 		// eslint-disable-next-line no-unused-vars
 		window.ab.closeDialog = (event) => {
 			if (event) {
-				event.preventDefault();
-				event.stopPropagation();
+				window.ab.preventDefault(event);
 			}
 
 			// Close closest dialog

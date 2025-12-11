@@ -4,7 +4,7 @@ templ Component() {
 	<dialog
 		id="rename-dialog"
 		class="dialog rename-dialog"
-		onkeydown="if (event.key === 'Escape') { event.preventDefault(); this.close(); }"
+		onkeydown="if (event.key === 'Escape') { window.ab.preventDefault(event); this.close(); }"
 		onclick="if (event.target === this) { this.close(); }"
 	>
 		<button
@@ -128,7 +128,7 @@ templ Component() {
 
 			// Handle form submission
 			form.addEventListener('submit', (e) => {
-				e.preventDefault();
+				window.ab.preventDefault(e);
 
 				const newFilePath = input.value.trim();
 

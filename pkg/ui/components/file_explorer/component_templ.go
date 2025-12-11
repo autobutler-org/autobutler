@@ -97,7 +97,7 @@ func Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, view
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><div id=\"file-explorer-selectable\" oncontextmenu=\"toggleFloatingContextMenu(event, this)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><div id=\"file-explorer-selectable\" oncontextmenu=\"window.ab.toggleFloatingContextMenu(event, this)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -117,7 +117,7 @@ func Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, view
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><div style=\"display: flex; align-items: center; gap: 1rem;\"><label class=\"device-badge-toggle\"><input type=\"checkbox\" id=\"toggle-device-badges\" onchange=\"toggleDeviceBadges(this.checked)\"> <span>Show device names</span></label><div class=\"view-switcher\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><div style=\"display: flex; align-items: center; gap: 1rem;\"><label class=\"device-badge-toggle\"><input type=\"checkbox\" id=\"toggle-device-badges\" onchange=\"window.ab.fileExplorer.toggleDeviceBadges(this.checked)\"> <span>Show device names</span></label><div class=\"view-switcher\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -139,7 +139,7 @@ func Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, view
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" onclick=\"switchView('list')\" title=\"List View\" type=\"button\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" onclick=\"window.ab.fileExplorer.switchView('list')\" title=\"List View\" type=\"button\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -169,7 +169,7 @@ func Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, view
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" onclick=\"switchView('grid')\" title=\"Grid View\" type=\"button\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" onclick=\"window.ab.fileExplorer.switchView('grid')\" title=\"Grid View\" type=\"button\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -199,7 +199,7 @@ func Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, view
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" onclick=\"switchView('column')\" title=\"Column View\" type=\"button\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" onclick=\"window.ab.fileExplorer.switchView('column')\" title=\"Column View\" type=\"button\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

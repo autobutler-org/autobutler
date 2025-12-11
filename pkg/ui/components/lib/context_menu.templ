@@ -46,8 +46,7 @@ templ ContextMenu(onClickHandlers maputil.OrderedMap[string, *ContextMenuHandler
 	// eslint-disable-next-line no-unused-vars
 	window.ab.closeContextMenu = (event, parentNode) => {
 		if (event) {
-			event.preventDefault();
-			event.stopPropagation();
+			window.ab.preventDefault(event);
 		}
 		for (const contextMenu of parentNode.querySelectorAll('.context-menu')) {
 			contextMenu.style.left = null;
@@ -60,8 +59,7 @@ templ ContextMenu(onClickHandlers maputil.OrderedMap[string, *ContextMenuHandler
 	// eslint-disable-next-line no-unused-vars
 	window.ab.closeContextMenuFromItem = (event) => {
 		if (event) {
-			event.preventDefault();
-			event.stopPropagation();
+			window.ab.preventDefault(event);
 		}
 
 		const contextMenu = event.target.closest('.context-menu');
@@ -76,8 +74,7 @@ templ ContextMenu(onClickHandlers maputil.OrderedMap[string, *ContextMenuHandler
 	// eslint-disable-next-line no-unused-vars
 	window.ab.toggleFloatingContextMenu = (event, parentNode) => {
 		if (event) {
-			event.preventDefault();
-			event.stopPropagation();
+			window.ab.preventDefault(event);
 		}
 		const contextMenu = parentNode.querySelector('.context-menu');
 		if (!contextMenu) {

@@ -46,13 +46,13 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 			[]string{"Download", "Move/Rename", "File Details", "Delete"},
 			[]*lib.ContextMenuHandlerProps{
 				{
-					OnClickHandler: fmt.Sprintf("window.ab.closeContextMenuFromItem(event); downloadFile('%s');", filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name())),
+					OnClickHandler: fmt.Sprintf("window.ab.closeContextMenuFromItem(event); window.ab.fileExplorer.downloadFile('%s');", filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name())),
 				},
 				{
-					OnClickHandler: fmt.Sprintf("window.ab.closeContextMenuFromItem(event); moveFile(event, '%s', '%s');", pageState.RootDir, file.Name()),
+					OnClickHandler: fmt.Sprintf("window.ab.closeContextMenuFromItem(event); window.ab.fileExplorer.moveFile(event, '%s', '%s');", pageState.RootDir, file.Name()),
 				},
 				{
-					OnClickHandler: fmt.Sprintf("window.ab.closeContextMenuFromItem(event); showFileDetails('%s');", file.Name()),
+					OnClickHandler: fmt.Sprintf("window.ab.closeContextMenuFromItem(event); window.ab.fileExplorer.showFileDetails('%s');", file.Name()),
 				},
 				{
 					AdditionalClasses: "context-menu-item--danger",
