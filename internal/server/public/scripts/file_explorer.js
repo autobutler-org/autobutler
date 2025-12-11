@@ -1,23 +1,5 @@
 // Initialize autobutler namespace
-window.ab = window.ab || {};
-
-window.ab.preventDefault = (event) => {
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-};
-
-window.ab.debounce = (func, wait) => {
-    let timeout;
-    return (...args) => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-};
-
-// File explorer state
-window.ab.fileExplorer = {
+window.ab = Object.assign(window.ab || {}, {
     ///////////////
     // Constants //
     ///////////////
@@ -48,24 +30,43 @@ window.ab.fileExplorer = {
     // Device filtering state
     activeDevices: new Set(),
 
+    ///////////////////////
+    // General Functions //
+    ///////////////////////
+
+    preventDefault: (event) => {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    },
+
+    debounce: (func, wait) => {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    },
+
     ///////////////
     // Functions //
     ///////////////
     getViewPreference: () => {
-        return localStorage.getItem(window.ab.fileExplorer.VIEW_STORAGE_KEY) || 'list';
+        return localStorage.getItem(window.ab.VIEW_STORAGE_KEY) || 'list';
     },
 
     setViewPreference: (view) => {
-        localStorage.setItem(window.ab.fileExplorer.VIEW_STORAGE_KEY, view);
+        localStorage.setItem(window.ab.VIEW_STORAGE_KEY, view);
         // Also set cookie so server can read it on regular page loads
         document.cookie = `fileExplorerView=${view}; path=/; max-age=31536000`; // 1 year
     },
 
     switchView: (view) => {
-        window.ab.fileExplorer.setViewPreference(view);
+        window.ab.setViewPreference(view);
 
         // Update button states immediately
-        window.ab.fileExplorer.updateViewButtonStates(view);
+        window.ab.updateViewButtonStates(view);
 
         // Use HTMX to reload the content without a full page refresh
         const currentPath = window.location.pathname;
@@ -116,10 +117,10 @@ window.ab.fileExplorer = {
 
         if (show) {
             fileExplorer.classList.remove('hide-device-badges');
-            localStorage.setItem(window.ab.fileExplorer.DEVICE_BADGE_STORAGE_KEY, 'true');
+            localStorage.setItem(window.ab.DEVICE_BADGE_STORAGE_KEY, 'true');
         } else {
             fileExplorer.classList.add('hide-device-badges');
-            localStorage.setItem(window.ab.fileExplorer.DEVICE_BADGE_STORAGE_KEY, 'false');
+            localStorage.setItem(window.ab.DEVICE_BADGE_STORAGE_KEY, 'false');
         }
     },
 
@@ -133,7 +134,7 @@ window.ab.fileExplorer = {
         const hasMultipleDevices = deviceFilterButtons.length > 1;
 
         // Get stored preference, defaulting to "on" if multiple devices, "off" if single device
-        const storedPreference = localStorage.getItem(window.ab.fileExplorer.DEVICE_BADGE_STORAGE_KEY);
+        const storedPreference = localStorage.getItem(window.ab.DEVICE_BADGE_STORAGE_KEY);
         let showBadges;
 
         if (storedPreference !== null) {
@@ -143,7 +144,7 @@ window.ab.fileExplorer = {
         }
 
         checkbox.checked = showBadges;
-        window.ab.fileExplorer.toggleDeviceBadges(showBadges);
+        window.ab.toggleDeviceBadges(showBadges);
     },
 
     // Clear file selection when clicking on empty space
@@ -160,7 +161,7 @@ window.ab.fileExplorer = {
             }
 
             // Clear selections for any other click
-            window.ab.fileExplorer.clearSelectedFiles();
+            window.ab.clearSelectedFiles();
         });
     },
 
@@ -177,7 +178,7 @@ window.ab.fileExplorer = {
      * Select a range of file nodes between two nodes (inclusive)
      */
     selectRange: (startNode, endNode) =>  {
-        const allNodes = window.ab.fileExplorer.getAllFileNodes();
+        const allNodes = window.ab.getAllFileNodes();
         const startIndex = allNodes.indexOf(startNode);
         const endIndex = allNodes.indexOf(endNode);
 
@@ -189,7 +190,7 @@ window.ab.fileExplorer = {
 
         // Select all nodes in the range
         for (let i = minIndex; i <= maxIndex; i++) {
-            window.ab.fileExplorer.selectFileNode(allNodes[i]);
+            window.ab.selectFileNode(allNodes[i]);
         }
     },
 
@@ -200,8 +201,8 @@ window.ab.fileExplorer = {
         document.querySelectorAll('.file-node--selected').forEach((node) => {
             node.classList.remove('file-node--selected');
         });
-        window.ab.fileExplorer.selectedFiles = [];
-        window.ab.fileExplorer.updateDownloadButton();
+        window.ab.selectedFiles = [];
+        window.ab.updateDownloadButton();
     },
 
     /**
@@ -219,14 +220,14 @@ window.ab.fileExplorer = {
         }
 
         const fileName = node.dataset.name;
-        if (fileName && !window.ab.fileExplorer.selectedFiles.includes(fileName)) {
-            window.ab.fileExplorer.selectedFiles.push(fileName);
+        if (fileName && !window.ab.selectedFiles.includes(fileName)) {
+            window.ab.selectedFiles.push(fileName);
         }
 
         // Track this as the last selected node for range selection
-        window.ab.fileExplorer.lastSelectedNode = node;
+        window.ab.lastSelectedNode = node;
 
-        window.ab.fileExplorer.updateDownloadButton();
+        window.ab.updateDownloadButton();
     },
 
     /**
@@ -237,9 +238,9 @@ window.ab.fileExplorer = {
         node.classList.remove('file-node--selected');
         const fileName = node.dataset.name;
         if (fileName) {
-            window.ab.fileExplorer.selectedFiles = window.ab.fileExplorer.selectedFiles.filter((name) => name !== fileName);
+            window.ab.selectedFiles = window.ab.selectedFiles.filter((name) => name !== fileName);
         }
-        window.ab.fileExplorer.updateDownloadButton();
+        window.ab.updateDownloadButton();
     },
 
     /**
@@ -249,7 +250,7 @@ window.ab.fileExplorer = {
         const downloadBtn = document.getElementById('file-download-button');
         if (!downloadBtn) return;
 
-        if (window.ab.fileExplorer.selectedFiles.length > 0) {
+        if (window.ab.selectedFiles.length > 0) {
             downloadBtn.disabled = false;
             downloadBtn.classList.remove('btn--disabled');
             downloadBtn.classList.add('btn--secondary');
@@ -291,7 +292,7 @@ window.ab.fileExplorer = {
                         swap: 'innerHTML',
                     }).then(() => {
                         window.history.pushState({}, '', href);
-                        window.ab.fileExplorer.updateBackButton();
+                        window.ab.updateBackButton();
                     });
                 }
             } else {
@@ -317,39 +318,39 @@ window.ab.fileExplorer = {
 
         // For list/grid views, use double-click delay and selection logic
         // Clear any pending double-click timer
-        if (window.ab.fileExplorer.clickTimer) {
-            clearTimeout(window.ab.fileExplorer.clickTimer);
-            window.ab.fileExplorer.clickTimer = null;
+        if (window.ab.clickTimer) {
+            clearTimeout(window.ab.clickTimer);
+            window.ab.clickTimer = null;
         }
 
         // Wait to see if this becomes a double-click
-        window.ab.fileExplorer.clickTimer = setTimeout(() => {
-            window.ab.fileExplorer.clickTimer = null;
+        window.ab.clickTimer = setTimeout(() => {
+            window.ab.clickTimer = null;
 
             // Single click behavior - toggle selection
             if (event.ctrlKey || event.metaKey) {
                 // Ctrl/Cmd+Click: toggle this item's selection
                 if (node.classList.contains('file-node--selected')) {
-                    window.ab.fileExplorer.deselectFileNode(node);
+                    window.ab.deselectFileNode(node);
                 } else {
-                    window.ab.fileExplorer.selectFileNode(node);
+                    window.ab.selectFileNode(node);
                 }
             } else if (event.shiftKey) {
                 // Shift+Click: range selection
-                if (window.ab.fileExplorer.lastSelectedNode && window.ab.fileExplorer.lastSelectedNode !== node) {
+                if (window.ab.lastSelectedNode && window.ab.lastSelectedNode !== node) {
                     // Select range from last selected to current
-                    window.ab.fileExplorer.selectRange(window.ab.fileExplorer.lastSelectedNode, node);
+                    window.ab.selectRange(window.ab.lastSelectedNode, node);
                 } else {
                     // No previous selection, just select this item
-                    window.ab.fileExplorer.clearSelectedFiles();
-                    window.ab.fileExplorer.selectFileNode(node);
+                    window.ab.clearSelectedFiles();
+                    window.ab.selectFileNode(node);
                 }
             } else {
                 // Regular click: select only this item
-                window.ab.fileExplorer.clearSelectedFiles();
-                window.ab.fileExplorer.selectFileNode(node);
+                window.ab.clearSelectedFiles();
+                window.ab.selectFileNode(node);
             }
-        }, window.ab.fileExplorer.DOUBLE_CLICK_DELAY);
+        }, window.ab.DOUBLE_CLICK_DELAY);
     },
 
     /**
@@ -358,9 +359,9 @@ window.ab.fileExplorer = {
      */
     handleFileNodeDoubleClick: (event, node) =>  {
         // Cancel the single-click timer
-        if (window.ab.fileExplorer.clickTimer) {
-            clearTimeout(window.ab.fileExplorer.clickTimer);
-            window.ab.fileExplorer.clickTimer = null;
+        if (window.ab.clickTimer) {
+            clearTimeout(window.ab.clickTimer);
+            window.ab.clickTimer = null;
         }
 
         window.ab.preventDefault(event);
@@ -379,7 +380,7 @@ window.ab.fileExplorer = {
                 }).then(() => {
                     // Update the browser URL after successful navigation
                     window.history.pushState({}, '', href);
-                    window.ab.fileExplorer.updateBackButton();
+                    window.ab.updateBackButton();
                 });
             }
         } else {
@@ -405,29 +406,29 @@ window.ab.fileExplorer = {
      */
     handleFileNodeTouch: (event, node) =>  {
         const currentTime = new Date().getTime();
-        const tapInterval = currentTime - window.ab.fileExplorer.lastTapTime;
+        const tapInterval = currentTime - window.ab.lastTapTime;
 
         // If this is a second tap on the same node within the delay window
-        if (window.ab.fileExplorer.lastTapNode === node && tapInterval < window.ab.fileExplorer.DOUBLE_TAP_DELAY && tapInterval > 0) {
+        if (window.ab.lastTapNode === node && tapInterval < window.ab.DOUBLE_TAP_DELAY && tapInterval > 0) {
             // Prevent default to avoid zoom on double-tap
             event.preventDefault();
 
             // Clear the single-tap timer if it's running
-            if (window.ab.fileExplorer.clickTimer) {
-                clearTimeout(window.ab.fileExplorer.clickTimer);
-                window.ab.fileExplorer.clickTimer = null;
+            if (window.ab.clickTimer) {
+                clearTimeout(window.ab.clickTimer);
+                window.ab.clickTimer = null;
             }
 
             // Trigger the double-click behavior
-            window.ab.fileExplorer.handleFileNodeDoubleClick(event, node);
+            window.ab.handleFileNodeDoubleClick(event, node);
 
             // Reset tap tracking
-            window.ab.fileExplorer.lastTapTime = 0;
-            window.ab.fileExplorer.lastTapNode = null;
+            window.ab.lastTapTime = 0;
+            window.ab.lastTapNode = null;
         } else {
             // Record this tap for potential double-tap
-            window.ab.fileExplorer.lastTapTime = currentTime;
-            window.ab.fileExplorer.lastTapNode = node;
+            window.ab.lastTapTime = currentTime;
+            window.ab.lastTapNode = node;
         }
     },
 
@@ -469,17 +470,17 @@ window.ab.fileExplorer = {
         const li = event.currentTarget.closest('li');
         const dropDir = li.dataset.name;
         console.log(`Drop on node: ${dropDir}`);
-        return window.ab.fileExplorer.dropFiles(event, `/${dropDir}`, returnDir ? returnDir : '/');
+        return window.ab.dropFiles(event, `/${dropDir}`, returnDir ? returnDir : '/');
     },
 
     downloadSelectedFiles: (event, rootDir) =>  {
         window.ab.preventDefault(event);
 
-        console.log('Download requested. Root dir:', rootDir, 'Selected files:', window.ab.fileExplorer.selectedFiles);
+        console.log('Download requested. Root dir:', rootDir, 'Selected files:', window.ab.selectedFiles);
 
         if (!rootDir) rootDir = '';
 
-        window.ab.fileExplorer.selectedFiles.forEach((fileName) => {
+        window.ab.selectedFiles.forEach((fileName) => {
             const link = document.createElement('a');
             let cleanFileName = fileName;
             while (cleanFileName.endsWith('/')) {
@@ -504,7 +505,7 @@ window.ab.fileExplorer = {
             link.click();
             document.body.removeChild(link);
         });
-        window.ab.fileExplorer.clearSelectedFiles();
+        window.ab.clearSelectedFiles();
     },
 
     dropFiles: (event, rootDir, returnDir) =>  {
@@ -578,8 +579,8 @@ window.ab.fileExplorer = {
         window.ab.preventDefault(event);
         const fileName = prompt('Enter the new file name (including extension):');
         if (fileName) {
-            if (fileName.length > window.ab.fileExplorer.MAX_FILE_NAME_LENGTH) {
-                alert(`File name must be ${window.ab.fileExplorer.MAX_FILE_NAME_LENGTH} characters or less`);
+            if (fileName.length > window.ab.MAX_FILE_NAME_LENGTH) {
+                alert(`File name must be ${window.ab.MAX_FILE_NAME_LENGTH} characters or less`);
                 return;
             }
             const uploadForm = document.getElementById('file-upload-form');
@@ -621,18 +622,18 @@ window.ab.fileExplorer = {
     // SORTING
 
     sortFiles: (column) => {
-        if (window.ab.fileExplorer.currentSortColumn === column) {
-            window.ab.fileExplorer.currentSortDirection = window.ab.fileExplorer.currentSortDirection === 'asc' ? 'desc' : 'asc';
+        if (window.ab.currentSortColumn === column) {
+            window.ab.currentSortDirection = window.ab.currentSortDirection === 'asc' ? 'desc' : 'asc';
         } else {
-            window.ab.fileExplorer.currentSortDirection = 'asc';
+            window.ab.currentSortDirection = 'asc';
         }
-        window.ab.fileExplorer.currentSortColumn = column;
+        window.ab.currentSortColumn = column;
 
-        window.ab.fileExplorer.applySorting();
+        window.ab.applySorting();
     },
 
     applySorting: () => {
-        const column = window.ab.fileExplorer.currentSortColumn;
+        const column = window.ab.currentSortColumn;
         if (!column) return;
 
         const tbody = document.getElementById('file-explorer-list');
@@ -650,7 +651,7 @@ window.ab.fileExplorer = {
                 bValue = b.dataset.name || '';
 
                 // Sort folders first, then files (unless mixed sorting is enabled)
-                if (!window.ab.fileExplorer.mixedSorting) {
+                if (!window.ab.mixedSorting) {
                     const aIsFolder = a.querySelector('td:first-child a[href]') !== null;
                     const bIsFolder = b.querySelector('td:first-child a[href]') !== null;
 
@@ -659,12 +660,12 @@ window.ab.fileExplorer = {
                 }
 
                 // Sort alphabetically
-                return window.ab.fileExplorer.currentSortDirection === 'asc'
+                return window.ab.currentSortDirection === 'asc'
                     ? aValue.localeCompare(bValue, undefined, { numeric: true, sensitivity: 'base' })
                     : bValue.localeCompare(aValue, undefined, { numeric: true, sensitivity: 'base' });
             } else if (column === 'size') {
                 // Sort folders first, then files (unless mixed sorting is enabled)
-                if (!window.ab.fileExplorer.mixedSorting) {
+                if (!window.ab.mixedSorting) {
                     const aIsFolder = a.querySelector('td:first-child a[href]') !== null;
                     const bIsFolder = b.querySelector('td:first-child a[href]') !== null;
 
@@ -676,10 +677,10 @@ window.ab.fileExplorer = {
                 const aSizeText = a.querySelector('td:nth-child(2)')?.textContent?.trim() || '0 B';
                 const bSizeText = b.querySelector('td:nth-child(2)')?.textContent?.trim() || '0 B';
 
-                aValue = window.ab.fileExplorer.parseSize(aSizeText);
-                bValue = window.ab.fileExplorer.parseSize(bSizeText);
+                aValue = window.ab.parseSize(aSizeText);
+                bValue = window.ab.parseSize(bSizeText);
 
-                return window.ab.fileExplorer.currentSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+                return window.ab.currentSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
             }
 
             return 0;
@@ -721,7 +722,7 @@ window.ab.fileExplorer = {
         });
 
         // Show the appropriate arrow for the current column and direction
-        const arrowId = `${column}-sort-${window.ab.fileExplorer.currentSortDirection}`;
+        const arrowId = `${column}-sort-${window.ab.currentSortDirection}`;
         const arrow = document.getElementById(arrowId);
         if (arrow) {
             arrow.classList.remove('hidden', 'text-gray-400');
@@ -730,7 +731,7 @@ window.ab.fileExplorer = {
     },
 
     toggleMixedSorting: () => {
-        window.ab.fileExplorer.mixedSorting = !window.ab.fileExplorer.mixedSorting;
+        window.ab.mixedSorting = !window.ab.mixedSorting;
 
         // Update button appearance
         const button = document.getElementById('mixed-sort-toggle');
@@ -738,7 +739,7 @@ window.ab.fileExplorer = {
         const folderIcon = document.getElementById('sort-folder-icon');
         const fileIcon = document.getElementById('sort-file-icon');
 
-        if (window.ab.fileExplorer.mixedSorting) {
+        if (window.ab.mixedSorting) {
             // Mixed sorting enabled - show both icons
             button.title =
                 'Currently: Mixed sorting (folders and files together)\nClick to switch to folders first';
@@ -759,9 +760,9 @@ window.ab.fileExplorer = {
         }
 
         // Re-sort if we have a current sort column
-        if (window.ab.fileExplorer.currentSortColumn) {
-            window.ab.fileExplorer.applySorting();
-            window.ab.fileExplorer.updateSortArrows(window.ab.fileExplorer.currentSortColumn);
+        if (window.ab.currentSortColumn) {
+            window.ab.applySorting();
+            window.ab.updateSortArrows(window.ab.currentSortColumn);
         }
     },
 
@@ -882,7 +883,7 @@ window.ab.fileExplorer = {
             target: '#file-explorer-view-content',
             swap: 'innerHTML',
         });
-        window.ab.fileExplorer.updateBackButton();
+        window.ab.updateBackButton();
     },
 
     // DEVICE FILTERING
@@ -893,10 +894,10 @@ window.ab.fileExplorer = {
         deviceButtons.forEach((button) => {
             const deviceName = button.getAttribute('data-device-name');
             if (button.classList.contains('device-filter-button--active')) {
-                window.ab.fileExplorer.activeDevices.add(deviceName);
+                window.ab.activeDevices.add(deviceName);
             }
         });
-        window.ab.fileExplorer.applyDeviceFilter();
+        window.ab.applyDeviceFilter();
     },
 
     // Toggle device filter when button is clicked
@@ -906,13 +907,13 @@ window.ab.fileExplorer = {
         // Toggle active state
         button.classList.toggle('device-filter-button--active');
 
-        if (window.ab.fileExplorer.activeDevices.has(deviceName)) {
-            window.ab.fileExplorer.activeDevices.delete(deviceName);
+        if (window.ab.activeDevices.has(deviceName)) {
+            window.ab.activeDevices.delete(deviceName);
         } else {
-            window.ab.fileExplorer.activeDevices.add(deviceName);
+            window.ab.activeDevices.add(deviceName);
         }
 
-        window.ab.fileExplorer.applyDeviceFilter();
+        window.ab.applyDeviceFilter();
     },
 
     // Apply the current device filter to all file nodes
@@ -921,7 +922,7 @@ window.ab.fileExplorer = {
         const fileNodes = document.querySelectorAll('.file-node');
 
         // If no devices are being filtered (no filter buttons or all inactive), show everything
-        if (window.ab.fileExplorer.activeDevices.size === 0) {
+        if (window.ab.activeDevices.size === 0) {
             fileNodes.forEach((node) => {
                 node.setAttribute('data-device-filtered', 'false');
                 node.style.display = '';
@@ -942,7 +943,7 @@ window.ab.fileExplorer = {
                 const deviceName = deviceBadge.textContent.trim();
 
                 // Show if device is in active set
-                if (window.ab.fileExplorer.activeDevices.has(deviceName)) {
+                if (window.ab.activeDevices.has(deviceName)) {
                     node.setAttribute('data-device-filtered', 'false');
                     node.style.display = '';
                 } else {
@@ -952,23 +953,23 @@ window.ab.fileExplorer = {
             }
         });
     },
-};
+});
 
 // Initialize - sync localStorage to cookie on page load and update button states
 document.addEventListener('DOMContentLoaded', function () {
-    const view = window.ab.fileExplorer.getViewPreference();
-    window.ab.fileExplorer.setViewPreference(view); // Ensures cookie is set
-    window.ab.fileExplorer.updateViewButtonStates(view); // Ensure button states match the active view
+    const view = window.ab.getViewPreference();
+    window.ab.setViewPreference(view); // Ensures cookie is set
+    window.ab.updateViewButtonStates(view); // Ensure button states match the active view
 });
 
 // Send view preference in all HTMX requests via custom header
 document.body.addEventListener('htmx:configRequest', function (event) {
-    const view = window.ab.fileExplorer.getViewPreference();
+    const view = window.ab.getViewPreference();
     event.detail.headers['X-File-Explorer-View'] = view;
 });
 
 // Add event listener for keyboard navigation
-document.addEventListener('keydown', window.ab.fileExplorer.handleTableKeyNavigation);
+document.addEventListener('keydown', window.ab.handleTableKeyNavigation);
 
 // Add keyboard support for sort buttons
 document.addEventListener(
@@ -989,8 +990,8 @@ document.addEventListener(
 
                 if (columnName) {
                     console.log('Sorting by column:', columnName);
-                    window.ab.fileExplorer.sortFiles(columnName);
-                    window.ab.fileExplorer.updateSortArrows(columnName);
+                    window.ab.sortFiles(columnName);
+                    window.ab.updateSortArrows(columnName);
                 }
 
                 return false;
@@ -1003,7 +1004,7 @@ document.addEventListener(
                 event.stopPropagation();
                 event.stopImmediatePropagation();
 
-                window.ab.fileExplorer.toggleMixedSorting();
+                window.ab.toggleMixedSorting();
 
                 return false;
             }
@@ -1046,13 +1047,13 @@ document.body.addEventListener('htmx:afterSwap', function (event) {
     if (event.detail.target.id === 'file-explorer-view-content') {
         // Small delay to ensure DOM is fully rendered
         requestAnimationFrame(() => {
-            window.ab.fileExplorer.scrollColumnViewToRight();
+            window.ab.scrollColumnViewToRight();
         });
     }
 });
 
 // Also scroll on initial page load
-document.addEventListener('DOMContentLoaded', window.ab.fileExplorer.scrollColumnViewToRight);
+document.addEventListener('DOMContentLoaded', window.ab.scrollColumnViewToRight);
 
 // Handle browser back/forward buttons
 window.addEventListener('popstate', function () {
@@ -1062,19 +1063,19 @@ window.addEventListener('popstate', function () {
         target: '#file-explorer-view-content',
         swap: 'innerHTML',
     });
-    window.ab.fileExplorer.updateBackButton();
+    window.ab.updateBackButton();
 });
 
 // Update back button on page load
 document.addEventListener('DOMContentLoaded', function () {
-    window.ab.fileExplorer.updateBackButton();
+    window.ab.updateBackButton();
 });
 
 // Initialize on page load and after HTMX swaps
-document.addEventListener('DOMContentLoaded', window.ab.fileExplorer.initializeDeviceFilter);
-document.body.addEventListener('htmx:afterSwap', window.ab.fileExplorer.initializeDeviceFilter);
+document.addEventListener('DOMContentLoaded', window.ab.initializeDeviceFilter);
+document.body.addEventListener('htmx:afterSwap', window.ab.initializeDeviceFilter);
 
-document.addEventListener('DOMContentLoaded', window.ab.fileExplorer.initializeDeviceBadgeToggle);
-document.body.addEventListener('htmx:afterSwap', window.ab.fileExplorer.initializeDeviceBadgeToggle);
+document.addEventListener('DOMContentLoaded', window.ab.initializeDeviceBadgeToggle);
+document.body.addEventListener('htmx:afterSwap', window.ab.initializeDeviceBadgeToggle);
 
-document.addEventListener('DOMContentLoaded', window.ab.fileExplorer.initializeFileSelectionClear);
+document.addEventListener('DOMContentLoaded', window.ab.initializeFileSelectionClear);

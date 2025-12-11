@@ -62,7 +62,7 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("window.ab.fileExplorer.dropOnNode", templ.JSExpression("event"), pageState.RootDir))
+		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("window.ab.dropOnNode", templ.JSExpression("event"), pageState.RootDir))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -79,16 +79,16 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" oncontextmenu=\"window.ab.toggleFloatingContextMenu(event, this)\" ondragenter=\"window.ab.fileExplorer.activateDropZoneOnNode(event)\" ondragover=\"window.ab.preventDefault(event)\" ondragleave=\"window.ab.fileExplorer.deactivateDropZoneOnNode(event)\" ondrop=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" oncontextmenu=\"window.ab.toggleFloatingContextMenu(event, this)\" ondragenter=\"window.ab.activateDropZoneOnNode(event)\" ondragover=\"window.ab.preventDefault(event)\" ondragleave=\"window.ab.deactivateDropZoneOnNode(event)\" ondrop=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var4 templ.ComponentScript = templ.JSFuncCall("window.ab.fileExplorer.dropOnNode", templ.JSExpression("event"), pageState.RootDir)
+		var templ_7745c5c3_Var4 templ.ComponentScript = templ.JSFuncCall("window.ab.dropOnNode", templ.JSExpression("event"), pageState.RootDir)
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4.Call)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" onclick=\"window.ab.fileExplorer.handleFileNodeClick(event, this)\" ondblclick=\"window.ab.fileExplorer.handleFileNodeDoubleClick(event, this)\" ontouchend=\"window.ab.fileExplorer.handleFileNodeTouch(event, this)\" data-name=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" onclick=\"window.ab.handleFileNodeClick(event, this)\" ondblclick=\"window.ab.handleFileNodeDoubleClick(event, this)\" ontouchend=\"window.ab.handleFileNodeTouch(event, this)\" data-name=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -229,7 +229,7 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" tabindex=\"0\" onkeydown=\"if (event.key === 'Enter' || event.key === ' ') { window.ab.preventDefault(event); window.ab.fileExplorer.handleFileNodeDoubleClick(event, this.closest('tr')); }\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" tabindex=\"0\" onkeydown=\"if (event.key === 'Enter' || event.key === ' ') { window.ab.preventDefault(event); window.ab.handleFileNodeDoubleClick(event, this.closest('tr')); }\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

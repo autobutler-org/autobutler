@@ -31,20 +31,19 @@ templ Dialog(
 	</dialog>
 	<script type="text/javascript">
 		// Initialize autobutler namespace
-		window.ab = window.ab || {};
+		window.ab = Object.assign(window.ab || {}, {
+			// Close dialog with optional cleanup
+			closeDialog: (event) => {
+				if (event) {
+					window.ab.preventDefault(event);
+				}
 
-		// Close dialog with optional cleanup
-		// eslint-disable-next-line no-unused-vars
-		window.ab.closeDialog = (event) => {
-			if (event) {
-				window.ab.preventDefault(event);
-			}
-
-			// Close closest dialog
-			const dialog = event.target.closest('dialog');
-			if (dialog) {
-				dialog.close();
-			}
-		}
+				// Close closest dialog
+				const dialog = event.target.closest('dialog');
+				if (dialog) {
+					dialog.close();
+				}
+			},
+		});
 	</script>
 }

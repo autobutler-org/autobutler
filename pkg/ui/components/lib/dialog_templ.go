@@ -142,7 +142,7 @@ func Dialog(
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"></div></dialog><script type=\"text/javascript\">\n\t\t// Initialize autobutler namespace\n\t\twindow.ab = window.ab || {};\n\n\t\t// Close dialog with optional cleanup\n\t\t// eslint-disable-next-line no-unused-vars\n\t\twindow.ab.closeDialog = (event) => {\n\t\t\tif (event) {\n\t\t\t\twindow.ab.preventDefault(event);\n\t\t\t}\n\n\t\t\t// Close closest dialog\n\t\t\tconst dialog = event.target.closest('dialog');\n\t\t\tif (dialog) {\n\t\t\t\tdialog.close();\n\t\t\t}\n\t\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"></div></dialog><script type=\"text/javascript\">\n\t\t// Initialize autobutler namespace\n\t\twindow.ab = Object.assign(window.ab || {}, {\n\t\t\t// Close dialog with optional cleanup\n\t\t\tcloseDialog: (event) => {\n\t\t\t\tif (event) {\n\t\t\t\t\twindow.ab.preventDefault(event);\n\t\t\t\t}\n\n\t\t\t\t// Close closest dialog\n\t\t\t\tconst dialog = event.target.closest('dialog');\n\t\t\t\tif (dialog) {\n\t\t\t\t\tdialog.close();\n\t\t\t\t}\n\t\t\t},\n\t\t});\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

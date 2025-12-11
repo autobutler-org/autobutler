@@ -35,13 +35,13 @@ templ Component(pageState types.PageState, file *fileutil.DeviceFileInfo) {
 	<tr
 		class={ nodeClasses, "file-node" }
 		oncontextmenu="window.ab.toggleFloatingContextMenu(event, this)"
-		ondragenter="window.ab.fileExplorer.activateDropZoneOnNode(event)"
+		ondragenter="window.ab.activateDropZoneOnNode(event)"
 		ondragover="window.ab.preventDefault(event)"
-		ondragleave="window.ab.fileExplorer.deactivateDropZoneOnNode(event)"
-		ondrop={ templ.JSFuncCall("window.ab.fileExplorer.dropOnNode", templ.JSExpression("event"), pageState.RootDir) }
-		onclick="window.ab.fileExplorer.handleFileNodeClick(event, this)"
-		ondblclick="window.ab.fileExplorer.handleFileNodeDoubleClick(event, this)"
-		ontouchend="window.ab.fileExplorer.handleFileNodeTouch(event, this)"
+		ondragleave="window.ab.deactivateDropZoneOnNode(event)"
+		ondrop={ templ.JSFuncCall("window.ab.dropOnNode", templ.JSExpression("event"), pageState.RootDir) }
+		onclick="window.ab.handleFileNodeClick(event, this)"
+		ondblclick="window.ab.handleFileNodeDoubleClick(event, this)"
+		ontouchend="window.ab.handleFileNodeTouch(event, this)"
 		data-name={ fileName }
 		data-file-type={ fileType }
 		data-device-name={ deviceName }
@@ -71,7 +71,7 @@ templ Component(pageState types.PageState, file *fileutil.DeviceFileInfo) {
 					class="file-table-cell file-table-cell--clickable"
 					data-viewer-path={ filepath.Join("/components/files/viewer", filePath) }
 					tabindex="0"
-					onkeydown="if (event.key === 'Enter' || event.key === ' ') { window.ab.preventDefault(event); window.ab.fileExplorer.handleFileNodeDoubleClick(event, this.closest('tr')); }"
+					onkeydown="if (event.key === 'Enter' || event.key === ' ') { window.ab.preventDefault(event); window.ab.handleFileNodeDoubleClick(event, this.closest('tr')); }"
 				>
 					{{ /* Render the appropriate icon based on the file type */ }}
 					switch fileType {

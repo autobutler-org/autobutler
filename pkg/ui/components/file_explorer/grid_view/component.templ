@@ -41,9 +41,9 @@ templ renderGridItem(pageState types.PageState, file *fileutil.DeviceFileInfo) {
 		data-file-type={ fileType }
 		data-device-name={ deviceName }
 		oncontextmenu="window.ab.toggleFloatingContextMenu(event, this)"
-		onclick="window.ab.fileExplorer.handleFileNodeClick(event, this)"
-		ondblclick="window.ab.fileExplorer.handleFileNodeDoubleClick(event, this)"
-		ontouchend="window.ab.fileExplorer.handleFileNodeTouch(event, this)"
+		onclick="window.ab.handleFileNodeClick(event, this)"
+		ondblclick="window.ab.handleFileNodeDoubleClick(event, this)"
+		ontouchend="window.ab.handleFileNodeTouch(event, this)"
 	>
 		if isFolder {
 			<div

@@ -398,7 +398,7 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file *
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" oncontextmenu=\"window.ab.toggleFloatingContextMenu(event, this)\" onclick=\"window.ab.fileExplorer.handleFileNodeClick(event, this)\" ondblclick=\"window.ab.fileExplorer.handleFileNodeDoubleClick(event, this)\" ontouchend=\"window.ab.fileExplorer.handleFileNodeTouch(event, this)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" oncontextmenu=\"window.ab.toggleFloatingContextMenu(event, this)\" onclick=\"window.ab.handleFileNodeClick(event, this)\" ondblclick=\"window.ab.handleFileNodeDoubleClick(event, this)\" ontouchend=\"window.ab.handleFileNodeTouch(event, this)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -584,7 +584,7 @@ func renderCurrentColumnItem(pageState types.PageState, file *fileutil.DeviceFil
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\" oncontextmenu=\"window.ab.toggleFloatingContextMenu(event, this)\" onclick=\"window.ab.fileExplorer.handleFileNodeClick(event, this)\" ondblclick=\"window.ab.fileExplorer.handleFileNodeDoubleClick(event, this)\" ontouchend=\"window.ab.fileExplorer.handleFileNodeTouch(event, this)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\" oncontextmenu=\"window.ab.toggleFloatingContextMenu(event, this)\" onclick=\"window.ab.handleFileNodeClick(event, this)\" ondblclick=\"window.ab.handleFileNodeDoubleClick(event, this)\" ontouchend=\"window.ab.handleFileNodeTouch(event, this)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
