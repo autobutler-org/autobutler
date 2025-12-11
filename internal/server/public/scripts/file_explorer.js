@@ -170,14 +170,14 @@ window.ab = Object.assign(window.ab || {}, {
     /**
      * Get all file nodes in the current view in DOM order
      */
-    getAllFileNodes: () =>  {
+    getAllFileNodes: () => {
         return Array.from(document.querySelectorAll('.file-node'));
     },
 
     /**
      * Select a range of file nodes between two nodes (inclusive)
      */
-    selectRange: (startNode, endNode) =>  {
+    selectRange: (startNode, endNode) => {
         const allNodes = window.ab.getAllFileNodes();
         const startIndex = allNodes.indexOf(startNode);
         const endIndex = allNodes.indexOf(endNode);
@@ -197,7 +197,7 @@ window.ab = Object.assign(window.ab || {}, {
     /**
      * Clear all selected files and remove visual selection
      */
-    clearSelectedFiles: () =>  {
+    clearSelectedFiles: () => {
         document.querySelectorAll('.file-node--selected').forEach((node) => {
             node.classList.remove('file-node--selected');
         });
@@ -208,7 +208,7 @@ window.ab = Object.assign(window.ab || {}, {
     /**
      * Select a single file node
      */
-    selectFileNode: (node) =>  {
+    selectFileNode: (node) => {
         if (!node) return;
 
         // Add selection class with temporary logging for debugging
@@ -233,7 +233,7 @@ window.ab = Object.assign(window.ab || {}, {
     /**
      * Deselect a single file node
      */
-    deselectFileNode: (node) =>  {
+    deselectFileNode: (node) => {
         if (!node) return;
         node.classList.remove('file-node--selected');
         const fileName = node.dataset.name;
@@ -246,7 +246,7 @@ window.ab = Object.assign(window.ab || {}, {
     /**
      * Update the download button state based on selection
      */
-    updateDownloadButton: () =>  {
+    updateDownloadButton: () => {
         const downloadBtn = document.getElementById('file-download-button');
         if (!downloadBtn) return;
 
@@ -266,11 +266,9 @@ window.ab = Object.assign(window.ab || {}, {
      * Single click = select the file (Google Drive style)
      * In column view: single click navigates/opens immediately (Finder style)
      */
-    handleFileNodeClick: (event, node) =>  {
+    handleFileNodeClick: (event, node) => {
         // Ignore if clicking on context menu trigger
-        if (
-            event.target.closest('.context-menu-trigger')
-        ) {
+        if (event.target.closest('.context-menu-trigger')) {
             return;
         }
 
@@ -357,7 +355,7 @@ window.ab = Object.assign(window.ab || {}, {
      * Handle double-click on a file node
      * Double-click = navigate/open the file (Google Drive style)
      */
-    handleFileNodeDoubleClick: (event, node) =>  {
+    handleFileNodeDoubleClick: (event, node) => {
         // Cancel the single-click timer
         if (window.ab.clickTimer) {
             clearTimeout(window.ab.clickTimer);
@@ -404,12 +402,16 @@ window.ab = Object.assign(window.ab || {}, {
      * Handle touch events for mobile double-tap detection
      * On mobile, double-tap opens files (since dblclick doesn't work reliably)
      */
-    handleFileNodeTouch: (event, node) =>  {
+    handleFileNodeTouch: (event, node) => {
         const currentTime = new Date().getTime();
         const tapInterval = currentTime - window.ab.lastTapTime;
 
         // If this is a second tap on the same node within the delay window
-        if (window.ab.lastTapNode === node && tapInterval < window.ab.DOUBLE_TAP_DELAY && tapInterval > 0) {
+        if (
+            window.ab.lastTapNode === node &&
+            tapInterval < window.ab.DOUBLE_TAP_DELAY &&
+            tapInterval > 0
+        ) {
             // Prevent default to avoid zoom on double-tap
             event.preventDefault();
 
@@ -432,7 +434,7 @@ window.ab = Object.assign(window.ab || {}, {
         }
     },
 
-    supportsDirectoryUpload: () =>  {
+    supportsDirectoryUpload: () => {
         const supportsFileSystemAccessAPI = 'getAsFileSystemHandle' in DataTransferItem.prototype;
         const supportsWebkitGetAsEntry = 'webkitGetAsEntry' in DataTransferItem.prototype;
         // NOTE: I have found that none of my browsers support this, and likely is why Google Drive does not support
@@ -440,31 +442,31 @@ window.ab = Object.assign(window.ab || {}, {
         return supportsFileSystemAccessAPI || supportsWebkitGetAsEntry;
     },
 
-    activateDropZone: (event) =>  {
+    activateDropZone: (event) => {
         window.ab.preventDefault(event);
         const fileUploadArea = document.getElementById('file-upload-area');
         fileUploadArea.classList.add('bg-blue-600');
         fileUploadArea.classList.remove('bg-gray-800');
     },
 
-    deactivateDropZone: (event) =>  {
+    deactivateDropZone: (event) => {
         window.ab.preventDefault(event);
         const fileUploadArea = document.getElementById('file-upload-area');
         fileUploadArea.classList.remove('bg-blue-600');
         fileUploadArea.classList.add('bg-gray-800');
     },
 
-    activateDropZoneOnNode: (event) =>  {
+    activateDropZoneOnNode: (event) => {
         window.ab.preventDefault(event);
         event.currentTarget.classList.add('bg-blue-600');
     },
 
-    deactivateDropZoneOnNode: (event) =>  {
+    deactivateDropZoneOnNode: (event) => {
         window.ab.preventDefault(event);
         event.currentTarget.classList.remove('bg-blue-600');
     },
 
-    dropOnNode: (event, returnDir) =>  {
+    dropOnNode: (event, returnDir) => {
         window.ab.preventDefault(event);
         event.currentTarget.classList.remove('bg-blue-600');
         const li = event.currentTarget.closest('li');
@@ -473,10 +475,15 @@ window.ab = Object.assign(window.ab || {}, {
         return window.ab.dropFiles(event, `/${dropDir}`, returnDir ? returnDir : '/');
     },
 
-    downloadSelectedFiles: (event, rootDir) =>  {
+    downloadSelectedFiles: (event, rootDir) => {
         window.ab.preventDefault(event);
 
-        console.log('Download requested. Root dir:', rootDir, 'Selected files:', window.ab.selectedFiles);
+        console.log(
+            'Download requested. Root dir:',
+            rootDir,
+            'Selected files:',
+            window.ab.selectedFiles
+        );
 
         if (!rootDir) rootDir = '';
 
@@ -508,7 +515,7 @@ window.ab = Object.assign(window.ab || {}, {
         window.ab.clearSelectedFiles();
     },
 
-    dropFiles: (event, rootDir, returnDir) =>  {
+    dropFiles: (event, rootDir, returnDir) => {
         rootDir = rootDir || '';
         returnDir = returnDir || '';
         window.ab.preventDefault(event);
@@ -530,7 +537,7 @@ window.ab = Object.assign(window.ab || {}, {
         }
     },
 
-    saveAceEditor: (filePath, content) =>  {
+    saveAceEditor: (filePath, content) => {
         fetch(`/api/v1/files${filePath}`, {
             method: 'POST',
             headers: {
@@ -555,7 +562,7 @@ window.ab = Object.assign(window.ab || {}, {
             });
     },
 
-    downloadFile: (filePath) =>  {
+    downloadFile: (filePath) => {
         const link = document.createElement('a');
         link.href = `/api/v1/files${filePath}`;
         link.download = filePath.split('/').pop();
@@ -564,7 +571,7 @@ window.ab = Object.assign(window.ab || {}, {
         document.body.removeChild(link);
     },
 
-    moveFile: (event, rootDir, fileName) =>  {
+    moveFile: (event, rootDir, fileName) => {
         window.ab.preventDefault(event);
         while (rootDir && rootDir[0] == '/') {
             rootDir = rootDir.slice(1);
@@ -575,7 +582,7 @@ window.ab = Object.assign(window.ab || {}, {
         window.ab.openRenameDialog(filePath);
     },
 
-    newFile: (event, rootDir) =>  {
+    newFile: (event, rootDir) => {
         window.ab.preventDefault(event);
         const fileName = prompt('Enter the new file name (including extension):');
         if (fileName) {
@@ -597,12 +604,12 @@ window.ab = Object.assign(window.ab || {}, {
         }
     },
 
-    showFolderDetails: (event) =>  {
+    showFolderDetails: (event) => {
         window.ab.preventDefault(event);
         alert('Folder details to be implemented.');
     },
 
-    navigateToParentAndPreview: (event, parentPath, previewPath) =>  {
+    navigateToParentAndPreview: (event, parentPath, previewPath) => {
         window.ab.preventDefault(event);
         // Use HTMX to navigate to parent (removes child columns) without full page reload
         htmx.ajax('GET', parentPath, {
@@ -623,7 +630,8 @@ window.ab = Object.assign(window.ab || {}, {
 
     sortFiles: (column) => {
         if (window.ab.currentSortColumn === column) {
-            window.ab.currentSortDirection = window.ab.currentSortDirection === 'asc' ? 'desc' : 'asc';
+            window.ab.currentSortDirection =
+                window.ab.currentSortDirection === 'asc' ? 'desc' : 'asc';
         } else {
             window.ab.currentSortDirection = 'asc';
         }
@@ -661,8 +669,14 @@ window.ab = Object.assign(window.ab || {}, {
 
                 // Sort alphabetically
                 return window.ab.currentSortDirection === 'asc'
-                    ? aValue.localeCompare(bValue, undefined, { numeric: true, sensitivity: 'base' })
-                    : bValue.localeCompare(aValue, undefined, { numeric: true, sensitivity: 'base' });
+                    ? aValue.localeCompare(bValue, undefined, {
+                          numeric: true,
+                          sensitivity: 'base',
+                      })
+                    : bValue.localeCompare(aValue, undefined, {
+                          numeric: true,
+                          sensitivity: 'base',
+                      });
             } else if (column === 'size') {
                 // Sort folders first, then files (unless mixed sorting is enabled)
                 if (!window.ab.mixedSorting) {
