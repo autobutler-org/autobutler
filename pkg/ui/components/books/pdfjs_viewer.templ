@@ -13,9 +13,10 @@ templ PDFJSViewer(filePath string) {
 	</div>
 	<script type="module">
 		import * as pdfjsLib from '/public/vendor/pdfjs/pdf.min.mjs';
-		
+
 		// Set worker path - PDF.js requires a worker for rendering
-		pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.149/pdf.worker.min.mjs';
+		pdfjsLib.GlobalWorkerOptions.workerSrc =
+			'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.149/pdf.worker.min.mjs';
 
 		const url = {{ filepath.Join("/api/v1/files", filePath) }};
 		const canvas = document.getElementById('pdfjs-canvas');
@@ -40,18 +41,18 @@ templ PDFJSViewer(filePath string) {
 
 		function renderPage(num) {
 			pageRendering = true;
-			pdfDoc.getPage(num).then(function(page) {
+			pdfDoc.getPage(num).then(function (page) {
 				const viewport = page.getViewport({ scale: scale });
 				canvas.height = viewport.height;
 				canvas.width = viewport.width;
 
 				const renderContext = {
 					canvasContext: ctx,
-					viewport: viewport
+					viewport: viewport,
 				};
 
 				const renderTask = page.render(renderContext);
-				renderTask.promise.then(function() {
+				renderTask.promise.then(function () {
 					pageRendering = false;
 					if (pageNumPending !== null) {
 						renderPage(pageNumPending);
@@ -61,8 +62,8 @@ templ PDFJSViewer(filePath string) {
 			});
 
 			pageInfo.textContent = `Page $${num} of $${pdfDoc.numPages}`;
-			prevBtn.disabled = (num <= 1);
-			nextBtn.disabled = (num >= pdfDoc.numPages);
+			prevBtn.disabled = num <= 1;
+			nextBtn.disabled = num >= pdfDoc.numPages;
 		}
 
 		function queueRenderPage(num) {
@@ -73,13 +74,13 @@ templ PDFJSViewer(filePath string) {
 			}
 		}
 
-		prevBtn.addEventListener('click', function() {
+		prevBtn.addEventListener('click', function () {
 			if (pageNum <= 1) return;
 			pageNum--;
 			queueRenderPage(pageNum);
 		});
 
-		nextBtn.addEventListener('click', function() {
+		nextBtn.addEventListener('click', function () {
 			if (pageNum >= pdfDoc.numPages) return;
 			pageNum++;
 			queueRenderPage(pageNum);
@@ -87,20 +88,24 @@ templ PDFJSViewer(filePath string) {
 
 		// Load PDF
 		const loadingTask = pdfjsLib.getDocument(url);
-		loadingTask.promise.then(function(pdf) {
-			pdfDoc = pdf;
-			renderPage(pageNum);
-		}).catch(function(error) {
-			console.error('Error loading PDF:', error);
-			document.getElementById('pdfjs-viewer-container').innerHTML = 
-				'<div style="padding: 2rem; text-align: center;">Error loading PDF. <a href="' + url + '" target="_blank">Download instead</a></div>';
-		});
+		loadingTask.promise
+			.then(function (pdf) {
+				pdfDoc = pdf;
+				renderPage(pageNum);
+			})
+			.catch(function (error) {
+				console.error('Error loading PDF:', error);
+				document.getElementById('pdfjs-viewer-container').innerHTML =
+					'<div style="padding: 2rem; text-align: center;">Error loading PDF. <a href="' +
+					url +
+					'" target="_blank">Download instead</a></div>';
+			});
 
 		// Handle resize
 		let resizeTimeout;
-		window.addEventListener('resize', function() {
+		window.addEventListener('resize', function () {
 			clearTimeout(resizeTimeout);
-			resizeTimeout = setTimeout(function() {
+			resizeTimeout = setTimeout(function () {
 				scale = getScale();
 				if (pdfDoc) {
 					renderPage(pageNum);

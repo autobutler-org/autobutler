@@ -109,7 +109,7 @@ templ Component(pageState types.PageState) {
 	</div>
 	<script>
 		// Close version dropdown when clicking outside
-		document.addEventListener('click', function(event) {
+		document.addEventListener('click', function (event) {
 			const container = document.getElementById('version-container');
 			const dropdown = document.getElementById('version-dropdown-container');
 			if (container && !container.contains(event.target) && dropdown) {

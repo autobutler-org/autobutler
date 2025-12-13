@@ -101,7 +101,7 @@ templ Component(filePath string) {
 				},
 			});
 
-			(function(filePath) {
+			(function (filePath) {
 				if (typeof ace === 'undefined') {
 					console.error('ACE editor not loaded');
 					return;
@@ -148,7 +148,9 @@ templ Component(filePath string) {
 							.then(function (response) {
 								if (!response.ok) {
 									return response.text().then(function (text) {
-										toastr.error('Error saving file: ' + (text || response.statusText));
+										toastr.error(
+											'Error saving file: ' + (text || response.statusText)
+										);
 									});
 								}
 							})

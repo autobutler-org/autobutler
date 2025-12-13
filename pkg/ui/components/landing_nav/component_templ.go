@@ -172,7 +172,7 @@ func Component(pageState types.PageState) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</span></div></div></div><script>\n\t\t// Close version dropdown when clicking outside\n\t\tdocument.addEventListener('click', function(event) {\n\t\t\tconst container = document.getElementById('version-container');\n\t\t\tconst dropdown = document.getElementById('version-dropdown-container');\n\t\t\tif (container && !container.contains(event.target) && dropdown) {\n\t\t\t\tdropdown.innerHTML = '';\n\t\t\t}\n\t\t});\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</span></div></div></div><script>\n\t\t// Close version dropdown when clicking outside\n\t\tdocument.addEventListener('click', function (event) {\n\t\t\tconst container = document.getElementById('version-container');\n\t\t\tconst dropdown = document.getElementById('version-dropdown-container');\n\t\t\tif (container && !container.contains(event.target) && dropdown) {\n\t\t\t\tdropdown.innerHTML = '';\n\t\t\t}\n\t\t});\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

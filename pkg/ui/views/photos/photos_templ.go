@@ -126,7 +126,7 @@ func Photos(pageState types.PageState, summary fileutil.Summary) templ.Component
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" style=\"display:none\"></div><script type=\"text/javascript\">\n\t\t\t\t\t(function() {\n\t\t\t\t\t\tconst debug = document.getElementById('photo-debug-initial');\n\t\t\t\t\t\tif (debug) {\n\t\t\t\t\t\t\tconsole.log('🚀 Initial Photos Load:', {\n\t\t\t\t\t\t\t\ttotalPhotos: parseInt(debug.dataset.total),\n\t\t\t\t\t\t\t\tfirstPageCount: parseInt(debug.dataset.firstPage),\n\t\t\t\t\t\t\t\tpageSize: parseInt(debug.dataset.pageSize)\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\t\t\t\t\t})();\n\t\t\t\t</script> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" style=\"display:none\"></div><script type=\"text/javascript\">\n\t\t\t\t\t(function () {\n\t\t\t\t\t\tconst debug = document.getElementById('photo-debug-initial');\n\t\t\t\t\t\tif (debug) {\n\t\t\t\t\t\t\tconsole.log('🚀 Initial Photos Load:', {\n\t\t\t\t\t\t\t\ttotalPhotos: parseInt(debug.dataset.total),\n\t\t\t\t\t\t\t\tfirstPageCount: parseInt(debug.dataset.firstPage),\n\t\t\t\t\t\t\t\tpageSize: parseInt(debug.dataset.pageSize),\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\t\t\t\t\t})();\n\t\t\t\t</script> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

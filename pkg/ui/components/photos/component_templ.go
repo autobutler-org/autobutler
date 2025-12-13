@@ -184,7 +184,7 @@ func PhotoGrid(pageState types.PageState, photos []photoutil.PhotoInfo, page int
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" style=\"display:none\"></div><script type=\"text/javascript\">\n\t\t\t(function() {\n\t\t\t\tconst debug = document.querySelector('.photo-grid-debug:last-of-type');\n\t\t\t\tif (debug) {\n\t\t\t\t\tconsole.log('📸 PhotoGrid:', {\n\t\t\t\t\t\tpage: parseInt(debug.dataset.page),\n\t\t\t\t\t\tphotosInPage: parseInt(debug.dataset.photosInPage),\n\t\t\t\t\t\ttotalPhotos: parseInt(debug.dataset.totalPhotos),\n\t\t\t\t\t\tphotosLoaded: parseInt(debug.dataset.photosLoaded),\n\t\t\t\t\t\thasMore: debug.dataset.hasMore === 'true'\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t})();\n\t\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" style=\"display:none\"></div><script type=\"text/javascript\">\n\t\t\t(function () {\n\t\t\t\tconst debug = document.querySelector('.photo-grid-debug:last-of-type');\n\t\t\t\tif (debug) {\n\t\t\t\t\tconsole.log('📸 PhotoGrid:', {\n\t\t\t\t\t\tpage: parseInt(debug.dataset.page),\n\t\t\t\t\t\tphotosInPage: parseInt(debug.dataset.photosInPage),\n\t\t\t\t\t\ttotalPhotos: parseInt(debug.dataset.totalPhotos),\n\t\t\t\t\t\tphotosLoaded: parseInt(debug.dataset.photosLoaded),\n\t\t\t\t\t\thasMore: debug.dataset.hasMore === 'true',\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t})();\n\t\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -207,7 +207,7 @@ func PhotoGrid(pageState types.PageState, photos []photoutil.PhotoInfo, page int
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<script type=\"text/javascript\">console.log('🏁 No more photos to load')</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<script type=\"text/javascript\">\n\t\t\t\tconsole.log('🏁 No more photos to load');\n\t\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -258,7 +258,7 @@ func PhotoGridPage(pageState types.PageState, photos []photoutil.PhotoInfo, page
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", page))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 112, Col: 37}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 114, Col: 37}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -271,7 +271,7 @@ func PhotoGridPage(pageState types.PageState, photos []photoutil.PhotoInfo, page
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(photos)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 113, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 115, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -284,7 +284,7 @@ func PhotoGridPage(pageState types.PageState, photos []photoutil.PhotoInfo, page
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", totalPhotos))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 114, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 116, Col: 52}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -297,7 +297,7 @@ func PhotoGridPage(pageState types.PageState, photos []photoutil.PhotoInfo, page
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", photosLoaded))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 115, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 117, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -310,13 +310,13 @@ func PhotoGridPage(pageState types.PageState, photos []photoutil.PhotoInfo, page
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", hasMore))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 116, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 118, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" style=\"display:none\"></div><script type=\"text/javascript\">\n\t\t(function() {\n\t\t\tconst debug = document.querySelector('.photo-grid-debug:last-of-type');\n\t\t\tif (debug) {\n\t\t\t\tconsole.log('📸 PhotoGrid Page ' + debug.dataset.page + ':', {\n\t\t\t\t\tpage: parseInt(debug.dataset.page),\n\t\t\t\t\tphotosInPage: parseInt(debug.dataset.photosInPage),\n\t\t\t\t\ttotalPhotos: parseInt(debug.dataset.totalPhotos),\n\t\t\t\t\tphotosLoaded: parseInt(debug.dataset.photosLoaded),\n\t\t\t\t\thasMore: debug.dataset.hasMore === 'true'\n\t\t\t\t});\n\t\t\t}\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" style=\"display:none\"></div><script type=\"text/javascript\">\n\t\t(function () {\n\t\t\tconst debug = document.querySelector('.photo-grid-debug:last-of-type');\n\t\t\tif (debug) {\n\t\t\t\tconsole.log('📸 PhotoGrid Page ' + debug.dataset.page + ':', {\n\t\t\t\t\tpage: parseInt(debug.dataset.page),\n\t\t\t\t\tphotosInPage: parseInt(debug.dataset.photosInPage),\n\t\t\t\t\ttotalPhotos: parseInt(debug.dataset.totalPhotos),\n\t\t\t\t\tphotosLoaded: parseInt(debug.dataset.photosLoaded),\n\t\t\t\t\thasMore: debug.dataset.hasMore === 'true',\n\t\t\t\t});\n\t\t\t}\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -328,7 +328,7 @@ func PhotoGridPage(pageState types.PageState, photos []photoutil.PhotoInfo, page
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/components/photos/grid?page=%d", page+1))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 137, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 139, Col: 66}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -339,7 +339,7 @@ func PhotoGridPage(pageState types.PageState, photos []photoutil.PhotoInfo, page
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<script type=\"text/javascript\">\n\t\t\t(function() {\n\t\t\t\tconsole.log('🏁 No more photos to load after page { fmt.Sprintf(\"%d\", page) }');\n\t\t\t})();\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<script type=\"text/javascript\">\n\t\t\t(function () {\n\t\t\t\tconsole.log('🏁 No more photos to load after page { fmt.Sprintf(\"%d\", page) }');\n\t\t\t})();\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -380,7 +380,7 @@ func PhotoGridItem(pageState types.PageState, photo photoutil.PhotoInfo) templ.C
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/components/files/viewer", filePath))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 164, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 166, Col: 62}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -393,7 +393,7 @@ func PhotoGridItem(pageState types.PageState, photo photoutil.PhotoInfo) templ.C
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(thumbnailPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 171, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 173, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
@@ -406,7 +406,7 @@ func PhotoGridItem(pageState types.PageState, photo photoutil.PhotoInfo) templ.C
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fileName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 172, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 174, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
