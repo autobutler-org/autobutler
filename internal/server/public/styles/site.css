@@ -197,3 +197,16 @@
 .rename-hidden {
     display: none;
 }
+
+footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-top: 1px solid var(--color-gray-300);
+    margin-top: var(--spacing-xl);
+
+    img {
+        height: 2rem;
+    }
+}
