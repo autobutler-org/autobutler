@@ -72,7 +72,7 @@ func Home(pageState types.PageState, summary fileutil.Summary) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></main></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></main><footer><p class=\"footer-text\">Autobutler LLC.</p><a href=\"https://github.com/autobutler-org/autobutler\" target=\"_blank\" rel=\"noopener noreferrer\"><img src=\"/public/img/github/github-mark-white.svg\" alt=\"GitHub logo\"></a></footer></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
