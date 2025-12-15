@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Files Page', () => {
-    test('loads files page successfully', async ({ page }) => {
+test.describe('Cirrus Page', () => {
+    test('loads cirrus page successfully', async ({ page }) => {
         await page.goto('/files');
 
         await expect(page).toHaveTitle(/Autobutler/);
         await expect(page.locator('#file-explorer')).toBeVisible();
     });
 
-    test('displays file explorer header with title and space info', async ({ page }) => {
+    test('displays cirrus header with title and space info', async ({ page }) => {
         await page.goto('/files');
 
         const header = page.locator('.file-explorer-header');
@@ -16,7 +16,7 @@ test.describe('Files Page', () => {
 
         const title = page.locator('h2.file-explorer-title');
         await expect(title).toBeVisible();
-        await expect(title).toHaveText('File Explorer');
+        await expect(title).toHaveText('Cirrus');
 
         const spaceInfo = page.locator('.file-explorer-space-info');
         await expect(spaceInfo).toBeVisible();
@@ -131,7 +131,7 @@ test.describe('Files Page', () => {
     });
 });
 
-test.describe('Files Page - File Upload', () => {
+test.describe('Cirrus Page - File Upload', () => {
     test('uploads a text file through file input', async ({ page }) => {
         await page.goto('/files');
 

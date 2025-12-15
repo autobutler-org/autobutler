@@ -13,8 +13,8 @@ type ServiceIcon struct {
 func GetDefaultServiceIcons() []ServiceIcon {
 	return []ServiceIcon{
 		{
-			Name:    "cirrus-drive",
-			Label:   "Cirrus Drive",
+			Name:    "cirrus",
+			Label:   "Cirrus",
 			Href:    "/files",
 			Enabled: true,
 			IconSVG: `<path d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-4M17 8l-5-5-5 5M12 3v12"/>`,
