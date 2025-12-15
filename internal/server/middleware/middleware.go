@@ -63,7 +63,7 @@ func redirectLegacyPaths() gin.HandlerFunc {
 
 		// Redirect /api/v1/folder/files/* to /api/v1/folder/cirrus/*
 		if len(path) > 21 && path[:22] == "/api/v1/folder/files/" {
-			newPath := "/api/v1/folder/cirrus" + path[21:]
+			newPath := "/api/v1/folder/cirrus" + path[22:]
 			c.Redirect(301, newPath)
 			c.Abort()
 			return

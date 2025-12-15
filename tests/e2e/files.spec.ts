@@ -260,7 +260,7 @@ test.describe('Files Page - Navigation', () => {
         await page.waitForTimeout(1000);
 
         // Verify we're back at the root (URL should be /cirrus)
-        await expect(page).toHaveURL(/^.*\/files\/?$/);
+        await expect(page).toHaveURL(/^.*\/cirrus\/?$/);
     });
 
     test('back button is disabled at root directory', async ({ page }) => {
