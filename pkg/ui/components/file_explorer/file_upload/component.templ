@@ -9,7 +9,7 @@ templ Component(pageState types.PageState) {
 	<form
 		id="file-upload-form"
 		hx-encoding="multipart/form-data"
-		hx-post={ filepath.Join("/api/v1/files", pageState.RootDir) }
+		hx-post={ filepath.Join("/api/v1/cirrus", pageState.RootDir) }
 		hx-swap="innerHTML"
 		hx-target="#file-explorer-status"
 		hx-indicator="#file-upload-progress"

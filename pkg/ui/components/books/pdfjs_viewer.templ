@@ -18,7 +18,7 @@ templ PDFJSViewer(filePath string) {
 		pdfjsLib.GlobalWorkerOptions.workerSrc =
 			'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.149/pdf.worker.min.mjs';
 
-		const url = {{ filepath.Join("/api/v1/files", filePath) }};
+		const url = {{ filepath.Join("/api/v1/cirrus", filePath) }};
 		const canvas = document.getElementById('pdfjs-canvas');
 		const ctx = canvas.getContext('2d');
 		const pageInfo = document.getElementById('pdfjs-page-info');

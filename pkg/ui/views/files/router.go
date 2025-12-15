@@ -34,7 +34,7 @@ func (r *router) Routes() []*serverutil.Route {
 }
 
 var filesRoute = serverutil.UiRoute(
-	"/files", func(c *gin.Context) templ.Component {
+	"/cirrus", func(c *gin.Context) templ.Component {
 		view := getViewFromRequest(c)
 
 		// If this is an htmx request, return just the view content with OOB breadcrumb
@@ -47,7 +47,7 @@ var filesRoute = serverutil.UiRoute(
 )
 
 var filesNestedRoute = serverutil.UiRoute(
-	"/files/*rootDir", func(c *gin.Context) templ.Component {
+	"/cirrus/*rootDir", func(c *gin.Context) templ.Component {
 		rootDir := c.Param("rootDir")
 		view := getViewFromRequest(c)
 
@@ -61,13 +61,13 @@ var filesNestedRoute = serverutil.UiRoute(
 )
 
 var fileExplorerComponentRoute = serverutil.UiRoute(
-	"/components/files/explorer/*fileDir", func(c *gin.Context) templ.Component {
+	"/components/cirrus/explorer/*fileDir", func(c *gin.Context) templ.Component {
 		return GetFileExplorer(c, c.Param("fileDir"))
 	},
 )
 
 var fileViewerComponentRoute = serverutil.UiRoute(
-	"/components/files/viewer/files/*filePath", func(c *gin.Context) templ.Component {
+	"/components/cirrus/viewer/files/*filePath", func(c *gin.Context) templ.Component {
 		filePath := c.Param("filePath")
 		fileType := fileutil.DetermineFileTypeFromPath(filePath)
 		var viewer templ.Component

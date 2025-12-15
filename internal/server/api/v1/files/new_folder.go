@@ -11,7 +11,7 @@ import (
 )
 
 var newFolderRoute = serverutil.ApiRoute(
-	"POST", "/folder/files/*folderDir", func(c *gin.Context) *serverutil.Response {
+	"POST", "/folder/cirrus/*folderDir", func(c *gin.Context) *serverutil.Response {
 		folderDir := c.Param("folderDir")
 		folderName := c.PostForm("folderName")
 

@@ -11,7 +11,7 @@ import (
 )
 
 var deleteFilesRoute = serverutil.ApiRoute(
-	"DELETE", "/files", func(c *gin.Context) *serverutil.Response {
+	"DELETE", "/cirrus", func(c *gin.Context) *serverutil.Response {
 		rootDir := c.Query("rootDir")
 		filePaths := c.QueryArray("filePaths")
 		fmt.Printf("Deleting multiple files: %s\n", filePaths)

@@ -141,7 +141,7 @@ templ Component(filePath string) {
 						var dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
 
 						// POST to update the file
-						fetch('/api/v1/files' + dirPath, {
+						fetch('/api/v1/cirrus' + dirPath, {
 							method: 'POST',
 							body: formData,
 						})

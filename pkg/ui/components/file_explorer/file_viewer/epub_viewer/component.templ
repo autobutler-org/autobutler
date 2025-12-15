@@ -24,7 +24,7 @@ templ Component(filePath string) {
 	<script>
 		var navigationListener = null;
 		var fileViewerContent = document.getElementById('file-viewer-content');
-		var loadedBook = ePub({{ filepath.Join("/api/v1/files", filePath) }});
+		var loadedBook = ePub({{ filepath.Join("/api/v1/cirrus", filePath) }});
 		var rendition = loadedBook.renderTo('book-reader', {
 			method: 'default',
 			flow: 'paginated',

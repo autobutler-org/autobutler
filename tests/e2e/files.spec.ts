@@ -2,14 +2,14 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Cirrus Page', () => {
     test('loads cirrus page successfully', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         await expect(page).toHaveTitle(/Autobutler/);
         await expect(page.locator('#file-explorer')).toBeVisible();
     });
 
     test('displays cirrus header with title and space info', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const header = page.locator('.file-explorer-header');
         await expect(header).toBeVisible();
@@ -25,7 +25,7 @@ test.describe('Cirrus Page', () => {
     });
 
     test('displays view switcher with three view options', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const viewSwitcher = page.locator('.view-switcher');
         await expect(viewSwitcher).toBeVisible();
@@ -40,7 +40,7 @@ test.describe('Cirrus Page', () => {
     });
 
     test('list view button is active by default', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const listViewBtn = page.locator('button[title="List View"]');
         const classes = await listViewBtn.getAttribute('class');
@@ -49,7 +49,7 @@ test.describe('Cirrus Page', () => {
     });
 
     test('displays breadcrumb navigation', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         // Look for the breadcrumbs nav element
         const breadcrumb = page.locator('nav#breadcrumbs');
@@ -57,14 +57,14 @@ test.describe('Cirrus Page', () => {
     });
 
     test('displays file explorer view content area', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const viewContent = page.locator('#file-explorer-view-content');
         await expect(viewContent).toBeVisible();
     });
 
     test('switching to grid view via query parameter', async ({ page }) => {
-        await page.goto('/files?view=grid');
+        await page.goto('/cirrus?view=grid');
 
         // Verify page loads successfully
         await expect(page).toHaveTitle(/Autobutler/);
@@ -72,7 +72,7 @@ test.describe('Cirrus Page', () => {
     });
 
     test('switching to column view via query parameter', async ({ page }) => {
-        await page.goto('/files?view=column');
+        await page.goto('/cirrus?view=column');
 
         // Verify page loads successfully
         await expect(page).toHaveTitle(/Autobutler/);
@@ -80,14 +80,14 @@ test.describe('Cirrus Page', () => {
     });
 
     test('file viewer dialog exists', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const fileViewer = page.locator('#file-viewer');
         await expect(fileViewer).toBeAttached();
     });
 
     test('explorer context menu exists', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         // Context menu should exist in the DOM (may be hidden initially)
         // There can be multiple context menus (one per file), so just check at least one exists
@@ -97,21 +97,21 @@ test.describe('Cirrus Page', () => {
     });
 
     test('file explorer status area exists', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const statusArea = page.locator('#file-explorer-status');
         await expect(statusArea).toBeAttached();
     });
 
     test('loads file explorer script', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const script = page.locator('script[src="/public/scripts/file_explorer.js"]');
         await expect(script).toBeAttached();
     });
 
     test('file explorer has HTMX support for dynamic updates', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         // Check for HTMX attributes on interactive elements
         const htmxElements = page.locator('[hx-get], [hx-post], [hx-delete]');
@@ -121,7 +121,7 @@ test.describe('Cirrus Page', () => {
     });
 
     test('drag and drop area exists for file uploads', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const dndArea = page.locator('#file-upload-area, [class*="upload"]');
         const count = await dndArea.count();
@@ -133,7 +133,7 @@ test.describe('Cirrus Page', () => {
 
 test.describe('Cirrus Page - File Upload', () => {
     test('uploads a text file through file input', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         // Find the file input element
         const fileInput = page.locator('input[type="file"]');
@@ -150,7 +150,7 @@ test.describe('Cirrus Page - File Upload', () => {
     });
 
     test('uploads duplicate file with numbered suffix', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const fileInput = page.locator('input[type="file"]');
 
@@ -193,7 +193,7 @@ test.describe('Cirrus Page - File Upload', () => {
     });
 
     test('uploads duplicate file without extension with numbered suffix', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const fileInput = page.locator('input[type="file"]');
 
@@ -230,7 +230,7 @@ test.describe('Cirrus Page - File Upload', () => {
 
 test.describe('Files Page - Navigation', () => {
     test('back button navigates from subfolder to parent folder', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         // Create a test folder
         const addFolderBtn = page.locator('#add-folder-btn');
@@ -250,7 +250,7 @@ test.describe('Files Page - Navigation', () => {
         await page.waitForTimeout(100);
 
         // Verify we're in the subfolder (URL should change)
-        await expect(page).toHaveURL(/\/files\/test-nav-folder/);
+        await expect(page).toHaveURL(/\/cirrus\/test-nav-folder/);
 
         // Find and click the back navigation button
         const backButton = page.locator('#nav-back-btn');
@@ -259,12 +259,12 @@ test.describe('Files Page - Navigation', () => {
         await backButton.click();
         await page.waitForTimeout(1000);
 
-        // Verify we're back at the root (URL should be /files)
+        // Verify we're back at the root (URL should be /cirrus)
         await expect(page).toHaveURL(/^.*\/files\/?$/);
     });
 
     test('back button is disabled at root directory', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const backButton = page.locator('#nav-back-btn');
         await expect(backButton).toBeVisible();
@@ -274,7 +274,7 @@ test.describe('Files Page - Navigation', () => {
 
 test.describe('Files Page - File Interactions', () => {
     test('opens file viewer modal when double-clicking on a file', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         // Double-click on the uploaded file
         const fileRow = page.locator('tr.file-table-row[data-name="sample.txt"]');
@@ -287,7 +287,7 @@ test.describe('Files Page - File Interactions', () => {
     });
 
     test('file viewer modal displays file content', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const fileRow = page.locator('tr.file-table-row[data-name="sample.txt"]');
         const fileCell = fileRow.locator('.file-table-cell--clickable');
@@ -302,7 +302,7 @@ test.describe('Files Page - File Interactions', () => {
     });
 
     test('file viewer modal closes with close button', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const fileRow = page.locator('tr.file-table-row[data-name="sample.txt"]');
         const fileCell = fileRow.locator('.file-table-cell--clickable');
@@ -320,7 +320,7 @@ test.describe('Files Page - File Interactions', () => {
     });
 
     test('file viewer modal closes with Escape key', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const fileRow = page.locator('tr.file-table-row[data-name="sample.txt"]');
         const fileCell = fileRow.locator('.file-table-cell--clickable');
@@ -337,7 +337,7 @@ test.describe('Files Page - File Interactions', () => {
     });
 
     test('context menu opens when clicking trigger button', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const fileRow = page.locator('tr.file-table-row[data-name="sample.txt"]');
         const contextTrigger = fileRow.locator('.context-menu-trigger');
@@ -353,7 +353,7 @@ test.describe('Files Page - File Interactions', () => {
 
 test.describe('Modal Dialog Behavior', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         // Check if sample.txt exists, if not upload it
         const existingFile = page.locator('tr.file-table-row[data-name="sample.txt"]');
@@ -452,7 +452,7 @@ test.describe('Modal Dialog Behavior', () => {
 
 test.describe('File Selection', () => {
     test('single click on file in list view selects it', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         // Find the first file row (not a folder)
         const file = page.locator('.file-table-row.file-node').first();
@@ -466,7 +466,7 @@ test.describe('File Selection', () => {
     });
 
     test('single click on second file deselects first and selects second', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const fileRows = page.locator('.file-table-row.file-node');
         await fileRows.first().waitFor({ state: 'visible' });
@@ -486,7 +486,7 @@ test.describe('File Selection', () => {
     });
 
     test('double click on folder in list view navigates into it', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         // Find a folder in the list
         const folder = page.locator('tr.file-table-row[data-name="test-nav-folder/"]');
@@ -504,7 +504,7 @@ test.describe('File Selection', () => {
     });
 
     test('double click on file in list view opens file viewer', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         // Find a file (not folder) in the list
         const file = page.locator('tr.file-table-row[data-name="sample.txt"]');
@@ -522,7 +522,7 @@ test.describe('File Selection', () => {
     });
 
     test('single click on file in grid view selects it', async ({ page }) => {
-        await page.goto('/files?view=grid');
+        await page.goto('/cirrus?view=grid');
 
         // Wait for grid view to load
         await page.locator('.grid-view-container').waitFor({ state: 'visible' });
@@ -539,7 +539,7 @@ test.describe('File Selection', () => {
     });
 
     test('clicking on empty space deselects all files', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const fileRow = page.locator('.file-table-row.file-node').first();
         await fileRow.waitFor({ state: 'visible' });
@@ -560,7 +560,7 @@ test.describe('File Selection', () => {
     });
 
     test('ctrl+click toggles file selection without deselecting others', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const files = page.locator('.file-table-row.file-node');
 
@@ -587,7 +587,7 @@ test.describe('File Selection', () => {
     });
 
     test('shift+click selects range of files', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const files = page.locator('.file-table-row.file-node');
 
@@ -610,7 +610,7 @@ test.describe('Files Page - Mobile Responsiveness', () => {
     test('hides column view button on mobile sizes', async ({ page }) => {
         // Set viewport to mobile size (iPhone SE dimensions)
         await page.setViewportSize({ width: 375, height: 667 });
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const viewSwitcher = page.locator('.view-switcher');
         await expect(viewSwitcher).toBeVisible();
@@ -630,10 +630,10 @@ test.describe('Files Page - Mobile Responsiveness', () => {
     test('hides column view content when displayed on mobile', async ({ page }) => {
         // Set viewport to mobile size
         await page.setViewportSize({ width: 375, height: 667 });
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         // Try to switch to column view (via direct URL parameter)
-        await page.goto('/files?view=column');
+        await page.goto('/cirrus?view=column');
 
         // Column view container should be hidden via CSS
         const columnViewContainer = page.locator('.column-view-container');
@@ -645,7 +645,7 @@ test.describe('Files Page - Mobile Responsiveness', () => {
     test('shows column view button on tablet/desktop sizes', async ({ page }) => {
         // Set viewport to tablet size (iPad dimensions)
         await page.setViewportSize({ width: 769, height: 1024 });
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const columnViewBtn = page.locator('button[title="Column View"]');
         await expect(columnViewBtn).toBeVisible();
@@ -655,7 +655,7 @@ test.describe('Files Page - Mobile Responsiveness', () => {
 test.describe('Column View Navigation', () => {
     test.beforeEach(async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 720 });
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const columnViewBtn = page.locator('button[title="Column View"]');
         await columnViewBtn.click();
@@ -676,7 +676,7 @@ test.describe('Column View Navigation', () => {
     });
 
     test.afterEach(async ({ page }) => {
-        await page.goto('/files?view=list');
+        await page.goto('/cirrus?view=list');
     });
 
     test('single-clicking folder in column view navigates without page reload', async ({
@@ -697,7 +697,7 @@ test.describe('Column View Navigation', () => {
         await page.waitForTimeout(100);
 
         // Verify URL changed
-        await expect(page).toHaveURL(/\/files\/test-nav-folder/);
+        await expect(page).toHaveURL(/\/cirrus\/test-nav-folder/);
 
         // Verify no page reload occurred (pageLoadCount should still be 0 after initial page load)
         expect(pageLoadCount).toBe(0);
@@ -714,7 +714,7 @@ test.describe('Column View Navigation', () => {
         await page.waitForTimeout(500);
 
         // Verify we're in the subfolder
-        await expect(page).toHaveURL(/\/files\/test-nav-folder/);
+        await expect(page).toHaveURL(/\/cirrus\/test-nav-folder/);
 
         // Click back button
         const backButton = page.locator('#nav-back-btn');
@@ -770,7 +770,7 @@ test.describe('Column View Navigation', () => {
 
 test.describe('Files Page - File Deletion', () => {
     test('deletes the uploaded file', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const fileRow = page.locator('tr.file-table-row[data-name="sample.txt"]');
         await fileRow.locator('.context-menu-trigger').click();
@@ -784,7 +784,7 @@ test.describe('Files Page - File Deletion', () => {
     });
 
     test('verifies file is no longer present after deletion', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
         await expect(page.locator('tr.file-table-row[data-name="sample.txt"]')).not.toBeVisible();
     });
 });

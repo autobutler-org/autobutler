@@ -163,7 +163,7 @@ templ PhotoGridItem(pageState types.PageState, photo photoutil.PhotoInfo) {
 	}}
 	<div
 		class="photo-grid-item"
-		hx-get={ filepath.Join("/components/files/viewer", filePath) }
+		hx-get={ filepath.Join("/components/cirrus/viewer", filePath) }
 		hx-target="#file-viewer-content"
 		hx-swap="innerHTML"
 		onclick="document.getElementById('file-viewer').showModal();"

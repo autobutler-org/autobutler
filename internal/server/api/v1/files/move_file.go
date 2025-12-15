@@ -10,7 +10,7 @@ import (
 )
 
 var moveFileRoute = serverutil.ApiRoute(
-	"PUT", "/files/*filePath", func(c *gin.Context) *serverutil.Response {
+	"PUT", "/cirrus/*filePath", func(c *gin.Context) *serverutil.Response {
 		filePath := c.Param("filePath")
 		newFilePath := c.PostForm("newFilePath")
 

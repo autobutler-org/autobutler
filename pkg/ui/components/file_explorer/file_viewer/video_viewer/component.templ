@@ -24,7 +24,7 @@ templ Component(filePath string) {
 		controls
 	>
 		<source
-			src={ filepath.Join("/api/v1/files", filePath) }
+			src={ filepath.Join("/api/v1/cirrus", filePath) }
 			type={ determineVideoType(filePath) }
 		/>
 		Your browser does not support this video format.

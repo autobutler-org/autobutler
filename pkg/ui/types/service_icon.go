@@ -15,7 +15,7 @@ func GetDefaultServiceIcons() []ServiceIcon {
 		{
 			Name:    "cirrus",
 			Label:   "Cirrus",
-			Href:    "/files",
+			Href:    "/cirrus",
 			Enabled: true,
 			IconSVG: `<path d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-4M17 8l-5-5-5 5M12 3v12"/>`,
 		},
@@ -38,7 +38,7 @@ func GetDefaultServiceIcons() []ServiceIcon {
 		{
 			Name:    "docs",
 			Label:   "Docs",
-			Href:    "/files",
+			Href:    "/cirrus",
 			Enabled: false,
 			IconSVG: `<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
 				<polyline points="14 2 14 8 20 8"/>
