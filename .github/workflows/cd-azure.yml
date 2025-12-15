@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    types:
+      - labeled
   workflow_dispatch:
     inputs:
       environment:
@@ -39,6 +42,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
+
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'deploy-to-azure')
 
     steps:
       - name: Checkout code
