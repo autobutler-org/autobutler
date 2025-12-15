@@ -106,11 +106,11 @@ func GetMockRoles() []Role {
 
 func GetMockPermissions() []Permission {
 	return []Permission{
-		// Files
-		{ID: "files.read", Name: "View Files", Description: "View and download files", Resource: "Files", Action: "read"},
-		{ID: "files.write", Name: "Edit Files", Description: "Upload and modify files", Resource: "Files", Action: "write"},
-		{ID: "files.delete", Name: "Delete Files", Description: "Delete files and folders", Resource: "Files", Action: "delete"},
-		{ID: "files.manage", Name: "Manage Files", Description: "Configure file storage settings", Resource: "Files", Action: "manage"},
+		// Cirrus
+		{ID: "files.read", Name: "View Cirrus", Description: "View and download files", Resource: "Cirrus", Action: "read"},
+		{ID: "files.write", Name: "Edit Cirrus", Description: "Upload and modify files", Resource: "Cirrus", Action: "write"},
+		{ID: "files.delete", Name: "Delete Cirrus Files", Description: "Delete files and folders", Resource: "Cirrus", Action: "delete"},
+		{ID: "files.manage", Name: "Manage Cirrus", Description: "Configure file storage settings", Resource: "Cirrus", Action: "manage"},
 
 		// Calendar
 		{ID: "calendar.read", Name: "View Calendar", Description: "View calendar events", Resource: "Calendar", Action: "read"},
