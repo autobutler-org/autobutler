@@ -371,16 +371,16 @@ func PhotoGridItem(pageState types.PageState, photo photoutil.PhotoInfo) templ.C
 		ctx = templ.ClearChildren(ctx)
 		fileName := photo.FileInfo.Name()
 		// Use the relative path from the photo
-		filePath := filepath.Join("/files", photo.RelPath)
+		filePath := filepath.Join("/cirrus", photo.RelPath)
 		thumbnailPath := filepath.Join("/api/v1/thumbnails", photo.RelPath)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div class=\"photo-grid-item\" hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var18 string
-		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/components/files/viewer", filePath))
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/components/cirrus/viewer", filePath))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 166, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/photos/component.templ`, Line: 166, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {

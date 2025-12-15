@@ -158,7 +158,7 @@ templ PhotoGridItem(pageState types.PageState, photo photoutil.PhotoInfo) {
 	{{
 		fileName := photo.FileInfo.Name()
 		// Use the relative path from the photo
-		filePath := filepath.Join("/files", photo.RelPath)
+		filePath := filepath.Join("/cirrus", photo.RelPath)
 		thumbnailPath := filepath.Join("/api/v1/thumbnails", photo.RelPath)
 	}}
 	<div

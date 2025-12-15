@@ -334,9 +334,9 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file *
 		fileType := fileutil.DetermineFileType(parentPath, file)
 		fileName := file.Name()
 		isFolder := fileType == fileutil.FileTypeFolder
-		filePath := filepath.Join("/files", parentPath, fileName)
+		filePath := filepath.Join("/cirrus", parentPath, fileName)
 		// For files in parent columns, navigate to parent dir (removing child columns)
-		fileParentPath := filepath.Join("/files", parentPath)
+		fileParentPath := filepath.Join("/cirrus", parentPath)
 		dataFileType := fileType
 		if isFolder {
 			dataFileType = "folder"
@@ -442,7 +442,7 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file *
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("navigateToParentAndPreview", templ.JSExpression("event"), fileParentPath, filepath.Join("/components/files/viewer", filePath)))
+			templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("navigateToParentAndPreview", templ.JSExpression("event"), fileParentPath, filepath.Join("/components/cirrus/viewer", filePath)))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -450,7 +450,7 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file *
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var17 templ.ComponentScript = templ.JSFuncCall("navigateToParentAndPreview", templ.JSExpression("event"), fileParentPath, filepath.Join("/components/files/viewer", filePath))
+			var templ_7745c5c3_Var17 templ.ComponentScript = templ.JSFuncCall("navigateToParentAndPreview", templ.JSExpression("event"), fileParentPath, filepath.Join("/components/cirrus/viewer", filePath))
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17.Call)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -522,7 +522,7 @@ func renderCurrentColumnItem(pageState types.PageState, file *fileutil.DeviceFil
 		fileType := fileutil.DetermineFileType(pageState.RootDir, file)
 		fileName := file.Name()
 		isFolder := fileType == fileutil.FileTypeFolder
-		filePath := filepath.Join("/files", pageState.RootDir, fileName)
+		filePath := filepath.Join("/cirrus", pageState.RootDir, fileName)
 		dataFileType := fileType
 		if isFolder {
 			dataFileType = "folder"
@@ -633,9 +633,9 @@ func renderCurrentColumnItem(pageState types.PageState, file *fileutil.DeviceFil
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var27 string
-			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/components/files/viewer", filePath))
+			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/components/cirrus/viewer", filePath))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 216, Col: 74}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/column_view/component.templ`, Line: 216, Col: 75}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 			if templ_7745c5c3_Err != nil {
