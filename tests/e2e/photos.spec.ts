@@ -159,7 +159,7 @@ test.describe('Photos Page', () => {
 test.describe('Photos Page - Photo Upload', () => {
     test('uploads a PNG image and it appears in gallery', async ({ page }) => {
         // First go to files page to upload
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const fileInput = page.locator('input[type="file"]');
         await fileInput.setInputFiles('./tests/e2e/data/test-image.png');
@@ -185,7 +185,7 @@ test.describe('Photos Page - Photo Upload', () => {
     });
 
     test('uploads a JPEG image and verifies thumbnail', async ({ page }) => {
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const fileInput = page.locator('input[type="file"]');
         await fileInput.setInputFiles('./tests/e2e/data/test-image.jpg');
