@@ -39,79 +39,79 @@ templ ContextMenu(onClickHandlers maputil.OrderedMap[string, *ContextMenuHandler
 		</ul>
 	</div>
 	<script type="text/javascript">
-	// Initialize autobutler namespace
-	window.ab = Object.assign(window.ab || {}, {
-		// Close context menu(s) within a parent node
-		closeContextMenu: (event, parentNode) => {
-			if (event) {
-				window.ab.preventDefault(event);
-			}
-			for (const contextMenu of parentNode.querySelectorAll('.context-menu')) {
-				contextMenu.style.left = null;
-				contextMenu.style.top = null;
-				contextMenu.classList.add('hidden');
-			}
-		},
-
-		// Close context menu from within the menu (e.g., after clicking an item)
-		closeContextMenuFromItem: (event) => {
-			if (event) {
-				window.ab.preventDefault(event);
-			}
-
-			const contextMenu = event.target.closest('.context-menu');
-			if (contextMenu) {
-				contextMenu.style.left = null;
-				contextMenu.style.top = null;
-				contextMenu.classList.add('hidden');
-			}
-		},
-
-		// Toggle a floating context menu at cursor position
-		toggleFloatingContextMenu: (event, parentNode) => {
-			if (event) {
-				window.ab.preventDefault(event);
-			}
-			const contextMenu = parentNode.querySelector('.context-menu');
-			if (!contextMenu) {
-				console.error('Context menu not found in', parentNode);
-				return;
-			}
-
-			// Close any other open context menus first
-			document.querySelectorAll('.context-menu:not(.hidden)').forEach((menu) => {
-				if (menu !== contextMenu) {
-					menu.classList.add('hidden');
+		// Initialize autobutler namespace
+		window.ab = Object.assign(window.ab || {}, {
+			// Close context menu(s) within a parent node
+			closeContextMenu: (event, parentNode) => {
+				if (event) {
+					window.ab.preventDefault(event);
 				}
-			});
+				for (const contextMenu of parentNode.querySelectorAll('.context-menu')) {
+					contextMenu.style.left = null;
+					contextMenu.style.top = null;
+					contextMenu.classList.add('hidden');
+				}
+			},
 
-			// Toggle this context menu
-			const isHidden = contextMenu.classList.contains('hidden');
-			contextMenu.classList.toggle('hidden');
+			// Close context menu from within the menu (e.g., after clicking an item)
+			closeContextMenuFromItem: (event) => {
+				if (event) {
+					window.ab.preventDefault(event);
+				}
 
-			if (isHidden) {
-				// Position at click location
-				contextMenu.style.left = `${event.clientX}px`;
-				contextMenu.style.top = `${event.clientY}px`;
+				const contextMenu = event.target.closest('.context-menu');
+				if (contextMenu) {
+					contextMenu.style.left = null;
+					contextMenu.style.top = null;
+					contextMenu.classList.add('hidden');
+				}
+			},
 
-				// Ensure menu doesn't go off screen
-				requestAnimationFrame(() => {
-					const rect = contextMenu.getBoundingClientRect();
-					const viewportWidth = window.innerWidth;
-					const viewportHeight = window.innerHeight;
+			// Toggle a floating context menu at cursor position
+			toggleFloatingContextMenu: (event, parentNode) => {
+				if (event) {
+					window.ab.preventDefault(event);
+				}
+				const contextMenu = parentNode.querySelector('.context-menu');
+				if (!contextMenu) {
+					console.error('Context menu not found in', parentNode);
+					return;
+				}
 
-					// Adjust if menu goes off right edge
-					if (rect.right > viewportWidth) {
-						contextMenu.style.left = `${viewportWidth - rect.width - 10}px`;
-					}
-
-					// Adjust if menu goes off bottom edge
-					if (rect.bottom > viewportHeight) {
-						contextMenu.style.top = `${viewportHeight - rect.height - 10}px`;
+				// Close any other open context menus first
+				document.querySelectorAll('.context-menu:not(.hidden)').forEach((menu) => {
+					if (menu !== contextMenu) {
+						menu.classList.add('hidden');
 					}
 				});
-			}
-		},
-	});
-</script>
+
+				// Toggle this context menu
+				const isHidden = contextMenu.classList.contains('hidden');
+				contextMenu.classList.toggle('hidden');
+
+				if (isHidden) {
+					// Position at click location
+					contextMenu.style.left = `${event.clientX}px`;
+					contextMenu.style.top = `${event.clientY}px`;
+
+					// Ensure menu doesn't go off screen
+					requestAnimationFrame(() => {
+						const rect = contextMenu.getBoundingClientRect();
+						const viewportWidth = window.innerWidth;
+						const viewportHeight = window.innerHeight;
+
+						// Adjust if menu goes off right edge
+						if (rect.right > viewportWidth) {
+							contextMenu.style.left = `${viewportWidth - rect.width - 10}px`;
+						}
+
+						// Adjust if menu goes off bottom edge
+						if (rect.bottom > viewportHeight) {
+							contextMenu.style.top = `${viewportHeight - rect.height - 10}px`;
+						}
+					});
+				}
+			},
+		});
+	</script>
 }

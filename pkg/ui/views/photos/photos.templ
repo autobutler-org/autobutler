@@ -37,13 +37,13 @@ templ Photos(pageState types.PageState, summary fileutil.Summary) {
 					style="display:none"
 				></div>
 				<script type="text/javascript">
-					(function() {
+					(function () {
 						const debug = document.getElementById('photo-debug-initial');
 						if (debug) {
 							console.log('🚀 Initial Photos Load:', {
 								totalPhotos: parseInt(debug.dataset.total),
 								firstPageCount: parseInt(debug.dataset.firstPage),
-								pageSize: parseInt(debug.dataset.pageSize)
+								pageSize: parseInt(debug.dataset.pageSize),
 							});
 						}
 					})();

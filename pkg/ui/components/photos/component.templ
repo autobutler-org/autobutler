@@ -64,7 +64,7 @@ templ PhotoGrid(pageState types.PageState, photos []photoutil.PhotoInfo, page in
 			style="display:none"
 		></div>
 		<script type="text/javascript">
-			(function() {
+			(function () {
 				const debug = document.querySelector('.photo-grid-debug:last-of-type');
 				if (debug) {
 					console.log('📸 PhotoGrid:', {
@@ -72,7 +72,7 @@ templ PhotoGrid(pageState types.PageState, photos []photoutil.PhotoInfo, page in
 						photosInPage: parseInt(debug.dataset.photosInPage),
 						totalPhotos: parseInt(debug.dataset.totalPhotos),
 						photosLoaded: parseInt(debug.dataset.photosLoaded),
-						hasMore: debug.dataset.hasMore === 'true'
+						hasMore: debug.dataset.hasMore === 'true',
 					});
 				}
 			})();
@@ -91,7 +91,9 @@ templ PhotoGrid(pageState types.PageState, photos []photoutil.PhotoInfo, page in
 				<div class="loading-spinner">Loading more photos...</div>
 			</div>
 		} else {
-			<script type="text/javascript">console.log('🏁 No more photos to load')</script>
+			<script type="text/javascript">
+				console.log('🏁 No more photos to load');
+			</script>
 		}
 	</div>
 }
@@ -117,7 +119,7 @@ templ PhotoGridPage(pageState types.PageState, photos []photoutil.PhotoInfo, pag
 		style="display:none"
 	></div>
 	<script type="text/javascript">
-		(function() {
+		(function () {
 			const debug = document.querySelector('.photo-grid-debug:last-of-type');
 			if (debug) {
 				console.log('📸 PhotoGrid Page ' + debug.dataset.page + ':', {
@@ -125,7 +127,7 @@ templ PhotoGridPage(pageState types.PageState, photos []photoutil.PhotoInfo, pag
 					photosInPage: parseInt(debug.dataset.photosInPage),
 					totalPhotos: parseInt(debug.dataset.totalPhotos),
 					photosLoaded: parseInt(debug.dataset.photosLoaded),
-					hasMore: debug.dataset.hasMore === 'true'
+					hasMore: debug.dataset.hasMore === 'true',
 				});
 			}
 		})();
@@ -145,7 +147,7 @@ templ PhotoGridPage(pageState types.PageState, photos []photoutil.PhotoInfo, pag
 		</div>
 	} else {
 		<script type="text/javascript">
-			(function() {
+			(function () {
 				console.log('🏁 No more photos to load after page { fmt.Sprintf("%d", page) }');
 			})();
 		</script>

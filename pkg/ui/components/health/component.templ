@@ -201,39 +201,42 @@ templ Component(pageState types.PageState) {
 							},
 						},
 					}),
-					pageP99: new Chart(document.getElementById('latencyPageP99Chart').getContext('2d'), {
-						type: 'line',
-						plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
-						options: {
-							...commonOptions,
-							plugins: {
-								...commonOptions.plugins,
-								title: {
-									display: true,
-									text: 'Latency - Page Request Duration (p99)',
-									color: '#FFF',
-									font: { size: 14 },
+					pageP99: new Chart(
+						document.getElementById('latencyPageP99Chart').getContext('2d'),
+						{
+							type: 'line',
+							plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
+							options: {
+								...commonOptions,
+								plugins: {
+									...commonOptions.plugins,
+									title: {
+										display: true,
+										text: 'Latency - Page Request Duration (p99)',
+										color: '#FFF',
+										font: { size: 14 },
+									},
+									'datasource-prometheus': {
+										prometheus,
+										query: 'max by (http.route) (http.server.request.duration{http.route!~"/api.*"})',
+										timeRange,
+									},
 								},
-								'datasource-prometheus': {
-									prometheus,
-									query: 'max by (http.route) (http.server.request.duration{http.route!~"/api.*"})',
-									timeRange,
-								},
-							},
-							scales: {
-								...commonOptions.scales,
-								y: {
-									...commonOptions.scales.y,
-									ticks: {
-										...commonOptions.scales.y.ticks,
-										callback: function (value) {
-											return (value * 1000).toFixed(2) + ' ms';
+								scales: {
+									...commonOptions.scales,
+									y: {
+										...commonOptions.scales.y,
+										ticks: {
+											...commonOptions.scales.y.ticks,
+											callback: function (value) {
+												return (value * 1000).toFixed(2) + ' ms';
+											},
 										},
 									},
 								},
 							},
-						},
-					}),
+						}
+					),
 					api: new Chart(document.getElementById('latencyApiChart').getContext('2d'), {
 						type: 'line',
 						plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
@@ -255,39 +258,42 @@ templ Component(pageState types.PageState) {
 							},
 						},
 					}),
-					apiP99: new Chart(document.getElementById('latencyApiP99Chart').getContext('2d'), {
-						type: 'line',
-						plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
-						options: {
-							...commonOptions,
-							plugins: {
-								...commonOptions.plugins,
-								title: {
-									display: true,
-									text: 'Latency - API Request Duration (p99)',
-									color: '#FFF',
-									font: { size: 14 },
+					apiP99: new Chart(
+						document.getElementById('latencyApiP99Chart').getContext('2d'),
+						{
+							type: 'line',
+							plugins: [backgroundColorPlugin, ChartDatasourcePrometheusPlugin],
+							options: {
+								...commonOptions,
+								plugins: {
+									...commonOptions.plugins,
+									title: {
+										display: true,
+										text: 'Latency - API Request Duration (p99)',
+										color: '#FFF',
+										font: { size: 14 },
+									},
+									'datasource-prometheus': {
+										prometheus,
+										query: 'max by (http.route) (http.server.request.duration{http.route=~"/api.*"})',
+										timeRange,
+									},
 								},
-								'datasource-prometheus': {
-									prometheus,
-									query: 'max by (http.route) (http.server.request.duration{http.route=~"/api.*"})',
-									timeRange,
-								},
-							},
-							scales: {
-								...commonOptions.scales,
-								y: {
-									...commonOptions.scales.y,
-									ticks: {
-										...commonOptions.scales.y.ticks,
-										callback: function (value) {
-											return (value * 1000).toFixed(2) + ' ms';
+								scales: {
+									...commonOptions.scales,
+									y: {
+										...commonOptions.scales.y,
+										ticks: {
+											...commonOptions.scales.y.ticks,
+											callback: function (value) {
+												return (value * 1000).toFixed(2) + ' ms';
+											},
 										},
 									},
 								},
 							},
-						},
-					}),
+						}
+					),
 				};
 
 				// eslint-disable-next-line no-unused-vars
