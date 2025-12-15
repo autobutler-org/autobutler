@@ -22,13 +22,14 @@ autobutler/
 ├── internal/
 │   ├── server/              # HTTP server, routes, middleware
 │   │   ├── api/v1/          # REST API endpoints
-│   │   ├── ui/              # HTML UI handlers and components
 │   │   └── public/          # Static assets (CSS, JS, images)
-│   └── install/             # Installation and service management
-├── pkg/
-│   ├── calendar/            # Calendar domain logic
 │   ├── db/                  # Database layer with sqlc-generated code
-│   ├── storage/             # Cross-platform storage detection
+│   ├── install/             # Installation and service management
+│   └── update/              # Update management
+├── pkg/
+│   ├── botel/               # Botel (bot + hotel) infrastructure
+│   ├── calendar/            # Calendar domain logic
+│   ├── ui/                  # HTML UI components (templ templates)
 │   └── util/                # Shared utilities (business logic lives here)
 ├── sql/queries/             # SQL queries for code generation
 └── tests/e2e/               # End-to-end Playwright tests
@@ -186,7 +187,7 @@ Common Development Patterns
 1. Add SQL queries to `sql/queries/` (if database access needed)
 2. Create business logic in `pkg/util/<domain>/service.go`
 3. Add API endpoint in `internal/server/api/v1/<domain>/`
-4. Create UI components using templ in `internal/server/ui/`
+4. Create UI components using templ in `pkg/ui/`
 5. Add E2E tests in `tests/e2e/`
 
 **When fixing a bug:**
