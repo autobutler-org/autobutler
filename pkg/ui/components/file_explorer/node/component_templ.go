@@ -133,7 +133,7 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 		}
 		switch fileType {
 		case fileutil.FileTypeFolder:
-			filePath := filepath.Join("/files", pageState.RootDir, fileName)
+			filePath := filepath.Join("/cirrus", pageState.RootDir, fileName)
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<td class=\"file-table-cell file-table-cell--content\" data-href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -215,15 +215,15 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 				return templ_7745c5c3_Err
 			}
 		default:
-			filePath := filepath.Join("/files", pageState.RootDir, fileName)
+			filePath := filepath.Join("/cirrus", pageState.RootDir, fileName)
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<td class=\"file-table-cell file-table-cell--clickable\" data-viewer-path=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var11 string
-			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/components/files/viewer", filePath))
+			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/components/cirrus/viewer", filePath))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/node/component.templ`, Line: 72, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/node/component.templ`, Line: 72, Col: 76}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {

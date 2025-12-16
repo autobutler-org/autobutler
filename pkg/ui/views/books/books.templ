@@ -17,7 +17,7 @@ templ Books(pageState types.PageState) {
 		@header.Component()
 		@body.Component(pageState) {
 			@mock_banner.Component()
-			{{ bookFiles, err := bookutil.FindAllBooksRecursively(fileutil.GetFilesDir()) }}
+			{{ bookFiles, err := bookutil.FindAllBooksRecursively(fileutil.GetCirrusDir()) }}
 			if err != nil {
 				<div class="error-text">Error loading books: { err.Error() }</div>
 			} else {

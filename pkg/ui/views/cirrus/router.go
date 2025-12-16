@@ -1,4 +1,4 @@
-package view_files
+package view_cirrus
 
 import (
 	"autobutler/pkg/ui/components/file_explorer"
@@ -34,12 +34,12 @@ func (r *router) Routes() []*serverutil.Route {
 }
 
 var filesRoute = serverutil.UiRoute(
-	"/files", func(c *gin.Context) templ.Component {
+	"/cirrus", func(c *gin.Context) templ.Component {
 		view := getViewFromRequest(c)
 
 		// If this is an htmx request, return just the view content with OOB breadcrumb
 		if c.GetHeader("HX-Request") == "true" {
-			return GetFileExplorerViewContentWithBreadcrumb(c, "", view)
+			return GetExplorerViewContentWithBreadcrumb(c, "", view)
 		}
 
 		return Files(types.NewPageState().WithView(view))
@@ -47,13 +47,13 @@ var filesRoute = serverutil.UiRoute(
 )
 
 var filesNestedRoute = serverutil.UiRoute(
-	"/files/*rootDir", func(c *gin.Context) templ.Component {
+	"/cirrus/*rootDir", func(c *gin.Context) templ.Component {
 		rootDir := c.Param("rootDir")
 		view := getViewFromRequest(c)
 
 		// If this is an htmx request, return just the view content with OOB breadcrumb
 		if c.GetHeader("HX-Request") == "true" {
-			return GetFileExplorerViewContentWithBreadcrumb(c, rootDir, view)
+			return GetExplorerViewContentWithBreadcrumb(c, rootDir, view)
 		}
 
 		return Files(types.NewPageState().WithRootDir(rootDir).WithView(view))
@@ -61,13 +61,13 @@ var filesNestedRoute = serverutil.UiRoute(
 )
 
 var fileExplorerComponentRoute = serverutil.UiRoute(
-	"/components/files/explorer/*fileDir", func(c *gin.Context) templ.Component {
-		return GetFileExplorer(c, c.Param("fileDir"))
+	"/components/cirrus/explorer/*fileDir", func(c *gin.Context) templ.Component {
+		return GetExplorer(c, c.Param("fileDir"))
 	},
 )
 
 var fileViewerComponentRoute = serverutil.UiRoute(
-	"/components/files/viewer/files/*filePath", func(c *gin.Context) templ.Component {
+	"/components/cirrus/viewer/cirrus/*filePath", func(c *gin.Context) templ.Component {
 		filePath := c.Param("filePath")
 		fileType := fileutil.DetermineFileTypeFromPath(filePath)
 		var viewer templ.Component
@@ -108,15 +108,15 @@ func getViewFromRequest(c *gin.Context) string {
 	return "list"
 }
 
-func GetFileExplorer(c *gin.Context, rootDir string) templ.Component {
+func GetExplorer(c *gin.Context, rootDir string) templ.Component {
 	return getFileExplorerComponent(c, rootDir, false)
 }
 
-func GetFileExplorerViewContent(c *gin.Context, rootDir string, view string) templ.Component {
+func GetExplorerViewContent(c *gin.Context, rootDir string, view string) templ.Component {
 	return getFileExplorerComponent(c, rootDir, true, view)
 }
 
-func GetFileExplorerViewContentWithBreadcrumb(c *gin.Context, rootDir string, view string) templ.Component {
+func GetExplorerViewContentWithBreadcrumb(c *gin.Context, rootDir string, view string) templ.Component {
 	return getFileExplorerComponent(c, rootDir, true, view, true)
 }
 
@@ -134,9 +134,9 @@ func getFileExplorerComponent(c *gin.Context, rootDir string, viewContentOnly bo
 	if len(managedDevices) == 0 {
 		fullPathDir := ""
 		if rootDir == "" {
-			fullPathDir = fileutil.GetFilesDir()
+			fullPathDir = fileutil.GetCirrusDir()
 		} else {
-			fullPathDir = filepath.Join(fileutil.GetFilesDir(), rootDir)
+			fullPathDir = filepath.Join(fileutil.GetCirrusDir(), rootDir)
 		}
 		// Get device info for the default files directory
 		deviceName, devicePath := fileutil.GetDeviceInfoForPath(fullPathDir)

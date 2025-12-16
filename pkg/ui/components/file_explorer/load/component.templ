@@ -8,7 +8,7 @@ import (
 templ Component(pageState types.PageState) {
 	<div
 		hx-trigger="load"
-		hx-get={ filepath.Join("/components/files/explorer", pageState.RootDir) }
+		hx-get={ filepath.Join("/components/cirrus/explorer", pageState.RootDir) }
 		hx-target="#file-explorer"
 		hx-swap="outerHTML"
 	></div>

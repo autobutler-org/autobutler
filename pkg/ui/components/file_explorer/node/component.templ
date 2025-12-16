@@ -48,7 +48,7 @@ templ Component(pageState types.PageState, file *fileutil.DeviceFileInfo) {
 	>
 		switch fileType {
 			case fileutil.FileTypeFolder:
-				{{ filePath := filepath.Join("/files", pageState.RootDir, fileName) }}
+				{{ filePath := filepath.Join("/cirrus", pageState.RootDir, fileName) }}
 				<td class="file-table-cell file-table-cell--content" data-href={ filePath }>
 					@folder.Component()
 					<span class="file-table-name">{ fileName }</span>
@@ -66,10 +66,10 @@ templ Component(pageState types.PageState, file *fileutil.DeviceFileInfo) {
 					@explorer_context_menu.Component(pageState)
 				</td>
 			default:
-				{{ filePath := filepath.Join("/files", pageState.RootDir, fileName) }}
+				{{ filePath := filepath.Join("/cirrus", pageState.RootDir, fileName) }}
 				<td
 					class="file-table-cell file-table-cell--clickable"
-					data-viewer-path={ filepath.Join("/components/files/viewer", filePath) }
+					data-viewer-path={ filepath.Join("/components/cirrus/viewer", filePath) }
 					tabindex="0"
 					onkeydown="if (event.key === 'Enter' || event.key === ' ') { window.ab.preventDefault(event); window.ab.handleFileNodeDoubleClick(event, this.closest('tr')); }"
 				>

@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const method = event.detail.requestConfig.verb.toUpperCase();
 
             // Show appropriate success messages based on the request type
-            if (event.detail.pathInfo.requestPath.includes('/files')) {
+            if (event.detail.pathInfo.requestPath.includes('/cirrus')) {
                 if (method === 'POST') {
                     toastr.success('File(s) uploaded successfully');
                 } else if (method === 'PUT') {

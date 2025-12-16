@@ -25,7 +25,7 @@ type DeleteFilesResult struct {
 func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
 	if len(params.ManagedDevices) == 0 {
 		// Fallback to single device
-		fileDir := GetFilesDir()
+		fileDir := GetCirrusDir()
 		for _, filePath := range params.FilePaths {
 			fullPath := filepath.Join(fileDir, params.RootDir, filePath)
 			if err := os.RemoveAll(fullPath); err != nil { // coverage: ignore - requires filesystem permission errors
@@ -76,7 +76,7 @@ type MoveFileResult struct {
 
 // MoveFile moves a file from one location to another
 func MoveFile(params MoveFileParams) (*MoveFileResult, error) {
-	filesDir := GetFilesDir()
+	filesDir := GetCirrusDir()
 	oldFullPath := filepath.Join(filesDir, params.FilePath)
 	newFullPath := filepath.Join(filesDir, params.NewFilePath)
 
@@ -120,7 +120,7 @@ func UploadFiles(params UploadFilesParams) (*UploadFilesResult, error) {
 		}
 		defer file.Close()
 
-		fileDir := GetFilesDir()
+		fileDir := GetCirrusDir()
 		newFilePath := filepath.Join(fileDir, params.RootDir, header.Filename)
 
 		// Handle file name conflicts
@@ -172,7 +172,7 @@ type CreateFolderResult struct {
 
 // CreateFolder creates a new folder in the filesystem
 func CreateFolder(params CreateFolderParams) (*CreateFolderResult, error) {
-	rootDir := GetFilesDir()
+	rootDir := GetCirrusDir()
 	fullPath := filepath.Join(rootDir, params.FolderDir, params.FolderName)
 
 	if err := os.MkdirAll(fullPath, 0755); err != nil {
@@ -206,7 +206,7 @@ func DownloadFile(params DownloadFileParams) (*DownloadFileResult, error) {
 
 	if len(params.ManagedDevices) == 0 {
 		// Fallback to single device
-		rootDir := GetFilesDir()
+		rootDir := GetCirrusDir()
 		fullPath = filepath.Join(rootDir, params.FilePath)
 		if !DoesFileExist(fullPath) {
 			return nil, fmt.Errorf("file not found: %s", fullPath)

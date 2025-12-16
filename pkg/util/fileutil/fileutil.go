@@ -99,7 +99,7 @@ func DetermineFileType(rootDir string, file *DeviceFileInfo) FileType {
 	if file.IsDir() {
 		return FileTypeFolder
 	}
-	filesDir := GetFilesDir()
+	filesDir := GetCirrusDir()
 	stat, err := os.Stat(filepath.Join(filesDir, rootDir, file.Name()))
 	if err != nil || stat == nil {
 		return FileTypeGeneric // If we can't stat the file, treat it as generic
@@ -217,7 +217,7 @@ func GetDataDir() string {
 	}
 }
 
-func GetFilesDir() string {
+func GetCirrusDir() string {
 	filesPath := filepath.Join(GetDataDir(), "files")
 	if err := os.MkdirAll(filesPath, 0755); err != nil {
 		panic(fmt.Sprintf("failed to create files directory: %v", err)) // coverage: ignore - panic on filesystem error

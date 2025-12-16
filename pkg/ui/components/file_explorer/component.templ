@@ -19,7 +19,7 @@ import (
 
 templ Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, view string) {
 	// TODO: This works on firefox, but not on chrome as it will rapidly open and close the upload area.
-	{{ fileDir := fileutil.GetFilesDir() }}
+	{{ fileDir := fileutil.GetCirrusDir() }}
 	{{ availableBytes := fileutil.GetAvailableSpaceInBytes(fileDir) }}
 	<div
 		id="file-explorer"

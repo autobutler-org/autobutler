@@ -11,13 +11,13 @@ import (
 )
 
 var uploadRootFilesRoute = serverutil.ApiRoute(
-	"POST", "/files", func(c *gin.Context) *serverutil.Response {
+	"POST", "/cirrus", func(c *gin.Context) *serverutil.Response {
 		uploadFilesImpl(c, "")
 		return serverutil.Ok()
 	},
 )
 var uploadNestedFilesRoutes = serverutil.ApiRoute(
-	"POST", "/files/*rootDir", func(c *gin.Context) *serverutil.Response {
+	"POST", "/cirrus/*rootDir", func(c *gin.Context) *serverutil.Response {
 		rootDir := c.Param("rootDir")
 		uploadFilesImpl(c, rootDir)
 		return serverutil.Ok()

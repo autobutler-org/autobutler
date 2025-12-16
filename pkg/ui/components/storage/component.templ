@@ -7,7 +7,7 @@ import (
 
 // TODO: Add actual breakdown by category (Documents, Media, Backups, etc.)
 templ Component() {
-	{{ fileDir := fileutil.GetFilesDir() }}
+	{{ fileDir := fileutil.GetCirrusDir() }}
 	{{ availableBytes := fileutil.GetAvailableSpaceInBytes(fileDir) }}
 	{{ totalBytes := uint64(200 * 1024 * 1024 * 1024) }} // 200GB for now - TODO: get from actual disk
 	{{ usedBytes := totalBytes - availableBytes }}

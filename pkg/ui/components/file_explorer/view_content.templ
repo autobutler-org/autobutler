@@ -13,7 +13,7 @@ templ ViewContent(pageState types.PageState, files []*fileutil.DeviceFileInfo, v
 	if view == "column" {
 		@column_view.Component(pageState, files)
 	} else if len(files) == 0 {
-		<span class="file-explorer-empty">No files found in { filepath.Join(fileutil.GetFilesDir(), pageState.RootDir) }</span>
+		<span class="file-explorer-empty">No files found in { filepath.Join(fileutil.GetCirrusDir(), pageState.RootDir) }</span>
 	} else if view == "grid" {
 		@grid_view.Component(pageState, files)
 	} else {

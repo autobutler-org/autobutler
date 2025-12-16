@@ -26,7 +26,7 @@ test.describe('Device Management', () => {
 
         // Check for description with technical details
         const description = deviceManager.locator('.device-manager-description');
-        await expect(description).toContainText('data/files');
+        await expect(description).toContainText('data/cirrus');
         await expect(description).toContainText('Enabled devices');
     });
 
@@ -81,7 +81,7 @@ test.describe('Device Management', () => {
             const deviceItem = enabledBadge.locator('..').locator('..');
             const statusText = deviceItem.locator('.device-manager-item-status');
             await expect(statusText).toBeVisible();
-            await expect(statusText).toContainText('data/files');
+            await expect(statusText).toContainText('data/cirrus');
         }
     });
 

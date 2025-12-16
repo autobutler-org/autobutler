@@ -499,9 +499,9 @@ window.ab = Object.assign(window.ab || {}, {
             if (rootDir && rootDir !== '/') {
                 // Remove leading slash from rootDir if present
                 const cleanRootDir = rootDir.startsWith('/') ? rootDir.slice(1) : rootDir;
-                filePath = `/api/v1/files/${cleanRootDir}/${cleanFileName}`;
+                filePath = `/api/v1/cirrus/${cleanRootDir}/${cleanFileName}`;
             } else {
-                filePath = `/api/v1/files/${cleanFileName}`;
+                filePath = `/api/v1/cirrus/${cleanFileName}`;
             }
 
             console.log('Downloading:', filePath);
@@ -538,7 +538,7 @@ window.ab = Object.assign(window.ab || {}, {
     },
 
     saveAceEditor: (filePath, content) => {
-        fetch(`/api/v1/files${filePath}`, {
+        fetch(`/api/v1/cirrus${filePath}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'text/plain',
@@ -564,7 +564,7 @@ window.ab = Object.assign(window.ab || {}, {
 
     downloadFile: (filePath) => {
         const link = document.createElement('a');
-        link.href = `/api/v1/files${filePath}`;
+        link.href = `/api/v1/cirrus${filePath}`;
         link.download = filePath.split('/').pop();
         document.body.appendChild(link);
         link.click();
@@ -871,7 +871,7 @@ window.ab = Object.assign(window.ab || {}, {
         if (!backBtn) return;
 
         const currentPath = window.location.pathname;
-        const isAtRoot = currentPath === '/files' || currentPath === '/files/';
+        const isAtRoot = currentPath === '/cirrus' || currentPath === '/cirrus/';
 
         if (isAtRoot) {
             backBtn.disabled = true;
@@ -889,7 +889,7 @@ window.ab = Object.assign(window.ab || {}, {
         // Calculate parent directory
         let parentPath = currentPath.replace(/\/$/, ''); // Remove trailing slash
         const lastSlashIndex = parentPath.lastIndexOf('/');
-        parentPath = parentPath.substring(0, lastSlashIndex) || '/files';
+        parentPath = parentPath.substring(0, lastSlashIndex) || '/cirrus';
 
         // Navigate to parent
         window.history.pushState({}, '', parentPath);

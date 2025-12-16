@@ -72,7 +72,7 @@ var photoGridComponentRoute = serverutil.UiRoute(
 		println("🔍 SERVER: Photo grid request - Page:", page)
 
 		// Get all photos
-		photoFiles, err := photoutil.FindAllPhotosRecursively(fileutil.GetFilesDir())
+		photoFiles, err := photoutil.FindAllPhotosRecursively(fileutil.GetCirrusDir())
 		if err != nil {
 			return nil
 		}

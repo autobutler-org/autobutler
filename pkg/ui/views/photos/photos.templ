@@ -16,7 +16,7 @@ templ Photos(pageState types.PageState, summary fileutil.Summary) {
 	<html lang="en">
 		@header.Component()
 		@body.Component(pageState) {
-			{{ photoFiles, err := photoutil.FindAllPhotosRecursively(fileutil.GetFilesDir()) }}
+			{{ photoFiles, err := photoutil.FindAllPhotosRecursively(fileutil.GetCirrusDir()) }}
 			if err != nil {
 				<div class="error-text">Error loading photos: { err.Error() }</div>
 			} else {

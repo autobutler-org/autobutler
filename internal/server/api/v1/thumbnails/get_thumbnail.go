@@ -23,7 +23,7 @@ const (
 var getThumbnailRoute = serverutil.ApiRoute(
 	"GET", "/thumbnails/*filePath", func(c *gin.Context) *serverutil.Response {
 		filePath := c.Param("filePath")
-		filesDir := fileutil.GetFilesDir()
+		filesDir := fileutil.GetCirrusDir()
 		fullPath := filepath.Join(filesDir, filePath)
 
 		if _, err := os.Stat(fullPath); os.IsNotExist(err) {

@@ -36,9 +36,9 @@ templ renderColumnLayout(pageState types.PageState, files []*fileutil.DeviceFile
 	<div class="column-view-columns">
 		{{
 			// Build parent directories to show columns for each level
-			// For path /files/bingus, we want:
-			// - Column showing contents of /files (with bingus highlighted)
-			// - Column showing contents of /files/bingus
+			// For path /cirrus/bingus, we want:
+			// - Column showing contents of /cirrus (with bingus highlighted)
+			// - Column showing contents of /cirrus/bingus
 			var parentPaths []string
 			accumulatedPath := ""
 			for i := 0; i < len(validSegments); i++ {
@@ -68,7 +68,7 @@ templ renderColumnLayout(pageState types.PageState, files []*fileutil.DeviceFile
 // renderParentColumn renders a parent directory column, highlighting the next segment in the path
 templ renderParentColumn(pageState types.PageState, dirPath string, columnIndex int, nextSegment string) {
 	{{
-		fullPath := fileutil.GetFilesDir()
+		fullPath := fileutil.GetCirrusDir()
 		if dirPath != "" {
 			fullPath = filepath.Join(fullPath, dirPath)
 		}
@@ -130,9 +130,9 @@ templ renderParentColumnItem(pageState types.PageState, parentPath string, file 
 		fileType := fileutil.DetermineFileType(parentPath, file)
 		fileName := file.Name()
 		isFolder := fileType == fileutil.FileTypeFolder
-		filePath := filepath.Join("/files", parentPath, fileName)
+		filePath := filepath.Join("/cirrus", parentPath, fileName)
 		// For files in parent columns, navigate to parent dir (removing child columns)
-		fileParentPath := filepath.Join("/files", parentPath)
+		fileParentPath := filepath.Join("/cirrus", parentPath)
 		dataFileType := fileType
 		if isFolder {
 			dataFileType = "folder"
@@ -162,7 +162,7 @@ templ renderParentColumnItem(pageState types.PageState, parentPath string, file 
 		} else {
 			<div
 				class="column-view-link column-view-link--file"
-				onclick={ templ.JSFuncCall("navigateToParentAndPreview", templ.JSExpression("event"), fileParentPath, filepath.Join("/components/files/viewer", filePath)) }
+				onclick={ templ.JSFuncCall("navigateToParentAndPreview", templ.JSExpression("event"), fileParentPath, filepath.Join("/components/cirrus/viewer", filePath)) }
 			>
 				<span class="column-view-icon">
 					@renderFileIcon(fileType)
@@ -183,7 +183,7 @@ templ renderCurrentColumnItem(pageState types.PageState, file *fileutil.DeviceFi
 		fileType := fileutil.DetermineFileType(pageState.RootDir, file)
 		fileName := file.Name()
 		isFolder := fileType == fileutil.FileTypeFolder
-		filePath := filepath.Join("/files", pageState.RootDir, fileName)
+		filePath := filepath.Join("/cirrus", pageState.RootDir, fileName)
 		dataFileType := fileType
 		if isFolder {
 			dataFileType = "folder"
@@ -213,7 +213,7 @@ templ renderCurrentColumnItem(pageState types.PageState, file *fileutil.DeviceFi
 		} else {
 			<div
 				class="column-view-link column-view-link--file"
-				data-viewer-path={ filepath.Join("/components/files/viewer", filePath) }
+				data-viewer-path={ filepath.Join("/components/cirrus/viewer", filePath) }
 			>
 				<span class="column-view-icon">
 					@renderFileIcon(fileType)

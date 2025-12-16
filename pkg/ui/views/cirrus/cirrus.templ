@@ -1,4 +1,4 @@
-package view_files
+package view_cirrus
 
 import (
 	"autobutler/pkg/ui/components/body"
@@ -17,7 +17,7 @@ templ Files(pageState types.PageState) {
 		@header.Component()
 		@body.Component(pageState) {
 			{{
-				fullPathDir := filepath.Join(fileutil.GetFilesDir(), pageState.RootDir)
+				fullPathDir := filepath.Join(fileutil.GetCirrusDir(), pageState.RootDir)
 				deviceName, devicePath := fileutil.GetDeviceInfoForPath(fullPathDir)
 				files, err := fileutil.StatFilesInDir(fullPathDir, deviceName, devicePath)
 			}}

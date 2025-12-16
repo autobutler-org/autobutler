@@ -60,7 +60,7 @@ func Photos(pageState types.PageState, summary fileutil.Summary) templ.Component
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			photoFiles, err := photoutil.FindAllPhotosRecursively(fileutil.GetFilesDir())
+			photoFiles, err := photoutil.FindAllPhotosRecursively(fileutil.GetCirrusDir())
 			if err != nil {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"error-text\">Error loading photos: ")
 				if templ_7745c5c3_Err != nil {

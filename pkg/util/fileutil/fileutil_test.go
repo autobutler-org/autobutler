@@ -238,8 +238,8 @@ func TestGetDataDirForDevice_ExternalDevice(t *testing.T) {
 	}
 }
 
-func TestGetFilesDir(t *testing.T) {
-	filesDir := GetFilesDir()
+func TestGetCirrusDir(t *testing.T) {
+	filesDir := GetCirrusDir()
 	if filesDir == "" {
 		t.Error("Expected non-empty files directory")
 	}
@@ -378,7 +378,7 @@ func TestDeleteFiles_SingleDevice(t *testing.T) {
 	testFile := filepath.Join(tmpDir, "testfile.txt")
 	os.WriteFile(testFile, []byte("test content"), 0644)
 
-	// This test would need the GetFilesDir to return our tmpDir
+	// This test would need the GetCirrusDir to return our tmpDir
 	// Since we can't easily mock that, we'll test the structure
 	params := DeleteFilesParams{
 		RootDir:        "",
@@ -386,10 +386,10 @@ func TestDeleteFiles_SingleDevice(t *testing.T) {
 		ManagedDevices: nil,
 	}
 
-	// Note: This will fail in testing because GetFilesDir returns a fixed path
+	// Note: This will fail in testing because GetCirrusDir returns a fixed path
 	// In a real app, you'd use dependency injection
 	_, err := DeleteFiles(params)
-	// We expect an error since the file isn't in the actual GetFilesDir()
+	// We expect an error since the file isn't in the actual GetCirrusDir()
 	_ = err // Just verify it doesn't panic
 }
 
@@ -399,7 +399,7 @@ func TestMoveFile(t *testing.T) {
 		NewFilePath: "new/path/file.txt",
 	}
 
-	// This will fail because GetFilesDir returns a fixed path
+	// This will fail because GetCirrusDir returns a fixed path
 	// but it tests the code doesn't panic
 	_, err := MoveFile(params)
 	_ = err
@@ -411,11 +411,11 @@ func TestCreateFolder(t *testing.T) {
 		FolderName: "testfolder",
 	}
 
-	// This will create a real folder in the GetFilesDir
+	// This will create a real folder in the GetCirrusDir
 	// Clean up afterwards if needed
 	result, err := CreateFolder(params)
 	if err != nil {
-		// Expected since we can't control GetFilesDir in tests
+		// Expected since we can't control GetCirrusDir in tests
 		t.Logf("CreateFolder returned error (expected): %v", err)
 	} else if result != nil {
 		// If it succeeded, verify the result structure
@@ -706,7 +706,7 @@ func TestDeleteFiles_MultiDevice_PartialExistence(t *testing.T) {
 
 func TestMoveFile_CreateDirectory(t *testing.T) {
 	// This test validates that MoveFile creates the destination directory
-	// We can't easily test this without interfering with GetFilesDir(),
+	// We can't easily test this without interfering with GetCirrusDir(),
 	// but we can at least verify the function structure
 	params := MoveFileParams{
 		FilePath:    "nonexistent/old.txt",
@@ -757,7 +757,7 @@ func TestMoveFile_ToRootDirectory(t *testing.T) {
 	os.WriteFile(sourceFile, []byte("test"), 0644)
 
 	// Get the current files dir and construct paths relative to it
-	filesDir := GetFilesDir()
+	filesDir := GetCirrusDir()
 
 	// Create test structure in actual filesDir
 	testSourceDir := filepath.Join(filesDir, "test_move_root")
@@ -806,7 +806,7 @@ func TestMoveFile_ToRootDirectory(t *testing.T) {
 
 func TestUploadFiles_FileConflict(t *testing.T) {
 	// Test that UploadFiles handles filename conflicts by appending numbers
-	filesDir := GetFilesDir()
+	filesDir := GetCirrusDir()
 	testDir := filepath.Join(filesDir, "test_upload_conflict")
 	defer os.RemoveAll(testDir)
 
@@ -1132,7 +1132,7 @@ func TestDetermineFileType_Directory(t *testing.T) {
 func TestDetermineFileType_RegularFile(t *testing.T) {
 	// Test with a regular file - should use DetermineFileTypeFromPath
 	// Create a test file in the actual filesDir
-	filesDir := GetFilesDir()
+	filesDir := GetCirrusDir()
 	testDir := filepath.Join(filesDir, "test_determine_type")
 	testFile := filepath.Join(testDir, "test.pdf")
 

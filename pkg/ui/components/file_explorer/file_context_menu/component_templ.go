@@ -46,7 +46,7 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 			[]string{"Download", "Move/Rename", "File Details", "Delete"},
 			[]*lib.ContextMenuHandlerProps{
 				{
-					OnClickHandler: fmt.Sprintf("window.ab.closeContextMenuFromItem(event); window.ab.downloadFile('%s');", filepath.Join(`/api/v1/files`, pageState.RootDir, file.Name())),
+					OnClickHandler: fmt.Sprintf("window.ab.closeContextMenuFromItem(event); window.ab.downloadFile('%s');", filepath.Join(`/api/v1/cirrus`, pageState.RootDir, file.Name())),
 				},
 				{
 					OnClickHandler: fmt.Sprintf("window.ab.closeContextMenuFromItem(event); window.ab.moveFile(event, '%s', '%s');", pageState.RootDir, file.Name()),
@@ -59,7 +59,7 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 					ButtonAttributes: templ.Attributes{
 						"hx-target": "#file-explorer",
 						"hx-swap":   "outerHTML",
-						"hx-delete": filepath.Join(`/api/v1/files`),
+						"hx-delete": filepath.Join(`/api/v1/cirrus`),
 						"hx-vals":   fmt.Sprintf(`{"rootDir":"%s", "filePaths":["%s"]}`, pageState.RootDir, file.Name()),
 					},
 				},

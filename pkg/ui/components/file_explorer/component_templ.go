@@ -46,7 +46,7 @@ func Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, view
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		fileDir := fileutil.GetFilesDir()
+		fileDir := fileutil.GetCirrusDir()
 		availableBytes := fileutil.GetAvailableSpaceInBytes(fileDir)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"file-explorer\" class=\"file-explorer\">")
 		if templ_7745c5c3_Err != nil {

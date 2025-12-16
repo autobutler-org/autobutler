@@ -51,7 +51,7 @@ templ Breadcrumb(pageState types.PageState, view string) {
 				placeholder="New folder name"
 				maxlength="255"
 				hx-include="[name='folderName']"
-				hx-post={ filepath.Join("/api/v1/folder/files", pageState.RootDir) }
+				hx-post={ filepath.Join("/api/v1/folder/cirrus", pageState.RootDir) }
 				hx-target="#file-explorer-view-content"
 				hx-swap="innerHTML"
 				hx-trigger="keydown[keyCode==13] from:body"
@@ -107,7 +107,7 @@ templ BreadcrumbOOB(pageState types.PageState, view string) {
 				placeholder="New folder name"
 				maxlength="255"
 				hx-include="[name='folderName']"
-				hx-post={ filepath.Join("/api/v1/folder/files", pageState.RootDir) }
+				hx-post={ filepath.Join("/api/v1/folder/cirrus", pageState.RootDir) }
 				hx-target="#file-explorer-view-content"
 				hx-swap="innerHTML"
 				hx-trigger="keydown[keyCode==13] from:body"

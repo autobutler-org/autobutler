@@ -35,7 +35,7 @@ func Component() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		fileDir := fileutil.GetFilesDir()
+		fileDir := fileutil.GetCirrusDir()
 		availableBytes := fileutil.GetAvailableSpaceInBytes(fileDir)
 		totalBytes := uint64(200 * 1024 * 1024 * 1024)
 		usedBytes := totalBytes - availableBytes

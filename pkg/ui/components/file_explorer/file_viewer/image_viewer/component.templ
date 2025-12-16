@@ -8,7 +8,7 @@ import (
 )
 
 func readImageAsBase64(filePath string) (string, error) {
-	rootDir := fileutil.GetFilesDir()
+	rootDir := fileutil.GetCirrusDir()
 	fullPath := filepath.Join(rootDir, filePath)
 	data, err := os.ReadFile(fullPath)
 	if err != nil {

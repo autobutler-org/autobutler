@@ -86,7 +86,7 @@ func renderGridItem(pageState types.PageState, file *fileutil.DeviceFileInfo) te
 		fileType := fileutil.DetermineFileType(pageState.RootDir, file)
 		fileName := file.Name()
 		isFolder := fileType == fileutil.FileTypeFolder
-		filePath := filepath.Join("/files", pageState.RootDir, fileName)
+		filePath := filepath.Join("/cirrus", pageState.RootDir, fileName)
 		fileSize := fileutil.SizeBytesToString(file.Size())
 		deviceName := file.DeviceName
 		var templ_7745c5c3_Var3 = []any{"grid-view-item file-node", templ.KV("grid-view-item--folder", isFolder)}
@@ -229,9 +229,9 @@ func renderGridItem(pageState types.PageState, file *fileutil.DeviceFileInfo) te
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var12 string
-			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/components/files/viewer", filePath))
+			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/components/cirrus/viewer", filePath))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/grid_view/component.templ`, Line: 64, Col: 74}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/grid_view/component.templ`, Line: 64, Col: 75}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {

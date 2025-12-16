@@ -40,7 +40,7 @@ func Component(devices []fileutil.Device, managedDevices []fileutil.ManagedDevic
 		for _, md := range managedDevices {
 			managedMap[md.MountPoint] = true
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"device-manager\"><h3 class=\"device-manager-title\">Storage Device Management</h3><p class=\"device-manager-description\">Enable storage devices for Autobutler by creating the required data directory structure. Enabled devices will have a <code>.autobutler/data/files</code> directory and will appear in the file explorer for multi-device file management.</p><div class=\"device-manager-list\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"device-manager\"><h3 class=\"device-manager-title\">Storage Device Management</h3><p class=\"device-manager-description\">Enable storage devices for Autobutler by creating the required data directory structure. Enabled devices will have a <code>.autobutler/data/cirrus</code> directory and will appear in the file explorer for multi-device file management.</p><div class=\"device-manager-list\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -109,7 +109,7 @@ func Component(devices []fileutil.Device, managedDevices []fileutil.ManagedDevic
 				return templ_7745c5c3_Err
 			}
 			if isManaged {
-				dataPath := device.MountPoint + "/.autobutler/data/files"
+				dataPath := device.MountPoint + "/.autobutler/data/cirrus"
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<p class=\"device-manager-item-status\"><svg class=\"device-manager-status-icon\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><polyline points=\"20 6 9 17 4 12\"></polyline></svg> <span>Data directory: <code>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -151,7 +151,7 @@ func Component(devices []fileutil.Device, managedDevices []fileutil.ManagedDevic
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"> <button type=\"submit\" class=\"btn btn--primary btn--sm\" title=\"Creates .autobutler/data/files directory on this device\">Enable for Storage</button></form>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"> <button type=\"submit\" class=\"btn btn--primary btn--sm\" title=\"Creates .autobutler/data/cirrus directory on this device\">Enable for Storage</button></form>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
