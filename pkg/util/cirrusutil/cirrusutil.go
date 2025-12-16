@@ -217,6 +217,31 @@ func GetDataDir() string {
 	}
 }
 
+// GetNonConflictingPath returns a file path that doesn't conflict with existing files.
+// If the target path already exists, it appends _(n) before the file extension,
+// incrementing n until a non-existent path is found.
+// For example: file.txt -> file_(1).txt -> file_(2).txt, etc.
+func GetNonConflictingPath(targetPath string) string {
+	if _, err := os.Stat(targetPath); os.IsNotExist(err) {
+		// File doesn't exist, return the target path as-is
+		return targetPath
+	}
+
+	// File exists, need to find a non-conflicting name
+	ext := filepath.Ext(targetPath)
+	nameWithoutExt := targetPath[:len(targetPath)-len(ext)]
+	dir := filepath.Dir(targetPath)
+
+	i := 1
+	for {
+		newPath := filepath.Join(dir, fmt.Sprintf("%s_(%d)%s", filepath.Base(nameWithoutExt), i, ext))
+		if _, err := os.Stat(newPath); os.IsNotExist(err) {
+			return newPath
+		}
+		i++
+	}
+}
+
 func SetupCirrusDir() error {
 	// Check if the cirrus dir exists
 	// If cirrus dir exists, check if legacy files dir exists
@@ -239,7 +264,9 @@ func SetupCirrusDir() error {
 		}
 		for _, entry := range entries {
 			oldPath := filepath.Join(legacyFilesPath, entry.Name())
-			newPath := filepath.Join(cirrusPath, entry.Name())
+			targetPath := filepath.Join(cirrusPath, entry.Name())
+			// Use GetNonConflictingPath to handle naming conflicts
+			newPath := GetNonConflictingPath(targetPath)
 			if err := os.Rename(oldPath, newPath); err != nil {
 				return fmt.Errorf("failed to move file %s to cirrus directory: %w", entry.Name(), err)
 			}

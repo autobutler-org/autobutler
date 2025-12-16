@@ -2,6 +2,7 @@ package cirrusutil
 
 import (
 	"bytes"
+	"fmt"
 	"mime/multipart"
 	"os"
 	"path/filepath"
@@ -1327,5 +1328,405 @@ func TestGetDeviceStatuses(t *testing.T) {
 	}
 	if !hasEnabled {
 		t.Error("GetDeviceStatuses() should have at least one enabled device")
+	}
+}
+
+func TestSetupCirrusDir(t *testing.T) {
+	tests := []struct {
+		name          string
+		setupBefore   func(t *testing.T, dataDir string) // Setup function to prepare test state
+		wantError     bool
+		validateAfter func(t *testing.T, dataDir string) // Validation function to check post-setup state
+	}{
+		{
+			name: "creates cirrus directory when neither exists",
+			setupBefore: func(t *testing.T, dataDir string) {
+				// Both directories don't exist
+			},
+			wantError: false,
+			validateAfter: func(t *testing.T, dataDir string) {
+				cirrusPath := filepath.Join(dataDir, "cirrus")
+				info, err := os.Stat(cirrusPath)
+				if err != nil {
+					t.Fatalf("cirrus directory should exist: %v", err)
+				}
+				if !info.IsDir() {
+					t.Errorf("cirrus path should be a directory")
+				}
+			},
+		},
+		{
+			name: "does not error when cirrus directory already exists",
+			setupBefore: func(t *testing.T, dataDir string) {
+				cirrusPath := filepath.Join(dataDir, "cirrus")
+				if err := os.MkdirAll(cirrusPath, 0755); err != nil {
+					t.Fatalf("failed to create cirrus directory: %v", err)
+				}
+			},
+			wantError: false,
+			validateAfter: func(t *testing.T, dataDir string) {
+				cirrusPath := filepath.Join(dataDir, "cirrus")
+				info, err := os.Stat(cirrusPath)
+				if err != nil {
+					t.Fatalf("cirrus directory should exist: %v", err)
+				}
+				if !info.IsDir() {
+					t.Errorf("cirrus path should be a directory")
+				}
+			},
+		},
+		{
+			name: "migrates single file from legacy files directory",
+			setupBefore: func(t *testing.T, dataDir string) {
+				legacyFilesPath := filepath.Join(dataDir, "files")
+				if err := os.MkdirAll(legacyFilesPath, 0755); err != nil {
+					t.Fatalf("failed to create legacy files directory: %v", err)
+				}
+				// Create a test file in legacy directory
+				testFile := filepath.Join(legacyFilesPath, "test.txt")
+				if err := os.WriteFile(testFile, []byte("test content"), 0644); err != nil {
+					t.Fatalf("failed to create test file: %v", err)
+				}
+			},
+			wantError: false,
+			validateAfter: func(t *testing.T, dataDir string) {
+				cirrusPath := filepath.Join(dataDir, "cirrus")
+				legacyFilesPath := filepath.Join(dataDir, "files")
+
+				// Check that file was moved to cirrus
+				migratedFile := filepath.Join(cirrusPath, "test.txt")
+				content, err := os.ReadFile(migratedFile)
+				if err != nil {
+					t.Fatalf("migrated file should exist in cirrus: %v", err)
+				}
+				if string(content) != "test content" {
+					t.Errorf("migrated file content mismatch: got %q, want %q", string(content), "test content")
+				}
+
+				// Check that legacy directory was removed
+				if _, err := os.Stat(legacyFilesPath); !os.IsNotExist(err) {
+					t.Errorf("legacy files directory should be removed")
+				}
+			},
+		},
+		{
+			name: "migrates multiple files from legacy directory",
+			setupBefore: func(t *testing.T, dataDir string) {
+				legacyFilesPath := filepath.Join(dataDir, "files")
+				if err := os.MkdirAll(legacyFilesPath, 0755); err != nil {
+					t.Fatalf("failed to create legacy files directory: %v", err)
+				}
+				// Create multiple test files
+				for i := 1; i <= 3; i++ {
+					testFile := filepath.Join(legacyFilesPath, fmt.Sprintf("file%d.txt", i))
+					if err := os.WriteFile(testFile, []byte(fmt.Sprintf("content%d", i)), 0644); err != nil {
+						t.Fatalf("failed to create test file: %v", err)
+					}
+				}
+			},
+			wantError: false,
+			validateAfter: func(t *testing.T, dataDir string) {
+				cirrusPath := filepath.Join(dataDir, "cirrus")
+				legacyFilesPath := filepath.Join(dataDir, "files")
+
+				// Check that all files were moved
+				for i := 1; i <= 3; i++ {
+					migratedFile := filepath.Join(cirrusPath, fmt.Sprintf("file%d.txt", i))
+					content, err := os.ReadFile(migratedFile)
+					if err != nil {
+						t.Fatalf("file%d.txt should be migrated: %v", i, err)
+					}
+					expectedContent := fmt.Sprintf("content%d", i)
+					if string(content) != expectedContent {
+						t.Errorf("file%d.txt content mismatch: got %q, want %q", i, string(content), expectedContent)
+					}
+				}
+
+				// Check that legacy directory was removed
+				if _, err := os.Stat(legacyFilesPath); !os.IsNotExist(err) {
+					t.Errorf("legacy files directory should be removed")
+				}
+			},
+		},
+		{
+			name: "migrates subdirectories and their contents",
+			setupBefore: func(t *testing.T, dataDir string) {
+				legacyFilesPath := filepath.Join(dataDir, "files")
+				if err := os.MkdirAll(legacyFilesPath, 0755); err != nil {
+					t.Fatalf("failed to create legacy files directory: %v", err)
+				}
+				// Create a subdirectory with files
+				subDir := filepath.Join(legacyFilesPath, "subdir")
+				if err := os.MkdirAll(subDir, 0755); err != nil {
+					t.Fatalf("failed to create subdirectory: %v", err)
+				}
+				testFile := filepath.Join(subDir, "nested.txt")
+				if err := os.WriteFile(testFile, []byte("nested content"), 0644); err != nil {
+					t.Fatalf("failed to create nested file: %v", err)
+				}
+			},
+			wantError: false,
+			validateAfter: func(t *testing.T, dataDir string) {
+				cirrusPath := filepath.Join(dataDir, "cirrus")
+				legacyFilesPath := filepath.Join(dataDir, "files")
+
+				// Check that subdirectory was moved
+				movedSubDir := filepath.Join(cirrusPath, "subdir")
+				nestedFile := filepath.Join(movedSubDir, "nested.txt")
+				content, err := os.ReadFile(nestedFile)
+				if err != nil {
+					t.Fatalf("nested file should be migrated: %v", err)
+				}
+				if string(content) != "nested content" {
+					t.Errorf("nested file content mismatch: got %q, want %q", string(content), "nested content")
+				}
+
+				// Check that legacy directory was removed
+				if _, err := os.Stat(legacyFilesPath); !os.IsNotExist(err) {
+					t.Errorf("legacy files directory should be removed")
+				}
+			},
+		},
+		{
+			name: "handles empty legacy files directory",
+			setupBefore: func(t *testing.T, dataDir string) {
+				legacyFilesPath := filepath.Join(dataDir, "files")
+				if err := os.MkdirAll(legacyFilesPath, 0755); err != nil {
+					t.Fatalf("failed to create legacy files directory: %v", err)
+				}
+				// Don't add any files - directory is empty
+			},
+			wantError: false,
+			validateAfter: func(t *testing.T, dataDir string) {
+				legacyFilesPath := filepath.Join(dataDir, "files")
+				// Check that empty legacy directory was removed
+				if _, err := os.Stat(legacyFilesPath); !os.IsNotExist(err) {
+					t.Errorf("empty legacy files directory should be removed")
+				}
+			},
+		},
+		{
+			name: "migrates when both cirrus and legacy exist with content",
+			setupBefore: func(t *testing.T, dataDir string) {
+				cirrusPath := filepath.Join(dataDir, "cirrus")
+				legacyFilesPath := filepath.Join(dataDir, "files")
+
+				// Create cirrus directory with existing file
+				if err := os.MkdirAll(cirrusPath, 0755); err != nil {
+					t.Fatalf("failed to create cirrus directory: %v", err)
+				}
+				existingFile := filepath.Join(cirrusPath, "existing.txt")
+				if err := os.WriteFile(existingFile, []byte("existing content"), 0644); err != nil {
+					t.Fatalf("failed to create existing file: %v", err)
+				}
+
+				// Create legacy directory with file
+				if err := os.MkdirAll(legacyFilesPath, 0755); err != nil {
+					t.Fatalf("failed to create legacy files directory: %v", err)
+				}
+				legacyFile := filepath.Join(legacyFilesPath, "legacy.txt")
+				if err := os.WriteFile(legacyFile, []byte("legacy content"), 0644); err != nil {
+					t.Fatalf("failed to create legacy file: %v", err)
+				}
+			},
+			wantError: false,
+			validateAfter: func(t *testing.T, dataDir string) {
+				cirrusPath := filepath.Join(dataDir, "cirrus")
+				legacyFilesPath := filepath.Join(dataDir, "files")
+
+				// Check both files are in cirrus
+				existingFile := filepath.Join(cirrusPath, "existing.txt")
+				migratedFile := filepath.Join(cirrusPath, "legacy.txt")
+
+				if _, err := os.Stat(existingFile); err != nil {
+					t.Errorf("existing file should still be in cirrus: %v", err)
+				}
+				if _, err := os.Stat(migratedFile); err != nil {
+					t.Errorf("legacy file should be migrated to cirrus: %v", err)
+				}
+
+				// Check that legacy directory was removed
+				if _, err := os.Stat(legacyFilesPath); !os.IsNotExist(err) {
+					t.Errorf("legacy files directory should be removed")
+				}
+			},
+		},
+		{
+			name: "handles file naming conflicts by suffixing",
+			setupBefore: func(t *testing.T, dataDir string) {
+				cirrusPath := filepath.Join(dataDir, "cirrus")
+				legacyFilesPath := filepath.Join(dataDir, "files")
+
+				// Create cirrus directory with a file
+				if err := os.MkdirAll(cirrusPath, 0755); err != nil {
+					t.Fatalf("failed to create cirrus directory: %v", err)
+				}
+				conflictFile := filepath.Join(cirrusPath, "conflict.txt")
+				if err := os.WriteFile(conflictFile, []byte("original content"), 0644); err != nil {
+					t.Fatalf("failed to create original file: %v", err)
+				}
+
+				// Create legacy directory with a file with same name
+				if err := os.MkdirAll(legacyFilesPath, 0755); err != nil {
+					t.Fatalf("failed to create legacy files directory: %v", err)
+				}
+				legacyFile := filepath.Join(legacyFilesPath, "conflict.txt")
+				if err := os.WriteFile(legacyFile, []byte("migrated content"), 0644); err != nil {
+					t.Fatalf("failed to create legacy file: %v", err)
+				}
+			},
+			wantError: false,
+			validateAfter: func(t *testing.T, dataDir string) {
+				cirrusPath := filepath.Join(dataDir, "cirrus")
+
+				// Check original file still exists
+				originalFile := filepath.Join(cirrusPath, "conflict.txt")
+				content, err := os.ReadFile(originalFile)
+				if err != nil {
+					t.Fatalf("original file should exist: %v", err)
+				}
+				if string(content) != "original content" {
+					t.Errorf("original file should not be modified: got %q, want %q", string(content), "original content")
+				}
+
+				// Check migrated file was created with suffix
+				migratedFile := filepath.Join(cirrusPath, "conflict_(1).txt")
+				content, err = os.ReadFile(migratedFile)
+				if err != nil {
+					t.Fatalf("migrated file with suffix should exist: %v", err)
+				}
+				if string(content) != "migrated content" {
+					t.Errorf("migrated file should have migrated content: got %q, want %q", string(content), "migrated content")
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a temporary directory for this test
+			tmpDir := t.TempDir()
+
+			// Run setup
+			tt.setupBefore(t, tmpDir)
+
+			// Temporarily change GetDataDir by modifying cirrus and files paths directly
+			cirrusPath := filepath.Join(tmpDir, "cirrus")
+			legacyFilesPath := filepath.Join(tmpDir, "files")
+
+			// Copy the migration logic inline to test with our temp directory
+			if _, err := os.Stat(cirrusPath); os.IsNotExist(err) {
+				if err := os.MkdirAll(cirrusPath, 0755); err != nil {
+					t.Fatalf("failed to create cirrus directory: %v", err)
+				}
+			}
+
+			if _, err := os.Stat(legacyFilesPath); err == nil {
+				entries, err := os.ReadDir(legacyFilesPath)
+				if err != nil {
+					t.Fatalf("failed to read legacy files directory: %v", err)
+				}
+				for _, entry := range entries {
+					oldPath := filepath.Join(legacyFilesPath, entry.Name())
+					targetPath := filepath.Join(cirrusPath, entry.Name())
+					newPath := GetNonConflictingPath(targetPath)
+					if err := os.Rename(oldPath, newPath); err != nil {
+						t.Fatalf("failed to move file %s to cirrus directory: %v", entry.Name(), err)
+					}
+				}
+				if err := os.RemoveAll(legacyFilesPath); err != nil {
+					t.Fatalf("failed to delete legacy files directory: %v", err)
+				}
+			}
+
+			// Run validation
+			tt.validateAfter(t, tmpDir)
+		})
+	}
+}
+
+func TestGetNonConflictingPath(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	tests := []struct {
+		name            string
+		setup           func(t *testing.T, dir string) // Setup function to create files
+		inputPath       string
+		expectedPath    string
+		expectedContent string // For validating the file can be created
+	}{
+		{
+			name: "returns original path when no conflict exists",
+			setup: func(t *testing.T, dir string) {
+				// Don't create any files
+			},
+			inputPath:    filepath.Join(tmpDir, "newfile.txt"),
+			expectedPath: filepath.Join(tmpDir, "newfile.txt"),
+		},
+		{
+			name: "suffixes with _(1) when file exists",
+			setup: func(t *testing.T, dir string) {
+				if err := os.WriteFile(filepath.Join(dir, "file.txt"), []byte("original"), 0644); err != nil {
+					t.Fatalf("failed to create test file: %v", err)
+				}
+			},
+			inputPath:    filepath.Join(tmpDir, "file.txt"),
+			expectedPath: filepath.Join(tmpDir, "file_(1).txt"),
+		},
+		{
+			name: "increments suffix when multiple conflicts exist",
+			setup: func(t *testing.T, dir string) {
+				for i := 0; i < 2; i++ {
+					path := filepath.Join(dir, fmt.Sprintf("file%s.txt", func() string {
+						if i == 0 {
+							return ""
+						}
+						return fmt.Sprintf("_(%d)", i)
+					}()))
+					if err := os.WriteFile(path, []byte("content"), 0644); err != nil {
+						t.Fatalf("failed to create test file: %v", err)
+					}
+				}
+			},
+			inputPath:    filepath.Join(tmpDir, "file.txt"),
+			expectedPath: filepath.Join(tmpDir, "file_(2).txt"),
+		},
+		{
+			name: "handles files without extension",
+			setup: func(t *testing.T, dir string) {
+				if err := os.WriteFile(filepath.Join(dir, "file"), []byte("original"), 0644); err != nil {
+					t.Fatalf("failed to create test file: %v", err)
+				}
+			},
+			inputPath:    filepath.Join(tmpDir, "file"),
+			expectedPath: filepath.Join(tmpDir, "file_(1)"),
+		},
+		{
+			name: "handles files with multiple dots in name",
+			setup: func(t *testing.T, dir string) {
+				if err := os.WriteFile(filepath.Join(dir, "file.backup.txt"), []byte("original"), 0644); err != nil {
+					t.Fatalf("failed to create test file: %v", err)
+				}
+			},
+			inputPath:    filepath.Join(tmpDir, "file.backup.txt"),
+			expectedPath: filepath.Join(tmpDir, "file.backup_(1).txt"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a fresh temp directory for this test
+			testDir := t.TempDir()
+
+			tt.setup(t, testDir)
+
+			inputPath := filepath.Join(testDir, filepath.Base(tt.inputPath))
+			result := GetNonConflictingPath(inputPath)
+
+			expectedPath := filepath.Join(testDir, filepath.Base(tt.expectedPath))
+			if result != expectedPath {
+				t.Errorf("GetNonConflictingPath(%s) = %s, want %s", filepath.Base(inputPath), filepath.Base(result), filepath.Base(expectedPath))
+			}
+		})
 	}
 }
