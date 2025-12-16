@@ -26,14 +26,14 @@ func NewRouter() *router {
 
 func (r *router) Routes() []*serverutil.Route {
 	return []*serverutil.Route{
-		filesRoute,
-		filesNestedRoute,
+		cirrusRoute,
+		cirrusNestedRoute,
 		fileExplorerComponentRoute,
 		fileViewerComponentRoute,
 	}
 }
 
-var filesRoute = serverutil.UiRoute(
+var cirrusRoute = serverutil.UiRoute(
 	"/cirrus", func(c *gin.Context) templ.Component {
 		view := getViewFromRequest(c)
 
@@ -46,7 +46,7 @@ var filesRoute = serverutil.UiRoute(
 	},
 )
 
-var filesNestedRoute = serverutil.UiRoute(
+var cirrusNestedRoute = serverutil.UiRoute(
 	"/cirrus/*rootDir", func(c *gin.Context) templ.Component {
 		rootDir := c.Param("rootDir")
 		view := getViewFromRequest(c)

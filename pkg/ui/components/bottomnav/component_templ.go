@@ -57,7 +57,7 @@ func Component(pageState types.PageState) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var4 = []any{"bottomnav-item", templ.KV("bottomnav-item--active", pageState.CurrentPageName == types.PageFiles)}
+		var templ_7745c5c3_Var4 = []any{"bottomnav-item", templ.KV("bottomnav-item--active", pageState.CurrentPageName == types.PageCirrus)}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var4...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err

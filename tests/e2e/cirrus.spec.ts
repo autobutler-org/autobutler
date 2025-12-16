@@ -16,7 +16,7 @@ test.describe('Cirrus Page', () => {
 
         const title = page.locator('h2.file-explorer-title');
         await expect(title).toBeVisible();
-        await expect(title).toHaveText('File Explorer');
+        await expect(title).toHaveText('Cirrus');
 
         const spaceInfo = page.locator('.file-explorer-space-info');
         await expect(spaceInfo).toBeVisible();

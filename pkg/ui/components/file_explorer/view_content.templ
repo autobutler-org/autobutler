@@ -24,6 +24,5 @@ templ ViewContent(pageState types.PageState, files []*fileutil.DeviceFileInfo, v
 // ViewContentWithBreadcrumb is used for HTMX requests that need to update the breadcrumb via OOB swap
 templ ViewContentWithBreadcrumb(pageState types.PageState, files []*fileutil.DeviceFileInfo, view string) {
 	@ViewContent(pageState, files, view)
-	// Out-of-band swap to update breadcrumb
-	@BreadcrumbOOB(pageState, view)
+	@Breadcrumb(pageState, view)
 }
