@@ -3,7 +3,7 @@ package v1_files
 import (
 	"autobutler/pkg/ui/components/error_message"
 	view_cirrus "autobutler/pkg/ui/views/cirrus"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
 	"fmt"
 
@@ -16,12 +16,12 @@ var deleteFilesRoute = serverutil.ApiRoute(
 		filePaths := c.QueryArray("filePaths")
 		fmt.Printf("Deleting multiple files: %s\n", filePaths)
 
-		managedDevices, err := fileutil.GetManagedDevices()
+		managedDevices, err := cirrusutil.GetManagedDevices()
 		if err != nil {
 			managedDevices = nil
 		}
 
-		result, err := fileutil.DeleteFiles(fileutil.DeleteFilesParams{
+		result, err := cirrusutil.DeleteFiles(cirrusutil.DeleteFilesParams{
 			RootDir:        rootDir,
 			FilePaths:      filePaths,
 			ManagedDevices: managedDevices,

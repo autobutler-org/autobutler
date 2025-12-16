@@ -9,14 +9,14 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"encoding/base64"
 	"os"
 	"path/filepath"
 )
 
 func readImageAsBase64(filePath string) (string, error) {
-	rootDir := fileutil.GetCirrusDir()
+	rootDir := cirrusutil.GetCirrusDir()
 	fullPath := filepath.Join(rootDir, filePath)
 	data, err := os.ReadFile(fullPath)
 	if err != nil {

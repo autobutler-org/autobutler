@@ -9,13 +9,13 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"os"
 	"path/filepath"
 )
 
 func readFile(filePath string) (string, error) {
-	rootDir := fileutil.GetCirrusDir()
+	rootDir := cirrusutil.GetCirrusDir()
 	fullPath := filepath.Join(rootDir, filePath)
 	data, err := os.ReadFile(fullPath)
 	if err != nil {

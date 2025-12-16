@@ -2,11 +2,11 @@ package device_filter
 
 import (
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 )
 
 templ Component(pageState types.PageState) {
-	{{ managedDevices, err := fileutil.GetManagedDevices() }}
+	{{ managedDevices, err := cirrusutil.GetManagedDevices() }}
 	if err == nil && len(managedDevices) > 1 {
 		<div class="device-filter">
 			<label class="device-filter-label">Devices:</label>

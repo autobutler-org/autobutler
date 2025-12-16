@@ -5,15 +5,15 @@ import (
 	"autobutler/pkg/ui/components/file_explorer/grid_view"
 	"autobutler/pkg/ui/components/file_explorer/list_view"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"path/filepath"
 )
 
-templ ViewContent(pageState types.PageState, files []*fileutil.DeviceFileInfo, view string) {
+templ ViewContent(pageState types.PageState, files []*cirrusutil.DeviceFileInfo, view string) {
 	if view == "column" {
 		@column_view.Component(pageState, files)
 	} else if len(files) == 0 {
-		<span class="file-explorer-empty">No files found in { filepath.Join(fileutil.GetCirrusDir(), pageState.RootDir) }</span>
+		<span class="file-explorer-empty">No files found in { filepath.Join(cirrusutil.GetCirrusDir(), pageState.RootDir) }</span>
 	} else if view == "grid" {
 		@grid_view.Component(pageState, files)
 	} else {
@@ -22,7 +22,7 @@ templ ViewContent(pageState types.PageState, files []*fileutil.DeviceFileInfo, v
 }
 
 // ViewContentWithBreadcrumb is used for HTMX requests that need to update the breadcrumb via OOB swap
-templ ViewContentWithBreadcrumb(pageState types.PageState, files []*fileutil.DeviceFileInfo, view string) {
+templ ViewContentWithBreadcrumb(pageState types.PageState, files []*cirrusutil.DeviceFileInfo, view string) {
 	@ViewContent(pageState, files, view)
 	@Breadcrumb(pageState, view)
 }

@@ -12,7 +12,7 @@ import (
 	"autobutler/pkg/ui/components/books"
 	"autobutler/pkg/ui/components/file_explorer/file_viewer/epub_viewer"
 	"autobutler/pkg/ui/components/header"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"path/filepath"
 )
 
@@ -37,7 +37,7 @@ func BookReader(bookPath string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		fileType := fileutil.DetermineFileTypeFromPath(bookPath)
+		fileType := cirrusutil.DetermineFileTypeFromPath(bookPath)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -46,7 +46,7 @@ func BookReader(bookPath string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if fileType == fileutil.FileTypePDF {
+		if fileType == cirrusutil.FileTypePDF {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<link rel=\"stylesheet\" href=\"/public/vendor/pdfjs/pdf_viewer.min.css\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -70,12 +70,12 @@ func BookReader(bookPath string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		switch fileType {
-		case fileutil.FileTypePDF:
+		case cirrusutil.FileTypePDF:
 			templ_7745c5c3_Err = books.PDFJSViewer(bookPath).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case fileutil.FileTypeEpub:
+		case cirrusutil.FileTypeEpub:
 			templ_7745c5c3_Err = epub_viewer.Component(bookPath).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

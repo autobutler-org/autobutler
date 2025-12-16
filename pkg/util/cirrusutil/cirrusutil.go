@@ -1,4 +1,4 @@
-package fileutil
+package cirrusutil
 
 import (
 	"fmt"
@@ -217,12 +217,48 @@ func GetDataDir() string {
 	}
 }
 
-func GetCirrusDir() string {
-	filesPath := filepath.Join(GetDataDir(), "files")
-	if err := os.MkdirAll(filesPath, 0755); err != nil {
-		panic(fmt.Sprintf("failed to create files directory: %v", err)) // coverage: ignore - panic on filesystem error
+func SetupCirrusDir() error {
+	// Check if the cirrus dir exists
+	// If cirrus dir exists, check if legacy files dir exists
+	// if so, move the contents of legacy files dir to cirrus dir, then delete legacy files dir
+	cirrusPath := filepath.Join(GetDataDir(), "cirrus")
+	legacyFilesPath := filepath.Join(GetDataDir(), "files")
+
+	if _, err := os.Stat(cirrusPath); os.IsNotExist(err) {
+		// Cirrus dir does not exist, create it
+		if err := os.MkdirAll(cirrusPath, 0755); err != nil {
+			return fmt.Errorf("failed to create cirrus directory: %w", err)
+		}
 	}
-	return filesPath
+
+	if _, err := os.Stat(legacyFilesPath); err == nil {
+		// Legacy files dir exists, move contents to cirrus dir
+		entries, err := os.ReadDir(legacyFilesPath)
+		if err != nil {
+			return fmt.Errorf("failed to read legacy files directory: %w", err)
+		}
+		for _, entry := range entries {
+			oldPath := filepath.Join(legacyFilesPath, entry.Name())
+			newPath := filepath.Join(cirrusPath, entry.Name())
+			if err := os.Rename(oldPath, newPath); err != nil {
+				return fmt.Errorf("failed to move file %s to cirrus directory: %w", entry.Name(), err)
+			}
+		}
+		// Delete legacy files dir
+		if err := os.RemoveAll(legacyFilesPath); err != nil {
+			return fmt.Errorf("failed to delete legacy files directory: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func GetCirrusDir() string {
+	cirrusPath := filepath.Join(GetDataDir(), "cirrus")
+	if err := os.MkdirAll(cirrusPath, 0755); err != nil {
+		panic(fmt.Sprintf("failed to create cirrus directory: %v", err)) // coverage: ignore - panic on filesystem error
+	}
+	return cirrusPath
 }
 
 // GetDeviceInfoForPath returns the device name and device path for a given file path

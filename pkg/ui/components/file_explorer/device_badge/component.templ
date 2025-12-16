@@ -1,8 +1,8 @@
 package device_badge
 
-import "autobutler/pkg/util/fileutil"
+import "autobutler/pkg/util/cirrusutil"
 
-templ Component(file *fileutil.DeviceFileInfo) {
+templ Component(file *cirrusutil.DeviceFileInfo) {
 	if file != nil && file.DeviceName != "" {
 		<span class="device-badge" title={ "Device: " + file.DeviceName }>
 			<svg class="device-badge-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

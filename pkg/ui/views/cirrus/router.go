@@ -9,7 +9,7 @@ import (
 	"autobutler/pkg/ui/components/file_explorer/file_viewer/unsupported_viewer"
 	"autobutler/pkg/ui/components/file_explorer/file_viewer/video_viewer"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
 	"html"
 	"path/filepath"
@@ -69,20 +69,20 @@ var fileExplorerComponentRoute = serverutil.UiRoute(
 var fileViewerComponentRoute = serverutil.UiRoute(
 	"/components/cirrus/viewer/cirrus/*filePath", func(c *gin.Context) templ.Component {
 		filePath := c.Param("filePath")
-		fileType := fileutil.DetermineFileTypeFromPath(filePath)
+		fileType := cirrusutil.DetermineFileTypeFromPath(filePath)
 		var viewer templ.Component
 		switch fileType {
-		case fileutil.FileTypeImage:
+		case cirrusutil.FileTypeImage:
 			viewer = image_viewer.Component(filePath)
-		case fileutil.FileTypeVideo:
+		case cirrusutil.FileTypeVideo:
 			viewer = video_viewer.Component(filePath)
-		case fileutil.FileTypePDF:
+		case cirrusutil.FileTypePDF:
 			viewer = pdf_viewer.Component(filePath)
-		case fileutil.FileTypeEpub:
+		case cirrusutil.FileTypeEpub:
 			viewer = epub_viewer.Component(filePath)
-		case fileutil.FileTypeGeneric:
+		case cirrusutil.FileTypeGeneric:
 			viewer = text_viewer.Component(filePath)
-		case fileutil.FileTypeDocx:
+		case cirrusutil.FileTypeDocx:
 			viewer = unsupported_viewer.Component(filePath)
 		default:
 			viewer = unsupported_viewer.Component(filePath)
@@ -122,38 +122,38 @@ func GetExplorerViewContentWithBreadcrumb(c *gin.Context, rootDir string, view s
 
 func getFileExplorerComponent(c *gin.Context, rootDir string, viewContentOnly bool, view ...any) templ.Component {
 	// Get all managed devices
-	managedDevices, err := fileutil.GetManagedDevices()
+	managedDevices, err := cirrusutil.GetManagedDevices()
 	if err != nil {
 		c.Writer.WriteString(`<span class="text-red-500">Failed to load managed devices: ` + html.EscapeString(err.Error()) + `</span>`)
 		return nil
 	}
 
-	var files []*fileutil.DeviceFileInfo
+	var files []*cirrusutil.DeviceFileInfo
 
 	// If no managed devices exist, fall back to single default device
 	if len(managedDevices) == 0 {
 		fullPathDir := ""
 		if rootDir == "" {
-			fullPathDir = fileutil.GetCirrusDir()
+			fullPathDir = cirrusutil.GetCirrusDir()
 		} else {
-			fullPathDir = filepath.Join(fileutil.GetCirrusDir(), rootDir)
+			fullPathDir = filepath.Join(cirrusutil.GetCirrusDir(), rootDir)
 		}
 		// Get device info for the default files directory
-		deviceName, devicePath := fileutil.GetDeviceInfoForPath(fullPathDir)
-		files, err = fileutil.StatFilesInDir(fullPathDir, deviceName, devicePath)
+		deviceName, devicePath := cirrusutil.GetDeviceInfoForPath(fullPathDir)
+		files, err = cirrusutil.StatFilesInDir(fullPathDir, deviceName, devicePath)
 		if err != nil {
 			c.Writer.WriteString(`<span class="text-red-500">Failed to load files: ` + html.EscapeString(err.Error()) + `</span>`)
 			return nil
 		}
 	} else {
 		// Build list of directories to scan across all devices
-		var dirsToScan []fileutil.DirWithDevice
+		var dirsToScan []cirrusutil.DirWithDevice
 		for _, device := range managedDevices {
 			dirPath := device.FilesDir
 			if rootDir != "" {
 				dirPath = filepath.Join(device.FilesDir, rootDir)
 			}
-			dirsToScan = append(dirsToScan, fileutil.DirWithDevice{
+			dirsToScan = append(dirsToScan, cirrusutil.DirWithDevice{
 				Dir:        dirPath,
 				DeviceName: device.Name,
 				DevicePath: device.MountPoint,
@@ -161,7 +161,7 @@ func getFileExplorerComponent(c *gin.Context, rootDir string, viewContentOnly bo
 		}
 
 		// Get unified file list across all devices
-		files, err = fileutil.StatFilesInMultipleDirs(dirsToScan)
+		files, err = cirrusutil.StatFilesInMultipleDirs(dirsToScan)
 		if err != nil {
 			c.Writer.WriteString(`<span class="text-red-500">Failed to load files: ` + html.EscapeString(err.Error()) + `</span>`)
 			return nil

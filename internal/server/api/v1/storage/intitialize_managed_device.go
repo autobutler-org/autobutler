@@ -1,7 +1,7 @@
 package v1_storage
 
 import (
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
 	"net/http"
 
@@ -21,7 +21,7 @@ var initializeManagedDeviceRoute = serverutil.ApiRoute(
 				})
 		}
 
-		err := fileutil.InitializeDeviceDataDir(mountPoint)
+		err := cirrusutil.InitializeDeviceDataDir(mountPoint)
 		if err != nil {
 			return serverutil.NewResponse().
 				WithContentType(serverutil.ContentTypeJSON).

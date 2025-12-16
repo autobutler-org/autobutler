@@ -4,7 +4,7 @@ import (
 	"autobutler/pkg/ui/components/error_message"
 	"autobutler/pkg/ui/components/file_explorer/load"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
 
 	"github.com/gin-gonic/gin"
@@ -43,7 +43,7 @@ func uploadFilesImpl(c *gin.Context, rootDir string) {
 		returnDir = form.Value["returnDir"][0]
 	}
 
-	result, err := fileutil.UploadFiles(fileutil.UploadFilesParams{
+	result, err := cirrusutil.UploadFiles(cirrusutil.UploadFilesParams{
 		RootDir:     rootDir,
 		FileHeaders: fileHeaders,
 		ReturnDir:   returnDir,

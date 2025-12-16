@@ -10,17 +10,17 @@ import (
 	"autobutler/pkg/ui/components/icons/column_view"
 	"autobutler/pkg/ui/components/icons/grid_view"
 	"autobutler/pkg/ui/components/icons/list_view"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 
 	"autobutler/pkg/ui/components/file_explorer/explorer_context_menu"
 	"autobutler/pkg/ui/types"
 	"fmt"
 )
 
-templ Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, view string) {
+templ Component(pageState types.PageState, files []*cirrusutil.DeviceFileInfo, view string) {
 	// TODO: This works on firefox, but not on chrome as it will rapidly open and close the upload area.
-	{{ fileDir := fileutil.GetCirrusDir() }}
-	{{ availableBytes := fileutil.GetAvailableSpaceInBytes(fileDir) }}
+	{{ fileDir := cirrusutil.GetCirrusDir() }}
+	{{ availableBytes := cirrusutil.GetAvailableSpaceInBytes(fileDir) }}
 	<div
 		id="file-explorer"
 		class="file-explorer"
@@ -30,7 +30,7 @@ templ Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, vie
 		<div class="file-explorer-header">
 			<div>
 				<h2 class="file-explorer-title">Cirrus</h2>
-				<div class="file-explorer-space-info">Available Space: { fmt.Sprintf("%.2fGB", fileutil.BytesToGB(availableBytes)) }</div>
+				<div class="file-explorer-space-info">Available Space: { fmt.Sprintf("%.2fGB", cirrusutil.BytesToGB(availableBytes)) }</div>
 			</div>
 			<div style="display: flex; gap: 0.5rem; align-items: center;">
 				@file_navigation.Component(pageState)

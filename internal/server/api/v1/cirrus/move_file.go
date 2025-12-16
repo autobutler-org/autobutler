@@ -3,7 +3,7 @@ package v1_files
 import (
 	"autobutler/pkg/ui/components/error_message"
 	view_cirrus "autobutler/pkg/ui/views/cirrus"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
 
 	"github.com/gin-gonic/gin"
@@ -14,7 +14,7 @@ var moveFileRoute = serverutil.ApiRoute(
 		filePath := c.Param("filePath")
 		newFilePath := c.PostForm("newFilePath")
 
-		result, err := fileutil.MoveFile(fileutil.MoveFileParams{
+		result, err := cirrusutil.MoveFile(cirrusutil.MoveFileParams{
 			FilePath:    filePath,
 			NewFilePath: newFilePath,
 		})

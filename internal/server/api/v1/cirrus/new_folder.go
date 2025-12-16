@@ -3,7 +3,7 @@ package v1_files
 import (
 	"autobutler/pkg/ui/components/error_message"
 	view_cirrus "autobutler/pkg/ui/views/cirrus"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
 
 	"github.com/a-h/templ"
@@ -15,7 +15,7 @@ var newFolderRoute = serverutil.ApiRoute(
 		folderDir := c.Param("folderDir")
 		folderName := c.PostForm("folderName")
 
-		result, err := fileutil.CreateFolder(fileutil.CreateFolderParams{
+		result, err := cirrusutil.CreateFolder(cirrusutil.CreateFolderParams{
 			FolderDir:  folderDir,
 			FolderName: folderName,
 		})

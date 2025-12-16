@@ -5,10 +5,10 @@ import (
 	"autobutler/pkg/ui/components/header"
 	"autobutler/pkg/ui/components/landing_nav"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 )
 
-templ Devices(pageState types.PageState, devices []fileutil.Device, summary fileutil.Summary) {
+templ Devices(pageState types.PageState, devices []cirrusutil.Device, summary cirrusutil.Summary) {
 	{{ pageState.CurrentPageName = types.PageDevices }}
 	<!DOCTYPE html>
 	<html lang="en">

@@ -14,7 +14,7 @@ import (
 	"autobutler/pkg/ui/components/file_explorer"
 	"autobutler/pkg/ui/components/header"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"path/filepath"
 )
 
@@ -60,9 +60,9 @@ func Files(pageState types.PageState) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			fullPathDir := filepath.Join(fileutil.GetCirrusDir(), pageState.RootDir)
-			deviceName, devicePath := fileutil.GetDeviceInfoForPath(fullPathDir)
-			files, err := fileutil.StatFilesInDir(fullPathDir, deviceName, devicePath)
+			fullPathDir := filepath.Join(cirrusutil.GetCirrusDir(), pageState.RootDir)
+			deviceName, devicePath := cirrusutil.GetDeviceInfoForPath(fullPathDir)
+			files, err := cirrusutil.StatFilesInDir(fullPathDir, deviceName, devicePath)
 			if err != nil {
 				templ_7745c5c3_Err = error_message.Component("Error loading files: "+err.Error()).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {

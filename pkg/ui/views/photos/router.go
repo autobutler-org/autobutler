@@ -3,7 +3,7 @@ package view_photos
 import (
 	"autobutler/pkg/ui/components/photos"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/photoutil"
 	"autobutler/pkg/util/serverutil"
 	"strconv"
@@ -28,14 +28,14 @@ func (r *router) Routes() []*serverutil.Route {
 var photosRoute = serverutil.UiRoute(
 	"/photos", func(c *gin.Context) templ.Component {
 		// Get storage summary for the storage bar component
-		detector := fileutil.NewDetector()
+		detector := cirrusutil.NewDetector()
 		devices, err := detector.DetectDevices()
-		var summary fileutil.Summary
+		var summary cirrusutil.Summary
 		if err == nil && len(devices) > 0 {
-			summary = fileutil.CalculateSummary(devices)
+			summary = cirrusutil.CalculateSummary(devices)
 		} else {
 			// Provide empty summary if detection fails
-			summary = fileutil.Summary{}
+			summary = cirrusutil.Summary{}
 		}
 
 		return Photos(types.NewPageState(), summary)
@@ -46,14 +46,14 @@ var photosNestedRoute = serverutil.UiRoute(
 	"/photos/*rootDir", func(c *gin.Context) templ.Component {
 		rootDir := c.Param("rootDir")
 		// Get storage summary for the storage bar component
-		detector := fileutil.NewDetector()
+		detector := cirrusutil.NewDetector()
 		devices, err := detector.DetectDevices()
-		var summary fileutil.Summary
+		var summary cirrusutil.Summary
 		if err == nil && len(devices) > 0 {
-			summary = fileutil.CalculateSummary(devices)
+			summary = cirrusutil.CalculateSummary(devices)
 		} else {
 			// Provide empty summary if detection fails
-			summary = fileutil.Summary{}
+			summary = cirrusutil.Summary{}
 		}
 
 		return Photos(types.NewPageState().WithRootDir(rootDir), summary)
@@ -72,7 +72,7 @@ var photoGridComponentRoute = serverutil.UiRoute(
 		println("🔍 SERVER: Photo grid request - Page:", page)
 
 		// Get all photos
-		photoFiles, err := photoutil.FindAllPhotosRecursively(fileutil.GetCirrusDir())
+		photoFiles, err := photoutil.FindAllPhotosRecursively(cirrusutil.GetCirrusDir())
 		if err != nil {
 			return nil
 		}

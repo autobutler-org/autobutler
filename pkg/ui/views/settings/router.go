@@ -6,7 +6,7 @@ import (
 	"autobutler/pkg/ui/components/user_access"
 	"autobutler/pkg/ui/types"
 
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
 
 	"github.com/a-h/templ"
@@ -51,16 +51,16 @@ var settingsNetworkRoute = serverutil.UiRoute(
 var deviceManagerComponentRoute = serverutil.UiRoute(
 	"/components/settings/device-manager", func(c *gin.Context) templ.Component {
 		// Detect all storage devices
-		detector := fileutil.NewDetector()
+		detector := cirrusutil.NewDetector()
 		devices, err := detector.DetectDevices()
 		if err != nil {
-			devices = []fileutil.Device{}
+			devices = []cirrusutil.Device{}
 		}
 
 		// Get managed devices
-		managedDevices, err := fileutil.GetManagedDevices()
+		managedDevices, err := cirrusutil.GetManagedDevices()
 		if err != nil {
-			managedDevices = []fileutil.ManagedDevice{}
+			managedDevices = []cirrusutil.ManagedDevice{}
 		}
 
 		return device_manager.Component(devices, managedDevices)

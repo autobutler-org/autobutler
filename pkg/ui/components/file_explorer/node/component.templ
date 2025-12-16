@@ -11,15 +11,15 @@ import (
 	"autobutler/pkg/ui/components/icons/pdf"
 	"autobutler/pkg/ui/components/icons/slideshow"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"path/filepath"
 )
 
-templ Component(pageState types.PageState, file *fileutil.DeviceFileInfo) {
+templ Component(pageState types.PageState, file *cirrusutil.DeviceFileInfo) {
 	// TODO: Refactor this into small parts, so we don't do so much spaghetti for folder vs file, but share common bits
 	// TODO: this is the page where the greater table is loaded in @brandon
 	// Get file type and name
-	{{ fileType := fileutil.DetermineFileType(pageState.RootDir, file) }}
+	{{ fileType := cirrusutil.DetermineFileType(pageState.RootDir, file) }}
 	{{ fileName := "" }}
 	{{ deviceName := "" }}
 	{{ fileSize := int64(0) }}
@@ -47,7 +47,7 @@ templ Component(pageState types.PageState, file *fileutil.DeviceFileInfo) {
 		data-device-name={ deviceName }
 	>
 		switch fileType {
-			case fileutil.FileTypeFolder:
+			case cirrusutil.FileTypeFolder:
 				{{ filePath := filepath.Join("/cirrus", pageState.RootDir, fileName) }}
 				<td class="file-table-cell file-table-cell--content" data-href={ filePath }>
 					@folder.Component()
@@ -55,12 +55,12 @@ templ Component(pageState types.PageState, file *fileutil.DeviceFileInfo) {
 					@device_badge.Component(file)
 				</td>
 				<td class="file-table-cell file-table-size">
-					{ fileutil.SizeBytesToString(fileSize) }
+					{ cirrusutil.SizeBytesToString(fileSize) }
 				</td>
 				<td class="file-table-cell">
 					@file_context_menu.Component(pageState, file)
 				</td>
-			case fileutil.FileTypeSpacer:
+			case cirrusutil.FileTypeSpacer:
 				<td colspan="3" class="file-table-cell file-table-cell--spacer" onclick="document.getElementById('file-upload-input').click()" tabindex="0" onkeydown="if (event.key === 'Enter' || event.key === ' ') { window.ab.preventDefault(event); document.getElementById('file-upload-input').click(); }">
 					<span class="spacer">Drop files here&#8230;</span>
 					@explorer_context_menu.Component(pageState)
@@ -75,13 +75,13 @@ templ Component(pageState types.PageState, file *fileutil.DeviceFileInfo) {
 				>
 					{{ /* Render the appropriate icon based on the file type */ }}
 					switch fileType {
-						case fileutil.FileTypePDF:
+						case cirrusutil.FileTypePDF:
 							@pdf.Component()
-						case fileutil.FileTypeSlideshow:
+						case cirrusutil.FileTypeSlideshow:
 							@slideshow.Component()
-						case fileutil.FileTypeImage:
+						case cirrusutil.FileTypeImage:
 							@image.Component()
-						case fileutil.FileTypeArchive:
+						case cirrusutil.FileTypeArchive:
 							@archive.Component()
 						default:
 							@generic.Component()
@@ -90,7 +90,7 @@ templ Component(pageState types.PageState, file *fileutil.DeviceFileInfo) {
 					@device_badge.Component(file)
 				</td>
 				<td class="file-table-cell file-table-size">
-					{ fileutil.SizeBytesToString(fileSize) }
+					{ cirrusutil.SizeBytesToString(fileSize) }
 				</td>
 				<td class="file-table-cell">
 					@file_context_menu.Component(pageState, file)

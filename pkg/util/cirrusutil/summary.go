@@ -1,4 +1,4 @@
-package fileutil
+package cirrusutil
 
 // Summary represents overall storage summary
 type Summary struct {

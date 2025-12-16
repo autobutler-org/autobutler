@@ -10,12 +10,12 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"autobutler/pkg/ui/components/storage_partition"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 )
 
 // Component renders a device card showing storage device information
-// Uses fileutil.Device from the backend and storage_partition component for visualization
-func Component(device fileutil.Device) templ.Component {
+// Uses cirrusutil.Device from the backend and storage_partition component for visualization
+func Component(device cirrusutil.Device) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

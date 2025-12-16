@@ -18,12 +18,12 @@ import (
 	"autobutler/pkg/ui/components/icons/pdf"
 	"autobutler/pkg/ui/components/icons/slideshow"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"fmt"
 	"path/filepath"
 )
 
-func Component(pageState types.PageState, files []*fileutil.DeviceFileInfo) templ.Component {
+func Component(pageState types.PageState, files []*cirrusutil.DeviceFileInfo) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -62,7 +62,7 @@ func Component(pageState types.PageState, files []*fileutil.DeviceFileInfo) temp
 	})
 }
 
-func renderGridItem(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.Component {
+func renderGridItem(pageState types.PageState, file *cirrusutil.DeviceFileInfo) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -83,11 +83,11 @@ func renderGridItem(pageState types.PageState, file *fileutil.DeviceFileInfo) te
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		fileType := fileutil.DetermineFileType(pageState.RootDir, file)
+		fileType := cirrusutil.DetermineFileType(pageState.RootDir, file)
 		fileName := file.Name()
-		isFolder := fileType == fileutil.FileTypeFolder
+		isFolder := fileType == cirrusutil.FileTypeFolder
 		filePath := filepath.Join("/cirrus", pageState.RootDir, fileName)
-		fileSize := fileutil.SizeBytesToString(file.Size())
+		fileSize := cirrusutil.SizeBytesToString(file.Size())
 		deviceName := file.DeviceName
 		var templ_7745c5c3_Var3 = []any{"grid-view-item file-node", templ.KV("grid-view-item--folder", isFolder)}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var3...)
@@ -241,7 +241,7 @@ func renderGridItem(pageState types.PageState, file *fileutil.DeviceFileInfo) te
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if fileType == fileutil.FileTypeImage {
+			if fileType == cirrusutil.FileTypeImage {
 				thumbnailPath := filepath.Join("/api/v1/thumbnails", pageState.RootDir, fileName)
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<div class=\"grid-view-thumbnail-container\"><img class=\"grid-view-thumbnail\" src=\"")
 				if templ_7745c5c3_Err != nil {
@@ -357,7 +357,7 @@ func renderGridItem(pageState types.PageState, file *fileutil.DeviceFileInfo) te
 	})
 }
 
-func renderFileIcon(fileType fileutil.FileType) templ.Component {
+func renderFileIcon(fileType cirrusutil.FileType) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -379,22 +379,22 @@ func renderFileIcon(fileType fileutil.FileType) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		switch fileType {
-		case fileutil.FileTypePDF:
+		case cirrusutil.FileTypePDF:
 			templ_7745c5c3_Err = pdf.Component().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case fileutil.FileTypeSlideshow:
+		case cirrusutil.FileTypeSlideshow:
 			templ_7745c5c3_Err = slideshow.Component().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case fileutil.FileTypeImage:
+		case cirrusutil.FileTypeImage:
 			templ_7745c5c3_Err = image.Component().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case fileutil.FileTypeArchive:
+		case cirrusutil.FileTypeArchive:
 			templ_7745c5c3_Err = archive.Component().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

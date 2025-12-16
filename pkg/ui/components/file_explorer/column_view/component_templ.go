@@ -18,13 +18,13 @@ import (
 	"autobutler/pkg/ui/components/icons/pdf"
 	"autobutler/pkg/ui/components/icons/slideshow"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"fmt"
 	"path/filepath"
 	"strings"
 )
 
-func Component(pageState types.PageState, files []*fileutil.DeviceFileInfo) templ.Component {
+func Component(pageState types.PageState, files []*cirrusutil.DeviceFileInfo) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -61,7 +61,7 @@ func Component(pageState types.PageState, files []*fileutil.DeviceFileInfo) temp
 	})
 }
 
-func renderColumnLayout(pageState types.PageState, files []*fileutil.DeviceFileInfo) templ.Component {
+func renderColumnLayout(pageState types.PageState, files []*cirrusutil.DeviceFileInfo) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -154,12 +154,12 @@ func renderParentColumn(pageState types.PageState, dirPath string, columnIndex i
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		fullPath := fileutil.GetCirrusDir()
+		fullPath := cirrusutil.GetCirrusDir()
 		if dirPath != "" {
 			fullPath = filepath.Join(fullPath, dirPath)
 		}
-		deviceName, devicePath := fileutil.GetDeviceInfoForPath(fullPath)
-		columnFiles, _ := fileutil.StatFilesInDir(fullPath, deviceName, devicePath)
+		deviceName, devicePath := cirrusutil.GetDeviceInfoForPath(fullPath)
+		columnFiles, _ := cirrusutil.StatFilesInDir(fullPath, deviceName, devicePath)
 		columnTitle := "files"
 		if dirPath != "" {
 			columnTitle = filepath.Base(dirPath)
@@ -225,7 +225,7 @@ func renderParentColumn(pageState types.PageState, dirPath string, columnIndex i
 }
 
 // renderCurrentColumn renders the current directory being viewed
-func renderCurrentColumn(pageState types.PageState, files []*fileutil.DeviceFileInfo, columnIndex int) templ.Component {
+func renderCurrentColumn(pageState types.PageState, files []*cirrusutil.DeviceFileInfo, columnIndex int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -310,7 +310,7 @@ func renderCurrentColumn(pageState types.PageState, files []*fileutil.DeviceFile
 }
 
 // renderParentColumnItem renders an item in a parent directory column
-func renderParentColumnItem(pageState types.PageState, parentPath string, file *fileutil.DeviceFileInfo, isSelected bool) templ.Component {
+func renderParentColumnItem(pageState types.PageState, parentPath string, file *cirrusutil.DeviceFileInfo, isSelected bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -331,9 +331,9 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file *
 			templ_7745c5c3_Var9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		fileType := fileutil.DetermineFileType(parentPath, file)
+		fileType := cirrusutil.DetermineFileType(parentPath, file)
 		fileName := file.Name()
-		isFolder := fileType == fileutil.FileTypeFolder
+		isFolder := fileType == cirrusutil.FileTypeFolder
 		filePath := filepath.Join("/cirrus", parentPath, fileName)
 		// For files in parent columns, navigate to parent dir (removing child columns)
 		fileParentPath := filepath.Join("/cirrus", parentPath)
@@ -498,7 +498,7 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file *
 }
 
 // renderCurrentColumnItem renders an item in the current directory column
-func renderCurrentColumnItem(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.Component {
+func renderCurrentColumnItem(pageState types.PageState, file *cirrusutil.DeviceFileInfo) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -519,9 +519,9 @@ func renderCurrentColumnItem(pageState types.PageState, file *fileutil.DeviceFil
 			templ_7745c5c3_Var19 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		fileType := fileutil.DetermineFileType(pageState.RootDir, file)
+		fileType := cirrusutil.DetermineFileType(pageState.RootDir, file)
 		fileName := file.Name()
-		isFolder := fileType == fileutil.FileTypeFolder
+		isFolder := fileType == cirrusutil.FileTypeFolder
 		filePath := filepath.Join("/cirrus", pageState.RootDir, fileName)
 		dataFileType := fileType
 		if isFolder {
@@ -683,7 +683,7 @@ func renderCurrentColumnItem(pageState types.PageState, file *fileutil.DeviceFil
 	})
 }
 
-func renderFileIcon(fileType fileutil.FileType) templ.Component {
+func renderFileIcon(fileType cirrusutil.FileType) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -705,22 +705,22 @@ func renderFileIcon(fileType fileutil.FileType) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		switch fileType {
-		case fileutil.FileTypePDF:
+		case cirrusutil.FileTypePDF:
 			templ_7745c5c3_Err = pdf.Component().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case fileutil.FileTypeSlideshow:
+		case cirrusutil.FileTypeSlideshow:
 			templ_7745c5c3_Err = slideshow.Component().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case fileutil.FileTypeImage:
+		case cirrusutil.FileTypeImage:
 			templ_7745c5c3_Err = image.Component().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case fileutil.FileTypeArchive:
+		case cirrusutil.FileTypeArchive:
 			templ_7745c5c3_Err = archive.Component().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

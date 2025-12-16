@@ -3,13 +3,13 @@ package file_context_menu
 import (
 	"autobutler/pkg/ui/components/lib"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/maputil"
 	"fmt"
 	"path/filepath"
 )
 
-templ Component(pageState types.PageState, file *fileutil.DeviceFileInfo) {
+templ Component(pageState types.PageState, file *cirrusutil.DeviceFileInfo) {
 	<div>
 		<button
 			class="context-menu-trigger"
