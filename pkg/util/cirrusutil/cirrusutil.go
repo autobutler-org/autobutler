@@ -246,25 +246,25 @@ func SetupCirrusDir() error {
 	// Check if the cirrus dir exists
 	// If cirrus dir exists, check if legacy files dir exists
 	// if so, move the contents of legacy files dir to cirrus dir, then delete legacy files dir
-	cirrusPath := filepath.Join(GetDataDir(), "cirrus")
-	legacyFilesPath := filepath.Join(GetDataDir(), "files")
+	cirrusDir := ConstructCirrusDir(GetDataDir())
+	legacyFilesDir := filepath.Join(GetDataDir(), "files")
 
-	if _, err := os.Stat(cirrusPath); os.IsNotExist(err) {
+	if _, err := os.Stat(cirrusDir); os.IsNotExist(err) {
 		// Cirrus dir does not exist, create it
-		if err := os.MkdirAll(cirrusPath, 0755); err != nil {
+		if err := os.MkdirAll(cirrusDir, 0755); err != nil {
 			return fmt.Errorf("failed to create cirrus directory: %w", err)
 		}
 	}
 
-	if _, err := os.Stat(legacyFilesPath); err == nil {
+	if _, err := os.Stat(legacyFilesDir); err == nil {
 		// Legacy files dir exists, move contents to cirrus dir
-		entries, err := os.ReadDir(legacyFilesPath)
+		entries, err := os.ReadDir(legacyFilesDir)
 		if err != nil {
 			return fmt.Errorf("failed to read legacy files directory: %w", err)
 		}
 		for _, entry := range entries {
-			oldPath := filepath.Join(legacyFilesPath, entry.Name())
-			targetPath := filepath.Join(cirrusPath, entry.Name())
+			oldPath := filepath.Join(legacyFilesDir, entry.Name())
+			targetPath := filepath.Join(cirrusDir, entry.Name())
 			// Use GetNonConflictingPath to handle naming conflicts
 			newPath := GetNonConflictingPath(targetPath)
 			if err := os.Rename(oldPath, newPath); err != nil {
@@ -272,7 +272,7 @@ func SetupCirrusDir() error {
 			}
 		}
 		// Delete legacy files dir
-		if err := os.RemoveAll(legacyFilesPath); err != nil {
+		if err := os.RemoveAll(legacyFilesDir); err != nil {
 			return fmt.Errorf("failed to delete legacy files directory: %w", err)
 		}
 	}
@@ -280,8 +280,12 @@ func SetupCirrusDir() error {
 	return nil
 }
 
+func ConstructCirrusDir(dataDir string) string {
+	return filepath.Join(dataDir, "cirrus")
+}
+
 func GetCirrusDir() string {
-	cirrusPath := filepath.Join(GetDataDir(), "cirrus")
+	cirrusPath := ConstructCirrusDir(GetDataDir())
 	if err := os.MkdirAll(cirrusPath, 0755); err != nil {
 		panic(fmt.Sprintf("failed to create cirrus directory: %v", err)) // coverage: ignore - panic on filesystem error
 	}

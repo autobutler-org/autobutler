@@ -149,9 +149,9 @@ func getFileExplorerComponent(c *gin.Context, rootDir string, viewContentOnly bo
 		// Build list of directories to scan across all devices
 		var dirsToScan []cirrusutil.DirWithDevice
 		for _, device := range managedDevices {
-			dirPath := device.FilesDir
+			dirPath := device.CirrusDir
 			if rootDir != "" {
-				dirPath = filepath.Join(device.FilesDir, rootDir)
+				dirPath = filepath.Join(device.CirrusDir, rootDir)
 			}
 			dirsToScan = append(dirsToScan, cirrusutil.DirWithDevice{
 				Dir:        dirPath,

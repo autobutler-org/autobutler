@@ -37,7 +37,7 @@ func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
 		var dirsToSearch []DirWithDevice
 		for _, device := range params.ManagedDevices {
 			dirsToSearch = append(dirsToSearch, DirWithDevice{
-				Dir:        device.FilesDir,
+				Dir:        device.CirrusDir,
 				DeviceName: device.Name,
 				DevicePath: device.MountPoint,
 			})
@@ -216,7 +216,7 @@ func DownloadFile(params DownloadFileParams) (*DownloadFileResult, error) {
 		var dirsToSearch []DirWithDevice
 		for _, device := range params.ManagedDevices {
 			dirsToSearch = append(dirsToSearch, DirWithDevice{
-				Dir:        device.FilesDir,
+				Dir:        device.CirrusDir,
 				DeviceName: device.Name,
 				DevicePath: device.MountPoint,
 			})

@@ -101,14 +101,14 @@ test.describe('Device Management', () => {
             expect(device).toHaveProperty('is_enabled');
             expect(typeof device.is_enabled).toBe('boolean');
 
-            // If enabled, should have data_dir and files_dir
+            // If enabled, should have data_dir and cirrus_dir
             if (device.is_enabled) {
                 expect(device).toHaveProperty('data_dir');
-                expect(device).toHaveProperty('files_dir');
+                expect(device).toHaveProperty('cirrus_dir');
                 // System devices use ~/Library/Application Support/Autobutler/data (macOS)
                 // or ~/autobutler/data (Linux), external devices use .autobutler/data
                 expect(device.data_dir).toMatch(/(\.autobutler|Autobutler\/data|autobutler\/data)/);
-                expect(device.files_dir).toContain('files');
+                expect(device.cirrus_dir).toContain('cirrus');
             }
         }
     });
