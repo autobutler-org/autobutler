@@ -724,7 +724,7 @@ test.describe('Column View Navigation', () => {
         await page.waitForTimeout(500);
 
         // Verify we're back at root
-        await expect(page).toHaveURL(/^.*\/files\/?$/);
+        await expect(page).toHaveURL(/^.*\/cirrus\/?$/);
 
         // Verify still in column view
         const columnViewContainer = page.locator('.column-view-container');
