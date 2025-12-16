@@ -3,6 +3,7 @@ package server
 import (
 	"autobutler/internal/server/middleware"
 	"autobutler/pkg/botel"
+	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/deputil"
 	"context"
 	"fmt"
@@ -11,6 +12,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+func setupServices() error {
+	if err := cirrusutil.SetupCirrusDir(); err != nil {
+		return fmt.Errorf("failed to setup cirrus directory: %w", err)
+	}
+	return nil
+}
 
 func StartServer(deps deputil.Dependencies) error {
 	tp, err := botel.InitTracer(deps)
@@ -32,6 +40,10 @@ func StartServer(deps deputil.Dependencies) error {
 		}
 	}()
 
+	if err := setupServices(); err != nil {
+		return fmt.Errorf("failed to setup services: %w", err)
+	}
+
 	router := gin.Default()
 	// IMPORTANT: middleware.Use MUST be called before setupRoutes
 	middleware.Use(router, deps)
@@ -40,6 +52,7 @@ func StartServer(deps deputil.Dependencies) error {
 	if port == "" {
 		port = "8080"
 	}
+
 	if err := router.Run(fmt.Sprintf(":%s", port)); err != nil {
 		return err
 	}

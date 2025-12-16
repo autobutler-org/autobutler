@@ -5,7 +5,7 @@ import (
 	"autobutler/pkg/ui/components/mock_badge"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/bookutil"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -29,11 +29,11 @@ templ Library(pageState types.PageState, books []bookutil.RecursiveBookInfo) {
 		} else {
 			<div class="books-grid">
 				for _, bookInfo := range books {
-					{{ fileType := fileutil.DetermineFileTypeFromPath(bookInfo.FileInfo.Name()) }}
+					{{ fileType := cirrusutil.DetermineFileTypeFromPath(bookInfo.FileInfo.Name()) }}
 					<div class="book-card">
 						<a href={ templ.URL(filepath.Join("/books/reader?path=", bookInfo.RelPath)) } class="book-card-link">
 							<div class="book-card-cover">
-								if fileType == fileutil.FileTypePDF {
+								if fileType == cirrusutil.FileTypePDF {
 									{{ thumbnailPath := filepath.Join("/api/v1/thumbnails", bookInfo.RelPath) }}
 									<img
 										class="book-card-thumbnail"
@@ -57,7 +57,7 @@ templ Library(pageState types.PageState, books []bookutil.RecursiveBookInfo) {
 								<h3 class="book-card-title" title={ bookInfo.FileInfo.Name() }>
 									{ cleanBookTitle(bookInfo.FileInfo.Name()) }
 								</h3>
-								<p class="book-card-size">{ fileutil.SizeBytesToString(bookInfo.FileInfo.Size()) }</p>
+								<p class="book-card-size">{ cirrusutil.SizeBytesToString(bookInfo.FileInfo.Size()) }</p>
 							</div>
 						</a>
 					</div>

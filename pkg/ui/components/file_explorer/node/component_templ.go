@@ -19,11 +19,11 @@ import (
 	"autobutler/pkg/ui/components/icons/pdf"
 	"autobutler/pkg/ui/components/icons/slideshow"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"path/filepath"
 )
 
-func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.Component {
+func Component(pageState types.PageState, file *cirrusutil.DeviceFileInfo) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -44,7 +44,7 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		fileType := fileutil.DetermineFileType(pageState.RootDir, file)
+		fileType := cirrusutil.DetermineFileType(pageState.RootDir, file)
 		fileName := ""
 		deviceName := ""
 		fileSize := int64(0)
@@ -132,8 +132,8 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 			return templ_7745c5c3_Err
 		}
 		switch fileType {
-		case fileutil.FileTypeFolder:
-			filePath := filepath.Join("/files", pageState.RootDir, fileName)
+		case cirrusutil.FileTypeFolder:
+			filePath := filepath.Join("/cirrus", pageState.RootDir, fileName)
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<td class=\"file-table-cell file-table-cell--content\" data-href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -181,9 +181,9 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var10 string
-			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fileutil.SizeBytesToString(fileSize))
+			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(cirrusutil.SizeBytesToString(fileSize))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/node/component.templ`, Line: 58, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/node/component.templ`, Line: 58, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -201,7 +201,7 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		case fileutil.FileTypeSpacer:
+		case cirrusutil.FileTypeSpacer:
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<td colspan=\"3\" class=\"file-table-cell file-table-cell--spacer\" onclick=\"document.getElementById('file-upload-input').click()\" tabindex=\"0\" onkeydown=\"if (event.key === 'Enter' || event.key === ' ') { window.ab.preventDefault(event); document.getElementById('file-upload-input').click(); }\"><span class=\"spacer\">Drop files here&#8230;</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -215,15 +215,15 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 				return templ_7745c5c3_Err
 			}
 		default:
-			filePath := filepath.Join("/files", pageState.RootDir, fileName)
+			filePath := filepath.Join("/cirrus", pageState.RootDir, fileName)
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<td class=\"file-table-cell file-table-cell--clickable\" data-viewer-path=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var11 string
-			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/components/files/viewer", filePath))
+			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join("/components/cirrus/viewer", filePath))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/node/component.templ`, Line: 72, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/node/component.templ`, Line: 72, Col: 76}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -235,22 +235,22 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 			}
 			/* Render the appropriate icon based on the file type */
 			switch fileType {
-			case fileutil.FileTypePDF:
+			case cirrusutil.FileTypePDF:
 				templ_7745c5c3_Err = pdf.Component().Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-			case fileutil.FileTypeSlideshow:
+			case cirrusutil.FileTypeSlideshow:
 				templ_7745c5c3_Err = slideshow.Component().Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-			case fileutil.FileTypeImage:
+			case cirrusutil.FileTypeImage:
 				templ_7745c5c3_Err = image.Component().Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-			case fileutil.FileTypeArchive:
+			case cirrusutil.FileTypeArchive:
 				templ_7745c5c3_Err = archive.Component().Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -287,9 +287,9 @@ func Component(pageState types.PageState, file *fileutil.DeviceFileInfo) templ.C
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var13 string
-			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fileutil.SizeBytesToString(fileSize))
+			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(cirrusutil.SizeBytesToString(fileSize))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/node/component.templ`, Line: 93, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/node/component.templ`, Line: 93, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {

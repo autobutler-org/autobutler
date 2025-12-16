@@ -5,7 +5,7 @@ type PageName string
 const (
 	PageBooks    PageName = "Books"
 	PageDevices  PageName = "Devices"
-	PageFiles    PageName = "Files"
+	PageCirrus   PageName = "Cirrus"
 	PageHome     PageName = "Home"
 	PagePhotos   PageName = "Photos"
 	PageHealth   PageName = "Health"

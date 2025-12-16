@@ -1,18 +1,18 @@
 package storage
 
 import (
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"fmt"
 )
 
 // TODO: Add actual breakdown by category (Documents, Media, Backups, etc.)
 templ Component() {
-	{{ fileDir := fileutil.GetFilesDir() }}
-	{{ availableBytes := fileutil.GetAvailableSpaceInBytes(fileDir) }}
+	{{ fileDir := cirrusutil.GetCirrusDir() }}
+	{{ availableBytes := cirrusutil.GetAvailableSpaceInBytes(fileDir) }}
 	{{ totalBytes := uint64(200 * 1024 * 1024 * 1024) }} // 200GB for now - TODO: get from actual disk
 	{{ usedBytes := totalBytes - availableBytes }}
-	{{ usedGB := fileutil.BytesToGB(usedBytes) }}
-	{{ totalGB := fileutil.BytesToGB(totalBytes) }}
+	{{ usedGB := cirrusutil.BytesToGB(usedBytes) }}
+	{{ totalGB := cirrusutil.BytesToGB(totalBytes) }}
 	{{ percentUsed := int((float64(usedBytes) / float64(totalBytes)) * 100) }}
 	<div class="storage-component">
 		<h3 class="storage-title">Storage</h3>

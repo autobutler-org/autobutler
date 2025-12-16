@@ -1,13 +1,13 @@
 package text_viewer
 
 import (
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"os"
 	"path/filepath"
 )
 
 func readFile(filePath string) (string, error) {
-	rootDir := fileutil.GetFilesDir()
+	rootDir := cirrusutil.GetCirrusDir()
 	fullPath := filepath.Join(rootDir, filePath)
 	data, err := os.ReadFile(fullPath)
 	if err != nil {
@@ -141,7 +141,7 @@ templ Component(filePath string) {
 						var dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
 
 						// POST to update the file
-						fetch('/api/v1/files' + dirPath, {
+						fetch('/api/v1/cirrus' + dirPath, {
 							method: 'POST',
 							body: formData,
 						})

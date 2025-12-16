@@ -10,12 +10,12 @@ import (
 	"autobutler/pkg/ui/components/icons/pdf"
 	"autobutler/pkg/ui/components/icons/slideshow"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"fmt"
 	"path/filepath"
 )
 
-templ Component(pageState types.PageState, files []*fileutil.DeviceFileInfo) {
+templ Component(pageState types.PageState, files []*cirrusutil.DeviceFileInfo) {
 	<div class="grid-view-container">
 		<div class="grid-view-grid">
 			for _, file := range files {
@@ -25,13 +25,13 @@ templ Component(pageState types.PageState, files []*fileutil.DeviceFileInfo) {
 	</div>
 }
 
-templ renderGridItem(pageState types.PageState, file *fileutil.DeviceFileInfo) {
+templ renderGridItem(pageState types.PageState, file *cirrusutil.DeviceFileInfo) {
 	{{
-		fileType := fileutil.DetermineFileType(pageState.RootDir, file)
+		fileType := cirrusutil.DetermineFileType(pageState.RootDir, file)
 		fileName := file.Name()
-		isFolder := fileType == fileutil.FileTypeFolder
-		filePath := filepath.Join("/files", pageState.RootDir, fileName)
-		fileSize := fileutil.SizeBytesToString(file.Size())
+		isFolder := fileType == cirrusutil.FileTypeFolder
+		filePath := filepath.Join("/cirrus", pageState.RootDir, fileName)
+		fileSize := cirrusutil.SizeBytesToString(file.Size())
 		deviceName := file.DeviceName
 	}}
 	<div
@@ -61,9 +61,9 @@ templ renderGridItem(pageState types.PageState, file *fileutil.DeviceFileInfo) {
 		} else {
 			<div
 				class="grid-view-link"
-				data-viewer-path={ filepath.Join("/components/files/viewer", filePath) }
+				data-viewer-path={ filepath.Join("/components/cirrus/viewer", filePath) }
 			>
-				if fileType == fileutil.FileTypeImage {
+				if fileType == cirrusutil.FileTypeImage {
 					{{ thumbnailPath := filepath.Join("/api/v1/thumbnails", pageState.RootDir, fileName) }}
 					<div class="grid-view-thumbnail-container">
 						<img
@@ -91,15 +91,15 @@ templ renderGridItem(pageState types.PageState, file *fileutil.DeviceFileInfo) {
 	</div>
 }
 
-templ renderFileIcon(fileType fileutil.FileType) {
+templ renderFileIcon(fileType cirrusutil.FileType) {
 	switch fileType {
-		case fileutil.FileTypePDF:
+		case cirrusutil.FileTypePDF:
 			@pdf.Component()
-		case fileutil.FileTypeSlideshow:
+		case cirrusutil.FileTypeSlideshow:
 			@slideshow.Component()
-		case fileutil.FileTypeImage:
+		case cirrusutil.FileTypeImage:
 			@image.Component()
-		case fileutil.FileTypeArchive:
+		case cirrusutil.FileTypeArchive:
 			@archive.Component()
 		default:
 			@generic.Component()

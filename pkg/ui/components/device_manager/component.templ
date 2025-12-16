@@ -1,13 +1,13 @@
 package device_manager
 
 import (
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"fmt"
 )
 
 // Component renders a device management interface showing all detected devices
 // and allowing users to initialize them for autobutler
-templ Component(devices []fileutil.Device, managedDevices []fileutil.ManagedDevice) {
+templ Component(devices []cirrusutil.Device, managedDevices []cirrusutil.ManagedDevice) {
 	{{ managedMap := make(map[string]bool) }}
 	{{
 		for _, md := range managedDevices {
@@ -18,7 +18,7 @@ templ Component(devices []fileutil.Device, managedDevices []fileutil.ManagedDevi
 		<h3 class="device-manager-title">Storage Device Management</h3>
 		<p class="device-manager-description">
 			Enable storage devices for Autobutler by creating the required data directory structure.
-			Enabled devices will have a <code>.autobutler/data/files</code> directory and will appear in the file explorer for multi-device file management.
+			Enabled devices will have a <code>.autobutler/data/cirrus</code> directory and will appear in the file explorer for multi-device file management.
 		</p>
 		<div class="device-manager-list">
 			if len(devices) == 0 {
@@ -42,7 +42,7 @@ templ Component(devices []fileutil.Device, managedDevices []fileutil.ManagedDevi
 							{ device.Type } • { device.MountPoint } • { fmt.Sprintf("%.2f GB available", float64(device.AvailBytes)/(1024*1024*1024)) }
 						</p>
 						if isManaged {
-							{{ dataPath := device.MountPoint + "/.autobutler/data/files" }}
+							{{ dataPath := device.MountPoint + "/.autobutler/data/cirrus" }}
 							<p class="device-manager-item-status">
 								<svg class="device-manager-status-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 									<polyline points="20 6 9 17 4 12"></polyline>
@@ -70,7 +70,7 @@ templ Component(devices []fileutil.Device, managedDevices []fileutil.ManagedDevi
 								<button
 									type="submit"
 									class="btn btn--primary btn--sm"
-									title="Creates .autobutler/data/files directory on this device"
+									title="Creates .autobutler/data/cirrus directory on this device"
 								>
 									Enable for Storage
 								</button>

@@ -15,10 +15,10 @@ import (
 	"autobutler/pkg/ui/components/landing_nav"
 	"autobutler/pkg/ui/components/storage_bar"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 )
 
-func Home(pageState types.PageState, summary fileutil.Summary) templ.Component {
+func Home(pageState types.PageState, summary cirrusutil.Summary) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

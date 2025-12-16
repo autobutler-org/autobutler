@@ -23,7 +23,7 @@
     "deputil",
     "EPUB",
     "exif",
-    "fileutil",
+    "cirrusutil",
     "githubutil",
     "GOARCH",
     "goexif",

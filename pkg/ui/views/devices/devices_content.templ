@@ -2,12 +2,12 @@ package view_devices
 
 import (
 	"autobutler/pkg/ui/components/device_card"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"fmt"
 )
 
 // DevicesContent renders just the devices grid and summary (for HTMX updates)
-templ DevicesContent(devices []fileutil.Device, summary fileutil.Summary) {
+templ DevicesContent(devices []cirrusutil.Device, summary cirrusutil.Summary) {
 	<div class="devices-grid">
 		if len(devices) == 0 {
 			<div class="devices-empty">

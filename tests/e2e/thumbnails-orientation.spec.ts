@@ -7,7 +7,7 @@ test.describe('Photo Thumbnails - EXIF Orientation', () => {
         request,
     }) => {
         // First, upload a test image with EXIF orientation data
-        await page.goto('/files');
+        await page.goto('/cirrus');
 
         const fileInput = page.locator('input[type="file"]');
         const testImagePath = path.join('./tests/e2e/data/flipped.jpg');

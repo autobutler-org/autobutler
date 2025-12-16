@@ -10,19 +10,19 @@ import (
 	"autobutler/pkg/ui/components/icons/pdf"
 	"autobutler/pkg/ui/components/icons/slideshow"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"fmt"
 	"path/filepath"
 	"strings"
 )
 
-templ Component(pageState types.PageState, files []*fileutil.DeviceFileInfo) {
+templ Component(pageState types.PageState, files []*cirrusutil.DeviceFileInfo) {
 	<div class="column-view-container">
 		@renderColumnLayout(pageState, files)
 	</div>
 }
 
-templ renderColumnLayout(pageState types.PageState, files []*fileutil.DeviceFileInfo) {
+templ renderColumnLayout(pageState types.PageState, files []*cirrusutil.DeviceFileInfo) {
 	{{ pathSegments := strings.Split(strings.Trim(pageState.RootDir, "/"), "/") }}
 	{{
 		// Filter out empty segments
@@ -36,9 +36,9 @@ templ renderColumnLayout(pageState types.PageState, files []*fileutil.DeviceFile
 	<div class="column-view-columns">
 		{{
 			// Build parent directories to show columns for each level
-			// For path /files/bingus, we want:
-			// - Column showing contents of /files (with bingus highlighted)
-			// - Column showing contents of /files/bingus
+			// For path /cirrus/bingus, we want:
+			// - Column showing contents of /cirrus (with bingus highlighted)
+			// - Column showing contents of /cirrus/bingus
 			var parentPaths []string
 			accumulatedPath := ""
 			for i := 0; i < len(validSegments); i++ {
@@ -68,12 +68,12 @@ templ renderColumnLayout(pageState types.PageState, files []*fileutil.DeviceFile
 // renderParentColumn renders a parent directory column, highlighting the next segment in the path
 templ renderParentColumn(pageState types.PageState, dirPath string, columnIndex int, nextSegment string) {
 	{{
-		fullPath := fileutil.GetFilesDir()
+		fullPath := cirrusutil.GetCirrusDir()
 		if dirPath != "" {
 			fullPath = filepath.Join(fullPath, dirPath)
 		}
-		deviceName, devicePath := fileutil.GetDeviceInfoForPath(fullPath)
-		columnFiles, _ := fileutil.StatFilesInDir(fullPath, deviceName, devicePath)
+		deviceName, devicePath := cirrusutil.GetDeviceInfoForPath(fullPath)
+		columnFiles, _ := cirrusutil.StatFilesInDir(fullPath, deviceName, devicePath)
 		columnTitle := "files"
 		if dirPath != "" {
 			columnTitle = filepath.Base(dirPath)
@@ -99,7 +99,7 @@ templ renderParentColumn(pageState types.PageState, dirPath string, columnIndex 
 }
 
 // renderCurrentColumn renders the current directory being viewed
-templ renderCurrentColumn(pageState types.PageState, files []*fileutil.DeviceFileInfo, columnIndex int) {
+templ renderCurrentColumn(pageState types.PageState, files []*cirrusutil.DeviceFileInfo, columnIndex int) {
 	{{ columnTitle := filepath.Base(pageState.RootDir) }}
 	{{
 		if columnTitle == "" || columnTitle == "/" {
@@ -125,14 +125,14 @@ templ renderCurrentColumn(pageState types.PageState, files []*fileutil.DeviceFil
 }
 
 // renderParentColumnItem renders an item in a parent directory column
-templ renderParentColumnItem(pageState types.PageState, parentPath string, file *fileutil.DeviceFileInfo, isSelected bool) {
+templ renderParentColumnItem(pageState types.PageState, parentPath string, file *cirrusutil.DeviceFileInfo, isSelected bool) {
 	{{
-		fileType := fileutil.DetermineFileType(parentPath, file)
+		fileType := cirrusutil.DetermineFileType(parentPath, file)
 		fileName := file.Name()
-		isFolder := fileType == fileutil.FileTypeFolder
-		filePath := filepath.Join("/files", parentPath, fileName)
+		isFolder := fileType == cirrusutil.FileTypeFolder
+		filePath := filepath.Join("/cirrus", parentPath, fileName)
 		// For files in parent columns, navigate to parent dir (removing child columns)
-		fileParentPath := filepath.Join("/files", parentPath)
+		fileParentPath := filepath.Join("/cirrus", parentPath)
 		dataFileType := fileType
 		if isFolder {
 			dataFileType = "folder"
@@ -162,7 +162,7 @@ templ renderParentColumnItem(pageState types.PageState, parentPath string, file 
 		} else {
 			<div
 				class="column-view-link column-view-link--file"
-				onclick={ templ.JSFuncCall("navigateToParentAndPreview", templ.JSExpression("event"), fileParentPath, filepath.Join("/components/files/viewer", filePath)) }
+				onclick={ templ.JSFuncCall("navigateToParentAndPreview", templ.JSExpression("event"), fileParentPath, filepath.Join("/components/cirrus/viewer", filePath)) }
 			>
 				<span class="column-view-icon">
 					@renderFileIcon(fileType)
@@ -178,12 +178,12 @@ templ renderParentColumnItem(pageState types.PageState, parentPath string, file 
 }
 
 // renderCurrentColumnItem renders an item in the current directory column
-templ renderCurrentColumnItem(pageState types.PageState, file *fileutil.DeviceFileInfo) {
+templ renderCurrentColumnItem(pageState types.PageState, file *cirrusutil.DeviceFileInfo) {
 	{{
-		fileType := fileutil.DetermineFileType(pageState.RootDir, file)
+		fileType := cirrusutil.DetermineFileType(pageState.RootDir, file)
 		fileName := file.Name()
-		isFolder := fileType == fileutil.FileTypeFolder
-		filePath := filepath.Join("/files", pageState.RootDir, fileName)
+		isFolder := fileType == cirrusutil.FileTypeFolder
+		filePath := filepath.Join("/cirrus", pageState.RootDir, fileName)
 		dataFileType := fileType
 		if isFolder {
 			dataFileType = "folder"
@@ -213,7 +213,7 @@ templ renderCurrentColumnItem(pageState types.PageState, file *fileutil.DeviceFi
 		} else {
 			<div
 				class="column-view-link column-view-link--file"
-				data-viewer-path={ filepath.Join("/components/files/viewer", filePath) }
+				data-viewer-path={ filepath.Join("/components/cirrus/viewer", filePath) }
 			>
 				<span class="column-view-icon">
 					@renderFileIcon(fileType)
@@ -228,15 +228,15 @@ templ renderCurrentColumnItem(pageState types.PageState, file *fileutil.DeviceFi
 	</li>
 }
 
-templ renderFileIcon(fileType fileutil.FileType) {
+templ renderFileIcon(fileType cirrusutil.FileType) {
 	switch fileType {
-		case fileutil.FileTypePDF:
+		case cirrusutil.FileTypePDF:
 			@pdf.Component()
-		case fileutil.FileTypeSlideshow:
+		case cirrusutil.FileTypeSlideshow:
 			@slideshow.Component()
-		case fileutil.FileTypeImage:
+		case cirrusutil.FileTypeImage:
 			@image.Component()
-		case fileutil.FileTypeArchive:
+		case cirrusutil.FileTypeArchive:
 			@archive.Component()
 		default:
 			@generic.Component()

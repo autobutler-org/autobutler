@@ -10,12 +10,12 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"autobutler/pkg/ui/components/storage_partition"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 )
 
 // Component renders a device card showing storage device information
-// Uses fileutil.Device from the backend and storage_partition component for visualization
-func Component(device fileutil.Device) templ.Component {
+// Uses cirrusutil.Device from the backend and storage_partition component for visualization
+func Component(device cirrusutil.Device) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -36,7 +36,7 @@ func Component(device fileutil.Device) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"device-card\" onclick=\"window.location.href = '/files'\"><div class=\"device-card-header\"><div class=\"device-card-icon\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"2\" y=\"3\" width=\"20\" height=\"14\" rx=\"2\" ry=\"2\"></rect> <line x1=\"8\" y1=\"21\" x2=\"16\" y2=\"21\"></line> <line x1=\"12\" y1=\"17\" x2=\"12\" y2=\"21\"></line></svg></div><div class=\"device-card-title-section\"><h3 class=\"device-card-title\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"device-card\" onclick=\"window.location.href = '/cirrus'\"><div class=\"device-card-header\"><div class=\"device-card-icon\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"2\" y=\"3\" width=\"20\" height=\"14\" rx=\"2\" ry=\"2\"></rect> <line x1=\"8\" y1=\"21\" x2=\"16\" y2=\"21\"></line> <line x1=\"12\" y1=\"17\" x2=\"12\" y2=\"21\"></line></svg></div><div class=\"device-card-title-section\"><h3 class=\"device-card-title\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

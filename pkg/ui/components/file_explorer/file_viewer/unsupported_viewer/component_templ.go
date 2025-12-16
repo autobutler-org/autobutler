@@ -34,9 +34,9 @@ func Component(filePath string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 templ.SafeURL
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinURLErrs("/files/" + filePath)
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinURLErrs("/cirrus/" + filePath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/file_viewer/unsupported_viewer/component.templ`, Line: 11, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/file_viewer/unsupported_viewer/component.templ`, Line: 11, Col: 34}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {

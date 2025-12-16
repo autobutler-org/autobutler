@@ -1,4 +1,4 @@
-package view_files
+package view_cirrus
 
 import (
 	"autobutler/pkg/ui/components/body"
@@ -6,20 +6,20 @@ import (
 	"autobutler/pkg/ui/components/file_explorer"
 	"autobutler/pkg/ui/components/header"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"path/filepath"
 )
 
 templ Files(pageState types.PageState) {
-	{{ pageState.CurrentPageName = types.PageFiles }}
+	{{ pageState.CurrentPageName = types.PageCirrus }}
 	<!DOCTYPE html>
 	<html lang="en">
 		@header.Component()
 		@body.Component(pageState) {
 			{{
-				fullPathDir := filepath.Join(fileutil.GetFilesDir(), pageState.RootDir)
-				deviceName, devicePath := fileutil.GetDeviceInfoForPath(fullPathDir)
-				files, err := fileutil.StatFilesInDir(fullPathDir, deviceName, devicePath)
+				fullPathDir := filepath.Join(cirrusutil.GetCirrusDir(), pageState.RootDir)
+				deviceName, devicePath := cirrusutil.GetDeviceInfoForPath(fullPathDir)
+				files, err := cirrusutil.StatFilesInDir(fullPathDir, deviceName, devicePath)
 			}}
 			if err != nil {
 				@error_message.Component("Error loading files: " + err.Error())

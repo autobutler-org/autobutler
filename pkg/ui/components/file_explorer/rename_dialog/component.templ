@@ -173,7 +173,7 @@ templ Component() {
 				// Actually perform the rename/move
 				dialog.close();
 
-				htmx.ajax('PUT', `/api/v1/files/${originalFilePath}`, {
+				htmx.ajax('PUT', `/api/v1/cirrus/${originalFilePath}`, {
 					values: {
 						newFilePath: newFilePath,
 					},

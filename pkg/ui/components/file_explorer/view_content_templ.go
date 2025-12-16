@@ -13,11 +13,11 @@ import (
 	"autobutler/pkg/ui/components/file_explorer/grid_view"
 	"autobutler/pkg/ui/components/file_explorer/list_view"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"path/filepath"
 )
 
-func ViewContent(pageState types.PageState, files []*fileutil.DeviceFileInfo, view string) templ.Component {
+func ViewContent(pageState types.PageState, files []*cirrusutil.DeviceFileInfo, view string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -49,9 +49,9 @@ func ViewContent(pageState types.PageState, files []*fileutil.DeviceFileInfo, vi
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var2 string
-			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join(fileutil.GetFilesDir(), pageState.RootDir))
+			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(filepath.Join(cirrusutil.GetCirrusDir(), pageState.RootDir))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/view_content.templ`, Line: 16, Col: 112}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/view_content.templ`, Line: 16, Col: 115}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -77,7 +77,7 @@ func ViewContent(pageState types.PageState, files []*fileutil.DeviceFileInfo, vi
 }
 
 // ViewContentWithBreadcrumb is used for HTMX requests that need to update the breadcrumb via OOB swap
-func ViewContentWithBreadcrumb(pageState types.PageState, files []*fileutil.DeviceFileInfo, view string) templ.Component {
+func ViewContentWithBreadcrumb(pageState types.PageState, files []*cirrusutil.DeviceFileInfo, view string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -102,7 +102,7 @@ func ViewContentWithBreadcrumb(pageState types.PageState, files []*fileutil.Devi
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = BreadcrumbOOB(pageState, view).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = Breadcrumb(pageState, view).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

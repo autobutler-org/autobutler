@@ -4,20 +4,20 @@ import (
 	"autobutler/pkg/ui/components/error_message"
 	"autobutler/pkg/ui/components/file_explorer/load"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
 
 	"github.com/gin-gonic/gin"
 )
 
 var uploadRootFilesRoute = serverutil.ApiRoute(
-	"POST", "/files", func(c *gin.Context) *serverutil.Response {
+	"POST", "/cirrus", func(c *gin.Context) *serverutil.Response {
 		uploadFilesImpl(c, "")
 		return serverutil.Ok()
 	},
 )
 var uploadNestedFilesRoutes = serverutil.ApiRoute(
-	"POST", "/files/*rootDir", func(c *gin.Context) *serverutil.Response {
+	"POST", "/cirrus/*rootDir", func(c *gin.Context) *serverutil.Response {
 		rootDir := c.Param("rootDir")
 		uploadFilesImpl(c, rootDir)
 		return serverutil.Ok()
@@ -43,7 +43,7 @@ func uploadFilesImpl(c *gin.Context, rootDir string) {
 		returnDir = form.Value["returnDir"][0]
 	}
 
-	result, err := fileutil.UploadFiles(fileutil.UploadFilesParams{
+	result, err := cirrusutil.UploadFiles(cirrusutil.UploadFilesParams{
 		RootDir:     rootDir,
 		FileHeaders: fileHeaders,
 		ReturnDir:   returnDir,

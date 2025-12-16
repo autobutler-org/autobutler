@@ -2,7 +2,7 @@ package view_home
 
 import (
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
 
 	"github.com/a-h/templ"
@@ -24,14 +24,14 @@ func (r *router) Routes() []*serverutil.Route {
 var homeRoute = serverutil.UiRoute(
 	"/", func(c *gin.Context) templ.Component {
 		// Get storage summary for the storage bar component
-		detector := fileutil.NewDetector()
+		detector := cirrusutil.NewDetector()
 		devices, err := detector.DetectDevices()
-		var summary fileutil.Summary
+		var summary cirrusutil.Summary
 		if err == nil && len(devices) > 0 {
-			summary = fileutil.CalculateSummary(devices)
+			summary = cirrusutil.CalculateSummary(devices)
 		} else {
 			// Provide empty summary if detection fails
-			summary = fileutil.Summary{}
+			summary = cirrusutil.Summary{}
 		}
 
 		return Home(types.NewPageState(), summary)

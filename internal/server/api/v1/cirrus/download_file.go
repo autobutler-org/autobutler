@@ -2,7 +2,7 @@ package v1_files
 
 import (
 	"archive/zip"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
 	"fmt"
 	"net/http"
@@ -13,15 +13,15 @@ import (
 )
 
 var downloadFileRoute = serverutil.ApiRoute(
-	"GET", "/files/*filePath", func(c *gin.Context) *serverutil.Response {
+	"GET", "/cirrus/*filePath", func(c *gin.Context) *serverutil.Response {
 		filePath := c.Param("filePath")
 
-		managedDevices, err := fileutil.GetManagedDevices()
+		managedDevices, err := cirrusutil.GetManagedDevices()
 		if err != nil {
 			managedDevices = nil
 		}
 
-		result, err := fileutil.DownloadFile(fileutil.DownloadFileParams{
+		result, err := cirrusutil.DownloadFile(cirrusutil.DownloadFileParams{
 			FilePath:       filePath,
 			ManagedDevices: managedDevices,
 		})
@@ -52,7 +52,7 @@ var downloadFileRoute = serverutil.ApiRoute(
 
 			disposition := "inline"
 			contentType := "application/octet-stream"
-			if result.FileType == fileutil.FileTypePDF {
+			if result.FileType == cirrusutil.FileTypePDF {
 				disposition = "inline"
 				contentType = "application/pdf"
 			}

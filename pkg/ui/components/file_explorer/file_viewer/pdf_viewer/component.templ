@@ -5,7 +5,7 @@ import "path/filepath"
 templ Component(filePath string) {
 	<iframe
 		style="width: 90vw; height: 90vh;"
-		src={ filepath.Join("/api/v1/files", filePath) }
+		src={ filepath.Join("/api/v1/cirrus", filePath) }
 		type="application/pdf"
 	></iframe>
 }

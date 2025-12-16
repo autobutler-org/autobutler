@@ -18,14 +18,14 @@ import (
 	"autobutler/pkg/ui/components/icons/column_view"
 	"autobutler/pkg/ui/components/icons/grid_view"
 	"autobutler/pkg/ui/components/icons/list_view"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 
 	"autobutler/pkg/ui/components/file_explorer/explorer_context_menu"
 	"autobutler/pkg/ui/types"
 	"fmt"
 )
 
-func Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, view string) templ.Component {
+func Component(pageState types.PageState, files []*cirrusutil.DeviceFileInfo, view string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -46,8 +46,8 @@ func Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, view
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		fileDir := fileutil.GetFilesDir()
-		availableBytes := fileutil.GetAvailableSpaceInBytes(fileDir)
+		fileDir := cirrusutil.GetCirrusDir()
+		availableBytes := cirrusutil.GetAvailableSpaceInBytes(fileDir)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"file-explorer\" class=\"file-explorer\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -60,14 +60,14 @@ func Component(pageState types.PageState, files []*fileutil.DeviceFileInfo, view
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"file-explorer-header\"><div><h2 class=\"file-explorer-title\">File Explorer</h2><div class=\"file-explorer-space-info\">Available Space: ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"file-explorer-header\"><div><h2 class=\"file-explorer-title\">Cirrus</h2><div class=\"file-explorer-space-info\">Available Space: ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2fGB", fileutil.BytesToGB(availableBytes)))
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2fGB", cirrusutil.BytesToGB(availableBytes)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/component.templ`, Line: 33, Col: 118}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/file_explorer/component.templ`, Line: 33, Col: 120}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {

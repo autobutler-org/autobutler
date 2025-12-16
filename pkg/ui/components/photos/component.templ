@@ -3,14 +3,14 @@ package photos
 import (
 	"autobutler/pkg/ui/components/file_explorer/file_viewer"
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/photoutil"
 	"autobutler/pkg/util/stringutil"
 	"fmt"
 	"path/filepath"
 )
 
-templ Component(pageState types.PageState, photos []photoutil.PhotoInfo, totalPhotos int, summary fileutil.Summary) {
+templ Component(pageState types.PageState, photos []photoutil.PhotoInfo, totalPhotos int, summary cirrusutil.Summary) {
 	<div id="photos-library" class="photos-library">
 		@file_viewer.Component()
 		<div class="photos-container">
@@ -158,12 +158,12 @@ templ PhotoGridItem(pageState types.PageState, photo photoutil.PhotoInfo) {
 	{{
 		fileName := photo.FileInfo.Name()
 		// Use the relative path from the photo
-		filePath := filepath.Join("/files", photo.RelPath)
+		filePath := filepath.Join("/cirrus", photo.RelPath)
 		thumbnailPath := filepath.Join("/api/v1/thumbnails", photo.RelPath)
 	}}
 	<div
 		class="photo-grid-item"
-		hx-get={ filepath.Join("/components/files/viewer", filePath) }
+		hx-get={ filepath.Join("/components/cirrus/viewer", filePath) }
 		hx-target="#file-viewer-content"
 		hx-swap="innerHTML"
 		onclick="document.getElementById('file-viewer').showModal();"

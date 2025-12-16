@@ -2,15 +2,15 @@ package device_card
 
 import (
 	"autobutler/pkg/ui/components/storage_partition"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 )
 
 // Component renders a device card showing storage device information
-// Uses fileutil.Device from the backend and storage_partition component for visualization
-templ Component(device fileutil.Device) {
+// Uses cirrusutil.Device from the backend and storage_partition component for visualization
+templ Component(device cirrusutil.Device) {
 	<div
 		class="device-card"
-		onclick="window.location.href = '/files'"
+		onclick="window.location.href = '/cirrus'"
 	>
 		<div class="device-card-header">
 			<div class="device-card-icon">

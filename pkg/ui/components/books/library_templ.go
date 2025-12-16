@@ -13,7 +13,7 @@ import (
 	"autobutler/pkg/ui/components/mock_badge"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/bookutil"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -84,7 +84,7 @@ func Library(pageState types.PageState, books []bookutil.RecursiveBookInfo) temp
 				return templ_7745c5c3_Err
 			}
 			for _, bookInfo := range books {
-				fileType := fileutil.DetermineFileTypeFromPath(bookInfo.FileInfo.Name())
+				fileType := cirrusutil.DetermineFileTypeFromPath(bookInfo.FileInfo.Name())
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"book-card\"><a href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -102,7 +102,7 @@ func Library(pageState types.PageState, books []bookutil.RecursiveBookInfo) temp
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if fileType == fileutil.FileTypePDF {
+				if fileType == cirrusutil.FileTypePDF {
 					thumbnailPath := filepath.Join("/api/v1/thumbnails", bookInfo.RelPath)
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<img class=\"book-card-thumbnail\" src=\"")
 					if templ_7745c5c3_Err != nil {
@@ -187,9 +187,9 @@ func Library(pageState types.PageState, books []bookutil.RecursiveBookInfo) temp
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var8 string
-				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fileutil.SizeBytesToString(bookInfo.FileInfo.Size()))
+				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(cirrusutil.SizeBytesToString(bookInfo.FileInfo.Size()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/books/library.templ`, Line: 60, Col: 88}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/ui/components/books/library.templ`, Line: 60, Col: 90}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {

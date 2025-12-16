@@ -1,4 +1,4 @@
-package fileutil
+package cirrusutil
 
 import (
 	"fmt"
@@ -99,7 +99,7 @@ func DetermineFileType(rootDir string, file *DeviceFileInfo) FileType {
 	if file.IsDir() {
 		return FileTypeFolder
 	}
-	filesDir := GetFilesDir()
+	filesDir := GetCirrusDir()
 	stat, err := os.Stat(filepath.Join(filesDir, rootDir, file.Name()))
 	if err != nil || stat == nil {
 		return FileTypeGeneric // If we can't stat the file, treat it as generic
@@ -217,12 +217,79 @@ func GetDataDir() string {
 	}
 }
 
-func GetFilesDir() string {
-	filesPath := filepath.Join(GetDataDir(), "files")
-	if err := os.MkdirAll(filesPath, 0755); err != nil {
-		panic(fmt.Sprintf("failed to create files directory: %v", err)) // coverage: ignore - panic on filesystem error
+// GetNonConflictingPath returns a file path that doesn't conflict with existing files.
+// If the target path already exists, it appends _(n) before the file extension,
+// incrementing n until a non-existent path is found.
+// For example: file.txt -> file_(1).txt -> file_(2).txt, etc.
+func GetNonConflictingPath(targetPath string) string {
+	if _, err := os.Stat(targetPath); os.IsNotExist(err) {
+		// File doesn't exist, return the target path as-is
+		return targetPath
 	}
-	return filesPath
+
+	// File exists, need to find a non-conflicting name
+	ext := filepath.Ext(targetPath)
+	nameWithoutExt := targetPath[:len(targetPath)-len(ext)]
+	dir := filepath.Dir(targetPath)
+
+	i := 1
+	for {
+		newPath := filepath.Join(dir, fmt.Sprintf("%s_(%d)%s", filepath.Base(nameWithoutExt), i, ext))
+		if _, err := os.Stat(newPath); os.IsNotExist(err) {
+			return newPath
+		}
+		i++
+	}
+}
+
+func SetupCirrusDir() error {
+	// Check if the cirrus dir exists
+	// If cirrus dir exists, check if legacy files dir exists
+	// if so, move the contents of legacy files dir to cirrus dir, then delete legacy files dir
+	cirrusDir := ConstructCirrusDir(GetDataDir())
+	legacyFilesDir := filepath.Join(GetDataDir(), "files")
+
+	if _, err := os.Stat(cirrusDir); os.IsNotExist(err) {
+		// Cirrus dir does not exist, create it
+		if err := os.MkdirAll(cirrusDir, 0755); err != nil {
+			return fmt.Errorf("failed to create cirrus directory: %w", err)
+		}
+	}
+
+	if _, err := os.Stat(legacyFilesDir); err == nil {
+		// Legacy files dir exists, move contents to cirrus dir
+		entries, err := os.ReadDir(legacyFilesDir)
+		if err != nil {
+			return fmt.Errorf("failed to read legacy files directory: %w", err)
+		}
+		for _, entry := range entries {
+			oldPath := filepath.Join(legacyFilesDir, entry.Name())
+			targetPath := filepath.Join(cirrusDir, entry.Name())
+			// Use GetNonConflictingPath to handle naming conflicts
+			newPath := GetNonConflictingPath(targetPath)
+			if err := os.Rename(oldPath, newPath); err != nil {
+				return fmt.Errorf("failed to move file %s to cirrus directory: %w", entry.Name(), err)
+			}
+		}
+		// Delete legacy files dir
+		if err := os.RemoveAll(legacyFilesDir); err != nil {
+			return fmt.Errorf("failed to delete legacy files directory: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func ConstructCirrusDir(dataDir string) string {
+	return filepath.Join(dataDir, "cirrus")
+}
+
+func GetCirrusDir() string {
+	cirrusPath := ConstructCirrusDir(GetDataDir())
+	if err := os.MkdirAll(cirrusPath, 0755); err != nil {
+		panic(fmt.Sprintf("failed to create cirrus directory: %v", err)) // coverage: ignore - panic on filesystem error
+	}
+	return cirrusPath
 }
 
 // GetDeviceInfoForPath returns the device name and device path for a given file path

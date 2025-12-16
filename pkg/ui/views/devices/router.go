@@ -2,7 +2,7 @@ package view_devices
 
 import (
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
 
 	"github.com/a-h/templ"
@@ -25,14 +25,14 @@ func (r *router) Routes() []*serverutil.Route {
 var devicesRoute = serverutil.UiRoute(
 	"/devices", func(c *gin.Context) templ.Component {
 		// Detect storage devices using READ-ONLY operations
-		detector := fileutil.NewDetector()
+		detector := cirrusutil.NewDetector()
 		devices, err := detector.DetectDevices()
 		if err != nil {
-			devices = []fileutil.Device{} // Empty list on error
+			devices = []cirrusutil.Device{} // Empty list on error
 		}
 
 		// Calculate summary
-		summary := fileutil.CalculateSummary(devices)
+		summary := cirrusutil.CalculateSummary(devices)
 
 		return Devices(types.NewPageState(), devices, summary)
 	},
@@ -41,12 +41,12 @@ var devicesRoute = serverutil.UiRoute(
 var devicesComponentRoute = serverutil.UiRoute(
 	"/components/devices/list", func(c *gin.Context) templ.Component {
 		// Re-detect storage devices (READ-ONLY)
-		detector := fileutil.NewDetector()
+		detector := cirrusutil.NewDetector()
 		devices, err := detector.DetectDevices()
 		if err != nil {
-			devices = []fileutil.Device{} // Empty list on error
+			devices = []cirrusutil.Device{} // Empty list on error
 		}
-		summary := fileutil.CalculateSummary(devices)
+		summary := cirrusutil.CalculateSummary(devices)
 		return DevicesContent(devices, summary)
 	},
 )

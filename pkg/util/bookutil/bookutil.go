@@ -1,7 +1,7 @@
 package bookutil
 
 import (
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -19,8 +19,8 @@ func FindAllBooksRecursively(rootDir string) ([]RecursiveBookInfo, error) {
 			return nil
 		}
 
-		fileType := fileutil.DetermineFileTypeFromPath(info.Name())
-		if fileType == fileutil.FileTypePDF || fileType == fileutil.FileTypeEpub {
+		fileType := cirrusutil.DetermineFileTypeFromPath(info.Name())
+		if fileType == cirrusutil.FileTypePDF || fileType == cirrusutil.FileTypeEpub {
 			// Get relative path from rootDir
 			relPath, err := filepath.Rel(rootDir, path)
 			if err != nil {

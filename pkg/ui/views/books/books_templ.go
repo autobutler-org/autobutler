@@ -15,7 +15,7 @@ import (
 	"autobutler/pkg/ui/components/mock_banner"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/bookutil"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 )
 
 func Books(pageState types.PageState) templ.Component {
@@ -68,7 +68,7 @@ func Books(pageState types.PageState) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			bookFiles, err := bookutil.FindAllBooksRecursively(fileutil.GetFilesDir())
+			bookFiles, err := bookutil.FindAllBooksRecursively(cirrusutil.GetCirrusDir())
 			if err != nil {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"error-text\">Error loading books: ")
 				if templ_7745c5c3_Err != nil {

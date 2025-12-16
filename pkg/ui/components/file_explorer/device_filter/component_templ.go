@@ -10,7 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"autobutler/pkg/ui/types"
-	"autobutler/pkg/util/fileutil"
+	"autobutler/pkg/util/cirrusutil"
 )
 
 func Component(pageState types.PageState) templ.Component {
@@ -34,7 +34,7 @@ func Component(pageState types.PageState) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		managedDevices, err := fileutil.GetManagedDevices()
+		managedDevices, err := cirrusutil.GetManagedDevices()
 		if err == nil && len(managedDevices) > 1 {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"device-filter\"><label class=\"device-filter-label\">Devices:</label><div class=\"device-filter-buttons\">")
 			if templ_7745c5c3_Err != nil {

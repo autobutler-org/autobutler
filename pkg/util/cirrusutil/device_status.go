@@ -1,4 +1,4 @@
-package fileutil
+package cirrusutil
 
 // DeviceStatus represents the status of a storage device, including whether it's
 // enabled for Autobutler file management
@@ -6,7 +6,7 @@ type DeviceStatus struct {
 	Device
 	IsEnabled bool   `json:"is_enabled"`
 	DataDir   string `json:"data_dir,omitempty"`
-	FilesDir  string `json:"files_dir,omitempty"`
+	CirrusDir string `json:"cirrus_dir,omitempty"`
 }
 
 // GetDeviceStatuses returns all detected devices with their enable status
@@ -41,7 +41,7 @@ func GetDeviceStatuses() ([]DeviceStatus, error) {
 		if md, exists := enabledMap[device.MountPoint]; exists {
 			status.IsEnabled = true
 			status.DataDir = md.DataDir
-			status.FilesDir = md.FilesDir
+			status.CirrusDir = md.CirrusDir
 		}
 
 		statuses = append(statuses, status)
