@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Files Page', () => {
-    test('loads files page successfully', async ({ page }) => {
+test.describe('Cirrus Page', () => {
+    test('loads cirrus page successfully', async ({ page }) => {
         await page.goto('/cirrus');
 
         await expect(page).toHaveTitle(/Autobutler/);
@@ -131,7 +131,7 @@ test.describe('Files Page', () => {
     });
 });
 
-test.describe('Files Page - File Upload', () => {
+test.describe('Cirrus Page - File Upload', () => {
     test('uploads a text file through file input', async ({ page }) => {
         await page.goto('/cirrus');
 
@@ -228,7 +228,7 @@ test.describe('Files Page - File Upload', () => {
     });
 });
 
-test.describe('Files Page - Navigation', () => {
+test.describe('Cirrus Page - Navigation', () => {
     test('back button navigates from subfolder to parent folder', async ({ page }) => {
         await page.goto('/cirrus');
 
@@ -272,7 +272,7 @@ test.describe('Files Page - Navigation', () => {
     });
 });
 
-test.describe('Files Page - File Interactions', () => {
+test.describe('Cirrus Page - File Interactions', () => {
     test('opens file viewer modal when double-clicking on a file', async ({ page }) => {
         await page.goto('/cirrus');
 
@@ -606,7 +606,7 @@ test.describe('File Selection', () => {
     });
 });
 
-test.describe('Files Page - Mobile Responsiveness', () => {
+test.describe('Cirrus Page - Mobile Responsiveness', () => {
     test('hides column view button on mobile sizes', async ({ page }) => {
         // Set viewport to mobile size (iPhone SE dimensions)
         await page.setViewportSize({ width: 375, height: 667 });
@@ -768,7 +768,7 @@ test.describe('Column View Navigation', () => {
     });
 });
 
-test.describe('Files Page - File Deletion', () => {
+test.describe('Cirrus Page - File Deletion', () => {
     test('deletes the uploaded file', async ({ page }) => {
         await page.goto('/cirrus');
 
