@@ -5,15 +5,15 @@ package view_settings
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
+import "github.com/a-h/templ"
+import templruntime "github.com/a-h/templ/runtime"
+
 import (
 	"autobutler/pkg/ui/components/gradient_overlays"
 	"autobutler/pkg/ui/components/header"
 	"autobutler/pkg/ui/components/mock_banner"
 	"autobutler/pkg/ui/components/top_nav"
 	"autobutler/pkg/ui/types"
-
-	"github.com/a-h/templ"
-	templruntime "github.com/a-h/templ/runtime"
 )
 
 func SettingsNetwork(pageState types.PageState) templ.Component {
