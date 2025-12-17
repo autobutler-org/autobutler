@@ -9,6 +9,7 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"autobutler/pkg/ui/components/footer"
 	"autobutler/pkg/ui/components/gradient_overlays"
 	"autobutler/pkg/ui/components/header"
 	"autobutler/pkg/ui/components/hero"
@@ -72,7 +73,15 @@ func Home(pageState types.PageState, summary cirrusutil.Summary) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></main><footer><p class=\"footer-text\">Autobutler LLC.</p><a href=\"https://github.com/autobutler-org/autobutler\" target=\"_blank\" rel=\"noopener noreferrer\"><img src=\"/public/img/github/github-mark-white.svg\" alt=\"GitHub logo\"></a></footer></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></main>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = footer.Component().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

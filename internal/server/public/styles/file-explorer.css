@@ -1269,7 +1269,20 @@
         padding: var(--spacing-md);
         border-left: none;
         border-right: none;
-        padding-bottom: 90px; /* Space for bottom nav */
+        border-top: none;
+        padding-bottom: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .file-table-container {
+        flex: 1;
+        max-height: none;
+        overflow-y: auto;
+        overflow-x: hidden;
+        margin-bottom: 90px; /* Space for bottom nav */
     }
 
     .file-viewer {
