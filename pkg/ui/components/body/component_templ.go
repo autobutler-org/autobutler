@@ -5,15 +5,15 @@ package body
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
-import "github.com/a-h/templ"
-import templruntime "github.com/a-h/templ/runtime"
-
 import (
 	"autobutler/pkg/ui/components/bottomnav"
 	"autobutler/pkg/ui/components/footer"
 	"autobutler/pkg/ui/components/gradient_overlays"
 	"autobutler/pkg/ui/components/top_nav"
 	"autobutler/pkg/ui/types"
+
+	"github.com/a-h/templ"
+	templruntime "github.com/a-h/templ/runtime"
 )
 
 func Component(pageState types.PageState) templ.Component {
