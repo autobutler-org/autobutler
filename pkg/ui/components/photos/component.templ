@@ -25,7 +25,9 @@ templ Component(pageState types.PageState, photos []photoutil.PhotoInfo, totalPh
 					>All Photos</h2>
 					<div class="photos-count">{ formatPhotoCount(totalPhotos) }</div>
 				</div>
-				@PhotoGrid(pageState, photos, 1, totalPhotos)
+				<div class="photos-grid-container">
+					@PhotoGrid(pageState, photos, 1, totalPhotos)
+				</div>
 			</div>
 		</div>
 	</div>
