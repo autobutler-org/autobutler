@@ -12,7 +12,7 @@ import (
 	"autobutler/pkg/ui/components/bottomnav"
 	"autobutler/pkg/ui/components/footer"
 	"autobutler/pkg/ui/components/gradient_overlays"
-	"autobutler/pkg/ui/components/landing_nav"
+	"autobutler/pkg/ui/components/top_nav"
 	"autobutler/pkg/ui/types"
 )
 
@@ -49,7 +49,7 @@ func Component(pageState types.PageState) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = landing_nav.Component(pageState).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = top_nav.Component(pageState).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

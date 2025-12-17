@@ -5,7 +5,7 @@ import (
 	"autobutler/pkg/ui/components/gradient_overlays"
 	"autobutler/pkg/ui/components/header"
 	"autobutler/pkg/ui/components/hero"
-	"autobutler/pkg/ui/components/landing_nav"
+	"autobutler/pkg/ui/components/top_nav"
 	"autobutler/pkg/ui/components/storage_bar"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/cirrusutil"
@@ -20,7 +20,7 @@ templ Home(pageState types.PageState, summary cirrusutil.Summary) {
 			<main class="landing-main">
 				@gradient_overlays.Component()
 				<div class="landing-container">
-					@landing_nav.Component(pageState)
+					@top_nav.Component(pageState)
 					@hero.Component()
 					@storage_bar.Component(summary)
 				</div>
