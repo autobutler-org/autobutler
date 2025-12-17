@@ -22,10 +22,11 @@
 }
 
 .site-fullscreen-col {
+    height: 100vh;
     max-height: 100vh;
-    min-height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 /* Gradient overlays for decorative backgrounds */
@@ -68,7 +69,8 @@
     }
 
     .site-fullscreen-col {
-        min-height: 100vh;
+        height: 100vh;
+        max-height: 100vh;
     }
 
     /* Add safe area insets for devices with notches */

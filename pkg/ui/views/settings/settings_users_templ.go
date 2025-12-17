@@ -11,8 +11,8 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"autobutler/pkg/ui/components/gradient_overlays"
 	"autobutler/pkg/ui/components/header"
-	"autobutler/pkg/ui/components/landing_nav"
 	"autobutler/pkg/ui/components/mock_banner"
+	"autobutler/pkg/ui/components/top_nav"
 	"autobutler/pkg/ui/types"
 )
 
@@ -58,7 +58,7 @@ func SettingsUsers(pageState types.PageState) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = landing_nav.Component(pageState).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = top_nav.Component(pageState).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

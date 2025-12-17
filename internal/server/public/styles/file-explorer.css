@@ -12,6 +12,19 @@
     box-shadow: var(--shadow-sm);
     padding: var(--spacing-xl);
     border: 1px solid var(--color-gray-200);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Scroll container for the table area */
+.file-table-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -24,6 +37,39 @@
     display: flex;
     align-items: center;
     margin-bottom: var(--spacing-lg);
+}
+
+/* Make the selectable wrapper participate in flex sizing */
+#file-explorer-selectable {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Ensure the view content area flexes and allows internal scrolling */
+#file-explorer-view-content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Constrain table area so tbody never overflows outside card */
+.file-table-container {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-radius: var(--border-radius-lg);
+    /* Create a new formatting context to keep children inside */
+    contain: layout paint;
+}
+
+.file-table {
+    width: 100%;
+    table-layout: fixed;
 }
 
 .file-explorer-title {
@@ -137,10 +183,6 @@
 }
 
 /* File table */
-.file-table-container {
-    max-height: 70vh;
-    overflow-y: auto;
-}
 
 .file-table {
     width: 100%;
@@ -1267,7 +1309,22 @@
         padding: var(--spacing-md);
         border-left: none;
         border-right: none;
-        padding-bottom: 90px; /* Space for bottom nav */
+        border-top: none;
+        padding-bottom: 0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-height: 0;
+    }
+
+    .file-table-container {
+        flex: 1;
+        max-height: none;
+        overflow-y: auto;
+        overflow-x: hidden;
+        margin-bottom: 90px; /* Space for bottom nav */
+        min-height: 0;
     }
 
     .file-viewer {

@@ -12,7 +12,9 @@
 
 .photos-container {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
 }
 
 /* Sidebar Styles */
@@ -136,19 +138,17 @@
     flex: 1;
     padding: var(--spacing-2xl);
     background: var(--color-gray-50);
-    min-height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .photos-header {
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
-    margin-bottom: var(--spacing-2xl);
-    position: sticky;
-    top: 0;
-    background: var(--color-gray-50);
     padding: var(--spacing-lg) 0;
-    z-index: 10;
     border-bottom: 1px solid var(--color-gray-200);
 }
 
@@ -156,7 +156,6 @@
     .photos-header {
         background: var(--color-gray-900);
         border-bottom-color: var(--color-gray-800);
-        position: fixed;
     }
 }
 
@@ -173,6 +172,12 @@
 }
 
 /* Photo Grid Styles */
+.photos-grid-container {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
 .photo-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

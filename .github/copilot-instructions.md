@@ -22,6 +22,28 @@ Avoid
 - Do not introduce new global stylesheets at the project root. Keep site-wide styles centralized in `internal/server/public/styles/site.css`.
 - **NEVER add CSS transforms (transform: scale(), translateX(), etc.) to interactive elements unless explicitly requested.** Transforms on :active, :hover, or :focus states cause positioning bugs where clicks fail to register because elements move away from the cursor during interaction. This has caused numerous bugs.
 
+No-scroll page layout principle
+--------------------------------
+- **The page body/viewport should NEVER scroll.** Page scrolling creates a poor user experience.
+- Pages should use viewport-constrained layouts (e.g., `height: 100vh`, `overflow: hidden` on main containers).
+- When content needs to scroll, it should be within an **explicit, contained scrollable region** (e.g., a table tbody, a content area, a modal body).
+- Use flexbox layouts with `flex: 1` and `min-height: 0` to create flexible containers that fit within the viewport.
+- Example pattern:
+  ```css
+  .page-container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+  }
+  .scrollable-content {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+  }
+  ```
+- Reference implementations: `/cirrus` page (file-explorer.css, layout.css) and home page (landing.css).
+
 Style additions best practices
 -----------------------------
 - Keep new selectors specific and prefixed if needed to avoid collisions (e.g., .ab- or .site-).

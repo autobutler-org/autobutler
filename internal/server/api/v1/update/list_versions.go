@@ -2,7 +2,7 @@ package v1_update
 
 import (
 	"autobutler/pkg/ui/components/error_message"
-	"autobutler/pkg/ui/components/landing_nav"
+	"autobutler/pkg/ui/components/top_nav"
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/updateutil"
 
@@ -17,7 +17,7 @@ var listVersionsRoute = serverutil.ApiRoute(
 			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(err.Error()))
 		}
 
-		if err := landing_nav.VersionDropdown(result.Releases).Render(c.Request.Context(), c.Writer); err != nil {
+		if err := top_nav.VersionDropdown(result.Releases).Render(c.Request.Context(), c.Writer); err != nil {
 			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(err.Error()))
 		}
 		return serverutil.Ok()

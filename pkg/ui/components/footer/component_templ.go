@@ -29,7 +29,7 @@ func Component() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<footer></footer>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<footer><p class=\"footer-text\">Autobutler LLC.</p><a href=\"https://github.com/autobutler-org/autobutler\" target=\"_blank\" rel=\"noopener noreferrer\"><img src=\"/public/img/github/github-mark-white.svg\" alt=\"GitHub logo\"></a></footer>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

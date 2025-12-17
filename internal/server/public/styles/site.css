@@ -210,3 +210,11 @@ footer {
         height: 2rem;
     }
 }
+
+@media (max-width: 768px) {
+    footer {
+        margin-top: 0;
+        padding: var(--spacing-sm) var(--spacing-md);
+        margin-bottom: 90px; /* Account for bottom nav */
+    }
+}

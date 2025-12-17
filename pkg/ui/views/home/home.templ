@@ -1,11 +1,11 @@
 package view_home
 
 import (
+	"autobutler/pkg/ui/components/footer"
 	"autobutler/pkg/ui/components/gradient_overlays"
 	"autobutler/pkg/ui/components/header"
 	"autobutler/pkg/ui/components/hero"
-	"autobutler/pkg/ui/components/landing_nav"
-	"autobutler/pkg/ui/components/storage_bar"
+	"autobutler/pkg/ui/components/top_nav"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/cirrusutil"
 )
@@ -16,20 +16,14 @@ templ Home(pageState types.PageState, summary cirrusutil.Summary) {
 	<html lang="en">
 		@header.Component()
 		<body class="landing-body">
-			<main class="landing-main">
+			<main class="landing-main site-fullscreen-col">
 				@gradient_overlays.Component()
 				<div class="landing-container">
-					@landing_nav.Component(pageState)
+					@top_nav.Component(pageState)
 					@hero.Component()
-					@storage_bar.Component(summary)
 				</div>
+				@footer.Component()
 			</main>
-			<footer>
-				<p class="footer-text">Autobutler LLC.</p>
-				<a href="https://github.com/autobutler-org/autobutler" target="_blank" rel="noopener noreferrer">
-					<img src="/public/img/github/github-mark-white.svg" alt="GitHub logo"/>
-				</a>
-			</footer>
 		</body>
 	</html>
 }
