@@ -7,6 +7,8 @@
 .file-explorer {
     background-color: white;
     max-width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
     margin: var(--spacing-2xl) var(--spacing-xl);
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-sm);
@@ -137,10 +139,6 @@
 }
 
 /* File table */
-.file-table-container {
-    max-height: 70vh;
-    overflow-y: auto;
-}
 
 .file-table {
     width: 100%;
