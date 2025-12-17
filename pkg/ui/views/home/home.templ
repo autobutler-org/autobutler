@@ -16,14 +16,14 @@ templ Home(pageState types.PageState, summary cirrusutil.Summary) {
 	<html lang="en">
 		@header.Component()
 		<body class="landing-body">
-			<main class="landing-main">
+			<main class="landing-main site-fullscreen-col">
 				@gradient_overlays.Component()
 				<div class="landing-container">
 					@top_nav.Component(pageState)
 					@hero.Component()
 				</div>
+				@footer.Component()
 			</main>
-			@footer.Component()
 		</body>
 	</html>
 }

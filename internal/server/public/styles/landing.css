@@ -26,7 +26,6 @@
 .landing-container {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
     max-width: 1400px;
     margin: 0 auto;
     width: 100%;
@@ -377,7 +376,7 @@
 /* Service Icons Container */
 .service-icons-container {
     max-width: 900px;
-    margin: var(--spacing-3xl) auto;
+    margin-bottom: var(--spacing-2xl);
     padding: var(--spacing-3xl) var(--spacing-2xl);
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(10px);
@@ -619,11 +618,10 @@
 
 /* Adjust hero for landing page */
 .landing-container .hero {
-    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: var(--spacing-xl) 0;
+    padding: var(--spacing-3xl) 0 var(--spacing-xl);
 }
 
 .landing-container .hero-content {
@@ -712,7 +710,7 @@
 
     .service-icons-container {
         padding: var(--spacing-2xl) var(--spacing-md);
-        margin: var(--spacing-2xl) 0;
+        margin-bottom: var(--spacing-2xl);
     }
 
     /* Max 4 columns on mobile */
