@@ -36,7 +36,7 @@ func Component(columnName string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSUnsafeFuncCall(fmt.Sprintf("sortFiles('%s'); updateSortArrows('%s')", columnName, columnName)))
+		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSUnsafeFuncCall(fmt.Sprintf("window.ab.sortFiles('%s'); window.ab.updateSortArrows('%s')", columnName, columnName)))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -57,7 +57,7 @@ func Component(columnName string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var3 templ.ComponentScript = templ.JSUnsafeFuncCall(fmt.Sprintf("sortFiles('%s'); updateSortArrows('%s')", columnName, columnName))
+		var templ_7745c5c3_Var3 templ.ComponentScript = templ.JSUnsafeFuncCall(fmt.Sprintf("window.ab.sortFiles('%s'); window.ab.updateSortArrows('%s')", columnName, columnName))
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3.Call)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
