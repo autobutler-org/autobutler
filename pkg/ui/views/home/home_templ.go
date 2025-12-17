@@ -5,18 +5,17 @@ package view_home
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
+import "github.com/a-h/templ"
+import templruntime "github.com/a-h/templ/runtime"
+
 import (
 	"autobutler/pkg/ui/components/footer"
 	"autobutler/pkg/ui/components/gradient_overlays"
 	"autobutler/pkg/ui/components/header"
 	"autobutler/pkg/ui/components/hero"
-	"autobutler/pkg/ui/components/storage_bar"
 	"autobutler/pkg/ui/components/top_nav"
 	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/cirrusutil"
-
-	"github.com/a-h/templ"
-	templruntime "github.com/a-h/templ/runtime"
 )
 
 func Home(pageState types.PageState, summary cirrusutil.Summary) templ.Component {
@@ -66,10 +65,6 @@ func Home(pageState types.PageState, summary cirrusutil.Summary) templ.Component
 			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Err = hero.Component().Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = storage_bar.Component(summary).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
