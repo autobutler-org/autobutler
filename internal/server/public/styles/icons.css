@@ -6,10 +6,10 @@
 .icon {
     display: inline-block;
     vertical-align: middle;
+}
 
-    svg& {
-        color: var(--color-gray-200);
-    }
+.icon-light {
+    color: var(--color-gray-200);
 }
 
 /* View switcher icons */
