@@ -93,7 +93,7 @@ self.addEventListener('fetch', (event) => {
     // Cache-first for all static assets (CSS, JS, images, fonts)
     // These are versioned via cache name, so cache-first is fast and safe
     if (isStaticAsset(url)) {
-        event.respondWith(cacheFirst(request, url));
+        event.respondWith(cacheFirst(request));
         return;
     }
 
@@ -105,11 +105,11 @@ self.addEventListener('fetch', (event) => {
     }
 
     // Default: cache-first for everything else
-    event.respondWith(cacheFirst(request, url));
+    event.respondWith(cacheFirst(request));
 });
 
 // Cache-first strategy: serve from cache immediately, fallback to network
-async function cacheFirst(request, url) {
+async function cacheFirst(request) {
     // Check both caches in parallel for speed
     const [staticCache, runtimeCache] = await Promise.all([
         caches.open(CACHE_NAME),
@@ -159,7 +159,6 @@ async function cacheFirstWithLazyRevalidate(request, url) {
     const cached = runtimeCached || staticCached;
 
     if (cached) {
-
         // Check if we should revalidate in the background
         const lastTime = lastRevalidated.get(cacheKey) || 0;
         const now = Date.now();
@@ -241,10 +240,7 @@ function isStaticAsset(url) {
 
 // Helper: Check if request is a navigation request (HTML page)
 function isNavigationRequest(request) {
-    return (
-        request.mode === 'navigate' ||
-        request.headers.get('accept')?.includes('text/html')
-    );
+    return request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html');
 }
 
 // Helper: Check if request is an API call
