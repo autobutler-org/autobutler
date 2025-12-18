@@ -162,7 +162,7 @@ templ renderParentColumnItem(pageState types.PageState, parentPath string, file 
 		} else {
 			<div
 				class="column-view-link column-view-link--file"
-				onclick={ templ.JSFuncCall("navigateToParentAndPreview", templ.JSExpression("event"), fileParentPath, filepath.Join("/components/cirrus/viewer", filePath)) }
+				onclick={ templ.JSFuncCall("window.ab.navigateToParentAndPreview", templ.JSExpression("event"), fileParentPath, filepath.Join("/components/cirrus/viewer", filePath)) }
 			>
 				<span class="column-view-icon">
 					@renderFileIcon(fileType)

@@ -442,7 +442,7 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file *
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("navigateToParentAndPreview", templ.JSExpression("event"), fileParentPath, filepath.Join("/components/cirrus/viewer", filePath)))
+			templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("window.ab.navigateToParentAndPreview", templ.JSExpression("event"), fileParentPath, filepath.Join("/components/cirrus/viewer", filePath)))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -450,7 +450,7 @@ func renderParentColumnItem(pageState types.PageState, parentPath string, file *
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var17 templ.ComponentScript = templ.JSFuncCall("navigateToParentAndPreview", templ.JSExpression("event"), fileParentPath, filepath.Join("/components/cirrus/viewer", filePath))
+			var templ_7745c5c3_Var17 templ.ComponentScript = templ.JSFuncCall("window.ab.navigateToParentAndPreview", templ.JSExpression("event"), fileParentPath, filepath.Join("/components/cirrus/viewer", filePath))
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17.Call)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

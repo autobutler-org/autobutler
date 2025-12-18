@@ -40,10 +40,10 @@ func Component(pageState types.PageState) templ.Component {
 			[]string{"New File", "Details"},
 			[]*lib.ContextMenuHandlerProps{
 				{
-					OnClickHandler: fmt.Sprintf("newFile(event, '%s'); window.ab.closeContextMenuFromItem(event);", pageState.RootDir),
+					OnClickHandler: fmt.Sprintf("window.ab.newFile(event, '%s'); window.ab.closeContextMenuFromItem(event);", pageState.RootDir),
 				},
 				{
-					OnClickHandler: "showFolderDetails(event); window.ab.closeContextMenuFromItem(event);",
+					OnClickHandler: "window.ab.showFolderDetails(event); window.ab.closeContextMenuFromItem(event);",
 				},
 			},
 		)
