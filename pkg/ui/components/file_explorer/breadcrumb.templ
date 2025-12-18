@@ -6,8 +6,12 @@ import (
 	"strings"
 )
 
-templ Breadcrumb(pageState types.PageState, view string) {
-	<nav id="breadcrumbs" class="file-explorer-breadcrumbs" data-path={ pageState.RootDir } hx-swap-oob="true">
+templ Breadcrumb(pageState types.PageState, view string, swapOOB bool) {
+	<nav
+		id="breadcrumbs"
+		class="file-explorer-breadcrumbs"
+		data-path={ pageState.RootDir }
+	>
 		{{ accumulatedDir := "" }}
 		for i, dir := range strings.Split(pageState.RootDir, "/") {
 			if i == 0 {
