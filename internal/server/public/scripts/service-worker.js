@@ -1,5 +1,5 @@
-const CACHE_NAME = 'autobutler-v2';
-const RUNTIME_CACHE = 'autobutler-runtime-v2';
+const CACHE_NAME = 'autobutler-v3';
+const RUNTIME_CACHE = 'autobutler-runtime-v3';
 
 // Critical assets to cache on install for instant loading
 const STATIC_ASSETS = [
@@ -32,29 +32,25 @@ const STATIC_ASSETS = [
     // and are automatically included in the cached HTML pages
 ];
 
+// Revalidation interval: only revalidate cached content after this time (in ms)
+// This prevents constant background fetches while still keeping content fresh
+const REVALIDATE_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+// Store last revalidation times (in-memory, resets on SW restart)
+const lastRevalidated = new Map();
+
 // Install event - cache critical static assets for instant page loads
 self.addEventListener('install', (event) => {
-    console.log('[Service Worker] Installing...');
     event.waitUntil(
         caches
             .open(CACHE_NAME)
-            .then((cache) => {
-                console.log('[Service Worker] Caching critical assets');
-                return cache.addAll(STATIC_ASSETS);
-            })
-            .then(() => {
-                console.log('[Service Worker] Installed successfully');
-                return self.skipWaiting();
-            })
-            .catch((error) => {
-                console.error('[Service Worker] Installation failed:', error);
-            })
+            .then((cache) => cache.addAll(STATIC_ASSETS))
+            .then(() => self.skipWaiting())
     );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-    console.log('[Service Worker] Activating...');
     const cacheWhitelist = [CACHE_NAME, RUNTIME_CACHE];
 
     event.waitUntil(
@@ -64,20 +60,16 @@ self.addEventListener('activate', (event) => {
                 return Promise.all(
                     cacheNames.map((cacheName) => {
                         if (!cacheWhitelist.includes(cacheName)) {
-                            console.log('[Service Worker] Deleting old cache:', cacheName);
                             return caches.delete(cacheName);
                         }
                     })
                 );
             })
-            .then(() => {
-                console.log('[Service Worker] Activated');
-                return self.clients.claim();
-            })
+            .then(() => self.clients.claim())
     );
 });
 
-// Fetch event - intelligent caching strategies
+// Fetch event - intelligent caching strategies optimized for speed
 self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
@@ -87,212 +79,181 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Stale-while-revalidate for HTML pages (fast PWA, auto-updates)
-    if (isNavigationRequest(request)) {
-        event.respondWith(staleWhileRevalidate(request));
+    // Skip non-GET requests
+    if (request.method !== 'GET') {
         return;
     }
 
-    // Stale-while-revalidate for CSS/JS (fast load, auto-updates in background)
-    if (isCSSOrJS(request)) {
-        event.respondWith(staleWhileRevalidate(request));
+    // Network-only for API calls (always need fresh data)
+    if (isAPIRequest(url)) {
+        event.respondWith(networkOnly(request));
         return;
     }
 
-    // Network-first strategy for API calls only
-    if (isAPIRequest(request)) {
-        event.respondWith(networkFirst(request));
-        return;
-    }
-
-    // Cache-first for images and other static assets (rarely change)
-    if (isStaticAsset(request)) {
+    // Cache-first for all static assets (CSS, JS, images, fonts)
+    // These are versioned via cache name, so cache-first is fast and safe
+    if (isStaticAsset(url)) {
         event.respondWith(cacheFirst(request));
         return;
     }
 
-    // Default: stale-while-revalidate
-    event.respondWith(staleWhileRevalidate(request));
+    // Navigation requests: cache-first with lazy background revalidation
+    // Serves instantly from cache, only revalidates periodically
+    if (isNavigationRequest(request)) {
+        event.respondWith(cacheFirstWithLazyRevalidate(request, url));
+        return;
+    }
+
+    // Default: cache-first for everything else
+    event.respondWith(cacheFirst(request));
 });
 
-// Cache-first strategy: serve from cache, fallback to network
+// Cache-first strategy: serve from cache immediately, fallback to network
 async function cacheFirst(request) {
-    const cache = await caches.open(CACHE_NAME);
-    const cached = await cache.match(request);
+    // Check both caches in parallel for speed
+    const [staticCache, runtimeCache] = await Promise.all([
+        caches.open(CACHE_NAME),
+        caches.open(RUNTIME_CACHE),
+    ]);
 
-    if (cached) {
-        console.log('[Service Worker] Serving from cache:', request.url);
-        return cached;
+    // Try static cache first (pre-cached assets)
+    const staticCached = await staticCache.match(request);
+    if (staticCached) {
+        return staticCached;
     }
 
+    // Try runtime cache
+    const runtimeCached = await runtimeCache.match(request);
+    if (runtimeCached) {
+        return runtimeCached;
+    }
+
+    // Cache miss - fetch from network
     try {
         const response = await fetch(request);
 
-        if (response && response.status === 200) {
-            // Clone and cache the response for future use
-            const responseToCache = response.clone();
-            const runtimeCache = await caches.open(RUNTIME_CACHE);
-            await runtimeCache.put(request, responseToCache);
-        }
-
-        return response;
-    } catch (error) {
-        console.error('[Service Worker] Fetch failed:', error);
-
-        // Try to get from runtime cache as last resort
-        const runtimeCache = await caches.open(RUNTIME_CACHE);
-        const runtimeCached = await runtimeCache.match(request);
-
-        if (runtimeCached) {
-            return runtimeCached;
-        }
-
-        // Return offline page or error response
-        return new Response('Offline - Content not available', {
-            status: 503,
-            statusText: 'Service Unavailable',
-            headers: new Headers({
-                'Content-Type': 'text/plain',
-            }),
-        });
-    }
-}
-
-// Network-first strategy: try network first, fallback to cache
-async function networkFirst(request) {
-    try {
-        const response = await fetch(request);
-
-        if (response && response.status === 200) {
-            // Cache successful responses
-            const responseToCache = response.clone();
-            const runtimeCache = await caches.open(RUNTIME_CACHE);
-            await runtimeCache.put(request, responseToCache);
+        if (response && response.status === 200 && response.type === 'basic') {
+            // Cache the response for future use (don't await - fire and forget)
+            runtimeCache.put(request, response.clone());
         }
 
         return response;
     } catch {
-        console.log('[Service Worker] Network failed, trying cache:', request.url);
+        return offlineResponse();
+    }
+}
 
-        // Try static cache first
-        const staticCache = await caches.open(CACHE_NAME);
-        const staticCached = await staticCache.match(request);
+// Cache-first with lazy background revalidation for HTML pages
+// Only revalidates if content is older than REVALIDATE_INTERVAL
+async function cacheFirstWithLazyRevalidate(request, url) {
+    const cacheKey = url.pathname;
 
-        if (staticCached) {
-            return staticCached;
+    // Check both caches
+    const [staticCache, runtimeCache] = await Promise.all([
+        caches.open(CACHE_NAME),
+        caches.open(RUNTIME_CACHE),
+    ]);
+
+    const staticCached = await staticCache.match(request);
+    const runtimeCached = await runtimeCache.match(request);
+    const cached = runtimeCached || staticCached;
+
+    if (cached) {
+        // Check if we should revalidate in the background
+        const lastTime = lastRevalidated.get(cacheKey) || 0;
+        const now = Date.now();
+
+        if (now - lastTime > REVALIDATE_INTERVAL) {
+            // Mark as revalidating to prevent duplicate fetches
+            lastRevalidated.set(cacheKey, now);
+
+            // Lazy revalidate in background (don't block response)
+            lazyRevalidate(request, runtimeCache);
         }
 
-        // Try runtime cache
-        const runtimeCache = await caches.open(RUNTIME_CACHE);
-        const runtimeCached = await runtimeCache.match(request);
+        return cached;
+    }
 
-        if (runtimeCached) {
-            return runtimeCached;
+    // No cache - must fetch from network
+    try {
+        const response = await fetch(request);
+
+        if (response && response.status === 200 && response.type === 'basic') {
+            runtimeCache.put(request, response.clone());
+            lastRevalidated.set(cacheKey, Date.now());
         }
 
-        // Return offline fallback
-        if (isNavigationRequest(request)) {
-            const fallback = await staticCache.match('/');
-            if (fallback) {
-                return fallback;
-            }
-        }
+        return response;
+    } catch {
+        // Try to return homepage as fallback for navigation
+        const fallback = await staticCache.match('/');
+        return fallback || offlineResponse();
+    }
+}
 
-        return new Response('Offline', {
+// Lazy background revalidation - doesn't block the response
+function lazyRevalidate(request, cache) {
+    // Use setTimeout to ensure this runs after the response is sent
+    setTimeout(() => {
+        fetch(request)
+            .then((response) => {
+                if (response && response.status === 200 && response.type === 'basic') {
+                    cache.put(request, response);
+                }
+            })
+            .catch(() => {
+                // Silent fail - cache still has valid content
+            });
+    }, 100);
+}
+
+// Network-only for API requests (no caching)
+async function networkOnly(request) {
+    try {
+        return await fetch(request);
+    } catch {
+        return new Response(JSON.stringify({ error: 'Offline' }), {
             status: 503,
             statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'application/json' },
         });
     }
 }
 
-// Stale-while-revalidate strategy: serve from cache immediately, update cache in background
-async function staleWhileRevalidate(request) {
-    const cache = await caches.open(RUNTIME_CACHE);
-    const cachedResponse = await cache.match(request);
-
-    // Fetch from network in the background to update cache
-    const fetchPromise = fetch(request)
-        .then((response) => {
-            if (response && response.status === 200) {
-                // Update cache with fresh response
-                cache.put(request, response.clone());
-            }
-            return response;
-        })
-        .catch((error) => {
-            console.log('[Service Worker] Background fetch failed:', error);
-            return null;
-        });
-
-    // Return cached response immediately if available, otherwise wait for network
-    if (cachedResponse) {
-        console.log('[Service Worker] Serving from cache (stale-while-revalidate):', request.url);
-        return cachedResponse;
-    }
-
-    // No cache available, wait for network (first load)
-    console.log('[Service Worker] No cache, waiting for network:', request.url);
-    const networkResponse = await fetchPromise;
-
-    if (networkResponse) {
-        return networkResponse;
-    }
-
-    // Network failed and no cache - return offline fallback
-    const staticCache = await caches.open(CACHE_NAME);
-    const fallback = await staticCache.match('/');
-
-    return (
-        fallback ||
-        new Response('Offline', {
-            status: 503,
-            statusText: 'Service Unavailable',
-        })
-    );
+// Offline fallback response
+function offlineResponse() {
+    return new Response('Offline - Content not available', {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: { 'Content-Type': 'text/plain' },
+    });
 }
 
-// Helper: Check if request is for CSS or JS (needs frequent updates)
-function isCSSOrJS(request) {
-    const url = new URL(request.url);
+// Helper: Check if request is for a static asset (CSS, JS, images, fonts)
+function isStaticAsset(url) {
     const path = url.pathname;
-    return path.match(/\.(css|js)$/i);
-}
-
-// Helper: Check if request is for a static asset (images, fonts, etc.)
-function isStaticAsset(request) {
-    const url = new URL(request.url);
-    const path = url.pathname;
-
     return (
-        path.match(/\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp)$/i) ||
-        (path.startsWith('/public/') && !isCSSOrJS(request))
+        path.startsWith('/public/') ||
+        path.match(/\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp)$/i)
     );
 }
 
 // Helper: Check if request is a navigation request (HTML page)
 function isNavigationRequest(request) {
-    return (
-        request.mode === 'navigate' ||
-        (request.method === 'GET' && request.headers.get('accept')?.includes('text/html'))
-    );
+    return request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html');
 }
 
 // Helper: Check if request is an API call
-function isAPIRequest(request) {
-    const url = new URL(request.url);
+function isAPIRequest(url) {
     return url.pathname.startsWith('/api/');
 }
 
 // Background sync for failed requests (future enhancement)
-self.addEventListener('sync', (event) => {
-    if (event.tag === 'sync-data') {
-        console.log('[Service Worker] Background sync triggered');
-        // Implement background sync logic here
-    }
+self.addEventListener('sync', () => {
+    // Implement background sync logic here
 });
 
 // Handle push notifications (future enhancement)
 self.addEventListener('push', () => {
-    console.log('[Service Worker] Push notification received');
     // Implement push notification logic here
 });
