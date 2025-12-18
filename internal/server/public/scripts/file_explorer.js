@@ -480,13 +480,6 @@ window.ab = Object.assign(window.ab || {}, {
     downloadSelectedFiles: (event, rootDir) => {
         window.ab.preventDefault(event);
 
-        console.log(
-            'Download requested. Root dir:',
-            rootDir,
-            'Selected files:',
-            window.ab.selectedFiles
-        );
-
         if (!rootDir) rootDir = '';
 
         window.ab.selectedFiles.forEach((fileName) => {

@@ -31,7 +31,7 @@ func Component(pageState types.PageState) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<button id=\"file-download-button\" disabled type=\"button\" class=\"btn btn--icon btn--disabled\" onclick=\"(function(e){ downloadSelectedFiles(e, this.getAttribute('data-root-dir')); }).call(this, event)\" title=\"Download selected files\" data-root-dir=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<button id=\"file-download-button\" disabled type=\"button\" class=\"btn btn--icon btn--disabled\" onclick=\"(function(e){ window.ab.downloadSelectedFiles(e, this.getAttribute('data-root-dir')); }).call(this, event)\" title=\"Download selected files\" data-root-dir=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
