@@ -71,8 +71,8 @@ window.ab = Object.assign(window.ab || {}, {
         // Use HTMX to reload the content without a full page refresh
         const currentPath = window.location.pathname;
         htmx.ajax('GET', currentPath, {
-            target: '#file-explorer-view-content',
-            swap: 'innerHTML',
+            target: '#file-explorer',
+            swap: 'outerHTML',
             indicator: false,
         });
     },
@@ -287,8 +287,8 @@ window.ab = Object.assign(window.ab || {}, {
                 const href = contentCell?.dataset.href;
                 if (href) {
                     htmx.ajax('GET', href, {
-                        target: '#file-explorer-view-content',
-                        swap: 'innerHTML',
+                        target: '#file-explorer',
+                        swap: 'outerHTML',
                     }).then(() => {
                         window.history.pushState({}, '', href);
                         window.ab.updateBackButton();
@@ -374,8 +374,8 @@ window.ab = Object.assign(window.ab || {}, {
             if (href) {
                 // Use HTMX for smooth navigation without page reload
                 htmx.ajax('GET', href, {
-                    target: '#file-explorer-view-content',
-                    swap: 'innerHTML',
+                    target: '#file-explorer',
+                    swap: 'outerHTML',
                     indicator: false,
                 }).then(() => {
                     // Update the browser URL after successful navigation
@@ -615,8 +615,8 @@ window.ab = Object.assign(window.ab || {}, {
         window.ab.preventDefault(event);
         // Use HTMX to navigate to parent (removes child columns) without full page reload
         htmx.ajax('GET', parentPath, {
-            target: '#file-explorer-view-content',
-            swap: 'innerHTML',
+            target: '#file-explorer',
+            swap: 'outerHTML',
             indicator: false,
         }).then(function () {
             // After the file explorer updates, load the preview
@@ -898,8 +898,8 @@ window.ab = Object.assign(window.ab || {}, {
         // Navigate to parent
         window.history.pushState({}, '', parentPath);
         htmx.ajax('GET', parentPath, {
-            target: '#file-explorer-view-content',
-            swap: 'innerHTML',
+            target: '#file-explorer',
+            swap: 'outerHTML',
         });
         window.ab.updateBackButton();
     },
@@ -1067,8 +1067,8 @@ window.addEventListener('popstate', function () {
     // Reload the file explorer content for the current URL
     const currentPath = window.location.pathname;
     htmx.ajax('GET', currentPath, {
-        target: '#file-explorer-view-content',
-        swap: 'innerHTML',
+        target: '#file-explorer',
+        swap: 'outerHTML',
     });
     window.ab.updateBackButton();
 });

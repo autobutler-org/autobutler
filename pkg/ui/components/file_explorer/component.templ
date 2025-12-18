@@ -46,7 +46,7 @@ templ Component(pageState types.PageState, files []*cirrusutil.DeviceFileInfo, v
 			@explorer_context_menu.Component(pageState)
 			<div class="file-explorer-controls">
 				<div>
-					@Breadcrumb(pageState, view)
+					@Breadcrumb(pageState, view, false)
 					@device_filter.Component(pageState)
 				</div>
 				<div style="display: flex; align-items: center; gap: 1rem;">

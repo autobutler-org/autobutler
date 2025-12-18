@@ -24,10 +24,10 @@ var newFolderRoute = serverutil.ApiRoute(
 			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(err.Error()))
 		}
 
-		// Check if it's an HTMX request targeting just the content
+		// Return full explorer for HTMX so all controls (upload, breadcrumbs) stay in sync
 		var component templ.Component
 		if c.GetHeader("HX-Request") == "true" {
-			component = view_cirrus.GetExplorerViewContent(c, result.CurrentDir, "")
+			component = view_cirrus.GetExplorer(c, result.CurrentDir)
 		} else {
 			component = view_cirrus.GetExplorer(c, result.CurrentDir)
 		}
