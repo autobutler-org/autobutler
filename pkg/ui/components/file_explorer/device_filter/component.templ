@@ -16,7 +16,7 @@ templ Component(pageState types.PageState) {
 						class="device-filter-button device-filter-button--active"
 						data-device-name={ device.Name }
 						data-device-path={ device.MountPoint }
-						onclick="toggleDeviceFilter(this)"
+						onclick="window.ab.toggleDeviceFilter(this)"
 						title={ "Toggle " + device.Name }
 						type="button"
 					>

@@ -31,7 +31,7 @@ func Component(pageState types.PageState) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<button id=\"file-download-button\" disabled type=\"button\" class=\"btn btn--icon btn--disabled\" onclick=\"(function(e){ downloadSelectedFiles(e, this.getAttribute('data-root-dir')); }).call(this, event)\" title=\"Download selected files\" data-root-dir=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<button id=\"file-download-button\" disabled type=\"button\" class=\"btn btn--icon btn--disabled\" onclick=\"(function(e){ window.ab.downloadSelectedFiles(e, this.getAttribute('data-root-dir')); }).call(this, event)\" title=\"Download selected files\" data-root-dir=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -44,7 +44,7 @@ func Component(pageState types.PageState) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"icon icon--lg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" style=\"color: var(--color-gray-600);\"><path d=\"M12 3a1 1 0 011 1v9.586l3.293-3.293a1 1 0 111.414 1.414l-5 5a1 1 0 01-1.414 0l-5-5a1 1 0 111.414-1.414L11 13.586V4a1 1 0 011-1z\"></path> <path d=\"M5 19a1 1 0 011-1h12a1 1 0 110 2H6a1 1 0 01-1-1z\"></path></svg></button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"icon icon--lg\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M12 3a1 1 0 011 1v9.586l3.293-3.293a1 1 0 111.414 1.414l-5 5a1 1 0 01-1.414 0l-5-5a1 1 0 111.414-1.414L11 13.586V4a1 1 0 011-1z\"></path> <path d=\"M5 19a1 1 0 011-1h12a1 1 0 110 2H6a1 1 0 01-1-1z\"></path></svg></button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
