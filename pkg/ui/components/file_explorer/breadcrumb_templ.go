@@ -95,7 +95,7 @@ func Breadcrumb(pageState types.PageState, view string, swapOOB bool) templ.Comp
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" hx-target=\"#file-explorer-view-content\" hx-swap=\"innerHTML\" hx-push-url=\"true\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" hx-target=\"#file-explorer\" hx-swap=\"outerHTML\" hx-push-url=\"true\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -126,7 +126,7 @@ func Breadcrumb(pageState types.PageState, view string, swapOOB bool) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" hx-target=\"#file-explorer-view-content\" hx-swap=\"innerHTML\" hx-trigger=\"keydown[keyCode==13] from:body\" hx-disabled-elt=\"this\"></div></nav>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" hx-target=\"#file-explorer\" hx-swap=\"outerHTML\" hx-trigger=\"keydown[keyCode==13] from:body\" hx-disabled-elt=\"this\"></div></nav>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

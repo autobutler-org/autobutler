@@ -39,7 +39,7 @@ var cirrusRoute = serverutil.UiRoute(
 
 		// If this is an htmx request, return just the view content with OOB breadcrumb
 		if c.GetHeader("HX-Request") == "true" {
-			return GetExplorerViewContentWithBreadcrumb(c, "", view)
+			return getFileExplorerComponent(c, "", false, view)
 		}
 
 		return Files(types.NewPageState().WithView(view))
@@ -53,7 +53,7 @@ var cirrusNestedRoute = serverutil.UiRoute(
 
 		// If this is an htmx request, return just the view content with OOB breadcrumb
 		if c.GetHeader("HX-Request") == "true" {
-			return GetExplorerViewContentWithBreadcrumb(c, rootDir, view)
+			return getFileExplorerComponent(c, rootDir, false, view)
 		}
 
 		return Files(types.NewPageState().WithRootDir(rootDir).WithView(view))

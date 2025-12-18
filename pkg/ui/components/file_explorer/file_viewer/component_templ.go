@@ -34,11 +34,7 @@ func Component() templ.Component {
 		templ_7745c5c3_Err = lib.Dialog(
 			"file-viewer",
 			"",
-			[]string{
-				"/public/vendor/epub.js/jszip.min.js",
-				"/public/vendor/epub.js/epub.min.js",
-				"/public/vendor/ace/ace.js",
-			},
+			[]string{},
 		).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
