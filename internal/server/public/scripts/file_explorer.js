@@ -73,6 +73,7 @@ window.ab = Object.assign(window.ab || {}, {
         htmx.ajax('GET', currentPath, {
             target: '#file-explorer-view-content',
             swap: 'innerHTML',
+            indicator: false,
         });
     },
 
@@ -375,6 +376,7 @@ window.ab = Object.assign(window.ab || {}, {
                 htmx.ajax('GET', href, {
                     target: '#file-explorer-view-content',
                     swap: 'innerHTML',
+                    indicator: false,
                 }).then(() => {
                     // Update the browser URL after successful navigation
                     window.history.pushState({}, '', href);
@@ -615,11 +617,13 @@ window.ab = Object.assign(window.ab || {}, {
         htmx.ajax('GET', parentPath, {
             target: '#file-explorer-view-content',
             swap: 'innerHTML',
+            indicator: false,
         }).then(function () {
             // After the file explorer updates, load the preview
             htmx.ajax('GET', previewPath, {
                 target: '#column-preview-content',
                 swap: 'innerHTML',
+                indicator: false,
             });
         });
         // Update the URL
@@ -1052,17 +1056,6 @@ document.addEventListener('keydown', function (event) {
             // Click the button to show the input
             addFolderBtn.click();
         }
-    }
-});
-
-// Listen for HTMX content swaps to scroll column view
-document.body.addEventListener('htmx:afterSwap', function (event) {
-    // Check if we're in column view and the content was swapped
-    if (event.detail.target.id === 'file-explorer-view-content') {
-        // Small delay to ensure DOM is fully rendered
-        requestAnimationFrame(() => {
-            window.ab.scrollColumnViewToRight();
-        });
     }
 });
 
