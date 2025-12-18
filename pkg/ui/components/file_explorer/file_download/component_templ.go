@@ -44,7 +44,7 @@ func Component(pageState types.PageState) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"icon icon--lg\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M12 3a1 1 0 011 1v9.586l3.293-3.293a1 1 0 111.414 1.414l-5 5a1 1 0 01-1.414 0l-5-5a1 1 0 111.414-1.414L11 13.586V4a1 1 0 011-1z\"></path> <path d=\"M5 19a1 1 0 011-1h12a1 1 0 110 2H6a1 1 0 01-1-1z\"></path></svg></button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"icon icon--lg icon-light\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M12 3a1 1 0 011 1v9.586l3.293-3.293a1 1 0 111.414 1.414l-5 5a1 1 0 01-1.414 0l-5-5a1 1 0 111.414-1.414L11 13.586V4a1 1 0 011-1z\"></path> <path d=\"M5 19a1 1 0 011-1h12a1 1 0 110 2H6a1 1 0 01-1-1z\"></path></svg></button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
