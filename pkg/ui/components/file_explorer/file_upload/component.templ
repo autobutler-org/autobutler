@@ -12,7 +12,6 @@ templ Component(pageState types.PageState) {
 		hx-post={ filepath.Join("/api/v1/cirrus", pageState.RootDir) }
 		hx-swap="innerHTML"
 		hx-target="#file-explorer-status"
-		hx-indicator="#file-upload-progress"
 	>
 		<input
 			type="file"
