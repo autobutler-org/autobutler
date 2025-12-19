@@ -1,0 +1,37 @@
+name: EPIC
+description: File a new EPIC.
+title: "[EPIC] "
+labels: ["epic"]
+projects: ["autobutler-org/2"]
+type: EPIC
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this epic, you wannabe PM you...
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: What component(s) are affected by this?
+      multiple: true
+      options:
+        - N/A
+        - Photos
+        - Docs
+        - Books
+        - Cirrus (Drive)
+        - General UI
+        - Backend
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: epic-description
+    attributes:
+      label: What do you want to see in Autobutler?
+      description: '...'
+      placeholder: 'Come on now...'
+    validations:
+      required: true
