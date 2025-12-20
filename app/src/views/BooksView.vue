@@ -113,6 +113,12 @@ onMounted(async () => {
   align-items: center;
   gap: var(--spacing-md);
 }
+
+@media (prefers-color-scheme: dark) {
+  .books-library-title {
+    color: white;
+  }
+}
 .books-library-count {
   font-size: var(--font-size-lg);
   color: var(--color-gray-500);
