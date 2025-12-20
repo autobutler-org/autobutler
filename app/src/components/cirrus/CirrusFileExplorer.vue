@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { CirrusFileNode, FileType } from '@/types/cirrus'
-import { getFiles, getAvailableSpace, bytesToGB, determineFileType, getFileName } from '@/services/cirrusService'
+import { getFiles, determineFileType, getFileName } from '@/services/cirrusService'
 import CirrusBreadcrumb from './CirrusBreadcrumb.vue'
 import CirrusListView from './CirrusListView.vue'
 import CirrusGridView from './CirrusGridView.vue'
@@ -31,10 +31,6 @@ const contextMenuOpen = ref(false)
 const contextMenuFile = ref<CirrusFileNode | null>(null)
 const contextMenuX = ref(0)
 const contextMenuY = ref(0)
-
-// Computed
-const availableSpace = computed(() => getAvailableSpace())
-const availableSpaceFormatted = computed(() => `${bytesToGB(availableSpace.value).toFixed(2)}GB`)
 
 // Fetch files for the current path
 async function fetchFiles() {
@@ -374,9 +370,19 @@ async function handleDelete(file: CirrusFileNode) {
   margin-right: var(--spacing-lg);
   white-space: nowrap;
   color: var(--color-gray-900);
-
-  @media (prefers-color-scheme: dark) {
+}
+@media (prefers-color-scheme: dark) {
+  .file-explorer-title,
+  .file-explorer-header,
+  .file-explorer-controls,
+  .file-explorer-loading,
+  .file-explorer-empty,
+  .device-badge-toggle,
+  .file-explorer-space-info {
     color: white;
+  }
+  .file-explorer-error {
+    color: #f87171;
   }
 }
 

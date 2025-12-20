@@ -193,14 +193,25 @@ const sidebarSections = [
 .settings-header {
   margin-bottom: var(--spacing-xl);
 }
-.settings-title {
-  font-size: var(--font-size-2xl);
-  font-weight: 700;
-  color: var(--color-gray-900);
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
+@media (prefers-color-scheme: dark) {
+  .settings-title {
+    color: white;
+  }
+  .settings-desc,
+  .settings-section-description p,
+  .settings-card-desc,
+  .settings-section-card p,
+  .settings-metric-time,
+  .settings-metric-stats td,
+  .settings-events-table td,
+  .settings-events-table th {
+    color: var(--color-gray-200);
+  }
+  .settings-section-header h2,
+  .settings-metric-card h4,
+  .settings-metrics-section h3 {
+    color: white;
+  }
 }
 .settings-desc {
   font-size: var(--font-size-base);
