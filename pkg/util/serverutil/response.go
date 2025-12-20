@@ -1,11 +1,7 @@
 package serverutil
 
 import (
-	"bytes"
-	"context"
 	"net/http"
-
-	"github.com/a-h/templ"
 )
 
 type Response struct {
@@ -16,11 +12,11 @@ type Response struct {
 }
 
 func Ok() *Response {
-	return NewResponse().WithContentType(ContentTypeHTML).WithStatusCode(http.StatusOK)
+	return NewResponse().WithContentType(ContentTypeJSON).WithStatusCode(http.StatusOK)
 }
 
 func NewResponse() *Response {
-	return (&Response{}).WithContentType(ContentTypeHTML).WithStatusCode(http.StatusOK).WithData(nil).WithError(nil)
+	return (&Response{}).WithContentType(ContentTypeJSON).WithStatusCode(http.StatusOK).WithData(nil).WithError(nil)
 }
 
 func (r *Response) WithContentType(contentType ContentType) *Response {
@@ -40,12 +36,5 @@ func (r *Response) WithData(data any) *Response {
 
 func (r *Response) WithError(err error) *Response {
 	r.Error = err
-	return r
-}
-
-func (r *Response) WithComponent(component templ.Component) *Response {
-	var buf bytes.Buffer
-	component.Render(context.Background(), &buf)
-	r.Data = buf.String()
 	return r
 }
