@@ -32,7 +32,7 @@ const router = createRouter({
     {
       path: '/devices',
       name: 'devices',
-      component: () => DevicesView,
+      component: DevicesView,
     },
     {
       path: '/settings',
