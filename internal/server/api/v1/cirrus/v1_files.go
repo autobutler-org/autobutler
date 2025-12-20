@@ -16,5 +16,7 @@ func (r *router) Routes() []*serverutil.Route {
 		moveFileRoute,
 		uploadNestedFilesRoutes,
 		uploadRootFilesRoute,
+		cirrusRoute,
+		cirrusNestedRoute,
 	}
 }

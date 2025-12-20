@@ -8,10 +8,10 @@ import (
 // DeviceFileInfo wraps fs.FileInfo with device information. This is the output type
 // for all file functions Autobutler uses internally.
 type DeviceFileInfo struct {
-	fs.FileInfo
-	DeviceName string // Name of the device this file is on
-	DevicePath string // Mount point of the device
-	FullPath   string // Full path to the file
+	fs.FileInfo `json:"fileInfo"` // Embedded file info
+	DeviceName  string            `json:"deviceName"` // Name of the device this file is on
+	DevicePath  string            `json:"devicePath"` // Mount point of the device
+	FullPath    string            `json:"fullPath"`   // Full path to the file
 }
 
 // NewDeviceFileInfo is a constructor
