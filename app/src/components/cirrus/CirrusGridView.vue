@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { CirrusFileNode } from '@/types/cirrus'
-import { determineFileType, getFileName, isDirectory } from '@/services/cirrusService'
+import { determineFileType, getFileName, isDirectory, getFileSize, formatBytes } from '@/services/cirrusService'
 import FolderIcon from '@/components/icons/FolderIcon.vue'
 import PdfIcon from '@/components/icons/PdfIcon.vue'
 import ImageIcon from '@/components/icons/ImageIcon.vue'
@@ -12,6 +12,7 @@ import DocxIcon from '@/components/icons/DocxIcon.vue'
 const props = defineProps<{
   files: CirrusFileNode[]
   currentPath: string
+  showDeviceBadges?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -90,7 +91,15 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
           </div>
           <div class="grid-view-details">
             <div class="grid-view-name" :title="getFileName(file)">{{ getFileName(file) }}</div>
-            <div v-if="!isDirectory(file)" class="grid-view-size">{{ getFileType(file) }}</div>
+            <div v-if="props.showDeviceBadges && file.deviceName" class="device-badge" :title="'Device: ' + file.deviceName">
+              <svg class="device-badge-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+              <span class="device-badge-name">{{ file.deviceName }}</span>
+            </div>
+            <div v-if="!isDirectory(file)" class="grid-view-size">{{ formatBytes(getFileSize(file)) }}</div>
           </div>
         </div>
       </div>
@@ -203,5 +212,40 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
   font-size: 0.75rem;
   color: var(--color-gray-500);
   margin-top: var(--spacing-xs);
+}
+
+/* Device badge - Shows which storage device a file is on */
+.device-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+  padding: 2px 6px;
+  background-color: var(--color-blue-50);
+  border: 1px solid var(--color-blue-200);
+  border-radius: var(--border-radius-sm);
+  font-size: 10px;
+  color: var(--color-blue-700);
+  white-space: nowrap;
+
+  @media (prefers-color-scheme: dark) {
+    background-color: var(--color-blue-900);
+    border-color: var(--color-blue-700);
+    color: var(--color-blue-200);
+  }
+}
+
+.device-badge-icon {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+}
+
+.device-badge-name {
+  font-weight: 500;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

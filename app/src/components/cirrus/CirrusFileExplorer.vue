@@ -291,6 +291,7 @@ async function handleDelete(file: CirrusFileNode) {
           <CirrusGridView
             :files="files"
             :current-path="currentPath"
+            :show-device-badges="showDeviceBadges"
             @navigate-folder="handleNavigateFolder"
             @open-file="handleOpenFile"
             @context-menu="handleContextMenu"
@@ -300,6 +301,7 @@ async function handleDelete(file: CirrusFileNode) {
           <CirrusListView
             :files="files"
             :current-path="currentPath"
+            :show-device-badges="showDeviceBadges"
             @navigate-folder="handleNavigateFolder"
             @open-file="handleOpenFile"
             @context-menu="handleContextMenu"
