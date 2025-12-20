@@ -78,7 +78,7 @@ const defaultServiceIcons: ServiceIcon[] = [
     <div class="hero-content">
       <!-- Hero Icon -->
       <div class="hero-icon">
-        <img src="/public/img/butler.png" alt="AutoButler Logo" />
+        <img src="/img/butler.png" alt="AutoButler Logo" />
         <h1 class="hero-title">AutoButler</h1>
         <p class="hero-description">
           Your secure home cloud for files, planning, and everyday tasks — elegantly organized in

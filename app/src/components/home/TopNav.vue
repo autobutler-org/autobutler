@@ -60,7 +60,7 @@ function closeMobileMenu() {
   <nav class="landing-nav">
     <div class="landing-nav-left">
       <RouterLink to="/" class="landing-nav-logo">
-        <img src="/public/img/butler.png" height="24" width="24" alt="AutoButler" />
+        <img src="/img/butler.png" height="24" width="24" alt="AutoButler" />
       </RouterLink>
       <RouterLink
         v-for="link in navLinks"
@@ -194,7 +194,7 @@ function closeMobileMenu() {
               d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
             />
           </svg>
-          <span>Files</span>
+          <span>Cirrus</span>
         </RouterLink>
         <RouterLink to="/photos" class="mobile-menu-link" @click="closeMobileMenu">
           <svg

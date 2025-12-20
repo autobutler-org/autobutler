@@ -6,7 +6,7 @@
   <footer class="app-footer">
     <p class="footer-text">Autobutler LLC.</p>
     <a href="https://github.com/autobutler-org/autobutler" target="_blank" rel="noopener noreferrer">
-      <img src="/public/img/github/github-mark-white.svg" alt="GitHub logo" />
+      <img src="/img/github/github-mark-white.svg" alt="GitHub logo" />
     </a>
   </footer>
 </template>
