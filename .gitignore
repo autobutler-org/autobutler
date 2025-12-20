@@ -8,6 +8,8 @@ internal/server/public/*
 # Datlinks
 datalinks/mac
 
+tmp/
+
 *.exe
 *.exe~
 *.dll
