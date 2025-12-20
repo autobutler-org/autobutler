@@ -1,3 +1,12 @@
+
+<template>
+  <ModalDialog v-if="modelValue" @close="closeDialog">
+    <div class="file-viewer-content">
+      <component :is="viewerComponent" :file-path="filePath" />
+    </div>
+  </ModalDialog>
+</template>
+
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { FileType } from '@/types/cirrus'
@@ -39,14 +48,6 @@ function closeDialog() {
   emit('update:modelValue', false)
 }
 </script>
-
-<template>
-  <ModalDialog v-if="modelValue" @close="closeDialog">
-    <div class="file-viewer-content">
-      <component :is="viewerComponent" :file-path="filePath" />
-    </div>
-  </ModalDialog>
-</template>
 
 <style lang="scss" scoped>
 .file-viewer-content {

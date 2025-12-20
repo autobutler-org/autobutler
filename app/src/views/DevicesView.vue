@@ -1,3 +1,4 @@
+
 <template>
   <div class="landing-body page-container">
     <main class="landing-main">
@@ -62,7 +63,7 @@
                 <h3 class="devices-total-title">Total Capacity</h3>
                 <p class="devices-total-capacity">{{ summary.total_tb.toFixed(2) }} TB</p>
                 <p class="devices-total-used">
-                  {{ summary.used_tb.toFixed(2) }} TB used • {{ summary.avail_tb.toFixed(2) }} TB
+                  {{ summary.used_tb.toFixed(2) }} TB used 2 {{ summary.avail_tb.toFixed(2) }} TB
                   free
                 </p>
               </div>

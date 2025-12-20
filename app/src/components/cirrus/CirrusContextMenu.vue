@@ -1,3 +1,39 @@
+
+<template>
+  <Teleport to="body">
+    <div
+      v-if="modelValue && file"
+      ref="menuRef"
+      class="context-menu"
+      :style="{ left: `${x}px`, top: `${y}px` }"
+      @contextmenu.prevent
+    >
+      <ul class="context-menu-list">
+        <li>
+          <button type="button" class="context-menu-item" @click="handleDownload">Download</button>
+        </li>
+        <li>
+          <button type="button" class="context-menu-item" @click="handleRename">Move/Rename</button>
+        </li>
+        <li>
+          <button type="button" class="context-menu-item" @click="handleDetails">
+            File Details
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            class="context-menu-item context-menu-item--danger"
+            @click="handleDelete"
+          >
+            Delete
+          </button>
+        </li>
+      </ul>
+    </div>
+  </Teleport>
+</template>
+
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import type { CirrusFileNode } from '@/types/cirrus'
@@ -122,41 +158,6 @@ watch(
   },
 )
 </script>
-
-<template>
-  <Teleport to="body">
-    <div
-      v-if="modelValue && file"
-      ref="menuRef"
-      class="context-menu"
-      :style="{ left: `${x}px`, top: `${y}px` }"
-      @contextmenu.prevent
-    >
-      <ul class="context-menu-list">
-        <li>
-          <button type="button" class="context-menu-item" @click="handleDownload">Download</button>
-        </li>
-        <li>
-          <button type="button" class="context-menu-item" @click="handleRename">Move/Rename</button>
-        </li>
-        <li>
-          <button type="button" class="context-menu-item" @click="handleDetails">
-            File Details
-          </button>
-        </li>
-        <li>
-          <button
-            type="button"
-            class="context-menu-item context-menu-item--danger"
-            @click="handleDelete"
-          >
-            Delete
-          </button>
-        </li>
-      </ul>
-    </div>
-  </Teleport>
-</template>
 
 <style lang="scss">
 /* Not scoped because Teleport renders outside component tree */
