@@ -1,13 +1,51 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import type { NavLink } from '@/types/home'
 import { RouterLink } from 'vue-router'
+import { getCurrentVersion, getAvailableReleases, type Release } from '@/services/versionService'
 
 defineProps<{
   navLinks?: NavLink[]
 }>()
 
 const mobileMenuOpen = ref(false)
+const versionDropdownOpen = ref(false)
+const currentVersion = ref('vX.Y.Z')
+const releases = ref<Release[]>([])
+const loadingReleases = ref(false)
+
+// Fetch current version on mount
+onMounted(async () => {
+  currentVersion.value = await getCurrentVersion()
+  
+  // Add click outside listener for version dropdown
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
+function handleClickOutside(event: MouseEvent) {
+  const container = document.getElementById('version-container')
+  if (container && !container.contains(event.target as Node)) {
+    versionDropdownOpen.value = false
+  }
+}
+
+async function toggleVersionDropdown() {
+  if (versionDropdownOpen.value) {
+    versionDropdownOpen.value = false
+    return
+  }
+  
+  versionDropdownOpen.value = true
+  if (releases.value.length === 0) {
+    loadingReleases.value = true
+    releases.value = await getAvailableReleases()
+    loadingReleases.value = false
+  }
+}
 
 function toggleMobileMenu() {
   mobileMenuOpen.value = !mobileMenuOpen.value
@@ -50,10 +88,31 @@ function closeMobileMenu() {
         </svg>
       </RouterLink>
       <div class="version-container" id="version-container">
-        <button class="landing-nav-version version-display" title="Version">
-          vX.Y.Z
+        <button
+          class="landing-nav-version version-display"
+          :title="'Version ' + currentVersion"
+          @click.stop="toggleVersionDropdown"
+        >
+          {{ currentVersion }}
           <span style="margin-left: 0.25rem">▾</span>
         </button>
+        <div v-if="versionDropdownOpen" class="version-dropdown" @click.stop>
+          <div v-if="loadingReleases" class="version-dropdown-loading">Loading...</div>
+          <template v-else-if="releases.length > 0">
+            <a
+              v-for="release in releases"
+              :key="release.tagName"
+              :href="release.htmlUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              :class="['version-dropdown-item', { 'version-dropdown-item--current': release.isCurrentVersion }]"
+            >
+              <span class="version-dropdown-tag">{{ release.tagName }}</span>
+              <span v-if="release.isCurrentVersion" class="version-dropdown-badge">Current</span>
+            </a>
+          </template>
+          <div v-else class="version-dropdown-empty">No releases available</div>
+        </div>
       </div>
       <RouterLink to="/devices" class="landing-nav-button" title="Devices">
         <!-- Devices icon -->
@@ -202,7 +261,7 @@ function closeMobileMenu() {
           <span>Settings</span>
         </RouterLink>
         <div class="mobile-menu-divider"></div>
-        <span class="mobile-menu-version"> vX.Y.Z </span>
+        <span class="mobile-menu-version">Version: {{ currentVersion }}</span>
       </div>
     </div>
   </div>
@@ -313,6 +372,8 @@ function closeMobileMenu() {
 }
 
 .version-container {
+  position: relative;
+
   @media (max-width: 768px) {
     display: none !important;
   }
@@ -338,6 +399,87 @@ function closeMobileMenu() {
     background: rgba(0, 0, 0, 0.05);
     color: var(--color-gray-600);
   }
+}
+
+.version-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: var(--spacing-sm);
+  min-width: 200px;
+  background: hsl(225, 25%, 18%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  z-index: 1000;
+
+  @media (prefers-color-scheme: light) {
+    background: white;
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.version-dropdown-loading,
+.version-dropdown-empty {
+  padding: var(--spacing-md) var(--spacing-lg);
+  color: var(--color-gray-400);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+.version-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  color: var(--color-gray-300);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  &--current {
+    background: rgba(37, 99, 235, 0.2);
+
+    &:hover {
+      background: rgba(37, 99, 235, 0.3);
+    }
+  }
+
+  @media (prefers-color-scheme: light) {
+    color: var(--color-gray-700);
+
+    &:hover {
+      background: var(--color-gray-100);
+    }
+
+    &--current {
+      background: rgba(37, 99, 235, 0.1);
+
+      &:hover {
+        background: rgba(37, 99, 235, 0.15);
+      }
+    }
+  }
+}
+
+.version-dropdown-tag {
+  font-family: monospace;
+}
+
+.version-dropdown-badge {
+  padding: 2px 6px;
+  background: var(--color-primary-600);
+  color: white;
+  border-radius: var(--border-radius);
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .landing-nav-hamburger {
