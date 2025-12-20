@@ -118,9 +118,12 @@ function handleFolderCreated(folderName: string) {
   if (!exists) {
     // Add folder at the beginning (folders typically appear first)
     files.value.unshift({
-      fullPath,
-      deviceName: '',
+      name: folderName,
+      size: 0,
       isDir: true,
+      deviceName: '',
+      devicePath: '',
+      fullPath,
     })
   }
 }

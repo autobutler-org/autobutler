@@ -21,23 +21,31 @@ export function bytesToGB(bytes: number): number {
 }
 
 /**
- * Extract filename from a full path
+ * Extract filename from a full path or use name field
  */
 export function getFileName(node: CirrusFileNode): string {
+  // Prefer the name field from the API if available
+  if (node.name) {
+    return node.name
+  }
+  // Fallback to extracting from fullPath
   const parts = node.fullPath.split('/')
   return parts[parts.length - 1] || ''
 }
 
 /**
- * Determine if a node represents a directory based on file extension
- * Since we can't get this from the API directly, we infer from the filename
- * Files without extensions or with folder-like paths are treated as potential folders
+ * Determine if a node represents a directory
  */
 export function isDirectory(node: CirrusFileNode): boolean {
-  const fileName = getFileName(node)
-  // If the filename has no extension, it's likely a folder
-  // This is a heuristic - the real implementation should get this from the backend
-  return !fileName.includes('.') || fileName.startsWith('.')
+  // Use the isDir field from the API
+  return node.isDir
+}
+
+/**
+ * Get the file size in bytes
+ */
+export function getFileSize(node: CirrusFileNode): number {
+  return node.size || 0
 }
 
 /**

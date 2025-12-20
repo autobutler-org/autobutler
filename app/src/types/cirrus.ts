@@ -12,9 +12,10 @@ export type FileType =
   | 'generic'
 
 // CirrusFileNode matches the JSON response from the backend API
-// The fileInfo field is an empty object when serialized (fs.FileInfo doesn't serialize to JSON)
 export interface CirrusFileNode {
-  fileInfo: Record<string, unknown> // Empty object from backend
+  name: string
+  size: number
+  isDir: boolean
   deviceName: string
   devicePath: string
   fullPath: string

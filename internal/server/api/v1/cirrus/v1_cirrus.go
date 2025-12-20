@@ -8,6 +8,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// FileNodeJSON is a JSON-serializable representation of a file node
+type FileNodeJSON struct {
+	Name       string `json:"name"`
+	Size       int64  `json:"size"`
+	IsDir      bool   `json:"isDir"`
+	DeviceName string `json:"deviceName"`
+	DevicePath string `json:"devicePath"`
+	FullPath   string `json:"fullPath"`
+}
+
 func getCirrusFiles(filePath string) ([]*cirrusutil.DeviceFileInfo, error) {
 	fullPathDir := filepath.Join(cirrusutil.GetCirrusDir(), filePath)
 	deviceName, devicePath := cirrusutil.GetDeviceInfoForPath(fullPathDir)
@@ -19,7 +29,21 @@ func cirrusRouteCommon(c *gin.Context, filePath string) *serverutil.Response {
 	if err != nil {
 		return serverutil.NewResponse().WithStatusCode(500).WithError(err)
 	}
-	return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(data)
+
+	// Convert to JSON-serializable format
+	jsonData := make([]FileNodeJSON, len(data))
+	for i, file := range data {
+		jsonData[i] = FileNodeJSON{
+			Name:       file.Name(),
+			Size:       file.Size(),
+			IsDir:      file.IsDir(),
+			DeviceName: file.DeviceName,
+			DevicePath: file.DevicePath,
+			FullPath:   file.FullPath,
+		}
+	}
+
+	return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(jsonData)
 }
 
 var cirrusRoute = serverutil.ApiRoute(

@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { CirrusFileNode } from '@/types/cirrus'
-import { determineFileType, getFileName, isDirectory } from '@/services/cirrusService'
+import {
+  determineFileType,
+  getFileName,
+  isDirectory,
+  getFileSize,
+  formatBytes,
+} from '@/services/cirrusService'
 import FolderIcon from '@/components/icons/FolderIcon.vue'
 import PdfIcon from '@/components/icons/PdfIcon.vue'
 import ImageIcon from '@/components/icons/ImageIcon.vue'
@@ -67,7 +73,7 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
       <thead class="file-table-header">
         <tr>
           <th class="file-table-header-cell file-table-header-cell--left">Name</th>
-          <th class="file-table-header-cell file-table-header-cell--right">Type</th>
+          <th class="file-table-header-cell file-table-header-cell--right">Size</th>
           <th class="file-table-header-cell file-table-header-cell--toggle"></th>
         </tr>
       </thead>
@@ -88,7 +94,7 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
               <span class="file-table-name">{{ getFileName(file) }}</span>
             </td>
             <td class="file-table-cell file-table-size">
-              Folder
+              —
             </td>
             <td class="file-table-cell file-table-cell--menu">
               <button
@@ -107,7 +113,7 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
               <span class="file-table-name">{{ getFileName(file) }}</span>
             </td>
             <td class="file-table-cell file-table-size">
-              {{ getFileType(file) }}
+              {{ formatBytes(getFileSize(file)) }}
             </td>
             <td class="file-table-cell file-table-cell--menu">
               <button
