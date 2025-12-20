@@ -1,37 +1,34 @@
 <template>
   <div class="landing-body">
     <TopNav :navLinks="navLinks" />
-    <div class="landing-container">
-      <div class="books-library">
-        <div class="books-library-header">
-          <h1 class="books-library-title">
-            Library
-            <span class="mock-badge">mock</span>
-          </h1>
-          <p class="books-library-count">{{ formatBookCount(totalBooks) }}</p>
-        </div>
-        <div v-if="books.length === 0" class="books-empty">
-          <div class="book-card-icon">
-            <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/></svg>
-          </div>
-          <h2>No books found</h2>
-          <p>Add PDF or EPUB files to your files directory to see them here.</p>
-        </div>
-        <div v-else class="books-grid">
-          <router-link v-for="book in books" :key="book.relPath" :to="`/books/reader?path=${encodeURIComponent(book.relPath)}`" class="book-card-link">
-            <div class="book-card-cover">
-              <div class="book-card-icon">
-                <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/></svg>
-              </div>
-              <span class="book-card-badge">{{ book.type }}</span>
-            </div>
-            <div class="book-card-info">
-              <h3 class="book-card-title" :title="book.fileName">{{ book.title }}</h3>
-              <p class="book-card-size">{{ formatBookSize(book.size) }}</p>
-            </div>
-          </router-link>
-        </div>
+    <div class="books-header-simple">
+      <h1 class="books-library-title">
+        Library <span class="mock-badge">mock</span>
+      </h1>
+      <p class="books-library-count">{{ formatBookCount(totalBooks) }}</p>
+    </div>
+    <div v-if="books.length === 0" class="books-empty">
+      <div class="book-card-icon">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/></svg>
       </div>
+      <h2>No books found</h2>
+      <p>Add PDF or EPUB files to your files directory to see them here.</p>
+    </div>
+    <div v-else class="books-grid-simple">
+      <router-link v-for="book in books" :key="book.relPath" :to="`/books/reader?path=${encodeURIComponent(book.relPath)}`" class="book-card-link">
+        <div class="book-card">
+          <div class="book-card-cover">
+            <div class="book-card-icon">
+              <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/></svg>
+            </div>
+            <span class="book-card-badge">{{ book.type }}</span>
+          </div>
+          <div class="book-card-info">
+            <h3 class="book-card-title" :title="book.fileName">{{ book.title }}</h3>
+            <p class="book-card-size">{{ formatBookSize(book.size) }}</p>
+          </div>
+        </div>
+      </router-link>
     </div>
   </div>
 </template>
@@ -100,17 +97,12 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.books-library {
+.books-header-simple {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-}
-.books-library-header {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-2xl) var(--spacing-2xl) var(--spacing-lg) var(--spacing-2xl);
-  border-bottom: 1px solid var(--color-gray-200);
+  margin-top: var(--spacing-2xl);
+  margin-bottom: var(--spacing-xl);
 }
 .books-library-title {
   font-size: var(--font-size-2xl);
@@ -134,30 +126,36 @@ onMounted(async () => {
   padding: var(--spacing-2xl);
   color: var(--color-gray-500);
 }
-.books-grid {
+.books-grid-simple {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: var(--spacing-xl);
-  padding: var(--spacing-2xl);
+  width: 100vw;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding-bottom: var(--spacing-2xl);
 }
+/* Book card styling similar to photo grid */
 .book-card {
-  background: white;
+  background: var(--color-gray-900);
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   transition: box-shadow 0.2s;
+  border: 1px solid var(--color-gray-800);
 }
 .book-card:hover {
   box-shadow: var(--shadow-md);
+  border-color: var(--color-primary-400);
 }
 .book-card-cover {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 120px;
-  background: var(--color-gray-100);
+  background: var(--color-gray-800);
   position: relative;
 }
 .book-card-badge {
@@ -176,7 +174,7 @@ onMounted(async () => {
 .book-card-title {
   font-size: var(--font-size-base);
   font-weight: 600;
-  color: var(--color-gray-900);
+  color: white;
   margin: 0 0 4px 0;
   white-space: nowrap;
   overflow: hidden;
@@ -184,7 +182,7 @@ onMounted(async () => {
 }
 .book-card-size {
   font-size: var(--font-size-xs);
-  color: var(--color-gray-500);
+  color: var(--color-gray-300);
 }
 .book-card-link {
   text-decoration: none;
