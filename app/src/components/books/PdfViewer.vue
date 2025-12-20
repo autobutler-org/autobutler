@@ -2,7 +2,7 @@
   <div class="pdf-viewer">
     <iframe
       v-if="filePath"
-      :src="`/api/v1/cirrus/${encodeURIComponent(filePath)}`"
+      :src="`/api/v1/download/cirrus/${encodeURIComponent(filePath)}`"
       type="application/pdf"
       width="100%"
       height="100%"

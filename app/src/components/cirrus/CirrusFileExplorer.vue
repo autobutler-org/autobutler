@@ -135,7 +135,7 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
 function handleDownload(file: CirrusFileNode) {
   const fileName = getFileName(file)
   const relativePath = currentPath.value ? `${currentPath.value}/${fileName}` : fileName
-  const downloadUrl = `/api/v1/cirrus/${relativePath}`
+  const downloadUrl = `/api/v1/download/cirrus/${relativePath}`
 
   // Create a temporary link and click it to trigger download
   const link = document.createElement('a')
@@ -172,7 +172,7 @@ async function handleDelete(file: CirrusFileNode) {
     params.append('rootDir', currentPath.value)
     params.append('filePaths', fileName)
 
-    const response = await fetch(`/api/v1/cirrus?${params.toString()}`, {
+    const response = await fetch(`/api/v1/download/cirrus?${params.toString()}`, {
       method: 'DELETE',
     })
 

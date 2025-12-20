@@ -25,7 +25,7 @@ const videoType = computed(() => {
 
 <template>
   <video class="file-viewer-media" controls>
-    <source :src="`/api/v1/cirrus/${filePath}`" :type="videoType" />
+    <source :src="`/api/v1/download/cirrus/${filePath}`" :type="videoType" />
     Your browser does not support this video format.
   </video>
 </template>

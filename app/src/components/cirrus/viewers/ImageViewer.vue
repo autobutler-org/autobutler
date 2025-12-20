@@ -5,7 +5,7 @@ defineProps<{
 </script>
 
 <template>
-  <img class="file-viewer-media" :src="`/api/v1/cirrus/${filePath}`" :alt="filePath" />
+  <img class="file-viewer-media" :src="`/api/v1/download/cirrus/${filePath}`" :alt="filePath" />
 </template>
 
 <style lang="scss" scoped>

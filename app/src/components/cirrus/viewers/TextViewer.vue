@@ -16,7 +16,7 @@ const filename = computed(() => {
 
 onMounted(async () => {
   try {
-    const response = await fetch(`/api/v1/cirrus/${props.filePath}`)
+    const response = await fetch(`/api/v1/download/cirrus/${props.filePath}`)
     if (!response.ok) {
       throw new Error('Failed to load file')
     }

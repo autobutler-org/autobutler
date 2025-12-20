@@ -5,7 +5,8 @@ defineProps<{
 </script>
 
 <template>
-  <iframe class="pdf-viewer-frame" :src="`/api/v1/cirrus/${filePath}`" type="application/pdf" />
+<template>
+  <iframe class="pdf-viewer-frame" :src="`/api/v1/download/cirrus/${filePath}`" type="application/pdf" />
 </template>
 
 <style lang="scss" scoped>
