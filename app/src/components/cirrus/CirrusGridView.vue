@@ -17,6 +17,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'navigate-folder': [path: string]
   'open-file': [file: CirrusFileNode]
+  'context-menu': [event: MouseEvent, file: CirrusFileNode]
 }>()
 
 function getFileType(file: CirrusFileNode) {
@@ -51,6 +52,11 @@ function handleClick(file: CirrusFileNode) {
     emit('open-file', file)
   }
 }
+
+function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
+  event.preventDefault()
+  emit('context-menu', event, file)
+}
 </script>
 
 <template>
@@ -65,7 +71,16 @@ function handleClick(file: CirrusFileNode) {
         :data-file-type="getFileType(file)"
         :data-device-name="file.deviceName"
         @dblclick="handleClick(file)"
+        @contextmenu="handleContextMenu($event, file)"
       >
+        <button
+          class="context-menu-trigger"
+          type="button"
+          title="More actions"
+          @click.stop="handleContextMenu($event, file)"
+        >
+          &#x22EE;
+        </button>
         <div class="grid-view-link">
           <div v-if="isDirectory(file)" class="grid-view-icon-container">
             <FolderIcon />
@@ -104,12 +119,44 @@ function handleClick(file: CirrusFileNode) {
   border-radius: var(--border-radius-lg);
   cursor: pointer;
   transition: background-color 0.15s ease;
+  position: relative;
 
   &:hover {
     background-color: var(--color-gray-100);
 
     @media (prefers-color-scheme: dark) {
       background-color: var(--color-gray-800);
+    }
+
+    .context-menu-trigger {
+      opacity: 1;
+    }
+  }
+}
+
+.context-menu-trigger {
+  position: absolute;
+  top: var(--spacing-xs);
+  right: var(--spacing-xs);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  font-size: 1rem;
+  color: var(--color-gray-600);
+  border-radius: var(--border-radius-sm);
+  opacity: 0;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+
+  &:hover {
+    background-color: var(--color-gray-200);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    color: var(--color-gray-400);
+
+    &:hover {
+      background-color: var(--color-gray-700);
     }
   }
 }

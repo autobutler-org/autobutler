@@ -18,6 +18,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'navigate-folder': [path: string]
   'open-file': [file: CirrusFileNode]
+  'context-menu': [event: MouseEvent, file: CirrusFileNode]
 }>()
 
 function getFileType(file: CirrusFileNode) {
@@ -53,6 +54,11 @@ function handleClick(file: CirrusFileNode) {
     emit('open-file', file)
   }
 }
+
+function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
+  event.preventDefault()
+  emit('context-menu', event, file)
+}
 </script>
 
 <template>
@@ -74,6 +80,7 @@ function handleClick(file: CirrusFileNode) {
           :data-file-type="getFileType(file)"
           :data-device-name="file.deviceName"
           @dblclick="handleClick(file)"
+          @contextmenu="handleContextMenu($event, file)"
         >
           <template v-if="isDirectory(file)">
             <td class="file-table-cell file-table-cell--content">
@@ -83,7 +90,16 @@ function handleClick(file: CirrusFileNode) {
             <td class="file-table-cell file-table-size">
               Folder
             </td>
-            <td class="file-table-cell"></td>
+            <td class="file-table-cell file-table-cell--menu">
+              <button
+                type="button"
+                class="context-menu-trigger"
+                aria-label="Open context menu"
+                @click.stop="handleContextMenu($event, file)"
+              >
+                &#x22EE;
+              </button>
+            </td>
           </template>
           <template v-else>
             <td class="file-table-cell file-table-cell--clickable">
@@ -93,7 +109,16 @@ function handleClick(file: CirrusFileNode) {
             <td class="file-table-cell file-table-size">
               {{ getFileType(file) }}
             </td>
-            <td class="file-table-cell"></td>
+            <td class="file-table-cell file-table-cell--menu">
+              <button
+                type="button"
+                class="context-menu-trigger"
+                aria-label="Open context menu"
+                @click.stop="handleContextMenu($event, file)"
+              >
+                &#x22EE;
+              </button>
+            </td>
           </template>
         </tr>
         <!-- Spacer row for drag and drop hint -->
@@ -203,6 +228,11 @@ function handleClick(file: CirrusFileNode) {
     cursor: pointer;
   }
 
+  &--menu {
+    width: 40px;
+    text-align: center;
+  }
+
   &--spacer {
     text-align: center;
     font-style: italic;
@@ -216,6 +246,35 @@ function handleClick(file: CirrusFileNode) {
       @media (prefers-color-scheme: dark) {
         background-color: var(--color-gray-800);
       }
+    }
+  }
+}
+
+.context-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: var(--border-radius);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: var(--color-gray-500);
+
+  &:hover {
+    background-color: var(--color-gray-200);
+    color: var(--color-gray-700);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    color: var(--color-gray-400);
+
+    &:hover {
+      background-color: var(--color-gray-700);
+      color: var(--color-gray-200);
     }
   }
 }

@@ -7,6 +7,7 @@ import CirrusBreadcrumb from './CirrusBreadcrumb.vue'
 import CirrusListView from './CirrusListView.vue'
 import CirrusGridView from './CirrusGridView.vue'
 import CirrusFileViewer from './CirrusFileViewer.vue'
+import CirrusContextMenu from './CirrusContextMenu.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,6 +24,12 @@ const showDeviceBadges = ref(false)
 const fileViewerOpen = ref(false)
 const selectedFilePath = ref('')
 const selectedFileType = ref<FileType>('generic')
+
+// Context menu state
+const contextMenuOpen = ref(false)
+const contextMenuFile = ref<CirrusFileNode | null>(null)
+const contextMenuX = ref(0)
+const contextMenuY = ref(0)
 
 // Computed
 const availableSpace = computed(() => getAvailableSpace())
@@ -90,6 +97,71 @@ function switchView(newView: 'list' | 'grid') {
 
 function toggleDeviceBadges(show: boolean) {
   showDeviceBadges.value = show
+}
+
+// Context menu handlers
+function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
+  contextMenuFile.value = file
+  contextMenuX.value = event.clientX
+  contextMenuY.value = event.clientY
+  contextMenuOpen.value = true
+}
+
+function handleDownload(file: CirrusFileNode) {
+  const fileName = getFileName(file)
+  const relativePath = currentPath.value ? `${currentPath.value}/${fileName}` : fileName
+  const downloadUrl = `/api/v1/cirrus/${relativePath}`
+
+  // Create a temporary link and click it to trigger download
+  const link = document.createElement('a')
+  link.href = downloadUrl
+  link.download = fileName
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+function handleRename(file: CirrusFileNode) {
+  // TODO: Implement rename dialog
+  const fileName = getFileName(file)
+  console.log('Rename file:', fileName)
+  alert(`Rename functionality coming soon for: ${fileName}`)
+}
+
+function handleFileDetails(file: CirrusFileNode) {
+  // TODO: Implement file details dialog
+  const fileName = getFileName(file)
+  console.log('File details:', fileName)
+  alert(`File details for: ${fileName}\nPath: ${file.fullPath}\nDevice: ${file.deviceName}`)
+}
+
+async function handleDelete(file: CirrusFileNode) {
+  const fileName = getFileName(file)
+  if (!confirm(`Are you sure you want to delete "${fileName}"?`)) {
+    return
+  }
+
+  try {
+    const response = await fetch('/api/v1/cirrus', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        rootDir: currentPath.value,
+        filePaths: [fileName],
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to delete file')
+    }
+
+    // Refresh the file list
+    await fetchFiles()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to delete file'
+  }
 }
 </script>
 
@@ -187,6 +259,7 @@ function toggleDeviceBadges(show: boolean) {
             :current-path="currentPath"
             @navigate-folder="handleNavigateFolder"
             @open-file="handleOpenFile"
+            @context-menu="handleContextMenu"
           />
         </template>
         <template v-else>
@@ -195,6 +268,7 @@ function toggleDeviceBadges(show: boolean) {
             :current-path="currentPath"
             @navigate-folder="handleNavigateFolder"
             @open-file="handleOpenFile"
+            @context-menu="handleContextMenu"
           />
         </template>
       </div>
@@ -205,6 +279,19 @@ function toggleDeviceBadges(show: boolean) {
       v-model="fileViewerOpen"
       :file-path="selectedFilePath"
       :file-type="selectedFileType"
+    />
+
+    <!-- Context Menu -->
+    <CirrusContextMenu
+      v-model="contextMenuOpen"
+      :file="contextMenuFile"
+      :current-path="currentPath"
+      :x="contextMenuX"
+      :y="contextMenuY"
+      @download="handleDownload"
+      @rename="handleRename"
+      @details="handleFileDetails"
+      @delete="handleDelete"
     />
   </div>
 </template>
