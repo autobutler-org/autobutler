@@ -37,6 +37,7 @@ const navLinks: NavLink[] = [
   align-items: center;
   gap: var(--spacing-md);
   padding: var(--spacing-lg) 0;
+  margin-left: 1rem;
 }
 .library-layout {
   display: flex;

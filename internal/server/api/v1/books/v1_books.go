@@ -40,5 +40,5 @@ func getBooksHandler(c *gin.Context) *serverutil.Response {
 }
 
 var getBooksRoute = serverutil.ApiRoute(
-	"GET", "/json/books", getBooksHandler,
+	"GET", "/books", getBooksHandler,
 )

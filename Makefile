@@ -198,7 +198,7 @@ watch:
 serve/backend: generate ## Serve backend
 	go run $(MAIN) serve
 
-watch/backend: ## Watch backend for changes
+watch/backend: build/backend ## Watch backend for changes
 	air \
 		--build.cmd "$(MAKE) build/backend" \
 		--build.entrypoint "./build/autobutler" \

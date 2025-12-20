@@ -37,5 +37,5 @@ func getPhotosHandler(c *gin.Context) *serverutil.Response {
 }
 
 var getPhotosRoute = serverutil.ApiRoute(
-	"GET", "/json/photos", getPhotosHandler,
+	"GET", "/photos", getPhotosHandler,
 )

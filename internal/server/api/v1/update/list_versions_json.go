@@ -26,7 +26,7 @@ type VersionJSON struct {
 }
 
 var getCurrentVersionRoute = serverutil.ApiRoute(
-	"GET", "/json/version", func(c *gin.Context) *serverutil.Response {
+	"GET", "/version", func(c *gin.Context) *serverutil.Response {
 		version := versionutil.GetVersion()
 
 		return serverutil.NewResponse().
@@ -42,7 +42,7 @@ var getCurrentVersionRoute = serverutil.ApiRoute(
 )
 
 var listVersionsJSONRoute = serverutil.ApiRoute(
-	"GET", "/json/versions", func(c *gin.Context) *serverutil.Response {
+	"GET", "/versions", func(c *gin.Context) *serverutil.Response {
 		result, err := updateutil.ListPossibleUpdates(updateutil.ListPossibleUpdatesParams{})
 		if err != nil {
 			return serverutil.NewResponse().

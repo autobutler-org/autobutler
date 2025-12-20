@@ -22,7 +22,7 @@ export interface VersionResponse {
  */
 export async function getCurrentVersion(): Promise<string> {
   try {
-    const response = await fetch('/api/v1/json/version')
+    const response = await fetch('/api/v1/version')
     if (!response.ok) {
       return 'vX.Y.Z'
     }
@@ -38,7 +38,7 @@ export async function getCurrentVersion(): Promise<string> {
  */
 export async function getAvailableReleases(): Promise<Release[]> {
   try {
-    const response = await fetch('/api/v1/json/versions')
+    const response = await fetch('/api/v1/versions')
     if (!response.ok) {
       return []
     }

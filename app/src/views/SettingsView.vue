@@ -298,6 +298,139 @@ const sidebarSections = [
 </script>
 
 <style scoped>
+.settings-sidebar-thanks {
+  margin-top: var(--spacing-2xl);
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-gray-800);
+}
+.settings-thanks-link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--color-primary-600);
+  text-decoration: none;
+  font-weight: 600;
+  margin-top: var(--spacing-xs);
+}
+.settings-thanks-link:hover {
+  text-decoration: underline;
+}
+.library-sidebar {
+  padding-top: var(--spacing-xl);
+}
+.library-sidebar-section {
+  margin-bottom: var(--spacing-xl);
+}
+.library-sidebar-title {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-gray-400);
+  margin-bottom: var(--spacing-xs);
+  letter-spacing: 0.05em;
+}
+.library-sidebar-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+.library-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius);
+  color: var(--color-gray-300);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+.library-sidebar-item:hover {
+  background: var(--color-gray-800);
+  color: white;
+}
+.library-sidebar-item.active {
+  background: var(--color-primary-600);
+  color: white;
+}
+.library-sidebar-count {
+  margin-left: auto;
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+}
+.library-sidebar-item.active .library-sidebar-count {
+  color: var(--color-primary-100);
+}
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg) 0 var(--spacing-md) 0;
+  border-bottom: 1px solid var(--color-gray-800);
+  margin-bottom: var(--spacing-xl);
+}
+.settings-title {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-gray-100);
+}
+.settings-header-actions {
+  display: flex;
+  gap: var(--spacing-md);
+}
+.settings-section {
+  margin-bottom: var(--spacing-2xl);
+}
+.settings-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xs);
+}
+.settings-section-header h2 {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-gray-100);
+}
+.settings-section-description {
+  margin-bottom: var(--spacing-md);
+  color: var(--color-gray-400);
+}
+.settings-section-card {
+  background: var(--color-gray-900);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-xl);
+  color: white;
+  border: 1px solid var(--color-gray-800);
+  margin-bottom: var(--spacing-md);
+}
+.settings-section-toolbar {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+}
+.settings-section-toolbar button {
+  background: var(--color-gray-800);
+  color: var(--color-gray-100);
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 4px 12px;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.settings-section-toolbar button:hover {
+  background: var(--color-primary-600);
+  color: white;
+}
 .settings-header {
   margin-bottom: var(--spacing-xl);
 }

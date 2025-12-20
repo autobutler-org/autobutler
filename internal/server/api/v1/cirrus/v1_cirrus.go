@@ -47,13 +47,13 @@ func cirrusRouteCommon(c *gin.Context, filePath string) *serverutil.Response {
 }
 
 var cirrusRoute = serverutil.ApiRoute(
-	"GET", "/json/cirrus", func(c *gin.Context) *serverutil.Response {
+	"GET", "/cirrus", func(c *gin.Context) *serverutil.Response {
 		return cirrusRouteCommon(c, "")
 	},
 )
 
 var cirrusNestedRoute = serverutil.ApiRoute(
-	"GET", "/json/cirrus/*filePath", func(c *gin.Context) *serverutil.Response {
+	"GET", "/cirrus/*filePath", func(c *gin.Context) *serverutil.Response {
 		filePath := c.Param("filePath")
 		return cirrusRouteCommon(c, filePath)
 	},

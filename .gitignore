@@ -32,7 +32,6 @@ build/
 # Added by goreleaser init:
 dist/
 
-__*
 .env
 
 # Playwright

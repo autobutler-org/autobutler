@@ -3,7 +3,7 @@ package v1_books
 import "autobutler/pkg/util/serverutil"
 
 // Router for /api/v1/books endpoints
-// Registers the /json/books route
+// Registers the /books route
 
 type router struct{}
 

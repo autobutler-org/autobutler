@@ -214,7 +214,6 @@ onMounted(async () => {
   color: inherit;
 }
 .mock-badge {
-  margin-left: 1rem;
   background: var(--color-gray-300);
   color: var(--color-gray-700);
   font-size: var(--font-size-xs);

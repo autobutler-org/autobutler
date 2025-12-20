@@ -3,7 +3,7 @@ package v1_photos
 import "autobutler/pkg/util/serverutil"
 
 // Router for /api/v1/photos endpoints
-// Registers the /json/photos route
+// Registers the /photos route
 
 type router struct{}
 
