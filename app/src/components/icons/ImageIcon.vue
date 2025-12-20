@@ -1,7 +1,3 @@
-<script setup lang="ts">
-// Image file icon
-</script>
-
 <template>
   <svg
     xmlns="http://www.w3.org/2000/svg"

@@ -1,4 +1,3 @@
-
 <template>
   <LibraryLayout>
     <template #sidebar>

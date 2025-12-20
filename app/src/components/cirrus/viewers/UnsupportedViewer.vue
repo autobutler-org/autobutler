@@ -1,9 +1,3 @@
-<script setup lang="ts">
-defineProps<{
-  filePath: string
-}>()
-</script>
-
 <template>
   <div class="unsupported-viewer">
     <div class="unsupported-viewer-message">
@@ -14,6 +8,12 @@ defineProps<{
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+defineProps<{
+  filePath: string
+}>()
+</script>
 
 <style lang="scss" scoped>
 .unsupported-viewer {

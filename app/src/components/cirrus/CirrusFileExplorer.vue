@@ -1,3 +1,142 @@
+<template>
+  <div id="file-explorer" class="file-explorer">
+    <div class="file-explorer-header">
+      <div>
+        <h2 class="file-explorer-title">Cirrus</h2>
+      </div>
+      <div style="display: flex; gap: 0.5rem; align-items: center">
+        <!-- Navigation and download controls would go here -->
+      </div>
+    </div>
+
+    <!-- Drop Zone for file uploads -->
+    <CirrusDropZone :current-path="currentPath" @files-uploaded="handleFilesUploaded" />
+
+    <div id="file-explorer-selectable">
+      <div class="file-explorer-controls">
+        <div>
+          <CirrusBreadcrumb
+            :current-path="currentPath"
+            @navigate="navigateToPath"
+            @folder-created="handleFolderCreated"
+          />
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem">
+          <label class="device-badge-toggle">
+            <input
+              type="checkbox"
+              id="toggle-device-badges"
+              :checked="showDeviceBadges"
+              @change="toggleDeviceBadges(($event.target as HTMLInputElement).checked)"
+            />
+            <span>Show device names</span>
+          </label>
+          <div class="view-switcher">
+            <button
+              :class="['btn', 'btn--icon', view === 'list' ? 'btn--primary' : 'btn--secondary']"
+              @click="switchView('list')"
+              title="List View"
+              type="button"
+            >
+              <!-- List view icon -->
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="icon icon--base"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+            <button
+              :class="['btn', 'btn--icon', view === 'grid' ? 'btn--primary' : 'btn--secondary']"
+              @click="switchView('grid')"
+              title="Grid View"
+              type="button"
+            >
+              <!-- Grid view icon -->
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="icon icon--base"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="file-explorer-status"></div>
+
+      <div id="file-explorer-view-content">
+        <template v-if="loading">
+          <span class="file-explorer-loading">Loading files...</span>
+        </template>
+        <template v-else-if="error">
+          <span class="file-explorer-error">{{ error }}</span>
+        </template>
+        <template v-else-if="files.length === 0">
+          <span class="file-explorer-empty">No files found</span>
+        </template>
+        <template v-else-if="view === 'grid'">
+          <CirrusGridView
+            :files="files"
+            :current-path="currentPath"
+            :show-device-badges="showDeviceBadges"
+            @navigate-folder="handleNavigateFolder"
+            @open-file="handleOpenFile"
+            @context-menu="handleContextMenu"
+          />
+        </template>
+        <template v-else>
+          <CirrusListView
+            :files="files"
+            :current-path="currentPath"
+            :show-device-badges="showDeviceBadges"
+            @navigate-folder="handleNavigateFolder"
+            @open-file="handleOpenFile"
+            @context-menu="handleContextMenu"
+          />
+        </template>
+      </div>
+    </div>
+
+    <!-- File Viewer Modal -->
+    <CirrusFileViewer
+      v-model="fileViewerOpen"
+      :file-path="selectedFilePath"
+      :file-type="selectedFileType"
+    />
+
+    <!-- Context Menu -->
+    <CirrusContextMenu
+      v-model="contextMenuOpen"
+      :file="contextMenuFile"
+      :current-path="currentPath"
+      :x="contextMenuX"
+      :y="contextMenuY"
+      @download="handleDownload"
+      @rename="handleRename"
+      @details="handleFileDetails"
+      @delete="handleDelete"
+    />
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -187,145 +326,6 @@ async function handleDelete(file: CirrusFileNode) {
   }
 }
 </script>
-
-<template>
-  <div id="file-explorer" class="file-explorer">
-    <div class="file-explorer-header">
-      <div>
-        <h2 class="file-explorer-title">Cirrus</h2>
-      </div>
-      <div style="display: flex; gap: 0.5rem; align-items: center">
-        <!-- Navigation and download controls would go here -->
-      </div>
-    </div>
-
-    <!-- Drop Zone for file uploads -->
-    <CirrusDropZone :current-path="currentPath" @files-uploaded="handleFilesUploaded" />
-
-    <div id="file-explorer-selectable">
-      <div class="file-explorer-controls">
-        <div>
-          <CirrusBreadcrumb
-            :current-path="currentPath"
-            @navigate="navigateToPath"
-            @folder-created="handleFolderCreated"
-          />
-        </div>
-        <div style="display: flex; align-items: center; gap: 1rem">
-          <label class="device-badge-toggle">
-            <input
-              type="checkbox"
-              id="toggle-device-badges"
-              :checked="showDeviceBadges"
-              @change="toggleDeviceBadges(($event.target as HTMLInputElement).checked)"
-            />
-            <span>Show device names</span>
-          </label>
-          <div class="view-switcher">
-            <button
-              :class="['btn', 'btn--icon', view === 'list' ? 'btn--primary' : 'btn--secondary']"
-              @click="switchView('list')"
-              title="List View"
-              type="button"
-            >
-              <!-- List view icon -->
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="icon icon--base"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </button>
-            <button
-              :class="['btn', 'btn--icon', view === 'grid' ? 'btn--primary' : 'btn--secondary']"
-              @click="switchView('grid')"
-              title="Grid View"
-              type="button"
-            >
-              <!-- Grid view icon -->
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="icon icon--base"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div id="file-explorer-status"></div>
-
-      <div id="file-explorer-view-content">
-        <template v-if="loading">
-          <span class="file-explorer-loading">Loading files...</span>
-        </template>
-        <template v-else-if="error">
-          <span class="file-explorer-error">{{ error }}</span>
-        </template>
-        <template v-else-if="files.length === 0">
-          <span class="file-explorer-empty">No files found</span>
-        </template>
-        <template v-else-if="view === 'grid'">
-          <CirrusGridView
-            :files="files"
-            :current-path="currentPath"
-            :show-device-badges="showDeviceBadges"
-            @navigate-folder="handleNavigateFolder"
-            @open-file="handleOpenFile"
-            @context-menu="handleContextMenu"
-          />
-        </template>
-        <template v-else>
-          <CirrusListView
-            :files="files"
-            :current-path="currentPath"
-            :show-device-badges="showDeviceBadges"
-            @navigate-folder="handleNavigateFolder"
-            @open-file="handleOpenFile"
-            @context-menu="handleContextMenu"
-          />
-        </template>
-      </div>
-    </div>
-
-    <!-- File Viewer Modal -->
-    <CirrusFileViewer
-      v-model="fileViewerOpen"
-      :file-path="selectedFilePath"
-      :file-type="selectedFileType"
-    />
-
-    <!-- Context Menu -->
-    <CirrusContextMenu
-      v-model="contextMenuOpen"
-      :file="contextMenuFile"
-      :current-path="currentPath"
-      :x="contextMenuX"
-      :y="contextMenuY"
-      @download="handleDownload"
-      @rename="handleRename"
-      @details="handleFileDetails"
-      @delete="handleDelete"
-    />
-  </div>
-</template>
 
 <style lang="scss" scoped>
 .file-explorer {

@@ -1,4 +1,3 @@
-
 <template>
   <div class="landing-body page-container">
     <main class="landing-main">

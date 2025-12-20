@@ -1,144 +1,3 @@
-<script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { CirrusFileNode } from '@/types/cirrus'
-import {
-  determineFileType,
-  getFileName,
-  isDirectory,
-  getFileSize,
-  formatBytes,
-} from '@/services/cirrusService'
-import FolderIcon from '@/components/icons/FolderIcon.vue'
-import PdfIcon from '@/components/icons/PdfIcon.vue'
-import ImageIcon from '@/components/icons/ImageIcon.vue'
-import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
-import ArchiveIcon from '@/components/icons/ArchiveIcon.vue'
-import GenericIcon from '@/components/icons/GenericIcon.vue'
-import DocxIcon from '@/components/icons/DocxIcon.vue'
-import { type Component } from 'vue'
-
-const props = defineProps<{
-  files: CirrusFileNode[]
-  currentPath: string
-  showDeviceBadges?: boolean
-}>()
-
-const emit = defineEmits<{
-  'navigate-folder': [path: string]
-  'open-file': [file: CirrusFileNode]
-  'context-menu': [event: MouseEvent, file: CirrusFileNode]
-}>()
-
-// Sorting state
-type SortColumn = 'name' | 'size' | null
-type SortDirection = 'asc' | 'desc'
-
-const sortColumn = ref<SortColumn>(null)
-const sortDirection = ref<SortDirection>('asc')
-const mixedSorting = ref(false)
-
-// Toggle mixed sorting mode (folders mixed with files vs folders first)
-function toggleMixedSorting() {
-  mixedSorting.value = !mixedSorting.value
-}
-
-// Sorted files computed property
-const sortedFiles = computed(() => {
-  if (!sortColumn.value) {
-    // Default: folders first (unless mixed), then alphabetically by name
-    return [...props.files].sort((a, b) => {
-      const aIsDir = isDirectory(a)
-      const bIsDir = isDirectory(b)
-
-      // Folders first unless mixed sorting is enabled
-      if (!mixedSorting.value) {
-        if (aIsDir && !bIsDir) return -1
-        if (!aIsDir && bIsDir) return 1
-      }
-
-      return getFileName(a).localeCompare(getFileName(b), undefined, {
-        numeric: true,
-        sensitivity: 'base',
-      })
-    })
-  }
-
-  return [...props.files].sort((a, b) => {
-    const aIsDir = isDirectory(a)
-    const bIsDir = isDirectory(b)
-
-    // Folders first unless mixed sorting is enabled
-    if (!mixedSorting.value) {
-      if (aIsDir && !bIsDir) return -1
-      if (!aIsDir && bIsDir) return 1
-    }
-
-    let comparison = 0
-
-    if (sortColumn.value === 'name') {
-      comparison = getFileName(a).localeCompare(getFileName(b), undefined, {
-        numeric: true,
-        sensitivity: 'base',
-      })
-    } else if (sortColumn.value === 'size') {
-      comparison = getFileSize(a) - getFileSize(b)
-    }
-
-    return sortDirection.value === 'asc' ? comparison : -comparison
-  })
-})
-
-function toggleSort(column: SortColumn) {
-  if (sortColumn.value === column) {
-    // Toggle direction
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    // New column, start ascending
-    sortColumn.value = column
-    sortDirection.value = 'asc'
-  }
-}
-
-function getFileType(file: CirrusFileNode) {
-  return determineFileType(file)
-}
-
-function getIconComponent(fileType: string): Component {
-  switch (fileType) {
-    case 'folder':
-      return FolderIcon
-    case 'pdf':
-      return PdfIcon
-    case 'image':
-      return ImageIcon
-    case 'slideshow':
-      return SlideshowIcon
-    case 'archive':
-      return ArchiveIcon
-    case 'docx':
-      return DocxIcon
-    default:
-      return GenericIcon
-  }
-}
-
-function handleClick(file: CirrusFileNode) {
-  const fileName = getFileName(file)
-  if (isDirectory(file)) {
-    // Navigate to folder
-    const newPath = props.currentPath ? `${props.currentPath}/${fileName}` : fileName
-    emit('navigate-folder', newPath)
-  } else {
-    emit('open-file', file)
-  }
-}
-
-function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
-  event.preventDefault()
-  emit('context-menu', event, file)
-}
-</script>
-
 <template>
   <div class="file-table-container">
     <table id="file-explorer-table" class="file-table">
@@ -329,6 +188,147 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
     </table>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import type { CirrusFileNode } from '@/types/cirrus'
+import {
+  determineFileType,
+  getFileName,
+  isDirectory,
+  getFileSize,
+  formatBytes,
+} from '@/services/cirrusService'
+import FolderIcon from '@/components/icons/FolderIcon.vue'
+import PdfIcon from '@/components/icons/PdfIcon.vue'
+import ImageIcon from '@/components/icons/ImageIcon.vue'
+import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
+import ArchiveIcon from '@/components/icons/ArchiveIcon.vue'
+import GenericIcon from '@/components/icons/GenericIcon.vue'
+import DocxIcon from '@/components/icons/DocxIcon.vue'
+import { type Component } from 'vue'
+
+const props = defineProps<{
+  files: CirrusFileNode[]
+  currentPath: string
+  showDeviceBadges?: boolean
+}>()
+
+const emit = defineEmits<{
+  'navigate-folder': [path: string]
+  'open-file': [file: CirrusFileNode]
+  'context-menu': [event: MouseEvent, file: CirrusFileNode]
+}>()
+
+// Sorting state
+type SortColumn = 'name' | 'size' | null
+type SortDirection = 'asc' | 'desc'
+
+const sortColumn = ref<SortColumn>(null)
+const sortDirection = ref<SortDirection>('asc')
+const mixedSorting = ref(false)
+
+// Toggle mixed sorting mode (folders mixed with files vs folders first)
+function toggleMixedSorting() {
+  mixedSorting.value = !mixedSorting.value
+}
+
+// Sorted files computed property
+const sortedFiles = computed(() => {
+  if (!sortColumn.value) {
+    // Default: folders first (unless mixed), then alphabetically by name
+    return [...props.files].sort((a, b) => {
+      const aIsDir = isDirectory(a)
+      const bIsDir = isDirectory(b)
+
+      // Folders first unless mixed sorting is enabled
+      if (!mixedSorting.value) {
+        if (aIsDir && !bIsDir) return -1
+        if (!aIsDir && bIsDir) return 1
+      }
+
+      return getFileName(a).localeCompare(getFileName(b), undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      })
+    })
+  }
+
+  return [...props.files].sort((a, b) => {
+    const aIsDir = isDirectory(a)
+    const bIsDir = isDirectory(b)
+
+    // Folders first unless mixed sorting is enabled
+    if (!mixedSorting.value) {
+      if (aIsDir && !bIsDir) return -1
+      if (!aIsDir && bIsDir) return 1
+    }
+
+    let comparison = 0
+
+    if (sortColumn.value === 'name') {
+      comparison = getFileName(a).localeCompare(getFileName(b), undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      })
+    } else if (sortColumn.value === 'size') {
+      comparison = getFileSize(a) - getFileSize(b)
+    }
+
+    return sortDirection.value === 'asc' ? comparison : -comparison
+  })
+})
+
+function toggleSort(column: SortColumn) {
+  if (sortColumn.value === column) {
+    // Toggle direction
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    // New column, start ascending
+    sortColumn.value = column
+    sortDirection.value = 'asc'
+  }
+}
+
+function getFileType(file: CirrusFileNode) {
+  return determineFileType(file)
+}
+
+function getIconComponent(fileType: string): Component {
+  switch (fileType) {
+    case 'folder':
+      return FolderIcon
+    case 'pdf':
+      return PdfIcon
+    case 'image':
+      return ImageIcon
+    case 'slideshow':
+      return SlideshowIcon
+    case 'archive':
+      return ArchiveIcon
+    case 'docx':
+      return DocxIcon
+    default:
+      return GenericIcon
+  }
+}
+
+function handleClick(file: CirrusFileNode) {
+  const fileName = getFileName(file)
+  if (isDirectory(file)) {
+    // Navigate to folder
+    const newPath = props.currentPath ? `${props.currentPath}/${fileName}` : fileName
+    emit('navigate-folder', newPath)
+  } else {
+    emit('open-file', file)
+  }
+}
+
+function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
+  event.preventDefault()
+  emit('context-menu', event, file)
+}
+</script>
 
 <style lang="scss" scoped>
 .file-table-container {

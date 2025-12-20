@@ -1,12 +1,12 @@
+<template>
+  <img class="file-viewer-media" :src="`/api/v1/download/cirrus/${filePath}`" :alt="filePath" />
+</template>
+
 <script setup lang="ts">
 defineProps<{
   filePath: string
 }>()
 </script>
-
-<template>
-  <img class="file-viewer-media" :src="`/api/v1/download/cirrus/${filePath}`" :alt="filePath" />
-</template>
 
 <style lang="scss" scoped>
 .file-viewer-media {

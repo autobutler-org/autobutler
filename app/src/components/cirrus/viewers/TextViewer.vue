@@ -1,3 +1,14 @@
+<template>
+  <div class="text-viewer-container">
+    <div class="text-viewer-header">
+      <span class="text-viewer-filename">{{ filename }}</span>
+    </div>
+    <div v-if="loading" class="text-viewer-loading">Loading...</div>
+    <div v-else-if="error" class="text-viewer-error">{{ error }}</div>
+    <pre v-else class="text-viewer-content">{{ content }}</pre>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 
@@ -28,17 +39,6 @@ onMounted(async () => {
   }
 })
 </script>
-
-<template>
-  <div class="text-viewer-container">
-    <div class="text-viewer-header">
-      <span class="text-viewer-filename">{{ filename }}</span>
-    </div>
-    <div v-if="loading" class="text-viewer-loading">Loading...</div>
-    <div v-else-if="error" class="text-viewer-error">{{ error }}</div>
-    <pre v-else class="text-viewer-content">{{ content }}</pre>
-  </div>
-</template>
 
 <style lang="scss" scoped>
 .text-viewer-container {

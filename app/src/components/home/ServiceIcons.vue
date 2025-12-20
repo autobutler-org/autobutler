@@ -1,15 +1,3 @@
-<script setup lang="ts">
-import type { ServiceIcon } from '@/types/home'
-
-defineProps<{
-  icons: ServiceIcon[]
-}>()
-
-function handleDisabledClick() {
-  alert('Coming soon!')
-}
-</script>
-
 <template>
   <div class="service-icons-container">
     <div class="service-icons">
@@ -48,6 +36,18 @@ function handleDisabledClick() {
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import type { ServiceIcon } from '@/types/home'
+
+defineProps<{
+  icons: ServiceIcon[]
+}>()
+
+function handleDisabledClick() {
+  alert('Coming soon!')
+}
+</script>
 
 <style lang="scss" scoped>
 .service-icons-container {

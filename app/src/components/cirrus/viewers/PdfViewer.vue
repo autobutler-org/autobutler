@@ -1,12 +1,12 @@
+<template>
+  <iframe class="pdf-viewer-frame" :src="`/api/v1/download/cirrus/${filePath}`" type="application/pdf" />
+</template>
+
 <script setup lang="ts">
 defineProps<{
   filePath: string
 }>()
 </script>
-
-<template>
-  <iframe class="pdf-viewer-frame" :src="`/api/v1/download/cirrus/${filePath}`" type="application/pdf" />
-</template>
 
 <style lang="scss" scoped>
 .pdf-viewer-frame {

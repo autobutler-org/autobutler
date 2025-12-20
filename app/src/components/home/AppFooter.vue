@@ -1,7 +1,3 @@
-<script setup lang="ts">
-// Footer component
-</script>
-
 <template>
   <footer class="app-footer">
     <p class="footer-text">Autobutler LLC.</p>

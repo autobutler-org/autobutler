@@ -1,3 +1,10 @@
+<template>
+  <video class="file-viewer-media" controls>
+    <source :src="`/api/v1/download/cirrus/${filePath}`" :type="videoType" />
+    Your browser does not support this video format.
+  </video>
+</template>
+
 <script setup lang="ts">
 import { computed } from 'vue'
 
@@ -22,13 +29,6 @@ const videoType = computed(() => {
   }
 })
 </script>
-
-<template>
-  <video class="file-viewer-media" controls>
-    <source :src="`/api/v1/download/cirrus/${filePath}`" :type="videoType" />
-    Your browser does not support this video format.
-  </video>
-</template>
 
 <style lang="scss" scoped>
 .file-viewer-media {

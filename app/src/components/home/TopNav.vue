@@ -1,61 +1,3 @@
-<script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import type { NavLink } from '@/types/home'
-import { RouterLink } from 'vue-router'
-import { getCurrentVersion, getAvailableReleases, type Release } from '@/services/versionService'
-
-defineProps<{
-  navLinks?: NavLink[]
-}>()
-
-const mobileMenuOpen = ref(false)
-const versionDropdownOpen = ref(false)
-const currentVersion = ref('vX.Y.Z')
-const releases = ref<Release[]>([])
-const loadingReleases = ref(false)
-
-// Fetch current version on mount
-onMounted(async () => {
-  currentVersion.value = await getCurrentVersion()
-
-  // Add click outside listener for version dropdown
-  document.addEventListener('click', handleClickOutside)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
-
-function handleClickOutside(event: MouseEvent) {
-  const container = document.getElementById('version-container')
-  if (container && !container.contains(event.target as Node)) {
-    versionDropdownOpen.value = false
-  }
-}
-
-async function toggleVersionDropdown() {
-  if (versionDropdownOpen.value) {
-    versionDropdownOpen.value = false
-    return
-  }
-
-  versionDropdownOpen.value = true
-  if (releases.value.length === 0) {
-    loadingReleases.value = true
-    releases.value = await getAvailableReleases()
-    loadingReleases.value = false
-  }
-}
-
-function toggleMobileMenu() {
-  mobileMenuOpen.value = !mobileMenuOpen.value
-}
-
-function closeMobileMenu() {
-  mobileMenuOpen.value = false
-}
-</script>
-
 <template>
   <nav class="landing-nav">
     <div class="landing-nav-left">
@@ -266,6 +208,64 @@ function closeMobileMenu() {
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
+import type { NavLink } from '@/types/home'
+import { RouterLink } from 'vue-router'
+import { getCurrentVersion, getAvailableReleases, type Release } from '@/services/versionService'
+
+defineProps<{
+  navLinks?: NavLink[]
+}>()
+
+const mobileMenuOpen = ref(false)
+const versionDropdownOpen = ref(false)
+const currentVersion = ref('vX.Y.Z')
+const releases = ref<Release[]>([])
+const loadingReleases = ref(false)
+
+// Fetch current version on mount
+onMounted(async () => {
+  currentVersion.value = await getCurrentVersion()
+
+  // Add click outside listener for version dropdown
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
+function handleClickOutside(event: MouseEvent) {
+  const container = document.getElementById('version-container')
+  if (container && !container.contains(event.target as Node)) {
+    versionDropdownOpen.value = false
+  }
+}
+
+async function toggleVersionDropdown() {
+  if (versionDropdownOpen.value) {
+    versionDropdownOpen.value = false
+    return
+  }
+
+  versionDropdownOpen.value = true
+  if (releases.value.length === 0) {
+    loadingReleases.value = true
+    releases.value = await getAvailableReleases()
+    loadingReleases.value = false
+  }
+}
+
+function toggleMobileMenu() {
+  mobileMenuOpen.value = !mobileMenuOpen.value
+}
+
+function closeMobileMenu() {
+  mobileMenuOpen.value = false
+}
+</script>
 
 <style lang="scss" scoped>
 .landing-nav {

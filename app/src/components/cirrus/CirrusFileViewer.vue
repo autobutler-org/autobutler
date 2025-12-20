@@ -1,4 +1,3 @@
-
 <template>
   <ModalDialog v-if="modelValue" @close="closeDialog">
     <div class="file-viewer-content">

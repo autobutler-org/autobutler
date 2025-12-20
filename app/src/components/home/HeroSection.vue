@@ -1,3 +1,34 @@
+<template>
+  <div class="hero">
+    <div class="hero-content">
+      <!-- Hero Icon -->
+      <div class="hero-icon">
+        <img src="/img/butler.png" alt="AutoButler Logo" />
+        <h1 class="hero-title">AutoButler</h1>
+        <p class="hero-description">
+          Your secure home cloud for files, planning, and everyday tasks — elegantly organized in
+          one place.
+        </p>
+      </div>
+
+      <!-- CTA Buttons -->
+      <div class="hero-actions">
+        <a class="btn btn--primary" href="/cirrus">
+          <span>Browse files</span>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path
+              d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+            />
+          </svg>
+        </a>
+      </div>
+
+      <!-- Service Icons -->
+      <ServiceIcons :icons="defaultServiceIcons" />
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 import type { ServiceIcon } from '@/types/home'
 import ServiceIcons from './ServiceIcons.vue'
@@ -72,37 +103,6 @@ const defaultServiceIcons: ServiceIcon[] = [
   },
 ]
 </script>
-
-<template>
-  <div class="hero">
-    <div class="hero-content">
-      <!-- Hero Icon -->
-      <div class="hero-icon">
-        <img src="/img/butler.png" alt="AutoButler Logo" />
-        <h1 class="hero-title">AutoButler</h1>
-        <p class="hero-description">
-          Your secure home cloud for files, planning, and everyday tasks — elegantly organized in
-          one place.
-        </p>
-      </div>
-
-      <!-- CTA Buttons -->
-      <div class="hero-actions">
-        <a class="btn btn--primary" href="/cirrus">
-          <span>Browse files</span>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path
-              d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
-            />
-          </svg>
-        </a>
-      </div>
-
-      <!-- Service Icons -->
-      <ServiceIcons :icons="defaultServiceIcons" />
-    </div>
-  </div>
-</template>
 
 <style lang="scss" scoped>
 .hero {

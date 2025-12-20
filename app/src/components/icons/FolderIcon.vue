@@ -1,7 +1,3 @@
-<script setup lang="ts">
-// Folder icon - used for directory items
-</script>
-
 <template>
   <svg
     xmlns="http://www.w3.org/2000/svg"

@@ -1,3 +1,50 @@
+<template>
+  <nav class="file-explorer-breadcrumbs" :data-path="currentPath">
+    <span v-for="(segment, index) in segments" :key="index" class="file-explorer-breadcrumb">
+      <a href="#" @click.prevent="navigateTo(segment.path)">
+        {{ segment.name }}
+      </a>
+      <span>/</span>
+    </span>
+    <div class="file-explorer-folder-controls">
+      <button
+        id="add-folder-btn"
+        class="file-explorer-add-folder btn btn--icon"
+        title="Add Folder"
+        type="button"
+        @click="toggleFolderInput"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="icon icon--base"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
+      </button>
+      <input
+        v-if="showFolderInput"
+        ref="folderInputRef"
+        v-model="folderName"
+        type="text"
+        class="file-explorer-folder-input"
+        placeholder="New folder name"
+        maxlength="255"
+        :disabled="isCreating"
+        @keydown="handleKeydown"
+        @blur="showFolderInput = false"
+      />
+    </div>
+  </nav>
+</template>
+
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
@@ -89,53 +136,6 @@ function handleKeydown(event: KeyboardEvent) {
   }
 }
 </script>
-
-<template>
-  <nav class="file-explorer-breadcrumbs" :data-path="currentPath">
-    <span v-for="(segment, index) in segments" :key="index" class="file-explorer-breadcrumb">
-      <a href="#" @click.prevent="navigateTo(segment.path)">
-        {{ segment.name }}
-      </a>
-      <span>/</span>
-    </span>
-    <div class="file-explorer-folder-controls">
-      <button
-        id="add-folder-btn"
-        class="file-explorer-add-folder btn btn--icon"
-        title="Add Folder"
-        type="button"
-        @click="toggleFolderInput"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="icon icon--base"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 4v16m8-8H4"
-          />
-        </svg>
-      </button>
-      <input
-        v-if="showFolderInput"
-        ref="folderInputRef"
-        v-model="folderName"
-        type="text"
-        class="file-explorer-folder-input"
-        placeholder="New folder name"
-        maxlength="255"
-        :disabled="isCreating"
-        @keydown="handleKeydown"
-        @blur="showFolderInput = false"
-      />
-    </div>
-  </nav>
-</template>
 
 <style lang="scss" scoped>
 .file-explorer-breadcrumbs {

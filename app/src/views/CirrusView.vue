@@ -9,7 +9,6 @@ const navLinks: NavLink[] = [
   { name: 'Books', href: '/books' },
 ]
 </script>
-
 <template>
   <main class="site-main-bg">
     <TopNav :navLinks="navLinks" />

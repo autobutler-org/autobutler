@@ -11,7 +11,6 @@ const navLinks: NavLink[] = [
   { name: 'Books', href: '/books' },
 ]
 </script>
-
 <template>
   <div class="landing-body">
     <main class="landing-main site-fullscreen-col">
