@@ -22,9 +22,11 @@
         </a>
       </div>
     </template>
-    <template #main>
-      <div class="settings-header">
-        <h1 class="settings-title">Settings & Metrics</h1>
+    <template #title>
+      <h2 class="library-title">Settings & Metrics</h2>
+    </template>
+    <template #subtitle>
+      <div class="library-subtitle">
         <div class="settings-header-actions">
           <button aria-label="Save">
             <svg
@@ -57,81 +59,59 @@
           </button>
         </div>
       </div>
-      <div class="settings-content">
-        <section id="storage" class="settings-section">
-          <div class="settings-section-header">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              width="20"
-              height="20"
-            >
-              <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
-              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
-            </svg>
-            <h2>Storage Devices</h2>
-          </div>
-          <div class="settings-section-description">
-            <p>Manage which storage devices are enabled for Autobutler file storage.</p>
-          </div>
-          <div class="settings-section-card">
-            <span class="mock-badge">mock</span>
-            <p style="text-align: center; padding: 2rem; color: var(--color-gray-500)">
-              Loading devices...
-            </p>
-          </div>
-        </section>
-        <section id="opentelemetry" class="settings-section">
-          <div class="settings-section-header">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              width="20"
-              height="20"
-            >
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-            </svg>
-            <h2>OpenTelemetry</h2>
-          </div>
-          <div class="settings-section-toolbar">
-            <button>Configuration</button>
-            <button>Metrics</button>
-            <button>Traces</button>
-            <button>Logs</button>
-            <button>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                width="16"
-                height="16"
-              >
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="M21 21l-4.35-4.35"></path>
+    </template>
+    <template #main>
+      <div class="settings-content redesigned">
+        <div class="settings-cards-row">
+          <section id="storage" class="settings-section settings-card">
+            <div class="settings-section-header">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
               </svg>
-              Search settings
-            </button>
-          </div>
-          <div class="settings-section-card">
-            <span class="mock-badge">mock</span>
-            <h3>Collector & Exporter</h3>
-            <p>Configure where telemetry is sent and how it's batched</p>
-          </div>
-        </section>
-        <section class="settings-metrics-section">
+              <h2>Storage Devices</h2>
+            </div>
+            <div class="settings-section-description">
+              <p>Manage which storage devices are enabled for Autobutler file storage.</p>
+            </div>
+            <div class="settings-section-card mock-card">
+              <span class="mock-badge">mock</span>
+              <p class="mock-loading">Loading devices...</p>
+            </div>
+          </section>
+          <section id="opentelemetry" class="settings-section settings-card">
+            <div class="settings-section-header">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+              <h2>OpenTelemetry</h2>
+            </div>
+            <div class="settings-section-toolbar">
+              <button>Configuration</button>
+              <button>Metrics</button>
+              <button>Traces</button>
+              <button>Logs</button>
+              <button>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="M21 21l-4.35-4.35"></path>
+                </svg>
+                Search settings
+              </button>
+            </div>
+            <div class="settings-section-card mock-card">
+              <span class="mock-badge">mock</span>
+              <h3>Collector & Exporter</h3>
+              <p>Configure where telemetry is sent and how it's batched</p>
+            </div>
+          </section>
+        </div>
+        <section class="settings-metrics-section settings-card">
           <span class="mock-badge">mock</span>
           <h3>OpenTelemetry Metrics</h3>
           <p>Live instrumentation snapshots for the NAS and file browser.</p>
-          <div class="settings-metrics-grid">
+          <div class="settings-metrics-grid redesigned-metrics">
             <div class="settings-metric-card">
               <h4>CPU Usage (%)</h4>
               <span class="settings-metric-time">Last 15m</span>
@@ -140,20 +120,11 @@
                 <button>System</button>
                 <button>Collector</button>
               </div>
-              <table class="settings-metric-stats">
+              <table class="settings-metric-stats compact">
                 <tbody>
-                  <tr>
-                    <td>Current</td>
-                    <td>32%</td>
-                  </tr>
-                  <tr>
-                    <td>Peak</td>
-                    <td>77%</td>
-                  </tr>
-                  <tr>
-                    <td>Avg</td>
-                    <td>28%</td>
-                  </tr>
+                  <tr><td>Current</td><td>32%</td></tr>
+                  <tr><td>Peak</td><td>77%</td></tr>
+                  <tr><td>Avg</td><td>28%</td></tr>
                 </tbody>
               </table>
             </div>
@@ -166,20 +137,11 @@
                 <button>Used</button>
                 <button>Collector</button>
               </div>
-              <table class="settings-metric-stats">
+              <table class="settings-metric-stats compact">
                 <tbody>
-                  <tr>
-                    <td>Used</td>
-                    <td>18.2 GB</td>
-                  </tr>
-                  <tr>
-                    <td>Cache</td>
-                    <td>2.9 GB</td>
-                  </tr>
-                  <tr>
-                    <td>Free</td>
-                    <td>13.6 GB</td>
-                  </tr>
+                  <tr><td>Used</td><td>18.2 GB</td></tr>
+                  <tr><td>Cache</td><td>2.9 GB</td></tr>
+                  <tr><td>Free</td><td>13.6 GB</td></tr>
                 </tbody>
               </table>
             </div>
@@ -191,20 +153,11 @@
                 <button>Read</button>
                 <button>Write</button>
               </div>
-              <table class="settings-metric-stats">
+              <table class="settings-metric-stats compact">
                 <tbody>
-                  <tr>
-                    <td>Read</td>
-                    <td>210 MB/s</td>
-                  </tr>
-                  <tr>
-                    <td>Write</td>
-                    <td>185 MB/s</td>
-                  </tr>
-                  <tr>
-                    <td>Latency</td>
-                    <td>4.6 ms</td>
-                  </tr>
+                  <tr><td>Read</td><td>210 MB/s</td></tr>
+                  <tr><td>Write</td><td>185 MB/s</td></tr>
+                  <tr><td>Latency</td><td>4.6 ms</td></tr>
                 </tbody>
               </table>
             </div>
@@ -217,27 +170,18 @@
                 <button>Move</button>
                 <button>Delete</button>
               </div>
-              <table class="settings-metric-stats">
+              <table class="settings-metric-stats compact">
                 <tbody>
-                  <tr>
-                    <td>Current</td>
-                    <td>42 ops/s</td>
-                  </tr>
-                  <tr>
-                    <td>Peak</td>
-                    <td>120 ops/s</td>
-                  </tr>
-                  <tr>
-                    <td>Errors</td>
-                    <td>0.2%</td>
-                  </tr>
+                  <tr><td>Current</td><td>42 ops/s</td></tr>
+                  <tr><td>Peak</td><td>120 ops/s</td></tr>
+                  <tr><td>Errors</td><td>0.2%</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
           <h3>Recent Telemetry Events</h3>
           <p>Latest exporter status, dropped spans, and warnings.</p>
-          <table class="settings-events-table">
+          <table class="settings-events-table compact">
             <thead>
               <tr>
                 <th>Time</th>
@@ -247,24 +191,9 @@
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>2025-04-12 10:14:03</td>
-                <td>Exporter connected to http://otel-collector:4317</td>
-                <td>Exporter</td>
-                <td>Info</td>
-              </tr>
-              <tr>
-                <td>2025-04-12 10:10:22</td>
-                <td>Batch size adjusted to 512 KB</td>
-                <td>Collector</td>
-                <td>Info</td>
-              </tr>
-              <tr>
-                <td>2025-04-12 09:58:07</td>
-                <td>Transient failure, retry scheduled</td>
-                <td>Exporter</td>
-                <td>Warning</td>
-              </tr>
+              <tr><td>2025-04-12 10:14:03</td><td>Exporter connected to http://otel-collector:4317</td><td>Exporter</td><td>Info</td></tr>
+              <tr><td>2025-04-12 10:10:22</td><td>Batch size adjusted to 512 KB</td><td>Collector</td><td>Info</td></tr>
+              <tr><td>2025-04-12 09:58:07</td><td>Transient failure, retry scheduled</td><td>Exporter</td><td>Warning</td></tr>
             </tbody>
           </table>
           <div class="settings-events-actions">
@@ -459,31 +388,50 @@ const sidebarSections = [
   color: var(--color-gray-500);
   margin-top: var(--spacing-xs);
 }
-.settings-content {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: var(--spacing-xl);
-  margin-top: var(--spacing-lg);
+
+.settings-content.redesigned {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+  background: var(--color-gray-950);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-2xl);
+  min-height: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+.settings-cards-row {
+  display: flex;
+  gap: var(--spacing-2xl);
+  margin-bottom: var(--spacing-2xl);
 }
 .settings-card {
   background: var(--color-gray-900);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-sm);
-  padding: var(--spacing-xl);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 2px 16px 0 rgba(0,0,0,0.10);
+  padding: var(--spacing-xl) var(--spacing-2xl);
   color: white;
   border: 1px solid var(--color-gray-800);
+  flex: 1;
+  min-width: 320px;
+  max-width: 600px;
+  transition: box-shadow 0.2s;
 }
-.settings-card-title {
-  font-size: var(--font-size-lg);
-  font-weight: 600;
-  margin-bottom: var(--spacing-xs);
+.settings-card:hover {
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.18);
 }
-.settings-card-desc {
-  font-size: var(--font-size-base);
-  color: var(--color-gray-300);
+.mock-card {
+  background: var(--color-gray-950);
+  border: 1px dashed var(--color-gray-700);
+  color: var(--color-gray-400);
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius);
+  text-align: center;
 }
 .mock-badge {
-  margin-left: 1rem;
+  margin-left: 0;
+  margin-bottom: 0.5rem;
   background: var(--color-gray-300);
   color: var(--color-gray-700);
   font-size: var(--font-size-xs);
@@ -491,5 +439,110 @@ const sidebarSections = [
   border-radius: 8px;
   text-transform: uppercase;
   font-weight: 700;
+  display: inline-block;
+}
+.mock-loading {
+  color: var(--color-gray-500);
+  font-size: var(--font-size-base);
+  padding: 1.5rem 0;
+}
+.settings-metrics-section.settings-card {
+  margin-top: 0;
+  padding: var(--spacing-xl) var(--spacing-2xl);
+}
+.settings-metrics-grid.redesigned-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+.settings-metric-card {
+  background: var(--color-gray-950);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-xs);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-gray-800);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+.settings-metric-card h4 {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+}
+.settings-metric-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-400);
+  margin-bottom: var(--spacing-xs);
+}
+.settings-metric-chart {
+  background: var(--color-gray-900);
+  border-radius: var(--border-radius);
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-gray-500);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-xs);
+}
+.settings-metric-filters {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-xs);
+}
+.settings-metric-filters button {
+  background: var(--color-gray-800);
+  color: var(--color-gray-100);
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 2px 10px;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.settings-metric-filters button:hover {
+  background: var(--color-primary-600);
+  color: white;
+}
+.settings-metric-stats.compact {
+  width: 100%;
+  font-size: var(--font-size-xs);
+  border-collapse: collapse;
+  margin-top: var(--spacing-xs);
+}
+.settings-metric-stats.compact td {
+  padding: 2px 8px;
+  color: var(--color-gray-300);
+}
+.settings-metric-stats.compact tr {
+  border-bottom: 1px solid var(--color-gray-800);
+}
+.settings-events-table.compact {
+  width: 100%;
+  font-size: var(--font-size-xs);
+  border-collapse: collapse;
+  margin-top: var(--spacing-md);
+  background: var(--color-gray-950);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+.settings-events-table.compact th,
+.settings-events-table.compact td {
+  padding: 6px 10px;
+  color: var(--color-gray-300);
+  border-bottom: 1px solid var(--color-gray-800);
+}
+.settings-events-table.compact th {
+  background: var(--color-gray-900);
+  font-weight: 600;
+}
+.settings-events-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+  justify-content: flex-end;
 }
 </style>

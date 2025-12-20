@@ -3,11 +3,11 @@
     <template #sidebar>
       <BooksSidebar />
     </template>
-    <template #header-title>
+    <template #title>
         <span class="mock-badge">mock</span>
         <h2 class="library-title">Library</h2>
     </template>
-    <template #header-subtitle>
+    <template #subtitle>
       <div class="library-subtitle">{{ formatBookCount(totalBooks) }}</div>
     </template>
     <template #main>

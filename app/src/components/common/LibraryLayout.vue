@@ -9,8 +9,8 @@
         <div class="library-separator" aria-hidden="true"></div>
         <main class="library-main">
           <div class="library-header">
-            <slot name="header-title" />
-            <slot name="header-subtitle" />
+            <slot name="title" />
+            <slot name="subtitle" />
           </div>
           <slot name="main" />
         </main>

@@ -4,10 +4,10 @@
       <PhotosSidebar :photo-count="totalPhotos" :summary="summary" />
       <div id="mobile-photos-arrival-location"></div>
     </template>
-    <template #header-title>
+    <template #title>
         <h2 class="library-title" @click="scrollToArrival">All Photos</h2>
     </template>
-    <template #header-subtitle>
+    <template #subtitle>
       <div class="library-subtitle">{{ formatPhotoCount(totalPhotos) }}</div>
     </template>
     <template #main>
