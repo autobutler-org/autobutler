@@ -31,30 +31,32 @@ const navLinks: NavLink[] = [
   { name: 'Books', href: '/books' },
 ]
 
-const photos = ref([])
+const photos = ref<Photo[]>([])
 const totalPhotos = ref(0)
 const summary = ref({})
 import { useRouter } from 'vue-router'
+import type { Photo } from '@/types/photo'
 const router = useRouter()
-function onPhotoClick(photo) {
+
+const onPhotoClick = (photo: Photo) => {
   if (photo.relPath) {
     router.push({ name: 'photo-viewer', params: { path: encodeURIComponent(photo.relPath) } })
   }
 }
 
-function formatPhotoCount(count: number) {
+const formatPhotoCount = (count: number) => {
   if (count === 1) return '1 photo'
   return `${count.toLocaleString()} photos`
 }
 
-function scrollToArrival() {
+const scrollToArrival = () => {
   const arrival = document.getElementById('mobile-photos-arrival-location')
   if (arrival) {
     arrival.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 }
 
-function convertPhotoApi(photo: PhotoApiResponse) {
+const convertPhotoApi = (photo: PhotoApiResponse) => {
   return {
     relPath: photo.relPath,
     fileName: photo.fileName,

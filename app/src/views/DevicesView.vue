@@ -1,5 +1,5 @@
 <template>
-  <div class="page-container">
+  <div class="landing-body page-container">
     <main class="landing-main">
       <div class="landing-container">
         <GradientOverlays />

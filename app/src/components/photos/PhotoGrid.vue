@@ -6,11 +6,11 @@
 </template>
 
 <script setup lang="ts">
+import type { Photo } from '@/types/photo';
 import PhotoGridItem from './PhotoGridItem.vue'
-import { defineProps } from 'vue'
 
 defineProps<{
-  photos: any[]
+  photos: Photo[]
   page: number
   totalPhotos: number
 }>()

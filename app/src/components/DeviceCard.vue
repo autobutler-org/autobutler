@@ -25,10 +25,9 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue';
 import StoragePartition from './StoragePartition.vue';
 
-const props = defineProps({
+defineProps({
   device: {
     type: Object,
     required: true,
