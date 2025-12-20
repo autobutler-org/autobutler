@@ -1,16 +1,20 @@
 <template>
-  <div class="photos-library">
+  <div class="landing-body">
     <TopNav :navLinks="navLinks" />
-    <div class="photos-container">
-      <PhotosSidebar :photo-count="totalPhotos" :summary="summary" />
-      <div id="mobile-photos-arrival-location"></div>
-      <div class="photos-main">
-        <div class="photos-header">
-          <h2 class="photos-title" @click="scrollToArrival">All Photos</h2>
-          <div class="photos-count">{{ formatPhotoCount(totalPhotos) }}</div>
-        </div>
-        <div class="photos-grid-container">
-          <PhotoGrid :photos="photos" :page="1" :total-photos="totalPhotos" @photoClick="onPhotoClick" />
+    <div class="landing-container">
+      <div class="photos-library">
+        <div class="photos-container">
+          <PhotosSidebar :photo-count="totalPhotos" :summary="summary" />
+          <div id="mobile-photos-arrival-location"></div>
+          <div class="photos-main">
+            <div class="photos-header">
+              <h2 class="photos-title" @click="scrollToArrival">All Photos</h2>
+              <div class="photos-count">{{ formatPhotoCount(totalPhotos) }}</div>
+            </div>
+            <div class="photos-grid-container">
+              <PhotoGrid :photos="photos" :page="1" :total-photos="totalPhotos" @photoClick="onPhotoClick" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -84,7 +88,6 @@ onMounted(async () => {
   flex-direction: column;
   height: 100%;
   width: 100%;
-  background: var(--color-gray-50);
 }
 .photos-container {
   display: flex;
@@ -95,7 +98,6 @@ onMounted(async () => {
 .photos-main {
   flex: 1;
   padding: var(--spacing-2xl);
-  background: var(--color-gray-50);
   min-height: 0;
   overflow: hidden;
   display: flex;

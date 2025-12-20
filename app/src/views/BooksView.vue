@@ -1,33 +1,37 @@
 <template>
-  <TopNav :navLinks="navLinks" />
-  <div class="books-library">
-    <div class="books-library-header">
-      <h1 class="books-library-title">
-        Library
-        <span class="mock-badge">mock</span>
-      </h1>
-      <p class="books-library-count">{{ formatBookCount(totalBooks) }}</p>
-    </div>
-    <div v-if="books.length === 0" class="books-empty">
-      <div class="book-card-icon">
-        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/></svg>
-      </div>
-      <h2>No books found</h2>
-      <p>Add PDF or EPUB files to your files directory to see them here.</p>
-    </div>
-    <div v-else class="books-grid">
-      <router-link v-for="book in books" :key="book.relPath" :to="`/books/reader?path=${encodeURIComponent(book.relPath)}`" class="book-card-link">
-        <div class="book-card-cover">
+  <div class="landing-body">
+    <TopNav :navLinks="navLinks" />
+    <div class="landing-container">
+      <div class="books-library">
+        <div class="books-library-header">
+          <h1 class="books-library-title">
+            Library
+            <span class="mock-badge">mock</span>
+          </h1>
+          <p class="books-library-count">{{ formatBookCount(totalBooks) }}</p>
+        </div>
+        <div v-if="books.length === 0" class="books-empty">
           <div class="book-card-icon">
             <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/></svg>
           </div>
-          <span class="book-card-badge">{{ book.type }}</span>
+          <h2>No books found</h2>
+          <p>Add PDF or EPUB files to your files directory to see them here.</p>
         </div>
-        <div class="book-card-info">
-          <h3 class="book-card-title" :title="book.fileName">{{ book.title }}</h3>
-          <p class="book-card-size">{{ formatBookSize(book.size) }}</p>
+        <div v-else class="books-grid">
+          <router-link v-for="book in books" :key="book.relPath" :to="`/books/reader?path=${encodeURIComponent(book.relPath)}`" class="book-card-link">
+            <div class="book-card-cover">
+              <div class="book-card-icon">
+                <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/></svg>
+              </div>
+              <span class="book-card-badge">{{ book.type }}</span>
+            </div>
+            <div class="book-card-info">
+              <h3 class="book-card-title" :title="book.fileName">{{ book.title }}</h3>
+              <p class="book-card-size">{{ formatBookSize(book.size) }}</p>
+            </div>
+          </router-link>
         </div>
-      </router-link>
+      </div>
     </div>
   </div>
 </template>
@@ -100,7 +104,6 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: var(--color-gray-50);
 }
 .books-library-header {
   display: flex;
