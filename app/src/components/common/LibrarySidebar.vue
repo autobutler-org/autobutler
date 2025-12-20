@@ -32,7 +32,7 @@ interface SidebarSection {
 defineProps<{ sections: SidebarSection[] }>()
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 /* Match PhotosSidebar styles */
 .library-sidebar {
   width: 100%;

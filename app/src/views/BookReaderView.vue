@@ -20,17 +20,17 @@
       <div class="book-reader-spacer"></div>
     </div>
     <div class="book-reader-content">
-      <component :is="viewerComponent" :file-path="bookPath" />
+      <component :is="viewerComponent" :filePath="bookPath" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, defineComponent } from 'vue'
 import { useRoute } from 'vue-router'
 import TopNav from '@/components/home/TopNav.vue'
 import type { NavLink } from '@/types/home'
-import PdfViewer from '@/components/books/PdfViewer.vue'
+import PdfViewer from '@/components/cirrus/viewers/PdfViewer.vue'
 
 const navLinks: NavLink[] = [
   { name: 'Cirrus', href: '/cirrus' },
@@ -52,13 +52,13 @@ function getFileType(path: string) {
 const viewerComponent = computed(() => {
   const type = getFileType(bookPath.value)
   if (type === 'pdf') return PdfViewer
-  return {
+  return defineComponent({
     template: '<div class="error-text">Only PDF viewing is supported.</div>',
-  }
+  })
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .book-reader-view {
   display: flex;
   flex-direction: column;

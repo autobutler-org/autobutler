@@ -139,4 +139,4 @@ function legendLabel(category: string, bytes: number) {
 }
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped></style>

@@ -101,7 +101,7 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 /* Cirrus-style header and grid */
 .books-header-simple {
   display: flex;

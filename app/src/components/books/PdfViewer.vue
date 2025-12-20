@@ -16,7 +16,7 @@
 defineProps<{ filePath: string }>()
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .pdf-viewer {
   width: 100%;
   height: 100%;

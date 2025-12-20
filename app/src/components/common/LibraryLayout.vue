@@ -30,7 +30,7 @@ const navLinks: NavLink[] = [
 ]
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 /* Generic library layout classes */
 .library-header {
   display: flex;

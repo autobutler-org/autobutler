@@ -29,7 +29,7 @@ function onClose() {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .modal-overlay {
   position: fixed;
   inset: 0;

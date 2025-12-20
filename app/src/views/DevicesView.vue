@@ -160,4 +160,4 @@ function calculateSummary(devices: Device[]): Summary {
 onMounted(fetchDevices)
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped></style>

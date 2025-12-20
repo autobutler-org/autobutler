@@ -297,7 +297,7 @@ const sidebarSections = [
 ]
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .settings-sidebar-thanks {
   margin-top: var(--spacing-2xl);
   padding: var(--spacing-md);
