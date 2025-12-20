@@ -1,8 +1,9 @@
+
 <template>
-  <div class="landing-body page-container">
+  <div class="site-main-bg">
     <main class="landing-main">
+      <GradientOverlays />
       <div class="landing-container">
-        <GradientOverlays />
         <TopNav :navLinks="navLinks" />
         <div class="devices-page">
           <div class="devices-header">
@@ -62,8 +63,7 @@
                 <h3 class="devices-total-title">Total Capacity</h3>
                 <p class="devices-total-capacity">{{ summary.total_tb.toFixed(2) }} TB</p>
                 <p class="devices-total-used">
-                  {{ summary.used_tb.toFixed(2) }} TB used 2 {{ summary.avail_tb.toFixed(2) }} TB
-                  free
+                  {{ summary.used_tb.toFixed(2) }} TB used • {{ summary.avail_tb.toFixed(2) }} TB free
                 </p>
               </div>
             </div>
@@ -160,4 +160,142 @@ function calculateSummary(devices: Device[]): Summary {
 onMounted(fetchDevices)
 </script>
 
-<style lang="scss" scoped></style>
+
+<style lang="scss" scoped>
+
+/* Use the same layout and style as HomeView and BooksView */
+.site-main-bg {
+  height: 100vh;
+  min-height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: linear-gradient(180deg, hsl(225, 25%, 15%) 0%, hsl(225, 30%, 10%) 100%);
+}
+@media (prefers-color-scheme: light) {
+  .site-main-bg {
+    background: linear-gradient(180deg, hsl(225, 15%, 95%) 0%, hsl(225, 20%, 98%) 100%);
+  }
+}
+.landing-main {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.landing-container {
+  display: flex;
+  flex-direction: column;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 var(--spacing-2xl);
+}
+.devices-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+#devices-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--spacing-2xl);
+}
+.devices-header {
+  padding: 2rem 0 1rem 0;
+}
+.devices-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+.devices-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-gray-900);
+}
+@media (prefers-color-scheme: dark) {
+  .devices-title {
+    color: white;
+  }
+}
+.devices-subtitle {
+  color: var(--color-gray-500);
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
+.devices-refresh-button {
+  background: var(--color-gray-100);
+  color: var(--color-gray-900);
+  border: 1px solid var(--color-gray-300);
+  border-radius: 8px;
+  padding: 0.5rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.2s;
+}
+.devices-refresh-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.devices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--spacing-xl);
+  margin-top: var(--spacing-xl);
+}
+.devices-empty {
+  text-align: center;
+  color: var(--color-gray-500);
+  font-size: 1.2rem;
+  margin-top: 4rem;
+}
+.devices-total {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: var(--spacing-xl);
+  background: var(--color-gray-100);
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);
+}
+.devices-total-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--color-primary-100);
+  border-radius: 50%;
+}
+.devices-total-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-gray-900);
+}
+@media (prefers-color-scheme: dark) {
+  .devices-total-title {
+    color: white;
+  }
+}
+.devices-total-capacity {
+  font-size: 1.1rem;
+  color: var(--color-gray-700);
+  margin: 0.2rem 0;
+}
+.devices-total-used {
+  font-size: 1rem;
+  color: var(--color-gray-500);
+}
+</style>

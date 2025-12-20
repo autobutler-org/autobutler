@@ -311,7 +311,7 @@ async function handleDelete(file: CirrusFileNode) {
     params.append('rootDir', currentPath.value)
     params.append('filePaths', fileName)
 
-    const response = await fetch(`/api/v1/download/cirrus?${params.toString()}`, {
+    const response = await fetch(`/api/v1/cirrus?${params.toString()}`, {
       method: 'DELETE',
     })
 
