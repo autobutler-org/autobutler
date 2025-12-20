@@ -1,0 +1,221 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+
+const props = defineProps<{
+  currentPath: string
+}>()
+
+const emit = defineEmits<{
+  'files-uploaded': []
+}>()
+
+const isDragOver = ref(false)
+const isUploading = ref(false)
+const uploadProgress = ref('')
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
+function handleDragEnter(event: DragEvent) {
+  event.preventDefault()
+  isDragOver.value = true
+}
+
+function handleDragOver(event: DragEvent) {
+  event.preventDefault()
+}
+
+function handleDragLeave(event: DragEvent) {
+  event.preventDefault()
+  isDragOver.value = false
+}
+
+async function handleDrop(event: DragEvent) {
+  event.preventDefault()
+  isDragOver.value = false
+
+  const files = event.dataTransfer?.files
+  if (files && files.length > 0) {
+    await uploadFiles(files)
+  }
+}
+
+function handleClick() {
+  fileInputRef.value?.click()
+}
+
+function handleFileInputChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (input.files && input.files.length > 0) {
+    uploadFiles(input.files)
+    // Reset the input so the same file can be selected again
+    input.value = ''
+  }
+}
+
+async function uploadFiles(files: FileList) {
+  isUploading.value = true
+  uploadProgress.value = `Uploading ${files.length} file${files.length > 1 ? 's' : ''}...`
+
+  try {
+    const formData = new FormData()
+    for (const file of files) {
+      formData.append('files', file)
+    }
+
+    // Build the upload URL
+    const uploadPath = props.currentPath
+      ? `/api/v1/cirrus/${props.currentPath}`
+      : '/api/v1/cirrus'
+
+    const response = await fetch(uploadPath, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new Error('Upload failed')
+    }
+
+    uploadProgress.value = 'Upload complete!'
+    emit('files-uploaded')
+
+    // Clear the message after a short delay
+    setTimeout(() => {
+      uploadProgress.value = ''
+    }, 2000)
+  } catch (error) {
+    uploadProgress.value = `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    setTimeout(() => {
+      uploadProgress.value = ''
+    }, 3000)
+  } finally {
+    isUploading.value = false
+  }
+}
+</script>
+
+<template>
+  <div
+    :class="['drop-zone', { 'drop-zone--active': isDragOver, 'drop-zone--uploading': isUploading }]"
+    @dragenter="handleDragEnter"
+    @dragover="handleDragOver"
+    @dragleave="handleDragLeave"
+    @drop="handleDrop"
+    @click="handleClick"
+  >
+    <input
+      ref="fileInputRef"
+      type="file"
+      class="drop-zone-input"
+      multiple
+      @change="handleFileInputChange"
+    />
+    <div class="drop-zone-content">
+      <template v-if="isUploading || uploadProgress">
+        <span class="drop-zone-text">{{ uploadProgress }}</span>
+      </template>
+      <template v-else-if="isDragOver">
+        <span class="drop-zone-text">Drop files here...</span>
+      </template>
+      <template v-else>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="drop-zone-icon"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+          />
+        </svg>
+        <span class="drop-zone-text">Drop files here or click to upload</span>
+      </template>
+    </div>
+  </div>
+</template>
+
+<style lang="scss">
+.drop-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  border: 2px dashed var(--color-gray-400);
+  border-radius: var(--border-radius-lg);
+  background-color: var(--color-gray-100);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 80px;
+
+  &:hover {
+    border-color: var(--color-blue-500);
+    background-color: var(--color-blue-50);
+  }
+
+  &--active {
+    border-color: var(--color-blue-600);
+    background-color: var(--color-blue-100);
+    border-style: solid;
+  }
+
+  &--uploading {
+    cursor: wait;
+    border-color: var(--color-green-500);
+    background-color: var(--color-green-50);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    background-color: var(--color-gray-800);
+    border-color: var(--color-gray-600);
+
+    &:hover {
+      border-color: var(--color-blue-400);
+      background-color: var(--color-gray-700);
+    }
+
+    &--active {
+      border-color: var(--color-blue-500);
+      background-color: var(--color-gray-700);
+    }
+
+    &--uploading {
+      border-color: var(--color-green-400);
+      background-color: var(--color-gray-700);
+    }
+  }
+}
+
+.drop-zone-input {
+  display: none;
+}
+
+.drop-zone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  pointer-events: none;
+}
+
+.drop-zone-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--color-gray-500);
+
+  @media (prefers-color-scheme: dark) {
+    color: var(--color-gray-400);
+  }
+}
+
+.drop-zone-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+
+  @media (prefers-color-scheme: dark) {
+    color: var(--color-gray-400);
+  }
+}
+</style>

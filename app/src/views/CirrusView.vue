@@ -4,7 +4,7 @@ import CirrusFileExplorer from '@/components/cirrus/CirrusFileExplorer.vue'
 import type { NavLink } from '@/types/home'
 
 const navLinks: NavLink[] = [
-  { name: 'Files', href: '/cirrus' },
+  { name: 'Cirrus', href: '/cirrus' },
   { name: 'Photos', href: '/photos' },
   { name: 'Books', href: '/books' },
   { name: 'Health', href: '/health' },

@@ -8,6 +8,7 @@ import CirrusListView from './CirrusListView.vue'
 import CirrusGridView from './CirrusGridView.vue'
 import CirrusFileViewer from './CirrusFileViewer.vue'
 import CirrusContextMenu from './CirrusContextMenu.vue'
+import CirrusDropZone from './CirrusDropZone.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -174,6 +175,9 @@ async function handleDelete(file: CirrusFileNode) {
         <!-- Navigation and download controls would go here -->
       </div>
     </div>
+
+    <!-- Drop Zone for file uploads -->
+    <CirrusDropZone :current-path="currentPath" @files-uploaded="fetchFiles" />
 
     <div id="file-explorer-selectable">
       <div class="file-explorer-controls">
