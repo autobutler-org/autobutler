@@ -1,6 +1,5 @@
 import './assets/main.css'
-import './assets/cirrus.css'
-import './assets/landing.css'
+import './assets/variables.scss'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

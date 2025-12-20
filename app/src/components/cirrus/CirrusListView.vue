@@ -106,3 +106,136 @@ function handleClick(file: CirrusFileNode) {
     </table>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.file-table-container {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: var(--border-radius-lg);
+}
+
+.file-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.file-table-header {
+  background-color: var(--color-gray-50);
+  position: sticky;
+  top: 0;
+
+  @media (prefers-color-scheme: dark) {
+    background-color: var(--color-gray-900);
+  }
+}
+
+.file-table-header-cell {
+  height: 3rem;
+  padding: 0 var(--spacing-sm);
+  font-weight: 600;
+  color: var(--color-gray-700);
+
+  @media (prefers-color-scheme: dark) {
+    color: var(--color-gray-300);
+  }
+
+  &--left {
+    text-align: left;
+  }
+
+  &--right {
+    text-align: right;
+    width: 6rem;
+  }
+
+  &--toggle {
+    width: 4rem;
+  }
+}
+
+.file-table-body {
+  border-top: 1px solid var(--color-gray-200);
+
+  tr {
+    border-top: 1px solid var(--color-gray-200);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    border-color: var(--color-gray-700);
+
+    tr {
+      border-color: var(--color-gray-700);
+    }
+  }
+}
+
+.file-table-row {
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-gray-100);
+
+    @media (prefers-color-scheme: dark) {
+      background-color: var(--color-gray-800);
+    }
+  }
+}
+
+.file-table-cell {
+  padding: 0;
+
+  &--content {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-sm) 0 var(--spacing-sm) var(--spacing-sm);
+    height: 100%;
+  }
+
+  &--clickable {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-sm) 0 var(--spacing-sm) var(--spacing-sm);
+    height: 100%;
+    cursor: pointer;
+  }
+
+  &--spacer {
+    text-align: center;
+    font-style: italic;
+    color: var(--color-gray-400);
+    cursor: pointer;
+    padding: var(--spacing-sm) 0;
+
+    &:hover {
+      background-color: var(--color-gray-100);
+
+      @media (prefers-color-scheme: dark) {
+        background-color: var(--color-gray-800);
+      }
+    }
+  }
+}
+
+.file-table-name {
+  flex: 1;
+  margin-left: var(--spacing-sm);
+  color: inherit;
+  display: flex;
+  align-items: center;
+}
+
+.file-table-size {
+  color: var(--color-gray-500);
+  font-size: var(--font-size-sm);
+  text-align: right;
+  padding-right: var(--spacing-sm);
+
+  @media (prefers-color-scheme: dark) {
+    color: var(--color-gray-200);
+  }
+}
+</style>

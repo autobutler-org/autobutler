@@ -18,3 +18,20 @@
     />
   </svg>
 </template>
+
+<style lang="scss" scoped>
+.icon {
+  display: inline-block;
+  vertical-align: middle;
+
+  &--base {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  &--archive {
+    color: var(--color-green-600);
+    margin-right: var(--spacing-md);
+  }
+}
+</style>

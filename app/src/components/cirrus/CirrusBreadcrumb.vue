@@ -67,3 +67,90 @@ function navigateTo(path: string) {
     </div>
   </nav>
 </template>
+
+<style lang="scss" scoped>
+.file-explorer-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+  margin-bottom: var(--spacing-sm);
+
+  @media (prefers-color-scheme: dark) {
+    color: var(--color-gray-400);
+  }
+}
+
+.file-explorer-breadcrumb {
+  color: var(--color-gray-700);
+
+  @media (prefers-color-scheme: dark) {
+    color: var(--color-gray-300);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.file-explorer-folder-controls {
+  display: inline-flex;
+  align-items: center;
+  margin-left: var(--spacing-sm);
+}
+
+.file-explorer-add-folder {
+  margin-left: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius);
+
+  &:hover {
+    background-color: var(--color-gray-100);
+  }
+
+  svg {
+    color: var(--color-primary-400);
+    transition: color 0.2s ease;
+  }
+
+  &:hover svg {
+    color: var(--color-primary-600);
+  }
+}
+
+.icon {
+  display: inline-block;
+  vertical-align: middle;
+
+  &--base {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+
+  &--icon {
+    padding: var(--spacing-xs);
+  }
+}
+</style>

@@ -19,3 +19,20 @@
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 8h2" />
   </svg>
 </template>
+
+<style lang="scss" scoped>
+.icon {
+  display: inline-block;
+  vertical-align: middle;
+
+  &--base {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  &--docx {
+    color: var(--color-blue-600);
+    margin-right: var(--spacing-md);
+  }
+}
+</style>

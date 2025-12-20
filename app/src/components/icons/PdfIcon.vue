@@ -19,3 +19,20 @@
     <text x="7" y="16" font-size="6" fill="currentColor" stroke="none">PDF</text>
   </svg>
 </template>
+
+<style lang="scss" scoped>
+.icon {
+  display: inline-block;
+  vertical-align: middle;
+
+  &--base {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  &--pdf {
+    color: var(--color-red-600);
+    margin-right: var(--spacing-md);
+  }
+}
+</style>

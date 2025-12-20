@@ -191,3 +191,162 @@ function toggleDeviceBadges(show: boolean) {
     </div>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.file-explorer {
+  background-color: white;
+  max-width: 100%;
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+
+  @media (prefers-color-scheme: dark) {
+    background-color: var(--color-gray-900);
+  }
+}
+
+.file-explorer-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+#file-explorer-selectable {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+#file-explorer-view-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.file-explorer-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  margin-right: var(--spacing-lg);
+  white-space: nowrap;
+  color: var(--color-gray-900);
+
+  @media (prefers-color-scheme: dark) {
+    color: white;
+  }
+}
+
+.file-explorer-space-info {
+  color: var(--color-gray-500);
+}
+
+.file-explorer-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.file-explorer-loading {
+  padding: var(--spacing-md) 0;
+  color: var(--color-gray-500);
+  font-style: italic;
+}
+
+.file-explorer-error {
+  padding: var(--spacing-md) 0;
+  color: #dc2626;
+
+  @media (prefers-color-scheme: dark) {
+    color: #f87171;
+  }
+}
+
+.file-explorer-empty {
+  padding: var(--spacing-md) 0;
+  color: var(--color-gray-500);
+}
+
+.device-badge-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  cursor: pointer;
+
+  input {
+    cursor: pointer;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    color: var(--color-gray-400);
+  }
+}
+
+.view-switcher {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.icon {
+  display: inline-block;
+  vertical-align: middle;
+
+  &--base {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+
+  &--icon {
+    padding: var(--spacing-xs);
+  }
+
+  &--primary {
+    background-color: var(--color-primary-600);
+    color: white;
+    border-color: var(--color-primary-600);
+
+    &:hover {
+      background-color: var(--color-primary-400);
+    }
+  }
+
+  &--secondary {
+    background-color: transparent;
+    color: var(--color-gray-700);
+    border-color: var(--color-gray-300);
+
+    &:hover {
+      background-color: var(--color-gray-100);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      color: var(--color-gray-300);
+      border-color: var(--color-gray-600);
+
+      &:hover {
+        background-color: var(--color-gray-800);
+      }
+    }
+  }
+}
+</style>
