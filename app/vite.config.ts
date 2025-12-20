@@ -24,4 +24,8 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    outDir: '../internal/server/public',
+    emptyOutDir: true,
+  },
 })

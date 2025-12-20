@@ -11,7 +11,6 @@ func NewRouter() serverutil.Router {
 func (r *router) Routes() []*serverutil.Route {
 	return []*serverutil.Route{
 		deleteFilesRoute,
-		downloadFileRoute,
 		newFolderRoute,
 		moveFileRoute,
 		uploadNestedFilesRoutes,
