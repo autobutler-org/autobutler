@@ -100,6 +100,8 @@ onMounted(async () => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  margin: var(--spacing-xl) 0;
+  background: transparent;
 }
 .photos-header {
   display: flex;
@@ -114,6 +116,12 @@ onMounted(async () => {
   color: var(--color-gray-900);
   margin: 0;
 }
+
+@media (prefers-color-scheme: dark) {
+  .photos-title {
+    color: white;
+  }
+}
 .photos-count {
   font-size: var(--font-size-lg);
   color: var(--color-gray-500);
@@ -123,5 +131,6 @@ onMounted(async () => {
   overflow-y: auto;
   min-height: 0;
   background: transparent;
+  padding: 0;
 }
 </style>
