@@ -1,0 +1,91 @@
+<template>
+  <div class="photos-library">
+    <div class="photos-container">
+      <PhotosSidebar :summary="summary" />
+      <div id="mobile-photos-arrival-location"></div>
+      <div class="photos-main">
+        <div class="photos-header">
+          <h2 class="photos-title" @click="scrollToArrival">All Photos</h2>
+          <div class="photos-count">{{ formatPhotoCount(totalPhotos) }}</div>
+        </div>
+        <div class="photos-grid-container">
+          <PhotoGrid :photos="photos" :page="1" :total-photos="totalPhotos" />
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import PhotosSidebar from '@/components/photos/PhotosSidebar.vue'
+import PhotoGrid from '@/components/photos/PhotoGrid.vue'
+
+// TODO: Replace with real API call
+const photos = ref([])
+const totalPhotos = ref(0)
+const summary = ref({})
+
+function formatPhotoCount(count: number) {
+  if (count === 1) return '1 photo'
+  return `${count.toLocaleString()} photos`
+}
+
+function scrollToArrival() {
+  const arrival = document.getElementById('mobile-photos-arrival-location')
+  if (arrival) {
+    arrival.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+}
+
+onMounted(() => {
+  // TODO: Fetch photos and summary from API
+})
+</script>
+
+<style lang="scss" scoped>
+.photos-library {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--color-gray-50);
+}
+.photos-container {
+  display: flex;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+.photos-main {
+  flex: 1;
+  padding: var(--spacing-2xl);
+  background: var(--color-gray-50);
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.photos-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg) 0;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+.photos-title {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  color: var(--color-gray-900);
+  margin: 0;
+}
+.photos-count {
+  font-size: var(--font-size-lg);
+  color: var(--color-gray-500);
+}
+.photos-grid-container {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+</style>

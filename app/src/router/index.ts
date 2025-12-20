@@ -22,6 +22,11 @@ const router = createRouter({
       name: 'cirrus',
       component: () => import('../views/CirrusView.vue'),
     },
+    {
+      path: '/photos',
+      name: 'photos',
+      component: () => import('../views/PhotosView.vue'),
+    },
   ],
 })
 
