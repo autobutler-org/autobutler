@@ -15,28 +15,7 @@
       </div>
     </div>
     <div class="device-card-body">
-      <div class="storage-partition-component">
-        <div class="storage-partition-info">
-          <span class="storage-partition-label">Capacity: {{ (device.total_bytes / 1e9).toFixed(1) }} GB</span>
-          <span class="storage-partition-used">{{ device.percent_used }}% used • {{ (device.used_bytes / 1e9).toFixed(1) }} GB</span>
-        </div>
-        <div class="storage-partition-bar">
-          <div
-            v-for="cat in partitionSegments(device)"
-            :key="cat.key"
-            class="storage-partition-segment"
-            :class="cat.class"
-            :style="{ width: cat.percent + '%'}"
-            :title="cat.label + ': ' + cat.sizeDisplay"
-          ></div>
-        </div>
-        <div class="storage-partition-legend">
-          <div v-for="cat in partitionSegments(device)" :key="cat.key" class="storage-partition-legend-item">
-            <span class="storage-partition-dot" :class="cat.class"></span>
-            <span class="storage-partition-legend-label">{{ cat.label }} {{ cat.sizeDisplay }}</span>
-          </div>
-        </div>
-      </div>
+      <StoragePartition :device="device" />
     </div>
     <div class="device-card-footer">
       <div class="device-card-mount">
@@ -47,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import StoragePartition from './StoragePartition.vue'
 
 defineProps({
   device: {
@@ -58,35 +37,6 @@ defineProps({
 
 function goToCirrus() {
   window.location.href = '/cirrus'
-}
-
-function partitionSegments(device: any) {
-  // Map categories to color classes and labels
-  const map = [
-    { key: 'system', class: 'storage-partition-system', label: 'System' },
-    { key: 'documents', class: 'storage-partition-documents', label: 'Documents' },
-    { key: 'media', class: 'storage-partition-media', label: 'Media' },
-    { key: 'other', class: 'storage-partition-other', label: 'Other' },
-    { key: 'free', class: 'storage-partition-free', label: 'Free' },
-  ];
-  // Get total for percentage calculation
-  const total = (device.used_bytes + device.avail_bytes) / 1e9;
-  // Compose segments
-  return map.map(seg => {
-    let size = 0;
-    if (seg.key === 'free') {
-      size = device.avail_bytes / 1e9;
-    } else if (device.categories && device.categories[seg.label]) {
-      size = device.categories[seg.label] || 0;
-    }
-    return {
-      key: seg.key,
-      class: seg.class,
-      label: seg.label,
-      percent: total ? (size / total * 100) : 0,
-      sizeDisplay: size.toFixed(2) + ' GB',
-    };
-  }).filter(seg => seg.percent > 0);
 }
 </script>
 
