@@ -99,6 +99,15 @@ build/mac: build/mac/amd64 build/mac/arm64 ## Build macOS backends
 build/mac/arm64: ## Build macOS backends
 	GOOS=darwin GOARCH=arm64 go build -o ./build/autobutler-mac-arm64 $(MAIN)
 
+bundle:
+	$(MAKE) build/frontend
+	# Move frontend to backend public directory
+	rm -rf ./internal/server/public/*
+	mkdir -p ./internal/server/public
+	mv ./app/dist/* ./internal/server/public/
+	# Build backend
+	$(MAKE) build/backend
+
 PRINT_COVERAGE ?= 0
 
 test: test/unit test/e2e

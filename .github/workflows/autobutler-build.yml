@@ -15,6 +15,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: 'npm'
       - name: Setup go
         uses: actions/setup-go@v6
         with:
@@ -25,7 +30,7 @@ jobs:
         uses: ./.github/actions/setup-templ
       - name: Build
         run: |
-          make build
+          make bundle
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
