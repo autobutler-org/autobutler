@@ -54,10 +54,7 @@ const navLinks: NavLink[] = [
   width: 1px;
   height: 100vh;
   background: var(--color-gray-900);
-  opacity: 0.12;
-  border-radius: 2px;
   align-self: stretch;
-  transition: background 0.2s;
 }
 .library-main {
   flex: 1;

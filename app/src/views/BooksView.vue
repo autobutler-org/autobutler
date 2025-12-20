@@ -21,9 +21,6 @@
         <router-link v-for="book in books" :key="book.relPath" :to="`/books/reader?path=${encodeURIComponent(book.relPath)}`" class="book-card-link">
           <div class="book-card">
             <div class="book-card-cover">
-              <div class="book-card-icon">
-                <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/></svg>
-              </div>
               <span class="book-card-badge">{{ book.type }}</span>
             </div>
             <div class="book-card-info">
