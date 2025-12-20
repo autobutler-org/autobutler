@@ -1,5 +1,6 @@
 <template>
   <div class="photos-library">
+    <TopNav :navLinks="navLinks" />
     <div class="photos-container">
       <PhotosSidebar :photo-count="totalPhotos" :summary="summary" />
       <div id="mobile-photos-arrival-location"></div>
@@ -21,6 +22,15 @@ import { ref, onMounted } from 'vue'
 import PhotosSidebar from '@/components/photos/PhotosSidebar.vue'
 import PhotoGrid from '@/components/photos/PhotoGrid.vue'
 import { fetchPhotos, fetchPhotoSummary, type PhotoApiResponse } from '@/services/photosService'
+import TopNav from '@/components/home/TopNav.vue'
+import type { NavLink } from '@/types/home'
+
+const navLinks: NavLink[] = [
+  { name: 'Cirrus', href: '/cirrus' },
+  { name: 'Photos', href: '/photos' },
+  { name: 'Books', href: '/books' },
+  { name: 'Health', href: '/health' },
+]
 
 const photos = ref([])
 const totalPhotos = ref(0)
