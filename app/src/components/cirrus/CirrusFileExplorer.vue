@@ -197,7 +197,6 @@ async function handleDelete(file: CirrusFileNode) {
     <div class="file-explorer-header">
       <div>
         <h2 class="file-explorer-title">Cirrus</h2>
-        <div class="file-explorer-space-info">Available Space: {{ availableSpaceFormatted }}</div>
       </div>
       <div style="display: flex; gap: 0.5rem; align-items: center">
         <!-- Navigation and download controls would go here -->
