@@ -48,13 +48,13 @@ const sortedFiles = computed(() => {
     return [...props.files].sort((a, b) => {
       const aIsDir = isDirectory(a)
       const bIsDir = isDirectory(b)
-      
+
       // Folders first unless mixed sorting is enabled
       if (!mixedSorting.value) {
         if (aIsDir && !bIsDir) return -1
         if (!aIsDir && bIsDir) return 1
       }
-      
+
       return getFileName(a).localeCompare(getFileName(b), undefined, {
         numeric: true,
         sensitivity: 'base',
