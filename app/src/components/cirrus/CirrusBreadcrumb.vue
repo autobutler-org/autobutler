@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps<{
@@ -8,10 +8,16 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   navigate: [path: string]
-  'add-folder': []
+  'folder-created': [folderName: string]
 }>()
 
 const router = useRouter()
+
+// Folder input state
+const showFolderInput = ref(false)
+const folderName = ref('')
+const folderInputRef = ref<HTMLInputElement | null>(null)
+const isCreating = ref(false)
 
 // Parse the path into breadcrumb segments
 const segments = computed(() => {
@@ -31,6 +37,57 @@ function navigateTo(path: string) {
   emit('navigate', path)
   router.push(`/cirrus${path ? '/' + path : ''}`)
 }
+
+async function toggleFolderInput() {
+  showFolderInput.value = !showFolderInput.value
+  if (showFolderInput.value) {
+    await nextTick()
+    folderInputRef.value?.focus()
+  } else {
+    folderName.value = ''
+  }
+}
+
+async function createFolder() {
+  if (!folderName.value.trim() || isCreating.value) return
+
+  isCreating.value = true
+  try {
+    const formData = new FormData()
+    formData.append('folderName', folderName.value.trim())
+
+    const folderPath = props.currentPath
+      ? `/api/v1/folder/cirrus/${props.currentPath}`
+      : '/api/v1/folder/cirrus/'
+
+    const response = await fetch(folderPath, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to create folder')
+    }
+
+    emit('folder-created', folderName.value.trim())
+    folderName.value = ''
+    showFolderInput.value = false
+  } catch (error) {
+    console.error('Error creating folder:', error)
+    alert('Failed to create folder')
+  } finally {
+    isCreating.value = false
+  }
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Enter') {
+    createFolder()
+  } else if (event.key === 'Escape') {
+    showFolderInput.value = false
+    folderName.value = ''
+  }
+}
 </script>
 
 <template>
@@ -47,7 +104,7 @@ function navigateTo(path: string) {
         class="file-explorer-add-folder btn btn--icon"
         title="Add Folder"
         type="button"
-        @click="$emit('add-folder')"
+        @click="toggleFolderInput"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -64,6 +121,18 @@ function navigateTo(path: string) {
           />
         </svg>
       </button>
+      <input
+        v-if="showFolderInput"
+        ref="folderInputRef"
+        v-model="folderName"
+        type="text"
+        class="file-explorer-folder-input"
+        placeholder="New folder name"
+        maxlength="255"
+        :disabled="isCreating"
+        @keydown="handleKeydown"
+        @blur="showFolderInput = false"
+      />
     </div>
   </nav>
 </template>
@@ -103,6 +172,7 @@ function navigateTo(path: string) {
   display: inline-flex;
   align-items: center;
   margin-left: var(--spacing-sm);
+  gap: var(--spacing-sm);
 }
 
 .file-explorer-add-folder {
@@ -124,6 +194,39 @@ function navigateTo(path: string) {
 
   &:hover svg {
     color: var(--color-primary-600);
+  }
+}
+
+.file-explorer-folder-input {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+  width: 200px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary-500);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  }
+
+  &:disabled {
+    background-color: var(--color-gray-100);
+    cursor: not-allowed;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    background-color: var(--color-gray-800);
+    border-color: var(--color-gray-600);
+    color: var(--color-gray-100);
+
+    &:focus {
+      border-color: var(--color-primary-400);
+    }
+
+    &:disabled {
+      background-color: var(--color-gray-700);
+    }
   }
 }
 

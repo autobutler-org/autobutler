@@ -111,6 +111,20 @@ function handleFilesUploaded(uploadedFiles: CirrusFileNode[]) {
   }
 }
 
+// Handle folder created - add it to the list
+function handleFolderCreated(folderName: string) {
+  const fullPath = currentPath.value ? `${currentPath.value}/${folderName}` : folderName
+  const exists = files.value.some((f) => f.fullPath === fullPath)
+  if (!exists) {
+    // Add folder at the beginning (folders typically appear first)
+    files.value.unshift({
+      fullPath,
+      deviceName: '',
+      isDir: true,
+    })
+  }
+}
+
 // Context menu handlers
 function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
   contextMenuFile.value = file
@@ -193,7 +207,11 @@ async function handleDelete(file: CirrusFileNode) {
     <div id="file-explorer-selectable">
       <div class="file-explorer-controls">
         <div>
-          <CirrusBreadcrumb :current-path="currentPath" @navigate="navigateToPath" />
+          <CirrusBreadcrumb
+            :current-path="currentPath"
+            @navigate="navigateToPath"
+            @folder-created="handleFolderCreated"
+          />
         </div>
         <div style="display: flex; align-items: center; gap: 1rem">
           <label class="device-badge-toggle">
