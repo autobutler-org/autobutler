@@ -2,7 +2,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { CirrusFileNode, FileType } from '@/types/cirrus'
-import { getFiles, getAvailableSpace, bytesToGB, determineFileType } from '@/services/cirrusService'
+import { getFiles, getAvailableSpace, bytesToGB, determineFileType, getFileName } from '@/services/cirrusService'
 import CirrusBreadcrumb from './CirrusBreadcrumb.vue'
 import CirrusListView from './CirrusListView.vue'
 import CirrusGridView from './CirrusGridView.vue'
@@ -76,7 +76,10 @@ function handleNavigateFolder(path: string) {
 }
 
 function handleOpenFile(file: CirrusFileNode) {
-  selectedFilePath.value = file.fullPath
+  // Construct the relative path for the API from currentPath and filename
+  const fileName = getFileName(file)
+  const relativePath = currentPath.value ? `${currentPath.value}/${fileName}` : fileName
+  selectedFilePath.value = relativePath
   selectedFileType.value = determineFileType(file)
   fileViewerOpen.value = true
 }
