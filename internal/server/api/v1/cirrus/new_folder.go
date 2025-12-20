@@ -1,12 +1,9 @@
 package v1_files
 
 import (
-	"autobutler/pkg/ui/components/error_message"
-	view_cirrus "autobutler/pkg/ui/views/cirrus"
 	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,24 +12,11 @@ var newFolderRoute = serverutil.ApiRoute(
 		folderDir := c.Param("folderDir")
 		folderName := c.PostForm("folderName")
 
-		result, err := cirrusutil.CreateFolder(cirrusutil.CreateFolderParams{
+		if _, err := cirrusutil.CreateFolder(cirrusutil.CreateFolderParams{
 			FolderDir:  folderDir,
 			FolderName: folderName,
-		})
-
-		if err != nil {
-			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component(err.Error()))
-		}
-
-		// Return full explorer for HTMX so all controls (upload, breadcrumbs) stay in sync
-		var component templ.Component
-		if c.GetHeader("HX-Request") == "true" {
-			component = view_cirrus.GetExplorer(c, result.CurrentDir)
-		} else {
-			component = view_cirrus.GetExplorer(c, result.CurrentDir)
-		}
-		if err := component.Render(c.Request.Context(), c.Writer); err != nil {
-			return serverutil.NewResponse().WithStatusCode(500).WithComponent(error_message.Component("Failed to render file explorer: " + err.Error()))
+		}); err != nil {
+			return serverutil.NewResponse().WithStatusCode(500).WithError(err)
 		}
 		return serverutil.Ok()
 	},

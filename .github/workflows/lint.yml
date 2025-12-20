@@ -20,14 +20,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: .nvmrc
           cache: 'npm'
       - name: Install Node dependencies
-        run: npm ci
+        run: |
+          npm ci --prefix ./app
       - name: Setup sqlc
         uses: ./.github/actions/setup-sqlc
-      - name: Setup Templ
-        uses: ./.github/actions/setup-templ
       - name: Generate code
         run: |
           make generate

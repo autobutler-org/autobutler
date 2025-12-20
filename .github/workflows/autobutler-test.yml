@@ -58,7 +58,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        npm ci
+        npm ci --prefix ./app
 
     - name: Install Playwright Browsers
       run: |

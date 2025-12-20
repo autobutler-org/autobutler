@@ -1,20 +1,26 @@
 {
   "recommendations": [
+    "EditorConfig.EditorConfig",
+    "Vue.volar",
     "a-h.templ",
-    "jasonnutter.vscode-codeowners",
-    "streetsidesoftware.code-spell-checker",
+    "alexcvzz.vscode-sqlite",
     "bierner.color-info",
+    "bradlc.vscode-tailwindcss",
+    "davidanson.vscode-markdownlint",
+    "dbaeumer.vscode-eslint",
+    "dbaeumer.vscode-eslint",
+    "editorconfig.editorconfig",
+    "esbenp.prettier-vscode",
+    "golang.go",
+    "inferrinizzard.prettier-sql-vscode",
+    "jasonnutter.vscode-codeowners",
     "ms-azuretools.vscode-containers",
     "ms-azuretools.vscode-docker",
-    "editorconfig.editorconfig",
-    "davidanson.vscode-markdownlint",
-    "tyriar.sort-lines",
-    "golang.go",
-    "bradlc.vscode-tailwindcss",
-    "vscode-icons-team.vscode-icons",
-    "alexcvzz.vscode-sqlite",
-    "inferrinizzard.prettier-sql-vscode",
     "ms-playwright.playwright",
-    "dbaeumer.vscode-eslint"
+    "ms-playwright.playwright",
+    "streetsidesoftware.code-spell-checker",
+    "tyriar.sort-lines",
+    "vitest.explorer",
+    "vscode-icons-team.vscode-icons"
   ]
 }
