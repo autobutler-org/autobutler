@@ -1,19 +1,19 @@
-
 package v1_books
 
 import (
 	"autobutler/pkg/util/bookutil"
 	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
+
 	"github.com/gin-gonic/gin"
 )
 
 type BookJSON struct {
-	RelPath   string `json:"relPath"`
-	FileName  string `json:"fileName"`
-	Size      int64  `json:"size"`
-	Type      string `json:"type"`
-	MTime     int64  `json:"mtime"`
+	RelPath  string `json:"relPath"`
+	FileName string `json:"fileName"`
+	Size     int64  `json:"size"`
+	Type     string `json:"type"`
+	MTime    int64  `json:"mtime"`
 }
 
 func getBooksHandler(c *gin.Context) *serverutil.Response {

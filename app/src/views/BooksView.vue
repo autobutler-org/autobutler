@@ -16,7 +16,7 @@
       <p>Add PDF or EPUB files to your files directory to see them here.</p>
     </div>
     <div v-else class="books-grid">
-      <div v-for="book in books" :key="book.relPath" class="book-card">
+      <router-link v-for="book in books" :key="book.relPath" :to="`/books/reader?path=${encodeURIComponent(book.relPath)}`" class="book-card-link">
         <div class="book-card-cover">
           <div class="book-card-icon">
             <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/></svg>
@@ -27,7 +27,7 @@
           <h3 class="book-card-title" :title="book.fileName">{{ book.title }}</h3>
           <p class="book-card-size">{{ formatBookSize(book.size) }}</p>
         </div>
-      </div>
+      </router-link>
     </div>
   </div>
 </template>
@@ -182,6 +182,10 @@ onMounted(async () => {
 .book-card-size {
   font-size: var(--font-size-xs);
   color: var(--color-gray-500);
+}
+.book-card-link {
+  text-decoration: none;
+  color: inherit;
 }
 .mock-badge {
   margin-left: 1rem;
