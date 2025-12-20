@@ -3,7 +3,6 @@
     <img class="photo-grid-image" :src="thumbnailPath" :alt="photo.fileName || ''" loading="lazy" />
   </div>
 </template>
-defineEmits(['click'])
 
 <script setup lang="ts">
 import { computed } from 'vue'
