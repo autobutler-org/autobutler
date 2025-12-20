@@ -23,12 +23,6 @@ import PhotoGrid from '@/components/photos/PhotoGrid.vue'
 import { fetchPhotos, type PhotoApiResponse } from '@/services/photosService'
 import LibraryLayout from '@/components/common/LibraryLayout.vue'
 
-const navLinks: NavLink[] = [
-  { name: 'Cirrus', href: '/cirrus' },
-  { name: 'Photos', href: '/photos' },
-  { name: 'Books', href: '/books' },
-]
-
 const photos = ref<Photo[]>([])
 const totalPhotos = ref(0)
 const summary = ref({})

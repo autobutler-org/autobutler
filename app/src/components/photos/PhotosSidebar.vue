@@ -73,7 +73,8 @@ defineProps<{ photoCount: number, summary?: any }>()
 
 <style lang="scss" scoped>
 .photos-sidebar {
-  width: 250px;
+  width: 100%;
+  height: 100%;
   background: var(--color-gray-900);
   color: white;
   padding: var(--spacing-xl);

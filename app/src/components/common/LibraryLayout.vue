@@ -1,13 +1,13 @@
 <template>
   <div class="landing-body">
     <TopNav :navLinks="navLinks" />
-    <div class="photos-library">
-      <div class="photos-container">
-        <aside class="photos-sidebar">
+    <div class="library-layout">
+      <div class="library-container">
+        <aside class="library-sidebar">
           <slot name="sidebar" />
         </aside>
-        <div class="photos-separator" aria-hidden="true"></div>
-        <main class="photos-main">
+        <div class="library-separator" aria-hidden="true"></div>
+        <main class="library-main">
           <slot name="main" />
         </main>
       </div>
@@ -27,20 +27,21 @@ const navLinks: NavLink[] = [
 </script>
 
 <style scoped>
-.photos-library {
+/* Generic library layout classes */
+.library-layout {
   display: flex;
   flex-direction: column;
   height: 100%;
   width: 100vw;
 }
-.photos-container {
+.library-container {
   display: flex;
   height: 100vh;
   max-height: 100vh;
   max-width: 100vw;
   overflow: hidden;
 }
-.photos-sidebar {
+.library-sidebar {
   width: 280px;
   min-width: 220px;
   max-width: 320px;
@@ -49,7 +50,7 @@ const navLinks: NavLink[] = [
   display: flex;
   flex-direction: column;
 }
-.photos-separator {
+.library-separator {
   width: 1px;
   height: 100vh;
   background: var(--color-gray-900);
@@ -58,7 +59,7 @@ const navLinks: NavLink[] = [
   align-self: stretch;
   transition: background 0.2s;
 }
-.photos-main {
+.library-main {
   flex: 1;
   min-width: 0;
   overflow: hidden;
