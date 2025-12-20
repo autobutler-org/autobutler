@@ -1,0 +1,179 @@
+<template>
+  <TopNav :navLinks="navLinks" />
+  <div class="books-library">
+    <div class="books-library-header">
+      <h1 class="books-library-title">
+        Library
+        <span class="mock-badge">mock</span>
+      </h1>
+      <p class="books-library-count">{{ formatBookCount(totalBooks) }}</p>
+    </div>
+    <div v-if="books.length === 0" class="books-empty">
+      <div class="book-card-icon">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/></svg>
+      </div>
+      <h2>No books found</h2>
+      <p>Add PDF or EPUB files to your files directory to see them here.</p>
+    </div>
+    <div v-else class="books-grid">
+      <div v-for="book in books" :key="book.relPath" class="book-card">
+        <div class="book-card-cover">
+          <div class="book-card-icon">
+            <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/></svg>
+          </div>
+          <span class="book-card-badge">{{ book.type }}</span>
+        </div>
+        <div class="book-card-info">
+          <h3 class="book-card-title" :title="book.fileName">{{ book.title }}</h3>
+          <p class="book-card-size">{{ formatBookSize(book.size) }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import TopNav from '@/components/home/TopNav.vue'
+import type { NavLink } from '@/types/home'
+import { ref, onMounted } from 'vue'
+
+const navLinks: NavLink[] = [
+  { name: 'Cirrus', href: '/cirrus' },
+  { name: 'Photos', href: '/photos' },
+  { name: 'Books', href: '/books' },
+  { name: 'Health', href: '/health' },
+]
+
+interface Book {
+  relPath: string
+  fileName: string
+  title: string
+  size: number
+  type: string
+}
+
+const books = ref<Book[]>([])
+const totalBooks = ref(0)
+
+function formatBookCount(count: number) {
+  if (count === 1) return '1 book'
+  return `${count.toLocaleString()} books`
+}
+
+function formatBookSize(size: number) {
+  if (size < 1024) return `${size} B`
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
+  if (size < 1024 * 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
+  return `${(size / 1024 / 1024 / 1024).toFixed(1)} GB`
+}
+
+// TODO: Replace with real API call
+onMounted(() => {
+  // Stub/mock data
+  books.value = [
+    { relPath: 'book1.pdf', fileName: 'book1.pdf', title: 'Book One', size: 1048576, type: 'PDF' },
+    { relPath: 'book2.epub', fileName: 'book2.epub', title: 'Book Two', size: 2097152, type: 'EPUB' },
+  ]
+  totalBooks.value = books.value.length
+})
+</script>
+
+<style scoped>
+.books-library {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--color-gray-50);
+}
+.books-library-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-2xl) var(--spacing-2xl) var(--spacing-lg) var(--spacing-2xl);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+.books-library-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--color-gray-900);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+.books-library-count {
+  font-size: var(--font-size-lg);
+  color: var(--color-gray-500);
+}
+.books-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: var(--spacing-2xl);
+  color: var(--color-gray-500);
+}
+.books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--spacing-xl);
+  padding: var(--spacing-2xl);
+}
+.book-card {
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.book-card:hover {
+  box-shadow: var(--shadow-md);
+}
+.book-card-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  background: var(--color-gray-100);
+  position: relative;
+}
+.book-card-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--color-primary-600);
+  color: white;
+  font-size: var(--font-size-xs);
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+.book-card-info {
+  padding: var(--spacing-md);
+}
+.book-card-title {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-gray-900);
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.book-card-size {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+}
+.mock-badge {
+  margin-left: 1rem;
+  background: var(--color-gray-300);
+  color: var(--color-gray-700);
+  font-size: var(--font-size-xs);
+  padding: 2px 8px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+</style>

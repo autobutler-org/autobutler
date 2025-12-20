@@ -11,9 +11,3 @@ export async function fetchPhotos(): Promise<PhotoApiResponse[]> {
   if (!res.ok) throw new Error('Failed to fetch photos')
   return res.json()
 }
-
-export async function fetchPhotoSummary(): Promise<any> {
-  const res = await fetch('/api/v1/json/photos/summary')
-  if (!res.ok) throw new Error('Failed to fetch summary')
-  return res.json()
-}
