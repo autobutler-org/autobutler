@@ -154,6 +154,23 @@
   color: var(--color-gray-500);
 }
 
+.file-explorer-loading {
+  padding: var(--spacing-md) 0;
+  color: var(--color-gray-500);
+  font-style: italic;
+}
+
+.file-explorer-error {
+  padding: var(--spacing-md) 0;
+  color: #dc2626;
+}
+
+@media (prefers-color-scheme: dark) {
+  .file-explorer-error {
+    color: #f87171;
+  }
+}
+
 .file-explorer-controls {
   display: flex;
   justify-content: space-between;

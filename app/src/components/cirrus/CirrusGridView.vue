@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { DeviceFileInfo } from '@/types/cirrus'
-import { determineFileType, formatBytes } from '@/services/cirrusService'
+import type { CirrusFileNode } from '@/types/cirrus'
+import { determineFileType, getFileName, isDirectory } from '@/services/cirrusService'
 import FolderIcon from '@/components/icons/FolderIcon.vue'
 import PdfIcon from '@/components/icons/PdfIcon.vue'
 import ImageIcon from '@/components/icons/ImageIcon.vue'
@@ -10,17 +10,17 @@ import GenericIcon from '@/components/icons/GenericIcon.vue'
 import DocxIcon from '@/components/icons/DocxIcon.vue'
 
 const props = defineProps<{
-  files: DeviceFileInfo[]
+  files: CirrusFileNode[]
   currentPath: string
 }>()
 
 const emit = defineEmits<{
   'navigate-folder': [path: string]
-  'open-file': [file: DeviceFileInfo]
+  'open-file': [file: CirrusFileNode]
 }>()
 
-function getFileType(file: DeviceFileInfo) {
-  return determineFileType(file.name, file.isDir)
+function getFileType(file: CirrusFileNode) {
+  return determineFileType(file)
 }
 
 function getIconComponent(fileType: string) {
@@ -42,9 +42,10 @@ function getIconComponent(fileType: string) {
   }
 }
 
-function handleClick(file: DeviceFileInfo) {
-  if (file.isDir) {
-    const newPath = props.currentPath ? `${props.currentPath}/${file.name}` : file.name
+function handleClick(file: CirrusFileNode) {
+  const fileName = getFileName(file)
+  if (isDirectory(file)) {
+    const newPath = props.currentPath ? `${props.currentPath}/${fileName}` : fileName
     emit('navigate-folder', newPath)
   } else {
     emit('open-file', file)
@@ -57,24 +58,24 @@ function handleClick(file: DeviceFileInfo) {
     <div class="grid-view-grid">
       <div
         v-for="file in files"
-        :key="file.name"
-        :class="['grid-view-item', 'file-node', { 'grid-view-item--folder': file.isDir }]"
-        :data-name="file.name"
-        :data-is-folder="file.isDir"
+        :key="file.fullPath"
+        :class="['grid-view-item', 'file-node', { 'grid-view-item--folder': isDirectory(file) }]"
+        :data-name="getFileName(file)"
+        :data-is-folder="isDirectory(file)"
         :data-file-type="getFileType(file)"
         :data-device-name="file.deviceName"
         @dblclick="handleClick(file)"
       >
         <div class="grid-view-link">
-          <div v-if="file.isDir" class="grid-view-icon-container">
+          <div v-if="isDirectory(file)" class="grid-view-icon-container">
             <FolderIcon />
           </div>
           <div v-else class="grid-view-icon-container">
             <component :is="getIconComponent(getFileType(file))" />
           </div>
           <div class="grid-view-details">
-            <div class="grid-view-name" :title="file.name">{{ file.name }}</div>
-            <div v-if="!file.isDir" class="grid-view-size">{{ formatBytes(file.size) }}</div>
+            <div class="grid-view-name" :title="getFileName(file)">{{ getFileName(file) }}</div>
+            <div v-if="!isDirectory(file)" class="grid-view-size">{{ getFileType(file) }}</div>
           </div>
         </div>
       </div>

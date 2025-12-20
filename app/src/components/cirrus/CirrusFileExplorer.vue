@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { DeviceFileInfo } from '@/types/cirrus'
+import type { CirrusFileNode } from '@/types/cirrus'
 import { getFiles, getAvailableSpace, bytesToGB } from '@/services/cirrusService'
 import CirrusBreadcrumb from './CirrusBreadcrumb.vue'
 import CirrusListView from './CirrusListView.vue'
@@ -12,13 +12,29 @@ const router = useRouter()
 
 // State
 const currentPath = ref('')
+const files = ref<CirrusFileNode[]>([])
+const loading = ref(false)
+const error = ref<string | null>(null)
 const view = ref<'list' | 'grid'>('list')
 const showDeviceBadges = ref(false)
 
 // Computed
-const files = computed(() => getFiles(currentPath.value))
 const availableSpace = computed(() => getAvailableSpace())
 const availableSpaceFormatted = computed(() => `${bytesToGB(availableSpace.value).toFixed(2)}GB`)
+
+// Fetch files for the current path
+async function fetchFiles() {
+  loading.value = true
+  error.value = null
+  try {
+    files.value = await getFiles(currentPath.value)
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to load files'
+    files.value = []
+  } finally {
+    loading.value = false
+  }
+}
 
 // Watch route changes to update current path
 watch(
@@ -33,6 +49,16 @@ watch(
   { immediate: true },
 )
 
+// Watch current path changes to fetch files
+watch(currentPath, () => {
+  fetchFiles()
+})
+
+// Fetch files on mount
+onMounted(() => {
+  fetchFiles()
+})
+
 // Methods
 function navigateToPath(path: string) {
   currentPath.value = path
@@ -43,7 +69,7 @@ function handleNavigateFolder(path: string) {
   navigateToPath(path)
 }
 
-function handleOpenFile(file: DeviceFileInfo) {
+function handleOpenFile(file: CirrusFileNode) {
   // TODO: Implement file viewer
   console.log('Opening file:', file)
 }
@@ -136,7 +162,13 @@ function toggleDeviceBadges(show: boolean) {
       <div id="file-explorer-status"></div>
 
       <div id="file-explorer-view-content">
-        <template v-if="files.length === 0">
+        <template v-if="loading">
+          <span class="file-explorer-loading">Loading files...</span>
+        </template>
+        <template v-else-if="error">
+          <span class="file-explorer-error">{{ error }}</span>
+        </template>
+        <template v-else-if="files.length === 0">
           <span class="file-explorer-empty">No files found</span>
         </template>
         <template v-else-if="view === 'grid'">

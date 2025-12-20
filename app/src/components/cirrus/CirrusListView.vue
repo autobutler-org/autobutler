@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { DeviceFileInfo } from '@/types/cirrus'
-import { determineFileType, formatBytes } from '@/services/cirrusService'
+import type { CirrusFileNode } from '@/types/cirrus'
+import { determineFileType, getFileName, isDirectory } from '@/services/cirrusService'
 import FolderIcon from '@/components/icons/FolderIcon.vue'
 import PdfIcon from '@/components/icons/PdfIcon.vue'
 import ImageIcon from '@/components/icons/ImageIcon.vue'
@@ -11,17 +11,17 @@ import DocxIcon from '@/components/icons/DocxIcon.vue'
 import { type Component } from 'vue'
 
 const props = defineProps<{
-  files: DeviceFileInfo[]
+  files: CirrusFileNode[]
   currentPath: string
 }>()
 
 const emit = defineEmits<{
   'navigate-folder': [path: string]
-  'open-file': [file: DeviceFileInfo]
+  'open-file': [file: CirrusFileNode]
 }>()
 
-function getFileType(file: DeviceFileInfo) {
-  return determineFileType(file.name, file.isDir)
+function getFileType(file: CirrusFileNode) {
+  return determineFileType(file)
 }
 
 function getIconComponent(fileType: string): Component {
@@ -43,10 +43,11 @@ function getIconComponent(fileType: string): Component {
   }
 }
 
-function handleClick(file: DeviceFileInfo) {
-  if (file.isDir) {
+function handleClick(file: CirrusFileNode) {
+  const fileName = getFileName(file)
+  if (isDirectory(file)) {
     // Navigate to folder
-    const newPath = props.currentPath ? `${props.currentPath}/${file.name}` : file.name
+    const newPath = props.currentPath ? `${props.currentPath}/${fileName}` : fileName
     emit('navigate-folder', newPath)
   } else {
     emit('open-file', file)
@@ -60,37 +61,37 @@ function handleClick(file: DeviceFileInfo) {
       <thead class="file-table-header">
         <tr>
           <th class="file-table-header-cell file-table-header-cell--left">Name</th>
-          <th class="file-table-header-cell file-table-header-cell--right">Size</th>
+          <th class="file-table-header-cell file-table-header-cell--right">Type</th>
           <th class="file-table-header-cell file-table-header-cell--toggle"></th>
         </tr>
       </thead>
       <tbody id="file-explorer-list" class="file-table-body">
         <tr
           v-for="file in files"
-          :key="file.name"
+          :key="file.fullPath"
           class="file-table-row file-node"
-          :data-name="file.name"
+          :data-name="getFileName(file)"
           :data-file-type="getFileType(file)"
           :data-device-name="file.deviceName"
           @dblclick="handleClick(file)"
         >
-          <template v-if="file.isDir">
+          <template v-if="isDirectory(file)">
             <td class="file-table-cell file-table-cell--content">
               <FolderIcon />
-              <span class="file-table-name">{{ file.name }}</span>
+              <span class="file-table-name">{{ getFileName(file) }}</span>
             </td>
             <td class="file-table-cell file-table-size">
-              {{ formatBytes(file.size) }}
+              Folder
             </td>
             <td class="file-table-cell"></td>
           </template>
           <template v-else>
             <td class="file-table-cell file-table-cell--clickable">
               <component :is="getIconComponent(getFileType(file))" />
-              <span class="file-table-name">{{ file.name }}</span>
+              <span class="file-table-name">{{ getFileName(file) }}</span>
             </td>
             <td class="file-table-cell file-table-size">
-              {{ formatBytes(file.size) }}
+              {{ getFileType(file) }}
             </td>
             <td class="file-table-cell"></td>
           </template>

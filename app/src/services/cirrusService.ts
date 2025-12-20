@@ -1,5 +1,5 @@
-// Stubbed Cirrus service - returns static data instead of fetch calls
-import type { DeviceFileInfo } from '@/types/cirrus'
+// Cirrus service - makes API calls to the backend
+import type { CirrusFileNode, FileType } from '@/types/cirrus'
 
 // Helper to format bytes to human readable string
 export function formatBytes(bytes: number): string {
@@ -20,190 +20,33 @@ export function bytesToGB(bytes: number): number {
   return bytes / (1024 * 1024 * 1024)
 }
 
-// Stub data for files in root directory
-const stubRootFiles: DeviceFileInfo[] = [
-  {
-    name: 'Documents',
-    size: 1024 * 1024 * 500, // 500 MB
-    isDir: true,
-    modTime: '2025-01-15T10:30:00Z',
-    deviceName: 'Main Storage',
-    devicePath: '/',
-    fullPath: '/Documents',
-  },
-  {
-    name: 'Photos',
-    size: 1024 * 1024 * 1024 * 2, // 2 GB
-    isDir: true,
-    modTime: '2025-01-10T14:22:00Z',
-    deviceName: 'Main Storage',
-    devicePath: '/',
-    fullPath: '/Photos',
-  },
-  {
-    name: 'Videos',
-    size: 1024 * 1024 * 1024 * 5, // 5 GB
-    isDir: true,
-    modTime: '2025-01-05T09:15:00Z',
-    deviceName: 'Main Storage',
-    devicePath: '/',
-    fullPath: '/Videos',
-  },
-  {
-    name: 'report.pdf',
-    size: 1024 * 1024 * 2.5, // 2.5 MB
-    isDir: false,
-    modTime: '2025-01-20T16:45:00Z',
-    deviceName: 'Main Storage',
-    devicePath: '/',
-    fullPath: '/report.pdf',
-  },
-  {
-    name: 'presentation.pptx',
-    size: 1024 * 1024 * 15, // 15 MB
-    isDir: false,
-    modTime: '2025-01-18T11:30:00Z',
-    deviceName: 'Main Storage',
-    devicePath: '/',
-    fullPath: '/presentation.pptx',
-  },
-  {
-    name: 'vacation.jpg',
-    size: 1024 * 1024 * 4, // 4 MB
-    isDir: false,
-    modTime: '2025-01-12T08:00:00Z',
-    deviceName: 'Main Storage',
-    devicePath: '/',
-    fullPath: '/vacation.jpg',
-  },
-  {
-    name: 'archive.zip',
-    size: 1024 * 1024 * 50, // 50 MB
-    isDir: false,
-    modTime: '2025-01-08T13:20:00Z',
-    deviceName: 'Main Storage',
-    devicePath: '/',
-    fullPath: '/archive.zip',
-  },
-  {
-    name: 'notes.docx',
-    size: 1024 * 256, // 256 KB
-    isDir: false,
-    modTime: '2025-01-19T17:00:00Z',
-    deviceName: 'Main Storage',
-    devicePath: '/',
-    fullPath: '/notes.docx',
-  },
-]
-
-// Stub data for files in Documents subdirectory
-const stubDocumentsFiles: DeviceFileInfo[] = [
-  {
-    name: 'Work',
-    size: 1024 * 1024 * 200, // 200 MB
-    isDir: true,
-    modTime: '2025-01-14T09:00:00Z',
-    deviceName: 'Main Storage',
-    devicePath: '/',
-    fullPath: '/Documents/Work',
-  },
-  {
-    name: 'Personal',
-    size: 1024 * 1024 * 100, // 100 MB
-    isDir: true,
-    modTime: '2025-01-13T11:30:00Z',
-    deviceName: 'Main Storage',
-    devicePath: '/',
-    fullPath: '/Documents/Personal',
-  },
-  {
-    name: 'contract.pdf',
-    size: 1024 * 512, // 512 KB
-    isDir: false,
-    modTime: '2025-01-16T10:15:00Z',
-    deviceName: 'Main Storage',
-    devicePath: '/',
-    fullPath: '/Documents/contract.pdf',
-  },
-  {
-    name: 'resume.docx',
-    size: 1024 * 128, // 128 KB
-    isDir: false,
-    modTime: '2025-01-17T14:45:00Z',
-    deviceName: 'Main Storage',
-    devicePath: '/',
-    fullPath: '/Documents/resume.docx',
-  },
-]
-
-// Stub data for files in Photos subdirectory
-const stubPhotosFiles: DeviceFileInfo[] = [
-  {
-    name: 'Summer 2024',
-    size: 1024 * 1024 * 800, // 800 MB
-    isDir: true,
-    modTime: '2024-08-20T16:00:00Z',
-    deviceName: 'Main Storage',
-    devicePath: '/',
-    fullPath: '/Photos/Summer 2024',
-  },
-  {
-    name: 'beach.jpg',
-    size: 1024 * 1024 * 5, // 5 MB
-    isDir: false,
-    modTime: '2024-07-15T12:30:00Z',
-    deviceName: 'Main Storage',
-    devicePath: '/',
-    fullPath: '/Photos/beach.jpg',
-  },
-  {
-    name: 'sunset.png',
-    size: 1024 * 1024 * 8, // 8 MB
-    isDir: false,
-    modTime: '2024-07-16T19:45:00Z',
-    deviceName: 'Main Storage',
-    devicePath: '/',
-    fullPath: '/Photos/sunset.png',
-  },
-]
-
-// Map of path to stub files
-const stubFilesMap: Record<string, DeviceFileInfo[]> = {
-  '': stubRootFiles,
-  '/': stubRootFiles,
-  Documents: stubDocumentsFiles,
-  '/Documents': stubDocumentsFiles,
-  Photos: stubPhotosFiles,
-  '/Photos': stubPhotosFiles,
+/**
+ * Extract filename from a full path
+ */
+export function getFileName(node: CirrusFileNode): string {
+  const parts = node.fullPath.split('/')
+  return parts[parts.length - 1] || ''
 }
 
 /**
- * Get files for a given path (stubbed implementation)
- * In the real implementation, this would make a fetch call to the backend API
+ * Determine if a node represents a directory based on file extension
+ * Since we can't get this from the API directly, we infer from the filename
+ * Files without extensions or with folder-like paths are treated as potential folders
  */
-export function getFiles(path: string): DeviceFileInfo[] {
-  // Normalize path - remove leading/trailing slashes for lookup
-  const normalizedPath = path.replace(/^\/+|\/+$/g, '')
-  return stubFilesMap[normalizedPath] || stubFilesMap[path] || []
+export function isDirectory(node: CirrusFileNode): boolean {
+  const fileName = getFileName(node)
+  // If the filename has no extension, it's likely a folder
+  // This is a heuristic - the real implementation should get this from the backend
+  return !fileName.includes('.') || fileName.startsWith('.')
 }
 
 /**
- * Get available space in bytes (stubbed implementation)
- * In the real implementation, this would come from the backend
+ * Determine file type from a CirrusFileNode
  */
-export function getAvailableSpace(): number {
-  // Return 100 GB as stub value
-  return 100 * 1024 * 1024 * 1024
-}
+export function determineFileType(node: CirrusFileNode): FileType {
+  const fileName = getFileName(node)
 
-/**
- * Determine file type from filename
- */
-export function determineFileType(
-  fileName: string,
-  isDir: boolean,
-): 'folder' | 'pdf' | 'slideshow' | 'image' | 'video' | 'epub' | 'docx' | 'archive' | 'generic' {
-  if (isDir) {
+  if (isDirectory(node)) {
     return 'folder'
   }
 
@@ -249,3 +92,40 @@ export function determineFileType(
       return 'generic'
   }
 }
+
+/**
+ * Fetch files for a given path from the backend API
+ */
+export async function getFiles(path: string): Promise<CirrusFileNode[]> {
+  // Normalize path - remove leading/trailing slashes
+  const normalizedPath = path.replace(/^\/+|\/+$/g, '')
+
+  // Build the API URL
+  const apiUrl = normalizedPath
+    ? `/api/v1/json/cirrus/${normalizedPath}`
+    : '/api/v1/json/cirrus'
+
+  try {
+    const response = await fetch(apiUrl)
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch files: ${response.statusText}`)
+    }
+
+    const data: CirrusFileNode[] = await response.json()
+    return data
+  } catch (error) {
+    console.error('Error fetching cirrus files:', error)
+    throw error
+  }
+}
+
+/**
+ * Get available space in bytes
+ * TODO: This should come from a backend API endpoint
+ */
+export function getAvailableSpace(): number {
+  // Return 100 GB as stub value until we have an API endpoint for this
+  return 100 * 1024 * 1024 * 1024
+}
+
