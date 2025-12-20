@@ -1,6 +1,6 @@
 <template>
   <div class="photo-grid">
-    <PhotoGridItem v-for="photo in photos" :key="photo.relPath || photo.id" :photo="photo" />
+    <PhotoGridItem v-for="photo in photos" :key="photo.relPath || photo.id" :photo="photo" @click="() => $emit('photoClick', photo)" />
     <!-- TODO: Infinite scroll loader -->
   </div>
 </template>
@@ -14,6 +14,8 @@ defineProps<{
   page: number
   totalPhotos: number
 }>()
+
+defineEmits(['photoClick'])
 </script>
 
 <style lang="scss" scoped>

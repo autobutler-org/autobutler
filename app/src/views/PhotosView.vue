@@ -10,7 +10,7 @@
           <div class="photos-count">{{ formatPhotoCount(totalPhotos) }}</div>
         </div>
         <div class="photos-grid-container">
-          <PhotoGrid :photos="photos" :page="1" :total-photos="totalPhotos" />
+          <PhotoGrid :photos="photos" :page="1" :total-photos="totalPhotos" @photoClick="onPhotoClick" />
         </div>
       </div>
     </div>
@@ -34,6 +34,13 @@ const navLinks: NavLink[] = [
 const photos = ref([])
 const totalPhotos = ref(0)
 const summary = ref({})
+import { useRouter } from 'vue-router'
+const router = useRouter()
+function onPhotoClick(photo) {
+  if (photo.relPath) {
+    router.push({ name: 'photo-viewer', params: { path: encodeURIComponent(photo.relPath) } })
+  }
+}
 
 function formatPhotoCount(count: number) {
   if (count === 1) return '1 photo'

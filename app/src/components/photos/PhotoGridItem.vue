@@ -1,5 +1,5 @@
 <template>
-  <div class="photo-grid-item">
+  <div class="photo-grid-item" @click="$emit('click')">
     <img
       class="photo-grid-image"
       :src="thumbnailPath"
@@ -8,6 +8,7 @@
     />
   </div>
 </template>
+defineEmits(['click'])
 
 <script setup lang="ts">
 
