@@ -1,22 +1,19 @@
 <template>
-  <div class="landing-body">
-    <TopNav :navLinks="navLinks" />
-    <div class="photos-library">
-      <div class="photos-container">
-        <PhotosSidebar :photo-count="totalPhotos" :summary="summary" />
-        <div id="mobile-photos-arrival-location"></div>
-        <div class="photos-main">
-          <div class="photos-header">
-            <h2 class="photos-title" @click="scrollToArrival">All Photos</h2>
-            <div class="photos-count">{{ formatPhotoCount(totalPhotos) }}</div>
-          </div>
-          <div class="photos-grid-container">
-            <PhotoGrid :photos="photos" :page="1" :total-photos="totalPhotos" @photoClick="onPhotoClick" />
-          </div>
-        </div>
+  <LibraryLayout>
+    <template #sidebar>
+      <PhotosSidebar :photo-count="totalPhotos" :summary="summary" />
+      <div id="mobile-photos-arrival-location"></div>
+    </template>
+    <template #main>
+      <div class="photos-header">
+        <h2 class="photos-title" @click="scrollToArrival">All Photos</h2>
+        <div class="photos-count">{{ formatPhotoCount(totalPhotos) }}</div>
       </div>
-    </div>
-  </div>
+      <div class="photos-grid-container">
+        <PhotoGrid :photos="photos" :page="1" :total-photos="totalPhotos" @photoClick="onPhotoClick" />
+      </div>
+    </template>
+  </LibraryLayout>
 </template>
 
 <script setup lang="ts">
@@ -24,8 +21,7 @@ import { ref, onMounted } from 'vue'
 import PhotosSidebar from '@/components/photos/PhotosSidebar.vue'
 import PhotoGrid from '@/components/photos/PhotoGrid.vue'
 import { fetchPhotos, type PhotoApiResponse } from '@/services/photosService'
-import TopNav from '@/components/home/TopNav.vue'
-import type { NavLink } from '@/types/home'
+import LibraryLayout from '@/components/common/LibraryLayout.vue'
 
 const navLinks: NavLink[] = [
   { name: 'Cirrus', href: '/cirrus' },
@@ -81,28 +77,7 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
-.photos-library {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100vw;
-}
-.photos-container {
-  display: flex;
-  height: 100vh;
-  max-height: 100vh;
-  max-width: 100vw;
-  overflow: hidden;
-}
-.photos-main {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  margin: var(--spacing-xl) 0;
-  background: transparent;
-}
+/* Layout now handled by LibraryLayout.vue */
 .photos-header {
   display: flex;
   align-items: center;
