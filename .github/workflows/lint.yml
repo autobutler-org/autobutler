@@ -23,7 +23,9 @@ jobs:
           node-version-file: .nvmrc
           cache: 'npm'
       - name: Install Node dependencies
-        run: npm ci
+        run: |
+          npm ci
+          npm ci --prefix ./app
       - name: Setup sqlc
         uses: ./.github/actions/setup-sqlc
       - name: Setup Templ

@@ -30,7 +30,7 @@ jobs:
         uses: ./.github/actions/setup-templ
       - name: Install dependencies
         run: |
-          npm install --prefix ./app
+          npm ci --prefix ./app
       - name: Build
         run: |
           make bundle
