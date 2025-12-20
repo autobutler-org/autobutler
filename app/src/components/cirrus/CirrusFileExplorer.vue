@@ -142,23 +142,21 @@ async function handleDelete(file: CirrusFileNode) {
   }
 
   try {
-    const response = await fetch('/api/v1/cirrus', {
+    // Build query params - API expects rootDir and filePaths as query parameters
+    const params = new URLSearchParams()
+    params.append('rootDir', currentPath.value)
+    params.append('filePaths', fileName)
+
+    const response = await fetch(`/api/v1/cirrus?${params.toString()}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        rootDir: currentPath.value,
-        filePaths: [fileName],
-      }),
     })
 
     if (!response.ok) {
       throw new Error('Failed to delete file')
     }
 
-    // Refresh the file list
-    await fetchFiles()
+    // Remove the file from the in-memory list
+    files.value = files.value.filter((f) => f.fullPath !== file.fullPath)
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to delete file'
   }
