@@ -77,9 +77,15 @@ generate/templ: ## Generate templ files
 	templ generate
 	$(MAKE) lint/go
 
-build: generate ## Build backend
+build: ## Build backend and frontend
+	$(MAKE) -j2 build/backend build/frontend
+
+build/backend: generate ## Build backend
 	mkdir -p ./build
 	go build -o ./build/autobutler $(MAIN)
+
+build/frontend: ## Build frontend
+	npm run build --prefix ./app
 
 build/all: build/linux build/mac ## Build all backends
 
@@ -156,15 +162,12 @@ lint/css: ## Lint CSS files
 lint/yaml: ## Lint YAML files
 	npm run lint:yaml
 
-fix: fix/go fix/js fix/ts fix/css ## Fix code issues
+fix: fix/go fix/ts fix/css ## Fix code issues
 
 fix/go: ## Fix Go code issues
 	go mod tidy
 	go fmt ./...
 	templ fmt .
-
-fix/js: ## Fix JavaScript code issues
-	npm run format:js
 
 fix/ts: ## Fix TypeScript code issues
 	npm run format:ts
@@ -172,28 +175,41 @@ fix/ts: ## Fix TypeScript code issues
 fix/css: ## Fix CSS code issues
 	npm run format:css
 
-upgrade: upgrade/go upgrade/js ## Upgrade dependencies
+upgrade: upgrade/go upgrade/ts ## Upgrade dependencies
 
 upgrade/go: generate ## Upgrade dependencies (go)
 	go get -u ./...
 	$(MAKE) tidy
 
-upgrade/js: ## Upgrade dependencies (js)
+upgrade/ts: ## Upgrade dependencies (ts)
 	npm run check-updates
 	npm install
+	npm run check-updates --prefix ./app
+	npm install --prefix ./app
 
 tidy: ## Tidy go mod
 	go mod tidy
 
-serve: generate ## Serve backend
+serve:
+	$(MAKE) -j2 serve/backend serve/frontend
+
+watch:
+	$(MAKE) -j2 watch/backend watch/frontend
+
+serve/backend: generate ## Serve backend
 	go run $(MAIN) serve
 
-watch: ## Watch backend for changes
+watch/backend: ## Watch backend for changes
 	templ generate \
 		-watch \
-		-watch-pattern='(.+\.go$$)|(.+\.templ$$)|(.+_templ\.txt$$)|(.+\.js$$)|(.+\.css$$)' \
+		-watch-pattern='(.+\.go$$)|(.+\.templ$$)|(.+_templ\.txt$$)' \
 		-proxy="http://localhost:8080" \
 		-cmd="go run $(MAIN) serve"
+
+serve/frontend: ## Serve frontend
+	npm run dev --prefix ./app
+
+watch/frontend: serve/frontend ## Watch frontend
 
 version: ## Print version
 	go run $(MAIN) version

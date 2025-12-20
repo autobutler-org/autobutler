@@ -11,7 +11,6 @@
     "lint:ts": "eslint tests/e2e/**/*.ts && prettier --check tests/e2e/**/*.ts",
     "lint:css": "prettier --check internal/server/public/styles/**/*.css",
     "lint:yaml": "yamllint '**/*.{yaml,yml}'",
-    "format:js": "eslint --fix internal/server/public/scripts/**/*.js && prettier --write internal/server/public/scripts/**/*.js",
     "format:ts": "eslint --fix tests/e2e/**/*.ts && prettier --write tests/e2e/**/*.ts",
     "format:css": "prettier --write internal/server/public/styles/**/*.css",
     "check-updates": "ncu -u"
