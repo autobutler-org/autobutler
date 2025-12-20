@@ -3,11 +3,14 @@
     <template #sidebar>
       <BooksSidebar />
     </template>
+    <template #header-title>
+        <span class="mock-badge">mock</span>
+        <h2 class="library-title">Library</h2>
+    </template>
+    <template #header-subtitle>
+      <div class="library-subtitle">{{ formatBookCount(totalBooks) }}</div>
+    </template>
     <template #main>
-      <div class="books-header-simple">
-        <h1 class="books-library-title">Library <span class="mock-badge">mock</span></h1>
-        <p class="books-library-count">{{ formatBookCount(totalBooks) }}</p>
-      </div>
       <div v-if="books.length === 0" class="books-empty">
         <div class="book-card-icon">
           <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -99,6 +102,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* Cirrus-style header and grid */
 .books-header-simple {
   display: flex;
   flex-direction: column;
@@ -109,13 +113,12 @@ onMounted(async () => {
 .books-library-title {
   font-size: var(--font-size-2xl);
   font-weight: 700;
-  color: var(--color-gray-900);
   margin: 0;
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
+  color: var(--color-gray-900);
 }
-
 @media (prefers-color-scheme: dark) {
   .books-library-title {
     color: white;
@@ -143,9 +146,7 @@ onMounted(async () => {
   margin: 0 auto;
   padding-bottom: var(--spacing-2xl);
 }
-/* Book card styling similar to photo grid */
 .book-card {
-  background: var(--color-gray-900);
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-sm);
   display: flex;
@@ -153,6 +154,12 @@ onMounted(async () => {
   overflow: hidden;
   transition: box-shadow 0.2s;
   border: 1px solid var(--color-gray-800);
+  background: var(--color-gray-50);
+}
+@media (prefers-color-scheme: dark) {
+  .book-card {
+    background: var(--color-gray-900);
+  }
 }
 .book-card:hover {
   box-shadow: var(--shadow-md);
@@ -163,8 +170,13 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   height: 120px;
-  background: var(--color-gray-800);
+  background: var(--color-gray-100);
   position: relative;
+}
+@media (prefers-color-scheme: dark) {
+  .book-card-cover {
+    background: var(--color-gray-800);
+  }
 }
 .book-card-badge {
   position: absolute;
@@ -182,15 +194,20 @@ onMounted(async () => {
 .book-card-title {
   font-size: var(--font-size-base);
   font-weight: 600;
-  color: white;
   margin: 0 0 4px 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--color-gray-900);
+}
+@media (prefers-color-scheme: dark) {
+  .book-card-title {
+    color: white;
+  }
 }
 .book-card-size {
   font-size: var(--font-size-xs);
-  color: var(--color-gray-300);
+  color: var(--color-gray-500);
 }
 .book-card-link {
   text-decoration: none;

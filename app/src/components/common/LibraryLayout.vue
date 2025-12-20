@@ -1,5 +1,5 @@
 <template>
-  <div class="landing-body">
+  <div class="site-main-bg">
     <TopNav :navLinks="navLinks" />
     <div class="library-layout">
       <div class="library-container">
@@ -8,6 +8,10 @@
         </aside>
         <div class="library-separator" aria-hidden="true"></div>
         <main class="library-main">
+          <div class="library-header">
+            <slot name="header-title" />
+            <slot name="header-subtitle" />
+          </div>
           <slot name="main" />
         </main>
       </div>
@@ -28,6 +32,12 @@ const navLinks: NavLink[] = [
 
 <style scoped>
 /* Generic library layout classes */
+.library-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg) 0;
+}
 .library-layout {
   display: flex;
   flex-direction: column;
@@ -62,7 +72,27 @@ const navLinks: NavLink[] = [
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: transparent;
+  background: var(--color-background-soft);
   padding: 0;
+}
+@media (prefers-color-scheme: dark) {
+  .library-main {
+    background: var(--color-background-mute);
+  }
+}
+.library-title {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-gray-700);
+}
+@media (prefers-color-scheme: dark) {
+  .library-title {
+    color: var(--color-gray-100);
+  }
+}
+.library-subtitle {
+  font-size: var(--font-size-lg);
+  color: var(--color-gray-500);
 }
 </style>

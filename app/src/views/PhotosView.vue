@@ -4,11 +4,13 @@
       <PhotosSidebar :photo-count="totalPhotos" :summary="summary" />
       <div id="mobile-photos-arrival-location"></div>
     </template>
+    <template #header-title>
+        <h2 class="library-title" @click="scrollToArrival">All Photos</h2>
+    </template>
+    <template #header-subtitle>
+      <div class="library-subtitle">{{ formatPhotoCount(totalPhotos) }}</div>
+    </template>
     <template #main>
-      <div class="photos-header">
-        <h2 class="photos-title" @click="scrollToArrival">All Photos</h2>
-        <div class="photos-count">{{ formatPhotoCount(totalPhotos) }}</div>
-      </div>
       <div class="photos-grid-container">
         <PhotoGrid
           :photos="photos"
@@ -76,35 +78,10 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
-/* Layout now handled by LibraryLayout.vue */
-.photos-header {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-lg) 0;
-  border-bottom: 1px solid var(--color-gray-200);
-}
-.photos-title {
-  font-size: var(--font-size-3xl);
-  font-weight: 700;
-  color: var(--color-gray-900);
-  margin: 0;
-}
-
-@media (prefers-color-scheme: dark) {
-  .photos-title {
-    color: white;
-  }
-}
-.photos-count {
-  font-size: var(--font-size-lg);
-  color: var(--color-gray-500);
-}
 .photos-grid-container {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  background: transparent;
   padding: 0;
 }
 </style>

@@ -1,2 +1,15 @@
-/* Autobutler site-wide styles for Vite app build. Imports canonical CSS from backend public directory. */
-@import '../../../internal/server/public/styles/site.css';
+/* Main site background gradient, used everywhere (was .cirrus-view) */
+.site-main-bg {
+	height: 100vh;
+	min-height: 100vh;
+	width: 100vw;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	background: linear-gradient(180deg, hsl(225, 25%, 15%) 0%, hsl(225, 30%, 10%) 100%);
+}
+@media (prefers-color-scheme: light) {
+	.site-main-bg {
+		background: linear-gradient(180deg, hsl(225, 15%, 95%) 0%, hsl(225, 20%, 98%) 100%);
+	}
+}

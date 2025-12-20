@@ -11,22 +11,12 @@ const navLinks: NavLink[] = [
 </script>
 
 <template>
-  <main class="cirrus-view">
+  <main class="site-main-bg">
     <TopNav :navLinks="navLinks" />
     <CirrusFileExplorer />
   </main>
 </template>
 
 <style lang="scss" scoped>
-.cirrus-view {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: linear-gradient(180deg, hsl(225, 25%, 15%) 0%, hsl(225, 30%, 10%) 100%);
 
-  @media (prefers-color-scheme: light) {
-    background: linear-gradient(180deg, hsl(225, 15%, 95%) 0%, hsl(225, 20%, 98%) 100%);
-  }
-}
 </style>
