@@ -2,6 +2,8 @@
   <div class="page-container">
     <main class="landing-main">
       <div class="landing-container">
+        <GradientOverlays />
+        <TopNav :navLinks="navLinks" />
         <div class="devices-page">
           <div class="devices-header">
             <div class="devices-header-content">
@@ -59,9 +61,12 @@
   </div>
 </template>
 
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import DeviceCard from '../components/DeviceCard.vue';
+import TopNav from '@/components/home/TopNav.vue';
+import GradientOverlays from '@/components/home/GradientOverlays.vue';
 
 interface Device {
   name: string;
@@ -89,6 +94,12 @@ interface Summary {
   used_tb: number;
   avail_tb: number;
 }
+
+const navLinks = [
+  { name: 'Cirrus', href: '/cirrus' },
+  { name: 'Photos', href: '/photos' },
+  { name: 'Books', href: '/books' },
+];
 
 const devices = ref<Device[]>([]);
 const summary = ref<Summary>({
