@@ -416,11 +416,12 @@ function closeMobileMenu() {
   right: 0;
   margin-top: var(--spacing-sm);
   min-width: 200px;
+  max-height: 320px;
+  overflow-y: auto;
   background: hsl(225, 25%, 18%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--border-radius-lg);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
   z-index: 1000;
 
   @media (prefers-color-scheme: light) {
