@@ -21,11 +21,10 @@
         <p>Add PDF or EPUB files to your files directory to see them here.</p>
       </div>
       <div v-else class="books-grid-simple">
-        <router-link
+        <div
           v-for="book in books"
           :key="book.relPath"
-          :to="`/books/reader?path=${encodeURIComponent(book.relPath)}`"
-          class="book-card-link"
+          @click.prevent="selectBook(book)"
         >
           <div class="book-card">
             <div class="book-card-cover">
@@ -36,8 +35,13 @@
               <p class="book-card-size">{{ formatBookSize(book.size) }}</p>
             </div>
           </div>
-        </router-link>
+        </div>
       </div>
+      <CirrusFileViewer
+        v-model="fileViewerOpen"
+        :file-path="selectedFilePath"
+        :file-type="selectedFileType"
+      />
     </template>
   </LibraryLayout>
 </template>
@@ -45,8 +49,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { fetchBooks, type BookApiResponse } from '@/services/booksService'
+import CirrusFileViewer from '@/components/cirrus/CirrusFileViewer.vue'
 import LibraryLayout from '@/components/common/LibraryLayout.vue'
 import BooksSidebar from '@/components/books/BooksSidebar.vue'
+import type { FileType } from '@/types/cirrus'
 
 interface Book {
   relPath: string
@@ -58,6 +64,18 @@ interface Book {
 
 const books = ref<Book[]>([])
 const totalBooks = ref(0)
+
+const fileViewerOpen = ref(false)
+const selectedFilePath = ref('')
+const selectedFileType = ref<FileType>('pdf')
+
+const selectBook = (book: Book) => {
+  if (book.relPath) {
+    selectedFilePath.value = book.relPath
+    selectedFileType.value = book.type.toLowerCase() as FileType
+    fileViewerOpen.value = true
+  }
+}
 
 function formatBookCount(count: number) {
   if (count === 1) return '1 book'
@@ -147,6 +165,7 @@ onMounted(async () => {
   padding-bottom: var(--spacing-2xl);
 }
 .book-card {
+  cursor: pointer;
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-sm);
   display: flex;
@@ -208,10 +227,6 @@ onMounted(async () => {
 .book-card-size {
   font-size: var(--font-size-xs);
   color: var(--color-gray-500);
-}
-.book-card-link {
-  text-decoration: none;
-  color: inherit;
 }
 .mock-badge {
   background: var(--color-gray-300);

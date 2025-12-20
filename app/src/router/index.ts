@@ -4,8 +4,6 @@ import HomeView from '@/views/HomeView.vue'
 import BooksView from '@/views/BooksView.vue'
 import SettingsView from '@/views/SettingsView.vue'
 import PhotosView from '@/views/PhotosView.vue'
-import PhotoViewerView from '@/views/PhotoViewerView.vue'
-import BookReaderView from '@/views/BookReaderView.vue'
 import DevicesView from '@/views/DevicesView.vue'
 
 const router = createRouter({
@@ -27,20 +25,9 @@ const router = createRouter({
       component: PhotosView,
     },
     {
-      path: '/photos/viewer/:path',
-      name: 'photo-viewer',
-      component: () => PhotoViewerView,
-      props: (route) => ({ path: decodeURIComponent(route.params.path as string) }),
-    },
-    {
       path: '/books',
       name: 'books',
       component: BooksView,
-    },
-    {
-      path: '/books/reader',
-      name: 'book-reader',
-      component: () => BookReaderView,
     },
     {
       path: '/devices',
