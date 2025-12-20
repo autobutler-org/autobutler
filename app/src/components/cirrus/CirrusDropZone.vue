@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import type { CirrusFileNode } from '@/types/cirrus'
 
 const props = defineProps<{
   currentPath: string
 }>()
 
 const emit = defineEmits<{
-  'files-uploaded': []
+  'files-uploaded': [files: CirrusFileNode[]]
 }>()
 
 const isDragOver = ref(false)
@@ -75,8 +76,15 @@ async function uploadFiles(files: FileList) {
       throw new Error('Upload failed')
     }
 
+    // Create file nodes from the uploaded files
+    const uploadedNodes: CirrusFileNode[] = Array.from(files).map((file) => ({
+      fullPath: props.currentPath ? `${props.currentPath}/${file.name}` : file.name,
+      deviceName: '',
+      isDir: false,
+    }))
+
     uploadProgress.value = 'Upload complete!'
-    emit('files-uploaded')
+    emit('files-uploaded', uploadedNodes)
 
     // Clear the message after a short delay
     setTimeout(() => {

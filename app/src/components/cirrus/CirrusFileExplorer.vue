@@ -100,6 +100,17 @@ function toggleDeviceBadges(show: boolean) {
   showDeviceBadges.value = show
 }
 
+// Handle files uploaded - add them to the list
+function handleFilesUploaded(uploadedFiles: CirrusFileNode[]) {
+  // Add the new files to the list, avoiding duplicates
+  for (const newFile of uploadedFiles) {
+    const exists = files.value.some((f) => f.fullPath === newFile.fullPath)
+    if (!exists) {
+      files.value.push(newFile)
+    }
+  }
+}
+
 // Context menu handlers
 function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
   contextMenuFile.value = file
@@ -177,7 +188,7 @@ async function handleDelete(file: CirrusFileNode) {
     </div>
 
     <!-- Drop Zone for file uploads -->
-    <CirrusDropZone :current-path="currentPath" @files-uploaded="fetchFiles" />
+    <CirrusDropZone :current-path="currentPath" @files-uploaded="handleFilesUploaded" />
 
     <div id="file-explorer-selectable">
       <div class="file-explorer-controls">

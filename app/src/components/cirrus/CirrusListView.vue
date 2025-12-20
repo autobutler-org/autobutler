@@ -121,12 +121,6 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
             </td>
           </template>
         </tr>
-        <!-- Spacer row for drag and drop hint -->
-        <tr class="file-node">
-          <td colspan="3" class="file-table-cell file-table-cell--spacer">
-            <span class="spacer">Drop files here…</span>
-          </td>
-        </tr>
       </tbody>
     </table>
   </div>
@@ -232,22 +226,6 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
     width: 60px;
     text-align: center;
     vertical-align: middle;
-  }
-
-  &--spacer {
-    text-align: center;
-    font-style: italic;
-    color: var(--color-gray-400);
-    cursor: pointer;
-    padding: var(--spacing-sm) 0;
-
-    &:hover {
-      background-color: var(--color-gray-100);
-
-      @media (prefers-color-scheme: dark) {
-        background-color: var(--color-gray-800);
-      }
-    }
   }
 }
 
