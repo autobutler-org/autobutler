@@ -1,0 +1,2 @@
+/* Autobutler site-wide styles for Vite app build. Imports canonical CSS from backend public directory. */
+@import '../../../internal/server/public/styles/site.css';
