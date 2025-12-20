@@ -41,5 +41,60 @@ function goToCirrus() {
 </script>
 
 <style lang="scss" scoped>
-/* Add styles for device card and storage partition bar here if needed */
+.device-card {
+  background: rgba(0,0,0,0.12);
+  border-radius: 18px;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.10);
+  padding: 2.2rem 2.2rem 1.5rem 2.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.device-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.device-card-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.device-card-icon svg {
+  width: 48px;
+  height: 48px;
+  color: white;
+}
+.device-card-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.device-card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+.device-card-type {
+  font-size: 1rem;
+  color: #b3b3b3;
+  margin: 0;
+}
+.device-card-body {
+  margin-top: 0.5rem;
+}
+.device-card-footer {
+  margin-top: 0.8rem;
+}
+.device-card-mount {
+  font-size: 1rem;
+  color: #e0e0e0;
+}
+
 </style>
