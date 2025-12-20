@@ -7,13 +7,13 @@ export interface PhotoApiResponse {
 }
 
 export async function fetchPhotos(): Promise<PhotoApiResponse[]> {
-  const res = await fetch('/api/v1/photos')
+  const res = await fetch('/api/v1/json/photos')
   if (!res.ok) throw new Error('Failed to fetch photos')
   return res.json()
 }
 
 export async function fetchPhotoSummary(): Promise<any> {
-  const res = await fetch('/api/v1/photos/summary')
+  const res = await fetch('/api/v1/json/photos/summary')
   if (!res.ok) throw new Error('Failed to fetch summary')
   return res.json()
 }

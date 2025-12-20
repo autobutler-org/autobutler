@@ -5,6 +5,7 @@ import (
 
 	v1_files "autobutler/internal/server/api/v1/cirrus"
 	v1_metrics "autobutler/internal/server/api/v1/metrics"
+	v1_photos "autobutler/internal/server/api/v1/photos"
 	v1_storage "autobutler/internal/server/api/v1/storage"
 	v1_thumbnails "autobutler/internal/server/api/v1/thumbnails"
 	v1_update "autobutler/internal/server/api/v1/update"
@@ -52,6 +53,7 @@ func setupRouters(engine *gin.Engine) {
 		v1_storage.NewRouter(),
 		v1_thumbnails.NewRouter(),
 		v1_update.NewRouter(),
+		v1_photos.NewRouter(),
 	}
 	for _, r := range apiRouters {
 		serverutil.RegisterRouterWithGroup(group, r)
