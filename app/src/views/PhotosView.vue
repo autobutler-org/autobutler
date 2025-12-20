@@ -20,8 +20,8 @@
 import { ref, onMounted } from 'vue'
 import PhotosSidebar from '@/components/photos/PhotosSidebar.vue'
 import PhotoGrid from '@/components/photos/PhotoGrid.vue'
+import { fetchPhotos, fetchPhotoSummary, type PhotoApiResponse } from '@/services/photosService'
 
-// TODO: Replace with real API call
 const photos = ref([])
 const totalPhotos = ref(0)
 const summary = ref({})
@@ -38,8 +38,26 @@ function scrollToArrival() {
   }
 }
 
-onMounted(() => {
-  // TODO: Fetch photos and summary from API
+function convertPhotoApi(photo: PhotoApiResponse) {
+  return {
+    relPath: photo.relPath,
+    fileName: photo.fileName,
+    id: photo.relPath,
+    size: photo.size,
+    mtime: photo.mtime,
+  }
+}
+
+onMounted(async () => {
+  try {
+    const photoList = await fetchPhotos()
+    photos.value = photoList.map(convertPhotoApi)
+    totalPhotos.value = photoList.length
+    summary.value = await fetchPhotoSummary()
+  } catch (e) {
+    // TODO: handle error
+    console.error(e)
+  }
 })
 </script>
 
