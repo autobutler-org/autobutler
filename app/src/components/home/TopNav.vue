@@ -300,6 +300,12 @@ function closeMobileMenu() {
 .landing-nav-logo {
   display: flex;
   align-items: center;
+  padding: 0;
+  background: none;
+
+  &:hover {
+    background: none;
+  }
 }
 
 .landing-nav-link {
@@ -307,9 +313,12 @@ function closeMobileMenu() {
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s ease;
+  padding: 0;
+  background: none;
 
   &:hover {
     color: white;
+    background: none;
   }
 
   @media (prefers-color-scheme: light) {
