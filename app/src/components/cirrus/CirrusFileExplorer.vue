@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { CirrusFileNode } from '@/types/cirrus'
-import { getFiles, getAvailableSpace, bytesToGB } from '@/services/cirrusService'
+import type { CirrusFileNode, FileType } from '@/types/cirrus'
+import { getFiles, getAvailableSpace, bytesToGB, determineFileType } from '@/services/cirrusService'
 import CirrusBreadcrumb from './CirrusBreadcrumb.vue'
 import CirrusListView from './CirrusListView.vue'
 import CirrusGridView from './CirrusGridView.vue'
+import CirrusFileViewer from './CirrusFileViewer.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,6 +18,11 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const view = ref<'list' | 'grid'>('list')
 const showDeviceBadges = ref(false)
+
+// File viewer state
+const fileViewerOpen = ref(false)
+const selectedFilePath = ref('')
+const selectedFileType = ref<FileType>('generic')
 
 // Computed
 const availableSpace = computed(() => getAvailableSpace())
@@ -70,8 +76,9 @@ function handleNavigateFolder(path: string) {
 }
 
 function handleOpenFile(file: CirrusFileNode) {
-  // TODO: Implement file viewer
-  console.log('Opening file:', file)
+  selectedFilePath.value = file.fullPath
+  selectedFileType.value = determineFileType(file)
+  fileViewerOpen.value = true
 }
 
 function switchView(newView: 'list' | 'grid') {
@@ -189,6 +196,13 @@ function toggleDeviceBadges(show: boolean) {
         </template>
       </div>
     </div>
+
+    <!-- File Viewer Modal -->
+    <CirrusFileViewer
+      v-model="fileViewerOpen"
+      :file-path="selectedFilePath"
+      :file-type="selectedFileType"
+    />
   </div>
 </template>
 
