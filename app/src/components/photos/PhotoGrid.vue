@@ -1,12 +1,17 @@
 <template>
   <div class="photo-grid">
-    <PhotoGridItem v-for="photo in photos" :key="photo.relPath || photo.id" :photo="photo" @click="() => $emit('photoClick', photo)" />
+    <PhotoGridItem
+      v-for="photo in photos"
+      :key="photo.relPath || photo.id"
+      :photo="photo"
+      @click="() => $emit('photoClick', photo)"
+    />
     <!-- TODO: Infinite scroll loader -->
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Photo } from '@/types/photo';
+import type { Photo } from '@/types/photo'
 import PhotoGridItem from './PhotoGridItem.vue'
 
 defineProps<{

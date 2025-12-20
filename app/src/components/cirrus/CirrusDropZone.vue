@@ -63,9 +63,7 @@ async function uploadFiles(files: FileList) {
     }
 
     // Build the upload URL
-    const uploadPath = props.currentPath
-      ? `/api/v1/cirrus/${props.currentPath}`
-      : '/api/v1/cirrus'
+    const uploadPath = props.currentPath ? `/api/v1/cirrus/${props.currentPath}` : '/api/v1/cirrus'
 
     const response = await fetch(uploadPath, {
       method: 'POST',

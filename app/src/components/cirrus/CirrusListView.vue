@@ -144,7 +144,10 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
     <table id="file-explorer-table" class="file-table">
       <thead class="file-table-header">
         <tr>
-          <th class="file-table-header-cell file-table-header-cell--left file-table-header-cell--sortable" @click="toggleSort('name')">
+          <th
+            class="file-table-header-cell file-table-header-cell--left file-table-header-cell--sortable"
+            @click="toggleSort('name')"
+          >
             <span class="sort-button">
               <span>Name</span>
               <span class="sort-arrows">
@@ -171,7 +174,10 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
               </span>
             </span>
           </th>
-          <th class="file-table-header-cell file-table-header-cell--right file-table-header-cell--sortable" @click="toggleSort('size')">
+          <th
+            class="file-table-header-cell file-table-header-cell--right file-table-header-cell--sortable"
+            @click="toggleSort('size')"
+          >
             <span class="sort-button">
               <span>Size</span>
               <span class="sort-arrows">
@@ -210,11 +216,22 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
                   <path d="M7 8l5-5 5 5z"></path>
                   <path d="M7 16l5 5 5-5z"></path>
                 </svg>
-                <svg v-if="!mixedSorting" class="sort-switcher-folder" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
+                <svg
+                  v-if="!mixedSorting"
+                  class="sort-switcher-folder"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
+                  ></path>
                 </svg>
                 <svg v-else class="sort-switcher-file" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
+                  <path
+                    fill-rule="evenodd"
+                    d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                    clip-rule="evenodd"
+                  ></path>
                 </svg>
               </div>
               <span class="sort-switcher-label">{{ mixedSorting ? 'Mixed' : 'Folders' }}</span>
@@ -237,8 +254,19 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
             <td class="file-table-cell file-table-cell--content">
               <FolderIcon />
               <span class="file-table-name">{{ getFileName(file) }}</span>
-              <span v-if="props.showDeviceBadges && file.deviceName" class="device-badge" :title="'Device: ' + file.deviceName">
-                <svg class="device-badge-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <span
+                v-if="props.showDeviceBadges && file.deviceName"
+                class="device-badge"
+                :title="'Device: ' + file.deviceName"
+              >
+                <svg
+                  class="device-badge-icon"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
                   <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
                   <line x1="8" y1="21" x2="16" y2="21"></line>
                   <line x1="12" y1="17" x2="12" y2="21"></line>
@@ -246,9 +274,7 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
                 <span class="device-badge-name">{{ file.deviceName }}</span>
               </span>
             </td>
-            <td class="file-table-cell file-table-size">
-              —
-            </td>
+            <td class="file-table-cell file-table-size">—</td>
             <td class="file-table-cell file-table-cell--menu">
               <button
                 type="button"
@@ -264,8 +290,19 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
             <td class="file-table-cell file-table-cell--clickable">
               <component :is="getIconComponent(getFileType(file))" />
               <span class="file-table-name">{{ getFileName(file) }}</span>
-              <span v-if="props.showDeviceBadges && file.deviceName" class="device-badge" :title="'Device: ' + file.deviceName">
-                <svg class="device-badge-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <span
+                v-if="props.showDeviceBadges && file.deviceName"
+                class="device-badge"
+                :title="'Device: ' + file.deviceName"
+              >
+                <svg
+                  class="device-badge-icon"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
                   <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
                   <line x1="8" y1="21" x2="16" y2="21"></line>
                   <line x1="12" y1="17" x2="12" y2="21"></line>

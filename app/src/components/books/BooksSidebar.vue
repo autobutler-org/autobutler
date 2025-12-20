@@ -17,13 +17,9 @@ const sections = [
   },
   {
     title: 'Smart Shelves',
-    items: [
-      { label: 'PDFs' },
-      { label: 'EPUBs' },
-    ],
+    items: [{ label: 'PDFs' }, { label: 'EPUBs' }],
   },
 ]
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

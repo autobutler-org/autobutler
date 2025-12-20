@@ -105,7 +105,10 @@ function closeMobileMenu() {
               :href="release.htmlUrl"
               target="_blank"
               rel="noopener noreferrer"
-              :class="['version-dropdown-item', { 'version-dropdown-item--current': release.isCurrentVersion }]"
+              :class="[
+                'version-dropdown-item',
+                { 'version-dropdown-item--current': release.isCurrentVersion },
+              ]"
             >
               <span class="version-dropdown-tag">{{ release.tagName }}</span>
               <span v-if="release.isCurrentVersion" class="version-dropdown-badge">Current</span>
@@ -190,9 +193,7 @@ function closeMobileMenu() {
             stroke="currentColor"
             stroke-width="2"
           >
-            <path
-              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-            />
+            <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
           </svg>
           <span>Cirrus</span>
         </RouterLink>
@@ -500,7 +501,9 @@ function closeMobileMenu() {
   background: none;
   border: none;
   color: var(--color-gray-300);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 
   &:hover {
     color: white;
@@ -599,7 +602,9 @@ function closeMobileMenu() {
   cursor: pointer;
   padding: var(--spacing-sm);
   border-radius: var(--border-radius);
-  transition: color 0.2s ease, background-color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
 
   &:hover {
     color: white;

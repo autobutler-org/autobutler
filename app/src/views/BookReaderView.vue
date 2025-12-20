@@ -3,7 +3,13 @@
   <div class="book-reader-view">
     <div class="book-reader-nav">
       <button class="book-reader-btn" @click="$router.back()" title="Back to library">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <path d="M19 12H5m0 0l7 7m-7-7l7-7"></path>
         </svg>
         <span>Library</span>
@@ -33,7 +39,7 @@ const navLinks: NavLink[] = [
 ]
 
 const route = useRoute()
-const bookPath = computed(() => route.query.path as string || '')
+const bookPath = computed(() => (route.query.path as string) || '')
 const fileName = computed(() => bookPath.value.split('/').pop() || '')
 
 function getFileType(path: string) {
@@ -47,7 +53,7 @@ const viewerComponent = computed(() => {
   const type = getFileType(bookPath.value)
   if (type === 'pdf') return PdfViewer
   return {
-    template: '<div class="error-text">Only PDF viewing is supported.</div>'
+    template: '<div class="error-text">Only PDF viewing is supported.</div>',
   }
 })
 </script>

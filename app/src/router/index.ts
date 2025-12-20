@@ -33,7 +33,7 @@ const router = createRouter({
       path: '/photos/viewer/:path',
       name: 'photo-viewer',
       component: () => import('../views/PhotoViewerView.vue'),
-      props: route => ({ path: decodeURIComponent(route.params.path as string) }),
+      props: (route) => ({ path: decodeURIComponent(route.params.path as string) }),
     },
     {
       path: '/books',

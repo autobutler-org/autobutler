@@ -109,9 +109,7 @@ export async function getFiles(path: string): Promise<CirrusFileNode[]> {
   const normalizedPath = path.replace(/^\/+|\/+$/g, '')
 
   // Build the API URL
-  const apiUrl = normalizedPath
-    ? `/api/v1/json/cirrus/${normalizedPath}`
-    : '/api/v1/json/cirrus'
+  const apiUrl = normalizedPath ? `/api/v1/json/cirrus/${normalizedPath}` : '/api/v1/json/cirrus'
 
   try {
     const response = await fetch(apiUrl)
@@ -136,4 +134,3 @@ export function getAvailableSpace(): number {
   // Return 100 GB as stub value until we have an API endpoint for this
   return 100 * 1024 * 1024 * 1024
 }
-

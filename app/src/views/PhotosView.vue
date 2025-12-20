@@ -10,7 +10,12 @@
         <div class="photos-count">{{ formatPhotoCount(totalPhotos) }}</div>
       </div>
       <div class="photos-grid-container">
-        <PhotoGrid :photos="photos" :page="1" :total-photos="totalPhotos" @photoClick="onPhotoClick" />
+        <PhotoGrid
+          :photos="photos"
+          :page="1"
+          :total-photos="totalPhotos"
+          @photoClick="onPhotoClick"
+        />
       </div>
     </template>
   </LibraryLayout>

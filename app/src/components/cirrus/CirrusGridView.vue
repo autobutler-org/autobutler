@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { CirrusFileNode } from '@/types/cirrus'
-import { determineFileType, getFileName, isDirectory, getFileSize, formatBytes } from '@/services/cirrusService'
+import {
+  determineFileType,
+  getFileName,
+  isDirectory,
+  getFileSize,
+  formatBytes,
+} from '@/services/cirrusService'
 import FolderIcon from '@/components/icons/FolderIcon.vue'
 import PdfIcon from '@/components/icons/PdfIcon.vue'
 import ImageIcon from '@/components/icons/ImageIcon.vue'
@@ -91,15 +97,28 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
           </div>
           <div class="grid-view-details">
             <div class="grid-view-name" :title="getFileName(file)">{{ getFileName(file) }}</div>
-            <div v-if="props.showDeviceBadges && file.deviceName" class="device-badge" :title="'Device: ' + file.deviceName">
-              <svg class="device-badge-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div
+              v-if="props.showDeviceBadges && file.deviceName"
+              class="device-badge"
+              :title="'Device: ' + file.deviceName"
+            >
+              <svg
+                class="device-badge-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
                 <line x1="8" y1="21" x2="16" y2="21"></line>
                 <line x1="12" y1="17" x2="12" y2="21"></line>
               </svg>
               <span class="device-badge-name">{{ file.deviceName }}</span>
             </div>
-            <div v-if="!isDirectory(file)" class="grid-view-size">{{ formatBytes(getFileSize(file)) }}</div>
+            <div v-if="!isDirectory(file)" class="grid-view-size">
+              {{ formatBytes(getFileSize(file)) }}
+            </div>
           </div>
         </div>
       </div>
@@ -155,7 +174,9 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
   color: var(--color-gray-600);
   border-radius: var(--border-radius-sm);
   opacity: 0;
-  transition: opacity 0.15s ease, background-color 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease;
 
   &:hover {
     background-color: var(--color-gray-200);

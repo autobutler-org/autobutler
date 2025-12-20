@@ -6,7 +6,7 @@
       type="application/pdf"
       width="100%"
       height="100%"
-      style="border: none; min-height: 80vh;"
+      style="border: none; min-height: 80vh"
     ></iframe>
     <div v-else class="error-text">No PDF file specified.</div>
   </div>

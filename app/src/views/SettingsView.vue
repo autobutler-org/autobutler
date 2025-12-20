@@ -5,8 +5,18 @@
       <div class="settings-sidebar-thanks">
         <h2>Thanks</h2>
         <a href="/thanks" class="settings-thanks-link">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            width="20"
+            height="20"
+          >
+            <path
+              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+            ></path>
           </svg>
           <span>View Thanks</span>
         </a>
@@ -17,14 +27,30 @@
         <h1 class="settings-title">Settings & Metrics</h1>
         <div class="settings-header-actions">
           <button aria-label="Save">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              width="20"
+              height="20"
+            >
               <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path>
               <polyline points="17 21 17 13 7 13 7 21"></polyline>
               <polyline points="7 3 7 8 15 8"></polyline>
             </svg>
           </button>
           <button aria-label="Refresh">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              width="20"
+              height="20"
+            >
               <polyline points="23 4 23 10 17 10"></polyline>
               <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path>
             </svg>
@@ -34,7 +60,15 @@
       <div class="settings-content">
         <section id="storage" class="settings-section">
           <div class="settings-section-header">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              width="20"
+              height="20"
+            >
               <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
               <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
               <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
@@ -46,12 +80,22 @@
           </div>
           <div class="settings-section-card">
             <span class="mock-badge">mock</span>
-            <p style="text-align: center; padding: 2rem; color: var(--color-gray-500);">Loading devices...</p>
+            <p style="text-align: center; padding: 2rem; color: var(--color-gray-500)">
+              Loading devices...
+            </p>
           </div>
         </section>
         <section id="opentelemetry" class="settings-section">
           <div class="settings-section-header">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              width="20"
+              height="20"
+            >
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
             </svg>
             <h2>OpenTelemetry</h2>
@@ -62,7 +106,15 @@
             <button>Traces</button>
             <button>Logs</button>
             <button>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                width="16"
+                height="16"
+              >
                 <circle cx="11" cy="11" r="8"></circle>
                 <path d="M21 21l-4.35-4.35"></path>
               </svg>
@@ -90,9 +142,18 @@
               </div>
               <table class="settings-metric-stats">
                 <tbody>
-                  <tr><td>Current</td><td>32%</td></tr>
-                  <tr><td>Peak</td><td>77%</td></tr>
-                  <tr><td>Avg</td><td>28%</td></tr>
+                  <tr>
+                    <td>Current</td>
+                    <td>32%</td>
+                  </tr>
+                  <tr>
+                    <td>Peak</td>
+                    <td>77%</td>
+                  </tr>
+                  <tr>
+                    <td>Avg</td>
+                    <td>28%</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -107,9 +168,18 @@
               </div>
               <table class="settings-metric-stats">
                 <tbody>
-                  <tr><td>Used</td><td>18.2 GB</td></tr>
-                  <tr><td>Cache</td><td>2.9 GB</td></tr>
-                  <tr><td>Free</td><td>13.6 GB</td></tr>
+                  <tr>
+                    <td>Used</td>
+                    <td>18.2 GB</td>
+                  </tr>
+                  <tr>
+                    <td>Cache</td>
+                    <td>2.9 GB</td>
+                  </tr>
+                  <tr>
+                    <td>Free</td>
+                    <td>13.6 GB</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -123,9 +193,18 @@
               </div>
               <table class="settings-metric-stats">
                 <tbody>
-                  <tr><td>Read</td><td>210 MB/s</td></tr>
-                  <tr><td>Write</td><td>185 MB/s</td></tr>
-                  <tr><td>Latency</td><td>4.6 ms</td></tr>
+                  <tr>
+                    <td>Read</td>
+                    <td>210 MB/s</td>
+                  </tr>
+                  <tr>
+                    <td>Write</td>
+                    <td>185 MB/s</td>
+                  </tr>
+                  <tr>
+                    <td>Latency</td>
+                    <td>4.6 ms</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -140,9 +219,18 @@
               </div>
               <table class="settings-metric-stats">
                 <tbody>
-                  <tr><td>Current</td><td>42 ops/s</td></tr>
-                  <tr><td>Peak</td><td>120 ops/s</td></tr>
-                  <tr><td>Errors</td><td>0.2%</td></tr>
+                  <tr>
+                    <td>Current</td>
+                    <td>42 ops/s</td>
+                  </tr>
+                  <tr>
+                    <td>Peak</td>
+                    <td>120 ops/s</td>
+                  </tr>
+                  <tr>
+                    <td>Errors</td>
+                    <td>0.2%</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -151,12 +239,32 @@
           <p>Latest exporter status, dropped spans, and warnings.</p>
           <table class="settings-events-table">
             <thead>
-              <tr><th>Time</th><th>Message</th><th>Component</th><th>Level</th></tr>
+              <tr>
+                <th>Time</th>
+                <th>Message</th>
+                <th>Component</th>
+                <th>Level</th>
+              </tr>
             </thead>
             <tbody>
-              <tr><td>2025-04-12 10:14:03</td><td>Exporter connected to http://otel-collector:4317</td><td>Exporter</td><td>Info</td></tr>
-              <tr><td>2025-04-12 10:10:22</td><td>Batch size adjusted to 512 KB</td><td>Collector</td><td>Info</td></tr>
-              <tr><td>2025-04-12 09:58:07</td><td>Transient failure, retry scheduled</td><td>Exporter</td><td>Warning</td></tr>
+              <tr>
+                <td>2025-04-12 10:14:03</td>
+                <td>Exporter connected to http://otel-collector:4317</td>
+                <td>Exporter</td>
+                <td>Info</td>
+              </tr>
+              <tr>
+                <td>2025-04-12 10:10:22</td>
+                <td>Batch size adjusted to 512 KB</td>
+                <td>Collector</td>
+                <td>Info</td>
+              </tr>
+              <tr>
+                <td>2025-04-12 09:58:07</td>
+                <td>Transient failure, retry scheduled</td>
+                <td>Exporter</td>
+                <td>Warning</td>
+              </tr>
             </tbody>
           </table>
           <div class="settings-events-actions">

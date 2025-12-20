@@ -109,7 +109,7 @@ watch(
     } else {
       removeListeners()
     }
-  }
+  },
 )
 
 // Also watch x and y changes in case they update while open
@@ -119,7 +119,7 @@ watch(
     if (props.modelValue) {
       adjustPosition()
     }
-  }
+  },
 )
 </script>
 
@@ -134,14 +134,10 @@ watch(
     >
       <ul class="context-menu-list">
         <li>
-          <button type="button" class="context-menu-item" @click="handleDownload">
-            Download
-          </button>
+          <button type="button" class="context-menu-item" @click="handleDownload">Download</button>
         </li>
         <li>
-          <button type="button" class="context-menu-item" @click="handleRename">
-            Move/Rename
-          </button>
+          <button type="button" class="context-menu-item" @click="handleRename">Move/Rename</button>
         </li>
         <li>
           <button type="button" class="context-menu-item" @click="handleDetails">
@@ -149,7 +145,11 @@ watch(
           </button>
         </li>
         <li>
-          <button type="button" class="context-menu-item context-menu-item--danger" @click="handleDelete">
+          <button
+            type="button"
+            class="context-menu-item context-menu-item--danger"
+            @click="handleDelete"
+          >
             Delete
           </button>
         </li>

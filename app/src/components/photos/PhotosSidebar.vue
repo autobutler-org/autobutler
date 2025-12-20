@@ -5,7 +5,7 @@
 <script setup lang="ts">
 import LibrarySidebar from '@/components/common/LibrarySidebar.vue'
 
-const props = defineProps<{ photoCount: number, summary?: any }>()
+const props = defineProps<{ photoCount: number }>()
 
 const sections = [
   {
@@ -28,5 +28,4 @@ const sections = [
 ]
 </script>
 
-<style lang="scss" scoped>
-</style>
+<style lang="scss" scoped></style>

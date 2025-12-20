@@ -5,20 +5,25 @@
     </template>
     <template #main>
       <div class="books-header-simple">
-        <h1 class="books-library-title">
-          Library <span class="mock-badge">mock</span>
-        </h1>
+        <h1 class="books-library-title">Library <span class="mock-badge">mock</span></h1>
         <p class="books-library-count">{{ formatBookCount(totalBooks) }}</p>
       </div>
       <div v-if="books.length === 0" class="books-empty">
         <div class="book-card-icon">
-          <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/></svg>
+          <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2" />
+          </svg>
         </div>
         <h2>No books found</h2>
         <p>Add PDF or EPUB files to your files directory to see them here.</p>
       </div>
       <div v-else class="books-grid-simple">
-        <router-link v-for="book in books" :key="book.relPath" :to="`/books/reader?path=${encodeURIComponent(book.relPath)}`" class="book-card-link">
+        <router-link
+          v-for="book in books"
+          :key="book.relPath"
+          :to="`/books/reader?path=${encodeURIComponent(book.relPath)}`"
+          class="book-card-link"
+        >
           <div class="book-card">
             <div class="book-card-cover">
               <span class="book-card-badge">{{ book.type }}</span>
@@ -65,7 +70,10 @@ function formatBookSize(size: number) {
 
 function cleanBookTitle(fileName: string): string {
   // Remove extension and replace underscores/dashes with spaces
-  return fileName.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim()
+  return fileName
+    .replace(/\.[^.]+$/, '')
+    .replace(/[_-]+/g, ' ')
+    .trim()
 }
 
 function convertBookApi(book: BookApiResponse) {
