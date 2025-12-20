@@ -1,6 +1,10 @@
 <template>
   <div class="photo-viewer-modal-overlay" @click.self="close">
-    <button class="photo-viewer-close" @click="close" aria-label="Close">&times;</button>
+    <button class="photo-viewer-close" @click="close" aria-label="Close">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20">
+        <path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M5 5l10 10M15 5l-10 10" />
+      </svg>
+    </button>
     <div class="photo-viewer-modal">
       <ImageViewer :filePath="path" />
     </div>
@@ -44,13 +48,12 @@ function close() {
 }
 .photo-viewer-close {
   position: fixed;
-  top: 2rem;
-  right: 2rem;
+  top: 1.5rem;
+  right: 1.5rem;
   background: white;
   border: none;
   border-radius: 50%;
-  font-size: 2.2rem;
-  color: #333;
+  color: #222;
   cursor: pointer;
   z-index: 1100;
   box-shadow: 0 2px 8px rgba(0,0,0,0.10);
@@ -61,9 +64,12 @@ function close() {
   justify-content: center;
   transition: background 0.15s;
   padding: 0;
-  line-height: 2.5rem;
 }
 .photo-viewer-close:hover {
   background: #f2f2f2;
+}
+.photo-viewer-close svg {
+  display: block;
+  margin: auto;
 }
 </style>
