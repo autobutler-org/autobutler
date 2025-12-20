@@ -35,13 +35,14 @@
 <script setup lang="ts">
 import TopNav from '@/components/home/TopNav.vue'
 import type { NavLink } from '@/types/home'
+
 import { ref, onMounted } from 'vue'
+import { fetchBooks, type BookApiResponse } from '@/services/booksService'
 
 const navLinks: NavLink[] = [
   { name: 'Cirrus', href: '/cirrus' },
   { name: 'Photos', href: '/photos' },
   { name: 'Books', href: '/books' },
-  { name: 'Health', href: '/health' },
 ]
 
 interface Book {
@@ -67,14 +68,30 @@ function formatBookSize(size: number) {
   return `${(size / 1024 / 1024 / 1024).toFixed(1)} GB`
 }
 
-// TODO: Replace with real API call
-onMounted(() => {
-  // Stub/mock data
-  books.value = [
-    { relPath: 'book1.pdf', fileName: 'book1.pdf', title: 'Book One', size: 1048576, type: 'PDF' },
-    { relPath: 'book2.epub', fileName: 'book2.epub', title: 'Book Two', size: 2097152, type: 'EPUB' },
-  ]
-  totalBooks.value = books.value.length
+function cleanBookTitle(fileName: string): string {
+  // Remove extension and replace underscores/dashes with spaces
+  return fileName.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim()
+}
+
+function convertBookApi(book: BookApiResponse) {
+  return {
+    relPath: book.relPath,
+    fileName: book.fileName,
+    title: cleanBookTitle(book.fileName),
+    size: book.size,
+    type: book.type.toUpperCase(),
+  }
+}
+
+onMounted(async () => {
+  try {
+    const bookList = await fetchBooks()
+    books.value = bookList.map(convertBookApi)
+    totalBooks.value = bookList.length
+  } catch (e) {
+    // TODO: handle error
+    console.error(e)
+  }
 })
 </script>
 

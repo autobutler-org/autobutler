@@ -9,7 +9,6 @@ const navLinks: NavLink[] = [
   { name: 'Cirrus', href: '/cirrus' },
   { name: 'Photos', href: '/photos' },
   { name: 'Books', href: '/books' },
-  { name: 'Health', href: '/health' },
 ]
 </script>
 

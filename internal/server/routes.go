@@ -3,6 +3,7 @@ package server
 import (
 	"embed"
 
+	v1_books "autobutler/internal/server/api/v1/books"
 	v1_files "autobutler/internal/server/api/v1/cirrus"
 	v1_metrics "autobutler/internal/server/api/v1/metrics"
 	v1_photos "autobutler/internal/server/api/v1/photos"
@@ -48,6 +49,7 @@ func setupRouters(engine *gin.Engine) {
 
 	group := engine.Group("/api/v1")
 	apiRouters := []serverutil.Router{
+		v1_books.NewRouter(), // Register the new books API router
 		v1_files.NewRouter(),
 		v1_metrics.NewRouter(),
 		v1_storage.NewRouter(),
