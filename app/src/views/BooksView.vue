@@ -1,50 +1,47 @@
 <template>
-  <div class="landing-body">
-    <TopNav :navLinks="navLinks" />
-    <div class="books-header-simple">
-      <h1 class="books-library-title">
-        Library <span class="mock-badge">mock</span>
-      </h1>
-      <p class="books-library-count">{{ formatBookCount(totalBooks) }}</p>
-    </div>
-    <div v-if="books.length === 0" class="books-empty">
-      <div class="book-card-icon">
-        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/></svg>
+  <LibraryLayout>
+    <template #sidebar>
+      <BooksSidebar />
+    </template>
+    <template #main>
+      <div class="books-header-simple">
+        <h1 class="books-library-title">
+          Library <span class="mock-badge">mock</span>
+        </h1>
+        <p class="books-library-count">{{ formatBookCount(totalBooks) }}</p>
       </div>
-      <h2>No books found</h2>
-      <p>Add PDF or EPUB files to your files directory to see them here.</p>
-    </div>
-    <div v-else class="books-grid-simple">
-      <router-link v-for="book in books" :key="book.relPath" :to="`/books/reader?path=${encodeURIComponent(book.relPath)}`" class="book-card-link">
-        <div class="book-card">
-          <div class="book-card-cover">
-            <div class="book-card-icon">
-              <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/></svg>
-            </div>
-            <span class="book-card-badge">{{ book.type }}</span>
-          </div>
-          <div class="book-card-info">
-            <h3 class="book-card-title" :title="book.fileName">{{ book.title }}</h3>
-            <p class="book-card-size">{{ formatBookSize(book.size) }}</p>
-          </div>
+      <div v-if="books.length === 0" class="books-empty">
+        <div class="book-card-icon">
+          <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/></svg>
         </div>
-      </router-link>
-    </div>
-  </div>
+        <h2>No books found</h2>
+        <p>Add PDF or EPUB files to your files directory to see them here.</p>
+      </div>
+      <div v-else class="books-grid-simple">
+        <router-link v-for="book in books" :key="book.relPath" :to="`/books/reader?path=${encodeURIComponent(book.relPath)}`" class="book-card-link">
+          <div class="book-card">
+            <div class="book-card-cover">
+              <div class="book-card-icon">
+                <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/></svg>
+              </div>
+              <span class="book-card-badge">{{ book.type }}</span>
+            </div>
+            <div class="book-card-info">
+              <h3 class="book-card-title" :title="book.fileName">{{ book.title }}</h3>
+              <p class="book-card-size">{{ formatBookSize(book.size) }}</p>
+            </div>
+          </div>
+        </router-link>
+      </div>
+    </template>
+  </LibraryLayout>
 </template>
 
 <script setup lang="ts">
-import TopNav from '@/components/home/TopNav.vue'
-import type { NavLink } from '@/types/home'
-
 import { ref, onMounted } from 'vue'
 import { fetchBooks, type BookApiResponse } from '@/services/booksService'
-
-const navLinks: NavLink[] = [
-  { name: 'Cirrus', href: '/cirrus' },
-  { name: 'Photos', href: '/photos' },
-  { name: 'Books', href: '/books' },
-]
+import LibraryLayout from '@/components/common/LibraryLayout.vue'
+import BooksSidebar from '@/components/books/BooksSidebar.vue'
 
 interface Book {
   relPath: string
