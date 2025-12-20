@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import type { CirrusFileNode } from '@/types/cirrus'
 
 const props = defineProps<{
@@ -81,13 +81,32 @@ async function adjustPosition() {
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   document.addEventListener('contextmenu', handleClickOutside)
-  adjustPosition()
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('contextmenu', handleClickOutside)
 })
+
+// Watch for menu opening to adjust position
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (isOpen) {
+      adjustPosition()
+    }
+  }
+)
+
+// Also watch x and y changes in case they update while open
+watch(
+  () => [props.x, props.y],
+  () => {
+    if (props.modelValue) {
+      adjustPosition()
+    }
+  }
+)
 </script>
 
 <template>

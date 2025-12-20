@@ -229,8 +229,9 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
   }
 
   &--menu {
-    width: 40px;
+    width: 60px;
     text-align: center;
+    vertical-align: middle;
   }
 
   &--spacer {
@@ -254,14 +255,14 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   border-radius: var(--border-radius);
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   color: var(--color-gray-500);
 
   &:hover {
