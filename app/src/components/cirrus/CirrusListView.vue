@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import type { CirrusFileNode } from '@/types/cirrus'
 import {
   determineFileType,
@@ -26,6 +27,63 @@ const emit = defineEmits<{
   'open-file': [file: CirrusFileNode]
   'context-menu': [event: MouseEvent, file: CirrusFileNode]
 }>()
+
+// Sorting state
+type SortColumn = 'name' | 'size' | null
+type SortDirection = 'asc' | 'desc'
+
+const sortColumn = ref<SortColumn>(null)
+const sortDirection = ref<SortDirection>('asc')
+
+// Sorted files computed property
+const sortedFiles = computed(() => {
+  if (!sortColumn.value) {
+    // Default: folders first, then alphabetically by name
+    return [...props.files].sort((a, b) => {
+      const aIsDir = isDirectory(a)
+      const bIsDir = isDirectory(b)
+      if (aIsDir && !bIsDir) return -1
+      if (!aIsDir && bIsDir) return 1
+      return getFileName(a).localeCompare(getFileName(b), undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      })
+    })
+  }
+
+  return [...props.files].sort((a, b) => {
+    const aIsDir = isDirectory(a)
+    const bIsDir = isDirectory(b)
+
+    // Always keep folders first
+    if (aIsDir && !bIsDir) return -1
+    if (!aIsDir && bIsDir) return 1
+
+    let comparison = 0
+
+    if (sortColumn.value === 'name') {
+      comparison = getFileName(a).localeCompare(getFileName(b), undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      })
+    } else if (sortColumn.value === 'size') {
+      comparison = getFileSize(a) - getFileSize(b)
+    }
+
+    return sortDirection.value === 'asc' ? comparison : -comparison
+  })
+})
+
+function toggleSort(column: SortColumn) {
+  if (sortColumn.value === column) {
+    // Toggle direction
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    // New column, start ascending
+    sortColumn.value = column
+    sortDirection.value = 'asc'
+  }
+}
 
 function getFileType(file: CirrusFileNode) {
   return determineFileType(file)
@@ -72,14 +130,66 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
     <table id="file-explorer-table" class="file-table">
       <thead class="file-table-header">
         <tr>
-          <th class="file-table-header-cell file-table-header-cell--left">Name</th>
-          <th class="file-table-header-cell file-table-header-cell--right">Size</th>
+          <th class="file-table-header-cell file-table-header-cell--left file-table-header-cell--sortable" @click="toggleSort('name')">
+            <span class="sort-button">
+              <span>Name</span>
+              <span class="sort-arrows">
+                <svg
+                  v-if="sortColumn === 'name' && sortDirection === 'asc'"
+                  class="sort-arrow sort-arrow--active"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M7 14l5-5 5 5z"></path>
+                </svg>
+                <svg
+                  v-else-if="sortColumn === 'name' && sortDirection === 'desc'"
+                  class="sort-arrow sort-arrow--active"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M7 10l5 5 5-5z"></path>
+                </svg>
+                <svg v-else class="sort-arrow" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M7 8l5-5 5 5z"></path>
+                  <path d="M7 16l5 5 5-5z"></path>
+                </svg>
+              </span>
+            </span>
+          </th>
+          <th class="file-table-header-cell file-table-header-cell--right file-table-header-cell--sortable" @click="toggleSort('size')">
+            <span class="sort-button">
+              <span>Size</span>
+              <span class="sort-arrows">
+                <svg
+                  v-if="sortColumn === 'size' && sortDirection === 'asc'"
+                  class="sort-arrow sort-arrow--active"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M7 14l5-5 5 5z"></path>
+                </svg>
+                <svg
+                  v-else-if="sortColumn === 'size' && sortDirection === 'desc'"
+                  class="sort-arrow sort-arrow--active"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M7 10l5 5 5-5z"></path>
+                </svg>
+                <svg v-else class="sort-arrow" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M7 8l5-5 5 5z"></path>
+                  <path d="M7 16l5 5 5-5z"></path>
+                </svg>
+              </span>
+            </span>
+          </th>
           <th class="file-table-header-cell file-table-header-cell--toggle"></th>
         </tr>
       </thead>
       <tbody id="file-explorer-list" class="file-table-body">
         <tr
-          v-for="file in files"
+          v-for="file in sortedFiles"
           :key="file.fullPath"
           class="file-table-row file-node"
           :data-name="getFileName(file)"
@@ -179,6 +289,44 @@ function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
 
   &--toggle {
     width: 4rem;
+  }
+
+  &--sortable {
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      background-color: var(--color-gray-100);
+
+      @media (prefers-color-scheme: dark) {
+        background-color: var(--color-gray-800);
+      }
+    }
+  }
+}
+
+.sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.sort-arrows {
+  display: inline-flex;
+  align-items: center;
+}
+
+.sort-arrow {
+  width: 16px;
+  height: 16px;
+  color: var(--color-gray-400);
+
+  &--active {
+    color: var(--color-gray-700);
+
+    @media (prefers-color-scheme: dark) {
+      color: var(--color-gray-300);
+    }
   }
 }
 
