@@ -46,7 +46,7 @@ func setupStaticRoutes(engine *gin.Engine) error {
 		return err
 	}
 	engine.NoRoute(
-		static.Serve("/public", staticFS),
+		static.Serve("/", staticFS),
 		func(c *gin.Context) {
 			// TODO: Make this render the SPA index.html instead of a 404 page
 			c.FileFromFS("public/index.html", staticFS)
