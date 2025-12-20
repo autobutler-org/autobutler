@@ -22,7 +22,7 @@ clean/tests:
 	rm -rf playwright-report/
 	rm -rf test-results/
 
-setup: setup/gotools setup/sqlc setup/templ ## Setup development environment
+setup: setup/gotools setup/sqlc setup/air ## Setup development environment
 
 setup/gotools: ## Install go tools
 	go install golang.org/x/tools/gopls@latest
@@ -35,8 +35,8 @@ setup/gotools: ## Install go tools
 setup/sqlc: ## Install sqlc tool
 	go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0
 
-setup/templ: ## Install templ tool
-	go install github.com/a-h/templ/cmd/templ@latest
+setup/air: ## Install air tool
+	go install github.com/air-verse/air@latest
 
 export INSTALL_VERSION?=$(shell git describe --tags --abbrev=0)
 export GOPROXY ?= https://proxy.golang.org,direct
@@ -68,14 +68,10 @@ install/mac: env-INSTALL_VERSION ## Install startup service on Mac
 	sudo launchctl load /Library/LaunchDaemons/com.autobutler.autobutler.plist
 	echo "Installed autobutler successfully. Will run at startup."
 
-generate: generate/sqlc generate/templ ## Generate files
+generate: generate/sqlc ## Generate files
 
-generate/sqlc: ## Generate templ files
+generate/sqlc: ## Generate sqlc files
 	sqlc generate
-
-generate/templ: ## Generate templ files
-	templ generate
-	$(MAKE) lint/go
 
 build: ## Build backend and frontend
 	$(MAKE) -j2 build/backend build/frontend
@@ -203,11 +199,11 @@ serve/backend: generate ## Serve backend
 	go run $(MAIN) serve
 
 watch/backend: ## Watch backend for changes
-	templ generate \
-		-watch \
-		-watch-pattern='(.+\.go$$)|(.+\.templ$$)|(.+_templ\.txt$$)' \
-		-proxy="http://localhost:8080" \
-		-cmd="go run $(MAIN) serve"
+	air \
+		--build.cmd "$(MAKE) build/backend" \
+		--build.entrypoint "./build/autobutler" \
+		--build.args_bin "serve" \
+		--build.exclude_dir "app,build,cd,datalinks,docs,internal/db,node_modules,playwright-report,scripts,sql,teststest-results"
 
 serve/frontend: ## Serve frontend
 	npm run dev --prefix ./app

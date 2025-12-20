@@ -3,6 +3,8 @@
 
 # Binaries for programs and plugins
 ./autobutler
+# Distribution directory
+internal/server/public/
 # Datlinks
 datalinks/mac
 
