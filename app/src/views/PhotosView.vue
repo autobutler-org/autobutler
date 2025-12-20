@@ -1,7 +1,7 @@
 <template>
   <div class="photos-library">
     <div class="photos-container">
-      <PhotosSidebar :summary="summary" />
+      <PhotosSidebar :photo-count="totalPhotos" :summary="summary" />
       <div id="mobile-photos-arrival-location"></div>
       <div class="photos-main">
         <div class="photos-header">

@@ -1,17 +1,18 @@
 package v1_photos
 
 import (
+	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/photoutil"
 	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/cirrusutil"
+
 	"github.com/gin-gonic/gin"
 )
 
 type PhotoJSON struct {
-	RelPath   string `json:"relPath"`
-	FileName  string `json:"fileName"`
-	Size      int64  `json:"size"`
-	MTime     int64  `json:"mtime"`
+	RelPath  string `json:"relPath"`
+	FileName string `json:"fileName"`
+	Size     int64  `json:"size"`
+	MTime    int64  `json:"mtime"`
 }
 
 func getPhotosHandler(c *gin.Context) *serverutil.Response {
