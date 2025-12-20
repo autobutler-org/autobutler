@@ -17,7 +17,7 @@ const loadingReleases = ref(false)
 // Fetch current version on mount
 onMounted(async () => {
   currentVersion.value = await getCurrentVersion()
-  
+
   // Add click outside listener for version dropdown
   document.addEventListener('click', handleClickOutside)
 })
@@ -38,7 +38,7 @@ async function toggleVersionDropdown() {
     versionDropdownOpen.value = false
     return
   }
-  
+
   versionDropdownOpen.value = true
   if (releases.value.length === 0) {
     loadingReleases.value = true

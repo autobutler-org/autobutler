@@ -3,6 +3,14 @@ import GradientOverlays from '@/components/home/GradientOverlays.vue'
 import TopNav from '@/components/home/TopNav.vue'
 import HeroSection from '@/components/home/HeroSection.vue'
 import AppFooter from '@/components/home/AppFooter.vue'
+import type { NavLink } from '@/types/home'
+
+const navLinks: NavLink[] = [
+  { name: 'Files', href: '/cirrus' },
+  { name: 'Photos', href: '/photos' },
+  { name: 'Books', href: '/books' },
+  { name: 'Health', href: '/health' },
+]
 </script>
 
 <template>
@@ -10,7 +18,7 @@ import AppFooter from '@/components/home/AppFooter.vue'
     <main class="landing-main site-fullscreen-col">
       <GradientOverlays />
       <div class="landing-container">
-        <TopNav />
+        <TopNav :navLinks="navLinks" />
         <HeroSection />
       </div>
       <AppFooter />
