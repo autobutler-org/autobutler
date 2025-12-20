@@ -30,6 +30,19 @@ function handleClickOutside(event: MouseEvent) {
   }
 }
 
+function addListeners() {
+  // Use setTimeout to avoid the current event from triggering close
+  setTimeout(() => {
+    document.addEventListener('click', handleClickOutside)
+    document.addEventListener('contextmenu', handleClickOutside)
+  }, 0)
+}
+
+function removeListeners() {
+  document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('contextmenu', handleClickOutside)
+}
+
 function handleDownload() {
   if (props.file) {
     emit('download', props.file)
@@ -79,21 +92,22 @@ async function adjustPosition() {
 }
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-  document.addEventListener('contextmenu', handleClickOutside)
+  // Listeners are added/removed dynamically based on menu open state
 })
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-  document.removeEventListener('contextmenu', handleClickOutside)
+  removeListeners()
 })
 
-// Watch for menu opening to adjust position
+// Watch for menu opening to adjust position and add/remove listeners
 watch(
   () => props.modelValue,
   (isOpen) => {
     if (isOpen) {
+      addListeners()
       adjustPosition()
+    } else {
+      removeListeners()
     }
   }
 )
@@ -144,7 +158,8 @@ watch(
   </Teleport>
 </template>
 
-<style lang="scss" scoped>
+<style lang="scss">
+/* Not scoped because Teleport renders outside component tree */
 .context-menu {
   position: fixed;
   background-color: white;
