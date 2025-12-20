@@ -46,36 +46,6 @@
             <div v-else class="devices-grid">
               <DeviceCard v-for="device in devices" :key="device.device_path" :device="device" />
             </div>
-            <div v-if="devices.length > 0" class="devices-total">
-              <div class="devices-total-info">
-                <h3 class="devices-total-title">Storage Breakdown</h3>
-                <div class="storage-bar-card">
-                  <div class="storage-bar">
-                    <div
-                      v-for="cat in storageCategories"
-                      :key="cat.name"
-                      class="storage-bar-section"
-                      :style="{
-                        width: cat.percent + '%',
-                        background: cat.color
-                      }"
-                      :title="cat.name + ': ' + cat.sizeDisplay"
-                    ></div>
-                  </div>
-                  <div class="storage-bar-legend">
-                    <span v-for="cat in storageCategories" :key="cat.name" class="storage-bar-legend-item">
-                      <span class="legend-dot" :style="{ background: cat.color }"></span>
-                      {{ cat.name }} ({{ cat.sizeDisplay }})
-                    </span>
-                  </div>
-                  <div class="storage-bar-summary">
-                    <span class="storage-bar-total">Total: {{ summary.total_tb.toFixed(2) }} TB</span>
-                    <span class="storage-bar-used">Used: {{ summary.used_tb.toFixed(2) }} TB</span>
-                    <span class="storage-bar-free">Free: {{ summary.avail_tb.toFixed(2) }} TB</span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -84,28 +54,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-// ...existing code...
+import { ref, onMounted } from 'vue'
 
-// Compute storage categories for the bar
-const storageCategories = computed(() => {
-  // Demo/mock values for UI only
-  // Replace with real aggregation from devices/categories if available
-  const cats = [
-    { name: 'Documents', size_tb: 120, color: 'var(--color-red-400)' },
-    { name: 'Applications', size_tb: 80, color: 'var(--color-orange-400)' },
-    { name: 'Messages', size_tb: 60, color: 'var(--color-yellow-400)' },
-    { name: 'Trash', size_tb: 10, color: 'var(--color-green-400)' },
-    { name: 'System Data', size_tb: 100, color: 'var(--color-gray-400)' },
-    { name: 'Free', size_tb: summary.value.avail_tb, color: 'var(--color-gray-200)' }
-  ];
-  const total = summary.value.total_tb || 370 + summary.value.avail_tb;
-  return cats.map(cat => ({
-    ...cat,
-    percent: total ? (cat.size_tb / total * 100) : 0,
-    sizeDisplay: cat.size_tb.toFixed(2) + ' TB'
-  })).filter(cat => cat.size_tb > 0);
-});
 import DeviceCard from '../components/DeviceCard.vue'
 import TopNav from '@/components/home/TopNav.vue'
 import GradientOverlays from '@/components/home/GradientOverlays.vue'
