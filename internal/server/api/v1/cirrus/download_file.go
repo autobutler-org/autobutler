@@ -13,7 +13,7 @@ import (
 )
 
 var downloadFileRoute = serverutil.ApiRoute(
-	"GET", "/cirrus/*filePath", func(c *gin.Context) *serverutil.Response {
+	"GET", "/download/cirrus/*filePath", func(c *gin.Context) *serverutil.Response {
 		filePath := c.Param("filePath")
 
 		managedDevices, err := cirrusutil.GetManagedDevices()

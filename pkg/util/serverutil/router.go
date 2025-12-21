@@ -3,7 +3,6 @@ package serverutil
 import (
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 )
 
@@ -45,14 +44,6 @@ func ApiRoute(method, path string, handler func(c *gin.Context) *Response) *Rout
 	}
 }
 
-func UiRoute(path string, handler func(c *gin.Context) templ.Component) *Route {
-	return &Route{
-		Method:  "GET",
-		Path:    path,
-		Handler: WrapUiRoute(handler),
-	}
-}
-
 func WrapApiRoute(handler func(c *gin.Context) *Response) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		resp := handler(c)
@@ -76,24 +67,5 @@ func WrapApiRoute(handler func(c *gin.Context) *Response) gin.HandlerFunc {
 		default:
 			c.String(http.StatusInternalServerError, "Unsupported content type")
 		}
-	}
-}
-
-func WrapUiRoute(handler func(c *gin.Context) templ.Component) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		wrapped := WrapApiRoute(func(c *gin.Context) *Response { // coverage: ignore - handler reassigned before use
-			return NewResponse().WithStatusCode(400)
-		})
-		component := handler(c)
-		if component == nil {
-			wrapped = WrapApiRoute(func(c *gin.Context) *Response { // coverage: ignore - handler reassigned before use
-				return NewResponse().WithStatusCode(400)
-			})
-		} else if err := component.Render(c.Request.Context(), c.Writer); err != nil {
-			wrapped = WrapApiRoute(func(c *gin.Context) *Response { // coverage: ignore - handler reassigned before use
-				return NewResponse().WithStatusCode(400)
-			})
-		}
-		wrapped(c)
 	}
 }

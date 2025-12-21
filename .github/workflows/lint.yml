@@ -12,22 +12,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Setup go
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - name: Install Node dependencies
-        run: npm ci
       - name: Setup sqlc
         uses: ./.github/actions/setup-sqlc
-      - name: Setup Templ
-        uses: ./.github/actions/setup-templ
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+      - name: Install Node dependencies
+        run: |
+          npm ci --prefix ./app
       - name: Generate code
         run: |
           make generate

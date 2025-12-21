@@ -1,0 +1,232 @@
+<template>
+  <LibraryLayout>
+    <template #sidebar>
+      <BooksSidebar />
+    </template>
+    <template #title>
+      <span class="mock-badge">mock</span>
+      <h2 class="library-title">Library</h2>
+    </template>
+    <template #subtitle>
+      <div class="library-subtitle">{{ formatBookCount(totalBooks) }}</div>
+    </template>
+    <template #main>
+      <div id="books-view">
+        <div v-if="books.length === 0" class="books-empty">
+          <div class="book-card-icon">
+            <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 6v6l4 2"
+              />
+            </svg>
+          </div>
+          <h2>No books found</h2>
+          <p>Add PDF or EPUB files to your files directory to see them here.</p>
+        </div>
+        <div v-else class="books-grid">
+          <div v-for="book in books" :key="book.relPath" @click.prevent="selectBook(book)">
+            <div class="book-card">
+              <div class="book-card-cover">
+                <span class="book-card-badge">{{ book.type }}</span>
+              </div>
+              <div class="book-card-info">
+                <h3 class="book-card-title" :title="book.fileName">{{ book.title }}</h3>
+                <p class="book-card-size">{{ formatBookSize(book.size) }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <CirrusFileViewer
+        v-model="fileViewerOpen"
+        :file-path="selectedFilePath"
+        :file-type="selectedFileType"
+      />
+    </template>
+  </LibraryLayout>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { fetchBooks, type BookApiResponse } from '@/services/booksService'
+import CirrusFileViewer from '@/components/cirrus/CirrusFileViewer.vue'
+import LibraryLayout from '@/components/common/LibraryLayout.vue'
+import BooksSidebar from '@/components/books/BooksSidebar.vue'
+import type { FileType } from '@/types/cirrus'
+import type { Book } from '@/types/book'
+
+const books = ref<Book[]>([])
+const totalBooks = ref(0)
+
+const fileViewerOpen = ref(false)
+const selectedFilePath = ref('')
+const selectedFileType = ref<FileType>('pdf')
+
+const selectBook = (book: Book) => {
+  if (book.relPath) {
+    selectedFilePath.value = book.relPath
+    selectedFileType.value = book.type.toLowerCase() as FileType
+    fileViewerOpen.value = true
+  }
+}
+
+const formatBookCount = (count: number) => {
+  if (count === 1) return '1 book'
+  return `${count.toLocaleString()} books`
+}
+
+const formatBookSize = (size: number) => {
+  if (size < 1024) return `${size} B`
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
+  if (size < 1024 * 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
+  return `${(size / 1024 / 1024 / 1024).toFixed(1)} GB`
+}
+
+const cleanBookTitle = (fileName: string): string =>
+  fileName
+    .replace(/\.[^.]+$/, '')
+    .replace(/[_-]+/g, ' ')
+    .trim()
+
+const convertBookApi = (book: BookApiResponse) => ({
+  relPath: book.relPath,
+  fileName: book.fileName,
+  title: cleanBookTitle(book.fileName),
+  size: book.size,
+  type: book.type.toUpperCase(),
+})
+
+onMounted(async () => {
+  try {
+    const bookList = await fetchBooks()
+    books.value = bookList.map(convertBookApi)
+    totalBooks.value = bookList.length
+  } catch (e) {
+    // TODO: handle error
+    console.error(e)
+  }
+})
+</script>
+
+<style lang="scss" scoped>
+/* Cirrus-style header and grid */
+.books-header-simple {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: var(--spacing-2xl);
+  margin-bottom: var(--spacing-xl);
+}
+.books-library-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  color: var(--color-gray-900);
+}
+@media (prefers-color-scheme: dark) {
+  .books-library-title {
+    color: white;
+  }
+}
+.books-library-count {
+  font-size: var(--font-size-lg);
+  color: var(--color-gray-500);
+}
+.books-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: var(--spacing-2xl);
+  color: var(--color-gray-500);
+}
+.books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--spacing-xl);
+  width: 100vw;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding-bottom: var(--spacing-2xl);
+}
+.book-card {
+  cursor: pointer;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+  border: 1px solid var(--color-gray-800);
+  background: var(--color-gray-50);
+}
+@media (prefers-color-scheme: dark) {
+  .book-card {
+    background: var(--color-gray-900);
+  }
+}
+.book-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary-400);
+}
+.book-card-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  background: var(--color-gray-100);
+  position: relative;
+}
+@media (prefers-color-scheme: dark) {
+  .book-card-cover {
+    background: var(--color-gray-800);
+  }
+}
+.book-card-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--color-primary-600);
+  color: white;
+  font-size: var(--font-size-xs);
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+.book-card-info {
+  padding: var(--spacing-md);
+}
+.book-card-title {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-gray-900);
+}
+@media (prefers-color-scheme: dark) {
+  .book-card-title {
+    color: white;
+  }
+}
+.book-card-size {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+}
+.mock-badge {
+  background: var(--color-gray-300);
+  color: var(--color-gray-700);
+  font-size: var(--font-size-xs);
+  padding: 2px 8px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+</style>

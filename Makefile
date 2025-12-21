@@ -11,7 +11,10 @@ ifneq (,$(wildcard ./.env))
     export
 endif
 
+export GOTOOLCHAIN=go1.25.0+auto
+
 MAIN := ./cmd/autobutler/main.go
+EXE := ./build/autobutler
 
 clean: clean/build clean/tests
 
@@ -22,7 +25,7 @@ clean/tests:
 	rm -rf playwright-report/
 	rm -rf test-results/
 
-setup: setup/gotools setup/sqlc setup/templ ## Setup development environment
+setup: setup/gotools setup/sqlc setup/air ## Setup development environment
 
 setup/gotools: ## Install go tools
 	go install golang.org/x/tools/gopls@latest
@@ -35,8 +38,8 @@ setup/gotools: ## Install go tools
 setup/sqlc: ## Install sqlc tool
 	go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0
 
-setup/templ: ## Install templ tool
-	go install github.com/a-h/templ/cmd/templ@latest
+setup/air: ## Install air tool
+	go install github.com/air-verse/air@latest
 
 export INSTALL_VERSION?=$(shell git describe --tags --abbrev=0)
 export GOPROXY ?= https://proxy.golang.org,direct
@@ -68,35 +71,35 @@ install/mac: env-INSTALL_VERSION ## Install startup service on Mac
 	sudo launchctl load /Library/LaunchDaemons/com.autobutler.autobutler.plist
 	echo "Installed autobutler successfully. Will run at startup."
 
-generate: generate/sqlc generate/templ ## Generate files
+generate: generate/sqlc ## Generate files
 
-generate/sqlc: ## Generate templ files
+generate/sqlc: ## Generate sqlc files
 	sqlc generate
 
-generate/templ: ## Generate templ files
-	templ generate
-	$(MAKE) lint/go
+build: ## Build backend and frontend
+	# Order matters: frontend must be built before backend
+	$(MAKE) build/frontend
+	$(MAKE) build/backend
 
-build: generate ## Build backend
+build/backend: generate ## Build backend
 	mkdir -p ./build
-	go build -o ./build/autobutler $(MAIN)
+	go build -o $(EXE) $(MAIN)
 
-build/all: build/linux build/mac ## Build all backends
-
-build/linux: build/linux/amd64 build/linux/arm64 ## Build linux backends
-build/linux/amd64: ## Build linux backends
-	GOOS=linux GOARCH=amd64 go build -o ./build/autobutler-linux-amd64 $(MAIN)
-build/linux/arm64: ## Build linux backends
-	GOOS=linux GOARCH=arm64 go build -o ./build/autobutler-linux-arm64 $(MAIN)
-
-build/mac: build/mac/amd64 build/mac/arm64 ## Build macOS backends
-build/mac/arm64: ## Build macOS backends
-	GOOS=darwin GOARCH=arm64 go build -o ./build/autobutler-mac-arm64 $(MAIN)
+build/frontend: ## Build frontend
+	npm run build --prefix ./app
+	# Explanation: https://github.com/gin-gonic/gin/issues/2654#issuecomment-815823804
+	cp -f ./internal/server/public/index.html ./internal/server/public/index.htm
+	touch ./internal/server/public/stub.txt
 
 PRINT_COVERAGE ?= 0
 
 test: test/unit test/e2e
+
 test/unit: ## Run unit tests
+	$(MAKE) test/unit/backend
+	$(MAKE) test/unit/frontend
+
+test/unit/backend: ## Run unit tests for backend
 	# Generate coverage report for unit tests
 	go test -v ./... \
 		-coverprofile=coverage.out \
@@ -113,27 +116,22 @@ test/unit: ## Run unit tests
 		go tool cover \
 			-func=coverage.out.ignored
 	fi
-test/e2e:
-	npm run test/e2e
 
-format: format/go format/templ format/js format/ts format/css ## Format code
+test/unit/frontend: ## Run unit tests for frontend
+	npm run test:unit --prefix ./app
+
+test/e2e:
+	npm run test:e2e --prefix ./app
+
+format: format/go format/ts ## Format code
 
 format/go: ## Format Go code
 	gofmt -s -w .
 
-format/templ: ## Format templ files
-	templ fmt .
-
-format/js: ## Format JavaScript files
-	npm run format:js
-
 format/ts: ## Format TypeScript files
-	npm run format:ts
+	npm run format --prefix ./app
 
-format/css: ## Format CSS files
-	npm run format:css
-
-lint: lint/go lint/sqlc lint/templ lint/js lint/ts lint/css lint/yaml ## Lint code
+lint: lint/go lint/sqlc lint/ts lint/yaml ## Lint code
 
 lint/go: ## Lint Go code
 	go vet ./...
@@ -141,59 +139,59 @@ lint/go: ## Lint Go code
 lint/sqlc: ## Lint sqlc
 	sqlc vet
 
-lint/templ: ## Lint templ files
-	templ fmt -fail .
-
-lint/js: ## Lint JavaScript files
-	npm run lint:js
-
 lint/ts: ## Lint TypeScript files
-	npm run lint:ts
-
-lint/css: ## Lint CSS files
-	npm run lint:css
+	npm run lint:ts --prefix ./app
 
 lint/yaml: ## Lint YAML files
-	npm run lint:yaml
+	npm run lint:yaml --prefix ./app
 
-fix: fix/go fix/js fix/ts fix/css ## Fix code issues
+fix: fix/go fix/ts ## Fix code issues
 
 fix/go: ## Fix Go code issues
 	go mod tidy
 	go fmt ./...
 	templ fmt .
 
-fix/js: ## Fix JavaScript code issues
-	npm run format:js
-
 fix/ts: ## Fix TypeScript code issues
-	npm run format:ts
+	npm run fix --prefix ./app
 
-fix/css: ## Fix CSS code issues
-	npm run format:css
-
-upgrade: upgrade/go upgrade/js ## Upgrade dependencies
+upgrade: upgrade/go upgrade/ts ## Upgrade dependencies
 
 upgrade/go: generate ## Upgrade dependencies (go)
 	go get -u ./...
 	$(MAKE) tidy
 
-upgrade/js: ## Upgrade dependencies (js)
-	npm run check-updates
-	npm install
+upgrade/ts: ## Upgrade dependencies (ts)
+	npm run check-updates --prefix ./app
+	npm install --prefix ./app
 
 tidy: ## Tidy go mod
 	go mod tidy
 
-serve: generate ## Serve backend
+serve:
+	$(MAKE) -j2 serve/backend serve/frontend
+
+watch:
+	$(MAKE) -j2 watch/backend watch/frontend
+
+serve/backend: generate ## Serve backend
 	go run $(MAIN) serve
 
-watch: ## Watch backend for changes
-	templ generate \
-		-watch \
-		-watch-pattern='(.+\.go$$)|(.+\.templ$$)|(.+_templ\.txt$$)|(.+\.js$$)|(.+\.css$$)' \
-		-proxy="http://localhost:8080" \
-		-cmd="go run $(MAIN) serve"
+serve/production: ## Serve backend in production mode
+	$(MAKE) build
+	$(EXE) serve
+
+watch/backend: build/backend ## Watch backend for changes
+	air \
+		--build.cmd "$(MAKE) build/backend" \
+		--build.entrypoint "$(EXE)" \
+		--build.args_bin "serve" \
+		--build.exclude_dir "app,build,cd,datalinks,docs,internal/db,node_modules,playwright-report,scripts,sql,teststest-results"
+
+serve/frontend: ## Serve frontend
+	npm run dev --prefix ./app
+
+watch/frontend: serve/frontend ## Watch frontend
 
 version: ## Print version
 	go run $(MAIN) version

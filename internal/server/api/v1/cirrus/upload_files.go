@@ -1,9 +1,6 @@
 package v1_files
 
 import (
-	"autobutler/pkg/ui/components/error_message"
-	"autobutler/pkg/ui/components/file_explorer/load"
-	"autobutler/pkg/ui/types"
 	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
 
@@ -25,15 +22,12 @@ var uploadNestedFilesRoutes = serverutil.ApiRoute(
 )
 
 func uploadFilesImpl(c *gin.Context, rootDir string) {
-	err := c.Request.ParseMultipartForm(32 << 20)
-	if err != nil {
-		error_message.Component("Failed to parse multipart form: "+err.Error()).Render(c.Request.Context(), c.Writer)
+	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
 		return
 	}
 
 	form, err := c.MultipartForm()
 	if err != nil {
-		error_message.Component("Failed to get file: "+err.Error()).Render(c.Request.Context(), c.Writer)
 		return
 	}
 
@@ -43,20 +37,11 @@ func uploadFilesImpl(c *gin.Context, rootDir string) {
 		returnDir = form.Value["returnDir"][0]
 	}
 
-	result, err := cirrusutil.UploadFiles(cirrusutil.UploadFilesParams{
+	if _, err := cirrusutil.UploadFiles(cirrusutil.UploadFilesParams{
 		RootDir:     rootDir,
 		FileHeaders: fileHeaders,
 		ReturnDir:   returnDir,
-	})
-
-	if err != nil {
-		error_message.Component(err.Error()).Render(c.Request.Context(), c.Writer)
-		return
-	}
-
-	loadComponent := load.Component(types.NewPageState().WithRootDir(result.RootDir))
-	if err := loadComponent.Render(c.Request.Context(), c.Writer); err != nil {
-		c.Status(500)
+	}); err != nil {
 		return
 	}
 }

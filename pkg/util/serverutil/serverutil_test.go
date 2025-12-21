@@ -1,9 +1,7 @@
 package serverutil_test
 
 import (
-	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -11,7 +9,6 @@ import (
 
 	"autobutler/pkg/util/serverutil"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 )
 
@@ -102,8 +99,8 @@ func TestOk(t *testing.T) {
 		t.Errorf("expected status %d, got %d", http.StatusOK, resp.StatusCode)
 	}
 
-	if resp.ContentType != serverutil.ContentTypeHTML {
-		t.Errorf("expected content type %s, got %s", serverutil.ContentTypeHTML, resp.ContentType)
+	if resp.ContentType != serverutil.ContentTypeJSON {
+		t.Errorf("expected content type %s, got %s", serverutil.ContentTypeJSON, resp.ContentType)
 	}
 
 	if resp.Data != nil {
@@ -113,43 +110,6 @@ func TestOk(t *testing.T) {
 	if resp.Error != nil {
 		t.Errorf("expected nil error, got %v", resp.Error)
 	}
-}
-
-func TestWithComponent(t *testing.T) {
-	// Create a simple mock component
-	mockComponent := &mockTemplComponent{content: "<div>Hello World</div>"}
-
-	resp := serverutil.NewResponse().WithComponent(mockComponent)
-
-	if resp.Data == nil {
-		t.Error("expected Data to be set after WithComponent")
-	}
-
-	dataStr, ok := resp.Data.(string)
-	if !ok {
-		t.Errorf("expected Data to be a string, got %T", resp.Data)
-	}
-
-	if dataStr != "<div>Hello World</div>" {
-		t.Errorf("expected Data to be '<div>Hello World</div>', got '%s'", dataStr)
-	}
-}
-
-// mockTemplComponent is a mock implementation of templ.Component for testing
-type mockTemplComponent struct {
-	content string
-}
-
-func (m *mockTemplComponent) Render(ctx context.Context, w io.Writer) error {
-	_, err := w.Write([]byte(m.content))
-	return err
-}
-
-// mockFailingComponent is a mock component that always fails to render
-type mockFailingComponent struct{}
-
-func (m *mockFailingComponent) Render(ctx context.Context, w io.Writer) error {
-	return fmt.Errorf("render failed")
 }
 
 func TestNewRoute(t *testing.T) {
@@ -188,26 +148,6 @@ func TestApiRoute(t *testing.T) {
 
 	if route.Path != "/api/test" {
 		t.Errorf("expected path /api/test, got %s", route.Path)
-	}
-
-	if route.Handler == nil {
-		t.Error("expected handler to be non-nil")
-	}
-}
-
-func TestUiRoute(t *testing.T) {
-	handler := func(c *gin.Context) templ.Component {
-		return &mockTemplComponent{content: "<h1>Test</h1>"}
-	}
-
-	route := serverutil.UiRoute("/page", handler)
-
-	if route.Method != "GET" {
-		t.Errorf("expected method GET, got %s", route.Method)
-	}
-
-	if route.Path != "/page" {
-		t.Errorf("expected path /page, got %s", route.Path)
 	}
 
 	if route.Handler == nil {
@@ -369,47 +309,6 @@ func TestWrapApiRoute_UnsupportedContentType(t *testing.T) {
 
 	if !strings.Contains(w.Body.String(), "Unsupported content type") {
 		t.Errorf("expected body to contain 'Unsupported content type', got: %s", w.Body.String())
-	}
-}
-
-func TestWrapUiRoute_NilComponent(t *testing.T) {
-	handler := func(c *gin.Context) templ.Component {
-		return nil
-	}
-
-	wrapped := serverutil.WrapUiRoute(handler)
-
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-
-	wrapped(c)
-
-	// The wrapped handler returns response with StatusCode 400 but no data/error,
-	// so Gin defaults to 200
-	if w.Code != http.StatusOK {
-		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
-	}
-}
-
-func TestWrapUiRoute_RenderError(t *testing.T) {
-	// Create a component that fails to render
-	handler := func(c *gin.Context) templ.Component {
-		return &mockFailingComponent{}
-	}
-
-	wrapped := serverutil.WrapUiRoute(handler)
-
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	// Need to set up a request with a valid context
-	c.Request = httptest.NewRequest("GET", "/", nil)
-
-	wrapped(c)
-
-	// The wrapped handler returns response with StatusCode 400 but no data/error,
-	// so Gin defaults to 200
-	if w.Code != http.StatusOK {
-		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
 	}
 }
 

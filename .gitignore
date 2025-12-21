@@ -3,8 +3,13 @@
 
 # Binaries for programs and plugins
 ./autobutler
+# Distribution directory
+internal/server/public/*
+!internal/server/public/stub.txt
 # Datlinks
 datalinks/mac
+
+tmp/
 
 *.exe
 *.exe~
@@ -28,7 +33,6 @@ build/
 # Added by goreleaser init:
 dist/
 
-__*
 .env
 
 # Playwright
