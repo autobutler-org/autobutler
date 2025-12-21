@@ -68,7 +68,9 @@ const isCreating = ref(false)
 
 // Parse the path into breadcrumb segments
 const segments = computed(() => {
-  const parts = props.currentPath.split('/').filter((p) => p.length > 0)
+  const parts = props.currentPath.split('/').filter((p) => {
+    return p.length > 0
+  })
   const result = [{ name: 'cirrus', path: '' }]
 
   let accumulatedPath = ''

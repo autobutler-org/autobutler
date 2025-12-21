@@ -136,7 +136,9 @@ onUnmounted(() => {
 
 // Watch for menu opening to adjust position and add/remove listeners
 watch(
-  () => props.modelValue,
+  () => {
+    return props.modelValue
+  },
   (isOpen) => {
     if (isOpen) {
       addListeners()
@@ -149,7 +151,9 @@ watch(
 
 // Also watch x and y changes in case they update while open
 watch(
-  () => [props.x, props.y],
+  () => {
+    return [props.x, props.y]
+  },
   () => {
     if (props.modelValue) {
       adjustPosition()

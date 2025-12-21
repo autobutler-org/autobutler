@@ -119,14 +119,16 @@ async function uploadFiles(files: FileList) {
     }
 
     // Create file nodes from the uploaded files
-    const uploadedNodes: CirrusFileNode[] = Array.from(files).map((file) => ({
-      name: file.name,
-      size: file.size,
-      isDir: false,
-      deviceName: '',
-      devicePath: '',
-      fullPath: props.currentPath ? `${props.currentPath}/${file.name}` : file.name,
-    }))
+    const uploadedNodes: CirrusFileNode[] = Array.from(files).map((file) => {
+      return {
+        name: file.name,
+        size: file.size,
+        isDir: false,
+        deviceName: '',
+        devicePath: '',
+        fullPath: props.currentPath ? `${props.currentPath}/${file.name}` : file.name,
+      }
+    })
 
     uploadProgress.value = 'Upload complete!'
     emit('files-uploaded', uploadedNodes)

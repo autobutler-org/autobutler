@@ -6,13 +6,13 @@ This is a markdown file used for testing.
 
 - Bullet points
 - **Bold text**
-- *Italic text*
+- _Italic text_
 
 ## Code Example
 
 ```javascript
 function hello() {
-  console.log("Hello, World!");
+	console.log('Hello, World!')
 }
 ```
 

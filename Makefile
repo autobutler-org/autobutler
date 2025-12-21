@@ -98,7 +98,10 @@ build/mac/arm64: ## Build macOS backends
 PRINT_COVERAGE ?= 0
 
 test: test/unit test/e2e
-test/unit: ## Run unit tests
+
+test/unit: test/unit/frontend test/unit/backend ## Run unit tests
+
+test/unit/backend: ## Run unit tests
 	# Generate coverage report for unit tests
 	go test -v ./... \
 		-coverprofile=coverage.out \
@@ -115,8 +118,12 @@ test/unit: ## Run unit tests
 		go tool cover \
 			-func=coverage.out.ignored
 	fi
+
+test/unit/frontend: ## Run unit tests
+	npm run test:unit --prefix ./app
+
 test/e2e:
-	npm run test/e2e
+	npm run test:e2e --prefix ./app
 
 format: format/go format/ts ## Format code
 
@@ -135,10 +142,10 @@ lint/sqlc: ## Lint sqlc
 	sqlc vet
 
 lint/ts: ## Lint TypeScript files
-	npm run lint --prefix ./app
+	npm run lint:ts --prefix ./app
 
 lint/yaml: ## Lint YAML files
-	npm run lint:yaml
+	npm run lint:yaml --prefix ./app
 
 fix: fix/go fix/ts ## Fix code issues
 
@@ -148,7 +155,7 @@ fix/go: ## Fix Go code issues
 	templ fmt .
 
 fix/ts: ## Fix TypeScript code issues
-	npm run format:ts
+	npm run format:ts --prefix ./app
 
 upgrade: upgrade/go upgrade/ts ## Upgrade dependencies
 
@@ -157,8 +164,6 @@ upgrade/go: generate ## Upgrade dependencies (go)
 	$(MAKE) tidy
 
 upgrade/ts: ## Upgrade dependencies (ts)
-	npm run check-updates
-	npm install
 	npm run check-updates --prefix ./app
 	npm install --prefix ./app
 

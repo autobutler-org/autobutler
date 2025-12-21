@@ -24,7 +24,6 @@ jobs:
           cache: 'npm'
       - name: Install Node dependencies
         run: |
-          npm ci
           npm ci --prefix ./app
       - name: Setup sqlc
         uses: ./.github/actions/setup-sqlc

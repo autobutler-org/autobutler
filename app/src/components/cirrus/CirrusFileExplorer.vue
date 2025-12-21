@@ -187,7 +187,9 @@ async function fetchFiles() {
 
 // Watch route changes to update current path
 watch(
-  () => route.params.pathMatch,
+  () => {
+    return route.params.pathMatch
+  },
   (newPath) => {
     if (Array.isArray(newPath)) {
       currentPath.value = newPath.join('/')
@@ -239,7 +241,9 @@ function toggleDeviceBadges(show: boolean) {
 function handleFilesUploaded(uploadedFiles: CirrusFileNode[]) {
   // Add the new files to the list, avoiding duplicates
   for (const newFile of uploadedFiles) {
-    const exists = files.value.some((f) => f.fullPath === newFile.fullPath)
+    const exists = files.value.some((f) => {
+      return f.fullPath === newFile.fullPath
+    })
     if (!exists) {
       files.value.push(newFile)
     }
@@ -249,7 +253,9 @@ function handleFilesUploaded(uploadedFiles: CirrusFileNode[]) {
 // Handle folder created - add it to the list
 function handleFolderCreated(folderName: string) {
   const fullPath = currentPath.value ? `${currentPath.value}/${folderName}` : folderName
-  const exists = files.value.some((f) => f.fullPath === fullPath)
+  const exists = files.value.some((f) => {
+    return f.fullPath === fullPath
+  })
   if (!exists) {
     // Add folder at the beginning (folders typically appear first)
     files.value.unshift({
@@ -320,7 +326,9 @@ async function handleDelete(file: CirrusFileNode) {
     }
 
     // Remove the file from the in-memory list
-    files.value = files.value.filter((f) => f.fullPath !== file.fullPath)
+    files.value = files.value.filter((f) => {
+      return f.fullPath !== file.fullPath
+    })
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to delete file'
   }

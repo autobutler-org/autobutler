@@ -65,7 +65,9 @@ defineProps({
 })
 
 // Static test values for visual testing
-const hasCategories = computed(() => true)
+const hasCategories = computed(() => {
+  return true
+})
 type CategoryLabel = 'System' | 'Documents' | 'Media' | 'Backups' | 'Other' | 'Free'
 
 const testGB: Record<CategoryLabel, number> = {
@@ -114,7 +116,9 @@ const categorySegments = computed(() => {
 const freeWidth = computed(() => {
   return ((testGB.Free / totalGB) * 100).toFixed(2) + '%'
 })
-const freeGB = computed(() => testGB.Free.toFixed(1))
+const freeGB = computed(() => {
+  return testGB.Free.toFixed(1)
+})
 </script>
 
 <style lang="scss" scoped>
