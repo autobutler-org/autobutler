@@ -8,7 +8,7 @@ test.describe('Photo Thumbnails - EXIF Orientation', () => {
   }) => {
     await page.goto('/cirrus')
     const fileInput = page.locator('input[type="file"]')
-    const testImagePath = path.join('./app/e2e/data/flipped.jpg')
+    const testImagePath = path.join('./e2e/data/flipped.jpg')
     await fileInput.setInputFiles(testImagePath)
     await page.waitForTimeout(100)
     await page.goto('/photos')

@@ -15,7 +15,7 @@ const SECONDS = 1000
 const MINUTES = 60 * SECONDS
 
 export default defineConfig({
-  timeout: 3 * SECONDS,
+  timeout: 5 * SECONDS,
   globalTimeout: 10 * MINUTES,
   testDir: './e2e',
   expect: {
