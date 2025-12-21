@@ -42,17 +42,17 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Download release
       if: ${{ !inputs.is-remote }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         run-id: ${{ inputs.run-id }}
         github-token: ${{ github.token }}
 
     - name: Setup node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version-file: .nvmrc
 
