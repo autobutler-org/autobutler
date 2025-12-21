@@ -32,48 +32,38 @@ on:
         type: string
         default: ''
         required: false
-
 env:
-  BASE_URL: ${{ inputs.is-remote && inputs.remote-url || 'http://127.0.0.1:8080' }}
-
+  BASE_URL: ${{ inputs.is-remote && inputs.remote-url || 'http://localhost:8080' }}
 jobs:
   test-e2e:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
-
     - name: Download release
       if: ${{ !inputs.is-remote }}
       uses: actions/download-artifact@v7
       with:
         run-id: ${{ inputs.run-id }}
         github-token: ${{ github.token }}
-
     - name: Setup node
       uses: actions/setup-node@v6
       with:
         node-version-file: .nvmrc
-
-    - name: Install dependencies
+    - name: Install Node dependencies
       run: |
         npm ci --prefix ./app
-
     - name: Install Playwright Browsers
       run: |
         npx playwright install --with-deps
-
     - name: Start Autobutler
       if: ${{ !inputs.is-remote }}
       run: |
         chmod +x ./artifact/autobutler
         ./artifact/autobutler serve &
-
     - name: Run E2E tests
       run: |
         make test/e2e
-
     - uses: actions/upload-artifact@v4
       with:
         name: playwright-report
@@ -81,10 +71,9 @@ jobs:
         retention-days: 30
   test-unit:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Setup go
       uses: actions/setup-go@v6
       with:

@@ -17,6 +17,8 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+      - name: Setup sqlc
+        uses: ./.github/actions/setup-sqlc
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
@@ -24,8 +26,6 @@ jobs:
       - name: Install Node dependencies
         run: |
           npm ci --prefix ./app
-      - name: Setup sqlc
-        uses: ./.github/actions/setup-sqlc
       - name: Generate code
         run: |
           make generate

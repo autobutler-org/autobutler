@@ -15,17 +15,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: .nvmrc
       - name: Setup go
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
       - name: Setup sqlc
         uses: ./.github/actions/setup-sqlc
-      - name: Install dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+      - name: Install Node dependencies
         run: |
           npm ci --prefix ./app
       - name: Build
