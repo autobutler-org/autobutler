@@ -212,7 +212,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import type { NavLink } from '@/types/service_icon'
+import type { NavLink } from '@/types/nav_link'
 import { RouterLink } from 'vue-router'
 import { getCurrentVersion, getAvailableReleases, type Release } from '@/services/versionService'
 

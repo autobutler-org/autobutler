@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 import TopNav from '@/components/home/TopNav.vue'
-import type { NavLink } from '@/types/service_icon'
+import type { NavLink } from '@/types/nav_link'
 
 const navLinks: NavLink[] = [
   { name: 'Cirrus', href: '/cirrus' },
