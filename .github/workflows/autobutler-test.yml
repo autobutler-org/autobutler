@@ -78,6 +78,13 @@ jobs:
       uses: actions/setup-go@v6
       with:
         go-version-file: go.mod
+    - name: Setup node
+      uses: actions/setup-node@v6
+      with:
+        node-version-file: .nvmrc
+    - name: Install Node dependencies
+      run: |
+        npm ci --prefix ./app
     - name: Run unit tests
       env:
         PRINT_COVERAGE: true
