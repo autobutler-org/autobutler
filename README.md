@@ -11,20 +11,27 @@
 
 ## What is AutoButler?
 
-AutoButler is a plug-and-play private cloud system that puts you back in control of your digital life. Instead of renting storage and services from Big Tech, AutoButler is a physical device you own that runs in your home—giving you complete sovereignty over your data, documents, photos, and digital memories.
+AutoButler is a plug-and-play private cloud system that puts you back in control of your digital life. Instead of renting
+storage and services from Big Tech, AutoButler is a physical device you own that runs in your home—giving you complete
+sovereignty over your data, documents, photos, and digital memories.
 
-The internet used to be a platform that we used, but increasingly has become a data-mining platform for tech companies. AutoButler seeks to restore control to consumers by storing your data in a physical device in your home, not on someone else's servers.
+The internet used to be a platform that we used, but increasingly has become a data-mining platform for tech companies.
+AutoButler seeks to restore control to consumers by storing your data in a physical device in your home, not on someone
+else's servers.
 
 ### Why AutoButler?
 
 **Own, Don't Rent**  
-Remember when buying software meant you owned it? AutoButler brings that philosophy back. No subscriptions for your own data—just a one-time purchase with optional upgrades when *you* want them.
+Remember when buying software meant you owned it? AutoButler brings that philosophy back. No subscriptions for your own
+data—just a one-time purchase with optional upgrades when *you* want them.
 
 **Privacy First**  
-Tech giants use your photos for AI training and build shadow profiles of your children. AutoButler keeps your family's data private, secure, and out of the hands of corporations.
+Tech giants use your photos for AI training and build shadow profiles of your children. AutoButler keeps your family's
+data private, secure, and out of the hands of corporations.
 
 **Physical Ownership**  
-Your data lives in a fireproof, waterproof container in your home. Add external drives, mail backups to family, or upgrade storage—it's yours to manage as you please.
+Your data lives in a fireproof, waterproof container in your home. Add external drives, mail backups to family, or upgrade
+storage—it's yours to manage as you please.
 
 ### What You Get With AutoButler
 
@@ -50,24 +57,28 @@ AutoButler is built as a full-stack web application designed to run on dedicated
 
 ### Technology Stack
 
-**Backend**
+#### Backend
+
 - **Go 1.24+** - High-performance, compiled backend server
 - **Gin Web Framework** - Fast HTTP routing and middleware
 - **SQLite** (modernc.org/sqlite) - Embedded database for local data storage
 - **golang-migrate** - Database schema migrations
 - **templ** - Type-safe HTML templating for Go
 
-**Frontend**
+#### Frontend
+
 - **Vanilla JavaScript** - No heavy frameworks, just fast, clean JS
 - **Tailwind CSS** - Utility-first CSS framework
 - **Flowbite Icons** - Beautiful SVG icon library
 
-**Testing & Quality**
+#### Testing & Quality
+
 - **Playwright** - End-to-end testing framework
 - **ESLint & Prettier** - Code quality and formatting
 - **Go standard testing** - Unit and integration tests
 
-**Observability**
+#### Observability
+
 - **OpenTelemetry** - Instrumentation for monitoring and tracing
 - **Runtime metrics** - Performance monitoring
 
@@ -81,7 +92,7 @@ AutoButler is built as a full-stack web application designed to run on dedicated
 
 ### Architecture
 
-```
+```plaintext
 autobutler/
 ├── cmd/autobutler/          # CLI entry points (serve, install, version)
 ├── internal/
@@ -108,66 +119,73 @@ autobutler/
 - **Go 1.24+** - [Install Go](https://golang.org/doc/install)
 - **Make** - Build automation
 - **Node.js & npm** - For frontend tooling and tests
-- **templ** - HTML templating tool (`go install github.com/a-h/templ/cmd/templ@latest`)
+- **air** - Hot reloading tool
 - **sqlc** - SQL code generator (for database layer development)
 
 ### Installation
 
 1. **Clone the repository**
-   ```shell
+
+   ```bash
    git clone https://github.com/autobutler-org/autobutler.git
    cd autobutler
    ```
 
 2. **Set up development environment**
-   ```shell
+
+   ```bash
    make setup
    ```
 
 3. **Generate code** (templ templates, database code, etc.)
-   ```shell
+
+   ```bash
    make generate
    ```
 
 4. **Build the application**
-   ```shell
+
+   ```bash
    make build
    ```
 
 ### Development
 
-**Run the backend with hot-reloading**
-```shell
+#### Run the frontend and backend with hot-reloading
+
+```bash
 make watch
 ```
 
-**Run the backend (production mode)**
-```shell
+#### Run the frontend and backend (production mode)
+
+```bash
 make serve
 ```
 
-**Run end-to-end tests**
-```shell
+#### Run end-to-end tests
+
+```bash
 npm run test/e2e
 ```
 
-**View test reports**
-```shell
+#### View test reports
+
+```bash
 npm run test/e2e/report
 ```
 
-**Format and lint code**
-```shell
-make fmt        # Format Go code
-npm run format:js   # Format JavaScript
-npm run format:css  # Format CSS
-npm run lint:js     # Lint JavaScript
+#### Format and lint code
+
+```bash
+make format        # Format all code
 ```
 
-### Project Commands
+#### Project Commands
 
 View all available commands:
-```shell
+
+```bash
 make help
 ```
 
@@ -175,7 +193,8 @@ make help
 
 ## Contributing
 
-We welcome contributions! AutoButler is built on the principle of digital sovereignty, and we believe in transparent, community-driven development.
+We welcome contributions! AutoButler is built on the principle of digital sovereignty, and we believe in transparent,
+community-driven development.
 
 Before contributing, please:
 
@@ -224,6 +243,7 @@ The future is about the people of the internet, not the corporations. We stand f
 
 **What if your online services worked more like plumbers than subscriptions?**
 
-Instead of renting your device and storage, you own your own private cloud. Pay for fixes or upgrades... or do them yourself. It's yours to manage as you please.
+Instead of renting your device and storage, you own your own private cloud. Pay for fixes or upgrades... or do them yourself.
+It's yours to manage as you please.
 
 Stop renting your digital life. **Start owning it.**

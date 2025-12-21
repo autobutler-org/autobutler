@@ -1,4 +1,3 @@
-
 <template>
   <div class="site-main-bg">
     <main class="landing-main">
@@ -140,9 +139,7 @@ function calculateSummary(devices: Device[]): Summary {
 onMounted(fetchDevices)
 </script>
 
-
 <style lang="scss" scoped>
-
 /* Use the same layout and style as HomeView and BooksView */
 .site-main-bg {
   height: 100vh;
@@ -246,7 +243,7 @@ onMounted(fetchDevices)
   background: var(--color-gray-100);
   border-radius: 12px;
   padding: 1.5rem 2rem;
-  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -256,7 +253,7 @@ onMounted(fetchDevices)
   height: 32px;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.03);
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.03);
 }
 .storage-bar-section {
   height: 100%;

@@ -118,30 +118,21 @@ test/unit: ## Run unit tests
 test/e2e:
 	npm run test/e2e
 
-format: format/go format/templ format/ts format/css ## Format code
+format: format/go format/ts ## Format code
 
 format/go: ## Format Go code
 	gofmt -s -w .
 
-format/templ: ## Format templ files
-	templ fmt .
-
 format/ts: ## Format TypeScript files
 	npm run format --prefix ./app
 
-format/css: ## Format CSS files
-	npm run format:css
-
-lint: lint/go lint/sqlc lint/templ lint/ts lint/css lint/yaml ## Lint code
+lint: lint/go lint/sqlc lint/ts lint/css lint/yaml ## Lint code
 
 lint/go: ## Lint Go code
 	go vet ./...
 
 lint/sqlc: ## Lint sqlc
 	sqlc vet
-
-lint/templ: ## Lint templ files
-	templ fmt -fail .
 
 lint/ts: ## Lint TypeScript files
 	npm run lint --prefix ./app
@@ -161,9 +152,6 @@ fix/go: ## Fix Go code issues
 
 fix/ts: ## Fix TypeScript code issues
 	npm run format:ts
-
-fix/css: ## Fix CSS code issues
-	npm run format:css
 
 upgrade: upgrade/go upgrade/ts ## Upgrade dependencies
 

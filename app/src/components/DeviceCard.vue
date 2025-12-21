@@ -1,9 +1,14 @@
-
 <template>
   <div class="device-card" @click="goToCirrus">
     <div class="device-card-header">
       <div class="device-card-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
           <line x1="8" y1="21" x2="16" y2="21"></line>
           <line x1="12" y1="17" x2="12" y2="21"></line>
@@ -11,7 +16,10 @@
       </div>
       <div class="device-card-title-section">
         <h3 class="device-card-title">{{ device.name }}</h3>
-        <p class="device-card-type">{{ device.is_internal ? 'External' : 'Internal' }} • {{ device.file_system }} • {{ device.device_path }}</p>
+        <p class="device-card-type">
+          {{ device.is_internal ? 'External' : 'Internal' }} • {{ device.file_system }} •
+          {{ device.device_path }}
+        </p>
       </div>
     </div>
     <div class="device-card-body">
@@ -42,9 +50,9 @@ function goToCirrus() {
 
 <style lang="scss" scoped>
 .device-card {
-  background: rgba(0,0,0,0.12);
+  background: rgba(0, 0, 0, 0.12);
   border-radius: 18px;
-  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.10);
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
   padding: 2.2rem 2.2rem 1.5rem 2.2rem;
   display: flex;
   flex-direction: column;
@@ -96,5 +104,4 @@ function goToCirrus() {
   font-size: 1rem;
   color: #e0e0e0;
 }
-
 </style>

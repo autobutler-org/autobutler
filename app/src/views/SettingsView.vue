@@ -65,7 +65,15 @@
         <div class="settings-cards-row">
           <section id="storage" class="settings-section settings-card">
             <div class="settings-section-header">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                width="20"
+                height="20"
+              >
                 <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
                 <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
                 <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
@@ -82,7 +90,15 @@
           </section>
           <section id="opentelemetry" class="settings-section settings-card">
             <div class="settings-section-header">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                width="20"
+                height="20"
+              >
                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
               </svg>
               <h2>OpenTelemetry</h2>
@@ -93,7 +109,15 @@
               <button>Traces</button>
               <button>Logs</button>
               <button>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  width="16"
+                  height="16"
+                >
                   <circle cx="11" cy="11" r="8"></circle>
                   <path d="M21 21l-4.35-4.35"></path>
                 </svg>
@@ -122,9 +146,18 @@
               </div>
               <table class="settings-metric-stats compact">
                 <tbody>
-                  <tr><td>Current</td><td>32%</td></tr>
-                  <tr><td>Peak</td><td>77%</td></tr>
-                  <tr><td>Avg</td><td>28%</td></tr>
+                  <tr>
+                    <td>Current</td>
+                    <td>32%</td>
+                  </tr>
+                  <tr>
+                    <td>Peak</td>
+                    <td>77%</td>
+                  </tr>
+                  <tr>
+                    <td>Avg</td>
+                    <td>28%</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -139,9 +172,18 @@
               </div>
               <table class="settings-metric-stats compact">
                 <tbody>
-                  <tr><td>Used</td><td>18.2 GB</td></tr>
-                  <tr><td>Cache</td><td>2.9 GB</td></tr>
-                  <tr><td>Free</td><td>13.6 GB</td></tr>
+                  <tr>
+                    <td>Used</td>
+                    <td>18.2 GB</td>
+                  </tr>
+                  <tr>
+                    <td>Cache</td>
+                    <td>2.9 GB</td>
+                  </tr>
+                  <tr>
+                    <td>Free</td>
+                    <td>13.6 GB</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -155,9 +197,18 @@
               </div>
               <table class="settings-metric-stats compact">
                 <tbody>
-                  <tr><td>Read</td><td>210 MB/s</td></tr>
-                  <tr><td>Write</td><td>185 MB/s</td></tr>
-                  <tr><td>Latency</td><td>4.6 ms</td></tr>
+                  <tr>
+                    <td>Read</td>
+                    <td>210 MB/s</td>
+                  </tr>
+                  <tr>
+                    <td>Write</td>
+                    <td>185 MB/s</td>
+                  </tr>
+                  <tr>
+                    <td>Latency</td>
+                    <td>4.6 ms</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -172,9 +223,18 @@
               </div>
               <table class="settings-metric-stats compact">
                 <tbody>
-                  <tr><td>Current</td><td>42 ops/s</td></tr>
-                  <tr><td>Peak</td><td>120 ops/s</td></tr>
-                  <tr><td>Errors</td><td>0.2%</td></tr>
+                  <tr>
+                    <td>Current</td>
+                    <td>42 ops/s</td>
+                  </tr>
+                  <tr>
+                    <td>Peak</td>
+                    <td>120 ops/s</td>
+                  </tr>
+                  <tr>
+                    <td>Errors</td>
+                    <td>0.2%</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -191,9 +251,24 @@
               </tr>
             </thead>
             <tbody>
-              <tr><td>2025-04-12 10:14:03</td><td>Exporter connected to http://otel-collector:4317</td><td>Exporter</td><td>Info</td></tr>
-              <tr><td>2025-04-12 10:10:22</td><td>Batch size adjusted to 512 KB</td><td>Collector</td><td>Info</td></tr>
-              <tr><td>2025-04-12 09:58:07</td><td>Transient failure, retry scheduled</td><td>Exporter</td><td>Warning</td></tr>
+              <tr>
+                <td>2025-04-12 10:14:03</td>
+                <td>Exporter connected to http://otel-collector:4317</td>
+                <td>Exporter</td>
+                <td>Info</td>
+              </tr>
+              <tr>
+                <td>2025-04-12 10:10:22</td>
+                <td>Batch size adjusted to 512 KB</td>
+                <td>Collector</td>
+                <td>Info</td>
+              </tr>
+              <tr>
+                <td>2025-04-12 09:58:07</td>
+                <td>Transient failure, retry scheduled</td>
+                <td>Exporter</td>
+                <td>Warning</td>
+              </tr>
             </tbody>
           </table>
           <div class="settings-events-actions">
@@ -408,7 +483,7 @@ const sidebarSections = [
 .settings-card {
   background: var(--color-gray-900);
   border-radius: var(--border-radius-lg);
-  box-shadow: 0 2px 16px 0 rgba(0,0,0,0.10);
+  box-shadow: 0 2px 16px 0 rgba(0, 0, 0, 0.1);
   padding: var(--spacing-xl) var(--spacing-2xl);
   color: white;
   border: 1px solid var(--color-gray-800);
@@ -418,7 +493,7 @@ const sidebarSections = [
   transition: box-shadow 0.2s;
 }
 .settings-card:hover {
-  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.18);
+  box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.18);
 }
 .mock-card {
   background: var(--color-gray-950);

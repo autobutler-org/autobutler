@@ -5,7 +5,7 @@
       <div id="mobile-photos-arrival-location"></div>
     </template>
     <template #title>
-        <h2 class="library-title" @click="scrollToArrival">All Photos</h2>
+      <h2 class="library-title" @click="scrollToArrival">All Photos</h2>
     </template>
     <template #subtitle>
       <div class="library-subtitle">{{ formatPhotoCount(totalPhotos) }}</div>

@@ -4,8 +4,8 @@
       <BooksSidebar />
     </template>
     <template #title>
-        <span class="mock-badge">mock</span>
-        <h2 class="library-title">Library</h2>
+      <span class="mock-badge">mock</span>
+      <h2 class="library-title">Library</h2>
     </template>
     <template #subtitle>
       <div class="library-subtitle">{{ formatBookCount(totalBooks) }}</div>
@@ -21,11 +21,7 @@
         <p>Add PDF or EPUB files to your files directory to see them here.</p>
       </div>
       <div v-else class="books-grid-simple">
-        <div
-          v-for="book in books"
-          :key="book.relPath"
-          @click.prevent="selectBook(book)"
-        >
+        <div v-for="book in books" :key="book.relPath" @click.prevent="selectBook(book)">
           <div class="book-card">
             <div class="book-card-cover">
               <span class="book-card-badge">{{ book.type }}</span>

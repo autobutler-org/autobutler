@@ -28,8 +28,6 @@ jobs:
           npm ci --prefix ./app
       - name: Setup sqlc
         uses: ./.github/actions/setup-sqlc
-      - name: Setup Templ
-        uses: ./.github/actions/setup-templ
       - name: Generate code
         run: |
           make generate

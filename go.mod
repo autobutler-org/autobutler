@@ -4,7 +4,6 @@ go 1.24.4
 
 require (
 	github.com/KononK/resize v0.0.0-20200801203131-21c514740ed6
-	github.com/a-h/templ v0.3.960
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-contrib/static v1.1.5
 	github.com/gin-gonic/gin v1.11.0

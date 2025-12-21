@@ -8,8 +8,8 @@ describe('HomeView', () => {
     const wrapper = mount(HomeView, {
       props: { msg: 'Autobutler' },
       global: {
-        plugins: [router]
-      }
+        plugins: [router],
+      },
     })
     await router.isReady?.()
     expect(wrapper.text()).toContain('Autobutler')

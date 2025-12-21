@@ -9,7 +9,6 @@ import (
 
 	"autobutler/pkg/util/serverutil"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 )
 
@@ -310,25 +309,6 @@ func TestWrapApiRoute_UnsupportedContentType(t *testing.T) {
 
 	if !strings.Contains(w.Body.String(), "Unsupported content type") {
 		t.Errorf("expected body to contain 'Unsupported content type', got: %s", w.Body.String())
-	}
-}
-
-func TestWrapUiRoute_NilComponent(t *testing.T) {
-	handler := func(c *gin.Context) templ.Component {
-		return nil
-	}
-
-	wrapped := serverutil.WrapUiRoute(handler)
-
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-
-	wrapped(c)
-
-	// The wrapped handler returns response with StatusCode 400 but no data/error,
-	// so Gin defaults to 200
-	if w.Code != http.StatusOK {
-		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
 	}
 }
 
