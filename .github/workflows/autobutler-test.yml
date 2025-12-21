@@ -59,8 +59,9 @@ jobs:
     - name: Start Autobutler
       if: ${{ !inputs.is-remote }}
       run: |
-        chmod +x ./artifact/autobutler
-        ./artifact/autobutler serve &
+        ls -la
+        chmod +x ./autobutler
+        ./autobutler serve &
     - name: Run E2E tests
       run: |
         make test/e2e
