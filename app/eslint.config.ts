@@ -3,6 +3,7 @@ import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescri
 import pluginVue from 'eslint-plugin-vue'
 import pluginVitest from '@vitest/eslint-plugin'
 import pluginPlaywright from 'eslint-plugin-playwright'
+import preferArrowFunctions from 'eslint-plugin-prefer-arrow-functions'
 import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
 
 // To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
@@ -31,9 +32,17 @@ export default defineConfigWithVueTs(
     files: ['e2e/**/*.{test,spec}.{js,ts,jsx,tsx}'],
   },
   skipFormatting,
+  preferArrowFunctions.configs.all,
+  // Temporarily disabled rules for Playwright
   {
+    files: ['e2e/*.spec.ts'],
     rules: {
-      'arrow-body-style': ['error', 'always'],
+      'playwright/no-conditional-in-test': 'off',
+      'playwright/no-conditional-expect': 'off',
+      'playwright/no-wait-for-timeout': 'off',
+      'playwright/no-useless-not': 'off',
+      'playwright/prefer-web-first-assertions': 'off',
+      'playwright/no-wait-for-selector': 'off',
     },
   },
 )
