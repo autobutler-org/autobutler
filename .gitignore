@@ -5,6 +5,7 @@
 ./autobutler
 # Distribution directory
 internal/server/public/*
+!internal/server/public/stub.txt
 # Datlinks
 datalinks/mac
 

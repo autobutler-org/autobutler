@@ -89,6 +89,7 @@ build/frontend: ## Build frontend
 	npm run build --prefix ./app
 	# Explanation: https://github.com/gin-gonic/gin/issues/2654#issuecomment-815823804
 	cp -f ./internal/server/public/index.html ./internal/server/public/index.htm
+	touch ./internal/server/public/stub.txt
 
 PRINT_COVERAGE ?= 0
 
