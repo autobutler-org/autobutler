@@ -9,7 +9,6 @@
     "test/e2e/install": "npx playwright install",
     "lint:js": "eslint internal/server/public/scripts/**/*.js && prettier --check internal/server/public/scripts/**/*.js",
     "lint:ts": "eslint tests/e2e/**/*.ts && prettier --check tests/e2e/**/*.ts",
-    "lint:css": "prettier --check internal/server/public/styles/**/*.css",
     "lint:yaml": "yamllint '**/*.{yaml,yml}'",
     "check-updates": "ncu -u"
   },

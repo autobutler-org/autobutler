@@ -126,7 +126,7 @@ format/go: ## Format Go code
 format/ts: ## Format TypeScript files
 	npm run format --prefix ./app
 
-lint: lint/go lint/sqlc lint/ts lint/css lint/yaml ## Lint code
+lint: lint/go lint/sqlc lint/ts lint/yaml ## Lint code
 
 lint/go: ## Lint Go code
 	go vet ./...
@@ -137,13 +137,10 @@ lint/sqlc: ## Lint sqlc
 lint/ts: ## Lint TypeScript files
 	npm run lint --prefix ./app
 
-lint/css: ## Lint CSS files
-	npm run lint:css
-
 lint/yaml: ## Lint YAML files
 	npm run lint:yaml
 
-fix: fix/go fix/ts fix/css ## Fix code issues
+fix: fix/go fix/ts ## Fix code issues
 
 fix/go: ## Fix Go code issues
 	go mod tidy
