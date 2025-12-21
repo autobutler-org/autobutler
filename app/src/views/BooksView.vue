@@ -15,7 +15,12 @@
         <div v-if="books.length === 0" class="books-empty">
           <div class="book-card-icon">
             <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 6v6l4 2"
+              />
             </svg>
           </div>
           <h2>No books found</h2>

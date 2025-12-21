@@ -11,8 +11,8 @@ import { defineConfig, devices } from '@playwright/test'
  * See https://playwright.dev/docs/test-configuration.
  */
 
-const SECONDS = 1000;
-const MINUTES = 60 * SECONDS;
+const SECONDS = 1000
+const MINUTES = 60 * SECONDS
 
 export default defineConfig({
   timeout: 3 * SECONDS,

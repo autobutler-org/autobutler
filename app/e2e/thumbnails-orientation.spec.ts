@@ -2,7 +2,10 @@ import { test, expect } from '@playwright/test'
 import * as path from 'path'
 
 test.describe('Photo Thumbnails - EXIF Orientation', () => {
-  test('thumbnail API respects EXIF orientation and does not rotate images incorrectly', async ({ page, request }) => {
+  test('thumbnail API respects EXIF orientation and does not rotate images incorrectly', async ({
+    page,
+    request,
+  }) => {
     await page.goto('/cirrus')
     const fileInput = page.locator('input[type="file"]')
     const testImagePath = path.join('./app/e2e/data/flipped.jpg')
