@@ -29,6 +29,10 @@ jobs:
       - name: Generate code
         run: |
           make generate
+      - name: Make empty public/ dir
+        run: |
+          mkdir -p ./internal/server/public
+          touch ./internal/server/public/some-file
       - name: Lint
         run: |
           make lint
