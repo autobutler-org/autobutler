@@ -29,7 +29,7 @@ jobs:
       - name: Generate code
         run: |
           make generate
-      - name: Make empty public/ dir
+      - name: Make stub public/ dir
         run: |
           mkdir -p ./internal/server/public
           touch ./internal/server/public/some-file
