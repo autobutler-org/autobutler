@@ -1,0 +1,1 @@
+./app/eslint.config.ts
