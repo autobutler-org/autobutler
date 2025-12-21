@@ -43,7 +43,7 @@ const viewerComponent = computed(() => {
   }
 })
 
-function closeDialog() {
+const closeDialog = () => {
   emit('update:modelValue', false)
 }
 </script>

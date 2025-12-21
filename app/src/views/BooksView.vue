@@ -73,35 +73,31 @@ const selectBook = (book: Book) => {
   }
 }
 
-function formatBookCount(count: number) {
+const formatBookCount = (count: number) => {
   if (count === 1) return '1 book'
   return `${count.toLocaleString()} books`
 }
 
-function formatBookSize(size: number) {
+const formatBookSize = (size: number) => {
   if (size < 1024) return `${size} B`
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
   if (size < 1024 * 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
   return `${(size / 1024 / 1024 / 1024).toFixed(1)} GB`
 }
 
-function cleanBookTitle(fileName: string): string {
-  // Remove extension and replace underscores/dashes with spaces
-  return fileName
+const cleanBookTitle = (fileName: string): string =>
+  fileName
     .replace(/\.[^.]+$/, '')
     .replace(/[_-]+/g, ' ')
     .trim()
-}
 
-function convertBookApi(book: BookApiResponse) {
-  return {
-    relPath: book.relPath,
-    fileName: book.fileName,
-    title: cleanBookTitle(book.fileName),
-    size: book.size,
-    type: book.type.toUpperCase(),
-  }
-}
+const convertBookApi = (book: BookApiResponse) => ({
+  relPath: book.relPath,
+  fileName: book.fileName,
+  title: cleanBookTitle(book.fileName),
+  size: book.size,
+  type: book.type.toUpperCase(),
+})
 
 onMounted(async () => {
   try {

@@ -7,7 +7,7 @@ export interface BookApiResponse {
   type: string
 }
 
-export async function fetchBooks(): Promise<BookApiResponse[]> {
+export const fetchBooks = async (): Promise<BookApiResponse[]> => {
   const res = await fetch('/api/v1/books')
   if (!res.ok) throw new Error('Failed to fetch books')
   return res.json()

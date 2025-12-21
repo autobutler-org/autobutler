@@ -238,14 +238,14 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 
-function handleClickOutside(event: MouseEvent) {
+const handleClickOutside = (event: MouseEvent) => {
   const container = document.getElementById('version-container')
   if (container && !container.contains(event.target as Node)) {
     versionDropdownOpen.value = false
   }
 }
 
-async function toggleVersionDropdown() {
+const toggleVersionDropdown = async () => {
   if (versionDropdownOpen.value) {
     versionDropdownOpen.value = false
     return
@@ -259,11 +259,11 @@ async function toggleVersionDropdown() {
   }
 }
 
-function toggleMobileMenu() {
+const toggleMobileMenu = () => {
   mobileMenuOpen.value = !mobileMenuOpen.value
 }
 
-function closeMobileMenu() {
+const closeMobileMenu = () => {
   mobileMenuOpen.value = false
 }
 </script>

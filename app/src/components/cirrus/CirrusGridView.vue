@@ -87,11 +87,9 @@ const emit = defineEmits<{
   'context-menu': [event: MouseEvent, file: CirrusFileNode]
 }>()
 
-function getFileType(file: CirrusFileNode) {
-  return determineFileType(file)
-}
+const getFileType = (file: CirrusFileNode) => determineFileType(file)
 
-function getIconComponent(fileType: string) {
+const getIconComponent = (fileType: string) => {
   switch (fileType) {
     case 'folder':
       return FolderIcon
@@ -110,7 +108,7 @@ function getIconComponent(fileType: string) {
   }
 }
 
-function handleClick(file: CirrusFileNode) {
+const handleClick = (file: CirrusFileNode) => {
   const fileName = getFileName(file)
   if (isDirectory(file)) {
     const newPath = props.currentPath ? `${props.currentPath}/${fileName}` : fileName
@@ -120,7 +118,7 @@ function handleClick(file: CirrusFileNode) {
   }
 }
 
-function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
+const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   event.preventDefault()
   emit('context-menu', event, file)
 }

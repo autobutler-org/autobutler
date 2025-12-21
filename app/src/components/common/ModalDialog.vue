@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 const emit = defineEmits(['close'])
-function onClose() {
+const onClose = () => {
   emit('close')
 }
 </script>

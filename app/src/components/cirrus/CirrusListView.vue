@@ -229,7 +229,7 @@ const sortDirection = ref<SortDirection>('asc')
 const mixedSorting = ref(false)
 
 // Toggle mixed sorting mode (folders mixed with files vs folders first)
-function toggleMixedSorting() {
+const toggleMixedSorting = () => {
   mixedSorting.value = !mixedSorting.value
 }
 
@@ -279,7 +279,7 @@ const sortedFiles = computed(() => {
   })
 })
 
-function toggleSort(column: SortColumn) {
+const toggleSort = (column: SortColumn) => {
   if (sortColumn.value === column) {
     // Toggle direction
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
@@ -290,11 +290,9 @@ function toggleSort(column: SortColumn) {
   }
 }
 
-function getFileType(file: CirrusFileNode) {
-  return determineFileType(file)
-}
+const getFileType = (file: CirrusFileNode) => determineFileType(file)
 
-function getIconComponent(fileType: string): Component {
+const getIconComponent = (fileType: string): Component => {
   switch (fileType) {
     case 'folder':
       return FolderIcon
@@ -313,7 +311,7 @@ function getIconComponent(fileType: string): Component {
   }
 }
 
-function handleClick(file: CirrusFileNode) {
+const handleClick = (file: CirrusFileNode) => {
   const fileName = getFileName(file)
   if (isDirectory(file)) {
     // Navigate to folder
@@ -324,7 +322,7 @@ function handleClick(file: CirrusFileNode) {
   }
 }
 
-function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
+const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   event.preventDefault()
   emit('context-menu', event, file)
 }

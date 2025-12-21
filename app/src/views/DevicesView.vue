@@ -104,7 +104,7 @@ const summary = ref<Summary>({
 })
 const loading = ref(false)
 
-async function fetchDevices() {
+const fetchDevices = async () => {
   loading.value = true
   try {
     const res = await fetch('/api/v1/storage/devices/status')
@@ -116,7 +116,7 @@ async function fetchDevices() {
   }
 }
 
-function calculateSummary(devices: Device[]): Summary {
+const calculateSummary = (devices: Device[]): Summary => {
   let total_bytes = 0,
     used_bytes = 0,
     avail_bytes = 0

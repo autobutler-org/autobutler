@@ -43,7 +43,7 @@ defineProps({
   },
 })
 
-function goToCirrus() {
+const goToCirrus = () => {
   window.location.href = '/cirrus'
 }
 </script>

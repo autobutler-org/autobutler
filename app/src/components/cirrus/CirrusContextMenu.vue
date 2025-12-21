@@ -55,17 +55,17 @@ const emit = defineEmits<{
 
 const menuRef = ref<HTMLElement | null>(null)
 
-function closeMenu() {
+const closeMenu = () => {
   emit('update:modelValue', false)
 }
 
-function handleClickOutside(event: MouseEvent) {
+const handleClickOutside = (event: MouseEvent) => {
   if (menuRef.value && !menuRef.value.contains(event.target as Node)) {
     closeMenu()
   }
 }
 
-function addListeners() {
+const addListeners = () => {
   // Use setTimeout to avoid the current event from triggering close
   setTimeout(() => {
     document.addEventListener('click', handleClickOutside)
@@ -73,33 +73,33 @@ function addListeners() {
   }, 0)
 }
 
-function removeListeners() {
+const removeListeners = () => {
   document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('contextmenu', handleClickOutside)
 }
 
-function handleDownload() {
+const handleDownload = () => {
   if (props.file) {
     emit('download', props.file)
   }
   closeMenu()
 }
 
-function handleRename() {
+const handleRename = () => {
   if (props.file) {
     emit('rename', props.file)
   }
   closeMenu()
 }
 
-function handleDetails() {
+const handleDetails = () => {
   if (props.file) {
     emit('details', props.file)
   }
   closeMenu()
 }
 
-function handleDelete() {
+const handleDelete = () => {
   if (props.file) {
     emit('delete', props.file)
   }
@@ -107,7 +107,7 @@ function handleDelete() {
 }
 
 // Adjust position to keep menu on screen
-async function adjustPosition() {
+const adjustPosition = async () => {
   await nextTick()
   if (!menuRef.value) return
 

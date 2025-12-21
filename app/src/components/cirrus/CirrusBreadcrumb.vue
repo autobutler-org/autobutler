@@ -82,12 +82,12 @@ const segments = computed(() => {
   return result
 })
 
-function navigateTo(path: string) {
+const navigateTo = (path: string) => {
   emit('navigate', path)
   router.push(`/cirrus${path ? '/' + path : ''}`)
 }
 
-async function toggleFolderInput() {
+const toggleFolderInput = async () => {
   showFolderInput.value = !showFolderInput.value
   if (showFolderInput.value) {
     await nextTick()
@@ -97,7 +97,7 @@ async function toggleFolderInput() {
   }
 }
 
-async function createFolder() {
+const createFolder = async () => {
   if (!folderName.value.trim() || isCreating.value) return
 
   isCreating.value = true
@@ -129,7 +129,7 @@ async function createFolder() {
   }
 }
 
-function handleKeydown(event: KeyboardEvent) {
+const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
     createFolder()
   } else if (event.key === 'Escape') {

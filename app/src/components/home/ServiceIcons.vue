@@ -44,7 +44,7 @@ defineProps<{
   icons: ServiceIcon[]
 }>()
 
-function handleDisabledClick() {
+const handleDisabledClick = () => {
   alert('Coming soon!')
 }
 </script>

@@ -20,7 +20,7 @@ export interface VersionResponse {
 /**
  * Fetch the current version from the API
  */
-export async function getCurrentVersion(): Promise<string> {
+export const getCurrentVersion = async (): Promise<string> => {
   try {
     const response = await fetch('/api/v1/version')
     if (!response.ok) {
@@ -36,7 +36,7 @@ export async function getCurrentVersion(): Promise<string> {
 /**
  * Fetch available releases for the version dropdown
  */
-export async function getAvailableReleases(): Promise<Release[]> {
+export const getAvailableReleases = async (): Promise<Release[]> => {
   try {
     const response = await fetch('/api/v1/versions')
     if (!response.ok) {

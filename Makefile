@@ -155,7 +155,7 @@ fix/go: ## Fix Go code issues
 	templ fmt .
 
 fix/ts: ## Fix TypeScript code issues
-	npm run format:ts --prefix ./app
+	npm run fix --prefix ./app
 
 upgrade: upgrade/go upgrade/ts ## Upgrade dependencies
 

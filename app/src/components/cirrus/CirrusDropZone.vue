@@ -59,21 +59,21 @@ const isUploading = ref(false)
 const uploadProgress = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
-function handleDragEnter(event: DragEvent) {
+const handleDragEnter = (event: DragEvent) => {
   event.preventDefault()
   isDragOver.value = true
 }
 
-function handleDragOver(event: DragEvent) {
+const handleDragOver = (event: DragEvent) => {
   event.preventDefault()
 }
 
-function handleDragLeave(event: DragEvent) {
+const handleDragLeave = (event: DragEvent) => {
   event.preventDefault()
   isDragOver.value = false
 }
 
-async function handleDrop(event: DragEvent) {
+const handleDrop = async (event: DragEvent) => {
   event.preventDefault()
   isDragOver.value = false
 
@@ -83,11 +83,11 @@ async function handleDrop(event: DragEvent) {
   }
 }
 
-function handleClick() {
+const handleClick = () => {
   fileInputRef.value?.click()
 }
 
-function handleFileInputChange(event: Event) {
+const handleFileInputChange = (event: Event) => {
   const input = event.target as HTMLInputElement
   if (input.files && input.files.length > 0) {
     uploadFiles(input.files)
@@ -96,7 +96,7 @@ function handleFileInputChange(event: Event) {
   }
 }
 
-async function uploadFiles(files: FileList) {
+const uploadFiles = async (files: FileList) => {
   isUploading.value = true
   uploadProgress.value = `Uploading ${files.length} file${files.length > 1 ? 's' : ''}...`
 

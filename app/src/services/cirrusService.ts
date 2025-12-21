@@ -2,7 +2,7 @@
 import type { CirrusFileNode, FileType } from '@/types/cirrus'
 
 // Helper to format bytes to human readable string
-export function formatBytes(bytes: number): string {
+export const formatBytes = (bytes: number): string => {
   if (bytes < 1024) {
     return `${bytes} B`
   } else if (bytes < 1024 * 1024) {
@@ -16,14 +16,12 @@ export function formatBytes(bytes: number): string {
   }
 }
 
-export function bytesToGB(bytes: number): number {
-  return bytes / (1024 * 1024 * 1024)
-}
+export const bytesToGB = (bytes: number): number => bytes / (1024 * 1024 * 1024)
 
 /**
  * Extract filename from a full path or use name field
  */
-export function getFileName(node: CirrusFileNode): string {
+export const getFileName = (node: CirrusFileNode): string => {
   // Prefer the name field from the API if available
   if (node.name) {
     return node.name
@@ -36,22 +34,17 @@ export function getFileName(node: CirrusFileNode): string {
 /**
  * Determine if a node represents a directory
  */
-export function isDirectory(node: CirrusFileNode): boolean {
-  // Use the isDir field from the API
-  return node.isDir
-}
+export const isDirectory = (node: CirrusFileNode): boolean => node.isDir
 
 /**
  * Get the file size in bytes
  */
-export function getFileSize(node: CirrusFileNode): number {
-  return node.size || 0
-}
+export const getFileSize = (node: CirrusFileNode): number => node.size || 0
 
 /**
  * Determine file type from a CirrusFileNode
  */
-export function determineFileType(node: CirrusFileNode): FileType {
+export const determineFileType = (node: CirrusFileNode): FileType => {
   const fileName = getFileName(node)
 
   if (isDirectory(node)) {
@@ -104,7 +97,7 @@ export function determineFileType(node: CirrusFileNode): FileType {
 /**
  * Fetch files for a given path from the backend API
  */
-export async function getFiles(path: string): Promise<CirrusFileNode[]> {
+export const getFiles = async (path: string): Promise<CirrusFileNode[]> => {
   // Normalize path - remove leading/trailing slashes
   const normalizedPath = path.replace(/^\/+|\/+$/g, '')
 
@@ -130,7 +123,4 @@ export async function getFiles(path: string): Promise<CirrusFileNode[]> {
  * Get available space in bytes
  * TODO: This should come from a backend API endpoint
  */
-export function getAvailableSpace(): number {
-  // Return 100 GB as stub value until we have an API endpoint for this
-  return 100 * 1024 * 1024 * 1024
-}
+export const getAvailableSpace = (): number => 100 * 1024 * 1024 * 1024

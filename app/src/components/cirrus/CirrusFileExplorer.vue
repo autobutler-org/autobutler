@@ -172,7 +172,7 @@ const contextMenuX = ref(0)
 const contextMenuY = ref(0)
 
 // Fetch files for the current path
-async function fetchFiles() {
+const fetchFiles = async () => {
   loading.value = true
   error.value = null
   try {
@@ -211,16 +211,16 @@ onMounted(() => {
 })
 
 // Methods
-function navigateToPath(path: string) {
+const navigateToPath = (path: string) => {
   currentPath.value = path
   router.push(`/cirrus${path ? '/' + path : ''}`)
 }
 
-function handleNavigateFolder(path: string) {
+const handleNavigateFolder = (path: string) => {
   navigateToPath(path)
 }
 
-function handleOpenFile(file: CirrusFileNode) {
+const handleOpenFile = (file: CirrusFileNode) => {
   // Construct the relative path for the API from currentPath and filename
   const fileName = getFileName(file)
   const relativePath = currentPath.value ? `${currentPath.value}/${fileName}` : fileName
@@ -229,16 +229,16 @@ function handleOpenFile(file: CirrusFileNode) {
   fileViewerOpen.value = true
 }
 
-function switchView(newView: 'list' | 'grid') {
+const switchView = (newView: 'list' | 'grid') => {
   view.value = newView
 }
 
-function toggleDeviceBadges(show: boolean) {
+const toggleDeviceBadges = (show: boolean) => {
   showDeviceBadges.value = show
 }
 
 // Handle files uploaded - add them to the list
-function handleFilesUploaded(uploadedFiles: CirrusFileNode[]) {
+const handleFilesUploaded = (uploadedFiles: CirrusFileNode[]) => {
   // Add the new files to the list, avoiding duplicates
   for (const newFile of uploadedFiles) {
     const exists = files.value.some((f) => {
@@ -251,7 +251,7 @@ function handleFilesUploaded(uploadedFiles: CirrusFileNode[]) {
 }
 
 // Handle folder created - add it to the list
-function handleFolderCreated(folderName: string) {
+const handleFolderCreated = (folderName: string) => {
   const fullPath = currentPath.value ? `${currentPath.value}/${folderName}` : folderName
   const exists = files.value.some((f) => {
     return f.fullPath === fullPath
@@ -270,14 +270,14 @@ function handleFolderCreated(folderName: string) {
 }
 
 // Context menu handlers
-function handleContextMenu(event: MouseEvent, file: CirrusFileNode) {
+const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   contextMenuFile.value = file
   contextMenuX.value = event.clientX
   contextMenuY.value = event.clientY
   contextMenuOpen.value = true
 }
 
-function handleDownload(file: CirrusFileNode) {
+const handleDownload = (file: CirrusFileNode) => {
   const fileName = getFileName(file)
   const relativePath = currentPath.value ? `${currentPath.value}/${fileName}` : fileName
   const downloadUrl = `/api/v1/download/cirrus/${relativePath}`
@@ -291,21 +291,21 @@ function handleDownload(file: CirrusFileNode) {
   document.body.removeChild(link)
 }
 
-function handleRename(file: CirrusFileNode) {
+const handleRename = (file: CirrusFileNode) => {
   // TODO: Implement rename dialog
   const fileName = getFileName(file)
   console.log('Rename file:', fileName)
   alert(`Rename functionality coming soon for: ${fileName}`)
 }
 
-function handleFileDetails(file: CirrusFileNode) {
+const handleFileDetails = (file: CirrusFileNode) => {
   // TODO: Implement file details dialog
   const fileName = getFileName(file)
   console.log('File details:', fileName)
   alert(`File details for: ${fileName}\nPath: ${file.fullPath}\nDevice: ${file.deviceName}`)
 }
 
-async function handleDelete(file: CirrusFileNode) {
+const handleDelete = async (file: CirrusFileNode) => {
   const fileName = getFileName(file)
   if (!confirm(`Are you sure you want to delete "${fileName}"?`)) {
     return
