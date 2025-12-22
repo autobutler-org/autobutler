@@ -25,7 +25,7 @@ clean/tests:
 	rm -rf playwright-report/
 	rm -rf test-results/
 
-setup: setup/gotools setup/sqlc setup/air ## Setup development environment
+setup: setup/gotools setup/sqlc setup/air setup/node ## Setup development environment
 
 setup/gotools: ## Install go tools
 	go install golang.org/x/tools/gopls@latest
@@ -40,6 +40,9 @@ setup/sqlc: ## Install sqlc tool
 
 setup/air: ## Install air tool
 	go install github.com/air-verse/air@latest
+
+setup/node: ## Setup Node.js environment
+	npm install --prefix ./app
 
 export INSTALL_VERSION?=$(shell git describe --tags --abbrev=0)
 export GOPROXY ?= https://proxy.golang.org,direct
