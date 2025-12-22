@@ -15,14 +15,14 @@ type Dependencies interface {
 	WithDatabase(database *db.DatabaseSqlc) Dependencies
 	WithHealthDatabase(healthDatabase *db.DatabaseRaw) Dependencies
 	WithMetricsExporter(exporter *botelsqlite.TraceExporter) Dependencies
-	WithWorker(workerService workerutil.Worker) Dependencies
+	WithWorker(worker workerutil.Worker) Dependencies
 }
 
 type dependencies struct {
 	database        *db.DatabaseSqlc
 	healthDatabase  *db.DatabaseRaw
 	metricsExporter *botelsqlite.TraceExporter
-	workerService   workerutil.Worker
+	worker          workerutil.Worker
 }
 
 func NewDependencies() Dependencies {
@@ -59,8 +59,8 @@ func (d *dependencies) WithMetricsExporter(exporter *botelsqlite.TraceExporter) 
 	return d
 }
 
-func (d *dependencies) WithWorker(workerService workerutil.Worker) Dependencies {
-	d.workerService = workerService
+func (d *dependencies) WithWorker(worker workerutil.Worker) Dependencies {
+	d.worker = worker
 	return d
 }
 
@@ -77,5 +77,5 @@ func (d *dependencies) MetricsExporter() *botelsqlite.TraceExporter {
 }
 
 func (d *dependencies) Worker() workerutil.Worker {
-	return d.workerService
+	return d.worker
 }
