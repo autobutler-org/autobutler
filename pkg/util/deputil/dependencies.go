@@ -3,6 +3,7 @@ package deputil
 import (
 	"autobutler/internal/db"
 	"autobutler/pkg/botel/exporters/botelsqlite"
+	"autobutler/pkg/util/workerutil"
 	"fmt"
 )
 
@@ -10,15 +11,18 @@ type Dependencies interface {
 	Database() *db.DatabaseSqlc
 	HealthDatabase() *db.DatabaseRaw
 	MetricsExporter() *botelsqlite.TraceExporter
+	Worker() workerutil.Worker
 	WithDatabase(database *db.DatabaseSqlc) Dependencies
 	WithHealthDatabase(healthDatabase *db.DatabaseRaw) Dependencies
 	WithMetricsExporter(exporter *botelsqlite.TraceExporter) Dependencies
+	WithWorker(workerService workerutil.Worker) Dependencies
 }
 
 type dependencies struct {
 	database        *db.DatabaseSqlc
 	healthDatabase  *db.DatabaseRaw
 	metricsExporter *botelsqlite.TraceExporter
+	workerService   workerutil.Worker
 }
 
 func NewDependencies() Dependencies {
@@ -55,6 +59,11 @@ func (d *dependencies) WithMetricsExporter(exporter *botelsqlite.TraceExporter) 
 	return d
 }
 
+func (d *dependencies) WithWorker(workerService workerutil.Worker) Dependencies {
+	d.workerService = workerService
+	return d
+}
+
 func (d *dependencies) Database() *db.DatabaseSqlc {
 	return d.database
 }
@@ -65,4 +74,8 @@ func (d *dependencies) HealthDatabase() *db.DatabaseRaw {
 
 func (d *dependencies) MetricsExporter() *botelsqlite.TraceExporter {
 	return d.metricsExporter
+}
+
+func (d *dependencies) Worker() workerutil.Worker {
+	return d.workerService
 }

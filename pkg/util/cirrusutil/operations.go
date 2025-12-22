@@ -21,6 +21,9 @@ type DeleteFilesResult struct {
 	RootDir string
 }
 
+// DeleteFilesChannel is a channel for deleting files
+type DeleteFilesChannel chan DeleteFilesParams
+
 // DeleteFiles removes files from the filesystem, handling both single and multi-device scenarios
 func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
 	if len(params.ManagedDevices) == 0 {
@@ -74,6 +77,9 @@ type MoveFileResult struct {
 	NewDir string
 }
 
+// MoveFileChannel is a channel for moving files
+type MoveFileChannel chan MoveFileParams
+
 // MoveFile moves a file from one location to another
 func MoveFile(params MoveFileParams) (*MoveFileResult, error) {
 	filesDir := GetCirrusDir()
@@ -110,6 +116,9 @@ type UploadFilesParams struct {
 type UploadFilesResult struct {
 	RootDir string
 }
+
+// UploadFilesChannel is a channel for uploading files
+type UploadFilesChannel chan UploadFilesParams
 
 // UploadFiles saves uploaded files to the filesystem
 func UploadFiles(params UploadFilesParams) (*UploadFilesResult, error) {
@@ -169,6 +178,9 @@ type CreateFolderParams struct {
 type CreateFolderResult struct {
 	CurrentDir string
 }
+
+// CreateFolderChannel is a channel for creating folders
+type CreateFolderChannel chan CreateFolderParams
 
 // CreateFolder creates a new folder in the filesystem
 func CreateFolder(params CreateFolderParams) (*CreateFolderResult, error) {

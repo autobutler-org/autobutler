@@ -11,8 +11,20 @@ type Response struct {
 	ContentType ContentType
 }
 
+func Accepted() *Response {
+	return NewResponse().WithStatusCode(http.StatusAccepted)
+}
+
 func Ok() *Response {
-	return NewResponse().WithContentType(ContentTypeJSON).WithStatusCode(http.StatusOK)
+	return NewResponse().WithStatusCode(http.StatusOK)
+}
+
+func BadRequest(err error) *Response {
+	return NewResponse().WithStatusCode(http.StatusBadRequest).WithError(err)
+}
+
+func InternalServerError(err error) *Response {
+	return NewResponse().WithStatusCode(http.StatusInternalServerError).WithError(err)
 }
 
 func NewResponse() *Response {

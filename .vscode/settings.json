@@ -17,13 +17,13 @@
     "bookutil",
     "botelsqlite",
     "busa",
+    "cirrusutil",
     "closedby",
     "ctxutil",
     "cweill",
     "deputil",
     "EPUB",
     "exif",
-    "cirrusutil",
     "githubutil",
     "GOARCH",
     "goexif",
@@ -65,6 +65,7 @@
     "toastr",
     "Typeflag",
     "versionutil",
-    "webp"
+    "webp",
+    "workerutil"
   ],
 }
