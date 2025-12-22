@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+////////////////
+// Unit tests //
+////////////////
+
 // mock types for channels
 type dummyDeleteFilesParams struct{}
 type dummyMoveFileParams struct{}
@@ -74,3 +78,7 @@ func TestWorker_LogErrors_ReceivesError(t *testing.T) {
 type logErrorMock struct{}
 
 func (logErrorMock) Error() string { return "mock error" }
+
+///////////////////////
+// Integration tests //
+///////////////////////
