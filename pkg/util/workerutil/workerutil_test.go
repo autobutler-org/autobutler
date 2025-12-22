@@ -2,6 +2,9 @@ package workerutil
 
 import (
 	"autobutler/pkg/util/cirrusutil"
+	"bytes"
+	"mime/multipart"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -179,4 +182,46 @@ func TestWorkerIntegration_CreateFolder(t *testing.T) {
 
 	// Cleanup
 	os.RemoveAll(folderPath)
+}
+
+func TestWorkerIntegration_UploadFile(t *testing.T) {
+	cirrusDir := cirrusutil.GetCirrusDir()
+	fileName := "integration_uploadfile.txt"
+	fileContent := []byte("upload test content")
+
+	// Create a multipart form and parse it to get a real *multipart.FileHeader
+	var b bytes.Buffer
+	mw := multipart.NewWriter(&b)
+	fw, err := mw.CreateFormFile("file", fileName)
+	if err != nil {
+		t.Fatalf("failed to create form file: %v", err)
+	}
+	if _, err := fw.Write(fileContent); err != nil {
+		t.Fatalf("failed to write file content: %v", err)
+	}
+	mw.Close()
+
+	req := httptest.NewRequest("POST", "/", &b)
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	if err := req.ParseMultipartForm(10 << 20); err != nil {
+		t.Fatalf("failed to parse multipart form: %v", err)
+	}
+	fh := req.MultipartForm.File["file"][0]
+
+	startWorkerAndQuitOnDone(t, func(w Worker) {
+		uploadCh := w.GetUploadFilesChannel()
+		uploadCh <- cirrusutil.UploadFilesParams{
+			RootDir:     "",
+			FileHeaders: []*multipart.FileHeader{fh},
+		}
+	})
+
+	uploadedPath := filepath.Join(cirrusDir, fileName)
+	data, err := os.ReadFile(uploadedPath)
+	if err != nil {
+		t.Errorf("uploaded file not found: %v", err)
+	} else if !bytes.Equal(data, fileContent) {
+		t.Errorf("uploaded file content mismatch: got %q, want %q", data, fileContent)
+	}
+	os.Remove(uploadedPath)
 }
