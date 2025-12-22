@@ -2,33 +2,34 @@ package v1_files
 
 import (
 	"autobutler/pkg/util/cirrusutil"
+	"autobutler/pkg/util/ctxutil"
+	"autobutler/pkg/util/deputil"
 	"autobutler/pkg/util/serverutil"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
 
 var uploadRootFilesRoute = serverutil.ApiRoute(
 	"POST", "/cirrus", func(c *gin.Context) *serverutil.Response {
-		uploadFilesImpl(c, "")
-		return serverutil.Ok()
+		return uploadFilesImpl(c, "")
 	},
 )
 var uploadNestedFilesRoutes = serverutil.ApiRoute(
 	"POST", "/cirrus/*rootDir", func(c *gin.Context) *serverutil.Response {
 		rootDir := c.Param("rootDir")
-		uploadFilesImpl(c, rootDir)
-		return serverutil.Ok()
+		return uploadFilesImpl(c, rootDir)
 	},
 )
 
-func uploadFilesImpl(c *gin.Context, rootDir string) {
+func uploadFilesImpl(c *gin.Context, rootDir string) *serverutil.Response {
 	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
-		return
+		return serverutil.BadRequest(err)
 	}
 
 	form, err := c.MultipartForm()
 	if err != nil {
-		return
+		return serverutil.BadRequest(err)
 	}
 
 	fileHeaders := form.File["files"]
@@ -37,11 +38,16 @@ func uploadFilesImpl(c *gin.Context, rootDir string) {
 		returnDir = form.Value["returnDir"][0]
 	}
 
-	if _, err := cirrusutil.UploadFiles(cirrusutil.UploadFilesParams{
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		return serverutil.InternalServerError(fmt.Errorf("dependencies not found in context"))
+	}
+	channel := deps.Worker().GetUploadFilesChannel()
+	channel <- cirrusutil.UploadFilesParams{
 		RootDir:     rootDir,
 		FileHeaders: fileHeaders,
 		ReturnDir:   returnDir,
-	}); err != nil {
-		return
 	}
+
+	return serverutil.Accepted()
 }

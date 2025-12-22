@@ -2,7 +2,10 @@ package v1_files
 
 import (
 	"autobutler/pkg/util/cirrusutil"
+	"autobutler/pkg/util/ctxutil"
+	"autobutler/pkg/util/deputil"
 	"autobutler/pkg/util/serverutil"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,12 +15,15 @@ var newFolderRoute = serverutil.ApiRoute(
 		folderDir := c.Param("folderDir")
 		folderName := c.PostForm("folderName")
 
-		if _, err := cirrusutil.CreateFolder(cirrusutil.CreateFolderParams{
+		deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+		if !ok {
+			return serverutil.InternalServerError(fmt.Errorf("dependencies not found in context"))
+		}
+		channel := deps.Worker().GetCreateFolderChannel()
+		channel <- cirrusutil.CreateFolderParams{
 			FolderDir:  folderDir,
 			FolderName: folderName,
-		}); err != nil {
-			return serverutil.NewResponse().WithStatusCode(500).WithError(err)
 		}
-		return serverutil.Ok()
+		return serverutil.Accepted()
 	},
 )

@@ -5,6 +5,7 @@ import (
 	"autobutler/pkg/botel"
 	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/deputil"
+	"autobutler/pkg/util/workerutil"
 	"context"
 	"fmt"
 	"log"
@@ -13,10 +14,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func setupServices() error {
+func setupServices(deps deputil.Dependencies) error {
 	if err := cirrusutil.SetupCirrusDir(); err != nil {
 		return fmt.Errorf("failed to setup cirrus directory: %w", err)
 	}
+	go deps.Worker().Process()
+	go deps.Worker().LogErrors()
 	return nil
 }
 
@@ -40,7 +43,8 @@ func StartServer(deps deputil.Dependencies) error {
 		}
 	}()
 
-	if err := setupServices(); err != nil {
+	deps.WithWorker(workerutil.NewWorker())
+	if err := setupServices(deps); err != nil {
 		return fmt.Errorf("failed to setup services: %w", err)
 	}
 
