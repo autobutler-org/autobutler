@@ -1,5 +1,16 @@
 # Build stage
-FROM golang:1.24.4-alpine AS builder
+FROM node:22-alpine AS frontend-builder
+
+WORKDIR /build
+
+# Copy go mod files
+COPY app ./app
+RUN npm --prefix ./app install
+RUN npm --prefix ./app run build
+RUN ls ./internal/server/public
+
+# Build stage
+FROM golang:1.25.5-alpine AS backend-builder
 
 WORKDIR /build
 
@@ -9,6 +20,9 @@ RUN go mod download
 
 # Copy source code
 COPY . .
+
+# Copy built frontend assets
+COPY --from=frontend-builder /build/internal/server/public ./internal/server/public
 
 # Build the application with the same flags as goreleaser
 ARG VERSION=dev
@@ -24,11 +38,8 @@ RUN apk --no-cache add ca-certificates
 
 WORKDIR /app
 
-# Copy the binary from builder
-COPY --from=builder /build/autobutler .
-
-# Copy static assets
-COPY --from=builder /build/internal/server/public ./internal/server/public
+# Copy the binary
+COPY --from=backend-builder /build/autobutler .
 
 # Create data directory for volume mount
 RUN mkdir -p ${HOME}/autobutler/data
