@@ -49,7 +49,10 @@
           </div>
           <div>
             <h3>Automated Google Import</h3>
-            <p>Connect your Google account and AutoButler will automatically request and import your data.</p>
+            <p>
+              Connect your Google account and AutoButler will automatically request and import your
+              data.
+            </p>
           </div>
         </div>
 
@@ -80,7 +83,7 @@
                 </div>
               </div>
             </div>
-            
+
             <p class="auth-description">
               AutoButler will request access to your Google Photos and Drive. You can review and
               revoke these permissions at any time from your Google Account settings.
@@ -156,8 +159,8 @@
               {{ authenticating ? 'Connecting...' : 'Sign in with Google' }}
             </button>
             <p class="privacy-note">
-              We never store your Google password. Authentication is handled securely through Google's
-              OAuth 2.0 protocol.
+              We never store your Google password. Authentication is handled securely through
+              Google's OAuth 2.0 protocol.
             </p>
           </div>
         </div>
@@ -186,7 +189,7 @@
           <div class="data-selection-card">
             <h3>Select Data to Import</h3>
             <p>AutoButler will automatically request, download, and import your selected data:</p>
-            
+
             <div class="service-checkboxes">
               <label class="service-checkbox">
                 <input type="checkbox" v-model="selectedServices.photos" />
@@ -357,7 +360,7 @@ const selectedServices = ref<SelectedServices>({
   photos: false,
   drive: false,
   contacts: false,
-  calendar: false
+  calendar: false,
 })
 
 const hasSelectedServices = computed(() => {
@@ -371,7 +374,7 @@ const initiateGoogleAuth = async () => {
   try {
     // Request OAuth authorization URL from backend
     const response = await fetch('/api/v1/auth/google/authorize', {
-      method: 'GET'
+      method: 'GET',
     })
 
     if (!response.ok) {
@@ -379,20 +382,16 @@ const initiateGoogleAuth = async () => {
     }
 
     const data = await response.json()
-    
+
     // Open OAuth popup
-    const authWindow = window.open(
-      data.authUrl,
-      'Google Authentication',
-      'width=600,height=700,left=100,top=100'
-    )
+    window.open(data.authUrl, 'Google Authentication', 'width=600,height=700,left=100,top=100')
 
     // Listen for OAuth callback
     window.addEventListener('message', handleAuthCallback)
   } catch (error) {
     importStatus.value = {
       type: 'error',
-      message: 'Failed to connect to Google. Please try again.'
+      message: 'Failed to connect to Google. Please try again.',
     }
     console.error('Auth error:', error)
   } finally {
@@ -409,12 +408,12 @@ const handleAuthCallback = async (event: MessageEvent) => {
     window.removeEventListener('message', handleAuthCallback)
     importStatus.value = {
       type: 'success',
-      message: 'Successfully connected to Google!'
+      message: 'Successfully connected to Google!',
     }
   } else if (event.data.type === 'google-auth-error') {
     importStatus.value = {
       type: 'error',
-      message: 'Authentication failed. Please try again.'
+      message: 'Authentication failed. Please try again.',
     }
     window.removeEventListener('message', handleAuthCallback)
   }
@@ -423,7 +422,7 @@ const handleAuthCallback = async (event: MessageEvent) => {
 const disconnectGoogle = async () => {
   try {
     await fetch('/api/v1/auth/google/disconnect', {
-      method: 'POST'
+      method: 'POST',
     })
     isAuthenticated.value = false
     userEmail.value = ''
@@ -431,11 +430,11 @@ const disconnectGoogle = async () => {
       photos: false,
       drive: false,
       contacts: false,
-      calendar: false
+      calendar: false,
     }
     importStatus.value = {
       type: 'info',
-      message: 'Disconnected from Google.'
+      message: 'Disconnected from Google.',
     }
   } catch (error) {
     console.error('Disconnect error:', error)
@@ -448,7 +447,8 @@ const startImport = async () => {
   importing.value = true
   importStatus.value = {
     type: 'info',
-    message: 'Requesting your data from Google Takeout... This process happens in the background and may take several hours for large accounts.'
+    message:
+      'Requesting your data from Google Takeout... This process happens in the background and may take several hours for large accounts.',
   }
 
   try {
@@ -461,11 +461,11 @@ const startImport = async () => {
     const response = await fetch('/api/v1/migration/google/start', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        services: selectedServices.value
-      })
+        services: selectedServices.value,
+      }),
     })
 
     if (!response.ok) {
@@ -476,7 +476,7 @@ const startImport = async () => {
 
     importStatus.value = {
       type: 'success',
-      message: `Export requested successfully! Export ID: ${data.exportId}. Google is preparing your data. You'll be notified when the download and import begins. This typically takes 2-24 hours depending on data size.`
+      message: `Export requested successfully! Export ID: ${data.exportId}. Google is preparing your data. You'll be notified when the download and import begins. This typically takes 2-24 hours depending on data size.`,
     }
 
     // Reset selections
@@ -484,12 +484,13 @@ const startImport = async () => {
       photos: false,
       drive: false,
       contacts: false,
-      calendar: false
+      calendar: false,
     }
   } catch (error) {
     importStatus.value = {
       type: 'error',
-      message: 'Failed to request export. Please try again or contact support if the issue persists.'
+      message:
+        'Failed to request export. Please try again or contact support if the issue persists.',
     }
     console.error('Import error:', error)
   } finally {

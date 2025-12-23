@@ -48,6 +48,11 @@ func init() {
 
 var googleAuthorizeRoute = serverutil.ApiRoute(
 	"GET", "/auth/google/authorize", func(c *gin.Context) *serverutil.Response {
+		// Validate OAuth config is set up
+		if googleOAuthConfig.ClientID == "" || googleOAuthConfig.ClientSecret == "" {
+			return serverutil.InternalServerError(fmt.Errorf("Google OAuth not configured. Please set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URL environment variables"))
+		}
+
 		// Generate a random state token for CSRF protection
 		state, err := generateStateToken()
 		if err != nil {

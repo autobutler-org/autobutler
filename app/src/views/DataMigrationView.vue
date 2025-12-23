@@ -194,9 +194,7 @@
               style="display: none"
             />
           </div>
-          <button class="btn btn--secondary" @click="() => fileInput?.click()">
-            Browse Files
-          </button>
+          <button class="btn btn--secondary" @click="() => fileInput?.click()">Browse Files</button>
           <button
             v-if="selectedFiles.length > 0"
             class="btn btn--primary"
