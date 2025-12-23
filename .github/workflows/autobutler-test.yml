@@ -45,7 +45,7 @@ jobs:
       uses: actions/download-artifact@v7
       with:
         run-id: ${{ inputs.run-id }}
-        github-token: ${{ github.token }}
+        github-token: ${{ secrets.FG_PAT }}
     - name: Setup node
       uses: actions/setup-node@v6
       with:
