@@ -53,7 +53,7 @@ func TestFetchGitHubReleases_HTTPError(t *testing.T) {
 }
 
 func TestFetchGitHubReleases_Integration(t *testing.T) {
-	t.Skip("https://github.com/autobutler-org/autobutler/issues/493: The API is super flaky in CI for some crazy reason...Skipping for now.")
+	// t.Skip("https://github.com/autobutler-org/autobutler/issues/493: The API is super flaky in CI for some crazy reason...Skipping for now.")
 
 	// This is an integration test that hits the real GitHub API
 	if testing.Short() {
