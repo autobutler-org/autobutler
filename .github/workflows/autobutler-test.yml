@@ -64,7 +64,6 @@ jobs:
         ./autobutler serve &
     - name: Run E2E tests
       run: |
-        unset GITHUB_TOKEN
         make test/e2e
     - uses: actions/upload-artifact@v4
       with:
@@ -91,7 +90,6 @@ jobs:
       env:
         PRINT_COVERAGE: true
       run: |
-        unset GITHUB_TOKEN
         make test/unit
     - name: Print Coverage
       run: |
