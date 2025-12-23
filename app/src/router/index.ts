@@ -2,6 +2,7 @@ import BooksView from '@/views/BooksView.vue';
 import CirrusView from '@/views/CirrusView.vue';
 import DataMigrationView from '@/views/DataMigrationView.vue';
 import DevicesView from '@/views/DevicesView.vue';
+import GoogleTakeoutView from '@/views/GoogleTakeoutView.vue';
 import HomeView from '@/views/HomeView.vue';
 import PhotosView from '@/views/PhotosView.vue';
 import SettingsView from '@/views/SettingsView.vue';
@@ -44,6 +45,11 @@ const router = createRouter({
       path: '/data-migration',
       name: 'data-migration',
       component: DataMigrationView,
+    },
+    {
+      path: '/data-migration/google-takeout',
+      name: 'google-takeout',
+      component: GoogleTakeoutView,
     },
   ],
 });

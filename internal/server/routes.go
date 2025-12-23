@@ -1,9 +1,11 @@
 package server
 
 import (
+	v1_auth "autobutler/internal/server/api/v1/auth"
 	v1_books "autobutler/internal/server/api/v1/books"
 	v1_files "autobutler/internal/server/api/v1/cirrus"
 	v1_metrics "autobutler/internal/server/api/v1/metrics"
+	v1_migration "autobutler/internal/server/api/v1/migration"
 	v1_photos "autobutler/internal/server/api/v1/photos"
 	v1_storage "autobutler/internal/server/api/v1/storage"
 	v1_thumbnails "autobutler/internal/server/api/v1/thumbnails"
@@ -27,9 +29,11 @@ func setupRoutes(engine *gin.Engine) {
 func setupRouters(engine *gin.Engine) {
 	group := engine.Group("/api/v1")
 	apiRouters := []serverutil.Router{
+		v1_auth.NewRouter(),
 		v1_books.NewRouter(), // Register the new books API router
 		v1_files.NewRouter(),
 		v1_metrics.NewRouter(),
+		v1_migration.NewRouter(),
 		v1_storage.NewRouter(),
 		v1_thumbnails.NewRouter(),
 		v1_update.NewRouter(),
