@@ -43,6 +43,7 @@ export default defineConfigWithVueTs(
       'playwright/no-useless-not': 'off',
       'playwright/prefer-web-first-assertions': 'off',
       'playwright/no-wait-for-selector': 'off',
+      'playwright/no-skipped-test': 'off',
     },
   },
 )
