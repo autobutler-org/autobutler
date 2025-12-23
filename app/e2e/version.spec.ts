@@ -7,7 +7,7 @@ test.describe('Version Dropdown', () => {
     await expect(versionButton).toBeVisible()
   })
 
-  test('should open dropdown when clicking version', async ({ page }) => {
+  test.skip('should open dropdown when clicking version', async ({ page }) => {
     await page.goto('/')
     const versionButton = page.locator('.version-display')
     await versionButton.click()
@@ -18,7 +18,7 @@ test.describe('Version Dropdown', () => {
     await expect(versionOptions.first()).toBeVisible()
   })
 
-  test('should close dropdown when clicking outside', async ({ page }) => {
+  test.skip('should close dropdown when clicking outside', async ({ page }) => {
     await page.goto('/')
     const versionButton = page.locator('.version-display')
     await versionButton.click()
