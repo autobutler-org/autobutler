@@ -218,10 +218,10 @@ watch(
   }
 
   &:hover {
-    background-color: transparentize($color-red-800, 0.7);
+    background-color: rgba($color-red-800, 0.7);
 
     @media (prefers-color-scheme: light) {
-      background-color: transparentize($color-red-200, 0.7);
+      background-color: rgba($color-red-200, 0.7);
     }
   }
 }
