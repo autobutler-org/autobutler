@@ -51,7 +51,6 @@ const handleDisabledClick = () => {
 
 <style lang="scss" scoped>
 .service-icons-container {
-  max-width: 900px;
   margin-bottom: var(--spacing-2xl);
   padding: var(--spacing-3xl) var(--spacing-2xl);
   background: rgba(255, 255, 255, 0.05);
@@ -71,7 +70,7 @@ const handleDisabledClick = () => {
   gap: var(--spacing-2xl);
   justify-items: center;
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     grid-template-columns: repeat(5, 1fr);
     gap: var(--spacing-3xl);
   }
