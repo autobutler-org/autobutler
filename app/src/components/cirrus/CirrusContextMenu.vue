@@ -188,7 +188,7 @@ watch(
 .context-menu-item {
   width: 100%;
   text-align: left;
-  padding: $spacing-sm --spacing-lg;
+  padding: $spacing-sm $spacing-lg;
   border: none;
   background: transparent;
   font-size: $font-size-sm;

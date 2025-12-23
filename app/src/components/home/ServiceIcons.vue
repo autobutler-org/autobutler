@@ -52,7 +52,7 @@ const handleDisabledClick = () => {
 <style lang="scss" scoped>
 .service-icons-container {
   margin-bottom: $spacing-2xl;
-  padding: $spacing-3xl --spacing-2xl;
+  padding: $spacing-3xl $spacing-2xl;
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);

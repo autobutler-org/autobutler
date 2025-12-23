@@ -345,7 +345,7 @@ const sidebarSections = [
   display: flex;
   align-items: center;
   gap: $spacing-md;
-  padding: $spacing-sm --spacing-md;
+  padding: $spacing-sm $spacing-md;
   border-radius: $border-radius;
   color: $color-gray-300;
   text-decoration: none;
@@ -373,7 +373,7 @@ const sidebarSections = [
   display: flex;
   align-items: center;
   gap: $spacing-lg;
-  padding: $spacing-lg 0 --spacing-md 0;
+  padding: $spacing-lg 0 $spacing-md 0;
   border-bottom: 1px solid $color-gray-800;
   margin-bottom: $spacing-xl;
 }
@@ -484,7 +484,7 @@ const sidebarSections = [
   background: $color-gray-900;
   border-radius: $border-radius-lg;
   box-shadow: 0 2px 16px 0 rgba(0, 0, 0, 0.1);
-  padding: $spacing-xl --spacing-2xl;
+  padding: $spacing-xl $spacing-2xl;
   color: white;
   border: 1px solid $color-gray-800;
   flex: 1;
@@ -523,7 +523,7 @@ const sidebarSections = [
 }
 .settings-metrics-section.settings-card {
   margin-top: 0;
-  padding: $spacing-xl --spacing-2xl;
+  padding: $spacing-xl $spacing-2xl;
 }
 .settings-metrics-grid.redesigned-metrics {
   display: grid;

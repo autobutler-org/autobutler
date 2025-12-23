@@ -456,7 +456,7 @@ const handleDelete = async (file: CirrusFileNode) => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: $spacing-xs --spacing-sm;
+  padding: $spacing-xs $spacing-sm;
   border-radius: $border-radius;
   font-size: $font-size-sm;
   font-weight: 500;

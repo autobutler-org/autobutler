@@ -114,13 +114,13 @@ const defaultServiceIcons: ServiceIcon[] = [
   flex: 1;
 
   @media (max-width: 768px) {
-    padding: $spacing-xl --spacing-md;
+    padding: $spacing-xl $spacing-md;
     padding-bottom: 100px;
     min-height: calc(100vh - 200px);
   }
 
   @media (max-width: 480px) {
-    padding: $spacing-md --spacing-sm;
+    padding: $spacing-md $spacing-sm;
     padding-bottom: 100px;
   }
 }
@@ -222,7 +222,7 @@ const defaultServiceIcons: ServiceIcon[] = [
   align-items: center;
   justify-content: center;
   gap: $spacing-sm;
-  padding: $spacing-md --spacing-xl;
+  padding: $spacing-md $spacing-xl;
   border-radius: $border-radius-lg;
   font-size: $font-size-base;
   font-weight: 600;
@@ -232,7 +232,7 @@ const defaultServiceIcons: ServiceIcon[] = [
   text-decoration: none;
 
   &--primary {
-    background: linear-gradient(135deg, $color-primary-600 0%, --color-primary-700) 100%;
+    background: linear-gradient(135deg, $color-primary-600 0%, $color-primary-700) 100%;
     color: white;
     box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
 

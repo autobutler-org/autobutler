@@ -58,7 +58,7 @@ onMounted(async () => {
 .text-viewer-header {
   display: flex;
   align-items: center;
-  padding: $spacing-md --spacing-lg;
+  padding: $spacing-md $spacing-lg;
   background: $color-gray-800;
   border-bottom: 1px solid $color-gray-700;
 

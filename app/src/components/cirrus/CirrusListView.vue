@@ -450,14 +450,14 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   &--content {
     display: flex;
     align-items: center;
-    padding: $spacing-sm 0 --spacing-sm --spacing-sm;
+    padding: $spacing-sm 0 $spacing-sm $spacing-sm;
     height: 100%;
   }
 
   &--clickable {
     display: flex;
     align-items: center;
-    padding: $spacing-sm 0 --spacing-sm --spacing-sm;
+    padding: $spacing-sm 0 $spacing-sm $spacing-sm;
     height: 100%;
     cursor: pointer;
   }

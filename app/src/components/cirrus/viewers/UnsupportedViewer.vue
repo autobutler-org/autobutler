@@ -40,7 +40,7 @@ defineProps<{
 .download-btn {
   color: white;
   background-color: $color-primary-600;
-  padding: $spacing-md --spacing-2xl;
+  padding: $spacing-md $spacing-2xl;
   border-radius: $border-radius-lg;
   transition: background-color 0.2s ease;
   display: inline-flex;

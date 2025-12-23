@@ -200,7 +200,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 }
 
 .file-explorer-folder-input {
-  padding: $spacing-xs --spacing-sm;
+  padding: $spacing-xs $spacing-sm;
   border: 1px solid $color-gray-300;
   border-radius: $border-radius;
   font-size: $font-size-sm;
@@ -246,7 +246,7 @@ const handleKeydown = (event: KeyboardEvent) => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: $spacing-xs --spacing-sm;
+  padding: $spacing-xs $spacing-sm;
   border-radius: $border-radius;
   font-size: $font-size-sm;
   font-weight: 500;

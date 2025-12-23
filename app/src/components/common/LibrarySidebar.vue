@@ -70,7 +70,7 @@ defineProps<{ sections: SidebarSection[] }>()
   display: flex;
   align-items: center;
   gap: $spacing-md;
-  padding: $spacing-sm --spacing-md;
+  padding: $spacing-sm $spacing-md;
   border-radius: $border-radius;
   color: $color-gray-300;
   text-decoration: none;

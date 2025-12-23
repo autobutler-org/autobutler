@@ -273,7 +273,7 @@ const closeMobileMenu = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: $spacing-xl --spacing-2xl;
+  padding: $spacing-xl $spacing-2xl;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -345,7 +345,7 @@ const closeMobileMenu = () => {
   display: flex;
   align-items: center;
   gap: $spacing-sm;
-  padding: $spacing-sm --spacing-md;
+  padding: $spacing-sm $spacing-md;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: $border-radius;
@@ -390,7 +390,7 @@ const closeMobileMenu = () => {
 }
 
 .landing-nav-version {
-  padding: $spacing-sm --spacing-md;
+  padding: $spacing-sm $spacing-md;
   background: rgba(255, 255, 255, 0.05);
   border-radius: $border-radius;
   color: $color-gray-400;
@@ -433,7 +433,7 @@ const closeMobileMenu = () => {
 
 .version-dropdown-loading,
 .version-dropdown-empty {
-  padding: $spacing-md --spacing-lg;
+  padding: $spacing-md $spacing-lg;
   color: $color-gray-400;
   font-size: $font-size-sm;
   text-align: center;
@@ -444,7 +444,7 @@ const closeMobileMenu = () => {
   align-items: center;
   justify-content: space-between;
   gap: $spacing-md;
-  padding: $spacing-sm --spacing-lg;
+  padding: $spacing-sm $spacing-lg;
   color: $color-gray-300;
   text-decoration: none;
   font-size: $font-size-sm;
@@ -575,7 +575,7 @@ const closeMobileMenu = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: $spacing-xl --spacing-lg;
+  padding: $spacing-xl $spacing-lg;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
 
@@ -636,7 +636,7 @@ const closeMobileMenu = () => {
   display: flex;
   align-items: center;
   gap: $spacing-lg;
-  padding: $spacing-lg --spacing-xl;
+  padding: $spacing-lg $spacing-xl;
   color: $color-gray-300;
   text-decoration: none;
   border: none;
@@ -684,7 +684,7 @@ const closeMobileMenu = () => {
 .mobile-menu-divider {
   height: 1px;
   background: rgba(255, 255, 255, 0.1);
-  margin: $spacing-sm --spacing-xl;
+  margin: $spacing-sm $spacing-xl;
 
   @media (prefers-color-scheme: light) {
     background: rgba(0, 0, 0, 0.1);
@@ -693,7 +693,7 @@ const closeMobileMenu = () => {
 
 .mobile-menu-version {
   display: block;
-  padding: $spacing-lg --spacing-xl;
+  padding: $spacing-lg $spacing-xl;
   font-size: $font-size-sm;
   color: $color-gray-500;
 }
