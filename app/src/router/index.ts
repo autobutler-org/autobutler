@@ -1,10 +1,11 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import CirrusView from '@/views/CirrusView.vue';
-import HomeView from '@/views/HomeView.vue';
 import BooksView from '@/views/BooksView.vue';
-import SettingsView from '@/views/SettingsView.vue';
-import PhotosView from '@/views/PhotosView.vue';
+import CirrusView from '@/views/CirrusView.vue';
+import DataMigrationView from '@/views/DataMigrationView.vue';
 import DevicesView from '@/views/DevicesView.vue';
+import HomeView from '@/views/HomeView.vue';
+import PhotosView from '@/views/PhotosView.vue';
+import SettingsView from '@/views/SettingsView.vue';
+import { createRouter, createWebHistory } from 'vue-router';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,6 +39,11 @@ const router = createRouter({
       path: '/settings',
       name: 'settings',
       component: SettingsView,
+    },
+    {
+      path: '/data-migration',
+      name: 'data-migration',
+      component: DataMigrationView,
     },
   ],
 });
