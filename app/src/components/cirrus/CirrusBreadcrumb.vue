@@ -143,21 +143,21 @@ const handleKeydown = (event: KeyboardEvent) => {
 .file-explorer-breadcrumbs {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  font-size: var(--font-size-sm);
-  color: var(--color-gray-500);
-  margin-bottom: var(--spacing-sm);
+  gap: $spacing-sm;
+  font-size: $font-size-sm;
+  color: $color-gray-500;
+  margin-bottom: $spacing-sm;
 
   @media (prefers-color-scheme: dark) {
-    color: var(--color-gray-400);
+    color: $color-gray-400;
   }
 }
 
 .file-explorer-breadcrumb {
-  color: var(--color-gray-700);
+  color: $color-gray-700;
 
   @media (prefers-color-scheme: dark) {
-    color: var(--color-gray-300);
+    color: $color-gray-300;
   }
 
   a {
@@ -173,8 +173,8 @@ const handleKeydown = (event: KeyboardEvent) => {
 .file-explorer-folder-controls {
   display: inline-flex;
   align-items: center;
-  margin-left: var(--spacing-sm);
-  gap: var(--spacing-sm);
+  margin-left: $spacing-sm;
+  gap: $spacing-sm;
 }
 
 .file-explorer-add-folder {
@@ -182,52 +182,52 @@ const handleKeydown = (event: KeyboardEvent) => {
   background: none;
   border: none;
   cursor: pointer;
-  padding: var(--spacing-xs);
-  border-radius: var(--border-radius);
+  padding: $spacing-xs;
+  border-radius: $border-radius;
 
   &:hover {
-    background-color: var(--color-gray-100);
+    background-color: $color-gray-100;
   }
 
   svg {
-    color: var(--color-primary-400);
+    color: $color-primary-400;
     transition: color 0.2s ease;
   }
 
   &:hover svg {
-    color: var(--color-primary-600);
+    color: $color-primary-600;
   }
 }
 
 .file-explorer-folder-input {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border: 1px solid var(--color-gray-300);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-sm);
+  padding: $spacing-xs --spacing-sm;
+  border: 1px solid $color-gray-300;
+  border-radius: $border-radius;
+  font-size: $font-size-sm;
   width: 200px;
 
   &:focus {
     outline: none;
-    border-color: var(--color-primary-500);
+    border-color: $color-primary-500;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
   }
 
   &:disabled {
-    background-color: var(--color-gray-100);
+    background-color: $color-gray-100;
     cursor: not-allowed;
   }
 
   @media (prefers-color-scheme: dark) {
-    background-color: var(--color-gray-800);
-    border-color: var(--color-gray-600);
-    color: var(--color-gray-100);
+    background-color: $color-gray-800;
+    border-color: $color-gray-600;
+    color: $color-gray-100;
 
     &:focus {
-      border-color: var(--color-primary-400);
+      border-color: $color-primary-400;
     }
 
     &:disabled {
-      background-color: var(--color-gray-700);
+      background-color: $color-gray-700;
     }
   }
 }
@@ -246,16 +246,16 @@ const handleKeydown = (event: KeyboardEvent) => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-sm);
+  padding: $spacing-xs --spacing-sm;
+  border-radius: $border-radius;
+  font-size: $font-size-sm;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
   border: 1px solid transparent;
 
   &--icon {
-    padding: var(--spacing-xs);
+    padding: $spacing-xs;
   }
 }
 </style>

@@ -142,7 +142,7 @@ onMounted(fetchDevices)
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
-  padding: 0 var(--spacing-2xl);
+  padding: 0 $spacing-2xl;
 }
 .devices-page {
   flex: 1;
@@ -154,7 +154,7 @@ onMounted(fetchDevices)
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding-bottom: var(--spacing-2xl);
+  padding-bottom: $spacing-2xl;
 }
 .devices-header {
   padding: 2rem 0 1rem 0;
@@ -166,10 +166,10 @@ onMounted(fetchDevices)
   gap: 2rem;
 }
 .devices-title {
-  font-size: var(--font-size-2xl);
+  font-size: $font-size-2xl;
   font-weight: 700;
   margin: 0;
-  color: var(--color-gray-900);
+  color: $color-gray-900;
 }
 @media (prefers-color-scheme: dark) {
   .devices-title {
@@ -177,14 +177,14 @@ onMounted(fetchDevices)
   }
 }
 .devices-subtitle {
-  color: var(--color-gray-500);
+  color: $color-gray-500;
   font-size: 1rem;
   margin-top: 0.5rem;
 }
 .devices-refresh-button {
-  background: var(--color-gray-100);
-  color: var(--color-gray-900);
-  border: 1px solid var(--color-gray-300);
+  background: $color-gray-100;
+  color: $color-gray-900;
+  border: 1px solid $color-gray-300;
   border-radius: 8px;
   padding: 0.5rem 1.2rem;
   font-size: 1rem;
@@ -202,12 +202,12 @@ onMounted(fetchDevices)
 .devices-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: var(--spacing-xl);
-  margin-top: var(--spacing-xl);
+  gap: $spacing-xl;
+  margin-top: $spacing-xl;
 }
 .devices-empty {
   text-align: center;
-  color: var(--color-gray-500);
+  color: $color-gray-500;
   font-size: 1.2rem;
   margin-top: 4rem;
 }
@@ -215,7 +215,7 @@ onMounted(fetchDevices)
 .storage-bar-card {
   width: 100%;
   margin-top: 1rem;
-  background: var(--color-gray-100);
+  background: $color-gray-100;
   border-radius: 12px;
   padding: 1.5rem 2rem;
   box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.04);
@@ -259,13 +259,13 @@ onMounted(fetchDevices)
   margin-top: 0.5rem;
 }
 .storage-bar-total {
-  color: var(--color-gray-900);
+  color: $color-gray-900;
   font-weight: 600;
 }
 .storage-bar-used {
-  color: var(--color-red-400);
+  color: $color-red-400;
 }
 .storage-bar-free {
-  color: var(--color-green-400);
+  color: $color-green-400;
 }
 </style>

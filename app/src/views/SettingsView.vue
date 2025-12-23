@@ -303,34 +303,34 @@ const sidebarSections = [
 
 <style lang="scss" scoped>
 .settings-sidebar-thanks {
-  margin-top: var(--spacing-2xl);
-  padding: var(--spacing-md);
-  border-top: 1px solid var(--color-gray-800);
+  margin-top: $spacing-2xl;
+  padding: $spacing-md;
+  border-top: 1px solid $color-gray-800;
 }
 .settings-thanks-link {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  color: var(--color-primary-600);
+  gap: $spacing-xs;
+  color: $color-primary-600;
   text-decoration: none;
   font-weight: 600;
-  margin-top: var(--spacing-xs);
+  margin-top: $spacing-xs;
 }
 .settings-thanks-link:hover {
   text-decoration: underline;
 }
 .library-sidebar {
-  padding-top: var(--spacing-xl);
+  padding-top: $spacing-xl;
 }
 .library-sidebar-section {
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: $spacing-xl;
 }
 .library-sidebar-title {
-  font-size: var(--font-size-xs);
+  font-size: $font-size-xs;
   font-weight: 700;
   text-transform: uppercase;
-  color: var(--color-gray-400);
-  margin-bottom: var(--spacing-xs);
+  color: $color-gray-400;
+  margin-bottom: $spacing-xs;
   letter-spacing: 0.05em;
 }
 .library-sidebar-list {
@@ -339,104 +339,104 @@ const sidebarSections = [
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: $spacing-xs;
 }
 .library-sidebar-item {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--border-radius);
-  color: var(--color-gray-300);
+  gap: $spacing-md;
+  padding: $spacing-sm --spacing-md;
+  border-radius: $border-radius;
+  color: $color-gray-300;
   text-decoration: none;
   transition: all 0.2s ease;
-  font-size: var(--font-size-sm);
+  font-size: $font-size-sm;
   cursor: pointer;
 }
 .library-sidebar-item:hover {
-  background: var(--color-gray-800);
+  background: $color-gray-800;
   color: white;
 }
 .library-sidebar-item.active {
-  background: var(--color-primary-600);
+  background: $color-primary-600;
   color: white;
 }
 .library-sidebar-count {
   margin-left: auto;
-  font-size: var(--font-size-xs);
-  color: var(--color-gray-500);
+  font-size: $font-size-xs;
+  color: $color-gray-500;
 }
 .library-sidebar-item.active .library-sidebar-count {
-  color: var(--color-primary-100);
+  color: $color-primary-100;
 }
 .settings-header {
   display: flex;
   align-items: center;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-lg) 0 var(--spacing-md) 0;
-  border-bottom: 1px solid var(--color-gray-800);
-  margin-bottom: var(--spacing-xl);
+  gap: $spacing-lg;
+  padding: $spacing-lg 0 --spacing-md 0;
+  border-bottom: 1px solid $color-gray-800;
+  margin-bottom: $spacing-xl;
 }
 .settings-title {
-  font-size: var(--font-size-3xl);
+  font-size: $font-size-3xl;
   font-weight: 700;
   margin: 0;
-  color: var(--color-gray-100);
+  color: $color-gray-100;
 }
 .settings-header-actions {
   display: flex;
-  gap: var(--spacing-md);
+  gap: $spacing-md;
 }
 .settings-section {
-  margin-bottom: var(--spacing-2xl);
+  margin-bottom: $spacing-2xl;
 }
 .settings-section-header {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-xs);
+  gap: $spacing-md;
+  margin-bottom: $spacing-xs;
 }
 .settings-section-header h2 {
-  font-size: var(--font-size-xl);
+  font-size: $font-size-xl;
   font-weight: 600;
   margin: 0;
-  color: var(--color-gray-100);
+  color: $color-gray-100;
 }
 .settings-section-description {
-  margin-bottom: var(--spacing-md);
-  color: var(--color-gray-400);
+  margin-bottom: $spacing-md;
+  color: $color-gray-400;
 }
 .settings-section-card {
-  background: var(--color-gray-900);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-sm);
-  padding: var(--spacing-xl);
+  background: $color-gray-900;
+  border-radius: $border-radius;
+  box-shadow: $shadow-sm;
+  padding: $spacing-xl;
   color: white;
-  border: 1px solid var(--color-gray-800);
-  margin-bottom: var(--spacing-md);
+  border: 1px solid $color-gray-800;
+  margin-bottom: $spacing-md;
 }
 .settings-section-toolbar {
   display: flex;
-  gap: var(--spacing-xs);
-  margin-bottom: var(--spacing-md);
+  gap: $spacing-xs;
+  margin-bottom: $spacing-md;
 }
 .settings-section-toolbar button {
-  background: var(--color-gray-800);
-  color: var(--color-gray-100);
+  background: $color-gray-800;
+  color: $color-gray-100;
   border: none;
-  border-radius: var(--border-radius);
+  border-radius: $border-radius;
   padding: 4px 12px;
-  font-size: var(--font-size-sm);
+  font-size: $font-size-sm;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s;
 }
 .settings-section-toolbar button:hover {
-  background: var(--color-primary-600);
+  background: $color-primary-600;
   color: white;
 }
 .settings-header {
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: $spacing-xl;
 }
 @media (prefers-color-scheme: dark) {
   .settings-title {
@@ -450,7 +450,7 @@ const sidebarSections = [
   .settings-metric-stats td,
   .settings-events-table td,
   .settings-events-table th {
-    color: var(--color-gray-200);
+    color: $color-gray-200;
   }
   .settings-section-header h2,
   .settings-metric-card h4,
@@ -459,34 +459,34 @@ const sidebarSections = [
   }
 }
 .settings-desc {
-  font-size: var(--font-size-base);
-  color: var(--color-gray-500);
-  margin-top: var(--spacing-xs);
+  font-size: $font-size-base;
+  color: $color-gray-500;
+  margin-top: $spacing-xs;
 }
 
 .settings-content.redesigned {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2xl);
-  background: var(--color-gray-950);
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-2xl);
+  gap: $spacing-2xl;
+  background: $color-gray-950;
+  border-radius: $border-radius-lg;
+  padding: $spacing-2xl;
   min-height: 0;
   max-height: 100vh;
   overflow-y: auto;
 }
 .settings-cards-row {
   display: flex;
-  gap: var(--spacing-2xl);
-  margin-bottom: var(--spacing-2xl);
+  gap: $spacing-2xl;
+  margin-bottom: $spacing-2xl;
 }
 .settings-card {
-  background: var(--color-gray-900);
-  border-radius: var(--border-radius-lg);
+  background: $color-gray-900;
+  border-radius: $border-radius-lg;
   box-shadow: 0 2px 16px 0 rgba(0, 0, 0, 0.1);
-  padding: var(--spacing-xl) var(--spacing-2xl);
+  padding: $spacing-xl --spacing-2xl;
   color: white;
-  border: 1px solid var(--color-gray-800);
+  border: 1px solid $color-gray-800;
   flex: 1;
   min-width: 320px;
   max-width: 600px;
@@ -496,20 +496,20 @@ const sidebarSections = [
   box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.18);
 }
 .mock-card {
-  background: var(--color-gray-950);
-  border: 1px dashed var(--color-gray-700);
-  color: var(--color-gray-400);
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-lg);
-  border-radius: var(--border-radius);
+  background: $color-gray-950;
+  border: 1px dashed $color-gray-700;
+  color: $color-gray-400;
+  margin-top: $spacing-md;
+  padding: $spacing-lg;
+  border-radius: $border-radius;
   text-align: center;
 }
 .mock-badge {
   margin-left: 0;
   margin-bottom: 0.5rem;
-  background: var(--color-gray-300);
-  color: var(--color-gray-700);
-  font-size: var(--font-size-xs);
+  background: $color-gray-300;
+  color: $color-gray-700;
+  font-size: $font-size-xs;
   padding: 2px 8px;
   border-radius: 8px;
   text-transform: uppercase;
@@ -517,107 +517,107 @@ const sidebarSections = [
   display: inline-block;
 }
 .mock-loading {
-  color: var(--color-gray-500);
-  font-size: var(--font-size-base);
+  color: $color-gray-500;
+  font-size: $font-size-base;
   padding: 1.5rem 0;
 }
 .settings-metrics-section.settings-card {
   margin-top: 0;
-  padding: var(--spacing-xl) var(--spacing-2xl);
+  padding: $spacing-xl --spacing-2xl;
 }
 .settings-metrics-grid.redesigned-metrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: var(--spacing-xl);
-  margin-bottom: var(--spacing-xl);
+  gap: $spacing-xl;
+  margin-bottom: $spacing-xl;
 }
 .settings-metric-card {
-  background: var(--color-gray-950);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-xs);
-  padding: var(--spacing-lg);
-  border: 1px solid var(--color-gray-800);
+  background: $color-gray-950;
+  border-radius: $border-radius;
+  box-shadow: $shadow-xs;
+  padding: $spacing-lg;
+  border: 1px solid $color-gray-800;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: $spacing-md;
 }
 .settings-metric-card h4 {
-  font-size: var(--font-size-lg);
+  font-size: $font-size-lg;
   font-weight: 600;
-  margin-bottom: var(--spacing-xs);
+  margin-bottom: $spacing-xs;
 }
 .settings-metric-time {
-  font-size: var(--font-size-xs);
-  color: var(--color-gray-400);
-  margin-bottom: var(--spacing-xs);
+  font-size: $font-size-xs;
+  color: $color-gray-400;
+  margin-bottom: $spacing-xs;
 }
 .settings-metric-chart {
-  background: var(--color-gray-900);
-  border-radius: var(--border-radius);
+  background: $color-gray-900;
+  border-radius: $border-radius;
   min-height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-gray-500);
-  font-size: var(--font-size-sm);
-  margin-bottom: var(--spacing-xs);
+  color: $color-gray-500;
+  font-size: $font-size-sm;
+  margin-bottom: $spacing-xs;
 }
 .settings-metric-filters {
   display: flex;
-  gap: var(--spacing-xs);
-  margin-bottom: var(--spacing-xs);
+  gap: $spacing-xs;
+  margin-bottom: $spacing-xs;
 }
 .settings-metric-filters button {
-  background: var(--color-gray-800);
-  color: var(--color-gray-100);
+  background: $color-gray-800;
+  color: $color-gray-100;
   border: none;
-  border-radius: var(--border-radius);
+  border-radius: $border-radius;
   padding: 2px 10px;
-  font-size: var(--font-size-xs);
+  font-size: $font-size-xs;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s;
 }
 .settings-metric-filters button:hover {
-  background: var(--color-primary-600);
+  background: $color-primary-600;
   color: white;
 }
 .settings-metric-stats.compact {
   width: 100%;
-  font-size: var(--font-size-xs);
+  font-size: $font-size-xs;
   border-collapse: collapse;
-  margin-top: var(--spacing-xs);
+  margin-top: $spacing-xs;
 }
 .settings-metric-stats.compact td {
   padding: 2px 8px;
-  color: var(--color-gray-300);
+  color: $color-gray-300;
 }
 .settings-metric-stats.compact tr {
-  border-bottom: 1px solid var(--color-gray-800);
+  border-bottom: 1px solid $color-gray-800;
 }
 .settings-events-table.compact {
   width: 100%;
-  font-size: var(--font-size-xs);
+  font-size: $font-size-xs;
   border-collapse: collapse;
-  margin-top: var(--spacing-md);
-  background: var(--color-gray-950);
-  border-radius: var(--border-radius);
+  margin-top: $spacing-md;
+  background: $color-gray-950;
+  border-radius: $border-radius;
   overflow: hidden;
 }
 .settings-events-table.compact th,
 .settings-events-table.compact td {
   padding: 6px 10px;
-  color: var(--color-gray-300);
-  border-bottom: 1px solid var(--color-gray-800);
+  color: $color-gray-300;
+  border-bottom: 1px solid $color-gray-800;
 }
 .settings-events-table.compact th {
-  background: var(--color-gray-900);
+  background: $color-gray-900;
   font-weight: 600;
 }
 .settings-events-actions {
   display: flex;
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-md);
+  gap: $spacing-md;
+  margin-top: $spacing-md;
   justify-content: flex-end;
 }
 </style>

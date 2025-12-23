@@ -26,8 +26,8 @@
   }
 
   &--folder {
-    color: var(--color-gray-500);
-    margin-right: var(--spacing-md);
+    color: $color-gray-500;
+    margin-right: $spacing-md;
   }
 }
 </style>

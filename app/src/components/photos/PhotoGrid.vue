@@ -44,7 +44,7 @@ const selectPhoto = (photo: Photo) => {
 .photo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--spacing-md);
-  padding-bottom: var(--spacing-2xl);
+  gap: $spacing-md;
+  padding-bottom: $spacing-2xl;
 }
 </style>

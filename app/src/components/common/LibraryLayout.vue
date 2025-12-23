@@ -35,8 +35,8 @@ const navLinks: NavLink[] = [
 .library-header {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-lg) 0;
+  gap: $spacing-md;
+  padding: $spacing-lg 0;
   margin-left: 1rem;
 }
 .library-layout {
@@ -64,7 +64,7 @@ const navLinks: NavLink[] = [
 .library-separator {
   width: 1px;
   height: 100vh;
-  background: var(--color-gray-900);
+  background: $color-gray-900;
   align-self: stretch;
 }
 .library-main {
@@ -73,27 +73,21 @@ const navLinks: NavLink[] = [
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: var(--color-background-soft);
   padding: 0;
 }
-@media (prefers-color-scheme: dark) {
-  .library-main {
-    background: var(--color-background-mute);
-  }
-}
 .library-title {
-  font-size: var(--font-size-3xl);
+  font-size: $font-size-3xl;
   font-weight: 700;
   margin: 0;
-  color: var(--color-gray-700);
+  color: $color-gray-700;
 }
 @media (prefers-color-scheme: dark) {
   .library-title {
-    color: var(--color-gray-100);
+    color: $color-gray-100;
   }
 }
 .library-subtitle {
-  font-size: var(--font-size-lg);
-  color: var(--color-gray-500);
+  font-size: $font-size-lg;
+  color: $color-gray-500;
 }
 </style>

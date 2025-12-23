@@ -153,48 +153,48 @@ const uploadFiles = async (files: FileList) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-md);
-  border: 2px dashed var(--color-gray-400);
-  border-radius: var(--border-radius-lg);
-  background-color: var(--color-gray-100);
+  padding: $spacing-md;
+  border: 2px dashed $color-gray-400;
+  border-radius: $border-radius-lg;
+  background-color: $color-gray-100;
   cursor: pointer;
   transition: all 0.2s ease;
   min-height: 80px;
 
   &:hover {
-    border-color: var(--color-blue-500);
-    background-color: var(--color-blue-50);
+    border-color: $color-blue-500;
+    background-color: $color-blue-50;
   }
 
   &--active {
-    border-color: var(--color-blue-600);
-    background-color: var(--color-blue-100);
+    border-color: $color-blue-600;
+    background-color: $color-blue-100;
     border-style: solid;
   }
 
   &--uploading {
     cursor: wait;
-    border-color: var(--color-green-500);
-    background-color: var(--color-green-50);
+    border-color: $color-green-500;
+    background-color: $color-green-50;
   }
 
   @media (prefers-color-scheme: dark) {
-    background-color: var(--color-gray-800);
-    border-color: var(--color-gray-600);
+    background-color: $color-gray-800;
+    border-color: $color-gray-600;
 
     &:hover {
-      border-color: var(--color-blue-400);
-      background-color: var(--color-gray-700);
+      border-color: $color-blue-400;
+      background-color: $color-gray-700;
     }
 
     &--active {
-      border-color: var(--color-blue-500);
-      background-color: var(--color-gray-700);
+      border-color: $color-blue-500;
+      background-color: $color-gray-700;
     }
 
     &--uploading {
-      border-color: var(--color-green-400);
-      background-color: var(--color-gray-700);
+      border-color: $color-green-400;
+      background-color: $color-gray-700;
     }
   }
 }
@@ -207,26 +207,26 @@ const uploadFiles = async (files: FileList) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: $spacing-sm;
   pointer-events: none;
 }
 
 .drop-zone-icon {
   width: 32px;
   height: 32px;
-  color: var(--color-gray-500);
+  color: $color-gray-500;
 
   @media (prefers-color-scheme: dark) {
-    color: var(--color-gray-400);
+    color: $color-gray-400;
   }
 }
 
 .drop-zone-text {
-  font-size: var(--font-size-sm);
-  color: var(--color-gray-600);
+  font-size: $font-size-sm;
+  color: $color-gray-600;
 
   @media (prefers-color-scheme: dark) {
-    color: var(--color-gray-400);
+    color: $color-gray-400;
   }
 }
 </style>

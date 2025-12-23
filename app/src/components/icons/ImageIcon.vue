@@ -26,8 +26,8 @@
   }
 
   &--image {
-    color: var(--color-purple-500);
-    margin-right: var(--spacing-md);
+    color: $color-purple-500;
+    margin-right: $spacing-md;
   }
 }
 </style>

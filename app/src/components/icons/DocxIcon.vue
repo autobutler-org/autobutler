@@ -27,8 +27,8 @@
   }
 
   &--docx {
-    color: var(--color-blue-600);
-    margin-right: var(--spacing-md);
+    color: $color-blue-600;
+    margin-right: $spacing-md;
   }
 }
 </style>

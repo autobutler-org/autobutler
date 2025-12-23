@@ -26,8 +26,8 @@
   }
 
   &--slideshow {
-    color: var(--color-yellow-600);
-    margin-right: var(--spacing-md);
+    color: $color-yellow-600;
+    margin-right: $spacing-md;
   }
 }
 </style>

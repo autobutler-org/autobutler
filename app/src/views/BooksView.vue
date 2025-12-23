@@ -117,17 +117,17 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: var(--spacing-2xl);
-  margin-bottom: var(--spacing-xl);
+  margin-top: $spacing-2xl;
+  margin-bottom: $spacing-xl;
 }
 .books-library-title {
-  font-size: var(--font-size-2xl);
+  font-size: $font-size-2xl;
   font-weight: 700;
   margin: 0;
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  color: var(--color-gray-900);
+  gap: $spacing-md;
+  color: $color-gray-900;
 }
 @media (prefers-color-scheme: dark) {
   .books-library-title {
@@ -135,8 +135,8 @@ onMounted(async () => {
   }
 }
 .books-library-count {
-  font-size: var(--font-size-lg);
-  color: var(--color-gray-500);
+  font-size: $font-size-lg;
+  color: $color-gray-500;
 }
 .books-empty {
   display: flex;
@@ -144,72 +144,72 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   flex: 1;
-  padding: var(--spacing-2xl);
-  color: var(--color-gray-500);
+  padding: $spacing-2xl;
+  color: $color-gray-500;
 }
 .books-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--spacing-xl);
+  gap: $spacing-xl;
   width: 100vw;
   max-width: 1400px;
   margin: 0 auto;
-  padding-bottom: var(--spacing-2xl);
+  padding-bottom: $spacing-2xl;
 }
 .book-card {
   cursor: pointer;
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-sm);
+  border-radius: $border-radius;
+  box-shadow: $shadow-sm;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   transition: box-shadow 0.2s;
-  border: 1px solid var(--color-gray-800);
-  background: var(--color-gray-50);
+  border: 1px solid $color-gray-800;
+  background: $color-gray-50;
 }
 @media (prefers-color-scheme: dark) {
   .book-card {
-    background: var(--color-gray-900);
+    background: $color-gray-900;
   }
 }
 .book-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-primary-400);
+  box-shadow: $shadow-md;
+  border-color: $color-primary-400;
 }
 .book-card-cover {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 120px;
-  background: var(--color-gray-100);
+  background: $color-gray-100;
   position: relative;
 }
 @media (prefers-color-scheme: dark) {
   .book-card-cover {
-    background: var(--color-gray-800);
+    background: $color-gray-800;
   }
 }
 .book-card-badge {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: var(--color-primary-600);
+  background: $color-primary-600;
   color: white;
-  font-size: var(--font-size-xs);
+  font-size: $font-size-xs;
   padding: 2px 8px;
   border-radius: 8px;
 }
 .book-card-info {
-  padding: var(--spacing-md);
+  padding: $spacing-md;
 }
 .book-card-title {
-  font-size: var(--font-size-base);
+  font-size: $font-size-base;
   font-weight: 600;
   margin: 0 0 4px 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--color-gray-900);
+  color: $color-gray-900;
 }
 @media (prefers-color-scheme: dark) {
   .book-card-title {
@@ -217,13 +217,13 @@ onMounted(async () => {
   }
 }
 .book-card-size {
-  font-size: var(--font-size-xs);
-  color: var(--color-gray-500);
+  font-size: $font-size-xs;
+  color: $color-gray-500;
 }
 .mock-badge {
-  background: var(--color-gray-300);
-  color: var(--color-gray-700);
-  font-size: var(--font-size-xs);
+  background: $color-gray-300;
+  color: $color-gray-700;
+  font-size: $font-size-xs;
   padding: 2px 8px;
   border-radius: 8px;
   text-transform: uppercase;

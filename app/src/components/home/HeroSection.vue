@@ -110,17 +110,17 @@ const defaultServiceIcons: ServiceIcon[] = [
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-2xl);
+  padding: $spacing-2xl;
   flex: 1;
 
   @media (max-width: 768px) {
-    padding: var(--spacing-xl) var(--spacing-md);
+    padding: $spacing-xl --spacing-md;
     padding-bottom: 100px;
     min-height: calc(100vh - 200px);
   }
 
   @media (max-width: 480px) {
-    padding: var(--spacing-md) var(--spacing-sm);
+    padding: $spacing-md --spacing-sm;
     padding-bottom: 100px;
   }
 }
@@ -129,11 +129,11 @@ const defaultServiceIcons: ServiceIcon[] = [
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2xl);
+  gap: $spacing-2xl;
 
   @media (max-width: 768px) {
     max-width: 100%;
-    gap: var(--spacing-lg);
+    gap: $spacing-lg;
   }
 }
 
@@ -143,13 +143,13 @@ const defaultServiceIcons: ServiceIcon[] = [
   img {
     width: 8rem;
     height: 8rem;
-    margin: 0 auto var(--spacing-xl);
+    margin: 0 auto $spacing-xl;
     display: block;
 
     @media (max-width: 768px) {
       width: 5rem;
       height: 5rem;
-      margin-bottom: var(--spacing-md);
+      margin-bottom: $spacing-md;
     }
 
     @media (max-width: 480px) {
@@ -160,51 +160,51 @@ const defaultServiceIcons: ServiceIcon[] = [
 }
 
 .hero-title {
-  font-size: var(--font-size-5xl);
+  font-size: $font-size-5xl;
   font-weight: 800;
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: $spacing-lg;
   color: white;
 
   @media (prefers-color-scheme: light) {
-    color: var(--color-gray-900);
+    color: $color-gray-900;
   }
 
   @media (max-width: 768px) {
-    font-size: var(--font-size-3xl);
-    margin-bottom: var(--spacing-md);
+    font-size: $font-size-3xl;
+    margin-bottom: $spacing-md;
     line-height: 1.2;
   }
 
   @media (max-width: 480px) {
-    font-size: var(--font-size-2xl);
+    font-size: $font-size-2xl;
   }
 }
 
 .hero-description {
-  font-size: var(--font-size-xl);
-  color: var(--color-gray-400);
-  margin-bottom: var(--spacing-2xl);
+  font-size: $font-size-xl;
+  color: $color-gray-400;
+  margin-bottom: $spacing-2xl;
   line-height: 1.6;
 
   @media (prefers-color-scheme: light) {
-    color: var(--color-gray-600);
+    color: $color-gray-600;
   }
 
   @media (max-width: 768px) {
-    font-size: var(--font-size-lg);
-    margin-bottom: var(--spacing-lg);
+    font-size: $font-size-lg;
+    margin-bottom: $spacing-lg;
     line-height: 1.5;
   }
 
   @media (max-width: 480px) {
-    font-size: var(--font-size-base);
+    font-size: $font-size-base;
   }
 }
 
 .hero-actions {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: $spacing-lg;
   justify-content: center;
 
   @media (min-width: 640px) {
@@ -213,7 +213,7 @@ const defaultServiceIcons: ServiceIcon[] = [
 
   @media (max-width: 768px) {
     width: 100%;
-    gap: var(--spacing-md);
+    gap: $spacing-md;
   }
 }
 
@@ -221,10 +221,10 @@ const defaultServiceIcons: ServiceIcon[] = [
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md) var(--spacing-xl);
-  border-radius: var(--border-radius-lg);
-  font-size: var(--font-size-base);
+  gap: $spacing-sm;
+  padding: $spacing-md --spacing-xl;
+  border-radius: $border-radius-lg;
+  font-size: $font-size-base;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -232,15 +232,15 @@ const defaultServiceIcons: ServiceIcon[] = [
   text-decoration: none;
 
   &--primary {
-    background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-700) 100%);
+    background: linear-gradient(135deg, $color-primary-600 0%, --color-primary-700) 100%;
     color: white;
     box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
 
     &:hover {
       background: linear-gradient(
         135deg,
-        var(--color-primary-700) 0%,
-        var(--color-primary-800) 100%
+        $color-primary-700 0%,
+        $color-primary-800 100%
       );
       box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
     }
@@ -253,8 +253,8 @@ const defaultServiceIcons: ServiceIcon[] = [
 
   @media (max-width: 768px) {
     width: 100%;
-    padding: var(--spacing-md);
-    font-size: var(--font-size-base);
+    padding: $spacing-md;
+    font-size: $font-size-base;
     justify-content: center;
   }
 }

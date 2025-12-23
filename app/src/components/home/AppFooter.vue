@@ -16,10 +16,10 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-xl);
+  gap: $spacing-lg;
+  padding: $spacing-xl;
   margin-top: auto;
-  color: var(--color-gray-500);
+  color: $color-gray-500;
 
   img {
     width: 24px;
@@ -34,7 +34,7 @@
 }
 
 .footer-text {
-  font-size: var(--font-size-sm);
+  font-size: $font-size-sm;
   margin: 0;
 }
 </style>

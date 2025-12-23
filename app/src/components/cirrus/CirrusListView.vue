@@ -335,7 +335,7 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   position: relative;
   overflow-y: auto;
   overflow-x: hidden;
-  border-radius: var(--border-radius-lg);
+  border-radius: $border-radius-lg;
 }
 
 .file-table {
@@ -345,23 +345,23 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 }
 
 .file-table-header {
-  background-color: var(--color-gray-50);
+  background-color: $color-gray-50;
   position: sticky;
   top: 0;
 
   @media (prefers-color-scheme: dark) {
-    background-color: var(--color-gray-900);
+    background-color: $color-gray-900;
   }
 }
 
 .file-table-header-cell {
   height: 3rem;
-  padding: 0 var(--spacing-sm);
+  padding: 0 $spacing-sm;
   font-weight: 600;
-  color: var(--color-gray-700);
+  color: $color-gray-700;
 
   @media (prefers-color-scheme: dark) {
-    color: var(--color-gray-300);
+    color: $color-gray-300;
   }
 
   &--left {
@@ -382,10 +382,10 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
     user-select: none;
 
     &:hover {
-      background-color: var(--color-gray-100);
+      background-color: $color-gray-100;
 
       @media (prefers-color-scheme: dark) {
-        background-color: var(--color-gray-800);
+        background-color: $color-gray-800;
       }
     }
   }
@@ -394,7 +394,7 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 .sort-button {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: $spacing-xs;
 }
 
 .sort-arrows {
@@ -405,29 +405,29 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 .sort-arrow {
   width: 16px;
   height: 16px;
-  color: var(--color-gray-400);
+  color: $color-gray-400;
 
   &--active {
-    color: var(--color-gray-700);
+    color: $color-gray-700;
 
     @media (prefers-color-scheme: dark) {
-      color: var(--color-gray-300);
+      color: $color-gray-300;
     }
   }
 }
 
 .file-table-body {
-  border-top: 1px solid var(--color-gray-200);
+  border-top: 1px solid $color-gray-200;
 
   tr {
-    border-top: 1px solid var(--color-gray-200);
+    border-top: 1px solid $color-gray-200;
   }
 
   @media (prefers-color-scheme: dark) {
-    border-color: var(--color-gray-700);
+    border-color: $color-gray-700;
 
     tr {
-      border-color: var(--color-gray-700);
+      border-color: $color-gray-700;
     }
   }
 }
@@ -436,10 +436,10 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   cursor: pointer;
 
   &:hover {
-    background-color: var(--color-gray-100);
+    background-color: $color-gray-100;
 
     @media (prefers-color-scheme: dark) {
-      background-color: var(--color-gray-800);
+      background-color: $color-gray-800;
     }
   }
 }
@@ -450,14 +450,14 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   &--content {
     display: flex;
     align-items: center;
-    padding: var(--spacing-sm) 0 var(--spacing-sm) var(--spacing-sm);
+    padding: $spacing-sm 0 --spacing-sm --spacing-sm;
     height: 100%;
   }
 
   &--clickable {
     display: flex;
     align-items: center;
-    padding: var(--spacing-sm) 0 var(--spacing-sm) var(--spacing-sm);
+    padding: $spacing-sm 0 --spacing-sm --spacing-sm;
     height: 100%;
     cursor: pointer;
   }
@@ -476,44 +476,44 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   width: 40px;
   height: 40px;
   padding: 0;
-  border-radius: var(--border-radius);
+  border-radius: $border-radius;
   border: none;
   background: transparent;
   cursor: pointer;
   font-size: 1.5rem;
-  color: var(--color-gray-500);
+  color: $color-gray-500;
 
   &:hover {
-    background-color: var(--color-gray-200);
-    color: var(--color-gray-700);
+    background-color: $color-gray-200;
+    color: $color-gray-700;
   }
 
   @media (prefers-color-scheme: dark) {
-    color: var(--color-gray-400);
+    color: $color-gray-400;
 
     &:hover {
-      background-color: var(--color-gray-700);
-      color: var(--color-gray-200);
+      background-color: $color-gray-700;
+      color: $color-gray-200;
     }
   }
 }
 
 .file-table-name {
   flex: 1;
-  margin-left: var(--spacing-sm);
+  margin-left: $spacing-sm;
   color: inherit;
   display: flex;
   align-items: center;
 }
 
 .file-table-size {
-  color: var(--color-gray-500);
-  font-size: var(--font-size-sm);
+  color: $color-gray-500;
+  font-size: $font-size-sm;
   text-align: right;
-  padding-right: var(--spacing-sm);
+  padding-right: $spacing-sm;
 
   @media (prefers-color-scheme: dark) {
-    color: var(--color-gray-200);
+    color: $color-gray-200;
   }
 }
 
@@ -524,21 +524,21 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-xs);
-  padding-left: var(--spacing-sm);
+  padding: $spacing-xs;
+  padding-left: $spacing-sm;
   border: none;
   background: transparent;
-  font-size: var(--font-size-xs);
+  font-size: $font-size-xs;
   cursor: pointer;
-  border-radius: var(--border-radius);
+  border-radius: $border-radius;
 
   &:hover {
-    background-color: var(--color-gray-200);
+    background-color: $color-gray-200;
   }
 
   @media (prefers-color-scheme: dark) {
     &:hover {
-      background-color: var(--color-gray-700);
+      background-color: $color-gray-700;
     }
   }
 }
@@ -547,10 +547,10 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-xs);
-  margin-bottom: var(--spacing-xs);
+  gap: $spacing-xs;
+  margin-bottom: $spacing-xs;
   height: 1rem;
-  padding-left: var(--spacing-xs);
+  padding-left: $spacing-xs;
 }
 
 .sort-switcher-arrows,
@@ -558,21 +558,21 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 .sort-switcher-file {
   width: 1rem;
   height: 1rem;
-  color: var(--color-gray-500);
+  color: $color-gray-500;
 
   @media (prefers-color-scheme: dark) {
-    color: var(--color-gray-400);
+    color: $color-gray-400;
   }
 }
 
 .sort-switcher-label {
-  color: var(--color-gray-500);
+  color: $color-gray-500;
   font-weight: 600;
   width: 3rem;
   text-align: center;
 
   @media (prefers-color-scheme: dark) {
-    color: var(--color-gray-400);
+    color: $color-gray-400;
   }
 }
 
@@ -580,20 +580,20 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 .device-badge {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  margin-left: var(--spacing-sm);
+  gap: $spacing-xs;
+  margin-left: $spacing-sm;
   padding: 2px 6px;
-  background-color: var(--color-blue-50);
-  border: 1px solid var(--color-blue-200);
-  border-radius: var(--border-radius-sm);
-  font-size: var(--font-size-xs);
-  color: var(--color-blue-700);
+  background-color: $color-blue-50;
+  border: 1px solid $color-blue-200;
+  border-radius: $border-radius-sm;
+  font-size: $font-size-xs;
+  color: $color-blue-700;
   white-space: nowrap;
 
   @media (prefers-color-scheme: dark) {
-    background-color: var(--color-blue-900);
-    border-color: var(--color-blue-700);
-    color: var(--color-blue-200);
+    background-color: $color-blue-900;
+    border-color: $color-blue-700;
+    color: $color-blue-200;
   }
 }
 

@@ -46,35 +46,35 @@ onMounted(async () => {
   flex-direction: column;
   width: 90vw;
   height: 80vh;
-  background: var(--color-gray-900);
-  border-radius: var(--border-radius-lg);
+  background: $color-gray-900;
+  border-radius: $border-radius-lg;
   overflow: hidden;
 
   @media (prefers-color-scheme: light) {
-    background: var(--color-gray-100);
+    background: $color-gray-100;
   }
 }
 
 .text-viewer-header {
   display: flex;
   align-items: center;
-  padding: var(--spacing-md) var(--spacing-lg);
-  background: var(--color-gray-800);
-  border-bottom: 1px solid var(--color-gray-700);
+  padding: $spacing-md --spacing-lg;
+  background: $color-gray-800;
+  border-bottom: 1px solid $color-gray-700;
 
   @media (prefers-color-scheme: light) {
-    background: var(--color-gray-200);
-    border-bottom-color: var(--color-gray-300);
+    background: $color-gray-200;
+    border-bottom-color: $color-gray-300;
   }
 }
 
 .text-viewer-filename {
   font-family: monospace;
-  font-size: var(--font-size-sm);
-  color: var(--color-gray-300);
+  font-size: $font-size-sm;
+  color: $color-gray-300;
 
   @media (prefers-color-scheme: light) {
-    color: var(--color-gray-700);
+    color: $color-gray-700;
   }
 }
 
@@ -84,27 +84,27 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   flex: 1;
-  color: var(--color-gray-400);
+  color: $color-gray-400;
 }
 
 .text-viewer-error {
-  color: var(--color-red-500);
+  color: $color-red-500;
 }
 
 .text-viewer-content {
   flex: 1;
   overflow: auto;
-  padding: var(--spacing-lg);
+  padding: $spacing-lg;
   margin: 0;
   font-family: monospace;
-  font-size: var(--font-size-sm);
+  font-size: $font-size-sm;
   line-height: 1.6;
   white-space: pre-wrap;
   word-wrap: break-word;
-  color: var(--color-gray-200);
+  color: $color-gray-200;
 
   @media (prefers-color-scheme: light) {
-    color: var(--color-gray-800);
+    color: $color-gray-800;
   }
 }
 </style>

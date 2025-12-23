@@ -273,7 +273,7 @@ const closeMobileMenu = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-xl) var(--spacing-2xl);
+  padding: $spacing-xl --spacing-2xl;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -295,7 +295,7 @@ const closeMobileMenu = () => {
 .landing-nav-left {
   display: flex;
   align-items: center;
-  gap: var(--spacing-2xl);
+  gap: $spacing-2xl;
 }
 
 .landing-nav-logo {
@@ -310,7 +310,7 @@ const closeMobileMenu = () => {
 }
 
 .landing-nav-link {
-  color: var(--color-gray-300);
+  color: $color-gray-300;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s ease;
@@ -323,10 +323,10 @@ const closeMobileMenu = () => {
   }
 
   @media (prefers-color-scheme: light) {
-    color: var(--color-gray-700);
+    color: $color-gray-700;
 
     &:hover {
-      color: var(--color-gray-900);
+      color: $color-gray-900;
     }
   }
 
@@ -338,19 +338,19 @@ const closeMobileMenu = () => {
 .landing-nav-right {
   display: flex;
   align-items: center;
-  gap: var(--spacing-lg);
+  gap: $spacing-lg;
 }
 
 .landing-nav-button {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
+  gap: $spacing-sm;
+  padding: $spacing-sm --spacing-md;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--border-radius);
-  color: var(--color-gray-200);
-  font-size: var(--font-size-sm);
+  border-radius: $border-radius;
+  color: $color-gray-200;
+  font-size: $font-size-sm;
   cursor: pointer;
   transition: all 0.2s ease;
   text-decoration: none;
@@ -368,7 +368,7 @@ const closeMobileMenu = () => {
   @media (prefers-color-scheme: light) {
     background: rgba(0, 0, 0, 0.05);
     border-color: rgba(0, 0, 0, 0.1);
-    color: var(--color-gray-700);
+    color: $color-gray-700;
 
     &:hover {
       background: rgba(0, 0, 0, 0.08);
@@ -390,11 +390,11 @@ const closeMobileMenu = () => {
 }
 
 .landing-nav-version {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: $spacing-sm --spacing-md;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: var(--border-radius);
-  color: var(--color-gray-400);
-  font-size: var(--font-size-sm);
+  border-radius: $border-radius;
+  color: $color-gray-400;
+  font-size: $font-size-sm;
   font-weight: 300;
   border: 1px solid transparent;
   cursor: pointer;
@@ -407,7 +407,7 @@ const closeMobileMenu = () => {
 
   @media (prefers-color-scheme: light) {
     background: rgba(0, 0, 0, 0.05);
-    color: var(--color-gray-600);
+    color: $color-gray-600;
   }
 }
 
@@ -415,11 +415,11 @@ const closeMobileMenu = () => {
   position: absolute;
   top: 100%;
   right: 0;
-  margin-top: var(--spacing-sm);
+  margin-top: $spacing-sm;
   min-width: 200px;
   background: hsl(225, 25%, 18%);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--border-radius-lg);
+  border-radius: $border-radius-lg;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   z-index: 1000;
@@ -433,9 +433,9 @@ const closeMobileMenu = () => {
 
 .version-dropdown-loading,
 .version-dropdown-empty {
-  padding: var(--spacing-md) var(--spacing-lg);
-  color: var(--color-gray-400);
-  font-size: var(--font-size-sm);
+  padding: $spacing-md --spacing-lg;
+  color: $color-gray-400;
+  font-size: $font-size-sm;
   text-align: center;
 }
 
@@ -443,11 +443,11 @@ const closeMobileMenu = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-md);
-  padding: var(--spacing-sm) var(--spacing-lg);
-  color: var(--color-gray-300);
+  gap: $spacing-md;
+  padding: $spacing-sm --spacing-lg;
+  color: $color-gray-300;
   text-decoration: none;
-  font-size: var(--font-size-sm);
+  font-size: $font-size-sm;
   transition: background-color 0.2s ease;
 
   &:hover {
@@ -463,10 +463,10 @@ const closeMobileMenu = () => {
   }
 
   @media (prefers-color-scheme: light) {
-    color: var(--color-gray-700);
+    color: $color-gray-700;
 
     &:hover {
-      background: var(--color-gray-100);
+      background: $color-gray-100;
     }
 
     &--current {
@@ -485,9 +485,9 @@ const closeMobileMenu = () => {
 
 .version-dropdown-badge {
   padding: 2px 6px;
-  background: var(--color-primary-600);
+  background: $color-primary-600;
   color: white;
-  border-radius: var(--border-radius);
+  border-radius: $border-radius;
   font-size: 0.75rem;
   font-weight: 500;
 }
@@ -495,11 +495,11 @@ const closeMobileMenu = () => {
 .landing-nav-hamburger {
   display: none;
   cursor: pointer;
-  padding: var(--spacing-sm);
-  border-radius: var(--border-radius);
+  padding: $spacing-sm;
+  border-radius: $border-radius;
   background: none;
   border: none;
-  color: var(--color-gray-300);
+  color: $color-gray-300;
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
@@ -515,11 +515,11 @@ const closeMobileMenu = () => {
   }
 
   @media (prefers-color-scheme: light) {
-    color: var(--color-gray-700);
+    color: $color-gray-700;
 
     &:hover {
-      color: var(--color-gray-900);
-      background-color: var(--color-gray-100);
+      color: $color-gray-900;
+      background-color: $color-gray-100;
     }
   }
 
@@ -575,7 +575,7 @@ const closeMobileMenu = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-xl) var(--spacing-lg);
+  padding: $spacing-xl --spacing-lg;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
 
@@ -585,22 +585,22 @@ const closeMobileMenu = () => {
 }
 
 .mobile-menu-title {
-  font-size: var(--font-size-lg);
+  font-size: $font-size-lg;
   font-weight: 600;
   color: white;
 
   @media (prefers-color-scheme: light) {
-    color: var(--color-gray-900);
+    color: $color-gray-900;
   }
 }
 
 .mobile-menu-close {
   background: none;
   border: none;
-  color: var(--color-gray-400);
+  color: $color-gray-400;
   cursor: pointer;
-  padding: var(--spacing-sm);
-  border-radius: var(--border-radius);
+  padding: $spacing-sm;
+  border-radius: $border-radius;
   transition:
     color 0.2s ease,
     background-color 0.2s ease;
@@ -616,11 +616,11 @@ const closeMobileMenu = () => {
   }
 
   @media (prefers-color-scheme: light) {
-    color: var(--color-gray-600);
+    color: $color-gray-600;
 
     &:hover {
-      color: var(--color-gray-900);
-      background-color: var(--color-gray-100);
+      color: $color-gray-900;
+      background-color: $color-gray-100;
     }
   }
 }
@@ -629,28 +629,28 @@ const closeMobileMenu = () => {
   flex: 1 1 auto;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: var(--spacing-md) 0;
+  padding: $spacing-md 0;
 }
 
 .mobile-menu-link {
   display: flex;
   align-items: center;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-lg) var(--spacing-xl);
-  color: var(--color-gray-300);
+  gap: $spacing-lg;
+  padding: $spacing-lg --spacing-xl;
+  color: $color-gray-300;
   text-decoration: none;
   border: none;
   background: none;
   width: 100%;
   text-align: left;
   transition: all 0.2s ease;
-  font-size: var(--font-size-lg);
+  font-size: $font-size-lg;
   font-weight: 500;
   min-height: 56px;
   cursor: pointer;
 
   &:hover {
-    background: var(--color-primary-800);
+    background: $color-primary-800;
     color: white;
   }
 
@@ -661,11 +661,11 @@ const closeMobileMenu = () => {
   }
 
   @media (prefers-color-scheme: light) {
-    color: var(--color-gray-700);
+    color: $color-gray-700;
 
     &:hover {
-      background: var(--color-primary-100);
-      color: var(--color-primary-900);
+      background: $color-primary-100;
+      color: $color-primary-900;
     }
   }
 }
@@ -684,7 +684,7 @@ const closeMobileMenu = () => {
 .mobile-menu-divider {
   height: 1px;
   background: rgba(255, 255, 255, 0.1);
-  margin: var(--spacing-sm) var(--spacing-xl);
+  margin: $spacing-sm --spacing-xl;
 
   @media (prefers-color-scheme: light) {
     background: rgba(0, 0, 0, 0.1);
@@ -693,8 +693,8 @@ const closeMobileMenu = () => {
 
 .mobile-menu-version {
   display: block;
-  padding: var(--spacing-lg) var(--spacing-xl);
-  font-size: var(--font-size-sm);
-  color: var(--color-gray-500);
+  padding: $spacing-lg --spacing-xl;
+  font-size: $font-size-sm;
+  color: $color-gray-500;
 }
 </style>
