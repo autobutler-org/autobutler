@@ -127,7 +127,6 @@ const defaultServiceIcons: ServiceIcon[] = [
 
 .hero-content {
   text-align: center;
-  max-width: 48rem;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2xl);
