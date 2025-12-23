@@ -31,8 +31,8 @@ export default defineConfig({
         additionalData: `
           @use "@/scss/variables.scss" as *;
           @use "@/scss/site.scss" as *;
-        `
-      }
-    }
+        `,
+      },
+    },
   },
 })

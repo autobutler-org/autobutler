@@ -237,11 +237,7 @@ const defaultServiceIcons: ServiceIcon[] = [
     box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
 
     &:hover {
-      background: linear-gradient(
-        135deg,
-        $color-primary-700 0%,
-        $color-primary-800 100%
-      );
+      background: linear-gradient(135deg, $color-primary-700 0%, $color-primary-800 100%);
       box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
     }
 
