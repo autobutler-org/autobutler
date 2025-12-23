@@ -55,6 +55,6 @@ const navLinks: NavLink[] = [
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
-  padding: 0 var(--spacing-2xl);
+  padding: 0 $spacing-2xl;
 }
 </style>

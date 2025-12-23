@@ -133,28 +133,28 @@ const freeGB = computed(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-sm);
-  font-size: var(--font-size-sm);
+  margin-bottom: $spacing-sm;
+  font-size: $font-size-sm;
 }
 
 .storage-partition-label {
-  color: var(--color-gray-300);
+  color: $color-gray-300;
   font-weight: 500;
 }
 
 @media (prefers-color-scheme: light) {
   .storage-partition-label {
-    color: var(--color-gray-700);
+    color: $color-gray-700;
   }
 }
 
 .storage-partition-used {
-  color: var(--color-gray-400);
+  color: $color-gray-400;
 }
 
 @media (prefers-color-scheme: light) {
   .storage-partition-used {
-    color: var(--color-gray-600);
+    color: $color-gray-600;
   }
 }
 
@@ -163,15 +163,15 @@ const freeGB = computed(() => {
   display: flex;
   height: 24px;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--border-radius);
+  border-radius: $border-radius;
   overflow: hidden;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: $spacing-md;
   border: 1px solid #6f6f6f;
 }
 
 @media (prefers-color-scheme: light) {
   .storage-partition-bar {
-    background: var(--color-gray-200);
+    background: $color-gray-200;
     border: 1px solid #6f6f6f;
   }
 }
@@ -222,13 +222,13 @@ const freeGB = computed(() => {
 .storage-partition-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--spacing-md);
+  gap: $spacing-md;
 }
 
 .storage-partition-legend-item {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: $spacing-xs;
 }
 
 .storage-partition-dot {
@@ -240,13 +240,13 @@ const freeGB = computed(() => {
 
 .storage-partition-legend-label {
   font-size: 0.8125rem;
-  color: var(--color-gray-400);
+  color: $color-gray-400;
   white-space: nowrap;
 }
 
 @media (prefers-color-scheme: light) {
   .storage-partition-legend-label {
-    color: var(--color-gray-600);
+    color: $color-gray-600;
   }
 }
 
@@ -257,7 +257,7 @@ const freeGB = computed(() => {
   }
 
   .storage-partition-legend {
-    gap: var(--spacing-sm);
+    gap: $spacing-sm;
   }
 
   .storage-partition-legend-label {

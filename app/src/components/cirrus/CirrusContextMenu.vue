@@ -167,55 +167,55 @@ watch(
 .context-menu {
   position: fixed;
   background-color: white;
-  border: 1px solid var(--color-gray-200);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-lg);
+  border: 1px solid $color-gray-200;
+  border-radius: $border-radius;
+  box-shadow: $shadow-lg;
   z-index: 10000;
   min-width: 140px;
 
   @media (prefers-color-scheme: dark) {
-    background-color: var(--color-gray-800);
-    border-color: var(--color-gray-700);
+    background-color: $color-gray-800;
+    border-color: $color-gray-700;
   }
 }
 
 .context-menu-list {
   list-style: none;
   margin: 0;
-  padding: var(--spacing-xs) 0;
+  padding: $spacing-xs 0;
 }
 
 .context-menu-item {
   width: 100%;
   text-align: left;
-  padding: var(--spacing-sm) var(--spacing-lg);
+  padding: $spacing-sm $spacing-lg;
   border: none;
   background: transparent;
-  font-size: var(--font-size-sm);
+  font-size: $font-size-sm;
   cursor: pointer;
   display: block;
   text-decoration: none;
-  color: var(--color-gray-900);
+  color: $color-gray-900;
 
   &:hover {
-    background-color: var(--color-gray-100);
+    background-color: $color-gray-100;
   }
 
   @media (prefers-color-scheme: dark) {
-    color: var(--color-gray-100);
+    color: $color-gray-100;
 
     &:hover {
-      background-color: var(--color-gray-700);
+      background-color: $color-gray-700;
     }
   }
 }
 
 .context-menu-item--danger {
   color: white;
-  background-color: var(--color-red-800);
+  background-color: $color-red-800;
 
   &:hover {
-    background-color: var(--color-red-600);
+    background-color: $color-red-600;
   }
 }
 </style>

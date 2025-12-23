@@ -1,7 +1,3 @@
-import './assets/main.css'
-import './assets/variables.scss'
-import './assets/site.css'
-
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 

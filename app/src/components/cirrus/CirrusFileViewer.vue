@@ -50,9 +50,9 @@ const closeDialog = () => {
 
 <style lang="scss" scoped>
 .file-viewer-content {
-  margin: var(--spacing-3xl);
-  width: calc(100% - (var(--spacing-3xl) * 2));
-  height: calc(100% - (var(--spacing-3xl) * 2));
+  margin: $spacing-3xl;
+  width: calc(100% - ($spacing-3xl) * 2);
+  height: calc(100% - ($spacing-3xl) * 2);
   display: flex;
   flex-direction: column;
   align-items: center;

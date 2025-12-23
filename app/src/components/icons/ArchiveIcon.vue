@@ -26,8 +26,8 @@
   }
 
   &--archive {
-    color: var(--color-green-600);
-    margin-right: var(--spacing-md);
+    color: $color-green-600;
+    margin-right: $spacing-md;
   }
 }
 </style>

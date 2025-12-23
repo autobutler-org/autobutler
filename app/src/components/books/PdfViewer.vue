@@ -23,6 +23,6 @@ defineProps<{ filePath: string }>()
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  background: var(--color-gray-100);
+  background: $color-gray-100;
 }
 </style>

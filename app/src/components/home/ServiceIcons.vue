@@ -51,8 +51,8 @@ const handleDisabledClick = () => {
 
 <style lang="scss" scoped>
 .service-icons-container {
-  margin-bottom: var(--spacing-2xl);
-  padding: var(--spacing-3xl) var(--spacing-2xl);
+  margin-bottom: $spacing-2xl;
+  padding: $spacing-3xl $spacing-2xl;
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -67,17 +67,17 @@ const handleDisabledClick = () => {
 .service-icons {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: var(--spacing-2xl);
+  gap: $spacing-2xl;
   justify-items: center;
 
   @media (min-width: 1024px) {
     grid-template-columns: repeat(5, 1fr);
-    gap: var(--spacing-3xl);
+    gap: $spacing-3xl;
   }
 
   @media (max-width: 768px) {
     grid-template-columns: repeat(3, 1fr);
-    gap: var(--spacing-lg);
+    gap: $spacing-lg;
   }
 
   @media (max-width: 480px) {
@@ -89,11 +89,11 @@ const handleDisabledClick = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: $spacing-md;
   text-decoration: none;
   transition: background-color 0.2s ease;
-  padding: var(--spacing-md);
-  border-radius: var(--border-radius-lg);
+  padding: $spacing-md;
+  border-radius: $border-radius-lg;
   cursor: pointer;
 
   &:hover {
@@ -128,7 +128,7 @@ const handleDisabledClick = () => {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--border-radius-lg);
+  border-radius: $border-radius-lg;
   transition: all 0.2s ease;
 
   svg {
@@ -137,7 +137,7 @@ const handleDisabledClick = () => {
     color: white;
 
     @media (prefers-color-scheme: light) {
-      color: var(--color-gray-700);
+      color: $color-gray-700;
     }
   }
 
@@ -158,13 +158,13 @@ const handleDisabledClick = () => {
 }
 
 .service-icon-label {
-  font-size: var(--font-size-sm);
-  color: var(--color-gray-300);
+  font-size: $font-size-sm;
+  color: $color-gray-300;
   font-weight: 500;
   text-align: center;
 
   @media (prefers-color-scheme: light) {
-    color: var(--color-gray-700);
+    color: $color-gray-700;
   }
 }
 </style>

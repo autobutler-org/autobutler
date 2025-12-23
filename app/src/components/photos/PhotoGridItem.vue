@@ -22,17 +22,17 @@ const thumbnailPath = computed(() => {
 .photo-grid-item {
   position: relative;
   aspect-ratio: 1;
-  border-radius: var(--border-radius-lg);
+  border-radius: $border-radius-lg;
   overflow: hidden;
   cursor: pointer;
-  background: var(--color-gray-200);
+  background: $color-gray-200;
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
 }
 .photo-grid-item:hover {
   transform: scale(1.02);
-  box-shadow: var(--shadow-lg);
+  box-shadow: $shadow-lg;
   z-index: 1;
 }
 .photo-grid-image {

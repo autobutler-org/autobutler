@@ -25,4 +25,14 @@ export default defineConfig({
     outDir: '../internal/server/public',
     emptyOutDir: true,
   },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        additionalData: `
+          @use "@/scss/variables.scss" as *;
+          @use "@/scss/site.scss" as *;
+        `,
+      },
+    },
+  },
 })

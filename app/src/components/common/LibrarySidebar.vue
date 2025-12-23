@@ -37,26 +37,26 @@ defineProps<{ sections: SidebarSection[] }>()
 .library-sidebar {
   width: 100%;
   height: 100%;
-  background: var(--color-gray-900);
+  background: $color-gray-900;
   color: white;
-  padding: var(--spacing-xl);
+  padding: $spacing-xl;
   overflow-y: auto;
   flex-shrink: 0;
-  border-right: 1px solid var(--color-gray-800);
+  border-right: 1px solid $color-gray-800;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
 }
 .library-sidebar-section {
-  margin-bottom: var(--spacing-2xl);
+  margin-bottom: $spacing-2xl;
 }
 .library-sidebar-title {
-  font-size: var(--font-size-xs);
+  font-size: $font-size-xs;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--color-gray-400);
-  margin-bottom: var(--spacing-md);
+  color: $color-gray-400;
+  margin-bottom: $spacing-md;
 }
 .library-sidebar-list {
   list-style: none;
@@ -64,34 +64,34 @@ defineProps<{ sections: SidebarSection[] }>()
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: $spacing-xs;
 }
 .library-sidebar-item {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--border-radius);
-  color: var(--color-gray-300);
+  gap: $spacing-md;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $border-radius;
+  color: $color-gray-300;
   text-decoration: none;
   transition: all 0.2s ease;
-  font-size: var(--font-size-sm);
+  font-size: $font-size-sm;
   cursor: pointer;
 }
 .library-sidebar-item:hover {
-  background: var(--color-gray-800);
+  background: $color-gray-800;
   color: white;
 }
 .library-sidebar-item.active {
-  background: var(--color-primary-600);
+  background: $color-primary-600;
   color: white;
 }
 .library-sidebar-count {
   margin-left: auto;
-  font-size: var(--font-size-xs);
-  color: var(--color-gray-500);
+  font-size: $font-size-xs;
+  color: $color-gray-500;
 }
 .library-sidebar-item.active .library-sidebar-count {
-  color: var(--color-primary-100);
+  color: $color-primary-100;
 }
 </style>

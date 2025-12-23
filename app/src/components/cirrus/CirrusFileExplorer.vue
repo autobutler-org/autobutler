@@ -339,8 +339,8 @@ const handleDelete = async (file: CirrusFileNode) => {
 .file-explorer {
   background-color: white;
   max-width: 100%;
-  box-shadow: var(--shadow-sm);
-  padding: var(--spacing-lg);
+  box-shadow: $shadow-sm;
+  padding: $spacing-lg;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -348,14 +348,14 @@ const handleDelete = async (file: CirrusFileNode) => {
   overflow: hidden;
 
   @media (prefers-color-scheme: dark) {
-    background-color: var(--color-gray-900);
+    background-color: $color-gray-900;
   }
 }
 
 .file-explorer-header {
   display: flex;
   align-items: center;
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: $spacing-lg;
 }
 
 #file-explorer-selectable {
@@ -373,11 +373,11 @@ const handleDelete = async (file: CirrusFileNode) => {
 }
 
 .file-explorer-title {
-  font-size: var(--font-size-2xl);
+  font-size: $font-size-2xl;
   font-weight: 700;
-  margin-right: var(--spacing-lg);
+  margin-right: $spacing-lg;
   white-space: nowrap;
-  color: var(--color-gray-900);
+  color: $color-gray-900;
 }
 @media (prefers-color-scheme: dark) {
   .file-explorer-title,
@@ -397,17 +397,17 @@ const handleDelete = async (file: CirrusFileNode) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: $spacing-md;
 }
 
 .file-explorer-loading {
-  padding: var(--spacing-md) 0;
-  color: var(--color-gray-500);
+  padding: $spacing-md 0;
+  color: $color-gray-500;
   font-style: italic;
 }
 
 .file-explorer-error {
-  padding: var(--spacing-md) 0;
+  padding: $spacing-md 0;
   color: #dc2626;
 
   @media (prefers-color-scheme: dark) {
@@ -416,16 +416,16 @@ const handleDelete = async (file: CirrusFileNode) => {
 }
 
 .file-explorer-empty {
-  padding: var(--spacing-md) 0;
-  color: var(--color-gray-500);
+  padding: $spacing-md 0;
+  color: $color-gray-500;
 }
 
 .device-badge-toggle {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  font-size: var(--font-size-sm);
-  color: var(--color-gray-600);
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  color: $color-gray-600;
   cursor: pointer;
 
   input {
@@ -433,13 +433,13 @@ const handleDelete = async (file: CirrusFileNode) => {
   }
 
   @media (prefers-color-scheme: dark) {
-    color: var(--color-gray-400);
+    color: $color-gray-400;
   }
 }
 
 .view-switcher {
   display: flex;
-  gap: var(--spacing-xs);
+  gap: $spacing-xs;
 }
 
 .icon {
@@ -456,43 +456,43 @@ const handleDelete = async (file: CirrusFileNode) => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-sm);
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $border-radius;
+  font-size: $font-size-sm;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
   border: 1px solid transparent;
 
   &--icon {
-    padding: var(--spacing-xs);
+    padding: $spacing-xs;
   }
 
   &--primary {
-    background-color: var(--color-primary-600);
+    background-color: $color-primary-600;
     color: white;
-    border-color: var(--color-primary-600);
+    border-color: $color-primary-600;
 
     &:hover {
-      background-color: var(--color-primary-400);
+      background-color: $color-primary-400;
     }
   }
 
   &--secondary {
     background-color: transparent;
-    color: var(--color-gray-700);
-    border-color: var(--color-gray-300);
+    color: $color-gray-700;
+    border-color: $color-gray-300;
 
     &:hover {
-      background-color: var(--color-gray-100);
+      background-color: $color-gray-100;
     }
 
     @media (prefers-color-scheme: dark) {
-      color: var(--color-gray-300);
-      border-color: var(--color-gray-600);
+      color: $color-gray-300;
+      border-color: $color-gray-600;
 
       &:hover {
-        background-color: var(--color-gray-800);
+        background-color: $color-gray-800;
       }
     }
   }
