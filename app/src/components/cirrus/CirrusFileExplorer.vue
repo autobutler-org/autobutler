@@ -38,21 +38,7 @@
               title="List View"
               type="button"
             >
-              <!-- List view icon -->
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="icon icon--base"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
+              <ListViewIcon />
             </button>
             <button
               :class="['btn', 'btn--icon', view === 'grid' ? 'btn--primary' : 'btn--secondary']"
@@ -60,21 +46,7 @@
               title="Grid View"
               type="button"
             >
-              <!-- Grid view icon -->
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="icon icon--base"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                />
-              </svg>
+              <GridViewIcon />
             </button>
           </div>
         </div>
@@ -186,6 +158,8 @@ import CirrusGridView from './CirrusGridView.vue'
 import CirrusFileViewer from './CirrusFileViewer.vue'
 import CirrusContextMenu from './CirrusContextMenu.vue'
 import CirrusDropZone from './CirrusDropZone.vue'
+import ListViewIcon from '../icons/ListViewIcon.vue'
+import GridViewIcon from '../icons/GridViewIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -566,16 +540,6 @@ const handleDelete = async (file: CirrusFileNode) => {
         background-color: $color-gray-800;
       }
     }
-  }
-}
-
-.icon {
-  display: inline-block;
-  vertical-align: middle;
-
-  &--base {
-    width: 1.25rem;
-    height: 1.25rem;
   }
 }
 
