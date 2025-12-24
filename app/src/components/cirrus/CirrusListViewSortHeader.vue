@@ -6,18 +6,18 @@
     <span class="sort-button">
       <span>{{ displayHeader }}</span>
       <span class="sort-arrows">
-        <SortArrowAscend v-if="activeSortColumn === header && sortDirection === 'asc'" />
-        <SortArrowDescend v-else-if="activeSortColumn === header && sortDirection === 'desc'" />
-        <SortArrowNeutral v-else />
+        <SortArrowAscendIcon v-if="activeSortColumn === header && sortDirection === 'asc'" />
+        <SortArrowDescendIcon v-else-if="activeSortColumn === header && sortDirection === 'desc'" />
+        <SortArrowNeutralIcon v-else />
       </span>
     </span>
   </th>
 </template>
 
 <script setup lang="ts">
-import SortArrowAscend from '../icons/SortArrowAscend.vue';
-import SortArrowDescend from '../icons/SortArrowDescend.vue';
-import SortArrowNeutral from '../icons/SortArrowNeutral.vue';
+import SortArrowAscendIcon from '../icons/SortArrowAscendIcon.vue';
+import SortArrowDescendIcon from '../icons/SortArrowDescendIcon.vue';
+import SortArrowNeutralIcon from '../icons/SortArrowNeutralIcon.vue';
 
 export type HeaderAlignDirection = 'left' | 'right'
 export type SortColumn = 'name' | 'size' | null

@@ -15,7 +15,7 @@
       <div class="hero-actions">
         <a class="btn btn--primary" href="/cirrus">
           <span>Browse files</span>
-          <RightArrow />
+          <RightArrowIcon />
         </a>
       </div>
 
@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import type { ServiceIcon } from '@/types/service_icon'
 import ServiceIcons from './ServiceIcons.vue'
-import RightArrow from '../icons/RightArrow.vue';
+import RightArrowIcon from '../icons/RightArrowIcon.vue';
 
 // Default service icons matching the Go implementation
 const defaultServiceIcons: ServiceIcon[] = [

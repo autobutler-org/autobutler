@@ -13,16 +13,7 @@
     <template #main>
       <div id="books-view">
         <div v-if="books.length === 0" class="books-empty">
-          <div class="book-card-icon">
-            <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 6v6l4 2"
-              />
-            </svg>
-          </div>
+          <BookIcon />
           <h2>No books found</h2>
           <p>Add PDF or EPUB files to your files directory to see them here.</p>
         </div>
@@ -57,6 +48,7 @@ import LibraryLayout from '@/components/common/LibraryLayout.vue'
 import BooksSidebar from '@/components/books/BooksSidebar.vue'
 import type { FileType } from '@/types/cirrus'
 import type { Book } from '@/types/book'
+import BookIcon from '@/components/icons/BookIcon.vue'
 
 const books = ref<Book[]>([])
 const totalBooks = ref(0)
