@@ -3,66 +3,15 @@
     <table id="file-explorer-table" class="file-table">
       <thead class="file-table-header">
         <tr>
-          <th
-            class="file-table-header-cell file-table-header-cell--left file-table-header-cell--sortable"
-            @click="toggleSort('name')"
-          >
-            <span class="sort-button">
-              <span>Name</span>
-              <span class="sort-arrows">
-                <svg
-                  v-if="sortColumn === 'name' && sortDirection === 'asc'"
-                  class="sort-arrow sort-arrow--active"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M7 14l5-5 5 5z"></path>
-                </svg>
-                <svg
-                  v-else-if="sortColumn === 'name' && sortDirection === 'desc'"
-                  class="sort-arrow sort-arrow--active"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M7 10l5 5 5-5z"></path>
-                </svg>
-                <svg v-else class="sort-arrow" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M7 8l5-5 5 5z"></path>
-                  <path d="M7 16l5 5 5-5z"></path>
-                </svg>
-              </span>
-            </span>
-          </th>
-          <th
-            class="file-table-header-cell file-table-header-cell--right file-table-header-cell--sortable"
-            @click="toggleSort('size')"
-          >
-            <span class="sort-button">
-              <span>Size</span>
-              <span class="sort-arrows">
-                <svg
-                  v-if="sortColumn === 'size' && sortDirection === 'asc'"
-                  class="sort-arrow sort-arrow--active"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M7 14l5-5 5 5z"></path>
-                </svg>
-                <svg
-                  v-else-if="sortColumn === 'size' && sortDirection === 'desc'"
-                  class="sort-arrow sort-arrow--active"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M7 10l5 5 5-5z"></path>
-                </svg>
-                <svg v-else class="sort-arrow" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M7 8l5-5 5 5z"></path>
-                  <path d="M7 16l5 5 5-5z"></path>
-                </svg>
-              </span>
-            </span>
-          </th>
+          <CirrusListViewSortHeader
+            v-for="column in sortColumns"
+            :key="column.column ? column.column : ''"
+            :header="column.column"
+            :active-sort-column="sortColumn"
+            :sort-direction="sortDirection"
+            :align-direction="column.alignDirection"
+            @toggle:sort="toggleSort"
+          />
           <th class="file-table-header-cell file-table-header-cell--toggle">
             <button
               class="sort-switcher"
@@ -213,6 +162,7 @@ import ArchiveIcon from '@/components/icons/ArchiveIcon.vue'
 import GenericIcon from '@/components/icons/GenericIcon.vue'
 import DocxIcon from '@/components/icons/DocxIcon.vue'
 import { type Component } from 'vue'
+import CirrusListViewSortHeader, { type HeaderAlignDirection, type SortColumn, type SortDirection } from './CirrusListViewSortHeader.vue'
 
 const props = defineProps<{
   files: CirrusFileNode[]
@@ -229,12 +179,16 @@ const emit = defineEmits<{
 }>()
 
 // Sorting state
-type SortColumn = 'name' | 'size' | null
-type SortDirection = 'asc' | 'desc'
-
 const sortColumn = ref<SortColumn>(null)
 const sortDirection = ref<SortDirection>('asc')
 const mixedSorting = ref(false)
+const sortColumns: { column: SortColumn; alignDirection?: HeaderAlignDirection }[] = [
+  {
+    column: 'name',
+    alignDirection: 'left',
+  },
+  { column: 'size' },
+]
 
 // Toggle mixed sorting mode (folders mixed with files vs folders first)
 const toggleMixedSorting = () => {
@@ -289,7 +243,7 @@ const sortedFiles = computed(() => {
   })
 })
 
-const toggleSort = (column: SortColumn) => {
+const toggleSort = (column: SortColumn): void => {
   if (sortColumn.value === column) {
     // Toggle direction
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
@@ -373,55 +327,8 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
     color: $color-gray-300;
   }
 
-  &--left {
-    text-align: left;
-  }
-
-  &--right {
-    text-align: right;
-    width: 6rem;
-  }
-
   &--toggle {
     width: 4rem;
-  }
-
-  &--sortable {
-    cursor: pointer;
-    user-select: none;
-
-    &:hover {
-      background-color: $color-gray-100;
-
-      @media (prefers-color-scheme: dark) {
-        background-color: $color-gray-800;
-      }
-    }
-  }
-}
-
-.sort-button {
-  display: inline-flex;
-  align-items: center;
-  gap: $spacing-xs;
-}
-
-.sort-arrows {
-  display: inline-flex;
-  align-items: center;
-}
-
-.sort-arrow {
-  width: 16px;
-  height: 16px;
-  color: $color-gray-400;
-
-  &--active {
-    color: $color-gray-700;
-
-    @media (prefers-color-scheme: dark) {
-      color: $color-gray-300;
-    }
   }
 }
 
