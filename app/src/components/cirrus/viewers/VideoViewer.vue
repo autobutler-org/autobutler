@@ -1,6 +1,6 @@
 <template>
   <video class="file-viewer-media" controls>
-    <source :src="src" :type="videoType" />
+    <source :src="src" :type="mimetype" />
     Your browser does not support this video format.
   </video>
 </template>
@@ -12,8 +12,7 @@ const props = defineProps<{
   src: string
 }>()
 
-const videoType = computed(() => {
-  const extension = props.src.split('.').pop()?.toLowerCase() || ''
+const getVideoMimetypeFromExtension = (extension: string) => {
   switch (extension) {
     case 'webm':
       return 'video/webm'
@@ -27,7 +26,9 @@ const videoType = computed(() => {
     default:
       return 'video/mp4'
   }
-})
+}
+
+const mimetype = computed(() => getVideoMimetypeFromExtension(props.src.split('.').pop()?.toLowerCase() || ''))
 </script>
 
 <style lang="scss" scoped>
