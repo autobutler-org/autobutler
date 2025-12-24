@@ -148,7 +148,7 @@ const uploadFiles = async (files: FileList) => {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .drop-zone {
   display: flex;
   align-items: center;
