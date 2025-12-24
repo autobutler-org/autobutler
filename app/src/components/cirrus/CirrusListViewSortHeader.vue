@@ -15,9 +15,9 @@
 </template>
 
 <script setup lang="ts">
-import SortArrowAscendIcon from '../icons/SortArrowAscendIcon.vue';
-import SortArrowDescendIcon from '../icons/SortArrowDescendIcon.vue';
-import SortArrowNeutralIcon from '../icons/SortArrowNeutralIcon.vue';
+import SortArrowAscendIcon from '../icons/SortArrowAscendIcon.vue'
+import SortArrowDescendIcon from '../icons/SortArrowDescendIcon.vue'
+import SortArrowNeutralIcon from '../icons/SortArrowNeutralIcon.vue'
 
 export type HeaderAlignDirection = 'left' | 'right'
 export type SortColumn = 'name' | 'size' | null

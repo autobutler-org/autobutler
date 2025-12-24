@@ -1,7 +1,9 @@
+import type { Component } from 'vue'
+
 export interface ServiceIcon {
   name: string
   label: string
   href: string
-  iconSVG: string
+  component: Component
   enabled: boolean
 }
