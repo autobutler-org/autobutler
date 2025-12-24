@@ -258,9 +258,8 @@ onMounted(() => {
 })
 
 // Methods
-const constructFileSrc = (relativePath: string) => {
-  return `/api/v1/download/cirrus/${relativePath}`
-}
+// TODO: Move to a common utility file
+const constructFileSrc = (relativePath: string) => `/api/v1/download/cirrus/${relativePath}`
 
 const handleSelectFile = (file: CirrusFileNode) => {
   selectedFile.value = file
