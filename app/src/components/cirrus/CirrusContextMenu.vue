@@ -15,7 +15,7 @@
           <button type="button" class="context-menu-item" @click="handleRename">Move/Rename</button>
         </li>
         <li>
-          <button type="button" class="context-menu-item" @click="handleDetails">
+          <button type="button" class="context-menu-item" @click="handleShowDetails">
             File Details
           </button>
         </li>
@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, watch, onUnmounted, nextTick } from 'vue'
 import type { CirrusFileNode } from '@/types/cirrus'
 
 const props = defineProps<{
@@ -55,55 +55,12 @@ const emit = defineEmits<{
 
 const menuRef = ref<HTMLElement | null>(null)
 
-const closeMenu = () => {
-  emit('update:modelValue', false)
-}
-
-const handleClickOutside = (event: MouseEvent) => {
-  if (menuRef.value && !menuRef.value.contains(event.target as Node)) {
-    closeMenu()
-  }
-}
-
 const addListeners = () => {
   // Use setTimeout to avoid the current event from triggering close
   setTimeout(() => {
     document.addEventListener('click', handleClickOutside)
     document.addEventListener('contextmenu', handleClickOutside)
   }, 0)
-}
-
-const removeListeners = () => {
-  document.removeEventListener('click', handleClickOutside)
-  document.removeEventListener('contextmenu', handleClickOutside)
-}
-
-const handleDownload = () => {
-  if (props.file) {
-    emit('download', props.file)
-  }
-  closeMenu()
-}
-
-const handleRename = () => {
-  if (props.file) {
-    emit('rename', props.file)
-  }
-  closeMenu()
-}
-
-const handleDetails = () => {
-  if (props.file) {
-    emit('details', props.file)
-  }
-  closeMenu()
-}
-
-const handleDelete = () => {
-  if (props.file) {
-    emit('delete', props.file)
-  }
-  closeMenu()
 }
 
 // Adjust position to keep menu on screen
@@ -126,9 +83,48 @@ const adjustPosition = async () => {
   }
 }
 
-onMounted(() => {
-  // Listeners are added/removed dynamically based on menu open state
-})
+const closeMenu = () => {
+  emit('update:modelValue', false)
+}
+
+const handleClickOutside = (event: MouseEvent) => {
+  if (menuRef.value && !menuRef.value.contains(event.target as Node)) {
+    closeMenu()
+  }
+}
+
+const handleDelete = () => {
+  if (props.file) {
+    emit('delete', props.file)
+  }
+  closeMenu()
+}
+
+const handleDownload = () => {
+  if (props.file) {
+    emit('download', props.file)
+  }
+  closeMenu()
+}
+
+const handleRename = () => {
+  if (props.file) {
+    emit('rename', props.file)
+  }
+  closeMenu()
+}
+
+const handleShowDetails = () => {
+  if (props.file) {
+    emit('details', props.file)
+  }
+  closeMenu()
+}
+
+const removeListeners = () => {
+  document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('contextmenu', handleClickOutside)
+}
 
 onUnmounted(() => {
   removeListeners()
