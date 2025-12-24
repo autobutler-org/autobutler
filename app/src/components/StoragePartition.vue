@@ -1,5 +1,5 @@
 <template>
-  <div class="storage-partition-component">
+  <div class="storage-partition">
     <div class="storage-partition-info">
       <span class="storage-partition-label"
         >Capacity: {{ (device.total_bytes / 1_073_741_824).toFixed(1) }} GB</span
@@ -122,11 +122,34 @@ const freeGB = computed(() => {
 </script>
 
 <style lang="scss" scoped>
-/* Storage Partition Component - Scenario 3: Per-Device/Partition Breakdown */
-/* Shows storage usage within a single device with category breakdown */
-
-.storage-partition-component {
+.storage-partition {
   width: 100%;
+}
+
+.storage-partition-bar {
+  display: flex;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: $border-radius;
+  overflow: hidden;
+  margin-bottom: $spacing-md;
+  border: 1px solid #6f6f6f;
+
+  @media (prefers-color-scheme: light) {
+    background: $color-gray-200;
+    border: 1px solid #6f6f6f;
+  }
+
+  @media (max-width: 768px) {
+    height: 20px;
+  }
+}
+
+.storage-partition-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .storage-partition-info {
@@ -140,39 +163,17 @@ const freeGB = computed(() => {
 .storage-partition-label {
   color: $color-gray-300;
   font-weight: 500;
-}
 
-@media (prefers-color-scheme: light) {
-  .storage-partition-label {
+  @media (prefers-color-scheme: light) {
     color: $color-gray-700;
   }
 }
 
 .storage-partition-used {
   color: $color-gray-400;
-}
 
-@media (prefers-color-scheme: light) {
-  .storage-partition-used {
+  @media (prefers-color-scheme: light) {
     color: $color-gray-600;
-  }
-}
-
-/* Storage Bar with Segments */
-.storage-partition-bar {
-  display: flex;
-  height: 24px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: $border-radius;
-  overflow: hidden;
-  margin-bottom: $spacing-md;
-  border: 1px solid #6f6f6f;
-}
-
-@media (prefers-color-scheme: light) {
-  .storage-partition-bar {
-    background: $color-gray-200;
-    border: 1px solid #6f6f6f;
   }
 }
 
@@ -180,49 +181,50 @@ const freeGB = computed(() => {
   transition: all 0.3s ease;
   cursor: pointer;
   position: relative;
-}
 
-.storage-partition-segment:hover {
-  opacity: 0.8;
-  filter: brightness(1.1);
+  &:hover {
+    opacity: 0.8;
+    filter: brightness(1.1);
+  }
 }
 
 /* Category Colors - matching existing device card colors */
-.storage-partition-system {
-  background: hsl(200, 70%, 50%); /* Blue */
+.storage-partition-backups {
+  background: hsl(30, 80%, 55%); /* Orange */
 }
 
 .storage-partition-documents {
   background: hsl(280, 60%, 60%); /* Purple */
 }
 
-.storage-partition-media {
-  background: hsl(340, 70%, 55%); /* Pink/Red */
+.storage-partition-free {
+  background: hsl(0, 0%, 25%); /* Dark gray */
+
+  @media (prefers-color-scheme: light) {
+    background: hsl(0, 0%, 85%); /* Light gray */
+  }
 }
 
-.storage-partition-backups {
-  background: hsl(30, 80%, 55%); /* Orange */
+.storage-partition-media {
+  background: hsl(340, 70%, 55%); /* Pink/Red */
 }
 
 .storage-partition-other {
   background: hsl(45, 70%, 55%); /* Yellow */
 }
 
-.storage-partition-free {
-  background: hsl(0, 0%, 25%); /* Dark gray */
+.storage-partition-system {
+  background: hsl(200, 70%, 50%); /* Blue */
 }
 
-@media (prefers-color-scheme: light) {
-  .storage-partition-free {
-    background: hsl(0, 0%, 85%); /* Light gray */
-  }
-}
-
-/* Category Legend */
 .storage-partition-legend {
   display: flex;
   flex-wrap: wrap;
   gap: $spacing-md;
+
+  @media (max-width: 768px) {
+    gap: $spacing-sm;
+  }
 }
 
 .storage-partition-legend-item {
@@ -231,36 +233,16 @@ const freeGB = computed(() => {
   gap: $spacing-xs;
 }
 
-.storage-partition-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
 .storage-partition-legend-label {
   font-size: 0.8125rem;
   color: $color-gray-400;
   white-space: nowrap;
-}
 
-@media (prefers-color-scheme: light) {
-  .storage-partition-legend-label {
+  @media (prefers-color-scheme: light) {
     color: $color-gray-600;
   }
-}
 
-/* Mobile responsiveness */
-@media (max-width: 768px) {
-  .storage-partition-bar {
-    height: 20px;
-  }
-
-  .storage-partition-legend {
-    gap: $spacing-sm;
-  }
-
-  .storage-partition-legend-label {
+  @media (max-width: 768px) {
     font-size: 0.75rem;
   }
 }
