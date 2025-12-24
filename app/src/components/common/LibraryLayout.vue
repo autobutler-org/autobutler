@@ -17,20 +17,6 @@
 </template>
 
 <style lang="scss" scoped>
-/* Generic library layout classes */
-.library-header {
-  display: flex;
-  align-items: center;
-  gap: $spacing-md;
-  padding: $spacing-lg 0;
-  margin-left: 1rem;
-}
-.library-layout {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100vw;
-}
 .library-container {
   display: flex;
   height: 100vh;
@@ -38,6 +24,38 @@
   max-width: 100vw;
   overflow: hidden;
 }
+
+.library-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-lg 0;
+  margin-left: 1rem;
+}
+
+.library-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100vw;
+}
+
+.library-main {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.library-separator {
+  width: 1px;
+  height: 100vh;
+  background: $color-gray-900;
+  align-self: stretch;
+}
+
 .library-sidebar {
   width: 280px;
   min-width: 220px;
@@ -47,33 +65,20 @@
   display: flex;
   flex-direction: column;
 }
-.library-separator {
-  width: 1px;
-  height: 100vh;
-  background: $color-gray-900;
-  align-self: stretch;
+
+.library-subtitle {
+  font-size: $font-size-lg;
+  color: $color-gray-500;
 }
-.library-main {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-}
+
 .library-title {
   font-size: $font-size-3xl;
   font-weight: 700;
   margin: 0;
   color: $color-gray-700;
-}
-@media (prefers-color-scheme: dark) {
-  .library-title {
+
+  @media (prefers-color-scheme: dark) {
     color: $color-gray-100;
   }
-}
-.library-subtitle {
-  font-size: $font-size-lg;
-  color: $color-gray-500;
 }
 </style>

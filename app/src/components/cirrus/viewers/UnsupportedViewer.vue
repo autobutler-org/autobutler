@@ -4,16 +4,14 @@
       <p>This file type cannot yet be viewed directly</p>
     </div>
     <div class="unsupported-viewer-actions">
-      <a :href="`/api/v1/download/cirrus/${filePath}`" class="download-btn" download>
-        Download file
-      </a>
+      <a :href="src" class="download-btn" download> Download file </a>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 defineProps<{
-  filePath: string
+  src: string
 }>()
 </script>
 

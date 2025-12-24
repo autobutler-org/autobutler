@@ -4,8 +4,9 @@
 
 <script setup lang="ts">
 import LibrarySidebar from '@/components/common/LibrarySidebar.vue'
+import { type SidebarSection } from '@/components/common/LibrarySidebar.vue'
 
-const sections = [
+const sections: SidebarSection[] = [
   {
     title: 'Library',
     items: [

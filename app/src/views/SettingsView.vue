@@ -2,25 +2,6 @@
   <LibraryLayout>
     <template #sidebar>
       <LibrarySidebar :sections="sidebarSections" />
-      <div class="settings-sidebar-thanks">
-        <h2>Thanks</h2>
-        <a href="/thanks" class="settings-thanks-link">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            width="20"
-            height="20"
-          >
-            <path
-              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-            ></path>
-          </svg>
-          <span>View Thanks</span>
-        </a>
-      </div>
     </template>
     <template #title>
       <h2 class="library-title">Settings & Metrics</h2>
@@ -29,33 +10,10 @@
       <div class="library-subtitle">
         <div class="settings-header-actions">
           <button aria-label="Save">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              width="20"
-              height="20"
-            >
-              <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path>
-              <polyline points="17 21 17 13 7 13 7 21"></polyline>
-              <polyline points="7 3 7 8 15 8"></polyline>
-            </svg>
+            <SaveIcon />
           </button>
           <button aria-label="Refresh">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              width="20"
-              height="20"
-            >
-              <polyline points="23 4 23 10 17 10"></polyline>
-              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path>
-            </svg>
+            <RefreshIcon />
           </button>
         </div>
       </div>
@@ -65,19 +23,7 @@
         <div class="settings-cards-row">
           <section id="storage" class="settings-section settings-card">
             <div class="settings-section-header">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                width="20"
-                height="20"
-              >
-                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
-                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
-              </svg>
+              <StorageDevicesIcon />
               <h2>Storage Devices</h2>
             </div>
             <div class="settings-section-description">
@@ -90,17 +36,7 @@
           </section>
           <section id="opentelemetry" class="settings-section settings-card">
             <div class="settings-section-header">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                width="20"
-                height="20"
-              >
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-              </svg>
+              <OpenTelemetryIcon />
               <h2>OpenTelemetry</h2>
             </div>
             <div class="settings-section-toolbar">
@@ -109,18 +45,7 @@
               <button>Traces</button>
               <button>Logs</button>
               <button>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  width="16"
-                  height="16"
-                >
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <path d="M21 21l-4.35-4.35"></path>
-                </svg>
+                <SearchIcon />
                 Search settings
               </button>
             </div>
@@ -284,6 +209,11 @@
 <script setup lang="ts">
 import LibraryLayout from '@/components/common/LibraryLayout.vue'
 import LibrarySidebar from '@/components/common/LibrarySidebar.vue'
+import OpenTelemetryIcon from '@/components/icons/OpenTelemetryIcon.vue'
+import RefreshIcon from '@/components/icons/RefreshIcon.vue'
+import SaveIcon from '@/components/icons/SaveIcon.vue'
+import SearchIcon from '@/components/icons/SearchIcon.vue'
+import StorageDevicesIcon from '@/components/icons/StorageDevicesIcon.vue'
 
 const sidebarSections = [
   {

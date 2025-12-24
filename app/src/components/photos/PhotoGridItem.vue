@@ -19,6 +19,13 @@ const thumbnailPath = computed(() => {
 </script>
 
 <style lang="scss" scoped>
+.photo-grid-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .photo-grid-item {
   position: relative;
   aspect-ratio: 1;
@@ -29,16 +36,11 @@ const thumbnailPath = computed(() => {
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
-}
-.photo-grid-item:hover {
-  transform: scale(1.02);
-  box-shadow: $shadow-lg;
-  z-index: 1;
-}
-.photo-grid-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+
+  &:hover {
+    transform: scale(1.02);
+    box-shadow: $shadow-lg;
+    z-index: 1;
+  }
 }
 </style>

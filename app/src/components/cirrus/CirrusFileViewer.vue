@@ -1,7 +1,7 @@
 <template>
   <ModalDialog v-if="modelValue" @close="closeDialog">
     <div class="file-viewer-content">
-      <component :is="viewerComponent" :file-path="filePath" />
+      <component :is="viewerComponent" :src="fileSrc" />
     </div>
   </ModalDialog>
 </template>
@@ -18,13 +18,14 @@ import ModalDialog from '@/components/common/ModalDialog.vue'
 
 const props = defineProps<{
   modelValue: boolean
-  filePath: string
+  fileSrc: string
   fileType: FileType
 }>()
 const emit = defineEmits(['update:modelValue'])
 
 // Determine which viewer component to use
 const viewerComponent = computed(() => {
+  // TODO: Move this logic to a utility module
   switch (props.fileType) {
     case 'image':
       return ImageViewer

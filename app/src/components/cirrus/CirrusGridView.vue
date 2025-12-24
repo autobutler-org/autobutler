@@ -14,7 +14,7 @@
         ]"
         :data-name="getFileName(file)"
         :data-is-folder="isDirectory(file)"
-        :data-file-type="getFileType(file)"
+        :data-file-type="determineFileType(file)"
         :data-device-name="file.deviceName"
         @click="emit('select', file)"
         @dblclick="handleClick(file)"
@@ -30,32 +30,17 @@
         </button>
         <div class="grid-view-link">
           <div v-if="isDirectory(file)" class="grid-view-icon-container">
-            <FolderIcon />
+            <CirrusFolderIcon />
           </div>
           <div v-else class="grid-view-icon-container">
-            <component :is="getIconComponent(getFileType(file))" />
+            <component :is="getIconComponent(determineFileType(file))" />
           </div>
           <div class="grid-view-details">
             <div class="grid-view-name" :title="getFileName(file)">{{ getFileName(file) }}</div>
-            <div
+            <DeviceBadge
               v-if="props.showDeviceBadges && file.deviceName"
-              class="device-badge"
-              :title="'Device: ' + file.deviceName"
-            >
-              <svg
-                class="device-badge-icon"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                <line x1="8" y1="21" x2="16" y2="21"></line>
-                <line x1="12" y1="17" x2="12" y2="21"></line>
-              </svg>
-              <span class="device-badge-name">{{ file.deviceName }}</span>
-            </div>
+              :device-name="file.deviceName"
+            />
             <div v-if="!isDirectory(file)" class="grid-view-size">
               {{ formatBytes(getFileSize(file)) }}
             </div>
@@ -75,13 +60,14 @@ import {
   getFileSize,
   formatBytes,
 } from '@/services/cirrusService'
-import FolderIcon from '@/components/icons/FolderIcon.vue'
+import CirrusFolderIcon from '@/components/icons/CirrusFolderIcon.vue'
 import PdfIcon from '@/components/icons/PdfIcon.vue'
 import ImageIcon from '@/components/icons/ImageIcon.vue'
 import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
 import ArchiveIcon from '@/components/icons/ArchiveIcon.vue'
 import GenericIcon from '@/components/icons/GenericIcon.vue'
 import DocxIcon from '@/components/icons/DocxIcon.vue'
+import DeviceBadge from '@/components/badges/DeviceBadge.vue'
 
 const props = defineProps<{
   files: CirrusFileNode[]
@@ -97,12 +83,13 @@ const emit = defineEmits<{
   select: [file: CirrusFileNode]
 }>()
 
-const getFileType = (file: CirrusFileNode) => determineFileType(file)
+// TODO: CirrusListView has the exact same functions/code, after this point
 
+// TODO: Move this to a utility module
 const getIconComponent = (fileType: string) => {
   switch (fileType) {
     case 'folder':
-      return FolderIcon
+      return CirrusFolderIcon
     case 'pdf':
       return PdfIcon
     case 'image':
@@ -247,40 +234,5 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   font-size: 0.75rem;
   color: $color-gray-500;
   margin-top: $spacing-xs;
-}
-
-/* Device badge - Shows which storage device a file is on */
-.device-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: $spacing-xs;
-  margin-top: $spacing-xs;
-  padding: 2px 6px;
-  background-color: $color-blue-50;
-  border: 1px solid $color-blue-200;
-  border-radius: $border-radius-sm;
-  font-size: 10px;
-  color: $color-blue-700;
-  white-space: nowrap;
-
-  @media (prefers-color-scheme: dark) {
-    background-color: $color-blue-900;
-    border-color: $color-blue-700;
-    color: $color-blue-200;
-  }
-}
-
-.device-badge-icon {
-  width: 10px;
-  height: 10px;
-  flex-shrink: 0;
-}
-
-.device-badge-name {
-  font-weight: 500;
-  max-width: 60px;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 </style>

@@ -15,7 +15,7 @@
     <div id="file-explorer-selectable">
       <div class="file-explorer-controls">
         <div>
-          <CirrusBreadcrumb
+          <CirrusBreadcrumbs
             :current-path="currentPath"
             @navigate="navigateToPath"
             @folder-created="handleFolderCreated"
@@ -38,21 +38,7 @@
               title="List View"
               type="button"
             >
-              <!-- List view icon -->
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="icon icon--base"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
+              <ListViewIcon />
             </button>
             <button
               :class="['btn', 'btn--icon', view === 'grid' ? 'btn--primary' : 'btn--secondary']"
@@ -60,21 +46,7 @@
               title="Grid View"
               type="button"
             >
-              <!-- Grid view icon -->
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="icon icon--base"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                />
-              </svg>
+              <GridViewIcon />
             </button>
           </div>
         </div>
@@ -122,7 +94,7 @@
     <!-- File Viewer Modal -->
     <CirrusFileViewer
       v-model="fileViewerOpen"
-      :file-path="selectedFilePath"
+      :file-src="selectedFileSrc"
       :file-type="selectedFileType"
     />
 
@@ -180,12 +152,14 @@ import { moveFile } from '@/services/cirrusService'
 import { useRoute, useRouter } from 'vue-router'
 import type { CirrusFileNode, FileType } from '@/types/cirrus'
 import { getFiles, determineFileType, getFileName } from '@/services/cirrusService'
-import CirrusBreadcrumb from './CirrusBreadcrumb.vue'
+import CirrusBreadcrumbs from './CirrusBreadcrumbs.vue'
 import CirrusListView from './CirrusListView.vue'
 import CirrusGridView from './CirrusGridView.vue'
 import CirrusFileViewer from './CirrusFileViewer.vue'
 import CirrusContextMenu from './CirrusContextMenu.vue'
 import CirrusDropZone from './CirrusDropZone.vue'
+import ListViewIcon from '../icons/ListViewIcon.vue'
+import GridViewIcon from '../icons/GridViewIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -200,7 +174,7 @@ const showDeviceBadges = ref(false)
 
 // File viewer state
 const fileViewerOpen = ref(false)
-const selectedFilePath = ref('')
+const selectedFileSrc = ref('')
 const selectedFileType = ref<FileType>('generic')
 // Selection state
 const selectedFile = ref<CirrusFileNode | null>(null)
@@ -258,6 +232,9 @@ onMounted(() => {
 })
 
 // Methods
+// TODO: Move to a common utility file
+const constructFileSrc = (relativePath: string) => `/api/v1/download/cirrus/${relativePath}`
+
 const handleSelectFile = (file: CirrusFileNode) => {
   selectedFile.value = file
 }
@@ -274,7 +251,7 @@ const handleOpenFile = (file: CirrusFileNode) => {
   // Construct the relative path for the API from currentPath and filename
   const fileName = getFileName(file)
   const relativePath = currentPath.value ? `${currentPath.value}/${fileName}` : fileName
-  selectedFilePath.value = relativePath
+  selectedFileSrc.value = constructFileSrc(relativePath)
   selectedFileType.value = determineFileType(file)
   fileViewerOpen.value = true
 }
@@ -428,58 +405,15 @@ const handleDelete = async (file: CirrusFileNode) => {
   }
 }
 
-.file-explorer-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: $spacing-lg;
-}
-
-#file-explorer-selectable {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-}
-
-#file-explorer-view-content {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.file-explorer-title {
-  font-size: $font-size-2xl;
-  font-weight: 700;
-  margin-right: $spacing-lg;
-  white-space: nowrap;
-  color: $color-gray-100;
-}
-@media (prefers-color-scheme: dark) {
-  .file-explorer-title,
-  .file-explorer-header,
-  .file-explorer-controls,
-  .file-explorer-loading,
-  .file-explorer-empty,
-  .device-badge-toggle {
-    color: white;
-  }
-  .file-explorer-error {
-    color: #f87171;
-  }
-}
-
 .file-explorer-controls {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: $spacing-md;
-}
 
-.file-explorer-loading {
-  padding: $spacing-md 0;
-  color: $color-gray-500;
-  font-style: italic;
+  @media (prefers-color-scheme: dark) {
+    color: white;
+  }
 }
 
 .file-explorer-error {
@@ -494,6 +428,56 @@ const handleDelete = async (file: CirrusFileNode) => {
 .file-explorer-empty {
   padding: $spacing-md 0;
   color: $color-gray-500;
+
+  @media (prefers-color-scheme: dark) {
+    color: white;
+  }
+}
+
+.file-explorer-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+
+  @media (prefers-color-scheme: dark) {
+    color: white;
+  }
+}
+
+.file-explorer-loading {
+  padding: $spacing-md 0;
+  color: $color-gray-500;
+  font-style: italic;
+
+  @media (prefers-color-scheme: dark) {
+    color: white;
+  }
+}
+
+#file-explorer-selectable {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.file-explorer-title {
+  font-size: $font-size-2xl;
+  font-weight: 700;
+  margin-right: $spacing-lg;
+  white-space: nowrap;
+  color: $color-gray-100;
+
+  @media (prefers-color-scheme: dark) {
+    color: white;
+  }
+}
+
+#file-explorer-view-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .device-badge-toggle {
@@ -509,22 +493,7 @@ const handleDelete = async (file: CirrusFileNode) => {
   }
 
   @media (prefers-color-scheme: dark) {
-    color: $color-gray-400;
-  }
-}
-
-.view-switcher {
-  display: flex;
-  gap: $spacing-xs;
-}
-
-.icon {
-  display: inline-block;
-  vertical-align: middle;
-
-  &--base {
-    width: 1.25rem;
-    height: 1.25rem;
+    color: white;
   }
 }
 
@@ -574,6 +543,27 @@ const handleDelete = async (file: CirrusFileNode) => {
   }
 }
 
+.move-dialog-actions {
+  display: flex;
+  gap: $spacing-md;
+  justify-content: flex-end;
+  margin-top: $spacing-md;
+}
+
+.move-dialog-error {
+  color: #dc2626;
+  font-size: $font-size-sm;
+  margin-bottom: $spacing-md;
+  text-align: left;
+}
+
+.move-dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-md;
+}
+
 .move-dialog-form {
   min-width: 540px;
   max-width: 98vw;
@@ -586,32 +576,18 @@ const handleDelete = async (file: CirrusFileNode) => {
   align-items: stretch;
   gap: $spacing-lg;
 
+  button.btn {
+    min-width: 110px;
+    font-size: $font-size-base;
+    font-weight: 600;
+    border-radius: $border-radius-md;
+    padding: $spacing-sm $spacing-lg;
+  }
+
   @media (max-width: 480px) {
     min-width: 0;
     padding: $spacing-lg;
   }
-}
-
-.move-dialog-title {
-  font-size: $font-size-xl;
-  font-weight: 700;
-  margin-bottom: $spacing-md;
-  text-align: left;
-  color: $color-gray-100;
-}
-
-.move-dialog-field {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-xs;
-  margin-bottom: $spacing-md;
-}
-
-.move-dialog-label {
-  font-size: $font-size-base;
-  font-weight: 500;
-  color: $color-gray-200;
-  margin-bottom: $spacing-xs;
 }
 
 .move-dialog-input {
@@ -644,25 +620,23 @@ const handleDelete = async (file: CirrusFileNode) => {
   }
 }
 
-.move-dialog-error {
-  color: #dc2626;
-  font-size: $font-size-sm;
+.move-dialog-label {
+  font-size: $font-size-base;
+  font-weight: 500;
+  color: $color-gray-200;
+  margin-bottom: $spacing-xs;
+}
+
+.move-dialog-title {
+  font-size: $font-size-xl;
+  font-weight: 700;
   margin-bottom: $spacing-md;
   text-align: left;
+  color: $color-gray-100;
 }
 
-.move-dialog-actions {
+.view-switcher {
   display: flex;
-  gap: $spacing-md;
-  justify-content: flex-end;
-  margin-top: $spacing-md;
-}
-
-.move-dialog-form button.btn {
-  min-width: 110px;
-  font-size: $font-size-base;
-  font-weight: 600;
-  border-radius: $border-radius-md;
-  padding: $spacing-sm $spacing-lg;
+  gap: $spacing-xs;
 }
 </style>

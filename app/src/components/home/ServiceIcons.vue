@@ -4,14 +4,7 @@
       <template v-for="icon in icons" :key="icon.name">
         <a v-if="icon.enabled" :href="icon.href" class="service-icon-button">
           <div class="service-icon-bg">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              v-html="icon.iconSVG"
-            />
+            <component :is="icon.component" />
           </div>
           <span class="service-icon-label">{{ icon.label }}</span>
         </a>
@@ -21,14 +14,7 @@
           @click="handleDisabledClick"
         >
           <div class="service-icon-bg">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              v-html="icon.iconSVG"
-            />
+            <component :is="icon.component" />
           </div>
           <span class="service-icon-label">{{ icon.label }}</span>
         </div>

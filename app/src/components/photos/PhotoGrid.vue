@@ -9,7 +9,7 @@
   </div>
   <CirrusFileViewer
     v-model="fileViewerOpen"
-    :file-path="selectedFilePath"
+    :file-src="selectedFileSrc"
     :file-type="selectedFileType"
   />
 </template>
@@ -28,12 +28,15 @@ defineProps<{
 }>()
 
 const fileViewerOpen = ref(false)
-const selectedFilePath = ref('')
+const selectedFileSrc = ref('')
 const selectedFileType = ref<FileType>('image')
+
+// TODO: Move to a common utility file
+const constructFileSrc = (relativePath: string) => `/api/v1/download/cirrus/${relativePath}`
 
 const selectPhoto = (photo: Photo) => {
   if (photo.relPath) {
-    selectedFilePath.value = photo.relPath
+    selectedFileSrc.value = constructFileSrc(photo.relPath)
     selectedFileType.value = 'image' // Assuming all photos are images; adjust as needed
     fileViewerOpen.value = true
   }

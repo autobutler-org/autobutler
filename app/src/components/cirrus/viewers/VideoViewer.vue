@@ -1,6 +1,6 @@
 <template>
   <video class="file-viewer-media" controls>
-    <source :src="`/api/v1/download/cirrus/${filePath}`" :type="videoType" />
+    <source :src="src" :type="mimetype" />
     Your browser does not support this video format.
   </video>
 </template>
@@ -9,11 +9,11 @@
 import { computed } from 'vue'
 
 const props = defineProps<{
-  filePath: string
+  src: string
 }>()
 
-const videoType = computed(() => {
-  const extension = props.filePath.split('.').pop()?.toLowerCase() || ''
+// TODO: Move this logic to a utility module
+const getVideoMimetypeFromExtension = (extension: string) => {
   switch (extension) {
     case 'webm':
       return 'video/webm'
@@ -27,7 +27,11 @@ const videoType = computed(() => {
     default:
       return 'video/mp4'
   }
-})
+}
+
+const mimetype = computed(() =>
+  getVideoMimetypeFromExtension(props.src.split('.').pop()?.toLowerCase() || ''),
+)
 </script>
 
 <style lang="scss" scoped>

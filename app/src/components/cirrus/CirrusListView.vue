@@ -3,66 +3,15 @@
     <table id="file-explorer-table" class="file-table">
       <thead class="file-table-header">
         <tr>
-          <th
-            class="file-table-header-cell file-table-header-cell--left file-table-header-cell--sortable"
-            @click="toggleSort('name')"
-          >
-            <span class="sort-button">
-              <span>Name</span>
-              <span class="sort-arrows">
-                <svg
-                  v-if="sortColumn === 'name' && sortDirection === 'asc'"
-                  class="sort-arrow sort-arrow--active"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M7 14l5-5 5 5z"></path>
-                </svg>
-                <svg
-                  v-else-if="sortColumn === 'name' && sortDirection === 'desc'"
-                  class="sort-arrow sort-arrow--active"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M7 10l5 5 5-5z"></path>
-                </svg>
-                <svg v-else class="sort-arrow" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M7 8l5-5 5 5z"></path>
-                  <path d="M7 16l5 5 5-5z"></path>
-                </svg>
-              </span>
-            </span>
-          </th>
-          <th
-            class="file-table-header-cell file-table-header-cell--right file-table-header-cell--sortable"
-            @click="toggleSort('size')"
-          >
-            <span class="sort-button">
-              <span>Size</span>
-              <span class="sort-arrows">
-                <svg
-                  v-if="sortColumn === 'size' && sortDirection === 'asc'"
-                  class="sort-arrow sort-arrow--active"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M7 14l5-5 5 5z"></path>
-                </svg>
-                <svg
-                  v-else-if="sortColumn === 'size' && sortDirection === 'desc'"
-                  class="sort-arrow sort-arrow--active"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M7 10l5 5 5-5z"></path>
-                </svg>
-                <svg v-else class="sort-arrow" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M7 8l5-5 5 5z"></path>
-                  <path d="M7 16l5 5 5-5z"></path>
-                </svg>
-              </span>
-            </span>
-          </th>
+          <CirrusListViewSortHeader
+            v-for="column in sortColumns"
+            :key="column.column ? column.column : ''"
+            :header="column.column"
+            :active-sort-column="sortColumn"
+            :sort-direction="sortDirection"
+            :align-direction="column.alignDirection"
+            @toggle:sort="toggleSort"
+          />
           <th class="file-table-header-cell file-table-header-cell--toggle">
             <button
               class="sort-switcher"
@@ -70,30 +19,7 @@
               :title="mixedSorting ? 'Switch to Folders First sorting' : 'Switch to Mixed sorting'"
               @click="toggleMixedSorting"
             >
-              <div class="sort-switcher-icons">
-                <svg class="sort-switcher-arrows" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M7 8l5-5 5 5z"></path>
-                  <path d="M7 16l5 5 5-5z"></path>
-                </svg>
-                <svg
-                  v-if="!mixedSorting"
-                  class="sort-switcher-folder"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
-                  ></path>
-                </svg>
-                <svg v-else class="sort-switcher-file" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fill-rule="evenodd"
-                    d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
-                    clip-rule="evenodd"
-                  ></path>
-                </svg>
-              </div>
-              <span class="sort-switcher-label">{{ mixedSorting ? 'Mixed' : 'Folders' }}</span>
+              <SortSwitcherIcon :mixed-sorting="mixedSorting" />
             </button>
           </th>
         </tr>
@@ -107,88 +33,33 @@
             'file-table-row--selected': selectedFile && selectedFile.fullPath === file.fullPath,
           }"
           :data-name="getFileName(file)"
-          :data-file-type="getFileType(file)"
+          :data-file-type="determineFileType(file)"
           :data-device-name="file.deviceName"
           @click="emit('select', file)"
           @dblclick="handleClick(file)"
           @contextmenu="handleContextMenu($event, file)"
         >
-          <template v-if="isDirectory(file)">
-            <td class="file-table-cell file-table-cell--content">
-              <FolderIcon />
-              <span class="file-table-name">{{ getFileName(file) }}</span>
-              <span
-                v-if="props.showDeviceBadges && file.deviceName"
-                class="device-badge"
-                :title="'Device: ' + file.deviceName"
-              >
-                <svg
-                  class="device-badge-icon"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                  <line x1="8" y1="21" x2="16" y2="21"></line>
-                  <line x1="12" y1="17" x2="12" y2="21"></line>
-                </svg>
-                <span class="device-badge-name">{{ file.deviceName }}</span>
-              </span>
-            </td>
-            <td class="file-table-cell file-table-size">
-              {{ formatBytes(getFileSize(file)) }}
-            </td>
-            <td class="file-table-cell file-table-cell--menu">
-              <button
-                type="button"
-                class="context-menu-trigger"
-                aria-label="Open context menu"
-                @click.stop="handleContextMenu($event, file)"
-              >
-                &#x22EE;
-              </button>
-            </td>
-          </template>
-          <template v-else>
-            <td class="file-table-cell file-table-cell--clickable">
-              <component :is="getIconComponent(getFileType(file))" />
-              <span class="file-table-name">{{ getFileName(file) }}</span>
-              <span
-                v-if="props.showDeviceBadges && file.deviceName"
-                class="device-badge"
-                :title="'Device: ' + file.deviceName"
-              >
-                <svg
-                  class="device-badge-icon"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                  <line x1="8" y1="21" x2="16" y2="21"></line>
-                  <line x1="12" y1="17" x2="12" y2="21"></line>
-                </svg>
-                <span class="device-badge-name">{{ file.deviceName }}</span>
-              </span>
-            </td>
-            <td class="file-table-cell file-table-size">
-              {{ formatBytes(getFileSize(file)) }}
-            </td>
-            <td class="file-table-cell file-table-cell--menu">
-              <button
-                type="button"
-                class="context-menu-trigger"
-                aria-label="Open context menu"
-                @click.stop="handleContextMenu($event, file)"
-              >
-                &#x22EE;
-              </button>
-            </td>
-          </template>
+          <td class="file-table-cell file-table-cell--clickable">
+            <component :is="getIconComponent(determineFileType(file))" />
+            <span class="file-table-name">{{ getFileName(file) }}</span>
+            <DeviceBadge
+              v-if="props.showDeviceBadges && file.deviceName"
+              :device-name="file.deviceName"
+            />
+          </td>
+          <td class="file-table-cell file-table-size">
+            {{ formatBytes(getFileSize(file)) }}
+          </td>
+          <td class="file-table-cell file-table-cell--menu">
+            <button
+              type="button"
+              class="context-menu-trigger"
+              aria-label="Open context menu"
+              @click.stop="handleContextMenu($event, file)"
+            >
+              &#x22EE;
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -205,7 +76,7 @@ import {
   getFileSize,
   formatBytes,
 } from '@/services/cirrusService'
-import FolderIcon from '@/components/icons/FolderIcon.vue'
+import CirrusFolderIcon from '@/components/icons/CirrusFolderIcon.vue'
 import PdfIcon from '@/components/icons/PdfIcon.vue'
 import ImageIcon from '@/components/icons/ImageIcon.vue'
 import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
@@ -213,6 +84,13 @@ import ArchiveIcon from '@/components/icons/ArchiveIcon.vue'
 import GenericIcon from '@/components/icons/GenericIcon.vue'
 import DocxIcon from '@/components/icons/DocxIcon.vue'
 import { type Component } from 'vue'
+import CirrusListViewSortHeader, {
+  type HeaderAlignDirection,
+  type SortColumn,
+  type SortDirection,
+} from './CirrusListViewSortHeader.vue'
+import DeviceBadge from '@/components/badges/DeviceBadge.vue'
+import SortSwitcherIcon from '@/components/icons/SortSwitcherIcon.vue'
 
 const props = defineProps<{
   files: CirrusFileNode[]
@@ -229,12 +107,16 @@ const emit = defineEmits<{
 }>()
 
 // Sorting state
-type SortColumn = 'name' | 'size' | null
-type SortDirection = 'asc' | 'desc'
-
 const sortColumn = ref<SortColumn>(null)
 const sortDirection = ref<SortDirection>('asc')
 const mixedSorting = ref(false)
+const sortColumns: { column: SortColumn; alignDirection?: HeaderAlignDirection }[] = [
+  {
+    column: 'name',
+    alignDirection: 'left',
+  },
+  { column: 'size' },
+]
 
 // Toggle mixed sorting mode (folders mixed with files vs folders first)
 const toggleMixedSorting = () => {
@@ -242,6 +124,8 @@ const toggleMixedSorting = () => {
 }
 
 // Sorted files computed property
+// TODO: Move the sorting into a super generic utility module, which allows you to sort by "sections" (e.g., folders first)
+// or as a whole, accepting predicates for the "sections"
 const sortedFiles = computed(() => {
   if (!sortColumn.value) {
     // Default: folders first (unless mixed), then alphabetically by name
@@ -287,7 +171,7 @@ const sortedFiles = computed(() => {
   })
 })
 
-const toggleSort = (column: SortColumn) => {
+const toggleSort = (column: SortColumn): void => {
   if (sortColumn.value === column) {
     // Toggle direction
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
@@ -298,12 +182,13 @@ const toggleSort = (column: SortColumn) => {
   }
 }
 
-const getFileType = (file: CirrusFileNode) => determineFileType(file)
+// TODO: CirrusGridView has the exact same functions/code, after this point
 
+// TODO: Move this to a utility module
 const getIconComponent = (fileType: string): Component => {
   switch (fileType) {
     case 'folder':
-      return FolderIcon
+      return CirrusFolderIcon
     case 'pdf':
       return PdfIcon
     case 'image':
@@ -372,55 +257,8 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
     color: $color-gray-300;
   }
 
-  &--left {
-    text-align: left;
-  }
-
-  &--right {
-    text-align: right;
-    width: 6rem;
-  }
-
   &--toggle {
     width: 4rem;
-  }
-
-  &--sortable {
-    cursor: pointer;
-    user-select: none;
-
-    &:hover {
-      background-color: $color-gray-100;
-
-      @media (prefers-color-scheme: dark) {
-        background-color: $color-gray-800;
-      }
-    }
-  }
-}
-
-.sort-button {
-  display: inline-flex;
-  align-items: center;
-  gap: $spacing-xs;
-}
-
-.sort-arrows {
-  display: inline-flex;
-  align-items: center;
-}
-
-.sort-arrow {
-  width: 16px;
-  height: 16px;
-  color: $color-gray-400;
-
-  &--active {
-    color: $color-gray-700;
-
-    @media (prefers-color-scheme: dark) {
-      color: $color-gray-300;
-    }
   }
 }
 
@@ -564,72 +402,5 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
       background-color: $color-gray-700;
     }
   }
-}
-
-.sort-switcher-icons {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: $spacing-xs;
-  margin-bottom: $spacing-xs;
-  height: 1rem;
-  padding-left: $spacing-xs;
-}
-
-.sort-switcher-arrows,
-.sort-switcher-folder,
-.sort-switcher-file {
-  width: 1rem;
-  height: 1rem;
-  color: $color-gray-500;
-
-  @media (prefers-color-scheme: dark) {
-    color: $color-gray-400;
-  }
-}
-
-.sort-switcher-label {
-  color: $color-gray-500;
-  font-weight: 600;
-  width: 3rem;
-  text-align: center;
-
-  @media (prefers-color-scheme: dark) {
-    color: $color-gray-400;
-  }
-}
-
-/* Device badge - Shows which storage device a file is on */
-.device-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: $spacing-xs;
-  margin-left: $spacing-sm;
-  padding: 2px 6px;
-  background-color: $color-blue-50;
-  border: 1px solid $color-blue-200;
-  border-radius: $border-radius-sm;
-  font-size: $font-size-xs;
-  color: $color-blue-700;
-  white-space: nowrap;
-
-  @media (prefers-color-scheme: dark) {
-    background-color: $color-blue-900;
-    border-color: $color-blue-700;
-    color: $color-blue-200;
-  }
-}
-
-.device-badge-icon {
-  width: 12px;
-  height: 12px;
-  flex-shrink: 0;
-}
-
-.device-badge-name {
-  font-weight: 500;
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 </style>
