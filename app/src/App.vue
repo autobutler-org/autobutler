@@ -1,9 +1,21 @@
-<script setup lang="ts">
-import { RouterView } from 'vue-router'
-</script>
 <template>
-  <RouterView />
+  <main class="site-main-bg">
+    <TopNav :navLinks="navLinks" />
+    <RouterView />
+  </main>
 </template>
+
+<script lang="ts" setup>
+import { RouterView } from 'vue-router'
+import TopNav from '@/components/home/TopNav.vue'
+import type { NavLink } from '@/types/nav_link'
+
+const navLinks: NavLink[] = [
+  { name: 'Cirrus', href: '/cirrus' },
+  { name: 'Photos', href: '/photos' },
+  { name: 'Books', href: '/books' },
+]
+</script>
 
 <style lang="scss" scoped>
 * {

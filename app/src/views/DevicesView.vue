@@ -1,54 +1,51 @@
 <template>
-  <div class="site-main-bg">
-    <main class="landing-main">
-      <GradientOverlays />
-      <div class="landing-container">
-        <TopNav :navLinks="navLinks" />
-        <div class="devices-page">
-          <div class="devices-header">
-            <div class="devices-header-content">
-              <div>
-                <h1 class="devices-title">Storage Devices</h1>
-                <p class="devices-subtitle">
-                  Monitor capacity, usage, and content categories across all connected drives
-                </p>
-              </div>
-              <button
-                class="devices-refresh-button"
-                :disabled="loading"
-                @click="fetchDevices"
-                title="Refresh storage devices"
+  <div class="landing-main">
+    <GradientOverlays />
+    <div class="landing-container">
+      <div class="devices-page">
+        <div class="devices-header">
+          <div class="devices-header-content">
+            <div>
+              <h1 class="devices-title">Storage Devices</h1>
+              <p class="devices-subtitle">
+                Monitor capacity, usage, and content categories across all connected drives
+              </p>
+            </div>
+            <button
+              class="devices-refresh-button"
+              :disabled="loading"
+              @click="fetchDevices"
+              title="Refresh storage devices"
+            >
+              <svg
+                v-if="loading"
+                class="refresh-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
               >
-                <svg
-                  v-if="loading"
-                  class="refresh-icon"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <polyline points="23 4 23 10 17 10"></polyline>
-                  <polyline points="1 20 1 14 7 14"></polyline>
-                  <path
-                    d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
-                  ></path>
-                </svg>
-                <span>Refresh</span>
-              </button>
-            </div>
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path
+                  d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+                ></path>
+              </svg>
+              <span>Refresh</span>
+            </button>
           </div>
-          <div id="devices-content">
-            <div v-if="devices.length === 0 && !loading" class="devices-empty">
-              <p>No storage devices detected</p>
-            </div>
-            <div v-else class="devices-grid">
-              <DeviceCard v-for="device in devices" :key="device.device_path" :device="device" />
-            </div>
+        </div>
+        <div id="devices-content">
+          <div v-if="devices.length === 0 && !loading" class="devices-empty">
+            <p>No storage devices detected</p>
+          </div>
+          <div v-else class="devices-grid">
+            <DeviceCard v-for="device in devices" :key="device.device_path" :device="device" />
           </div>
         </div>
       </div>
-    </main>
+    </div>
   </div>
 </template>
 
@@ -56,16 +53,9 @@
 import { ref, onMounted } from 'vue'
 
 import DeviceCard from '../components/DeviceCard.vue'
-import TopNav from '@/components/home/TopNav.vue'
 import GradientOverlays from '@/components/home/GradientOverlays.vue'
 import type { Summary } from '@/types/summary'
 import type { Device } from '@/types/device'
-
-const navLinks = [
-  { name: 'Cirrus', href: '/cirrus' },
-  { name: 'Photos', href: '/photos' },
-  { name: 'Books', href: '/books' },
-]
 
 const devices = ref<Device[]>([])
 const summary = ref<Summary>({
@@ -115,21 +105,6 @@ onMounted(fetchDevices)
 </script>
 
 <style lang="scss" scoped>
-/* Use the same layout and style as HomeView and BooksView */
-.site-main-bg {
-  height: 100vh;
-  min-height: 100vh;
-  width: 100vw;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: linear-gradient(180deg, hsl(225, 25%, 15%) 0%, hsl(225, 30%, 10%) 100%);
-}
-@media (prefers-color-scheme: light) {
-  .site-main-bg {
-    background: linear-gradient(180deg, hsl(225, 15%, 95%) 0%, hsl(225, 20%, 98%) 100%);
-  }
-}
 .landing-main {
   min-height: 100vh;
   display: flex;

@@ -1,34 +1,20 @@
 <template>
-  <div class="site-main-bg">
-    <TopNav :navLinks="navLinks" />
-    <div class="library-layout">
-      <div class="library-container">
-        <aside class="library-sidebar">
-          <slot name="sidebar" />
-        </aside>
-        <div class="library-separator" aria-hidden="true"></div>
-        <main class="library-main">
-          <div class="library-header">
-            <slot name="title" />
-            <slot name="subtitle" />
-          </div>
-          <slot name="main" />
-        </main>
+  <div class="library-layout">
+    <div class="library-container">
+      <aside class="library-sidebar">
+        <slot name="sidebar" />
+      </aside>
+      <div class="library-separator" aria-hidden="true"></div>
+      <div class="library-main">
+        <div class="library-header">
+          <slot name="title" />
+          <slot name="subtitle" />
+        </div>
+        <slot name="main" />
       </div>
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import TopNav from '@/components/home/TopNav.vue'
-import type { NavLink } from '@/types/nav_link'
-
-const navLinks: NavLink[] = [
-  { name: 'Cirrus', href: '/cirrus' },
-  { name: 'Photos', href: '/photos' },
-  { name: 'Books', href: '/books' },
-]
-</script>
 
 <style lang="scss" scoped>
 /* Generic library layout classes */
