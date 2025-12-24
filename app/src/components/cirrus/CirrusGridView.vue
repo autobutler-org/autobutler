@@ -4,11 +4,12 @@
       <div
         v-for="file in files"
         :key="file.fullPath"
-        :class="['grid-view-item', 'file-node', { 'grid-view-item--folder': isDirectory(file) }]"
+        :class="['grid-view-item', 'file-node', { 'grid-view-item--folder': isDirectory(file), 'grid-view-item--selected': selectedFile && selectedFile.fullPath === file.fullPath }]"
         :data-name="getFileName(file)"
         :data-is-folder="isDirectory(file)"
         :data-file-type="getFileType(file)"
         :data-device-name="file.deviceName"
+        @click="emit('select', file)"
         @dblclick="handleClick(file)"
         @contextmenu="handleContextMenu($event, file)"
       >
@@ -79,12 +80,14 @@ const props = defineProps<{
   files: CirrusFileNode[]
   currentPath: string
   showDeviceBadges?: boolean
+  selectedFile?: CirrusFileNode | null
 }>()
 
 const emit = defineEmits<{
   'navigate-folder': [path: string]
   'open-file': [file: CirrusFileNode]
   'context-menu': [event: MouseEvent, file: CirrusFileNode]
+  'select': [file: CirrusFileNode]
 }>()
 
 const getFileType = (file: CirrusFileNode) => determineFileType(file)
@@ -156,6 +159,12 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 
     .context-menu-trigger {
       opacity: 1;
+    }
+  }
+  &.grid-view-item--selected {
+    background-color: $color-primary-100;
+    @media (prefers-color-scheme: dark) {
+      background-color: $color-primary-900;
     }
   }
 }

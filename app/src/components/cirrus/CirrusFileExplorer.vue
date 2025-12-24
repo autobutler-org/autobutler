@@ -97,8 +97,10 @@
             :files="files"
             :current-path="currentPath"
             :show-device-badges="showDeviceBadges"
+            :selected-file="selectedFile"
             @navigate-folder="handleNavigateFolder"
             @open-file="handleOpenFile"
+            @select="handleSelectFile"
             @context-menu="handleContextMenu"
           />
         </template>
@@ -107,8 +109,10 @@
             :files="files"
             :current-path="currentPath"
             :show-device-badges="showDeviceBadges"
+            :selected-file="selectedFile"
             @navigate-folder="handleNavigateFolder"
             @open-file="handleOpenFile"
+            @select="handleSelectFile"
             @context-menu="handleContextMenu"
           />
         </template>
@@ -164,6 +168,8 @@ const showDeviceBadges = ref(false)
 const fileViewerOpen = ref(false)
 const selectedFilePath = ref('')
 const selectedFileType = ref<FileType>('generic')
+// Selection state
+const selectedFile = ref<CirrusFileNode | null>(null)
 
 // Context menu state
 const contextMenuOpen = ref(false)
@@ -211,6 +217,9 @@ onMounted(() => {
 })
 
 // Methods
+const handleSelectFile = (file: CirrusFileNode) => {
+  selectedFile.value = file
+}
 const navigateToPath = (path: string) => {
   currentPath.value = path
   router.push(`/cirrus${path ? '/' + path : ''}`)
