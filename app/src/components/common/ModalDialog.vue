@@ -30,27 +30,6 @@ const onClose = () => {
 </script>
 
 <style lang="scss" scoped>
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.modal-content {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.18);
-  padding: 0;
-  max-width: 95vw;
-  max-height: 95vh;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
 .modal-close {
   position: fixed;
   top: 1.5rem;
@@ -69,12 +48,37 @@ const onClose = () => {
   justify-content: center;
   transition: background 0.15s;
   padding: 0;
+
+  svg {
+    display: block;
+    margin: auto;
+  }
+
+  &:hover {
+    background: #f2f2f2;
+  }
 }
-.modal-close:hover {
-  background: #f2f2f2;
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.18);
+  padding: 0;
+  max-width: 95vw;
+  max-height: 95vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-.modal-close svg {
-  display: block;
-  margin: auto;
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
