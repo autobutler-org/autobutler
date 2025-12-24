@@ -48,6 +48,7 @@ const showFolderInput = ref(false)
 const folderName = ref('')
 const isCreating = ref(false)
 
+// TODO: Move folder creation logic to a service/module, then have this function wrap that
 const createFolder = async () => {
   if (!folderName.value.trim() || isCreating.value) return
 
