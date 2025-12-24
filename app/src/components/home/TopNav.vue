@@ -2,7 +2,7 @@
   <nav class="landing-nav">
     <div class="landing-nav-left">
       <RouterLink to="/" class="landing-nav-logo">
-        <img  src="/img/butler.png" alt="AutoButler" />
+        <img src="/img/butler.png" alt="AutoButler" />
       </RouterLink>
       <RouterLink
         v-for="link in navLinks"

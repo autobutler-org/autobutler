@@ -155,7 +155,14 @@
         </div>
         <div v-if="moveDialogError" class="move-dialog-error">{{ moveDialogError }}</div>
         <div class="move-dialog-actions">
-          <button type="button" class="btn btn--secondary" @click="moveDialogOpen = false" :disabled="moveDialogLoading">Cancel</button>
+          <button
+            type="button"
+            class="btn btn--secondary"
+            @click="moveDialogOpen = false"
+            :disabled="moveDialogLoading"
+          >
+            Cancel
+          </button>
           <button type="submit" class="btn btn--primary" :disabled="moveDialogLoading">
             <span v-if="moveDialogLoading">Moving...</span>
             <span v-else>Move/Rename</span>
@@ -339,7 +346,7 @@ const handleRename = (file: CirrusFileNode) => {
   moveDialogError.value = ''
   // Default to just renaming the file/folder name, not the whole path
   moveDialogNewPath.value = file.name
-  console.log(file);
+  console.log(file)
   moveDialogOpen.value = true
 }
 
@@ -567,7 +574,6 @@ const handleDelete = async (file: CirrusFileNode) => {
   }
 }
 
-
 .move-dialog-form {
   min-width: 540px;
   max-width: 98vw;
@@ -614,10 +620,12 @@ const handleDelete = async (file: CirrusFileNode) => {
   border-radius: $border-radius-md;
   font-size: $font-size-lg;
   width: 100%;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
   background: $color-gray-50;
   color: $color-gray-100;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.01);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.01);
 
   &:focus {
     outline: none;

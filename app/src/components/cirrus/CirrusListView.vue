@@ -103,7 +103,9 @@
           v-for="file in sortedFiles"
           :key="file.fullPath"
           class="file-table-row file-node"
-          :class="{ 'file-table-row--selected': selectedFile && selectedFile.fullPath === file.fullPath }"
+          :class="{
+            'file-table-row--selected': selectedFile && selectedFile.fullPath === file.fullPath,
+          }"
           :data-name="getFileName(file)"
           :data-file-type="getFileType(file)"
           :data-device-name="file.deviceName"
@@ -223,7 +225,7 @@ const emit = defineEmits<{
   'navigate-folder': [path: string]
   'open-file': [file: CirrusFileNode]
   'context-menu': [event: MouseEvent, file: CirrusFileNode]
-  'select': [file: CirrusFileNode]
+  select: [file: CirrusFileNode]
 }>()
 
 // Sorting state

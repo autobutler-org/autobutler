@@ -4,7 +4,14 @@
       <div
         v-for="file in files"
         :key="file.fullPath"
-        :class="['grid-view-item', 'file-node', { 'grid-view-item--folder': isDirectory(file), 'grid-view-item--selected': selectedFile && selectedFile.fullPath === file.fullPath }]"
+        :class="[
+          'grid-view-item',
+          'file-node',
+          {
+            'grid-view-item--folder': isDirectory(file),
+            'grid-view-item--selected': selectedFile && selectedFile.fullPath === file.fullPath,
+          },
+        ]"
         :data-name="getFileName(file)"
         :data-is-folder="isDirectory(file)"
         :data-file-type="getFileType(file)"
@@ -87,7 +94,7 @@ const emit = defineEmits<{
   'navigate-folder': [path: string]
   'open-file': [file: CirrusFileNode]
   'context-menu': [event: MouseEvent, file: CirrusFileNode]
-  'select': [file: CirrusFileNode]
+  select: [file: CirrusFileNode]
 }>()
 
 const getFileType = (file: CirrusFileNode) => determineFileType(file)
