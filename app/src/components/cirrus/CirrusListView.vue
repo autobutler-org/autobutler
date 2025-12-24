@@ -42,13 +42,10 @@
           <td class="file-table-cell file-table-cell--clickable">
             <component :is="getIconComponent(determineFileType(file))" />
             <span class="file-table-name">{{ getFileName(file) }}</span>
-            <span
+            <DeviceBadge
               v-if="props.showDeviceBadges && file.deviceName"
-              class="device-badge-container"
-              :title="'Device: ' + file.deviceName"
-            >
-              <DeviceBadge :device-name="file.deviceName" />
-            </span>
+              :device-name="file.deviceName"
+            />
           </td>
           <td class="file-table-cell file-table-size">
             {{ formatBytes(getFileSize(file)) }}
@@ -184,6 +181,8 @@ const toggleSort = (column: SortColumn): void => {
     sortDirection.value = 'asc'
   }
 }
+
+// TODO: CirrusGridView has the exact same functions/code, after this point
 
 // TODO: Move this to a utility module
 const getIconComponent = (fileType: string): Component => {
@@ -402,27 +401,6 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
     &:hover {
       background-color: $color-gray-700;
     }
-  }
-}
-
-/* Device badge - Shows which storage device a file is on */
-.device-badge-container {
-  display: inline-flex;
-  align-items: center;
-  gap: $spacing-xs;
-  margin-left: $spacing-sm;
-  padding: 2px 6px;
-  background-color: $color-blue-50;
-  border: 1px solid $color-blue-200;
-  border-radius: $border-radius-sm;
-  font-size: $font-size-xs;
-  color: $color-blue-700;
-  white-space: nowrap;
-
-  @media (prefers-color-scheme: dark) {
-    background-color: $color-blue-900;
-    border-color: $color-blue-700;
-    color: $color-blue-200;
   }
 }
 </style>
