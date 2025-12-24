@@ -441,7 +441,10 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 
   &:hover {
     background-color: $color-gray-100;
-    text-decoration: underline;
+
+    .file-table-cell .file-table-name {
+      text-decoration: underline;
+    }
 
     @media (prefers-color-scheme: dark) {
       background-color: $color-gray-800;
@@ -449,10 +452,13 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   }
   &.file-table-row--selected {
     background-color: $color-primary-100;
-    text-decoration: underline;
 
     @media (prefers-color-scheme: dark) {
       background-color: $color-primary-900;
+    }
+
+    .file-table-cell .file-table-name {
+      text-decoration: underline;
     }
   }
 }
