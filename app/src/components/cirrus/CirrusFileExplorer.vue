@@ -15,7 +15,7 @@
     <div id="file-explorer-selectable">
       <div class="file-explorer-controls">
         <div>
-          <CirrusBreadcrumb
+          <CirrusBreadcrumbs
             :current-path="currentPath"
             @navigate="navigateToPath"
             @folder-created="handleFolderCreated"
@@ -180,7 +180,7 @@ import { moveFile } from '@/services/cirrusService'
 import { useRoute, useRouter } from 'vue-router'
 import type { CirrusFileNode, FileType } from '@/types/cirrus'
 import { getFiles, determineFileType, getFileName } from '@/services/cirrusService'
-import CirrusBreadcrumb from './CirrusBreadcrumb.vue'
+import CirrusBreadcrumbs from './CirrusBreadcrumbs.vue'
 import CirrusListView from './CirrusListView.vue'
 import CirrusGridView from './CirrusGridView.vue'
 import CirrusFileViewer from './CirrusFileViewer.vue'
