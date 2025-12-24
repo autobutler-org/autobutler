@@ -76,7 +76,7 @@ import {
   getFileSize,
   formatBytes,
 } from '@/services/cirrusService'
-import FolderIcon from '@/components/icons/FolderIcon.vue'
+import CirrusFolderIcon from '@/components/icons/CirrusFolderIcon.vue'
 import PdfIcon from '@/components/icons/PdfIcon.vue'
 import ImageIcon from '@/components/icons/ImageIcon.vue'
 import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
@@ -188,7 +188,7 @@ const toggleSort = (column: SortColumn): void => {
 const getIconComponent = (fileType: string): Component => {
   switch (fileType) {
     case 'folder':
-      return FolderIcon
+      return CirrusFolderIcon
     case 'pdf':
       return PdfIcon
     case 'image':

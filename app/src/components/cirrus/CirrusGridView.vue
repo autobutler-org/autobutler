@@ -30,7 +30,7 @@
         </button>
         <div class="grid-view-link">
           <div v-if="isDirectory(file)" class="grid-view-icon-container">
-            <FolderIcon />
+            <CirrusFolderIcon />
           </div>
           <div v-else class="grid-view-icon-container">
             <component :is="getIconComponent(determineFileType(file))" />
@@ -60,7 +60,7 @@ import {
   getFileSize,
   formatBytes,
 } from '@/services/cirrusService'
-import FolderIcon from '@/components/icons/FolderIcon.vue'
+import CirrusFolderIcon from '@/components/icons/CirrusFolderIcon.vue'
 import PdfIcon from '@/components/icons/PdfIcon.vue'
 import ImageIcon from '@/components/icons/ImageIcon.vue'
 import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
@@ -89,7 +89,7 @@ const emit = defineEmits<{
 const getIconComponent = (fileType: string) => {
   switch (fileType) {
     case 'folder':
-      return FolderIcon
+      return CirrusFolderIcon
     case 'pdf':
       return PdfIcon
     case 'image':
