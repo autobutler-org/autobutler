@@ -135,7 +135,9 @@
                 <span class="device-badge-name">{{ file.deviceName }}</span>
               </span>
             </td>
-            <td class="file-table-cell file-table-size">—</td>
+            <td class="file-table-cell file-table-size">
+              {{ formatBytes(getFileSize(file)) }}
+            </td>
             <td class="file-table-cell file-table-cell--menu">
               <button
                 type="button"
