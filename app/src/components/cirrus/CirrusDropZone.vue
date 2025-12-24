@@ -199,10 +199,6 @@ const uploadFiles = async (files: FileList) => {
   }
 }
 
-.drop-zone-input {
-  display: none;
-}
-
 .drop-zone-content {
   display: flex;
   flex-direction: column;
@@ -219,6 +215,10 @@ const uploadFiles = async (files: FileList) => {
   @media (prefers-color-scheme: dark) {
     color: $color-gray-400;
   }
+}
+
+.drop-zone-input {
+  display: none;
 }
 
 .drop-zone-text {
