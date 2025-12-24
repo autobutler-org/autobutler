@@ -4,9 +4,7 @@
       <p>This file type cannot yet be viewed directly</p>
     </div>
     <div class="unsupported-viewer-actions">
-      <a :href="src" class="download-btn" download>
-        Download file
-      </a>
+      <a :href="src" class="download-btn" download> Download file </a>
     </div>
   </div>
 </template>

@@ -20,7 +20,7 @@ const content = ref('')
 const loading = ref(true)
 const error = ref<string | null>(null)
 
-const filename = computed(() =>  props.src.split('/').pop())
+const filename = computed(() => props.src.split('/').pop())
 
 onMounted(async () => {
   try {

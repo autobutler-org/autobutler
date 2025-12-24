@@ -55,9 +55,7 @@ const sortColumnToHeaderCase = (str: SortColumn) =>
 
 const displayHeader = sortColumnToHeaderCase(props.header)
 const alignClass =
-  props.alignDirection === 'left'
-    ? 'file-table-header-cell--left'
-    : 'file-table-header-cell--right'
+  props.alignDirection === 'left' ? 'file-table-header-cell--left' : 'file-table-header-cell--right'
 </script>
 
 <style lang="scss" scoped>

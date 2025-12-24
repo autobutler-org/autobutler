@@ -32,7 +32,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { CirrusFileNode } from '@/types/cirrus'
-import UploadIcon from '../icons/UploadIcon.vue';
+import UploadIcon from '../icons/UploadIcon.vue'
 
 const props = defineProps<{
   currentPath: string
