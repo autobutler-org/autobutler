@@ -64,7 +64,7 @@
               <span class="file-table-name">{{ getFileName(file) }}</span>
               <span
                 v-if="props.showDeviceBadges && file.deviceName"
-                class="device-badge"
+                class="device-badge-container"
                 :title="'Device: ' + file.deviceName"
               >
                 <DeviceBadge :device-name="file.deviceName" />
@@ -427,7 +427,7 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 }
 
 /* Device badge - Shows which storage device a file is on */
-.device-badge {
+.device-badge-container {
   display: inline-flex;
   align-items: center;
   gap: $spacing-xs;
