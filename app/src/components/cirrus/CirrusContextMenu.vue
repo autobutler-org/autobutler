@@ -207,11 +207,18 @@ watch(
 }
 
 .context-menu-item--danger {
-  color: white;
-  background-color: $color-red-800;
+  color: $color-red-400;
+
+  @media (prefers-color-scheme: light) {
+    color: $color-red-600;
+  }
 
   &:hover {
-    background-color: $color-red-600;
+    background-color: rgba($color-red-800, 0.7);
+
+    @media (prefers-color-scheme: light) {
+      background-color: rgba($color-red-200, 0.7);
+    }
   }
 }
 </style>
