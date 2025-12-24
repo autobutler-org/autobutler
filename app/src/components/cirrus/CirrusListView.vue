@@ -107,7 +107,7 @@
             'file-table-row--selected': selectedFile && selectedFile.fullPath === file.fullPath,
           }"
           :data-name="getFileName(file)"
-          :data-file-type="getFileType(file)"
+          :data-file-type="determineFileType(file)"
           :data-device-name="file.deviceName"
           @click="emit('select', file)"
           @dblclick="handleClick(file)"
@@ -153,7 +153,7 @@
           </template>
           <template v-else>
             <td class="file-table-cell file-table-cell--clickable">
-              <component :is="getIconComponent(getFileType(file))" />
+              <component :is="getIconComponent(determineFileType(file))" />
               <span class="file-table-name">{{ getFileName(file) }}</span>
               <span
                 v-if="props.showDeviceBadges && file.deviceName"
@@ -242,6 +242,8 @@ const toggleMixedSorting = () => {
 }
 
 // Sorted files computed property
+// TODO: Move the sorting into a super generic utility module, which allows you to sort by "sections" (e.g., folders first)
+// or as a whole, accepting predicates for the "sections"
 const sortedFiles = computed(() => {
   if (!sortColumn.value) {
     // Default: folders first (unless mixed), then alphabetically by name
@@ -298,8 +300,7 @@ const toggleSort = (column: SortColumn) => {
   }
 }
 
-const getFileType = (file: CirrusFileNode) => determineFileType(file)
-
+// TODO: Move this to a utility module
 const getIconComponent = (fileType: string): Component => {
   switch (fileType) {
     case 'folder':
