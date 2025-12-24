@@ -66,25 +66,6 @@
             <td class="file-table-cell file-table-cell--content">
               <FolderIcon />
               <span class="file-table-name">{{ getFileName(file) }}</span>
-              <span
-                v-if="props.showDeviceBadges && file.deviceName"
-                class="device-badge"
-                :title="'Device: ' + file.deviceName"
-              >
-                <svg
-                  class="device-badge-icon"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                  <line x1="8" y1="21" x2="16" y2="21"></line>
-                  <line x1="12" y1="17" x2="12" y2="21"></line>
-                </svg>
-                <span class="device-badge-name">{{ file.deviceName }}</span>
-              </span>
             </td>
             <td class="file-table-cell file-table-size">
               {{ formatBytes(getFileSize(file)) }}
@@ -109,19 +90,7 @@
                 class="device-badge"
                 :title="'Device: ' + file.deviceName"
               >
-                <svg
-                  class="device-badge-icon"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                  <line x1="8" y1="21" x2="16" y2="21"></line>
-                  <line x1="12" y1="17" x2="12" y2="21"></line>
-                </svg>
-                <span class="device-badge-name">{{ file.deviceName }}</span>
+              <DeviceBadge :device-name="file.deviceName" />
               </span>
             </td>
             <td class="file-table-cell file-table-size">
@@ -162,7 +131,12 @@ import ArchiveIcon from '@/components/icons/ArchiveIcon.vue'
 import GenericIcon from '@/components/icons/GenericIcon.vue'
 import DocxIcon from '@/components/icons/DocxIcon.vue'
 import { type Component } from 'vue'
-import CirrusListViewSortHeader, { type HeaderAlignDirection, type SortColumn, type SortDirection } from './CirrusListViewSortHeader.vue'
+import CirrusListViewSortHeader, {
+  type HeaderAlignDirection,
+  type SortColumn,
+  type SortDirection,
+} from './CirrusListViewSortHeader.vue'
+import DeviceBadge from '@/components/badges/DeviceBadge.vue'
 
 const props = defineProps<{
   files: CirrusFileNode[]
@@ -526,18 +500,5 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
     border-color: $color-blue-700;
     color: $color-blue-200;
   }
-}
-
-.device-badge-icon {
-  width: 12px;
-  height: 12px;
-  flex-shrink: 0;
-}
-
-.device-badge-name {
-  font-weight: 500;
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 </style>
