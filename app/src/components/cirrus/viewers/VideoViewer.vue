@@ -12,6 +12,7 @@ const props = defineProps<{
   src: string
 }>()
 
+// TODO: Move this logic to a utility module
 const getVideoMimetypeFromExtension = (extension: string) => {
   switch (extension) {
     case 'webm':

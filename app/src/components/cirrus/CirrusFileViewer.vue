@@ -25,6 +25,7 @@ const emit = defineEmits(['update:modelValue'])
 
 // Determine which viewer component to use
 const viewerComponent = computed(() => {
+  // TODO: Move this logic to a utility module
   switch (props.fileType) {
     case 'image':
       return ImageViewer
