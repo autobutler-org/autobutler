@@ -6,7 +6,6 @@
       type="application/pdf"
       width="100%"
       height="100%"
-      style="border: none; min-height: 80vh"
     ></iframe>
     <div v-else class="error-text">No PDF file specified.</div>
   </div>
@@ -24,5 +23,10 @@ defineProps<{ filePath: string }>()
   justify-content: center;
   align-items: flex-start;
   background: $color-gray-100;
+
+  iframe {
+    border: none;
+    min-height: 80vh;
+  }
 }
 </style>

@@ -19,12 +19,12 @@
 </template>
 
 <script setup lang="ts">
-interface SidebarItem {
+export interface SidebarItem {
   label: string
   count?: number
   active?: boolean
 }
-interface SidebarSection {
+export interface SidebarSection {
   title: string
   items: SidebarItem[]
 }
