@@ -84,6 +84,7 @@ const handleFileInputChange = (event: Event) => {
   }
 }
 
+// TODO: Move the core upload logic to it's own service/module, then have this function wrap that
 const uploadFiles = async (files: FileList) => {
   isUploading.value = true
   uploadProgress.value = `Uploading ${files.length} file${files.length > 1 ? 's' : ''}...`
