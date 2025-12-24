@@ -42,7 +42,7 @@
       </div>
       <CirrusFileViewer
         v-model="fileViewerOpen"
-        :file-path="selectedFilePath"
+        :file-src="selectedFileSrc"
         :file-type="selectedFileType"
       />
     </template>
@@ -62,12 +62,15 @@ const books = ref<Book[]>([])
 const totalBooks = ref(0)
 
 const fileViewerOpen = ref(false)
-const selectedFilePath = ref('')
+const selectedFileSrc = ref('')
 const selectedFileType = ref<FileType>('pdf')
+
+// TODO: Move to a common utility file
+const constructFileSrc = (relativePath: string) => `/api/v1/download/cirrus/${relativePath}`
 
 const selectBook = (book: Book) => {
   if (book.relPath) {
-    selectedFilePath.value = book.relPath
+    selectedFileSrc.value = constructFileSrc(book.relPath)
     selectedFileType.value = book.type.toLowerCase() as FileType
     fileViewerOpen.value = true
   }
@@ -112,50 +115,6 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
-/* Cirrus-style header and grid */
-.books-header-simple {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: $spacing-2xl;
-  margin-bottom: $spacing-xl;
-}
-.books-library-title {
-  font-size: $font-size-2xl;
-  font-weight: 700;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: $spacing-md;
-  color: $color-gray-900;
-}
-@media (prefers-color-scheme: dark) {
-  .books-library-title {
-    color: white;
-  }
-}
-.books-library-count {
-  font-size: $font-size-lg;
-  color: $color-gray-500;
-}
-.books-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  padding: $spacing-2xl;
-  color: $color-gray-500;
-}
-.books-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: $spacing-xl;
-  width: 100vw;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding-bottom: $spacing-2xl;
-}
 .book-card {
   cursor: pointer;
   border-radius: $border-radius;
@@ -166,29 +125,17 @@ onMounted(async () => {
   transition: box-shadow 0.2s;
   border: 1px solid $color-gray-800;
   background: $color-gray-50;
-}
-@media (prefers-color-scheme: dark) {
-  .book-card {
+
+  @media (prefers-color-scheme: dark) {
     background: $color-gray-900;
   }
-}
-.book-card:hover {
-  box-shadow: $shadow-md;
-  border-color: $color-primary-400;
-}
-.book-card-cover {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 120px;
-  background: $color-gray-100;
-  position: relative;
-}
-@media (prefers-color-scheme: dark) {
-  .book-card-cover {
-    background: $color-gray-800;
+
+  &:hover {
+    box-shadow: $shadow-md;
+    border-color: $color-primary-400;
   }
 }
+
 .book-card-badge {
   position: absolute;
   top: 8px;
@@ -199,9 +146,29 @@ onMounted(async () => {
   padding: 2px 8px;
   border-radius: 8px;
 }
+
+.book-card-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  background: $color-gray-100;
+  position: relative;
+
+  @media (prefers-color-scheme: dark) {
+    background: $color-gray-800;
+  }
+}
+
 .book-card-info {
   padding: $spacing-md;
 }
+
+.book-card-size {
+  font-size: $font-size-xs;
+  color: $color-gray-500;
+}
+
 .book-card-title {
   font-size: $font-size-base;
   font-weight: 600;
@@ -210,16 +177,59 @@ onMounted(async () => {
   overflow: hidden;
   text-overflow: ellipsis;
   color: $color-gray-900;
-}
-@media (prefers-color-scheme: dark) {
-  .book-card-title {
+
+  @media (prefers-color-scheme: dark) {
     color: white;
   }
 }
-.book-card-size {
-  font-size: $font-size-xs;
+
+.books-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: $spacing-2xl;
   color: $color-gray-500;
 }
+
+.books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: $spacing-xl;
+  width: 100vw;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding-bottom: $spacing-2xl;
+}
+
+.books-header-simple {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: $spacing-2xl;
+  margin-bottom: $spacing-xl;
+}
+
+.books-library-count {
+  font-size: $font-size-lg;
+  color: $color-gray-500;
+}
+
+.books-library-title {
+  font-size: $font-size-2xl;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  color: $color-gray-900;
+
+  @media (prefers-color-scheme: dark) {
+    color: white;
+  }
+}
+
 .mock-badge {
   background: $color-gray-300;
   color: $color-gray-700;

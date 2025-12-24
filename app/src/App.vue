@@ -25,11 +25,29 @@ const navLinks: NavLink[] = [
 header {
   line-height: 1.5;
   max-height: 100vh;
+
+  @media (min-width: 1024px) {
+    display: flex;
+    place-items: center;
+    padding-right: calc($section-gap) / 2;
+  }
+
+  .wrapper {
+    @media (min-width: 1024px) {
+      display: flex;
+      place-items: flex-start;
+      flex-wrap: wrap;
+    }
+  }
 }
 
 .logo {
   display: block;
   margin: 0 auto 2rem;
+
+  @media (min-width: 1024px) {
+    margin: 0 2rem 0 0;
+  }
 }
 
 nav {
@@ -37,44 +55,26 @@ nav {
   font-size: 12px;
   text-align: center;
   margin-top: 2rem;
-}
 
-nav a.router-link-exact-active {
-  color: $color-text-secondary;
-}
+  a {
+    display: inline-block;
+    padding: 0 1rem;
+    border-left: 1px solid $color-border;
 
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
+    &.router-link-exact-active {
+      color: $color-text-secondary;
 
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid $color-border;
-}
+      &:hover {
+        background-color: transparent;
+      }
+    }
 
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc($section-gap) / 2;
+    &:first-of-type {
+      border: 0;
+    }
   }
 
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
+  @media (min-width: 1024px) {
     text-align: left;
     margin-left: -1rem;
     font-size: 1rem;

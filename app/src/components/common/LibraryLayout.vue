@@ -76,10 +76,8 @@
   font-weight: 700;
   margin: 0;
   color: $color-gray-700;
-}
 
-@media (prefers-color-scheme: dark) {
-  .library-title {
+  @media (prefers-color-scheme: dark) {
     color: $color-gray-100;
   }
 }
