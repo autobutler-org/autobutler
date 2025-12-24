@@ -2,7 +2,7 @@
   <nav class="landing-nav">
     <div class="landing-nav-left">
       <RouterLink to="/" class="landing-nav-logo">
-        <img src="/img/butler.png" height="24" width="24" alt="AutoButler" />
+        <img  src="/img/butler.png" alt="AutoButler" />
       </RouterLink>
       <RouterLink
         v-for="link in navLinks"
@@ -273,7 +273,7 @@ const closeMobileMenu = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: $spacing-xl $spacing-2xl;
+  padding: $spacing-lg $spacing-2xl;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -303,9 +303,15 @@ const closeMobileMenu = () => {
   align-items: center;
   padding: 0;
   background: none;
+  height: 2rem;
 
   &:hover {
     background: none;
+  }
+
+  img {
+    height: 100%;
+    width: auto;
   }
 }
 
@@ -316,10 +322,17 @@ const closeMobileMenu = () => {
   transition: color 0.2s ease;
   padding: 0;
   background: none;
+  height: 2rem;
+  display: flex;
+  align-items: center;
 
   &:hover {
     color: white;
-    background: none;
+    text-decoration: underline;
+  }
+
+  &.router-link-active {
+    text-decoration: underline;
   }
 
   @media (prefers-color-scheme: light) {
