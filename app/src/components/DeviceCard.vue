@@ -49,30 +49,6 @@ const goToCirrus = () => {
   max-width: 600px;
   margin: 0 auto;
 }
-.device-card-header {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.device-card-title-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.device-card-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: white;
-  margin: 0;
-}
-
-.device-card-type {
-  font-size: 1rem;
-  color: #b3b3b3;
-  margin: 0;
-}
 
 .device-card-body {
   margin-top: 0.5rem;
@@ -82,8 +58,33 @@ const goToCirrus = () => {
   margin-top: 0.8rem;
 }
 
+.device-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
 .device-card-mount {
   font-size: 1rem;
   color: #e0e0e0;
+}
+
+.device-card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.device-card-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.device-card-type {
+  font-size: 1rem;
+  color: #b3b3b3;
+  margin: 0;
 }
 </style>
