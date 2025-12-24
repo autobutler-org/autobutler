@@ -43,6 +43,13 @@
             <td class="file-table-cell file-table-cell--content">
               <FolderIcon />
               <span class="file-table-name">{{ getFileName(file) }}</span>
+              <span
+                v-if="props.showDeviceBadges && file.deviceName"
+                class="device-badge-container"
+                :title="'Device: ' + file.deviceName"
+              >
+                <DeviceBadge :device-name="file.deviceName" />
+              </span>
             </td>
             <td class="file-table-cell file-table-size">
               {{ formatBytes(getFileSize(file)) }}
