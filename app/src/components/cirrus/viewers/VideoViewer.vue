@@ -1,6 +1,6 @@
 <template>
   <video class="file-viewer-media" controls>
-    <source :src="`/api/v1/download/cirrus/${filePath}`" :type="videoType" />
+    <source :src="src" :type="videoType" />
     Your browser does not support this video format.
   </video>
 </template>
@@ -9,11 +9,11 @@
 import { computed } from 'vue'
 
 const props = defineProps<{
-  filePath: string
+  src: string
 }>()
 
 const videoType = computed(() => {
-  const extension = props.filePath.split('.').pop()?.toLowerCase() || ''
+  const extension = props.src.split('.').pop()?.toLowerCase() || ''
   switch (extension) {
     case 'webm':
       return 'video/webm'

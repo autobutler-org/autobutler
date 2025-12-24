@@ -1,8 +1,8 @@
 <template>
   <div class="pdf-viewer">
     <iframe
-      v-if="filePath"
-      :src="`/api/v1/download/cirrus/${encodeURIComponent(filePath)}`"
+      v-if="src"
+      :src="src"
       type="application/pdf"
       width="100%"
       height="100%"
@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ filePath: string }>()
+defineProps<{ src: string }>()
 </script>
 
 <style lang="scss" scoped>

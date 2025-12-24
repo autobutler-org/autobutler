@@ -13,21 +13,18 @@
 import { ref, onMounted, computed } from 'vue'
 
 const props = defineProps<{
-  filePath: string
+  src: string
 }>()
 
 const content = ref('')
 const loading = ref(true)
 const error = ref<string | null>(null)
 
-const filename = computed(() => {
-  const parts = props.filePath.split('/')
-  return parts[parts.length - 1]
-})
+const filename = computed(() =>  props.src.split('/').pop())
 
 onMounted(async () => {
   try {
-    const response = await fetch(`/api/v1/download/cirrus/${props.filePath}`)
+    const response = await fetch(props.src)
     if (!response.ok) {
       throw new Error('Failed to load file')
     }

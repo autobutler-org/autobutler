@@ -122,7 +122,7 @@
     <!-- File Viewer Modal -->
     <CirrusFileViewer
       v-model="fileViewerOpen"
-      :file-path="selectedFilePath"
+      :file-src="selectedFileSrc"
       :file-type="selectedFileType"
     />
 
@@ -200,7 +200,7 @@ const showDeviceBadges = ref(false)
 
 // File viewer state
 const fileViewerOpen = ref(false)
-const selectedFilePath = ref('')
+const selectedFileSrc = ref('')
 const selectedFileType = ref<FileType>('generic')
 // Selection state
 const selectedFile = ref<CirrusFileNode | null>(null)
@@ -258,6 +258,10 @@ onMounted(() => {
 })
 
 // Methods
+const constructFileSrc = (relativePath: string) => {
+  return `/api/v1/download/cirrus/${relativePath}`
+}
+
 const handleSelectFile = (file: CirrusFileNode) => {
   selectedFile.value = file
 }
@@ -274,7 +278,7 @@ const handleOpenFile = (file: CirrusFileNode) => {
   // Construct the relative path for the API from currentPath and filename
   const fileName = getFileName(file)
   const relativePath = currentPath.value ? `${currentPath.value}/${fileName}` : fileName
-  selectedFilePath.value = relativePath
+  selectedFileSrc.value = constructFileSrc(relativePath)
   selectedFileType.value = determineFileType(file)
   fileViewerOpen.value = true
 }
