@@ -33,7 +33,6 @@ defineProps<{ sections: SidebarSection[] }>()
 </script>
 
 <style lang="scss" scoped>
-/* Match PhotosSidebar styles */
 .library-sidebar {
   width: 100%;
   height: 100%;
@@ -47,25 +46,13 @@ defineProps<{ sections: SidebarSection[] }>()
   flex-direction: column;
   box-sizing: border-box;
 }
-.library-sidebar-section {
-  margin-bottom: $spacing-2xl;
-}
-.library-sidebar-title {
+
+.library-sidebar-count {
+  margin-left: auto;
   font-size: $font-size-xs;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: $color-gray-400;
-  margin-bottom: $spacing-md;
+  color: $color-gray-100;
 }
-.library-sidebar-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-xs;
-}
+
 .library-sidebar-item {
   display: flex;
   align-items: center;
@@ -77,21 +64,41 @@ defineProps<{ sections: SidebarSection[] }>()
   transition: all 0.2s ease;
   font-size: $font-size-sm;
   cursor: pointer;
+
+  & .active {
+    color: $color-primary-100;
+  }
+
+  &:hover {
+    background: $color-gray-800;
+    color: white;
+  }
+
+  &.active {
+    background: $color-primary-600;
+    color: white;
+  }
 }
-.library-sidebar-item:hover {
-  background: $color-gray-800;
-  color: white;
+
+.library-sidebar-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
 }
-.library-sidebar-item.active {
-  background: $color-primary-600;
-  color: white;
+
+.library-sidebar-section {
+  margin-bottom: $spacing-2xl;
 }
-.library-sidebar-count {
-  margin-left: auto;
+
+.library-sidebar-title {
   font-size: $font-size-xs;
-  color: $color-gray-500;
-}
-.library-sidebar-item.active .library-sidebar-count {
-  color: $color-primary-100;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: $color-gray-400;
+  margin-bottom: $spacing-md;
 }
 </style>
