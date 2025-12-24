@@ -6,13 +6,6 @@
 </template>
 
 <style lang="scss" scoped>
-.gradient-overlays {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-
 .gradient-overlay {
   position: absolute;
   left: 0;
@@ -28,5 +21,12 @@
     bottom: 0;
     background: linear-gradient(0deg, rgba(139, 92, 246, 0.1) 0%, transparent 100%);
   }
+}
+
+.gradient-overlays {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
 }
 </style>

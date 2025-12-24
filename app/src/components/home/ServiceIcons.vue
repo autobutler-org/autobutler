@@ -11,7 +11,7 @@
               stroke="currentColor"
               stroke-width="2"
               v-html="icon.iconSVG"
-            />
+            ></svg>
           </div>
           <span class="service-icon-label">{{ icon.label }}</span>
         </a>
@@ -28,7 +28,7 @@
               stroke="currentColor"
               stroke-width="2"
               v-html="icon.iconSVG"
-            />
+            ></svg>
           </div>
           <span class="service-icon-label">{{ icon.label }}</span>
         </div>
