@@ -1,20 +1,7 @@
 <template>
   <div class="modal-overlay" @click.self="onClose">
     <button class="modal-close" @click="onClose" aria-label="Close">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="20"
-        height="20"
-        fill="none"
-        viewBox="0 0 20 20"
-      >
-        <path
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          d="M5 5l10 10M15 5l-10 10"
-        />
-      </svg>
+      <CloseIcon />
     </button>
     <div class="modal-content">
       <slot />
@@ -23,6 +10,8 @@
 </template>
 
 <script setup lang="ts">
+import CloseIcon from '@/components/icons/CloseIcon.vue'
+
 const emit = defineEmits(['close'])
 const onClose = () => {
   emit('close')

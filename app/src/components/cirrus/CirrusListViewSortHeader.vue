@@ -6,32 +6,19 @@
     <span class="sort-button">
       <span>{{ displayHeader }}</span>
       <span class="sort-arrows">
-        <svg
-          v-if="activeSortColumn === header && sortDirection === 'asc'"
-          class="sort-arrow sort-arrow--active"
-          fill="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path d="M7 14l5-5 5 5z"></path>
-        </svg>
-        <svg
-          v-else-if="activeSortColumn === header && sortDirection === 'desc'"
-          class="sort-arrow sort-arrow--active"
-          fill="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path d="M7 10l5 5 5-5z"></path>
-        </svg>
-        <svg v-else class="sort-arrow" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M7 8l5-5 5 5z"></path>
-          <path d="M7 16l5 5 5-5z"></path>
-        </svg>
+        <SortArrowAscend v-if="activeSortColumn === header && sortDirection === 'asc'" />
+        <SortArrowDescend v-else-if="activeSortColumn === header && sortDirection === 'desc'" />
+        <SortArrowNeutral v-else />
       </span>
     </span>
   </th>
 </template>
 
 <script setup lang="ts">
+import SortArrowAscend from '../icons/SortArrowAscend.vue';
+import SortArrowDescend from '../icons/SortArrowDescend.vue';
+import SortArrowNeutral from '../icons/SortArrowNeutral.vue';
+
 export type HeaderAlignDirection = 'left' | 'right'
 export type SortColumn = 'name' | 'size' | null
 export type SortDirection = 'asc' | 'desc'
