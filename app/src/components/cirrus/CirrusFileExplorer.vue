@@ -138,11 +138,38 @@
       @details="handleFileDetails"
       @delete="handleDelete"
     />
+
+    <!-- Move/Rename Modal Dialog -->
+    <ModalDialog v-if="moveDialogOpen" @close="moveDialogOpen = false">
+      <form @submit.prevent="submitMoveDialog" class="move-dialog-form">
+        <h3 class="move-dialog-title">Rename or Move</h3>
+        <div class="move-dialog-field">
+          <label for="move-path-input" class="move-dialog-label">New name or path</label>
+          <input
+            id="move-path-input"
+            v-model="moveDialogNewPath"
+            :disabled="moveDialogLoading"
+            class="move-dialog-input"
+            autocomplete="off"
+          />
+        </div>
+        <div v-if="moveDialogError" class="move-dialog-error">{{ moveDialogError }}</div>
+        <div class="move-dialog-actions">
+          <button type="button" class="btn btn--secondary" @click="moveDialogOpen = false" :disabled="moveDialogLoading">Cancel</button>
+          <button type="submit" class="btn btn--primary" :disabled="moveDialogLoading">
+            <span v-if="moveDialogLoading">Moving...</span>
+            <span v-else>Move/Rename</span>
+          </button>
+        </div>
+      </form>
+    </ModalDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
+import ModalDialog from '@/components/common/ModalDialog.vue'
+import { moveFile } from '@/services/cirrusService'
 import { useRoute, useRouter } from 'vue-router'
 import type { CirrusFileNode, FileType } from '@/types/cirrus'
 import { getFiles, determineFileType, getFileName } from '@/services/cirrusService'
@@ -176,6 +203,13 @@ const contextMenuOpen = ref(false)
 const contextMenuFile = ref<CirrusFileNode | null>(null)
 const contextMenuX = ref(0)
 const contextMenuY = ref(0)
+
+// Move/Rename dialog state
+const moveDialogOpen = ref(false)
+const moveDialogLoading = ref(false)
+const moveDialogError = ref('')
+const moveDialogNewPath = ref('')
+const moveDialogFile = ref<CirrusFileNode | null>(null)
 
 // Fetch files for the current path
 const fetchFiles = async () => {
@@ -301,10 +335,36 @@ const handleDownload = (file: CirrusFileNode) => {
 }
 
 const handleRename = (file: CirrusFileNode) => {
-  // TODO: Implement rename dialog
-  const fileName = getFileName(file)
-  console.log('Rename file:', fileName)
-  alert(`Rename functionality coming soon for: ${fileName}`)
+  moveDialogFile.value = file
+  moveDialogError.value = ''
+  // Default to just renaming the file/folder name, not the whole path
+  moveDialogNewPath.value = file.name
+  console.log(file);
+  moveDialogOpen.value = true
+}
+
+const submitMoveDialog = async () => {
+  if (!moveDialogFile.value) return
+  moveDialogLoading.value = true
+  moveDialogError.value = ''
+  try {
+    const oldPath = moveDialogFile.value.name
+    const newPath = moveDialogNewPath.value.trim()
+    if (!newPath || newPath === oldPath) {
+      moveDialogError.value = 'Please enter a new name or path.'
+      moveDialogLoading.value = false
+      return
+    }
+    await moveFile(oldPath, newPath)
+    // Update UI: refetch files and close dialog
+    await fetchFiles()
+    moveDialogOpen.value = false
+    moveDialogFile.value = null
+  } catch (e) {
+    moveDialogError.value = e instanceof Error ? e.message : 'Failed to move file.'
+  } finally {
+    moveDialogLoading.value = false
+  }
 }
 
 const handleFileDetails = (file: CirrusFileNode) => {
@@ -386,7 +446,7 @@ const handleDelete = async (file: CirrusFileNode) => {
   font-weight: 700;
   margin-right: $spacing-lg;
   white-space: nowrap;
-  color: $color-gray-900;
+  color: $color-gray-100;
 }
 @media (prefers-color-scheme: dark) {
   .file-explorer-title,
@@ -505,5 +565,96 @@ const handleDelete = async (file: CirrusFileNode) => {
       }
     }
   }
+}
+
+
+.move-dialog-form {
+  min-width: 540px;
+  max-width: 98vw;
+  background: $color-gray-800;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-lg;
+  padding: $spacing-xl $spacing-lg $spacing-lg $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: $spacing-lg;
+
+  @media (max-width: 480px) {
+    min-width: 0;
+    padding: $spacing-lg;
+  }
+}
+
+.move-dialog-title {
+  font-size: $font-size-xl;
+  font-weight: 700;
+  margin-bottom: $spacing-md;
+  text-align: left;
+  color: $color-gray-100;
+}
+
+.move-dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-md;
+}
+
+.move-dialog-label {
+  font-size: $font-size-base;
+  font-weight: 500;
+  color: $color-gray-200;
+  margin-bottom: $spacing-xs;
+}
+
+.move-dialog-input {
+  padding: $spacing-md;
+  border: 1.5px solid $color-gray-300;
+  border-radius: $border-radius-md;
+  font-size: $font-size-lg;
+  width: 100%;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  background: $color-gray-50;
+  color: $color-gray-100;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.01);
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary-500;
+    box-shadow: 0 0 0 2px $color-primary-100;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    background: $color-gray-900;
+    color: $color-gray-100;
+    border-color: $color-gray-600;
+    &::placeholder {
+      color: $color-gray-400;
+      opacity: 1;
+    }
+  }
+}
+
+.move-dialog-error {
+  color: #dc2626;
+  font-size: $font-size-sm;
+  margin-bottom: $spacing-md;
+  text-align: left;
+}
+
+.move-dialog-actions {
+  display: flex;
+  gap: $spacing-md;
+  justify-content: flex-end;
+  margin-top: $spacing-md;
+}
+
+.move-dialog-form button.btn {
+  min-width: 110px;
+  font-size: $font-size-base;
+  font-weight: 600;
+  border-radius: $border-radius-md;
+  padding: $spacing-sm $spacing-lg;
 }
 </style>
