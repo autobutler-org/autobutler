@@ -1,3 +1,21 @@
+/**
+ * Move or rename a file or directory in Cirrus
+ * @param oldPath The current path of the file or directory (relative to Cirrus root)
+ * @param newPath The new path (relative to Cirrus root)
+ * @returns Promise resolving to the backend result
+ */
+export const moveFile = async (oldPath: string, newPath: string): Promise<void> => {
+  const response = await fetch(`/api/v1/cirrus`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ filePath: oldPath, newFilePath: newPath }),
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to move file: ${response.statusText}`)
+  }
+}
 // Cirrus service - makes API calls to the backend
 import type { CirrusFileNode, FileType } from '@/types/cirrus'
 

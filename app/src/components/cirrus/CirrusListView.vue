@@ -103,9 +103,13 @@
           v-for="file in sortedFiles"
           :key="file.fullPath"
           class="file-table-row file-node"
+          :class="{
+            'file-table-row--selected': selectedFile && selectedFile.fullPath === file.fullPath,
+          }"
           :data-name="getFileName(file)"
           :data-file-type="getFileType(file)"
           :data-device-name="file.deviceName"
+          @click="emit('select', file)"
           @dblclick="handleClick(file)"
           @contextmenu="handleContextMenu($event, file)"
         >
@@ -133,7 +137,9 @@
                 <span class="device-badge-name">{{ file.deviceName }}</span>
               </span>
             </td>
-            <td class="file-table-cell file-table-size">—</td>
+            <td class="file-table-cell file-table-size">
+              {{ formatBytes(getFileSize(file)) }}
+            </td>
             <td class="file-table-cell file-table-cell--menu">
               <button
                 type="button"
@@ -212,12 +218,14 @@ const props = defineProps<{
   files: CirrusFileNode[]
   currentPath: string
   showDeviceBadges?: boolean
+  selectedFile?: CirrusFileNode | null
 }>()
 
 const emit = defineEmits<{
   'navigate-folder': [path: string]
   'open-file': [file: CirrusFileNode]
   'context-menu': [event: MouseEvent, file: CirrusFileNode]
+  select: [file: CirrusFileNode]
 }>()
 
 // Sorting state
@@ -438,8 +446,23 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   &:hover {
     background-color: $color-gray-100;
 
+    .file-table-cell .file-table-name {
+      text-decoration: underline;
+    }
+
     @media (prefers-color-scheme: dark) {
       background-color: $color-gray-800;
+    }
+  }
+  &.file-table-row--selected {
+    background-color: $color-primary-100;
+
+    @media (prefers-color-scheme: dark) {
+      background-color: $color-primary-900;
+    }
+
+    .file-table-cell .file-table-name {
+      text-decoration: underline;
     }
   }
 }
