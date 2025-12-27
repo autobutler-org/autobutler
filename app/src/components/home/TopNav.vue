@@ -144,7 +144,7 @@ watch(
     bannerTimeout = setTimeout(() => {
       showBanner.value = false
     }, 1200)
-  }
+  },
 )
 // --- End flash banner logic ---
 
@@ -220,7 +220,6 @@ const closeMobileMenu = () => {
     border-bottom-color: rgba(0, 0, 0, 0.1);
   }
 }
-
 
 .landing-nav-left {
   display: flex;
@@ -645,4 +644,3 @@ const closeMobileMenu = () => {
   font-family: monospace;
 }
 </style>
-
