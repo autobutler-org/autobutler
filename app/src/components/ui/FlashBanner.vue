@@ -31,7 +31,7 @@ watch(
       }, props.duration ?? 1200)
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 onUnmounted(() => {
@@ -51,7 +51,7 @@ onUnmounted(() => {
   border-radius: 0 0 1rem 1rem;
   font-weight: 600;
   font-size: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   pointer-events: none;
   z-index: 200;
   opacity: 0.95;
@@ -59,8 +59,14 @@ onUnmounted(() => {
 }
 
 @keyframes flash-banner-pop {
-  0% { transform: translateX(-50%) scale(0.9); opacity: 0.5; }
-  100% { transform: translateX(-50%) scale(1); opacity: 0.95; }
+  0% {
+    transform: translateX(-50%) scale(0.9);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.95;
+  }
 }
 
 .flash-banner-fade-enter-active,
