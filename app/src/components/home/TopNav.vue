@@ -1,7 +1,13 @@
 <template>
   <!-- Flash banner for minimal mode changes -->
   <FlashBanner :show="showBanner" @hide="showBanner = false">
-    {{ isMinimal ? 'Fullscreen mode enabled' : 'Fullscreen mode disabled' }}
+    {{
+      isMinimal
+        ? 'Fullscreen mode enabled' +
+          `${minimizeKeyCombo ? ` (${toKeyComboString(minimizeKeyCombo)})` : ''}`
+        : 'Fullscreen mode disabled' +
+          `${minimizeKeyCombo ? ` (${toKeyComboString(minimizeKeyCombo)})` : ''}`
+    }}
   </FlashBanner>
   <nav class="landing-nav" :class="{ 'landing-nav--minimal': isMinimal }">
     <div class="landing-nav-left">
@@ -127,9 +133,11 @@ import HomeIcon from '../icons/HomeIcon.vue'
 import FolderIcon from '../icons/FolderIcon.vue'
 import PhotoIcon from '../icons/PhotoIcon.vue'
 import BookIcon from '../icons/BookIcon.vue'
+import { toKeyComboString, type KeyCombo } from '@/util/keycombo'
 
 const props = defineProps<{
   isMinimal?: boolean
+  minimizeKeyCombo?: KeyCombo
   navLinks?: NavLink[]
 }>()
 // --- Flash banner logic ---

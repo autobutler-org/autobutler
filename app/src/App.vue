@@ -1,6 +1,6 @@
 <template>
   <main class="site-main-bg">
-    <TopNav :navLinks="navLinks" :is-minimal="isMinimal" />
+    <TopNav :navLinks="navLinks" :is-minimal="isMinimal" :minimize-key-combo="minimizeKeyCombo" />
     <RouterView />
   </main>
 </template>
@@ -10,6 +10,7 @@ import { RouterView } from 'vue-router'
 import TopNav from '@/components/home/TopNav.vue'
 import type { NavLink } from '@/types/nav_link'
 import { ref } from 'vue'
+import { fromKeyComboString, toEventListenerFunc } from './util/keycombo'
 
 const navLinks: NavLink[] = [
   { name: 'Cirrus', href: '/cirrus' },
@@ -18,16 +19,12 @@ const navLinks: NavLink[] = [
 ]
 
 const isMinimal = ref(false)
-
-const toggleMinimize = () => {
-  isMinimal.value = !isMinimal.value;
+const toggleMinimize = (_: Event): boolean => {
+  isMinimal.value = !isMinimal.value
+  return true
 }
-
-window.addEventListener('keydown', (e) => {
-  if (e.altKey && e.code === 'Space') {
-    toggleMinimize()
-  }
-})
+const minimizeKeyCombo = fromKeyComboString('alt-space')
+document.addEventListener('keydown', toEventListenerFunc(minimizeKeyCombo, toggleMinimize))
 </script>
 
 <style lang="scss" scoped>

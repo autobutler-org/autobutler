@@ -1,13 +1,13 @@
-import { arrayEquals } from "./array"
+import { arrayEquals } from './array'
 
-export type KeyModifier = 'alt' | 'ctrl' | 'meta' | 'shift';
+export type KeyModifier = 'alt' | 'ctrl' | 'meta' | 'shift'
 export interface KeyCombo {
-  modifiers?: KeyModifier[];
-  keys: string[];
+  modifiers?: KeyModifier[]
+  keys: string[]
 }
 
 // Parses a key combination string (e.g., "ctrl-alt-delete") into a KeyCombo object
-export const parseKeyCombo = (combo: string): KeyCombo => {
+export const fromKeyComboString = (combo: string): KeyCombo => {
   const parts = combo.toLowerCase().split('-')
   if (parts.length === 0) {
     return { keys: [] }
@@ -48,11 +48,44 @@ export const areKeyCombosEqual = (a: KeyCombo, b: KeyCombo): boolean => {
     return false
   }
 
-  return arrayEquals(
-    aModifiers,
-    bModifiers
-  ) && arrayEquals(
-    aKeys,
-    bKeys
-  )
+  return arrayEquals(aModifiers, bModifiers) && arrayEquals(aKeys, bKeys)
 }
+
+export const toEventListenerFunc =
+  (combo: KeyCombo, handler: (e: Event) => boolean) => (e: Event) => {
+    for (const mod of combo.modifiers ?? []) {
+      switch (mod) {
+        case 'alt':
+          if (!(e as KeyboardEvent).altKey) {
+            return false
+          }
+          break
+        case 'ctrl':
+          if (!(e as KeyboardEvent).ctrlKey) {
+            return false
+          }
+          break
+        case 'meta':
+          if (!(e as KeyboardEvent).metaKey) {
+            return false
+          }
+          break
+        case 'shift':
+          if (!(e as KeyboardEvent).shiftKey) {
+            return false
+          }
+          break
+      }
+    }
+
+    for (const key of combo.keys) {
+      if (
+        (e as KeyboardEvent).key.toLowerCase() === key.toLowerCase() ||
+        (e as KeyboardEvent).code.toLowerCase() === key.toLowerCase()
+      ) {
+        return handler(e)
+      }
+    }
+
+    return false
+  }

@@ -3,15 +3,17 @@ export const arrayCompare = <T>(
   arr2: T[] | undefined,
   elementComparator?: (a: T, b: T) => number,
 ): number => {
-  elementComparator = elementComparator ?? ((a, b) => {
-    if (a < b) {
-      return -1
-    }
-    if (a > b) {
-      return 1
-    }
-    return 0
-  })
+  elementComparator =
+    elementComparator ??
+    ((a, b) => {
+      if (a < b) {
+        return -1
+      }
+      if (a > b) {
+        return 1
+      }
+      return 0
+    })
   if (arr1 === undefined && arr2 === undefined) {
     return 0
   }
@@ -27,7 +29,7 @@ export const arrayCompare = <T>(
   const minLen = Math.min(len1, len2)
 
   for (let i = 0; i < minLen; i++) {
-    const element1  = arr1[i] as T
+    const element1 = arr1[i] as T
     const element2 = arr2[i] as T
     const cmp = elementComparator(element1, element2)
     if (cmp !== 0) {

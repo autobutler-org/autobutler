@@ -4,7 +4,7 @@ import pluginVue from 'eslint-plugin-vue'
 import pluginVitest from '@vitest/eslint-plugin'
 import pluginPlaywright from 'eslint-plugin-playwright'
 import preferArrowFunctions from 'eslint-plugin-prefer-arrow-functions'
-import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
+import pluginPrettier from 'eslint-plugin-prettier'
 
 // To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
 // import { configureVueProject } from '@vue/eslint-config-typescript'
@@ -19,7 +19,7 @@ export default defineConfigWithVueTs(
 
   globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
 
-  pluginVue.configs['flat/essential'],
+  pluginVue.configs['flat/strongly-recommended'],
   vueTsConfigs.recommended,
 
   {
@@ -31,7 +31,15 @@ export default defineConfigWithVueTs(
     ...pluginPlaywright.configs['flat/recommended'],
     files: ['e2e/**/*.{test,spec}.{js,ts,jsx,tsx}'],
   },
-  skipFormatting,
+  // Remove skipFormatting so Prettier rules are enforced
+  {
+    plugins: {
+      prettier: pluginPrettier,
+    },
+    rules: {
+      'prettier/prettier': 'error',
+    },
+  },
   ...(preferArrowFunctions.configs?.all ? [preferArrowFunctions.configs.all] : []),
   // Temporarily disabled rules for Playwright
   {
@@ -49,7 +57,19 @@ export default defineConfigWithVueTs(
   // Enforce no semicolons
   {
     rules: {
-      'semi': ['error', 'never'],
+      semi: ['error', 'never'],
+    },
+  },
+  // Allow unused variables and arguments that start with _
+  {
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
     },
   },
 )
