@@ -52,7 +52,7 @@
         </div>
       </div>
 
-      <div id="file-explorer-status"></div>
+      <div id="file-explorer-status" />
 
       <div id="file-explorer-view-content">
         <template v-if="loading">
@@ -125,7 +125,9 @@
             autocomplete="off"
           />
         </div>
-        <div v-if="moveDialogError" class="move-dialog-error">{{ moveDialogError }}</div>
+        <div v-if="moveDialogError" class="move-dialog-error">
+          {{ moveDialogError }}
+        </div>
         <div class="move-dialog-actions">
           <button
             type="button"

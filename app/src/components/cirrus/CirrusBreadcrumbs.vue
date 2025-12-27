@@ -6,10 +6,7 @@
       </a>
       <span>/</span>
     </span>
-    <CirrusAddFolder
-      :current-path="currentPath"
-      @folder-created="handleFolderCreated"
-    ></CirrusAddFolder>
+    <CirrusAddFolder :current-path="currentPath" @folder-created="handleFolderCreated" />
   </nav>
 </template>
 

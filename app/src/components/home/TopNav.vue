@@ -112,7 +112,7 @@
           <SettingsIcon />
           <span>Settings</span>
         </RouterLink>
-        <div class="mobile-menu-divider"></div>
+        <div class="mobile-menu-divider" />
         <span class="mobile-menu-version">Version: {{ currentVersion }}</span>
       </div>
     </div>

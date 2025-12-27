@@ -1,7 +1,7 @@
 <template>
   <div class="gradient-overlays">
-    <div class="gradient-overlay gradient-overlay--top"></div>
-    <div class="gradient-overlay gradient-overlay--bottom"></div>
+    <div class="gradient-overlay gradient-overlay--top" />
+    <div class="gradient-overlay gradient-overlay--bottom" />
   </div>
 </template>
 

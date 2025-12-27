@@ -8,7 +8,7 @@
     width="20"
     height="20"
   >
-    <polyline points="23 4 23 10 17 10"></polyline>
-    <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path>
+    <polyline points="23 4 23 10 17 10" />
+    <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
   </svg>
 </template>

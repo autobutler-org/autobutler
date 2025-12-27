@@ -8,7 +8,9 @@
       <h2 class="library-title">Library</h2>
     </template>
     <template #subtitle>
-      <div class="library-subtitle">{{ formatBookCount(totalBooks) }}</div>
+      <div class="library-subtitle">
+        {{ formatBookCount(totalBooks) }}
+      </div>
     </template>
     <template #main>
       <div id="books-view">
@@ -24,7 +26,9 @@
                 <span class="book-card-badge">{{ book.type }}</span>
               </div>
               <div class="book-card-info">
-                <h3 class="book-card-title" :title="book.fileName">{{ book.title }}</h3>
+                <h3 class="book-card-title" :title="book.fileName">
+                  {{ book.title }}
+                </h3>
                 <p class="book-card-size">{{ formatBookSize(book.size) }}</p>
               </div>
             </div>
@@ -41,14 +45,13 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
-import { fetchBooks, type BookApiResponse } from '@/services/booksService'
-import CirrusFileViewer from '@/components/cirrus/CirrusFileViewer.vue'
-import LibraryLayout from '@/components/common/LibraryLayout.vue'
 import BooksSidebar from '@/components/books/BooksSidebar.vue'
-import type { FileType } from '@/types/cirrus'
-import type { Book } from '@/types/book'
+import LibraryLayout from '@/components/common/LibraryLayout.vue'
 import BookIcon from '@/components/icons/BookIcon.vue'
+import { fetchBooks, type BookApiResponse } from '@/services/booksService'
+import type { Book } from '@/types/book'
+import type { FileType } from '@/types/cirrus'
+import { onMounted, ref } from 'vue'
 
 const books = ref<Book[]>([])
 const totalBooks = ref(0)

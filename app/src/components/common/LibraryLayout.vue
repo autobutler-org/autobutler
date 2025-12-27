@@ -4,7 +4,7 @@
       <aside class="library-sidebar">
         <slot name="sidebar" />
       </aside>
-      <div class="library-separator" aria-hidden="true"></div>
+      <div class="library-separator" aria-hidden="true" />
       <div class="library-main">
         <div class="library-header">
           <slot name="title" />

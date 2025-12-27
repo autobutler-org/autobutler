@@ -18,13 +18,13 @@
           :class="cat.class"
           :style="{ width: cat.width }"
           :title="cat.title"
-        ></div>
+        />
         <div
           v-if="device.avail_bytes > 0"
           class="storage-partition-segment storage-partition-free"
           :style="{ width: freeWidth }"
           :title="`Free: ${freeGB} GB`"
-        ></div>
+        />
       </template>
       <template v-else>
         <div
@@ -32,22 +32,22 @@
           class="storage-partition-segment storage-partition-used"
           :style="{ width: device.percent_used + '%' }"
           :title="`Used: ${(device.used_bytes / 1_073_741_824).toFixed(1)} GB`"
-        ></div>
+        />
         <div
           v-if="100 - device.percent_used > 0"
           class="storage-partition-segment storage-partition-free"
           :style="{ width: 100 - device.percent_used + '%' }"
           :title="`Free: ${(device.avail_bytes / 1_073_741_824).toFixed(1)} GB`"
-        ></div>
+        />
       </template>
     </div>
     <div v-if="hasCategories" class="storage-partition-legend">
       <div v-for="cat in categorySegments" :key="cat.key" class="storage-partition-legend-item">
-        <span class="storage-partition-dot" :class="cat.class"></span>
+        <span class="storage-partition-dot" :class="cat.class" />
         <span class="storage-partition-legend-label">{{ cat.label }} {{ cat.gb }} GB</span>
       </div>
       <div v-if="device.avail_bytes > 0" class="storage-partition-legend-item">
-        <span class="storage-partition-dot storage-partition-free"></span>
+        <span class="storage-partition-dot storage-partition-free" />
         <span class="storage-partition-legend-label">Free {{ freeGB }} GB</span>
       </div>
     </div>

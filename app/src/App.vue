@@ -1,6 +1,6 @@
 <template>
   <main class="site-main-bg">
-    <TopNav :navLinks="navLinks" :is-minimal="isMinimal" :minimize-key-combo="minimizeKeyCombo" />
+    <TopNav :nav-links="navLinks" :is-minimal="isMinimal" :minimize-key-combo="minimizeKeyCombo" />
     <RouterView />
   </main>
 </template>

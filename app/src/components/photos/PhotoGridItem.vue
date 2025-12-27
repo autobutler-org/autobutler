@@ -1,5 +1,5 @@
 <template>
-  <div class="photo-grid-item" @click="$emit('click')">
+  <div class="photo-grid-item">
     <img class="photo-grid-image" :src="thumbnailPath" :alt="photo.fileName || ''" loading="lazy" />
   </div>
 </template>

@@ -2,13 +2,15 @@
   <LibraryLayout>
     <template #sidebar>
       <PhotosSidebar :photo-count="totalPhotos" :summary="summary" />
-      <div id="mobile-photos-arrival-location"></div>
+      <div id="mobile-photos-arrival-location" />
     </template>
     <template #title>
       <h2 class="library-title" @click="scrollToArrival">All Photos</h2>
     </template>
     <template #subtitle>
-      <div class="library-subtitle">{{ formatPhotoCount(totalPhotos) }}</div>
+      <div class="library-subtitle">
+        {{ formatPhotoCount(totalPhotos) }}
+      </div>
     </template>
     <template #main>
       <div class="photos-grid-container">
@@ -16,7 +18,7 @@
           :photos="photos"
           :page="1"
           :total-photos="totalPhotos"
-          @photoClick="onPhotoClick"
+          @photo-click="onPhotoClick"
         />
       </div>
     </template>

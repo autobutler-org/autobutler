@@ -36,7 +36,9 @@
             <component :is="getIconComponent(determineFileType(file))" />
           </div>
           <div class="grid-view-details">
-            <div class="grid-view-name" :title="getFileName(file)">{{ getFileName(file) }}</div>
+            <div class="grid-view-name" :title="getFileName(file)">
+              {{ getFileName(file) }}
+            </div>
             <DeviceBadge
               v-if="props.showDeviceBadges && file.deviceName"
               :device-name="file.deviceName"

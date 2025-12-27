@@ -1,7 +1,9 @@
 <template>
   <nav class="library-sidebar">
     <div v-for="section in sections" :key="section.title" class="library-sidebar-section">
-      <h2 class="library-sidebar-title">{{ section.title }}</h2>
+      <h2 class="library-sidebar-title">
+        {{ section.title }}
+      </h2>
       <ul class="library-sidebar-list">
         <li
           v-for="item in section.items"
