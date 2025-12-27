@@ -2,9 +2,10 @@
   "[go]": {
     "editor.defaultFormatter": "golang.go",
   },
-  "[templ]": {
-    "editor.defaultFormatter": "a-h.templ",
+  "[typescript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
   },
+  "eslint.format.enable": true,
   "tailwindCSS.includeLanguages": {
     "templ": "html",
   },

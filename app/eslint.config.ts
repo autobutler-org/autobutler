@@ -46,4 +46,10 @@ export default defineConfigWithVueTs(
       'playwright/no-skipped-test': 'off',
     },
   },
+  // Enforce no semicolons
+  {
+    rules: {
+      'semi': ['error', 'never'],
+    },
+  },
 )
