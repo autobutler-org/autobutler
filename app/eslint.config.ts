@@ -1,10 +1,10 @@
-import { globalIgnores } from 'eslint/config'
-import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript'
-import pluginVue from 'eslint-plugin-vue'
 import pluginVitest from '@vitest/eslint-plugin'
+import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript'
+import prettierConfig from 'eslint-config-prettier'
 import pluginPlaywright from 'eslint-plugin-playwright'
 import preferArrowFunctions from 'eslint-plugin-prefer-arrow-functions'
-import pluginPrettier from 'eslint-plugin-prettier'
+import pluginVue from 'eslint-plugin-vue'
+import { globalIgnores } from 'eslint/config'
 
 // To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
 // import { configureVueProject } from '@vue/eslint-config-typescript'
@@ -31,15 +31,7 @@ export default defineConfigWithVueTs(
     ...pluginPlaywright.configs['flat/recommended'],
     files: ['e2e/**/*.{test,spec}.{js,ts,jsx,tsx}'],
   },
-  // Remove skipFormatting so Prettier rules are enforced
-  {
-    plugins: {
-      prettier: pluginPrettier,
-    },
-    rules: {
-      'prettier/prettier': 'error',
-    },
-  },
+  prettierConfig,
   ...(preferArrowFunctions.configs?.all ? [preferArrowFunctions.configs.all] : []),
   // Temporarily disabled rules for Playwright
   {
