@@ -27,7 +27,10 @@
               <h2>Storage Devices</h2>
             </div>
             <div class="settings-section-description">
-              <p>Manage which storage devices are enabled for Autobutler file storage.</p>
+              <p>
+                Manage which storage devices are enabled for Autobutler file
+                storage.
+              </p>
             </div>
             <div class="settings-section-card mock-card">
               <span class="mock-badge">mock</span>
@@ -206,7 +209,7 @@
   </LibraryLayout>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import LibraryLayout from '@/components/common/LibraryLayout.vue'
 import LibrarySidebar from '@/components/common/LibrarySidebar.vue'
 import OpenTelemetryIcon from '@/components/icons/OpenTelemetryIcon.vue'

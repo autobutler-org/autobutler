@@ -9,7 +9,8 @@
           'file-node',
           {
             'grid-view-item--folder': isDirectory(file),
-            'grid-view-item--selected': selectedFile && selectedFile.fullPath === file.fullPath,
+            'grid-view-item--selected':
+              selectedFile && selectedFile.fullPath === file.fullPath,
           },
         ]"
         :data-name="getFileName(file)"
@@ -36,7 +37,9 @@
             <component :is="getIconComponent(determineFileType(file))" />
           </div>
           <div class="grid-view-details">
-            <div class="grid-view-name" :title="getFileName(file)">{{ getFileName(file) }}</div>
+            <div class="grid-view-name" :title="getFileName(file)">
+              {{ getFileName(file) }}
+            </div>
             <DeviceBadge
               v-if="props.showDeviceBadges && file.deviceName"
               :device-name="file.deviceName"
@@ -51,7 +54,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import type { CirrusFileNode } from '@/types/cirrus'
 import {
   determineFileType,
@@ -108,7 +111,9 @@ const getIconComponent = (fileType: string) => {
 const handleClick = (file: CirrusFileNode) => {
   const fileName = getFileName(file)
   if (isDirectory(file)) {
-    const newPath = props.currentPath ? `${props.currentPath}/${fileName}` : fileName
+    const newPath = props.currentPath
+      ? `${props.currentPath}/${fileName}`
+      : fileName
     emit('navigate-folder', newPath)
   } else {
     emit('open-file', file)

@@ -1,5 +1,15 @@
 <template>
-  <nav class="landing-nav">
+  <!-- Flash banner for minimal mode changes -->
+  <FlashBanner :show="showBanner" @hide="showBanner = false">
+    {{
+      isMinimal
+        ? 'Fullscreen mode enabled' +
+          `${minimizeKeyCombo ? ` (${toKeyComboString(minimizeKeyCombo)})` : ''}`
+        : 'Fullscreen mode disabled' +
+          `${minimizeKeyCombo ? ` (${toKeyComboString(minimizeKeyCombo)})` : ''}`
+    }}
+  </FlashBanner>
+  <nav class="landing-nav" :class="{ 'landing-nav--minimal': isMinimal }">
     <div class="landing-nav-left">
       <RouterLink to="/" class="landing-nav-logo">
         <img src="/img/butler.png" alt="AutoButler" />
@@ -27,7 +37,9 @@
           <span style="margin-left: 0.25rem">▾</span>
         </button>
         <div v-if="versionDropdownOpen" class="version-dropdown" @click.stop>
-          <div v-if="loadingReleases" class="version-dropdown-loading">Loading...</div>
+          <div v-if="loadingReleases" class="version-dropdown-loading">
+            Loading...
+          </div>
           <template v-else-if="releases.length > 0">
             <a
               v-for="release in releases"
@@ -41,7 +53,11 @@
               ]"
             >
               <span class="version-dropdown-tag">{{ release.tagName }}</span>
-              <span v-if="release.isCurrentVersion" class="version-dropdown-badge">Current</span>
+              <span
+                v-if="release.isCurrentVersion"
+                class="version-dropdown-badge"
+                >Current</span
+              >
             </a>
           </template>
           <div v-else class="version-dropdown-empty">No releases available</div>
@@ -51,7 +67,11 @@
         <DeviceIcon />
         <span>Devices</span>
       </RouterLink>
-      <button class="landing-nav-hamburger" @click="toggleMobileMenu" aria-label="Menu">
+      <button
+        class="landing-nav-hamburger"
+        @click="toggleMobileMenu"
+        aria-label="Menu"
+      >
         <HamburgerIcon />
       </button>
     </div>
@@ -66,7 +86,11 @@
     <div class="mobile-menu-content">
       <div class="mobile-menu-header">
         <span class="mobile-menu-title">Menu</span>
-        <button class="mobile-menu-close" @click="closeMobileMenu" aria-label="Close menu">
+        <button
+          class="mobile-menu-close"
+          @click="closeMobileMenu"
+          aria-label="Close menu"
+        >
           <CloseIcon />
         </button>
       </div>
@@ -75,19 +99,35 @@
           <HomeIcon />
           <span>Home</span>
         </RouterLink>
-        <RouterLink to="/cirrus" class="mobile-menu-link" @click="closeMobileMenu">
+        <RouterLink
+          to="/cirrus"
+          class="mobile-menu-link"
+          @click="closeMobileMenu"
+        >
           <FolderIcon />
           <span>Cirrus</span>
         </RouterLink>
-        <RouterLink to="/photos" class="mobile-menu-link" @click="closeMobileMenu">
+        <RouterLink
+          to="/photos"
+          class="mobile-menu-link"
+          @click="closeMobileMenu"
+        >
           <PhotoIcon />
           <span>Photos</span>
         </RouterLink>
-        <RouterLink to="/books" class="mobile-menu-link" @click="closeMobileMenu">
+        <RouterLink
+          to="/books"
+          class="mobile-menu-link"
+          @click="closeMobileMenu"
+        >
           <BookIcon />
           <span>Books</span>
         </RouterLink>
-        <RouterLink to="/devices" class="mobile-menu-link" @click="closeMobileMenu">
+        <RouterLink
+          to="/devices"
+          class="mobile-menu-link"
+          @click="closeMobileMenu"
+        >
           <DeviceIcon />
           <span>Devices</span>
         </RouterLink>
@@ -102,18 +142,23 @@
           <SettingsIcon />
           <span>Settings</span>
         </RouterLink>
-        <div class="mobile-menu-divider"></div>
+        <div class="mobile-menu-divider" />
         <span class="mobile-menu-version">Version: {{ currentVersion }}</span>
       </div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+<script lang="ts" setup>
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import FlashBanner from '@/components/ui/FlashBanner.vue'
 import type { NavLink } from '@/types/nav_link'
 import { RouterLink } from 'vue-router'
-import { getCurrentVersion, getAvailableReleases, type Release } from '@/services/versionService'
+import {
+  getCurrentVersion,
+  getAvailableReleases,
+  type Release,
+} from '@/services/versionService'
 import SettingsIcon from '../icons/SettingsIcon.vue'
 import DeviceIcon from '../icons/DeviceIcon.vue'
 import HamburgerIcon from '../icons/HamburgerIcon.vue'
@@ -122,10 +167,28 @@ import HomeIcon from '../icons/HomeIcon.vue'
 import FolderIcon from '../icons/FolderIcon.vue'
 import PhotoIcon from '../icons/PhotoIcon.vue'
 import BookIcon from '../icons/BookIcon.vue'
+import { toKeyComboString, type KeyCombo } from '@/util/keycombo'
 
-defineProps<{
+const props = defineProps<{
+  isMinimal?: boolean
+  minimizeKeyCombo?: KeyCombo
   navLinks?: NavLink[]
 }>()
+// --- Flash banner logic ---
+const showBanner = ref(false)
+let bannerTimeout: ReturnType<typeof setTimeout> | null = null
+
+watch(
+  () => props.isMinimal,
+  () => {
+    showBanner.value = true
+    if (bannerTimeout) clearTimeout(bannerTimeout)
+    bannerTimeout = setTimeout(() => {
+      showBanner.value = false
+    }, 1200)
+  },
+)
+// --- End flash banner logic ---
 
 const mobileMenuOpen = ref(false)
 const versionDropdownOpen = ref(false)
@@ -143,6 +206,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  if (bannerTimeout) clearTimeout(bannerTimeout)
 })
 
 const handleClickOutside = (event: MouseEvent) => {
@@ -205,23 +269,6 @@ const closeMobileMenu = () => {
   gap: $spacing-2xl;
 }
 
-.landing-nav-logo {
-  display: flex;
-  align-items: center;
-  padding: 0;
-  background: none;
-  height: 2rem;
-
-  &:hover {
-    background: none;
-  }
-
-  img {
-    height: 100%;
-    width: auto;
-  }
-}
-
 .landing-nav-link {
   color: $color-gray-300;
   text-decoration: none;
@@ -253,6 +300,27 @@ const closeMobileMenu = () => {
   @media (max-width: 768px) {
     display: none !important;
   }
+}
+
+.landing-nav-logo {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  background: none;
+  height: 2rem;
+
+  &:hover {
+    background: none;
+  }
+
+  img {
+    height: 100%;
+    width: auto;
+  }
+}
+
+.landing-nav--minimal {
+  display: none;
 }
 
 .landing-nav-right {
@@ -329,87 +397,6 @@ const closeMobileMenu = () => {
     background: rgba(0, 0, 0, 0.05);
     color: $color-gray-600;
   }
-}
-
-.version-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: $spacing-sm;
-  min-width: 200px;
-  background: hsl(225, 25%, 18%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: $border-radius-lg;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-  z-index: 1000;
-
-  @media (prefers-color-scheme: light) {
-    background: white;
-    border-color: rgba(0, 0, 0, 0.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-}
-
-.version-dropdown-loading,
-.version-dropdown-empty {
-  padding: $spacing-md $spacing-lg;
-  color: $color-gray-400;
-  font-size: $font-size-sm;
-  text-align: center;
-}
-
-.version-dropdown-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: $spacing-md;
-  padding: $spacing-sm $spacing-lg;
-  color: $color-gray-300;
-  text-decoration: none;
-  font-size: $font-size-sm;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  &--current {
-    background: rgba(37, 99, 235, 0.2);
-
-    &:hover {
-      background: rgba(37, 99, 235, 0.3);
-    }
-  }
-
-  @media (prefers-color-scheme: light) {
-    color: $color-gray-700;
-
-    &:hover {
-      background: $color-gray-100;
-    }
-
-    &--current {
-      background: rgba(37, 99, 235, 0.1);
-
-      &:hover {
-        background: rgba(37, 99, 235, 0.15);
-      }
-    }
-  }
-}
-
-.version-dropdown-tag {
-  font-family: monospace;
-}
-
-.version-dropdown-badge {
-  padding: 2px 6px;
-  background: $color-primary-600;
-  color: white;
-  border-radius: $border-radius;
-  font-size: 0.75rem;
-  font-weight: 500;
 }
 
 .landing-nav-hamburger {
@@ -616,5 +603,86 @@ const closeMobileMenu = () => {
   padding: $spacing-lg $spacing-xl;
   font-size: $font-size-sm;
   color: $color-gray-500;
+}
+
+.version-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: $spacing-sm;
+  min-width: 200px;
+  background: hsl(225, 25%, 18%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: $border-radius-lg;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  z-index: 1000;
+
+  @media (prefers-color-scheme: light) {
+    background: white;
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.version-dropdown-badge {
+  padding: 2px 6px;
+  background: $color-primary-600;
+  color: white;
+  border-radius: $border-radius;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.version-dropdown-loading,
+.version-dropdown-empty {
+  padding: $spacing-md $spacing-lg;
+  color: $color-gray-400;
+  font-size: $font-size-sm;
+  text-align: center;
+}
+
+.version-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+  padding: $spacing-sm $spacing-lg;
+  color: $color-gray-300;
+  text-decoration: none;
+  font-size: $font-size-sm;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  &--current {
+    background: rgba(37, 99, 235, 0.2);
+
+    &:hover {
+      background: rgba(37, 99, 235, 0.3);
+    }
+  }
+
+  @media (prefers-color-scheme: light) {
+    color: $color-gray-700;
+
+    &:hover {
+      background: $color-gray-100;
+    }
+
+    &--current {
+      background: rgba(37, 99, 235, 0.1);
+
+      &:hover {
+        background: rgba(37, 99, 235, 0.15);
+      }
+    }
+  }
+}
+
+.version-dropdown-tag {
+  font-family: monospace;
 }
 </style>

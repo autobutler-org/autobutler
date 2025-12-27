@@ -1,10 +1,13 @@
-import { globalIgnores } from 'eslint/config'
-import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript'
-import pluginVue from 'eslint-plugin-vue'
 import pluginVitest from '@vitest/eslint-plugin'
+import {
+  defineConfigWithVueTs,
+  vueTsConfigs,
+} from '@vue/eslint-config-typescript'
+import prettierConfig from 'eslint-config-prettier'
 import pluginPlaywright from 'eslint-plugin-playwright'
 import preferArrowFunctions from 'eslint-plugin-prefer-arrow-functions'
-import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
+import pluginVue from 'eslint-plugin-vue'
+import { globalIgnores } from 'eslint/config'
 
 // To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
 // import { configureVueProject } from '@vue/eslint-config-typescript'
@@ -19,7 +22,7 @@ export default defineConfigWithVueTs(
 
   globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
 
-  pluginVue.configs['flat/essential'],
+  pluginVue.configs['flat/strongly-recommended'],
   vueTsConfigs.recommended,
 
   {
@@ -31,8 +34,10 @@ export default defineConfigWithVueTs(
     ...pluginPlaywright.configs['flat/recommended'],
     files: ['e2e/**/*.{test,spec}.{js,ts,jsx,tsx}'],
   },
-  skipFormatting,
-  ...(preferArrowFunctions.configs?.all ? [preferArrowFunctions.configs.all] : []),
+  prettierConfig,
+  ...(preferArrowFunctions.configs?.all
+    ? [preferArrowFunctions.configs.all]
+    : []),
   // Temporarily disabled rules for Playwright
   {
     files: ['e2e/*.spec.ts'],
@@ -44,6 +49,24 @@ export default defineConfigWithVueTs(
       'playwright/prefer-web-first-assertions': 'off',
       'playwright/no-wait-for-selector': 'off',
       'playwright/no-skipped-test': 'off',
+    },
+  },
+  // Enforce no semicolons
+  {
+    rules: {
+      semi: ['error', 'never'],
+    },
+  },
+  // Allow unused variables and arguments that start with _
+  {
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
     },
   },
 )

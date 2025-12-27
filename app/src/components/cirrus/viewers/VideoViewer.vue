@@ -5,7 +5,7 @@
   </video>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { computed } from 'vue'
 
 const props = defineProps<{
@@ -30,7 +30,9 @@ const getVideoMimetypeFromExtension = (extension: string) => {
 }
 
 const mimetype = computed(() =>
-  getVideoMimetypeFromExtension(props.src.split('.').pop()?.toLowerCase() || ''),
+  getVideoMimetypeFromExtension(
+    props.src.split('.').pop()?.toLowerCase() || '',
+  ),
 )
 </script>
 

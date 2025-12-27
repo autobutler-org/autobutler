@@ -8,7 +8,7 @@
     width="16"
     height="16"
   >
-    <circle cx="11" cy="11" r="8"></circle>
-    <path d="M21 21l-4.35-4.35"></path>
+    <circle cx="11" cy="11" r="8" />
+    <path d="M21 21l-4.35-4.35" />
   </svg>
 </template>

@@ -1,13 +1,20 @@
 <template>
-  <div class="photo-grid-item" @click="$emit('click')">
-    <img class="photo-grid-image" :src="thumbnailPath" :alt="photo.fileName || ''" loading="lazy" />
+  <div class="photo-grid-item">
+    <img
+      class="photo-grid-image"
+      :src="thumbnailPath"
+      :alt="photo.fileName || ''"
+      loading="lazy"
+    />
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { computed } from 'vue'
 
-const props = defineProps<{ photo: { relPath?: string; fileName?: string; id?: string } }>()
+const props = defineProps<{
+  photo: { relPath?: string; fileName?: string; id?: string }
+}>()
 
 const thumbnailPath = computed(() => {
   // Use relPath or id to build the thumbnail URL

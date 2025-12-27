@@ -1,20 +1,28 @@
 <template>
   <th
-    :class="['file-table-header-cell', 'file-table-header-cell--sortable', alignClass]"
+    :class="[
+      'file-table-header-cell',
+      'file-table-header-cell--sortable',
+      alignClass,
+    ]"
     @click="handleToggleSort(header)"
   >
     <span class="sort-button">
       <span>{{ displayHeader }}</span>
       <span class="sort-arrows">
-        <SortArrowAscendIcon v-if="activeSortColumn === header && sortDirection === 'asc'" />
-        <SortArrowDescendIcon v-else-if="activeSortColumn === header && sortDirection === 'desc'" />
+        <SortArrowAscendIcon
+          v-if="activeSortColumn === header && sortDirection === 'asc'"
+        />
+        <SortArrowDescendIcon
+          v-else-if="activeSortColumn === header && sortDirection === 'desc'"
+        />
         <SortArrowNeutralIcon v-else />
       </span>
     </span>
   </th>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import SortArrowAscendIcon from '../icons/SortArrowAscendIcon.vue'
 import SortArrowDescendIcon from '../icons/SortArrowDescendIcon.vue'
 import SortArrowNeutralIcon from '../icons/SortArrowNeutralIcon.vue'
@@ -42,7 +50,9 @@ const sortColumnToHeaderCase = (str: SortColumn) =>
 
 const displayHeader = sortColumnToHeaderCase(props.header)
 const alignClass =
-  props.alignDirection === 'left' ? 'file-table-header-cell--left' : 'file-table-header-cell--right'
+  props.alignDirection === 'left'
+    ? 'file-table-header-cell--left'
+    : 'file-table-header-cell--right'
 </script>
 
 <style lang="scss" scoped>

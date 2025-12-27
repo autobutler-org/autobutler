@@ -2,7 +2,7 @@
   <img class="file-viewer-media" :src="src" :alt="src" />
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 defineProps<{
   src: string
 }>()

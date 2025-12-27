@@ -1,7 +1,13 @@
 <template>
   <nav class="library-sidebar">
-    <div v-for="section in sections" :key="section.title" class="library-sidebar-section">
-      <h2 class="library-sidebar-title">{{ section.title }}</h2>
+    <div
+      v-for="section in sections"
+      :key="section.title"
+      class="library-sidebar-section"
+    >
+      <h2 class="library-sidebar-title">
+        {{ section.title }}
+      </h2>
       <ul class="library-sidebar-list">
         <li
           v-for="item in section.items"
@@ -18,7 +24,7 @@
   </nav>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 export interface SidebarItem {
   label: string
   count?: number

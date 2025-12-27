@@ -19,6 +19,8 @@ test.describe('Settings page', () => {
     const mockCard = page.locator('#storage .mock-card')
     await expect(mockCard).toBeVisible()
     await expect(mockCard.locator('.mock-badge')).toHaveText(/mock/i)
-    await expect(mockCard.locator('.mock-loading')).toHaveText(/loading devices/i)
+    await expect(mockCard.locator('.mock-loading')).toHaveText(
+      /loading devices/i,
+    )
   })
 })

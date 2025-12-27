@@ -2,9 +2,22 @@
   "[go]": {
     "editor.defaultFormatter": "golang.go",
   },
-  "[templ]": {
-    "editor.defaultFormatter": "a-h.templ",
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
   },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  },
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always",
+    "source.organizeImports": "always",
+    "source.sortImports": "always",
+    "source.fixAll.ts": "always"
+  },
+  "editor.formatOnSave": true,
   "tailwindCSS.includeLanguages": {
     "templ": "html",
   },

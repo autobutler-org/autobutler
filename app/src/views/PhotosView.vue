@@ -2,13 +2,15 @@
   <LibraryLayout>
     <template #sidebar>
       <PhotosSidebar :photo-count="totalPhotos" :summary="summary" />
-      <div id="mobile-photos-arrival-location"></div>
+      <div id="mobile-photos-arrival-location" />
     </template>
     <template #title>
       <h2 class="library-title" @click="scrollToArrival">All Photos</h2>
     </template>
     <template #subtitle>
-      <div class="library-subtitle">{{ formatPhotoCount(totalPhotos) }}</div>
+      <div class="library-subtitle">
+        {{ formatPhotoCount(totalPhotos) }}
+      </div>
     </template>
     <template #main>
       <div class="photos-grid-container">
@@ -16,14 +18,14 @@
           :photos="photos"
           :page="1"
           :total-photos="totalPhotos"
-          @photoClick="onPhotoClick"
+          @photo-click="onPhotoClick"
         />
       </div>
     </template>
   </LibraryLayout>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref, onMounted } from 'vue'
 import PhotosSidebar from '@/components/photos/PhotosSidebar.vue'
 import PhotoGrid from '@/components/photos/PhotoGrid.vue'
@@ -39,7 +41,10 @@ const router = useRouter()
 
 const onPhotoClick = (photo: Photo) => {
   if (photo.relPath) {
-    router.push({ name: 'photo-viewer', params: { path: encodeURIComponent(photo.relPath) } })
+    router.push({
+      name: 'photo-viewer',
+      params: { path: encodeURIComponent(photo.relPath) },
+    })
   }
 }
 

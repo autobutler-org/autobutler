@@ -3,9 +3,12 @@
     <div class="device-card-header">
       <DeviceCardIcon />
       <div class="device-card-title-section">
-        <h3 class="device-card-title">{{ device.name }}</h3>
+        <h3 class="device-card-title">
+          {{ device.name }}
+        </h3>
         <p class="device-card-type">
-          {{ device.is_internal ? 'External' : 'Internal' }} • {{ device.file_system }} •
+          {{ device.is_internal ? 'External' : 'Internal' }} •
+          {{ device.file_system }} •
           {{ device.device_path }}
         </p>
       </div>
@@ -21,7 +24,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import StoragePartition from './StoragePartition.vue'
 import DeviceCardIcon from '@/components/icons/DeviceCardIcon.vue'
 

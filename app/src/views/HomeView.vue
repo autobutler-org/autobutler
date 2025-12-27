@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import GradientOverlays from '@/components/home/GradientOverlays.vue'
 import HeroSection from '@/components/home/HeroSection.vue'
 import AppFooter from '@/components/home/AppFooter.vue'
@@ -20,10 +20,18 @@ import AppFooter from '@/components/home/AppFooter.vue'
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background: linear-gradient(180deg, hsl(225, 25%, 15%) 0%, hsl(225, 30%, 10%) 100%);
+  background: linear-gradient(
+    180deg,
+    hsl(225, 25%, 15%) 0%,
+    hsl(225, 30%, 10%) 100%
+  );
 
   @media (prefers-color-scheme: light) {
-    background: linear-gradient(180deg, hsl(225, 15%, 95%) 0%, hsl(225, 20%, 98%) 100%);
+    background: linear-gradient(
+      180deg,
+      hsl(225, 15%, 95%) 0%,
+      hsl(225, 20%, 98%) 100%
+    );
   }
 }
 

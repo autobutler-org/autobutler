@@ -7,7 +7,9 @@ test.describe('Cirrus Page', () => {
     await expect(page.locator('#file-explorer')).toBeVisible()
   })
 
-  test('displays file explorer header with title and space info', async ({ page }) => {
+  test('displays file explorer header with title and space info', async ({
+    page,
+  }) => {
     await page.goto('/cirrus')
     const header = page.locator('.file-explorer-header')
     await expect(header).toBeVisible()
@@ -20,8 +22,12 @@ test.describe('Cirrus Page', () => {
     await page.goto('/cirrus')
     const viewSwitcher = page.locator('.view-switcher')
     await expect(viewSwitcher).toBeVisible()
-    await expect(viewSwitcher.locator('button[title="List View"]')).toBeVisible()
-    await expect(viewSwitcher.locator('button[title="Grid View"]')).toBeVisible()
+    await expect(
+      viewSwitcher.locator('button[title="List View"]'),
+    ).toBeVisible()
+    await expect(
+      viewSwitcher.locator('button[title="Grid View"]'),
+    ).toBeVisible()
   })
 
   test('list view button is active by default', async ({ page }) => {

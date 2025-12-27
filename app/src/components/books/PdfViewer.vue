@@ -1,11 +1,17 @@
 <template>
   <div class="pdf-viewer">
-    <iframe v-if="src" :src="src" type="application/pdf" width="100%" height="100%"></iframe>
+    <iframe
+      v-if="src"
+      :src="src"
+      type="application/pdf"
+      width="100%"
+      height="100%"
+    />
     <div v-else class="error-text">No PDF file specified.</div>
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 defineProps<{ src: string }>()
 </script>
 

@@ -14,7 +14,7 @@
   />
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref } from 'vue'
 import type { FileType } from '@/types/cirrus'
 import type { Photo } from '@/types/photo'
@@ -32,7 +32,8 @@ const selectedFileSrc = ref('')
 const selectedFileType = ref<FileType>('image')
 
 // TODO: Move to a common utility file
-const constructFileSrc = (relativePath: string) => `/api/v1/download/cirrus/${relativePath}`
+const constructFileSrc = (relativePath: string) =>
+  `/api/v1/download/cirrus/${relativePath}`
 
 const selectPhoto = (photo: Photo) => {
   if (photo.relPath) {

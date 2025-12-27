@@ -9,7 +9,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import CloseIcon from '@/components/icons/CloseIcon.vue'
 
 const emit = defineEmits(['close'])

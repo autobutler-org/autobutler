@@ -16,7 +16,11 @@
             <button
               class="sort-switcher"
               type="button"
-              :title="mixedSorting ? 'Switch to Folders First sorting' : 'Switch to Mixed sorting'"
+              :title="
+                mixedSorting
+                  ? 'Switch to Folders First sorting'
+                  : 'Switch to Mixed sorting'
+              "
               @click="toggleMixedSorting"
             >
               <SortSwitcherIcon :mixed-sorting="mixedSorting" />
@@ -30,7 +34,8 @@
           :key="file.fullPath"
           class="file-table-row file-node"
           :class="{
-            'file-table-row--selected': selectedFile && selectedFile.fullPath === file.fullPath,
+            'file-table-row--selected':
+              selectedFile && selectedFile.fullPath === file.fullPath,
           }"
           :data-name="getFileName(file)"
           :data-file-type="determineFileType(file)"
@@ -66,7 +71,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref, computed } from 'vue'
 import type { CirrusFileNode } from '@/types/cirrus'
 import {
@@ -110,7 +115,10 @@ const emit = defineEmits<{
 const sortColumn = ref<SortColumn>(null)
 const sortDirection = ref<SortDirection>('asc')
 const mixedSorting = ref(false)
-const sortColumns: { column: SortColumn; alignDirection?: HeaderAlignDirection }[] = [
+const sortColumns: {
+  column: SortColumn
+  alignDirection?: HeaderAlignDirection
+}[] = [
   {
     column: 'name',
     alignDirection: 'left',
@@ -208,7 +216,9 @@ const handleClick = (file: CirrusFileNode) => {
   const fileName = getFileName(file)
   if (isDirectory(file)) {
     // Navigate to folder
-    const newPath = props.currentPath ? `${props.currentPath}/${fileName}` : fileName
+    const newPath = props.currentPath
+      ? `${props.currentPath}/${fileName}`
+      : fileName
     emit('navigate-folder', newPath)
   } else {
     emit('open-file', file)

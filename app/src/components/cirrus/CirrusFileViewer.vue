@@ -6,7 +6,7 @@
   </ModalDialog>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { computed } from 'vue'
 import type { FileType } from '@/types/cirrus'
 import ImageViewer from './viewers/ImageViewer.vue'

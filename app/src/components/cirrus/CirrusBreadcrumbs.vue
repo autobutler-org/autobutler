@@ -1,6 +1,10 @@
 <template>
   <nav class="file-explorer-breadcrumbs" :data-path="currentPath">
-    <span v-for="(segment, index) in segments" :key="index" class="file-explorer-breadcrumb">
+    <span
+      v-for="(segment, index) in segments"
+      :key="index"
+      class="file-explorer-breadcrumb"
+    >
       <a href="#" @click.prevent="navigateTo(segment.path)">
         {{ segment.name }}
       </a>
@@ -9,11 +13,11 @@
     <CirrusAddFolder
       :current-path="currentPath"
       @folder-created="handleFolderCreated"
-    ></CirrusAddFolder>
+    />
   </nav>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import CirrusAddFolder from './CirrusAddFolder.vue'

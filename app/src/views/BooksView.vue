@@ -8,7 +8,9 @@
       <h2 class="library-title">Library</h2>
     </template>
     <template #subtitle>
-      <div class="library-subtitle">{{ formatBookCount(totalBooks) }}</div>
+      <div class="library-subtitle">
+        {{ formatBookCount(totalBooks) }}
+      </div>
     </template>
     <template #main>
       <div id="books-view">
@@ -18,13 +20,19 @@
           <p>Add PDF or EPUB files to your files directory to see them here.</p>
         </div>
         <div v-else class="books-grid">
-          <div v-for="book in books" :key="book.relPath" @click.prevent="selectBook(book)">
+          <div
+            v-for="book in books"
+            :key="book.relPath"
+            @click.prevent="selectBook(book)"
+          >
             <div class="book-card">
               <div class="book-card-cover">
                 <span class="book-card-badge">{{ book.type }}</span>
               </div>
               <div class="book-card-info">
-                <h3 class="book-card-title" :title="book.fileName">{{ book.title }}</h3>
+                <h3 class="book-card-title" :title="book.fileName">
+                  {{ book.title }}
+                </h3>
                 <p class="book-card-size">{{ formatBookSize(book.size) }}</p>
               </div>
             </div>
@@ -40,15 +48,14 @@
   </LibraryLayout>
 </template>
 
-<script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { fetchBooks, type BookApiResponse } from '@/services/booksService'
-import CirrusFileViewer from '@/components/cirrus/CirrusFileViewer.vue'
-import LibraryLayout from '@/components/common/LibraryLayout.vue'
+<script lang="ts" setup>
 import BooksSidebar from '@/components/books/BooksSidebar.vue'
-import type { FileType } from '@/types/cirrus'
-import type { Book } from '@/types/book'
+import LibraryLayout from '@/components/common/LibraryLayout.vue'
 import BookIcon from '@/components/icons/BookIcon.vue'
+import { fetchBooks, type BookApiResponse } from '@/services/booksService'
+import type { Book } from '@/types/book'
+import type { FileType } from '@/types/cirrus'
+import { onMounted, ref } from 'vue'
 
 const books = ref<Book[]>([])
 const totalBooks = ref(0)
@@ -58,7 +65,8 @@ const selectedFileSrc = ref('')
 const selectedFileType = ref<FileType>('pdf')
 
 // TODO: Move to a common utility file
-const constructFileSrc = (relativePath: string) => `/api/v1/download/cirrus/${relativePath}`
+const constructFileSrc = (relativePath: string) =>
+  `/api/v1/download/cirrus/${relativePath}`
 
 const selectBook = (book: Book) => {
   if (book.relPath) {

@@ -6,7 +6,7 @@
   />
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 defineProps<{
   filePath: string
 }>()

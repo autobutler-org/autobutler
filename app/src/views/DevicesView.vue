@@ -8,7 +8,8 @@
             <div>
               <h1 class="devices-title">Storage Devices</h1>
               <p class="devices-subtitle">
-                Monitor capacity, usage, and content categories across all connected drives
+                Monitor capacity, usage, and content categories across all
+                connected drives
               </p>
             </div>
             <button
@@ -26,7 +27,11 @@
             <p>No storage devices detected</p>
           </div>
           <div v-else class="devices-grid">
-            <DeviceCard v-for="device in devices" :key="device.device_path" :device="device" />
+            <DeviceCard
+              v-for="device in devices"
+              :key="device.device_path"
+              :device="device"
+            />
           </div>
         </div>
       </div>
@@ -34,7 +39,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref, onMounted } from 'vue'
 
 import DeviceCard from '../components/DeviceCard.vue'
