@@ -9,7 +9,8 @@
           'file-node',
           {
             'grid-view-item--folder': isDirectory(file),
-            'grid-view-item--selected': selectedFile && selectedFile.fullPath === file.fullPath,
+            'grid-view-item--selected':
+              selectedFile && selectedFile.fullPath === file.fullPath,
           },
         ]"
         :data-name="getFileName(file)"
@@ -110,7 +111,9 @@ const getIconComponent = (fileType: string) => {
 const handleClick = (file: CirrusFileNode) => {
   const fileName = getFileName(file)
   if (isDirectory(file)) {
-    const newPath = props.currentPath ? `${props.currentPath}/${fileName}` : fileName
+    const newPath = props.currentPath
+      ? `${props.currentPath}/${fileName}`
+      : fileName
     emit('navigate-folder', newPath)
   } else {
     emit('open-file', file)

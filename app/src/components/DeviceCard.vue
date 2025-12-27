@@ -7,7 +7,8 @@
           {{ device.name }}
         </h3>
         <p class="device-card-type">
-          {{ device.is_internal ? 'External' : 'Internal' }} • {{ device.file_system }} •
+          {{ device.is_internal ? 'External' : 'Internal' }} •
+          {{ device.file_system }} •
           {{ device.device_path }}
         </p>
       </div>

@@ -1,5 +1,9 @@
 <template>
-  <svg class="sort-arrow sort-arrow--active" fill="currentColor" viewBox="0 0 24 24">
+  <svg
+    class="sort-arrow sort-arrow--active"
+    fill="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path d="M7 14l5-5 5 5z" />
   </svg>
 </template>

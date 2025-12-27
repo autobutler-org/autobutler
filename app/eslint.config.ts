@@ -1,5 +1,8 @@
 import pluginVitest from '@vitest/eslint-plugin'
-import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript'
+import {
+  defineConfigWithVueTs,
+  vueTsConfigs,
+} from '@vue/eslint-config-typescript'
 import prettierConfig from 'eslint-config-prettier'
 import pluginPlaywright from 'eslint-plugin-playwright'
 import preferArrowFunctions from 'eslint-plugin-prefer-arrow-functions'
@@ -32,7 +35,9 @@ export default defineConfigWithVueTs(
     files: ['e2e/**/*.{test,spec}.{js,ts,jsx,tsx}'],
   },
   prettierConfig,
-  ...(preferArrowFunctions.configs?.all ? [preferArrowFunctions.configs.all] : []),
+  ...(preferArrowFunctions.configs?.all
+    ? [preferArrowFunctions.configs.all]
+    : []),
   // Temporarily disabled rules for Playwright
   {
     files: ['e2e/*.spec.ts'],

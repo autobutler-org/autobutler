@@ -20,7 +20,11 @@
           <p>Add PDF or EPUB files to your files directory to see them here.</p>
         </div>
         <div v-else class="books-grid">
-          <div v-for="book in books" :key="book.relPath" @click.prevent="selectBook(book)">
+          <div
+            v-for="book in books"
+            :key="book.relPath"
+            @click.prevent="selectBook(book)"
+          >
             <div class="book-card">
               <div class="book-card-cover">
                 <span class="book-card-badge">{{ book.type }}</span>
@@ -61,7 +65,8 @@ const selectedFileSrc = ref('')
 const selectedFileType = ref<FileType>('pdf')
 
 // TODO: Move to a common utility file
-const constructFileSrc = (relativePath: string) => `/api/v1/download/cirrus/${relativePath}`
+const constructFileSrc = (relativePath: string) =>
+  `/api/v1/download/cirrus/${relativePath}`
 
 const selectBook = (book: Book) => {
   if (book.relPath) {

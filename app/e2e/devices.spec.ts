@@ -6,7 +6,9 @@ test.describe('Devices Page', () => {
     await expect(page).toHaveTitle(/Autobutler/)
   })
 
-  test('displays devices page header with title and subtitle', async ({ page }) => {
+  test('displays devices page header with title and subtitle', async ({
+    page,
+  }) => {
     await page.goto('/devices')
     const title = page.locator('h1.devices-title')
     await expect(title).toBeVisible()
@@ -22,7 +24,9 @@ test.describe('Devices Page', () => {
     await expect(devicesContent).toBeVisible()
   })
 
-  test('shows total capacity section when devices are present', async ({ page }) => {
+  test('shows total capacity section when devices are present', async ({
+    page,
+  }) => {
     await page.goto('/devices')
     const totalCapacityTitle = page.locator('h3.devices-total-title')
     const titleCount = await totalCapacityTitle.count()

@@ -33,7 +33,10 @@ describe('fromKeyComboString', () => {
   })
 
   it('is case-insensitive and sorts', () => {
-    expect(fromKeyComboString('CTRL-Alt-b')).toEqual({ modifiers: ['alt', 'ctrl'], keys: ['b'] })
+    expect(fromKeyComboString('CTRL-Alt-b')).toEqual({
+      modifiers: ['alt', 'ctrl'],
+      keys: ['b'],
+    })
   })
 })
 

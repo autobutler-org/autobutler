@@ -30,7 +30,9 @@ const getVideoMimetypeFromExtension = (extension: string) => {
 }
 
 const mimetype = computed(() =>
-  getVideoMimetypeFromExtension(props.src.split('.').pop()?.toLowerCase() || ''),
+  getVideoMimetypeFromExtension(
+    props.src.split('.').pop()?.toLowerCase() || '',
+  ),
 )
 </script>
 

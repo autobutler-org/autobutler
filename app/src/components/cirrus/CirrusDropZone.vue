@@ -1,6 +1,9 @@
 <template>
   <div
-    :class="['drop-zone', { 'drop-zone--active': isDragOver, 'drop-zone--uploading': isUploading }]"
+    :class="[
+      'drop-zone',
+      { 'drop-zone--active': isDragOver, 'drop-zone--uploading': isUploading },
+    ]"
     @dragenter="handleDragEnter"
     @dragover="handleDragOver"
     @dragleave="handleDragLeave"
@@ -96,7 +99,9 @@ const uploadFiles = async (files: FileList) => {
     }
 
     // Build the upload URL
-    const uploadPath = props.currentPath ? `/api/v1/cirrus/${props.currentPath}` : '/api/v1/cirrus'
+    const uploadPath = props.currentPath
+      ? `/api/v1/cirrus/${props.currentPath}`
+      : '/api/v1/cirrus'
 
     const response = await fetch(uploadPath, {
       method: 'POST',
@@ -115,7 +120,9 @@ const uploadFiles = async (files: FileList) => {
         isDir: false,
         deviceName: '',
         devicePath: '',
-        fullPath: props.currentPath ? `${props.currentPath}/${file.name}` : file.name,
+        fullPath: props.currentPath
+          ? `${props.currentPath}/${file.name}`
+          : file.name,
       }
     })
 

@@ -2,7 +2,8 @@
   <div class="storage-partition">
     <div class="storage-partition-info">
       <span class="storage-partition-label"
-        >Capacity: {{ (device.total_bytes / 1_073_741_824).toFixed(1) }} GB</span
+        >Capacity:
+        {{ (device.total_bytes / 1_073_741_824).toFixed(1) }} GB</span
       >
       <span class="storage-partition-used"
         >{{ device.percent_used }}% used •
@@ -42,9 +43,15 @@
       </template>
     </div>
     <div v-if="hasCategories" class="storage-partition-legend">
-      <div v-for="cat in categorySegments" :key="cat.key" class="storage-partition-legend-item">
+      <div
+        v-for="cat in categorySegments"
+        :key="cat.key"
+        class="storage-partition-legend-item"
+      >
         <span class="storage-partition-dot" :class="cat.class" />
-        <span class="storage-partition-legend-label">{{ cat.label }} {{ cat.gb }} GB</span>
+        <span class="storage-partition-legend-label"
+          >{{ cat.label }} {{ cat.gb }} GB</span
+        >
       </div>
       <div v-if="device.avail_bytes > 0" class="storage-partition-legend-item">
         <span class="storage-partition-dot storage-partition-free" />
@@ -68,7 +75,13 @@ defineProps({
 const hasCategories = computed(() => {
   return true
 })
-type CategoryLabel = 'System' | 'Documents' | 'Media' | 'Backups' | 'Other' | 'Free'
+type CategoryLabel =
+  | 'System'
+  | 'Documents'
+  | 'Media'
+  | 'Backups'
+  | 'Other'
+  | 'Free'
 
 const testGB: Record<CategoryLabel, number> = {
   System: 40.81,
@@ -78,12 +91,17 @@ const testGB: Record<CategoryLabel, number> = {
   Other: 183.65,
   Free: 19.9,
 }
-const totalGB = testGB.System + testGB.Documents + testGB.Media + testGB.Other + testGB.Free
+const totalGB =
+  testGB.System + testGB.Documents + testGB.Media + testGB.Other + testGB.Free
 
 const categorySegments = computed(() => {
   const map = [
     { key: 'system', class: 'storage-partition-system', label: 'System' },
-    { key: 'documents', class: 'storage-partition-documents', label: 'Documents' },
+    {
+      key: 'documents',
+      class: 'storage-partition-documents',
+      label: 'Documents',
+    },
     { key: 'media', class: 'storage-partition-media', label: 'Media' },
     { key: 'backups', class: 'storage-partition-backups', label: 'Backups' },
     { key: 'other', class: 'storage-partition-other', label: 'Other' },

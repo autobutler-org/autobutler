@@ -4,7 +4,10 @@
  * @param newPath The new path (relative to Cirrus root)
  * @returns Promise resolving to the backend result
  */
-export const moveFile = async (oldPath: string, newPath: string): Promise<void> => {
+export const moveFile = async (
+  oldPath: string,
+  newPath: string,
+): Promise<void> => {
   const response = await fetch(`/api/v1/cirrus`, {
     method: 'PUT',
     headers: {
@@ -120,7 +123,9 @@ export const getFiles = async (path: string): Promise<CirrusFileNode[]> => {
   const normalizedPath = path.replace(/^\/+|\/+$/g, '')
 
   // Build the API URL
-  const apiUrl = normalizedPath ? `/api/v1/cirrus/${normalizedPath}` : '/api/v1/cirrus'
+  const apiUrl = normalizedPath
+    ? `/api/v1/cirrus/${normalizedPath}`
+    : '/api/v1/cirrus'
 
   try {
     const response = await fetch(apiUrl)

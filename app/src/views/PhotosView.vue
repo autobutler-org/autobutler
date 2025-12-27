@@ -41,7 +41,10 @@ const router = useRouter()
 
 const onPhotoClick = (photo: Photo) => {
   if (photo.relPath) {
-    router.push({ name: 'photo-viewer', params: { path: encodeURIComponent(photo.relPath) } })
+    router.push({
+      name: 'photo-viewer',
+      params: { path: encodeURIComponent(photo.relPath) },
+    })
   }
 }
 

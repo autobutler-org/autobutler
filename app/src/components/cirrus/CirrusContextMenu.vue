@@ -9,13 +9,25 @@
     >
       <ul class="context-menu-list">
         <li>
-          <button type="button" class="context-menu-item" @click="handleDownload">Download</button>
+          <button
+            type="button"
+            class="context-menu-item"
+            @click="handleDownload"
+          >
+            Download
+          </button>
         </li>
         <li>
-          <button type="button" class="context-menu-item" @click="handleRename">Move/Rename</button>
+          <button type="button" class="context-menu-item" @click="handleRename">
+            Move/Rename
+          </button>
         </li>
         <li>
-          <button type="button" class="context-menu-item" @click="handleShowDetails">
+          <button
+            type="button"
+            class="context-menu-item"
+            @click="handleShowDetails"
+          >
             File Details
           </button>
         </li>

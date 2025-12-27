@@ -10,7 +10,10 @@
     </div>
 
     <!-- Drop Zone for file uploads -->
-    <CirrusDropZone :current-path="currentPath" @files-uploaded="handleFilesUploaded" />
+    <CirrusDropZone
+      :current-path="currentPath"
+      @files-uploaded="handleFilesUploaded"
+    />
 
     <div id="file-explorer-selectable">
       <div class="file-explorer-controls">
@@ -27,13 +30,19 @@
               type="checkbox"
               id="toggle-device-badges"
               :checked="showDeviceBadges"
-              @change="toggleDeviceBadges(($event.target as HTMLInputElement).checked)"
+              @change="
+                toggleDeviceBadges(($event.target as HTMLInputElement).checked)
+              "
             />
             <span>Show device names</span>
           </label>
           <div class="view-switcher">
             <button
-              :class="['btn', 'btn--icon', view === 'list' ? 'btn--primary' : 'btn--secondary']"
+              :class="[
+                'btn',
+                'btn--icon',
+                view === 'list' ? 'btn--primary' : 'btn--secondary',
+              ]"
               @click="switchView('list')"
               title="List View"
               type="button"
@@ -41,7 +50,11 @@
               <ListViewIcon />
             </button>
             <button
-              :class="['btn', 'btn--icon', view === 'grid' ? 'btn--primary' : 'btn--secondary']"
+              :class="[
+                'btn',
+                'btn--icon',
+                view === 'grid' ? 'btn--primary' : 'btn--secondary',
+              ]"
               @click="switchView('grid')"
               title="Grid View"
               type="button"
@@ -116,7 +129,9 @@
       <form @submit.prevent="submitMoveDialog" class="move-dialog-form">
         <h3 class="move-dialog-title">Rename or Move</h3>
         <div class="move-dialog-field">
-          <label for="move-path-input" class="move-dialog-label">New name or path</label>
+          <label for="move-path-input" class="move-dialog-label"
+            >New name or path</label
+          >
           <input
             id="move-path-input"
             v-model="moveDialogNewPath"
@@ -137,7 +152,11 @@
           >
             Cancel
           </button>
-          <button type="submit" class="btn btn--primary" :disabled="moveDialogLoading">
+          <button
+            type="submit"
+            class="btn btn--primary"
+            :disabled="moveDialogLoading"
+          >
             <span v-if="moveDialogLoading">Moving...</span>
             <span v-else>Move/Rename</span>
           </button>
@@ -153,7 +172,11 @@ import ModalDialog from '@/components/common/ModalDialog.vue'
 import { moveFile } from '@/services/cirrusService'
 import { useRoute, useRouter } from 'vue-router'
 import type { CirrusFileNode, FileType } from '@/types/cirrus'
-import { getFiles, determineFileType, getFileName } from '@/services/cirrusService'
+import {
+  getFiles,
+  determineFileType,
+  getFileName,
+} from '@/services/cirrusService'
 import CirrusBreadcrumbs from './CirrusBreadcrumbs.vue'
 import CirrusListView from './CirrusListView.vue'
 import CirrusGridView from './CirrusGridView.vue'
@@ -235,7 +258,8 @@ onMounted(() => {
 
 // Methods
 // TODO: Move to a common utility file
-const constructFileSrc = (relativePath: string) => `/api/v1/download/cirrus/${relativePath}`
+const constructFileSrc = (relativePath: string) =>
+  `/api/v1/download/cirrus/${relativePath}`
 
 const handleSelectFile = (file: CirrusFileNode) => {
   selectedFile.value = file
@@ -252,7 +276,9 @@ const handleNavigateFolder = (path: string) => {
 const handleOpenFile = (file: CirrusFileNode) => {
   // Construct the relative path for the API from currentPath and filename
   const fileName = getFileName(file)
-  const relativePath = currentPath.value ? `${currentPath.value}/${fileName}` : fileName
+  const relativePath = currentPath.value
+    ? `${currentPath.value}/${fileName}`
+    : fileName
   selectedFileSrc.value = constructFileSrc(relativePath)
   selectedFileType.value = determineFileType(file)
   fileViewerOpen.value = true
@@ -281,7 +307,9 @@ const handleFilesUploaded = (uploadedFiles: CirrusFileNode[]) => {
 
 // Handle folder created - add it to the list
 const handleFolderCreated = (folderName: string) => {
-  const fullPath = currentPath.value ? `${currentPath.value}/${folderName}` : folderName
+  const fullPath = currentPath.value
+    ? `${currentPath.value}/${folderName}`
+    : folderName
   const exists = files.value.some((f) => {
     return f.fullPath === fullPath
   })
@@ -308,7 +336,9 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 
 const handleDownload = (file: CirrusFileNode) => {
   const fileName = getFileName(file)
-  const relativePath = currentPath.value ? `${currentPath.value}/${fileName}` : fileName
+  const relativePath = currentPath.value
+    ? `${currentPath.value}/${fileName}`
+    : fileName
   const downloadUrl = `/api/v1/download/cirrus/${relativePath}`
 
   // Create a temporary link and click it to trigger download
@@ -347,7 +377,8 @@ const submitMoveDialog = async () => {
     moveDialogOpen.value = false
     moveDialogFile.value = null
   } catch (e) {
-    moveDialogError.value = e instanceof Error ? e.message : 'Failed to move file.'
+    moveDialogError.value =
+      e instanceof Error ? e.message : 'Failed to move file.'
   } finally {
     moveDialogLoading.value = false
   }
@@ -357,7 +388,9 @@ const handleFileDetails = (file: CirrusFileNode) => {
   // TODO: Implement file details dialog
   const fileName = getFileName(file)
   console.log('File details:', fileName)
-  alert(`File details for: ${fileName}\nPath: ${file.fullPath}\nDevice: ${file.deviceName}`)
+  alert(
+    `File details for: ${fileName}\nPath: ${file.fullPath}\nDevice: ${file.deviceName}`,
+  )
 }
 
 const handleDelete = async (file: CirrusFileNode) => {

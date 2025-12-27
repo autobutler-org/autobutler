@@ -37,7 +37,9 @@
           <span style="margin-left: 0.25rem">▾</span>
         </button>
         <div v-if="versionDropdownOpen" class="version-dropdown" @click.stop>
-          <div v-if="loadingReleases" class="version-dropdown-loading">Loading...</div>
+          <div v-if="loadingReleases" class="version-dropdown-loading">
+            Loading...
+          </div>
           <template v-else-if="releases.length > 0">
             <a
               v-for="release in releases"
@@ -51,7 +53,11 @@
               ]"
             >
               <span class="version-dropdown-tag">{{ release.tagName }}</span>
-              <span v-if="release.isCurrentVersion" class="version-dropdown-badge">Current</span>
+              <span
+                v-if="release.isCurrentVersion"
+                class="version-dropdown-badge"
+                >Current</span
+              >
             </a>
           </template>
           <div v-else class="version-dropdown-empty">No releases available</div>
@@ -61,7 +67,11 @@
         <DeviceIcon />
         <span>Devices</span>
       </RouterLink>
-      <button class="landing-nav-hamburger" @click="toggleMobileMenu" aria-label="Menu">
+      <button
+        class="landing-nav-hamburger"
+        @click="toggleMobileMenu"
+        aria-label="Menu"
+      >
         <HamburgerIcon />
       </button>
     </div>
@@ -76,7 +86,11 @@
     <div class="mobile-menu-content">
       <div class="mobile-menu-header">
         <span class="mobile-menu-title">Menu</span>
-        <button class="mobile-menu-close" @click="closeMobileMenu" aria-label="Close menu">
+        <button
+          class="mobile-menu-close"
+          @click="closeMobileMenu"
+          aria-label="Close menu"
+        >
           <CloseIcon />
         </button>
       </div>
@@ -85,19 +99,35 @@
           <HomeIcon />
           <span>Home</span>
         </RouterLink>
-        <RouterLink to="/cirrus" class="mobile-menu-link" @click="closeMobileMenu">
+        <RouterLink
+          to="/cirrus"
+          class="mobile-menu-link"
+          @click="closeMobileMenu"
+        >
           <FolderIcon />
           <span>Cirrus</span>
         </RouterLink>
-        <RouterLink to="/photos" class="mobile-menu-link" @click="closeMobileMenu">
+        <RouterLink
+          to="/photos"
+          class="mobile-menu-link"
+          @click="closeMobileMenu"
+        >
           <PhotoIcon />
           <span>Photos</span>
         </RouterLink>
-        <RouterLink to="/books" class="mobile-menu-link" @click="closeMobileMenu">
+        <RouterLink
+          to="/books"
+          class="mobile-menu-link"
+          @click="closeMobileMenu"
+        >
           <BookIcon />
           <span>Books</span>
         </RouterLink>
-        <RouterLink to="/devices" class="mobile-menu-link" @click="closeMobileMenu">
+        <RouterLink
+          to="/devices"
+          class="mobile-menu-link"
+          @click="closeMobileMenu"
+        >
           <DeviceIcon />
           <span>Devices</span>
         </RouterLink>
@@ -124,7 +154,11 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import FlashBanner from '@/components/ui/FlashBanner.vue'
 import type { NavLink } from '@/types/nav_link'
 import { RouterLink } from 'vue-router'
-import { getCurrentVersion, getAvailableReleases, type Release } from '@/services/versionService'
+import {
+  getCurrentVersion,
+  getAvailableReleases,
+  type Release,
+} from '@/services/versionService'
 import SettingsIcon from '../icons/SettingsIcon.vue'
 import DeviceIcon from '../icons/DeviceIcon.vue'
 import HamburgerIcon from '../icons/HamburgerIcon.vue'

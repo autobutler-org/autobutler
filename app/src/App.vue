@@ -1,6 +1,10 @@
 <template>
   <main class="site-main-bg">
-    <TopNav :nav-links="navLinks" :is-minimal="isMinimal" :minimize-key-combo="minimizeKeyCombo" />
+    <TopNav
+      :nav-links="navLinks"
+      :is-minimal="isMinimal"
+      :minimize-key-combo="minimizeKeyCombo"
+    />
     <RouterView />
   </main>
 </template>
@@ -24,7 +28,10 @@ const toggleMinimize = (_: Event): boolean => {
   return true
 }
 const minimizeKeyCombo = fromKeyComboString('alt-space')
-document.addEventListener('keydown', toEventListenerFunc(minimizeKeyCombo, toggleMinimize))
+document.addEventListener(
+  'keydown',
+  toEventListenerFunc(minimizeKeyCombo, toggleMinimize),
+)
 </script>
 
 <style lang="scss" scoped>

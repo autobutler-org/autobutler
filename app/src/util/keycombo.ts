@@ -47,7 +47,10 @@ export const areKeyCombosEqual = (a: KeyCombo, b: KeyCombo): boolean => {
   const aKeys = [...a.keys].sort()
   const bKeys = [...b.keys].sort()
 
-  if (aModifiers.length !== bModifiers.length || aKeys.length !== bKeys.length) {
+  if (
+    aModifiers.length !== bModifiers.length ||
+    aKeys.length !== bKeys.length
+  ) {
     return false
   }
 

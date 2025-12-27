@@ -28,7 +28,9 @@ test.describe('Photos Page', () => {
     await expect(photoGrid).toBeVisible()
   })
 
-  test('photo grid items have proper structure when photos exist', async ({ page }) => {
+  test('photo grid items have proper structure when photos exist', async ({
+    page,
+  }) => {
     await page.goto('/photos')
     const photoItems = page.locator('.photo-grid-item')
     const count = await photoItems.count()
