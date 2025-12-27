@@ -8,7 +8,10 @@ export interface KeyCombo {
 
 // Parses a key combination string (e.g., "ctrl-alt-delete") into a KeyCombo object
 export const fromKeyComboString = (combo: string): KeyCombo => {
-  const parts = combo.toLowerCase().split('-')
+  const parts = combo
+    .toLowerCase()
+    .split('-')
+    .filter((part) => part.length > 0)
   if (parts.length === 0) {
     return { keys: [] }
   }
