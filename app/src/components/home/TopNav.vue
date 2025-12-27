@@ -1,4 +1,10 @@
 <template>
+  <!-- Flash banner for minimal mode changes -->
+  <transition name="flash-banner-fade">
+      <div v-if="showBanner" class="flash-banner">
+        {{ isMinimal ? 'Fullscreen mode enabled' : 'Fullscreen mode disabled' }}
+      </div>
+    </transition>
   <nav class="landing-nav" :class="{ 'landing-nav--minimal': isMinimal }">
     <div class="landing-nav-left">
       <RouterLink to="/" class="landing-nav-logo">
@@ -110,7 +116,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import type { NavLink } from '@/types/nav_link'
 import { RouterLink } from 'vue-router'
 import { getCurrentVersion, getAvailableReleases, type Release } from '@/services/versionService'
@@ -123,10 +129,25 @@ import FolderIcon from '../icons/FolderIcon.vue'
 import PhotoIcon from '../icons/PhotoIcon.vue'
 import BookIcon from '../icons/BookIcon.vue'
 
-defineProps<{
+const props = defineProps<{
   isMinimal?: boolean
   navLinks?: NavLink[]
 }>()
+// --- Flash banner logic ---
+const showBanner = ref(false)
+let bannerTimeout: ReturnType<typeof setTimeout> | null = null
+
+watch(
+  () => props.isMinimal,
+  () => {
+    showBanner.value = true
+    if (bannerTimeout) clearTimeout(bannerTimeout)
+    bannerTimeout = setTimeout(() => {
+      showBanner.value = false
+    }, 1200)
+  }
+)
+// --- End flash banner logic ---
 
 const mobileMenuOpen = ref(false)
 const versionDropdownOpen = ref(false)
@@ -144,6 +165,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  if (bannerTimeout) clearTimeout(bannerTimeout)
 })
 
 const handleClickOutside = (event: MouseEvent) => {
@@ -198,6 +220,43 @@ const closeMobileMenu = () => {
     background: rgba(255, 255, 255, 0.8);
     border-bottom-color: rgba(0, 0, 0, 0.1);
   }
+}
+
+/* --- Flash banner styles --- */
+.flash-banner {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2563eb;
+  color: #fff;
+  padding: 0.5rem 2rem;
+  border-radius: 0 0 1rem 1rem;
+  font-weight: 600;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  pointer-events: none;
+  z-index: 200;
+  opacity: 0.95;
+  animation: flash-banner-pop 0.3s;
+}
+
+@keyframes flash-banner-pop {
+  0% { transform: translateX(-50%) scale(0.9); opacity: 0.5; }
+  100% { transform: translateX(-50%) scale(1); opacity: 0.95; }
+}
+
+.flash-banner-fade-enter-active,
+.flash-banner-fade-leave-active {
+  transition: opacity 0.4s;
+}
+.flash-banner-fade-enter-from,
+.flash-banner-fade-leave-to {
+  opacity: 0;
+}
+.flash-banner-fade-enter-to,
+.flash-banner-fade-leave-from {
+  opacity: 0.95;
 }
 
 .landing-nav-left {
