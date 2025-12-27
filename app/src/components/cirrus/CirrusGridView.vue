@@ -51,7 +51,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import type { CirrusFileNode } from '@/types/cirrus'
 import {
   determineFileType,

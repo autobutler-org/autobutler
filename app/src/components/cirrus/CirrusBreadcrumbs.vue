@@ -13,7 +13,7 @@
   </nav>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import CirrusAddFolder from './CirrusAddFolder.vue'

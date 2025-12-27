@@ -18,7 +18,7 @@
   </nav>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 export interface SidebarItem {
   label: string
   count?: number

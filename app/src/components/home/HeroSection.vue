@@ -25,7 +25,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import type { ServiceIcon } from '@/types/service_icon'
 import ServiceIcons from './ServiceIcons.vue'
 import RightArrowIcon from '../icons/RightArrowIcon.vue'

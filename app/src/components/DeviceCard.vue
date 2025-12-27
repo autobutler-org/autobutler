@@ -21,7 +21,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import StoragePartition from './StoragePartition.vue'
 import DeviceCardIcon from '@/components/icons/DeviceCardIcon.vue'
 

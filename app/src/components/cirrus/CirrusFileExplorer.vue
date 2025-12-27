@@ -145,7 +145,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref, watch, onMounted } from 'vue'
 import ModalDialog from '@/components/common/ModalDialog.vue'
 import { moveFile } from '@/services/cirrusService'

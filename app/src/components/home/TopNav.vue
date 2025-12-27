@@ -1,10 +1,8 @@
 <template>
   <!-- Flash banner for minimal mode changes -->
-  <transition name="flash-banner-fade">
-      <div v-if="showBanner" class="flash-banner">
-        {{ isMinimal ? 'Fullscreen mode enabled' : 'Fullscreen mode disabled' }}
-      </div>
-    </transition>
+  <FlashBanner :show="showBanner" @hide="showBanner = false">
+    {{ isMinimal ? 'Fullscreen mode enabled' : 'Fullscreen mode disabled' }}
+  </FlashBanner>
   <nav class="landing-nav" :class="{ 'landing-nav--minimal': isMinimal }">
     <div class="landing-nav-left">
       <RouterLink to="/" class="landing-nav-logo">
@@ -115,8 +113,9 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue'
+import FlashBanner from '@/components/ui/FlashBanner.vue'
 import type { NavLink } from '@/types/nav_link'
 import { RouterLink } from 'vue-router'
 import { getCurrentVersion, getAvailableReleases, type Release } from '@/services/versionService'
@@ -222,42 +221,6 @@ const closeMobileMenu = () => {
   }
 }
 
-/* --- Flash banner styles --- */
-.flash-banner {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #2563eb;
-  color: #fff;
-  padding: 0.5rem 2rem;
-  border-radius: 0 0 1rem 1rem;
-  font-weight: 600;
-  font-size: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  pointer-events: none;
-  z-index: 200;
-  opacity: 0.95;
-  animation: flash-banner-pop 0.3s;
-}
-
-@keyframes flash-banner-pop {
-  0% { transform: translateX(-50%) scale(0.9); opacity: 0.5; }
-  100% { transform: translateX(-50%) scale(1); opacity: 0.95; }
-}
-
-.flash-banner-fade-enter-active,
-.flash-banner-fade-leave-active {
-  transition: opacity 0.4s;
-}
-.flash-banner-fade-enter-from,
-.flash-banner-fade-leave-to {
-  opacity: 0;
-}
-.flash-banner-fade-enter-to,
-.flash-banner-fade-leave-from {
-  opacity: 0.95;
-}
 
 .landing-nav-left {
   display: flex;

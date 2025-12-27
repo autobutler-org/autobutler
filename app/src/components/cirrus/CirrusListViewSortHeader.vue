@@ -14,7 +14,7 @@
   </th>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import SortArrowAscendIcon from '../icons/SortArrowAscendIcon.vue'
 import SortArrowDescendIcon from '../icons/SortArrowDescendIcon.vue'
 import SortArrowNeutralIcon from '../icons/SortArrowNeutralIcon.vue'

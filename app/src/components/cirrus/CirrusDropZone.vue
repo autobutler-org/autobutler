@@ -29,7 +29,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref } from 'vue'
 import type { CirrusFileNode } from '@/types/cirrus'
 import UploadIcon from '../icons/UploadIcon.vue'

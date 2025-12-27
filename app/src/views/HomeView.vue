@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import GradientOverlays from '@/components/home/GradientOverlays.vue'
 import HeroSection from '@/components/home/HeroSection.vue'
 import AppFooter from '@/components/home/AppFooter.vue'

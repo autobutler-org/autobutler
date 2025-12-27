@@ -10,7 +10,7 @@ Vue SFC layout
 --------------
 Always order the sections of a Vue Single File Component (SFC) as follows:
 1. `<template>` block
-2. `<script setup lang="ts">` block
+2. `<script lang="ts" setup>` block
 3. `<style lang="scss">` block, adding `scoped` if styles are component-scoped
 
 No-scroll page layout principle

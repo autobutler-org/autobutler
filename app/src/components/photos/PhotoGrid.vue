@@ -14,7 +14,7 @@
   />
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref } from 'vue'
 import type { FileType } from '@/types/cirrus'
 import type { Photo } from '@/types/photo'

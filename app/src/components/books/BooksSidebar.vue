@@ -2,7 +2,7 @@
   <LibrarySidebar :sections="sections" />
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import LibrarySidebar from '@/components/common/LibrarySidebar.vue'
 import { type SidebarSection } from '@/components/common/LibrarySidebar.vue'
 

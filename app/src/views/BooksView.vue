@@ -40,7 +40,7 @@
   </LibraryLayout>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref, onMounted } from 'vue'
 import { fetchBooks, type BookApiResponse } from '@/services/booksService'
 import CirrusFileViewer from '@/components/cirrus/CirrusFileViewer.vue'

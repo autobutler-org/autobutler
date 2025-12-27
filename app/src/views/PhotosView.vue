@@ -23,7 +23,7 @@
   </LibraryLayout>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref, onMounted } from 'vue'
 import PhotosSidebar from '@/components/photos/PhotosSidebar.vue'
 import PhotoGrid from '@/components/photos/PhotoGrid.vue'

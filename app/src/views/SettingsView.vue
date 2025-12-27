@@ -206,7 +206,7 @@
   </LibraryLayout>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import LibraryLayout from '@/components/common/LibraryLayout.vue'
 import LibrarySidebar from '@/components/common/LibrarySidebar.vue'
 import OpenTelemetryIcon from '@/components/icons/OpenTelemetryIcon.vue'
