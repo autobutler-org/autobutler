@@ -1,5 +1,5 @@
 <template>
-  <nav class="landing-nav">
+  <nav class="landing-nav" :class="{ 'landing-nav--minimal': isMinimal }">
     <div class="landing-nav-left">
       <RouterLink to="/" class="landing-nav-logo">
         <img src="/img/butler.png" alt="AutoButler" />
@@ -124,6 +124,7 @@ import PhotoIcon from '../icons/PhotoIcon.vue'
 import BookIcon from '../icons/BookIcon.vue'
 
 defineProps<{
+  isMinimal?: boolean
   navLinks?: NavLink[]
 }>()
 
@@ -205,23 +206,6 @@ const closeMobileMenu = () => {
   gap: $spacing-2xl;
 }
 
-.landing-nav-logo {
-  display: flex;
-  align-items: center;
-  padding: 0;
-  background: none;
-  height: 2rem;
-
-  &:hover {
-    background: none;
-  }
-
-  img {
-    height: 100%;
-    width: auto;
-  }
-}
-
 .landing-nav-link {
   color: $color-gray-300;
   text-decoration: none;
@@ -253,6 +237,27 @@ const closeMobileMenu = () => {
   @media (max-width: 768px) {
     display: none !important;
   }
+}
+
+.landing-nav-logo {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  background: none;
+  height: 2rem;
+
+  &:hover {
+    background: none;
+  }
+
+  img {
+    height: 100%;
+    width: auto;
+  }
+}
+
+.landing-nav--minimal {
+  display: none;
 }
 
 .landing-nav-right {
@@ -329,87 +334,6 @@ const closeMobileMenu = () => {
     background: rgba(0, 0, 0, 0.05);
     color: $color-gray-600;
   }
-}
-
-.version-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: $spacing-sm;
-  min-width: 200px;
-  background: hsl(225, 25%, 18%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: $border-radius-lg;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-  z-index: 1000;
-
-  @media (prefers-color-scheme: light) {
-    background: white;
-    border-color: rgba(0, 0, 0, 0.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-}
-
-.version-dropdown-loading,
-.version-dropdown-empty {
-  padding: $spacing-md $spacing-lg;
-  color: $color-gray-400;
-  font-size: $font-size-sm;
-  text-align: center;
-}
-
-.version-dropdown-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: $spacing-md;
-  padding: $spacing-sm $spacing-lg;
-  color: $color-gray-300;
-  text-decoration: none;
-  font-size: $font-size-sm;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  &--current {
-    background: rgba(37, 99, 235, 0.2);
-
-    &:hover {
-      background: rgba(37, 99, 235, 0.3);
-    }
-  }
-
-  @media (prefers-color-scheme: light) {
-    color: $color-gray-700;
-
-    &:hover {
-      background: $color-gray-100;
-    }
-
-    &--current {
-      background: rgba(37, 99, 235, 0.1);
-
-      &:hover {
-        background: rgba(37, 99, 235, 0.15);
-      }
-    }
-  }
-}
-
-.version-dropdown-tag {
-  font-family: monospace;
-}
-
-.version-dropdown-badge {
-  padding: 2px 6px;
-  background: $color-primary-600;
-  color: white;
-  border-radius: $border-radius;
-  font-size: 0.75rem;
-  font-weight: 500;
 }
 
 .landing-nav-hamburger {
@@ -617,4 +541,86 @@ const closeMobileMenu = () => {
   font-size: $font-size-sm;
   color: $color-gray-500;
 }
+
+.version-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: $spacing-sm;
+  min-width: 200px;
+  background: hsl(225, 25%, 18%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: $border-radius-lg;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  z-index: 1000;
+
+  @media (prefers-color-scheme: light) {
+    background: white;
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.version-dropdown-badge {
+  padding: 2px 6px;
+  background: $color-primary-600;
+  color: white;
+  border-radius: $border-radius;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.version-dropdown-loading,
+.version-dropdown-empty {
+  padding: $spacing-md $spacing-lg;
+  color: $color-gray-400;
+  font-size: $font-size-sm;
+  text-align: center;
+}
+
+.version-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+  padding: $spacing-sm $spacing-lg;
+  color: $color-gray-300;
+  text-decoration: none;
+  font-size: $font-size-sm;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  &--current {
+    background: rgba(37, 99, 235, 0.2);
+
+    &:hover {
+      background: rgba(37, 99, 235, 0.3);
+    }
+  }
+
+  @media (prefers-color-scheme: light) {
+    color: $color-gray-700;
+
+    &:hover {
+      background: $color-gray-100;
+    }
+
+    &--current {
+      background: rgba(37, 99, 235, 0.1);
+
+      &:hover {
+        background: rgba(37, 99, 235, 0.15);
+      }
+    }
+  }
+}
+
+.version-dropdown-tag {
+  font-family: monospace;
+}
 </style>
+

@@ -1,6 +1,6 @@
 <template>
   <main class="site-main-bg">
-    <TopNav :navLinks="navLinks" />
+    <TopNav :navLinks="navLinks" :is-minimal="isMinimal" />
     <RouterView />
   </main>
 </template>
@@ -9,12 +9,25 @@
 import { RouterView } from 'vue-router'
 import TopNav from '@/components/home/TopNav.vue'
 import type { NavLink } from '@/types/nav_link'
+import { ref } from 'vue'
 
 const navLinks: NavLink[] = [
   { name: 'Cirrus', href: '/cirrus' },
   { name: 'Photos', href: '/photos' },
   { name: 'Books', href: '/books' },
 ]
+
+const isMinimal = ref(false)
+
+const toggleMinimize = () => {
+  isMinimal.value = !isMinimal.value;
+}
+
+window.addEventListener('keydown', (e) => {
+  if (e.altKey && e.code === 'Space') {
+    toggleMinimize()
+  }
+})
 </script>
 
 <style lang="scss" scoped>
