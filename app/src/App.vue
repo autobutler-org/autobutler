@@ -15,9 +15,9 @@ import TopNav from '@/components/home/TopNav.vue'
 import ThemeModal from '@/components/ThemeModal.vue'
 import { useThemeStore } from '@/stores/theme'
 import type { NavLink } from '@/types/nav_link'
+import { fromKeyComboString, toEventListenerFunc } from '@/util/keycombo'
 import { onBeforeUnmount, onMounted, ref, ref as vueRef } from 'vue'
 import { RouterView } from 'vue-router'
-import { fromKeyComboString, toEventListenerFunc } from './util/keycombo'
 
 const navLinks: NavLink[] = [
   { name: 'Cirrus', href: '/cirrus' },
