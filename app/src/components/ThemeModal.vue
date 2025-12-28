@@ -3,11 +3,11 @@
     <div class="theme-modal">
       <h2>Theme</h2>
       <div class="theme-section">
-        <label
-          >Font size scale:
+        <label class="font-size-label">
+          Font size scale:
           <input
             type="range"
-            min="0.8"
+            min="0.5"
             max="1.5"
             step="0.01"
             :value="theme.fontSizeScale"
@@ -17,7 +17,9 @@
               )
             "
           />
-          <span>{{ theme.fontSizeScale.toFixed(2) }}x</span>
+          <span class="slider-value"
+            >{{ theme.fontSizeScale.toFixed(2) }}x</span
+          >
         </label>
       </div>
       <button class="close-btn" @click="close">Close</button>
@@ -75,9 +77,27 @@ watch(
   box-shadow: 0 4px 32px #0008;
   padding: 2rem 2.5rem 1.5rem 2.5rem;
   outline: none;
+  h2 {
+    margin-bottom: 1.2em;
+  }
 }
 .theme-section {
   margin-bottom: 1.5rem;
+}
+.font-size-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
+  font-size: 1.1em;
+}
+.font-size-label input[type='range'] {
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+}
+.slider-value {
+  min-width: 3em;
+  text-align: right;
+  display: inline-block;
 }
 .close-btn {
   background: #444;

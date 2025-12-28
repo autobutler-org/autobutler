@@ -5,45 +5,17 @@
       :is-minimal="isMinimal"
       :minimize-key-combo="minimizeKeyCombo"
     />
-    <div
-      style="
-        position: fixed;
-        top: 1rem;
-        right: 1rem;
-        z-index: 9999;
-        background: #fff3;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        backdrop-filter: blur(4px);
-      "
-    >
-      <label style="font-size: 0.9em"
-        >Font size scale:
-        <input
-          type="range"
-          min="0.8"
-          max="1.5"
-          step="0.01"
-          :value="theme.fontSizeScale"
-          @input="
-            theme.setFontSizeScale(
-              Number(($event.target as HTMLInputElement).value),
-            )
-          "
-          style="vertical-align: middle; width: 100px"
-        />
-        <span>{{ theme.fontSizeScale.toFixed(2) }}x</span>
-      </label>
-    </div>
+    <ThemeModal :open="themeModalOpen" @close="themeModalOpen = false" />
     <RouterView />
   </main>
 </template>
 
 <script lang="ts" setup>
 import TopNav from '@/components/home/TopNav.vue'
+import ThemeModal from '@/components/ThemeModal.vue'
 import { useThemeStore } from '@/stores/theme'
 import type { NavLink } from '@/types/nav_link'
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, ref as vueRef } from 'vue'
 import { RouterView } from 'vue-router'
 import { fromKeyComboString, toEventListenerFunc } from './util/keycombo'
 
@@ -60,6 +32,20 @@ const toggleMinimize = (_: Event): boolean => {
 }
 const minimizeKeyCombo = fromKeyComboString('alt-space')
 const theme = useThemeStore()
+const themeModalOpen = vueRef(false)
+
+const handleSettingsHotkey = (e: KeyboardEvent) => {
+  if (e.altKey && (e.key === '`' || e.code === 'Backquote')) {
+    e.preventDefault()
+    themeModalOpen.value = !themeModalOpen.value
+  }
+}
+onMounted(() => {
+  window.addEventListener('keydown', handleSettingsHotkey)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleSettingsHotkey)
+})
 onMounted(() => {
   theme.applyFontSizeScale()
 })
