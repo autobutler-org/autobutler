@@ -7,7 +7,6 @@ export const useThemeStore = defineStore('theme', {
   }),
   actions: {
     setFontSizeScale(scale: number) {
-      console.log(`Setting font size scale to ${scale}`)
       this.fontSizeScale = scale
       this.applyFontSizeScale()
     },
