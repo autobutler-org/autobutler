@@ -343,8 +343,9 @@ const closeMobileMenu = () => {
   text-decoration: none;
 
   &:hover {
-    background: rgba($theme-palette-bg-primary, 0.15);
-    border-color: rgba($theme-palette-bg-primary, 0.3);
+    background: rgba($theme-palette-accent, 0.12);
+    border-color: $theme-palette-accent;
+    color: $theme-palette-accent;
   }
 
   svg {
