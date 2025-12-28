@@ -158,22 +158,25 @@ $theme-font-size-5xl: var(--theme-font-size-5xl);
 // Palette //
 /////////////
 
-$theme-palette-bg-primary: $color-gray-50;
-$theme-palette-bg-secondary: $color-gray-100;
-$theme-palette-bg-inverse: $color-gray-900;
 
-$theme-palette-text-primary: $color-gray-900;
-$theme-palette-text-secondary: $color-gray-700;
-$theme-palette-text-inverse: $color-gray-50;
-$theme-palette-text-muted: $color-gray-500;
+// Palette: improved for high contrast and clarity
+$theme-palette-bg-primary: #181e29;                 // Main site background
+$theme-palette-bg-nav: #131726;                     // TopNav background (slightly darker)
+$theme-palette-bg-secondary: $color-gray-800;       // Slightly lighter dark
+$theme-palette-bg-inverse: $color-gray-50;          // For light mode or highlights
 
-$theme-palette-border: $color-gray-300;
-$theme-palette-border-strong: $color-gray-700;
+$theme-palette-text-primary: $color-gray-50;        // Main text (very light)
+$theme-palette-text-secondary: $color-gray-200;     // Secondary text (light)
+$theme-palette-text-inverse: $color-gray-900;       // For text on light backgrounds
+$theme-palette-text-muted: $color-gray-400;         // Muted/disabled text
 
-$theme-palette-accent: $color-primary-600;
-$theme-palette-accent-hover: $color-primary-400;
+$theme-palette-border: $color-gray-700;             // Subtle border
+$theme-palette-border-strong: $color-gray-200;      // Strong border for light bg
 
-$theme-palette-success: $color-green-600;
-$theme-palette-warning: $color-yellow-500;
-$theme-palette-danger: $color-red-600;
-$theme-palette-info: $color-blue-600;
+$theme-palette-accent: $color-primary-400;          // Brighter accent (blue)
+$theme-palette-accent-hover: $color-primary-200;    // Lighter accent for hover
+
+$theme-palette-success: $color-green-400;
+$theme-palette-warning: $color-yellow-400;
+$theme-palette-danger: $color-red-400;
+$theme-palette-info: $color-blue-400;
