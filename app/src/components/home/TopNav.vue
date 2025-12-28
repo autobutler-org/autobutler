@@ -654,7 +654,8 @@ const closeMobileMenu = () => {
   transition: background-color 0.2s ease;
 
   &:hover {
-    background: rgba($color-gray-50, 0.1);
+    background: $theme-palette-accent;
+    color: $theme-palette-text-inverse;
   }
 
   &--current {
