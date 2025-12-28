@@ -40,12 +40,12 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 
-import DeviceCard from '../components/DeviceCard.vue'
 import GradientOverlays from '@/components/home/GradientOverlays.vue'
-import type { Summary } from '@/types/summary'
 import type { Device } from '@/types/device'
+import type { Summary } from '@/types/summary'
+import DeviceCard from '../components/DeviceCard.vue'
 
 const devices = ref<Device[]>([])
 const summary = ref<Summary>({
@@ -143,7 +143,7 @@ onMounted(fetchDevices)
 }
 .devices-subtitle {
   color: $color-gray-500;
-  font-size: 1rem;
+  font-size: $font-size-base;
   margin-top: 0.5rem;
 }
 .devices-refresh-button {
@@ -152,7 +152,7 @@ onMounted(fetchDevices)
   border: 1px solid $color-gray-300;
   border-radius: 8px;
   padding: 0.5rem 1.2rem;
-  font-size: 1rem;
+  font-size: $font-size-base;
   font-weight: 500;
   cursor: pointer;
   display: flex;
@@ -220,7 +220,7 @@ onMounted(fetchDevices)
 .storage-bar-summary {
   display: flex;
   gap: 2rem;
-  font-size: 1rem;
+  font-size: $font-size-base;
   margin-top: 0.5rem;
 }
 .storage-bar-total {

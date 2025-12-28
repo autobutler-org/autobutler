@@ -24,7 +24,7 @@ defineProps<{
   background-color: $color-blue-50;
   border: 1px solid $color-blue-200;
   border-radius: $border-radius-sm;
-  font-size: 10px;
+  font-size: $font-size-xs;
   color: $color-blue-700;
   white-space: nowrap;
 

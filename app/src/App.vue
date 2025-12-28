@@ -10,10 +10,10 @@
 </template>
 
 <script lang="ts" setup>
-import { RouterView } from 'vue-router'
 import TopNav from '@/components/home/TopNav.vue'
 import type { NavLink } from '@/types/nav_link'
 import { ref } from 'vue'
+import { RouterView } from 'vue-router'
 import { fromKeyComboString, toEventListenerFunc } from './util/keycombo'
 
 const navLinks: NavLink[] = [
@@ -69,7 +69,7 @@ header {
 
 nav {
   width: 100%;
-  font-size: 12px;
+  font-size: $font-size-xs;
   text-align: center;
   margin-top: 2rem;
 
@@ -94,7 +94,7 @@ nav {
   @media (min-width: 1024px) {
     text-align: left;
     margin-left: -1rem;
-    font-size: 1rem;
+    font-size: $font-size-base;
 
     padding: 1rem 0;
     margin-top: 1rem;
