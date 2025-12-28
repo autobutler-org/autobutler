@@ -1,21 +1,18 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
 import LibraryLayout from '@/components/common/LibraryLayout.vue'
 import LibrarySidebar from '@/components/common/LibrarySidebar.vue'
 import {
-  fetchNodeStatus,
-  fetchMetrics,
+  autoSetup,
   fetchDiagnostics,
   fetchFeatures,
-  updateFeatures,
+  fetchMetrics,
+  fetchNodeStatus,
   saveConfiguration as saveConfigurationApi,
-  autoSetup,
-  type NetworkNode as ApiNetworkNode,
-  type NetworkMetrics as ApiNetworkMetrics,
-  type DiagnosticCheck,
-  type PrivacyFeatures as ApiPrivacyFeatures,
+  updateFeatures,
   type AutoSetupResult,
+  type DiagnosticCheck,
 } from '@/services/networkingService'
+import { computed, onMounted, ref } from 'vue'
 
 interface NetworkNode {
   name: string
@@ -128,12 +125,13 @@ const loadData = async () => {
     loading.value = true
     error.value = null
 
-    const [statusData, metricsData, diagnosticsData, featuresData] = await Promise.all([
-      fetchNodeStatus(),
-      fetchMetrics(),
-      fetchDiagnostics(),
-      fetchFeatures(),
-    ])
+    const [statusData, metricsData, diagnosticsData, featuresData] =
+      await Promise.all([
+        fetchNodeStatus(),
+        fetchMetrics(),
+        fetchDiagnostics(),
+        fetchFeatures(),
+      ])
 
     node.value = {
       name: statusData.name,
@@ -167,7 +165,8 @@ const loadData = async () => {
       usageAnalytics: featuresData.usage_analytics,
     }
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Failed to load networking data'
+    error.value =
+      err instanceof Error ? err.message : 'Failed to load networking data'
     console.error('Error loading networking data:', err)
   } finally {
     loading.value = false
@@ -181,9 +180,9 @@ const saveConfiguration = async () => {
     configSuccess.value = null
 
     const result = await saveConfigurationApi(configForm.value)
-    
+
     configSuccess.value = result.message
-    
+
     if (result.restart_required) {
       configSuccess.value += ' Please restart the backend service.'
     }
@@ -193,7 +192,8 @@ const saveConfiguration = async () => {
       loadData()
     }, 2000)
   } catch (err) {
-    configError.value = err instanceof Error ? err.message : 'Failed to save configuration'
+    configError.value =
+      err instanceof Error ? err.message : 'Failed to save configuration'
     console.error('Error saving configuration:', err)
   } finally {
     configSaving.value = false
@@ -214,7 +214,8 @@ const createNetwork = async () => {
       loadData()
     }, 2000)
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Failed to create network'
+    error.value =
+      err instanceof Error ? err.message : 'Failed to create network'
     console.error('Error creating network:', err)
   } finally {
     isSettingUp.value = false
@@ -263,9 +264,12 @@ const uptimeFormatted = computed(() => {
 
 const statusColor = computed(() => {
   switch (node.value.status) {
-    case 'online': return '#10b981'
-    case 'degraded': return '#f59e0b'
-    case 'offline': return '#ef4444'
+    case 'online':
+      return '#10b981'
+    case 'degraded':
+      return '#f59e0b'
+    case 'offline':
+      return '#ef4444'
   }
 })
 
@@ -307,36 +311,75 @@ const sidebarSections = [
           <div v-if="setupResult" class="setup-success">
             <div class="success-icon">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                <path d="M8 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <path
+                  d="M8 12l2 2 4-4"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </div>
             <h2>Your Network is Ready!</h2>
-            <p class="success-message">A private network has been created on this device.</p>
+            <p class="success-message">
+              A private network has been created on this device.
+            </p>
 
             <div class="connection-card">
               <h3>📱 Connect Your Devices</h3>
-              <p>Install the Tailscale app on your phone, laptop, or tablet, then use these settings:</p>
-              
+              <p>
+                Install the Tailscale app on your phone, laptop, or tablet, then
+                use these settings:
+              </p>
+
               <div class="connection-details">
                 <div class="detail-row">
                   <span class="detail-label">Control Server URL</span>
-                  <code class="detail-value">{{ setupResult.headscale_url }}</code>
-                  <button @click="copyToClipboard(setupResult.headscale_url)" class="btn-copy">Copy</button>
+                  <code class="detail-value">{{
+                    setupResult.headscale_url
+                  }}</code>
+                  <button
+                    @click="copyToClipboard(setupResult.headscale_url)"
+                    class="btn-copy"
+                  >
+                    Copy
+                  </button>
                 </div>
                 <div class="detail-row">
                   <span class="detail-label">Auth Key</span>
-                  <code class="detail-value auth-key">{{ setupResult.auth_key }}</code>
-                  <button @click="copyToClipboard(setupResult.auth_key)" class="btn-copy">Copy</button>
+                  <code class="detail-value auth-key">{{
+                    setupResult.auth_key
+                  }}</code>
+                  <button
+                    @click="copyToClipboard(setupResult.auth_key)"
+                    class="btn-copy"
+                  >
+                    Copy
+                  </button>
                 </div>
               </div>
 
               <div class="instructions-list">
                 <h4>How to connect:</h4>
                 <ol>
-                  <li>Download Tailscale from <a href="https://tailscale.com/download" target="_blank">tailscale.com/download</a></li>
+                  <li>
+                    Download Tailscale from
+                    <a href="https://tailscale.com/download" target="_blank"
+                      >tailscale.com/download</a
+                    >
+                  </li>
                   <li>Open the app and go to Settings</li>
-                  <li>Under "Use a custom control server", paste the Control Server URL above</li>
+                  <li>
+                    Under "Use a custom control server", paste the Control
+                    Server URL above
+                  </li>
                   <li>When prompted, paste the Auth Key</li>
                   <li>Your device will connect automatically</li>
                 </ol>
@@ -348,22 +391,51 @@ const sidebarSections = [
           <div v-else class="setup-welcome">
             <div class="welcome-icon">
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L4 6V12C4 16.5 7.5 20.5 12 22C16.5 20.5 20 16.5 20 12V6L12 2Z" 
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                <path
+                  d="M12 2L4 6V12C4 16.5 7.5 20.5 12 22C16.5 20.5 20 16.5 20 12V6L12 2Z"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="3"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
               </svg>
             </div>
             <h2>Create Your Private Network</h2>
             <p class="welcome-description">
-              Set up a secure, local network to connect all your devices. 
+              Set up a secure, local network to connect all your devices.
               Everything runs on this device—no external services needed.
             </p>
 
-            <button @click="createNetwork" class="btn-create-network" :disabled="isSettingUp">
+            <button
+              @click="createNetwork"
+              class="btn-create-network"
+              :disabled="isSettingUp"
+            >
               <span v-if="isSettingUp">
                 <svg class="spinner" width="20" height="20" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" opacity="0.25"/>
-                  <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/>
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                    fill="none"
+                    opacity="0.25"
+                  />
+                  <path
+                    d="M12 2a10 10 0 0 1 10 10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                    fill="none"
+                    stroke-linecap="round"
+                  />
                 </svg>
                 Setting up network...
               </span>
@@ -373,20 +445,27 @@ const sidebarSections = [
             <p v-if="error" class="error-message">{{ error }}</p>
 
             <!-- Advanced Manual Configuration -->
-            <button @click="showAdvanced = !showAdvanced" class="btn-advanced" type="button">
+            <button
+              @click="showAdvanced = !showAdvanced"
+              class="btn-advanced"
+              type="button"
+            >
               {{ showAdvanced ? '▼' : '▶' }} Advanced: Manual Configuration
             </button>
 
             <div v-if="showAdvanced" class="advanced-config">
-              <p class="advanced-note">For power users who want to configure an existing Headscale server manually.</p>
-              
+              <p class="advanced-note">
+                For power users who want to configure an existing Headscale
+                server manually.
+              </p>
+
               <form @submit.prevent="saveConfiguration" class="config-form">
                 <div class="form-group">
                   <label for="headscale_url">Headscale Server URL</label>
-                  <input 
+                  <input
                     id="headscale_url"
-                    v-model="configForm.headscale_url" 
-                    type="text" 
+                    v-model="configForm.headscale_url"
+                    type="text"
                     placeholder="http://192.168.1.100:8080"
                     required
                   />
@@ -394,10 +473,10 @@ const sidebarSections = [
 
                 <div class="form-group">
                   <label for="auth_key">Pre-Auth Key</label>
-                  <input 
+                  <input
                     id="auth_key"
-                    v-model="configForm.auth_key" 
-                    type="password" 
+                    v-model="configForm.auth_key"
+                    type="password"
                     placeholder="Enter your pre-auth key"
                     required
                   />
@@ -405,216 +484,300 @@ const sidebarSections = [
 
                 <div class="form-group">
                   <label for="hostname">Node Hostname</label>
-                  <input 
+                  <input
                     id="hostname"
-                    v-model="configForm.hostname" 
-                    type="text" 
+                    v-model="configForm.hostname"
+                    type="text"
                     placeholder="my-autobutler-node"
                     required
                   />
                 </div>
 
-                <button type="submit" class="btn-primary" :disabled="configSaving">
+                <button
+                  type="submit"
+                  class="btn-primary"
+                  :disabled="configSaving"
+                >
                   {{ configSaving ? 'Saving...' : 'Save Configuration' }}
                 </button>
-                
-                <p v-if="configError" class="error-message">{{ configError }}</p>
-                <p v-if="configSuccess" class="success-message-inline">{{ configSuccess }}</p>
+
+                <p v-if="configError" class="error-message">
+                  {{ configError }}
+                </p>
+                <p v-if="configSuccess" class="success-message-inline">
+                  {{ configSuccess }}
+                </p>
               </form>
             </div>
           </div>
         </div>
         <div v-else>
-        <div class="header">
-          <div class="header-left">
-            <div class="shield-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L4 6V12C4 16.5 7.5 20.5 12 22C16.5 20.5 20 16.5 20 12V6L12 2Z" 
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M9 12L11 14L15 10" 
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="header-text">
-              <h1>Home node · Networking</h1>
-              <p>Private, encrypted gateway for your NAS</p>
-            </div>
-          </div>
-          <div class="header-right">
-            <span class="badge">Node: {{ node.name.split('.')[0] }}</span>
-            <span class="badge">Environment: {{ environment }}</span>
-          </div>
-        </div>
-
-    <div class="grid">
-      <div class="card connection-status">
-        <div class="card-header">
-          <div>
-            <h2>Connection status</h2>
-            <p class="card-subtitle">Current state of this node on your home network.</p>
-          </div>
-          <div class="status-badge" :style="{ '--status-color': statusColor }">
-            <span class="status-dot"></span>
-            Healthy · {{ node.status }}
-          </div>
-        </div>
-
-        <div class="node-info">
-          <h3>{{ node.name }}</h3>
-          <p class="ip-addresses">{{ node.localIP }} · IPv6: {{ node.ipv6 }}</p>
-        </div>
-
-        <div class="progress-bar">
-          <div class="progress-fill"></div>
-        </div>
-
-        <div class="metrics">
-          <div class="metric">
-            <span class="metric-label">Uptime</span>
-            <span class="metric-value">{{ uptimeFormatted }}</span>
-          </div>
-          <div class="metric">
-            <span class="metric-label">Current throughput</span>
-            <span class="metric-value">{{ node.throughputDown }} Mbps ↓ · {{ node.throughputUp }} Mbps ↑</span>
-          </div>
-          <div class="metric">
-            <span class="metric-label">Latency to gateway</span>
-            <span class="metric-value">{{ node.latency }} ms</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="right-column">
-        <div class="card privacy-features">
-          <div class="card-header">
-            <div>
-              <h2>Privacy & features</h2>
-              <p class="card-subtitle">Keep the node quiet on the network until you need it.</p>
-            </div>
-          </div>
-
-          <div class="feature-toggles">
-            <div class="feature-item">
-              <div class="feature-info">
-                <h4>Advertise on local network</h4>
-                <p>Broadcasts service via mDNS / Bonjour so devices can discover it.</p>
+          <div class="header">
+            <div class="header-left">
+              <div class="shield-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 2L4 6V12C4 16.5 7.5 20.5 12 22C16.5 20.5 20 16.5 20 12V6L12 2Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M9 12L11 14L15 10"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
               </div>
-              <label class="toggle">
-                <input type="checkbox" v-model="features.advertiseLocal" @change="handleFeatureToggle('advertiseLocal')">
-                <span class="toggle-slider"></span>
-              </label>
-            </div>
-
-            <div class="feature-item">
-              <div class="feature-info">
-                <h4>Remote access tunnel</h4>
-                <p>Create an end-to-end encrypted tunnel for access outside your home.</p>
+              <div class="header-text">
+                <h1>Home node · Networking</h1>
+                <p>Private, encrypted gateway for your NAS</p>
               </div>
-              <label class="toggle">
-                <input type="checkbox" v-model="features.remoteTunnel" @change="handleFeatureToggle('remoteTunnel')">
-                <span class="toggle-slider"></span>
-              </label>
             </div>
+            <div class="header-right">
+              <span class="badge">Node: {{ node.name.split('.')[0] }}</span>
+              <span class="badge">Environment: {{ environment }}</span>
+            </div>
+          </div>
 
-            <div class="feature-item">
-              <div class="feature-info">
-                <h4>Usage analytics</h4>
-                <p>Collect anonymous metrics locally only. Nothing leaves your network.</p>
+          <div class="grid">
+            <div class="card connection-status">
+              <div class="card-header">
+                <div>
+                  <h2>Connection status</h2>
+                  <p class="card-subtitle">
+                    Current state of this node on your home network.
+                  </p>
+                </div>
+                <div
+                  class="status-badge"
+                  :style="{ '--status-color': statusColor }"
+                >
+                  <span class="status-dot"></span>
+                  Healthy · {{ node.status }}
+                </div>
               </div>
-              <label class="toggle">
-                <input type="checkbox" v-model="features.usageAnalytics" @change="handleFeatureToggle('usageAnalytics')">
-                <span class="toggle-slider"></span>
-              </label>
-            </div>
-          </div>
 
-          <div class="metrics-grid">
-            <div class="metric-item">
-              <span class="metric-label">Active clients</span>
-              <span class="metric-value">{{ metrics.activeClients }} devices</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Encrypted sessions</span>
-              <span class="metric-value">{{ metrics.encryptedSessions }} / {{ metrics.totalSessions }} TLS</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Last new device</span>
-              <span class="metric-value">{{ metrics.lastDeviceName }} · {{ metrics.lastDeviceTime }}</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Blocked requests</span>
-              <span class="metric-value">{{ metrics.blockedRequests }} in last {{ metrics.blockedTimeframe }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="card diagnostics">
-          <div class="card-header">
-            <div>
-              <h2>Diagnostics</h2>
-              <p class="card-subtitle">Quick checks to understand what might be wrong.</p>
-            </div>
-          </div>
-
-          <div class="diagnostic-checks">
-            <div v-for="check in diagnostics" :key="check.name" class="diagnostic-item">
-              <div class="diagnostic-info">
-                <h4>{{ check.name }}</h4>
-                <p>{{ check.description }}</p>
+              <div class="node-info">
+                <h3>{{ node.name }}</h3>
+                <p class="ip-addresses">
+                  {{ node.localIP }} · IPv6: {{ node.ipv6 }}
+                </p>
               </div>
-              <span class="diagnostic-status" :data-status="check.status">
-                {{ check.status_text }}
-              </span>
+
+              <div class="progress-bar">
+                <div class="progress-fill"></div>
+              </div>
+
+              <div class="metrics">
+                <div class="metric">
+                  <span class="metric-label">Uptime</span>
+                  <span class="metric-value">{{ uptimeFormatted }}</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-label">Current throughput</span>
+                  <span class="metric-value"
+                    >{{ node.throughputDown }} Mbps ↓ ·
+                    {{ node.throughputUp }} Mbps ↑</span
+                  >
+                </div>
+                <div class="metric">
+                  <span class="metric-label">Latency to gateway</span>
+                  <span class="metric-value">{{ node.latency }} ms</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="right-column">
+              <div class="card privacy-features">
+                <div class="card-header">
+                  <div>
+                    <h2>Privacy & features</h2>
+                    <p class="card-subtitle">
+                      Keep the node quiet on the network until you need it.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="feature-toggles">
+                  <div class="feature-item">
+                    <div class="feature-info">
+                      <h4>Advertise on local network</h4>
+                      <p>
+                        Broadcasts service via mDNS / Bonjour so devices can
+                        discover it.
+                      </p>
+                    </div>
+                    <label class="toggle">
+                      <input
+                        type="checkbox"
+                        v-model="features.advertiseLocal"
+                        @change="handleFeatureToggle('advertiseLocal')"
+                      />
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <div class="feature-item">
+                    <div class="feature-info">
+                      <h4>Remote access tunnel</h4>
+                      <p>
+                        Create an end-to-end encrypted tunnel for access outside
+                        your home.
+                      </p>
+                    </div>
+                    <label class="toggle">
+                      <input
+                        type="checkbox"
+                        v-model="features.remoteTunnel"
+                        @change="handleFeatureToggle('remoteTunnel')"
+                      />
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <div class="feature-item">
+                    <div class="feature-info">
+                      <h4>Usage analytics</h4>
+                      <p>
+                        Collect anonymous metrics locally only. Nothing leaves
+                        your network.
+                      </p>
+                    </div>
+                    <label class="toggle">
+                      <input
+                        type="checkbox"
+                        v-model="features.usageAnalytics"
+                        @change="handleFeatureToggle('usageAnalytics')"
+                      />
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="metrics-grid">
+                  <div class="metric-item">
+                    <span class="metric-label">Active clients</span>
+                    <span class="metric-value"
+                      >{{ metrics.activeClients }} devices</span
+                    >
+                  </div>
+                  <div class="metric-item">
+                    <span class="metric-label">Encrypted sessions</span>
+                    <span class="metric-value"
+                      >{{ metrics.encryptedSessions }} /
+                      {{ metrics.totalSessions }} TLS</span
+                    >
+                  </div>
+                  <div class="metric-item">
+                    <span class="metric-label">Last new device</span>
+                    <span class="metric-value"
+                      >{{ metrics.lastDeviceName }} ·
+                      {{ metrics.lastDeviceTime }}</span
+                    >
+                  </div>
+                  <div class="metric-item">
+                    <span class="metric-label">Blocked requests</span>
+                    <span class="metric-value"
+                      >{{ metrics.blockedRequests }} in last
+                      {{ metrics.blockedTimeframe }}</span
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <div class="card diagnostics">
+                <div class="card-header">
+                  <div>
+                    <h2>Diagnostics</h2>
+                    <p class="card-subtitle">
+                      Quick checks to understand what might be wrong.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="diagnostic-checks">
+                  <div
+                    v-for="check in diagnostics"
+                    :key="check.name"
+                    class="diagnostic-item"
+                  >
+                    <div class="diagnostic-info">
+                      <h4>{{ check.name }}</h4>
+                      <p>{{ check.description }}</p>
+                    </div>
+                    <span class="diagnostic-status" :data-status="check.status">
+                      {{ check.status_text }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card how-to-connect">
+              <div class="card-header">
+                <div>
+                  <h2>How to connect</h2>
+                  <p class="card-subtitle">
+                    Simple instructions you can share with anyone on your
+                    network.
+                  </p>
+                </div>
+              </div>
+
+              <div class="connection-steps">
+                <div class="step">
+                  <span class="step-number">1</span>
+                  <div class="step-content">
+                    <h4>From your laptop or phone</h4>
+                    <p>
+                      Make sure you're on the same Wi-Fi or Ethernet network as
+                      this node.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="step">
+                  <span class="step-number">2</span>
+                  <div class="step-content">
+                    <h4>Open this address</h4>
+                    <p>Type the following URL into your browser.</p>
+                    <code class="connection-url"
+                      >https://{{ node.name }}:8443</code
+                    >
+                  </div>
+                </div>
+
+                <div class="step">
+                  <span class="step-number">3</span>
+                  <div class="step-content">
+                    <h4>Optional: direct IP access</h4>
+                    <p>
+                      If mDNS/local name resolution fails, use the IP address
+                      instead.
+                    </p>
+                    <code class="connection-url"
+                      >https://{{ node.localIP }}:8443</code
+                    >
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div class="card how-to-connect">
-        <div class="card-header">
-          <div>
-            <h2>How to connect</h2>
-            <p class="card-subtitle">Simple instructions you can share with anyone on your network.</p>
-          </div>
-        </div>
-
-        <div class="connection-steps">
-          <div class="step">
-            <span class="step-number">1</span>
-            <div class="step-content">
-              <h4>From your laptop or phone</h4>
-              <p>Make sure you're on the same Wi-Fi or Ethernet network as this node.</p>
+          <div class="footer">
+            <p>
+              All diagnostics run locally on this node. No traffic metadata is
+              sent to third parties.
+            </p>
+            <div class="footer-actions">
+              <button class="btn-secondary">View raw logs</button>
+              <button class="btn-secondary">Export config</button>
             </div>
           </div>
-
-          <div class="step">
-            <span class="step-number">2</span>
-            <div class="step-content">
-              <h4>Open this address</h4>
-              <p>Type the following URL into your browser.</p>
-              <code class="connection-url">https://{{ node.name }}:8443</code>
-            </div>
-          </div>
-
-          <div class="step">
-            <span class="step-number">3</span>
-            <div class="step-content">
-              <h4>Optional: direct IP access</h4>
-              <p>If mDNS/local name resolution fails, use the IP address instead.</p>
-              <code class="connection-url">https://{{ node.localIP }}:8443</code>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-        <div class="footer">
-          <p>All diagnostics run locally on this node. No traffic metadata is sent to third parties.</p>
-          <div class="footer-actions">
-            <button class="btn-secondary">View raw logs</button>
-            <button class="btn-secondary">Export config</button>
-          </div>
-        </div>
         </div>
       </div>
     </template>
@@ -737,7 +900,9 @@ const sidebarSections = [
   color: $color-gray-100;
   font-size: 0.9375rem;
   font-family: inherit;
-  transition: border-color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
 }
 
 .form-group input:focus {
@@ -967,7 +1132,6 @@ const sidebarSections = [
     color: $color-gray-600;
   }
 }
-
 
 @media (prefers-color-scheme: light) {
   .config-warning {
@@ -1268,7 +1432,7 @@ const sidebarSections = [
 
 .toggle-slider::before {
   position: absolute;
-  content: "";
+  content: '';
   height: 1.125rem;
   width: 1.125rem;
   left: 0.1875rem;
@@ -1338,18 +1502,18 @@ const sidebarSections = [
   font-size: 0.8125rem;
   font-weight: 500;
   white-space: nowrap;
-  
-  &[data-status="ok"] {
+
+  &[data-status='ok'] {
     background: hsl(150, 50%, 20%);
     color: hsl(150, 60%, 70%);
   }
-  
-  &[data-status="warning"] {
+
+  &[data-status='warning'] {
     background: hsl(45, 50%, 20%);
     color: hsl(45, 60%, 70%);
   }
-  
-  &[data-status="error"] {
+
+  &[data-status='error'] {
     background: hsl(0, 50%, 20%);
     color: hsl(0, 60%, 70%);
   }
@@ -1357,17 +1521,17 @@ const sidebarSections = [
 
 @media (prefers-color-scheme: light) {
   .diagnostic-status {
-    &[data-status="ok"] {
+    &[data-status='ok'] {
       background: hsl(150, 50%, 95%);
       color: hsl(150, 60%, 35%);
     }
-    
-    &[data-status="warning"] {
+
+    &[data-status='warning'] {
       background: hsl(45, 50%, 95%);
       color: hsl(45, 60%, 35%);
     }
-    
-    &[data-status="error"] {
+
+    &[data-status='error'] {
       background: hsl(0, 50%, 95%);
       color: hsl(0, 60%, 35%);
     }
@@ -1466,7 +1630,7 @@ const sidebarSections = [
   color: hsl(220, 15%, 75%);
   cursor: pointer;
   transition: all 0.2s;
-  
+
   &:hover {
     background: hsl(220, 20%, 18%);
     border-color: hsl(220, 20%, 30%);
@@ -1477,7 +1641,7 @@ const sidebarSections = [
   .btn-secondary {
     border-color: hsl(220, 20%, 80%);
     color: hsl(220, 15%, 35%);
-    
+
     &:hover {
       background: hsl(220, 20%, 95%);
       border-color: hsl(220, 20%, 75%);
