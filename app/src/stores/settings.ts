@@ -25,7 +25,7 @@ export const useSettingsStore = defineStore('settings', {
       for (const [key, rem] of Object.entries(baseSizes)) {
         document.documentElement.style.setProperty(
           `--font-size-${key}`,
-          `${rem * this.fontSizeScale}rem`
+          `${rem * this.fontSizeScale}rem`,
         )
       }
     },
