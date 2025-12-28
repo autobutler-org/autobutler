@@ -270,7 +270,7 @@ const closeMobileMenu = () => {
 }
 
 .landing-nav-link {
-  color: $theme-palette-text-muted;
+  color: $theme-palette-text-primary;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s ease;
@@ -281,7 +281,7 @@ const closeMobileMenu = () => {
   align-items: center;
 
   &:hover {
-    color: $theme-palette-text-inverse;
+    color: $theme-palette-accent;
     text-decoration: underline;
   }
 
@@ -290,9 +290,9 @@ const closeMobileMenu = () => {
   }
 
   @media (prefers-color-scheme: light) {
-    color: $theme-palette-text-secondary;
+    color: $theme-palette-text-primary;
     &:hover {
-      color: $theme-palette-text-primary;
+      color: $theme-palette-accent;
     }
   }
 
