@@ -49,7 +49,7 @@ const close = () => emit('close')
 
 <style lang="scss" scoped>
 .theme-modal {
-    position: relative;
+  position: relative;
   background: #222;
   color: #fff;
   min-width: 320px;
