@@ -131,7 +131,7 @@ onMounted(fetchDevices)
   gap: 2rem;
 }
 .devices-title {
-  font-size: $font-size-2xl;
+  font-size: $theme-font-size-2xl;
   font-weight: 700;
   margin: 0;
   color: $color-gray-900;
@@ -143,7 +143,7 @@ onMounted(fetchDevices)
 }
 .devices-subtitle {
   color: $color-gray-500;
-  font-size: $font-size-base;
+  font-size: $theme-font-size-base;
   margin-top: 0.5rem;
 }
 .devices-refresh-button {
@@ -152,7 +152,7 @@ onMounted(fetchDevices)
   border: 1px solid $color-gray-300;
   border-radius: 8px;
   padding: 0.5rem 1.2rem;
-  font-size: $font-size-base;
+  font-size: $theme-font-size-base;
   font-weight: 500;
   cursor: pointer;
   display: flex;
@@ -220,7 +220,7 @@ onMounted(fetchDevices)
 .storage-bar-summary {
   display: flex;
   gap: 2rem;
-  font-size: $font-size-base;
+  font-size: $theme-font-size-base;
   margin-top: 0.5rem;
 }
 .storage-bar-total {

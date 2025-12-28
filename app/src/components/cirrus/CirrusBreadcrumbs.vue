@@ -64,7 +64,7 @@ const navigateTo = (path: string) => {
   display: flex;
   align-items: center;
   gap: $spacing-sm;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   color: $color-gray-500;
   margin-bottom: $spacing-sm;
 

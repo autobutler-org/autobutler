@@ -55,7 +55,7 @@ defineProps<{ sections: SidebarSection[] }>()
 
 .library-sidebar-count {
   margin-left: auto;
-  font-size: $font-size-xs;
+  font-size: $theme-font-size-xs;
   color: $color-gray-100;
 }
 
@@ -68,7 +68,7 @@ defineProps<{ sections: SidebarSection[] }>()
   color: $color-gray-300;
   text-decoration: none;
   transition: all 0.2s ease;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   cursor: pointer;
 
   & .active {
@@ -100,7 +100,7 @@ defineProps<{ sections: SidebarSection[] }>()
 }
 
 .library-sidebar-title {
-  font-size: $font-size-xs;
+  font-size: $theme-font-size-xs;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;

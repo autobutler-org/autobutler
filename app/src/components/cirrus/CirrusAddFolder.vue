@@ -25,7 +25,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, nextTick } from 'vue'
+import { nextTick, ref } from 'vue'
 import AddFolderIcon from '../icons/AddFolderIcon.vue'
 
 const props = defineProps<{
@@ -128,7 +128,7 @@ const toggleFolderInput = async () => {
   padding: $spacing-xs $spacing-sm;
   border: 1px solid $color-gray-300;
   border-radius: $border-radius;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   width: 200px;
 
   &:focus {
@@ -164,7 +164,7 @@ const toggleFolderInput = async () => {
   justify-content: center;
   padding: $spacing-xs $spacing-sm;
   border-radius: $border-radius;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;

@@ -144,7 +144,7 @@ const handleDisabledClick = () => {
 }
 
 .service-icon-label {
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   color: $color-gray-300;
   font-weight: 500;
   text-align: center;

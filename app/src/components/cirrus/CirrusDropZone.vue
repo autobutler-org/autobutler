@@ -33,8 +33,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
 import type { CirrusFileNode } from '@/types/cirrus'
+import { ref } from 'vue'
 import UploadIcon from '../icons/UploadIcon.vue'
 
 const props = defineProps<{
@@ -208,7 +208,7 @@ const uploadFiles = async (files: FileList) => {
 }
 
 .drop-zone-text {
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   color: $color-gray-600;
 
   @media (prefers-color-scheme: dark) {

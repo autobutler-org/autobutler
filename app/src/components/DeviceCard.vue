@@ -68,12 +68,12 @@ const goToCirrus = () => {
 }
 
 .device-card-mount {
-  font-size: $font-size-base;
+  font-size: $theme-font-size-base;
   color: #e0e0e0;
 }
 
 .device-card-title {
-  font-size: $font-size-2xl;
+  font-size: $theme-font-size-2xl;
   font-weight: 700;
   color: white;
   margin: 0;
@@ -86,7 +86,7 @@ const goToCirrus = () => {
 }
 
 .device-card-type {
-  font-size: $font-size-base;
+  font-size: $theme-font-size-base;
   color: #b3b3b3;
   margin: 0;
 }

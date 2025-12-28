@@ -7,11 +7,12 @@ export const useThemeStore = defineStore('theme', {
   }),
   actions: {
     setFontSizeScale(scale: number) {
+      console.log(`Setting font size scale to ${scale}`)
       this.fontSizeScale = scale
       this.applyFontSizeScale()
     },
     applyFontSizeScale() {
-      // These match the CSS variables in variables.scss
+      // These match the theme variables in variables.scss
       const baseSizes = {
         xs: 0.75,
         sm: 0.875,
@@ -24,7 +25,7 @@ export const useThemeStore = defineStore('theme', {
       }
       for (const [key, rem] of Object.entries(baseSizes)) {
         document.documentElement.style.setProperty(
-          `--font-size-${key}`,
+          `--theme-font-size-${key}`,
           `${rem * this.fontSizeScale}rem`,
         )
       }

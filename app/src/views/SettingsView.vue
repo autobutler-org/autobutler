@@ -259,7 +259,7 @@ const sidebarSections = [
   margin-bottom: $spacing-xl;
 }
 .library-sidebar-title {
-  font-size: $font-size-xs;
+  font-size: $theme-font-size-xs;
   font-weight: 700;
   text-transform: uppercase;
   color: $color-gray-400;
@@ -283,7 +283,7 @@ const sidebarSections = [
   color: $color-gray-300;
   text-decoration: none;
   transition: all 0.2s ease;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   cursor: pointer;
 }
 .library-sidebar-item:hover {
@@ -296,7 +296,7 @@ const sidebarSections = [
 }
 .library-sidebar-count {
   margin-left: auto;
-  font-size: $font-size-xs;
+  font-size: $theme-font-size-xs;
   color: $color-gray-500;
 }
 .library-sidebar-item.active .library-sidebar-count {
@@ -311,7 +311,7 @@ const sidebarSections = [
   margin-bottom: $spacing-xl;
 }
 .settings-title {
-  font-size: $font-size-3xl;
+  font-size: $theme-font-size-3xl;
   font-weight: 700;
   margin: 0;
   color: $color-gray-100;
@@ -330,7 +330,7 @@ const sidebarSections = [
   margin-bottom: $spacing-xs;
 }
 .settings-section-header h2 {
-  font-size: $font-size-xl;
+  font-size: $theme-font-size-xl;
   font-weight: 600;
   margin: 0;
   color: $color-gray-100;
@@ -359,7 +359,7 @@ const sidebarSections = [
   border: none;
   border-radius: $border-radius;
   padding: 4px 12px;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s;
@@ -392,7 +392,7 @@ const sidebarSections = [
   }
 }
 .settings-desc {
-  font-size: $font-size-base;
+  font-size: $theme-font-size-base;
   color: $color-gray-500;
   margin-top: $spacing-xs;
 }
@@ -442,7 +442,7 @@ const sidebarSections = [
   margin-bottom: 0.5rem;
   background: $color-gray-300;
   color: $color-gray-700;
-  font-size: $font-size-xs;
+  font-size: $theme-font-size-xs;
   padding: 2px 8px;
   border-radius: 8px;
   text-transform: uppercase;
@@ -451,7 +451,7 @@ const sidebarSections = [
 }
 .mock-loading {
   color: $color-gray-500;
-  font-size: $font-size-base;
+  font-size: $theme-font-size-base;
   padding: 1.5rem 0;
 }
 .settings-metrics-section.settings-card {
@@ -475,12 +475,12 @@ const sidebarSections = [
   gap: $spacing-md;
 }
 .settings-metric-card h4 {
-  font-size: $font-size-lg;
+  font-size: $theme-font-size-lg;
   font-weight: 600;
   margin-bottom: $spacing-xs;
 }
 .settings-metric-time {
-  font-size: $font-size-xs;
+  font-size: $theme-font-size-xs;
   color: $color-gray-400;
   margin-bottom: $spacing-xs;
 }
@@ -492,7 +492,7 @@ const sidebarSections = [
   align-items: center;
   justify-content: center;
   color: $color-gray-500;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   margin-bottom: $spacing-xs;
 }
 .settings-metric-filters {
@@ -506,7 +506,7 @@ const sidebarSections = [
   border: none;
   border-radius: $border-radius;
   padding: 2px 10px;
-  font-size: $font-size-xs;
+  font-size: $theme-font-size-xs;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s;
@@ -517,7 +517,7 @@ const sidebarSections = [
 }
 .settings-metric-stats.compact {
   width: 100%;
-  font-size: $font-size-xs;
+  font-size: $theme-font-size-xs;
   border-collapse: collapse;
   margin-top: $spacing-xs;
 }
@@ -530,7 +530,7 @@ const sidebarSections = [
 }
 .settings-events-table.compact {
   width: 100%;
-  font-size: $font-size-xs;
+  font-size: $theme-font-size-xs;
   border-collapse: collapse;
   margin-top: $spacing-md;
   background: $color-gray-950;

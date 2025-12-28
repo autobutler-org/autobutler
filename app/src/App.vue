@@ -90,7 +90,7 @@ header {
 
 nav {
   width: 100%;
-  font-size: $font-size-xs;
+  font-size: $theme-font-size-xs;
   text-align: center;
   margin-top: 2rem;
 
@@ -115,7 +115,7 @@ nav {
   @media (min-width: 1024px) {
     text-align: left;
     margin-left: -1rem;
-    font-size: $font-size-base;
+    font-size: $theme-font-size-base;
 
     padding: 1rem 0;
     margin-top: 1rem;

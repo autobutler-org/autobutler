@@ -175,7 +175,7 @@ const freeGB = computed(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: $spacing-sm;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
 }
 
 .storage-partition-label {

@@ -142,7 +142,7 @@ onMounted(async () => {
   right: 8px;
   background: $color-primary-600;
   color: white;
-  font-size: $font-size-xs;
+  font-size: $theme-font-size-xs;
   padding: 2px 8px;
   border-radius: 8px;
 }
@@ -165,12 +165,12 @@ onMounted(async () => {
 }
 
 .book-card-size {
-  font-size: $font-size-xs;
+  font-size: $theme-font-size-xs;
   color: $color-gray-500;
 }
 
 .book-card-title {
-  font-size: $font-size-base;
+  font-size: $theme-font-size-base;
   font-weight: 600;
   margin: 0 0 4px 0;
   white-space: nowrap;
@@ -212,12 +212,12 @@ onMounted(async () => {
 }
 
 .books-library-count {
-  font-size: $font-size-lg;
+  font-size: $theme-font-size-lg;
   color: $color-gray-500;
 }
 
 .books-library-title {
-  font-size: $font-size-2xl;
+  font-size: $theme-font-size-2xl;
   font-weight: 700;
   margin: 0;
   display: flex;
@@ -233,7 +233,7 @@ onMounted(async () => {
 .mock-badge {
   background: $color-gray-300;
   color: $color-gray-700;
-  font-size: $font-size-xs;
+  font-size: $theme-font-size-xs;
   padding: 2px 8px;
   border-radius: 8px;
   text-transform: uppercase;

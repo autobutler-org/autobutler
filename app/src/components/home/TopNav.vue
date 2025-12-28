@@ -338,7 +338,7 @@ const closeMobileMenu = () => {
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: $border-radius;
   color: $color-gray-200;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   cursor: pointer;
   transition: all 0.2s ease;
   text-decoration: none;
@@ -382,7 +382,7 @@ const closeMobileMenu = () => {
   background: rgba(255, 255, 255, 0.05);
   border-radius: $border-radius;
   color: $color-gray-400;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   font-weight: 300;
   border: 1px solid transparent;
   cursor: pointer;
@@ -492,7 +492,7 @@ const closeMobileMenu = () => {
 }
 
 .mobile-menu-title {
-  font-size: $font-size-lg;
+  font-size: $theme-font-size-lg;
   font-weight: 600;
   color: white;
 
@@ -551,7 +551,7 @@ const closeMobileMenu = () => {
   width: 100%;
   text-align: left;
   transition: all 0.2s ease;
-  font-size: $font-size-lg;
+  font-size: $theme-font-size-lg;
   font-weight: 500;
   min-height: 56px;
   cursor: pointer;
@@ -601,7 +601,7 @@ const closeMobileMenu = () => {
 .mobile-menu-version {
   display: block;
   padding: $spacing-lg $spacing-xl;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   color: $color-gray-500;
 }
 
@@ -638,7 +638,7 @@ const closeMobileMenu = () => {
 .version-dropdown-empty {
   padding: $spacing-md $spacing-lg;
   color: $color-gray-400;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   text-align: center;
 }
 
@@ -650,7 +650,7 @@ const closeMobileMenu = () => {
   padding: $spacing-sm $spacing-lg;
   color: $color-gray-300;
   text-decoration: none;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   transition: background-color 0.2s ease;
 
   &:hover {

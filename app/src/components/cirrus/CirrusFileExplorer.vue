@@ -167,24 +167,24 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, onMounted } from 'vue'
 import ModalDialog from '@/components/common/ModalDialog.vue'
-import { moveFile } from '@/services/cirrusService'
-import { useRoute, useRouter } from 'vue-router'
-import type { CirrusFileNode, FileType } from '@/types/cirrus'
 import {
-  getFiles,
   determineFileType,
   getFileName,
+  getFiles,
+  moveFile,
 } from '@/services/cirrusService'
+import type { CirrusFileNode, FileType } from '@/types/cirrus'
+import { onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import GridViewIcon from '../icons/GridViewIcon.vue'
+import ListViewIcon from '../icons/ListViewIcon.vue'
 import CirrusBreadcrumbs from './CirrusBreadcrumbs.vue'
-import CirrusListView from './CirrusListView.vue'
-import CirrusGridView from './CirrusGridView.vue'
-import CirrusFileViewer from './CirrusFileViewer.vue'
 import CirrusContextMenu from './CirrusContextMenu.vue'
 import CirrusDropZone from './CirrusDropZone.vue'
-import ListViewIcon from '../icons/ListViewIcon.vue'
-import GridViewIcon from '../icons/GridViewIcon.vue'
+import CirrusFileViewer from './CirrusFileViewer.vue'
+import CirrusGridView from './CirrusGridView.vue'
+import CirrusListView from './CirrusListView.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -497,7 +497,7 @@ const handleDelete = async (file: CirrusFileNode) => {
 }
 
 .file-explorer-title {
-  font-size: $font-size-2xl;
+  font-size: $theme-font-size-2xl;
   font-weight: 700;
   margin-right: $spacing-lg;
   white-space: nowrap;
@@ -519,7 +519,7 @@ const handleDelete = async (file: CirrusFileNode) => {
   display: flex;
   align-items: center;
   gap: $spacing-xs;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   color: $color-gray-600;
   cursor: pointer;
 
@@ -538,7 +538,7 @@ const handleDelete = async (file: CirrusFileNode) => {
   justify-content: center;
   padding: $spacing-xs $spacing-sm;
   border-radius: $border-radius;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -587,7 +587,7 @@ const handleDelete = async (file: CirrusFileNode) => {
 
 .move-dialog-error {
   color: #dc2626;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   margin-bottom: $spacing-md;
   text-align: left;
 }
@@ -613,7 +613,7 @@ const handleDelete = async (file: CirrusFileNode) => {
 
   button.btn {
     min-width: 110px;
-    font-size: $font-size-base;
+    font-size: $theme-font-size-base;
     font-weight: 600;
     border-radius: $border-radius-md;
     padding: $spacing-sm $spacing-lg;
@@ -629,7 +629,7 @@ const handleDelete = async (file: CirrusFileNode) => {
   padding: $spacing-md;
   border: 1.5px solid $color-gray-300;
   border-radius: $border-radius-md;
-  font-size: $font-size-lg;
+  font-size: $theme-font-size-lg;
   width: 100%;
   transition:
     border-color 0.15s,
@@ -656,14 +656,14 @@ const handleDelete = async (file: CirrusFileNode) => {
 }
 
 .move-dialog-label {
-  font-size: $font-size-base;
+  font-size: $theme-font-size-base;
   font-weight: 500;
   color: $color-gray-200;
   margin-bottom: $spacing-xs;
 }
 
 .move-dialog-title {
-  font-size: $font-size-xl;
+  font-size: $theme-font-size-xl;
   font-weight: 700;
   margin-bottom: $spacing-md;
   text-align: left;

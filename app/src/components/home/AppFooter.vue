@@ -34,7 +34,7 @@
 }
 
 .footer-text {
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   margin: 0;
 }
 </style>

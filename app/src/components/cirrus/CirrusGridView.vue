@@ -176,7 +176,7 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   border: none;
   cursor: pointer;
   padding: $spacing-xs;
-  font-size: $font-size-base;
+  font-size: $theme-font-size-base;
   color: $color-gray-600;
   border-radius: $border-radius-sm;
   opacity: 0;
@@ -226,7 +226,7 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 }
 
 .grid-view-name {
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   word-break: break-word;
   overflow: hidden;
   display: -webkit-box;

@@ -46,8 +46,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, onUnmounted, nextTick } from 'vue'
 import type { CirrusFileNode } from '@/types/cirrus'
+import { nextTick, onUnmounted, ref, watch } from 'vue'
 
 const props = defineProps<{
   modelValue: boolean
@@ -199,7 +199,7 @@ watch(
   padding: $spacing-sm $spacing-lg;
   border: none;
   background: transparent;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   cursor: pointer;
   display: block;
   text-decoration: none;

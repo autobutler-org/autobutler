@@ -28,7 +28,7 @@ defineProps<{
 
 .unsupported-viewer-message {
   color: $color-gray-300;
-  font-size: $font-size-lg;
+  font-size: $theme-font-size-lg;
 
   @media (prefers-color-scheme: light) {
     color: $color-gray-700;

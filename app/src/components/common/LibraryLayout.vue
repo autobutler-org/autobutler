@@ -67,12 +67,12 @@
 }
 
 .library-subtitle {
-  font-size: $font-size-lg;
+  font-size: $theme-font-size-lg;
   color: $color-gray-500;
 }
 
 .library-title {
-  font-size: $font-size-3xl;
+  font-size: $theme-font-size-3xl;
   font-weight: 700;
   margin: 0;
   color: $color-gray-700;

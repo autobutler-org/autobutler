@@ -12,7 +12,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 const props = defineProps<{
   src: string
@@ -69,7 +69,7 @@ onMounted(async () => {
 
 .text-viewer-filename {
   font-family: monospace;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   color: $color-gray-300;
 
   @media (prefers-color-scheme: light) {
@@ -96,7 +96,7 @@ onMounted(async () => {
   padding: $spacing-lg;
   margin: 0;
   font-family: monospace;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   line-height: 1.6;
   white-space: pre-wrap;
   word-wrap: break-word;

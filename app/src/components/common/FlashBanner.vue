@@ -50,7 +50,7 @@ onUnmounted(() => {
   padding: 0.5rem 2rem;
   border-radius: 0 0 1rem 1rem;
   font-weight: 600;
-  font-size: $font-size-base;
+  font-size: $theme-font-size-base;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   pointer-events: none;
   z-index: 200;
