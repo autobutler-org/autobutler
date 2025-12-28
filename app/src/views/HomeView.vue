@@ -1,7 +1,7 @@
 <script lang="ts" setup>
+import AppFooter from '@/components/home/AppFooter.vue'
 import GradientOverlays from '@/components/home/GradientOverlays.vue'
 import HeroSection from '@/components/home/HeroSection.vue'
-import AppFooter from '@/components/home/AppFooter.vue'
 </script>
 <template>
   <div class="landing-body">
@@ -16,16 +16,11 @@ import AppFooter from '@/components/home/AppFooter.vue'
 </template>
 
 <style lang="scss" scoped>
-
 .landing-body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background: linear-gradient(
-    180deg,
-    $color-gray-900 0%,
-    $color-gray-950 100%
-  );
+  background: linear-gradient(180deg, $color-gray-900 0%, $color-gray-950 100%);
 
   @media (prefers-color-scheme: light) {
     background: linear-gradient(
