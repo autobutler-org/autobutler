@@ -3,6 +3,7 @@ package deputil
 import (
 	"autobutler/internal/db"
 	"autobutler/pkg/botel/exporters/botelsqlite"
+	"autobutler/pkg/networking"
 	"autobutler/pkg/util/workerutil"
 	"fmt"
 )
@@ -12,15 +13,18 @@ type Dependencies interface {
 	HealthDatabase() *db.DatabaseRaw
 	MetricsExporter() *botelsqlite.TraceExporter
 	Worker() workerutil.Worker
+	NetworkingNode() *networking.Node
 	WithDatabase(database *db.DatabaseSqlc) Dependencies
 	WithHealthDatabase(healthDatabase *db.DatabaseRaw) Dependencies
 	WithMetricsExporter(exporter *botelsqlite.TraceExporter) Dependencies
 	WithWorker(worker workerutil.Worker) Dependencies
+	WithNetworkingNode(node *networking.Node) Dependencies
 }
 
 type dependencies struct {
 	database        *db.DatabaseSqlc
 	healthDatabase  *db.DatabaseRaw
+	networkingNode  *networking.Node
 	metricsExporter *botelsqlite.TraceExporter
 	worker          workerutil.Worker
 }
@@ -78,4 +82,13 @@ func (d *dependencies) MetricsExporter() *botelsqlite.TraceExporter {
 
 func (d *dependencies) Worker() workerutil.Worker {
 	return d.worker
+}
+
+func (d *dependencies) WithNetworkingNode(node *networking.Node) Dependencies {
+	d.networkingNode = node
+	return d
+}
+
+func (d *dependencies) NetworkingNode() *networking.Node {
+	return d.networkingNode
 }

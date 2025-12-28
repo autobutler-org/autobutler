@@ -4,6 +4,7 @@ import (
 	v1_books "autobutler/internal/server/api/v1/books"
 	v1_files "autobutler/internal/server/api/v1/cirrus"
 	v1_metrics "autobutler/internal/server/api/v1/metrics"
+	v1_networking "autobutler/internal/server/api/v1/networking"
 	v1_photos "autobutler/internal/server/api/v1/photos"
 	v1_storage "autobutler/internal/server/api/v1/storage"
 	v1_thumbnails "autobutler/internal/server/api/v1/thumbnails"
@@ -30,6 +31,7 @@ func setupRouters(engine *gin.Engine) {
 		v1_books.NewRouter(), // Register the new books API router
 		v1_files.NewRouter(),
 		v1_metrics.NewRouter(),
+		v1_networking.NewRouter(),
 		v1_storage.NewRouter(),
 		v1_thumbnails.NewRouter(),
 		v1_update.NewRouter(),

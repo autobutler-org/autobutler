@@ -3,6 +3,7 @@ package server
 import (
 	"autobutler/internal/server/middleware"
 	"autobutler/pkg/botel"
+	"autobutler/pkg/networking"
 	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/deputil"
 	"autobutler/pkg/util/workerutil"
@@ -18,6 +19,15 @@ func setupServices(deps deputil.Dependencies) error {
 	if err := cirrusutil.SetupCirrusDir(); err != nil {
 		return fmt.Errorf("failed to setup cirrus directory: %w", err)
 	}
+
+	node, err := networking.InitNetworkingNode(context.Background())
+	if err != nil {
+		log.Printf("Warning: failed to initialize networking node: %v", err)
+	} else if node != nil {
+		deps.WithNetworkingNode(node)
+		log.Printf("Networking node initialized successfully")
+	}
+
 	go deps.Worker().Process()
 	go deps.Worker().LogErrors()
 	return nil

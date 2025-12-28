@@ -225,7 +225,7 @@ const sidebarSections = [
       { label: 'General', active: true },
       { label: 'Users & Access' },
       { label: 'Storage' },
-      { label: 'Networking' },
+      { label: 'Networking', to: '/networking' },
       { label: 'Security' },
       { label: 'OpenTelemetry' },
       { label: 'Advanced' },

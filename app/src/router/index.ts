@@ -5,6 +5,7 @@ import BooksView from '@/views/BooksView.vue'
 import SettingsView from '@/views/SettingsView.vue'
 import PhotosView from '@/views/PhotosView.vue'
 import DevicesView from '@/views/DevicesView.vue'
+import NetworkingView from '@/views/NetworkingView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,6 +39,11 @@ const router = createRouter({
       path: '/settings',
       name: 'settings',
       component: SettingsView,
+    },
+    {
+      path: '/networking',
+      name: 'networking',
+      component: NetworkingView,
     },
   ],
 })

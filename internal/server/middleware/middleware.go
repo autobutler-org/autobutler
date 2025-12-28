@@ -30,4 +30,8 @@ func Use(router *gin.Engine, deps deputil.Dependencies) {
 	router.Use(cors.New(config))
 
 	router.Use(inject(deps))
+
+	if deps.NetworkingNode() != nil {
+		router.Use(NetworkingNode(deps.NetworkingNode()))
+	}
 }
