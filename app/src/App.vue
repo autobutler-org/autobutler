@@ -24,15 +24,15 @@
           min="0.8"
           max="1.5"
           step="0.01"
-          :value="settings.fontSizeScale"
+          :value="theme.fontSizeScale"
           @input="
-            settings.setFontSizeScale(
+            theme.setFontSizeScale(
               Number(($event.target as HTMLInputElement).value),
             )
           "
           style="vertical-align: middle; width: 100px"
         />
-        <span>{{ settings.fontSizeScale.toFixed(2) }}x</span>
+        <span>{{ theme.fontSizeScale.toFixed(2) }}x</span>
       </label>
     </div>
     <RouterView />
@@ -41,7 +41,7 @@
 
 <script lang="ts" setup>
 import TopNav from '@/components/home/TopNav.vue'
-import { useSettingsStore } from '@/stores/settings'
+import { useThemeStore } from '@/stores/theme'
 import type { NavLink } from '@/types/nav_link'
 import { onMounted, ref } from 'vue'
 import { RouterView } from 'vue-router'
@@ -59,9 +59,9 @@ const toggleMinimize = (_: Event): boolean => {
   return true
 }
 const minimizeKeyCombo = fromKeyComboString('alt-space')
-const settings = useSettingsStore()
+const theme = useThemeStore()
 onMounted(() => {
-  settings.applyFontSizeScale()
+  theme.applyFontSizeScale()
 })
 document.addEventListener(
   'keydown',

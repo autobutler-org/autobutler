@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 
-export const useSettingsStore = defineStore('settings', {
+export const useThemeStore = defineStore('theme', {
   state: () => ({
     fontSizeBase: 1,
     fontSizeScale: 1, // Multiplier for all font sizes
@@ -11,7 +11,7 @@ export const useSettingsStore = defineStore('settings', {
       this.applyFontSizeScale()
     },
     applyFontSizeScale() {
-      // These match the CSS variable names in variables.scss and App.vue
+      // These match the CSS variables in variables.scss
       const baseSizes = {
         xs: 0.75,
         sm: 0.875,

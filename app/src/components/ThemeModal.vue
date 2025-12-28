@@ -1,8 +1,8 @@
 <template>
-  <div v-if="open" class="settings-modal-overlay" @click.self="close">
-    <div class="settings-modal">
-      <h2>Settings</h2>
-      <div class="settings-section">
+  <div v-if="open" class="theme-modal-overlay" @click.self="close">
+    <div class="theme-modal">
+      <h2>Theme</h2>
+      <div class="theme-section">
         <label
           >Font size scale:
           <input
@@ -10,14 +10,14 @@
             min="0.8"
             max="1.5"
             step="0.01"
-            :value="settings.fontSizeScale"
+            :value="theme.fontSizeScale"
             @input="
-              settings.setFontSizeScale(
+              theme.setFontSizeScale(
                 Number(($event.target as HTMLInputElement).value),
               )
             "
           />
-          <span>{{ settings.fontSizeScale.toFixed(2) }}x</span>
+          <span>{{ theme.fontSizeScale.toFixed(2) }}x</span>
         </label>
       </div>
       <button class="close-btn" @click="close">Close</button>
@@ -26,12 +26,12 @@
 </template>
 
 <script lang="ts" setup>
-import { useSettingsStore } from '@/stores/settings'
+import { useThemeStore } from '@/stores/theme'
 import { watch } from 'vue'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits(['close'])
-const settings = useSettingsStore()
+const theme = useThemeStore()
 
 const close = () => {
   emit('close')
@@ -43,7 +43,7 @@ watch(
   (val) => {
     if (val) {
       setTimeout(() => {
-        const el = document.querySelector('.settings-modal') as HTMLElement
+        const el = document.querySelector('.theme-modal') as HTMLElement
         if (el) el.focus()
       }, 10)
       const handler = (e: KeyboardEvent) => {
@@ -57,7 +57,7 @@ watch(
 </script>
 
 <style lang="scss" scoped>
-.settings-modal-overlay {
+.theme-modal-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.35);
@@ -66,7 +66,7 @@ watch(
   align-items: center;
   justify-content: center;
 }
-.settings-modal {
+.theme-modal {
   background: #222;
   color: #fff;
   min-width: 320px;
@@ -76,7 +76,7 @@ watch(
   padding: 2rem 2.5rem 1.5rem 2.5rem;
   outline: none;
 }
-.settings-section {
+.theme-section {
   margin-bottom: 1.5rem;
 }
 .close-btn {
