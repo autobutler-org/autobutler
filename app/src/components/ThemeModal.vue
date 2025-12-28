@@ -1,6 +1,15 @@
 <template>
-  <div v-if="open" class="theme-modal-overlay" @click.self="close">
+  <ModalDialog
+    v-if="open"
+    @close="close"
+    :backdrop="false"
+    :hide-close-button="true"
+    :transparent="true"
+  >
     <div class="theme-modal">
+      <button class="theme-modal-close" @click="close" aria-label="Close">
+        <CloseIcon />
+      </button>
       <h2>Theme</h2>
       <div class="theme-section">
         <label class="font-size-label">
@@ -22,53 +31,25 @@
           >
         </label>
       </div>
-      <button class="close-btn" @click="close">Close</button>
     </div>
-  </div>
+  </ModalDialog>
 </template>
 
 <script lang="ts" setup>
+import ModalDialog from '@/components/common/ModalDialog.vue'
+import CloseIcon from '@/components/icons/CloseIcon.vue'
 import { useThemeStore } from '@/stores/theme'
-import { watch } from 'vue'
 
-const props = defineProps<{ open: boolean }>()
+defineProps<{ open: boolean }>()
+
 const emit = defineEmits(['close'])
 const theme = useThemeStore()
-
-const close = () => {
-  emit('close')
-}
-
-// Focus trap and escape key
-watch(
-  () => props.open,
-  (val) => {
-    if (val) {
-      setTimeout(() => {
-        const el = document.querySelector('.theme-modal') as HTMLElement
-        if (el) el.focus()
-      }, 10)
-      const handler = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') close()
-      }
-      window.addEventListener('keydown', handler)
-      return () => window.removeEventListener('keydown', handler)
-    }
-  },
-)
+const close = () => emit('close')
 </script>
 
 <style lang="scss" scoped>
-.theme-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.35);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 .theme-modal {
+    position: relative;
   background: #222;
   color: #fff;
   min-width: 320px;
@@ -81,35 +62,57 @@ watch(
     margin-bottom: 1.2em;
   }
 }
+
+.theme-modal-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: white;
+  border: none;
+  border-radius: 50%;
+  color: #222;
+  cursor: pointer;
+  z-index: 1100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  padding: 0;
+
+  svg {
+    display: block;
+    margin: auto;
+  }
+
+  &:hover {
+    background: #f2f2f2;
+  }
+}
+
 .theme-section {
   margin-bottom: 1.5rem;
 }
+
 .font-size-label {
   display: flex;
   align-items: center;
   gap: 0.75em;
   font-size: 1.1em;
 }
+
 .font-size-label input[type='range'] {
   margin-left: 0.5em;
   margin-right: 0.5em;
 }
+
 .slider-value {
   min-width: 3em;
   text-align: right;
   display: inline-block;
-}
-.close-btn {
-  background: #444;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 0.5rem 1.2rem;
-  font-size: 1rem;
-  cursor: pointer;
-  margin-top: 0.5rem;
-}
-.close-btn:hover {
-  background: #666;
 }
 </style>
