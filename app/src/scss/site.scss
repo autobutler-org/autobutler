@@ -31,11 +31,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: linear-gradient(
-    180deg,
-    $color-gray-900 0%,
-    $color-gray-950 100%
-  );
+  background: linear-gradient(180deg, $color-gray-900 0%, $color-gray-950 100%);
 }
 @media (prefers-color-scheme: light) {
   .site-main-bg {

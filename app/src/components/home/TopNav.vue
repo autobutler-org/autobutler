@@ -334,7 +334,7 @@ const closeMobileMenu = () => {
   gap: $spacing-sm;
   padding: $spacing-sm $spacing-md;
   background: rgba($theme-palette-bg-primary, 0.1);
-  border: 1px solid rgba($theme-palette-bg-primary, 0.2);
+  border: 1px solid $theme-palette-border;
   border-radius: $border-radius;
   color: $theme-palette-text-secondary;
   font-size: $theme-font-size-sm;
@@ -370,6 +370,16 @@ const closeMobileMenu = () => {
 }
 
 .version-container {
+  border: 1px solid $theme-palette-border;
+  border-radius: $border-radius;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+  &:hover,
+  &:focus-within {
+    background: rgba($theme-palette-accent, 0.12);
+    border-color: $theme-palette-accent;
+  }
   position: relative;
 
   @media (max-width: 768px) {
