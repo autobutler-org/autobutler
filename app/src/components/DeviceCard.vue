@@ -25,8 +25,8 @@
 </template>
 
 <script lang="ts" setup>
-import StoragePartition from './StoragePartition.vue'
 import DeviceCardIcon from '@/components/icons/DeviceCardIcon.vue'
+import StoragePartition from './StoragePartition.vue'
 
 defineProps({
   device: {
@@ -68,12 +68,12 @@ const goToCirrus = () => {
 }
 
 .device-card-mount {
-  font-size: 1rem;
+  font-size: $font-size-base;
   color: #e0e0e0;
 }
 
 .device-card-title {
-  font-size: 1.5rem;
+  font-size: $font-size-2xl;
   font-weight: 700;
   color: white;
   margin: 0;
@@ -86,7 +86,7 @@ const goToCirrus = () => {
 }
 
 .device-card-type {
-  font-size: 1rem;
+  font-size: $font-size-base;
   color: #b3b3b3;
   margin: 0;
 }

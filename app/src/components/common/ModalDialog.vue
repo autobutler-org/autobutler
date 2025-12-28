@@ -1,9 +1,19 @@
 <template>
-  <div class="modal-overlay" @click.self="onClose">
-    <button class="modal-close" @click="onClose" aria-label="Close">
+  <div
+    :class="[backdrop ? 'modal-overlay' : 'modal-overlay--no-backdrop']"
+    @click.self="onClose"
+  >
+    <button
+      v-if="!hideCloseButton"
+      class="modal-close"
+      @click="onClose"
+      aria-label="Close"
+    >
       <CloseIcon />
     </button>
-    <div class="modal-content">
+    <div
+      :class="[transparent ? 'modal-content--transparent' : 'modal-content']"
+    >
       <slot />
     </div>
   </div>
@@ -12,6 +22,15 @@
 <script lang="ts" setup>
 import CloseIcon from '@/components/icons/CloseIcon.vue'
 
+const {
+  backdrop = true,
+  hideCloseButton = false,
+  transparent = false,
+} = defineProps<{
+  backdrop?: boolean
+  hideCloseButton?: boolean
+  transparent?: boolean
+}>()
 const emit = defineEmits(['close'])
 const onClose = () => {
   emit('close')
@@ -50,21 +69,24 @@ const onClose = () => {
 
 .modal-content {
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.18);
-  padding: 0;
-  max-width: 95vw;
-  max-height: 95vh;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+}
+.modal-content--transparent {
+  background: transparent;
 }
 
 .modal-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay--no-backdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent;
   z-index: 1000;
   display: flex;
   align-items: center;

@@ -55,22 +55,22 @@
 </template>
 
 <script lang="ts" setup>
-import type { CirrusFileNode } from '@/types/cirrus'
+import DeviceBadge from '@/components/badges/DeviceBadge.vue'
+import ArchiveIcon from '@/components/icons/ArchiveIcon.vue'
+import CirrusFolderIcon from '@/components/icons/CirrusFolderIcon.vue'
+import DocxIcon from '@/components/icons/DocxIcon.vue'
+import GenericIcon from '@/components/icons/GenericIcon.vue'
+import ImageIcon from '@/components/icons/ImageIcon.vue'
+import PdfIcon from '@/components/icons/PdfIcon.vue'
+import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
 import {
   determineFileType,
-  getFileName,
-  isDirectory,
-  getFileSize,
   formatBytes,
+  getFileName,
+  getFileSize,
+  isDirectory,
 } from '@/services/cirrusService'
-import CirrusFolderIcon from '@/components/icons/CirrusFolderIcon.vue'
-import PdfIcon from '@/components/icons/PdfIcon.vue'
-import ImageIcon from '@/components/icons/ImageIcon.vue'
-import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
-import ArchiveIcon from '@/components/icons/ArchiveIcon.vue'
-import GenericIcon from '@/components/icons/GenericIcon.vue'
-import DocxIcon from '@/components/icons/DocxIcon.vue'
-import DeviceBadge from '@/components/badges/DeviceBadge.vue'
+import type { CirrusFileNode } from '@/types/cirrus'
 
 const props = defineProps<{
   files: CirrusFileNode[]
@@ -176,7 +176,7 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   border: none;
   cursor: pointer;
   padding: $spacing-xs;
-  font-size: 1rem;
+  font-size: $font-size-base;
   color: $color-gray-600;
   border-radius: $border-radius-sm;
   opacity: 0;

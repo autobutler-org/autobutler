@@ -150,24 +150,24 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
-import FlashBanner from '@/components/ui/FlashBanner.vue'
-import type { NavLink } from '@/types/nav_link'
-import { RouterLink } from 'vue-router'
+import FlashBanner from '@/components/common/FlashBanner.vue'
 import {
-  getCurrentVersion,
   getAvailableReleases,
+  getCurrentVersion,
   type Release,
 } from '@/services/versionService'
-import SettingsIcon from '../icons/SettingsIcon.vue'
-import DeviceIcon from '../icons/DeviceIcon.vue'
-import HamburgerIcon from '../icons/HamburgerIcon.vue'
-import CloseIcon from '../icons/CloseIcon.vue'
-import HomeIcon from '../icons/HomeIcon.vue'
-import FolderIcon from '../icons/FolderIcon.vue'
-import PhotoIcon from '../icons/PhotoIcon.vue'
-import BookIcon from '../icons/BookIcon.vue'
+import type { NavLink } from '@/types/nav_link'
 import { toKeyComboString, type KeyCombo } from '@/util/keycombo'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
+import BookIcon from '../icons/BookIcon.vue'
+import CloseIcon from '../icons/CloseIcon.vue'
+import DeviceIcon from '../icons/DeviceIcon.vue'
+import FolderIcon from '../icons/FolderIcon.vue'
+import HamburgerIcon from '../icons/HamburgerIcon.vue'
+import HomeIcon from '../icons/HomeIcon.vue'
+import PhotoIcon from '../icons/PhotoIcon.vue'
+import SettingsIcon from '../icons/SettingsIcon.vue'
 
 const props = defineProps<{
   isMinimal?: boolean
