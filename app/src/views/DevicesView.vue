@@ -138,7 +138,7 @@ onMounted(fetchDevices)
 }
 @media (prefers-color-scheme: dark) {
   .devices-title {
-    color: white;
+    color: $color-gray-50;
   }
 }
 .devices-subtitle {

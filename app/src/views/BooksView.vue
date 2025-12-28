@@ -141,7 +141,7 @@ onMounted(async () => {
   top: 8px;
   right: 8px;
   background: $color-primary-600;
-  color: white;
+  color: $color-gray-50;
   font-size: $theme-font-size-xs;
   padding: 2px 8px;
   border-radius: 8px;
@@ -179,7 +179,7 @@ onMounted(async () => {
   color: $color-gray-900;
 
   @media (prefers-color-scheme: dark) {
-    color: white;
+    color: $color-gray-50;
   }
 }
 
@@ -226,7 +226,7 @@ onMounted(async () => {
   color: $color-gray-900;
 
   @media (prefers-color-scheme: dark) {
-    color: white;
+    color: $color-gray-50;
   }
 }
 

@@ -158,7 +158,7 @@ const defaultServiceIcons: ServiceIcon[] = [
   font-size: $theme-font-size-5xl;
   font-weight: 800;
   margin-bottom: $spacing-lg;
-  color: white;
+  color: $color-gray-50;
 
   @media (prefers-color-scheme: light) {
     color: $color-gray-900;
@@ -233,7 +233,7 @@ const defaultServiceIcons: ServiceIcon[] = [
         $color-primary-700
       )
       100%;
-    color: white;
+    color: $color-gray-50;
     box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
 
     &:hover {

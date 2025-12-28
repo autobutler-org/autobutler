@@ -54,6 +54,10 @@
   height: 100vh;
   background: $color-gray-900;
   align-self: stretch;
+
+  @media (prefers-color-scheme: light) {
+    background: $color-gray-200;
+  }
 }
 
 .library-sidebar {

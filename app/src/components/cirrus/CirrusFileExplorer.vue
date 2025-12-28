@@ -425,7 +425,7 @@ const handleDelete = async (file: CirrusFileNode) => {
 
 <style lang="scss" scoped>
 .file-explorer {
-  background-color: white;
+  background-color: $color-gray-50;
   max-width: 100%;
   box-shadow: $shadow-sm;
   padding: $spacing-lg;
@@ -447,16 +447,16 @@ const handleDelete = async (file: CirrusFileNode) => {
   margin-bottom: $spacing-md;
 
   @media (prefers-color-scheme: dark) {
-    color: white;
+    color: $color-gray-50;
   }
 }
 
 .file-explorer-error {
   padding: $spacing-md 0;
-  color: #dc2626;
+  color: $color-red-600;
 
   @media (prefers-color-scheme: dark) {
-    color: #f87171;
+    color: $color-red-400;
   }
 }
 
@@ -465,7 +465,7 @@ const handleDelete = async (file: CirrusFileNode) => {
   color: $color-gray-500;
 
   @media (prefers-color-scheme: dark) {
-    color: white;
+    color: $color-gray-50;
   }
 }
 
@@ -475,7 +475,7 @@ const handleDelete = async (file: CirrusFileNode) => {
   margin-bottom: $spacing-lg;
 
   @media (prefers-color-scheme: dark) {
-    color: white;
+    color: $color-gray-50;
   }
 }
 
@@ -485,7 +485,7 @@ const handleDelete = async (file: CirrusFileNode) => {
   font-style: italic;
 
   @media (prefers-color-scheme: dark) {
-    color: white;
+    color: $color-gray-50;
   }
 }
 
@@ -504,7 +504,7 @@ const handleDelete = async (file: CirrusFileNode) => {
   color: $color-gray-100;
 
   @media (prefers-color-scheme: dark) {
-    color: white;
+    color: $color-gray-50;
   }
 }
 
@@ -528,7 +528,7 @@ const handleDelete = async (file: CirrusFileNode) => {
   }
 
   @media (prefers-color-scheme: dark) {
-    color: white;
+    color: $color-gray-50;
   }
 }
 
@@ -586,7 +586,7 @@ const handleDelete = async (file: CirrusFileNode) => {
 }
 
 .move-dialog-error {
-  color: #dc2626;
+  color: $color-red-600;
   font-size: $theme-font-size-sm;
   margin-bottom: $spacing-md;
   text-align: left;

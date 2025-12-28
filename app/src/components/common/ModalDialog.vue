@@ -42,13 +42,13 @@ const onClose = () => {
   position: fixed;
   top: 1.5rem;
   right: 1.5rem;
-  background: white;
+  background: $color-gray-50;
   border: none;
   border-radius: 50%;
-  color: #222;
+  color: $color-gray-900;
   cursor: pointer;
   z-index: 1100;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba($color-gray-950, 0.1);
   width: 2.5rem;
   height: 2.5rem;
   display: flex;
@@ -63,12 +63,12 @@ const onClose = () => {
   }
 
   &:hover {
-    background: #f2f2f2;
+    background: $color-gray-100;
   }
 }
 
 .modal-content {
-  background: white;
+  background: $color-gray-50;
 }
 .modal-content--transparent {
   background: transparent;
@@ -77,7 +77,7 @@ const onClose = () => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba($color-gray-950, 0.7);
   z-index: 1000;
   display: flex;
   align-items: center;

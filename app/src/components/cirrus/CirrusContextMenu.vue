@@ -174,7 +174,7 @@ watch(
 /* Not scoped because Teleport renders outside component tree */
 .context-menu {
   position: fixed;
-  background-color: white;
+  background-color: $color-gray-50;
   border: 1px solid $color-gray-200;
   border-radius: $border-radius;
   box-shadow: $shadow-lg;

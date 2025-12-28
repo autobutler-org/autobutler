@@ -147,15 +147,15 @@ const freeGB = computed(() => {
 .storage-partition-bar {
   display: flex;
   height: 24px;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba($color-gray-950, 0.2);
   border-radius: $border-radius;
   overflow: hidden;
   margin-bottom: $spacing-md;
-  border: 1px solid #6f6f6f;
+  border: 1px solid $color-gray-500;
 
   @media (prefers-color-scheme: light) {
     background: $color-gray-200;
-    border: 1px solid #6f6f6f;
+    border: 1px solid $color-gray-500;
   }
 
   @media (max-width: 768px) {
@@ -208,31 +208,31 @@ const freeGB = computed(() => {
 
 /* Category Colors - matching existing device card colors */
 .storage-partition-backups {
-  background: hsl(30, 80%, 55%); /* Orange */
+  background: $color-yellow-500; /* Orange */
 }
 
 .storage-partition-documents {
-  background: hsl(280, 60%, 60%); /* Purple */
+  background: $color-purple-400; /* Purple */
 }
 
 .storage-partition-free {
-  background: hsl(0, 0%, 25%); /* Dark gray */
+  background: $color-gray-700; /* Dark gray */
 
   @media (prefers-color-scheme: light) {
-    background: hsl(0, 0%, 85%); /* Light gray */
+    background: $color-gray-200; /* Light gray */
   }
 }
 
 .storage-partition-media {
-  background: hsl(340, 70%, 55%); /* Pink/Red */
+  background: $color-red-400; /* Pink/Red */
 }
 
 .storage-partition-other {
-  background: hsl(45, 70%, 55%); /* Yellow */
+  background: $color-yellow-400; /* Yellow */
 }
 
 .storage-partition-system {
-  background: hsl(200, 70%, 50%); /* Blue */
+  background: $color-blue-500; /* Blue */
 }
 
 .storage-partition-legend {

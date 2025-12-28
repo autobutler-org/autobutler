@@ -288,11 +288,11 @@ const sidebarSections = [
 }
 .library-sidebar-item:hover {
   background: $color-gray-800;
-  color: white;
+  color: $color-gray-50;
 }
 .library-sidebar-item.active {
   background: $color-primary-600;
-  color: white;
+  color: $color-gray-50;
 }
 .library-sidebar-count {
   margin-left: auto;

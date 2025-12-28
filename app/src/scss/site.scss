@@ -1,3 +1,5 @@
+@use '@/scss/variables.scss' as *;
+
 *,
 *::before,
 *::after {
@@ -31,16 +33,16 @@ body {
   overflow: hidden;
   background: linear-gradient(
     180deg,
-    hsl(225, 25%, 15%) 0%,
-    hsl(225, 30%, 10%) 100%
+    $color-gray-900 0%,
+    $color-gray-950 100%
   );
 }
 @media (prefers-color-scheme: light) {
   .site-main-bg {
     background: linear-gradient(
       180deg,
-      hsl(225, 15%, 95%) 0%,
-      hsl(225, 20%, 98%) 100%
+      $color-blue-50 0%,
+      $color-blue-100 100%
     );
   }
 }

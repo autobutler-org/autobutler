@@ -16,21 +16,22 @@ import AppFooter from '@/components/home/AppFooter.vue'
 </template>
 
 <style lang="scss" scoped>
+
 .landing-body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
   background: linear-gradient(
     180deg,
-    hsl(225, 25%, 15%) 0%,
-    hsl(225, 30%, 10%) 100%
+    $color-gray-900 0%,
+    $color-gray-950 100%
   );
 
   @media (prefers-color-scheme: light) {
     background: linear-gradient(
       180deg,
-      hsl(225, 15%, 95%) 0%,
-      hsl(225, 20%, 98%) 100%
+      $color-gray-100 0%,
+      $color-gray-50 100%
     );
   }
 }

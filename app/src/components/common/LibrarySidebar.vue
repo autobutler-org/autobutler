@@ -43,7 +43,7 @@ defineProps<{ sections: SidebarSection[] }>()
   width: 100%;
   height: 100%;
   background: $color-gray-900;
-  color: white;
+  color: $color-gray-50;
   padding: $spacing-xl;
   overflow-y: auto;
   flex-shrink: 0;
@@ -77,12 +77,12 @@ defineProps<{ sections: SidebarSection[] }>()
 
   &:hover {
     background: $color-gray-800;
-    color: white;
+    color: $color-gray-50;
   }
 
   &.active {
     background: $color-primary-600;
-    color: white;
+    color: $color-gray-50;
   }
 }
 

@@ -248,9 +248,9 @@ const closeMobileMenu = () => {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba($color-gray-950, 0.3);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba($color-gray-50, 0.1);
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
@@ -258,8 +258,8 @@ const closeMobileMenu = () => {
   right: 0;
 
   @media (prefers-color-scheme: light) {
-    background: rgba(255, 255, 255, 0.8);
-    border-bottom-color: rgba(0, 0, 0, 0.1);
+    background: rgba($color-gray-50, 0.8);
+    border-bottom-color: rgba($color-gray-950, 0.1);
   }
 }
 
@@ -281,7 +281,7 @@ const closeMobileMenu = () => {
   align-items: center;
 
   &:hover {
-    color: white;
+    color: $color-gray-50;
     text-decoration: underline;
   }
 
@@ -334,8 +334,8 @@ const closeMobileMenu = () => {
   align-items: center;
   gap: $spacing-sm;
   padding: $spacing-sm $spacing-md;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba($color-gray-50, 0.1);
+  border: 1px solid rgba($color-gray-50, 0.2);
   border-radius: $border-radius;
   color: $color-gray-200;
   font-size: $theme-font-size-sm;
@@ -344,8 +344,8 @@ const closeMobileMenu = () => {
   text-decoration: none;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba($color-gray-50, 0.15);
+    border-color: rgba($color-gray-50, 0.3);
   }
 
   svg {
@@ -354,13 +354,13 @@ const closeMobileMenu = () => {
   }
 
   @media (prefers-color-scheme: light) {
-    background: rgba(0, 0, 0, 0.05);
-    border-color: rgba(0, 0, 0, 0.1);
+    background: rgba($color-gray-950, 0.05);
+    border-color: rgba($color-gray-950, 0.1);
     color: $color-gray-700;
 
     &:hover {
-      background: rgba(0, 0, 0, 0.08);
-      border-color: rgba(0, 0, 0, 0.15);
+      background: rgba($color-gray-950, 0.08);
+      border-color: rgba($color-gray-950, 0.15);
     }
   }
 
@@ -379,7 +379,7 @@ const closeMobileMenu = () => {
 
 .landing-nav-version {
   padding: $spacing-sm $spacing-md;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba($color-gray-50, 0.05);
   border-radius: $border-radius;
   color: $color-gray-400;
   font-size: $theme-font-size-sm;
@@ -389,12 +389,12 @@ const closeMobileMenu = () => {
   transition: all 0.2s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba($color-gray-50, 0.1);
+    border-color: rgba($color-gray-50, 0.2);
   }
 
   @media (prefers-color-scheme: light) {
-    background: rgba(0, 0, 0, 0.05);
+    background: rgba($color-gray-950, 0.05);
     color: $color-gray-600;
   }
 }
@@ -466,15 +466,15 @@ const closeMobileMenu = () => {
   bottom: 0;
   width: 300px;
   max-width: 85vw;
-  background: hsl(225, 25%, 15%);
-  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
+  background: $color-gray-900;
+  box-shadow: 2px 0 12px rgba($color-gray-950, 0.3);
   display: flex;
   flex-direction: column;
   transition: transform 0.3s ease;
   overflow: hidden;
 
   @media (prefers-color-scheme: light) {
-    background: white;
+    background: $color-gray-50;
   }
 }
 
@@ -494,7 +494,7 @@ const closeMobileMenu = () => {
 .mobile-menu-title {
   font-size: $theme-font-size-lg;
   font-weight: 600;
-  color: white;
+  color: $color-gray-50;
 
   @media (prefers-color-scheme: light) {
     color: $color-gray-900;
@@ -580,21 +580,21 @@ const closeMobileMenu = () => {
 .mobile-menu-footer {
   margin-top: auto;
   padding: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba($color-gray-50, 0.1);
   flex-shrink: 0;
 
   @media (prefers-color-scheme: light) {
-    border-top-color: rgba(0, 0, 0, 0.1);
+    border-top-color: rgba($color-gray-950, 0.1);
   }
 }
 
 .mobile-menu-divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba($color-gray-50, 0.1);
   margin: $spacing-sm $spacing-xl;
 
   @media (prefers-color-scheme: light) {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba($color-gray-950, 0.1);
   }
 }
 
@@ -611,24 +611,24 @@ const closeMobileMenu = () => {
   right: 0;
   margin-top: $spacing-sm;
   min-width: 200px;
-  background: hsl(225, 25%, 18%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: $color-gray-800;
+  border: 1px solid rgba($color-gray-50, 0.1);
   border-radius: $border-radius-lg;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba($color-gray-950, 0.3);
   overflow: hidden;
   z-index: 1000;
 
   @media (prefers-color-scheme: light) {
-    background: white;
-    border-color: rgba(0, 0, 0, 0.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: $color-gray-50;
+    border-color: rgba($color-gray-900, 0.1);
+    box-shadow: 0 4px 12px rgba($color-gray-900, 0.15);
   }
 }
 
 .version-dropdown-badge {
   padding: 2px 6px;
   background: $color-primary-600;
-  color: white;
+  color: $color-gray-50;
   border-radius: $border-radius;
   font-size: 0.75rem;
   font-weight: 500;
@@ -654,14 +654,14 @@ const closeMobileMenu = () => {
   transition: background-color 0.2s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba($color-gray-50, 0.1);
   }
 
   &--current {
-    background: rgba(37, 99, 235, 0.2);
+    background: rgba($color-primary-600, 0.2);
 
     &:hover {
-      background: rgba(37, 99, 235, 0.3);
+      background: rgba($color-primary-600, 0.3);
     }
   }
 
@@ -673,10 +673,9 @@ const closeMobileMenu = () => {
     }
 
     &--current {
-      background: rgba(37, 99, 235, 0.1);
-
+      background: rgba($color-primary-600, 0.1);
       &:hover {
-        background: rgba(37, 99, 235, 0.15);
+        background: rgba($color-primary-600, 0.15);
       }
     }
   }

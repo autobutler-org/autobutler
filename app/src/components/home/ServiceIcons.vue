@@ -39,14 +39,14 @@ const handleDisabledClick = () => {
 .service-icons-container {
   margin-bottom: $spacing-2xl;
   padding: $spacing-3xl $spacing-2xl;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba($color-gray-50, 0.05);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba($color-gray-50, 0.1);
   border-radius: 24px;
 
   @media (prefers-color-scheme: light) {
-    background: rgba(0, 0, 0, 0.03);
-    border-color: rgba(0, 0, 0, 0.08);
+    background: rgba($color-gray-900, 0.03);
+    border-color: rgba($color-gray-900, 0.08);
   }
 }
 
@@ -83,19 +83,19 @@ const handleDisabledClick = () => {
   cursor: pointer;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba($color-gray-50, 0.05);
 
     @media (prefers-color-scheme: light) {
-      background-color: rgba(0, 0, 0, 0.03);
+      background-color: rgba($color-gray-900, 0.03);
     }
 
     .service-icon-bg {
-      background: rgba(255, 255, 255, 0.15);
-      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba($color-gray-50, 0.15);
+      border-color: rgba($color-gray-50, 0.3);
 
       @media (prefers-color-scheme: light) {
-        background: rgba(0, 0, 0, 0.08);
-        border-color: rgba(0, 0, 0, 0.15);
+        background: rgba($color-gray-900, 0.08);
+        border-color: rgba($color-gray-900, 0.15);
       }
     }
   }
@@ -111,16 +111,16 @@ const handleDisabledClick = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba($color-gray-50, 0.1);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba($color-gray-50, 0.2);
   border-radius: $border-radius-lg;
   transition: all 0.2s ease;
 
   svg {
     width: 28px;
     height: 28px;
-    color: white;
+    color: $color-gray-50;
 
     @media (prefers-color-scheme: light) {
       color: $color-gray-700;
@@ -128,8 +128,8 @@ const handleDisabledClick = () => {
   }
 
   @media (prefers-color-scheme: light) {
-    background: rgba(0, 0, 0, 0.05);
-    border-color: rgba(0, 0, 0, 0.1);
+    background: rgba($color-gray-900, 0.05);
+    border-color: rgba($color-gray-900, 0.1);
   }
 
   @media (max-width: 768px) {
