@@ -147,15 +147,15 @@ const freeGB = computed(() => {
 .storage-partition-bar {
   display: flex;
   height: 24px;
-  background: rgba($color-gray-950, 0.2);
+  background: color.scale($theme-palette-bg-primary, $lightness: 20%);
   border-radius: $border-radius;
   overflow: hidden;
   margin-bottom: $spacing-md;
-  border: 1px solid $color-gray-500;
+  border: 1px solid $theme-palette-border;
 
   @media (prefers-color-scheme: light) {
-    background: $color-gray-200;
-    border: 1px solid $color-gray-500;
+    background: $theme-palette-bg-inverse;
+    border: 1px solid $theme-palette-border-strong;
   }
 
   @media (max-width: 768px) {
@@ -179,19 +179,19 @@ const freeGB = computed(() => {
 }
 
 .storage-partition-label {
-  color: $color-gray-300;
+  color: $theme-palette-text-secondary;
   font-weight: 500;
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-700;
+    color: $theme-palette-text-inverse;
   }
 }
 
 .storage-partition-used {
-  color: $color-gray-400;
+  color: $theme-palette-text-muted;
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-600;
+    color: $theme-palette-text-secondary;
   }
 }
 
