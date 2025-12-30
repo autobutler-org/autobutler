@@ -20,15 +20,6 @@ import HeroSection from '@/components/home/HeroSection.vue'
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background: linear-gradient(180deg, $color-gray-900 0%, $color-gray-950 100%);
-
-  @media (prefers-color-scheme: light) {
-    background: linear-gradient(
-      180deg,
-      $color-gray-100 0%,
-      $color-gray-50 100%
-    );
-  }
 }
 
 .landing-main {
