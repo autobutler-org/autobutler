@@ -85,6 +85,7 @@ build: ## Build backend and frontend
 	$(MAKE) build/backend
 
 build/backend: generate ## Build backend
+	touch ./internal/server/public/stub.txt
 	mkdir -p ./build
 	go build -o $(EXE) $(MAIN)
 
@@ -137,6 +138,7 @@ format/ts: ## Format TypeScript files
 lint: lint/go lint/sqlc lint/ts lint/yaml ## Lint code
 
 lint/go: ## Lint Go code
+	touch ./internal/server/public/stub.txt
 	go vet ./...
 
 lint/sqlc: ## Lint sqlc
