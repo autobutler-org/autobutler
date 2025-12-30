@@ -22,7 +22,6 @@ defineProps<{ src: string }>()
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  background: $color-gray-100;
 
   iframe {
     border: none;
