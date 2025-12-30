@@ -123,16 +123,16 @@ onMounted(async () => {
   flex-direction: column;
   overflow: hidden;
   transition: box-shadow 0.2s;
-  border: 1px solid $color-gray-800;
-  background: $color-gray-50;
+  border: 1px solid $theme-palette-border;
+  background: $theme-palette-bg-primary;
 
   @media (prefers-color-scheme: dark) {
-    background: $color-gray-900;
+    background: $theme-palette-bg-nav;
   }
 
   &:hover {
     box-shadow: $shadow-md;
-    border-color: $color-primary-400;
+    border-color: $theme-palette-accent;
   }
 }
 
@@ -140,8 +140,8 @@ onMounted(async () => {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: $color-primary-600;
-  color: $color-gray-50;
+  background: $theme-palette-accent;
+  color: $theme-palette-text-inverse;
   font-size: $theme-font-size-xs;
   padding: 2px 8px;
   border-radius: 8px;
@@ -152,11 +152,11 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   height: 120px;
-  background: $color-gray-100;
+  background: $theme-palette-bg-secondary;
   position: relative;
 
   @media (prefers-color-scheme: dark) {
-    background: $color-gray-800;
+    background: $theme-palette-bg-nav;
   }
 }
 
@@ -166,7 +166,7 @@ onMounted(async () => {
 
 .book-card-size {
   font-size: $theme-font-size-xs;
-  color: $color-gray-500;
+  color: $theme-palette-text-muted;
 }
 
 .book-card-title {
@@ -176,10 +176,10 @@ onMounted(async () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: $color-gray-900;
+  color: $theme-palette-text-primary;
 
   @media (prefers-color-scheme: dark) {
-    color: $color-gray-50;
+    color: $theme-palette-text-primary;
   }
 }
 
@@ -190,7 +190,7 @@ onMounted(async () => {
   justify-content: center;
   flex: 1;
   padding: $spacing-2xl;
-  color: $color-gray-500;
+  color: $theme-palette-text-muted;
 }
 
 .books-grid {
@@ -213,7 +213,7 @@ onMounted(async () => {
 
 .books-library-count {
   font-size: $theme-font-size-lg;
-  color: $color-gray-500;
+  color: $theme-palette-text-muted;
 }
 
 .books-library-title {
@@ -223,16 +223,16 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: $spacing-md;
-  color: $color-gray-900;
+  color: $theme-palette-text-primary;
 
   @media (prefers-color-scheme: dark) {
-    color: $color-gray-50;
+    color: $theme-palette-text-primary;
   }
 }
 
 .mock-badge {
-  background: $color-gray-300;
-  color: $color-gray-700;
+  background: $theme-palette-bg-secondary;
+  color: $theme-palette-text-secondary;
   font-size: $theme-font-size-xs;
   padding: 2px 8px;
   border-radius: 8px;
