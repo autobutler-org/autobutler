@@ -623,24 +623,18 @@ const closeMobileMenu = () => {
   right: 0;
   margin-top: $spacing-sm;
   min-width: 200px;
-  background: $color-gray-800;
-  border: 1px solid rgba($color-gray-50, 0.1);
+  background: $theme-palette-bg-nav;
+  border: 1px solid color.scale($theme-palette-border, $alpha: -90%);
   border-radius: $border-radius-lg;
-  box-shadow: 0 4px 12px rgba($color-gray-950, 0.3);
+  box-shadow: 0 4px 12px color.scale($theme-palette-border, $alpha: -70%);
   overflow: hidden;
   z-index: 1000;
-
-  @media (prefers-color-scheme: light) {
-    background: $color-gray-50;
-    border-color: rgba($color-gray-900, 0.1);
-    box-shadow: 0 4px 12px rgba($color-gray-900, 0.15);
-  }
 }
 
 .version-dropdown-badge {
   padding: 2px 6px;
-  background: $color-primary-600;
-  color: $color-gray-50;
+  background: $theme-palette-accent;
+  color: $theme-palette-text-inverse;
   border-radius: $border-radius;
   font-size: 0.75rem;
   font-weight: 500;
@@ -660,7 +654,7 @@ const closeMobileMenu = () => {
   justify-content: space-between;
   gap: $spacing-md;
   padding: $spacing-sm $spacing-lg;
-  color: $color-gray-300;
+  color: $theme-palette-text-secondary;
   text-decoration: none;
   font-size: $theme-font-size-sm;
   transition: background-color 0.2s ease;
@@ -671,24 +665,24 @@ const closeMobileMenu = () => {
   }
 
   &--current {
-    background: rgba($color-primary-600, 0.2);
+    background: color.scale($theme-palette-accent, $alpha: -80%);
 
     &:hover {
-      background: rgba($color-primary-600, 0.3);
+      background: color.scale($theme-palette-accent, $alpha: -70%);
     }
   }
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-700;
+    color: $theme-palette-text-primary;
 
     &:hover {
-      background: $color-gray-100;
+      background: $theme-palette-accent-hover;
     }
 
     &--current {
-      background: rgba($color-primary-600, 0.1);
+      background: color.scale($theme-palette-accent, $alpha: -90%);
       &:hover {
-        background: rgba($color-primary-600, 0.15);
+        background: color.scale($theme-palette-accent, $alpha: -85%);
       }
     }
   }

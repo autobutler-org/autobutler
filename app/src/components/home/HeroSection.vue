@@ -100,6 +100,8 @@ const defaultServiceIcons: ServiceIcon[] = [
 </script>
 
 <style lang="scss" scoped>
+@use 'sass:color';
+
 .hero {
   display: flex;
   flex-direction: column;
