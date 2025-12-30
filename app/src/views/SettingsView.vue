@@ -235,16 +235,18 @@ const sidebarSections = [
 </script>
 
 <style lang="scss" scoped>
+@use 'sass:color';
+
 .settings-sidebar-thanks {
   margin-top: $spacing-2xl;
   padding: $spacing-md;
-  border-top: 1px solid $color-gray-800;
+  border-top: 1px solid $theme-palette-border;
 }
 .settings-thanks-link {
   display: flex;
   align-items: center;
   gap: $spacing-xs;
-  color: $color-primary-600;
+  color: $theme-palette-accent;
   text-decoration: none;
   font-weight: 600;
   margin-top: $spacing-xs;
@@ -262,7 +264,7 @@ const sidebarSections = [
   font-size: $theme-font-size-xs;
   font-weight: 700;
   text-transform: uppercase;
-  color: $color-gray-400;
+  color: $theme-palette-text-muted;
   margin-bottom: $spacing-xs;
   letter-spacing: 0.05em;
 }
@@ -280,41 +282,41 @@ const sidebarSections = [
   gap: $spacing-md;
   padding: $spacing-sm $spacing-md;
   border-radius: $border-radius;
-  color: $color-gray-300;
+  color: $theme-palette-text-secondary;
   text-decoration: none;
   transition: all 0.2s ease;
   font-size: $theme-font-size-sm;
   cursor: pointer;
 }
 .library-sidebar-item:hover {
-  background: $color-gray-800;
-  color: $color-gray-50;
+  background: $theme-palette-bg-secondary;
+  color: $theme-palette-text-primary;
 }
 .library-sidebar-item.active {
-  background: $color-primary-600;
-  color: $color-gray-50;
+  background: $theme-palette-accent;
+  color: $theme-palette-text-inverse;
 }
 .library-sidebar-count {
   margin-left: auto;
   font-size: $theme-font-size-xs;
-  color: $color-gray-500;
+  color: $theme-palette-text-muted;
 }
 .library-sidebar-item.active .library-sidebar-count {
-  color: $color-primary-100;
+  color: $theme-palette-accent-hover;
 }
 .settings-header {
   display: flex;
   align-items: center;
   gap: $spacing-lg;
   padding: $spacing-lg 0 $spacing-md 0;
-  border-bottom: 1px solid $color-gray-800;
+  border-bottom: 1px solid $theme-palette-border;
   margin-bottom: $spacing-xl;
 }
 .settings-title {
   font-size: $theme-font-size-3xl;
   font-weight: 700;
   margin: 0;
-  color: $color-gray-100;
+  color: $theme-palette-text-primary;
 }
 .settings-header-actions {
   display: flex;
@@ -333,19 +335,19 @@ const sidebarSections = [
   font-size: $theme-font-size-xl;
   font-weight: 600;
   margin: 0;
-  color: $color-gray-100;
+  color: $theme-palette-text-primary;
 }
 .settings-section-description {
   margin-bottom: $spacing-md;
-  color: $color-gray-400;
+  color: $theme-palette-text-muted;
 }
 .settings-section-card {
-  background: $color-gray-900;
+  background: $theme-palette-bg-primary;
   border-radius: $border-radius;
   box-shadow: $shadow-sm;
   padding: $spacing-xl;
-  color: white;
-  border: 1px solid $color-gray-800;
+  color: $theme-palette-text-primary;
+  border: 1px solid $theme-palette-border;
   margin-bottom: $spacing-md;
 }
 .settings-section-toolbar {
@@ -354,8 +356,8 @@ const sidebarSections = [
   margin-bottom: $spacing-md;
 }
 .settings-section-toolbar button {
-  background: $color-gray-800;
-  color: $color-gray-100;
+  background: $theme-palette-bg-secondary;
+  color: $theme-palette-text-primary;
   border: none;
   border-radius: $border-radius;
   padding: 4px 12px;
@@ -365,8 +367,8 @@ const sidebarSections = [
   transition: background 0.2s;
 }
 .settings-section-toolbar button:hover {
-  background: $color-primary-600;
-  color: white;
+  background: $theme-palette-accent;
+  color: $theme-palette-text-inverse;
 }
 .settings-header {
   margin-bottom: $spacing-xl;
@@ -383,7 +385,7 @@ const sidebarSections = [
   .settings-metric-stats td,
   .settings-events-table td,
   .settings-events-table th {
-    color: $color-gray-200;
+    color: $theme-palette-text-secondary;
   }
   .settings-section-header h2,
   .settings-metric-card h4,
@@ -393,7 +395,7 @@ const sidebarSections = [
 }
 .settings-desc {
   font-size: $theme-font-size-base;
-  color: $color-gray-500;
+  color: $theme-palette-text-muted;
   margin-top: $spacing-xs;
 }
 
@@ -401,7 +403,7 @@ const sidebarSections = [
   display: flex;
   flex-direction: column;
   gap: $spacing-2xl;
-  background: $color-gray-950;
+  background: $theme-palette-bg-nav;
   border-radius: $border-radius-lg;
   padding: $spacing-2xl;
   min-height: 0;
@@ -414,24 +416,24 @@ const sidebarSections = [
   margin-bottom: $spacing-2xl;
 }
 .settings-card {
-  background: $color-gray-900;
+  background: $theme-palette-bg-primary;
   border-radius: $border-radius-lg;
-  box-shadow: 0 2px 16px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 16px 0 color.scale($theme-palette-border, $alpha: -90%);
   padding: $spacing-xl $spacing-2xl;
-  color: white;
-  border: 1px solid $color-gray-800;
+  color: $theme-palette-text-primary;
+  border: 1px solid $theme-palette-border;
   flex: 1;
   min-width: 320px;
   max-width: 600px;
   transition: box-shadow 0.2s;
 }
 .settings-card:hover {
-  box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.18);
+  box-shadow: 0 4px 24px 0 color.scale($theme-palette-border, $alpha: -80%);
 }
 .mock-card {
-  background: $color-gray-950;
-  border: 1px dashed $color-gray-700;
-  color: $color-gray-400;
+  background: $theme-palette-bg-nav;
+  border: 1px dashed $theme-palette-border;
+  color: $theme-palette-text-muted;
   margin-top: $spacing-md;
   padding: $spacing-lg;
   border-radius: $border-radius;
@@ -440,8 +442,8 @@ const sidebarSections = [
 .mock-badge {
   margin-left: 0;
   margin-bottom: 0.5rem;
-  background: $color-gray-300;
-  color: $color-gray-700;
+  background: $theme-palette-bg-secondary;
+  color: $theme-palette-text-secondary;
   font-size: $theme-font-size-xs;
   padding: 2px 8px;
   border-radius: 8px;
@@ -450,7 +452,7 @@ const sidebarSections = [
   display: inline-block;
 }
 .mock-loading {
-  color: $color-gray-500;
+  color: $theme-palette-text-muted;
   font-size: $theme-font-size-base;
   padding: 1.5rem 0;
 }
@@ -465,11 +467,11 @@ const sidebarSections = [
   margin-bottom: $spacing-xl;
 }
 .settings-metric-card {
-  background: $color-gray-950;
+  background: $theme-palette-bg-nav;
   border-radius: $border-radius;
   box-shadow: $shadow-xs;
   padding: $spacing-lg;
-  border: 1px solid $color-gray-800;
+  border: 1px solid $theme-palette-border;
   display: flex;
   flex-direction: column;
   gap: $spacing-md;
@@ -481,17 +483,17 @@ const sidebarSections = [
 }
 .settings-metric-time {
   font-size: $theme-font-size-xs;
-  color: $color-gray-400;
+  color: $theme-palette-text-muted;
   margin-bottom: $spacing-xs;
 }
 .settings-metric-chart {
-  background: $color-gray-900;
+  background: $theme-palette-bg-primary;
   border-radius: $border-radius;
   min-height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: $color-gray-500;
+  color: $theme-palette-text-muted;
   font-size: $theme-font-size-sm;
   margin-bottom: $spacing-xs;
 }
@@ -501,8 +503,8 @@ const sidebarSections = [
   margin-bottom: $spacing-xs;
 }
 .settings-metric-filters button {
-  background: $color-gray-800;
-  color: $color-gray-100;
+  background: $theme-palette-bg-secondary;
+  color: $theme-palette-text-primary;
   border: none;
   border-radius: $border-radius;
   padding: 2px 10px;
@@ -512,8 +514,8 @@ const sidebarSections = [
   transition: background 0.2s;
 }
 .settings-metric-filters button:hover {
-  background: $color-primary-600;
-  color: white;
+  background: $theme-palette-accent;
+  color: $theme-palette-text-inverse;
 }
 .settings-metric-stats.compact {
   width: 100%;
@@ -523,28 +525,28 @@ const sidebarSections = [
 }
 .settings-metric-stats.compact td {
   padding: 2px 8px;
-  color: $color-gray-300;
+  color: $theme-palette-text-secondary;
 }
 .settings-metric-stats.compact tr {
-  border-bottom: 1px solid $color-gray-800;
+  border-bottom: 1px solid $theme-palette-border;
 }
 .settings-events-table.compact {
   width: 100%;
   font-size: $theme-font-size-xs;
   border-collapse: collapse;
   margin-top: $spacing-md;
-  background: $color-gray-950;
+  background: $theme-palette-bg-nav;
   border-radius: $border-radius;
   overflow: hidden;
 }
 .settings-events-table.compact th,
 .settings-events-table.compact td {
   padding: 6px 10px;
-  color: $color-gray-300;
-  border-bottom: 1px solid $color-gray-800;
+  color: $theme-palette-text-secondary;
+  border-bottom: 1px solid $theme-palette-border;
 }
 .settings-events-table.compact th {
-  background: $color-gray-900;
+  background: $theme-palette-bg-primary;
   font-weight: 600;
 }
 .settings-events-actions {
