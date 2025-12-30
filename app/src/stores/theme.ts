@@ -62,5 +62,6 @@ export const useThemeStore = defineStore('theme', {
           value,
         )
       }
+    },
   },
 })

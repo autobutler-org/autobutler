@@ -34,16 +34,14 @@
           Primary Background Color:
           <input
             type="color"
-            :value="theme.fontSizeScale"
+            :value="theme.palette.bgPrimary"
             @input="
-              theme.setFontSizeScale(
-                Number(($event.target as HTMLInputElement).value),
+              theme.setPaletteColor(
+                'bgPrimary',
+                ($event.target as HTMLInputElement).value,
               )
             "
           />
-          <span class="slider-value"
-            >{{ theme.fontSizeScale.toFixed(2) }}x</span
-          >
         </label>
       </div>
     </div>
@@ -127,5 +125,9 @@ const close = () => emit('close')
   min-width: 3em;
   text-align: right;
   display: inline-block;
+}
+
+input[type='color'] {
+  float: right;
 }
 </style>
