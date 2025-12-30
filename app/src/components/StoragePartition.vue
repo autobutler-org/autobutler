@@ -19,7 +19,7 @@
           :class="cat.class"
           :style="{ width: cat.width }"
           :title="cat.title"
-        />
+        ></div>
         <div
           v-if="device.avail_bytes > 0"
           class="storage-partition-segment storage-partition-free"
@@ -216,11 +216,7 @@ const freeGB = computed(() => {
 }
 
 .storage-partition-free {
-  background: $color-gray-700; /* Dark gray */
-
-  @media (prefers-color-scheme: light) {
-    background: $color-gray-200; /* Light gray */
-  }
+  background: $theme-palette-border; /* Subtle border/dark gray */
 }
 
 .storage-partition-media {
