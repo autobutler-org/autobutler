@@ -27,17 +27,17 @@ defineProps<{
 }
 
 .unsupported-viewer-message {
-  color: $color-gray-300;
+  color: $theme-palette-text-secondary;
   font-size: $theme-font-size-lg;
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-700;
+    color: $theme-palette-text-inverse;
   }
 }
 
 .download-btn {
-  color: white;
-  background-color: $color-primary-600;
+  color: $theme-palette-text-inverse;
+  background-color: $theme-palette-accent;
   padding: $spacing-md $spacing-2xl;
   border-radius: $border-radius-lg;
   transition: background-color 0.2s ease;
@@ -49,7 +49,7 @@ defineProps<{
   cursor: pointer;
 
   &:hover {
-    background-color: $color-primary-700;
+    background-color: $theme-palette-accent-hover;
   }
 }
 </style>
