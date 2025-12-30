@@ -139,6 +139,7 @@ format/ts: ## Format TypeScript files
 lint: lint/go lint/sqlc lint/ts lint/yaml ## Lint code
 
 lint/go: ## Lint Go code
+	mkdir -p ./internal/server/public
 	touch ./internal/server/public/stub.txt
 	go vet ./...
 
