@@ -150,21 +150,13 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   position: relative;
 
   &:hover {
-    background-color: $color-gray-100;
-
-    @media (prefers-color-scheme: dark) {
-      background-color: $color-gray-800;
-    }
-
+    background-color: $theme-palette-bg-secondary;
     .context-menu-trigger {
       opacity: 1;
     }
   }
   &.grid-view-item--selected {
-    background-color: $color-primary-100;
-    @media (prefers-color-scheme: dark) {
-      background-color: $color-primary-900;
-    }
+    background-color: $theme-palette-accent;
   }
 }
 
@@ -177,7 +169,7 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   cursor: pointer;
   padding: $spacing-xs;
   font-size: $theme-font-size-base;
-  color: $color-gray-600;
+  color: $theme-palette-text-muted;
   border-radius: $border-radius-sm;
   opacity: 0;
   transition:
@@ -185,15 +177,8 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
     background-color 0.15s ease;
 
   &:hover {
-    background-color: $color-gray-200;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    color: $color-gray-400;
-
-    &:hover {
-      background-color: $color-gray-700;
-    }
+    background-color: $theme-palette-accent-hover;
+    color: $theme-palette-text-inverse;
   }
 }
 
@@ -237,7 +222,7 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 
 .grid-view-size {
   font-size: 0.75rem;
-  color: $color-gray-500;
+  color: $theme-palette-text-muted;
   margin-top: $spacing-xs;
 }
 </style>
