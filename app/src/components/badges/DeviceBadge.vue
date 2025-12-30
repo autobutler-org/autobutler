@@ -21,17 +21,15 @@ defineProps<{
   gap: $spacing-xs;
   margin-top: $spacing-xs;
   padding: 2px 6px;
-  background-color: $color-blue-50;
-  border: 1px solid $color-blue-200;
+  background-color: $theme-palette-accent;
+  border: 1px solid $theme-palette-border-strong;
   border-radius: $border-radius-sm;
   font-size: $theme-font-size-xs;
-  color: $color-blue-700;
+  color: $theme-palette-text-inverse;
   white-space: nowrap;
 
-  @media (prefers-color-scheme: dark) {
-    background-color: $color-blue-900;
-    border-color: $color-blue-700;
-    color: $color-blue-200;
+  &:hover {
+    background-color: $theme-palette-accent-hover;
   }
 }
 
