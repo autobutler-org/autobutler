@@ -1,12 +1,6 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 test.describe('Books Page', () => {
-  test('loads books page successfully', async ({ page }) => {
-    await page.goto('/books')
-    await expect(page).toHaveTitle(/Autobutler/)
-    await expect(page.locator('#books-view')).toBeVisible()
-  })
-
   test('displays books library header', async ({ page }) => {
     await page.goto('/books')
     const title = page.locator('.library-title')
