@@ -85,6 +85,7 @@ build: ## Build backend and frontend
 	$(MAKE) build/backend
 
 build/backend: generate ## Build backend
+	mkdir -p ./internal/server/public
 	touch ./internal/server/public/stub.txt
 	mkdir -p ./build
 	go build -o $(EXE) $(MAIN)
