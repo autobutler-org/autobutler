@@ -16,9 +16,5 @@ func (r *router) Routes() []*serverutil.Route {
 		getPrivacyFeaturesRoute,
 		updatePrivacyFeaturesRoute,
 		getConnectionInfoRoute,
-		getConfigurationRoute,
-		updateConfigurationRoute,
-		getSetupGuideRoute,
-		autoSetupRoute,
 	}
 }

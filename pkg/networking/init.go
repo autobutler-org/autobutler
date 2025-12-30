@@ -8,7 +8,7 @@ import (
 )
 
 func InitNetworkingNode(ctx context.Context) (*Node, error) {
-	// Try home config first, then system config
+	// Try to load from config file first
 	home := os.Getenv("HOME")
 	configPaths := []string{}
 	if home != "" {
@@ -27,12 +27,15 @@ func InitNetworkingNode(ctx context.Context) (*Node, error) {
 			break
 		}
 	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to load config: %w", err)
+
+	// If no config file found, use environment variables via DefaultConfig
+	if cfg == nil {
+		cfg = DefaultConfig()
 	}
 
-	if cfg.HeadscaleURL == "" || cfg.AuthKey == "" {
-		slog.Info("networking node not configured, skipping initialization")
+	// Check if configured (auth key is required)
+	if cfg.AuthKey == "" {
+		slog.Info("networking node not configured (missing auth key), skipping initialization")
 		return nil, nil
 	}
 

@@ -8,13 +8,13 @@ import (
 )
 
 type Config struct {
-	HeadscaleURL string         `json:"headscale_url"`
-	AuthKey      string         `json:"auth_key"`
-	Hostname     string         `json:"hostname"`
-	StateDir     string         `json:"state_dir"`
-	WebUIPort    int            `json:"webui_port"`
-	Features     FeatureToggles `json:"features"`
-	Environment  string         `json:"environment"`
+	ControlURL  string         `json:"control_url"`
+	AuthKey     string         `json:"auth_key"`
+	Hostname    string         `json:"hostname"`
+	StateDir    string         `json:"state_dir"`
+	WebUIPort   int            `json:"webui_port"`
+	Features    FeatureToggles `json:"features"`
+	Environment string         `json:"environment"`
 }
 
 type FeatureToggles struct {
@@ -24,13 +24,28 @@ type FeatureToggles struct {
 }
 
 func DefaultConfig() *Config {
+	stateDir := os.Getenv("TAILSCALE_STATE_DIR")
+	if stateDir == "" {
+		stateDir = "/var/lib/tailscale"
+	}
+
+	hostname := os.Getenv("TAILSCALE_HOSTNAME")
+	if hostname == "" {
+		hostname, _ = os.Hostname()
+	}
+
+	controlURL := os.Getenv("TAILSCALE_CONTROL_URL")
+	if controlURL == "" {
+		controlURL = "https://controlplane.tailscale.com"
+	}
+
 	return &Config{
-		HeadscaleURL: os.Getenv("HEADSCALE_URL"),
-		AuthKey:      os.Getenv("HEADSCALE_AUTH_KEY"),
-		Hostname:     os.Getenv("NODE_HOSTNAME"),
-		StateDir:     "/var/lib/networking-node",
-		WebUIPort:    8443,
-		Environment:  "Home",
+		ControlURL:  controlURL,
+		AuthKey:     os.Getenv("TAILSCALE_AUTH_KEY"),
+		Hostname:    hostname,
+		StateDir:    stateDir,
+		WebUIPort:   8443,
+		Environment: "Home",
 		Features: FeatureToggles{
 			AdvertiseLocal: true,
 			RemoteTunnel:   true,
@@ -90,9 +105,6 @@ func (c *Config) SaveConfig(path string) error {
 }
 
 func (c *Config) Validate() error {
-	if c.HeadscaleURL == "" {
-		return fmt.Errorf("headscale_url is required")
-	}
 	if c.AuthKey == "" {
 		return fmt.Errorf("auth_key is required")
 	}

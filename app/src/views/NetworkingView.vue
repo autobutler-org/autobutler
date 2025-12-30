@@ -2,14 +2,11 @@
 import LibraryLayout from '@/components/common/LibraryLayout.vue'
 import LibrarySidebar from '@/components/common/LibrarySidebar.vue'
 import {
-  autoSetup,
   fetchDiagnostics,
   fetchFeatures,
   fetchMetrics,
   fetchNodeStatus,
-  saveConfiguration as saveConfigurationApi,
   updateFeatures,
-  type AutoSetupResult,
   type DiagnosticCheck,
 } from '@/services/networkingService'
 import { computed, onMounted, ref } from 'vue'
@@ -57,25 +54,6 @@ const environment = ref('Home')
 const loading = ref(true)
 const error = ref<string | null>(null)
 const isConfigured = ref(true)
-
-const configForm = ref({
-  headscale_url: '',
-  auth_key: '',
-  hostname: '',
-  environment: 'Home',
-  state_dir: '/var/lib/networking-node',
-  webui_port: 8443,
-  advertise_local: true,
-  remote_tunnel: true,
-  usage_analytics: true,
-})
-
-const configSaving = ref(false)
-const configError = ref<string | null>(null)
-const configSuccess = ref<string | null>(null)
-const showAdvanced = ref(false)
-const isSettingUp = ref(false)
-const setupResult = ref<AutoSetupResult | null>(null)
 
 const features = ref<PrivacyFeatures>({
   advertiseLocal: true,
@@ -173,63 +151,6 @@ const loadData = async () => {
   }
 }
 
-const saveConfiguration = async () => {
-  try {
-    configSaving.value = true
-    configError.value = null
-    configSuccess.value = null
-
-    const result = await saveConfigurationApi(configForm.value)
-
-    configSuccess.value = result.message
-
-    if (result.restart_required) {
-      configSuccess.value += ' Please restart the backend service.'
-    }
-
-    // Reload data after a short delay
-    setTimeout(() => {
-      loadData()
-    }, 2000)
-  } catch (err) {
-    configError.value =
-      err instanceof Error ? err.message : 'Failed to save configuration'
-    console.error('Error saving configuration:', err)
-  } finally {
-    configSaving.value = false
-  }
-}
-
-const createNetwork = async () => {
-  try {
-    isSettingUp.value = true
-    error.value = null
-
-    const result = await autoSetup()
-    setupResult.value = result
-    isConfigured.value = true
-
-    // Reload the networking data
-    setTimeout(() => {
-      loadData()
-    }, 2000)
-  } catch (err) {
-    error.value =
-      err instanceof Error ? err.message : 'Failed to create network'
-    console.error('Error creating network:', err)
-  } finally {
-    isSettingUp.value = false
-  }
-}
-
-const copyToClipboard = async (text: string) => {
-  try {
-    await navigator.clipboard.writeText(text)
-  } catch (err) {
-    console.error('Failed to copy:', err)
-  }
-}
-
 const handleFeatureToggle = async (featureName: keyof PrivacyFeatures) => {
   try {
     const apiFeatureName =
@@ -307,88 +228,7 @@ const sidebarSections = [
           <button @click="loadData" class="btn-secondary">Retry</button>
         </div>
         <div v-else-if="!isConfigured" class="setup-container">
-          <!-- Success State After Setup -->
-          <div v-if="setupResult" class="setup-success">
-            <div class="success-icon">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  stroke-width="2"
-                />
-                <path
-                  d="M8 12l2 2 4-4"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </div>
-            <h2>Your Network is Ready!</h2>
-            <p class="success-message">
-              A private network has been created on this device.
-            </p>
-
-            <div class="connection-card">
-              <h3>📱 Connect Your Devices</h3>
-              <p>
-                Install the Tailscale app on your phone, laptop, or tablet, then
-                use these settings:
-              </p>
-
-              <div class="connection-details">
-                <div class="detail-row">
-                  <span class="detail-label">Control Server URL</span>
-                  <code class="detail-value">{{
-                    setupResult.headscale_url
-                  }}</code>
-                  <button
-                    @click="copyToClipboard(setupResult.headscale_url)"
-                    class="btn-copy"
-                  >
-                    Copy
-                  </button>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">Auth Key</span>
-                  <code class="detail-value auth-key">{{
-                    setupResult.auth_key
-                  }}</code>
-                  <button
-                    @click="copyToClipboard(setupResult.auth_key)"
-                    class="btn-copy"
-                  >
-                    Copy
-                  </button>
-                </div>
-              </div>
-
-              <div class="instructions-list">
-                <h4>How to connect:</h4>
-                <ol>
-                  <li>
-                    Download Tailscale from
-                    <a href="https://tailscale.com/download" target="_blank"
-                      >tailscale.com/download</a
-                    >
-                  </li>
-                  <li>Open the app and go to Settings</li>
-                  <li>
-                    Under "Use a custom control server", paste the Control
-                    Server URL above
-                  </li>
-                  <li>When prompted, paste the Auth Key</li>
-                  <li>Your device will connect automatically</li>
-                </ol>
-              </div>
-            </div>
-          </div>
-
-          <!-- Initial Setup State -->
-          <div v-else class="setup-welcome">
+          <div class="setup-welcome">
             <div class="welcome-icon">
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
                 <path
@@ -407,107 +247,38 @@ const sidebarSections = [
                 />
               </svg>
             </div>
-            <h2>Create Your Private Network</h2>
+            <h2>Tailscale Not Configured</h2>
             <p class="welcome-description">
-              Set up a secure, local network to connect all your devices.
-              Everything runs on this device—no external services needed.
+              To connect this node to your Tailscale network, configure the
+              following environment variables and restart the server:
             </p>
 
-            <button
-              @click="createNetwork"
-              class="btn-create-network"
-              :disabled="isSettingUp"
-            >
-              <span v-if="isSettingUp">
-                <svg class="spinner" width="20" height="20" viewBox="0 0 24 24">
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                    fill="none"
-                    opacity="0.25"
-                  />
-                  <path
-                    d="M12 2a10 10 0 0 1 10 10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                    fill="none"
-                    stroke-linecap="round"
-                  />
-                </svg>
-                Setting up network...
-              </span>
-              <span v-else>Create New Network</span>
-            </button>
+            <div class="env-vars-card">
+              <h3>Required Environment Variables</h3>
+              <pre><code>TAILSCALE_AUTH_KEY=tskey-auth-xxxxx
+TAILSCALE_HOSTNAME=autobutler-node</code></pre>
 
-            <p v-if="error" class="error-message">{{ error }}</p>
+              <h4>Optional</h4>
+              <pre><code>TAILSCALE_CONTROL_URL=https://controlplane.tailscale.com
+TAILSCALE_STATE_DIR=/var/lib/tailscale</code></pre>
 
-            <!-- Advanced Manual Configuration -->
-            <button
-              @click="showAdvanced = !showAdvanced"
-              class="btn-advanced"
-              type="button"
-            >
-              {{ showAdvanced ? '▼' : '▶' }} Advanced: Manual Configuration
-            </button>
-
-            <div v-if="showAdvanced" class="advanced-config">
-              <p class="advanced-note">
-                For power users who want to configure an existing Headscale
-                server manually.
-              </p>
-
-              <form @submit.prevent="saveConfiguration" class="config-form">
-                <div class="form-group">
-                  <label for="headscale_url">Headscale Server URL</label>
-                  <input
-                    id="headscale_url"
-                    v-model="configForm.headscale_url"
-                    type="text"
-                    placeholder="http://192.168.1.100:8080"
-                    required
-                  />
-                </div>
-
-                <div class="form-group">
-                  <label for="auth_key">Pre-Auth Key</label>
-                  <input
-                    id="auth_key"
-                    v-model="configForm.auth_key"
-                    type="password"
-                    placeholder="Enter your pre-auth key"
-                    required
-                  />
-                </div>
-
-                <div class="form-group">
-                  <label for="hostname">Node Hostname</label>
-                  <input
-                    id="hostname"
-                    v-model="configForm.hostname"
-                    type="text"
-                    placeholder="my-autobutler-node"
-                    required
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  class="btn-primary"
-                  :disabled="configSaving"
-                >
-                  {{ configSaving ? 'Saving...' : 'Save Configuration' }}
-                </button>
-
-                <p v-if="configError" class="error-message">
-                  {{ configError }}
-                </p>
-                <p v-if="configSuccess" class="success-message-inline">
-                  {{ configSuccess }}
-                </p>
-              </form>
+              <div class="help-text">
+                <p><strong>Get your auth key:</strong></p>
+                <ol>
+                  <li>
+                    Go to
+                    <a
+                      href="https://login.tailscale.com/admin/settings/keys"
+                      target="_blank"
+                      >Tailscale Admin → Settings → Keys</a
+                    >
+                  </li>
+                  <li>Click "Generate auth key"</li>
+                  <li>Check "Reusable" and set expiration</li>
+                  <li>Copy the key and add to your .env file</li>
+                  <li>Restart the server</li>
+                </ol>
+              </div>
             </div>
           </div>
         </div>
@@ -1645,6 +1416,113 @@ const sidebarSections = [
     &:hover {
       background: hsl(220, 20%, 95%);
       border-color: hsl(220, 20%, 75%);
+    }
+  }
+}
+
+.env-vars-card {
+  background: hsl(220, 15%, 12%);
+  border: 1px solid hsl(220, 15%, 20%);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  text-align: left;
+  max-width: 700px;
+  margin: 0 auto;
+
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: $color-gray-200;
+    margin-bottom: 1rem;
+  }
+
+  h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: $color-gray-300;
+    margin: 1.5rem 0 0.75rem;
+  }
+
+  pre {
+    background: hsl(220, 15%, 10%);
+    padding: 1rem 1.25rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+  }
+
+  code {
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 0.875rem;
+    color: hsl(120, 50%, 60%);
+    line-height: 1.6;
+  }
+
+  @media (prefers-color-scheme: light) {
+    background: $color-gray-50;
+    border-color: $color-gray-200;
+
+    h3 {
+      color: $color-gray-900;
+    }
+
+    h4 {
+      color: $color-gray-800;
+    }
+
+    pre {
+      background: $color-gray-100;
+    }
+
+    code {
+      color: hsl(120, 50%, 35%);
+    }
+  }
+}
+
+.help-text {
+  padding-top: 1.5rem;
+  border-top: 1px solid hsl(220, 15%, 20%);
+
+  p {
+    font-size: 0.9375rem;
+    color: $color-gray-300;
+    margin-bottom: 0.75rem;
+  }
+
+  ol {
+    padding-left: 1.5rem;
+    color: $color-gray-400;
+    line-height: 1.8;
+    font-size: 0.9375rem;
+  }
+
+  li {
+    margin-bottom: 0.5rem;
+  }
+
+  a {
+    color: hsl(220, 70%, 60%);
+    text-decoration: underline;
+
+    &:hover {
+      color: hsl(220, 70%, 50%);
+    }
+  }
+
+  @media (prefers-color-scheme: light) {
+    border-top-color: $color-gray-200;
+
+    p {
+      color: $color-gray-700;
+    }
+
+    ol {
+      color: $color-gray-600;
+    }
+
+    a {
+      color: hsl(220, 70%, 45%);
     }
   }
 }

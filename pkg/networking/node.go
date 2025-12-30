@@ -93,8 +93,8 @@ func (n *Node) Start(ctx context.Context) error {
 		},
 	}
 
-	if n.config.HeadscaleURL != "" {
-		srv.ControlURL = n.config.HeadscaleURL
+	if n.config.ControlURL != "" {
+		srv.ControlURL = n.config.ControlURL
 	}
 
 	if n.config.AuthKey != "" {
@@ -158,9 +158,16 @@ func (n *Node) updateNetworkInfo(ctx context.Context) error {
 	}
 
 	if n.server != nil {
-		status, err := n.server.Up(ctx)
+		// Use a short timeout to prevent blocking when auth key is invalid
+		timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+
+		status, err := n.server.Up(timeoutCtx)
 		if err == nil && len(status.TailscaleIPs) > 0 {
 			n.tailnetIP = status.TailscaleIPs[0].String()
+		} else if err != nil {
+			// Log but don't fail - just means we're not connected yet
+			n.logger.Debug("tailscale not up yet", "error", err)
 		}
 	}
 
