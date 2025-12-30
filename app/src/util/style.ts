@@ -37,5 +37,8 @@ export const propertyNameToKey = (name: string): string =>
     })
     .join('')
 
-export const keyToPropertyName = (key: string): string =>
-  '--' + key.replace(/([A-Z])/g, '-$1').toLowerCase()
+export const keyToPropertyName = (
+  key: string,
+  includePrefix: boolean = true,
+): string =>
+  (includePrefix ? '--' : '') + key.replace(/([A-Z])/g, '-$1').toLowerCase()

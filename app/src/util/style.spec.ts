@@ -21,4 +21,12 @@ describe('keyToPropertyName', () => {
     expect(keyToPropertyName('a')).toBe('--a')
     expect(keyToPropertyName('foo')).toBe('--foo')
   })
+  it('converts camelCase key to CSS custom property without prefix', () => {
+    expect(keyToPropertyName('themePaletteAccent', false)).toBe(
+      'theme-palette-accent',
+    )
+    expect(keyToPropertyName('fooBarBaz', false)).toBe('foo-bar-baz')
+    expect(keyToPropertyName('a', false)).toBe('a')
+    expect(keyToPropertyName('foo', false)).toBe('foo')
+  })
 })
