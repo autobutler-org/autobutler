@@ -52,11 +52,11 @@
 .library-separator {
   width: 1px;
   height: 100vh;
-  background: $color-gray-900;
+  background: $theme-palette-bg-nav;
   align-self: stretch;
 
   @media (prefers-color-scheme: light) {
-    background: $color-gray-200;
+    background: $theme-palette-bg-inverse;
   }
 }
 
@@ -72,17 +72,17 @@
 
 .library-subtitle {
   font-size: $theme-font-size-lg;
-  color: $color-gray-500;
+  color: $theme-palette-text-muted;
 }
 
 .library-title {
   font-size: $theme-font-size-3xl;
   font-weight: 700;
   margin: 0;
-  color: $color-gray-700;
+  color: $theme-palette-text-secondary;
 
   @media (prefers-color-scheme: dark) {
-    color: $color-gray-100;
+    color: $theme-palette-text-primary;
   }
 }
 </style>
