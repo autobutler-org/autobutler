@@ -42,12 +42,12 @@ defineProps<{ sections: SidebarSection[] }>()
 .library-sidebar {
   width: 100%;
   height: 100%;
-  background: $color-gray-900;
-  color: $color-gray-50;
+  background: $theme-palette-bg-nav;
+  color: $theme-palette-text-primary;
   padding: $spacing-xl;
   overflow-y: auto;
   flex-shrink: 0;
-  border-right: 1px solid $color-gray-800;
+  border-right: 1px solid $theme-palette-bg-secondary;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -56,7 +56,7 @@ defineProps<{ sections: SidebarSection[] }>()
 .library-sidebar-count {
   margin-left: auto;
   font-size: $theme-font-size-xs;
-  color: $color-gray-100;
+  color: $theme-palette-text-secondary;
 }
 
 .library-sidebar-item {
@@ -65,24 +65,24 @@ defineProps<{ sections: SidebarSection[] }>()
   gap: $spacing-md;
   padding: $spacing-sm $spacing-md;
   border-radius: $border-radius;
-  color: $color-gray-300;
+  color: $theme-palette-text-muted;
   text-decoration: none;
   transition: all 0.2s ease;
   font-size: $theme-font-size-sm;
   cursor: pointer;
 
   & .active {
-    color: $color-primary-100;
+    color: $theme-palette-accent-hover;
   }
 
   &:hover {
-    background: $color-gray-800;
-    color: $color-gray-50;
+    background: $theme-palette-bg-secondary;
+    color: $theme-palette-text-primary;
   }
 
   &.active {
-    background: $color-primary-600;
-    color: $color-gray-50;
+    background: $theme-palette-accent;
+    color: $theme-palette-text-inverse;
   }
 }
 
