@@ -4,6 +4,10 @@ export interface CssCustomProperty {
   element: HTMLElement
 }
 
+export const applyCssCustomProperty = (property: CssCustomProperty): void => {
+  property.element.style.setProperty(property.name, property.value)
+}
+
 export const getCssCustomProperties = (
   element: HTMLElement = document.documentElement,
 ): CssCustomProperty[] => {
@@ -23,6 +27,15 @@ export const getCssCustomProperties = (
   return customProps
 }
 
-export const applyCssCustomProperty = (property: CssCustomProperty): void => {
-  property.element.style.setProperty(property.name, property.value)
-}
+export const propertyNameToKey = (name: string): string =>
+  name
+    .replace(/^--/, '')
+    .split('-')
+    .map((part, index) => {
+      if (index === 0) return part
+      return part.charAt(0).toUpperCase() + part.slice(1)
+    })
+    .join('')
+
+export const keyToPropertyName = (key: string): string =>
+  '--' + key.replace(/([A-Z])/g, '-$1').toLowerCase()
