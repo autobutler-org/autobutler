@@ -125,7 +125,11 @@
     />
 
     <!-- Move/Rename Modal Dialog -->
-    <ModalDialog v-if="moveDialogOpen" @close="moveDialogOpen = false">
+    <ModalDialog
+      v-if="moveDialogOpen"
+      @close="moveDialogOpen = false"
+      :transparent="true"
+    >
       <form @submit.prevent="submitMoveDialog" class="move-dialog-form">
         <h3 class="move-dialog-title">Rename or Move</h3>
         <div class="move-dialog-field">
@@ -167,24 +171,24 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, onMounted } from 'vue'
 import ModalDialog from '@/components/common/ModalDialog.vue'
-import { moveFile } from '@/services/cirrusService'
-import { useRoute, useRouter } from 'vue-router'
-import type { CirrusFileNode, FileType } from '@/types/cirrus'
 import {
-  getFiles,
   determineFileType,
   getFileName,
+  getFiles,
+  moveFile,
 } from '@/services/cirrusService'
+import type { CirrusFileNode, FileType } from '@/types/cirrus'
+import { onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import GridViewIcon from '../icons/GridViewIcon.vue'
+import ListViewIcon from '../icons/ListViewIcon.vue'
 import CirrusBreadcrumbs from './CirrusBreadcrumbs.vue'
-import CirrusListView from './CirrusListView.vue'
-import CirrusGridView from './CirrusGridView.vue'
-import CirrusFileViewer from './CirrusFileViewer.vue'
 import CirrusContextMenu from './CirrusContextMenu.vue'
 import CirrusDropZone from './CirrusDropZone.vue'
-import ListViewIcon from '../icons/ListViewIcon.vue'
-import GridViewIcon from '../icons/GridViewIcon.vue'
+import CirrusFileViewer from './CirrusFileViewer.vue'
+import CirrusGridView from './CirrusGridView.vue'
+import CirrusListView from './CirrusListView.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -425,7 +429,6 @@ const handleDelete = async (file: CirrusFileNode) => {
 
 <style lang="scss" scoped>
 .file-explorer {
-  background-color: white;
   max-width: 100%;
   box-shadow: $shadow-sm;
   padding: $spacing-lg;
@@ -434,10 +437,6 @@ const handleDelete = async (file: CirrusFileNode) => {
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
-
-  @media (prefers-color-scheme: dark) {
-    background-color: $color-gray-900;
-  }
 }
 
 .file-explorer-controls {
@@ -445,48 +444,30 @@ const handleDelete = async (file: CirrusFileNode) => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: $spacing-md;
-
-  @media (prefers-color-scheme: dark) {
-    color: white;
-  }
+  color: $theme-palette-text-primary;
 }
 
 .file-explorer-error {
   padding: $spacing-md 0;
-  color: #dc2626;
-
-  @media (prefers-color-scheme: dark) {
-    color: #f87171;
-  }
+  color: $theme-palette-danger;
 }
 
 .file-explorer-empty {
   padding: $spacing-md 0;
-  color: $color-gray-500;
-
-  @media (prefers-color-scheme: dark) {
-    color: white;
-  }
+  color: $theme-palette-text-muted;
 }
 
 .file-explorer-header {
   display: flex;
   align-items: center;
   margin-bottom: $spacing-lg;
-
-  @media (prefers-color-scheme: dark) {
-    color: white;
-  }
+  color: $theme-palette-text-primary;
 }
 
 .file-explorer-loading {
   padding: $spacing-md 0;
-  color: $color-gray-500;
+  color: $theme-palette-text-muted;
   font-style: italic;
-
-  @media (prefers-color-scheme: dark) {
-    color: white;
-  }
 }
 
 #file-explorer-selectable {
@@ -497,15 +478,11 @@ const handleDelete = async (file: CirrusFileNode) => {
 }
 
 .file-explorer-title {
-  font-size: $font-size-2xl;
+  font-size: $theme-font-size-2xl;
   font-weight: 700;
   margin-right: $spacing-lg;
   white-space: nowrap;
-  color: $color-gray-100;
-
-  @media (prefers-color-scheme: dark) {
-    color: white;
-  }
+  color: $theme-palette-text-primary;
 }
 
 #file-explorer-view-content {
@@ -519,16 +496,12 @@ const handleDelete = async (file: CirrusFileNode) => {
   display: flex;
   align-items: center;
   gap: $spacing-xs;
-  font-size: $font-size-sm;
-  color: $color-gray-600;
+  font-size: $theme-font-size-sm;
+  color: $theme-palette-text-muted;
   cursor: pointer;
 
   input {
     cursor: pointer;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    color: white;
   }
 }
 
@@ -538,7 +511,7 @@ const handleDelete = async (file: CirrusFileNode) => {
   justify-content: center;
   padding: $spacing-xs $spacing-sm;
   border-radius: $border-radius;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -549,31 +522,22 @@ const handleDelete = async (file: CirrusFileNode) => {
   }
 
   &--primary {
-    background-color: $color-primary-600;
-    color: white;
-    border-color: $color-primary-600;
+    background-color: $theme-palette-accent;
+    color: $theme-palette-text-inverse;
+    border-color: $theme-palette-accent;
 
     &:hover {
-      background-color: $color-primary-400;
+      background-color: $theme-palette-accent-hover;
     }
   }
 
   &--secondary {
     background-color: transparent;
-    color: $color-gray-700;
-    border-color: $color-gray-300;
+    color: $theme-palette-text-primary;
+    border-color: $theme-palette-border-strong;
 
     &:hover {
-      background-color: $color-gray-100;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      color: $color-gray-300;
-      border-color: $color-gray-600;
-
-      &:hover {
-        background-color: $color-gray-800;
-      }
+      background-color: $theme-palette-bg-secondary;
     }
   }
 }
@@ -586,8 +550,8 @@ const handleDelete = async (file: CirrusFileNode) => {
 }
 
 .move-dialog-error {
-  color: #dc2626;
-  font-size: $font-size-sm;
+  color: $theme-palette-error;
+  font-size: $theme-font-size-sm;
   margin-bottom: $spacing-md;
   text-align: left;
 }
@@ -602,7 +566,7 @@ const handleDelete = async (file: CirrusFileNode) => {
 .move-dialog-form {
   min-width: 540px;
   max-width: 98vw;
-  background: $color-gray-800;
+  background: $theme-palette-bg-secondary;
   border-radius: $border-radius-lg;
   box-shadow: $shadow-lg;
   padding: $spacing-xl $spacing-lg $spacing-lg $spacing-lg;
@@ -613,7 +577,7 @@ const handleDelete = async (file: CirrusFileNode) => {
 
   button.btn {
     min-width: 110px;
-    font-size: $font-size-base;
+    font-size: $theme-font-size-base;
     font-weight: 600;
     border-radius: $border-radius-md;
     padding: $spacing-sm $spacing-lg;
@@ -627,47 +591,42 @@ const handleDelete = async (file: CirrusFileNode) => {
 
 .move-dialog-input {
   padding: $spacing-md;
-  border: 1.5px solid $color-gray-300;
+  border: 1.5px solid $theme-palette-border-strong;
   border-radius: $border-radius-md;
-  font-size: $font-size-lg;
+  font-size: $theme-font-size-lg;
   width: 100%;
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
-  background: $color-gray-50;
-  color: $color-gray-100;
+  background: $theme-palette-bg-inverse;
+  color: $theme-palette-text-primary;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.01);
 
   &:focus {
     outline: none;
-    border-color: $color-primary-500;
-    box-shadow: 0 0 0 2px $color-primary-100;
+    border-color: $theme-palette-accent;
+    box-shadow: 0 0 0 2px $theme-palette-accent-hover;
   }
 
-  @media (prefers-color-scheme: dark) {
-    background: $color-gray-900;
-    color: $color-gray-100;
-    border-color: $color-gray-600;
-    &::placeholder {
-      color: $color-gray-400;
-      opacity: 1;
-    }
+  &::placeholder {
+    color: $theme-palette-text-muted;
+    opacity: 1;
   }
 }
 
 .move-dialog-label {
-  font-size: $font-size-base;
+  font-size: $theme-font-size-base;
   font-weight: 500;
-  color: $color-gray-200;
+  color: $theme-palette-text-secondary;
   margin-bottom: $spacing-xs;
 }
 
 .move-dialog-title {
-  font-size: $font-size-xl;
+  font-size: $theme-font-size-xl;
   font-weight: 700;
   margin-bottom: $spacing-md;
   text-align: left;
-  color: $color-gray-100;
+  color: $theme-palette-text-primary;
 }
 
 .view-switcher {

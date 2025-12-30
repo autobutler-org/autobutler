@@ -131,28 +131,23 @@ onMounted(fetchDevices)
   gap: 2rem;
 }
 .devices-title {
-  font-size: $font-size-2xl;
+  font-size: $theme-font-size-2xl;
   font-weight: 700;
   margin: 0;
-  color: $color-gray-900;
-}
-@media (prefers-color-scheme: dark) {
-  .devices-title {
-    color: white;
-  }
+  color: $theme-palette-text-primary;
 }
 .devices-subtitle {
-  color: $color-gray-500;
-  font-size: $font-size-base;
+  color: $theme-palette-text-muted;
+  font-size: $theme-font-size-base;
   margin-top: 0.5rem;
 }
 .devices-refresh-button {
-  background: $color-gray-100;
-  color: $color-gray-900;
-  border: 1px solid $color-gray-300;
+  background: $theme-palette-bg-secondary;
+  color: $theme-palette-text-primary;
+  border: 1px solid $theme-palette-border;
   border-radius: 8px;
   padding: 0.5rem 1.2rem;
-  font-size: $font-size-base;
+  font-size: $theme-font-size-base;
   font-weight: 500;
   cursor: pointer;
   display: flex;
@@ -172,7 +167,7 @@ onMounted(fetchDevices)
 }
 .devices-empty {
   text-align: center;
-  color: $color-gray-500;
+  color: $theme-palette-text-muted;
   font-size: 1.2rem;
   margin-top: 4rem;
 }
@@ -180,10 +175,10 @@ onMounted(fetchDevices)
 .storage-bar-card {
   width: 100%;
   margin-top: 1rem;
-  background: $color-gray-100;
+  background: $theme-palette-bg-secondary;
   border-radius: 12px;
   padding: 1.5rem 2rem;
-  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 8px 0 hsl(from $theme-palette-border h s l / 0.04);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -193,7 +188,7 @@ onMounted(fetchDevices)
   height: 32px;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.03);
+  box-shadow: 0 1px 4px 0 hsl(from $theme-palette-border h s l / 0.02);
 }
 .storage-bar-section {
   height: 100%;
@@ -220,17 +215,17 @@ onMounted(fetchDevices)
 .storage-bar-summary {
   display: flex;
   gap: 2rem;
-  font-size: $font-size-base;
+  font-size: $theme-font-size-base;
   margin-top: 0.5rem;
 }
 .storage-bar-total {
-  color: $color-gray-900;
+  color: $theme-palette-text-primary;
   font-weight: 600;
 }
 .storage-bar-used {
-  color: $color-red-400;
+  color: #f87171;
 }
 .storage-bar-free {
-  color: $color-green-400;
+  color: #4ade80;
 }
 </style>

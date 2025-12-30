@@ -57,7 +57,7 @@ document.addEventListener(
 
 <style lang="scss" scoped>
 * {
-  color: white;
+  color: $theme-palette-text-primary;
 }
 
 header {
@@ -90,17 +90,17 @@ header {
 
 nav {
   width: 100%;
-  font-size: $font-size-xs;
+  font-size: $theme-font-size-xs;
   text-align: center;
   margin-top: 2rem;
 
   a {
     display: inline-block;
     padding: 0 1rem;
-    border-left: 1px solid $color-border;
+    border-left: 1px solid $theme-palette-border;
 
     &.router-link-exact-active {
-      color: $color-text-secondary;
+      color: $theme-palette-text-secondary;
 
       &:hover {
         background-color: transparent;
@@ -115,7 +115,7 @@ nav {
   @media (min-width: 1024px) {
     text-align: left;
     margin-left: -1rem;
-    font-size: $font-size-base;
+    font-size: $theme-font-size-base;
 
     padding: 1rem 0;
     margin-top: 1rem;

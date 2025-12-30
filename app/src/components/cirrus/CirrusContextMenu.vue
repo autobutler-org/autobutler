@@ -46,8 +46,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, onUnmounted, nextTick } from 'vue'
 import type { CirrusFileNode } from '@/types/cirrus'
+import { nextTick, onUnmounted, ref, watch } from 'vue'
 
 const props = defineProps<{
   modelValue: boolean
@@ -174,17 +174,14 @@ watch(
 /* Not scoped because Teleport renders outside component tree */
 .context-menu {
   position: fixed;
-  background-color: white;
-  border: 1px solid $color-gray-200;
+  background: $theme-palette-bg-nav;
+  border: 1px solid $theme-palette-border;
   border-radius: $border-radius;
   box-shadow: $shadow-lg;
   z-index: 10000;
   min-width: 140px;
 
-  @media (prefers-color-scheme: dark) {
-    background-color: $color-gray-800;
-    border-color: $color-gray-700;
-  }
+  // No need for dark mode override, palette is dark by default
 }
 
 .context-menu-list {
@@ -199,38 +196,28 @@ watch(
   padding: $spacing-sm $spacing-lg;
   border: none;
   background: transparent;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   cursor: pointer;
   display: block;
   text-decoration: none;
-  color: $color-gray-900;
+  color: $theme-palette-text-primary;
 
   &:hover {
-    background-color: $color-gray-100;
+    background: rgba($theme-palette-accent, 0.12);
+    color: $theme-palette-accent;
   }
 
-  @media (prefers-color-scheme: dark) {
-    color: $color-gray-100;
-
-    &:hover {
-      background-color: $color-gray-700;
-    }
-  }
+  // No need for dark mode override, palette is dark by default
 }
 
 .context-menu-item--danger {
-  color: $color-red-400;
+  color: $theme-palette-danger;
 
-  @media (prefers-color-scheme: light) {
-    color: $color-red-600;
-  }
+  // No need for light override, palette is semantic
 
   &:hover {
-    background-color: rgba($color-red-800, 0.7);
-
-    @media (prefers-color-scheme: light) {
-      background-color: rgba($color-red-200, 0.7);
-    }
+    background: rgba($theme-palette-danger, 0.15);
+    color: $theme-palette-danger;
   }
 }
 </style>

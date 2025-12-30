@@ -39,7 +39,7 @@ const thumbnailPath = computed(() => {
   border-radius: $border-radius-lg;
   overflow: hidden;
   cursor: pointer;
-  background: $color-gray-200;
+  background: $theme-palette-bg-secondary;
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;

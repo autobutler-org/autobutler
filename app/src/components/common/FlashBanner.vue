@@ -45,13 +45,13 @@ onUnmounted(() => {
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  background: #2563eb;
-  color: #fff;
+  background: $theme-palette-accent;
+  color: $theme-palette-text-inverse;
   padding: 0.5rem 2rem;
   border-radius: 0 0 1rem 1rem;
   font-weight: 600;
-  font-size: $font-size-base;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-size: $theme-font-size-base;
+  box-shadow: 0 2px 8px rgba($theme-palette-bg-primary, 0.15);
   pointer-events: none;
   z-index: 200;
   opacity: 0.95;

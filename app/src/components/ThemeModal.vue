@@ -30,6 +30,25 @@
             >{{ theme.fontSizeScale.toFixed(2) }}x</span
           >
         </label>
+        <div
+          v-for="(value, key) in theme.palette"
+          :key="key"
+          class="palette-selector"
+        >
+          <label>
+            {{ keyToLabelName(key.replace(/palette/g, '')) }}:
+            <input
+              type="color"
+              :value="value"
+              @change="
+                theme.setPaletteColor(
+                  key,
+                  ($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </label>
+        </div>
       </div>
     </div>
   </ModalDialog>
@@ -39,6 +58,7 @@
 import ModalDialog from '@/components/common/ModalDialog.vue'
 import CloseIcon from '@/components/icons/CloseIcon.vue'
 import { useThemeStore } from '@/stores/theme'
+import { keyToLabelName } from '@/util/style'
 
 defineProps<{ open: boolean }>()
 
@@ -50,12 +70,12 @@ const close = () => emit('close')
 <style lang="scss" scoped>
 .theme-modal {
   position: relative;
-  background: #222;
-  color: #fff;
+  background: $theme-palette-bg-nav;
+  color: $theme-palette-text-primary;
   min-width: 320px;
   max-width: 90vw;
   border-radius: 12px;
-  box-shadow: 0 4px 32px #0008;
+  box-shadow: 0 4px 32px rgba($theme-palette-bg-primary, 0.53);
   padding: 2rem 2.5rem 1.5rem 2.5rem;
   outline: none;
   h2 {
@@ -67,15 +87,13 @@ const close = () => emit('close')
   position: absolute;
   top: 1.5rem;
   right: 1.5rem;
-  top: 1.5rem;
-  right: 1.5rem;
-  background: white;
+  background: $theme-palette-bg-inverse;
   border: none;
   border-radius: 50%;
-  color: #222;
+  color: $theme-palette-text-inverse;
   cursor: pointer;
   z-index: 1100;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba($theme-palette-bg-primary, 0.1);
   width: 2.5rem;
   height: 2.5rem;
   display: flex;
@@ -90,7 +108,7 @@ const close = () => emit('close')
   }
 
   &:hover {
-    background: #f2f2f2;
+    background: $theme-palette-accent-hover;
   }
 }
 
@@ -114,5 +132,23 @@ const close = () => emit('close')
   min-width: 3em;
   text-align: right;
   display: inline-block;
+}
+
+.palette-selector {
+  margin-top: 1em;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.palette-selector label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.palette-selector input[type='color'] {
+  margin-left: 1em;
 }
 </style>

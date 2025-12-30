@@ -12,7 +12,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 const props = defineProps<{
   src: string
@@ -45,12 +45,12 @@ onMounted(async () => {
   flex-direction: column;
   width: 90vw;
   height: 80vh;
-  background: $color-gray-900;
+  background: $theme-palette-bg-nav;
   border-radius: $border-radius-lg;
   overflow: hidden;
 
   @media (prefers-color-scheme: light) {
-    background: $color-gray-100;
+    background: $theme-palette-bg-inverse;
   }
 }
 
@@ -58,22 +58,22 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   padding: $spacing-md $spacing-lg;
-  background: $color-gray-800;
-  border-bottom: 1px solid $color-gray-700;
+  background: $theme-palette-bg-secondary;
+  border-bottom: 1px solid $theme-palette-border;
 
   @media (prefers-color-scheme: light) {
-    background: $color-gray-200;
-    border-bottom-color: $color-gray-300;
+    background: $theme-palette-bg-inverse;
+    border-bottom-color: $theme-palette-border-strong;
   }
 }
 
 .text-viewer-filename {
   font-family: monospace;
-  font-size: $font-size-sm;
-  color: $color-gray-300;
+  font-size: $theme-font-size-sm;
+  color: $theme-palette-text-secondary;
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-700;
+    color: $theme-palette-text-inverse;
   }
 }
 
@@ -83,11 +83,11 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   flex: 1;
-  color: $color-gray-400;
+  color: $theme-palette-text-muted;
 }
 
 .text-viewer-error {
-  color: $color-red-500;
+  color: $theme-palette-danger;
 }
 
 .text-viewer-content {
@@ -96,14 +96,14 @@ onMounted(async () => {
   padding: $spacing-lg;
   margin: 0;
   font-family: monospace;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   line-height: 1.6;
   white-space: pre-wrap;
   word-wrap: break-word;
-  color: $color-gray-200;
+  color: $theme-palette-text-primary;
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-800;
+    color: $theme-palette-text-inverse;
   }
 }
 </style>

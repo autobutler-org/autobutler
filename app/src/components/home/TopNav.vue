@@ -248,9 +248,9 @@ const closeMobileMenu = () => {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(0, 0, 0, 0.3);
+  background: hsl(from $theme-palette-bg-nav h s l / 0.97);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid hsl(from $theme-palette-bg-primary h s l / 0.1);
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
@@ -258,8 +258,8 @@ const closeMobileMenu = () => {
   right: 0;
 
   @media (prefers-color-scheme: light) {
-    background: rgba(255, 255, 255, 0.8);
-    border-bottom-color: rgba(0, 0, 0, 0.1);
+    background: hsl(from $theme-palette-bg-nav h s l / 0.97);
+    border-bottom-color: hsl(from $theme-palette-bg-inverse h s l / 0.1);
   }
 }
 
@@ -270,7 +270,7 @@ const closeMobileMenu = () => {
 }
 
 .landing-nav-link {
-  color: $color-gray-300;
+  color: $theme-palette-text-primary;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s ease;
@@ -281,7 +281,7 @@ const closeMobileMenu = () => {
   align-items: center;
 
   &:hover {
-    color: white;
+    color: $theme-palette-accent;
     text-decoration: underline;
   }
 
@@ -290,10 +290,9 @@ const closeMobileMenu = () => {
   }
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-700;
-
+    color: $theme-palette-text-primary;
     &:hover {
-      color: $color-gray-900;
+      color: $theme-palette-accent;
     }
   }
 
@@ -334,18 +333,19 @@ const closeMobileMenu = () => {
   align-items: center;
   gap: $spacing-sm;
   padding: $spacing-sm $spacing-md;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: hsl(from $theme-palette-bg-primary h s l / 0.1);
+  border: 1px solid $theme-palette-border;
   border-radius: $border-radius;
-  color: $color-gray-200;
-  font-size: $font-size-sm;
+  color: $theme-palette-text-secondary;
+  font-size: $theme-font-size-sm;
   cursor: pointer;
   transition: all 0.2s ease;
   text-decoration: none;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: hsl(from $theme-palette-accent h s l / 0.12);
+    border-color: $theme-palette-accent;
+    color: $theme-palette-accent;
   }
 
   svg {
@@ -354,13 +354,13 @@ const closeMobileMenu = () => {
   }
 
   @media (prefers-color-scheme: light) {
-    background: rgba(0, 0, 0, 0.05);
-    border-color: rgba(0, 0, 0, 0.1);
-    color: $color-gray-700;
+    background: hsl(from $theme-palette-bg-inverse h s l / 0.05);
+    border-color: hsl(from $theme-palette-bg-inverse h s l / 0.1);
+    color: $theme-palette-text-secondary;
 
     &:hover {
-      background: rgba(0, 0, 0, 0.08);
-      border-color: rgba(0, 0, 0, 0.15);
+      background: hsl(from $theme-palette-bg-inverse h s l / 0.08);
+      border-color: hsl(from $theme-palette-bg-inverse h s l / 0.15);
     }
   }
 
@@ -370,6 +370,16 @@ const closeMobileMenu = () => {
 }
 
 .version-container {
+  border: 1px solid $theme-palette-border;
+  border-radius: $border-radius;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+  &:hover,
+  &:focus-within {
+    background: hsl(from $theme-palette-accent h s l / 0.12);
+    border-color: $theme-palette-accent;
+  }
   position: relative;
 
   @media (max-width: 768px) {
@@ -379,23 +389,23 @@ const closeMobileMenu = () => {
 
 .landing-nav-version {
   padding: $spacing-sm $spacing-md;
-  background: rgba(255, 255, 255, 0.05);
+  background: hsl(from $theme-palette-bg-primary h s l / 0.05);
   border-radius: $border-radius;
-  color: $color-gray-400;
-  font-size: $font-size-sm;
+  color: $theme-palette-text-muted;
+  font-size: $theme-font-size-sm;
   font-weight: 300;
   border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba($theme-palette-bg-primary, 0.1);
+    border-color: rgba($theme-palette-bg-primary, 0.2);
   }
 
   @media (prefers-color-scheme: light) {
-    background: rgba(0, 0, 0, 0.05);
-    color: $color-gray-600;
+    background: rgba($theme-palette-bg-inverse, 0.05);
+    color: $theme-palette-text-secondary;
   }
 }
 
@@ -406,14 +416,14 @@ const closeMobileMenu = () => {
   border-radius: $border-radius;
   background: none;
   border: none;
-  color: $color-gray-300;
+  color: $theme-palette-text-muted;
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
 
   &:hover {
-    color: white;
-    background-color: rgba(255, 255, 255, 0.1);
+    color: $theme-palette-text-inverse;
+    background-color: rgba($theme-palette-bg-primary, 0.1);
   }
 
   svg {
@@ -422,11 +432,11 @@ const closeMobileMenu = () => {
   }
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-700;
+    color: $theme-palette-text-secondary;
 
     &:hover {
-      color: $color-gray-900;
-      background-color: $color-gray-100;
+      color: $theme-palette-text-primary;
+      background-color: $theme-palette-bg-secondary;
     }
   }
 
@@ -443,7 +453,7 @@ const closeMobileMenu = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba($theme-palette-bg-inverse, 0.5);
   z-index: 9999;
   opacity: 0;
   pointer-events: none;
@@ -466,15 +476,15 @@ const closeMobileMenu = () => {
   bottom: 0;
   width: 300px;
   max-width: 85vw;
-  background: hsl(225, 25%, 15%);
-  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
+  background: $theme-palette-bg-inverse;
+  box-shadow: 2px 0 12px rgba($theme-palette-bg-inverse, 0.3);
   display: flex;
   flex-direction: column;
   transition: transform 0.3s ease;
   overflow: hidden;
 
   @media (prefers-color-scheme: light) {
-    background: white;
+    background: $theme-palette-bg-primary;
   }
 }
 
@@ -483,28 +493,28 @@ const closeMobileMenu = () => {
   justify-content: space-between;
   align-items: center;
   padding: $spacing-xl $spacing-lg;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba($theme-palette-bg-primary, 0.1);
   flex-shrink: 0;
 
   @media (prefers-color-scheme: light) {
-    border-bottom-color: rgba(0, 0, 0, 0.1);
+    border-bottom-color: rgba($theme-palette-bg-inverse, 0.1);
   }
 }
 
 .mobile-menu-title {
-  font-size: $font-size-lg;
+  font-size: $theme-font-size-lg;
   font-weight: 600;
-  color: white;
+  color: $theme-palette-text-inverse;
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-900;
+    color: $theme-palette-text-primary;
   }
 }
 
 .mobile-menu-close {
   background: none;
   border: none;
-  color: $color-gray-400;
+  color: $theme-palette-text-muted;
   cursor: pointer;
   padding: $spacing-sm;
   border-radius: $border-radius;
@@ -513,8 +523,8 @@ const closeMobileMenu = () => {
     background-color 0.2s ease;
 
   &:hover {
-    color: white;
-    background-color: rgba(255, 255, 255, 0.1);
+    color: $theme-palette-text-inverse;
+    background-color: rgba($theme-palette-bg-primary, 0.1);
   }
 
   svg {
@@ -523,11 +533,11 @@ const closeMobileMenu = () => {
   }
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-600;
+    color: $theme-palette-text-secondary;
 
     &:hover {
-      color: $color-gray-900;
-      background-color: $color-gray-100;
+      color: $theme-palette-text-primary;
+      background-color: $theme-palette-bg-secondary;
     }
   }
 }
@@ -544,21 +554,21 @@ const closeMobileMenu = () => {
   align-items: center;
   gap: $spacing-lg;
   padding: $spacing-lg $spacing-xl;
-  color: $color-gray-300;
+  color: $theme-palette-text-muted;
   text-decoration: none;
   border: none;
   background: none;
   width: 100%;
   text-align: left;
   transition: all 0.2s ease;
-  font-size: $font-size-lg;
+  font-size: $theme-font-size-lg;
   font-weight: 500;
   min-height: 56px;
   cursor: pointer;
 
   &:hover {
-    background: $color-primary-800;
-    color: white;
+    background: $theme-palette-accent;
+    color: $theme-palette-text-inverse;
   }
 
   svg {
@@ -568,11 +578,11 @@ const closeMobileMenu = () => {
   }
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-700;
+    color: $theme-palette-text-secondary;
 
     &:hover {
-      background: $color-primary-100;
-      color: $color-primary-900;
+      background: $theme-palette-accent-hover;
+      color: $theme-palette-accent;
     }
   }
 }
@@ -580,29 +590,29 @@ const closeMobileMenu = () => {
 .mobile-menu-footer {
   margin-top: auto;
   padding: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba($theme-palette-bg-primary, 0.1);
   flex-shrink: 0;
 
   @media (prefers-color-scheme: light) {
-    border-top-color: rgba(0, 0, 0, 0.1);
+    border-top-color: rgba($theme-palette-bg-inverse, 0.1);
   }
 }
 
 .mobile-menu-divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba($theme-palette-bg-primary, 0.1);
   margin: $spacing-sm $spacing-xl;
 
   @media (prefers-color-scheme: light) {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba($theme-palette-bg-inverse, 0.1);
   }
 }
 
 .mobile-menu-version {
   display: block;
   padding: $spacing-lg $spacing-xl;
-  font-size: $font-size-sm;
-  color: $color-gray-500;
+  font-size: $theme-font-size-sm;
+  color: $theme-palette-text-muted;
 }
 
 .version-dropdown {
@@ -611,24 +621,18 @@ const closeMobileMenu = () => {
   right: 0;
   margin-top: $spacing-sm;
   min-width: 200px;
-  background: hsl(225, 25%, 18%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: $theme-palette-bg-nav;
+  border: 1px solid hsl(from $theme-palette-border h s l / 0.1);
   border-radius: $border-radius-lg;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px hsl(from $theme-palette-border h s l / 0.3);
   overflow: hidden;
   z-index: 1000;
-
-  @media (prefers-color-scheme: light) {
-    background: white;
-    border-color: rgba(0, 0, 0, 0.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
 }
 
 .version-dropdown-badge {
   padding: 2px 6px;
-  background: $color-primary-600;
-  color: white;
+  background: $theme-palette-accent;
+  color: $theme-palette-text-inverse;
   border-radius: $border-radius;
   font-size: 0.75rem;
   font-weight: 500;
@@ -637,8 +641,8 @@ const closeMobileMenu = () => {
 .version-dropdown-loading,
 .version-dropdown-empty {
   padding: $spacing-md $spacing-lg;
-  color: $color-gray-400;
-  font-size: $font-size-sm;
+  color: $theme-palette-text-muted;
+  font-size: $theme-font-size-sm;
   text-align: center;
 }
 
@@ -648,35 +652,35 @@ const closeMobileMenu = () => {
   justify-content: space-between;
   gap: $spacing-md;
   padding: $spacing-sm $spacing-lg;
-  color: $color-gray-300;
+  color: $theme-palette-text-secondary;
   text-decoration: none;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   transition: background-color 0.2s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: $theme-palette-accent;
+    color: $theme-palette-text-inverse;
   }
 
   &--current {
-    background: rgba(37, 99, 235, 0.2);
+    background: hsl(from $theme-palette-accent h s l / 0.2);
 
     &:hover {
-      background: rgba(37, 99, 235, 0.3);
+      background: hsl(from $theme-palette-accent h s l / 0.3);
     }
   }
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-700;
+    color: $theme-palette-text-primary;
 
     &:hover {
-      background: $color-gray-100;
+      background: $theme-palette-accent-hover;
     }
 
     &--current {
-      background: rgba(37, 99, 235, 0.1);
-
+      background: hsl(from $theme-palette-accent h s l / 0.1);
       &:hover {
-        background: rgba(37, 99, 235, 0.15);
+        background: hsl(from $theme-palette-accent h s l / 0.15);
       }
     }
   }

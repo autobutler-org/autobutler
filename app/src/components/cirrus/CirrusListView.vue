@@ -72,30 +72,29 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue'
-import type { CirrusFileNode } from '@/types/cirrus'
+import DeviceBadge from '@/components/badges/DeviceBadge.vue'
+import ArchiveIcon from '@/components/icons/ArchiveIcon.vue'
+import CirrusFolderIcon from '@/components/icons/CirrusFolderIcon.vue'
+import DocxIcon from '@/components/icons/DocxIcon.vue'
+import GenericIcon from '@/components/icons/GenericIcon.vue'
+import ImageIcon from '@/components/icons/ImageIcon.vue'
+import PdfIcon from '@/components/icons/PdfIcon.vue'
+import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
+import SortSwitcherIcon from '@/components/icons/SortSwitcherIcon.vue'
 import {
   determineFileType,
-  getFileName,
-  isDirectory,
-  getFileSize,
   formatBytes,
+  getFileName,
+  getFileSize,
+  isDirectory,
 } from '@/services/cirrusService'
-import CirrusFolderIcon from '@/components/icons/CirrusFolderIcon.vue'
-import PdfIcon from '@/components/icons/PdfIcon.vue'
-import ImageIcon from '@/components/icons/ImageIcon.vue'
-import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
-import ArchiveIcon from '@/components/icons/ArchiveIcon.vue'
-import GenericIcon from '@/components/icons/GenericIcon.vue'
-import DocxIcon from '@/components/icons/DocxIcon.vue'
-import { type Component } from 'vue'
+import type { CirrusFileNode } from '@/types/cirrus'
+import { computed, ref, type Component } from 'vue'
 import CirrusListViewSortHeader, {
   type HeaderAlignDirection,
   type SortColumn,
   type SortDirection,
 } from './CirrusListViewSortHeader.vue'
-import DeviceBadge from '@/components/badges/DeviceBadge.vue'
-import SortSwitcherIcon from '@/components/icons/SortSwitcherIcon.vue'
 
 const props = defineProps<{
   files: CirrusFileNode[]
@@ -248,23 +247,23 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 }
 
 .file-table-header {
-  background-color: $color-gray-50;
+  background-color: $theme-palette-bg-nav;
   position: sticky;
   top: 0;
-
-  @media (prefers-color-scheme: dark) {
-    background-color: $color-gray-900;
-  }
 }
 
 .file-table-header-cell {
   height: 3rem;
   padding: 0 $spacing-sm;
   font-weight: 600;
-  color: $color-gray-700;
+  color: $theme-palette-text-primary;
 
-  @media (prefers-color-scheme: dark) {
-    color: $color-gray-300;
+  &:hover {
+    background-color: $theme-palette-bg-inverse;
+
+    @media (prefers-color-scheme: dark) {
+      background-color: $theme-palette-bg-secondary;
+    }
   }
 
   &--toggle {
@@ -273,18 +272,10 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 }
 
 .file-table-body {
-  border-top: 1px solid $color-gray-200;
+  border-top: 1px solid $theme-palette-border;
 
   tr {
-    border-top: 1px solid $color-gray-200;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    border-color: $color-gray-700;
-
-    tr {
-      border-color: $color-gray-700;
-    }
+    border-top: 1px solid $theme-palette-border;
   }
 }
 
@@ -292,22 +283,11 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   cursor: pointer;
 
   &:hover {
-    background-color: $color-gray-100;
-
-    .file-table-cell .file-table-name {
-      text-decoration: underline;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      background-color: $color-gray-800;
-    }
+    background-color: $theme-palette-bg-secondary;
   }
-  &.file-table-row--selected {
-    background-color: $color-primary-100;
 
-    @media (prefers-color-scheme: dark) {
-      background-color: $color-primary-900;
-    }
+  &.file-table-row--selected {
+    background-color: $theme-palette-bg-secondary;
 
     .file-table-cell .file-table-name {
       text-decoration: underline;
@@ -352,20 +332,11 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   background: transparent;
   cursor: pointer;
   font-size: 1.5rem;
-  color: $color-gray-500;
+  color: $theme-palette-text-muted;
 
   &:hover {
-    background-color: $color-gray-200;
-    color: $color-gray-700;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    color: $color-gray-400;
-
-    &:hover {
-      background-color: $color-gray-700;
-      color: $color-gray-200;
-    }
+    background-color: $theme-palette-accent-hover;
+    color: $theme-palette-text-inverse;
   }
 }
 
@@ -378,14 +349,10 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 }
 
 .file-table-size {
-  color: $color-gray-500;
-  font-size: $font-size-sm;
+  color: $theme-palette-text-muted;
+  font-size: $theme-font-size-sm;
   text-align: right;
   padding-right: $spacing-sm;
-
-  @media (prefers-color-scheme: dark) {
-    color: $color-gray-200;
-  }
 }
 
 .sort-switcher {
@@ -399,18 +366,8 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   padding-left: $spacing-sm;
   border: none;
   background: transparent;
-  font-size: $font-size-xs;
+  font-size: $theme-font-size-xs;
   cursor: pointer;
   border-radius: $border-radius;
-
-  &:hover {
-    background-color: $color-gray-200;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    &:hover {
-      background-color: $color-gray-700;
-    }
-  }
 }
 </style>

@@ -64,21 +64,13 @@ const navigateTo = (path: string) => {
   display: flex;
   align-items: center;
   gap: $spacing-sm;
-  font-size: $font-size-sm;
-  color: $color-gray-500;
+  font-size: $theme-font-size-sm;
+  color: $theme-palette-text-muted;
   margin-bottom: $spacing-sm;
-
-  @media (prefers-color-scheme: dark) {
-    color: $color-gray-400;
-  }
 }
 
 .file-explorer-breadcrumb {
-  color: $color-gray-700;
-
-  @media (prefers-color-scheme: dark) {
-    color: $color-gray-300;
-  }
+  color: $theme-palette-text-primary;
 
   a {
     color: inherit;

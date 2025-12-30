@@ -19,7 +19,7 @@
   gap: $spacing-lg;
   padding: $spacing-xl;
   margin-top: auto;
-  color: $color-gray-500;
+  color: $theme-palette-text-muted;
 
   img {
     width: 24px;
@@ -34,7 +34,7 @@
 }
 
 .footer-text {
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
   margin: 0;
 }
 </style>

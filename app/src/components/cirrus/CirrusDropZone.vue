@@ -33,8 +33,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
 import type { CirrusFileNode } from '@/types/cirrus'
+import { ref } from 'vue'
 import UploadIcon from '../icons/UploadIcon.vue'
 
 const props = defineProps<{
@@ -150,48 +150,28 @@ const uploadFiles = async (files: FileList) => {
   align-items: center;
   justify-content: center;
   padding: $spacing-md;
-  border: 2px dashed $color-gray-400;
+  border: 2px dashed $theme-palette-border;
   border-radius: $border-radius-lg;
-  background-color: $color-gray-100;
+  background-color: $theme-palette-bg-secondary;
   cursor: pointer;
   transition: all 0.2s ease;
   min-height: 80px;
 
   &:hover {
-    border-color: $color-blue-500;
-    background-color: $color-blue-50;
+    border-color: $theme-palette-accent;
+    background-color: hsl(from $theme-palette-bg-secondary h s calc(l - 2));
   }
 
   &--active {
-    border-color: $color-blue-600;
-    background-color: $color-blue-100;
+    border-color: $theme-palette-accent;
+    background-color: hsl(from $theme-palette-bg-secondary h s calc(l + 4));
     border-style: solid;
   }
 
   &--uploading {
     cursor: wait;
-    border-color: $color-green-500;
-    background-color: $color-green-50;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    background-color: $color-gray-800;
-    border-color: $color-gray-600;
-
-    &:hover {
-      border-color: $color-blue-400;
-      background-color: $color-gray-700;
-    }
-
-    &--active {
-      border-color: $color-blue-500;
-      background-color: $color-gray-700;
-    }
-
-    &--uploading {
-      border-color: $color-green-400;
-      background-color: $color-gray-700;
-    }
+    border-color: $theme-palette-success;
+    background-color: hsl(from $theme-palette-bg-secondary h s calc(l + 8));
   }
 }
 
@@ -208,11 +188,7 @@ const uploadFiles = async (files: FileList) => {
 }
 
 .drop-zone-text {
-  font-size: $font-size-sm;
-  color: $color-gray-600;
-
-  @media (prefers-color-scheme: dark) {
-    color: $color-gray-400;
-  }
+  font-size: $theme-font-size-sm;
+  color: $theme-palette-text-muted;
 }
 </style>

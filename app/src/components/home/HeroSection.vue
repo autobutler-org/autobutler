@@ -27,16 +27,16 @@
 
 <script lang="ts" setup>
 import type { ServiceIcon } from '@/types/service_icon'
-import ServiceIcons from './ServiceIcons.vue'
-import RightArrowIcon from '../icons/RightArrowIcon.vue'
-import FolderIcon from '../icons/FolderIcon.vue'
-import PhotoIcon from '../icons/PhotoIcon.vue'
+import BackupIcon from '../icons/BackupIcon.vue'
 import BookIcon from '../icons/BookIcon.vue'
 import DocsIcon from '../icons/DocsIcon.vue'
-import PasswordsIcon from '../icons/PasswordsIcon.vue'
-import VpnIcon from '../icons/VpnIcon.vue'
 import EmailIcon from '../icons/EmailIcon.vue'
-import BackupIcon from '../icons/BackupIcon.vue'
+import FolderIcon from '../icons/FolderIcon.vue'
+import PasswordsIcon from '../icons/PasswordsIcon.vue'
+import PhotoIcon from '../icons/PhotoIcon.vue'
+import RightArrowIcon from '../icons/RightArrowIcon.vue'
+import VpnIcon from '../icons/VpnIcon.vue'
+import ServiceIcons from './ServiceIcons.vue'
 
 // Default service icons matching the Go implementation
 const defaultServiceIcons: ServiceIcon[] = [
@@ -155,44 +155,44 @@ const defaultServiceIcons: ServiceIcon[] = [
 }
 
 .hero-title {
-  font-size: $font-size-5xl;
+  font-size: $theme-font-size-5xl;
   font-weight: 800;
   margin-bottom: $spacing-lg;
-  color: white;
+  color: $theme-palette-text-primary;
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-900;
+    color: $theme-palette-text-inverse;
   }
 
   @media (max-width: 768px) {
-    font-size: $font-size-3xl;
+    font-size: $theme-font-size-3xl;
     margin-bottom: $spacing-md;
     line-height: 1.2;
   }
 
   @media (max-width: 480px) {
-    font-size: $font-size-2xl;
+    font-size: $theme-font-size-2xl;
   }
 }
 
 .hero-description {
-  font-size: $font-size-xl;
-  color: $color-gray-400;
+  font-size: $theme-font-size-xl;
+  color: $theme-palette-text-muted;
   margin-bottom: $spacing-2xl;
   line-height: 1.6;
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-600;
+    color: $theme-palette-text-secondary;
   }
 
   @media (max-width: 768px) {
-    font-size: $font-size-lg;
+    font-size: $theme-font-size-lg;
     margin-bottom: $spacing-lg;
     line-height: 1.5;
   }
 
   @media (max-width: 480px) {
-    font-size: $font-size-base;
+    font-size: $theme-font-size-base;
   }
 }
 
@@ -219,7 +219,7 @@ const defaultServiceIcons: ServiceIcon[] = [
   gap: $spacing-sm;
   padding: $spacing-md $spacing-xl;
   border-radius: $border-radius-lg;
-  font-size: $font-size-base;
+  font-size: $theme-font-size-base;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -227,22 +227,13 @@ const defaultServiceIcons: ServiceIcon[] = [
   text-decoration: none;
 
   &--primary {
-    background: linear-gradient(
-        135deg,
-        $color-primary-600 0%,
-        $color-primary-700
-      )
-      100%;
-    color: white;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+    background: $theme-palette-accent;
+    color: $theme-palette-text-inverse;
+    box-shadow: 0 4px 14px hsl(from $theme-palette-accent h s l / 0.3);
 
     &:hover {
-      background: linear-gradient(
-        135deg,
-        $color-primary-700 0%,
-        $color-primary-800 100%
-      );
-      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+      background: $theme-palette-accent-hover;
+      box-shadow: 0 6px 20px hsl(from $theme-palette-accent h s l / 0.4);
     }
 
     svg {
@@ -254,7 +245,7 @@ const defaultServiceIcons: ServiceIcon[] = [
   @media (max-width: 768px) {
     width: 100%;
     padding: $spacing-md;
-    font-size: $font-size-base;
+    font-size: $theme-font-size-base;
     justify-content: center;
   }
 }

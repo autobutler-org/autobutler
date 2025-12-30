@@ -42,13 +42,13 @@ const onClose = () => {
   position: fixed;
   top: 1.5rem;
   right: 1.5rem;
-  background: white;
+  background: $theme-palette-bg-inverse;
   border: none;
   border-radius: 50%;
-  color: #222;
+  color: $theme-palette-text-inverse;
   cursor: pointer;
   z-index: 1100;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba($theme-palette-bg-primary, 0.1);
   width: 2.5rem;
   height: 2.5rem;
   display: flex;
@@ -63,12 +63,12 @@ const onClose = () => {
   }
 
   &:hover {
-    background: #f2f2f2;
+    background: $theme-palette-accent-hover;
   }
 }
 
 .modal-content {
-  background: white;
+  background: $theme-palette-bg-inverse;
 }
 .modal-content--transparent {
   background: transparent;
@@ -77,7 +77,7 @@ const onClose = () => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba($theme-palette-bg-primary, 0.7);
   z-index: 1000;
   display: flex;
   align-items: center;

@@ -19,7 +19,7 @@
           :class="cat.class"
           :style="{ width: cat.width }"
           :title="cat.title"
-        />
+        ></div>
         <div
           v-if="device.avail_bytes > 0"
           class="storage-partition-segment storage-partition-free"
@@ -147,15 +147,15 @@ const freeGB = computed(() => {
 .storage-partition-bar {
   display: flex;
   height: 24px;
-  background: rgba(0, 0, 0, 0.2);
+  background: $theme-palette-bg-primary;
   border-radius: $border-radius;
   overflow: hidden;
   margin-bottom: $spacing-md;
-  border: 1px solid #6f6f6f;
+  border: 1px solid $theme-palette-border;
 
   @media (prefers-color-scheme: light) {
-    background: $color-gray-200;
-    border: 1px solid #6f6f6f;
+    background: $theme-palette-bg-inverse;
+    border: 1px solid $theme-palette-border-strong;
   }
 
   @media (max-width: 768px) {
@@ -175,23 +175,23 @@ const freeGB = computed(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: $spacing-sm;
-  font-size: $font-size-sm;
+  font-size: $theme-font-size-sm;
 }
 
 .storage-partition-label {
-  color: $color-gray-300;
+  color: $theme-palette-text-secondary;
   font-weight: 500;
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-700;
+    color: $theme-palette-text-inverse;
   }
 }
 
 .storage-partition-used {
-  color: $color-gray-400;
+  color: $theme-palette-text-muted;
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-600;
+    color: $theme-palette-text-secondary;
   }
 }
 
@@ -208,31 +208,27 @@ const freeGB = computed(() => {
 
 /* Category Colors - matching existing device card colors */
 .storage-partition-backups {
-  background: hsl(30, 80%, 55%); /* Orange */
+  background: $color-yellow-500; /* Orange */
 }
 
 .storage-partition-documents {
-  background: hsl(280, 60%, 60%); /* Purple */
+  background: $color-purple-400; /* Purple */
 }
 
 .storage-partition-free {
-  background: hsl(0, 0%, 25%); /* Dark gray */
-
-  @media (prefers-color-scheme: light) {
-    background: hsl(0, 0%, 85%); /* Light gray */
-  }
+  background: $theme-palette-border; /* Subtle border/dark gray */
 }
 
 .storage-partition-media {
-  background: hsl(340, 70%, 55%); /* Pink/Red */
+  background: $color-red-400; /* Pink/Red */
 }
 
 .storage-partition-other {
-  background: hsl(45, 70%, 55%); /* Yellow */
+  background: $color-yellow-400; /* Yellow */
 }
 
 .storage-partition-system {
-  background: hsl(200, 70%, 50%); /* Blue */
+  background: $color-blue-500; /* Blue */
 }
 
 .storage-partition-legend {
@@ -253,11 +249,11 @@ const freeGB = computed(() => {
 
 .storage-partition-legend-label {
   font-size: 0.8125rem;
-  color: $color-gray-400;
+  color: $theme-palette-text-muted;
   white-space: nowrap;
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-600;
+    color: $theme-palette-text-secondary;
   }
 
   @media (max-width: 768px) {

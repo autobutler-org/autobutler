@@ -42,9 +42,9 @@ const goToCirrus = () => {
 
 <style lang="scss" scoped>
 .device-card {
-  background: rgba(0, 0, 0, 0.12);
+  background: rgba($theme-palette-bg-primary, 0.7);
   border-radius: 18px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px 0 rgba($theme-palette-bg-nav, 0.15);
   padding: 2.2rem 2.2rem 1.5rem 2.2rem;
   display: flex;
   flex-direction: column;
@@ -68,14 +68,14 @@ const goToCirrus = () => {
 }
 
 .device-card-mount {
-  font-size: $font-size-base;
-  color: #e0e0e0;
+  font-size: $theme-font-size-base;
+  color: $theme-palette-text-secondary;
 }
 
 .device-card-title {
-  font-size: $font-size-2xl;
+  font-size: $theme-font-size-2xl;
   font-weight: 700;
-  color: white;
+  color: $theme-palette-text-primary;
   margin: 0;
 }
 
@@ -86,8 +86,8 @@ const goToCirrus = () => {
 }
 
 .device-card-type {
-  font-size: $font-size-base;
-  color: #b3b3b3;
+  font-size: $theme-font-size-base;
+  color: $theme-palette-text-muted;
   margin: 0;
 }
 </style>

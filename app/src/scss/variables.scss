@@ -1,3 +1,7 @@
+//////////////////////
+// Static Variables //
+//////////////////////
+
 // Spacing
 $spacing-xs: 0.25rem;
 $spacing-sm: 0.5rem;
@@ -8,26 +12,15 @@ $spacing-2xl: 3rem;
 $spacing-3xl: 4rem;
 
 // Font sizes
-// CSS custom properties, to allow runtime overrides
-:root {
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
-  --font-size-3xl: 1.875rem;
-  --font-size-5xl: 3rem;
-}
 
-$font-size-xs: var(--font-size-xs);
-$font-size-sm: var(--font-size-sm);
-$font-size-base: var(--font-size-base);
-$font-size-lg: var(--font-size-lg);
-$font-size-xl: var(--font-size-xl);
-$font-size-2xl: var(--font-size-2xl);
-$font-size-3xl: var(--font-size-3xl);
-$font-size-5xl: var(--font-size-5xl);
+$font-size-xs: 0.75rem;
+$font-size-sm: 0.875rem;
+$font-size-base: 1rem;
+$font-size-lg: 1.125rem;
+$font-size-xl: 1.25rem;
+$font-size-2xl: 1.5rem;
+$font-size-3xl: 1.875rem;
+$font-size-5xl: 3rem;
 
 // Border radius
 $border-radius: 0.25rem;
@@ -60,6 +53,7 @@ $color-gray-950: #030712;
 $color-primary-100: #dbeafe;
 $color-primary-200: #bfdbfe;
 $color-primary-400: #60a5fa;
+$color-primary-500: #3b82f6;
 $color-primary-600: #2563eb;
 $color-primary-700: #1d4ed8;
 $color-primary-800: #1e40af;
@@ -135,7 +129,3 @@ $border-radius-lg: 0.5rem;
 
 // Gaps
 $section-gap: $spacing-3xl;
-
-// Theme
-
-$color-primary-500: #3b82f6;
