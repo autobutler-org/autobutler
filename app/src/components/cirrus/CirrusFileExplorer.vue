@@ -125,7 +125,11 @@
     />
 
     <!-- Move/Rename Modal Dialog -->
-    <ModalDialog v-if="moveDialogOpen" @close="moveDialogOpen = false">
+    <ModalDialog
+      v-if="moveDialogOpen"
+      @close="moveDialogOpen = false"
+      :transparent="true"
+    >
       <form @submit.prevent="submitMoveDialog" class="move-dialog-form">
         <h3 class="move-dialog-title">Rename or Move</h3>
         <div class="move-dialog-field">
