@@ -251,11 +251,11 @@ const freeGB = computed(() => {
 
 .storage-partition-legend-label {
   font-size: 0.8125rem;
-  color: $color-gray-400;
+  color: $theme-palette-text-muted;
   white-space: nowrap;
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-600;
+    color: $theme-palette-text-secondary;
   }
 
   @media (max-width: 768px) {
