@@ -1,10 +1,29 @@
 import { defineStore } from 'pinia'
 
+import {
+  getCssCustomProperties,
+  keyToPropertyName,
+  propertyNameToKey,
+} from '@/util/style'
+
+type Palette = Record<string, string>
+
 export const useThemeStore = defineStore('theme', {
-  state: () => ({
-    fontSizeBase: 1,
-    fontSizeScale: 1, // Multiplier for all font sizes
-  }),
+  state: () => {
+    const styles = getCssCustomProperties().filter((prop) =>
+      prop.name.startsWith('--theme-palette-'),
+    )
+    const theme = {
+      fontSizeBase: 1,
+      fontSizeScale: 1, // Multiplier for all font sizes
+      palette: {} as Palette,
+    }
+    for (const style of styles) {
+      const key = propertyNameToKey(style.name.replace('--theme-', ''))
+      theme.palette[key] = style.value // Set defaults from CSS file, assuming store is uninitialized for now
+    }
+    return theme
+  },
   actions: {
     setFontSizeScale(scale: number) {
       this.fontSizeScale = scale
@@ -29,5 +48,19 @@ export const useThemeStore = defineStore('theme', {
         )
       }
     },
+    setPaletteColor(key: string, value: string) {
+      this.palette[key] = value
+      document.documentElement.style.setProperty(
+        `--theme-palette-${keyToPropertyName(key, false)}`,
+        value,
+      )
+    },
+    applyPalette() {
+      for (const [key, value] of Object.entries(this.palette)) {
+        document.documentElement.style.setProperty(
+          `--theme-palette-${keyToPropertyName(key, false)}`,
+          value,
+        )
+      }
   },
 })
