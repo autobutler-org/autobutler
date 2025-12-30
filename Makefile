@@ -16,6 +16,10 @@ export GOTOOLCHAIN=go1.25.0+auto
 MAIN := ./cmd/autobutler/main.go
 EXE := ./build/autobutler
 
+_ensure/public:
+	mkdir -p ./internal/server/public
+	touch ./internal/server/public/stub.txt
+
 clean: clean/build clean/tests
 
 clean/build:
@@ -85,8 +89,7 @@ build: ## Build backend and frontend
 	$(MAKE) build/backend
 
 build/backend: generate ## Build backend
-	mkdir -p ./internal/server/public
-	touch ./internal/server/public/stub.txt
+	$(MAKE) _ensure/public
 	mkdir -p ./build
 	go build -o $(EXE) $(MAIN)
 
@@ -94,7 +97,7 @@ build/frontend: ## Build frontend
 	npm run build --prefix ./app
 	# Explanation: https://github.com/gin-gonic/gin/issues/2654#issuecomment-815823804
 	cp -f ./internal/server/public/index.html ./internal/server/public/index.htm
-	touch ./internal/server/public/stub.txt
+	$(MAKE) _ensure/public
 
 PRINT_COVERAGE ?= 0
 
@@ -105,6 +108,7 @@ test/unit: ## Run unit tests
 	$(MAKE) test/unit/frontend
 
 test/unit/backend: ## Run unit tests for backend
+	$(MAKE) _ensure/public
 	# Generate coverage report for unit tests
 	go test -v ./... \
 		-coverprofile=coverage.out \
@@ -139,8 +143,7 @@ format/ts: ## Format TypeScript files
 lint: lint/go lint/sqlc lint/ts lint/yaml ## Lint code
 
 lint/go: ## Lint Go code
-	mkdir -p ./internal/server/public
-	touch ./internal/server/public/stub.txt
+	$(MAKE) _ensure/public
 	go vet ./...
 
 lint/sqlc: ## Lint sqlc
