@@ -97,10 +97,10 @@ nav {
   a {
     display: inline-block;
     padding: 0 1rem;
-    border-left: 1px solid $color-border;
+    border-left: 1px solid $theme-palette-border;
 
     &.router-link-exact-active {
-      color: $color-text-secondary;
+      color: $theme-palette-text-secondary;
 
       &:hover {
         background-color: transparent;
