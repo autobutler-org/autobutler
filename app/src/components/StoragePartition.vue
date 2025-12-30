@@ -140,6 +140,8 @@ const freeGB = computed(() => {
 </script>
 
 <style lang="scss" scoped>
+@use 'sass:color';
+
 .storage-partition {
   width: 100%;
 }
