@@ -30,19 +30,25 @@
             >{{ theme.fontSizeScale.toFixed(2) }}x</span
           >
         </label>
-        <label class="palette-bg-primary">
-          Primary Background Color:
-          <input
-            type="color"
-            :value="theme.palette.bgPrimary"
-            @input="
-              theme.setPaletteColor(
-                'bgPrimary',
-                ($event.target as HTMLInputElement).value,
-              )
-            "
-          />
-        </label>
+        <div
+          v-for="(value, key) in theme.palette"
+          :key="key"
+          class="palette-selector"
+        >
+          <label>
+            {{ keyToLabelName(key.replace(/palette/g, '')) }}:
+            <input
+              type="color"
+              :value="value"
+              @change="
+                theme.setPaletteColor(
+                  key,
+                  ($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </label>
+        </div>
       </div>
     </div>
   </ModalDialog>
@@ -52,6 +58,7 @@
 import ModalDialog from '@/components/common/ModalDialog.vue'
 import CloseIcon from '@/components/icons/CloseIcon.vue'
 import { useThemeStore } from '@/stores/theme'
+import { keyToLabelName } from '@/util/style'
 
 defineProps<{ open: boolean }>()
 
@@ -127,7 +134,21 @@ const close = () => emit('close')
   display: inline-block;
 }
 
-input[type='color'] {
-  float: right;
+.palette-selector {
+  margin-top: 1em;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.palette-selector label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.palette-selector input[type='color'] {
+  margin-left: 1em;
 }
 </style>

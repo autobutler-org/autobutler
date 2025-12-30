@@ -42,3 +42,13 @@ export const keyToPropertyName = (
   includePrefix: boolean = true,
 ): string =>
   (includePrefix ? '--' : '') + key.replace(/([A-Z])/g, '-$1').toLowerCase()
+
+export const keyToLabelName = (key: string): string =>
+  keyToPropertyName(key, false)
+    .split('-')
+    .reverse()
+    .join('-')
+    .replace(/-/g, ' ')
+    .replace(/bg/g, 'background')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .trim()

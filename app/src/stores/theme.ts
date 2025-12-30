@@ -51,14 +51,14 @@ export const useThemeStore = defineStore('theme', {
     setPaletteColor(key: string, value: string) {
       this.palette[key] = value
       document.documentElement.style.setProperty(
-        `--theme-palette-${keyToPropertyName(key, false)}`,
+        `--theme-${keyToPropertyName(key, false)}`,
         value,
       )
     },
     applyPalette() {
       for (const [key, value] of Object.entries(this.palette)) {
         document.documentElement.style.setProperty(
-          `--theme-palette-${keyToPropertyName(key, false)}`,
+          `--theme-${keyToPropertyName(key, false)}`,
           value,
         )
       }
