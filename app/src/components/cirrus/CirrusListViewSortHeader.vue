@@ -60,11 +60,7 @@ const alignClass =
   height: 3rem;
   padding: 0 $spacing-sm;
   font-weight: 600;
-  color: $color-gray-700;
-
-  @media (prefers-color-scheme: dark) {
-    color: $color-gray-300;
-  }
+  color: $theme-palette-text-primary;
 
   &--left {
     text-align: left;
@@ -80,11 +76,7 @@ const alignClass =
     user-select: none;
 
     &:hover {
-      background-color: $color-gray-100;
-
-      @media (prefers-color-scheme: dark) {
-        background-color: $color-gray-800;
-      }
+      background-color: $theme-palette-accent-hover;
     }
   }
 }
@@ -92,14 +84,10 @@ const alignClass =
 .sort-arrow {
   width: 16px;
   height: 16px;
-  color: $color-gray-400;
+  color: $theme-palette-text-muted;
 
   &--active {
-    color: $color-gray-700;
-
-    @media (prefers-color-scheme: dark) {
-      color: $color-gray-300;
-    }
+    color: $theme-palette-text-primary;
   }
 }
 
