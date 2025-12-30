@@ -240,6 +240,8 @@ const closeMobileMenu = () => {
 </script>
 
 <style lang="scss" scoped>
+@use 'sass:color';
+
 .landing-nav {
   display: flex;
   justify-content: space-between;
@@ -248,9 +250,9 @@ const closeMobileMenu = () => {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba($theme-palette-bg-nav, 0.97);
+  background: color.scale($theme-palette-bg-nav, $alpha: -3%);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba($theme-palette-bg-primary, 0.1);
+  border-bottom: 1px solid color.scale($theme-palette-bg-primary, $alpha: -90%);
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
@@ -258,8 +260,8 @@ const closeMobileMenu = () => {
   right: 0;
 
   @media (prefers-color-scheme: light) {
-    background: rgba($theme-palette-bg-nav, 0.97);
-    border-bottom-color: rgba($theme-palette-bg-inverse, 0.1);
+    background: color.scale($theme-palette-bg-nav, $alpha: -3%);
+    border-bottom-color: color.scale($theme-palette-bg-inverse, $alpha: -90%);
   }
 }
 
@@ -333,7 +335,7 @@ const closeMobileMenu = () => {
   align-items: center;
   gap: $spacing-sm;
   padding: $spacing-sm $spacing-md;
-  background: rgba($theme-palette-bg-primary, 0.1);
+  background: color.scale($theme-palette-bg-primary, $alpha: -90%);
   border: 1px solid $theme-palette-border;
   border-radius: $border-radius;
   color: $theme-palette-text-secondary;
@@ -343,7 +345,7 @@ const closeMobileMenu = () => {
   text-decoration: none;
 
   &:hover {
-    background: rgba($theme-palette-accent, 0.12);
+    background: color.scale($theme-palette-accent, $alpha: -88%);
     border-color: $theme-palette-accent;
     color: $theme-palette-accent;
   }
@@ -354,13 +356,13 @@ const closeMobileMenu = () => {
   }
 
   @media (prefers-color-scheme: light) {
-    background: rgba($theme-palette-bg-inverse, 0.05);
-    border-color: rgba($theme-palette-bg-inverse, 0.1);
+    background: color.scale($theme-palette-bg-inverse, $alpha: -95%);
+    border-color: color.scale($theme-palette-bg-inverse, $alpha: -90%);
     color: $theme-palette-text-secondary;
 
     &:hover {
-      background: rgba($theme-palette-bg-inverse, 0.08);
-      border-color: rgba($theme-palette-bg-inverse, 0.15);
+      background: color.scale($theme-palette-bg-inverse, $alpha: -92%);
+      border-color: color.scale($theme-palette-bg-inverse, $alpha: -85%);
     }
   }
 
@@ -377,7 +379,7 @@ const closeMobileMenu = () => {
     border-color 0.2s;
   &:hover,
   &:focus-within {
-    background: rgba($theme-palette-accent, 0.12);
+    background: color.scale($theme-palette-accent, $alpha: -88%);
     border-color: $theme-palette-accent;
   }
   position: relative;
@@ -389,7 +391,7 @@ const closeMobileMenu = () => {
 
 .landing-nav-version {
   padding: $spacing-sm $spacing-md;
-  background: rgba($theme-palette-bg-primary, 0.05);
+  background: color.scale($theme-palette-bg-primary, $alpha: -95%);
   border-radius: $border-radius;
   color: $theme-palette-text-muted;
   font-size: $theme-font-size-sm;
