@@ -158,10 +158,10 @@ const defaultServiceIcons: ServiceIcon[] = [
   font-size: $theme-font-size-5xl;
   font-weight: 800;
   margin-bottom: $spacing-lg;
-  color: $color-gray-50;
+  color: $theme-palette-text-primary;
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-900;
+    color: $theme-palette-text-inverse;
   }
 
   @media (max-width: 768px) {
@@ -177,12 +177,12 @@ const defaultServiceIcons: ServiceIcon[] = [
 
 .hero-description {
   font-size: $theme-font-size-xl;
-  color: $color-gray-400;
+  color: $theme-palette-text-muted;
   margin-bottom: $spacing-2xl;
   line-height: 1.6;
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-600;
+    color: $theme-palette-text-secondary;
   }
 
   @media (max-width: 768px) {
@@ -227,22 +227,13 @@ const defaultServiceIcons: ServiceIcon[] = [
   text-decoration: none;
 
   &--primary {
-    background: linear-gradient(
-        135deg,
-        $color-primary-600 0%,
-        $color-primary-700
-      )
-      100%;
-    color: $color-gray-50;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+    background: $theme-palette-accent;
+    color: $theme-palette-text-inverse;
+    box-shadow: 0 4px 14px color.scale($theme-palette-accent, $alpha: -70%);
 
     &:hover {
-      background: linear-gradient(
-        135deg,
-        $color-primary-700 0%,
-        $color-primary-800 100%
-      );
-      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+      background: $theme-palette-accent-hover;
+      box-shadow: 0 6px 20px color.scale($theme-palette-accent, $alpha: -60%);
     }
 
     svg {
