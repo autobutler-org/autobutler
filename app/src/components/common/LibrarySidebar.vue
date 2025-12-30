@@ -104,7 +104,7 @@ defineProps<{ sections: SidebarSection[] }>()
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: $color-gray-400;
+  color: $theme-palette-text-muted;
   margin-bottom: $spacing-md;
 }
 </style>
