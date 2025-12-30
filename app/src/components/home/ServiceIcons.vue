@@ -36,17 +36,19 @@ const handleDisabledClick = () => {
 </script>
 
 <style lang="scss" scoped>
+@use 'sass:color';
+
 .service-icons-container {
   margin-bottom: $spacing-2xl;
   padding: $spacing-3xl $spacing-2xl;
-  background: rgba($color-gray-50, 0.05);
+  background: color.scale($theme-palette-bg-inverse, $alpha: -95%);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba($color-gray-50, 0.1);
+  border: 1px solid color.scale($theme-palette-bg-inverse, $alpha: -90%);
   border-radius: 24px;
 
   @media (prefers-color-scheme: light) {
-    background: rgba($color-gray-900, 0.03);
-    border-color: rgba($color-gray-900, 0.08);
+    background: color.scale($theme-palette-bg-primary, $alpha: -97%);
+    border-color: color.scale($theme-palette-bg-primary, $alpha: -92%);
   }
 }
 
@@ -83,19 +85,19 @@ const handleDisabledClick = () => {
   cursor: pointer;
 
   &:hover {
-    background-color: rgba($color-gray-50, 0.05);
+    background-color: color.scale($theme-palette-bg-inverse, $alpha: -95%);
 
     @media (prefers-color-scheme: light) {
-      background-color: rgba($color-gray-900, 0.03);
+      background-color: color.scale($theme-palette-bg-primary, $alpha: -97%);
     }
 
     .service-icon-bg {
-      background: rgba($color-gray-50, 0.15);
-      border-color: rgba($color-gray-50, 0.3);
+      background: color.scale($theme-palette-bg-inverse, $alpha: -85%);
+      border-color: color.scale($theme-palette-bg-inverse, $alpha: -70%);
 
       @media (prefers-color-scheme: light) {
-        background: rgba($color-gray-900, 0.08);
-        border-color: rgba($color-gray-900, 0.15);
+        background: color.scale($theme-palette-bg-primary, $alpha: -92%);
+        border-color: color.scale($theme-palette-bg-primary, $alpha: -85%);
       }
     }
   }
@@ -111,25 +113,25 @@ const handleDisabledClick = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba($color-gray-50, 0.1);
+  background: color.scale($theme-palette-bg-inverse, $alpha: -90%);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba($color-gray-50, 0.2);
+  border: 1px solid color.scale($theme-palette-bg-inverse, $alpha: -80%);
   border-radius: $border-radius-lg;
   transition: all 0.2s ease;
 
   svg {
     width: 28px;
     height: 28px;
-    color: $color-gray-50;
+    color: $theme-palette-text-primary;
 
     @media (prefers-color-scheme: light) {
-      color: $color-gray-700;
+      color: $theme-palette-text-inverse;
     }
   }
 
   @media (prefers-color-scheme: light) {
-    background: rgba($color-gray-900, 0.05);
-    border-color: rgba($color-gray-900, 0.1);
+    background: color.scale($theme-palette-bg-primary, $alpha: -95%);
+    border-color: color.scale($theme-palette-bg-primary, $alpha: -90%);
   }
 
   @media (max-width: 768px) {
@@ -145,12 +147,12 @@ const handleDisabledClick = () => {
 
 .service-icon-label {
   font-size: $theme-font-size-sm;
-  color: $color-gray-300;
+  color: $theme-palette-text-muted;
   font-weight: 500;
   text-align: center;
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-700;
+    color: $theme-palette-text-inverse;
   }
 }
 </style>
