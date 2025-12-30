@@ -284,13 +284,10 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 
   &:hover {
     background-color: $theme-palette-bg-secondary;
-
-    .file-table-cell .file-table-name {
-      text-decoration: underline;
-    }
   }
+
   &.file-table-row--selected {
-    background-color: $theme-palette-accent;
+    background-color: $theme-palette-bg-secondary;
 
     .file-table-cell .file-table-name {
       text-decoration: underline;
