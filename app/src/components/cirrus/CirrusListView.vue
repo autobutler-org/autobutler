@@ -259,10 +259,10 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   color: $theme-palette-text-primary;
 
   &:hover {
-    background-color: $color-gray-100;
+    background-color: $theme-palette-bg-inverse;
 
     @media (prefers-color-scheme: dark) {
-      background-color: $color-gray-800;
+      background-color: $theme-palette-bg-secondary;
     }
   }
 
