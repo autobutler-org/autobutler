@@ -235,8 +235,6 @@ const sidebarSections = [
 </script>
 
 <style lang="scss" scoped>
-@use 'sass:color';
-
 .settings-sidebar-thanks {
   margin-top: $spacing-2xl;
   padding: $spacing-md;
@@ -418,7 +416,7 @@ const sidebarSections = [
 .settings-card {
   background: $theme-palette-bg-primary;
   border-radius: $border-radius-lg;
-  box-shadow: 0 2px 16px 0 color.scale($theme-palette-border, $alpha: -90%);
+  box-shadow: 0 2px 16px 0 $theme-palette-border;
   padding: $spacing-xl $spacing-2xl;
   color: $theme-palette-text-primary;
   border: 1px solid $theme-palette-border;
@@ -428,7 +426,7 @@ const sidebarSections = [
   transition: box-shadow 0.2s;
 }
 .settings-card:hover {
-  box-shadow: 0 4px 24px 0 color.scale($theme-palette-border, $alpha: -80%);
+  box-shadow: 0 4px 24px 0 $theme-palette-border;
 }
 .mock-card {
   background: $theme-palette-bg-nav;

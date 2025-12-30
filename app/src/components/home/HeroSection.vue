@@ -100,8 +100,6 @@ const defaultServiceIcons: ServiceIcon[] = [
 </script>
 
 <style lang="scss" scoped>
-@use 'sass:color';
-
 .hero {
   display: flex;
   flex-direction: column;
@@ -231,11 +229,11 @@ const defaultServiceIcons: ServiceIcon[] = [
   &--primary {
     background: $theme-palette-accent;
     color: $theme-palette-text-inverse;
-    box-shadow: 0 4px 14px color.scale($theme-palette-accent, $alpha: -70%);
+    box-shadow: 0 4px 14px hsl(from $theme-palette-accent h s l / 0.3);
 
     &:hover {
       background: $theme-palette-accent-hover;
-      box-shadow: 0 6px 20px color.scale($theme-palette-accent, $alpha: -60%);
+      box-shadow: 0 6px 20px hsl(from $theme-palette-accent h s l / 0.4);
     }
 
     svg {

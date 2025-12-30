@@ -30,6 +30,21 @@
             >{{ theme.fontSizeScale.toFixed(2) }}x</span
           >
         </label>
+        <label class="palette-bg-primary">
+          Primary Background Color:
+          <input
+            type="color"
+            :value="theme.fontSizeScale"
+            @input="
+              theme.setFontSizeScale(
+                Number(($event.target as HTMLInputElement).value),
+              )
+            "
+          />
+          <span class="slider-value"
+            >{{ theme.fontSizeScale.toFixed(2) }}x</span
+          >
+        </label>
       </div>
     </div>
   </ModalDialog>

@@ -1,0 +1,65 @@
+@use '@/scss/variables.scss' as *;
+
+////////////////
+// Font Sizes //
+////////////////
+:root {
+  --theme-font-size-xs: #{$font-size-xs};
+  --theme-font-size-sm: #{$font-size-sm};
+  --theme-font-size-base: #{$font-size-base};
+  --theme-font-size-lg: #{$font-size-lg};
+  --theme-font-size-xl: #{$font-size-xl};
+  --theme-font-size-2xl: #{$font-size-2xl};
+  --theme-font-size-3xl: #{$font-size-3xl};
+  --theme-font-size-5xl: #{$font-size-5xl};
+}
+
+$theme-font-size-xs: var(--theme-font-size-xs);
+$theme-font-size-sm: var(--theme-font-size-sm);
+$theme-font-size-base: var(--theme-font-size-base);
+$theme-font-size-lg: var(--theme-font-size-lg);
+$theme-font-size-xl: var(--theme-font-size-xl);
+$theme-font-size-2xl: var(--theme-font-size-2xl);
+$theme-font-size-3xl: var(--theme-font-size-3xl);
+$theme-font-size-5xl: var(--theme-font-size-5xl);
+
+/////////////
+// Palette //
+/////////////
+:root {
+  --theme-palette-accent-hover: #{$color-primary-200}; // Lighter accent for hover
+  --theme-palette-accent: #{$color-primary-400}; // Brighter accent (blue)
+  --theme-palette-bg-inverse: #{$color-gray-50}; // For light mode or highlights
+  --theme-palette-bg-nav: #0d101a; // TopNav background (much darker)
+  --theme-palette-bg-primary: #181e29; // Main site background
+  --theme-palette-bg-secondary: #{$color-gray-800}; // Slightly lighter dark
+  --theme-palette-border-strong: #{$color-gray-200}; // Strong border for light bg
+  --theme-palette-border: #{$color-gray-700}; // Subtle border
+  --theme-palette-danger: #{$color-red-400};
+  --theme-palette-error: #{$color-red-600}; // Error color for forms, alerts, etc.
+  --theme-palette-info: #{$color-blue-400};
+  --theme-palette-success: #{$color-green-400};
+  --theme-palette-text-inverse: #{$color-gray-900}; // For text on light backgrounds
+  --theme-palette-text-muted: #{$color-gray-400}; // Muted/disabled text
+  --theme-palette-text-primary: #{$color-gray-50}; // Main text (very light)
+  --theme-palette-text-secondary: #{$color-gray-200}; // Secondary text (light)
+  --theme-palette-warning: #{$color-yellow-400};
+}
+
+$theme-palette-accent-hover: var(--theme-palette-accent-hover);
+$theme-palette-accent: var(--theme-palette-accent);
+$theme-palette-bg-inverse: var(--theme-palette-bg-inverse);
+$theme-palette-bg-nav: var(--theme-palette-bg-nav);
+$theme-palette-bg-primary: var(--theme-palette-bg-primary);
+$theme-palette-bg-secondary: var(--theme-palette-bg-secondary);
+$theme-palette-border-strong: var(--theme-palette-border-strong);
+$theme-palette-border: var(--theme-palette-border);
+$theme-palette-danger: var(--theme-palette-danger);
+$theme-palette-error: var(--theme-palette-error);
+$theme-palette-info: var(--theme-palette-info);
+$theme-palette-success: var(--theme-palette-success);
+$theme-palette-text-inverse: var(--theme-palette-text-inverse);
+$theme-palette-text-muted: var(--theme-palette-text-muted);
+$theme-palette-text-primary: var(--theme-palette-text-primary);
+$theme-palette-text-secondary: var(--theme-palette-text-secondary);
+$theme-palette-warning: var(--theme-palette-warning);

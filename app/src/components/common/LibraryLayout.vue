@@ -17,8 +17,6 @@
 </template>
 
 <style lang="scss" scoped>
-@use 'sass:color';
-
 .library-container {
   display: flex;
   height: 100vh;

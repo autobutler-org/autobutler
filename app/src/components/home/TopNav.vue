@@ -240,8 +240,6 @@ const closeMobileMenu = () => {
 </script>
 
 <style lang="scss" scoped>
-@use 'sass:color';
-
 .landing-nav {
   display: flex;
   justify-content: space-between;
@@ -250,9 +248,9 @@ const closeMobileMenu = () => {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: color.scale($theme-palette-bg-nav, $alpha: -3%);
+  background: hsl(from $theme-palette-bg-nav h s l / 0.97);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid color.scale($theme-palette-bg-primary, $alpha: -90%);
+  border-bottom: 1px solid hsl(from $theme-palette-bg-primary h s l / 0.1);
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
@@ -260,8 +258,8 @@ const closeMobileMenu = () => {
   right: 0;
 
   @media (prefers-color-scheme: light) {
-    background: color.scale($theme-palette-bg-nav, $alpha: -3%);
-    border-bottom-color: color.scale($theme-palette-bg-inverse, $alpha: -90%);
+    background: hsl(from $theme-palette-bg-nav h s l / 0.97);
+    border-bottom-color: hsl(from $theme-palette-bg-inverse h s l / 0.1);
   }
 }
 
@@ -335,7 +333,7 @@ const closeMobileMenu = () => {
   align-items: center;
   gap: $spacing-sm;
   padding: $spacing-sm $spacing-md;
-  background: color.scale($theme-palette-bg-primary, $alpha: -90%);
+  background: hsl(from $theme-palette-bg-primary h s l / 0.1);
   border: 1px solid $theme-palette-border;
   border-radius: $border-radius;
   color: $theme-palette-text-secondary;
@@ -345,7 +343,7 @@ const closeMobileMenu = () => {
   text-decoration: none;
 
   &:hover {
-    background: color.scale($theme-palette-accent, $alpha: -88%);
+    background: hsl(from $theme-palette-accent h s l / 0.12);
     border-color: $theme-palette-accent;
     color: $theme-palette-accent;
   }
@@ -356,13 +354,13 @@ const closeMobileMenu = () => {
   }
 
   @media (prefers-color-scheme: light) {
-    background: color.scale($theme-palette-bg-inverse, $alpha: -95%);
-    border-color: color.scale($theme-palette-bg-inverse, $alpha: -90%);
+    background: hsl(from $theme-palette-bg-inverse h s l / 0.05);
+    border-color: hsl(from $theme-palette-bg-inverse h s l / 0.1);
     color: $theme-palette-text-secondary;
 
     &:hover {
-      background: color.scale($theme-palette-bg-inverse, $alpha: -92%);
-      border-color: color.scale($theme-palette-bg-inverse, $alpha: -85%);
+      background: hsl(from $theme-palette-bg-inverse h s l / 0.08);
+      border-color: hsl(from $theme-palette-bg-inverse h s l / 0.15);
     }
   }
 
@@ -379,7 +377,7 @@ const closeMobileMenu = () => {
     border-color 0.2s;
   &:hover,
   &:focus-within {
-    background: color.scale($theme-palette-accent, $alpha: -88%);
+    background: hsl(from $theme-palette-accent h s l / 0.12);
     border-color: $theme-palette-accent;
   }
   position: relative;
@@ -391,7 +389,7 @@ const closeMobileMenu = () => {
 
 .landing-nav-version {
   padding: $spacing-sm $spacing-md;
-  background: color.scale($theme-palette-bg-primary, $alpha: -95%);
+  background: hsl(from $theme-palette-bg-primary h s l / 0.05);
   border-radius: $border-radius;
   color: $theme-palette-text-muted;
   font-size: $theme-font-size-sm;
@@ -624,9 +622,9 @@ const closeMobileMenu = () => {
   margin-top: $spacing-sm;
   min-width: 200px;
   background: $theme-palette-bg-nav;
-  border: 1px solid color.scale($theme-palette-border, $alpha: -90%);
+  border: 1px solid hsl(from $theme-palette-border h s l / 0.1);
   border-radius: $border-radius-lg;
-  box-shadow: 0 4px 12px color.scale($theme-palette-border, $alpha: -70%);
+  box-shadow: 0 4px 12px hsl(from $theme-palette-border h s l / 0.3);
   overflow: hidden;
   z-index: 1000;
 }
@@ -665,10 +663,10 @@ const closeMobileMenu = () => {
   }
 
   &--current {
-    background: color.scale($theme-palette-accent, $alpha: -80%);
+    background: hsl(from $theme-palette-accent h s l / 0.2);
 
     &:hover {
-      background: color.scale($theme-palette-accent, $alpha: -70%);
+      background: hsl(from $theme-palette-accent h s l / 0.3);
     }
   }
 
@@ -680,9 +678,9 @@ const closeMobileMenu = () => {
     }
 
     &--current {
-      background: color.scale($theme-palette-accent, $alpha: -90%);
+      background: hsl(from $theme-palette-accent h s l / 0.1);
       &:hover {
-        background: color.scale($theme-palette-accent, $alpha: -85%);
+        background: hsl(from $theme-palette-accent h s l / 0.15);
       }
     }
   }

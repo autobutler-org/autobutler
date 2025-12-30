@@ -36,19 +36,17 @@ const handleDisabledClick = () => {
 </script>
 
 <style lang="scss" scoped>
-@use 'sass:color';
-
 .service-icons-container {
   margin-bottom: $spacing-2xl;
   padding: $spacing-3xl $spacing-2xl;
-  background: color.scale($theme-palette-bg-inverse, $alpha: -95%);
+  background: hsl(from $theme-palette-bg-inverse h s l / 0.05);
   backdrop-filter: blur(10px);
-  border: 1px solid color.scale($theme-palette-bg-inverse, $alpha: -90%);
+  border: 1px solid hsl(from $theme-palette-bg-inverse h s l / 0.1);
   border-radius: 24px;
 
   @media (prefers-color-scheme: light) {
-    background: color.scale($theme-palette-bg-primary, $alpha: -97%);
-    border-color: color.scale($theme-palette-bg-primary, $alpha: -92%);
+    background: hsl(from $theme-palette-bg-primary h s l / 0.03);
+    border-color: hsl(from $theme-palette-bg-primary h s l / 0.08);
   }
 }
 
@@ -85,19 +83,19 @@ const handleDisabledClick = () => {
   cursor: pointer;
 
   &:hover {
-    background-color: color.scale($theme-palette-bg-inverse, $alpha: -95%);
+    background-color: hsl(from $theme-palette-bg-inverse h s l / 0.05);
 
     @media (prefers-color-scheme: light) {
-      background-color: color.scale($theme-palette-bg-primary, $alpha: -97%);
+      background-color: hsl(from $theme-palette-bg-primary h s l / 0.03);
     }
 
     .service-icon-bg {
-      background: color.scale($theme-palette-bg-inverse, $alpha: -85%);
-      border-color: color.scale($theme-palette-bg-inverse, $alpha: -70%);
+      background: hsl(from $theme-palette-bg-inverse h s l / 0.15);
+      border-color: hsl(from $theme-palette-bg-inverse h s l / 0.3);
 
       @media (prefers-color-scheme: light) {
-        background: color.scale($theme-palette-bg-primary, $alpha: -92%);
-        border-color: color.scale($theme-palette-bg-primary, $alpha: -85%);
+        background: hsl(from $theme-palette-bg-primary h s l / 0.08);
+        border-color: hsl(from $theme-palette-bg-primary h s l / 0.15);
       }
     }
   }
@@ -113,9 +111,9 @@ const handleDisabledClick = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color.scale($theme-palette-bg-inverse, $alpha: -90%);
+  background: hsl(from $theme-palette-bg-inverse h s l / 0.1);
   backdrop-filter: blur(10px);
-  border: 1px solid color.scale($theme-palette-bg-inverse, $alpha: -80%);
+  border: 1px solid hsl(from $theme-palette-bg-inverse h s l / 0.2);
   border-radius: $border-radius-lg;
   transition: all 0.2s ease;
 
@@ -130,8 +128,8 @@ const handleDisabledClick = () => {
   }
 
   @media (prefers-color-scheme: light) {
-    background: color.scale($theme-palette-bg-primary, $alpha: -95%);
-    border-color: color.scale($theme-palette-bg-primary, $alpha: -90%);
+    background: hsl(from $theme-palette-bg-primary h s l / 0.05);
+    border-color: hsl(from $theme-palette-bg-primary h s l / 0.1);
   }
 
   @media (max-width: 768px) {

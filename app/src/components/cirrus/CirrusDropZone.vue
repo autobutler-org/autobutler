@@ -145,8 +145,6 @@ const uploadFiles = async (files: FileList) => {
 </script>
 
 <style lang="scss" scoped>
-@use 'sass:color';
-
 .drop-zone {
   display: flex;
   align-items: center;
@@ -161,19 +159,19 @@ const uploadFiles = async (files: FileList) => {
 
   &:hover {
     border-color: $theme-palette-accent;
-    background-color: color.scale($theme-palette-bg-secondary, $lightness: -2%);
+    background-color: hsl(from $theme-palette-bg-secondary h s calc(l - 2));
   }
 
   &--active {
     border-color: $theme-palette-accent;
-    background-color: color.scale($theme-palette-bg-secondary, $lightness: 4%);
+    background-color: hsl(from $theme-palette-bg-secondary h s calc(l + 4));
     border-style: solid;
   }
 
   &--uploading {
     cursor: wait;
     border-color: $theme-palette-success;
-    background-color: color.scale($theme-palette-bg-secondary, $lightness: 8%);
+    background-color: hsl(from $theme-palette-bg-secondary h s calc(l + 8));
   }
 }
 

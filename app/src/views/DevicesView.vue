@@ -95,8 +95,6 @@ onMounted(fetchDevices)
 </script>
 
 <style lang="scss" scoped>
-@use 'sass:color';
-
 .landing-main {
   min-height: 100vh;
   display: flex;
@@ -180,7 +178,7 @@ onMounted(fetchDevices)
   background: $theme-palette-bg-secondary;
   border-radius: 12px;
   padding: 1.5rem 2rem;
-  box-shadow: 0 2px 8px 0 color.scale($theme-palette-border, $alpha: -96%);
+  box-shadow: 0 2px 8px 0 hsl(from $theme-palette-border h s l / 0.04);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -190,7 +188,7 @@ onMounted(fetchDevices)
   height: 32px;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 4px 0 color.scale($theme-palette-border, $alpha: -98%);
+  box-shadow: 0 1px 4px 0 hsl(from $theme-palette-border h s l / 0.02);
 }
 .storage-bar-section {
   height: 100%;
