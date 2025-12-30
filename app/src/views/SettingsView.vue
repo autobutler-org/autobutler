@@ -375,7 +375,7 @@ const sidebarSections = [
 }
 @media (prefers-color-scheme: dark) {
   .settings-title {
-    color: white;
+    color: $theme-palette-text-primary;
   }
   .settings-desc,
   .settings-section-description p,
@@ -390,7 +390,7 @@ const sidebarSections = [
   .settings-section-header h2,
   .settings-metric-card h4,
   .settings-metrics-section h3 {
-    color: white;
+    color: $theme-palette-text-primary;
   }
 }
 .settings-desc {

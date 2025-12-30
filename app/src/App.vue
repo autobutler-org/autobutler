@@ -57,7 +57,7 @@ document.addEventListener(
 
 <style lang="scss" scoped>
 * {
-  color: white;
+  color: $theme-palette-text-primary;
 }
 
 header {
