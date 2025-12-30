@@ -50,12 +50,12 @@ const close = () => emit('close')
 <style lang="scss" scoped>
 .theme-modal {
   position: relative;
-  background: $color-gray-900;
-  color: $color-gray-50;
+  background: $theme-palette-bg-nav;
+  color: $theme-palette-text-primary;
   min-width: 320px;
   max-width: 90vw;
   border-radius: 12px;
-  box-shadow: 0 4px 32px rgba($color-gray-950, 0.53); // #0008 ≈ 53% opacity
+  box-shadow: 0 4px 32px rgba($theme-palette-bg-primary, 0.53);
   padding: 2rem 2.5rem 1.5rem 2.5rem;
   outline: none;
   h2 {
@@ -67,13 +67,13 @@ const close = () => emit('close')
   position: absolute;
   top: 1.5rem;
   right: 1.5rem;
-  background: $color-gray-50;
+  background: $theme-palette-bg-inverse;
   border: none;
   border-radius: 50%;
-  color: $color-gray-900;
+  color: $theme-palette-text-inverse;
   cursor: pointer;
   z-index: 1100;
-  box-shadow: 0 2px 8px rgba($color-gray-950, 0.1);
+  box-shadow: 0 2px 8px rgba($theme-palette-bg-primary, 0.1);
   width: 2.5rem;
   height: 2.5rem;
   display: flex;
@@ -88,7 +88,7 @@ const close = () => emit('close')
   }
 
   &:hover {
-    background: $color-gray-100;
+    background: $theme-palette-accent-hover;
   }
 }
 
