@@ -98,22 +98,23 @@ const toggleFolderInput = async () => {
 .file-explorer-add-folder {
   margin-left: 0;
   background: none;
-  border: none;
+  border: 1px solid $theme-palette-border;
   cursor: pointer;
   padding: $spacing-xs;
   border-radius: $border-radius;
 
   &:hover {
-    background-color: $color-gray-100;
+    background: rgba($theme-palette-accent, 0.12);
+    border-color: $theme-palette-accent;
   }
 
   svg {
-    color: $color-primary-400;
+    color: $theme-palette-accent;
     transition: color 0.2s ease;
   }
 
   &:hover svg {
-    color: $color-primary-600;
+    color: $theme-palette-accent-hover;
   }
 }
 
@@ -126,33 +127,33 @@ const toggleFolderInput = async () => {
 
 .file-explorer-folder-input {
   padding: $spacing-xs $spacing-sm;
-  border: 1px solid $color-gray-300;
+  border: 1px solid $theme-palette-border;
   border-radius: $border-radius;
   font-size: $theme-font-size-sm;
   width: 200px;
 
   &:focus {
     outline: none;
-    border-color: $color-primary-500;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    border-color: $theme-palette-accent;
+    box-shadow: 0 0 0 2px rgba($theme-palette-accent, 0.2);
   }
 
   &:disabled {
-    background-color: $color-gray-100;
+    background-color: $theme-palette-bg-secondary;
     cursor: not-allowed;
   }
 
   @media (prefers-color-scheme: dark) {
-    background-color: $color-gray-800;
-    border-color: $color-gray-600;
-    color: $color-gray-100;
+    background-color: $theme-palette-bg-primary;
+    border-color: $theme-palette-border;
+    color: $theme-palette-text-primary;
 
     &:focus {
-      border-color: $color-primary-400;
+      border-color: $theme-palette-accent;
     }
 
     &:disabled {
-      background-color: $color-gray-700;
+      background-color: $theme-palette-bg-secondary;
     }
   }
 }
