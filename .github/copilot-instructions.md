@@ -64,3 +64,7 @@ API endpoint architecture
   - Service functions are reusable across different parts of the codebase (API, CLI, background jobs)
   - Clear separation of concerns between HTTP layer and domain logic
 - See `pkg/util/cirrusutil/service.go` and `internal/server/api/v1/cirrus/` for reference implementations.
+
+SCSS color function deprecation
+-------------------------------
+- Do NOT use the deprecated `lighten()` or `darken()` SCSS functions. Use `color.scale($color, $lightness: ...)` instead, as per the latest Sass guidelines: https://sass-lang.com/d/color-functions
