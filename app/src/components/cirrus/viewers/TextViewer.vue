@@ -83,11 +83,11 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   flex: 1;
-  color: $color-gray-400;
+  color: $theme-palette-text-muted;
 }
 
 .text-viewer-error {
-  color: $color-red-500;
+  color: $theme-palette-danger;
 }
 
 .text-viewer-content {
@@ -100,10 +100,10 @@ onMounted(async () => {
   line-height: 1.6;
   white-space: pre-wrap;
   word-wrap: break-word;
-  color: $color-gray-200;
+  color: $theme-palette-text-primary;
 
   @media (prefers-color-scheme: light) {
-    color: $color-gray-800;
+    color: $theme-palette-text-inverse;
   }
 }
 </style>
