@@ -425,7 +425,6 @@ const handleDelete = async (file: CirrusFileNode) => {
 
 <style lang="scss" scoped>
 .file-explorer {
-  background-color: $theme-palette-bg-primary;
   max-width: 100%;
   box-shadow: $shadow-sm;
   padding: $spacing-lg;
