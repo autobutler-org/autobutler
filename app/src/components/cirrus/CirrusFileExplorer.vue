@@ -546,7 +546,7 @@ const handleDelete = async (file: CirrusFileNode) => {
 }
 
 .move-dialog-error {
-  color: $color-red-600;
+  color: $theme-palette-error;
   font-size: $theme-font-size-sm;
   margin-bottom: $spacing-md;
   text-align: left;
