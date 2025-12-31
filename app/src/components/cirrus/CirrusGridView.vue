@@ -1,5 +1,13 @@
 <template>
-  <div class="grid-view-container">
+  <div
+    class="grid-view-container"
+    :class="{ 'grid-view-container--dragging': isDragOver }"
+    @dragenter="handleDragEnter"
+    @dragover="handleDragOver"
+    @dragleave="handleDragLeave"
+    @drop="handleDrop"
+  >
+    <div class="grid-view-drop-overlay" v-show="isDragOver" />
     <div class="grid-view-grid">
       <div
         v-for="file in files"
@@ -71,8 +79,10 @@ import GenericIcon from '@/components/icons/GenericIcon.vue'
 import ImageIcon from '@/components/icons/ImageIcon.vue'
 import PdfIcon from '@/components/icons/PdfIcon.vue'
 import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
+import { useCirrusFileDropZone } from '@/composables/useCirrusFileDropZone'
 import CirrusService from '@/services/cirrusService'
 import type { CirrusFileNode } from '@/types/cirrus'
+import { computed } from 'vue'
 
 const props = defineProps<{
   files: CirrusFileNode[]
@@ -86,7 +96,19 @@ const emit = defineEmits<{
   'open-file': [file: CirrusFileNode]
   'context-menu': [event: MouseEvent, file: CirrusFileNode]
   select: [file: CirrusFileNode]
+  'files-uploaded': [files: CirrusFileNode[]]
 }>()
+
+const {
+  isDragOver,
+  handleDragEnter,
+  handleDragOver,
+  handleDragLeave,
+  handleDrop,
+} = useCirrusFileDropZone({
+  currentPath: computed(() => props.currentPath),
+  onFilesUploaded: (files) => emit('files-uploaded', files),
+})
 
 // TODO: CirrusListView has the exact same functions/code, after this point
 
@@ -133,6 +155,21 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   flex: 1;
   overflow-y: auto;
   padding: $spacing-sm;
+  position: relative;
+  border-radius: $border-radius-lg;
+}
+
+.grid-view-container--dragging {
+  outline: 2px dashed rgba(64, 158, 255, 0.35);
+}
+
+.grid-view-drop-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(64, 158, 255, 0.12);
+  border-radius: inherit;
+  transition: opacity 0.2s ease;
 }
 
 .grid-view-grid {

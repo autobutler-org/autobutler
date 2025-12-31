@@ -81,6 +81,7 @@
             @open-file="handleOpenFile"
             @select="handleSelectFile"
             @context-menu="handleContextMenu"
+            @files-uploaded="handleFilesUploaded"
           />
         </template>
         <template v-else>
