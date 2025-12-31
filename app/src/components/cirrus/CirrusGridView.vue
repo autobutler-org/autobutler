@@ -19,6 +19,9 @@
             'grid-view-item--folder': CirrusService.isDirectory(file),
             'grid-view-item--selected':
               selectedFile && selectedFile.fullPath === file.fullPath,
+            'grid-view-item--drop-target':
+              CirrusService.isDirectory(file) &&
+              hoveredDirectoryPath === resolveDirectoryTargetPath(file),
           },
         ]"
         :data-name="CirrusService.getFileName(file)"
@@ -28,6 +31,10 @@
         @click="emit('select', file)"
         @dblclick="handleClick(file)"
         @contextmenu="handleContextMenu($event, file)"
+        @dragenter="handleDirectoryDragEnter($event, file)"
+        @dragover="handleDirectoryDragOver($event, file)"
+        @dragleave="handleDirectoryDragLeave($event, file)"
+        @drop="handleDirectoryDrop($event, file)"
       >
         <button
           class="context-menu-trigger"
@@ -82,7 +89,7 @@ import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
 import { useCirrusFileDropZone } from '@/composables/useCirrusFileDropZone'
 import CirrusService from '@/services/cirrusService'
 import type { CirrusFileNode } from '@/types/cirrus'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps<{
   files: CirrusFileNode[]
@@ -99,16 +106,70 @@ const emit = defineEmits<{
   'files-uploaded': [files: CirrusFileNode[]]
 }>()
 
-const {
-  isDragOver,
-  handleDragEnter,
-  handleDragOver,
-  handleDragLeave,
-  handleDrop,
-} = useCirrusFileDropZone({
-  currentPath: computed(() => props.currentPath),
-  onFilesUploaded: (files) => emit('files-uploaded', files),
+const { isDragOver, handleDragEnter, handleDragOver, handleDragLeave, handleDrop } =
+  useCirrusFileDropZone({
+    currentPath: computed(() => props.currentPath),
+    onFilesUploaded: (files) => emit('files-uploaded', files),
+  })
+
+const hoveredDirectoryPath = ref<string | null>(null)
+
+const normalizeCurrentPath = computed(() =>
+  props.currentPath.replace(/^\/+|\/+$/g, '').trim(),
+)
+
+const resolveDirectoryTargetPath = (file: CirrusFileNode) => {
+  const directoryName = CirrusService.getFileName(file)
+  const basePath = normalizeCurrentPath.value.replace(/\/+$/g, '')
+  return basePath ? `${basePath}/${directoryName}` : directoryName
+}
+
+const clearHoveredDirectory = () => {
+  hoveredDirectoryPath.value = null
+}
+
+watch(isDragOver, (active) => {
+  if (!active) {
+    clearHoveredDirectory()
+  }
 })
+
+const handleDirectoryDragEnter = (event: DragEvent, file: CirrusFileNode) => {
+  if (!CirrusService.isDirectory(file)) return
+  event.preventDefault()
+  hoveredDirectoryPath.value = resolveDirectoryTargetPath(file)
+}
+
+const handleDirectoryDragOver = (event: DragEvent, file: CirrusFileNode) => {
+  if (!CirrusService.isDirectory(file)) return
+  event.preventDefault()
+  hoveredDirectoryPath.value = resolveDirectoryTargetPath(file)
+}
+
+const handleDirectoryDragLeave = (event: DragEvent, file: CirrusFileNode) => {
+  if (!CirrusService.isDirectory(file)) return
+  event.preventDefault()
+
+  const currentTarget = event.currentTarget as Node | null
+  const relatedTarget = event.relatedTarget as Node | null
+
+  if (currentTarget && relatedTarget && currentTarget.contains(relatedTarget)) {
+    return
+  }
+
+  if (hoveredDirectoryPath.value === resolveDirectoryTargetPath(file)) {
+    clearHoveredDirectory()
+  }
+}
+
+const handleDirectoryDrop = async (event: DragEvent, file: CirrusFileNode) => {
+  if (!CirrusService.isDirectory(file)) return
+  event.preventDefault()
+  event.stopPropagation()
+  const targetPath = resolveDirectoryTargetPath(file)
+  clearHoveredDirectory()
+  await handleDrop(event, targetPath)
+}
 
 // TODO: CirrusListView has the exact same functions/code, after this point
 
@@ -196,6 +257,10 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   }
   &.grid-view-item--selected {
     background-color: $theme-palette-accent;
+  }
+  &.grid-view-item--drop-target {
+    background-color: rgba(64, 158, 255, 0.2);
+    outline: 2px dashed rgba(64, 158, 255, 0.45);
   }
 }
 
