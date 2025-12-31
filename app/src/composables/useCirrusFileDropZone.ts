@@ -20,7 +20,7 @@ export const useCirrusFileDropZone = ({
   const fileInputRef = ref<HTMLInputElement | null>(null)
 
   const resolveCurrentPath = () =>
-    (unref(currentPath) || '').replace(/^\/+|\/+$/g, '').trim()
+    CirrusService.normalizePath(unref(currentPath) || '')
 
   const uploadFiles = async (files: FileList, targetPath?: string) => {
     if (!files.length) return
@@ -29,7 +29,9 @@ export const useCirrusFileDropZone = ({
     uploadProgress.value = `Uploading ${files.length} file${files.length > 1 ? 's' : ''}...`
 
     try {
-      const targetUploadPath = targetPath?.trim() || resolveCurrentPath()
+      const targetUploadPath = targetPath
+        ? CirrusService.normalizePath(targetPath)
+        : resolveCurrentPath()
       const uploadUrl = targetUploadPath
         ? `/api/v1/cirrus/${targetUploadPath}`
         : '/api/v1/cirrus'

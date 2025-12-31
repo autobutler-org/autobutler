@@ -16,7 +16,7 @@ export default class CirrusService {
    * Fetch files for a given path from the backend API
    */
   static getFiles = async (path: string): Promise<CirrusFileNode[]> => {
-    const normalizedPath = path.replace(/^\/+|\/+$/g, '')
+    const normalizedPath = CirrusService.normalizePath(path)
     const apiUrl = normalizedPath
       ? `/api/v1/cirrus/${normalizedPath}`
       : '/api/v1/cirrus'
@@ -108,6 +108,10 @@ export default class CirrusService {
       default:
         return 'generic'
     }
+  }
+
+  static normalizePath(path: string): string {
+    return path.replace(/^\/+|\/+$/g, '').trim()
   }
 
   /**

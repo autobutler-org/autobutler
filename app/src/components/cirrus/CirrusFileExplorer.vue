@@ -286,20 +286,18 @@ const toggleDeviceBadges = (show: boolean) => {
   showDeviceBadges.value = show
 }
 
-const normalizePath = (path: string) => path.replace(/^\/+|\/+$/g, '').trim()
-
 const getParentPath = (fullPath: string) => {
-  const segments = normalizePath(fullPath).split('/').filter(Boolean)
+  const segments = CirrusService.normalizePath(fullPath).split('/').filter(Boolean)
   segments.pop()
   return segments.join('/')
 }
 
 // Handle files uploaded - add them to the list
 const handleFilesUploaded = (uploadedFiles: CirrusFileNode[]) => {
-  const currentPathNormalized = normalizePath(currentPath.value)
+  const currentPathNormalized = CirrusService.normalizePath(currentPath.value)
 
   for (const newFile of uploadedFiles) {
-    const normalizedFullPath = normalizePath(newFile.fullPath)
+    const normalizedFullPath = CirrusService.normalizePath(newFile.fullPath)
     const parentPath = getParentPath(newFile.fullPath)
 
     // Only display the file if it belongs to the directory currently in view

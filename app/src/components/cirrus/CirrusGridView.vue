@@ -115,12 +115,12 @@ const { isDragOver, handleDragEnter, handleDragOver, handleDragLeave, handleDrop
 const hoveredDirectoryPath = ref<string | null>(null)
 
 const normalizeCurrentPath = computed(() =>
-  props.currentPath.replace(/^\/+|\/+$/g, '').trim(),
+  CirrusService.normalizePath(props.currentPath),
 )
 
 const resolveDirectoryTargetPath = (file: CirrusFileNode) => {
   const directoryName = CirrusService.getFileName(file)
-  const basePath = normalizeCurrentPath.value.replace(/\/+$/g, '')
+  const basePath = normalizeCurrentPath.value
   return basePath ? `${basePath}/${directoryName}` : directoryName
 }
 
