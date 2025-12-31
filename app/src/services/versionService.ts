@@ -1,6 +1,4 @@
-/**
- * Version service for fetching app version information
- */
+import HttpService from './httpService'
 
 export interface Release {
   tagName: string
@@ -17,34 +15,23 @@ export interface VersionResponse {
   buildDate: string
 }
 
-/**
- * Fetch the current version from the API
- */
-export const getCurrentVersion = async (): Promise<string> => {
-  try {
-    const response = await fetch('/api/v1/version')
-    if (!response.ok) {
+export default class VersionService {
+  static getCurrentVersion = async (): Promise<string> => {
+    try {
+      const data =
+        await HttpService.getAsJson<VersionResponse>('/api/v1/version')
+      return data.semver || 'vX.Y.Z'
+    } catch {
       return 'vX.Y.Z'
     }
-    const data: VersionResponse = await response.json()
-    return data.semver || 'vX.Y.Z'
-  } catch {
-    return 'vX.Y.Z'
   }
-}
 
-/**
- * Fetch available releases for the version dropdown
- */
-export const getAvailableReleases = async (): Promise<Release[]> => {
-  try {
-    const response = await fetch('/api/v1/versions')
-    if (!response.ok) {
+  static getAvailableReleases = async (): Promise<Release[]> => {
+    try {
+      const data = await HttpService.getAsJson<Release[]>('/api/v1/versions')
+      return data || []
+    } catch {
       return []
     }
-    const data: Release[] = await response.json()
-    return data || []
-  } catch {
-    return []
   }
 }

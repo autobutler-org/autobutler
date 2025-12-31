@@ -8,14 +8,14 @@
           'grid-view-item',
           'file-node',
           {
-            'grid-view-item--folder': isDirectory(file),
+            'grid-view-item--folder': CirrusService.isDirectory(file),
             'grid-view-item--selected':
               selectedFile && selectedFile.fullPath === file.fullPath,
           },
         ]"
-        :data-name="getFileName(file)"
-        :data-is-folder="isDirectory(file)"
-        :data-file-type="determineFileType(file)"
+        :data-name="CirrusService.getFileName(file)"
+        :data-is-folder="CirrusService.isDirectory(file)"
+        :data-file-type="CirrusService.determineFileType(file)"
         :data-device-name="file.deviceName"
         @click="emit('select', file)"
         @dblclick="handleClick(file)"
@@ -30,22 +30,30 @@
           &#x22EE;
         </button>
         <div class="grid-view-link">
-          <div v-if="isDirectory(file)" class="grid-view-icon-container">
+          <div
+            v-if="CirrusService.isDirectory(file)"
+            class="grid-view-icon-container"
+          >
             <CirrusFolderIcon />
           </div>
           <div v-else class="grid-view-icon-container">
-            <component :is="getIconComponent(determineFileType(file))" />
+            <component
+              :is="getIconComponent(CirrusService.determineFileType(file))"
+            />
           </div>
           <div class="grid-view-details">
-            <div class="grid-view-name" :title="getFileName(file)">
-              {{ getFileName(file) }}
+            <div
+              class="grid-view-name"
+              :title="CirrusService.getFileName(file)"
+            >
+              {{ CirrusService.getFileName(file) }}
             </div>
             <DeviceBadge
               v-if="props.showDeviceBadges && file.deviceName"
               :device-name="file.deviceName"
             />
-            <div v-if="!isDirectory(file)" class="grid-view-size">
-              {{ formatBytes(getFileSize(file)) }}
+            <div v-if="!CirrusService.isDirectory(file)" class="grid-view-size">
+              {{ CirrusService.formatBytes(CirrusService.getFileSize(file)) }}
             </div>
           </div>
         </div>
@@ -63,13 +71,7 @@ import GenericIcon from '@/components/icons/GenericIcon.vue'
 import ImageIcon from '@/components/icons/ImageIcon.vue'
 import PdfIcon from '@/components/icons/PdfIcon.vue'
 import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
-import {
-  determineFileType,
-  formatBytes,
-  getFileName,
-  getFileSize,
-  isDirectory,
-} from '@/services/cirrusService'
+import CirrusService from '@/services/cirrusService'
 import type { CirrusFileNode } from '@/types/cirrus'
 
 const props = defineProps<{
@@ -109,8 +111,8 @@ const getIconComponent = (fileType: string) => {
 }
 
 const handleClick = (file: CirrusFileNode) => {
-  const fileName = getFileName(file)
-  if (isDirectory(file)) {
+  const fileName = CirrusService.getFileName(file)
+  if (CirrusService.isDirectory(file)) {
     const newPath = props.currentPath
       ? `${props.currentPath}/${fileName}`
       : fileName

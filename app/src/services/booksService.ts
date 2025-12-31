@@ -1,4 +1,5 @@
-// Service for fetching books from the backend
+import HttpService from './httpService'
+
 export interface BookApiResponse {
   relPath: string
   fileName: string
@@ -7,8 +8,8 @@ export interface BookApiResponse {
   type: string
 }
 
-export const fetchBooks = async (): Promise<BookApiResponse[]> => {
-  const res = await fetch('/api/v1/books')
-  if (!res.ok) throw new Error('Failed to fetch books')
-  return res.json()
+export default class BooksService {
+  static listBooks = async (): Promise<BookApiResponse[]> => {
+    return await HttpService.getAsJson<BookApiResponse[]>('/api/v1/books')
+  }
 }

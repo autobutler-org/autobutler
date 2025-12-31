@@ -37,23 +37,27 @@
             'file-table-row--selected':
               selectedFile && selectedFile.fullPath === file.fullPath,
           }"
-          :data-name="getFileName(file)"
-          :data-file-type="determineFileType(file)"
+          :data-name="CirrusService.getFileName(file)"
+          :data-file-type="CirrusService.determineFileType(file)"
           :data-device-name="file.deviceName"
           @click="emit('select', file)"
           @dblclick="handleClick(file)"
           @contextmenu="handleContextMenu($event, file)"
         >
           <td class="file-table-cell file-table-cell--clickable">
-            <component :is="getIconComponent(determineFileType(file))" />
-            <span class="file-table-name">{{ getFileName(file) }}</span>
+            <component
+              :is="getIconComponent(CirrusService.determineFileType(file))"
+            />
+            <span class="file-table-name">{{
+              CirrusService.getFileName(file)
+            }}</span>
             <DeviceBadge
               v-if="props.showDeviceBadges && file.deviceName"
               :device-name="file.deviceName"
             />
           </td>
           <td class="file-table-cell file-table-size">
-            {{ formatBytes(getFileSize(file)) }}
+            {{ CirrusService.formatBytes(CirrusService.getFileSize(file)) }}
           </td>
           <td class="file-table-cell file-table-cell--menu">
             <button
@@ -81,13 +85,7 @@ import ImageIcon from '@/components/icons/ImageIcon.vue'
 import PdfIcon from '@/components/icons/PdfIcon.vue'
 import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
 import SortSwitcherIcon from '@/components/icons/SortSwitcherIcon.vue'
-import {
-  determineFileType,
-  formatBytes,
-  getFileName,
-  getFileSize,
-  isDirectory,
-} from '@/services/cirrusService'
+import CirrusService from '@/services/cirrusService'
 import type { CirrusFileNode } from '@/types/cirrus'
 import { computed, ref, type Component } from 'vue'
 import CirrusListViewSortHeader, {
@@ -137,8 +135,8 @@ const sortedFiles = computed(() => {
   if (!sortColumn.value) {
     // Default: folders first (unless mixed), then alphabetically by name
     return [...props.files].sort((a, b) => {
-      const aIsDir = isDirectory(a)
-      const bIsDir = isDirectory(b)
+      const aIsDir = CirrusService.isDirectory(a)
+      const bIsDir = CirrusService.isDirectory(b)
 
       // Folders first unless mixed sorting is enabled
       if (!mixedSorting.value) {
@@ -146,16 +144,20 @@ const sortedFiles = computed(() => {
         if (!aIsDir && bIsDir) return 1
       }
 
-      return getFileName(a).localeCompare(getFileName(b), undefined, {
-        numeric: true,
-        sensitivity: 'base',
-      })
+      return CirrusService.getFileName(a).localeCompare(
+        CirrusService.getFileName(b),
+        undefined,
+        {
+          numeric: true,
+          sensitivity: 'base',
+        },
+      )
     })
   }
 
   return [...props.files].sort((a, b) => {
-    const aIsDir = isDirectory(a)
-    const bIsDir = isDirectory(b)
+    const aIsDir = CirrusService.isDirectory(a)
+    const bIsDir = CirrusService.isDirectory(b)
 
     // Folders first unless mixed sorting is enabled
     if (!mixedSorting.value) {
@@ -166,12 +168,16 @@ const sortedFiles = computed(() => {
     let comparison = 0
 
     if (sortColumn.value === 'name') {
-      comparison = getFileName(a).localeCompare(getFileName(b), undefined, {
-        numeric: true,
-        sensitivity: 'base',
-      })
+      comparison = CirrusService.getFileName(a).localeCompare(
+        CirrusService.getFileName(b),
+        undefined,
+        {
+          numeric: true,
+          sensitivity: 'base',
+        },
+      )
     } else if (sortColumn.value === 'size') {
-      comparison = getFileSize(a) - getFileSize(b)
+      comparison = CirrusService.getFileSize(a) - CirrusService.getFileSize(b)
     }
 
     return sortDirection.value === 'asc' ? comparison : -comparison
@@ -212,8 +218,8 @@ const getIconComponent = (fileType: string): Component => {
 }
 
 const handleClick = (file: CirrusFileNode) => {
-  const fileName = getFileName(file)
-  if (isDirectory(file)) {
+  const fileName = CirrusService.getFileName(file)
+  if (CirrusService.isDirectory(file)) {
     // Navigate to folder
     const newPath = props.currentPath
       ? `${props.currentPath}/${fileName}`

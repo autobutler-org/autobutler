@@ -35,6 +35,8 @@
 <script lang="ts" setup>
 import type { CirrusFileNode } from '@/types/cirrus'
 import { ref } from 'vue'
+
+import CirrusService from '@/services/cirrusService'
 import UploadIcon from '../icons/UploadIcon.vue'
 
 const props = defineProps<{
@@ -93,24 +95,12 @@ const uploadFiles = async (files: FileList) => {
   uploadProgress.value = `Uploading ${files.length} file${files.length > 1 ? 's' : ''}...`
 
   try {
-    const formData = new FormData()
-    for (const file of files) {
-      formData.append('files', file)
-    }
-
     // Build the upload URL
     const uploadPath = props.currentPath
       ? `/api/v1/cirrus/${props.currentPath}`
       : '/api/v1/cirrus'
 
-    const response = await fetch(uploadPath, {
-      method: 'POST',
-      body: formData,
-    })
-
-    if (!response.ok) {
-      throw new Error('Upload failed')
-    }
+    await CirrusService.uploadFiles(uploadPath, files)
 
     // Create file nodes from the uploaded files
     const uploadedNodes: CirrusFileNode[] = Array.from(files).map((file) => {
