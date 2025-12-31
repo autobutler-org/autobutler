@@ -40,8 +40,9 @@ func (l *LinuxDetector) DetectDevices() ([]Device, error) {
 		mountPoint := fields[6]
 
 		// Skip non-physical filesystems
-		if !strings.HasPrefix(devicePath, "/dev/") ||
-			strings.HasPrefix(devicePath, "/dev/loop") {
+		if (!strings.HasPrefix(devicePath, "/dev/") ||
+			strings.HasPrefix(devicePath, "/dev/loop")) &&
+			fsType != "9p" /* Show 9p filesystems, for mounted drives on WSL */ {
 			continue
 		}
 
