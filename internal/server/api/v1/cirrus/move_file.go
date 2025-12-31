@@ -13,16 +13,16 @@ import (
 type moveFileRequest struct {
 	FilePath    string `json:"filePath"`
 	NewFilePath string `json:"newFilePath"`
+	OldDevice   string `json:"oldDevice"`
+	NewDevice   string `json:"newDevice"`
 }
 
 var moveFileRoute = serverutil.ApiRoute(
-	"PUT", "/cirrus/*filePath", func(c *gin.Context) *serverutil.Response {
+	"PUT", "/cirrus", func(c *gin.Context) *serverutil.Response {
 		var req moveFileRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			return serverutil.BadRequest(err)
 		}
-		oldDeviceName := c.Query("oldDevice")
-		newDeviceName := c.Query("newDevice")
 
 		deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 		if !ok {
@@ -32,8 +32,8 @@ var moveFileRoute = serverutil.ApiRoute(
 		channel <- cirrusutil.MoveFileParams{
 			FilePath:      req.FilePath,
 			NewFilePath:   req.NewFilePath,
-			OldDeviceName: oldDeviceName,
-			NewDeviceName: newDeviceName,
+			OldDeviceName: req.OldDevice,
+			NewDeviceName: req.NewDevice,
 		}
 		return serverutil.Accepted()
 	},
