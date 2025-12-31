@@ -9,12 +9,6 @@
       </div>
     </div>
 
-    <!-- Drop Zone for file uploads -->
-    <CirrusDropZone
-      :current-path="currentPath"
-      @files-uploaded="handleFilesUploaded"
-    />
-
     <div id="file-explorer-selectable">
       <div class="file-explorer-controls">
         <div>
@@ -99,6 +93,7 @@
             @open-file="handleOpenFile"
             @select="handleSelectFile"
             @context-menu="handleContextMenu"
+            @files-uploaded="handleFilesUploaded"
           />
         </template>
       </div>
@@ -180,7 +175,6 @@ import GridViewIcon from '../icons/GridViewIcon.vue'
 import ListViewIcon from '../icons/ListViewIcon.vue'
 import CirrusBreadcrumbs from './CirrusBreadcrumbs.vue'
 import CirrusContextMenu from './CirrusContextMenu.vue'
-import CirrusDropZone from './CirrusDropZone.vue'
 import CirrusFileViewer from './CirrusFileViewer.vue'
 import CirrusGridView from './CirrusGridView.vue'
 import CirrusListView from './CirrusListView.vue'

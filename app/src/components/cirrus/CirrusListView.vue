@@ -1,5 +1,13 @@
 <template>
-  <div class="file-table-container">
+  <div
+    class="file-table-container"
+    :class="{ 'file-table-container--dragging': isDragOver }"
+    @dragenter="handleDragEnter"
+    @dragover="handleDragOver"
+    @dragleave="handleDragLeave"
+    @drop="handleDrop"
+  >
+    <div class="file-table-drop-overlay" v-show="isDragOver" />
     <table id="file-explorer-table" class="file-table">
       <thead class="file-table-header">
         <tr>
@@ -85,6 +93,7 @@ import ImageIcon from '@/components/icons/ImageIcon.vue'
 import PdfIcon from '@/components/icons/PdfIcon.vue'
 import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
 import SortSwitcherIcon from '@/components/icons/SortSwitcherIcon.vue'
+import { useCirrusFileDropZone } from '@/composables/useCirrusFileDropZone'
 import CirrusService from '@/services/cirrusService'
 import type { CirrusFileNode } from '@/types/cirrus'
 import { computed, ref, type Component } from 'vue'
@@ -106,6 +115,7 @@ const emit = defineEmits<{
   'open-file': [file: CirrusFileNode]
   'context-menu': [event: MouseEvent, file: CirrusFileNode]
   select: [file: CirrusFileNode]
+  'files-uploaded': [files: CirrusFileNode[]]
 }>()
 
 // Sorting state
@@ -122,6 +132,17 @@ const sortColumns: {
   },
   { column: 'size' },
 ]
+
+const {
+  isDragOver,
+  handleDragEnter,
+  handleDragOver,
+  handleDragLeave,
+  handleDrop,
+} = useCirrusFileDropZone({
+  currentPath: computed(() => props.currentPath),
+  onFilesUploaded: (files) => emit('files-uploaded', files),
+})
 
 // Toggle mixed sorting mode (folders mixed with files vs folders first)
 const toggleMixedSorting = () => {
@@ -244,6 +265,19 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   overflow-y: auto;
   overflow-x: hidden;
   border-radius: $border-radius-lg;
+}
+
+.file-table-container--dragging {
+  outline: 2px dashed rgba(64, 158, 255, 0.35);
+}
+
+.file-table-drop-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(64, 158, 255, 0.12);
+  border-radius: inherit;
+  transition: opacity 0.2s ease;
 }
 
 .file-table {

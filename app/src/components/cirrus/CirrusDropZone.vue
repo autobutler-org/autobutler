@@ -33,10 +33,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { CirrusFileNode } from '@/types/cirrus'
-import { ref } from 'vue'
+import { computed } from 'vue'
 
-import CirrusService from '@/services/cirrusService'
+import { useCirrusFileDropZone } from '@/composables/useCirrusFileDropZone'
+import type { CirrusFileNode } from '@/types/cirrus'
 import UploadIcon from '../icons/UploadIcon.vue'
 
 const props = defineProps<{
@@ -47,91 +47,21 @@ const emit = defineEmits<{
   'files-uploaded': [files: CirrusFileNode[]]
 }>()
 
-const isDragOver = ref(false)
-const isUploading = ref(false)
-const uploadProgress = ref('')
-const fileInputRef = ref<HTMLInputElement | null>(null)
-
-const handleDragEnter = (event: DragEvent) => {
-  event.preventDefault()
-  isDragOver.value = true
-}
-
-const handleDragOver = (event: DragEvent) => {
-  event.preventDefault()
-}
-
-const handleDragLeave = (event: DragEvent) => {
-  event.preventDefault()
-  isDragOver.value = false
-}
-
-const handleDrop = async (event: DragEvent) => {
-  event.preventDefault()
-  isDragOver.value = false
-
-  const files = event.dataTransfer?.files
-  if (files && files.length > 0) {
-    await uploadFiles(files)
-  }
-}
-
-const handleClick = () => {
-  fileInputRef.value?.click()
-}
-
-const handleFileInputChange = (event: Event) => {
-  const input = event.target as HTMLInputElement
-  if (input.files && input.files.length > 0) {
-    uploadFiles(input.files)
-    // Reset the input so the same file can be selected again
-    input.value = ''
-  }
-}
-
-// TODO: Move the core upload logic to it's own service/module, then have this function wrap that
-const uploadFiles = async (files: FileList) => {
-  isUploading.value = true
-  uploadProgress.value = `Uploading ${files.length} file${files.length > 1 ? 's' : ''}...`
-
-  try {
-    // Build the upload URL
-    const uploadPath = props.currentPath
-      ? `/api/v1/cirrus/${props.currentPath}`
-      : '/api/v1/cirrus'
-
-    await CirrusService.uploadFiles(uploadPath, files)
-
-    // Create file nodes from the uploaded files
-    const uploadedNodes: CirrusFileNode[] = Array.from(files).map((file) => {
-      return {
-        name: file.name,
-        size: file.size,
-        isDir: false,
-        deviceName: '',
-        devicePath: '',
-        fullPath: props.currentPath
-          ? `${props.currentPath}/${file.name}`
-          : file.name,
-      }
-    })
-
-    uploadProgress.value = 'Upload complete!'
-    emit('files-uploaded', uploadedNodes)
-
-    // Clear the message after a short delay
-    setTimeout(() => {
-      uploadProgress.value = ''
-    }, 2000)
-  } catch (error) {
-    uploadProgress.value = `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-    setTimeout(() => {
-      uploadProgress.value = ''
-    }, 3000)
-  } finally {
-    isUploading.value = false
-  }
-}
+const {
+  fileInputRef,
+  isDragOver,
+  isUploading,
+  uploadProgress,
+  handleDragEnter,
+  handleDragOver,
+  handleDragLeave,
+  handleDrop,
+  handleClick,
+  handleFileInputChange,
+} = useCirrusFileDropZone({
+  currentPath: computed(() => props.currentPath),
+  onFilesUploaded: (files) => emit('files-uploaded', files),
+})
 </script>
 
 <style lang="scss" scoped>
