@@ -11,9 +11,9 @@ import (
 
 // DeleteFilesParams contains parameters for deleting files
 type DeleteFilesParams struct {
-	RootDir        string
-	FilePaths      []string
-	ManagedDevices []ManagedDevice
+	RootDir    string
+	FilePaths  []string
+	DeviceName string
 }
 
 // DeleteFilesResult contains the result of a delete operation
@@ -26,37 +26,26 @@ type DeleteFilesChannel chan DeleteFilesParams
 
 // DeleteFiles removes files from the filesystem, handling both single and multi-device scenarios
 func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
-	if len(params.ManagedDevices) == 0 {
-		// Fallback to single device
-		fileDir := GetCirrusDir()
-		for _, filePath := range params.FilePaths {
-			fullPath := filepath.Join(fileDir, params.RootDir, filePath)
-			if err := os.RemoveAll(fullPath); err != nil { // coverage: ignore - requires filesystem permission errors
-				return nil, fmt.Errorf("failed to delete %s: %w", filePath, err)
+	managedDevices, err := GetManagedDevices()
+	if err != nil {
+		return nil, err // coverage: ignore - requires device detection failure
+	}
+	var device *ManagedDevice
+	if params.DeviceName != "" {
+		for _, d := range managedDevices {
+			if d.Name == params.DeviceName {
+				device = &d
+				break
 			}
 		}
-	} else {
-		// Build list of device directories
-		var dirsToSearch []DirWithDevice
-		for _, device := range params.ManagedDevices {
-			dirsToSearch = append(dirsToSearch, DirWithDevice{
-				Dir:        device.CirrusDir,
-				DeviceName: device.Name,
-				DevicePath: device.MountPoint,
-			})
-		}
+	}
 
-		// Delete files from all devices where they exist
+	if device != nil || len(managedDevices) == 0 {
+		// Single device or specified device
 		for _, filePath := range params.FilePaths {
-			relPath := filepath.Join(params.RootDir, filePath)
-			// Try to find and delete from each device
-			for _, dirInfo := range dirsToSearch {
-				fullPath := filepath.Join(dirInfo.Dir, relPath)
-				if _, err := os.Stat(fullPath); err == nil {
-					if err := os.RemoveAll(fullPath); err != nil { // coverage: ignore - requires filesystem permission errors
-						return nil, fmt.Errorf("failed to delete %s from %s: %w", filePath, dirInfo.DeviceName, err)
-					}
-				}
+			fullPath := filepath.Join(device.CirrusDir, params.RootDir, filePath)
+			if err := os.RemoveAll(fullPath); err != nil { // coverage: ignore - requires filesystem permission errors
+				return nil, fmt.Errorf("failed to delete %s: %w", filePath, err)
 			}
 		}
 	}
@@ -68,8 +57,10 @@ func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
 
 // MoveFileParams contains parameters for moving a file
 type MoveFileParams struct {
-	FilePath    string
-	NewFilePath string
+	FilePath      string
+	NewFilePath   string
+	OldDeviceName string
+	NewDeviceName string
 }
 
 // MoveFileResult contains the result of a move operation
@@ -110,6 +101,7 @@ type UploadFilesParams struct {
 	RootDir     string
 	FileHeaders []*multipart.FileHeader
 	ReturnDir   string
+	DeviceName  string
 }
 
 // UploadFilesResult contains the result of an upload operation
@@ -172,6 +164,7 @@ func UploadFiles(params UploadFilesParams) (*UploadFilesResult, error) {
 type CreateFolderParams struct {
 	FolderDir  string
 	FolderName string
+	DeviceName string
 }
 
 // CreateFolderResult contains the result of a folder creation operation

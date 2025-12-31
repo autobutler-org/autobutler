@@ -40,11 +40,6 @@ func (w *worker) Process() error {
 	for {
 		select {
 		case deleteReq := <-w.deleteFilesChannel:
-			managedDevices, err := cirrusutil.GetManagedDevices()
-			if err != nil {
-				managedDevices = nil
-			}
-			deleteReq.ManagedDevices = managedDevices
 			if _, err := cirrusutil.DeleteFiles(deleteReq); err != nil {
 				w.errorChannel <- err
 			}

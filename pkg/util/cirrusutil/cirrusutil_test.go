@@ -382,9 +382,8 @@ func TestDeleteFiles_SingleDevice(t *testing.T) {
 	// This test would need the GetCirrusDir to return our tmpDir
 	// Since we can't easily mock that, we'll test the structure
 	params := DeleteFilesParams{
-		RootDir:        "",
-		FilePaths:      []string{"testfile.txt"},
-		ManagedDevices: nil,
+		RootDir:   "",
+		FilePaths: []string{"testfile.txt"},
 	}
 
 	// Note: This will fail in testing because GetCirrusDir returns a fixed path
@@ -619,28 +618,9 @@ func TestDeleteFiles_MultiDevice(t *testing.T) {
 	os.WriteFile(testFile1, []byte("content1"), 0644)
 	os.WriteFile(testFile2, []byte("content2"), 0644)
 
-	// Setup managed devices
-	devices := []ManagedDevice{
-		{
-			Device: Device{
-				Name:       "Device1",
-				MountPoint: "/mnt/dev1",
-			},
-			CirrusDir: tmpDir1,
-		},
-		{
-			Device: Device{
-				Name:       "Device2",
-				MountPoint: "/mnt/dev2",
-			},
-			CirrusDir: tmpDir2,
-		},
-	}
-
 	params := DeleteFilesParams{
-		RootDir:        "test",
-		FilePaths:      []string{"file1.txt"},
-		ManagedDevices: devices,
+		RootDir:   "test",
+		FilePaths: []string{"file1.txt"},
 	}
 
 	result, err := DeleteFiles(params)
@@ -664,34 +644,15 @@ func TestDeleteFiles_MultiDevice(t *testing.T) {
 func TestDeleteFiles_MultiDevice_PartialExistence(t *testing.T) {
 	// Create test directories
 	tmpDir1 := t.TempDir()
-	tmpDir2 := t.TempDir()
 
 	// Create test file only on first device
 	testFile1 := filepath.Join(tmpDir1, "test", "file1.txt")
 	os.MkdirAll(filepath.Dir(testFile1), 0755)
 	os.WriteFile(testFile1, []byte("content1"), 0644)
 
-	devices := []ManagedDevice{
-		{
-			Device: Device{
-				Name:       "Device1",
-				MountPoint: "/mnt/dev1",
-			},
-			CirrusDir: tmpDir1,
-		},
-		{
-			Device: Device{
-				Name:       "Device2",
-				MountPoint: "/mnt/dev2",
-			},
-			CirrusDir: tmpDir2,
-		},
-	}
-
 	params := DeleteFilesParams{
-		RootDir:        "test",
-		FilePaths:      []string{"file1.txt"},
-		ManagedDevices: devices,
+		RootDir:   "test",
+		FilePaths: []string{"file1.txt"},
 	}
 
 	_, err := DeleteFiles(params)
