@@ -233,7 +233,7 @@ func TestGetDataDirForDevice_MacOSSystemVolume(t *testing.T) {
 func TestGetDataDirForDevice_ExternalDevice(t *testing.T) {
 	// Test with external device mount point
 	dataDir := GetDataDirForDevice("/Volumes/External")
-	expected := "/Volumes/External/.autobutler/data"
+	expected := "/Volumes/External/autobutler/data"
 	if dataDir != expected {
 		t.Errorf("Expected %s, got %s", expected, dataDir)
 	}
@@ -1037,8 +1037,8 @@ func TestInitializeDeviceDataDir(t *testing.T) {
 	}
 
 	// Verify the directory structure was created
-	// For external devices, the path is: mountPoint/.autobutler/data/cirrus
-	dataDir := filepath.Join(tempDir, ".autobutler", "data")
+	// For external devices, the path is: mountPoint/autobutler/data/cirrus
+	dataDir := filepath.Join(tempDir, "autobutler", "data")
 	cirrusDir := ConstructCirrusDir(dataDir)
 	if _, err := os.Stat(cirrusDir); os.IsNotExist(err) {
 		t.Errorf("Expected cirrus directory to be created at %s", cirrusDir)
@@ -1048,7 +1048,7 @@ func TestInitializeDeviceDataDir(t *testing.T) {
 func TestInitializeDeviceDataDir_AlreadyExists(t *testing.T) {
 	// Create a temporary directory with existing structure
 	tempDir := t.TempDir()
-	dataDir := filepath.Join(tempDir, ".autobutler", "data")
+	dataDir := filepath.Join(tempDir, "autobutler", "data")
 	cirrusDir := ConstructCirrusDir(dataDir)
 	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
 		t.Fatalf("Failed to create test directory: %v", err)

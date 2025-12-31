@@ -18,14 +18,28 @@ type FileNodeJSON struct {
 	FullPath   string `json:"fullPath"`
 }
 
-func getCirrusFiles(filePath string) ([]*cirrusutil.DeviceFileInfo, error) {
-	fullPathDir := filepath.Join(cirrusutil.GetCirrusDir(), filePath)
-	deviceName, devicePath := cirrusutil.GetDeviceInfoForPath(fullPathDir)
-	return cirrusutil.StatFilesInDir(fullPathDir, deviceName, devicePath)
+// getCirrusFilesAcrossDevices merges files across all managed devices for the given filePath
+func getCirrusFilesAcrossDevices(filePath string) ([]*cirrusutil.DeviceFileInfo, error) {
+	devices, err := cirrusutil.GetManagedDevices()
+	if err != nil {
+		return nil, err
+	}
+	var allFiles []*cirrusutil.DeviceFileInfo
+	       for _, device := range devices {
+		       cirrusDir := device.CirrusDir
+		       fullPathDir := filepath.Join(cirrusDir, filePath)
+		       files, err := cirrusutil.StatFilesInDir(fullPathDir, device.Name, device.DataDir)
+		       if err != nil {
+			       // Optionally, skip devices with errors instead of failing all
+			       continue
+		       }
+		       allFiles = append(allFiles, files...)
+	       }
+	return allFiles, nil
 }
 
 func cirrusRouteCommon(c *gin.Context, filePath string) *serverutil.Response {
-	data, err := getCirrusFiles(filePath)
+	data, err := getCirrusFilesAcrossDevices(filePath)
 	if err != nil {
 		return serverutil.NewResponse().WithStatusCode(500).WithError(err)
 	}
