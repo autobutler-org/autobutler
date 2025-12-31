@@ -57,21 +57,23 @@
           @drop="handleDirectoryDrop($event, file)"
         >
           <td class="file-table-cell file-table-cell--clickable">
-            <component
-              :is="getIconComponent(CirrusService.determineFileType(file))"
-            />
-            <span class="file-table-name">
-              <span
-                class="file-table-name-label"
-                :class="{
-                  'file-table-name-label--drop-target':
-                    CirrusService.isDirectory(file) &&
-                    hoveredDirectoryPath === resolveDirectoryTargetPath(file),
-                }"
-              >
-                {{ CirrusService.getFileName(file) }}
+            <div
+              class="file-table-name-container"
+              :class="{
+                'file-table-name-container--drop-target':
+                  CirrusService.isDirectory(file) &&
+                  hoveredDirectoryPath === resolveDirectoryTargetPath(file),
+              }"
+            >
+              <component
+                :is="getIconComponent(CirrusService.determineFileType(file))"
+              />
+              <span class="file-table-name">
+                <span class="file-table-name-label">
+                  {{ CirrusService.getFileName(file) }}
+                </span>
               </span>
-            </span>
+            </div>
             <DeviceBadge
               v-if="props.showDeviceBadges && file.deviceName"
               :device-name="file.deviceName"
@@ -452,6 +454,18 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   }
 }
 
+.file-table-name-container {
+  display: flex;
+  align-items: center;
+  border-radius: $border-radius-md;
+  transition: background-color 0.15s ease;
+  padding: $spacing-xs $spacing-sm;
+
+  &--drop-target {
+    background-color: $color-primary-400;
+  }
+}
+
 .file-table-name {
   flex: 1;
   margin-left: $spacing-sm;
@@ -464,12 +478,8 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   display: inline-flex;
   align-items: center;
   border-radius: $border-radius-md;
-  padding: $spacing-xs $spacing-sm;
+  padding: 0 $spacing-xs;
   transition: background-color 0.15s ease;
-
-  &--drop-target {
-    background-color: $color-primary-400;
-  }
 }
 
 .file-table-size {
