@@ -26,17 +26,17 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
-import PhotosSidebar from '@/components/photos/PhotosSidebar.vue'
-import PhotoGrid from '@/components/photos/PhotoGrid.vue'
-import { fetchPhotos, type PhotoApiResponse } from '@/services/photosService'
 import LibraryLayout from '@/components/common/LibraryLayout.vue'
+import PhotoGrid from '@/components/photos/PhotoGrid.vue'
+import PhotosSidebar from '@/components/photos/PhotosSidebar.vue'
+import PhotosService, { type PhotoApiResponse } from '@/services/photosService'
+import type { Photo } from '@/types/photo'
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 const photos = ref<Photo[]>([])
 const totalPhotos = ref(0)
 const summary = ref({})
-import { useRouter } from 'vue-router'
-import type { Photo } from '@/types/photo'
 const router = useRouter()
 
 const onPhotoClick = (photo: Photo) => {
@@ -72,7 +72,7 @@ const convertPhotoApi = (photo: PhotoApiResponse) => {
 
 onMounted(async () => {
   try {
-    const photoList = await fetchPhotos()
+    const photoList = await PhotosService.listPhotos()
     photos.value = photoList.map(convertPhotoApi)
     totalPhotos.value = photoList.length
   } catch (e) {

@@ -172,12 +172,7 @@
 
 <script lang="ts" setup>
 import ModalDialog from '@/components/common/ModalDialog.vue'
-import {
-  determineFileType,
-  getFileName,
-  getFiles,
-  moveFile,
-} from '@/services/cirrusService'
+import CirrusService from '@/services/cirrusService'
 import type { CirrusFileNode, FileType } from '@/types/cirrus'
 import { onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -226,7 +221,7 @@ const fetchFiles = async () => {
   loading.value = true
   error.value = null
   try {
-    files.value = await getFiles(currentPath.value)
+    files.value = await CirrusService.getFiles(currentPath.value)
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to load files'
     files.value = []
@@ -279,12 +274,12 @@ const handleNavigateFolder = (path: string) => {
 
 const handleOpenFile = (file: CirrusFileNode) => {
   // Construct the relative path for the API from currentPath and filename
-  const fileName = getFileName(file)
+  const fileName = CirrusService.getFileName(file)
   const relativePath = currentPath.value
     ? `${currentPath.value}/${fileName}`
     : fileName
   selectedFileSrc.value = constructFileSrc(relativePath)
-  selectedFileType.value = determineFileType(file)
+  selectedFileType.value = CirrusService.determineFileType(file)
   fileViewerOpen.value = true
 }
 
@@ -339,7 +334,7 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 }
 
 const handleDownload = (file: CirrusFileNode) => {
-  const fileName = getFileName(file)
+  const fileName = CirrusService.getFileName(file)
   const relativePath = currentPath.value
     ? `${currentPath.value}/${fileName}`
     : fileName
@@ -375,7 +370,7 @@ const submitMoveDialog = async () => {
       moveDialogLoading.value = false
       return
     }
-    await moveFile(oldPath, newPath)
+    await CirrusService.moveFile(oldPath, newPath)
     // Update UI: refetch files and close dialog
     await fetchFiles()
     moveDialogOpen.value = false
@@ -390,7 +385,7 @@ const submitMoveDialog = async () => {
 
 const handleFileDetails = (file: CirrusFileNode) => {
   // TODO: Implement file details dialog
-  const fileName = getFileName(file)
+  const fileName = CirrusService.getFileName(file)
   console.log('File details:', fileName)
   alert(
     `File details for: ${fileName}\nPath: ${file.fullPath}\nDevice: ${file.deviceName}`,
@@ -398,7 +393,7 @@ const handleFileDetails = (file: CirrusFileNode) => {
 }
 
 const handleDelete = async (file: CirrusFileNode) => {
-  const fileName = getFileName(file)
+  const fileName = CirrusService.getFileName(file)
   if (!confirm(`Are you sure you want to delete "${fileName}"?`)) {
     return
   }

@@ -52,7 +52,7 @@
 import BooksSidebar from '@/components/books/BooksSidebar.vue'
 import LibraryLayout from '@/components/common/LibraryLayout.vue'
 import BookIcon from '@/components/icons/BookIcon.vue'
-import { fetchBooks, type BookApiResponse } from '@/services/booksService'
+import BooksService, { type BookApiResponse } from '@/services/booksService'
 import type { Book } from '@/types/book'
 import type { FileType } from '@/types/cirrus'
 import { onMounted, ref } from 'vue'
@@ -104,7 +104,7 @@ const convertBookApi = (book: BookApiResponse) => ({
 
 onMounted(async () => {
   try {
-    const bookList = await fetchBooks()
+    const bookList = await BooksService.listBooks()
     books.value = bookList.map(convertBookApi)
     totalBooks.value = bookList.length
   } catch (e) {

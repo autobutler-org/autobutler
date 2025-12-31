@@ -151,11 +151,7 @@
 
 <script lang="ts" setup>
 import FlashBanner from '@/components/common/FlashBanner.vue'
-import {
-  getAvailableReleases,
-  getCurrentVersion,
-  type Release,
-} from '@/services/versionService'
+import VersionService, { type Release } from '@/services/versionService'
 import type { NavLink } from '@/types/nav_link'
 import { toKeyComboString, type KeyCombo } from '@/util/keycombo'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
@@ -198,7 +194,7 @@ const loadingReleases = ref(false)
 
 // Fetch current version on mount
 onMounted(async () => {
-  currentVersion.value = await getCurrentVersion()
+  currentVersion.value = await VersionService.getCurrentVersion()
 
   // Add click outside listener for version dropdown
   document.addEventListener('click', handleClickOutside)
@@ -225,7 +221,7 @@ const toggleVersionDropdown = async () => {
   versionDropdownOpen.value = true
   if (releases.value.length === 0) {
     loadingReleases.value = true
-    releases.value = await getAvailableReleases()
+    releases.value = await VersionService.getAvailableReleases()
     loadingReleases.value = false
   }
 }

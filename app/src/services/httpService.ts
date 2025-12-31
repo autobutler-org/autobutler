@@ -9,6 +9,13 @@ export default class HttpService {
     options?: RequestInit,
   ): Promise<T> => this._genericRequest<T>(url, 'GET', undefined, options)
 
+  static put = async (
+    url: string,
+    body: unknown,
+    options?: RequestInit,
+  ): Promise<Response> =>
+    this._genericRequest<Response>(url, 'PUT', body, options)
+
   private static constructUrl(url: string): string {
     while (url.startsWith('/')) {
       url = url.slice(1)
@@ -19,7 +26,7 @@ export default class HttpService {
   private static _genericRequest = async <T>(
     url: string,
     method: string,
-    body?: never,
+    body?: unknown,
     options?: RequestInit,
   ): Promise<T> => {
     const fetchOptions: RequestInit = {
@@ -39,7 +46,7 @@ export default class HttpService {
         if (!response.ok) {
           return Promise.reject(response)
         }
-        return response as T
+        return response.json() as T
       })
       .catch((error) => {
         return Promise.reject(error)

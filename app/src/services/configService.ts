@@ -1,14 +1,14 @@
 import { useConfigStore, type ConfigState } from '@/stores/config'
+import HttpService from './httpService'
 
 export default class ConfigService {
   static initAsync = async () => {
-    const res = await fetch('/config.json')
     let data: ConfigState = {
       featureFlags: {},
     }
-    if (res.ok) {
-      data = (await res.json()) as ConfigState
-    }
+    try {
+      data = await HttpService.getAsJson<ConfigState>('/config.json')
+    } catch {}
     const configStore = useConfigStore()
     configStore.setFeatureFlags(data.featureFlags || {})
   }
