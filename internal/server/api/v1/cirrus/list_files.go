@@ -21,58 +21,58 @@ type FileNodeJSON struct {
 // getCirrusFilesAcrossDevices merges files across all managed devices for the given filePath
 // If deviceName is empty, list files across all devices. Otherwise, only for the specified device.
 func getCirrusFilesForDevice(filePath string, deviceName string) ([]*cirrusutil.DeviceFileInfo, error) {
-       devices, err := cirrusutil.GetManagedDevices()
-       if err != nil {
-	       return nil, err
-       }
-       var selectedDevices []cirrusutil.ManagedDevice
-       if deviceName == "" {
-	       selectedDevices = devices
-       } else {
-	       for _, d := range devices {
-		       if d.Name == deviceName {
-			       selectedDevices = append(selectedDevices, d)
-			       break
-		       }
-	       }
-	       if len(selectedDevices) == 0 {
-		       return nil, nil // Device not found, return empty
-	       }
-       }
-       var allFiles []*cirrusutil.DeviceFileInfo
-       for _, device := range selectedDevices {
-	       cirrusDir := device.CirrusDir
-	       fullPathDir := filepath.Join(cirrusDir, filePath)
-	       files, err := cirrusutil.StatFilesInDir(fullPathDir, device.Name, device.DataDir)
-	       if err != nil {
-		       continue
-	       }
-	       allFiles = append(allFiles, files...)
-       }
-       return allFiles, nil
+	devices, err := cirrusutil.GetManagedDevices()
+	if err != nil {
+		return nil, err
+	}
+	var selectedDevices []cirrusutil.ManagedDevice
+	if deviceName == "" {
+		selectedDevices = devices
+	} else {
+		for _, d := range devices {
+			if d.Name == deviceName {
+				selectedDevices = append(selectedDevices, d)
+				break
+			}
+		}
+		if len(selectedDevices) == 0 {
+			return nil, nil // Device not found, return empty
+		}
+	}
+	var allFiles []*cirrusutil.DeviceFileInfo
+	for _, device := range selectedDevices {
+		cirrusDir := device.CirrusDir
+		fullPathDir := filepath.Join(cirrusDir, filePath)
+		files, err := cirrusutil.StatFilesInDir(fullPathDir, device.Name, device.DataDir)
+		if err != nil {
+			continue
+		}
+		allFiles = append(allFiles, files...)
+	}
+	return allFiles, nil
 }
 
 func cirrusRouteCommon(c *gin.Context, filePath string) *serverutil.Response {
-       deviceName := c.Query("device")
-       data, err := getCirrusFilesForDevice(filePath, deviceName)
-       if err != nil {
-	       return serverutil.NewResponse().WithStatusCode(500).WithError(err)
-       }
+	deviceName := c.Query("device")
+	data, err := getCirrusFilesForDevice(filePath, deviceName)
+	if err != nil {
+		return serverutil.NewResponse().WithStatusCode(500).WithError(err)
+	}
 
-       // Convert to JSON-serializable format
-       jsonData := make([]FileNodeJSON, len(data))
-       for i, file := range data {
-	       jsonData[i] = FileNodeJSON{
-		       Name:       file.Name(),
-		       Size:       file.Size(),
-		       IsDir:      file.IsDir(),
-		       DeviceName: file.DeviceName,
-		       DevicePath: file.DevicePath,
-		       FullPath:   file.FullPath,
-	       }
-       }
+	// Convert to JSON-serializable format
+	jsonData := make([]FileNodeJSON, len(data))
+	for i, file := range data {
+		jsonData[i] = FileNodeJSON{
+			Name:       file.Name(),
+			Size:       file.Size(),
+			IsDir:      file.IsDir(),
+			DeviceName: file.DeviceName,
+			DevicePath: file.DevicePath,
+			FullPath:   file.FullPath,
+		}
+	}
 
-       return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(jsonData)
+	return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(jsonData)
 }
 
 var listFilesRoute = serverutil.ApiRoute(
