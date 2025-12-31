@@ -20,12 +20,12 @@ var newFolderRoute = serverutil.ApiRoute(
 		if !ok {
 			return serverutil.InternalServerError(fmt.Errorf("dependencies not found in context"))
 		}
-		       channel := deps.Worker().GetCreateFolderChannel()
-		       channel <- cirrusutil.CreateFolderParams{
-			       FolderDir:  folderDir,
-			       FolderName: folderName,
-			       DeviceName: deviceName,
-		       }
+		channel := deps.Worker().GetCreateFolderChannel()
+		channel <- cirrusutil.CreateFolderParams{
+			FolderDir:  folderDir,
+			FolderName: folderName,
+			DeviceName: deviceName,
+		}
 		return serverutil.Accepted()
 	},
 )

@@ -27,29 +27,29 @@ func uploadFilesImpl(c *gin.Context, rootDir string) *serverutil.Response {
 		return serverutil.BadRequest(err)
 	}
 
-	       form, err := c.MultipartForm()
-	       if err != nil {
-		       return serverutil.BadRequest(err)
-	       }
+	form, err := c.MultipartForm()
+	if err != nil {
+		return serverutil.BadRequest(err)
+	}
 
-	       fileHeaders := form.File["files"]
-	       returnDir := ""
-	       if len(form.Value["returnDir"]) > 0 {
-		       returnDir = form.Value["returnDir"][0]
-	       }
-	       deviceName := c.Query("device")
+	fileHeaders := form.File["files"]
+	returnDir := ""
+	if len(form.Value["returnDir"]) > 0 {
+		returnDir = form.Value["returnDir"][0]
+	}
+	deviceName := c.Query("device")
 
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	if !ok {
 		return serverutil.InternalServerError(fmt.Errorf("dependencies not found in context"))
 	}
-	       channel := deps.Worker().GetUploadFilesChannel()
-	       channel <- cirrusutil.UploadFilesParams{
-		       RootDir:     rootDir,
-		       FileHeaders: fileHeaders,
-		       ReturnDir:   returnDir,
-		       DeviceName:  deviceName,
-	       }
+	channel := deps.Worker().GetUploadFilesChannel()
+	channel <- cirrusutil.UploadFilesParams{
+		RootDir:     rootDir,
+		FileHeaders: fileHeaders,
+		ReturnDir:   returnDir,
+		DeviceName:  deviceName,
+	}
 
 	return serverutil.Accepted()
 }

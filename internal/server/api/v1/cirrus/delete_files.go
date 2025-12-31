@@ -20,12 +20,12 @@ var deleteFilesRoute = serverutil.ApiRoute(
 		if !ok {
 			return serverutil.InternalServerError(fmt.Errorf("dependencies not found in context"))
 		}
-		       channel := deps.Worker().GetDeleteFilesChannel()
-		       channel <- cirrusutil.DeleteFilesParams{
-			       RootDir:    rootDir,
-			       FilePaths:  filePaths,
-			       DeviceName: deviceName,
-		       }
+		channel := deps.Worker().GetDeleteFilesChannel()
+		channel <- cirrusutil.DeleteFilesParams{
+			RootDir:    rootDir,
+			FilePaths:  filePaths,
+			DeviceName: deviceName,
+		}
 		return serverutil.Accepted()
 	},
 )
