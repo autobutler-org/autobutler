@@ -19,23 +19,24 @@ export const useCirrusFileDropZone = ({
   const uploadProgress = ref('')
   const fileInputRef = ref<HTMLInputElement | null>(null)
 
-  const resolveCurrentPath = () => (unref(currentPath) || '').trim()
+  const resolveCurrentPath = () =>
+    (unref(currentPath) || '').replace(/^\/+|\/+$/g, '').trim()
 
-  const resolveUploadPath = () => {
-    const path = resolveCurrentPath()
-    return path ? `/api/v1/cirrus/${path}` : '/api/v1/cirrus'
-  }
-
-  const uploadFiles = async (files: FileList) => {
+  const uploadFiles = async (files: FileList, targetPath?: string) => {
     if (!files.length) return
 
     isUploading.value = true
     uploadProgress.value = `Uploading ${files.length} file${files.length > 1 ? 's' : ''}...`
 
     try {
-      await CirrusService.uploadFiles(resolveUploadPath(), files)
+      const targetUploadPath = targetPath?.trim() || resolveCurrentPath()
+      const uploadUrl = targetUploadPath
+        ? `/api/v1/cirrus/${targetUploadPath}`
+        : '/api/v1/cirrus'
 
-      const currentPathValue = resolveCurrentPath()
+      await CirrusService.uploadFiles(uploadUrl, files)
+
+      const currentPathValue = targetUploadPath
 
       const uploadedNodes: CirrusFileNode[] = Array.from(files).map((file) => ({
         name: file.name,
@@ -43,7 +44,9 @@ export const useCirrusFileDropZone = ({
         isDir: false,
         deviceName: '',
         devicePath: '',
-        fullPath: currentPathValue ? `${currentPathValue}/${file.name}` : file.name,
+        fullPath: currentPathValue
+          ? `${currentPathValue}/${file.name}`
+          : file.name,
       }))
 
       uploadProgress.value = 'Upload complete!'
@@ -82,20 +85,24 @@ export const useCirrusFileDropZone = ({
     const relatedTarget = event.relatedTarget as Node | null
 
     // Ignore leaves that move within the current drop zone
-    if (currentTarget && relatedTarget && currentTarget.contains(relatedTarget)) {
+    if (
+      currentTarget &&
+      relatedTarget &&
+      currentTarget.contains(relatedTarget)
+    ) {
       return
     }
 
     isDragOver.value = false
   }
 
-  const handleDrop = async (event: DragEvent) => {
+  const handleDrop = async (event: DragEvent, targetPath?: string) => {
     event.preventDefault()
     isDragOver.value = false
 
     const files = event.dataTransfer?.files
     if (files && files.length) {
-      await uploadFiles(files)
+      await uploadFiles(files, targetPath)
     }
   }
 
@@ -125,4 +132,6 @@ export const useCirrusFileDropZone = ({
   }
 }
 
-export type UseCirrusFileDropZoneReturn = ReturnType<typeof useCirrusFileDropZone>
+export type UseCirrusFileDropZoneReturn = ReturnType<
+  typeof useCirrusFileDropZone
+>

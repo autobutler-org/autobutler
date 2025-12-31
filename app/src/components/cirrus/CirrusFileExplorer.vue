@@ -286,15 +286,36 @@ const toggleDeviceBadges = (show: boolean) => {
   showDeviceBadges.value = show
 }
 
+const normalizePath = (path: string) => path.replace(/^\/+|\/+$/g, '').trim()
+
+const getParentPath = (fullPath: string) => {
+  const segments = normalizePath(fullPath).split('/').filter(Boolean)
+  segments.pop()
+  return segments.join('/')
+}
+
 // Handle files uploaded - add them to the list
 const handleFilesUploaded = (uploadedFiles: CirrusFileNode[]) => {
-  // Add the new files to the list, avoiding duplicates
+  const currentPathNormalized = normalizePath(currentPath.value)
+
   for (const newFile of uploadedFiles) {
+    const normalizedFullPath = normalizePath(newFile.fullPath)
+    const parentPath = getParentPath(newFile.fullPath)
+
+    // Only display the file if it belongs to the directory currently in view
+    if (parentPath !== currentPathNormalized) {
+      continue
+    }
+
     const exists = files.value.some((f) => {
-      return f.fullPath === newFile.fullPath
+      return normalizePath(f.fullPath) === normalizedFullPath
     })
+
     if (!exists) {
-      files.value.push(newFile)
+      files.value.push({
+        ...newFile,
+        fullPath: normalizedFullPath,
+      })
     }
   }
 }
