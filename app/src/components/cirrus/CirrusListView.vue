@@ -463,12 +463,12 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 .file-table-name-label {
   display: inline-flex;
   align-items: center;
-  border-radius: $border-radius-sm;
-  padding: 0 $spacing-xs;
+  border-radius: $border-radius-md;
+  padding: $spacing-xs $spacing-sm;
   transition: background-color 0.15s ease;
 
   &--drop-target {
-    background-color: rgba(64, 158, 255, 0.2);
+    background-color: $color-primary-400;
   }
 }
 
