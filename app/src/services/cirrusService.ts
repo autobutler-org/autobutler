@@ -1,4 +1,5 @@
 import type { CirrusFileNode, FileType } from '@/types/cirrus'
+
 import HttpService from './httpService'
 
 export default class CirrusService {

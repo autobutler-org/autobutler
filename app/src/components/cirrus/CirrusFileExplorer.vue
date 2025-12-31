@@ -287,7 +287,9 @@ const toggleDeviceBadges = (show: boolean) => {
 }
 
 const getParentPath = (fullPath: string) => {
-  const segments = CirrusService.normalizePath(fullPath).split('/').filter(Boolean)
+  const segments = CirrusService.normalizePath(fullPath)
+    .split('/')
+    .filter(Boolean)
   segments.pop()
   return segments.join('/')
 }
@@ -306,7 +308,7 @@ const handleFilesUploaded = (uploadedFiles: CirrusFileNode[]) => {
     }
 
     const exists = files.value.some((f) => {
-      return normalizePath(f.fullPath) === normalizedFullPath
+      return CirrusService.normalizePath(f.fullPath) === normalizedFullPath
     })
 
     if (!exists) {
