@@ -118,9 +118,7 @@ export default class CirrusService {
     params.append('rootDir', rootDir)
     params.append('filePaths', fileName)
     const url = `/api/v1/cirrus?${params.toString()}`
-    const response = await fetch(HttpService.baseUrl + url, {
-      method: 'DELETE',
-    })
+    const response = await HttpService.delete(url)
     if (!response.ok) throw new Error('Failed to delete file')
   }
 
@@ -136,10 +134,7 @@ export default class CirrusService {
       formData.append('files', file)
     }
     const url = uploadPath.startsWith('/') ? uploadPath : '/' + uploadPath
-    const response = await fetch(HttpService.baseUrl + url, {
-      method: 'POST',
-      body: formData,
-    })
+    const response = await HttpService.postForm(url, formData)
     if (!response.ok) throw new Error('Upload failed')
     return response
   }

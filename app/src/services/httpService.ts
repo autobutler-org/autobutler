@@ -1,34 +1,63 @@
 export default class HttpService {
+  static post = async (
+    url: string,
+    body: unknown,
+    options?: RequestInit,
+  ): Promise<Response> =>
+    HttpService._genericRequest(url, 'POST', body, options)
+
+  static postForm = async (
+    url: string,
+    formData: FormData,
+    options?: RequestInit,
+  ): Promise<Response> => {
+    const fetchOptions: RequestInit = {
+      method: 'POST',
+      body: formData,
+      ...options,
+    }
+    return fetch(HttpService.constructUrl(url), fetchOptions)
+  }
+
+  static delete = async (
+    url: string,
+    options?: RequestInit,
+  ): Promise<Response> =>
+    HttpService._genericRequest(url, 'DELETE', undefined, options)
   static baseUrl: string = `${window.location.protocol}//${window.location.hostname}:8080`
 
   static get = async (url: string, options?: RequestInit): Promise<Response> =>
-    this._genericRequest<Response>(url, 'GET', undefined, options)
+    HttpService._genericRequest(url, 'GET', undefined, options)
 
   static getAsJson = async <T>(
     url: string,
     options?: RequestInit,
-  ): Promise<T> => this._genericRequest<T>(url, 'GET', undefined, options)
+  ): Promise<T> =>
+    HttpService._genericRequest(url, 'GET', undefined, options).then(
+      async (response: Response) => {
+        return response.json() as Promise<T>
+      },
+    )
 
   static put = async (
     url: string,
     body: unknown,
     options?: RequestInit,
-  ): Promise<Response> =>
-    this._genericRequest<Response>(url, 'PUT', body, options)
+  ): Promise<Response> => HttpService._genericRequest(url, 'PUT', body, options)
 
-  private static constructUrl(url: string): string {
+  private static constructUrl = (url: string): string => {
     while (url.startsWith('/')) {
       url = url.slice(1)
     }
-    return `${this.baseUrl}/${url}`
+    return `${HttpService.baseUrl}/${url}`
   }
 
-  private static _genericRequest = async <T>(
+  private static _genericRequest = async (
     url: string,
     method: string,
     body?: unknown,
     options?: RequestInit,
-  ): Promise<T> => {
+  ): Promise<Response> => {
     const fetchOptions: RequestInit = {
       method,
       headers: {
@@ -46,7 +75,7 @@ export default class HttpService {
         if (!response.ok) {
           return Promise.reject(response)
         }
-        return response.json() as T
+        return response
       })
       .catch((error) => {
         return Promise.reject(error)

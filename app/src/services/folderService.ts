@@ -10,10 +10,7 @@ export default class FolderService {
     const url = folderPath
       ? `/api/v1/folder/cirrus/${folderPath}`
       : '/api/v1/folder/cirrus/'
-    const response = await fetch(HttpService.baseUrl + url, {
-      method: 'POST',
-      body: formData,
-    })
+    const response = await HttpService.postForm(url, formData)
     if (!response.ok) throw new Error('Failed to create folder')
   }
 }
