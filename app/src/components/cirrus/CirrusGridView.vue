@@ -106,11 +106,16 @@ const emit = defineEmits<{
   'files-uploaded': [files: CirrusFileNode[]]
 }>()
 
-const { isDragOver, handleDragEnter, handleDragOver, handleDragLeave, handleDrop } =
-  useCirrusFileDropZone({
-    currentPath: computed(() => props.currentPath),
-    onFilesUploaded: (files) => emit('files-uploaded', files),
-  })
+const {
+  isDragOver,
+  handleDragEnter,
+  handleDragOver,
+  handleDragLeave,
+  handleDrop,
+} = useCirrusFileDropZone({
+  currentPath: computed(() => props.currentPath),
+  onFilesUploaded: (files) => emit('files-uploaded', files),
+})
 
 const hoveredDirectoryPath = ref<string | null>(null)
 
@@ -221,14 +226,14 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 }
 
 .grid-view-container--dragging {
-  outline: 2px dashed rgba(64, 158, 255, 0.35);
+  outline: 2px dashed rgba($color-blue-500, 0.35);
 }
 
 .grid-view-drop-overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: rgba(64, 158, 255, 0.12);
+  background: rgba($color-blue-500, 0.12);
   border-radius: inherit;
   transition: opacity 0.2s ease;
 }
@@ -259,8 +264,8 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
     background-color: $theme-palette-accent;
   }
   &.grid-view-item--drop-target {
-    background-color: rgba(64, 158, 255, 0.2);
-    outline: 2px dashed rgba(64, 158, 255, 0.45);
+    background-color: rgba($color-blue-500, 0.2);
+    outline: 2px dashed rgba($color-blue-500, 0.45);
   }
 }
 

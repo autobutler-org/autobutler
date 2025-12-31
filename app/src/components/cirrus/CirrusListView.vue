@@ -342,14 +342,14 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 }
 
 .file-table-container--dragging {
-  outline: 2px dashed rgba(64, 158, 255, 0.35);
+  outline: 2px dashed rgba($color-blue-500, 0.35);
 }
 
 .file-table-drop-overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: rgba(64, 158, 255, 0.12);
+  background: rgba($color-blue-500, 0.12);
   border-radius: inherit;
   transition: opacity 0.2s ease;
 }
