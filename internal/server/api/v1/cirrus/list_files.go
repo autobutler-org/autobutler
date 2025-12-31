@@ -25,16 +25,16 @@ func getCirrusFilesAcrossDevices(filePath string) ([]*cirrusutil.DeviceFileInfo,
 		return nil, err
 	}
 	var allFiles []*cirrusutil.DeviceFileInfo
-	       for _, device := range devices {
-		       cirrusDir := device.CirrusDir
-		       fullPathDir := filepath.Join(cirrusDir, filePath)
-		       files, err := cirrusutil.StatFilesInDir(fullPathDir, device.Name, device.DataDir)
-		       if err != nil {
-			       // Optionally, skip devices with errors instead of failing all
-			       continue
-		       }
-		       allFiles = append(allFiles, files...)
-	       }
+	for _, device := range devices {
+		cirrusDir := device.CirrusDir
+		fullPathDir := filepath.Join(cirrusDir, filePath)
+		files, err := cirrusutil.StatFilesInDir(fullPathDir, device.Name, device.DataDir)
+		if err != nil {
+			// Optionally, skip devices with errors instead of failing all
+			continue
+		}
+		allFiles = append(allFiles, files...)
+	}
 	return allFiles, nil
 }
 
