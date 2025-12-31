@@ -31,13 +31,14 @@ func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
 
+	cirrusDir := GetCirrusDir()
 	if device != nil {
-		// Single device or specified device
-		for _, filePath := range params.FilePaths {
-			fullPath := filepath.Join(device.CirrusDir, params.RootDir, filePath)
-			if err := os.RemoveAll(fullPath); err != nil { // coverage: ignore - requires filesystem permission errors
-				return nil, fmt.Errorf("failed to delete %s: %w", filePath, err)
-			}
+		cirrusDir = device.CirrusDir
+	}
+	for _, filePath := range params.FilePaths {
+		fullPath := filepath.Join(cirrusDir, params.RootDir, filePath)
+		if err := os.RemoveAll(fullPath); err != nil { // coverage: ignore - requires filesystem permission errors
+			return nil, fmt.Errorf("failed to delete %s: %w", filePath, err)
 		}
 	}
 
@@ -267,6 +268,10 @@ func DownloadFile(params DownloadFileParams) (*DownloadFileResult, error) {
 	}
 	fullPath := filepath.Join(cirrusDir, params.FilePath)
 	fileType := DetermineFileTypeFromPath(fullPath)
+
+	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("file not found: %s", params.FilePath)
+	}
 
 	return &DownloadFileResult{
 		FullPath: fullPath,
