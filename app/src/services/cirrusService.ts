@@ -109,4 +109,38 @@ export default class CirrusService {
         return 'generic'
     }
   }
+
+  /**
+   * Delete a file in Cirrus
+   */
+  static async deleteFile(rootDir: string, fileName: string): Promise<void> {
+    const params = new URLSearchParams()
+    params.append('rootDir', rootDir)
+    params.append('filePaths', fileName)
+    const url = `/api/v1/cirrus?${params.toString()}`
+    const response = await fetch(HttpService.baseUrl + url, {
+      method: 'DELETE',
+    })
+    if (!response.ok) throw new Error('Failed to delete file')
+  }
+
+  /**
+   * Upload files to Cirrus
+   */
+  static async uploadFiles(
+    uploadPath: string,
+    files: FileList | File[],
+  ): Promise<Response> {
+    const formData = new FormData()
+    for (const file of Array.from(files)) {
+      formData.append('files', file)
+    }
+    const url = uploadPath.startsWith('/') ? uploadPath : '/' + uploadPath
+    const response = await fetch(HttpService.baseUrl + url, {
+      method: 'POST',
+      body: formData,
+    })
+    if (!response.ok) throw new Error('Upload failed')
+    return response
+  }
 }

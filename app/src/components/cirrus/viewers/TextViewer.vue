@@ -12,6 +12,7 @@
 </template>
 
 <script lang="ts" setup>
+import TextFileService from '@/services/textFileService'
 import { computed, onMounted, ref } from 'vue'
 
 const props = defineProps<{
@@ -26,11 +27,7 @@ const filename = computed(() => props.src.split('/').pop())
 
 onMounted(async () => {
   try {
-    const response = await fetch(props.src)
-    if (!response.ok) {
-      throw new Error('Failed to load file')
-    }
-    content.value = await response.text()
+    content.value = await TextFileService.fetchTextFile(props.src)
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to load file'
   } finally {

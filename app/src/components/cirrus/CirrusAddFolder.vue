@@ -26,6 +26,8 @@
 
 <script lang="ts" setup>
 import { nextTick, ref } from 'vue'
+
+import FolderService from '@/services/folderService'
 import AddFolderIcon from '../icons/AddFolderIcon.vue'
 
 const props = defineProps<{
@@ -47,22 +49,7 @@ const createFolder = async () => {
 
   isCreating.value = true
   try {
-    const formData = new FormData()
-    formData.append('folderName', folderName.value.trim())
-
-    const folderPath = props.currentPath
-      ? `/api/v1/folder/cirrus/${props.currentPath}`
-      : '/api/v1/folder/cirrus/'
-
-    const response = await fetch(folderPath, {
-      method: 'POST',
-      body: formData,
-    })
-
-    if (!response.ok) {
-      throw new Error('Failed to create folder')
-    }
-
+    await FolderService.createFolder(props.currentPath, folderName.value.trim())
     emit('folder-created', folderName.value.trim())
     folderName.value = ''
     showFolderInput.value = false

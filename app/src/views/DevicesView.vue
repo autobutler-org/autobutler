@@ -43,6 +43,7 @@
 import { onMounted, ref } from 'vue'
 
 import GradientOverlays from '@/components/home/GradientOverlays.vue'
+import DevicesService from '@/services/devicesService'
 import type { Device } from '@/types/device'
 import type { Summary } from '@/types/summary'
 import DeviceCard from '../components/DeviceCard.vue'
@@ -62,8 +63,7 @@ const loading = ref(false)
 const fetchDevices = async () => {
   loading.value = true
   try {
-    const res = await fetch('/api/v1/storage/devices/status')
-    const data = await res.json()
+    const data = await DevicesService.fetchDevicesStatus()
     devices.value = data.devices || []
     summary.value = calculateSummary(devices.value)
   } finally {

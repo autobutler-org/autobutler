@@ -404,13 +404,7 @@ const handleDelete = async (file: CirrusFileNode) => {
     params.append('rootDir', currentPath.value)
     params.append('filePaths', fileName)
 
-    const response = await fetch(`/api/v1/cirrus?${params.toString()}`, {
-      method: 'DELETE',
-    })
-
-    if (!response.ok) {
-      throw new Error('Failed to delete file')
-    }
+    await CirrusService.deleteFile(currentPath.value, fileName)
 
     // Remove the file from the in-memory list
     files.value = files.value.filter((f) => {
