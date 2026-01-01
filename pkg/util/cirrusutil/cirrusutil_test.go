@@ -233,7 +233,7 @@ func TestGetDataDirForDevice_MacOSSystemVolume(t *testing.T) {
 func TestGetDataDirForDevice_ExternalDevice(t *testing.T) {
 	// Test with external device mount point
 	dataDir := GetDataDirForDevice("/Volumes/External")
-	expected := "/Volumes/External/.autobutler/data"
+	expected := "/Volumes/External/autobutler/data"
 	if dataDir != expected {
 		t.Errorf("Expected %s, got %s", expected, dataDir)
 	}
@@ -382,9 +382,8 @@ func TestDeleteFiles_SingleDevice(t *testing.T) {
 	// This test would need the GetCirrusDir to return our tmpDir
 	// Since we can't easily mock that, we'll test the structure
 	params := DeleteFilesParams{
-		RootDir:        "",
-		FilePaths:      []string{"testfile.txt"},
-		ManagedDevices: nil,
+		RootDir:   "",
+		FilePaths: []string{"testfile.txt"},
 	}
 
 	// Note: This will fail in testing because GetCirrusDir returns a fixed path
@@ -428,8 +427,7 @@ func TestCreateFolder(t *testing.T) {
 
 func TestDownloadFile(t *testing.T) {
 	params := DownloadFileParams{
-		FilePath:       "nonexistent/file.txt",
-		ManagedDevices: nil,
+		FilePath: "nonexistent/file.txt",
 	}
 
 	_, err := DownloadFile(params)
@@ -602,106 +600,6 @@ func TestDoesFileExist(t *testing.T) {
 	nonExistentFile := filepath.Join(tmpDir, "does-not-exist.txt")
 	if DoesFileExist(nonExistentFile) {
 		t.Error("Expected file to not exist")
-	}
-}
-
-func TestDeleteFiles_MultiDevice(t *testing.T) {
-	// Create test directories for multiple devices
-	tmpDir1 := t.TempDir()
-	tmpDir2 := t.TempDir()
-
-	// Create test files on both devices
-	testFile1 := filepath.Join(tmpDir1, "test", "file1.txt")
-	testFile2 := filepath.Join(tmpDir2, "test", "file1.txt")
-
-	os.MkdirAll(filepath.Dir(testFile1), 0755)
-	os.MkdirAll(filepath.Dir(testFile2), 0755)
-	os.WriteFile(testFile1, []byte("content1"), 0644)
-	os.WriteFile(testFile2, []byte("content2"), 0644)
-
-	// Setup managed devices
-	devices := []ManagedDevice{
-		{
-			Device: Device{
-				Name:       "Device1",
-				MountPoint: "/mnt/dev1",
-			},
-			CirrusDir: tmpDir1,
-		},
-		{
-			Device: Device{
-				Name:       "Device2",
-				MountPoint: "/mnt/dev2",
-			},
-			CirrusDir: tmpDir2,
-		},
-	}
-
-	params := DeleteFilesParams{
-		RootDir:        "test",
-		FilePaths:      []string{"file1.txt"},
-		ManagedDevices: devices,
-	}
-
-	result, err := DeleteFiles(params)
-	if err != nil {
-		t.Fatalf("DeleteFiles failed: %v", err)
-	}
-
-	if result.RootDir != "test" {
-		t.Errorf("Expected RootDir 'test', got '%s'", result.RootDir)
-	}
-
-	// Verify files were deleted from both devices
-	if DoesFileExist(testFile1) {
-		t.Error("Expected file to be deleted from device 1")
-	}
-	if DoesFileExist(testFile2) {
-		t.Error("Expected file to be deleted from device 2")
-	}
-}
-
-func TestDeleteFiles_MultiDevice_PartialExistence(t *testing.T) {
-	// Create test directories
-	tmpDir1 := t.TempDir()
-	tmpDir2 := t.TempDir()
-
-	// Create test file only on first device
-	testFile1 := filepath.Join(tmpDir1, "test", "file1.txt")
-	os.MkdirAll(filepath.Dir(testFile1), 0755)
-	os.WriteFile(testFile1, []byte("content1"), 0644)
-
-	devices := []ManagedDevice{
-		{
-			Device: Device{
-				Name:       "Device1",
-				MountPoint: "/mnt/dev1",
-			},
-			CirrusDir: tmpDir1,
-		},
-		{
-			Device: Device{
-				Name:       "Device2",
-				MountPoint: "/mnt/dev2",
-			},
-			CirrusDir: tmpDir2,
-		},
-	}
-
-	params := DeleteFilesParams{
-		RootDir:        "test",
-		FilePaths:      []string{"file1.txt"},
-		ManagedDevices: devices,
-	}
-
-	_, err := DeleteFiles(params)
-	if err != nil {
-		t.Fatalf("DeleteFiles should not fail when file doesn't exist on all devices: %v", err)
-	}
-
-	// Verify file was deleted from device 1
-	if DoesFileExist(testFile1) {
-		t.Error("Expected file to be deleted from device 1")
 	}
 }
 
@@ -918,76 +816,9 @@ func TestUploadFiles_CopyError(t *testing.T) {
 	t.Skip("Copy errors require simulating I/O failures")
 }
 
-func TestDownloadFile_MultiDevice(t *testing.T) {
-	// Create test directories
-	tmpDir1 := t.TempDir()
-	tmpDir2 := t.TempDir()
-
-	// Create test file only on second device
-	testFile := filepath.Join(tmpDir2, "test", "file1.txt")
-	os.MkdirAll(filepath.Dir(testFile), 0755)
-	os.WriteFile(testFile, []byte("content"), 0644)
-
-	devices := []ManagedDevice{
-		{
-			Device: Device{
-				Name:       "Device1",
-				MountPoint: "/mnt/dev1",
-			},
-			CirrusDir: tmpDir1,
-		},
-		{
-			Device: Device{
-				Name:       "Device2",
-				MountPoint: "/mnt/dev2",
-			},
-			CirrusDir: tmpDir2,
-		},
-	}
-
-	params := DownloadFileParams{
-		FilePath:       "test/file1.txt",
-		ManagedDevices: devices,
-	}
-
-	result, err := DownloadFile(params)
-	if err != nil {
-		t.Fatalf("DownloadFile failed: %v", err)
-	}
-
-	if result.FullPath != testFile {
-		t.Errorf("Expected FullPath %s, got %s", testFile, result.FullPath)
-	}
-
-	if result.FileType == FileTypeFolder {
-		t.Error("Expected FileType to not be FileTypeFolder for a file")
-	}
-}
-
 func TestDownloadFile_MultiDevice_NotFound(t *testing.T) {
-	tmpDir1 := t.TempDir()
-	tmpDir2 := t.TempDir()
-
-	devices := []ManagedDevice{
-		{
-			Device: Device{
-				Name:       "Device1",
-				MountPoint: "/mnt/dev1",
-			},
-			CirrusDir: tmpDir1,
-		},
-		{
-			Device: Device{
-				Name:       "Device2",
-				MountPoint: "/mnt/dev2",
-			},
-			CirrusDir: tmpDir2,
-		},
-	}
-
 	params := DownloadFileParams{
-		FilePath:       "test/nonexistent.txt",
-		ManagedDevices: devices,
+		FilePath: "test/nonexistent.txt",
 	}
 
 	_, err := DownloadFile(params)
@@ -1037,8 +868,8 @@ func TestInitializeDeviceDataDir(t *testing.T) {
 	}
 
 	// Verify the directory structure was created
-	// For external devices, the path is: mountPoint/.autobutler/data/cirrus
-	dataDir := filepath.Join(tempDir, ".autobutler", "data")
+	// For external devices, the path is: mountPoint/autobutler/data/cirrus
+	dataDir := filepath.Join(tempDir, "autobutler", "data")
 	cirrusDir := ConstructCirrusDir(dataDir)
 	if _, err := os.Stat(cirrusDir); os.IsNotExist(err) {
 		t.Errorf("Expected cirrus directory to be created at %s", cirrusDir)
@@ -1048,7 +879,7 @@ func TestInitializeDeviceDataDir(t *testing.T) {
 func TestInitializeDeviceDataDir_AlreadyExists(t *testing.T) {
 	// Create a temporary directory with existing structure
 	tempDir := t.TempDir()
-	dataDir := filepath.Join(tempDir, ".autobutler", "data")
+	dataDir := filepath.Join(tempDir, "autobutler", "data")
 	cirrusDir := ConstructCirrusDir(dataDir)
 	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
 		t.Fatalf("Failed to create test directory: %v", err)

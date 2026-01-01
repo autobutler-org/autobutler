@@ -11,6 +11,21 @@ type ManagedDevice struct {
 	CirrusDir string `json:"cirrus_dir"` // Path to cirrus subdirectory
 }
 
+func FindManagedDeviceByName(name string) (*ManagedDevice, error) {
+	managedDevices, err := GetManagedDevices()
+	if err != nil {
+		return nil, err // coverage: ignore - requires device detection failure
+	}
+	if name != "" {
+		for _, d := range managedDevices {
+			if d.Name == name {
+				return &d, nil
+			}
+		}
+	}
+	return nil, nil
+}
+
 // GetManagedDevices returns all devices that have an autobutler data directory
 func GetManagedDevices() ([]ManagedDevice, error) {
 	detector := NewDetector()

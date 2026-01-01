@@ -40,8 +40,9 @@ func (l *LinuxDetector) DetectDevices() ([]Device, error) {
 		mountPoint := fields[6]
 
 		// Skip non-physical filesystems
-		if !strings.HasPrefix(devicePath, "/dev/") ||
-			strings.HasPrefix(devicePath, "/dev/loop") {
+		if (!strings.HasPrefix(devicePath, "/dev/") ||
+			strings.HasPrefix(devicePath, "/dev/loop")) &&
+			(mountPoint != "/mnt/usb") /* Specific mount for dev usage */ {
 			continue
 		}
 

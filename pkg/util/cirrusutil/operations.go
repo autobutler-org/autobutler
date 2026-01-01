@@ -11,9 +11,9 @@ import (
 
 // DeleteFilesParams contains parameters for deleting files
 type DeleteFilesParams struct {
-	RootDir        string
-	FilePaths      []string
-	ManagedDevices []ManagedDevice
+	RootDir    string
+	FilePaths  []string
+	DeviceName string
 }
 
 // DeleteFilesResult contains the result of a delete operation
@@ -26,38 +26,19 @@ type DeleteFilesChannel chan DeleteFilesParams
 
 // DeleteFiles removes files from the filesystem, handling both single and multi-device scenarios
 func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
-	if len(params.ManagedDevices) == 0 {
-		// Fallback to single device
-		fileDir := GetCirrusDir()
-		for _, filePath := range params.FilePaths {
-			fullPath := filepath.Join(fileDir, params.RootDir, filePath)
-			if err := os.RemoveAll(fullPath); err != nil { // coverage: ignore - requires filesystem permission errors
-				return nil, fmt.Errorf("failed to delete %s: %w", filePath, err)
-			}
-		}
-	} else {
-		// Build list of device directories
-		var dirsToSearch []DirWithDevice
-		for _, device := range params.ManagedDevices {
-			dirsToSearch = append(dirsToSearch, DirWithDevice{
-				Dir:        device.CirrusDir,
-				DeviceName: device.Name,
-				DevicePath: device.MountPoint,
-			})
-		}
+	device, err := FindManagedDeviceByName(params.DeviceName)
+	if err != nil {
+		return nil, err // coverage: ignore - requires device detection failure
+	}
 
-		// Delete files from all devices where they exist
-		for _, filePath := range params.FilePaths {
-			relPath := filepath.Join(params.RootDir, filePath)
-			// Try to find and delete from each device
-			for _, dirInfo := range dirsToSearch {
-				fullPath := filepath.Join(dirInfo.Dir, relPath)
-				if _, err := os.Stat(fullPath); err == nil {
-					if err := os.RemoveAll(fullPath); err != nil { // coverage: ignore - requires filesystem permission errors
-						return nil, fmt.Errorf("failed to delete %s from %s: %w", filePath, dirInfo.DeviceName, err)
-					}
-				}
-			}
+	cirrusDir := GetCirrusDir()
+	if device != nil {
+		cirrusDir = device.CirrusDir
+	}
+	for _, filePath := range params.FilePaths {
+		fullPath := filepath.Join(cirrusDir, params.RootDir, filePath)
+		if err := os.RemoveAll(fullPath); err != nil { // coverage: ignore - requires filesystem permission errors
+			return nil, fmt.Errorf("failed to delete %s: %w", filePath, err)
 		}
 	}
 
@@ -68,8 +49,10 @@ func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
 
 // MoveFileParams contains parameters for moving a file
 type MoveFileParams struct {
-	FilePath    string
-	NewFilePath string
+	FilePath      string
+	NewFilePath   string
+	OldDeviceName string
+	NewDeviceName string
 }
 
 // MoveFileResult contains the result of a move operation
@@ -82,9 +65,28 @@ type MoveFileChannel chan MoveFileParams
 
 // MoveFile moves a file from one location to another
 func MoveFile(params MoveFileParams) (*MoveFileResult, error) {
-	filesDir := GetCirrusDir()
-	oldFullPath := filepath.Join(filesDir, params.FilePath)
-	newFullPath := filepath.Join(filesDir, params.NewFilePath)
+	oldDevice, err := FindManagedDeviceByName(params.OldDeviceName)
+	if err != nil {
+		return nil, err // coverage: ignore - requires device detection failure
+	}
+	newDevice, err := FindManagedDeviceByName(params.NewDeviceName)
+	if err != nil {
+		return nil, err // coverage: ignore - requires device detection failure
+	}
+
+	defaultCirrusDir := GetCirrusDir()
+
+	oldCirrusDir := defaultCirrusDir
+	if oldDevice != nil {
+		oldCirrusDir = oldDevice.CirrusDir
+	}
+	newCirrusDir := defaultCirrusDir
+	if newDevice != nil {
+		newCirrusDir = newDevice.CirrusDir
+	}
+
+	oldFullPath := filepath.Join(oldCirrusDir, params.FilePath)
+	newFullPath := filepath.Join(newCirrusDir, params.NewFilePath)
 
 	newFullDir := filepath.Dir(newFullPath)
 	if err := os.MkdirAll(newFullDir, 0755); err != nil {
@@ -92,7 +94,33 @@ func MoveFile(params MoveFileParams) (*MoveFileResult, error) {
 	}
 
 	if err := os.Rename(oldFullPath, newFullPath); err != nil { // coverage: ignore - requires filesystem permission errors or cross-device move
-		return nil, fmt.Errorf("failed to move file: %w", err)
+		// Check for cross-device link error (EXDEV)
+		if linkErr, ok := err.(*os.LinkError); ok && linkErr.Err.Error() == "invalid cross-device link" {
+			// Fallback: copy then delete
+			srcFile, err := os.Open(oldFullPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to open source file for cross-device move: %w", err)
+			}
+			defer srcFile.Close()
+
+			// Create destination file
+			dstFile, err := os.Create(newFullPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create destination file for cross-device move: %w", err)
+			}
+			defer dstFile.Close()
+
+			if _, err := io.Copy(dstFile, srcFile); err != nil {
+				return nil, fmt.Errorf("failed to copy file for cross-device move: %w", err)
+			}
+
+			// Remove the source file
+			if err := os.Remove(oldFullPath); err != nil {
+				return nil, fmt.Errorf("failed to remove source file after cross-device move: %w", err)
+			}
+		} else {
+			return nil, fmt.Errorf("failed to move file: %w", err)
+		}
 	}
 
 	newDir := filepath.Dir(params.NewFilePath)
@@ -110,6 +138,7 @@ type UploadFilesParams struct {
 	RootDir     string
 	FileHeaders []*multipart.FileHeader
 	ReturnDir   string
+	DeviceName  string
 }
 
 // UploadFilesResult contains the result of an upload operation
@@ -122,6 +151,15 @@ type UploadFilesChannel chan UploadFilesParams
 
 // UploadFiles saves uploaded files to the filesystem
 func UploadFiles(params UploadFilesParams) (*UploadFilesResult, error) {
+	device, err := FindManagedDeviceByName(params.DeviceName)
+	if err != nil {
+		return nil, err // coverage: ignore - requires device detection failure
+	}
+
+	fileDir := GetCirrusDir()
+	if device != nil {
+		fileDir = device.CirrusDir
+	}
 	for _, header := range params.FileHeaders {
 		file, err := header.Open()
 		if err != nil { // coverage: ignore - requires malformed multipart data
@@ -129,7 +167,6 @@ func UploadFiles(params UploadFilesParams) (*UploadFilesResult, error) {
 		}
 		defer file.Close()
 
-		fileDir := GetCirrusDir()
 		newFilePath := filepath.Join(fileDir, params.RootDir, header.Filename)
 
 		// Handle file name conflicts
@@ -172,6 +209,7 @@ func UploadFiles(params UploadFilesParams) (*UploadFilesResult, error) {
 type CreateFolderParams struct {
 	FolderDir  string
 	FolderName string
+	DeviceName string
 }
 
 // CreateFolderResult contains the result of a folder creation operation
@@ -184,7 +222,14 @@ type CreateFolderChannel chan CreateFolderParams
 
 // CreateFolder creates a new folder in the filesystem
 func CreateFolder(params CreateFolderParams) (*CreateFolderResult, error) {
+	device, err := FindManagedDeviceByName(params.DeviceName)
+	if err != nil {
+		return nil, err // coverage: ignore - requires device detection failure
+	}
 	rootDir := GetCirrusDir()
+	if device != nil {
+		rootDir = device.CirrusDir
+	}
 	fullPath := filepath.Join(rootDir, params.FolderDir, params.FolderName)
 
 	if err := os.MkdirAll(fullPath, 0755); err != nil {
@@ -198,8 +243,8 @@ func CreateFolder(params CreateFolderParams) (*CreateFolderResult, error) {
 
 // DownloadFileParams contains parameters for downloading a file
 type DownloadFileParams struct {
-	FilePath       string
-	ManagedDevices []ManagedDevice
+	FilePath   string
+	DeviceName string
 }
 
 // DownloadFileResult contains the result of a download operation
@@ -213,34 +258,20 @@ type DownloadFileResult struct {
 
 // DownloadFile prepares a file for download, handling both files and folders (as zip)
 func DownloadFile(params DownloadFileParams) (*DownloadFileResult, error) {
-	var fullPath string
-	var err error
-
-	if len(params.ManagedDevices) == 0 {
-		// Fallback to single device
-		rootDir := GetCirrusDir()
-		fullPath = filepath.Join(rootDir, params.FilePath)
-		if !DoesFileExist(fullPath) {
-			return nil, fmt.Errorf("file not found: %s", fullPath)
-		}
-	} else {
-		// Search for file across all managed devices
-		var dirsToSearch []DirWithDevice
-		for _, device := range params.ManagedDevices {
-			dirsToSearch = append(dirsToSearch, DirWithDevice{
-				Dir:        device.CirrusDir,
-				DeviceName: device.Name,
-				DevicePath: device.MountPoint,
-			})
-		}
-
-		fullPath, err = FindFileAcrossDevices(dirsToSearch, params.FilePath)
-		if err != nil {
-			return nil, fmt.Errorf("file not found: %w", err)
-		}
+	device, err := FindManagedDeviceByName(params.DeviceName)
+	if err != nil {
+		return nil, err // coverage: ignore - requires device detection failure
 	}
-
+	cirrusDir := GetCirrusDir()
+	if device != nil {
+		cirrusDir = device.CirrusDir
+	}
+	fullPath := filepath.Join(cirrusDir, params.FilePath)
 	fileType := DetermineFileTypeFromPath(fullPath)
+
+	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("file not found: %s", params.FilePath)
+	}
 
 	return &DownloadFileResult{
 		FullPath: fullPath,

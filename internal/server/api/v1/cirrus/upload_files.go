@@ -37,6 +37,7 @@ func uploadFilesImpl(c *gin.Context, rootDir string) *serverutil.Response {
 	if len(form.Value["returnDir"]) > 0 {
 		returnDir = form.Value["returnDir"][0]
 	}
+	deviceName := c.Query("device")
 
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	if !ok {
@@ -47,6 +48,7 @@ func uploadFilesImpl(c *gin.Context, rootDir string) *serverutil.Response {
 		RootDir:     rootDir,
 		FileHeaders: fileHeaders,
 		ReturnDir:   returnDir,
+		DeviceName:  deviceName,
 	}
 
 	return serverutil.Accepted()

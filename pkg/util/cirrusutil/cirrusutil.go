@@ -199,8 +199,8 @@ func GetDataDirForDevice(mountPoint string) string {
 		}
 	}
 
-	// For external devices, use .autobutler directory on the device itself
-	return filepath.Join(mountPoint, ".autobutler", "data")
+	// For external devices, use autobutler directory on the device itself
+	return filepath.Join(mountPoint, "autobutler", "data")
 }
 
 func GetDataDir() string {
