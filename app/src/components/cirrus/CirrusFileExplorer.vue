@@ -597,7 +597,6 @@ const handleDelete = async (file: CirrusFileNode) => {
     border-color 0.15s,
     box-shadow 0.15s;
   background: $theme-palette-bg-inverse;
-  color: $theme-palette-text-primary;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.01);
 
   &:focus {
