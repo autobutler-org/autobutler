@@ -11,7 +11,7 @@ import (
 )
 
 type moveFileRequest struct {
-	FilePath    string `json:"filePath"`
+	OldFilePath string `json:"oldFilePath"`
 	NewFilePath string `json:"newFilePath"`
 	OldDevice   string `json:"oldDevice"`
 	NewDevice   string `json:"newDevice"`
@@ -30,7 +30,7 @@ var moveFileRoute = serverutil.ApiRoute(
 		}
 		channel := deps.Worker().GetMoveFileChannel()
 		channel <- cirrusutil.MoveFileParams{
-			FilePath:      req.FilePath,
+			OldFilePath:   req.OldFilePath,
 			NewFilePath:   req.NewFilePath,
 			OldDeviceName: req.OldDevice,
 			NewDeviceName: req.NewDevice,
