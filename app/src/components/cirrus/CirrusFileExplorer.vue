@@ -125,7 +125,17 @@
       v-if="moveDialogOpen"
       @close="moveDialogOpen = false"
       :transparent="true"
+      :hide-close-button="true"
     >
+      <div class="custom-modal-close-wrapper">
+        <button
+          class="custom-modal-close"
+          @click="moveDialogOpen = false"
+          aria-label="Close"
+        >
+          <CloseIcon />
+        </button>
+      </div>
       <form @submit.prevent="submitMoveDialog" class="move-dialog-form">
         <h3 class="move-dialog-title">Rename or Move</h3>
         <div class="move-dialog-field">
@@ -145,14 +155,6 @@
         </div>
         <div class="move-dialog-actions">
           <button
-            type="button"
-            class="btn btn--secondary"
-            @click="moveDialogOpen = false"
-            :disabled="moveDialogLoading"
-          >
-            Cancel
-          </button>
-          <button
             type="submit"
             class="btn btn--primary"
             :disabled="moveDialogLoading"
@@ -163,13 +165,70 @@
         </div>
       </form>
     </ModalDialog>
-
+    <!-- File Details Modal Dialog -->
+    <ModalDialog
+      v-if="detailsDialogOpen"
+      @close="closeDetailsDialog"
+      :transparent="true"
+      :hide-close-button="true"
+    >
+      <div class="custom-modal-close-wrapper">
+        <button
+          class="custom-modal-close"
+          @click="closeDetailsDialog"
+          aria-label="Close"
+        >
+          <CloseIcon />
+        </button>
+      </div>
+      <div class="details-dialog-form">
+        <div class="details-dialog-header">
+          <span class="details-dialog-title">File Details</span>
+        </div>
+        <div v-if="detailsDialogFile">
+          <table class="details-table">
+            <tbody>
+              <tr>
+                <th>Name</th>
+                <td>{{ detailsDialogFile.name }}</td>
+              </tr>
+              <tr>
+                <th>Path</th>
+                <td class="details-path">{{ detailsDialogFile.fullPath }}</td>
+              </tr>
+              <tr>
+                <th>Device</th>
+                <td>{{ detailsDialogFile.deviceName }}</td>
+              </tr>
+              <tr v-if="detailsDialogFile.size !== undefined">
+                <th>Size</th>
+                <td>{{ detailsDialogFile.size }} bytes</td>
+              </tr>
+              <tr>
+                <th>Type</th>
+                <td>{{ detailsDialogFile.isDir ? 'Folder' : 'File' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ModalDialog>
     <!-- Delete Confirmation Modal Dialog -->
     <ModalDialog
       v-if="deleteDialogOpen"
       @close="closeDeleteDialog"
       :transparent="true"
+      :hide-close-button="true"
     >
+      <div class="custom-modal-close-wrapper">
+        <button
+          class="custom-modal-close"
+          @click="closeDeleteDialog"
+          aria-label="Close"
+        >
+          <CloseIcon />
+        </button>
+      </div>
       <form @submit.prevent="confirmDelete" class="move-dialog-form">
         <h3 class="move-dialog-title">Delete File</h3>
         <div class="move-dialog-field">
@@ -183,14 +242,6 @@
           {{ deleteDialogError }}
         </div>
         <div class="move-dialog-actions">
-          <button
-            type="button"
-            class="btn btn--secondary"
-            @click="closeDeleteDialog"
-            :disabled="deleteDialogLoading"
-          >
-            Cancel
-          </button>
           <button
             type="submit"
             class="btn btn--primary"
@@ -207,6 +258,7 @@
 
 <script lang="ts" setup>
 import ModalDialog from '@/components/common/ModalDialog.vue';
+import CloseIcon from '@/components/icons/CloseIcon.vue';
 import CirrusService from '@/services/cirrusService';
 import type { CirrusFileNode, FileType } from '@/types/cirrus';
 import { onMounted, ref, watch } from 'vue';
@@ -250,6 +302,18 @@ const moveDialogError = ref('');
 const moveDialogNewPath = ref('');
 const moveDialogOldDeviceName = ref('');
 const moveDialogFile = ref<CirrusFileNode | null>(null);
+// File details dialog state
+const detailsDialogOpen = ref(false);
+const detailsDialogFile = ref<CirrusFileNode | null>(null);
+
+const openDetailsDialog = (file: CirrusFileNode) => {
+  detailsDialogFile.value = file;
+  detailsDialogOpen.value = true;
+};
+const closeDetailsDialog = () => {
+  detailsDialogOpen.value = false;
+  detailsDialogFile.value = null;
+};
 
 // Delete dialog state
 const deleteDialogOpen = ref(false);
@@ -507,12 +571,7 @@ const submitMoveDialog = async () => {
 };
 
 const handleFileDetails = (file: CirrusFileNode) => {
-  // TODO: Implement file details dialog
-  const fileName = CirrusService.getFileName(file);
-  console.log('File details:', fileName);
-  alert(
-    `File details for: ${fileName}\nPath: ${file.fullPath}\nDevice: ${file.deviceName}`,
-  );
+  openDetailsDialog(file);
 };
 
 const handleDelete = (file: CirrusFileNode) => {
@@ -724,5 +783,86 @@ const handleDelete = (file: CirrusFileNode) => {
 .view-switcher {
   display: flex;
   gap: $spacing-xs;
+}
+
+/* File Details Dialog Styles */
+.details-dialog-form {
+  min-width: 420px;
+  max-width: 98vw;
+  background: $theme-palette-bg-secondary;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-lg;
+  padding: $spacing-xl $spacing-lg $spacing-lg $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: $spacing-lg;
+}
+
+.details-dialog-header {
+  margin-bottom: $spacing-md;
+}
+
+.details-dialog-title {
+  font-size: $theme-font-size-2xl;
+  font-weight: 700;
+  color: $theme-palette-text-primary;
+  letter-spacing: 0.01em;
+}
+
+.details-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 0.5rem;
+  font-size: $theme-font-size-lg;
+  color: $theme-palette-text-primary;
+}
+.details-table th {
+  text-align: left;
+  font-weight: 600;
+  color: $theme-palette-text-secondary;
+  padding-right: 1.5rem;
+  vertical-align: top;
+  min-width: 80px;
+}
+.details-table td {
+  word-break: break-all;
+  color: $theme-palette-text-primary;
+}
+.details-path {
+  font-size: $theme-font-size-base;
+  color: $theme-palette-text-muted;
+}
+
+// Custom close button for ModalDialogs (like ThemeModal)
+.custom-modal-close-wrapper {
+  position: relative;
+}
+
+.custom-modal-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: $theme-palette-bg-inverse;
+  border: none;
+  border-radius: 50%;
+  color: $theme-palette-text-inverse;
+  cursor: pointer;
+  z-index: 1100;
+  box-shadow: 0 2px 8px rgba($theme-palette-bg-primary, 0.1);
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  padding: 0;
+  svg {
+    display: block;
+    margin: auto;
+  }
+  &:hover {
+    background: $theme-palette-accent-hover;
+  }
 }
 </style>
