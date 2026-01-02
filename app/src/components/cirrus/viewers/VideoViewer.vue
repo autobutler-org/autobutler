@@ -6,34 +6,34 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { computed } from 'vue';
 
 const props = defineProps<{
-  src: string
-}>()
+  src: string;
+}>();
 
 // TODO: Move this logic to a utility module
 const getVideoMimetypeFromExtension = (extension: string) => {
   switch (extension) {
     case 'webm':
-      return 'video/webm'
+      return 'video/webm';
     case 'ogg':
     case 'ogv':
-      return 'video/ogg'
+      return 'video/ogg';
     case 'mov':
-      return 'video/quicktime'
+      return 'video/quicktime';
     case 'avi':
-      return 'video/avi'
+      return 'video/avi';
     default:
-      return 'video/mp4'
+      return 'video/mp4';
   }
-}
+};
 
 const mimetype = computed(() =>
   getVideoMimetypeFromExtension(
     props.src.split('.').pop()?.toLowerCase() || '',
   ),
-)
+);
 </script>
 
 <style lang="scss" scoped>

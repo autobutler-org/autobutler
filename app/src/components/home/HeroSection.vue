@@ -26,17 +26,17 @@
 </template>
 
 <script lang="ts" setup>
-import type { ServiceIcon } from '@/types/service_icon'
-import BackupIcon from '../icons/BackupIcon.vue'
-import BookIcon from '../icons/BookIcon.vue'
-import DocsIcon from '../icons/DocsIcon.vue'
-import EmailIcon from '../icons/EmailIcon.vue'
-import FolderIcon from '../icons/FolderIcon.vue'
-import PasswordsIcon from '../icons/PasswordsIcon.vue'
-import PhotoIcon from '../icons/PhotoIcon.vue'
-import RightArrowIcon from '../icons/RightArrowIcon.vue'
-import VpnIcon from '../icons/VpnIcon.vue'
-import ServiceIcons from './ServiceIcons.vue'
+import type { ServiceIcon } from '@/types/service_icon';
+import BackupIcon from '../icons/BackupIcon.vue';
+import BookIcon from '../icons/BookIcon.vue';
+import DocsIcon from '../icons/DocsIcon.vue';
+import EmailIcon from '../icons/EmailIcon.vue';
+import FolderIcon from '../icons/FolderIcon.vue';
+import PasswordsIcon from '../icons/PasswordsIcon.vue';
+import PhotoIcon from '../icons/PhotoIcon.vue';
+import RightArrowIcon from '../icons/RightArrowIcon.vue';
+import VpnIcon from '../icons/VpnIcon.vue';
+import ServiceIcons from './ServiceIcons.vue';
 
 // Default service icons matching the Go implementation
 const defaultServiceIcons: ServiceIcon[] = [
@@ -96,7 +96,7 @@ const defaultServiceIcons: ServiceIcon[] = [
     enabled: false,
     component: BackupIcon,
   },
-]
+];
 </script>
 
 <style lang="scss" scoped>

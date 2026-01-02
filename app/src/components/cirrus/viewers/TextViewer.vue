@@ -12,28 +12,28 @@
 </template>
 
 <script lang="ts" setup>
-import TextFileService from '@/services/textFileService'
-import { computed, onMounted, ref } from 'vue'
+import TextFileService from '@/services/textFileService';
+import { computed, onMounted, ref } from 'vue';
 
 const props = defineProps<{
-  src: string
-}>()
+  src: string;
+}>();
 
-const content = ref('')
-const loading = ref(true)
-const error = ref<string | null>(null)
+const content = ref('');
+const loading = ref(true);
+const error = ref<string | null>(null);
 
-const filename = computed(() => props.src.split('/').pop())
+const filename = computed(() => props.src.split('/').pop());
 
 onMounted(async () => {
   try {
-    content.value = await TextFileService.fetchTextFile(props.src)
+    content.value = await TextFileService.fetchTextFile(props.src);
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to load file'
+    error.value = e instanceof Error ? e.message : 'Failed to load file';
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-})
+});
 </script>
 
 <style lang="scss" scoped>

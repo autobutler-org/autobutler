@@ -15,33 +15,33 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
-import type { FileType } from '@/types/cirrus'
-import type { Photo } from '@/types/photo'
-import PhotoGridItem from './PhotoGridItem.vue'
-import CirrusFileViewer from '@/components/cirrus/CirrusFileViewer.vue'
+import { ref } from 'vue';
+import type { FileType } from '@/types/cirrus';
+import type { Photo } from '@/types/photo';
+import PhotoGridItem from './PhotoGridItem.vue';
+import CirrusFileViewer from '@/components/cirrus/CirrusFileViewer.vue';
 
 defineProps<{
-  photos: Photo[]
-  page: number
-  totalPhotos: number
-}>()
+  photos: Photo[];
+  page: number;
+  totalPhotos: number;
+}>();
 
-const fileViewerOpen = ref(false)
-const selectedFileSrc = ref('')
-const selectedFileType = ref<FileType>('image')
+const fileViewerOpen = ref(false);
+const selectedFileSrc = ref('');
+const selectedFileType = ref<FileType>('image');
 
 // TODO: Move to a common utility file
 const constructFileSrc = (relativePath: string) =>
-  `/api/v1/download/cirrus/${relativePath}`
+  `/api/v1/download/cirrus/${relativePath}`;
 
 const selectPhoto = (photo: Photo) => {
   if (photo.relPath) {
-    selectedFileSrc.value = constructFileSrc(photo.relPath)
-    selectedFileType.value = 'image' // Assuming all photos are images; adjust as needed
-    fileViewerOpen.value = true
+    selectedFileSrc.value = constructFileSrc(photo.relPath);
+    selectedFileType.value = 'image'; // Assuming all photos are images; adjust as needed
+    fileViewerOpen.value = true;
   }
-}
+};
 </script>
 
 <style lang="scss" scoped>

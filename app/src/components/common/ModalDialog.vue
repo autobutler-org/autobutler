@@ -20,21 +20,21 @@
 </template>
 
 <script lang="ts" setup>
-import CloseIcon from '@/components/icons/CloseIcon.vue'
+import CloseIcon from '@/components/icons/CloseIcon.vue';
 
 const {
   backdrop = true,
   hideCloseButton = false,
   transparent = false,
 } = defineProps<{
-  backdrop?: boolean
-  hideCloseButton?: boolean
-  transparent?: boolean
-}>()
-const emit = defineEmits(['close'])
+  backdrop?: boolean;
+  hideCloseButton?: boolean;
+  transparent?: boolean;
+}>();
+const emit = defineEmits(['close']);
 const onClose = () => {
-  emit('close')
-}
+  emit('close');
+};
 </script>
 
 <style lang="scss" scoped>

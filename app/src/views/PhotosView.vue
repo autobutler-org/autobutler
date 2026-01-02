@@ -26,39 +26,39 @@
 </template>
 
 <script lang="ts" setup>
-import LibraryLayout from '@/components/common/LibraryLayout.vue'
-import PhotoGrid from '@/components/photos/PhotoGrid.vue'
-import PhotosSidebar from '@/components/photos/PhotosSidebar.vue'
-import PhotosService, { type PhotoApiResponse } from '@/services/photosService'
-import type { Photo } from '@/types/photo'
-import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import LibraryLayout from '@/components/common/LibraryLayout.vue';
+import PhotoGrid from '@/components/photos/PhotoGrid.vue';
+import PhotosSidebar from '@/components/photos/PhotosSidebar.vue';
+import PhotosService, { type PhotoApiResponse } from '@/services/photosService';
+import type { Photo } from '@/types/photo';
+import { onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
-const photos = ref<Photo[]>([])
-const totalPhotos = ref(0)
-const summary = ref({})
-const router = useRouter()
+const photos = ref<Photo[]>([]);
+const totalPhotos = ref(0);
+const summary = ref({});
+const router = useRouter();
 
 const onPhotoClick = (photo: Photo) => {
   if (photo.relPath) {
     router.push({
       name: 'photo-viewer',
       params: { path: encodeURIComponent(photo.relPath) },
-    })
+    });
   }
-}
+};
 
 const formatPhotoCount = (count: number) => {
-  if (count === 1) return '1 photo'
-  return `${count.toLocaleString()} photos`
-}
+  if (count === 1) return '1 photo';
+  return `${count.toLocaleString()} photos`;
+};
 
 const scrollToArrival = () => {
-  const arrival = document.getElementById('mobile-photos-arrival-location')
+  const arrival = document.getElementById('mobile-photos-arrival-location');
   if (arrival) {
-    arrival.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    arrival.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-}
+};
 
 const convertPhotoApi = (photo: PhotoApiResponse) => {
   return {
@@ -67,19 +67,19 @@ const convertPhotoApi = (photo: PhotoApiResponse) => {
     id: photo.relPath,
     size: photo.size,
     mtime: photo.mtime,
-  }
-}
+  };
+};
 
 onMounted(async () => {
   try {
-    const photoList = await PhotosService.listPhotos()
-    photos.value = photoList.map(convertPhotoApi)
-    totalPhotos.value = photoList.length
+    const photoList = await PhotosService.listPhotos();
+    photos.value = photoList.map(convertPhotoApi);
+    totalPhotos.value = photoList.length;
   } catch (e) {
     // TODO: handle error
-    console.error(e)
+    console.error(e);
   }
-})
+});
 </script>
 
 <style lang="scss" scoped>

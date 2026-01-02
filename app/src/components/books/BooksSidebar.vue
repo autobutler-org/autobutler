@@ -3,8 +3,8 @@
 </template>
 
 <script lang="ts" setup>
-import LibrarySidebar from '@/components/common/LibrarySidebar.vue'
-import { type SidebarSection } from '@/components/common/LibrarySidebar.vue'
+import LibrarySidebar from '@/components/common/LibrarySidebar.vue';
+import { type SidebarSection } from '@/components/common/LibrarySidebar.vue';
 
 const sections: SidebarSection[] = [
   {
@@ -20,5 +20,5 @@ const sections: SidebarSection[] = [
     title: 'Smart Shelves',
     items: [{ label: 'PDFs' }, { label: 'EPUBs' }],
   },
-]
+];
 </script>

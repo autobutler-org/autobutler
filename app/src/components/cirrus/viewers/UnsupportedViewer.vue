@@ -11,8 +11,8 @@
 
 <script lang="ts" setup>
 defineProps<{
-  src: string
-}>()
+  src: string;
+}>();
 </script>
 
 <style lang="scss" scoped>

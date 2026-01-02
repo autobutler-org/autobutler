@@ -12,7 +12,7 @@
 </template>
 
 <script lang="ts" setup>
-defineProps<{ src: string }>()
+defineProps<{ src: string }>();
 </script>
 
 <style lang="scss" scoped>

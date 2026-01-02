@@ -23,36 +23,36 @@
 </template>
 
 <script lang="ts" setup>
-import SortArrowAscendIcon from '../icons/SortArrowAscendIcon.vue'
-import SortArrowDescendIcon from '../icons/SortArrowDescendIcon.vue'
-import SortArrowNeutralIcon from '../icons/SortArrowNeutralIcon.vue'
+import SortArrowAscendIcon from '../icons/SortArrowAscendIcon.vue';
+import SortArrowDescendIcon from '../icons/SortArrowDescendIcon.vue';
+import SortArrowNeutralIcon from '../icons/SortArrowNeutralIcon.vue';
 
-export type HeaderAlignDirection = 'left' | 'right'
-export type SortColumn = 'name' | 'size' | null
-export type SortDirection = 'asc' | 'desc'
+export type HeaderAlignDirection = 'left' | 'right';
+export type SortColumn = 'name' | 'size' | null;
+export type SortDirection = 'asc' | 'desc';
 
 const props = defineProps<{
-  header: SortColumn
-  activeSortColumn: SortColumn
-  sortDirection: SortDirection
-  alignDirection?: HeaderAlignDirection
-}>()
+  header: SortColumn;
+  activeSortColumn: SortColumn;
+  sortDirection: SortDirection;
+  alignDirection?: HeaderAlignDirection;
+}>();
 const emit = defineEmits<{
-  'toggle:sort': [column: SortColumn]
-}>()
+  'toggle:sort': [column: SortColumn];
+}>();
 
 const handleToggleSort = (header: SortColumn) => {
-  emit('toggle:sort', header)
-}
+  emit('toggle:sort', header);
+};
 
 const sortColumnToHeaderCase = (str: SortColumn) =>
-  str === null ? '' : str.charAt(0).toUpperCase() + str.slice(1)
+  str === null ? '' : str.charAt(0).toUpperCase() + str.slice(1);
 
-const displayHeader = sortColumnToHeaderCase(props.header)
+const displayHeader = sortColumnToHeaderCase(props.header);
 const alignClass =
   props.alignDirection === 'left'
     ? 'file-table-header-cell--left'
-    : 'file-table-header-cell--right'
+    : 'file-table-header-cell--right';
 </script>
 
 <style lang="scss" scoped>

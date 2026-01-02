@@ -46,128 +46,128 @@
 </template>
 
 <script lang="ts" setup>
-import type { CirrusFileNode } from '@/types/cirrus'
-import { nextTick, onUnmounted, ref, watch } from 'vue'
+import type { CirrusFileNode } from '@/types/cirrus';
+import { nextTick, onUnmounted, ref, watch } from 'vue';
 
 const props = defineProps<{
-  modelValue: boolean
-  file: CirrusFileNode | null
-  currentPath: string
-  x: number
-  y: number
-}>()
+  modelValue: boolean;
+  file: CirrusFileNode | null;
+  currentPath: string;
+  x: number;
+  y: number;
+}>();
 
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-  download: [file: CirrusFileNode]
-  rename: [file: CirrusFileNode]
-  details: [file: CirrusFileNode]
-  delete: [file: CirrusFileNode]
-}>()
+  'update:modelValue': [value: boolean];
+  download: [file: CirrusFileNode];
+  rename: [file: CirrusFileNode];
+  details: [file: CirrusFileNode];
+  delete: [file: CirrusFileNode];
+}>();
 
-const menuRef = ref<HTMLElement | null>(null)
+const menuRef = ref<HTMLElement | null>(null);
 
 const addListeners = () => {
   // Use setTimeout to avoid the current event from triggering close
   setTimeout(() => {
-    document.addEventListener('click', handleClickOutside)
-    document.addEventListener('contextmenu', handleClickOutside)
-  }, 0)
-}
+    document.addEventListener('click', handleClickOutside);
+    document.addEventListener('contextmenu', handleClickOutside);
+  }, 0);
+};
 
 // Adjust position to keep menu on screen
 const adjustPosition = async () => {
-  await nextTick()
-  if (!menuRef.value) return
+  await nextTick();
+  if (!menuRef.value) return;
 
-  const rect = menuRef.value.getBoundingClientRect()
-  const viewportWidth = window.innerWidth
-  const viewportHeight = window.innerHeight
+  const rect = menuRef.value.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
 
   // Adjust X if menu goes off right edge
   if (rect.right > viewportWidth) {
-    menuRef.value.style.left = `${viewportWidth - rect.width - 10}px`
+    menuRef.value.style.left = `${viewportWidth - rect.width - 10}px`;
   }
 
   // Adjust Y if menu goes off bottom edge
   if (rect.bottom > viewportHeight) {
-    menuRef.value.style.top = `${viewportHeight - rect.height - 10}px`
+    menuRef.value.style.top = `${viewportHeight - rect.height - 10}px`;
   }
-}
+};
 
 const closeMenu = () => {
-  emit('update:modelValue', false)
-}
+  emit('update:modelValue', false);
+};
 
 const handleClickOutside = (event: MouseEvent) => {
   if (menuRef.value && !menuRef.value.contains(event.target as Node)) {
-    closeMenu()
+    closeMenu();
   }
-}
+};
 
 const handleDelete = () => {
   if (props.file) {
-    emit('delete', props.file)
+    emit('delete', props.file);
   }
-  closeMenu()
-}
+  closeMenu();
+};
 
 const handleDownload = () => {
   if (props.file) {
-    emit('download', props.file)
+    emit('download', props.file);
   }
-  closeMenu()
-}
+  closeMenu();
+};
 
 const handleRename = () => {
   if (props.file) {
-    emit('rename', props.file)
+    emit('rename', props.file);
   }
-  closeMenu()
-}
+  closeMenu();
+};
 
 const handleShowDetails = () => {
   if (props.file) {
-    emit('details', props.file)
+    emit('details', props.file);
   }
-  closeMenu()
-}
+  closeMenu();
+};
 
 const removeListeners = () => {
-  document.removeEventListener('click', handleClickOutside)
-  document.removeEventListener('contextmenu', handleClickOutside)
-}
+  document.removeEventListener('click', handleClickOutside);
+  document.removeEventListener('contextmenu', handleClickOutside);
+};
 
 onUnmounted(() => {
-  removeListeners()
-})
+  removeListeners();
+});
 
 // Watch for menu opening to adjust position and add/remove listeners
 watch(
   () => {
-    return props.modelValue
+    return props.modelValue;
   },
   (isOpen) => {
     if (isOpen) {
-      addListeners()
-      adjustPosition()
+      addListeners();
+      adjustPosition();
     } else {
-      removeListeners()
+      removeListeners();
     }
   },
-)
+);
 
 // Also watch x and y changes in case they update while open
 watch(
   () => {
-    return [props.x, props.y]
+    return [props.x, props.y];
   },
   () => {
     if (props.modelValue) {
-      adjustPosition()
+      adjustPosition();
     }
   },
-)
+);
 </script>
 
 <style lang="scss">

@@ -167,168 +167,168 @@
 </template>
 
 <script lang="ts" setup>
-import ModalDialog from '@/components/common/ModalDialog.vue'
-import CirrusService from '@/services/cirrusService'
-import type { CirrusFileNode, FileType } from '@/types/cirrus'
-import { onMounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import GridViewIcon from '../icons/GridViewIcon.vue'
-import ListViewIcon from '../icons/ListViewIcon.vue'
-import CirrusBreadcrumbs from './CirrusBreadcrumbs.vue'
-import CirrusContextMenu from './CirrusContextMenu.vue'
-import CirrusFileViewer from './CirrusFileViewer.vue'
-import CirrusGridView from './CirrusGridView.vue'
-import CirrusListView from './CirrusListView.vue'
+import ModalDialog from '@/components/common/ModalDialog.vue';
+import CirrusService from '@/services/cirrusService';
+import type { CirrusFileNode, FileType } from '@/types/cirrus';
+import { onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import GridViewIcon from '../icons/GridViewIcon.vue';
+import ListViewIcon from '../icons/ListViewIcon.vue';
+import CirrusBreadcrumbs from './CirrusBreadcrumbs.vue';
+import CirrusContextMenu from './CirrusContextMenu.vue';
+import CirrusFileViewer from './CirrusFileViewer.vue';
+import CirrusGridView from './CirrusGridView.vue';
+import CirrusListView from './CirrusListView.vue';
 
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
+const router = useRouter();
 
 // State
-const currentPath = ref('')
-const files = ref<CirrusFileNode[]>([])
-const loading = ref(false)
-const error = ref<string | null>(null)
-const view = ref<'list' | 'grid'>('list')
-const showDeviceBadges = ref(true)
+const currentPath = ref('');
+const files = ref<CirrusFileNode[]>([]);
+const loading = ref(false);
+const error = ref<string | null>(null);
+const view = ref<'list' | 'grid'>('list');
+const showDeviceBadges = ref(true);
 
 // File viewer state
-const fileViewerOpen = ref(false)
-const selectedFileSrc = ref('')
-const selectedFileType = ref<FileType>('generic')
+const fileViewerOpen = ref(false);
+const selectedFileSrc = ref('');
+const selectedFileType = ref<FileType>('generic');
 // Selection state
-const selectedFile = ref<CirrusFileNode | null>(null)
+const selectedFile = ref<CirrusFileNode | null>(null);
 
 // Context menu state
-const contextMenuOpen = ref(false)
-const contextMenuFile = ref<CirrusFileNode | null>(null)
-const contextMenuX = ref(0)
-const contextMenuY = ref(0)
+const contextMenuOpen = ref(false);
+const contextMenuFile = ref<CirrusFileNode | null>(null);
+const contextMenuX = ref(0);
+const contextMenuY = ref(0);
 
 // Move/Rename dialog state
-const moveDialogOpen = ref(false)
-const moveDialogLoading = ref(false)
-const moveDialogError = ref('')
-const moveDialogNewPath = ref('')
-const moveDialogOldDeviceName = ref('')
-const moveDialogFile = ref<CirrusFileNode | null>(null)
+const moveDialogOpen = ref(false);
+const moveDialogLoading = ref(false);
+const moveDialogError = ref('');
+const moveDialogNewPath = ref('');
+const moveDialogOldDeviceName = ref('');
+const moveDialogFile = ref<CirrusFileNode | null>(null);
 
 // Fetch files for the current path
 const fetchFiles = async () => {
-  loading.value = true
-  error.value = null
+  loading.value = true;
+  error.value = null;
   try {
-    files.value = await CirrusService.getFiles(currentPath.value)
+    files.value = await CirrusService.getFiles(currentPath.value);
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to load files'
-    files.value = []
+    error.value = e instanceof Error ? e.message : 'Failed to load files';
+    files.value = [];
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // Watch route changes to update current path
 watch(
   () => {
-    return route.params.pathMatch
+    return route.params.pathMatch;
   },
   (newPath) => {
     if (Array.isArray(newPath)) {
-      currentPath.value = newPath.join('/')
+      currentPath.value = newPath.join('/');
     } else {
-      currentPath.value = newPath || ''
+      currentPath.value = newPath || '';
     }
   },
   { immediate: true },
-)
+);
 
 // Watch current path changes to fetch files
 watch(currentPath, () => {
-  fetchFiles()
-})
+  fetchFiles();
+});
 
 // Fetch files on mount
 onMounted(() => {
-  fetchFiles()
-})
+  fetchFiles();
+});
 
 // Methods
 // TODO: Move to a common utility file
 const constructFileSrc = (relativePath: string) =>
-  `/api/v1/download/cirrus/${relativePath}`
+  `/api/v1/download/cirrus/${relativePath}`;
 
 const handleSelectFile = (file: CirrusFileNode) => {
-  selectedFile.value = file
-}
+  selectedFile.value = file;
+};
 const navigateToPath = (path: string) => {
-  currentPath.value = path
-  router.push(`/cirrus${path ? '/' + path : ''}`)
-}
+  currentPath.value = path;
+  router.push(`/cirrus${path ? '/' + path : ''}`);
+};
 
 const handleNavigateFolder = (path: string) => {
-  navigateToPath(path)
-}
+  navigateToPath(path);
+};
 
 const handleOpenFile = (file: CirrusFileNode) => {
   // Construct the relative path for the API from currentPath and filename
-  const fileName = CirrusService.getFileName(file)
+  const fileName = CirrusService.getFileName(file);
   const relativePath = currentPath.value
     ? `${currentPath.value}/${fileName}`
-    : fileName
-  selectedFileSrc.value = constructFileSrc(relativePath)
-  selectedFileType.value = CirrusService.determineFileType(file)
-  fileViewerOpen.value = true
-}
+    : fileName;
+  selectedFileSrc.value = constructFileSrc(relativePath);
+  selectedFileType.value = CirrusService.determineFileType(file);
+  fileViewerOpen.value = true;
+};
 
 const switchView = (newView: 'list' | 'grid') => {
-  view.value = newView
-}
+  view.value = newView;
+};
 
 const toggleDeviceBadges = (show: boolean) => {
-  showDeviceBadges.value = show
-}
+  showDeviceBadges.value = show;
+};
 
 const getParentPath = (fullPath: string) => {
   const segments = CirrusService.normalizePath(fullPath)
     .split('/')
-    .filter(Boolean)
-  segments.pop()
-  return segments.join('/')
-}
+    .filter(Boolean);
+  segments.pop();
+  return segments.join('/');
+};
 
 // Handle files uploaded - add them to the list
 const handleFilesUploaded = (uploadedFiles: CirrusFileNode[]) => {
-  const currentPathNormalized = CirrusService.normalizePath(currentPath.value)
+  const currentPathNormalized = CirrusService.normalizePath(currentPath.value);
 
   for (const newFile of uploadedFiles) {
-    const normalizedFullPath = CirrusService.normalizePath(newFile.fullPath)
-    const parentPath = getParentPath(newFile.fullPath)
+    const normalizedFullPath = CirrusService.normalizePath(newFile.fullPath);
+    const parentPath = getParentPath(newFile.fullPath);
 
     // Only display the file if it belongs to the directory currently in view
     if (parentPath !== currentPathNormalized) {
-      continue
+      continue;
     }
 
     const exists = files.value.some((f) => {
-      return CirrusService.normalizePath(f.fullPath) === normalizedFullPath
-    })
+      return CirrusService.normalizePath(f.fullPath) === normalizedFullPath;
+    });
 
     if (!exists) {
       files.value.push({
         ...newFile,
         fullPath: normalizedFullPath,
-      })
+      });
     }
   }
-}
+};
 
 // Handle folder created - add it to the list
 const handleFolderCreated = (folderName: string) => {
   const fullPath = currentPath.value
     ? `${currentPath.value}/${folderName}`
-    : folderName
+    : folderName;
   const exists = files.value.some((f) => {
-    return f.fullPath === fullPath
-  })
+    return f.fullPath === fullPath;
+  });
   if (!exists) {
     // Add folder at the beginning (folders typically appear first)
     files.value.unshift({
@@ -338,56 +338,56 @@ const handleFolderCreated = (folderName: string) => {
       deviceName: '',
       devicePath: '',
       fullPath,
-    })
+    });
   }
-}
+};
 
 // Context menu handlers
 const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
-  contextMenuFile.value = file
-  contextMenuX.value = event.clientX
-  contextMenuY.value = event.clientY
-  contextMenuOpen.value = true
-}
+  contextMenuFile.value = file;
+  contextMenuX.value = event.clientX;
+  contextMenuY.value = event.clientY;
+  contextMenuOpen.value = true;
+};
 
 const handleDownload = (file: CirrusFileNode) => {
-  const fileName = CirrusService.getFileName(file)
+  const fileName = CirrusService.getFileName(file);
   const relativePath = currentPath.value
     ? `${currentPath.value}/${fileName}`
-    : fileName
+    : fileName;
   const downloadUrl = `/api/v1/download/cirrus/${relativePath}${
     file.deviceName ? `?device=${encodeURIComponent(file.deviceName)}` : ''
-  }`
+  }`;
 
   // Create a temporary link and click it to trigger download
-  const link = document.createElement('a')
-  link.href = downloadUrl
-  link.download = fileName
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-}
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
 const handleRename = (file: CirrusFileNode) => {
-  moveDialogFile.value = file
-  moveDialogError.value = ''
+  moveDialogFile.value = file;
+  moveDialogError.value = '';
   // Default to just renaming the file/folder name, not the whole path
-  moveDialogNewPath.value = file.name
-  moveDialogOpen.value = true
-  moveDialogOldDeviceName.value = file.deviceName
-}
+  moveDialogNewPath.value = file.name;
+  moveDialogOpen.value = true;
+  moveDialogOldDeviceName.value = file.deviceName;
+};
 
 const submitMoveDialog = async () => {
-  if (!moveDialogFile.value) return
-  moveDialogLoading.value = true
-  moveDialogError.value = ''
+  if (!moveDialogFile.value) return;
+  moveDialogLoading.value = true;
+  moveDialogError.value = '';
   try {
-    const oldPath = moveDialogFile.value.name
-    const newPath = moveDialogNewPath.value.trim()
+    const oldPath = moveDialogFile.value.name;
+    const newPath = moveDialogNewPath.value.trim();
     if (!newPath || newPath === oldPath) {
-      moveDialogError.value = 'Please enter a new name or path.'
-      moveDialogLoading.value = false
-      return
+      moveDialogError.value = 'Please enter a new name or path.';
+      moveDialogLoading.value = false;
+      return;
     }
     // TODO: Allow for supporting a new target device in the future
     await CirrusService.moveFile(
@@ -395,7 +395,7 @@ const submitMoveDialog = async () => {
       newPath,
       moveDialogOldDeviceName.value,
       moveDialogOldDeviceName.value,
-    )
+    );
     // Update the in-memory file list
     // TODO: When moving to a new directory, we need to filter out the moved file
     files.value = files.value.map((f) => {
@@ -404,52 +404,56 @@ const submitMoveDialog = async () => {
           ...f,
           name: newPath,
           fullPath: f.fullPath.replace(oldPath, newPath),
-        }
+        };
       }
-      return f
-    })
+      return f;
+    });
     // Close the dialog
-    moveDialogOpen.value = false
-    moveDialogFile.value = null
+    moveDialogOpen.value = false;
+    moveDialogFile.value = null;
   } catch (e) {
     moveDialogError.value =
-      e instanceof Error ? e.message : 'Failed to move file.'
+      e instanceof Error ? e.message : 'Failed to move file.';
   } finally {
-    moveDialogLoading.value = false
+    moveDialogLoading.value = false;
   }
-}
+};
 
 const handleFileDetails = (file: CirrusFileNode) => {
   // TODO: Implement file details dialog
-  const fileName = CirrusService.getFileName(file)
-  console.log('File details:', fileName)
+  const fileName = CirrusService.getFileName(file);
+  console.log('File details:', fileName);
   alert(
     `File details for: ${fileName}\nPath: ${file.fullPath}\nDevice: ${file.deviceName}`,
-  )
-}
+  );
+};
 
 const handleDelete = async (file: CirrusFileNode) => {
-  const fileName = CirrusService.getFileName(file)
+  const fileName = CirrusService.getFileName(file);
   if (!confirm(`Are you sure you want to delete "${fileName}"?`)) {
-    return
+    return;
   }
 
   try {
     // Build query params - API expects rootDir and filePaths as query parameters
-    const params = new URLSearchParams()
-    params.append('rootDir', currentPath.value)
-    params.append('filePaths', fileName)
+    const params = new URLSearchParams();
+    params.append('rootDir', currentPath.value);
+    params.append('filePaths', fileName);
 
-    await CirrusService.deleteFile(currentPath.value, fileName, file.deviceName)
+    await CirrusService.deleteFile(
+      currentPath.value,
+      fileName,
+      file.deviceName,
+    );
 
     // Remove the file from the in-memory list
     files.value = files.value.filter((f) => {
-      return f.fullPath !== file.fullPath
-    })
+      return f.fullPath !== file.fullPath;
+    });
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to delete file'
+    error.value = e instanceof Error ? e.message : 'Failed to delete file';
   }
-}
+};
 </script>
 
 <style lang="scss" scoped>

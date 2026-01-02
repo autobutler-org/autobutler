@@ -1,5 +1,5 @@
-import process from 'node:process'
-import { defineConfig, devices } from '@playwright/test'
+import process from 'node:process';
+import { defineConfig, devices } from '@playwright/test';
 
 /**
  * Read environment variables from file.
@@ -11,8 +11,8 @@ import { defineConfig, devices } from '@playwright/test'
  * See https://playwright.dev/docs/test-configuration.
  */
 
-const SECONDS = 1000
-const MINUTES = 60 * SECONDS
+const SECONDS = 1000;
+const MINUTES = 60 * SECONDS;
 
 export default defineConfig({
   timeout: 5 * SECONDS,
@@ -98,4 +98,4 @@ export default defineConfig({
 
   /* Folder for test artifacts such as screenshots, videos, traces, etc. */
   // outputDir: 'test-results/',
-})
+});

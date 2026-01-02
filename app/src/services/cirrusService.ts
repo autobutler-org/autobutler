@@ -1,6 +1,6 @@
-import type { CirrusFileNode, FileType } from '@/types/cirrus'
+import type { CirrusFileNode, FileType } from '@/types/cirrus';
 
-import HttpService from './httpService'
+import HttpService from './httpService';
 
 export default class CirrusService {
   /**
@@ -17,72 +17,72 @@ export default class CirrusService {
       newFilePath: newPath,
       oldDevice: oldDeviceName,
       newDevice: newDeviceName,
-    })
-  }
+    });
+  };
 
   /**
    * Fetch files for a given path from the backend API
    */
   static getFiles = async (path: string): Promise<CirrusFileNode[]> => {
-    const normalizedPath = CirrusService.normalizePath(path)
+    const normalizedPath = CirrusService.normalizePath(path);
     const apiUrl = normalizedPath
       ? `/api/v1/cirrus/${normalizedPath}`
-      : '/api/v1/cirrus'
-    return await HttpService.getAsJson<CirrusFileNode[]>(apiUrl)
-  }
+      : '/api/v1/cirrus';
+    return await HttpService.getAsJson<CirrusFileNode[]>(apiUrl);
+  };
 
   /**
    * Get available space in bytes (mocked)
    */
-  static getAvailableSpace = (): number => 100 * 1024 * 1024 * 1024
+  static getAvailableSpace = (): number => 100 * 1024 * 1024 * 1024;
 
   // Utility methods can be static or exported as needed
   static formatBytes(bytes: number): string {
     if (bytes < 1024) {
-      return `${bytes} B`
+      return `${bytes} B`;
     } else if (bytes < 1024 * 1024) {
-      return `${(bytes / 1024).toFixed(1)} KB`
+      return `${(bytes / 1024).toFixed(1)} KB`;
     } else if (bytes < 1024 * 1024 * 1024) {
-      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     } else if (bytes < 1024 * 1024 * 1024 * 1024) {
-      return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+      return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
     } else {
-      return `${(bytes / (1024 * 1024 * 1024 * 1024)).toFixed(1)} TB`
+      return `${(bytes / (1024 * 1024 * 1024 * 1024)).toFixed(1)} TB`;
     }
   }
 
   static bytesToGB(bytes: number): number {
-    return bytes / (1024 * 1024 * 1024)
+    return bytes / (1024 * 1024 * 1024);
   }
 
   static getFileName(node: CirrusFileNode): string {
     if (node.name) {
-      return node.name
+      return node.name;
     }
-    const parts = node.fullPath.split('/')
-    return parts[parts.length - 1] || ''
+    const parts = node.fullPath.split('/');
+    return parts[parts.length - 1] || '';
   }
 
   static isDirectory(node: CirrusFileNode): boolean {
-    return node.isDir
+    return node.isDir;
   }
 
   static getFileSize(node: CirrusFileNode): number {
-    return node.size || 0
+    return node.size || 0;
   }
 
   static determineFileType(node: CirrusFileNode): FileType {
-    const fileName = CirrusService.getFileName(node)
+    const fileName = CirrusService.getFileName(node);
     if (CirrusService.isDirectory(node)) {
-      return 'folder'
+      return 'folder';
     }
-    const ext = fileName.toLowerCase().split('.').pop() || ''
+    const ext = fileName.toLowerCase().split('.').pop() || '';
     switch (ext) {
       case 'pdf':
-        return 'pdf'
+        return 'pdf';
       case 'pptx':
       case 'ppt':
-        return 'slideshow'
+        return 'slideshow';
       case 'png':
       case 'jpg':
       case 'jpeg':
@@ -95,31 +95,31 @@ export default class CirrusService {
       case 'tiff':
       case 'tif':
       case 'avif':
-        return 'image'
+        return 'image';
       case 'mp4':
       case 'm4v':
       case 'webm':
       case 'ogg':
       case 'avi':
       case 'mov':
-        return 'video'
+        return 'video';
       case 'epub':
-        return 'epub'
+        return 'epub';
       case 'docx':
-        return 'docx'
+        return 'docx';
       case 'zip':
       case 'rar':
       case 'tar':
       case 'gz':
       case '7z':
-        return 'archive'
+        return 'archive';
       default:
-        return 'generic'
+        return 'generic';
     }
   }
 
   static normalizePath(path: string): string {
-    return path.replace(/^\/+|\/+$/g, '').trim()
+    return path.replace(/^\/+|\/+$/g, '').trim();
   }
 
   /**
@@ -130,15 +130,15 @@ export default class CirrusService {
     fileName: string,
     deviceName?: string,
   ): Promise<void> {
-    const params = new URLSearchParams()
-    params.append('rootDir', rootDir)
-    params.append('filePaths', fileName)
+    const params = new URLSearchParams();
+    params.append('rootDir', rootDir);
+    params.append('filePaths', fileName);
     if (deviceName) {
-      params.append('device', deviceName)
+      params.append('device', deviceName);
     }
-    const url = `/api/v1/cirrus?${params.toString()}`
-    const response = await HttpService.delete(url)
-    if (!response.ok) throw new Error('Failed to delete file')
+    const url = `/api/v1/cirrus?${params.toString()}`;
+    const response = await HttpService.delete(url);
+    if (!response.ok) throw new Error('Failed to delete file');
   }
 
   /**
@@ -148,13 +148,13 @@ export default class CirrusService {
     uploadPath: string,
     files: FileList | File[],
   ): Promise<Response> {
-    const formData = new FormData()
+    const formData = new FormData();
     for (const file of Array.from(files)) {
-      formData.append('files', file)
+      formData.append('files', file);
     }
-    const url = uploadPath.startsWith('/') ? uploadPath : '/' + uploadPath
-    const response = await HttpService.postForm(url, formData)
-    if (!response.ok) throw new Error('Upload failed')
-    return response
+    const url = uploadPath.startsWith('/') ? uploadPath : '/' + uploadPath;
+    const response = await HttpService.postForm(url, formData);
+    if (!response.ok) throw new Error('Upload failed');
+    return response;
   }
 }

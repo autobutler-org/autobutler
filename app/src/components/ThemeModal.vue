@@ -55,16 +55,16 @@
 </template>
 
 <script lang="ts" setup>
-import ModalDialog from '@/components/common/ModalDialog.vue'
-import CloseIcon from '@/components/icons/CloseIcon.vue'
-import { useThemeStore } from '@/stores/theme'
-import { keyToLabelName } from '@/util/style'
+import ModalDialog from '@/components/common/ModalDialog.vue';
+import CloseIcon from '@/components/icons/CloseIcon.vue';
+import { useThemeStore } from '@/stores/theme';
+import { keyToLabelName } from '@/util/style';
 
-defineProps<{ open: boolean }>()
+defineProps<{ open: boolean }>();
 
-const emit = defineEmits(['close'])
-const theme = useThemeStore()
-const close = () => emit('close')
+const emit = defineEmits(['close']);
+const theme = useThemeStore();
+const close = () => emit('close');
 </script>
 
 <style lang="scss" scoped>

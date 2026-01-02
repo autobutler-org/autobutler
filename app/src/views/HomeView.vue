@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import AppFooter from '@/components/home/AppFooter.vue'
-import GradientOverlays from '@/components/home/GradientOverlays.vue'
-import HeroSection from '@/components/home/HeroSection.vue'
+import AppFooter from '@/components/home/AppFooter.vue';
+import GradientOverlays from '@/components/home/GradientOverlays.vue';
+import HeroSection from '@/components/home/HeroSection.vue';
 </script>
 <template>
   <div class="landing-body">

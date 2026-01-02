@@ -7,36 +7,36 @@
 </template>
 
 <script lang="ts" setup>
-import { onUnmounted, ref, watch } from 'vue'
+import { onUnmounted, ref, watch } from 'vue';
 
 const props = defineProps<{
-  show: boolean
-  duration?: number
-}>()
+  show: boolean;
+  duration?: number;
+}>();
 
-const emit = defineEmits(['hide'])
+const emit = defineEmits(['hide']);
 
-const show = ref(props.show)
-let bannerTimeout: ReturnType<typeof setTimeout> | null = null
+const show = ref(props.show);
+let bannerTimeout: ReturnType<typeof setTimeout> | null = null;
 
 watch(
   () => props.show,
   (val) => {
-    show.value = val
+    show.value = val;
     if (val && props.duration !== 0) {
-      if (bannerTimeout) clearTimeout(bannerTimeout)
+      if (bannerTimeout) clearTimeout(bannerTimeout);
       bannerTimeout = setTimeout(() => {
-        show.value = false
-        emit('hide')
-      }, props.duration ?? 1200)
+        show.value = false;
+        emit('hide');
+      }, props.duration ?? 1200);
     }
   },
   { immediate: true },
-)
+);
 
 onUnmounted(() => {
-  if (bannerTimeout) clearTimeout(bannerTimeout)
-})
+  if (bannerTimeout) clearTimeout(bannerTimeout);
+});
 </script>
 
 <style lang="scss" scoped>
