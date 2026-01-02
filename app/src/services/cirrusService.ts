@@ -6,10 +6,17 @@ export default class CirrusService {
   /**
    * Move or rename a file or directory in Cirrus
    */
-  static moveFile = async (oldPath: string, newPath: string): Promise<void> => {
+  static moveFile = async (
+    oldPath: string,
+    newPath: string,
+    oldDeviceName?: string,
+    newDeviceName?: string,
+  ): Promise<void> => {
     await HttpService.put('/api/v1/cirrus', {
-      filePath: oldPath,
+      oldFilePath: oldPath,
       newFilePath: newPath,
+      oldDevice: oldDeviceName,
+      newDevice: newDeviceName,
     })
   }
 
@@ -118,10 +125,17 @@ export default class CirrusService {
   /**
    * Delete a file in Cirrus
    */
-  static async deleteFile(rootDir: string, fileName: string): Promise<void> {
+  static async deleteFile(
+    rootDir: string,
+    fileName: string,
+    deviceName?: string,
+  ): Promise<void> {
     const params = new URLSearchParams()
     params.append('rootDir', rootDir)
     params.append('filePaths', fileName)
+    if (deviceName) {
+      params.append('device', deviceName)
+    }
     const url = `/api/v1/cirrus?${params.toString()}`
     const response = await HttpService.delete(url)
     if (!response.ok) throw new Error('Failed to delete file')

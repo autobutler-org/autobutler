@@ -395,7 +395,7 @@ func TestDeleteFiles_SingleDevice(t *testing.T) {
 
 func TestMoveFile(t *testing.T) {
 	params := MoveFileParams{
-		FilePath:    "old/path/file.txt",
+		OldFilePath: "old/path/file.txt",
 		NewFilePath: "new/path/file.txt",
 	}
 
@@ -608,7 +608,7 @@ func TestMoveFile_CreateDirectory(t *testing.T) {
 	// We can't easily test this without interfering with GetCirrusDir(),
 	// but we can at least verify the function structure
 	params := MoveFileParams{
-		FilePath:    "nonexistent/old.txt",
+		OldFilePath: "nonexistent/old.txt",
 		NewFilePath: "new/path/file.txt",
 	}
 
@@ -624,7 +624,7 @@ func TestMoveFile_ToRootDirectory(t *testing.T) {
 	// When NewFilePath has no directory component, filepath.Dir returns "."
 
 	params := MoveFileParams{
-		FilePath:    "subdir/file.txt",
+		OldFilePath: "subdir/file.txt",
 		NewFilePath: "newfile.txt", // No directory component
 	}
 
@@ -666,7 +666,7 @@ func TestMoveFile_ToRootDirectory(t *testing.T) {
 	defer os.RemoveAll(testSourceDir)
 
 	params2 := MoveFileParams{
-		FilePath:    "test_move_root/subdir/file.txt",
+		OldFilePath: "test_move_root/subdir/file.txt",
 		NewFilePath: "test_move_root/moved.txt",
 	}
 
@@ -685,7 +685,7 @@ func TestMoveFile_ToRootDirectory(t *testing.T) {
 	os.WriteFile(testSourceFile2, []byte("content2"), 0644)
 
 	params3 := MoveFileParams{
-		FilePath:    "test_move_root/subdir/file2.txt",
+		OldFilePath: "test_move_root/subdir/file2.txt",
 		NewFilePath: "rootfile.txt", // No directory path, filepath.Dir will return "."
 	}
 

@@ -189,7 +189,7 @@ const files = ref<CirrusFileNode[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const view = ref<'list' | 'grid'>('list')
-const showDeviceBadges = ref(false)
+const showDeviceBadges = ref(true)
 
 // File viewer state
 const fileViewerOpen = ref(false)
@@ -209,6 +209,7 @@ const moveDialogOpen = ref(false)
 const moveDialogLoading = ref(false)
 const moveDialogError = ref('')
 const moveDialogNewPath = ref('')
+const moveDialogOldDeviceName = ref('')
 const moveDialogFile = ref<CirrusFileNode | null>(null)
 
 // Fetch files for the current path
@@ -354,7 +355,9 @@ const handleDownload = (file: CirrusFileNode) => {
   const relativePath = currentPath.value
     ? `${currentPath.value}/${fileName}`
     : fileName
-  const downloadUrl = `/api/v1/download/cirrus/${relativePath}`
+  const downloadUrl = `/api/v1/download/cirrus/${relativePath}${
+    file.deviceName ? `?device=${encodeURIComponent(file.deviceName)}` : ''
+  }`
 
   // Create a temporary link and click it to trigger download
   const link = document.createElement('a')
@@ -370,8 +373,8 @@ const handleRename = (file: CirrusFileNode) => {
   moveDialogError.value = ''
   // Default to just renaming the file/folder name, not the whole path
   moveDialogNewPath.value = file.name
-  console.log(file)
   moveDialogOpen.value = true
+  moveDialogOldDeviceName.value = file.deviceName
 }
 
 const submitMoveDialog = async () => {
@@ -386,9 +389,26 @@ const submitMoveDialog = async () => {
       moveDialogLoading.value = false
       return
     }
-    await CirrusService.moveFile(oldPath, newPath)
-    // Update UI: refetch files and close dialog
-    await fetchFiles()
+    // TODO: Allow for supporting a new target device in the future
+    await CirrusService.moveFile(
+      oldPath,
+      newPath,
+      moveDialogOldDeviceName.value,
+      moveDialogOldDeviceName.value,
+    )
+    // Update the in-memory file list
+    // TODO: When moving to a new directory, we need to filter out the moved file
+    files.value = files.value.map((f) => {
+      if (f.name === oldPath) {
+        return {
+          ...f,
+          name: newPath,
+          fullPath: f.fullPath.replace(oldPath, newPath),
+        }
+      }
+      return f
+    })
+    // Close the dialog
     moveDialogOpen.value = false
     moveDialogFile.value = null
   } catch (e) {
@@ -420,7 +440,7 @@ const handleDelete = async (file: CirrusFileNode) => {
     params.append('rootDir', currentPath.value)
     params.append('filePaths', fileName)
 
-    await CirrusService.deleteFile(currentPath.value, fileName)
+    await CirrusService.deleteFile(currentPath.value, fileName, file.deviceName)
 
     // Remove the file from the in-memory list
     files.value = files.value.filter((f) => {
@@ -604,7 +624,6 @@ const handleDelete = async (file: CirrusFileNode) => {
     border-color 0.15s,
     box-shadow 0.15s;
   background: $theme-palette-bg-inverse;
-  color: $theme-palette-text-primary;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.01);
 
   &:focus {

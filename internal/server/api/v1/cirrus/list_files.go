@@ -49,6 +49,19 @@ func getCirrusFilesForDevice(filePath string, deviceName string) ([]*cirrusutil.
 		}
 		allFiles = append(allFiles, files...)
 	}
+	// Remove any duplicate folders (can happen if multiple devices have same dir structure)
+	// TODO: This should be improved to actually list off ALL devices on the file node then, so the
+	// client can show which devices have that folder, and file operations on the file can happen on all devices
+	seenPaths := make(map[string]bool)
+	uniqueFiles := make([]*cirrusutil.DeviceFileInfo, 0, len(allFiles))
+	for _, file := range allFiles {
+		name := file.FileInfo.Name()
+		if !seenPaths[name] {
+			seenPaths[name] = true
+			uniqueFiles = append(uniqueFiles, file)
+		}
+	}
+	allFiles = uniqueFiles
 	return allFiles, nil
 }
 
