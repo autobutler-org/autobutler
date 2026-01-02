@@ -308,15 +308,24 @@ const handleFileInputChange = async (event: Event) => {
   if (!input.files || input.files.length === 0) return;
   isUploading.value = true;
   uploadProgress.value = `Uploading ${input.files.length} file${input.files.length > 1 ? 's' : ''}...`;
-  // Simulate upload delay for demo; replace with real upload logic
-  setTimeout(() => {
+  try {
+    // Actually upload the files to the backend
+    await CirrusService.uploadFiles(
+      `/api/v1/cirrus/${currentPath.value || ''}`,
+      input.files,
+    );
     uploadProgress.value = 'Upload complete!';
+    // Refresh the file list after upload
+    await fetchFiles();
+  } catch (err) {
+    uploadProgress.value = 'Upload failed';
+  } finally {
     isUploading.value = false;
     setTimeout(() => {
       uploadProgress.value = '';
     }, 1500);
-  }, 1200);
-  input.value = '';
+    input.value = '';
+  }
 };
 
 const route = useRoute();
