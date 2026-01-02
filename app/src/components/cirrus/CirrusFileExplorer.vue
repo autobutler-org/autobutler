@@ -127,6 +127,15 @@
       :transparent="true"
       :hide-close-button="true"
     >
+      <div class="custom-modal-close-wrapper">
+        <button
+          class="custom-modal-close"
+          @click="moveDialogOpen = false"
+          aria-label="Close"
+        >
+          <CloseIcon />
+        </button>
+      </div>
       <form @submit.prevent="submitMoveDialog" class="move-dialog-form">
         <h3 class="move-dialog-title">Rename or Move</h3>
         <div class="move-dialog-field">
@@ -146,14 +155,6 @@
         </div>
         <div class="move-dialog-actions">
           <button
-            type="button"
-            class="btn btn--secondary"
-            @click="moveDialogOpen = false"
-            :disabled="moveDialogLoading"
-          >
-            Cancel
-          </button>
-          <button
             type="submit"
             class="btn btn--primary"
             :disabled="moveDialogLoading"
@@ -171,6 +172,15 @@
       :transparent="true"
       :hide-close-button="true"
     >
+      <div class="custom-modal-close-wrapper">
+        <button
+          class="custom-modal-close"
+          @click="closeDetailsDialog"
+          aria-label="Close"
+        >
+          <CloseIcon />
+        </button>
+      </div>
       <div class="details-dialog-form">
         <div class="details-dialog-header">
           <span class="details-dialog-title">File Details</span>
@@ -200,15 +210,6 @@
               </tr>
             </tbody>
           </table>
-        </div>
-        <div class="details-dialog-actions">
-          <button
-            type="button"
-            class="btn btn--primary"
-            @click="closeDetailsDialog"
-          >
-            Close
-          </button>
         </div>
       </div>
     </ModalDialog>
@@ -255,6 +256,7 @@
 
 <script lang="ts" setup>
 import ModalDialog from '@/components/common/ModalDialog.vue';
+import CloseIcon from '@/components/icons/CloseIcon.vue';
 import CirrusService from '@/services/cirrusService';
 import type { CirrusFileNode, FileType } from '@/types/cirrus';
 import { onMounted, ref, watch } from 'vue';
@@ -829,10 +831,36 @@ const handleDelete = (file: CirrusFileNode) => {
   font-size: $theme-font-size-base;
   color: $theme-palette-text-muted;
 }
-.details-dialog-actions {
+
+// Custom close button for ModalDialogs (like ThemeModal)
+.custom-modal-close-wrapper {
+  position: relative;
+}
+
+.custom-modal-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: $theme-palette-bg-inverse;
+  border: none;
+  border-radius: 50%;
+  color: $theme-palette-text-inverse;
+  cursor: pointer;
+  z-index: 1100;
+  box-shadow: 0 2px 8px rgba($theme-palette-bg-primary, 0.1);
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
-  gap: $spacing-md;
-  justify-content: flex-end;
-  margin-top: $spacing-md;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  padding: 0;
+  svg {
+    display: block;
+    margin: auto;
+  }
+  &:hover {
+    background: $theme-palette-accent-hover;
+  }
 }
 </style>
