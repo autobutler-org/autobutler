@@ -218,7 +218,17 @@
       v-if="deleteDialogOpen"
       @close="closeDeleteDialog"
       :transparent="true"
+      :hide-close-button="true"
     >
+      <div class="custom-modal-close-wrapper">
+        <button
+          class="custom-modal-close"
+          @click="closeDeleteDialog"
+          aria-label="Close"
+        >
+          <CloseIcon />
+        </button>
+      </div>
       <form @submit.prevent="confirmDelete" class="move-dialog-form">
         <h3 class="move-dialog-title">Delete File</h3>
         <div class="move-dialog-field">
@@ -232,14 +242,6 @@
           {{ deleteDialogError }}
         </div>
         <div class="move-dialog-actions">
-          <button
-            type="button"
-            class="btn btn--secondary"
-            @click="closeDeleteDialog"
-            :disabled="deleteDialogLoading"
-          >
-            Cancel
-          </button>
           <button
             type="submit"
             class="btn btn--primary"
