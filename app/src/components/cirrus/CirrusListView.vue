@@ -1,5 +1,13 @@
 <template>
-  <div class="file-table-container">
+  <div
+    class="file-table-container"
+    :class="{ 'file-table-container--dragging': isDragOver }"
+    @dragenter="handleDragEnter"
+    @dragover="handleDragOver"
+    @dragleave="handleDragLeave"
+    @drop="handleDrop"
+  >
+    <div class="file-table-drop-overlay" v-show="isDragOver" />
     <table id="file-explorer-table" class="file-table">
       <thead class="file-table-header">
         <tr>
@@ -43,14 +51,29 @@
           @click="emit('select', file)"
           @dblclick="handleClick(file)"
           @contextmenu="handleContextMenu($event, file)"
+          @dragenter="handleDirectoryDragEnter($event, file)"
+          @dragover="handleDirectoryDragOver($event, file)"
+          @dragleave="handleDirectoryDragLeave($event, file)"
+          @drop="handleDirectoryDrop($event, file)"
         >
           <td class="file-table-cell file-table-cell--clickable">
-            <component
-              :is="getIconComponent(CirrusService.determineFileType(file))"
-            />
-            <span class="file-table-name">{{
-              CirrusService.getFileName(file)
-            }}</span>
+            <div
+              class="file-table-name-container"
+              :class="{
+                'file-table-name-container--drop-target':
+                  CirrusService.isDirectory(file) &&
+                  hoveredDirectoryPath === resolveDirectoryTargetPath(file),
+              }"
+            >
+              <component
+                :is="getIconComponent(CirrusService.determineFileType(file))"
+              />
+              <span class="file-table-name">
+                <span class="file-table-name-label">
+                  {{ CirrusService.getFileName(file) }}
+                </span>
+              </span>
+            </div>
             <DeviceBadge
               v-if="props.showDeviceBadges && file.deviceName"
               :device-name="file.deviceName"
@@ -85,9 +108,10 @@ import ImageIcon from '@/components/icons/ImageIcon.vue'
 import PdfIcon from '@/components/icons/PdfIcon.vue'
 import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
 import SortSwitcherIcon from '@/components/icons/SortSwitcherIcon.vue'
+import { useCirrusFileDropZone } from '@/composables/useCirrusFileDropZone'
 import CirrusService from '@/services/cirrusService'
 import type { CirrusFileNode } from '@/types/cirrus'
-import { computed, ref, type Component } from 'vue'
+import { computed, ref, watch, type Component } from 'vue'
 import CirrusListViewSortHeader, {
   type HeaderAlignDirection,
   type SortColumn,
@@ -106,6 +130,7 @@ const emit = defineEmits<{
   'open-file': [file: CirrusFileNode]
   'context-menu': [event: MouseEvent, file: CirrusFileNode]
   select: [file: CirrusFileNode]
+  'files-uploaded': [files: CirrusFileNode[]]
 }>()
 
 // Sorting state
@@ -122,6 +147,76 @@ const sortColumns: {
   },
   { column: 'size' },
 ]
+
+const {
+  isDragOver,
+  handleDragEnter,
+  handleDragOver,
+  handleDragLeave,
+  handleDrop,
+} = useCirrusFileDropZone({
+  currentPath: computed(() => props.currentPath),
+  onFilesUploaded: (files) => emit('files-uploaded', files),
+})
+
+const hoveredDirectoryPath = ref<string | null>(null)
+
+const normalizeCurrentPath = computed(() =>
+  CirrusService.normalizePath(props.currentPath),
+)
+
+const resolveDirectoryTargetPath = (file: CirrusFileNode) => {
+  const directoryName = CirrusService.getFileName(file)
+  const basePath = normalizeCurrentPath.value
+  return basePath ? `${basePath}/${directoryName}` : directoryName
+}
+
+const clearHoveredDirectory = () => {
+  hoveredDirectoryPath.value = null
+}
+
+watch(isDragOver, (active) => {
+  if (!active) {
+    clearHoveredDirectory()
+  }
+})
+
+const handleDirectoryDragEnter = (event: DragEvent, file: CirrusFileNode) => {
+  if (!CirrusService.isDirectory(file)) return
+  event.preventDefault()
+  hoveredDirectoryPath.value = resolveDirectoryTargetPath(file)
+}
+
+const handleDirectoryDragOver = (event: DragEvent, file: CirrusFileNode) => {
+  if (!CirrusService.isDirectory(file)) return
+  event.preventDefault()
+  hoveredDirectoryPath.value = resolveDirectoryTargetPath(file)
+}
+
+const handleDirectoryDragLeave = (event: DragEvent, file: CirrusFileNode) => {
+  if (!CirrusService.isDirectory(file)) return
+  event.preventDefault()
+
+  const currentTarget = event.currentTarget as Node | null
+  const relatedTarget = event.relatedTarget as Node | null
+
+  if (currentTarget && relatedTarget && currentTarget.contains(relatedTarget)) {
+    return
+  }
+
+  if (hoveredDirectoryPath.value === resolveDirectoryTargetPath(file)) {
+    clearHoveredDirectory()
+  }
+}
+
+const handleDirectoryDrop = async (event: DragEvent, file: CirrusFileNode) => {
+  if (!CirrusService.isDirectory(file)) return
+  event.preventDefault()
+  event.stopPropagation()
+  const targetPath = resolveDirectoryTargetPath(file)
+  clearHoveredDirectory()
+  await handleDrop(event, targetPath)
+}
 
 // Toggle mixed sorting mode (folders mixed with files vs folders first)
 const toggleMixedSorting = () => {
@@ -246,6 +341,19 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   border-radius: $border-radius-lg;
 }
 
+.file-table-container--dragging {
+  outline: 2px dashed rgba($color-blue-500, 0.35);
+}
+
+.file-table-drop-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgba($color-blue-500, 0.12);
+  border-radius: inherit;
+  transition: opacity 0.2s ease;
+}
+
 .file-table {
   width: 100%;
   border-collapse: collapse;
@@ -346,12 +454,32 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   }
 }
 
+.file-table-name-container {
+  display: flex;
+  align-items: center;
+  border-radius: $border-radius-md;
+  transition: background-color 0.15s ease;
+  padding: $spacing-xs $spacing-sm;
+
+  &--drop-target {
+    background-color: $color-primary-400;
+  }
+}
+
 .file-table-name {
   flex: 1;
   margin-left: $spacing-sm;
   color: inherit;
   display: flex;
   align-items: center;
+}
+
+.file-table-name-label {
+  display: inline-flex;
+  align-items: center;
+  border-radius: $border-radius-md;
+  padding: 0 $spacing-xs;
+  transition: background-color 0.15s ease;
 }
 
 .file-table-size {

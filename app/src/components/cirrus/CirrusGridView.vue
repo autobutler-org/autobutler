@@ -1,5 +1,13 @@
 <template>
-  <div class="grid-view-container">
+  <div
+    class="grid-view-container"
+    :class="{ 'grid-view-container--dragging': isDragOver }"
+    @dragenter="handleDragEnter"
+    @dragover="handleDragOver"
+    @dragleave="handleDragLeave"
+    @drop="handleDrop"
+  >
+    <div class="grid-view-drop-overlay" v-show="isDragOver" />
     <div class="grid-view-grid">
       <div
         v-for="file in files"
@@ -11,6 +19,9 @@
             'grid-view-item--folder': CirrusService.isDirectory(file),
             'grid-view-item--selected':
               selectedFile && selectedFile.fullPath === file.fullPath,
+            'grid-view-item--drop-target':
+              CirrusService.isDirectory(file) &&
+              hoveredDirectoryPath === resolveDirectoryTargetPath(file),
           },
         ]"
         :data-name="CirrusService.getFileName(file)"
@@ -20,6 +31,10 @@
         @click="emit('select', file)"
         @dblclick="handleClick(file)"
         @contextmenu="handleContextMenu($event, file)"
+        @dragenter="handleDirectoryDragEnter($event, file)"
+        @dragover="handleDirectoryDragOver($event, file)"
+        @dragleave="handleDirectoryDragLeave($event, file)"
+        @drop="handleDirectoryDrop($event, file)"
       >
         <button
           class="context-menu-trigger"
@@ -71,8 +86,10 @@ import GenericIcon from '@/components/icons/GenericIcon.vue'
 import ImageIcon from '@/components/icons/ImageIcon.vue'
 import PdfIcon from '@/components/icons/PdfIcon.vue'
 import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
+import { useCirrusFileDropZone } from '@/composables/useCirrusFileDropZone'
 import CirrusService from '@/services/cirrusService'
 import type { CirrusFileNode } from '@/types/cirrus'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps<{
   files: CirrusFileNode[]
@@ -86,7 +103,78 @@ const emit = defineEmits<{
   'open-file': [file: CirrusFileNode]
   'context-menu': [event: MouseEvent, file: CirrusFileNode]
   select: [file: CirrusFileNode]
+  'files-uploaded': [files: CirrusFileNode[]]
 }>()
+
+const {
+  isDragOver,
+  handleDragEnter,
+  handleDragOver,
+  handleDragLeave,
+  handleDrop,
+} = useCirrusFileDropZone({
+  currentPath: computed(() => props.currentPath),
+  onFilesUploaded: (files) => emit('files-uploaded', files),
+})
+
+const hoveredDirectoryPath = ref<string | null>(null)
+
+const normalizeCurrentPath = computed(() =>
+  CirrusService.normalizePath(props.currentPath),
+)
+
+const resolveDirectoryTargetPath = (file: CirrusFileNode) => {
+  const directoryName = CirrusService.getFileName(file)
+  const basePath = normalizeCurrentPath.value
+  return basePath ? `${basePath}/${directoryName}` : directoryName
+}
+
+const clearHoveredDirectory = () => {
+  hoveredDirectoryPath.value = null
+}
+
+watch(isDragOver, (active) => {
+  if (!active) {
+    clearHoveredDirectory()
+  }
+})
+
+const handleDirectoryDragEnter = (event: DragEvent, file: CirrusFileNode) => {
+  if (!CirrusService.isDirectory(file)) return
+  event.preventDefault()
+  hoveredDirectoryPath.value = resolveDirectoryTargetPath(file)
+}
+
+const handleDirectoryDragOver = (event: DragEvent, file: CirrusFileNode) => {
+  if (!CirrusService.isDirectory(file)) return
+  event.preventDefault()
+  hoveredDirectoryPath.value = resolveDirectoryTargetPath(file)
+}
+
+const handleDirectoryDragLeave = (event: DragEvent, file: CirrusFileNode) => {
+  if (!CirrusService.isDirectory(file)) return
+  event.preventDefault()
+
+  const currentTarget = event.currentTarget as Node | null
+  const relatedTarget = event.relatedTarget as Node | null
+
+  if (currentTarget && relatedTarget && currentTarget.contains(relatedTarget)) {
+    return
+  }
+
+  if (hoveredDirectoryPath.value === resolveDirectoryTargetPath(file)) {
+    clearHoveredDirectory()
+  }
+}
+
+const handleDirectoryDrop = async (event: DragEvent, file: CirrusFileNode) => {
+  if (!CirrusService.isDirectory(file)) return
+  event.preventDefault()
+  event.stopPropagation()
+  const targetPath = resolveDirectoryTargetPath(file)
+  clearHoveredDirectory()
+  await handleDrop(event, targetPath)
+}
 
 // TODO: CirrusListView has the exact same functions/code, after this point
 
@@ -133,6 +221,21 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   flex: 1;
   overflow-y: auto;
   padding: $spacing-sm;
+  position: relative;
+  border-radius: $border-radius-lg;
+}
+
+.grid-view-container--dragging {
+  outline: 2px dashed rgba($color-blue-500, 0.35);
+}
+
+.grid-view-drop-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgba($color-blue-500, 0.12);
+  border-radius: inherit;
+  transition: opacity 0.2s ease;
 }
 
 .grid-view-grid {
@@ -159,6 +262,10 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   }
   &.grid-view-item--selected {
     background-color: $theme-palette-accent;
+  }
+  &.grid-view-item--drop-target {
+    background-color: rgba($color-blue-500, 0.2);
+    outline: 2px dashed rgba($color-blue-500, 0.45);
   }
 }
 

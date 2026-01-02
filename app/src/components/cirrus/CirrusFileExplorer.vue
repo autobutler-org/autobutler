@@ -9,12 +9,6 @@
       </div>
     </div>
 
-    <!-- Drop Zone for file uploads -->
-    <CirrusDropZone
-      :current-path="currentPath"
-      @files-uploaded="handleFilesUploaded"
-    />
-
     <div id="file-explorer-selectable">
       <div class="file-explorer-controls">
         <div>
@@ -87,6 +81,7 @@
             @open-file="handleOpenFile"
             @select="handleSelectFile"
             @context-menu="handleContextMenu"
+            @files-uploaded="handleFilesUploaded"
           />
         </template>
         <template v-else>
@@ -99,6 +94,7 @@
             @open-file="handleOpenFile"
             @select="handleSelectFile"
             @context-menu="handleContextMenu"
+            @files-uploaded="handleFilesUploaded"
           />
         </template>
       </div>
@@ -180,7 +176,6 @@ import GridViewIcon from '../icons/GridViewIcon.vue'
 import ListViewIcon from '../icons/ListViewIcon.vue'
 import CirrusBreadcrumbs from './CirrusBreadcrumbs.vue'
 import CirrusContextMenu from './CirrusContextMenu.vue'
-import CirrusDropZone from './CirrusDropZone.vue'
 import CirrusFileViewer from './CirrusFileViewer.vue'
 import CirrusGridView from './CirrusGridView.vue'
 import CirrusListView from './CirrusListView.vue'
@@ -291,15 +286,36 @@ const toggleDeviceBadges = (show: boolean) => {
   showDeviceBadges.value = show
 }
 
+const getParentPath = (fullPath: string) => {
+  const segments = CirrusService.normalizePath(fullPath)
+    .split('/')
+    .filter(Boolean)
+  segments.pop()
+  return segments.join('/')
+}
+
 // Handle files uploaded - add them to the list
 const handleFilesUploaded = (uploadedFiles: CirrusFileNode[]) => {
-  // Add the new files to the list, avoiding duplicates
+  const currentPathNormalized = CirrusService.normalizePath(currentPath.value)
+
   for (const newFile of uploadedFiles) {
+    const normalizedFullPath = CirrusService.normalizePath(newFile.fullPath)
+    const parentPath = getParentPath(newFile.fullPath)
+
+    // Only display the file if it belongs to the directory currently in view
+    if (parentPath !== currentPathNormalized) {
+      continue
+    }
+
     const exists = files.value.some((f) => {
-      return f.fullPath === newFile.fullPath
+      return CirrusService.normalizePath(f.fullPath) === normalizedFullPath
     })
+
     if (!exists) {
-      files.value.push(newFile)
+      files.value.push({
+        ...newFile,
+        fullPath: normalizedFullPath,
+      })
     }
   }
 }
