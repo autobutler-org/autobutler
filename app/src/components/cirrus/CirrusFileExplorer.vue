@@ -1,8 +1,31 @@
 <template>
   <div id="file-explorer" class="file-explorer">
     <div class="file-explorer-header">
-      <div>
+      <div class="file-explorer-header-row">
         <h2 class="file-explorer-title">Cirrus</h2>
+        <div class="file-explorer-upload-row">
+          <span v-if="uploadProgress" class="upload-progress">{{
+            uploadProgress
+          }}</span>
+          <button
+            class="upload-btn"
+            type="button"
+            :disabled="isUploading"
+            @click="handleUploadClick"
+            title="Upload files"
+            aria-label="Upload files"
+          >
+            <UploadIcon />
+          </button>
+          <input
+            ref="fileInputRef"
+            type="file"
+            multiple
+            style="display: none"
+            @change="handleFileInputChange"
+            aria-label="Select files to upload"
+          />
+        </div>
       </div>
       <div style="display: flex; gap: 0.5rem; align-items: center">
         <!-- Navigation and download controls would go here -->
@@ -259,9 +282,10 @@
 <script lang="ts" setup>
 import ModalDialog from '@/components/common/ModalDialog.vue';
 import CloseIcon from '@/components/icons/CloseIcon.vue';
+import UploadIcon from '@/components/icons/UploadIcon.vue';
 import CirrusService from '@/services/cirrusService';
 import type { CirrusFileNode, FileType } from '@/types/cirrus';
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, ref as vueRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import GridViewIcon from '../icons/GridViewIcon.vue';
 import ListViewIcon from '../icons/ListViewIcon.vue';
@@ -270,6 +294,39 @@ import CirrusContextMenu from './CirrusContextMenu.vue';
 import CirrusFileViewer from './CirrusFileViewer.vue';
 import CirrusGridView from './CirrusGridView.vue';
 import CirrusListView from './CirrusListView.vue';
+
+const fileInputRef = vueRef<HTMLInputElement | null>(null);
+const isUploading = vueRef(false);
+const uploadProgress = vueRef('');
+
+const handleUploadClick = () => {
+  fileInputRef.value?.click();
+};
+
+const handleFileInputChange = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (!input.files || input.files.length === 0) return;
+  isUploading.value = true;
+  uploadProgress.value = `Uploading ${input.files.length} file${input.files.length > 1 ? 's' : ''}...`;
+  try {
+    // Actually upload the files to the backend
+    await CirrusService.uploadFiles(
+      `/api/v1/cirrus/${currentPath.value || ''}`,
+      input.files,
+    );
+    uploadProgress.value = 'Upload complete!';
+    // Refresh the file list after upload
+    await fetchFiles();
+  } catch (err) {
+    uploadProgress.value = 'Upload failed';
+  } finally {
+    isUploading.value = false;
+    setTimeout(() => {
+      uploadProgress.value = '';
+    }, 1500);
+    input.value = '';
+  }
+};
 
 const route = useRoute();
 const router = useRouter();
@@ -616,6 +673,15 @@ const handleDelete = (file: CirrusFileNode) => {
   color: $theme-palette-text-primary;
 }
 
+.file-explorer-header-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-xs;
+  justify-content: space-between;
+  width: 100%;
+}
+
 .file-explorer-loading {
   padding: $spacing-md 0;
   color: $theme-palette-text-muted;
@@ -635,6 +701,12 @@ const handleDelete = (file: CirrusFileNode) => {
   margin-right: $spacing-lg;
   white-space: nowrap;
   color: $theme-palette-text-primary;
+}
+
+.file-explorer-upload-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
 }
 
 #file-explorer-view-content {
@@ -863,6 +935,38 @@ const handleDelete = (file: CirrusFileNode) => {
   }
   &:hover {
     background: $theme-palette-accent-hover;
+  }
+}
+
+.upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $theme-palette-bg-nav;
+  color: $theme-palette-accent;
+  font-size: 1.5rem;
+  border-radius: $border-radius-lg;
+  padding: 0.5rem 1rem;
+  min-width: 40px;
+  min-height: 40px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  &:hover:not(:disabled) {
+    background: $theme-palette-bg-secondary;
+    color: $theme-palette-text-inverse;
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    display: block;
   }
 }
 </style>
