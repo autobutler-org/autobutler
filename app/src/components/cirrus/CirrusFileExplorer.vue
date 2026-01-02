@@ -194,7 +194,7 @@ const files = ref<CirrusFileNode[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const view = ref<'list' | 'grid'>('list')
-const showDeviceBadges = ref(false)
+const showDeviceBadges = ref(true)
 
 // File viewer state
 const fileViewerOpen = ref(false)
