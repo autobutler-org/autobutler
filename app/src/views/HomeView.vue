@@ -16,31 +16,43 @@ import HeroSection from '@/components/home/HeroSection.vue';
 </template>
 
 <style lang="scss" scoped>
+
 .landing-body {
   margin: 0;
   padding: 0;
-  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 
+
 .landing-main {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow: hidden;
 }
+
 
 .site-fullscreen-col {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 0;
 }
+
 
 .landing-container {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
   padding: 0 $spacing-2xl;
+  min-height: 0;
 }
 </style>

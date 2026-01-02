@@ -105,18 +105,19 @@ const defaultServiceIcons: ServiceIcon[] = [
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: $spacing-2xl;
   flex: 1;
+  min-height: 0;
+  width: 100%;
+  padding: $spacing-2xl;
 
   @media (max-width: 768px) {
     padding: $spacing-xl $spacing-md;
-    padding-bottom: 100px;
-    min-height: calc(100vh - 200px);
+    padding-bottom: 0;
   }
 
   @media (max-width: 480px) {
     padding: $spacing-md $spacing-sm;
-    padding-bottom: 100px;
+    padding-bottom: 0;
   }
 }
 
