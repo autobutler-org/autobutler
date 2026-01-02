@@ -4,10 +4,11 @@
 
 <script lang="ts" setup>
 import LibrarySidebar from '@/components/common/LibrarySidebar.vue';
+import { ref } from 'vue';
 
 const props = defineProps<{ photoCount: number }>();
 
-const sections = [
+const sections = ref([
   {
     title: 'Library',
     items: [
@@ -25,5 +26,5 @@ const sections = [
       { label: 'Selfies', count: 0 },
     ],
   },
-];
+]);
 </script>
