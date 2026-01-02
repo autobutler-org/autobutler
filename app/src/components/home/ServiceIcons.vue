@@ -53,17 +53,14 @@ const handleDisabledClick = () => {
 .service-icons {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: $spacing-2xl;
   justify-items: center;
 
   @media (min-width: 1024px) {
     grid-template-columns: repeat(5, 1fr);
-    gap: $spacing-3xl;
   }
 
   @media (max-width: 768px) {
     grid-template-columns: repeat(3, 1fr);
-    gap: $spacing-lg;
   }
 
   @media (max-width: 480px) {
