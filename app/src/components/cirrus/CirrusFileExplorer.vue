@@ -125,6 +125,7 @@
       v-if="moveDialogOpen"
       @close="moveDialogOpen = false"
       :transparent="true"
+      :hide-close-button="true"
     >
       <form @submit.prevent="submitMoveDialog" class="move-dialog-form">
         <h3 class="move-dialog-title">Rename or Move</h3>
@@ -168,26 +169,39 @@
       v-if="detailsDialogOpen"
       @close="closeDetailsDialog"
       :transparent="true"
+      :hide-close-button="true"
     >
-      <div class="move-dialog-form">
-        <h3 class="move-dialog-title">File Details</h3>
-        <div class="move-dialog-field">
-          <div v-if="detailsDialogFile">
-            <div><strong>Name:</strong> {{ detailsDialogFile.name }}</div>
-            <div><strong>Path:</strong> {{ detailsDialogFile.fullPath }}</div>
-            <div>
-              <strong>Device:</strong> {{ detailsDialogFile.deviceName }}
-            </div>
-            <div v-if="detailsDialogFile.size !== undefined">
-              <strong>Size:</strong> {{ detailsDialogFile.size }} bytes
-            </div>
-            <div v-if="detailsDialogFile.isDir">
-              <strong>Type:</strong> Folder
-            </div>
-            <div v-else><strong>Type:</strong> File</div>
-          </div>
+      <div class="details-dialog-form">
+        <div class="details-dialog-header">
+          <span class="details-dialog-title">File Details</span>
         </div>
-        <div class="move-dialog-actions">
+        <div v-if="detailsDialogFile">
+          <table class="details-table">
+            <tbody>
+              <tr>
+                <th>Name</th>
+                <td>{{ detailsDialogFile.name }}</td>
+              </tr>
+              <tr>
+                <th>Path</th>
+                <td class="details-path">{{ detailsDialogFile.fullPath }}</td>
+              </tr>
+              <tr>
+                <th>Device</th>
+                <td>{{ detailsDialogFile.deviceName }}</td>
+              </tr>
+              <tr v-if="detailsDialogFile.size !== undefined">
+                <th>Size</th>
+                <td>{{ detailsDialogFile.size }} bytes</td>
+              </tr>
+              <tr>
+                <th>Type</th>
+                <td>{{ detailsDialogFile.isDir ? 'Folder' : 'File' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="details-dialog-actions">
           <button
             type="button"
             class="btn btn--primary"
@@ -765,5 +779,60 @@ const handleDelete = (file: CirrusFileNode) => {
 .view-switcher {
   display: flex;
   gap: $spacing-xs;
+}
+
+/* File Details Dialog Styles */
+.details-dialog-form {
+  min-width: 420px;
+  max-width: 98vw;
+  background: $theme-palette-bg-secondary;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-lg;
+  padding: $spacing-xl $spacing-lg $spacing-lg $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: $spacing-lg;
+}
+
+.details-dialog-header {
+  margin-bottom: $spacing-md;
+}
+
+.details-dialog-title {
+  font-size: $theme-font-size-2xl;
+  font-weight: 700;
+  color: $theme-palette-text-primary;
+  letter-spacing: 0.01em;
+}
+
+.details-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 0.5rem;
+  font-size: $theme-font-size-lg;
+  color: $theme-palette-text-primary;
+}
+.details-table th {
+  text-align: left;
+  font-weight: 600;
+  color: $theme-palette-text-secondary;
+  padding-right: 1.5rem;
+  vertical-align: top;
+  min-width: 80px;
+}
+.details-table td {
+  word-break: break-all;
+  color: $theme-palette-text-primary;
+}
+.details-path {
+  font-size: $theme-font-size-base;
+  color: $theme-palette-text-muted;
+}
+.details-dialog-actions {
+  display: flex;
+  gap: $spacing-md;
+  justify-content: flex-end;
+  margin-top: $spacing-md;
 }
 </style>
