@@ -1,4 +1,7 @@
 export default class HttpService {
+  // NOTE: Can be empty in most of all cases, but is available in case you have a need for it
+  static baseUrl: string = ``
+
   static post = async (
     url: string,
     body: unknown,
@@ -24,7 +27,6 @@ export default class HttpService {
     options?: RequestInit,
   ): Promise<Response> =>
     HttpService._genericRequest(url, 'DELETE', undefined, options)
-  static baseUrl: string = `${window.location.protocol}//${window.location.hostname}:8080`
 
   static get = async (url: string, options?: RequestInit): Promise<Response> =>
     HttpService._genericRequest(url, 'GET', undefined, options)
