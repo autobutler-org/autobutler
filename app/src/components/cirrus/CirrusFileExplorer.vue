@@ -163,6 +163,45 @@
         </div>
       </form>
     </ModalDialog>
+
+    <!-- Delete Confirmation Modal Dialog -->
+    <ModalDialog
+      v-if="deleteDialogOpen"
+      @close="closeDeleteDialog"
+      :transparent="true"
+    >
+      <form @submit.prevent="confirmDelete" class="move-dialog-form">
+        <h3 class="move-dialog-title">Delete File</h3>
+        <div class="move-dialog-field">
+          <span
+            >Are you sure you want to delete "{{
+              deleteDialogFile?.name
+            }}"?</span
+          >
+        </div>
+        <div v-if="deleteDialogError" class="move-dialog-error">
+          {{ deleteDialogError }}
+        </div>
+        <div class="move-dialog-actions">
+          <button
+            type="button"
+            class="btn btn--secondary"
+            @click="closeDeleteDialog"
+            :disabled="deleteDialogLoading"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="btn btn--primary"
+            :disabled="deleteDialogLoading"
+          >
+            <span v-if="deleteDialogLoading">Deleting...</span>
+            <span v-else>Delete</span>
+          </button>
+        </div>
+      </form>
+    </ModalDialog>
   </div>
 </template>
 
@@ -211,6 +250,54 @@ const moveDialogError = ref('');
 const moveDialogNewPath = ref('');
 const moveDialogOldDeviceName = ref('');
 const moveDialogFile = ref<CirrusFileNode | null>(null);
+
+// Delete dialog state
+const deleteDialogOpen = ref(false);
+const deleteDialogLoading = ref(false);
+const deleteDialogError = ref('');
+const deleteDialogFile = ref<CirrusFileNode | null>(null);
+
+const openDeleteDialog = (file: CirrusFileNode) => {
+  deleteDialogFile.value = file;
+  deleteDialogError.value = '';
+  deleteDialogOpen.value = true;
+};
+const closeDeleteDialog = () => {
+  deleteDialogOpen.value = false;
+  deleteDialogFile.value = null;
+  deleteDialogError.value = '';
+};
+
+const confirmDelete = async () => {
+  if (!deleteDialogFile.value) return;
+  deleteDialogLoading.value = true;
+  deleteDialogError.value = '';
+  const file = deleteDialogFile.value;
+  const fileName = CirrusService.getFileName(file);
+  try {
+    // Build query params - API expects rootDir and filePaths as query parameters
+    const params = new URLSearchParams();
+    params.append('rootDir', currentPath.value);
+    params.append('filePaths', fileName);
+
+    await CirrusService.deleteFile(
+      currentPath.value,
+      fileName,
+      file.deviceName,
+    );
+
+    // Remove the file from the in-memory list
+    files.value = files.value.filter((f) => {
+      return f.fullPath !== file.fullPath;
+    });
+    closeDeleteDialog();
+  } catch (e) {
+    deleteDialogError.value =
+      e instanceof Error ? e.message : 'Failed to delete file';
+  } finally {
+    deleteDialogLoading.value = false;
+  }
+};
 
 // Fetch files for the current path
 const fetchFiles = async () => {
@@ -428,31 +515,8 @@ const handleFileDetails = (file: CirrusFileNode) => {
   );
 };
 
-const handleDelete = async (file: CirrusFileNode) => {
-  const fileName = CirrusService.getFileName(file);
-  if (!confirm(`Are you sure you want to delete "${fileName}"?`)) {
-    return;
-  }
-
-  try {
-    // Build query params - API expects rootDir and filePaths as query parameters
-    const params = new URLSearchParams();
-    params.append('rootDir', currentPath.value);
-    params.append('filePaths', fileName);
-
-    await CirrusService.deleteFile(
-      currentPath.value,
-      fileName,
-      file.deviceName,
-    );
-
-    // Remove the file from the in-memory list
-    files.value = files.value.filter((f) => {
-      return f.fullPath !== file.fullPath;
-    });
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to delete file';
-  }
+const handleDelete = (file: CirrusFileNode) => {
+  openDeleteDialog(file);
 };
 </script>
 
