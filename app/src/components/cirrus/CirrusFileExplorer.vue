@@ -380,8 +380,19 @@ const submitMoveDialog = async () => {
       moveDialogOldDeviceName.value,
       moveDialogOldDeviceName.value,
     )
-    // Update UI: refetch files and close dialog
-    await fetchFiles()
+    // Update the in-memory file list
+    // TODO: When moving to a new directory, we need to filter out the moved file
+    files.value = files.value.map((f) => {
+      if (f.name === oldPath) {
+        return {
+          ...f,
+          name: newPath,
+          fullPath: f.fullPath.replace(oldPath, newPath),
+        }
+      }
+      return f
+    })
+    // Close the dialog
     moveDialogOpen.value = false
     moveDialogFile.value = null
   } catch (e) {
