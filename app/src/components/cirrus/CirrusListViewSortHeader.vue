@@ -28,7 +28,7 @@ import SortArrowDescendIcon from '../icons/SortArrowDescendIcon.vue';
 import SortArrowNeutralIcon from '../icons/SortArrowNeutralIcon.vue';
 
 export type HeaderAlignDirection = 'left' | 'right';
-export type SortColumn = 'name' | 'size' | null;
+export type SortColumn = 'name' | 'size' | 'device' | null;
 export type SortDirection = 'asc' | 'desc';
 
 const props = defineProps<{

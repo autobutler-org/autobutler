@@ -28,7 +28,7 @@
                 toggleDeviceBadges(($event.target as HTMLInputElement).checked)
               "
             />
-            <span>Show device names</span>
+            <span>Show devices</span>
           </label>
           <div class="view-switcher">
             <button

@@ -12,7 +12,9 @@
       <thead class="file-table-header">
         <tr>
           <CirrusListViewSortHeader
-            v-for="column in sortColumns"
+            v-for="column in showDeviceBadges
+              ? sortColumns
+              : sortColumnsNoDevice"
             :key="column.column ? column.column : ''"
             :header="column.column"
             :active-sort-column="sortColumn"
@@ -74,6 +76,11 @@
                 </span>
               </span>
             </div>
+          </td>
+          <td
+            v-if="props.showDeviceBadges"
+            class="file-table-cell file-table-device"
+          >
             <DeviceBadge
               v-if="props.showDeviceBadges && file.deviceName"
               :device-name="file.deviceName"
@@ -145,8 +152,13 @@ const sortColumns: {
     column: 'name',
     alignDirection: 'left',
   },
+  { column: 'device' },
   { column: 'size' },
 ];
+
+const sortColumnsNoDevice = sortColumns.filter(
+  (col) => col.column !== 'device',
+);
 
 const {
   isDragOver,
@@ -273,6 +285,12 @@ const sortedFiles = computed(() => {
       );
     } else if (sortColumn.value === 'size') {
       comparison = CirrusService.getFileSize(a) - CirrusService.getFileSize(b);
+    } else if (sortColumn.value === 'device') {
+      comparison = (a.deviceName || '').localeCompare(
+        b.deviceName || '',
+        undefined,
+        { sensitivity: 'base' },
+      );
     }
 
     return sortDirection.value === 'asc' ? comparison : -comparison;
@@ -480,6 +498,13 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   border-radius: $border-radius-md;
   padding: 0 $spacing-xs;
   transition: background-color 0.15s ease;
+}
+
+.file-table-device {
+  color: $theme-palette-text-muted;
+  font-size: $theme-font-size-sm;
+  text-align: right;
+  padding-right: $spacing-sm;
 }
 
 .file-table-size {
