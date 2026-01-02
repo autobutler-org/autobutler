@@ -38,7 +38,7 @@ const handleDisabledClick = () => {
 <style lang="scss" scoped>
 .service-icons-container {
   margin-bottom: $spacing-2xl;
-  padding: $spacing-3xl $spacing-2xl;
+  padding: $spacing-md $spacing-md;
   background: hsl(from $theme-palette-bg-inverse h s l / 0.05);
   backdrop-filter: blur(10px);
   border: 1px solid hsl(from $theme-palette-bg-inverse h s l / 0.1);

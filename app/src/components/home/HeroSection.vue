@@ -125,11 +125,9 @@ const defaultServiceIcons: ServiceIcon[] = [
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: $spacing-2xl;
 
   @media (max-width: 768px) {
     max-width: 100%;
-    gap: $spacing-lg;
   }
 }
 
@@ -202,6 +200,7 @@ const defaultServiceIcons: ServiceIcon[] = [
   flex-direction: column;
   gap: $spacing-lg;
   justify-content: center;
+  margin: 0 auto $spacing-lg;
 
   @media (min-width: 640px) {
     flex-direction: row;

@@ -16,7 +16,6 @@ import HeroSection from '@/components/home/HeroSection.vue';
 </template>
 
 <style lang="scss" scoped>
-
 .landing-body {
   margin: 0;
   padding: 0;
@@ -24,7 +23,6 @@ import HeroSection from '@/components/home/HeroSection.vue';
   width: 100vw;
   overflow: hidden;
 }
-
 
 .landing-main {
   height: 100vh;
@@ -34,14 +32,12 @@ import HeroSection from '@/components/home/HeroSection.vue';
   overflow: hidden;
 }
 
-
 .site-fullscreen-col {
   display: flex;
   flex-direction: column;
   height: 100vh;
   min-height: 0;
 }
-
 
 .landing-container {
   display: flex;
