@@ -24,15 +24,15 @@
 </template>
 
 <script lang="ts" setup>
-import type { ServiceIcon } from '@/types/service_icon'
+import type { ServiceIcon } from '@/types/service_icon';
 
 defineProps<{
-  icons: ServiceIcon[]
-}>()
+  icons: ServiceIcon[];
+}>();
 
 const handleDisabledClick = () => {
-  alert('Coming soon!')
-}
+  alert('Coming soon!');
+};
 </script>
 
 <style lang="scss" scoped>

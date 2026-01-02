@@ -62,26 +62,26 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { computed } from 'vue';
 
 defineProps({
   device: {
     type: Object,
     required: true,
   },
-})
+});
 
 // Static test values for visual testing
 const hasCategories = computed(() => {
-  return true
-})
+  return true;
+});
 type CategoryLabel =
   | 'System'
   | 'Documents'
   | 'Media'
   | 'Backups'
   | 'Other'
-  | 'Free'
+  | 'Free';
 
 const testGB: Record<CategoryLabel, number> = {
   System: 40.81,
@@ -90,9 +90,9 @@ const testGB: Record<CategoryLabel, number> = {
   Backups: 0,
   Other: 183.65,
   Free: 19.9,
-}
+};
 const totalGB =
-  testGB.System + testGB.Documents + testGB.Media + testGB.Other + testGB.Free
+  testGB.System + testGB.Documents + testGB.Media + testGB.Other + testGB.Free;
 
 const categorySegments = computed(() => {
   const map = [
@@ -105,10 +105,10 @@ const categorySegments = computed(() => {
     { key: 'media', class: 'storage-partition-media', label: 'Media' },
     { key: 'backups', class: 'storage-partition-backups', label: 'Backups' },
     { key: 'other', class: 'storage-partition-other', label: 'Other' },
-  ]
+  ];
   return map
     .map((seg) => {
-      const gb = testGB[seg.label as CategoryLabel] || 0
+      const gb = testGB[seg.label as CategoryLabel] || 0;
       if (!gb || !totalGB)
         return {
           key: seg.key,
@@ -117,8 +117,8 @@ const categorySegments = computed(() => {
           width: '0%',
           title: '',
           gb: '0',
-        }
-      const percent = (gb / totalGB) * 100
+        };
+      const percent = (gb / totalGB) * 100;
       return {
         key: seg.key,
         class: seg.class,
@@ -126,17 +126,17 @@ const categorySegments = computed(() => {
         width: percent.toFixed(2) + '%',
         title: `${seg.label}: ${gb.toFixed(1)} GB`,
         gb: gb.toFixed(1),
-      }
+      };
     })
-    .filter(Boolean)
-})
+    .filter(Boolean);
+});
 
 const freeWidth = computed(() => {
-  return ((testGB.Free / totalGB) * 100).toFixed(2) + '%'
-})
+  return ((testGB.Free / totalGB) * 100).toFixed(2) + '%';
+});
 const freeGB = computed(() => {
-  return testGB.Free.toFixed(1)
-})
+  return testGB.Free.toFixed(1);
+});
 </script>
 
 <style lang="scss" scoped>

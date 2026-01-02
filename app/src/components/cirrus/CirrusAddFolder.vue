@@ -25,60 +25,63 @@
 </template>
 
 <script lang="ts" setup>
-import { nextTick, ref } from 'vue'
+import { nextTick, ref } from 'vue';
 
-import FolderService from '@/services/folderService'
-import AddFolderIcon from '../icons/AddFolderIcon.vue'
+import FolderService from '@/services/folderService';
+import AddFolderIcon from '../icons/AddFolderIcon.vue';
 
 const props = defineProps<{
-  currentPath: string
-}>()
+  currentPath: string;
+}>();
 
 const emit = defineEmits<{
-  'folder-created': [folderName: string]
-}>()
+  'folder-created': [folderName: string];
+}>();
 
-const folderInputRef = ref<HTMLInputElement | null>(null)
-const showFolderInput = ref(false)
-const folderName = ref('')
-const isCreating = ref(false)
+const folderInputRef = ref<HTMLInputElement | null>(null);
+const showFolderInput = ref(false);
+const folderName = ref('');
+const isCreating = ref(false);
 
 // TODO: Move folder creation logic to a service/module, then have this function wrap that
 const createFolder = async () => {
-  if (!folderName.value.trim() || isCreating.value) return
+  if (!folderName.value.trim() || isCreating.value) return;
 
-  isCreating.value = true
+  isCreating.value = true;
   try {
-    await FolderService.createFolder(props.currentPath, folderName.value.trim())
-    emit('folder-created', folderName.value.trim())
-    folderName.value = ''
-    showFolderInput.value = false
+    await FolderService.createFolder(
+      props.currentPath,
+      folderName.value.trim(),
+    );
+    emit('folder-created', folderName.value.trim());
+    folderName.value = '';
+    showFolderInput.value = false;
   } catch (error) {
-    console.error('Error creating folder:', error)
-    alert('Failed to create folder')
+    console.error('Error creating folder:', error);
+    alert('Failed to create folder');
   } finally {
-    isCreating.value = false
+    isCreating.value = false;
   }
-}
+};
 
 const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
-    createFolder()
+    createFolder();
   } else if (event.key === 'Escape') {
-    showFolderInput.value = false
-    folderName.value = ''
+    showFolderInput.value = false;
+    folderName.value = '';
   }
-}
+};
 
 const toggleFolderInput = async () => {
-  showFolderInput.value = !showFolderInput.value
+  showFolderInput.value = !showFolderInput.value;
   if (showFolderInput.value) {
-    await nextTick()
-    folderInputRef.value?.focus()
+    await nextTick();
+    folderInputRef.value?.focus();
   } else {
-    folderName.value = ''
+    folderName.value = '';
   }
-}
+};
 </script>
 
 <style lang="scss" scoped>

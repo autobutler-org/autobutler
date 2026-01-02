@@ -7,46 +7,46 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
-import type { FileType } from '@/types/cirrus'
-import ImageViewer from './viewers/ImageViewer.vue'
-import VideoViewer from './viewers/VideoViewer.vue'
-import PdfViewer from './viewers/PdfViewer.vue'
-import TextViewer from './viewers/TextViewer.vue'
-import UnsupportedViewer from './viewers/UnsupportedViewer.vue'
-import ModalDialog from '@/components/common/ModalDialog.vue'
+import { computed } from 'vue';
+import type { FileType } from '@/types/cirrus';
+import ImageViewer from './viewers/ImageViewer.vue';
+import VideoViewer from './viewers/VideoViewer.vue';
+import PdfViewer from './viewers/PdfViewer.vue';
+import TextViewer from './viewers/TextViewer.vue';
+import UnsupportedViewer from './viewers/UnsupportedViewer.vue';
+import ModalDialog from '@/components/common/ModalDialog.vue';
 
 const props = defineProps<{
-  modelValue: boolean
-  fileSrc: string
-  fileType: FileType
-}>()
-const emit = defineEmits(['update:modelValue'])
+  modelValue: boolean;
+  fileSrc: string;
+  fileType: FileType;
+}>();
+const emit = defineEmits(['update:modelValue']);
 
 // Determine which viewer component to use
 const viewerComponent = computed(() => {
   // TODO: Move this logic to a utility module
   switch (props.fileType) {
     case 'image':
-      return ImageViewer
+      return ImageViewer;
     case 'video':
-      return VideoViewer
+      return VideoViewer;
     case 'pdf':
-      return PdfViewer
+      return PdfViewer;
     case 'generic':
-      return TextViewer
+      return TextViewer;
     case 'epub':
     case 'docx':
     case 'archive':
     case 'slideshow':
     default:
-      return UnsupportedViewer
+      return UnsupportedViewer;
   }
-})
+});
 
 const closeDialog = () => {
-  emit('update:modelValue', false)
-}
+  emit('update:modelValue', false);
+};
 </script>
 
 <style lang="scss" scoped>

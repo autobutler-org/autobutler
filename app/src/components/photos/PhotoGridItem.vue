@@ -10,19 +10,19 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { computed } from 'vue';
 
 const props = defineProps<{
-  photo: { relPath?: string; fileName?: string; id?: string }
-}>()
+  photo: { relPath?: string; fileName?: string; id?: string };
+}>();
 
 const thumbnailPath = computed(() => {
   // Use relPath or id to build the thumbnail URL
   if (props.photo.relPath) {
-    return `/api/v1/thumbnails/${props.photo.relPath}`
+    return `/api/v1/thumbnails/${props.photo.relPath}`;
   }
-  return ''
-})
+  return '';
+});
 </script>
 
 <style lang="scss" scoped>

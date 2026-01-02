@@ -1,10 +1,10 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import CirrusView from '@/views/CirrusView.vue'
-import HomeView from '@/views/HomeView.vue'
-import BooksView from '@/views/BooksView.vue'
-import SettingsView from '@/views/SettingsView.vue'
-import PhotosView from '@/views/PhotosView.vue'
-import DevicesView from '@/views/DevicesView.vue'
+import { createRouter, createWebHistory } from 'vue-router';
+import CirrusView from '@/views/CirrusView.vue';
+import HomeView from '@/views/HomeView.vue';
+import BooksView from '@/views/BooksView.vue';
+import SettingsView from '@/views/SettingsView.vue';
+import PhotosView from '@/views/PhotosView.vue';
+import DevicesView from '@/views/DevicesView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -40,6 +40,6 @@ const router = createRouter({
       component: SettingsView,
     },
   ],
-})
+});
 
-export default router
+export default router;

@@ -99,54 +99,54 @@
 </template>
 
 <script lang="ts" setup>
-import DeviceBadge from '@/components/badges/DeviceBadge.vue'
-import ArchiveIcon from '@/components/icons/ArchiveIcon.vue'
-import CirrusFolderIcon from '@/components/icons/CirrusFolderIcon.vue'
-import DocxIcon from '@/components/icons/DocxIcon.vue'
-import GenericIcon from '@/components/icons/GenericIcon.vue'
-import ImageIcon from '@/components/icons/ImageIcon.vue'
-import PdfIcon from '@/components/icons/PdfIcon.vue'
-import SlideshowIcon from '@/components/icons/SlideshowIcon.vue'
-import SortSwitcherIcon from '@/components/icons/SortSwitcherIcon.vue'
-import { useCirrusFileDropZone } from '@/composables/useCirrusFileDropZone'
-import CirrusService from '@/services/cirrusService'
-import type { CirrusFileNode } from '@/types/cirrus'
-import { computed, ref, watch, type Component } from 'vue'
+import DeviceBadge from '@/components/badges/DeviceBadge.vue';
+import ArchiveIcon from '@/components/icons/ArchiveIcon.vue';
+import CirrusFolderIcon from '@/components/icons/CirrusFolderIcon.vue';
+import DocxIcon from '@/components/icons/DocxIcon.vue';
+import GenericIcon from '@/components/icons/GenericIcon.vue';
+import ImageIcon from '@/components/icons/ImageIcon.vue';
+import PdfIcon from '@/components/icons/PdfIcon.vue';
+import SlideshowIcon from '@/components/icons/SlideshowIcon.vue';
+import SortSwitcherIcon from '@/components/icons/SortSwitcherIcon.vue';
+import { useCirrusFileDropZone } from '@/composables/useCirrusFileDropZone';
+import CirrusService from '@/services/cirrusService';
+import type { CirrusFileNode } from '@/types/cirrus';
+import { computed, ref, watch, type Component } from 'vue';
 import CirrusListViewSortHeader, {
   type HeaderAlignDirection,
   type SortColumn,
   type SortDirection,
-} from './CirrusListViewSortHeader.vue'
+} from './CirrusListViewSortHeader.vue';
 
 const props = defineProps<{
-  files: CirrusFileNode[]
-  currentPath: string
-  showDeviceBadges?: boolean
-  selectedFile?: CirrusFileNode | null
-}>()
+  files: CirrusFileNode[];
+  currentPath: string;
+  showDeviceBadges?: boolean;
+  selectedFile?: CirrusFileNode | null;
+}>();
 
 const emit = defineEmits<{
-  'navigate-folder': [path: string]
-  'open-file': [file: CirrusFileNode]
-  'context-menu': [event: MouseEvent, file: CirrusFileNode]
-  select: [file: CirrusFileNode]
-  'files-uploaded': [files: CirrusFileNode[]]
-}>()
+  'navigate-folder': [path: string];
+  'open-file': [file: CirrusFileNode];
+  'context-menu': [event: MouseEvent, file: CirrusFileNode];
+  select: [file: CirrusFileNode];
+  'files-uploaded': [files: CirrusFileNode[]];
+}>();
 
 // Sorting state
-const sortColumn = ref<SortColumn>(null)
-const sortDirection = ref<SortDirection>('asc')
-const mixedSorting = ref(false)
+const sortColumn = ref<SortColumn>(null);
+const sortDirection = ref<SortDirection>('asc');
+const mixedSorting = ref(false);
 const sortColumns: {
-  column: SortColumn
-  alignDirection?: HeaderAlignDirection
+  column: SortColumn;
+  alignDirection?: HeaderAlignDirection;
 }[] = [
   {
     column: 'name',
     alignDirection: 'left',
   },
   { column: 'size' },
-]
+];
 
 const {
   isDragOver,
@@ -157,71 +157,71 @@ const {
 } = useCirrusFileDropZone({
   currentPath: computed(() => props.currentPath),
   onFilesUploaded: (files) => emit('files-uploaded', files),
-})
+});
 
-const hoveredDirectoryPath = ref<string | null>(null)
+const hoveredDirectoryPath = ref<string | null>(null);
 
 const normalizeCurrentPath = computed(() =>
   CirrusService.normalizePath(props.currentPath),
-)
+);
 
 const resolveDirectoryTargetPath = (file: CirrusFileNode) => {
-  const directoryName = CirrusService.getFileName(file)
-  const basePath = normalizeCurrentPath.value
-  return basePath ? `${basePath}/${directoryName}` : directoryName
-}
+  const directoryName = CirrusService.getFileName(file);
+  const basePath = normalizeCurrentPath.value;
+  return basePath ? `${basePath}/${directoryName}` : directoryName;
+};
 
 const clearHoveredDirectory = () => {
-  hoveredDirectoryPath.value = null
-}
+  hoveredDirectoryPath.value = null;
+};
 
 watch(isDragOver, (active) => {
   if (!active) {
-    clearHoveredDirectory()
+    clearHoveredDirectory();
   }
-})
+});
 
 const handleDirectoryDragEnter = (event: DragEvent, file: CirrusFileNode) => {
-  if (!CirrusService.isDirectory(file)) return
-  event.preventDefault()
-  hoveredDirectoryPath.value = resolveDirectoryTargetPath(file)
-}
+  if (!CirrusService.isDirectory(file)) return;
+  event.preventDefault();
+  hoveredDirectoryPath.value = resolveDirectoryTargetPath(file);
+};
 
 const handleDirectoryDragOver = (event: DragEvent, file: CirrusFileNode) => {
-  if (!CirrusService.isDirectory(file)) return
-  event.preventDefault()
-  hoveredDirectoryPath.value = resolveDirectoryTargetPath(file)
-}
+  if (!CirrusService.isDirectory(file)) return;
+  event.preventDefault();
+  hoveredDirectoryPath.value = resolveDirectoryTargetPath(file);
+};
 
 const handleDirectoryDragLeave = (event: DragEvent, file: CirrusFileNode) => {
-  if (!CirrusService.isDirectory(file)) return
-  event.preventDefault()
+  if (!CirrusService.isDirectory(file)) return;
+  event.preventDefault();
 
-  const currentTarget = event.currentTarget as Node | null
-  const relatedTarget = event.relatedTarget as Node | null
+  const currentTarget = event.currentTarget as Node | null;
+  const relatedTarget = event.relatedTarget as Node | null;
 
   if (currentTarget && relatedTarget && currentTarget.contains(relatedTarget)) {
-    return
+    return;
   }
 
   if (hoveredDirectoryPath.value === resolveDirectoryTargetPath(file)) {
-    clearHoveredDirectory()
+    clearHoveredDirectory();
   }
-}
+};
 
 const handleDirectoryDrop = async (event: DragEvent, file: CirrusFileNode) => {
-  if (!CirrusService.isDirectory(file)) return
-  event.preventDefault()
-  event.stopPropagation()
-  const targetPath = resolveDirectoryTargetPath(file)
-  clearHoveredDirectory()
-  await handleDrop(event, targetPath)
-}
+  if (!CirrusService.isDirectory(file)) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const targetPath = resolveDirectoryTargetPath(file);
+  clearHoveredDirectory();
+  await handleDrop(event, targetPath);
+};
 
 // Toggle mixed sorting mode (folders mixed with files vs folders first)
 const toggleMixedSorting = () => {
-  mixedSorting.value = !mixedSorting.value
-}
+  mixedSorting.value = !mixedSorting.value;
+};
 
 // Sorted files computed property
 // TODO: Move the sorting into a super generic utility module, which allows you to sort by "sections" (e.g., folders first)
@@ -230,13 +230,13 @@ const sortedFiles = computed(() => {
   if (!sortColumn.value) {
     // Default: folders first (unless mixed), then alphabetically by name
     return [...props.files].sort((a, b) => {
-      const aIsDir = CirrusService.isDirectory(a)
-      const bIsDir = CirrusService.isDirectory(b)
+      const aIsDir = CirrusService.isDirectory(a);
+      const bIsDir = CirrusService.isDirectory(b);
 
       // Folders first unless mixed sorting is enabled
       if (!mixedSorting.value) {
-        if (aIsDir && !bIsDir) return -1
-        if (!aIsDir && bIsDir) return 1
+        if (aIsDir && !bIsDir) return -1;
+        if (!aIsDir && bIsDir) return 1;
       }
 
       return CirrusService.getFileName(a).localeCompare(
@@ -246,21 +246,21 @@ const sortedFiles = computed(() => {
           numeric: true,
           sensitivity: 'base',
         },
-      )
-    })
+      );
+    });
   }
 
   return [...props.files].sort((a, b) => {
-    const aIsDir = CirrusService.isDirectory(a)
-    const bIsDir = CirrusService.isDirectory(b)
+    const aIsDir = CirrusService.isDirectory(a);
+    const bIsDir = CirrusService.isDirectory(b);
 
     // Folders first unless mixed sorting is enabled
     if (!mixedSorting.value) {
-      if (aIsDir && !bIsDir) return -1
-      if (!aIsDir && bIsDir) return 1
+      if (aIsDir && !bIsDir) return -1;
+      if (!aIsDir && bIsDir) return 1;
     }
 
-    let comparison = 0
+    let comparison = 0;
 
     if (sortColumn.value === 'name') {
       comparison = CirrusService.getFileName(a).localeCompare(
@@ -270,25 +270,25 @@ const sortedFiles = computed(() => {
           numeric: true,
           sensitivity: 'base',
         },
-      )
+      );
     } else if (sortColumn.value === 'size') {
-      comparison = CirrusService.getFileSize(a) - CirrusService.getFileSize(b)
+      comparison = CirrusService.getFileSize(a) - CirrusService.getFileSize(b);
     }
 
-    return sortDirection.value === 'asc' ? comparison : -comparison
-  })
-})
+    return sortDirection.value === 'asc' ? comparison : -comparison;
+  });
+});
 
 const toggleSort = (column: SortColumn): void => {
   if (sortColumn.value === column) {
     // Toggle direction
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
   } else {
     // New column, start ascending
-    sortColumn.value = column
-    sortDirection.value = 'asc'
+    sortColumn.value = column;
+    sortDirection.value = 'asc';
   }
-}
+};
 
 // TODO: CirrusGridView has the exact same functions/code, after this point
 
@@ -296,39 +296,39 @@ const toggleSort = (column: SortColumn): void => {
 const getIconComponent = (fileType: string): Component => {
   switch (fileType) {
     case 'folder':
-      return CirrusFolderIcon
+      return CirrusFolderIcon;
     case 'pdf':
-      return PdfIcon
+      return PdfIcon;
     case 'image':
-      return ImageIcon
+      return ImageIcon;
     case 'slideshow':
-      return SlideshowIcon
+      return SlideshowIcon;
     case 'archive':
-      return ArchiveIcon
+      return ArchiveIcon;
     case 'docx':
-      return DocxIcon
+      return DocxIcon;
     default:
-      return GenericIcon
+      return GenericIcon;
   }
-}
+};
 
 const handleClick = (file: CirrusFileNode) => {
-  const fileName = CirrusService.getFileName(file)
+  const fileName = CirrusService.getFileName(file);
   if (CirrusService.isDirectory(file)) {
     // Navigate to folder
     const newPath = props.currentPath
       ? `${props.currentPath}/${fileName}`
-      : fileName
-    emit('navigate-folder', newPath)
+      : fileName;
+    emit('navigate-folder', newPath);
   } else {
-    emit('open-file', file)
+    emit('open-file', file);
   }
-}
+};
 
 const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
-  event.preventDefault()
-  emit('context-menu', event, file)
-}
+  event.preventDefault();
+  emit('context-menu', event, file);
+};
 </script>
 
 <style lang="scss" scoped>

@@ -12,7 +12,7 @@ This is a markdown file used for testing.
 
 ```javascript
 function hello() {
-	console.log('Hello, World!')
+	console.log('Hello, World!');
 }
 ```
 

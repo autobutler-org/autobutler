@@ -7,68 +7,68 @@ export const arrayCompare = <T>(
     elementComparator ??
     ((a, b) => {
       if (a < b) {
-        return -1
+        return -1;
       }
       if (a > b) {
-        return 1
+        return 1;
       }
-      return 0
-    })
+      return 0;
+    });
   if (arr1 === undefined && arr2 === undefined) {
-    return 0
+    return 0;
   }
   if (arr1 === undefined) {
-    return -1
+    return -1;
   }
   if (arr2 === undefined) {
-    return 1
+    return 1;
   }
 
-  const len1 = arr1.length
-  const len2 = arr2.length
-  const minLen = Math.min(len1, len2)
+  const len1 = arr1.length;
+  const len2 = arr2.length;
+  const minLen = Math.min(len1, len2);
 
   for (let i = 0; i < minLen; i++) {
-    const element1 = arr1[i] as T
-    const element2 = arr2[i] as T
-    const cmp = elementComparator(element1, element2)
+    const element1 = arr1[i] as T;
+    const element2 = arr2[i] as T;
+    const cmp = elementComparator(element1, element2);
     if (cmp !== 0) {
-      return cmp
+      return cmp;
     }
   }
 
   if (len1 < len2) {
-    return -1
+    return -1;
   }
   if (len1 > len2) {
-    return 1
+    return 1;
   }
-  return 0
-}
+  return 0;
+};
 
 export const arrayEquals = <T>(
   arr1: T[] | undefined,
   arr2: T[] | undefined,
   elementEquality?: (a: T, b: T) => boolean,
 ): boolean => {
-  elementEquality = elementEquality ?? ((a, b) => a === b)
+  elementEquality = elementEquality ?? ((a, b) => a === b);
   if (arr1 === undefined && arr2 === undefined) {
-    return true
+    return true;
   }
   if (arr1 === undefined || arr2 === undefined) {
-    return false
+    return false;
   }
   if (arr1.length !== arr2.length) {
-    return false
+    return false;
   }
 
   for (let i = 0; i < arr1.length; i++) {
-    const element1 = arr1[i] as T
-    const element2 = arr2[i] as T
+    const element1 = arr1[i] as T;
+    const element2 = arr2[i] as T;
     if (!elementEquality(element1, element2)) {
-      return false
+      return false;
     }
   }
 
-  return true
-}
+  return true;
+};

@@ -150,89 +150,89 @@
 </template>
 
 <script lang="ts" setup>
-import FlashBanner from '@/components/common/FlashBanner.vue'
-import VersionService, { type Release } from '@/services/versionService'
-import type { NavLink } from '@/types/nav_link'
-import { toKeyComboString, type KeyCombo } from '@/util/keycombo'
-import { onMounted, onUnmounted, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
-import BookIcon from '../icons/BookIcon.vue'
-import CloseIcon from '../icons/CloseIcon.vue'
-import DeviceIcon from '../icons/DeviceIcon.vue'
-import FolderIcon from '../icons/FolderIcon.vue'
-import HamburgerIcon from '../icons/HamburgerIcon.vue'
-import HomeIcon from '../icons/HomeIcon.vue'
-import PhotoIcon from '../icons/PhotoIcon.vue'
-import SettingsIcon from '../icons/SettingsIcon.vue'
+import FlashBanner from '@/components/common/FlashBanner.vue';
+import VersionService, { type Release } from '@/services/versionService';
+import type { NavLink } from '@/types/nav_link';
+import { toKeyComboString, type KeyCombo } from '@/util/keycombo';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { RouterLink } from 'vue-router';
+import BookIcon from '../icons/BookIcon.vue';
+import CloseIcon from '../icons/CloseIcon.vue';
+import DeviceIcon from '../icons/DeviceIcon.vue';
+import FolderIcon from '../icons/FolderIcon.vue';
+import HamburgerIcon from '../icons/HamburgerIcon.vue';
+import HomeIcon from '../icons/HomeIcon.vue';
+import PhotoIcon from '../icons/PhotoIcon.vue';
+import SettingsIcon from '../icons/SettingsIcon.vue';
 
 const props = defineProps<{
-  isMinimal?: boolean
-  minimizeKeyCombo?: KeyCombo
-  navLinks?: NavLink[]
-}>()
+  isMinimal?: boolean;
+  minimizeKeyCombo?: KeyCombo;
+  navLinks?: NavLink[];
+}>();
 // --- Flash banner logic ---
-const showBanner = ref(false)
-let bannerTimeout: ReturnType<typeof setTimeout> | null = null
+const showBanner = ref(false);
+let bannerTimeout: ReturnType<typeof setTimeout> | null = null;
 
 watch(
   () => props.isMinimal,
   () => {
-    showBanner.value = true
-    if (bannerTimeout) clearTimeout(bannerTimeout)
+    showBanner.value = true;
+    if (bannerTimeout) clearTimeout(bannerTimeout);
     bannerTimeout = setTimeout(() => {
-      showBanner.value = false
-    }, 1200)
+      showBanner.value = false;
+    }, 1200);
   },
-)
+);
 // --- End flash banner logic ---
 
-const mobileMenuOpen = ref(false)
-const versionDropdownOpen = ref(false)
-const currentVersion = ref('vX.Y.Z')
-const releases = ref<Release[]>([])
-const loadingReleases = ref(false)
+const mobileMenuOpen = ref(false);
+const versionDropdownOpen = ref(false);
+const currentVersion = ref('vX.Y.Z');
+const releases = ref<Release[]>([]);
+const loadingReleases = ref(false);
 
 // Fetch current version on mount
 onMounted(async () => {
-  currentVersion.value = await VersionService.getCurrentVersion()
+  currentVersion.value = await VersionService.getCurrentVersion();
 
   // Add click outside listener for version dropdown
-  document.addEventListener('click', handleClickOutside)
-})
+  document.addEventListener('click', handleClickOutside);
+});
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-  if (bannerTimeout) clearTimeout(bannerTimeout)
-})
+  document.removeEventListener('click', handleClickOutside);
+  if (bannerTimeout) clearTimeout(bannerTimeout);
+});
 
 const handleClickOutside = (event: MouseEvent) => {
-  const container = document.getElementById('version-container')
+  const container = document.getElementById('version-container');
   if (container && !container.contains(event.target as Node)) {
-    versionDropdownOpen.value = false
+    versionDropdownOpen.value = false;
   }
-}
+};
 
 const toggleVersionDropdown = async () => {
   if (versionDropdownOpen.value) {
-    versionDropdownOpen.value = false
-    return
+    versionDropdownOpen.value = false;
+    return;
   }
 
-  versionDropdownOpen.value = true
+  versionDropdownOpen.value = true;
   if (releases.value.length === 0) {
-    loadingReleases.value = true
-    releases.value = await VersionService.getAvailableReleases()
-    loadingReleases.value = false
+    loadingReleases.value = true;
+    releases.value = await VersionService.getAvailableReleases();
+    loadingReleases.value = false;
   }
-}
+};
 
 const toggleMobileMenu = () => {
-  mobileMenuOpen.value = !mobileMenuOpen.value
-}
+  mobileMenuOpen.value = !mobileMenuOpen.value;
+};
 
 const closeMobileMenu = () => {
-  mobileMenuOpen.value = false
-}
+  mobileMenuOpen.value = false;
+};
 </script>
 
 <style lang="scss" scoped>

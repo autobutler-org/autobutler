@@ -210,13 +210,13 @@
 </template>
 
 <script lang="ts" setup>
-import LibraryLayout from '@/components/common/LibraryLayout.vue'
-import LibrarySidebar from '@/components/common/LibrarySidebar.vue'
-import OpenTelemetryIcon from '@/components/icons/OpenTelemetryIcon.vue'
-import RefreshIcon from '@/components/icons/RefreshIcon.vue'
-import SaveIcon from '@/components/icons/SaveIcon.vue'
-import SearchIcon from '@/components/icons/SearchIcon.vue'
-import StorageDevicesIcon from '@/components/icons/StorageDevicesIcon.vue'
+import LibraryLayout from '@/components/common/LibraryLayout.vue';
+import LibrarySidebar from '@/components/common/LibrarySidebar.vue';
+import OpenTelemetryIcon from '@/components/icons/OpenTelemetryIcon.vue';
+import RefreshIcon from '@/components/icons/RefreshIcon.vue';
+import SaveIcon from '@/components/icons/SaveIcon.vue';
+import SearchIcon from '@/components/icons/SearchIcon.vue';
+import StorageDevicesIcon from '@/components/icons/StorageDevicesIcon.vue';
 
 const sidebarSections = [
   {
@@ -231,7 +231,7 @@ const sidebarSections = [
       { label: 'Advanced' },
     ],
   },
-]
+];
 </script>
 
 <style lang="scss" scoped>

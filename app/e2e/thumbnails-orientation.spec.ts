@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test'
-import * as path from 'path'
+import { expect, test } from '@playwright/test';
+import * as path from 'path';
 
 test.describe('Photo Thumbnails - EXIF Orientation', () => {
   // TODO: This test is currently skipped because the upload mechanism has changed
@@ -7,35 +7,35 @@ test.describe('Photo Thumbnails - EXIF Orientation', () => {
     page,
     request,
   }) => {
-    await page.goto('/cirrus')
+    await page.goto('/cirrus');
     // NOTE: There is not longer a file input, so this needs to be adapted to use the upload UI
-    const fileInput = page.locator('input[type="file"]')
-    const testImagePath = path.join('./e2e/data/flipped.jpg')
-    await fileInput.setInputFiles(testImagePath)
-    await page.waitForTimeout(100)
-    await page.goto('/photos')
-    await page.waitForTimeout(1000)
-    const firstPhotoItem = page.locator('.photo-grid-item').first()
-    const firstImage = firstPhotoItem.locator('img.photo-grid-image')
-    await expect(firstImage).toBeVisible()
-    const thumbnailSrc = await firstImage.getAttribute('src')
-    expect(thumbnailSrc).toBeTruthy()
-    expect(thumbnailSrc).toContain('/api/v1/thumbnails/')
-    const thumbnailResponse = await request.get(thumbnailSrc!)
-    expect(thumbnailResponse.ok()).toBeTruthy()
-    const contentType = thumbnailResponse.headers()['content-type']
-    expect(contentType).toMatch(/image\/(jpeg|jpg|png)/)
+    const fileInput = page.locator('input[type="file"]');
+    const testImagePath = path.join('./e2e/data/flipped.jpg');
+    await fileInput.setInputFiles(testImagePath);
+    await page.waitForTimeout(100);
+    await page.goto('/photos');
+    await page.waitForTimeout(1000);
+    const firstPhotoItem = page.locator('.photo-grid-item').first();
+    const firstImage = firstPhotoItem.locator('img.photo-grid-image');
+    await expect(firstImage).toBeVisible();
+    const thumbnailSrc = await firstImage.getAttribute('src');
+    expect(thumbnailSrc).toBeTruthy();
+    expect(thumbnailSrc).toContain('/api/v1/thumbnails/');
+    const thumbnailResponse = await request.get(thumbnailSrc!);
+    expect(thumbnailResponse.ok()).toBeTruthy();
+    const contentType = thumbnailResponse.headers()['content-type'];
+    expect(contentType).toMatch(/image\/(jpeg|jpg|png)/);
     const dimensions = await firstImage.evaluate((img: HTMLImageElement) => {
       return {
         width: img.naturalWidth,
         height: img.naturalHeight,
         displayWidth: img.width,
         displayHeight: img.height,
-      }
-    })
-    expect(dimensions.width).toBeGreaterThan(0)
-    expect(dimensions.height).toBeGreaterThan(0)
-    expect(dimensions.width).toBeLessThanOrEqual(400)
-    expect(dimensions.height).toBeLessThanOrEqual(400)
-  })
-})
+      };
+    });
+    expect(dimensions.width).toBeGreaterThan(0);
+    expect(dimensions.height).toBeGreaterThan(0);
+    expect(dimensions.width).toBeLessThanOrEqual(400);
+    expect(dimensions.height).toBeLessThanOrEqual(400);
+  });
+});

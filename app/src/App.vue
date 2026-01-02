@@ -11,48 +11,48 @@
 </template>
 
 <script lang="ts" setup>
-import TopNav from '@/components/home/TopNav.vue'
-import ThemeModal from '@/components/ThemeModal.vue'
-import { useThemeStore } from '@/stores/theme'
-import type { NavLink } from '@/types/nav_link'
-import { fromKeyComboString, toEventListenerFunc } from '@/util/keycombo'
-import { onBeforeUnmount, onMounted, ref, ref as vueRef } from 'vue'
-import { RouterView } from 'vue-router'
+import TopNav from '@/components/home/TopNav.vue';
+import ThemeModal from '@/components/ThemeModal.vue';
+import { useThemeStore } from '@/stores/theme';
+import type { NavLink } from '@/types/nav_link';
+import { fromKeyComboString, toEventListenerFunc } from '@/util/keycombo';
+import { onBeforeUnmount, onMounted, ref, ref as vueRef } from 'vue';
+import { RouterView } from 'vue-router';
 
 const navLinks: NavLink[] = [
   { name: 'Cirrus', href: '/cirrus' },
   { name: 'Photos', href: '/photos' },
   { name: 'Books', href: '/books' },
-]
+];
 
-const isMinimal = ref(false)
+const isMinimal = ref(false);
 const toggleMinimize = (_: Event): boolean => {
-  isMinimal.value = !isMinimal.value
-  return true
-}
-const minimizeKeyCombo = fromKeyComboString('alt-space')
-const theme = useThemeStore()
-const themeModalOpen = vueRef(false)
+  isMinimal.value = !isMinimal.value;
+  return true;
+};
+const minimizeKeyCombo = fromKeyComboString('alt-space');
+const theme = useThemeStore();
+const themeModalOpen = vueRef(false);
 
 const handleSettingsHotkey = (e: KeyboardEvent) => {
   if (e.altKey && (e.key === '`' || e.code === 'Backquote')) {
-    e.preventDefault()
-    themeModalOpen.value = !themeModalOpen.value
+    e.preventDefault();
+    themeModalOpen.value = !themeModalOpen.value;
   }
-}
+};
 onMounted(() => {
-  window.addEventListener('keydown', handleSettingsHotkey)
-})
+  window.addEventListener('keydown', handleSettingsHotkey);
+});
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', handleSettingsHotkey)
-})
+  window.removeEventListener('keydown', handleSettingsHotkey);
+});
 onMounted(() => {
-  theme.applyFontSizeScale()
-})
+  theme.applyFontSizeScale();
+});
 document.addEventListener(
   'keydown',
   toEventListenerFunc(minimizeKeyCombo, toggleMinimize),
-)
+);
 </script>
 
 <style lang="scss" scoped>

@@ -26,16 +26,16 @@
 
 <script lang="ts" setup>
 export interface SidebarItem {
-  label: string
-  count?: number
-  active?: boolean
+  label: string;
+  count?: number;
+  active?: boolean;
 }
 export interface SidebarSection {
-  title: string
-  items: SidebarItem[]
+  title: string;
+  items: SidebarItem[];
 }
 
-defineProps<{ sections: SidebarSection[] }>()
+defineProps<{ sections: SidebarSection[] }>();
 </script>
 
 <style lang="scss" scoped>

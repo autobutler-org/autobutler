@@ -18,45 +18,45 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
-import CirrusAddFolder from './CirrusAddFolder.vue'
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
+import CirrusAddFolder from './CirrusAddFolder.vue';
 
 const props = defineProps<{
-  currentPath: string
-}>()
+  currentPath: string;
+}>();
 
 const emit = defineEmits<{
-  navigate: [path: string]
-  'folder-created': [folderName: string]
-}>()
+  navigate: [path: string];
+  'folder-created': [folderName: string];
+}>();
 
-const router = useRouter()
+const router = useRouter();
 
 // Parse the path into breadcrumb segments
 const segments = computed(() => {
   const parts = props.currentPath.split('/').filter((p) => {
-    return p.length > 0
-  })
-  const result = [{ name: 'cirrus', path: '' }]
+    return p.length > 0;
+  });
+  const result = [{ name: 'cirrus', path: '' }];
 
-  let accumulatedPath = ''
+  let accumulatedPath = '';
   for (const part of parts) {
-    accumulatedPath = accumulatedPath ? `${accumulatedPath}/${part}` : part
-    result.push({ name: part, path: accumulatedPath })
+    accumulatedPath = accumulatedPath ? `${accumulatedPath}/${part}` : part;
+    result.push({ name: part, path: accumulatedPath });
   }
 
-  return result
-})
+  return result;
+});
 
 const handleFolderCreated = (folderName: string) => {
-  emit('folder-created', folderName)
-}
+  emit('folder-created', folderName);
+};
 
 const navigateTo = (path: string) => {
-  emit('navigate', path)
-  router.push(`/cirrus${path ? '/' + path : ''}`)
-}
+  emit('navigate', path);
+  router.push(`/cirrus${path ? '/' + path : ''}`);
+};
 </script>
 
 <style lang="scss" scoped>

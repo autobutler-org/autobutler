@@ -40,15 +40,15 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue';
 
-import GradientOverlays from '@/components/home/GradientOverlays.vue'
-import DevicesService from '@/services/devicesService'
-import type { Device } from '@/types/device'
-import type { Summary } from '@/types/summary'
-import DeviceCard from '../components/DeviceCard.vue'
+import GradientOverlays from '@/components/home/GradientOverlays.vue';
+import DevicesService from '@/services/devicesService';
+import type { Device } from '@/types/device';
+import type { Summary } from '@/types/summary';
+import DeviceCard from '../components/DeviceCard.vue';
 
-const devices = ref<Device[]>([])
+const devices = ref<Device[]>([]);
 const summary = ref<Summary>({
   total_devices: 0,
   total_bytes: 0,
@@ -57,28 +57,28 @@ const summary = ref<Summary>({
   total_tb: 0,
   used_tb: 0,
   avail_tb: 0,
-})
-const loading = ref(false)
+});
+const loading = ref(false);
 
 const fetchDevices = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const data = await DevicesService.fetchDevicesStatus()
-    devices.value = data.devices || []
-    summary.value = calculateSummary(devices.value)
+    const data = await DevicesService.fetchDevicesStatus();
+    devices.value = data.devices || [];
+    summary.value = calculateSummary(devices.value);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const calculateSummary = (devices: Device[]): Summary => {
   let total_bytes = 0,
     used_bytes = 0,
-    avail_bytes = 0
+    avail_bytes = 0;
   for (const d of devices) {
-    total_bytes += d.total_bytes
-    used_bytes += d.used_bytes
-    avail_bytes += d.avail_bytes
+    total_bytes += d.total_bytes;
+    used_bytes += d.used_bytes;
+    avail_bytes += d.avail_bytes;
   }
   return {
     total_devices: devices.length,
@@ -88,10 +88,10 @@ const calculateSummary = (devices: Device[]): Summary => {
     total_tb: total_bytes / 1e12,
     used_tb: used_bytes / 1e12,
     avail_tb: avail_bytes / 1e12,
-  }
-}
+  };
+};
 
-onMounted(fetchDevices)
+onMounted(fetchDevices);
 </script>
 
 <style lang="scss" scoped>

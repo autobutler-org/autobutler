@@ -34,8 +34,8 @@
 
 <script setup lang="ts">
 defineProps<{
-  mixedSorting: boolean
-}>()
+  mixedSorting: boolean;
+}>();
 </script>
 
 <style lang="scss" scoped>

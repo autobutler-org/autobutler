@@ -8,8 +8,8 @@
 
 <script lang="ts" setup>
 defineProps<{
-  filePath: string
-}>()
+  filePath: string;
+}>();
 </script>
 
 <style lang="scss" scoped>

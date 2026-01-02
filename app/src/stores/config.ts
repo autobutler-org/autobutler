@@ -1,11 +1,11 @@
-import { defineStore } from 'pinia'
+import { defineStore } from 'pinia';
 
 export interface FeatureFlags {
-  [key: string]: boolean
+  [key: string]: boolean;
 }
 
 export interface ConfigState {
-  featureFlags: FeatureFlags
+  featureFlags: FeatureFlags;
 }
 
 export const useConfigStore = defineStore('config', {
@@ -14,7 +14,7 @@ export const useConfigStore = defineStore('config', {
   }),
   actions: {
     setFeatureFlags(flags: FeatureFlags) {
-      this.featureFlags = flags
+      this.featureFlags = flags;
     },
   },
-})
+});

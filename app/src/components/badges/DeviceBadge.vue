@@ -6,11 +6,11 @@
 </template>
 
 <script lang="ts" setup>
-import DeviceIcon from '@/components/icons/DeviceIcon.vue'
+import DeviceIcon from '@/components/icons/DeviceIcon.vue';
 
 defineProps<{
-  deviceName: string
-}>()
+  deviceName: string;
+}>();
 </script>
 
 <style lang="scss" scoped>

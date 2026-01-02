@@ -25,19 +25,19 @@
 </template>
 
 <script lang="ts" setup>
-import DeviceCardIcon from '@/components/icons/DeviceCardIcon.vue'
-import StoragePartition from './StoragePartition.vue'
+import DeviceCardIcon from '@/components/icons/DeviceCardIcon.vue';
+import StoragePartition from './StoragePartition.vue';
 
 defineProps({
   device: {
     type: Object,
     required: true,
   },
-})
+});
 
 const goToCirrus = () => {
-  window.location.href = '/cirrus'
-}
+  window.location.href = '/cirrus';
+};
 </script>
 
 <style lang="scss" scoped>

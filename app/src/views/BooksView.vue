@@ -49,50 +49,50 @@
 </template>
 
 <script lang="ts" setup>
-import BooksSidebar from '@/components/books/BooksSidebar.vue'
-import LibraryLayout from '@/components/common/LibraryLayout.vue'
-import BookIcon from '@/components/icons/BookIcon.vue'
-import BooksService, { type BookApiResponse } from '@/services/booksService'
-import type { Book } from '@/types/book'
-import type { FileType } from '@/types/cirrus'
-import { onMounted, ref } from 'vue'
+import BooksSidebar from '@/components/books/BooksSidebar.vue';
+import LibraryLayout from '@/components/common/LibraryLayout.vue';
+import BookIcon from '@/components/icons/BookIcon.vue';
+import BooksService, { type BookApiResponse } from '@/services/booksService';
+import type { Book } from '@/types/book';
+import type { FileType } from '@/types/cirrus';
+import { onMounted, ref } from 'vue';
 
-const books = ref<Book[]>([])
-const totalBooks = ref(0)
+const books = ref<Book[]>([]);
+const totalBooks = ref(0);
 
-const fileViewerOpen = ref(false)
-const selectedFileSrc = ref('')
-const selectedFileType = ref<FileType>('pdf')
+const fileViewerOpen = ref(false);
+const selectedFileSrc = ref('');
+const selectedFileType = ref<FileType>('pdf');
 
 // TODO: Move to a common utility file
 const constructFileSrc = (relativePath: string) =>
-  `/api/v1/download/cirrus/${relativePath}`
+  `/api/v1/download/cirrus/${relativePath}`;
 
 const selectBook = (book: Book) => {
   if (book.relPath) {
-    selectedFileSrc.value = constructFileSrc(book.relPath)
-    selectedFileType.value = book.type.toLowerCase() as FileType
-    fileViewerOpen.value = true
+    selectedFileSrc.value = constructFileSrc(book.relPath);
+    selectedFileType.value = book.type.toLowerCase() as FileType;
+    fileViewerOpen.value = true;
   }
-}
+};
 
 const formatBookCount = (count: number) => {
-  if (count === 1) return '1 book'
-  return `${count.toLocaleString()} books`
-}
+  if (count === 1) return '1 book';
+  return `${count.toLocaleString()} books`;
+};
 
 const formatBookSize = (size: number) => {
-  if (size < 1024) return `${size} B`
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
-  if (size < 1024 * 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
-  return `${(size / 1024 / 1024 / 1024).toFixed(1)} GB`
-}
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  if (size < 1024 * 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`;
+  return `${(size / 1024 / 1024 / 1024).toFixed(1)} GB`;
+};
 
 const cleanBookTitle = (fileName: string): string =>
   fileName
     .replace(/\.[^.]+$/, '')
     .replace(/[_-]+/g, ' ')
-    .trim()
+    .trim();
 
 const convertBookApi = (book: BookApiResponse) => ({
   relPath: book.relPath,
@@ -100,18 +100,18 @@ const convertBookApi = (book: BookApiResponse) => ({
   title: cleanBookTitle(book.fileName),
   size: book.size,
   type: book.type.toUpperCase(),
-})
+});
 
 onMounted(async () => {
   try {
-    const bookList = await BooksService.listBooks()
-    books.value = bookList.map(convertBookApi)
-    totalBooks.value = bookList.length
+    const bookList = await BooksService.listBooks();
+    books.value = bookList.map(convertBookApi);
+    totalBooks.value = bookList.length;
   } catch (e) {
     // TODO: handle error
-    console.error(e)
+    console.error(e);
   }
-})
+});
 </script>
 
 <style lang="scss" scoped>

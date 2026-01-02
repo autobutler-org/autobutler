@@ -1,13 +1,13 @@
-import pluginVitest from '@vitest/eslint-plugin'
+import pluginVitest from '@vitest/eslint-plugin';
 import {
   defineConfigWithVueTs,
   vueTsConfigs,
-} from '@vue/eslint-config-typescript'
-import prettierConfig from 'eslint-config-prettier'
-import pluginPlaywright from 'eslint-plugin-playwright'
-import preferArrowFunctions from 'eslint-plugin-prefer-arrow-functions'
-import pluginVue from 'eslint-plugin-vue'
-import { globalIgnores } from 'eslint/config'
+} from '@vue/eslint-config-typescript';
+import prettierConfig from 'eslint-config-prettier';
+import pluginPlaywright from 'eslint-plugin-playwright';
+import preferArrowFunctions from 'eslint-plugin-prefer-arrow-functions';
+import pluginVue from 'eslint-plugin-vue';
+import { globalIgnores } from 'eslint/config';
 
 // To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
 // import { configureVueProject } from '@vue/eslint-config-typescript'
@@ -51,12 +51,6 @@ export default defineConfigWithVueTs(
       'playwright/no-skipped-test': 'off',
     },
   },
-  // Enforce no semicolons
-  {
-    rules: {
-      semi: ['error', 'never'],
-    },
-  },
   // Allow unused variables and arguments that start with _
   {
     rules: {
@@ -69,4 +63,4 @@ export default defineConfigWithVueTs(
       ],
     },
   },
-)
+);
