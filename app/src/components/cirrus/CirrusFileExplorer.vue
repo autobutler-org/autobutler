@@ -1,8 +1,31 @@
 <template>
   <div id="file-explorer" class="file-explorer">
     <div class="file-explorer-header">
-      <div>
+      <div class="file-explorer-header-row">
         <h2 class="file-explorer-title">Cirrus</h2>
+        <div>
+          <button
+            class="upload-btn"
+            type="button"
+            :disabled="isUploading"
+            @click="handleUploadClick"
+            title="Upload files"
+            aria-label="Upload files"
+          >
+            <UploadIcon />
+          </button>
+          <input
+            ref="fileInputRef"
+            type="file"
+            multiple
+            style="display: none"
+            @change="handleFileInputChange"
+            aria-label="Select files to upload"
+          />
+          <span v-if="uploadProgress" class="upload-progress">{{
+            uploadProgress
+          }}</span>
+        </div>
       </div>
       <div style="display: flex; gap: 0.5rem; align-items: center">
         <!-- Navigation and download controls would go here -->
@@ -10,29 +33,6 @@
     </div>
 
     <div id="file-explorer-selectable">
-      <div class="file-explorer-upload-row">
-        <button
-          class="upload-btn"
-          type="button"
-          :disabled="isUploading"
-          @click="handleUploadClick"
-          title="Upload files"
-          aria-label="Upload files"
-        >
-          <UploadIcon />
-        </button>
-        <input
-          ref="fileInputRef"
-          type="file"
-          multiple
-          style="display: none"
-          @change="handleFileInputChange"
-          aria-label="Select files to upload"
-        />
-        <span v-if="uploadProgress" class="upload-progress">{{
-          uploadProgress
-        }}</span>
-      </div>
       <div class="file-explorer-controls">
         <div>
           <CirrusBreadcrumbs
@@ -685,11 +685,13 @@ const handleDelete = (file: CirrusFileNode) => {
   color: $theme-palette-text-primary;
 }
 
-.file-explorer-upload-row {
+.file-explorer-header-row {
   display: flex;
   align-items: center;
   gap: $spacing-xs;
   margin-bottom: $spacing-xs;
+  justify-content: space-between;
+  width: 100%;
 }
 
 #file-explorer-view-content {
