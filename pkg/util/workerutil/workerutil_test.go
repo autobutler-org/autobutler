@@ -146,7 +146,7 @@ func TestWorkerIntegration_MoveFile(t *testing.T) {
 	startWorkerAndQuitOnDone(t, func(w Worker) {
 		moveCh := w.GetMoveFileChannel()
 		moveCh <- cirrusutil.MoveFileParams{
-			FilePath:    oldName,
+			OldFilePath: oldName,
 			NewFilePath: newName,
 		}
 	})

@@ -49,7 +49,7 @@ func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
 
 // MoveFileParams contains parameters for moving a file
 type MoveFileParams struct {
-	FilePath      string
+	OldFilePath   string
 	NewFilePath   string
 	OldDeviceName string
 	NewDeviceName string
@@ -85,7 +85,7 @@ func MoveFile(params MoveFileParams) (*MoveFileResult, error) {
 		newCirrusDir = newDevice.CirrusDir
 	}
 
-	oldFullPath := filepath.Join(oldCirrusDir, params.FilePath)
+	oldFullPath := filepath.Join(oldCirrusDir, params.OldFilePath)
 	newFullPath := filepath.Join(newCirrusDir, params.NewFilePath)
 
 	newFullDir := filepath.Dir(newFullPath)
