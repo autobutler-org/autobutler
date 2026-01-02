@@ -163,7 +163,41 @@
         </div>
       </form>
     </ModalDialog>
-
+    <!-- File Details Modal Dialog -->
+    <ModalDialog
+      v-if="detailsDialogOpen"
+      @close="closeDetailsDialog"
+      :transparent="true"
+    >
+      <div class="move-dialog-form">
+        <h3 class="move-dialog-title">File Details</h3>
+        <div class="move-dialog-field">
+          <div v-if="detailsDialogFile">
+            <div><strong>Name:</strong> {{ detailsDialogFile.name }}</div>
+            <div><strong>Path:</strong> {{ detailsDialogFile.fullPath }}</div>
+            <div>
+              <strong>Device:</strong> {{ detailsDialogFile.deviceName }}
+            </div>
+            <div v-if="detailsDialogFile.size !== undefined">
+              <strong>Size:</strong> {{ detailsDialogFile.size }} bytes
+            </div>
+            <div v-if="detailsDialogFile.isDir">
+              <strong>Type:</strong> Folder
+            </div>
+            <div v-else><strong>Type:</strong> File</div>
+          </div>
+        </div>
+        <div class="move-dialog-actions">
+          <button
+            type="button"
+            class="btn btn--primary"
+            @click="closeDetailsDialog"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </ModalDialog>
     <!-- Delete Confirmation Modal Dialog -->
     <ModalDialog
       v-if="deleteDialogOpen"
@@ -250,6 +284,18 @@ const moveDialogError = ref('');
 const moveDialogNewPath = ref('');
 const moveDialogOldDeviceName = ref('');
 const moveDialogFile = ref<CirrusFileNode | null>(null);
+// File details dialog state
+const detailsDialogOpen = ref(false);
+const detailsDialogFile = ref<CirrusFileNode | null>(null);
+
+const openDetailsDialog = (file: CirrusFileNode) => {
+  detailsDialogFile.value = file;
+  detailsDialogOpen.value = true;
+};
+const closeDetailsDialog = () => {
+  detailsDialogOpen.value = false;
+  detailsDialogFile.value = null;
+};
 
 // Delete dialog state
 const deleteDialogOpen = ref(false);
@@ -507,12 +553,7 @@ const submitMoveDialog = async () => {
 };
 
 const handleFileDetails = (file: CirrusFileNode) => {
-  // TODO: Implement file details dialog
-  const fileName = CirrusService.getFileName(file);
-  console.log('File details:', fileName);
-  alert(
-    `File details for: ${fileName}\nPath: ${file.fullPath}\nDevice: ${file.deviceName}`,
-  );
+  openDetailsDialog(file);
 };
 
 const handleDelete = (file: CirrusFileNode) => {
