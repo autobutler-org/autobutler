@@ -38,7 +38,7 @@ const handleDisabledClick = () => {
 <style lang="scss" scoped>
 .service-icons-container {
   margin-bottom: $spacing-2xl;
-  padding: $spacing-3xl $spacing-2xl;
+  padding: $spacing-md $spacing-md;
   background: hsl(from $theme-palette-bg-inverse h s l / 0.05);
   backdrop-filter: blur(10px);
   border: 1px solid hsl(from $theme-palette-bg-inverse h s l / 0.1);
@@ -53,17 +53,14 @@ const handleDisabledClick = () => {
 .service-icons {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: $spacing-2xl;
   justify-items: center;
 
   @media (min-width: 1024px) {
     grid-template-columns: repeat(5, 1fr);
-    gap: $spacing-3xl;
   }
 
   @media (max-width: 768px) {
     grid-template-columns: repeat(3, 1fr);
-    gap: $spacing-lg;
   }
 
   @media (max-width: 480px) {
