@@ -3,7 +3,10 @@
     <div class="file-explorer-header">
       <div class="file-explorer-header-row">
         <h2 class="file-explorer-title">Cirrus</h2>
-        <div>
+        <div class="file-explorer-upload-row">
+          <span v-if="uploadProgress" class="upload-progress">{{
+            uploadProgress
+          }}</span>
           <button
             class="upload-btn"
             type="button"
@@ -22,9 +25,6 @@
             @change="handleFileInputChange"
             aria-label="Select files to upload"
           />
-          <span v-if="uploadProgress" class="upload-progress">{{
-            uploadProgress
-          }}</span>
         </div>
       </div>
       <div style="display: flex; gap: 0.5rem; align-items: center">
@@ -673,6 +673,15 @@ const handleDelete = (file: CirrusFileNode) => {
   color: $theme-palette-text-primary;
 }
 
+.file-explorer-header-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-xs;
+  justify-content: space-between;
+  width: 100%;
+}
+
 .file-explorer-loading {
   padding: $spacing-md 0;
   color: $theme-palette-text-muted;
@@ -694,13 +703,10 @@ const handleDelete = (file: CirrusFileNode) => {
   color: $theme-palette-text-primary;
 }
 
-.file-explorer-header-row {
+.file-explorer-upload-row {
   display: flex;
   align-items: center;
-  gap: $spacing-xs;
-  margin-bottom: $spacing-xs;
-  justify-content: space-between;
-  width: 100%;
+  gap: $spacing-sm;
 }
 
 #file-explorer-view-content {
