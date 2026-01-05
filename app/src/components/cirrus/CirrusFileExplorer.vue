@@ -317,7 +317,7 @@ const handleFileInputChange = async (event: Event) => {
     uploadProgress.value = 'Upload complete!';
     // Refresh the file list after upload
     await fetchFiles();
-  } catch (err) {
+  } catch {
     uploadProgress.value = 'Upload failed';
   } finally {
     isUploading.value = false;
