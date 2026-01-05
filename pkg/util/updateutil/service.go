@@ -9,9 +9,20 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"regexp"
 	"runtime"
 	"strings"
 )
+
+func IsDevelopmentVersion(version string) bool {
+	if matched, err := regexp.MatchString("^.*-", version); err != nil || matched {
+		return true
+	}
+	if matched, err := regexp.MatchString("-.*$", version); err != nil || matched {
+		return true
+	}
+	return false
+}
 
 // ListPossibleUpdatesParams contains parameters for listing possible updates
 type ListPossibleUpdatesParams struct{}
@@ -37,6 +48,9 @@ func ListPossibleUpdates(params ListPossibleUpdatesParams) (*ListPossibleUpdates
 
 	var possibleUpdates []githubutil.GitHubRelease
 	for _, release := range releases {
+		if IsDevelopmentVersion(release.TagName) {
+			continue
+		}
 		comparison := versionutil.CompareVersions(
 			versionutil.Version{
 				Semver: release.TagName,
