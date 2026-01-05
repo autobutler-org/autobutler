@@ -173,3 +173,29 @@ func TestConstants(t *testing.T) {
 		t.Errorf("Expected extractedName to be '%s', got '%s'", expectedExtractedName, extractedName)
 	}
 }
+
+func TestIsDevelopmentVersion(t *testing.T) {
+	tests := []struct {
+		version string
+		want    bool
+	}{
+		{"1.0.0", false},
+		{"1.0.0-beta", true},
+		{"1.0.0-rc1", true},
+		{"1.0.0+build", false},
+		{"v1.2.3", false},
+		{"v1.2.3-dev", true},
+		{"v1.2.3-alpha.1", true},
+		{"v1.2.3.4", false},
+		{"1.0.0-", true},
+		{"-1.0.0", true},
+		{"1.0.0--dev", true},
+		{"", false},
+	}
+	for _, tt := range tests {
+		got := IsDevelopmentVersion(tt.version)
+		if got != tt.want {
+			t.Errorf("IsDevelopmentVersion(%q) = %v, want %v", tt.version, got, tt.want)
+		}
+	}
+}
