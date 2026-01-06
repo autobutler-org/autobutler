@@ -2,7 +2,6 @@
   "recommendations": [
     "EditorConfig.EditorConfig",
     "Vue.volar",
-    "a-h.templ",
     "alexcvzz.vscode-sqlite",
     "bierner.color-info",
     "bradlc.vscode-tailwindcss",
