@@ -17,11 +17,14 @@
       "preLaunchTask": "make: generate"
     },
     {
-      "name": "Debug running process",
+      "name": "Debug lsusb",
       "type": "go",
-      "request": "attach",
-      "mode": "local",
-      "processId": 115725,
-    }
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cmd/lsusb/main.go",
+      "args": [
+        "-storage",
+      ]
+    },
   ]
 }

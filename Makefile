@@ -99,6 +99,15 @@ build/frontend: ## Build frontend
 	cp -f ./internal/server/public/index.html ./internal/server/public/index.htm
 	$(MAKE) _ensure/public
 
+build/lsusb: ## Build lsusb utility
+	go build -o ./build/lsusb ./cmd/lsusb/main.go
+
+LSUSB_ARGS ?= -storage
+
+lsusb: env-LSUSB_ARGS ## Run lsusb utility
+	$(MAKE) build/lsusb
+	sudo ./build/lsusb $(LSUSB_ARGS)
+
 PRINT_COVERAGE ?= 0
 
 test: test/unit test/e2e
