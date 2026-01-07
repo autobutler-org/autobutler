@@ -15,9 +15,9 @@ type UsbDevice interface {
 	GetManufacturer() string
 	GetProduct() string
 	GetSerial() string
+	GetMountPath() string
 	// Functions
 	BlockDevicePath() (string, bool)
-	IsMounted() (string, bool)
 	IsStorageDevice() bool
 	Partitions() ([]Partition, error)
 }
@@ -29,6 +29,7 @@ type usbDevice struct {
 	Manufacturer string `json:"manufacturer"`
 	Product      string `json:"product"`
 	Serial       string `json:"serial"`
+	MountPath    string `json:"mountPath"`
 }
 
 func (u *usbDevice) GetPath() string {
@@ -55,6 +56,20 @@ func (u *usbDevice) GetSerial() string {
 	return u.Serial
 }
 
+func (u *usbDevice) GetMountPath() string {
+	return u.MountPath
+}
+
+func (u *usbDevice) UpdateStatus() error {
+	if mountPath, err := u.checkIfMounted(); err != nil {
+		u.MountPath = ""
+		return err
+	} else {
+		u.MountPath = mountPath
+	}
+	return nil
+}
+
 func (u *usbDevice) BlockDevicePath() (string, bool) {
 	usbDirName := filepath.Base(u.Path)
 	blockDevs, _ := filepath.Glob("/sys/block/*/device")
@@ -72,14 +87,6 @@ func (u *usbDevice) BlockDevicePath() (string, bool) {
 		}
 	}
 	return "", false
-}
-
-func (u *usbDevice) IsMounted() (string, bool) {
-	blockDev, exists := u.BlockDevicePath()
-	if !exists {
-		return "", false
-	}
-	return isDeviceMounted(blockDev)
 }
 
 func (u *usbDevice) IsStorageDevice() bool {
@@ -108,4 +115,18 @@ func (u *usbDevice) Partitions() ([]Partition, error) {
 		}
 	}
 	return partitions, nil
+}
+
+func (u *usbDevice) checkIfMounted() (string, error) {
+	partitions, err := u.Partitions()
+	if err != nil {
+		return "", err
+	}
+	for _, part := range partitions {
+		mountPath, err := part.MountPath()
+		if err == nil {
+			return mountPath, nil
+		}
+	}
+	return "", nil
 }

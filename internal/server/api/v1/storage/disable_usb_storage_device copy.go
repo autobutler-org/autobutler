@@ -36,8 +36,8 @@ var disableUsbStorageDeviceRoute = serverutil.ApiRoute(
 				WithError(errors.New("Specified USB device is not a storage device"))
 		}
 
-		mountPath, isMounted := targetDevice.IsMounted()
-		if !isMounted {
+		mountPath := targetDevice.GetMountPath()
+		if mountPath == "" {
 			return serverutil.NewResponse().
 				WithContentType(serverutil.ContentTypeJSON).
 				WithStatusCode(http.StatusBadRequest).
