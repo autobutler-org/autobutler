@@ -47,8 +47,15 @@
                     style="display: flex; align-items: center; gap: 1rem"
                   >
                     <span>{{ device.product }}</span>
-                    <button @click="() => {}" class="device-enable-btn">
+                    <button
+                      v-if="device.mountPath == ''"
+                      @click="() => {}"
+                      class="device-enable-btn"
+                    >
                       Enable
+                    </button>
+                    <button v-else @click="() => {}" class="device-disable-btn">
+                      Disable
                     </button>
                   </li>
                 </ul>
@@ -285,6 +292,22 @@ const sidebarSections = [
 }
 .device-enable-btn:hover {
   background: $theme-palette-accent-hover;
+}
+
+.device-disable-btn {
+  background: $theme-palette-bg-secondary;
+  color: $theme-palette-text-muted;
+  border: none;
+  border-radius: $border-radius;
+  padding: 4px 16px;
+  font-size: $theme-font-size-sm;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.device-disable-btn:hover {
+  background: $theme-palette-border;
+  color: $theme-palette-text-primary;
 }
 // ...existing styles...
 .settings-sidebar-thanks {

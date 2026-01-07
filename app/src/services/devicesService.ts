@@ -12,6 +12,7 @@ export interface UsbDevice {
   manufacturer: string;
   product: string;
   serial: string;
+  mountPath: string;
 }
 
 export interface UsbDevicesResponse {
