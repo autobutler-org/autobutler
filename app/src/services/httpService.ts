@@ -4,7 +4,7 @@ export default class HttpService {
 
   static post = async (
     url: string,
-    body: unknown,
+    body?: unknown,
     options?: RequestInit,
   ): Promise<Response> =>
     HttpService._genericRequest(url, 'POST', body, options);
