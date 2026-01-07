@@ -40,13 +40,15 @@
                 <p class="mock-loading">Failed to load devices</p>
               </template>
               <template v-else>
-                <ul v-if="usbDevices.length > 0">
+                <ul v-if="usbDevices.length > 0" class="device-list">
                   <li
                     v-for="device in usbDevices"
                     :key="device.path"
                     class="device-list-item"
                   >
-                    <span class="device-name">{{ device.product }}</span>
+                    <RouterLink class="device-name device-link" to="/devices">{{
+                      device.serial
+                    }}</RouterLink>
                     <button
                       v-if="device.mountPath == ''"
                       @click="enableDevice(device.serial)"
@@ -334,6 +336,33 @@ const enableDevice = async (serial: string) => {
 .device-enable-btn:hover {
   background: $theme-palette-accent-hover;
 }
+
+.device-link {
+  color: $theme-palette-text-primary;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  padding: 0;
+  background: none;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+
+  &:hover {
+    color: $theme-palette-accent;
+    text-decoration: underline;
+  }
+
+  @media (prefers-color-scheme: light) {
+    color: $theme-palette-text-primary;
+    &:hover {
+      color: $theme-palette-accent;
+    }
+  }
+}
+.device-list {
+  padding-left: 0;
+}
 .device-list-item {
   display: flex;
   align-items: center;
@@ -345,7 +374,7 @@ const enableDevice = async (serial: string) => {
   flex: 1 1 auto;
   float: left;
   text-align: left;
-  font-size: $theme-font-size-lg;
+  font-size: $theme-font-size-sm;
   font-weight: 500;
 }
 .settings-sidebar-thanks {
