@@ -41,8 +41,15 @@
               </template>
               <template v-else>
                 <ul v-if="usbDevices.length > 0">
-                  <li v-for="device in usbDevices" :key="device.path">
-                    {{ device.product }}
+                  <li
+                    v-for="device in usbDevices"
+                    :key="device.path"
+                    style="display: flex; align-items: center; gap: 1rem"
+                  >
+                    <span>{{ device.product }}</span>
+                    <button @click="() => {}" class="device-enable-btn">
+                      Enable
+                    </button>
                   </li>
                 </ul>
                 <p v-else>No devices found</p>
@@ -265,6 +272,21 @@ const sidebarSections = [
 </script>
 
 <style lang="scss" scoped>
+.device-enable-btn {
+  background: $theme-palette-accent;
+  color: $theme-palette-text-inverse;
+  border: none;
+  border-radius: $border-radius;
+  padding: 4px 16px;
+  font-size: $theme-font-size-sm;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.device-enable-btn:hover {
+  background: $theme-palette-accent-hover;
+}
+// ...existing styles...
 .settings-sidebar-thanks {
   margin-top: $spacing-2xl;
   padding: $spacing-md;
