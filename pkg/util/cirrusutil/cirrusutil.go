@@ -217,6 +217,14 @@ func GetDataDir() string {
 	}
 }
 
+func GetMountsDir() string {
+	mountDir := filepath.Join(GetDataDir(), "mounts")
+	if err := os.MkdirAll(mountDir, 0755); err != nil {
+		panic(fmt.Sprintf("failed to create mount directory: %v", err)) // coverage: ignore - panic on filesystem error
+	}
+	return mountDir
+}
+
 // GetNonConflictingPath returns a file path that doesn't conflict with existing files.
 // If the target path already exists, it appends _(n) before the file extension,
 // incrementing n until a non-existent path is found.

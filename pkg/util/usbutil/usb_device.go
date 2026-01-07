@@ -8,6 +8,14 @@ import (
 )
 
 type UsbDevice interface {
+	// Member variable access
+	GetPath() string
+	GetVendorID() string
+	GetProductID() string
+	GetManufacturer() string
+	GetProduct() string
+	GetSerial() string
+	// Functions
 	BlockDevicePath() (string, bool)
 	IsMounted() (string, bool)
 	IsStorageDevice() bool
@@ -15,12 +23,36 @@ type UsbDevice interface {
 }
 
 type usbDevice struct {
-	Path         string
-	VendorID     string
-	ProductID    string
-	Manufacturer string
-	Product      string
-	Serial       string
+	Path         string `json:"path"`
+	VendorID     string `json:"vendorID"`
+	ProductID    string `json:"productID"`
+	Manufacturer string `json:"manufacturer"`
+	Product      string `json:"product"`
+	Serial       string `json:"serial"`
+}
+
+func (u *usbDevice) GetPath() string {
+	return u.Path
+}
+
+func (u *usbDevice) GetVendorID() string {
+	return u.VendorID
+}
+
+func (u *usbDevice) GetProductID() string {
+	return u.ProductID
+}
+
+func (u *usbDevice) GetManufacturer() string {
+	return u.Manufacturer
+}
+
+func (u *usbDevice) GetProduct() string {
+	return u.Product
+}
+
+func (u *usbDevice) GetSerial() string {
+	return u.Serial
 }
 
 func (u *usbDevice) BlockDevicePath() (string, bool) {

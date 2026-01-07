@@ -26,7 +26,7 @@ func main() {
 				fmt.Printf("  Error retrieving partitions: %v", err)
 			} else {
 				for _, partition := range partitions {
-					if pMountPath, pMounted := partition.MountPath(); pMounted {
+					if pMountPath, err := partition.MountPath(); err == nil {
 						sizeBytes, err := partition.SizeBytes()
 						if err != nil {
 							fmt.Printf("  Error retrieving partition size: %v", err)
@@ -43,7 +43,7 @@ func main() {
 				fmt.Printf("  Error retrieving partitions: %v", err)
 			} else {
 				for _, partition := range partitions {
-					mountCommand, _ := partition.MountCommand("/mnt/usb")
+					mountCommand := partition.MountCommand("/mnt/usb")
 					fmt.Printf(
 						"  Partition(%s) not mounted, mount with: %s",
 						partition,

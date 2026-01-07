@@ -79,6 +79,7 @@
     "templ",
     "toastr",
     "Typeflag",
+    "usbutil",
     "versionutil",
     "webp",
     "workerutil"

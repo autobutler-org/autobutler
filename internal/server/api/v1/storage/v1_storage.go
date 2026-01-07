@@ -10,7 +10,10 @@ func NewRouter() serverutil.Router {
 
 func (r *router) Routes() []*serverutil.Route {
 	return []*serverutil.Route{
+		disableUsbStorageDeviceRoute,
+		enableUsbStorageDeviceRoute,
 		getDeviceStatusesRoute,
 		initializeManagedDeviceRoute,
+		listUsbStorageDevicesRoute,
 	}
 }

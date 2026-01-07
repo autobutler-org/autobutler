@@ -16,6 +16,7 @@ tmp/
 *.dll
 *.so
 *.dylib
+__debug*
 
 # Test binary, build with `go test -c`
 *.test

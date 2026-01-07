@@ -7,6 +7,19 @@ import (
 	"strings"
 )
 
+func FindUsbDeviceBySerial(serial string) (UsbDevice, error) {
+	usbDevices, err := ListUsbDevices(true)
+	if err != nil {
+		return nil, err
+	}
+	for _, device := range usbDevices {
+		if device.GetSerial() == serial {
+			return device, nil
+		}
+	}
+	return nil, fmt.Errorf("USB device with serial %q not found", serial)
+}
+
 // ListUsbDevices lists all USB devices under /sys/bus/usb/devices/
 func ListUsbDevices(onlyStorage bool) ([]UsbDevice, error) {
 	base := "/sys/bus/usb/devices/"

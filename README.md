@@ -23,7 +23,7 @@ else's servers.
 
 **Own, Don't Rent**  
 Remember when buying software meant you owned it? AutoButler brings that philosophy back. No subscriptions for your own
-data—just a one-time purchase with optional upgrades when *you* want them.
+data—just a one-time purchase with optional upgrades when _you_ want them.
 
 **Privacy First**  
 Tech giants use your photos for AI training and build shadow profiles of your children. AutoButler keeps your family's
@@ -162,6 +162,24 @@ make watch
 ```bash
 make serve
 ```
+
+### Root Privileges
+
+**Note:** Mounting and unmounting USB storage devices requires root privileges on Linux. For development and testing, you
+must run the backend as root to perform these operations. The Makefile supports this with the `AS_ROOT=1` environment variable:
+
+```bash
+make watch/backend AS_ROOT=1
+```
+
+or
+
+```bash
+make serve/backend AS_ROOT=1
+```
+
+This ensures the backend process has the necessary permissions to execute mount and unmount commands. Without root, device
+mounting and unmounting will fail with permission errors.
 
 #### Run end-to-end tests
 

@@ -32,18 +32,18 @@ clean/tests:
 setup: setup/gotools setup/sqlc setup/air setup/node ## Setup development environment
 
 setup/gotools: ## Install go tools
-	go install golang.org/x/tools/gopls@latest
-	go install github.com/cweill/gotests/gotests@v1.6.0
-	go install github.com/josharian/impl@v1.4.0
-	go install github.com/haya14busa/goplay/cmd/goplay@v1.0.0
-	go install github.com/go-delve/delve/cmd/dlv@latest
-	go install honnef.co/go/tools/cmd/staticcheck@latest
+	$(GO) install golang.org/x/tools/gopls@latest
+	$(GO) install github.com/cweill/gotests/gotests@v1.6.0
+	$(GO) install github.com/josharian/impl@v1.4.0
+	$(GO) install github.com/haya14busa/goplay/cmd/goplay@v1.0.0
+	$(GO) install github.com/go-delve/delve/cmd/dlv@latest
+	$(GO) install honnef.co/go/tools/cmd/staticcheck@latest
 
 setup/sqlc: ## Install sqlc tool
-	go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0
+	$(GO) install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0
 
 setup/air: ## Install air tool
-	go install github.com/air-verse/air@latest
+	$(GO) install github.com/air-verse/air@latest
 
 setup/node: ## Setup Node.js environment
 	npm install --prefix ./app
@@ -91,7 +91,7 @@ build: ## Build backend and frontend
 build/backend: generate ## Build backend
 	$(MAKE) _ensure/public
 	mkdir -p ./build
-	go build -o $(EXE) $(MAIN)
+	$(GO) build -o $(EXE) $(MAIN)
 
 build/frontend: ## Build frontend
 	npm run build --prefix ./app
@@ -100,7 +100,7 @@ build/frontend: ## Build frontend
 	$(MAKE) _ensure/public
 
 build/lsusb: ## Build lsusb utility
-	go build -o ./build/lsusb ./cmd/lsusb/main.go
+	$(GO) build -o ./build/lsusb ./cmd/lsusb/main.go
 
 LSUSB_ARGS ?= -storage
 
@@ -119,19 +119,19 @@ test/unit: ## Run unit tests
 test/unit/backend: ## Run unit tests for backend
 	$(MAKE) _ensure/public
 	# Generate coverage report for unit tests
-	go test -v ./... \
+	$(GO) test -v ./... \
 		-coverprofile=coverage.out \
 		-covermode=atomic
 	# Apply coverage ignore directives
 	./scripts/apply-coverage-ignore.bash \
 		coverage.out
 	# Generate coverage report as HTMl
-	go tool cover \
+	$(GO) tool cover \
 		-html=coverage.out.ignored \
 		-o coverage.html
 	# Display coverage summary in terminal
 	if [[ "$(PRINT_COVERAGE)" = "1" || "$(PRINT_COVERAGE)" = "true" ]] ; then
-		go tool cover \
+		$(GO) tool cover \
 			-func=coverage.out.ignored
 	fi
 
@@ -153,7 +153,7 @@ lint: lint/go lint/sqlc lint/ts lint/yaml ## Lint code
 
 lint/go: ## Lint Go code
 	$(MAKE) _ensure/public
-	go vet ./...
+	$(GO) vet ./...
 
 lint/sqlc: ## Lint sqlc
 	sqlc vet
@@ -167,8 +167,8 @@ lint/yaml: ## Lint YAML files
 fix: fix/go fix/ts ## Fix code issues
 
 fix/go: ## Fix Go code issues
-	go mod tidy
-	go fmt ./...
+	$(GO) mod tidy
+	$(GO) fmt ./...
 	templ fmt .
 
 fix/ts: ## Fix TypeScript code issues
@@ -177,7 +177,7 @@ fix/ts: ## Fix TypeScript code issues
 upgrade: upgrade/go upgrade/ts ## Upgrade dependencies
 
 upgrade/go: generate ## Upgrade dependencies (go)
-	go get -u ./...
+	$(GO) get -u ./...
 	$(MAKE) tidy
 
 upgrade/ts: ## Upgrade dependencies (ts)
@@ -185,7 +185,7 @@ upgrade/ts: ## Upgrade dependencies (ts)
 	npm install --prefix ./app
 
 tidy: ## Tidy go mod
-	go mod tidy
+	$(GO) mod tidy
 
 serve:
 	$(MAKE) -j2 serve/backend serve/frontend
@@ -193,19 +193,36 @@ serve:
 watch:
 	$(MAKE) -j2 watch/backend watch/frontend
 
+AS_ROOT ?= 0
+
+GO := $(shell which go)
+AIR := $(shell which air)
+ifeq ($(AS_ROOT), 1)
+	GO := sudo $(GO)
+	AIR := sudo $(AIR)
+endif
+
 serve/backend: generate ## Serve backend
-	go run $(MAIN) serve
+	$(GO) run $(MAIN) serve
 
 serve/production: ## Serve backend in production mode
 	$(MAKE) build
 	$(EXE) serve
 
 watch/backend: build/backend ## Watch backend for changes
-	air \
+ifeq ($(AS_ROOT), 1)
+	$(AIR) \
+		--build.cmd "sudo $(MAKE) build/backend" \
+		--build.entrypoint "$(EXE)" \
+		--build.args_bin "serve" \
+		--build.exclude_dir "app,build,cd,datalinks,docs,internal/db,node_modules,playwright-report,scripts,sql,teststest-results"
+else
+	$(AIR) \
 		--build.cmd "$(MAKE) build/backend" \
 		--build.entrypoint "$(EXE)" \
 		--build.args_bin "serve" \
 		--build.exclude_dir "app,build,cd,datalinks,docs,internal/db,node_modules,playwright-report,scripts,sql,teststest-results"
+endif
 
 serve/frontend: ## Serve frontend
 	npm run dev --prefix ./app
@@ -213,7 +230,7 @@ serve/frontend: ## Serve frontend
 watch/frontend: serve/frontend ## Watch frontend
 
 version: ## Print version
-	go run $(MAIN) version
+	$(GO) run $(MAIN) version
 
 env-%: ## Check for env var
 	if [ -z "$($*)" ]; then \

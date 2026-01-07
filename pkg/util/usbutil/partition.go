@@ -3,14 +3,15 @@ package usbutil
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 
 	"golang.org/x/sys/unix"
 )
 
 type Partition interface {
-	MountCommand(mountTargetPath string) (string, error)
-	MountPath() (string, bool)
+	MountCommand(mountTargetPath string) *exec.Cmd
+	MountPath() (string, error)
 	Path() string
 	SizeBytes() (int, error)
 }
@@ -19,27 +20,31 @@ type partition struct {
 	path string
 }
 
-func (p *partition) MountCommand(mountTargetPath string) (string, error) {
-	return fmt.Sprintf("mount %s %s", p.path, mountTargetPath), nil
+func (p *partition) MountCommand(mountTargetPath string) *exec.Cmd {
+	return exec.Command("mount", p.path, mountTargetPath)
 }
 
-func (p *partition) MountPath() (string, bool) {
+func UnmountCommand(mountTargetPath string) *exec.Cmd {
+	return exec.Command("umount", mountTargetPath)
+}
+
+func (p *partition) MountPath() (string, error) {
 	// Check /proc/mounts for this device
 	data, err := os.ReadFile("/proc/mounts")
 	if err != nil {
-		return "", false
+		return "", fmt.Errorf("failed to read /proc/mounts: %w", err)
 	}
-	lines := strings.Split(string(data), "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(string(data), "\n")
+	for line := range lines {
 		fields := strings.Fields(line)
 		if len(fields) < 2 {
 			continue
 		}
 		if fields[0] == p.path {
-			return fields[1], true
+			return fields[1], nil
 		}
 	}
-	return "", false
+	return "", fmt.Errorf("partition %s is not mountable", p.path)
 }
 
 func (p *partition) Path() string {
