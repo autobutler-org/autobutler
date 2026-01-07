@@ -43,7 +43,9 @@ func ListUsbDevices(onlyStorage bool) ([]UsbDevice, error) {
 			Product:      readFileTrim(filepath.Join(devicePath, "product")),
 			Serial:       readFileTrim(filepath.Join(devicePath, "serial")),
 		}
-		if onlyStorage && !dev.IsStorageDevice() {
+		if dev.IsStorageDevice() {
+			dev.UpdateStatus()
+		} else if onlyStorage {
 			continue
 		}
 		devices = append(devices, dev)

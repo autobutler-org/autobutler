@@ -19,8 +19,8 @@ func main() {
 	}
 	for _, dev := range devices {
 		fmt.Printf("%+v\n", dev)
-		if mountPoint, mounted := dev.IsMounted(); mounted {
-			fmt.Printf("  Mounted at: %s", mountPoint)
+		if mountPath := dev.GetMountPath(); mountPath != "" {
+			fmt.Printf("  Mounted at: %s", mountPath)
 			partitions, err := dev.Partitions()
 			if err != nil {
 				fmt.Printf("  Error retrieving partitions: %v", err)

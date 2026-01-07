@@ -32,9 +32,41 @@
                 storage.
               </p>
             </div>
-            <div class="settings-section-card mock-card">
-              <span class="mock-badge">mock</span>
-              <p class="mock-loading">Loading devices...</p>
+            <div class="settings-section-card">
+              <template v-if="usbLoading">
+                <p class="mock-loading">Loading devices...</p>
+              </template>
+              <template v-else-if="usbError">
+                <p class="mock-loading">Failed to load devices</p>
+              </template>
+              <template v-else>
+                <ul v-if="usbDevices.length > 0" class="device-list">
+                  <li
+                    v-for="device in usbDevices"
+                    :key="device.path"
+                    class="device-list-item"
+                  >
+                    <RouterLink class="device-name device-link" to="/devices">{{
+                      device.serial
+                    }}</RouterLink>
+                    <button
+                      v-if="device.mountPath == ''"
+                      @click="enableDevice(device.serial)"
+                      class="device-enable-btn"
+                    >
+                      Enable
+                    </button>
+                    <button
+                      v-else
+                      @click="disableDevice(device.serial)"
+                      class="device-disable-btn"
+                    >
+                      Disable
+                    </button>
+                  </li>
+                </ul>
+                <p v-else>No devices found</p>
+              </template>
             </div>
           </section>
           <section id="opentelemetry" class="settings-section settings-card">
@@ -217,6 +249,24 @@ import RefreshIcon from '@/components/icons/RefreshIcon.vue';
 import SaveIcon from '@/components/icons/SaveIcon.vue';
 import SearchIcon from '@/components/icons/SearchIcon.vue';
 import StorageDevicesIcon from '@/components/icons/StorageDevicesIcon.vue';
+import DevicesService, { type UsbDevice } from '@/services/devicesService';
+import { onMounted, ref } from 'vue';
+const usbDevices = ref<UsbDevice[]>([]);
+const usbLoading = ref(true);
+const usbError = ref('');
+
+onMounted(async () => {
+  usbLoading.value = true;
+  usbError.value = '';
+  try {
+    const data = await DevicesService.listUsbStorageDevices();
+    usbDevices.value = data.devices;
+  } catch (e) {
+    usbError.value = JSON.stringify(e);
+  } finally {
+    usbLoading.value = false;
+  }
+});
 
 const sidebarSections = [
   {
@@ -232,9 +282,101 @@ const sidebarSections = [
     ],
   },
 ];
+
+const disableDevice = async (serial: string) => {
+  try {
+    await DevicesService.disableUsbStorageDevice(serial);
+    // Refresh device list
+    const data = await DevicesService.listUsbStorageDevices();
+    usbDevices.value = data.devices;
+  } catch (e) {
+    console.error('Failed to disable device:', e);
+  }
+};
+
+const enableDevice = async (serial: string) => {
+  try {
+    await DevicesService.enableUsbStorageDevice(serial);
+    // Refresh device list
+    const data = await DevicesService.listUsbStorageDevices();
+    usbDevices.value = data.devices;
+  } catch (e) {
+    console.error('Failed to disable device:', e);
+  }
+};
 </script>
 
 <style lang="scss" scoped>
+.device-disable-btn {
+  background: $theme-palette-bg-secondary;
+  color: $theme-palette-text-muted;
+  border: none;
+  border-radius: $border-radius;
+  padding: 4px 16px;
+  font-size: $theme-font-size-sm;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.device-disable-btn:hover {
+  background: $theme-palette-border;
+  color: $theme-palette-text-primary;
+}
+.device-enable-btn {
+  background: $theme-palette-accent;
+  color: $theme-palette-text-inverse;
+  border: none;
+  border-radius: $border-radius;
+  padding: 4px 16px;
+  font-size: $theme-font-size-sm;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.device-enable-btn:hover {
+  background: $theme-palette-accent-hover;
+}
+
+.device-link {
+  color: $theme-palette-text-primary;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  padding: 0;
+  background: none;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+
+  &:hover {
+    color: $theme-palette-accent;
+    text-decoration: underline;
+  }
+
+  @media (prefers-color-scheme: light) {
+    color: $theme-palette-text-primary;
+    &:hover {
+      color: $theme-palette-accent;
+    }
+  }
+}
+.device-list {
+  padding-left: 0;
+}
+.device-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+}
+.device-name {
+  flex: 1 1 auto;
+  float: left;
+  text-align: left;
+  font-size: $theme-font-size-sm;
+  font-weight: 500;
+}
 .settings-sidebar-thanks {
   margin-top: $spacing-2xl;
   padding: $spacing-md;

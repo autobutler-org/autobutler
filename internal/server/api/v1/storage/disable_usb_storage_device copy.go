@@ -11,7 +11,7 @@ import (
 )
 
 var disableUsbStorageDeviceRoute = serverutil.ApiRoute(
-	"POST", "/storage/devices/usb/:serial/unmount", func(c *gin.Context) *serverutil.Response {
+	"DELETE", "/storage/devices/usb/:serial", func(c *gin.Context) *serverutil.Response {
 		// Disabling a storage device typically involves unmounting it
 		serial := c.Param("serial")
 		if serial == "" {
@@ -36,8 +36,8 @@ var disableUsbStorageDeviceRoute = serverutil.ApiRoute(
 				WithError(errors.New("Specified USB device is not a storage device"))
 		}
 
-		mountPath, isMounted := targetDevice.IsMounted()
-		if !isMounted {
+		mountPath := targetDevice.GetMountPath()
+		if mountPath == "" {
 			return serverutil.NewResponse().
 				WithContentType(serverutil.ContentTypeJSON).
 				WithStatusCode(http.StatusBadRequest).
