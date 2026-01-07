@@ -229,21 +229,20 @@ import RefreshIcon from '@/components/icons/RefreshIcon.vue';
 import SaveIcon from '@/components/icons/SaveIcon.vue';
 import SearchIcon from '@/components/icons/SearchIcon.vue';
 import StorageDevicesIcon from '@/components/icons/StorageDevicesIcon.vue';
+import DevicesService, { type UsbDevice } from '@/services/devicesService';
 import { onMounted, ref } from 'vue';
-const usbDevices = ref([]);
+const usbDevices = ref<UsbDevice[]>([]);
 const usbLoading = ref(true);
-const usbError = ref(false);
+const usbError = ref('');
 
 onMounted(async () => {
   usbLoading.value = true;
-  usbError.value = false;
+  usbError.value = '';
   try {
-    const res = await fetch('/api/v1/storage/devices/usb');
-    if (!res.ok) throw new Error('Network error');
-    const data = await res.json();
-    usbDevices.value = Array.isArray(data.devices) ? data.devices : [];
+    const data = await DevicesService.listUsbStorageDevices();
+    usbDevices.value = data.devices;
   } catch (e) {
-    usbError.value = true;
+    usbError.value = JSON.stringify(e);
   } finally {
     usbLoading.value = false;
   }
