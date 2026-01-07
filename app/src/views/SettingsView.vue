@@ -44,9 +44,9 @@
                   <li
                     v-for="device in usbDevices"
                     :key="device.path"
-                    style="display: flex; align-items: center; gap: 1rem"
+                    class="device-list-item"
                   >
-                    <span>{{ device.product }}</span>
+                    <span class="device-name">{{ device.product }}</span>
                     <button
                       v-if="device.mountPath == ''"
                       @click="enableDevice(device.serial)"
@@ -305,21 +305,6 @@ const enableDevice = async (serial: string) => {
 </script>
 
 <style lang="scss" scoped>
-.device-enable-btn {
-  background: $theme-palette-accent;
-  color: $theme-palette-text-inverse;
-  border: none;
-  border-radius: $border-radius;
-  padding: 4px 16px;
-  font-size: $theme-font-size-sm;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.device-enable-btn:hover {
-  background: $theme-palette-accent-hover;
-}
-
 .device-disable-btn {
   background: $theme-palette-bg-secondary;
   color: $theme-palette-text-muted;
@@ -335,7 +320,34 @@ const enableDevice = async (serial: string) => {
   background: $theme-palette-border;
   color: $theme-palette-text-primary;
 }
-// ...existing styles...
+.device-enable-btn {
+  background: $theme-palette-accent;
+  color: $theme-palette-text-inverse;
+  border: none;
+  border-radius: $border-radius;
+  padding: 4px 16px;
+  font-size: $theme-font-size-sm;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.device-enable-btn:hover {
+  background: $theme-palette-accent-hover;
+}
+.device-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+}
+.device-name {
+  flex: 1 1 auto;
+  float: left;
+  text-align: left;
+  font-size: $theme-font-size-lg;
+  font-weight: 500;
+}
 .settings-sidebar-thanks {
   margin-top: $spacing-2xl;
   padding: $spacing-md;
