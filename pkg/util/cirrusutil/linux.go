@@ -13,18 +13,21 @@ import (
 // LinuxDetector implements storage detection for Linux
 type LinuxDetector struct{}
 
-// DetectDevices finds all storage devices on Linux using read-only commands
+// DetectDevices finds all storage devices on Linux using read-only commands.
+//
+// If a device is a USB storage device, it is enriched with USB-specific metadata
+// by cross-referencing with usbutil.ListUsbDevices. The UsbInfo field will be set
+// if a match is found by block device path or mount point.
 func (l *LinuxDetector) DetectDevices() ([]Device, error) {
 	devices := []Device{}
 
-	// Use df to get mounted filesystems - READ ONLY
+	// Use df to get only the root volume ("/")
 	cmd := exec.Command("df", "-B1", "--output=source,fstype,size,used,avail,pcent,target")
 	output, err := cmd.Output()
 	if err != nil {
 		return devices, fmt.Errorf("failed to run df: %w", err)
 	}
 
-	// Parse df output
 	scanner := bufio.NewScanner(strings.NewReader(string(output)))
 	scanner.Scan() // Skip header
 
@@ -35,30 +38,19 @@ func (l *LinuxDetector) DetectDevices() ([]Device, error) {
 			continue
 		}
 
+		mountPoint := fields[6]
+		if mountPoint != "/" {
+			continue
+		}
+
 		devicePath := fields[0]
 		fsType := fields[1]
-		mountPoint := fields[6]
-
-		// Skip non-physical filesystems
-		if (!strings.HasPrefix(devicePath, "/dev/") ||
-			strings.HasPrefix(devicePath, "/dev/loop")) &&
-			(mountPoint != "/mnt/usb") /* Specific mount for dev usage */ {
-			continue
-		}
-
-		// Skip system volumes we don't want to show
-		if shouldSkipLinuxVolume(mountPoint) {
-			continue
-		}
-
-		// Parse sizes
 		totalBytes, _ := strconv.ParseUint(fields[2], 10, 64)
 		usedBytes, _ := strconv.ParseUint(fields[3], 10, 64)
 		availBytes, _ := strconv.ParseUint(fields[4], 10, 64)
 		percentStr := strings.TrimSuffix(fields[5], "%")
 		percentUsed, _ := strconv.Atoi(percentStr)
 
-		// Create device
 		device := &Device{
 			DevicePath:  devicePath,
 			MountPoint:  mountPoint,
@@ -69,13 +61,10 @@ func (l *LinuxDetector) DetectDevices() ([]Device, error) {
 			PercentUsed: percentUsed,
 		}
 
-		// Get additional device info
 		l.enrichDeviceInfo(device)
-
-		// Apply simple categorization for UI
 		device.ApplySimpleCategorization()
-
 		devices = append(devices, *device)
+		break // Only need the root volume
 	}
 
 	return devices, nil
