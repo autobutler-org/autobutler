@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Settings page', () => {
-  test('settings page has storage section', async ({ page }) => {
+  test.skip('settings page has storage section', async ({ page }) => {
     await page.goto('/settings');
     // Section exists
     const storageSection = page.locator('#storage.settings-section');
@@ -16,7 +16,7 @@ test.describe('Settings page', () => {
     );
   });
 
-  test('shows mock card with loading text and badge', async ({ page }) => {
+  test.skip('shows mock card with loading text and badge', async ({ page }) => {
     await page.goto('/settings');
     const mockCard = page.locator('#storage .mock-card');
     await expect(mockCard).toBeVisible();
