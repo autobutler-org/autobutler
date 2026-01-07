@@ -49,12 +49,16 @@
                     <span>{{ device.product }}</span>
                     <button
                       v-if="device.mountPath == ''"
-                      @click="() => {}"
+                      @click="enableDevice(device.serial)"
                       class="device-enable-btn"
                     >
                       Enable
                     </button>
-                    <button v-else @click="() => {}" class="device-disable-btn">
+                    <button
+                      v-else
+                      @click="disableDevice(device.serial)"
+                      class="device-disable-btn"
+                    >
                       Disable
                     </button>
                   </li>
@@ -276,6 +280,28 @@ const sidebarSections = [
     ],
   },
 ];
+
+const disableDevice = async (serial: string) => {
+  try {
+    await DevicesService.disableUsbStorageDevice(serial);
+    // Refresh device list
+    const data = await DevicesService.listUsbStorageDevices();
+    usbDevices.value = data.devices;
+  } catch (e) {
+    console.error('Failed to disable device:', e);
+  }
+};
+
+const enableDevice = async (serial: string) => {
+  try {
+    await DevicesService.enableUsbStorageDevice(serial);
+    // Refresh device list
+    const data = await DevicesService.listUsbStorageDevices();
+    usbDevices.value = data.devices;
+  } catch (e) {
+    console.error('Failed to disable device:', e);
+  }
+};
 </script>
 
 <style lang="scss" scoped>
