@@ -32,9 +32,21 @@
                 storage.
               </p>
             </div>
-            <div class="settings-section-card mock-card">
-              <span class="mock-badge">mock</span>
-              <p class="mock-loading">Loading devices...</p>
+            <div class="settings-section-card">
+              <template v-if="usbLoading">
+                <p class="mock-loading">Loading devices...</p>
+              </template>
+              <template v-else-if="usbError">
+                <p class="mock-loading">Failed to load devices</p>
+              </template>
+              <template v-else>
+                <ul v-if="usbDevices.length > 0">
+                  <li v-for="device in usbDevices" :key="device.path">
+                    {{ device.product }}
+                  </li>
+                </ul>
+                <p v-else>No devices found</p>
+              </template>
             </div>
           </section>
           <section id="opentelemetry" class="settings-section settings-card">
@@ -217,6 +229,25 @@ import RefreshIcon from '@/components/icons/RefreshIcon.vue';
 import SaveIcon from '@/components/icons/SaveIcon.vue';
 import SearchIcon from '@/components/icons/SearchIcon.vue';
 import StorageDevicesIcon from '@/components/icons/StorageDevicesIcon.vue';
+import { onMounted, ref } from 'vue';
+const usbDevices = ref([]);
+const usbLoading = ref(true);
+const usbError = ref(false);
+
+onMounted(async () => {
+  usbLoading.value = true;
+  usbError.value = false;
+  try {
+    const res = await fetch('/api/v1/storage/devices/usb');
+    if (!res.ok) throw new Error('Network error');
+    const data = await res.json();
+    usbDevices.value = Array.isArray(data.devices) ? data.devices : [];
+  } catch (e) {
+    usbError.value = true;
+  } finally {
+    usbLoading.value = false;
+  }
+});
 
 const sidebarSections = [
   {
