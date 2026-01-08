@@ -104,9 +104,9 @@ const goToCirrus = () => {
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
-  min-width: 260px;
-  max-width: 600px;
-  flex: 1 1 320px;
+  min-width: 16.25rem;
+  max-width: 37.5rem;
+  flex: 1 1 20rem;
   margin: 0;
 }
 
