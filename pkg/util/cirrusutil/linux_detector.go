@@ -1,6 +1,7 @@
 package cirrusutil
 
 import (
+	"autobutler/pkg/util/usbutil"
 	"bufio"
 	"fmt"
 	"os/exec"
@@ -13,18 +14,21 @@ import (
 // LinuxDetector implements storage detection for Linux
 type LinuxDetector struct{}
 
-// DetectDevices finds all storage devices on Linux using read-only commands
+// DetectDevices finds all storage devices on Linux using read-only commands.
+//
+// If a device is a USB storage device, it is enriched with USB-specific metadata
+// by cross-referencing with usbutil.ListUsbDevices. The UsbInfo field will be set
+// if a match is found by block device path or mount point.
 func (l *LinuxDetector) DetectDevices() ([]Device, error) {
 	devices := []Device{}
 
-	// Use df to get mounted filesystems - READ ONLY
+	// Use df to get only the root volume ("/")
 	cmd := exec.Command("df", "-B1", "--output=source,fstype,size,used,avail,pcent,target")
 	output, err := cmd.Output()
 	if err != nil {
 		return devices, fmt.Errorf("failed to run df: %w", err)
 	}
 
-	// Parse df output
 	scanner := bufio.NewScanner(strings.NewReader(string(output)))
 	scanner.Scan() // Skip header
 
@@ -35,30 +39,19 @@ func (l *LinuxDetector) DetectDevices() ([]Device, error) {
 			continue
 		}
 
+		mountPoint := fields[6]
+		if mountPoint != "/" {
+			continue
+		}
+
 		devicePath := fields[0]
 		fsType := fields[1]
-		mountPoint := fields[6]
-
-		// Skip non-physical filesystems
-		if (!strings.HasPrefix(devicePath, "/dev/") ||
-			strings.HasPrefix(devicePath, "/dev/loop")) &&
-			(mountPoint != "/mnt/usb") /* Specific mount for dev usage */ {
-			continue
-		}
-
-		// Skip system volumes we don't want to show
-		if shouldSkipLinuxVolume(mountPoint) {
-			continue
-		}
-
-		// Parse sizes
 		totalBytes, _ := strconv.ParseUint(fields[2], 10, 64)
 		usedBytes, _ := strconv.ParseUint(fields[3], 10, 64)
 		availBytes, _ := strconv.ParseUint(fields[4], 10, 64)
 		percentStr := strings.TrimSuffix(fields[5], "%")
 		percentUsed, _ := strconv.Atoi(percentStr)
 
-		// Create device
 		device := &Device{
 			DevicePath:  devicePath,
 			MountPoint:  mountPoint,
@@ -66,16 +59,78 @@ func (l *LinuxDetector) DetectDevices() ([]Device, error) {
 			TotalBytes:  totalBytes,
 			UsedBytes:   usedBytes,
 			AvailBytes:  availBytes,
-			PercentUsed: percentUsed,
+			PercentUsed: float64(percentUsed),
 		}
 
-		// Get additional device info
 		l.enrichDeviceInfo(device)
-
-		// Apply simple categorization for UI
 		device.ApplySimpleCategorization()
-
 		devices = append(devices, *device)
+		break // Only need the root volume
+	}
+
+	// Now add USB storage devices
+	usbDevices, err := usbutil.ListUsbDevices(true)
+	if err == nil {
+		for _, usb := range usbDevices {
+			const storageType = "External USB"
+			name := fmt.Sprintf("%s - %s", usb.GetManufacturer(), usb.GetProduct())
+			mountPath := usb.GetMountPath()
+			if mountPath == "" {
+				// Default values, used if not mounted
+				dev := Device{
+					Name:        name,
+					Type:        storageType,
+					FileSystem:  "",
+					DevicePath:  "",
+					MountPoint:  "",
+					TotalBytes:  0,
+					UsedBytes:   0,
+					AvailBytes:  0,
+					PercentUsed: 0,
+					IsInternal:  false,
+					IsRemovable: true,
+					IsReadOnly:  true,
+					Model:       usb.GetProduct(),
+					UsbInfo:     usb,
+				}
+				devices = append(devices, dev)
+				continue
+			}
+
+			partitions, err := usb.Partitions()
+			if err != nil || len(partitions) == 0 {
+				continue
+			}
+			stat, err := partitions[0].Stat()
+			if err != nil {
+				continue
+			}
+			blockSize := uint64(stat.Bsize)
+			sizeBytes := stat.Blocks * blockSize
+			usedBytes := (stat.Blocks - stat.Bavail) * blockSize
+			availableBytes := stat.Bavail * blockSize
+			percentUsed := float64(usedBytes) / float64(sizeBytes) * 100
+
+			dev := Device{
+				Name:        name,
+				Type:        storageType,
+				FileSystem:  "",        // TODO: Not available yet
+				DevicePath:  mountPath, // Not always the block device, but best available
+				MountPoint:  mountPath,
+				TotalBytes:  sizeBytes,
+				UsedBytes:   usedBytes,
+				AvailBytes:  availableBytes,
+				PercentUsed: percentUsed,
+				IsInternal:  false,
+				IsRemovable: true,
+				IsReadOnly:  false, // Assume writable
+				Model:       usb.GetProduct(),
+				UsbInfo:     usb,
+			}
+			devices = append(devices, dev)
+			// Skip enrichDeviceInfo, just categorize
+			dev.ApplySimpleCategorization()
+		}
 	}
 
 	return devices, nil
@@ -117,10 +172,10 @@ func (l *LinuxDetector) enrichDeviceInfo(device *Device) {
 	info := string(output)
 	fields := strings.Fields(info)
 
-	if len(fields) > 0 {
-		device.IsRemovable = fields[0] == "1"
-		device.IsInternal = !device.IsRemovable
+	device.IsRemovable = false
+	device.IsInternal = true
 
+	if len(fields) > 0 {
 		if len(fields) > 1 {
 			device.Model = fields[1]
 		}

@@ -21,54 +21,6 @@
     <template #main>
       <div class="settings-content redesigned">
         <div class="settings-cards-row">
-          <section id="storage" class="settings-section settings-card">
-            <div class="settings-section-header">
-              <StorageDevicesIcon />
-              <h2>Storage Devices</h2>
-            </div>
-            <div class="settings-section-description">
-              <p>
-                Manage which storage devices are enabled for Autobutler file
-                storage.
-              </p>
-            </div>
-            <div class="settings-section-card">
-              <template v-if="usbLoading">
-                <p class="mock-loading">Loading devices...</p>
-              </template>
-              <template v-else-if="usbError">
-                <p class="mock-loading">Failed to load devices</p>
-              </template>
-              <template v-else>
-                <ul v-if="usbDevices.length > 0" class="device-list">
-                  <li
-                    v-for="device in usbDevices"
-                    :key="device.path"
-                    class="device-list-item"
-                  >
-                    <RouterLink class="device-name device-link" to="/devices">{{
-                      device.serial
-                    }}</RouterLink>
-                    <button
-                      v-if="device.mountPath == ''"
-                      @click="enableDevice(device.serial)"
-                      class="device-enable-btn"
-                    >
-                      Enable
-                    </button>
-                    <button
-                      v-else
-                      @click="disableDevice(device.serial)"
-                      class="device-disable-btn"
-                    >
-                      Disable
-                    </button>
-                  </li>
-                </ul>
-                <p v-else>No devices found</p>
-              </template>
-            </div>
-          </section>
           <section id="opentelemetry" class="settings-section settings-card">
             <div class="settings-section-header">
               <OpenTelemetryIcon />
@@ -248,25 +200,6 @@ import OpenTelemetryIcon from '@/components/icons/OpenTelemetryIcon.vue';
 import RefreshIcon from '@/components/icons/RefreshIcon.vue';
 import SaveIcon from '@/components/icons/SaveIcon.vue';
 import SearchIcon from '@/components/icons/SearchIcon.vue';
-import StorageDevicesIcon from '@/components/icons/StorageDevicesIcon.vue';
-import DevicesService, { type UsbDevice } from '@/services/devicesService';
-import { onMounted, ref } from 'vue';
-const usbDevices = ref<UsbDevice[]>([]);
-const usbLoading = ref(true);
-const usbError = ref('');
-
-onMounted(async () => {
-  usbLoading.value = true;
-  usbError.value = '';
-  try {
-    const data = await DevicesService.listUsbStorageDevices();
-    usbDevices.value = data.devices;
-  } catch (e) {
-    usbError.value = JSON.stringify(e);
-  } finally {
-    usbLoading.value = false;
-  }
-});
 
 const sidebarSections = [
   {
@@ -274,7 +207,6 @@ const sidebarSections = [
     items: [
       { label: 'General', active: true },
       { label: 'Users & Access' },
-      { label: 'Storage' },
       { label: 'Networking' },
       { label: 'Security' },
       { label: 'OpenTelemetry' },
@@ -282,61 +214,9 @@ const sidebarSections = [
     ],
   },
 ];
-
-const disableDevice = async (serial: string) => {
-  try {
-    await DevicesService.disableUsbStorageDevice(serial);
-    // Refresh device list
-    const data = await DevicesService.listUsbStorageDevices();
-    usbDevices.value = data.devices;
-  } catch (e) {
-    console.error('Failed to disable device:', e);
-  }
-};
-
-const enableDevice = async (serial: string) => {
-  try {
-    await DevicesService.enableUsbStorageDevice(serial);
-    // Refresh device list
-    const data = await DevicesService.listUsbStorageDevices();
-    usbDevices.value = data.devices;
-  } catch (e) {
-    console.error('Failed to disable device:', e);
-  }
-};
 </script>
 
 <style lang="scss" scoped>
-.device-disable-btn {
-  background: $theme-palette-bg-secondary;
-  color: $theme-palette-text-muted;
-  border: none;
-  border-radius: $border-radius;
-  padding: 4px 16px;
-  font-size: $theme-font-size-sm;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.device-disable-btn:hover {
-  background: $theme-palette-border;
-  color: $theme-palette-text-primary;
-}
-.device-enable-btn {
-  background: $theme-palette-accent;
-  color: $theme-palette-text-inverse;
-  border: none;
-  border-radius: $border-radius;
-  padding: 4px 16px;
-  font-size: $theme-font-size-sm;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.device-enable-btn:hover {
-  background: $theme-palette-accent-hover;
-}
-
 .device-link {
   color: $theme-palette-text-primary;
   text-decoration: none;

@@ -10,7 +10,7 @@ type DeviceStatus struct {
 }
 
 // GetDeviceStatuses returns all detected devices with their enable status
-func GetDeviceStatuses() ([]DeviceStatus, error) {
+func GetDeviceStatuses() ([]*DeviceStatus, error) {
 	// Detect all storage devices
 	detector := NewDetector()
 	devices, err := detector.DetectDevices()
@@ -31,9 +31,9 @@ func GetDeviceStatuses() ([]DeviceStatus, error) {
 	}
 
 	// Build status list
-	var statuses []DeviceStatus
+	var statuses []*DeviceStatus
 	for _, device := range devices {
-		status := DeviceStatus{
+		status := &DeviceStatus{
 			Device:    device,
 			IsEnabled: false,
 		}

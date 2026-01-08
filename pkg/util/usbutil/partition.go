@@ -14,6 +14,7 @@ type Partition interface {
 	MountPath() (string, error)
 	Path() string
 	SizeBytes() (int, error)
+	Stat() (*unix.Statfs_t, error)
 }
 
 type partition struct {
@@ -52,6 +53,13 @@ func (p *partition) Path() string {
 }
 
 func (p *partition) SizeBytes() (int, error) {
+	stat, err := p.Stat()
+	if err == nil {
+		// If we can stat, use that
+		return int(stat.Blocks * uint64(stat.Bsize)), nil
+	}
+
+	// If not mounted, use ioctl on the block device
 	f, err := os.Open(p.path)
 	if err != nil {
 		return 0, err
@@ -62,4 +70,18 @@ func (p *partition) SizeBytes() (int, error) {
 		return 0, err
 	}
 	return size, nil
+}
+
+func (p *partition) Stat() (*unix.Statfs_t, error) {
+	mountPath, err := p.MountPath()
+	if err != nil {
+		return nil, fmt.Errorf("partition %s is not mounted", p.path)
+	}
+
+	var stat unix.Statfs_t
+	err = unix.Statfs(mountPath, &stat)
+	if err != nil {
+		return nil, fmt.Errorf("failed to statfs mount path %s: %w", mountPath, err)
+	}
+	return &stat, nil
 }

@@ -6,7 +6,7 @@
         {{ (device.total_bytes / 1_073_741_824).toFixed(1) }} GB</span
       >
       <span class="storage-partition-used"
-        >{{ device.percent_used }}% used •
+        >{{ percentUsed }}% used •
         {{ (device.used_bytes / 1_073_741_824).toFixed(1) }} GB</span
       >
     </div>
@@ -29,15 +29,15 @@
       </template>
       <template v-else>
         <div
-          v-if="device.percent_used > 0"
+          v-if="percentUsed > 0"
           class="storage-partition-segment storage-partition-used"
-          :style="{ width: device.percent_used + '%' }"
+          :style="{ width: percentUsed + '%' }"
           :title="`Used: ${(device.used_bytes / 1_073_741_824).toFixed(1)} GB`"
         />
         <div
-          v-if="100 - device.percent_used > 0"
+          v-if="100 - percentUsed > 0"
           class="storage-partition-segment storage-partition-free"
-          :style="{ width: 100 - device.percent_used + '%' }"
+          :style="{ width: 100 - percentUsed + '%' }"
           :title="`Free: ${(device.avail_bytes / 1_073_741_824).toFixed(1)} GB`"
         />
       </template>
@@ -62,13 +62,14 @@
 </template>
 
 <script lang="ts" setup>
+import type { Device } from '@/types/device';
 import { computed } from 'vue';
 
-defineProps({
-  device: {
-    type: Object,
-    required: true,
-  },
+const props = defineProps<{ device: Device }>();
+
+const percentUsed = computed(() => {
+  // Clamp to 2 decimal places, but show as number (not string)
+  return Number(props.device.percent_used.toFixed(2));
 });
 
 // Static test values for visual testing
