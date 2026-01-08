@@ -1,6 +1,7 @@
 package cirrusutil
 
 import (
+	"autobutler/pkg/util/usbutil"
 	"bufio"
 	"fmt"
 	"os/exec"
@@ -58,13 +59,58 @@ func (l *LinuxDetector) DetectDevices() ([]Device, error) {
 			TotalBytes:  totalBytes,
 			UsedBytes:   usedBytes,
 			AvailBytes:  availBytes,
-			PercentUsed: percentUsed,
+			PercentUsed: float64(percentUsed),
 		}
 
 		l.enrichDeviceInfo(device)
 		device.ApplySimpleCategorization()
 		devices = append(devices, *device)
 		break // Only need the root volume
+	}
+
+	// Now add USB storage devices
+	usbDevices, err := usbutil.ListUsbDevices(true)
+	if err == nil {
+		for _, usb := range usbDevices {
+			mountPath := usb.GetMountPath()
+			if mountPath == "" {
+				continue
+			}
+
+			partitions, err := usb.Partitions()
+			if err != nil || len(partitions) == 0 {
+				continue
+			}
+			stat, err := partitions[0].Stat()
+			if err != nil {
+				continue
+			}
+			blockSize := uint64(stat.Bsize)
+			sizeBytes := stat.Blocks * blockSize
+			usedBytes := (stat.Blocks - stat.Bavail) * blockSize
+			availableBytes := stat.Bavail * blockSize
+			percentUsed := float64(usedBytes) / float64(sizeBytes) * 100
+
+			dev := Device{
+				Name:        filepath.Base(mountPath),
+				Type:        "External USB",
+				FileSystem:  "",        // TODO: Not available yet
+				DevicePath:  mountPath, // Not always the block device, but best available
+				MountPoint:  mountPath,
+				TotalBytes:  sizeBytes,
+				UsedBytes:   usedBytes,
+				AvailBytes:  availableBytes,
+				PercentUsed: percentUsed,
+				IsInternal:  false,
+				IsRemovable: true,
+				IsReadOnly:  false, // Assume writable
+				Model:       usb.GetProduct(),
+				UsbInfo:     usb,
+			}
+			// Skip enrichDeviceInfo, just categorize
+			dev.ApplySimpleCategorization()
+			devices = append(devices, dev)
+		}
 	}
 
 	return devices, nil

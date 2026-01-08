@@ -11,7 +11,7 @@ type Device struct {
 	TotalBytes  uint64            `json:"total_bytes"`        // Total capacity in bytes
 	UsedBytes   uint64            `json:"used_bytes"`         // Used space in bytes
 	AvailBytes  uint64            `json:"avail_bytes"`        // Available space in bytes
-	PercentUsed int               `json:"percent_used"`       // Percentage used
+	PercentUsed float64           `json:"percent_used"`       // Percentage used
 	IsInternal  bool              `json:"is_internal"`        // True if internal drive
 	IsRemovable bool              `json:"is_removable"`       // True if removable media
 	IsReadOnly  bool              `json:"is_read_only"`       // True if read-only
