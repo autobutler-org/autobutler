@@ -31,12 +31,6 @@ export default class DevicesService {
     await HttpService.post(`/api/v1/storage/devices/usb/${serial}`);
   }
 
-  static async findUsbStorageDevice(serial: string): Promise<UsbDevice> {
-    return await HttpService.getAsJson<UsbDevice>(
-      `/api/v1/storage/devices/usb/${serial}`,
-    );
-  }
-
   static async getDeviceStatuses(): Promise<DevicesStatusResponse> {
     return await HttpService.getAsJson<DevicesStatusResponse>(
       '/api/v1/storage/devices/status',
@@ -46,12 +40,6 @@ export default class DevicesService {
   static async getDeviceStatus(serial: string): Promise<Device> {
     return await HttpService.getAsJson<Device>(
       `/api/v1/storage/devices/status/${serial}`,
-    );
-  }
-
-  static async listUsbStorageDevices(): Promise<UsbDevicesResponse> {
-    return await HttpService.getAsJson<UsbDevicesResponse>(
-      '/api/v1/storage/devices/usb',
     );
   }
 }
