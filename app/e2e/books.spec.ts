@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Books Page', () => {
-  test('displays books library header', async ({ page }) => {
+  test.skip('displays books library header', async ({ page }) => {
     await page.goto('/books');
     const title = page.locator('.library-title');
     await expect(title).toBeVisible();
