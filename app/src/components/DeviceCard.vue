@@ -1,6 +1,6 @@
 <template>
   <div class="device-card">
-    <div class="device-card-header" @click="goToCirrus">
+    <div class="device-card-header">
       <DeviceCardIcon />
       <div class="device-card-title-section">
         <h3 class="device-card-title">
@@ -8,15 +8,14 @@
         </h3>
         <p class="device-card-type">
           {{ displayedDevice.is_internal ? 'Internal' : 'External' }}
+          <span v-if="!displayedDevice.is_internal"
+            >• Mounted?
+            <ToggleSwitch
+              :model-value="!!displayedDevice.usb_info?.mountPath"
+              @update:model-value="onToggleUsbMount"
+            />
+          </span>
         </p>
-      </div>
-    </div>
-    <div class="device-card-usb" v-if="displayedDevice.usb_info">
-      <div class="device-card-usb-mount">
-        <ToggleSwitch
-          :model-value="!!displayedDevice.usb_info.mountPath"
-          @update:model-value="onToggleUsbMount"
-        />
       </div>
     </div>
     <div
@@ -115,12 +114,6 @@ const goToCirrus = () => {
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  cursor: pointer;
-}
-
-.device-card-mount {
-  font-size: $theme-font-size-base;
-  color: $theme-palette-text-secondary;
 }
 
 .device-card-title {
