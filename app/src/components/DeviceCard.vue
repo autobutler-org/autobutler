@@ -53,14 +53,10 @@ const displayedDevice = ref<Device>(props.device);
 
 const disableDevice = async (serial: string) => {
   try {
-    console.log('Disabling device with serial:', serial);
     await DevicesService.disableUsbStorageDevice(serial);
-    console.log('disabled device with serial:', serial);
     // Refresh device
-    const data = await DevicesService.findUsbStorageDevice(serial);
-    console.log(data);
-    displayedDevice.value.usb_info = data;
-    displayedDevice.value.mount_point = data.mountPath;
+    const data = await DevicesService.getDeviceStatus(serial);
+    displayedDevice.value = data;
   } catch (e) {
     console.error('Failed to disable device:', e);
   }
@@ -68,14 +64,10 @@ const disableDevice = async (serial: string) => {
 
 const enableDevice = async (serial: string) => {
   try {
-    console.log('Enabling device with serial:', serial);
     await DevicesService.enableUsbStorageDevice(serial);
-    console.log('enabled device with serial:', serial);
     // Refresh device
-    const data = await DevicesService.findUsbStorageDevice(serial);
-    console.log(data);
-    displayedDevice.value.usb_info = data;
-    displayedDevice.value.mount_point = data.mountPath;
+    const data = await DevicesService.getDeviceStatus(serial);
+    displayedDevice.value = data;
   } catch (e) {
     console.error('Failed to disable device:', e);
   }
