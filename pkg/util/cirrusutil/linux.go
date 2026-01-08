@@ -72,8 +72,28 @@ func (l *LinuxDetector) DetectDevices() ([]Device, error) {
 	usbDevices, err := usbutil.ListUsbDevices(true)
 	if err == nil {
 		for _, usb := range usbDevices {
+			const storageType = "External USB"
+			name := fmt.Sprintf("%s - %s", usb.GetManufacturer(), usb.GetProduct())
 			mountPath := usb.GetMountPath()
 			if mountPath == "" {
+				// Default values, used if not mounted
+				dev := Device{
+					Name:        name,
+					Type:        storageType,
+					FileSystem:  "",
+					DevicePath:  "",
+					MountPoint:  "",
+					TotalBytes:  0,
+					UsedBytes:   0,
+					AvailBytes:  0,
+					PercentUsed: 0,
+					IsInternal:  false,
+					IsRemovable: true,
+					IsReadOnly:  true,
+					Model:       usb.GetProduct(),
+					UsbInfo:     usb,
+				}
+				devices = append(devices, dev)
 				continue
 			}
 
@@ -92,8 +112,8 @@ func (l *LinuxDetector) DetectDevices() ([]Device, error) {
 			percentUsed := float64(usedBytes) / float64(sizeBytes) * 100
 
 			dev := Device{
-				Name:        fmt.Sprintf("%s - %s", usb.GetManufacturer(), usb.GetProduct()),
-				Type:        "External USB",
+				Name:        name,
+				Type:        storageType,
 				FileSystem:  "",        // TODO: Not available yet
 				DevicePath:  mountPath, // Not always the block device, but best available
 				MountPoint:  mountPath,
@@ -107,9 +127,9 @@ func (l *LinuxDetector) DetectDevices() ([]Device, error) {
 				Model:       usb.GetProduct(),
 				UsbInfo:     usb,
 			}
+			devices = append(devices, dev)
 			// Skip enrichDeviceInfo, just categorize
 			dev.ApplySimpleCategorization()
-			devices = append(devices, dev)
 		}
 	}
 

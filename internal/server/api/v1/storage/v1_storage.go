@@ -12,6 +12,7 @@ func (r *router) Routes() []*serverutil.Route {
 	return []*serverutil.Route{
 		disableUsbStorageDeviceRoute,
 		enableUsbStorageDeviceRoute,
+		findUsbStorageDeviceRoute,
 		getDeviceStatusesRoute,
 		initializeManagedDeviceRoute,
 		listUsbStorageDevicesRoute,

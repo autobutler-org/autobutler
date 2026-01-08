@@ -4,12 +4,10 @@
       <DeviceCardIcon />
       <div class="device-card-title-section">
         <h3 class="device-card-title">
-          {{ device.name }}
+          {{ displayedDevice.name }}
         </h3>
         <p class="device-card-type">
-          {{ device.is_internal ? 'External' : 'Internal' }} •
-          {{ device.file_system }} •
-          {{ device.device_path }}
+          {{ displayedDevice.is_internal ? 'External' : 'Internal' }}
         </p>
       </div>
     </div>
@@ -17,8 +15,26 @@
       <StoragePartition :device="device" />
     </div>
     <div class="device-card-footer">
-      <div class="device-card-mount">
-        <span class="device-mount-label">Mount: {{ device.mount_point }}</span>
+      <div v-if="displayedDevice.usb_info" class="device-card-usb-info">
+        <!-- Toggle button to mount and unmount the device -->
+        <!-- if mount path is "", have "enable" button -->
+        <!-- if mount path is non-empty, have "disable" button -->
+        <div class="device-card-mount" v-if="displayedDevice.mount_point">
+          <button
+            @click="disableDevice(displayedDevice.usb_info.serial)"
+            class="device-disable-btn"
+          >
+            Disable
+          </button>
+        </div>
+        <div class="device-card-mount" v-else>
+          <button
+            @click="enableDevice(displayedDevice.usb_info.serial)"
+            class="device-enable-btn"
+          >
+            Enable
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -26,14 +42,42 @@
 
 <script lang="ts" setup>
 import DeviceCardIcon from '@/components/icons/DeviceCardIcon.vue';
+import DevicesService from '@/services/devicesService';
+import type { Device } from '@/types/device';
+import { ref } from 'vue';
 import StoragePartition from './StoragePartition.vue';
 
-defineProps({
-  device: {
-    type: Object,
-    required: true,
-  },
-});
+const props = defineProps<{
+  device: Device;
+}>();
+
+const displayedDevice = ref<Device>(props.device);
+
+const disableDevice = async (serial: string) => {
+  try {
+    console.log('Disabling device with serial:', serial);
+    await DevicesService.disableUsbStorageDevice(serial);
+    console.log('disabled device with serial:', serial);
+    // Refresh device
+    const data = await DevicesService.findUsbStorageDevice(serial);
+    displayedDevice.value.usb_info = data;
+  } catch (e) {
+    console.error('Failed to disable device:', e);
+  }
+};
+
+const enableDevice = async (serial: string) => {
+  try {
+    console.log('Enabling device with serial:', serial);
+    await DevicesService.enableUsbStorageDevice(serial);
+    console.log('enabled device with serial:', serial);
+    // Refresh device
+    const data = await DevicesService.findUsbStorageDevice(serial);
+    displayedDevice.value.usb_info = data;
+  } catch (e) {
+    console.error('Failed to disable device:', e);
+  }
+};
 
 const goToCirrus = () => {
   window.location.href = '/cirrus';
@@ -89,5 +133,35 @@ const goToCirrus = () => {
   font-size: $theme-font-size-base;
   color: $theme-palette-text-muted;
   margin: 0;
+}
+
+.device-disable-btn {
+  background: $theme-palette-bg-secondary;
+  color: $theme-palette-text-muted;
+  border: none;
+  border-radius: $border-radius;
+  padding: 4px 16px;
+  font-size: $theme-font-size-sm;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.device-disable-btn:hover {
+  background: $theme-palette-border;
+  color: $theme-palette-text-primary;
+}
+.device-enable-btn {
+  background: $theme-palette-accent;
+  color: $theme-palette-text-inverse;
+  border: none;
+  border-radius: $border-radius;
+  padding: 4px 16px;
+  font-size: $theme-font-size-sm;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.device-enable-btn:hover {
+  background: $theme-palette-accent-hover;
 }
 </style>
