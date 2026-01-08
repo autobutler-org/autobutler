@@ -12,11 +12,15 @@ import (
 
 var snapshotRegex = regexp.MustCompile(`/dev/disk\d+s\d+s\d+`)
 
-// DarwinDetector implements storage detection for macOS
-type DarwinDetector struct{}
+// detector implements storage detection for macOS
+type detector struct{}
+
+func NewDetector() Detector {
+	return &detector{}
+}
 
 // DetectDevices finds all storage devices on macOS using read-only commands
-func (d *DarwinDetector) DetectDevices() ([]Device, error) {
+func (d *detector) DetectDevices() ([]Device, error) {
 	devices := []Device{}
 	seenContainers := make(map[string]bool) // Track APFS containers to avoid double-counting
 
@@ -92,7 +96,7 @@ func (d *DarwinDetector) DetectDevices() ([]Device, error) {
 
 // getContainerID extracts the APFS container identifier from device path
 // e.g., /dev/disk3s1s1 -> disk3 (the base disk)
-func (d *DarwinDetector) getContainerID(devicePath string) string {
+func (d *detector) getContainerID(devicePath string) string {
 	// Extract base disk number (e.g., disk3 from /dev/disk3s1s1)
 	re := regexp.MustCompile(`/dev/(disk\d+)`)
 	matches := re.FindStringSubmatch(devicePath)
@@ -103,7 +107,7 @@ func (d *DarwinDetector) getContainerID(devicePath string) string {
 }
 
 // getDeviceInfo retrieves detailed information about a specific device using diskutil
-func (d *DarwinDetector) getDeviceInfo(devicePath string) (*Device, error) {
+func (d *detector) getDeviceInfo(devicePath string) (*Device, error) {
 	device := &Device{
 		DevicePath: devicePath,
 	}

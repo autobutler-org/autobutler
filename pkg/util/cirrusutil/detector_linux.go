@@ -11,15 +11,19 @@ import (
 	"strings"
 )
 
-// LinuxDetector implements storage detection for Linux
-type LinuxDetector struct{}
+// detector implements storage detection for Linux
+type detector struct{}
+
+func NewDetector() Detector {
+	return &detector{}
+}
 
 // DetectDevices finds all storage devices on Linux using read-only commands.
 //
 // If a device is a USB storage device, it is enriched with USB-specific metadata
 // by cross-referencing with usbutil.ListUsbDevices. The UsbInfo field will be set
 // if a match is found by block device path or mount point.
-func (l *LinuxDetector) DetectDevices() ([]Device, error) {
+func (d *detector) DetectDevices() ([]Device, error) {
 	devices := []Device{}
 
 	// Use df to get only the root volume ("/")
@@ -62,7 +66,7 @@ func (l *LinuxDetector) DetectDevices() ([]Device, error) {
 			PercentUsed: float64(percentUsed),
 		}
 
-		l.enrichDeviceInfo(device)
+		d.enrichDeviceInfo(device)
 		device.ApplySimpleCategorization()
 		devices = append(devices, *device)
 		break // Only need the root volume
@@ -157,7 +161,7 @@ func shouldSkipLinuxVolume(mountPoint string) bool {
 	return false
 }
 
-func (l *LinuxDetector) enrichDeviceInfo(device *Device) {
+func (d *detector) enrichDeviceInfo(device *Device) {
 	// Set default name
 	device.Name = filepath.Base(device.MountPoint)
 	if device.Name == "" || device.Name == "/" {
