@@ -12,6 +12,16 @@ ifneq (,$(wildcard ./.env))
 endif
 
 export GOTOOLCHAIN=go1.25.0+auto
+AS_ROOT ?= 0
+
+GO := $(shell which go)
+AIR := $(shell which air)
+ifeq ($(AS_ROOT), 1)
+	GO := sudo $(GO)
+	AIR := sudo $(AIR)
+endif
+export GOOS=$(shell $(GO) env GOOS)
+export GOARCH=$(shell $(GO) env GOARCH)
 
 MAIN := ./cmd/autobutler/main.go
 EXE := ./build/autobutler
@@ -196,15 +206,6 @@ serve:
 
 watch:
 	$(MAKE) -j2 watch/backend watch/frontend
-
-AS_ROOT ?= 0
-
-GO := $(shell which go)
-AIR := $(shell which air)
-ifeq ($(AS_ROOT), 1)
-	GO := sudo $(GO)
-	AIR := sudo $(AIR)
-endif
 
 serve/backend: generate ## Serve backend
 	$(GO) run $(MAIN) serve
