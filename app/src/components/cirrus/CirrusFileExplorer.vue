@@ -3,14 +3,33 @@
     <div class="file-explorer-header">
       <div class="file-explorer-header-row">
         <h2 class="file-explorer-title">Cirrus</h2>
-        <div class="file-explorer-upload-row">
+        <div
+          class="file-explorer-upload-row"
+          style="display: flex; align-items: center; gap: 0.5rem"
+        >
+          <template v-if="devices.length > 1">
+            <select
+              v-model="selectedDeviceSerial"
+              class="device-select"
+              :disabled="isUploading || devices.length === 0"
+              aria-label="Select upload location"
+            >
+              <option
+                v-for="device in devices"
+                :key="device.name"
+                :value="device.usb_info?.serial || ''"
+              >
+                {{ device.name }}
+              </option>
+            </select>
+          </template>
           <span v-if="uploadProgress" class="upload-progress">{{
             uploadProgress
           }}</span>
           <button
             class="upload-btn"
             type="button"
-            :disabled="isUploading"
+            :disabled="isUploading || devices.length === 0"
             @click="handleUploadClick"
             title="Upload files"
             aria-label="Upload files"
@@ -295,9 +314,15 @@ import CirrusFileViewer from './CirrusFileViewer.vue';
 import CirrusGridView from './CirrusGridView.vue';
 import CirrusListView from './CirrusListView.vue';
 
+import DevicesService from '@/services/devicesService';
+import { useCirrusDeviceStore } from '@/stores/cirrusDeviceStore';
+import { storeToRefs } from 'pinia';
+
 const fileInputRef = vueRef<HTMLInputElement | null>(null);
 const isUploading = vueRef(false);
 const uploadProgress = vueRef('');
+const cirrusDeviceStore = useCirrusDeviceStore();
+const { devices, selectedDeviceSerial } = storeToRefs(cirrusDeviceStore);
 
 const handleUploadClick = () => {
   fileInputRef.value?.click();
@@ -309,10 +334,12 @@ const handleFileInputChange = async (event: Event) => {
   isUploading.value = true;
   uploadProgress.value = `Uploading ${input.files.length} file${input.files.length > 1 ? 's' : ''}...`;
   try {
-    // Actually upload the files to the backend
+    // Actually upload the files to the backend, include device as query param
+    const uploadPath = `/api/v1/cirrus/${currentPath.value || ''}`;
     await CirrusService.uploadFiles(
-      `/api/v1/cirrus/${currentPath.value || ''}`,
+      uploadPath,
       input.files,
+      selectedDeviceSerial.value,
     );
     uploadProgress.value = 'Upload complete!';
     // Refresh the file list after upload
@@ -327,6 +354,20 @@ const handleFileInputChange = async (event: Event) => {
     input.value = '';
   }
 };
+// Fetch available storage devices
+const fetchDevices = async () => {
+  try {
+    const resp = await DevicesService.getDeviceStatuses();
+    cirrusDeviceStore.setDevices(resp.devices || []);
+  } catch {
+    cirrusDeviceStore.setDevices([]);
+  }
+};
+
+onMounted(() => {
+  fetchFiles();
+  fetchDevices();
+});
 
 const route = useRoute();
 const router = useRouter();
@@ -357,7 +398,7 @@ const moveDialogOpen = ref(false);
 const moveDialogLoading = ref(false);
 const moveDialogError = ref('');
 const moveDialogNewPath = ref('');
-const moveDialogOldDeviceName = ref('');
+const moveDialogOldDeviceSerial = ref('');
 const moveDialogFile = ref<CirrusFileNode | null>(null);
 // File details dialog state
 const detailsDialogOpen = ref(false);
@@ -404,7 +445,7 @@ const confirmDelete = async () => {
     await CirrusService.deleteFile(
       currentPath.value,
       fileName,
-      file.deviceName,
+      file.deviceSerial,
     );
 
     // Remove the file from the in-memory list
@@ -546,6 +587,7 @@ const handleFolderCreated = (folderName: string) => {
       deviceName: '',
       devicePath: '',
       fullPath,
+      deviceSerial: '',
     });
   }
 };
@@ -564,7 +606,7 @@ const handleDownload = (file: CirrusFileNode) => {
     ? `${currentPath.value}/${fileName}`
     : fileName;
   const downloadUrl = `/api/v1/download/cirrus/${relativePath}${
-    file.deviceName ? `?device=${encodeURIComponent(file.deviceName)}` : ''
+    file.deviceSerial ? `?serial=${encodeURIComponent(file.deviceSerial)}` : ''
   }`;
 
   // Create a temporary link and click it to trigger download
@@ -582,7 +624,7 @@ const handleRename = (file: CirrusFileNode) => {
   // Default to just renaming the file/folder name, not the whole path
   moveDialogNewPath.value = file.name;
   moveDialogOpen.value = true;
-  moveDialogOldDeviceName.value = file.deviceName;
+  moveDialogOldDeviceSerial.value = file.deviceSerial;
 };
 
 const submitMoveDialog = async () => {
@@ -597,12 +639,12 @@ const submitMoveDialog = async () => {
       moveDialogLoading.value = false;
       return;
     }
-    // TODO: Allow for supporting a new target device in the future
     await CirrusService.moveFile(
       oldPath,
       newPath,
-      moveDialogOldDeviceName.value,
-      moveDialogOldDeviceName.value,
+      moveDialogOldDeviceSerial.value,
+      // TODO: Allow for supporting a new target device in the future
+      moveDialogOldDeviceSerial.value,
     );
     // Update the in-memory file list
     // TODO: When moving to a new directory, we need to filter out the moved file
@@ -968,5 +1010,15 @@ const handleDelete = (file: CirrusFileNode) => {
     height: 1.5rem;
     display: block;
   }
+}
+.device-select {
+  padding: 0.4rem 0.7rem;
+  border-radius: $border-radius-md;
+  border: 0.09rem solid $theme-palette-border-strong;
+  font-size: $theme-font-size-base;
+  background: $theme-palette-bg-inverse;
+  min-width: 7.5rem;
+  max-width: 13.75rem;
+  margin-right: 0.5rem;
 }
 </style>

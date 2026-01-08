@@ -138,7 +138,7 @@ func GetFolderSize(dir string) (int64, error) {
 	return size, nil
 }
 
-func StatFilesInDir(dir string, deviceName string, devicePath string) ([]*DeviceFileInfo, error) {
+func StatFilesInDir(dir string, deviceName string, devicePath string, deviceSerial string) ([]*DeviceFileInfo, error) {
 	entries, err := os.ReadDir(dir)
 	files := make([]*DeviceFileInfo, 0, len(entries))
 	if err != nil {
@@ -161,7 +161,7 @@ func StatFilesInDir(dir string, deviceName string, devicePath string) ([]*Device
 			fileInfo = info
 		}
 		// Wrap in DeviceFileInfo with device info
-		files = append(files, NewDeviceFileInfo(fileInfo, deviceName, devicePath, fullPath))
+		files = append(files, NewDeviceFileInfo(fileInfo, deviceName, devicePath, fullPath, deviceSerial))
 	}
 	// Sort files by directory first, then by name
 	slices.SortFunc(files, func(a, b *DeviceFileInfo) int {
@@ -219,6 +219,7 @@ func GetDataDir() string {
 
 func GetMountsDir() string {
 	mountDir := filepath.Join(GetDataDir(), "mounts")
+	// TODO: Probably should not panic here
 	if err := os.MkdirAll(mountDir, 0755); err != nil {
 		panic(fmt.Sprintf("failed to create mount directory: %v", err)) // coverage: ignore - panic on filesystem error
 	}
@@ -293,9 +294,20 @@ func ConstructCirrusDir(dataDir string) string {
 }
 
 func GetCirrusDir() string {
+	// TODO: Probably should not panic here
 	cirrusPath := ConstructCirrusDir(GetDataDir())
 	if err := os.MkdirAll(cirrusPath, 0755); err != nil {
 		panic(fmt.Sprintf("failed to create cirrus directory: %v", err)) // coverage: ignore - panic on filesystem error
+	}
+	return cirrusPath
+}
+
+func GetCirrusDirForDevice(mountPoint string) string {
+	// TODO: Probably should not panic here
+	dataDir := GetDataDirForDevice(mountPoint)
+	cirrusPath := ConstructCirrusDir(dataDir)
+	if err := os.MkdirAll(cirrusPath, 0755); err != nil {
+		panic(fmt.Sprintf("failed to create cirrus directory for device at %s: %v", mountPoint, err)) // coverage: ignore - panic on filesystem error
 	}
 	return cirrusPath
 }
@@ -397,7 +409,7 @@ func StatFilesInMultipleDirs(dirsWithDeviceInfo []DirWithDevice) ([]*DeviceFileI
 			}
 
 			// Wrap with device information
-			deviceFileInfo := NewDeviceFileInfo(fileInfo, dirInfo.DeviceName, dirInfo.DevicePath, fullPath)
+			deviceFileInfo := NewDeviceFileInfo(fileInfo, dirInfo.DeviceName, dirInfo.DevicePath, fullPath, dirInfo.DeviceSerial)
 
 			// Add to map (multiple devices may have same file name)
 			fileMap[entry.Name()] = append(fileMap[entry.Name()], deviceFileInfo)
@@ -425,9 +437,10 @@ func StatFilesInMultipleDirs(dirsWithDeviceInfo []DirWithDevice) ([]*DeviceFileI
 
 // DirWithDevice associates a directory path with its device information
 type DirWithDevice struct {
-	Dir        string
-	DeviceName string
-	DevicePath string
+	Dir          string
+	DeviceName   string
+	DevicePath   string
+	DeviceSerial string
 }
 
 // DoesFileExist checks if a file exists at the given path

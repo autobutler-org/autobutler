@@ -15,11 +15,11 @@ import (
 var downloadFileRoute = serverutil.ApiRoute(
 	"GET", "/download/cirrus/*filePath", func(c *gin.Context) *serverutil.Response {
 		filePath := c.Param("filePath")
-		deviceName := c.Query("device")
+		serial := c.Query("serial")
 
 		result, err := cirrusutil.DownloadFile(cirrusutil.DownloadFileParams{
-			FilePath:   filePath,
-			DeviceName: deviceName,
+			FilePath:     filePath,
+			DeviceSerial: serial,
 		})
 
 		if err != nil {

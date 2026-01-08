@@ -14,7 +14,7 @@ var deleteFilesRoute = serverutil.ApiRoute(
 	"DELETE", "/cirrus", func(c *gin.Context) *serverutil.Response {
 		rootDir := c.Query("rootDir")
 		filePaths := c.QueryArray("filePaths")
-		deviceName := c.Query("device")
+		serial := c.Query("serial")
 
 		deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 		if !ok {
@@ -22,9 +22,9 @@ var deleteFilesRoute = serverutil.ApiRoute(
 		}
 		channel := deps.Worker().GetDeleteFilesChannel()
 		channel <- cirrusutil.DeleteFilesParams{
-			RootDir:    rootDir,
-			FilePaths:  filePaths,
-			DeviceName: deviceName,
+			RootDir:      rootDir,
+			FilePaths:    filePaths,
+			DeviceSerial: serial,
 		}
 		return serverutil.Accepted()
 	},

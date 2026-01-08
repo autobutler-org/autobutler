@@ -14,7 +14,7 @@ var newFolderRoute = serverutil.ApiRoute(
 	"POST", "/folder/cirrus/*folderDir", func(c *gin.Context) *serverutil.Response {
 		folderDir := c.Param("folderDir")
 		folderName := c.PostForm("folderName")
-		deviceName := c.Query("device")
+		serial := c.Query("serial")
 
 		deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 		if !ok {
@@ -22,9 +22,9 @@ var newFolderRoute = serverutil.ApiRoute(
 		}
 		channel := deps.Worker().GetCreateFolderChannel()
 		channel <- cirrusutil.CreateFolderParams{
-			FolderDir:  folderDir,
-			FolderName: folderName,
-			DeviceName: deviceName,
+			FolderDir:    folderDir,
+			FolderName:   folderName,
+			DeviceSerial: serial,
 		}
 		return serverutil.Accepted()
 	},

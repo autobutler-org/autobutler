@@ -11,16 +11,19 @@ type ManagedDevice struct {
 	CirrusDir string `json:"cirrus_dir"` // Path to cirrus subdirectory
 }
 
-func FindManagedDeviceByName(name string) (*ManagedDevice, error) {
+// FindManagedDeviceBySerial finds a managed device by its USB serial number
+// Empty serial returns first internal device
+func FindManagedDeviceBySerial(serial string) (*ManagedDevice, error) {
 	managedDevices, err := GetManagedDevices()
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
-	if name != "" {
-		for _, d := range managedDevices {
-			if d.Name == name {
-				return &d, nil
-			}
+	for _, d := range managedDevices {
+		if serial == "" && d.IsInternal {
+			return &d, nil
+		}
+		if d.UsbInfo != nil && d.UsbInfo.GetSerial() == serial {
+			return &d, nil
 		}
 	}
 	return nil, nil
@@ -37,16 +40,13 @@ func GetManagedDevices() ([]ManagedDevice, error) {
 	var managedDevices []ManagedDevice
 	for _, device := range devices {
 		dataDir := GetDataDirForDevice(device.MountPoint)
-		cirrusDir := ConstructCirrusDir(dataDir)
+		cirrusDir := GetCirrusDirForDevice(device.MountPoint)
 
-		// Check if this device has an autobutler data directory
-		if _, err := os.Stat(cirrusDir); err == nil {
-			managedDevices = append(managedDevices, ManagedDevice{
-				Device:    device,
-				DataDir:   dataDir,
-				CirrusDir: cirrusDir,
-			})
-		}
+		managedDevices = append(managedDevices, ManagedDevice{
+			Device:    device,
+			DataDir:   dataDir,
+			CirrusDir: cirrusDir,
+		})
 	}
 
 	return managedDevices, nil

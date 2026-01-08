@@ -11,10 +11,10 @@ import (
 )
 
 type moveFileRequest struct {
-	OldFilePath string `json:"oldFilePath"`
-	NewFilePath string `json:"newFilePath"`
-	OldDevice   string `json:"oldDevice"`
-	NewDevice   string `json:"newDevice"`
+	OldFilePath     string `json:"oldFilePath"`
+	NewFilePath     string `json:"newFilePath"`
+	OldDeviceSerial string `json:"oldDeviceSerial"`
+	NewDeviceSerial string `json:"newDeviceSerial"`
 }
 
 var moveFileRoute = serverutil.ApiRoute(
@@ -30,10 +30,10 @@ var moveFileRoute = serverutil.ApiRoute(
 		}
 		channel := deps.Worker().GetMoveFileChannel()
 		channel <- cirrusutil.MoveFileParams{
-			OldFilePath:   req.OldFilePath,
-			NewFilePath:   req.NewFilePath,
-			OldDeviceName: req.OldDevice,
-			NewDeviceName: req.NewDevice,
+			OldFilePath:     req.OldFilePath,
+			NewFilePath:     req.NewFilePath,
+			OldDeviceSerial: req.OldDeviceSerial,
+			NewDeviceSerial: req.NewDeviceSerial,
 		}
 		return serverutil.Accepted()
 	},

@@ -37,7 +37,7 @@ func uploadFilesImpl(c *gin.Context, rootDir string) *serverutil.Response {
 	if len(form.Value["returnDir"]) > 0 {
 		returnDir = form.Value["returnDir"][0]
 	}
-	deviceName := c.Query("device")
+	serial := c.Query("serial")
 
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	if !ok {
@@ -45,10 +45,10 @@ func uploadFilesImpl(c *gin.Context, rootDir string) *serverutil.Response {
 	}
 	channel := deps.Worker().GetUploadFilesChannel()
 	channel <- cirrusutil.UploadFilesParams{
-		RootDir:     rootDir,
-		FileHeaders: fileHeaders,
-		ReturnDir:   returnDir,
-		DeviceName:  deviceName,
+		RootDir:      rootDir,
+		FileHeaders:  fileHeaders,
+		ReturnDir:    returnDir,
+		DeviceSerial: serial,
 	}
 
 	return serverutil.Accepted()

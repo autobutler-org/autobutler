@@ -19,6 +19,7 @@ export interface CirrusFileNode {
   deviceName: string;
   devicePath: string;
   fullPath: string;
+  deviceSerial: string;
 }
 
 export interface CirrusState {
