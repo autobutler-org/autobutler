@@ -1,3 +1,13 @@
+export interface UsbInfo {
+  path: string;
+  vendorID: string;
+  productID: string;
+  manufacturer: string;
+  product: string;
+  serial: string;
+  mountPath: string;
+}
+
 export interface Device {
   name: string;
   type: string;
@@ -13,4 +23,5 @@ export interface Device {
   is_read_only: boolean;
   model: string;
   categories: Record<string, number>;
+  usb_info?: UsbInfo;
 }
