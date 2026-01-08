@@ -71,7 +71,7 @@ func (d *DarwinDetector) DetectDevices() ([]Device, error) {
 		device.TotalBytes = totalKB * 1024
 		device.UsedBytes = usedKB * 1024
 		device.AvailBytes = availKB * 1024
-		device.PercentUsed = percentUsed
+		device.PercentUsed = float64(percentUsed)
 		device.MountPoint = mountPoint
 
 		// Mark this container as seen (for deduplication in summary)
@@ -130,7 +130,7 @@ func (d *DarwinDetector) getDeviceInfo(devicePath string) (*Device, error) {
 	}
 	device.UsedBytes = device.TotalBytes - device.AvailBytes
 	if device.TotalBytes > 0 {
-		device.PercentUsed = int((float64(device.UsedBytes) / float64(device.TotalBytes)) * 100)
+		device.PercentUsed = (float64(device.UsedBytes) / float64(device.TotalBytes)) * 100
 	}
 
 	// Determine device type and properties
