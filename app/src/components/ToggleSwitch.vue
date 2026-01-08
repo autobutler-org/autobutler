@@ -1,13 +1,17 @@
 <template>
   <label class="toggle-switch">
-    <input type="checkbox" :checked="modelValue" @change="$emit('update:modelValue', $event.target.checked)" />
+    <input
+      type="checkbox"
+      :checked="modelValue"
+      @change="$emit('update:modelValue', $event.target.checked)"
+    />
     <span class="slider"></span>
   </label>
 </template>
 
 <script lang="ts" setup>
-defineProps<{ modelValue: boolean }>()
-defineEmits(['update:modelValue'])
+defineProps<{ modelValue: boolean }>();
+defineEmits(['update:modelValue']);
 </script>
 
 <style lang="scss" scoped>
@@ -49,6 +53,6 @@ input:checked + .slider {
 }
 input:checked + .slider:before {
   transform: translateX(1.1rem);
-  background: $theme-palette-accent;
+  background: $theme-palette-bg-primary; // or white for contrast
 }
 </style>

@@ -15,7 +15,7 @@
       <div class="device-card-usb-mount">
         <ToggleSwitch
           :model-value="!!displayedDevice.usb_info.mountPath"
-          @update:modelValue="onToggleUsbMount"
+          @update:model-value="onToggleUsbMount"
         />
       </div>
     </div>
