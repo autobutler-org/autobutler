@@ -63,7 +63,7 @@ const loading = ref(false);
 const fetchDevices = async () => {
   loading.value = true;
   try {
-    const data = await DevicesService.fetchDevicesStatus();
+    const data = await DevicesService.getDeviceStatuses();
     devices.value = data.devices || [];
     summary.value = calculateSummary(devices.value);
   } finally {
