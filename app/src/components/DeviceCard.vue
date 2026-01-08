@@ -23,7 +23,7 @@
       @click="goToCirrus"
       v-if="displayedDevice.is_internal || displayedDevice.usb_info?.mountPath"
     >
-      <StoragePartition :device="device" />
+      <StoragePartition :device="displayedDevice" />
     </div>
   </div>
 </template>
