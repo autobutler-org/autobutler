@@ -29,7 +29,7 @@ clean/tests:
 	rm -rf playwright-report/
 	rm -rf test-results/
 
-setup: setup/gotools setup/sqlc setup/air setup/node ## Setup development environment
+setup: setup/gotools setup/sqlc setup/air setup/node setup/playwright ## Setup development environment
 
 setup/gotools: ## Install go tools
 	$(GO) install golang.org/x/tools/gopls@latest
@@ -47,6 +47,10 @@ setup/air: ## Install air tool
 
 setup/node: ## Setup Node.js environment
 	npm install --prefix ./app
+
+setup/playwright: ## Install Playwright browsers
+	npx playwright install \
+		--with-deps
 
 export INSTALL_VERSION?=$(shell git describe --tags --abbrev=0)
 export GOPROXY ?= https://proxy.golang.org,direct
