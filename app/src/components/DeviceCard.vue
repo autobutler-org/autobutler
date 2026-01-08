@@ -1,17 +1,21 @@
 <template>
-  <div class="device-card" @click="goToCirrus">
-    <div class="device-card-header">
+  <div class="device-card">
+    <div class="device-card-header" @click="goToCirrus">
       <DeviceCardIcon />
       <div class="device-card-title-section">
         <h3 class="device-card-title">
           {{ displayedDevice.name }}
         </h3>
         <p class="device-card-type">
-          {{ displayedDevice.is_internal ? 'External' : 'Internal' }}
+          {{ displayedDevice.is_internal ? 'Internal' : 'External' }}
         </p>
       </div>
     </div>
-    <div class="device-card-body">
+    <div
+      class="device-card-body"
+      @click="goToCirrus"
+      v-if="displayedDevice.is_internal || displayedDevice.usb_info?.mountPath"
+    >
       <StoragePartition :device="device" />
     </div>
     <div class="device-card-footer">
@@ -19,7 +23,10 @@
         <!-- Toggle button to mount and unmount the device -->
         <!-- if mount path is "", have "enable" button -->
         <!-- if mount path is non-empty, have "disable" button -->
-        <div class="device-card-mount" v-if="displayedDevice.mount_point">
+        <div
+          class="device-card-mount"
+          v-if="displayedDevice.usb_info.mountPath"
+        >
           <button
             @click="disableDevice(displayedDevice.usb_info.serial)"
             class="device-disable-btn"
@@ -60,7 +67,9 @@ const disableDevice = async (serial: string) => {
     console.log('disabled device with serial:', serial);
     // Refresh device
     const data = await DevicesService.findUsbStorageDevice(serial);
+    console.log(data);
     displayedDevice.value.usb_info = data;
+    displayedDevice.value.mount_point = data.mountPath;
   } catch (e) {
     console.error('Failed to disable device:', e);
   }
@@ -73,7 +82,9 @@ const enableDevice = async (serial: string) => {
     console.log('enabled device with serial:', serial);
     // Refresh device
     const data = await DevicesService.findUsbStorageDevice(serial);
+    console.log(data);
     displayedDevice.value.usb_info = data;
+    displayedDevice.value.mount_point = data.mountPath;
   } catch (e) {
     console.error('Failed to disable device:', e);
   }
@@ -99,6 +110,7 @@ const goToCirrus = () => {
 
 .device-card-body {
   margin-top: 0.5rem;
+  cursor: pointer;
 }
 
 .device-card-footer {
@@ -109,6 +121,7 @@ const goToCirrus = () => {
   display: flex;
   align-items: center;
   gap: 1.5rem;
+  cursor: pointer;
 }
 
 .device-card-mount {

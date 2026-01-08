@@ -32,7 +32,7 @@ export default class DevicesService {
   }
 
   static async findUsbStorageDevice(serial: string): Promise<UsbDevice> {
-    await HttpService.getAsJson<UsbDevice>(
+    return await HttpService.getAsJson<UsbDevice>(
       `/api/v1/storage/devices/usb/${serial}`,
     );
   }

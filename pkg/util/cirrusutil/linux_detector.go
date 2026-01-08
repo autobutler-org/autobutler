@@ -172,10 +172,10 @@ func (l *LinuxDetector) enrichDeviceInfo(device *Device) {
 	info := string(output)
 	fields := strings.Fields(info)
 
-	if len(fields) > 0 {
-		device.IsRemovable = fields[0] == "1"
-		device.IsInternal = !device.IsRemovable
+	device.IsRemovable = false
+	device.IsInternal = true
 
+	if len(fields) > 0 {
 		if len(fields) > 1 {
 			device.Model = fields[1]
 		}
