@@ -104,8 +104,10 @@ const goToCirrus = () => {
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
+  min-width: 260px;
   max-width: 600px;
-  margin: 0 auto;
+  flex: 1 1 320px;
+  margin: 0;
 }
 
 .device-card-body {
