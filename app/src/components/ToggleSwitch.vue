@@ -3,7 +3,9 @@
     <input
       type="checkbox"
       :checked="modelValue"
-      @change="$emit('update:modelValue', $event.target.checked)"
+      @change="
+        $emit('update:modelValue', ($event.target as HTMLInputElement).checked)
+      "
     />
     <span class="slider"></span>
   </label>
