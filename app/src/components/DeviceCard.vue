@@ -13,28 +13,10 @@
     </div>
     <div class="device-card-usb" v-if="displayedDevice.usb_info">
       <div class="device-card-usb-mount">
-        <!-- Toggle button to mount and unmount the device -->
-        <!-- if mount path is "", have "enable" button -->
-        <!-- if mount path is non-empty, have "disable" button -->
-        <div
-          class="device-card-mount"
-          v-if="displayedDevice.usb_info.mountPath"
-        >
-          <button
-            @click="disableDevice(displayedDevice.usb_info.serial)"
-            class="device-disable-btn"
-          >
-            Disable
-          </button>
-        </div>
-        <div class="device-card-mount" v-else>
-          <button
-            @click="enableDevice(displayedDevice.usb_info.serial)"
-            class="device-enable-btn"
-          >
-            Enable
-          </button>
-        </div>
+        <ToggleSwitch
+          :model-value="!!displayedDevice.usb_info.mountPath"
+          @update:modelValue="onToggleUsbMount"
+        />
       </div>
     </div>
     <div
@@ -53,6 +35,16 @@ import DevicesService from '@/services/devicesService';
 import type { Device } from '@/types/device';
 import { ref } from 'vue';
 import StoragePartition from './StoragePartition.vue';
+import ToggleSwitch from './ToggleSwitch.vue';
+const onToggleUsbMount = async (checked: boolean) => {
+  const serial = displayedDevice.value.usb_info?.serial;
+  if (!serial) return;
+  if (checked) {
+    await enableDevice(serial);
+  } else {
+    await disableDevice(serial);
+  }
+};
 
 const props = defineProps<{
   device: Device;
