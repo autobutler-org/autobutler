@@ -11,15 +11,8 @@
         </p>
       </div>
     </div>
-    <div
-      class="device-card-body"
-      @click="goToCirrus"
-      v-if="displayedDevice.is_internal || displayedDevice.usb_info?.mountPath"
-    >
-      <StoragePartition :device="device" />
-    </div>
-    <div class="device-card-footer">
-      <div v-if="displayedDevice.usb_info" class="device-card-usb-info">
+    <div class="device-card-usb" v-if="displayedDevice.usb_info">
+      <div class="device-card-usb-mount">
         <!-- Toggle button to mount and unmount the device -->
         <!-- if mount path is "", have "enable" button -->
         <!-- if mount path is non-empty, have "disable" button -->
@@ -43,6 +36,13 @@
           </button>
         </div>
       </div>
+    </div>
+    <div
+      class="device-card-body"
+      @click="goToCirrus"
+      v-if="displayedDevice.is_internal || displayedDevice.usb_info?.mountPath"
+    >
+      <StoragePartition :device="device" />
     </div>
   </div>
 </template>
@@ -115,7 +115,7 @@ const goToCirrus = () => {
   cursor: pointer;
 }
 
-.device-card-footer {
+.device-card-usb {
   margin-top: 0.8rem;
 }
 
