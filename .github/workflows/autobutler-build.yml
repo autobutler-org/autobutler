@@ -36,6 +36,18 @@ jobs:
         with:
           path: build/autobutler
           if-no-files-found: error
+      - name: Check backend cross-compile [darwin/arm64]
+        env:
+          GOOS: darwin
+          GOARCH: arm64
+        run: |
+          make build/backend
+      - name: Check backend cross-compile [linux/arm64]
+        env:
+          GOOS: linux
+          GOARCH: arm64
+        run: |
+          make build/backend
   autobutler-build-test:
     uses: ./.github/workflows/autobutler-test.yml
     needs:
