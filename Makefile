@@ -20,8 +20,8 @@ ifeq ($(AS_ROOT), 1)
 	GO := sudo $(GO)
 	AIR := sudo $(AIR)
 endif
-export GOOS=$(shell $(GO) env GOOS)
-export GOARCH=$(shell $(GO) env GOARCH)
+export GOOS ?= $(shell $(GO) env GOOS)
+export GOARCH ?= $(shell $(GO) env GOARCH)
 
 MAIN := ./cmd/autobutler/main.go
 EXE := ./build/autobutler
