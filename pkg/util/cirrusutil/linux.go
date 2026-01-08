@@ -92,7 +92,7 @@ func (l *LinuxDetector) DetectDevices() ([]Device, error) {
 			percentUsed := float64(usedBytes) / float64(sizeBytes) * 100
 
 			dev := Device{
-				Name:        filepath.Base(mountPath),
+				Name:        fmt.Sprintf("%s - %s", usb.GetManufacturer(), usb.GetProduct()),
 				Type:        "External USB",
 				FileSystem:  "",        // TODO: Not available yet
 				DevicePath:  mountPath, // Not always the block device, but best available
