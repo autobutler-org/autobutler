@@ -10,27 +10,28 @@ import (
 
 // FileNodeJSON is a JSON-serializable representation of a file node
 type FileNodeJSON struct {
-	Name       string `json:"name"`
-	Size       int64  `json:"size"`
-	IsDir      bool   `json:"isDir"`
-	DeviceName string `json:"deviceName"`
-	DevicePath string `json:"devicePath"`
-	FullPath   string `json:"fullPath"`
+	Name         string `json:"name"`
+	Size         int64  `json:"size"`
+	IsDir        bool   `json:"isDir"`
+	DeviceName   string `json:"deviceName"`
+	DevicePath   string `json:"devicePath"`
+	FullPath     string `json:"fullPath"`
+	DeviceSerial string `json:"deviceSerial"`
 }
 
 // getCirrusFilesAcrossDevices merges files across all managed devices for the given filePath
-// If deviceName is empty, list files across all devices. Otherwise, only for the specified device.
-func getCirrusFilesForDevice(filePath string, deviceName string) ([]*cirrusutil.DeviceFileInfo, error) {
+// If deviceSerial is empty, list files across all devices. Otherwise, only for the specified device.
+func getCirrusFilesForDevice(filePath string, deviceSerial string) ([]*cirrusutil.DeviceFileInfo, error) {
 	devices, err := cirrusutil.GetManagedDevices()
 	if err != nil {
 		return nil, err
 	}
 	var selectedDevices []cirrusutil.ManagedDevice
-	if deviceName == "" {
+	if deviceSerial == "" {
 		selectedDevices = devices
 	} else {
 		for _, d := range devices {
-			if d.Name == deviceName {
+			if d.UsbInfo != nil && d.UsbInfo.GetSerial() == deviceSerial {
 				selectedDevices = append(selectedDevices, d)
 				break
 			}
@@ -43,31 +44,36 @@ func getCirrusFilesForDevice(filePath string, deviceName string) ([]*cirrusutil.
 	for _, device := range selectedDevices {
 		cirrusDir := device.CirrusDir
 		fullPathDir := filepath.Join(cirrusDir, filePath)
-		files, err := cirrusutil.StatFilesInDir(fullPathDir, device.Name, device.DataDir)
+		deviceSerial := deviceSerial
+		if device.UsbInfo != nil {
+			deviceSerial = device.UsbInfo.GetSerial()
+		}
+		files, err := cirrusutil.StatFilesInDir(fullPathDir, device.Name, device.DataDir, deviceSerial)
 		if err != nil {
 			continue
 		}
 		allFiles = append(allFiles, files...)
 	}
-	// Remove any duplicate folders (can happen if multiple devices have same dir structure)
-	// TODO: This should be improved to actually list off ALL devices on the file node then, so the
-	// client can show which devices have that folder, and file operations on the file can happen on all devices
-	seenPaths := make(map[string]bool)
-	uniqueFiles := make([]*cirrusutil.DeviceFileInfo, 0, len(allFiles))
+	// Only deduplicate folders (isDir), show all files across all devices
+	seenFolders := make(map[string]bool)
+	filteredFiles := make([]*cirrusutil.DeviceFileInfo, 0, len(allFiles))
 	for _, file := range allFiles {
 		name := file.FileInfo.Name()
-		if !seenPaths[name] {
-			seenPaths[name] = true
-			uniqueFiles = append(uniqueFiles, file)
+		if file.IsDir() {
+			if seenFolders[name] {
+				continue
+			}
+			seenFolders[name] = true
 		}
+		filteredFiles = append(filteredFiles, file)
 	}
-	allFiles = uniqueFiles
+	allFiles = filteredFiles
 	return allFiles, nil
 }
 
 func cirrusRouteCommon(c *gin.Context, filePath string) *serverutil.Response {
-	deviceName := c.Query("device")
-	data, err := getCirrusFilesForDevice(filePath, deviceName)
+	serial := c.Query("serial")
+	data, err := getCirrusFilesForDevice(filePath, serial)
 	if err != nil {
 		return serverutil.NewResponse().WithStatusCode(500).WithError(err)
 	}
@@ -76,12 +82,13 @@ func cirrusRouteCommon(c *gin.Context, filePath string) *serverutil.Response {
 	jsonData := make([]FileNodeJSON, len(data))
 	for i, file := range data {
 		jsonData[i] = FileNodeJSON{
-			Name:       file.Name(),
-			Size:       file.Size(),
-			IsDir:      file.IsDir(),
-			DeviceName: file.DeviceName,
-			DevicePath: file.DevicePath,
-			FullPath:   file.FullPath,
+			Name:         file.Name(),
+			Size:         file.Size(),
+			IsDir:        file.IsDir(),
+			DeviceName:   file.DeviceName,
+			DevicePath:   file.DevicePath,
+			FullPath:     file.FullPath,
+			DeviceSerial: file.DeviceSerial,
 		}
 	}
 

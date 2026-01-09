@@ -485,7 +485,7 @@ func TestStatFilesInDir(t *testing.T) {
 	os.WriteFile(filepath.Join(tmpDir, "file2.txt"), []byte("content2"), 0644)
 	os.Mkdir(filepath.Join(tmpDir, "subdir"), 0755)
 
-	files, err := StatFilesInDir(tmpDir, "TestDevice", "/test")
+	files, err := StatFilesInDir(tmpDir, "TestDevice", "/test", "")
 	if err != nil {
 		t.Fatalf("StatFilesInDir failed: %v", err)
 	}
@@ -1054,7 +1054,7 @@ func TestNewDeviceFileInfo(t *testing.T) {
 	devicePath := "/test/path"
 	fullPath := testFile
 
-	deviceFileInfo := NewDeviceFileInfo(fileInfo, deviceName, devicePath, fullPath)
+	deviceFileInfo := NewDeviceFileInfo(fileInfo, deviceName, devicePath, fullPath, "")
 
 	// Verify all fields are set correctly
 	if deviceFileInfo.DeviceName != deviceName {
@@ -1085,7 +1085,7 @@ func TestDeviceFileInfo_WrapperMethods(t *testing.T) {
 		t.Fatalf("Failed to stat test file: %v", err)
 	}
 
-	deviceFileInfo := NewDeviceFileInfo(fileInfo, "Device", "/device", testFile)
+	deviceFileInfo := NewDeviceFileInfo(fileInfo, "Device", "/device", testFile, "")
 
 	// Test Name() wrapper
 	if deviceFileInfo.Name() != fileInfo.Name() {

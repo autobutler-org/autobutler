@@ -1,6 +1,7 @@
 import { ref, unref, type Ref } from 'vue';
 
 import CirrusService from '@/services/cirrusService';
+import { useCirrusDeviceStore } from '@/stores/cirrusDeviceStore';
 import type { CirrusFileNode } from '@/types/cirrus';
 
 type MaybeRef<T> = T | Ref<T>;
@@ -36,7 +37,16 @@ export const useCirrusFileDropZone = ({
         ? `/api/v1/cirrus/${targetUploadPath}`
         : '/api/v1/cirrus';
 
-      await CirrusService.uploadFiles(uploadUrl, files);
+      // Get selected device serial and name from Pinia store
+      const cirrusDeviceStore = useCirrusDeviceStore();
+      const serial = cirrusDeviceStore.selectedDeviceSerial || '';
+      const selectedDevice =
+        cirrusDeviceStore.devices.find(
+          (d) => (d.usb_info?.serial || '') === serial,
+        ) || cirrusDeviceStore.devices.find((d) => !d.usb_info?.serial);
+      const deviceName = selectedDevice ? selectedDevice.name : '';
+
+      await CirrusService.uploadFiles(uploadUrl, files, serial);
 
       const currentPathValue = targetUploadPath;
 
@@ -44,11 +54,12 @@ export const useCirrusFileDropZone = ({
         name: file.name,
         size: file.size,
         isDir: false,
-        deviceName: '',
+        deviceName,
         devicePath: '',
         fullPath: currentPathValue
           ? `${currentPathValue}/${file.name}`
           : file.name,
+        deviceSerial: serial,
       }));
 
       uploadProgress.value = 'Upload complete!';

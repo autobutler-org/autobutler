@@ -9,14 +9,14 @@ export default class CirrusService {
   static moveFile = async (
     oldPath: string,
     newPath: string,
-    oldDeviceName?: string,
-    newDeviceName?: string,
+    oldDeviceSerial?: string,
+    newDeviceSerial?: string,
   ): Promise<void> => {
     await HttpService.put('/api/v1/cirrus', {
       oldFilePath: oldPath,
       newFilePath: newPath,
-      oldDevice: oldDeviceName,
-      newDevice: newDeviceName,
+      oldDeviceSerial: oldDeviceSerial,
+      newDeviceSerial: newDeviceSerial,
     });
   };
 
@@ -128,13 +128,13 @@ export default class CirrusService {
   static async deleteFile(
     rootDir: string,
     fileName: string,
-    deviceName?: string,
+    deviceSerial?: string,
   ): Promise<void> {
     const params = new URLSearchParams();
     params.append('rootDir', rootDir);
     params.append('filePaths', fileName);
-    if (deviceName) {
-      params.append('device', deviceName);
+    if (deviceSerial) {
+      params.append('serial', deviceSerial);
     }
     const url = `/api/v1/cirrus?${params.toString()}`;
     const response = await HttpService.delete(url);
@@ -147,12 +147,15 @@ export default class CirrusService {
   static async uploadFiles(
     uploadPath: string,
     files: FileList | File[],
+    serial?: string,
   ): Promise<Response> {
     const formData = new FormData();
     for (const file of Array.from(files)) {
       formData.append('files', file);
     }
-    const url = uploadPath.startsWith('/') ? uploadPath : '/' + uploadPath;
+    const url =
+      (uploadPath.startsWith('/') ? uploadPath : '/' + uploadPath) +
+      (serial ? `?serial=${encodeURIComponent(serial)}` : '');
     const response = await HttpService.postForm(url, formData);
     if (!response.ok) throw new Error('Upload failed');
     return response;

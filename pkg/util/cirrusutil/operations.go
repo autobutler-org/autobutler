@@ -11,9 +11,9 @@ import (
 
 // DeleteFilesParams contains parameters for deleting files
 type DeleteFilesParams struct {
-	RootDir    string
-	FilePaths  []string
-	DeviceName string
+	RootDir      string
+	FilePaths    []string
+	DeviceSerial string
 }
 
 // DeleteFilesResult contains the result of a delete operation
@@ -26,7 +26,7 @@ type DeleteFilesChannel chan DeleteFilesParams
 
 // DeleteFiles removes files from the filesystem, handling both single and multi-device scenarios
 func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
-	device, err := FindManagedDeviceByName(params.DeviceName)
+	device, err := FindManagedDeviceBySerial(params.DeviceSerial)
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
@@ -49,10 +49,10 @@ func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
 
 // MoveFileParams contains parameters for moving a file
 type MoveFileParams struct {
-	OldFilePath   string
-	NewFilePath   string
-	OldDeviceName string
-	NewDeviceName string
+	OldFilePath     string
+	NewFilePath     string
+	OldDeviceSerial string
+	NewDeviceSerial string
 }
 
 // MoveFileResult contains the result of a move operation
@@ -65,11 +65,11 @@ type MoveFileChannel chan MoveFileParams
 
 // MoveFile moves a file from one location to another
 func MoveFile(params MoveFileParams) (*MoveFileResult, error) {
-	oldDevice, err := FindManagedDeviceByName(params.OldDeviceName)
+	oldDevice, err := FindManagedDeviceBySerial(params.OldDeviceSerial)
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
-	newDevice, err := FindManagedDeviceByName(params.NewDeviceName)
+	newDevice, err := FindManagedDeviceBySerial(params.NewDeviceSerial)
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
@@ -135,10 +135,10 @@ func MoveFile(params MoveFileParams) (*MoveFileResult, error) {
 
 // UploadFilesParams contains parameters for uploading files
 type UploadFilesParams struct {
-	RootDir     string
-	FileHeaders []*multipart.FileHeader
-	ReturnDir   string
-	DeviceName  string
+	RootDir      string
+	FileHeaders  []*multipart.FileHeader
+	ReturnDir    string
+	DeviceSerial string
 }
 
 // UploadFilesResult contains the result of an upload operation
@@ -151,14 +151,14 @@ type UploadFilesChannel chan UploadFilesParams
 
 // UploadFiles saves uploaded files to the filesystem
 func UploadFiles(params UploadFilesParams) (*UploadFilesResult, error) {
-	device, err := FindManagedDeviceByName(params.DeviceName)
+	device, err := FindManagedDeviceBySerial(params.DeviceSerial)
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
 
-	fileDir := GetCirrusDir()
+	cirrusDir := device.CirrusDir
 	if device != nil {
-		fileDir = device.CirrusDir
+		cirrusDir = device.CirrusDir
 	}
 	for _, header := range params.FileHeaders {
 		file, err := header.Open()
@@ -167,7 +167,7 @@ func UploadFiles(params UploadFilesParams) (*UploadFilesResult, error) {
 		}
 		defer file.Close()
 
-		newFilePath := filepath.Join(fileDir, params.RootDir, header.Filename)
+		newFilePath := filepath.Join(cirrusDir, params.RootDir, header.Filename)
 
 		// Handle file name conflicts
 		if _, err := os.Stat(newFilePath); err == nil {
@@ -176,7 +176,7 @@ func UploadFiles(params UploadFilesParams) (*UploadFilesResult, error) {
 			i := 1
 			for {
 				newFileName := fmt.Sprintf("%s_(%d)%s", name, i, ext)
-				newFilePath = filepath.Join(fileDir, params.RootDir, newFileName)
+				newFilePath = filepath.Join(cirrusDir, params.RootDir, newFileName)
 				if _, err := os.Stat(newFilePath); os.IsNotExist(err) {
 					break
 				}
@@ -207,9 +207,9 @@ func UploadFiles(params UploadFilesParams) (*UploadFilesResult, error) {
 
 // CreateFolderParams contains parameters for creating a folder
 type CreateFolderParams struct {
-	FolderDir  string
-	FolderName string
-	DeviceName string
+	FolderDir    string
+	FolderName   string
+	DeviceSerial string
 }
 
 // CreateFolderResult contains the result of a folder creation operation
@@ -222,7 +222,7 @@ type CreateFolderChannel chan CreateFolderParams
 
 // CreateFolder creates a new folder in the filesystem
 func CreateFolder(params CreateFolderParams) (*CreateFolderResult, error) {
-	device, err := FindManagedDeviceByName(params.DeviceName)
+	device, err := FindManagedDeviceBySerial(params.DeviceSerial)
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
@@ -243,8 +243,8 @@ func CreateFolder(params CreateFolderParams) (*CreateFolderResult, error) {
 
 // DownloadFileParams contains parameters for downloading a file
 type DownloadFileParams struct {
-	FilePath   string
-	DeviceName string
+	FilePath     string
+	DeviceSerial string
 }
 
 // DownloadFileResult contains the result of a download operation
@@ -258,7 +258,7 @@ type DownloadFileResult struct {
 
 // DownloadFile prepares a file for download, handling both files and folders (as zip)
 func DownloadFile(params DownloadFileParams) (*DownloadFileResult, error) {
-	device, err := FindManagedDeviceByName(params.DeviceName)
+	device, err := FindManagedDeviceBySerial(params.DeviceSerial)
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
