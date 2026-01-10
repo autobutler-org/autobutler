@@ -1,7 +1,6 @@
-package cirrusutil
+package storageutil
 
 import (
-	"autobutler/pkg/util/usbutil"
 	"bufio"
 	"fmt"
 	"os/exec"
@@ -21,7 +20,7 @@ func NewDetector() Detector {
 // DetectDevices finds all storage devices on Linux using read-only commands.
 //
 // If a device is a USB storage device, it is enriched with USB-specific metadata
-// by cross-referencing with usbutil.ListUsbDevices. The UsbInfo field will be set
+// by cross-referencing with ListUsbDevices. The UsbInfo field will be set
 // if a match is found by block device path or mount point.
 func (d *detector) DetectDevices() ([]Device, error) {
 	devices := []Device{}
@@ -73,7 +72,7 @@ func (d *detector) DetectDevices() ([]Device, error) {
 	}
 
 	// Now add USB storage devices
-	usbDevices, err := usbutil.ListUsbDevices(true)
+	usbDevices, err := ListUsbDevices(true)
 	if err == nil {
 		for _, usb := range usbDevices {
 			const storageType = "External USB"

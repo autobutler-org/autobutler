@@ -1,6 +1,4 @@
-package cirrusutil
-
-import "autobutler/pkg/util/usbutil"
+package storageutil
 
 type Device struct {
 	Name        string            `json:"name"`
@@ -17,7 +15,7 @@ type Device struct {
 	IsReadOnly  bool              `json:"is_read_only"`       // True if read-only
 	Model       string            `json:"model"`              // Device model name
 	Categories  map[string]uint64 `json:"categories"`         // Simple heuristic breakdown in bytes
-	UsbInfo     usbutil.UsbDevice `json:"usb_info,omitempty"` // USB-specific info, if available
+	UsbInfo     UsbDevice         `json:"usb_info,omitempty"` // USB-specific info, if available
 }
 
 // ApplySimpleCategorization applies a simple heuristic categorization for UI display

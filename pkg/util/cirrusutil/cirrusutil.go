@@ -461,3 +461,15 @@ func FindFileAcrossDevices(dirsWithDevice []DirWithDevice, relPath string) (stri
 	}
 	return "", fmt.Errorf("file not found: %s", relPath)
 }
+
+// InitializeDeviceDataDir creates the autobutler data directory structure on a device
+func InitializeDeviceDataDir(mountPoint string) error {
+	dataDir := GetDataDirForDevice(mountPoint)
+	cirrusDir := ConstructCirrusDir(dataDir)
+
+	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
+		return err // coverage: ignore - requires filesystem permission errors
+	}
+
+	return nil
+}

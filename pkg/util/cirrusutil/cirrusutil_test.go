@@ -1,6 +1,7 @@
 package cirrusutil
 
 import (
+	"autobutler/pkg/util/storageutil"
 	"bytes"
 	"fmt"
 	"mime/multipart"
@@ -178,7 +179,7 @@ func TestCustomFileInfo(t *testing.T) {
 }
 
 func TestDeviceApplySimpleCategorization_SystemVolume(t *testing.T) {
-	device := &Device{
+	device := &storageutil.Device{
 		MountPoint: "/",
 		UsedBytes:  1000000,
 	}
@@ -195,7 +196,7 @@ func TestDeviceApplySimpleCategorization_SystemVolume(t *testing.T) {
 }
 
 func TestDeviceApplySimpleCategorization_ExternalVolume(t *testing.T) {
-	device := &Device{
+	device := &storageutil.Device{
 		MountPoint: "/Volumes/External",
 		UsedBytes:  5000000,
 	}
@@ -367,7 +368,7 @@ func TestStatFilesInMultipleDirs_WithNonexistentDir(t *testing.T) {
 }
 
 func TestNewDetector(t *testing.T) {
-	detector := NewDetector()
+	detector := storageutil.NewDetector()
 	if detector == nil {
 		t.Error("Expected non-nil detector")
 	}
@@ -539,7 +540,7 @@ func TestGetFolderSize_WithSubdirectories(t *testing.T) {
 }
 
 func TestCalculateSummary(t *testing.T) {
-	devices := []Device{
+	devices := []storageutil.Device{
 		{
 			TotalBytes: 1000000000000, // 1TB
 			UsedBytes:  500000000000,  // 500GB
@@ -577,7 +578,7 @@ func TestCalculateSummary(t *testing.T) {
 }
 
 func TestCalculateSummary_EmptyDevices(t *testing.T) {
-	summary := CalculateSummary([]Device{})
+	summary := CalculateSummary([]storageutil.Device{})
 
 	if summary.TotalDevices != 0 {
 		t.Errorf("Expected 0 devices, got %d", summary.TotalDevices)

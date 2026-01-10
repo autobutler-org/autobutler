@@ -2,7 +2,7 @@ package v1_storage
 
 import (
 	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/usbutil"
+	"autobutler/pkg/util/storageutil"
 	"errors"
 	"fmt"
 	"net/http"
@@ -21,7 +21,7 @@ var disableUsbStorageDeviceRoute = serverutil.ApiRoute(
 				WithError(errors.New("`serial` path parameter is required"))
 		}
 
-		targetDevice, err := usbutil.FindUsbDeviceBySerial(serial)
+		targetDevice, err := storageutil.FindUsbDeviceBySerial(serial)
 		if err != nil {
 			return serverutil.NewResponse().
 				WithContentType(serverutil.ContentTypeJSON).
@@ -44,7 +44,7 @@ var disableUsbStorageDeviceRoute = serverutil.ApiRoute(
 				WithError(errors.New("USB storage device is not mounted"))
 		}
 
-		unmountCommand := usbutil.UnmountCommand(mountPath)
+		unmountCommand := storageutil.UnmountCommand(mountPath)
 		if err != nil {
 			return serverutil.NewResponse().
 				WithContentType(serverutil.ContentTypeJSON).

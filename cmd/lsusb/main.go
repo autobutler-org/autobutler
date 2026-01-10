@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"os"
 
-	"autobutler/pkg/util/usbutil"
+	"autobutler/pkg/util/storageutil"
 )
 
 func main() {
 	onlyStorage := flag.Bool("storage", false, "List only storage devices")
 	flag.Parse()
 
-	devices, err := usbutil.ListUsbDevices(*onlyStorage)
+	devices, err := storageutil.ListUsbDevices(*onlyStorage)
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
