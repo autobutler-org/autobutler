@@ -1,4 +1,4 @@
-package usbutil
+package storageutil
 
 import (
 	"fmt"

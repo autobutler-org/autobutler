@@ -7,11 +7,11 @@
           {{ displayedDevice.name }}
         </h3>
         <p class="device-card-type">
-          {{ displayedDevice.is_internal ? 'Internal' : 'External' }}
-          <span v-if="!displayedDevice.is_internal"
+          {{ displayedDevice.isInternal ? 'Internal' : 'External' }}
+          <span v-if="!displayedDevice.isInternal"
             >• Mounted?
             <ToggleSwitch
-              :model-value="!!displayedDevice.usb_info?.mountPath"
+              :model-value="!!displayedDevice.usbInfo?.mountPath"
               @update:model-value="onToggleUsbMount"
             />
           </span>
@@ -21,7 +21,7 @@
     <div
       class="device-card-body"
       @click="goToCirrus"
-      v-if="displayedDevice.is_internal || displayedDevice.usb_info?.mountPath"
+      v-if="displayedDevice.isInternal || displayedDevice.usbInfo?.mountPath"
     >
       <StoragePartition :device="displayedDevice" />
     </div>
@@ -36,7 +36,7 @@ import { ref } from 'vue';
 import StoragePartition from './StoragePartition.vue';
 import ToggleSwitch from './ToggleSwitch.vue';
 const onToggleUsbMount = async (checked: boolean) => {
-  const serial = displayedDevice.value.usb_info?.serial;
+  const serial = displayedDevice.value.usbInfo?.serial;
   if (!serial) return;
   if (checked) {
     await enableDevice(serial);

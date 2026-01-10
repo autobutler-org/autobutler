@@ -1,9 +1,11 @@
 package cirrusutil
 
+import "autobutler/pkg/util/storageutil"
+
 // DeviceStatus represents the status of a storage device, including whether it's
 // enabled for Autobutler file management
 type DeviceStatus struct {
-	Device
+	storageutil.Device
 	IsEnabled bool   `json:"is_enabled"`
 	DataDir   string `json:"data_dir,omitempty"`
 	CirrusDir string `json:"cirrus_dir,omitempty"`
@@ -12,7 +14,7 @@ type DeviceStatus struct {
 // GetDeviceStatuses returns all detected devices with their enable status
 func GetDeviceStatuses() ([]*DeviceStatus, error) {
 	// Detect all storage devices
-	detector := NewDetector()
+	detector := storageutil.NewDetector()
 	devices, err := detector.DetectDevices()
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection to fail

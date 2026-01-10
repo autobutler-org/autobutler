@@ -29,7 +29,7 @@
           <div v-else class="devices-grid">
             <DeviceCard
               v-for="device in devices"
-              :key="device.device_path"
+              :key="device.devicePath"
               :device="device"
             />
           </div>
@@ -76,9 +76,9 @@ const calculateSummary = (devices: Device[]): Summary => {
     used_bytes = 0,
     avail_bytes = 0;
   for (const d of devices) {
-    total_bytes += d.total_bytes;
-    used_bytes += d.used_bytes;
-    avail_bytes += d.avail_bytes;
+    total_bytes += d.totalBytes;
+    used_bytes += d.usedBytes;
+    avail_bytes += d.availableBytes;
   }
   return {
     total_devices: devices.length,

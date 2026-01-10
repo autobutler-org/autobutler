@@ -10,17 +10,17 @@ export const useCirrusDeviceStore = defineStore('cirrusDevice', {
     setDevices(devices: Device[]) {
       // Only include devices that are internal or have a mount_point (i.e., mounted)
       const filtered = devices.filter(
-        (d) => !d.usb_info?.serial || !!d.mount_point,
+        (d) => !d.usbInfo?.serial || !!d.mountPoint,
       );
       this.devices = filtered;
       // If the current selected device is not present, fallback to first internal
       if (
-        !filtered.some((d) => d.usb_info?.serial === this.selectedDeviceSerial)
+        !filtered.some((d) => d.usbInfo?.serial === this.selectedDeviceSerial)
       ) {
-        const internal = filtered.find((d) => !d.usb_info?.serial);
+        const internal = filtered.find((d) => !d.usbInfo?.serial);
         this.selectedDeviceSerial = internal
           ? ''
-          : filtered[0]?.usb_info?.serial || '';
+          : filtered[0]?.usbInfo?.serial || '';
       }
     },
     setSelectedDeviceSerial(serial: string) {
@@ -29,9 +29,9 @@ export const useCirrusDeviceStore = defineStore('cirrusDevice', {
     getSelectedDevice() {
       return (
         this.devices.find(
-          (d) => (d.usb_info?.serial || '') === this.selectedDeviceSerial,
+          (d) => (d.usbInfo?.serial || '') === this.selectedDeviceSerial,
         ) ||
-        this.devices.find((d) => !d.usb_info?.serial) ||
+        this.devices.find((d) => !d.usbInfo?.serial) ||
         this.devices[0] ||
         null
       );
