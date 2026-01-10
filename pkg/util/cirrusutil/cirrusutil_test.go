@@ -542,14 +542,14 @@ func TestGetFolderSize_WithSubdirectories(t *testing.T) {
 func TestCalculateSummary(t *testing.T) {
 	devices := []storageutil.Device{
 		{
-			TotalBytes: 1000000000000, // 1TB
-			UsedBytes:  500000000000,  // 500GB
-			AvailBytes: 500000000000,  // 500GB
+			TotalBytes:     1000000000000, // 1TB
+			UsedBytes:      500000000000,  // 500GB
+			AvailableBytes: 500000000000,  // 500GB
 		},
 		{
-			TotalBytes: 2000000000000, // 2TB
-			UsedBytes:  1000000000000, // 1TB
-			AvailBytes: 1000000000000, // 1TB
+			TotalBytes:     2000000000000, // 2TB
+			UsedBytes:      1000000000000, // 1TB
+			AvailableBytes: 1000000000000, // 1TB
 		},
 	}
 

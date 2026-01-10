@@ -21,7 +21,7 @@ func CalculateSummary(devices []storageutil.Device) Summary {
 		summary.TotalDevices++
 		summary.TotalBytes += device.TotalBytes
 		summary.UsedBytes += device.UsedBytes
-		summary.AvailBytes += device.AvailBytes
+		summary.AvailBytes += device.AvailableBytes
 	}
 
 	summary.TotalTB = BytesToTB(summary.TotalBytes)

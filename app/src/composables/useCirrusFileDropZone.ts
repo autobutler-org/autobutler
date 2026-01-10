@@ -42,8 +42,8 @@ export const useCirrusFileDropZone = ({
       const serial = cirrusDeviceStore.selectedDeviceSerial || '';
       const selectedDevice =
         cirrusDeviceStore.devices.find(
-          (d) => (d.usb_info?.serial || '') === serial,
-        ) || cirrusDeviceStore.devices.find((d) => !d.usb_info?.serial);
+          (d) => (d.usbInfo?.serial || '') === serial,
+        ) || cirrusDeviceStore.devices.find((d) => !d.usbInfo?.serial);
       const deviceName = selectedDevice ? selectedDevice.name : '';
 
       await CirrusService.uploadFiles(uploadUrl, files, serial);

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -25,6 +24,7 @@ func NewDetector() Detector {
 func (d *detector) DetectDevices() ([]Device, error) {
 	devices := []Device{}
 
+	// TODO: Stop using df, which can be unreliable. Consider parsing /proc/mounts
 	// Use df to get only the root volume ("/")
 	cmd := exec.Command("df", "-B1", "--output=source,fstype,size,used,avail,pcent,target")
 	output, err := cmd.Output()
@@ -51,21 +51,23 @@ func (d *detector) DetectDevices() ([]Device, error) {
 		fsType := fields[1]
 		totalBytes, _ := strconv.ParseUint(fields[2], 10, 64)
 		usedBytes, _ := strconv.ParseUint(fields[3], 10, 64)
-		availBytes, _ := strconv.ParseUint(fields[4], 10, 64)
-		percentStr := strings.TrimSuffix(fields[5], "%")
-		percentUsed, _ := strconv.Atoi(percentStr)
+		availableBytes, _ := strconv.ParseUint(fields[4], 10, 64)
 
 		device := &Device{
-			DevicePath:  devicePath,
-			MountPoint:  mountPoint,
-			FileSystem:  fsType,
-			TotalBytes:  totalBytes,
-			UsedBytes:   usedBytes,
-			AvailBytes:  availBytes,
-			PercentUsed: float64(percentUsed),
+			DevicePath:     devicePath,
+			MountPoint:     mountPoint,
+			FileSystem:     fsType,
+			TotalBytes:     totalBytes,
+			UsedBytes:      usedBytes,
+			AvailableBytes: availableBytes,
+			IsInternal:     true,
 		}
 
-		d.enrichDeviceInfo(device)
+		device.Name = filepath.Base(device.MountPoint)
+		if device.Name == "" || device.Name == "/" {
+			device.Name = "Root Volume"
+		}
+
 		device.ApplySimpleCategorization()
 		devices = append(devices, *device)
 		break // Only need the root volume
@@ -81,20 +83,15 @@ func (d *detector) DetectDevices() ([]Device, error) {
 			if mountPath == "" {
 				// Default values, used if not mounted
 				dev := Device{
-					Name:        name,
-					Type:        storageType,
-					FileSystem:  "",
-					DevicePath:  "",
-					MountPoint:  "",
-					TotalBytes:  0,
-					UsedBytes:   0,
-					AvailBytes:  0,
-					PercentUsed: 0,
-					IsInternal:  false,
-					IsRemovable: true,
-					IsReadOnly:  true,
-					Model:       usb.GetProduct(),
-					UsbInfo:     usb,
+					Name:           name,
+					DevicePath:     "",
+					MountPoint:     "",
+					TotalBytes:     0,
+					UsedBytes:      0,
+					AvailableBytes: 0,
+					IsInternal:     false,
+					Model:          usb.GetProduct(),
+					UsbInfo:        usb,
 				}
 				devices = append(devices, dev)
 				continue
@@ -108,123 +105,30 @@ func (d *detector) DetectDevices() ([]Device, error) {
 			if err != nil {
 				continue
 			}
+			devicePath, exists := usb.BlockDevicePath()
+			if !exists {
+				continue
+			}
 			blockSize := uint64(stat.Bsize)
 			sizeBytes := stat.Blocks * blockSize
 			usedBytes := (stat.Blocks - stat.Bavail) * blockSize
 			availableBytes := stat.Bavail * blockSize
-			percentUsed := float64(usedBytes) / float64(sizeBytes) * 100
 
-			dev := Device{
-				Name:        name,
-				Type:        storageType,
-				FileSystem:  "",        // TODO: Not available yet
-				DevicePath:  mountPath, // Not always the block device, but best available
-				MountPoint:  mountPath,
-				TotalBytes:  sizeBytes,
-				UsedBytes:   usedBytes,
-				AvailBytes:  availableBytes,
-				PercentUsed: percentUsed,
-				IsInternal:  false,
-				IsRemovable: true,
-				IsReadOnly:  false, // Assume writable
-				Model:       usb.GetProduct(),
-				UsbInfo:     usb,
+			device := Device{
+				Name:           name,
+				DevicePath:     devicePath,
+				MountPoint:     mountPath,
+				TotalBytes:     sizeBytes,
+				UsedBytes:      usedBytes,
+				AvailableBytes: availableBytes,
+				IsInternal:     false,
+				Model:          usb.GetProduct(),
+				UsbInfo:        usb,
 			}
-			devices = append(devices, dev)
-			// Skip enrichDeviceInfo, just categorize
-			dev.ApplySimpleCategorization()
+			devices = append(devices, device)
+			device.ApplySimpleCategorization()
 		}
 	}
 
 	return devices, nil
-}
-
-// Helper functions
-
-func shouldSkipLinuxVolume(mountPoint string) bool {
-	// Skip system-internal volumes
-	skipPrefixes := []string{
-		"/boot",
-		"/sys",
-		"/proc",
-		"/dev",
-		"/run",
-	}
-
-	for _, prefix := range skipPrefixes {
-		if strings.HasPrefix(mountPoint, prefix) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (d *detector) enrichDeviceInfo(device *Device) {
-	// Set default name
-	device.Name = filepath.Base(device.MountPoint)
-	if device.Name == "" || device.Name == "/" {
-		device.Name = "Root Volume"
-	}
-
-	// Determine if internal or external using lsblk - READ ONLY
-	baseDev := extractBaseDevice(device.DevicePath)
-	cmd := exec.Command("lsblk", "-no", "HOTPLUG,MODEL,TRAN", baseDev)
-	output, _ := cmd.Output()
-
-	info := string(output)
-	fields := strings.Fields(info)
-
-	device.IsRemovable = false
-	device.IsInternal = true
-
-	if len(fields) > 0 {
-		if len(fields) > 1 {
-			device.Model = fields[1]
-		}
-
-		// Determine device type
-		device.Type = determineLinuxDeviceType(device, fields)
-	}
-}
-
-func extractBaseDevice(devicePath string) string {
-	// Extract base device from partition path
-	// e.g., /dev/sda1 -> /dev/sda
-	re := regexp.MustCompile(`(/dev/[a-z]+)`)
-	matches := re.FindStringSubmatch(devicePath)
-	if len(matches) > 1 {
-		return matches[1]
-	}
-	return devicePath
-}
-
-func determineLinuxDeviceType(device *Device, fields []string) string {
-	var typeStr string
-
-	if device.IsInternal {
-		typeStr = "Internal"
-	} else {
-		// Check transport type
-		if len(fields) > 2 {
-			tran := fields[2]
-			switch tran {
-			case "usb":
-				typeStr = "External USB"
-			case "sata":
-				typeStr = "External SATA"
-			default:
-				typeStr = "External"
-			}
-		} else {
-			typeStr = "External"
-		}
-	}
-
-	// Add filesystem
-	if device.FileSystem != "" {
-		typeStr += " • " + device.FileSystem
-	}
-
-	return typeStr
 }

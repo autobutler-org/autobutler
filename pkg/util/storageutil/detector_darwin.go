@@ -59,8 +59,6 @@ func (d *detector) DetectDevices() ([]Device, error) {
 		totalKB, _ := strconv.ParseUint(fields[1], 10, 64)
 		usedKB, _ := strconv.ParseUint(fields[2], 10, 64)
 		availKB, _ := strconv.ParseUint(fields[3], 10, 64)
-		percentStr := strings.TrimSuffix(fields[4], "%")
-		percentUsed, _ := strconv.Atoi(percentStr)
 
 		// Get detailed device info
 		device, err := d.getDeviceInfo(devicePath)
@@ -74,8 +72,7 @@ func (d *detector) DetectDevices() ([]Device, error) {
 		// Override with df values which are more accurate
 		device.TotalBytes = totalKB * 1024
 		device.UsedBytes = usedKB * 1024
-		device.AvailBytes = availKB * 1024
-		device.PercentUsed = float64(percentUsed)
+		device.AvailableBytes = availKB * 1024
 		device.MountPoint = mountPoint
 
 		// Mark this container as seen (for deduplication in summary)
@@ -130,21 +127,12 @@ func (d *detector) getDeviceInfo(devicePath string) (*Device, error) {
 		device.TotalBytes = parseSize(totalStr)
 	}
 	if availStr := extractValue(info, "Volume Free Space:"); availStr != "" {
-		device.AvailBytes = parseSize(availStr)
+		device.AvailableBytes = parseSize(availStr)
 	}
-	device.UsedBytes = device.TotalBytes - device.AvailBytes
-	if device.TotalBytes > 0 {
-		device.PercentUsed = (float64(device.UsedBytes) / float64(device.TotalBytes)) * 100
-	}
+	device.UsedBytes = device.TotalBytes - device.AvailableBytes
 
 	// Determine device type and properties
 	device.IsInternal = strings.Contains(strings.ToLower(info), "internal: yes")
-	device.IsRemovable = strings.Contains(strings.ToLower(info), "removable media: yes") ||
-		strings.Contains(strings.ToLower(info), "ejectable: yes")
-	device.IsReadOnly = strings.Contains(strings.ToLower(info), "read-only volume: yes")
-
-	// Set device type description
-	device.Type = determineDeviceType(device, info)
 
 	// Set default name if empty
 	if device.Name == "" {
@@ -200,32 +188,4 @@ func parseSize(sizeStr string) uint64 {
 		return size
 	}
 	return 0
-}
-
-func determineDeviceType(device *Device, info string) string {
-	var typeStr string
-
-	// Determine connection type
-	if device.IsInternal {
-		if strings.Contains(info, "SSD") {
-			typeStr = "Internal SSD"
-		} else {
-			typeStr = "Internal"
-		}
-	} else if device.IsRemovable {
-		if strings.Contains(info, "USB") {
-			typeStr = "External USB"
-		} else {
-			typeStr = "External"
-		}
-	} else {
-		typeStr = "External"
-	}
-
-	// Add filesystem
-	if device.FileSystem != "" {
-		typeStr += " • " + device.FileSystem
-	}
-
-	return typeStr
 }

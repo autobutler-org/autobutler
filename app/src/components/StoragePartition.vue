@@ -2,12 +2,11 @@
   <div class="storage-partition">
     <div class="storage-partition-info">
       <span class="storage-partition-label"
-        >Capacity:
-        {{ (device.total_bytes / 1_073_741_824).toFixed(1) }} GB</span
+        >Capacity: {{ (device.totalBytes / GB).toFixed(1) }} GB</span
       >
       <span class="storage-partition-used"
         >{{ percentUsed }}% used •
-        {{ (device.used_bytes / 1_073_741_824).toFixed(1) }} GB</span
+        {{ (device.usedBytes / GB).toFixed(1) }} GB</span
       >
     </div>
     <div class="storage-partition-bar">
@@ -21,7 +20,7 @@
           :title="cat.title"
         ></div>
         <div
-          v-if="device.avail_bytes > 0"
+          v-if="device.availableBytes > 0"
           class="storage-partition-segment storage-partition-free"
           :style="{ width: freeWidth }"
           :title="`Free: ${freeGB} GB`"
@@ -32,13 +31,13 @@
           v-if="percentUsed > 0"
           class="storage-partition-segment storage-partition-used"
           :style="{ width: percentUsed + '%' }"
-          :title="`Used: ${(device.used_bytes / 1_073_741_824).toFixed(1)} GB`"
+          :title="`Used: ${(device.usedBytes / 1_073_741_824).toFixed(1)} GB`"
         />
         <div
           v-if="100 - percentUsed > 0"
           class="storage-partition-segment storage-partition-free"
           :style="{ width: 100 - percentUsed + '%' }"
-          :title="`Free: ${(device.avail_bytes / 1_073_741_824).toFixed(1)} GB`"
+          :title="`Free: ${(device.availableBytes / 1_073_741_824).toFixed(1)} GB`"
         />
       </template>
     </div>
@@ -53,7 +52,10 @@
           >{{ cat.label }} {{ cat.gb }} GB</span
         >
       </div>
-      <div v-if="device.avail_bytes > 0" class="storage-partition-legend-item">
+      <div
+        v-if="device.availableBytes > 0"
+        class="storage-partition-legend-item"
+      >
         <span class="storage-partition-dot storage-partition-free" />
         <span class="storage-partition-legend-label">Free {{ freeGB }} GB</span>
       </div>
@@ -67,9 +69,15 @@ import { computed } from 'vue';
 
 const props = defineProps<{ device: Device }>();
 
+const GB = 1024 * 1024 * 1024;
+
 const percentUsed = computed(() => {
-  // Clamp to 2 decimal places, but show as number (not string)
-  return Number(props.device.percent_used.toFixed(2));
+  const percent =
+    props.device.totalBytes > 0
+      ? (props.device.usedBytes / props.device.totalBytes) * 100
+      : 0;
+  // Clamp to 2 decimal places, but show as number (not string) for comparisons
+  return Number(percent.toFixed(2));
 });
 
 // Static test values for visual testing

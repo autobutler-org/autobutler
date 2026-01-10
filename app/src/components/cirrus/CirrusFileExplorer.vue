@@ -17,7 +17,7 @@
               <option
                 v-for="device in devices"
                 :key="device.name"
-                :value="device.usb_info?.serial || ''"
+                :value="device.usbInfo?.serial || ''"
               >
                 {{ device.name }}
               </option>
