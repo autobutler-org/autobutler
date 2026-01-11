@@ -9,8 +9,8 @@ import HeroSection from '@/components/home/HeroSection.vue';
       <GradientOverlays />
       <div class="landing-container">
         <HeroSection />
+        <AppFooter />
       </div>
-      <AppFooter />
     </div>
   </div>
 </template>
@@ -19,24 +19,23 @@ import HeroSection from '@/components/home/HeroSection.vue';
 .landing-body {
   margin: 0;
   padding: 0;
-  height: 100vh;
+  min-height: 100vh;
   width: 100vw;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .landing-main {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
 }
 
 .site-fullscreen-col {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  min-height: 0;
+  min-height: 100vh;
 }
 
 .landing-container {
@@ -49,6 +48,7 @@ import HeroSection from '@/components/home/HeroSection.vue';
   margin: 0 auto;
   width: 100%;
   padding: 0 $spacing-2xl;
-  min-height: 0;
+  padding-top: 5rem;
+  padding-bottom: $spacing-2xl;
 }
 </style>
