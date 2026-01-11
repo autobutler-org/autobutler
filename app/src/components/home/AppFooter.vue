@@ -49,13 +49,9 @@ const storageData = ref<{
   totalBytes: number;
   usedBytes: number;
   availableBytes: number;
-} | null>({
-  totalBytes: 245107195904,
-  usedBytes: 182787731456,
-  availableBytes: 19950489600,
-});
+} | null>(null);
 
-const isLoading = ref(false);
+const isLoading = ref(true);
 
 const usagePercentage = computed(() => {
   if (!storageData.value || storageData.value.totalBytes === 0) return 0;
