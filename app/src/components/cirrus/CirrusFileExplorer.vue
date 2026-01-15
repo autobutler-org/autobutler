@@ -680,6 +680,11 @@ const submitMoveDialog = async () => {
           ...f,
           name: newPath,
           fullPath: f.fullPath.replace(oldPath, newPath),
+          deviceSerial: moveDialogTargetDeviceSerial.value,
+          deviceName:
+            devices.value.find(
+              (d) => d.usbInfo?.serial === moveDialogTargetDeviceSerial.value,
+            )?.name || 'Internal',
         };
       }
       return f;
