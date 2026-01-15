@@ -657,8 +657,12 @@ const submitMoveDialog = async () => {
   try {
     const oldPath = moveDialogFile.value.name;
     const newPath = moveDialogNewPath.value.trim();
-    if (!newPath || newPath === oldPath) {
-      moveDialogError.value = 'Please enter a new name or path.';
+    if (
+      !newPath ||
+      (newPath === oldPath &&
+        moveDialogTargetDeviceSerial.value === moveDialogOldDeviceSerial.value)
+    ) {
+      moveDialogError.value = 'Please enter a new name or device.';
       moveDialogLoading.value = false;
       return;
     }
