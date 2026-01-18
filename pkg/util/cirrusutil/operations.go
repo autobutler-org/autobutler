@@ -279,3 +279,74 @@ func DownloadFile(params DownloadFileParams) (*DownloadFileResult, error) {
 		IsFolder: fileType == FileTypeFolder,
 	}, nil
 }
+
+// UploadFilesStreamedParams contains parameters for streaming file uploads
+type UploadFilesStreamedParams struct {
+	Reader       *multipart.Reader
+	RootDir      string
+	DeviceSerial string
+}
+
+// UploadFilesStreamed streams multipart file uploads directly to disk
+func UploadFilesStreamed(params UploadFilesStreamedParams) error {
+	device, err := FindManagedDeviceBySerial(params.DeviceSerial)
+	if err != nil {
+		return fmt.Errorf("device not found: %w", err)
+	}
+	cirrusDir := GetCirrusDir()
+	if device != nil {
+		cirrusDir = device.CirrusDir
+	}
+
+	for {
+		part, err := params.Reader.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		formName := part.FormName()
+		if formName == "files" && part.FileName() != "" {
+			fileName := part.FileName()
+			destDir := filepath.Join(cirrusDir, params.RootDir)
+			if err := os.MkdirAll(destDir, 0755); err != nil {
+				part.Close()
+				return fmt.Errorf("failed to create directory: %w", err)
+			}
+			destPath := filepath.Join(destDir, fileName)
+
+			// Handle file name conflicts
+			if _, err := os.Stat(destPath); err == nil {
+				ext := filepath.Ext(fileName)
+				name := fileName[:len(fileName)-len(ext)]
+				i := 1
+				for {
+					newFileName := fmt.Sprintf("%s_(%d)%s", name, i, ext)
+					destPath = filepath.Join(destDir, newFileName)
+					if _, err := os.Stat(destPath); os.IsNotExist(err) {
+						break
+					}
+					i++
+				}
+			}
+
+			outFile, err := os.Create(destPath)
+			if err != nil {
+				part.Close()
+				return fmt.Errorf("failed to create file: %w", err)
+			}
+			if _, err := io.Copy(outFile, part); err != nil {
+				outFile.Close()
+				part.Close()
+				return fmt.Errorf("failed to write file: %w", err)
+			}
+			outFile.Close()
+			part.Close()
+		} else {
+			part.Close()
+		}
+	}
+	return nil
+}
