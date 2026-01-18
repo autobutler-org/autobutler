@@ -2,10 +2,7 @@ package v1_files
 
 import (
 	"autobutler/pkg/util/cirrusutil"
-	"autobutler/pkg/util/ctxutil"
-	"autobutler/pkg/util/deputil"
 	"autobutler/pkg/util/serverutil"
-	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,33 +20,18 @@ var uploadNestedFilesRoutes = serverutil.ApiRoute(
 )
 
 func uploadFilesImpl(c *gin.Context, rootDir string) *serverutil.Response {
-	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
-		return serverutil.BadRequest(err)
-	}
-
-	form, err := c.MultipartForm()
+	serial := c.Query("serial")
+	reader, err := c.Request.MultipartReader()
 	if err != nil {
 		return serverutil.BadRequest(err)
 	}
-
-	fileHeaders := form.File["files"]
-	returnDir := ""
-	if len(form.Value["returnDir"]) > 0 {
-		returnDir = form.Value["returnDir"][0]
-	}
-	serial := c.Query("serial")
-
-	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
-	if !ok {
-		return serverutil.InternalServerError(fmt.Errorf("dependencies not found in context"))
-	}
-	channel := deps.Worker().GetUploadFilesChannel()
-	channel <- cirrusutil.UploadFilesParams{
+	err = cirrusutil.UploadFilesStreamed(cirrusutil.UploadFilesStreamedParams{
+		Reader:       reader,
 		RootDir:      rootDir,
-		FileHeaders:  fileHeaders,
-		ReturnDir:    returnDir,
 		DeviceSerial: serial,
+	})
+	if err != nil {
+		return serverutil.BadRequest(err)
 	}
-
-	return serverutil.Accepted()
+	return serverutil.Ok()
 }
