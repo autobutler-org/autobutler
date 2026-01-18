@@ -41,7 +41,7 @@
       <tbody id="file-explorer-list" class="file-table-body">
         <tr
           v-for="file in sortedFiles"
-          :key="file.fullPath"
+          :key="`${file.fullPath}-${file.deviceSerial}`"
           class="file-table-row file-node"
           :class="{
             'file-table-row--selected':

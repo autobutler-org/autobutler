@@ -192,6 +192,26 @@
             autocomplete="off"
           />
         </div>
+        <div class="move-dialog-field" v-if="devices.length > 1">
+          <label for="move-device-select" class="move-dialog-label"
+            >Target device</label
+          >
+          <select
+            id="move-device-select"
+            v-model="moveDialogTargetDeviceSerial"
+            :disabled="moveDialogLoading"
+            class="device-select"
+            aria-label="Select target device"
+          >
+            <option
+              v-for="device in devices"
+              :key="device.usbInfo?.serial || 'internal'"
+              :value="device.usbInfo?.serial || ''"
+            >
+              {{ device.name }}
+            </option>
+          </select>
+        </div>
         <div v-if="moveDialogError" class="move-dialog-error">
           {{ moveDialogError }}
         </div>
@@ -399,6 +419,7 @@ const moveDialogLoading = ref(false);
 const moveDialogError = ref('');
 const moveDialogNewPath = ref('');
 const moveDialogOldDeviceSerial = ref('');
+const moveDialogTargetDeviceSerial = ref('');
 const moveDialogFile = ref<CirrusFileNode | null>(null);
 // File details dialog state
 const detailsDialogOpen = ref(false);
@@ -625,6 +646,8 @@ const handleRename = (file: CirrusFileNode) => {
   moveDialogNewPath.value = file.name;
   moveDialogOpen.value = true;
   moveDialogOldDeviceSerial.value = file.deviceSerial;
+  // Default target device to current device
+  moveDialogTargetDeviceSerial.value = file.deviceSerial;
 };
 
 const submitMoveDialog = async () => {
@@ -634,8 +657,12 @@ const submitMoveDialog = async () => {
   try {
     const oldPath = moveDialogFile.value.name;
     const newPath = moveDialogNewPath.value.trim();
-    if (!newPath || newPath === oldPath) {
-      moveDialogError.value = 'Please enter a new name or path.';
+    if (
+      !newPath ||
+      (newPath === oldPath &&
+        moveDialogTargetDeviceSerial.value === moveDialogOldDeviceSerial.value)
+    ) {
+      moveDialogError.value = 'Please enter a new name or device.';
       moveDialogLoading.value = false;
       return;
     }
@@ -643,8 +670,7 @@ const submitMoveDialog = async () => {
       oldPath,
       newPath,
       moveDialogOldDeviceSerial.value,
-      // TODO: Allow for supporting a new target device in the future
-      moveDialogOldDeviceSerial.value,
+      moveDialogTargetDeviceSerial.value,
     );
     // Update the in-memory file list
     // TODO: When moving to a new directory, we need to filter out the moved file
@@ -654,6 +680,11 @@ const submitMoveDialog = async () => {
           ...f,
           name: newPath,
           fullPath: f.fullPath.replace(oldPath, newPath),
+          deviceSerial: moveDialogTargetDeviceSerial.value,
+          deviceName:
+            devices.value.find(
+              (d) => d.usbInfo?.serial === moveDialogTargetDeviceSerial.value,
+            )?.name || 'Internal',
         };
       }
       return f;
