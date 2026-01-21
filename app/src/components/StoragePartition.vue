@@ -110,7 +110,10 @@ const categorySegments = computed(() => {
   if (!props.device.categories) return [];
   const totalBytes = totalCategoryBytes.value;
   if (!totalBytes) return [];
-  const entries = Object.entries(props.device.categories);
+  // Sort categories by name for stable color assignment
+  const entries = Object.entries(props.device.categories).sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
   return entries
     .map(([key, bytes], idx) => {
       if (!bytes) return null;
