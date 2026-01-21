@@ -1,10 +1,10 @@
 package v1_files
 
 import (
-	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/ctxutil"
 	"autobutler/pkg/util/deputil"
 	"autobutler/pkg/util/serverutil"
+	"autobutler/pkg/util/storageutil"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -29,7 +29,7 @@ var moveFileRoute = serverutil.ApiRoute(
 			return serverutil.InternalServerError(fmt.Errorf("dependencies not found in context"))
 		}
 		channel := deps.Worker().GetMoveFileChannel()
-		channel <- cirrusutil.MoveFileParams{
+		channel <- storageutil.MoveFileParams{
 			OldFilePath:     req.OldFilePath,
 			NewFilePath:     req.NewFilePath,
 			OldDeviceSerial: req.OldDeviceSerial,

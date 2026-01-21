@@ -1,7 +1,6 @@
 package v1_storage
 
 import (
-	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/storageutil"
 	"errors"
@@ -70,7 +69,7 @@ var enableUsbStorageDeviceRoute = serverutil.ApiRoute(
 				WithError(errors.New("Partition is already mounted"))
 		}
 
-		mountTargetDir := cirrusutil.GetMountsDir()
+		mountTargetDir := storageutil.GetMountsDir()
 		mountTargetPath := filepath.Join(mountTargetDir, targetDevice.GetSerial())
 		if err := os.MkdirAll(mountTargetPath, os.ModeDir|os.ModePerm); err != nil {
 			return serverutil.NewResponse().

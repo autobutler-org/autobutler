@@ -9,5 +9,3 @@ autobutler/pkg/ui/components
 autobutler/pkg/ui/types
 autobutler/pkg/ui/views
 autobutler/pkg/util/updateutil
-autobutler/pkg/util/cirrusutil/linux
-autobutler/pkg/util/cirrusutil/darwin

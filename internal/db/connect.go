@@ -1,7 +1,7 @@
 package db
 
 import (
-	"autobutler/pkg/util/cirrusutil"
+	"autobutler/pkg/util/storageutil"
 	"context"
 	"database/sql"
 	"fmt"
@@ -11,7 +11,7 @@ import (
 
 func ConnectToDatabase() (*DatabaseSqlc, error) {
 	var database DatabaseSqlc
-	dataDir := cirrusutil.GetDataDir()
+	dataDir := storageutil.GetDataDir()
 	err := os.MkdirAll(dataDir, 0755)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create data directory: %v", err)
@@ -38,7 +38,7 @@ func ConnectToDatabase() (*DatabaseSqlc, error) {
 
 func ConnectToHealthDatabase() (*DatabaseRaw, error) {
 	var database DatabaseRaw
-	dataDir := cirrusutil.GetDataDir()
+	dataDir := storageutil.GetDataDir()
 	err := os.MkdirAll(dataDir, 0755)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create data directory: %v", err))

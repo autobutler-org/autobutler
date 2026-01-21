@@ -1,4 +1,4 @@
-package cirrusutil
+package storageutil
 
 // Category represents storage category types
 type Category string

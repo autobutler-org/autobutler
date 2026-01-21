@@ -1,7 +1,7 @@
 package workerutil
 
 import (
-	"autobutler/pkg/util/cirrusutil"
+	"autobutler/pkg/util/storageutil"
 	"log"
 )
 
@@ -10,29 +10,29 @@ type Worker interface {
 	GetQuitChannel() chan struct{}
 	GetErrorChannel() chan error
 	LogErrors() error
-	GetDeleteFilesChannel() cirrusutil.DeleteFilesChannel
-	GetMoveFileChannel() cirrusutil.MoveFileChannel
-	GetUploadFilesChannel() cirrusutil.UploadFilesChannel
-	GetCreateFolderChannel() cirrusutil.CreateFolderChannel
+	GetDeleteFilesChannel() storageutil.DeleteFilesChannel
+	GetMoveFileChannel() storageutil.MoveFileChannel
+	GetUploadFilesChannel() storageutil.UploadFilesChannel
+	GetCreateFolderChannel() storageutil.CreateFolderChannel
 }
 
 type worker struct {
 	quitChannel         chan struct{}
 	errorChannel        chan error
-	deleteFilesChannel  cirrusutil.DeleteFilesChannel
-	moveFileChannel     cirrusutil.MoveFileChannel
-	uploadFilesChannel  cirrusutil.UploadFilesChannel
-	createFolderChannel cirrusutil.CreateFolderChannel
+	deleteFilesChannel  storageutil.DeleteFilesChannel
+	moveFileChannel     storageutil.MoveFileChannel
+	uploadFilesChannel  storageutil.UploadFilesChannel
+	createFolderChannel storageutil.CreateFolderChannel
 }
 
 func NewWorker() Worker {
 	return &worker{
 		quitChannel:         make(chan struct{}),
 		errorChannel:        make(chan error),
-		deleteFilesChannel:  make(cirrusutil.DeleteFilesChannel),
-		moveFileChannel:     make(cirrusutil.MoveFileChannel),
-		uploadFilesChannel:  make(cirrusutil.UploadFilesChannel),
-		createFolderChannel: make(cirrusutil.CreateFolderChannel),
+		deleteFilesChannel:  make(storageutil.DeleteFilesChannel),
+		moveFileChannel:     make(storageutil.MoveFileChannel),
+		uploadFilesChannel:  make(storageutil.UploadFilesChannel),
+		createFolderChannel: make(storageutil.CreateFolderChannel),
 	}
 }
 
@@ -40,19 +40,19 @@ func (w *worker) Process() error {
 	for {
 		select {
 		case deleteReq := <-w.deleteFilesChannel:
-			if _, err := cirrusutil.DeleteFiles(deleteReq); err != nil {
+			if _, err := storageutil.DeleteFiles(deleteReq); err != nil {
 				w.errorChannel <- err
 			}
 		case moveReq := <-w.moveFileChannel:
-			if _, err := cirrusutil.MoveFile(moveReq); err != nil {
+			if _, err := storageutil.MoveFile(moveReq); err != nil {
 				w.errorChannel <- err
 			}
 		case uploadReq := <-w.uploadFilesChannel:
-			if _, err := cirrusutil.UploadFiles(uploadReq); err != nil {
+			if _, err := storageutil.UploadFiles(uploadReq); err != nil {
 				w.errorChannel <- err
 			}
 		case createFolderReq := <-w.createFolderChannel:
-			if _, err := cirrusutil.CreateFolder(createFolderReq); err != nil {
+			if _, err := storageutil.CreateFolder(createFolderReq); err != nil {
 				w.errorChannel <- err
 			}
 		case <-w.quitChannel:
@@ -78,18 +78,18 @@ func (w *worker) LogErrors() error {
 	}
 }
 
-func (w *worker) GetDeleteFilesChannel() cirrusutil.DeleteFilesChannel {
+func (w *worker) GetDeleteFilesChannel() storageutil.DeleteFilesChannel {
 	return w.deleteFilesChannel
 }
 
-func (w *worker) GetMoveFileChannel() cirrusutil.MoveFileChannel {
+func (w *worker) GetMoveFileChannel() storageutil.MoveFileChannel {
 	return w.moveFileChannel
 }
 
-func (w *worker) GetUploadFilesChannel() cirrusutil.UploadFilesChannel {
+func (w *worker) GetUploadFilesChannel() storageutil.UploadFilesChannel {
 	return w.uploadFilesChannel
 }
 
-func (w *worker) GetCreateFolderChannel() cirrusutil.CreateFolderChannel {
+func (w *worker) GetCreateFolderChannel() storageutil.CreateFolderChannel {
 	return w.createFolderChannel
 }

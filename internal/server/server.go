@@ -3,8 +3,8 @@ package server
 import (
 	"autobutler/internal/server/middleware"
 	"autobutler/pkg/botel"
-	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/deputil"
+	"autobutler/pkg/util/storageutil"
 	"autobutler/pkg/util/workerutil"
 	"context"
 	"fmt"
@@ -15,7 +15,7 @@ import (
 )
 
 func setupServices(deps deputil.Dependencies) error {
-	if err := cirrusutil.SetupCirrusDir(); err != nil {
+	if err := storageutil.SetupCirrusDir(); err != nil {
 		return fmt.Errorf("failed to setup cirrus directory: %w", err)
 	}
 	go deps.Worker().Process()

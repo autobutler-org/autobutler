@@ -1,9 +1,9 @@
 package v1_photos
 
 import (
-	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/photoutil"
 	"autobutler/pkg/util/serverutil"
+	"autobutler/pkg/util/storageutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,7 +16,7 @@ type PhotoJSON struct {
 }
 
 func getPhotosHandler(c *gin.Context) *serverutil.Response {
-	rootDir := cirrusutil.GetCirrusDir()
+	rootDir := storageutil.GetCirrusDir()
 	photos, err := photoutil.FindAllPhotosRecursively(rootDir)
 	if err != nil {
 		return serverutil.NewResponse().WithStatusCode(500).WithError(err)

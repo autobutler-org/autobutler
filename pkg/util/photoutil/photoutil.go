@@ -1,7 +1,7 @@
 package photoutil
 
 import (
-	"autobutler/pkg/util/cirrusutil"
+	"autobutler/pkg/util/storageutil"
 	"fmt"
 	"image"
 	"io"
@@ -20,8 +20,8 @@ func FilterPhotoFiles(files []fs.FileInfo) []fs.FileInfo {
 		if file.IsDir() {
 			continue
 		}
-		fileType := cirrusutil.DetermineFileTypeFromPath(file.Name())
-		if fileType == cirrusutil.FileTypeImage {
+		fileType := storageutil.DetermineFileTypeFromPath(file.Name())
+		if fileType == storageutil.FileTypeImage {
 			photoFiles = append(photoFiles, file)
 		}
 	}
@@ -40,8 +40,8 @@ func FindAllPhotosRecursively(rootDir string) ([]PhotoInfo, error) {
 			return nil
 		}
 
-		fileType := cirrusutil.DetermineFileTypeFromPath(info.Name())
-		if fileType == cirrusutil.FileTypeImage {
+		fileType := storageutil.DetermineFileTypeFromPath(info.Name())
+		if fileType == storageutil.FileTypeImage {
 			// Get relative path from rootDir
 			relPath, err := filepath.Rel(rootDir, path)
 			if err != nil {
