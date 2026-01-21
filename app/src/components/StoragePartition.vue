@@ -15,10 +15,9 @@
           v-for="cat in categorySegments"
           :key="cat.key"
           class="storage-partition-segment"
-          :class="cat.class"
-          :style="{ width: cat.width }"
+          :style="{ ...cat.style, width: cat.width }"
           :title="cat.title"
-        ></div>
+        />
         <div
           v-if="device.availableBytes > 0"
           class="storage-partition-segment storage-partition-free"
@@ -47,7 +46,7 @@
         :key="cat.key"
         class="storage-partition-legend-item"
       >
-        <span class="storage-partition-dot" :class="cat.class" />
+        <span class="storage-partition-dot" :style="cat.style" />
         <span class="storage-partition-legend-label"
           >{{ cat.label }} {{ cat.gb }} GB</span
         >
@@ -90,23 +89,38 @@ const totalCategoryBytes = computed(() => {
   return Object.values(props.device.categories).reduce((sum, v) => sum + v, 0);
 });
 
+const categoryColors = [
+  '#3b82f6', // blue
+  '#a78bfa', // purple
+  '#f87171', // red
+  '#fbbf24', // yellow
+  '#f59e42', // orange
+  '#10b981', // green
+  '#6366f1', // indigo
+  '#eab308', // gold
+  '#f472b6', // pink
+  '#6ee7b7', // teal
+];
+
+const getCategoryColor = (index: number) => {
+  return categoryColors[index % categoryColors.length];
+};
+
 const categorySegments = computed(() => {
   if (!props.device.categories) return [];
   const totalBytes = totalCategoryBytes.value;
   if (!totalBytes) return [];
-  // Use backend keys and values directly
-  return Object.entries(props.device.categories)
-    .map(([key, bytes]) => {
+  const entries = Object.entries(props.device.categories);
+  return entries
+    .map(([key, bytes], idx) => {
       if (!bytes) return null;
       const gb = bytes / GB;
       const percent = (bytes / totalBytes) * 100;
-      // Use a class naming convention for color, fallback to 'other' if unknown
-      const className = `storage-partition-${key}`;
-      // Capitalize key for label
+      const style = { background: getCategoryColor(idx) };
       const label = key.charAt(0).toUpperCase() + key.slice(1);
       return {
         key,
-        class: className,
+        style,
         label,
         width: percent.toFixed(2) + '%',
         title: `${label}: ${gb.toFixed(1)} GB`,
@@ -194,29 +208,9 @@ const freeGB = computed(() => {
   }
 }
 
-/* Category Colors - matching existing device card colors */
-.storage-partition-backups {
-  background: $color-yellow-500; /* Orange */
-}
-
-.storage-partition-documents {
-  background: $color-purple-400; /* Purple */
-}
-
+/* Free segment color */
 .storage-partition-free {
   background: $theme-palette-border; /* Subtle border/dark gray */
-}
-
-.storage-partition-media {
-  background: $color-red-400; /* Pink/Red */
-}
-
-.storage-partition-other {
-  background: $color-yellow-400; /* Yellow */
-}
-
-.storage-partition-system {
-  background: $color-blue-500; /* Blue */
 }
 
 .storage-partition-legend {
