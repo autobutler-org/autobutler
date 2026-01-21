@@ -7,9 +7,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
-	"runtime"
 	"strings"
 )
 
@@ -35,39 +33,6 @@ func ListPossibleUpdates() ([]githubutil.GitHubRelease, error) {
 		}
 	}
 	return possibleUpdates, nil
-}
-
-func Update(version string) error {
-	// Copy the current binary to some temporary system location
-	// Download the new release
-	// Unpack the new release, replacing the currently running binary location
-	if version == "" {
-		return fmt.Errorf("version cannot be empty")
-	}
-	_, err := backupSelf()
-	if err != nil {
-		return fmt.Errorf("failed to copy current binary: %w", err)
-	}
-	baseUrl := os.Getenv("AUTOBUTLER_UPDATE_URL")
-	if baseUrl == "" {
-		baseUrl = "https://github.com/autobutler-org/autobutler.org/releases/download"
-	}
-	goos := fmt.Sprintf("%s%s", strings.ToUpper(string(runtime.GOOS[0])), string(runtime.GOOS[1:]))
-	url := fmt.Sprintf("%s/%s/autobutler_%s_%s.tar.gz", baseUrl, version, goos, runtime.GOARCH)
-	fmt.Println("Downloading update from", url)
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("failed to download update from %s: %s", url, resp.Status)
-	}
-	if err := replaceSelf(resp.Body); err != nil {
-		return fmt.Errorf("failed to replace self with update from %s: %w", url, err)
-	}
-	fmt.Println("Update successful.")
-	return nil
 }
 
 func RestartAutobutler() {
