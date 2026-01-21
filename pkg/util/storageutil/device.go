@@ -38,14 +38,13 @@ func (d *Device) ApplySimpleCategorization() {
 	}
 
 	// Traverse the mount point
-	root := GetCirrusDirForDevice(d.MountPoint)
-	systemBytes := uint64(0)
+	cirrusDir := GetCirrusDirForDevice(d.MountPoint)
 	docBytes := uint64(0)
 	mediaBytes := uint64(0)
 	backupBytes := uint64(0)
 	otherBytes := uint64(0)
 
-	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	filepath.Walk(cirrusDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil // skip errors
 		}
@@ -66,20 +65,6 @@ func (d *Device) ApplySimpleCategorization() {
 		return nil
 	})
 
-	// System files: estimate as difference between used and categorized if on system volume
-	if root == "/" || root == "/System/Volumes/Data" || root == "/home" {
-		categorized := docBytes + mediaBytes + backupBytes + otherBytes
-		systemBytes = d.UsedBytes
-		if systemBytes > categorized {
-			systemBytes = systemBytes - categorized
-		} else {
-			systemBytes = 0
-		}
-	}
-
-	if systemBytes > 0 {
-		d.Categories["system"] = systemBytes
-	}
 	if docBytes > 0 {
 		d.Categories["documents"] = docBytes
 	}
