@@ -1,9 +1,9 @@
 package v1_thumbnails
 
 import (
-	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/photoutil"
 	"autobutler/pkg/util/serverutil"
+	"autobutler/pkg/util/storageutil"
 	"fmt"
 	"image/jpeg"
 	"image/png"
@@ -23,7 +23,7 @@ const (
 var getThumbnailRoute = serverutil.ApiRoute(
 	"GET", "/thumbnails/*filePath", func(c *gin.Context) *serverutil.Response {
 		filePath := c.Param("filePath")
-		filesDir := cirrusutil.GetCirrusDir()
+		filesDir := storageutil.GetCirrusDir()
 		fullPath := filepath.Join(filesDir, filePath)
 
 		if _, err := os.Stat(fullPath); os.IsNotExist(err) {

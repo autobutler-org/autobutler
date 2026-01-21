@@ -1,10 +1,8 @@
-package cirrusutil
-
-import "autobutler/pkg/util/storageutil"
+package storageutil
 
 // ManagedDevice represents a storage device that has an autobutler data directory
 type ManagedDevice struct {
-	storageutil.Device
+	Device
 	DataDir   string `json:"data_dir"`   // Path to autobutler data directory on this device
 	CirrusDir string `json:"cirrus_dir"` // Path to cirrus subdirectory
 }
@@ -29,7 +27,7 @@ func FindManagedDeviceBySerial(serial string) (*ManagedDevice, error) {
 
 // GetManagedDevices returns all devices that have an autobutler data directory
 func GetManagedDevices() ([]ManagedDevice, error) {
-	detector := storageutil.NewDetector()
+	detector := NewDetector()
 	devices, err := detector.DetectDevices()
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure

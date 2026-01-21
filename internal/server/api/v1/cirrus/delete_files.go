@@ -1,10 +1,10 @@
 package v1_files
 
 import (
-	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/ctxutil"
 	"autobutler/pkg/util/deputil"
 	"autobutler/pkg/util/serverutil"
+	"autobutler/pkg/util/storageutil"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -21,7 +21,7 @@ var deleteFilesRoute = serverutil.ApiRoute(
 			return serverutil.InternalServerError(fmt.Errorf("dependencies not found in context"))
 		}
 		channel := deps.Worker().GetDeleteFilesChannel()
-		channel <- cirrusutil.DeleteFilesParams{
+		channel <- storageutil.DeleteFilesParams{
 			RootDir:      rootDir,
 			FilePaths:    filePaths,
 			DeviceSerial: serial,

@@ -1,4 +1,4 @@
-package cirrusutil
+package storageutil
 
 import (
 	"fmt"
@@ -26,38 +26,6 @@ const (
 	FileTypeSpacer    FileType = "spacer"
 	FileTypeArchive   FileType = "archive"
 )
-
-func BytesToKB(size uint64) float64 {
-	return float64(size) / 1024
-}
-
-func BytesToMB(size uint64) float64 {
-	return BytesToKB(size) / 1024
-}
-
-func BytesToGB(size uint64) float64 {
-	return BytesToMB(size) / 1024
-}
-
-func BytesToTB(size uint64) float64 {
-	return BytesToGB(size) / 1024
-}
-
-func KBToBytes(size float64) uint64 {
-	return uint64(size * 1024)
-}
-
-func MBToBytes(size float64) uint64 {
-	return uint64(KBToBytes(size) * 1024)
-}
-
-func GBToBytes(size float64) uint64 {
-	return uint64(MBToBytes(size) * 1024)
-}
-
-func TBToBytes(size float64) uint64 {
-	return uint64(GBToBytes(size) * 1024)
-}
 
 func DetermineFileTypeFromPath(filePath string) FileType {
 	// Empty string or "/" represents a folder
@@ -175,57 +143,6 @@ func StatFilesInDir(dir string, deviceName string, devicePath string, deviceSeri
 	return files, nil
 }
 
-// GetDataDirForDevice returns the data directory path for a specific device mount point
-func GetDataDirForDevice(mountPoint string) string {
-	// For the main system device (root filesystem or /System/Volumes/Data on macOS),
-	// use the standard user-specific data directory location
-	isSystemDevice := mountPoint == "/" || mountPoint == "/System/Volumes/Data"
-
-	if isSystemDevice {
-		// Use platform-specific user directories (~/Library/Application Support/Autobutler/data on macOS)
-		switch runtime.GOOS {
-		case "darwin": // coverage: ignore - Not run in CI
-			homeDir, err := os.UserHomeDir()
-			if err != nil {
-				homeDir = "/" // coverage: ignore - requires UserHomeDir to fail
-			}
-			return filepath.Join(homeDir, "Library", "Application Support", "Autobutler", "data")
-		case "linux": // coverage: ignore - Not run in mac dev environments
-			homeDir, err := os.UserHomeDir()
-			if err != nil {
-				homeDir = "/var/lib" // coverage: ignore - requires UserHomeDir to fail
-			}
-			return filepath.Join(homeDir, "autobutler", "data") // coverage: ignore
-		}
-	}
-
-	// For external devices, use autobutler directory on the device itself
-	return filepath.Join(mountPoint, "autobutler", "data")
-}
-
-func GetDataDir() string {
-	// Get data directory for the system device
-	switch runtime.GOOS {
-	case "darwin": // coverage: ignore - Not run in CI
-		// On macOS, the system mount point can be / or /System/Volumes/Data
-		// Use / as the canonical reference
-		return GetDataDirForDevice("/")
-	case "linux": // coverage: ignore - Not run in mac dev environments
-		return GetDataDirForDevice("/")
-	default:
-		panic(fmt.Sprintf("unsupported OS: %s", runtime.GOOS)) // coverage: ignore - panic on unsupported OS
-	}
-}
-
-func GetMountsDir() string {
-	mountDir := filepath.Join(GetDataDir(), "mounts")
-	// TODO: Probably should not panic here
-	if err := os.MkdirAll(mountDir, 0755); err != nil {
-		panic(fmt.Sprintf("failed to create mount directory: %v", err)) // coverage: ignore - panic on filesystem error
-	}
-	return mountDir
-}
-
 // GetNonConflictingPath returns a file path that doesn't conflict with existing files.
 // If the target path already exists, it appends _(n) before the file extension,
 // incrementing n until a non-existent path is found.
@@ -287,29 +204,6 @@ func SetupCirrusDir() error {
 	}
 
 	return nil
-}
-
-func ConstructCirrusDir(dataDir string) string {
-	return filepath.Join(dataDir, "cirrus")
-}
-
-func GetCirrusDir() string {
-	// TODO: Probably should not panic here
-	cirrusPath := ConstructCirrusDir(GetDataDir())
-	if err := os.MkdirAll(cirrusPath, 0755); err != nil {
-		panic(fmt.Sprintf("failed to create cirrus directory: %v", err)) // coverage: ignore - panic on filesystem error
-	}
-	return cirrusPath
-}
-
-func GetCirrusDirForDevice(mountPoint string) string {
-	// TODO: Probably should not panic here
-	dataDir := GetDataDirForDevice(mountPoint)
-	cirrusPath := ConstructCirrusDir(dataDir)
-	if err := os.MkdirAll(cirrusPath, 0755); err != nil {
-		panic(fmt.Sprintf("failed to create cirrus directory for device at %s: %v", mountPoint, err)) // coverage: ignore - panic on filesystem error
-	}
-	return cirrusPath
 }
 
 // GetDeviceInfoForPath returns the device name and device path for a given file path
@@ -472,4 +366,94 @@ func InitializeDeviceDataDir(mountPoint string) error {
 	}
 
 	return nil
+}
+
+func FindUsbDeviceBySerial(serial string) (UsbDevice, error) {
+	usbDevices, err := ListUsbDevices(true)
+	if err != nil {
+		return nil, err
+	}
+	for _, device := range usbDevices {
+		if device.GetSerial() == serial {
+			return device, nil
+		}
+	}
+	return nil, fmt.Errorf("USB device with serial %q not found", serial)
+}
+
+// ListUsbDevices lists all USB devices under /sys/bus/usb/devices/
+func ListUsbDevices(onlyStorage bool) ([]UsbDevice, error) {
+	base := "/sys/bus/usb/devices/"
+	entries, err := os.ReadDir(base)
+	if err != nil {
+		return nil, err
+	}
+	var devices []UsbDevice
+	for _, entry := range entries {
+		devicePath := filepath.Join(base, entry.Name())
+		vendor := readFileTrim(filepath.Join(devicePath, "idVendor"))
+		product := readFileTrim(filepath.Join(devicePath, "idProduct"))
+		if vendor == "" || product == "" {
+			continue // Not a device directory
+		}
+		dev := &usbDevice{
+			Path:         devicePath,
+			VendorID:     vendor,
+			ProductID:    product,
+			Manufacturer: readFileTrim(filepath.Join(devicePath, "manufacturer")),
+			Product:      readFileTrim(filepath.Join(devicePath, "product")),
+			Serial:       readFileTrim(filepath.Join(devicePath, "serial")),
+		}
+		if dev.IsStorageDevice() {
+			dev.UpdateStatus()
+		} else if onlyStorage {
+			continue
+		}
+		devices = append(devices, dev)
+	}
+	return devices, nil
+}
+
+// isDeviceMounted checks if a block device (e.g., /dev/sda) is mounted somewhere by parsing /proc/mounts.
+// Returns the mount point if mounted, or empty string if not.
+// isDeviceMounted checks if a block device or any of its partitions are mounted.
+// Returns the mount point and the device node (e.g., /dev/sda1) if mounted, or empty string if not.
+func isDeviceMounted(blockDevice string) (mountPoint string, mounted bool) {
+	data, err := os.ReadFile("/proc/mounts")
+	if err != nil {
+		return "", false
+	}
+	lines := strings.Split(string(data), "\n")
+	// Check the base device (rare, usually not mounted directly)
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
+		}
+		if fields[0] == blockDevice {
+			return fields[1], true
+		}
+	}
+	// Check partitions (e.g., /dev/sda1, /dev/sda2)
+	for partNum := 1; partNum <= 16; partNum++ {
+		part := fmt.Sprintf("%s%d", blockDevice, partNum)
+		for _, line := range lines {
+			fields := strings.Fields(line)
+			if len(fields) < 2 {
+				continue
+			}
+			if fields[0] == part {
+				return fields[1], true
+			}
+		}
+	}
+	return "", false
+}
+
+func readFileTrim(path string) string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(data))
 }

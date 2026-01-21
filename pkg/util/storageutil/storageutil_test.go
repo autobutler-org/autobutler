@@ -1,7 +1,6 @@
-package cirrusutil
+package storageutil
 
 import (
-	"autobutler/pkg/util/storageutil"
 	"bytes"
 	"fmt"
 	"mime/multipart"
@@ -10,6 +9,56 @@ import (
 	"runtime"
 	"testing"
 )
+
+func TestReadFileTrim(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+		want    string
+	}{
+		{"trims whitespace", "  hello world \n", "hello world"},
+		{"empty file", "", ""},
+		{"no trim needed", "foo", "foo"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			file := filepath.Join(dir, "testfile")
+			if err := os.WriteFile(file, []byte(tt.content), 0644); err != nil {
+				t.Fatalf("failed to write temp file: %v", err)
+			}
+			got := readFileTrim(file)
+			if got != tt.want {
+				t.Errorf("readFileTrim() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsStorageDevice(t *testing.T) {
+	tests := []struct {
+		name         string
+		product      string
+		manufacturer string
+		want         bool
+	}{
+		{"host controller", "xHCI Host Controller", "Linux", false},
+		{"non-storage device", "Some Product", "Some Manufacturer", false},
+		// Add more cases as needed
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			os.WriteFile(filepath.Join(dir, "product"), []byte(tt.product), 0644)
+			os.WriteFile(filepath.Join(dir, "manufacturer"), []byte(tt.manufacturer), 0644)
+			dev := &usbDevice{Path: dir}
+			got := dev.IsStorageDevice()
+			if got != tt.want {
+				t.Errorf("IsStorageDevice() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
 
 func TestBytesConversions(t *testing.T) {
 	tests := []struct {
@@ -88,6 +137,172 @@ func TestReverseConversions(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestCalculateSummary(t *testing.T) {
+	devices := []Device{
+		{
+			TotalBytes:     1000000000000, // 1TB
+			UsedBytes:      500000000000,  // 500GB
+			AvailableBytes: 500000000000,  // 500GB
+		},
+		{
+			TotalBytes:     2000000000000, // 2TB
+			UsedBytes:      1000000000000, // 1TB
+			AvailableBytes: 1000000000000, // 1TB
+		},
+	}
+
+	summary := CalculateSummary(devices)
+
+	if summary.TotalDevices != 2 {
+		t.Errorf("Expected 2 devices, got %d", summary.TotalDevices)
+	}
+
+	if summary.TotalBytes != 3000000000000 {
+		t.Errorf("Expected total bytes 3000000000000, got %d", summary.TotalBytes)
+	}
+
+	if summary.UsedBytes != 1500000000000 {
+		t.Errorf("Expected used bytes 1500000000000, got %d", summary.UsedBytes)
+	}
+
+	if summary.AvailBytes != 1500000000000 {
+		t.Errorf("Expected avail bytes 1500000000000, got %d", summary.AvailBytes)
+	}
+
+	// Check TB conversions (approximately)
+	if summary.TotalTB < 2.7 || summary.TotalTB > 2.8 {
+		t.Errorf("Expected TotalTB around 2.73, got %f", summary.TotalTB)
+	}
+}
+
+func TestCalculateSummary_EmptyDevices(t *testing.T) {
+	summary := CalculateSummary([]Device{})
+
+	if summary.TotalDevices != 0 {
+		t.Errorf("Expected 0 devices, got %d", summary.TotalDevices)
+	}
+
+	if summary.TotalBytes != 0 {
+		t.Errorf("Expected 0 total bytes, got %d", summary.TotalBytes)
+	}
+}
+
+func TestGetManagedDevices(t *testing.T) {
+	// Create a temporary directory to simulate a managed device
+	tempDir := t.TempDir()
+	cirrusDir := ConstructCirrusDir(tempDir)
+	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
+		t.Fatalf("Failed to create test cirrus directory: %v", err)
+	}
+
+	// Note: This test will find actual system devices that have autobutler directories
+	// We can't easily mock the detector, but we can verify the function executes
+	devices, err := GetManagedDevices()
+	if err != nil {
+		t.Fatalf("GetManagedDevices() error = %v", err)
+	}
+
+	// Should return a slice (possibly empty if no managed devices exist)
+	if devices == nil {
+		t.Error("GetManagedDevices() should return non-nil slice")
+	}
+
+	// Each device should have non-empty fields
+	for i, device := range devices {
+		if device.DataDir == "" {
+			t.Errorf("Device %d has empty DataDir", i)
+		}
+		if device.CirrusDir == "" {
+			t.Errorf("Device %d has empty FilesDir", i)
+		}
+	}
+}
+
+func TestGetDeviceStatuses(t *testing.T) {
+	// This test verifies that GetDeviceStatuses properly merges
+	// detected devices with managed devices to build status information
+	statuses, err := GetDeviceStatuses()
+	if err != nil {
+		t.Fatalf("GetDeviceStatuses() error = %v", err)
+	}
+
+	// Should return at least one device (the system device)
+	if len(statuses) == 0 {
+		t.Error("GetDeviceStatuses() returned no devices")
+	}
+
+	// Verify each status has required fields
+	for i, status := range statuses {
+		if status.Name == "" {
+			t.Errorf("statuses[%d].Name is empty", i)
+		}
+		if status.MountPoint == "" {
+			t.Errorf("statuses[%d].MountPoint is empty", i)
+		}
+
+		// If device is enabled, it should have DataDir and FilesDir
+		if status.IsEnabled {
+			if status.DataDir == "" {
+				t.Errorf("statuses[%d].DataDir is empty for enabled device %s", i, status.Name)
+			}
+			if status.CirrusDir == "" {
+				t.Errorf("statuses[%d].FilesDir is empty for enabled device %s", i, status.Name)
+			}
+		}
+	}
+
+	// At least one device should be enabled (the system device)
+	hasEnabled := false
+	for _, status := range statuses {
+		if status.IsEnabled {
+			hasEnabled = true
+			break
+		}
+	}
+	if !hasEnabled {
+		t.Error("GetDeviceStatuses() should have at least one enabled device")
+	}
+}
+
+func TestGetDataDir(t *testing.T) {
+	dataDir := GetDataDir()
+	if dataDir == "" {
+		t.Error("Expected non-empty data directory")
+	}
+}
+
+func TestGetDataDirForDevice_SystemDevice(t *testing.T) {
+	// Test with system root device
+	dataDir := GetDataDirForDevice("/")
+	if dataDir == "" {
+		t.Error("Expected non-empty data directory for root device")
+	}
+}
+
+func TestGetDataDirForDevice_MacOSSystemVolume(t *testing.T) {
+	// Test with macOS system volume path
+	dataDir := GetDataDirForDevice("/System/Volumes/Data")
+	if dataDir == "" {
+		t.Error("Expected non-empty data directory for macOS system volume")
+	}
+}
+
+func TestGetDataDirForDevice_ExternalDevice(t *testing.T) {
+	// Test with external device mount point
+	dataDir := GetDataDirForDevice("/Volumes/External")
+	expected := "/Volumes/External/autobutler/data"
+	if dataDir != expected {
+		t.Errorf("Expected %s, got %s", expected, dataDir)
+	}
+}
+
+func TestGetCirrusDir(t *testing.T) {
+	filesDir := GetCirrusDir()
+	if filesDir == "" {
+		t.Error("Expected non-empty files directory")
 	}
 }
 
@@ -175,75 +390,6 @@ func TestCustomFileInfo(t *testing.T) {
 	// Test Sys()
 	if fi.Sys() != nil {
 		t.Error("Expected Sys() to return nil")
-	}
-}
-
-func TestDeviceApplySimpleCategorization_SystemVolume(t *testing.T) {
-	device := &storageutil.Device{
-		MountPoint: "/",
-		UsedBytes:  1000000,
-	}
-
-	device.ApplySimpleCategorization()
-
-	if device.Categories == nil {
-		t.Fatal("Expected Categories to be initialized")
-	}
-
-	if device.Categories["system"] != 100000 { // 10%
-		t.Errorf("Expected system to be 100000, got %d", device.Categories["system"])
-	}
-}
-
-func TestDeviceApplySimpleCategorization_ExternalVolume(t *testing.T) {
-	device := &storageutil.Device{
-		MountPoint: "/Volumes/External",
-		UsedBytes:  5000000,
-	}
-
-	device.ApplySimpleCategorization()
-
-	if device.Categories["other"] != 5000000 {
-		t.Errorf("Expected all bytes to be categorized as 'other', got %d", device.Categories["other"])
-	}
-}
-
-func TestGetDataDir(t *testing.T) {
-	dataDir := GetDataDir()
-	if dataDir == "" {
-		t.Error("Expected non-empty data directory")
-	}
-}
-
-func TestGetDataDirForDevice_SystemDevice(t *testing.T) {
-	// Test with system root device
-	dataDir := GetDataDirForDevice("/")
-	if dataDir == "" {
-		t.Error("Expected non-empty data directory for root device")
-	}
-}
-
-func TestGetDataDirForDevice_MacOSSystemVolume(t *testing.T) {
-	// Test with macOS system volume path
-	dataDir := GetDataDirForDevice("/System/Volumes/Data")
-	if dataDir == "" {
-		t.Error("Expected non-empty data directory for macOS system volume")
-	}
-}
-
-func TestGetDataDirForDevice_ExternalDevice(t *testing.T) {
-	// Test with external device mount point
-	dataDir := GetDataDirForDevice("/Volumes/External")
-	expected := "/Volumes/External/autobutler/data"
-	if dataDir != expected {
-		t.Errorf("Expected %s, got %s", expected, dataDir)
-	}
-}
-
-func TestGetCirrusDir(t *testing.T) {
-	filesDir := GetCirrusDir()
-	if filesDir == "" {
-		t.Error("Expected non-empty files directory")
 	}
 }
 
@@ -368,7 +514,7 @@ func TestStatFilesInMultipleDirs_WithNonexistentDir(t *testing.T) {
 }
 
 func TestNewDetector(t *testing.T) {
-	detector := storageutil.NewDetector()
+	detector := NewDetector()
 	if detector == nil {
 		t.Error("Expected non-nil detector")
 	}
@@ -536,56 +682,6 @@ func TestGetFolderSize_WithSubdirectories(t *testing.T) {
 	// Should be 3 + 5 = 8 bytes
 	if size != 8 {
 		t.Errorf("Expected size 8, got %d", size)
-	}
-}
-
-func TestCalculateSummary(t *testing.T) {
-	devices := []storageutil.Device{
-		{
-			TotalBytes:     1000000000000, // 1TB
-			UsedBytes:      500000000000,  // 500GB
-			AvailableBytes: 500000000000,  // 500GB
-		},
-		{
-			TotalBytes:     2000000000000, // 2TB
-			UsedBytes:      1000000000000, // 1TB
-			AvailableBytes: 1000000000000, // 1TB
-		},
-	}
-
-	summary := CalculateSummary(devices)
-
-	if summary.TotalDevices != 2 {
-		t.Errorf("Expected 2 devices, got %d", summary.TotalDevices)
-	}
-
-	if summary.TotalBytes != 3000000000000 {
-		t.Errorf("Expected total bytes 3000000000000, got %d", summary.TotalBytes)
-	}
-
-	if summary.UsedBytes != 1500000000000 {
-		t.Errorf("Expected used bytes 1500000000000, got %d", summary.UsedBytes)
-	}
-
-	if summary.AvailBytes != 1500000000000 {
-		t.Errorf("Expected avail bytes 1500000000000, got %d", summary.AvailBytes)
-	}
-
-	// Check TB conversions (approximately)
-	if summary.TotalTB < 2.7 || summary.TotalTB > 2.8 {
-		t.Errorf("Expected TotalTB around 2.73, got %f", summary.TotalTB)
-	}
-}
-
-func TestCalculateSummary_EmptyDevices(t *testing.T) {
-	summary := CalculateSummary([]storageutil.Device{})
-
-	if summary.TotalDevices != 0 {
-		t.Errorf("Expected 0 devices, got %d", summary.TotalDevices)
-	}
-
-	if summary.TotalBytes != 0 {
-		t.Errorf("Expected 0 total bytes, got %d", summary.TotalBytes)
 	}
 }
 
@@ -825,37 +921,6 @@ func TestDownloadFile_MultiDevice_NotFound(t *testing.T) {
 	_, err := DownloadFile(params)
 	if err == nil {
 		t.Error("Expected error when file doesn't exist on any device")
-	}
-}
-
-func TestGetManagedDevices(t *testing.T) {
-	// Create a temporary directory to simulate a managed device
-	tempDir := t.TempDir()
-	cirrusDir := ConstructCirrusDir(tempDir)
-	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
-		t.Fatalf("Failed to create test cirrus directory: %v", err)
-	}
-
-	// Note: This test will find actual system devices that have autobutler directories
-	// We can't easily mock the detector, but we can verify the function executes
-	devices, err := GetManagedDevices()
-	if err != nil {
-		t.Fatalf("GetManagedDevices() error = %v", err)
-	}
-
-	// Should return a slice (possibly empty if no managed devices exist)
-	if devices == nil {
-		t.Error("GetManagedDevices() should return non-nil slice")
-	}
-
-	// Each device should have non-empty fields
-	for i, device := range devices {
-		if device.DataDir == "" {
-			t.Errorf("Device %d has empty DataDir", i)
-		}
-		if device.CirrusDir == "" {
-			t.Errorf("Device %d has empty FilesDir", i)
-		}
 	}
 }
 
@@ -1116,52 +1181,6 @@ func TestDeviceFileInfo_WrapperMethods(t *testing.T) {
 	// Test Sys() wrapper
 	if deviceFileInfo.Sys() != fileInfo.Sys() {
 		t.Errorf("Sys() mismatch")
-	}
-}
-
-func TestGetDeviceStatuses(t *testing.T) {
-	// This test verifies that GetDeviceStatuses properly merges
-	// detected devices with managed devices to build status information
-	statuses, err := GetDeviceStatuses()
-	if err != nil {
-		t.Fatalf("GetDeviceStatuses() error = %v", err)
-	}
-
-	// Should return at least one device (the system device)
-	if len(statuses) == 0 {
-		t.Error("GetDeviceStatuses() returned no devices")
-	}
-
-	// Verify each status has required fields
-	for i, status := range statuses {
-		if status.Name == "" {
-			t.Errorf("statuses[%d].Name is empty", i)
-		}
-		if status.MountPoint == "" {
-			t.Errorf("statuses[%d].MountPoint is empty", i)
-		}
-
-		// If device is enabled, it should have DataDir and FilesDir
-		if status.IsEnabled {
-			if status.DataDir == "" {
-				t.Errorf("statuses[%d].DataDir is empty for enabled device %s", i, status.Name)
-			}
-			if status.CirrusDir == "" {
-				t.Errorf("statuses[%d].FilesDir is empty for enabled device %s", i, status.Name)
-			}
-		}
-	}
-
-	// At least one device should be enabled (the system device)
-	hasEnabled := false
-	for _, status := range statuses {
-		if status.IsEnabled {
-			hasEnabled = true
-			break
-		}
-	}
-	if !hasEnabled {
-		t.Error("GetDeviceStatuses() should have at least one enabled device")
 	}
 }
 

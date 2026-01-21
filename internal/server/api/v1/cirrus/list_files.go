@@ -1,8 +1,8 @@
 package v1_files
 
 import (
-	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
+	"autobutler/pkg/util/storageutil"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
@@ -21,12 +21,12 @@ type FileNodeJSON struct {
 
 // getCirrusFilesAcrossDevices merges files across all managed devices for the given filePath
 // If deviceSerial is empty, list files across all devices. Otherwise, only for the specified device.
-func getCirrusFilesForDevice(filePath string, deviceSerial string) ([]*cirrusutil.DeviceFileInfo, error) {
-	devices, err := cirrusutil.GetManagedDevices()
+func getCirrusFilesForDevice(filePath string, deviceSerial string) ([]*storageutil.DeviceFileInfo, error) {
+	devices, err := storageutil.GetManagedDevices()
 	if err != nil {
 		return nil, err
 	}
-	var selectedDevices []cirrusutil.ManagedDevice
+	var selectedDevices []storageutil.ManagedDevice
 	if deviceSerial == "" {
 		selectedDevices = devices
 	} else {
@@ -40,7 +40,7 @@ func getCirrusFilesForDevice(filePath string, deviceSerial string) ([]*cirrusuti
 			return nil, nil // Device not found, return empty
 		}
 	}
-	var allFiles []*cirrusutil.DeviceFileInfo
+	var allFiles []*storageutil.DeviceFileInfo
 	for _, device := range selectedDevices {
 		cirrusDir := device.CirrusDir
 		fullPathDir := filepath.Join(cirrusDir, filePath)
@@ -48,7 +48,7 @@ func getCirrusFilesForDevice(filePath string, deviceSerial string) ([]*cirrusuti
 		if device.UsbInfo != nil {
 			deviceSerial = device.UsbInfo.GetSerial()
 		}
-		files, err := cirrusutil.StatFilesInDir(fullPathDir, device.Name, device.DataDir, deviceSerial)
+		files, err := storageutil.StatFilesInDir(fullPathDir, device.Name, device.DataDir, deviceSerial)
 		if err != nil {
 			continue
 		}
@@ -56,7 +56,7 @@ func getCirrusFilesForDevice(filePath string, deviceSerial string) ([]*cirrusuti
 	}
 	// Only deduplicate folders (isDir), show all files across all devices
 	seenFolders := make(map[string]bool)
-	filteredFiles := make([]*cirrusutil.DeviceFileInfo, 0, len(allFiles))
+	filteredFiles := make([]*storageutil.DeviceFileInfo, 0, len(allFiles))
 	for _, file := range allFiles {
 		name := file.FileInfo.Name()
 		if file.IsDir() {

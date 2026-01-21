@@ -1,6 +1,4 @@
-package cirrusutil
-
-import "autobutler/pkg/util/storageutil"
+package storageutil
 
 // Summary represents overall storage summary
 type Summary struct {
@@ -14,7 +12,7 @@ type Summary struct {
 }
 
 // CalculateSummary calculates total storage summary from all devices
-func CalculateSummary(devices []storageutil.Device) Summary {
+func CalculateSummary(devices []Device) Summary {
 	summary := Summary{}
 
 	for _, device := range devices {

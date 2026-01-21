@@ -1,7 +1,7 @@
 package workerutil
 
 import (
-	"autobutler/pkg/util/cirrusutil"
+	"autobutler/pkg/util/storageutil"
 	"bytes"
 	"mime/multipart"
 	"net/http/httptest"
@@ -112,7 +112,7 @@ func startWorkerAndQuitOnDone(t *testing.T, fn func(w Worker)) {
 
 func TestWorkerIntegration_DeleteFile(t *testing.T) {
 	testFileName := "integration_deletefile.txt"
-	cirrusDir := cirrusutil.GetCirrusDir()
+	cirrusDir := storageutil.GetCirrusDir()
 
 	filePath := filepath.Join(cirrusDir, testFileName)
 	if err := os.WriteFile(filePath, []byte("test"), 0644); err != nil {
@@ -121,7 +121,7 @@ func TestWorkerIntegration_DeleteFile(t *testing.T) {
 
 	startWorkerAndQuitOnDone(t, func(w Worker) {
 		deleteCh := w.GetDeleteFilesChannel()
-		deleteCh <- cirrusutil.DeleteFilesParams{
+		deleteCh <- storageutil.DeleteFilesParams{
 			RootDir:   "",
 			FilePaths: []string{testFileName},
 		}
@@ -133,7 +133,7 @@ func TestWorkerIntegration_DeleteFile(t *testing.T) {
 }
 
 func TestWorkerIntegration_MoveFile(t *testing.T) {
-	cirrusDir := cirrusutil.GetCirrusDir()
+	cirrusDir := storageutil.GetCirrusDir()
 	oldName := "integration_movefile_old.txt"
 	newName := "integration_movefile_new.txt"
 	oldPath := filepath.Join(cirrusDir, oldName)
@@ -145,7 +145,7 @@ func TestWorkerIntegration_MoveFile(t *testing.T) {
 
 	startWorkerAndQuitOnDone(t, func(w Worker) {
 		moveCh := w.GetMoveFileChannel()
-		moveCh <- cirrusutil.MoveFileParams{
+		moveCh <- storageutil.MoveFileParams{
 			OldFilePath: oldName,
 			NewFilePath: newName,
 		}
@@ -164,13 +164,13 @@ func TestWorkerIntegration_MoveFile(t *testing.T) {
 }
 
 func TestWorkerIntegration_CreateFolder(t *testing.T) {
-	cirrusDir := cirrusutil.GetCirrusDir()
+	cirrusDir := storageutil.GetCirrusDir()
 	folderName := "integration_created_folder"
 	folderPath := filepath.Join(cirrusDir, folderName)
 
 	startWorkerAndQuitOnDone(t, func(w Worker) {
 		createCh := w.GetCreateFolderChannel()
-		createCh <- cirrusutil.CreateFolderParams{
+		createCh <- storageutil.CreateFolderParams{
 			FolderDir:  "",
 			FolderName: folderName,
 		}
@@ -185,7 +185,7 @@ func TestWorkerIntegration_CreateFolder(t *testing.T) {
 }
 
 func TestWorkerIntegration_UploadFile(t *testing.T) {
-	cirrusDir := cirrusutil.GetCirrusDir()
+	cirrusDir := storageutil.GetCirrusDir()
 	fileName := "integration_uploadfile.txt"
 	fileContent := []byte("upload test content")
 
@@ -210,7 +210,7 @@ func TestWorkerIntegration_UploadFile(t *testing.T) {
 
 	startWorkerAndQuitOnDone(t, func(w Worker) {
 		uploadCh := w.GetUploadFilesChannel()
-		uploadCh <- cirrusutil.UploadFilesParams{
+		uploadCh <- storageutil.UploadFilesParams{
 			RootDir:     "",
 			FileHeaders: []*multipart.FileHeader{fh},
 		}

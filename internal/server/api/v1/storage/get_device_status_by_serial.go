@@ -1,8 +1,8 @@
 package v1_storage
 
 import (
-	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
+	"autobutler/pkg/util/storageutil"
 	"errors"
 	"fmt"
 	"net/http"
@@ -19,14 +19,14 @@ var getDeviceStatusBySerialRoute = serverutil.ApiRoute(
 				WithStatusCode(http.StatusBadRequest).
 				WithError(errors.New("Serial parameter is required"))
 		}
-		statuses, err := cirrusutil.GetDeviceStatuses()
+		statuses, err := storageutil.GetDeviceStatuses()
 		if err != nil {
 			return serverutil.NewResponse().
 				WithContentType(serverutil.ContentTypeJSON).
 				WithStatusCode(http.StatusInternalServerError).
 				WithError(fmt.Errorf("Failed to get device statuses: %w", err))
 		}
-		var device *cirrusutil.DeviceStatus
+		var device *storageutil.DeviceStatus
 		for _, ds := range statuses {
 			if ds.UsbInfo == nil {
 				continue

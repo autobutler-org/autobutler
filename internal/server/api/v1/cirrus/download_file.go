@@ -2,8 +2,8 @@ package v1_files
 
 import (
 	"archive/zip"
-	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
+	"autobutler/pkg/util/storageutil"
 	"fmt"
 	"net/http"
 	"os"
@@ -17,7 +17,7 @@ var downloadFileRoute = serverutil.ApiRoute(
 		filePath := c.Param("filePath")
 		serial := c.Query("serial")
 
-		result, err := cirrusutil.DownloadFile(cirrusutil.DownloadFileParams{
+		result, err := storageutil.DownloadFile(storageutil.DownloadFileParams{
 			FilePath:     filePath,
 			DeviceSerial: serial,
 		})
@@ -48,7 +48,7 @@ var downloadFileRoute = serverutil.ApiRoute(
 
 			disposition := "inline"
 			contentType := "application/octet-stream"
-			if result.FileType == cirrusutil.FileTypePDF {
+			if result.FileType == storageutil.FileTypePDF {
 				disposition = "inline"
 				contentType = "application/pdf"
 			}

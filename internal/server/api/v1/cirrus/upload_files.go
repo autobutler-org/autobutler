@@ -1,8 +1,8 @@
 package v1_files
 
 import (
-	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
+	"autobutler/pkg/util/storageutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,7 +25,7 @@ func uploadFilesImpl(c *gin.Context, rootDir string) *serverutil.Response {
 	if err != nil {
 		return serverutil.BadRequest(err)
 	}
-	err = cirrusutil.UploadFilesStreamed(cirrusutil.UploadFilesStreamedParams{
+	err = storageutil.UploadFilesStreamed(storageutil.UploadFilesStreamedParams{
 		Reader:       reader,
 		RootDir:      rootDir,
 		DeviceSerial: serial,

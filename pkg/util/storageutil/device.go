@@ -1,5 +1,11 @@
 package storageutil
 
+import (
+	"os"
+	"path/filepath"
+	"strings"
+)
+
 type Device struct {
 	Name           string            `json:"name"`
 	DevicePath     string            `json:"devicePath"`        // e.g., "/dev/disk3s5"
@@ -17,23 +23,70 @@ type Device struct {
 // ApplySimpleCategorization applies a simple heuristic categorization for UI display
 // System volumes get a basic breakdown, external drives show as "other"
 func (d *Device) ApplySimpleCategorization() {
-	// TODO: This whole function is a mock and needs to be replaced with something useful later
+	// Real categorization: traverse the mount point and sum file sizes by type
 	d.Categories = make(map[string]uint64)
 
-	// System volume heuristic: 10% system, 20% documents, 25% media, rest is other
-	if d.MountPoint == "/" || d.MountPoint == "/System/Volumes/Data" || d.MountPoint == "/home" {
-		d.Categories["system"] = d.UsedBytes / 10 // 10%
-		d.Categories["dents"] = d.UsedBytes / 5   // 20%
-		d.Categories["media"] = d.UsedBytes / 4   // 25%
+	// Define file extensions for categories
+	docExts := map[string]struct{}{
+		".pdf": {}, ".doc": {}, ".docx": {}, ".txt": {}, ".md": {}, ".xls": {}, ".xlsx": {}, ".ppt": {}, ".pptx": {}, ".csv": {},
+	}
+	mediaExts := map[string]struct{}{
+		".jpg": {}, ".jpeg": {}, ".png": {}, ".gif": {}, ".bmp": {}, ".mp4": {}, ".mov": {}, ".avi": {}, ".mkv": {}, ".mp3": {}, ".wav": {}, ".flac": {},
+	}
+	backupExts := map[string]struct{}{
+		".bak": {}, ".backup": {}, ".zip": {}, ".tar": {}, ".gz": {}, ".rar": {},
+	}
 
-		categorized := d.Categories["system"] + d.Categories["documents"] + d.Categories["media"]
-		if categorized < d.UsedBytes {
-			d.Categories["other"] = d.UsedBytes - categorized
-		} else {
-			d.Categories["other"] = 0 // coverage: ignore
+	// Traverse the mount point
+	cirrusDir := GetCirrusDirForDevice(d.MountPoint)
+	docBytes := uint64(0)
+	mediaBytes := uint64(0)
+	backupBytes := uint64(0)
+	otherBytes := uint64(0)
+
+	filepath.Walk(cirrusDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil // skip errors
 		}
-	} else {
-		// External/other volumes: everything is "other"
-		d.Categories["other"] = d.UsedBytes
+		if info.IsDir() {
+			return nil
+		}
+		ext := strings.ToLower(filepath.Ext(info.Name()))
+		size := uint64(info.Size())
+		if _, ok := docExts[ext]; ok {
+			docBytes += size
+		} else if _, ok := mediaExts[ext]; ok {
+			mediaBytes += size
+		} else if _, ok := backupExts[ext]; ok {
+			backupBytes += size
+		} else {
+			otherBytes += size
+		}
+		return nil
+	})
+
+	// Add system category for system volumes: system = total - categorized - free
+	categorized := docBytes + mediaBytes + backupBytes + otherBytes
+	total := d.TotalBytes
+	free := d.AvailableBytes
+	systemBytes := uint64(0)
+	if total > categorized+free {
+		systemBytes = total - categorized - free
+	}
+
+	if docBytes > 0 {
+		d.Categories["documents"] = docBytes
+	}
+	if mediaBytes > 0 {
+		d.Categories["media"] = mediaBytes
+	}
+	if backupBytes > 0 {
+		d.Categories["backups"] = backupBytes
+	}
+	if otherBytes > 0 {
+		d.Categories["other"] = otherBytes
+	}
+	if systemBytes > 0 {
+		d.Categories["system"] = systemBytes
 	}
 }

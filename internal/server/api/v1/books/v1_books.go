@@ -2,8 +2,8 @@ package v1_books
 
 import (
 	"autobutler/pkg/util/bookutil"
-	"autobutler/pkg/util/cirrusutil"
 	"autobutler/pkg/util/serverutil"
+	"autobutler/pkg/util/storageutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,7 +17,7 @@ type BookJSON struct {
 }
 
 func getBooksHandler(c *gin.Context) *serverutil.Response {
-	rootDir := cirrusutil.GetCirrusDir()
+	rootDir := storageutil.GetCirrusDir()
 	books, err := bookutil.FindAllBooksRecursively(rootDir)
 	if err != nil {
 		return serverutil.NewResponse().WithStatusCode(500).WithError(err)
@@ -26,7 +26,7 @@ func getBooksHandler(c *gin.Context) *serverutil.Response {
 	result := make([]BookJSON, len(books))
 	for i, book := range books {
 		info := book.FileInfo
-		fileType := cirrusutil.DetermineFileTypeFromPath(info.Name())
+		fileType := storageutil.DetermineFileTypeFromPath(info.Name())
 		result[i] = BookJSON{
 			RelPath:  book.RelPath,
 			FileName: info.Name(),
