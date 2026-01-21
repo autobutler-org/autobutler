@@ -76,75 +76,54 @@ const percentUsed = computed(() => {
     props.device.totalBytes > 0
       ? (props.device.usedBytes / props.device.totalBytes) * 100
       : 0;
-  // Clamp to 2 decimal places, but show as number (not string) for comparisons
   return Number(percent.toFixed(2));
 });
 
-// Static test values for visual testing
 const hasCategories = computed(() => {
-  return true;
+  return (
+    props.device.categories && Object.keys(props.device.categories).length > 0
+  );
 });
-type CategoryLabel =
-  | 'System'
-  | 'Documents'
-  | 'Media'
-  | 'Backups'
-  | 'Other'
-  | 'Free';
 
-const testGB: Record<CategoryLabel, number> = {
-  System: 40.81,
-  Documents: 81.62,
-  Media: 102.03,
-  Backups: 0,
-  Other: 183.65,
-  Free: 19.9,
-};
-const totalGB =
-  testGB.System + testGB.Documents + testGB.Media + testGB.Other + testGB.Free;
+const totalCategoryBytes = computed(() => {
+  if (!props.device.categories) return 0;
+  return Object.values(props.device.categories).reduce((sum, v) => sum + v, 0);
+});
 
 const categorySegments = computed(() => {
-  const map = [
-    { key: 'system', class: 'storage-partition-system', label: 'System' },
-    {
-      key: 'documents',
-      class: 'storage-partition-documents',
-      label: 'Documents',
-    },
-    { key: 'media', class: 'storage-partition-media', label: 'Media' },
-    { key: 'backups', class: 'storage-partition-backups', label: 'Backups' },
-    { key: 'other', class: 'storage-partition-other', label: 'Other' },
-  ];
-  return map
-    .map((seg) => {
-      const gb = testGB[seg.label as CategoryLabel] || 0;
-      if (!gb || !totalGB)
-        return {
-          key: seg.key,
-          class: seg.class,
-          label: seg.label,
-          width: '0%',
-          title: '',
-          gb: '0',
-        };
-      const percent = (gb / totalGB) * 100;
+  if (!props.device.categories) return [];
+  const totalBytes = totalCategoryBytes.value;
+  if (!totalBytes) return [];
+  // Use backend keys and values directly
+  return Object.entries(props.device.categories)
+    .map(([key, bytes]) => {
+      if (!bytes) return null;
+      const gb = bytes / GB;
+      const percent = (bytes / totalBytes) * 100;
+      // Use a class naming convention for color, fallback to 'other' if unknown
+      const className = `storage-partition-${key}`;
+      // Capitalize key for label
+      const label = key.charAt(0).toUpperCase() + key.slice(1);
       return {
-        key: seg.key,
-        class: seg.class,
-        label: seg.label,
+        key,
+        class: className,
+        label,
         width: percent.toFixed(2) + '%',
-        title: `${seg.label}: ${gb.toFixed(1)} GB`,
+        title: `${label}: ${gb.toFixed(1)} GB`,
         gb: gb.toFixed(1),
       };
     })
-    .filter(Boolean);
+    .filter((x) => !!x);
 });
 
 const freeWidth = computed(() => {
-  return ((testGB.Free / totalGB) * 100).toFixed(2) + '%';
+  const total = props.device.totalBytes || 0;
+  const free = props.device.availableBytes || 0;
+  if (!total) return '0%';
+  return ((free / total) * 100).toFixed(2) + '%';
 });
 const freeGB = computed(() => {
-  return testGB.Free.toFixed(1);
+  return (props.device.availableBytes / GB).toFixed(1);
 });
 </script>
 

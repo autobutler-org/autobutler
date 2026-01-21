@@ -22,9 +22,9 @@ func (d *Device) ApplySimpleCategorization() {
 
 	// System volume heuristic: 10% system, 20% documents, 25% media, rest is other
 	if d.MountPoint == "/" || d.MountPoint == "/System/Volumes/Data" || d.MountPoint == "/home" {
-		d.Categories["system"] = d.UsedBytes / 10   // 10%
-		d.Categories["documents"] = d.UsedBytes / 5 // 20%
-		d.Categories["media"] = d.UsedBytes / 4     // 25%
+		d.Categories["system"] = d.UsedBytes / 10 // 10%
+		d.Categories["dents"] = d.UsedBytes / 5   // 20%
+		d.Categories["media"] = d.UsedBytes / 4   // 25%
 
 		categorized := d.Categories["system"] + d.Categories["documents"] + d.Categories["media"]
 		if categorized < d.UsedBytes {
