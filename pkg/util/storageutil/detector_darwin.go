@@ -121,6 +121,10 @@ func (d *detector) getDeviceInfo(devicePath string) (*Device, error) {
 	device.MountPoint = extractValue(info, "Mount Point:")
 	device.FileSystem = extractValue(info, "Type \\(Bundle\\):")
 	device.Model = extractValue(info, "Device / Media Name:")
+	deviceLocation := extractValue(info, "Device Location:")
+	if deviceLocation == "Internal" {
+		device.IsInternal = true
+	}
 
 	// Parse sizes
 	if totalStr := extractValue(info, "Disk Size:"); totalStr != "" {
@@ -130,9 +134,6 @@ func (d *detector) getDeviceInfo(devicePath string) (*Device, error) {
 		device.AvailableBytes = parseSize(availStr)
 	}
 	device.UsedBytes = device.TotalBytes - device.AvailableBytes
-
-	// Determine device type and properties
-	device.IsInternal = strings.Contains(strings.ToLower(info), "internal: yes")
 
 	// Set default name if empty
 	if device.Name == "" {
