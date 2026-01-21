@@ -65,6 +65,15 @@ func (d *Device) ApplySimpleCategorization() {
 		return nil
 	})
 
+	// Add system category for system volumes: system = total - categorized - free
+	categorized := docBytes + mediaBytes + backupBytes + otherBytes
+	total := d.TotalBytes
+	free := d.AvailableBytes
+	systemBytes := uint64(0)
+	if total > categorized+free {
+		systemBytes = total - categorized - free
+	}
+
 	if docBytes > 0 {
 		d.Categories["documents"] = docBytes
 	}
@@ -76,5 +85,8 @@ func (d *Device) ApplySimpleCategorization() {
 	}
 	if otherBytes > 0 {
 		d.Categories["other"] = otherBytes
+	}
+	if systemBytes > 0 {
+		d.Categories["system"] = systemBytes
 	}
 }
