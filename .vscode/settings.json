@@ -87,6 +87,7 @@
     "templ",
     "toastr",
     "Typeflag",
+    "updateutil",
     "versionutil",
     "webp",
     "workerutil",
