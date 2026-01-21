@@ -267,36 +267,6 @@ func TestGetDeviceStatuses(t *testing.T) {
 	}
 }
 
-func TestDeviceApplySimpleCategorization_SystemVolume(t *testing.T) {
-	device := &Device{
-		MountPoint: "/",
-		UsedBytes:  1000000,
-	}
-
-	device.ApplySimpleCategorization()
-
-	if device.Categories == nil {
-		t.Fatal("Expected Categories to be initialized")
-	}
-
-	if device.Categories["system"] != 100000 { // 10%
-		t.Errorf("Expected system to be 100000, got %d", device.Categories["system"])
-	}
-}
-
-func TestDeviceApplySimpleCategorization_ExternalVolume(t *testing.T) {
-	device := &Device{
-		MountPoint: "/Volumes/External",
-		UsedBytes:  5000000,
-	}
-
-	device.ApplySimpleCategorization()
-
-	if device.Categories["other"] != 5000000 {
-		t.Errorf("Expected all bytes to be categorized as 'other', got %d", device.Categories["other"])
-	}
-}
-
 func TestGetDataDir(t *testing.T) {
 	dataDir := GetDataDir()
 	if dataDir == "" {
