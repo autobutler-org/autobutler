@@ -2,11 +2,12 @@
   <!-- Flash banner for minimal mode changes -->
   <FlashBanner :show="showBanner" @hide="showBanner = false">
     {{
-      isMinimal
+      bannerMessage ||
+      (isMinimal
         ? 'Fullscreen mode enabled' +
           `${minimizeKeyCombo ? ` (${toKeyComboString(minimizeKeyCombo)})` : ''}`
         : 'Fullscreen mode disabled' +
-          `${minimizeKeyCombo ? ` (${toKeyComboString(minimizeKeyCombo)})` : ''}`
+          `${minimizeKeyCombo ? ` (${toKeyComboString(minimizeKeyCombo)})` : ''}`)
     }}
   </FlashBanner>
   <nav class="landing-nav" :class="{ 'landing-nav--minimal': isMinimal }">
@@ -41,12 +42,11 @@
             Loading...
           </div>
           <template v-else-if="releases.length > 0">
-            <a
+            <button
               v-for="release in releases"
               :key="release.tagName"
-              :href="release.htmlUrl"
-              target="_blank"
-              rel="noopener noreferrer"
+              :disabled="release.isCurrentVersion || !!updatingVersion"
+              @click="handleUpdate(release.tagName)"
               :class="[
                 'version-dropdown-item',
                 { 'version-dropdown-item--current': release.isCurrentVersion },
@@ -58,7 +58,12 @@
                 class="version-dropdown-badge"
                 >Current</span
               >
-            </a>
+              <span
+                v-if="updatingVersion === release.tagName"
+                style="margin-left: 8px"
+                >Updating...</span
+              >
+            </button>
           </template>
           <div v-else class="version-dropdown-empty">No releases available</div>
         </div>
@@ -151,6 +156,7 @@
 
 <script lang="ts" setup>
 import FlashBanner from '@/components/common/FlashBanner.vue';
+import UpdateService from '@/services/updateService';
 import VersionService, { type Release } from '@/services/versionService';
 import type { NavLink } from '@/types/nav_link';
 import { toKeyComboString, type KeyCombo } from '@/util/keycombo';
@@ -172,6 +178,7 @@ const props = defineProps<{
 }>();
 // --- Flash banner logic ---
 const showBanner = ref(false);
+const bannerMessage = ref('');
 let bannerTimeout: ReturnType<typeof setTimeout> | null = null;
 
 watch(
@@ -191,6 +198,7 @@ const versionDropdownOpen = ref(false);
 const currentVersion = ref('vX.Y.Z');
 const releases = ref<Release[]>([]);
 const loadingReleases = ref(false);
+const updatingVersion = ref<string | null>(null);
 
 // Fetch current version on mount
 onMounted(async () => {
@@ -223,6 +231,20 @@ const toggleVersionDropdown = async () => {
     loadingReleases.value = true;
     releases.value = await VersionService.getAvailableReleases();
     loadingReleases.value = false;
+  }
+};
+
+const handleUpdate = async (version: string) => {
+  updatingVersion.value = version;
+  try {
+    bannerMessage.value = `Update to ${version} started. The server will restart once it downloads.`;
+    showBanner.value = true;
+    await UpdateService.performUpdate(version);
+  } catch (err) {
+    showBanner.value = true;
+    bannerMessage.value = `Update failed: ${err}`;
+  } finally {
+    updatingVersion.value = null;
   }
 };
 
@@ -648,10 +670,16 @@ const closeMobileMenu = () => {
   justify-content: space-between;
   gap: $spacing-md;
   padding: $spacing-sm $spacing-lg;
-  color: $theme-palette-text-secondary;
-  text-decoration: none;
+  background: $theme-palette-bg-nav;
+  border: none;
+  border-radius: $border-radius;
+  color: $theme-palette-text-muted;
   font-size: $theme-font-size-sm;
-  transition: background-color 0.2s ease;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 
   &:hover {
     background: $theme-palette-accent;
@@ -660,21 +688,30 @@ const closeMobileMenu = () => {
 
   &--current {
     background: hsl(from $theme-palette-accent h s l / 0.2);
-
+    cursor: default;
+    color: $theme-palette-text-primary;
     &:hover {
       background: hsl(from $theme-palette-accent h s l / 0.3);
     }
   }
 
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
   @media (prefers-color-scheme: light) {
-    color: $theme-palette-text-primary;
+    color: $theme-palette-text-inverse;
+    background: $theme-palette-bg-nav;
 
     &:hover {
       background: $theme-palette-accent-hover;
+      color: $theme-palette-text-inverse;
     }
 
     &--current {
       background: hsl(from $theme-palette-accent h s l / 0.1);
+      color: $theme-palette-text-inverse;
       &:hover {
         background: hsl(from $theme-palette-accent h s l / 0.15);
       }
