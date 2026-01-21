@@ -8,6 +8,13 @@
   font-weight: normal;
 }
 
+html {
+  // Remove rubber band scrolling
+  // https://dsalim.dev/css/2023/05/24/prevent-drag-overscroll-macos.html
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+}
+
 body {
   font-family:
     Inter,
