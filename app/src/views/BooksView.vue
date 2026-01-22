@@ -15,7 +15,6 @@
     <template #main>
       <div id="books-view">
         <div v-if="books.length === 0" class="books-empty">
-          <BookIcon />
           <h2>No books found</h2>
           <p>Add PDF or EPUB files to your files directory to see them here.</p>
         </div>
@@ -52,7 +51,6 @@
 import BooksSidebar from '@/components/books/BooksSidebar.vue';
 import CirrusFileViewer from '@/components/cirrus/CirrusFileViewer.vue';
 import LibraryLayout from '@/components/common/LibraryLayout.vue';
-import BookIcon from '@/components/icons/BookIcon.vue';
 import BooksService, { type BookApiResponse } from '@/services/booksService';
 import type { Book } from '@/types/book';
 import type { FileType } from '@/types/cirrus';
