@@ -50,6 +50,7 @@
 
 <script lang="ts" setup>
 import BooksSidebar from '@/components/books/BooksSidebar.vue';
+import CirrusFileViewer from '@/components/cirrus/CirrusFileViewer.vue';
 import LibraryLayout from '@/components/common/LibraryLayout.vue';
 import BookIcon from '@/components/icons/BookIcon.vue';
 import BooksService, { type BookApiResponse } from '@/services/booksService';
@@ -69,6 +70,7 @@ const constructFileSrc = (relativePath: string) =>
   `/api/v1/download/cirrus/${relativePath}`;
 
 const selectBook = (book: Book) => {
+  console.log('Selected book:', book);
   if (book.relPath) {
     selectedFileSrc.value = constructFileSrc(book.relPath);
     selectedFileType.value = book.type.toLowerCase() as FileType;
