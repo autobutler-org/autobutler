@@ -55,9 +55,7 @@ jobs:
         npm ci --prefix ./app
     - name: Install Playwright Browsers
       run: |
-        npx playwright install \
-          --with-deps \
-          --cwd=./app
+        make setup/playwright
     - name: Start Autobutler
       if: ${{ !inputs.is-remote }}
       run: |

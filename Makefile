@@ -59,6 +59,7 @@ setup/node: ## Setup Node.js environment
 	npm install --prefix ./app
 
 setup/playwright: ## Install Playwright browsers
+	cd ./app
 	npx playwright install \
 		--with-deps
 
