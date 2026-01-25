@@ -118,7 +118,7 @@
             :files="files"
             :current-path="currentPath"
             :show-device-badges="showDeviceBadges"
-            :selected-file="selectedFile"
+            :selected-files="selectedFiles"
             @navigate-folder="handleNavigateFolder"
             @open-file="handleOpenFile"
             @select="handleSelectFile"
@@ -131,7 +131,7 @@
             :files="files"
             :current-path="currentPath"
             :show-device-badges="showDeviceBadges"
-            :selected-file="selectedFile"
+            :selected-files="selectedFiles"
             @navigate-folder="handleNavigateFolder"
             @open-file="handleOpenFile"
             @select="handleSelectFile"
@@ -405,7 +405,8 @@ const fileViewerOpen = ref(false);
 const selectedFileSrc = ref('');
 const selectedFileType = ref<FileType>('generic');
 // Selection state
-const selectedFile = ref<CirrusFileNode | null>(null);
+const selectedFiles = ref<CirrusFileNode[]>([]);
+const lastSelectedFile = ref<CirrusFileNode | null>(null);
 
 // Context menu state
 const contextMenuOpen = ref(false);
@@ -526,8 +527,39 @@ onMounted(() => {
 const constructFileSrc = (relativePath: string) =>
   `/api/v1/download/cirrus/${relativePath}`;
 
-const handleSelectFile = (file: CirrusFileNode) => {
-  selectedFile.value = file;
+const handleSelectFile = (file: CirrusFileNode, event?: MouseEvent) => {
+  // Multi-select logic: ctrl/cmd for toggle, shift for range, else single select
+  if (event && (event.ctrlKey || event.metaKey)) {
+    // Toggle selection
+    const idx = selectedFiles.value.findIndex(
+      (f) => f.fullPath === file.fullPath,
+    );
+    if (idx >= 0) {
+      selectedFiles.value.splice(idx, 1);
+    } else {
+      selectedFiles.value.push(file);
+    }
+    lastSelectedFile.value = file;
+  } else if (event && event.shiftKey && lastSelectedFile.value) {
+    // Range select (from lastSelectedFile to clicked)
+    const filesList = files.value;
+    const startIdx = filesList.findIndex(
+      (f) => f.fullPath === lastSelectedFile.value?.fullPath,
+    );
+    const endIdx = filesList.findIndex((f) => f.fullPath === file.fullPath);
+    if (startIdx >= 0 && endIdx >= 0) {
+      const [from, to] =
+        startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+      const range = filesList.slice(from, to + 1);
+      // Replace selection with range
+      selectedFiles.value = range;
+    }
+    lastSelectedFile.value = file;
+  } else {
+    // Single select
+    selectedFiles.value = [file];
+    lastSelectedFile.value = file;
+  }
 };
 const navigateToPath = (path: string) => {
   currentPath.value = path;
