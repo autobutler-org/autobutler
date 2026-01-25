@@ -133,20 +133,6 @@
         <template v-else-if="files.length === 0">
           <span class="file-explorer-empty">No files found</span>
         </template>
-        <template v-else-if="view === 'grid'">
-          <CirrusGridView
-            :files="files"
-            :current-path="currentPath"
-            :show-device-badges="showDeviceBadges"
-            :selected-files="selectedFiles"
-            @navigate-folder="handleNavigateFolder"
-            @open-file="handleOpenFile"
-            @select="handleSelectFile"
-            @context-menu="handleContextMenu"
-            @files-uploaded="handleFilesUploaded"
-            @deselect-all="handleDeselectAll"
-          />
-        </template>
         <template v-else>
           <div
             class="file-table-container"
@@ -157,7 +143,8 @@
               min-height: 0;
             "
           >
-            <CirrusListView
+            <component
+              :is="fileViewComponent"
               :files="files"
               :current-path="currentPath"
               :show-device-badges="showDeviceBadges"
@@ -351,6 +338,35 @@
 </template>
 
 <script lang="ts" setup>
+import ModalDialog from '@/components/common/ModalDialog.vue';
+import CloseIcon from '@/components/icons/CloseIcon.vue';
+import UploadIcon from '@/components/icons/UploadIcon.vue';
+import CirrusService from '@/services/cirrusService';
+import type { CirrusFileNode, FileType } from '@/types/cirrus';
+import { computed, onMounted, ref, ref as vueRef, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import GridViewIcon from '../icons/GridViewIcon.vue';
+import ListViewIcon from '../icons/ListViewIcon.vue';
+import CirrusBreadcrumbs from './CirrusBreadcrumbs.vue';
+import CirrusContextMenu from './CirrusContextMenu.vue';
+import CirrusFileViewer from './CirrusFileViewer.vue';
+import CirrusGridView from './CirrusGridView.vue';
+import CirrusListView from './CirrusListView.vue';
+
+import DevicesService from '@/services/devicesService';
+import { useCirrusDeviceStore } from '@/stores/cirrusDeviceStore';
+import { storeToRefs } from 'pinia';
+
+const fileInputRef = vueRef<HTMLInputElement | null>(null);
+const isUploading = vueRef(false);
+const uploadProgress = vueRef('');
+const cirrusDeviceStore = useCirrusDeviceStore();
+const { devices, selectedDeviceSerial } = storeToRefs(cirrusDeviceStore);
+
+const fileViewComponent = computed(() => {
+  return view.value === 'grid' ? CirrusGridView : CirrusListView;
+});
+
 // Unselect all files when CirrusListView emits deselect-all
 const handleDeselectAll = () => {
   selectedFiles.value = [];
@@ -400,30 +416,6 @@ const handleDownloadSelected = () => {
     document.body.removeChild(link);
   }
 };
-import ModalDialog from '@/components/common/ModalDialog.vue';
-import CloseIcon from '@/components/icons/CloseIcon.vue';
-import UploadIcon from '@/components/icons/UploadIcon.vue';
-import CirrusService from '@/services/cirrusService';
-import type { CirrusFileNode, FileType } from '@/types/cirrus';
-import { onMounted, ref, ref as vueRef, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import GridViewIcon from '../icons/GridViewIcon.vue';
-import ListViewIcon from '../icons/ListViewIcon.vue';
-import CirrusBreadcrumbs from './CirrusBreadcrumbs.vue';
-import CirrusContextMenu from './CirrusContextMenu.vue';
-import CirrusFileViewer from './CirrusFileViewer.vue';
-import CirrusGridView from './CirrusGridView.vue';
-import CirrusListView from './CirrusListView.vue';
-
-import DevicesService from '@/services/devicesService';
-import { useCirrusDeviceStore } from '@/stores/cirrusDeviceStore';
-import { storeToRefs } from 'pinia';
-
-const fileInputRef = vueRef<HTMLInputElement | null>(null);
-const isUploading = vueRef(false);
-const uploadProgress = vueRef('');
-const cirrusDeviceStore = useCirrusDeviceStore();
-const { devices, selectedDeviceSerial } = storeToRefs(cirrusDeviceStore);
 
 const handleUploadClick = () => {
   fileInputRef.value?.click();
