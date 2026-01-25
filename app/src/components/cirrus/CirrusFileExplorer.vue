@@ -40,21 +40,21 @@
             class="action-btn"
             type="button"
             :disabled="selectedFiles.length === 0 || isUploading"
-            @click="handleDeleteSelected"
-            title="Delete selected files"
-            aria-label="Delete selected files"
-          >
-            <DeleteIcon />
-          </button>
-          <button
-            class="action-btn"
-            type="button"
-            :disabled="selectedFiles.length === 0 || isUploading"
             @click="handleDownloadSelected"
             title="Download selected files"
             aria-label="Download selected files"
           >
             <DownloadIcon />
+          </button>
+          <button
+            class="action-btn"
+            type="button"
+            :disabled="selectedFiles.length === 0 || isUploading"
+            @click="handleDeleteSelected"
+            title="Delete selected files"
+            aria-label="Delete selected files"
+          >
+            <DeleteIcon />
           </button>
           <input
             ref="fileInputRef"
