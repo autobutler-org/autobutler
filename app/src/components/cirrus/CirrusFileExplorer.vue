@@ -44,7 +44,7 @@
             title="Delete selected files"
             aria-label="Delete selected files"
           >
-            🗑️
+            <DeleteIcon />
           </button>
           <button
             class="download-btn"
@@ -340,6 +340,7 @@
 <script lang="ts" setup>
 import ModalDialog from '@/components/common/ModalDialog.vue';
 import CloseIcon from '@/components/icons/CloseIcon.vue';
+import DeleteIcon from '@/components/icons/DeleteIcon.vue';
 import UploadIcon from '@/components/icons/UploadIcon.vue';
 import CirrusService from '@/services/cirrusService';
 import type { CirrusFileNode, FileType } from '@/types/cirrus';
@@ -1123,6 +1124,38 @@ const handleDelete = (file: CirrusFileNode) => {
   }
   &:hover {
     background: $theme-palette-accent-hover;
+  }
+}
+
+.delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $theme-palette-bg-nav;
+  color: $theme-palette-accent;
+  font-size: 1.5rem;
+  border-radius: $border-radius-lg;
+  padding: 0.5rem 1rem;
+  min-width: 40px;
+  min-height: 40px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  &:hover:not(:disabled) {
+    background: $theme-palette-bg-secondary;
+    color: $theme-palette-text-inverse;
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    display: block;
   }
 }
 
