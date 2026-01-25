@@ -103,6 +103,13 @@
         </tr>
       </tbody>
     </table>
+    <!-- Deselect area directly after #file-explorer-table -->
+    <div
+      id="file-explorer-table-deselect"
+      class="file-explorer-deselect-area"
+      @click="$emit('deselect-all')"
+      style="width: 100%; min-height: 32px; cursor: pointer"
+    ></div>
   </div>
 </template>
 
@@ -351,6 +358,10 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 </script>
 
 <style lang="scss" scoped>
+// Empty area for deselecting in list view
+.file-explorer-deselect-area {
+  background: transparent;
+}
 .file-table-container {
   flex: 1;
   min-height: 0;

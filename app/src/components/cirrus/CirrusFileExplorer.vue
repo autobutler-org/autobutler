@@ -71,7 +71,7 @@
       </div>
     </div>
 
-    <div id="file-explorer-selectable">
+    <div id="file-explorer-selectable" @click.self="handleSelectableClick">
       <div class="file-explorer-controls">
         <div>
           <CirrusBreadcrumbs
@@ -147,17 +147,28 @@
           />
         </template>
         <template v-else>
-          <CirrusListView
-            :files="files"
-            :current-path="currentPath"
-            :show-device-badges="showDeviceBadges"
-            :selected-files="selectedFiles"
-            @navigate-folder="handleNavigateFolder"
-            @open-file="handleOpenFile"
-            @select="handleSelectFile"
-            @context-menu="handleContextMenu"
-            @files-uploaded="handleFilesUploaded"
-          />
+          <div
+            class="file-table-container"
+            style="
+              display: flex;
+              flex-direction: column;
+              flex: 1;
+              min-height: 0;
+            "
+          >
+            <CirrusListView
+              :files="files"
+              :current-path="currentPath"
+              :show-device-badges="showDeviceBadges"
+              :selected-files="selectedFiles"
+              @navigate-folder="handleNavigateFolder"
+              @open-file="handleOpenFile"
+              @select="handleSelectFile"
+              @context-menu="handleContextMenu"
+              @files-uploaded="handleFilesUploaded"
+              @deselect-all="handleDeselectAll"
+            />
+          </div>
         </template>
       </div>
     </div>
@@ -339,6 +350,11 @@
 </template>
 
 <script lang="ts" setup>
+// Unselect all files when CirrusListView emits deselect-all
+const handleDeselectAll = () => {
+  selectedFiles.value = [];
+  lastSelectedFile.value = null;
+};
 // Delete all selected files
 const handleDeleteSelected = async () => {
   if (selectedFiles.value.length === 0) return;
@@ -803,6 +819,10 @@ const handleDelete = (file: CirrusFileNode) => {
 </script>
 
 <style lang="scss" scoped>
+// Empty area for deselecting in list view
+.file-explorer-deselect-area {
+  background: transparent;
+}
 .file-explorer {
   max-width: 100%;
   box-shadow: $shadow-sm;
