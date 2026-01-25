@@ -364,7 +364,13 @@ const cirrusDeviceStore = useCirrusDeviceStore();
 const { devices, selectedDeviceSerial } = storeToRefs(cirrusDeviceStore);
 
 const fileViewComponent = computed(() => {
-  return view.value === 'grid' ? CirrusGridView : CirrusListView;
+  switch (view.value) {
+    case 'grid':
+      return CirrusGridView;
+    case 'list':
+    default:
+      return CirrusListView;
+  }
 });
 
 // Unselect all files when CirrusListView emits deselect-all
