@@ -107,7 +107,7 @@
     <div
       id="file-explorer-table-deselect"
       class="file-explorer-deselect-area"
-      @click="$emit('deselect-all')"
+      @click="emit('deselect-all')"
       style="width: 100%; min-height: 32px; cursor: pointer"
     ></div>
   </div>
@@ -146,6 +146,7 @@ const emit = defineEmits<{
   'context-menu': [event: MouseEvent, file: CirrusFileNode];
   select: [file: CirrusFileNode, event?: MouseEvent];
   'files-uploaded': [files: CirrusFileNode[]];
+  'deselect-all': [];
 }>();
 
 // Sorting state
