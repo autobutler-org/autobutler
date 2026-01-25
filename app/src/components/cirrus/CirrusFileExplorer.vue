@@ -144,6 +144,7 @@
             @select="handleSelectFile"
             @context-menu="handleContextMenu"
             @files-uploaded="handleFilesUploaded"
+            @deselect-all="handleDeselectAll"
           />
         </template>
         <template v-else>
