@@ -71,7 +71,7 @@
       </div>
     </div>
 
-    <div id="file-explorer-selectable" @click.self="handleSelectableClick">
+    <div id="file-explorer-selectable">
       <div class="file-explorer-controls">
         <div>
           <CirrusBreadcrumbs
@@ -371,7 +371,10 @@ const handleDeleteSelected = async () => {
         (f) => f.fullPath !== file.fullPath,
       );
     } catch (e) {
-      // Optionally show error per file
+      console.error(
+        `Failed to delete file ${CirrusService.getFileName(file)}:`,
+        e,
+      );
     }
   }
 };
