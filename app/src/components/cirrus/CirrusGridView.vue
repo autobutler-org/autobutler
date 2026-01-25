@@ -18,7 +18,8 @@
           {
             'grid-view-item--folder': CirrusService.isDirectory(file),
             'grid-view-item--selected':
-              selectedFile && selectedFile.fullPath === file.fullPath,
+              props.selectedFiles &&
+              props.selectedFiles.some((f) => f.fullPath === file.fullPath),
             'grid-view-item--drop-target':
               CirrusService.isDirectory(file) &&
               hoveredDirectoryPath === resolveDirectoryTargetPath(file),
@@ -28,7 +29,7 @@
         :data-is-folder="CirrusService.isDirectory(file)"
         :data-file-type="CirrusService.determineFileType(file)"
         :data-device-name="file.deviceName"
-        @click="emit('select', file)"
+        @click="(event) => emit('select', file, event)"
         @dblclick="handleClick(file)"
         @contextmenu="handleContextMenu($event, file)"
         @dragenter="handleDirectoryDragEnter($event, file)"
@@ -95,14 +96,14 @@ const props = defineProps<{
   files: CirrusFileNode[];
   currentPath: string;
   showDeviceBadges?: boolean;
-  selectedFile?: CirrusFileNode | null;
+  selectedFiles?: CirrusFileNode[];
 }>();
 
 const emit = defineEmits<{
   'navigate-folder': [path: string];
   'open-file': [file: CirrusFileNode];
   'context-menu': [event: MouseEvent, file: CirrusFileNode];
-  select: [file: CirrusFileNode];
+  select: [file: CirrusFileNode, event?: MouseEvent];
   'files-uploaded': [files: CirrusFileNode[]];
 }>();
 
