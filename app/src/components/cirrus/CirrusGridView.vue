@@ -76,6 +76,14 @@
       </div>
     </div>
   </div>
+  <div
+    class="grid-view-deselect-area"
+    @click="
+      console.log('deselect grid');
+      emit('deselect-all');
+    "
+    title="Click to deselect all"
+  ></div>
 </template>
 
 <script lang="ts" setup>
@@ -105,6 +113,7 @@ const emit = defineEmits<{
   'context-menu': [event: MouseEvent, file: CirrusFileNode];
   select: [file: CirrusFileNode, event?: MouseEvent];
   'files-uploaded': [files: CirrusFileNode[]];
+  'deselect-all': [];
 }>();
 
 const {
@@ -219,7 +228,6 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 
 <style lang="scss" scoped>
 .grid-view-container {
-  flex: 1;
   overflow-y: auto;
   padding: $spacing-sm;
   position: relative;
@@ -334,5 +342,9 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   font-size: 0.75rem;
   color: $theme-palette-text-muted;
   margin-top: $spacing-xs;
+}
+
+.grid-view-deselect-area {
+  flex: 1;
 }
 </style>
