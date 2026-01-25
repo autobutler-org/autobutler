@@ -78,10 +78,7 @@
   </div>
   <div
     class="grid-view-deselect-area"
-    @click="
-      console.log('deselect grid');
-      emit('deselect-all');
-    "
+    @click="emit('deselect-all')"
     title="Click to deselect all"
   ></div>
 </template>
