@@ -36,6 +36,26 @@
           >
             <UploadIcon />
           </button>
+          <button
+            class="delete-btn"
+            type="button"
+            :disabled="selectedFiles.length === 0 || isUploading"
+            @click="handleDeleteSelected"
+            title="Delete selected files"
+            aria-label="Delete selected files"
+          >
+            🗑️
+          </button>
+          <button
+            class="download-btn"
+            type="button"
+            :disabled="selectedFiles.length === 0 || isUploading"
+            @click="handleDownloadSelected"
+            title="Download selected files"
+            aria-label="Download selected files"
+          >
+            ⬇️
+          </button>
           <input
             ref="fileInputRef"
             type="file"
@@ -319,6 +339,47 @@
 </template>
 
 <script lang="ts" setup>
+// Delete all selected files
+const handleDeleteSelected = async () => {
+  if (selectedFiles.value.length === 0) return;
+  for (const file of [...selectedFiles.value]) {
+    try {
+      await CirrusService.deleteFile(
+        currentPath.value,
+        CirrusService.getFileName(file),
+        file.deviceSerial,
+      );
+      files.value = files.value.filter((f) => f.fullPath !== file.fullPath);
+      selectedFiles.value = selectedFiles.value.filter(
+        (f) => f.fullPath !== file.fullPath,
+      );
+    } catch (e) {
+      // Optionally show error per file
+    }
+  }
+};
+
+// Download all selected files
+const handleDownloadSelected = () => {
+  if (selectedFiles.value.length === 0) return;
+  for (const file of selectedFiles.value) {
+    const fileName = CirrusService.getFileName(file);
+    const relativePath = currentPath.value
+      ? `${currentPath.value}/${fileName}`
+      : fileName;
+    const downloadUrl = `/api/v1/download/cirrus/${relativePath}${
+      file.deviceSerial
+        ? `?serial=${encodeURIComponent(file.deviceSerial)}`
+        : ''
+    }`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+};
 import ModalDialog from '@/components/common/ModalDialog.vue';
 import CloseIcon from '@/components/icons/CloseIcon.vue';
 import UploadIcon from '@/components/icons/UploadIcon.vue';
