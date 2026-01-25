@@ -23,6 +23,12 @@
   max-height: 100vh;
   max-width: 100vw;
   overflow: hidden;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    height: auto;
+    max-height: none;
+  }
 }
 
 .library-header {
@@ -58,6 +64,10 @@
   @media (prefers-color-scheme: light) {
     background: $theme-palette-bg-inverse;
   }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 }
 
 .library-sidebar {
@@ -68,6 +78,13 @@
   padding: 0;
   display: flex;
   flex-direction: column;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    border-bottom: 1px solid $theme-palette-bg-nav;
+  }
 }
 
 .library-subtitle {
