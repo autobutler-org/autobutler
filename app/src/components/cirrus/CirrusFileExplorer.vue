@@ -27,7 +27,7 @@
             uploadProgress
           }}</span>
           <button
-            class="upload-btn"
+            class="action-btn"
             type="button"
             :disabled="isUploading || devices.length === 0"
             @click="handleUploadClick"
@@ -37,7 +37,7 @@
             <UploadIcon />
           </button>
           <button
-            class="delete-btn"
+            class="action-btn"
             type="button"
             :disabled="selectedFiles.length === 0 || isUploading"
             @click="handleDeleteSelected"
@@ -47,14 +47,14 @@
             <DeleteIcon />
           </button>
           <button
-            class="download-btn"
+            class="action-btn"
             type="button"
             :disabled="selectedFiles.length === 0 || isUploading"
             @click="handleDownloadSelected"
             title="Download selected files"
             aria-label="Download selected files"
           >
-            ⬇️
+            <DownloadIcon />
           </button>
           <input
             ref="fileInputRef"
@@ -341,6 +341,7 @@
 import ModalDialog from '@/components/common/ModalDialog.vue';
 import CloseIcon from '@/components/icons/CloseIcon.vue';
 import DeleteIcon from '@/components/icons/DeleteIcon.vue';
+import DownloadIcon from '@/components/icons/DownloadIcon.vue';
 import UploadIcon from '@/components/icons/UploadIcon.vue';
 import CirrusService from '@/services/cirrusService';
 import type { CirrusFileNode, FileType } from '@/types/cirrus';
@@ -822,6 +823,38 @@ const handleDelete = (file: CirrusFileNode) => {
 </script>
 
 <style lang="scss" scoped>
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $theme-palette-bg-nav;
+  color: $theme-palette-accent;
+  font-size: 1.5rem;
+  border-radius: $border-radius-lg;
+  padding: 0.5rem 1rem;
+  min-width: 40px;
+  min-height: 40px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  &:hover:not(:disabled) {
+    background: $theme-palette-bg-secondary;
+    color: $theme-palette-text-inverse;
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    display: block;
+  }
+}
+
 // Empty area for deselecting in list view
 .file-explorer-deselect-area {
   background: transparent;
@@ -1095,7 +1128,6 @@ const handleDelete = (file: CirrusFileNode) => {
   color: $theme-palette-text-muted;
 }
 
-// Custom close button for ModalDialogs (like ThemeModal)
 .custom-modal-close-wrapper {
   position: relative;
 }
@@ -1127,69 +1159,6 @@ const handleDelete = (file: CirrusFileNode) => {
   }
 }
 
-.delete-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: $theme-palette-bg-nav;
-  color: $theme-palette-accent;
-  font-size: 1.5rem;
-  border-radius: $border-radius-lg;
-  padding: 0.5rem 1rem;
-  min-width: 40px;
-  min-height: 40px;
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    color 0.15s,
-    border-color 0.15s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  &:hover:not(:disabled) {
-    background: $theme-palette-bg-secondary;
-    color: $theme-palette-text-inverse;
-  }
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  svg {
-    width: 1.5rem;
-    height: 1.5rem;
-    display: block;
-  }
-}
-
-.upload-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: $theme-palette-bg-nav;
-  color: $theme-palette-accent;
-  font-size: 1.5rem;
-  border-radius: $border-radius-lg;
-  padding: 0.5rem 1rem;
-  min-width: 40px;
-  min-height: 40px;
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    color 0.15s,
-    border-color 0.15s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  &:hover:not(:disabled) {
-    background: $theme-palette-bg-secondary;
-    color: $theme-palette-text-inverse;
-  }
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  svg {
-    width: 1.5rem;
-    height: 1.5rem;
-    display: block;
-  }
-}
 .device-select {
   padding: 0.4rem 0.7rem;
   border-radius: $border-radius-md;
