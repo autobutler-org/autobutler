@@ -509,6 +509,10 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   border-radius: $border-radius-md;
   padding: 0 $spacing-xs;
   transition: background-color 0.15s ease;
+
+  &::selection {
+    background-color: transparent;
+  }
 }
 
 .file-table-device {

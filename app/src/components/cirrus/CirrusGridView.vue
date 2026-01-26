@@ -333,6 +333,10 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
+
+  &::selection {
+    background-color: transparent;
+  }
 }
 
 .grid-view-size {
