@@ -83,12 +83,12 @@ export const useCirrusFileDropZone = ({
 
   const handleDragEnter = (event: DragEvent) => {
     event.preventDefault();
-    isDragOver.value = true;
+    isDragOver.value = isDraggingFiles(event);
   };
 
   const handleDragOver = (event: DragEvent) => {
     event.preventDefault();
-    isDragOver.value = true;
+    isDragOver.value = isDraggingFiles(event);
   };
 
   const handleDragLeave = (event: DragEvent) => {
@@ -131,17 +131,29 @@ export const useCirrusFileDropZone = ({
     }
   };
 
+  const isDraggingFiles = (event: DragEvent) => {
+    if (event.dataTransfer?.types) {
+      for (const type of event.dataTransfer.types) {
+        if (type === 'Files') {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
   return {
     fileInputRef,
+    handleClick,
+    handleDragEnter,
+    handleDragLeave,
+    handleDragOver,
+    handleDrop,
+    handleFileInputChange,
     isDragOver,
+    isDraggingFiles,
     isUploading,
     uploadProgress,
-    handleDragEnter,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
-    handleClick,
-    handleFileInputChange,
   };
 };
 
