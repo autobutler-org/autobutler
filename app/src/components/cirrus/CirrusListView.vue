@@ -45,12 +45,13 @@
           class="file-table-row file-node"
           :class="{
             'file-table-row--selected':
-              selectedFile && selectedFile.fullPath === file.fullPath,
+              props.selectedFiles &&
+              props.selectedFiles.some((f) => f.fullPath === file.fullPath),
           }"
           :data-name="CirrusService.getFileName(file)"
           :data-file-type="CirrusService.determineFileType(file)"
           :data-device-name="file.deviceName"
-          @click="emit('select', file)"
+          @click="(event) => emit('select', file, event)"
           @dblclick="handleClick(file)"
           @contextmenu="handleContextMenu($event, file)"
           @dragenter="handleDirectoryDragEnter($event, file)"
@@ -102,7 +103,13 @@
         </tr>
       </tbody>
     </table>
+    <!-- Deselect area directly after #file-explorer-table -->
   </div>
+  <div
+    class="file-explorer-deselect-area"
+    @click="emit('deselect-all')"
+    title="Click to deselect all"
+  ></div>
 </template>
 
 <script lang="ts" setup>
@@ -129,15 +136,16 @@ const props = defineProps<{
   files: CirrusFileNode[];
   currentPath: string;
   showDeviceBadges?: boolean;
-  selectedFile?: CirrusFileNode | null;
+  selectedFiles?: CirrusFileNode[];
 }>();
 
 const emit = defineEmits<{
   'navigate-folder': [path: string];
   'open-file': [file: CirrusFileNode];
   'context-menu': [event: MouseEvent, file: CirrusFileNode];
-  select: [file: CirrusFileNode];
+  select: [file: CirrusFileNode, event?: MouseEvent];
   'files-uploaded': [files: CirrusFileNode[]];
+  'deselect-all': [];
 }>();
 
 // Sorting state
@@ -350,8 +358,11 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 </script>
 
 <style lang="scss" scoped>
-.file-table-container {
+.file-explorer-deselect-area {
   flex: 1;
+}
+
+.file-table-container {
   min-height: 0;
   position: relative;
   overflow-y: auto;

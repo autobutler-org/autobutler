@@ -18,7 +18,8 @@
           {
             'grid-view-item--folder': CirrusService.isDirectory(file),
             'grid-view-item--selected':
-              selectedFile && selectedFile.fullPath === file.fullPath,
+              props.selectedFiles &&
+              props.selectedFiles.some((f) => f.fullPath === file.fullPath),
             'grid-view-item--drop-target':
               CirrusService.isDirectory(file) &&
               hoveredDirectoryPath === resolveDirectoryTargetPath(file),
@@ -28,7 +29,7 @@
         :data-is-folder="CirrusService.isDirectory(file)"
         :data-file-type="CirrusService.determineFileType(file)"
         :data-device-name="file.deviceName"
-        @click="emit('select', file)"
+        @click="(event) => emit('select', file, event)"
         @dblclick="handleClick(file)"
         @contextmenu="handleContextMenu($event, file)"
         @dragenter="handleDirectoryDragEnter($event, file)"
@@ -75,6 +76,11 @@
       </div>
     </div>
   </div>
+  <div
+    class="grid-view-deselect-area"
+    @click="emit('deselect-all')"
+    title="Click to deselect all"
+  ></div>
 </template>
 
 <script lang="ts" setup>
@@ -95,15 +101,16 @@ const props = defineProps<{
   files: CirrusFileNode[];
   currentPath: string;
   showDeviceBadges?: boolean;
-  selectedFile?: CirrusFileNode | null;
+  selectedFiles?: CirrusFileNode[];
 }>();
 
 const emit = defineEmits<{
   'navigate-folder': [path: string];
   'open-file': [file: CirrusFileNode];
   'context-menu': [event: MouseEvent, file: CirrusFileNode];
-  select: [file: CirrusFileNode];
+  select: [file: CirrusFileNode, event?: MouseEvent];
   'files-uploaded': [files: CirrusFileNode[]];
+  'deselect-all': [];
 }>();
 
 const {
@@ -218,7 +225,6 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 
 <style lang="scss" scoped>
 .grid-view-container {
-  flex: 1;
   overflow-y: auto;
   padding: $spacing-sm;
   position: relative;
@@ -333,5 +339,9 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   font-size: 0.75rem;
   color: $theme-palette-text-muted;
   margin-top: $spacing-xs;
+}
+
+.grid-view-deselect-area {
+  flex: 1;
 }
 </style>

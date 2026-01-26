@@ -27,7 +27,7 @@
             uploadProgress
           }}</span>
           <button
-            class="upload-btn"
+            class="action-btn"
             type="button"
             :disabled="isUploading || devices.length === 0"
             @click="handleUploadClick"
@@ -35,6 +35,26 @@
             aria-label="Upload files"
           >
             <UploadIcon />
+          </button>
+          <button
+            class="action-btn"
+            type="button"
+            :disabled="selectedFiles.length === 0 || isUploading"
+            @click="handleDownloadSelected"
+            title="Download selected files"
+            aria-label="Download selected files"
+          >
+            <DownloadIcon />
+          </button>
+          <button
+            class="action-btn"
+            type="button"
+            :disabled="selectedFiles.length === 0 || isUploading"
+            @click="handleDeleteSelected"
+            title="Delete selected files"
+            aria-label="Delete selected files"
+          >
+            <DeleteIcon />
           </button>
           <input
             ref="fileInputRef"
@@ -113,31 +133,30 @@
         <template v-else-if="files.length === 0">
           <span class="file-explorer-empty">No files found</span>
         </template>
-        <template v-else-if="view === 'grid'">
-          <CirrusGridView
-            :files="files"
-            :current-path="currentPath"
-            :show-device-badges="showDeviceBadges"
-            :selected-file="selectedFile"
-            @navigate-folder="handleNavigateFolder"
-            @open-file="handleOpenFile"
-            @select="handleSelectFile"
-            @context-menu="handleContextMenu"
-            @files-uploaded="handleFilesUploaded"
-          />
-        </template>
         <template v-else>
-          <CirrusListView
-            :files="files"
-            :current-path="currentPath"
-            :show-device-badges="showDeviceBadges"
-            :selected-file="selectedFile"
-            @navigate-folder="handleNavigateFolder"
-            @open-file="handleOpenFile"
-            @select="handleSelectFile"
-            @context-menu="handleContextMenu"
-            @files-uploaded="handleFilesUploaded"
-          />
+          <div
+            class="file-table-container"
+            style="
+              display: flex;
+              flex-direction: column;
+              flex: 1;
+              min-height: 0;
+            "
+          >
+            <component
+              :is="fileViewComponent"
+              :files="files"
+              :current-path="currentPath"
+              :show-device-badges="showDeviceBadges"
+              :selected-files="selectedFiles"
+              @navigate-folder="handleNavigateFolder"
+              @open-file="handleOpenFile"
+              @select="handleSelectFile"
+              @context-menu="handleContextMenu"
+              @files-uploaded="handleFilesUploaded"
+              @deselect-all="handleDeselectAll"
+            />
+          </div>
         </template>
       </div>
     </div>
@@ -321,10 +340,12 @@
 <script lang="ts" setup>
 import ModalDialog from '@/components/common/ModalDialog.vue';
 import CloseIcon from '@/components/icons/CloseIcon.vue';
+import DeleteIcon from '@/components/icons/DeleteIcon.vue';
+import DownloadIcon from '@/components/icons/DownloadIcon.vue';
 import UploadIcon from '@/components/icons/UploadIcon.vue';
 import CirrusService from '@/services/cirrusService';
 import type { CirrusFileNode, FileType } from '@/types/cirrus';
-import { onMounted, ref, ref as vueRef, watch } from 'vue';
+import { computed, onMounted, ref, ref as vueRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import GridViewIcon from '../icons/GridViewIcon.vue';
 import ListViewIcon from '../icons/ListViewIcon.vue';
@@ -343,6 +364,66 @@ const isUploading = vueRef(false);
 const uploadProgress = vueRef('');
 const cirrusDeviceStore = useCirrusDeviceStore();
 const { devices, selectedDeviceSerial } = storeToRefs(cirrusDeviceStore);
+
+const fileViewComponent = computed(() => {
+  switch (view.value) {
+    case 'grid':
+      return CirrusGridView;
+    case 'list':
+    default:
+      return CirrusListView;
+  }
+});
+
+// Unselect all files when CirrusListView emits deselect-all
+const handleDeselectAll = () => {
+  selectedFiles.value = [];
+  lastSelectedFile.value = null;
+};
+// Delete all selected files
+const handleDeleteSelected = async () => {
+  if (selectedFiles.value.length === 0) return;
+  for (const file of [...selectedFiles.value]) {
+    try {
+      await CirrusService.deleteFile(
+        currentPath.value,
+        CirrusService.getFileName(file),
+        file.deviceSerial,
+      );
+      files.value = files.value.filter((f) => f.fullPath !== file.fullPath);
+      selectedFiles.value = selectedFiles.value.filter(
+        (f) => f.fullPath !== file.fullPath,
+      );
+    } catch (e) {
+      console.error(
+        `Failed to delete file ${CirrusService.getFileName(file)}:`,
+        e,
+      );
+    }
+  }
+};
+
+// Download all selected files
+const handleDownloadSelected = () => {
+  if (selectedFiles.value.length === 0) return;
+  for (const file of selectedFiles.value) {
+    const fileName = CirrusService.getFileName(file);
+    const relativePath = currentPath.value
+      ? `${currentPath.value}/${fileName}`
+      : fileName;
+    const downloadUrl = `/api/v1/download/cirrus/${relativePath}${
+      file.deviceSerial
+        ? `?serial=${encodeURIComponent(file.deviceSerial)}`
+        : ''
+    }`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+};
 
 const handleUploadClick = () => {
   fileInputRef.value?.click();
@@ -405,7 +486,8 @@ const fileViewerOpen = ref(false);
 const selectedFileSrc = ref('');
 const selectedFileType = ref<FileType>('generic');
 // Selection state
-const selectedFile = ref<CirrusFileNode | null>(null);
+const selectedFiles = ref<CirrusFileNode[]>([]);
+const lastSelectedFile = ref<CirrusFileNode | null>(null);
 
 // Context menu state
 const contextMenuOpen = ref(false);
@@ -526,8 +608,39 @@ onMounted(() => {
 const constructFileSrc = (relativePath: string) =>
   `/api/v1/download/cirrus/${relativePath}`;
 
-const handleSelectFile = (file: CirrusFileNode) => {
-  selectedFile.value = file;
+const handleSelectFile = (file: CirrusFileNode, event?: MouseEvent) => {
+  // Multi-select logic: ctrl/cmd for toggle, shift for range, else single select
+  if (event && (event.ctrlKey || event.metaKey)) {
+    // Toggle selection
+    const idx = selectedFiles.value.findIndex(
+      (f) => f.fullPath === file.fullPath,
+    );
+    if (idx >= 0) {
+      selectedFiles.value.splice(idx, 1);
+    } else {
+      selectedFiles.value.push(file);
+    }
+    lastSelectedFile.value = file;
+  } else if (event && event.shiftKey && lastSelectedFile.value) {
+    // Range select (from lastSelectedFile to clicked)
+    const filesList = files.value;
+    const startIdx = filesList.findIndex(
+      (f) => f.fullPath === lastSelectedFile.value?.fullPath,
+    );
+    const endIdx = filesList.findIndex((f) => f.fullPath === file.fullPath);
+    if (startIdx >= 0 && endIdx >= 0) {
+      const [from, to] =
+        startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+      const range = filesList.slice(from, to + 1);
+      // Replace selection with range
+      selectedFiles.value = range;
+    }
+    lastSelectedFile.value = file;
+  } else {
+    // Single select
+    selectedFiles.value = [file];
+    lastSelectedFile.value = file;
+  }
 };
 const navigateToPath = (path: string) => {
   currentPath.value = path;
@@ -710,6 +823,42 @@ const handleDelete = (file: CirrusFileNode) => {
 </script>
 
 <style lang="scss" scoped>
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $theme-palette-bg-nav;
+  color: $theme-palette-accent;
+  font-size: 1.5rem;
+  border-radius: $border-radius-lg;
+  padding: 0.5rem 1rem;
+  min-width: 40px;
+  min-height: 40px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  &:hover:not(:disabled) {
+    background: $theme-palette-bg-secondary;
+    color: $theme-palette-text-inverse;
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    display: block;
+  }
+}
+
+// Empty area for deselecting in list view
+.file-explorer-deselect-area {
+  background: transparent;
+}
 .file-explorer {
   max-width: 100%;
   box-shadow: $shadow-sm;
@@ -979,7 +1128,6 @@ const handleDelete = (file: CirrusFileNode) => {
   color: $theme-palette-text-muted;
 }
 
-// Custom close button for ModalDialogs (like ThemeModal)
 .custom-modal-close-wrapper {
   position: relative;
 }
@@ -1011,37 +1159,6 @@ const handleDelete = (file: CirrusFileNode) => {
   }
 }
 
-.upload-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: $theme-palette-bg-nav;
-  color: $theme-palette-accent;
-  font-size: 1.5rem;
-  border-radius: $border-radius-lg;
-  padding: 0.5rem 1rem;
-  min-width: 40px;
-  min-height: 40px;
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    color 0.15s,
-    border-color 0.15s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  &:hover:not(:disabled) {
-    background: $theme-palette-bg-secondary;
-    color: $theme-palette-text-inverse;
-  }
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  svg {
-    width: 1.5rem;
-    height: 1.5rem;
-    display: block;
-  }
-}
 .device-select {
   padding: 0.4rem 0.7rem;
   border-radius: $border-radius-md;
