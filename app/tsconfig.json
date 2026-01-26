@@ -12,6 +12,6 @@
     }
   ],
   "vueCompilerOptions": {
-    "strictTemplates": true,
+    "strictTemplates": true
   }
 }
