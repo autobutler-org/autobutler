@@ -113,6 +113,11 @@ export const useCirrusFileDropZone = ({
     event.preventDefault();
     isDragOver.value = false;
 
+    // If this is a file move, let the directory drop handler handle it
+    if (event.dataTransfer?.getData('application/x-cirrus-file-path')) {
+      return;
+    }
+
     const files = event.dataTransfer?.files;
     if (files && files.length) {
       await uploadFiles(files, targetPath);

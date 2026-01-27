@@ -58,6 +58,8 @@
           @dragover="handleDirectoryDragOver($event, file)"
           @dragleave="handleDirectoryDragLeave($event, file)"
           @drop="handleDirectoryDrop($event, file)"
+          draggable="true"
+          @dragstart="handleFileDragStart($event, file)"
         >
           <td class="file-table-cell file-table-cell--clickable">
             <div
@@ -125,7 +127,7 @@ import SortSwitcherIcon from '@/components/icons/SortSwitcherIcon.vue';
 import { useCirrusFileDropZone } from '@/composables/useCirrusFileDropZone';
 import CirrusService from '@/services/cirrusService';
 import type { CirrusFileNode } from '@/types/cirrus';
-import { computed, ref, watch, type Component } from 'vue';
+import { computed, nextTick, ref, watch, type Component } from 'vue';
 import CirrusListViewSortHeader, {
   type HeaderAlignDirection,
   type SortColumn,
@@ -147,6 +149,41 @@ const emit = defineEmits<{
   'files-uploaded': [files: CirrusFileNode[]];
   'deselect-all': [];
 }>();
+
+const handleFileDragStart = (event: DragEvent, file: CirrusFileNode) => {
+  // Only allow dragging files, not directories
+  if (CirrusService.isDirectory(file)) {
+    event.preventDefault();
+    return;
+  }
+  const filePath = props.currentPath
+    ? `${props.currentPath}/${CirrusService.getFileName(file)}`
+    : CirrusService.getFileName(file);
+  event.dataTransfer?.setData('application/x-cirrus-file-path', filePath);
+  if (file.deviceSerial) {
+    event.dataTransfer?.setData(
+      'application/x-cirrus-device-serial',
+      file.deviceSerial,
+    );
+  }
+};
+
+const handleFileMove = async (
+  oldPath: string,
+  newPath: string,
+  oldDeviceSerial?: string,
+  newDeviceSerial?: string,
+) => {
+  await CirrusService.moveFile(
+    oldPath,
+    newPath,
+    oldDeviceSerial,
+    newDeviceSerial,
+  );
+  // Wait for backend to update, then refresh
+  await nextTick();
+  emit('files-uploaded', []); // Triggers refresh (or use a dedicated refresh event if available)
+};
 
 // Sorting state
 const sortColumn = ref<SortColumn>(null);
@@ -235,6 +272,27 @@ const handleDirectoryDrop = async (event: DragEvent, file: CirrusFileNode) => {
   event.stopPropagation();
   const targetPath = resolveDirectoryTargetPath(file);
   clearHoveredDirectory();
+
+  // Check if this is a file move (internal drag)
+  const dt = event.dataTransfer;
+  const movedFilePath = dt?.getData('application/x-cirrus-file-path');
+  const movedDeviceSerial =
+    dt?.getData('application/x-cirrus-device-serial') || undefined;
+  if (movedFilePath) {
+    // Compose new path
+    const fileName = CirrusService.getFileName({
+      fullPath: movedFilePath,
+    } as CirrusFileNode);
+    const newPath = `${targetPath}/${fileName}`;
+    await handleFileMove(
+      movedFilePath,
+      newPath,
+      movedDeviceSerial,
+      file.deviceSerial,
+    );
+    return;
+  }
+  // Otherwise, treat as upload
   await handleDrop(event, targetPath);
 };
 
