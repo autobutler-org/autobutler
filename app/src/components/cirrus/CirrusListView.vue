@@ -127,7 +127,8 @@ import SortSwitcherIcon from '@/components/icons/SortSwitcherIcon.vue';
 import { useCirrusFileDropZone } from '@/composables/useCirrusFileDropZone';
 import CirrusService from '@/services/cirrusService';
 import type { CirrusFileNode } from '@/types/cirrus';
-import { computed, nextTick, ref, watch, type Component } from 'vue';
+import { normalizePath } from '@/util/filepath';
+import { computed, ref, watch, type Component } from 'vue';
 import CirrusListViewSortHeader, {
   type HeaderAlignDirection,
   type SortColumn,
@@ -148,13 +149,21 @@ const emit = defineEmits<{
   select: [file: CirrusFileNode, event?: MouseEvent];
   'files-uploaded': [files: CirrusFileNode[]];
   'deselect-all': [];
+  'file-move': [
+    oldPath: string,
+    newPath: string,
+    oldDeviceSerial?: string,
+    newDeviceSerial?: string,
+  ];
 }>();
 
 const handleFileDragStart = (event: DragEvent, file: CirrusFileNode) => {
   // Allow dragging both files and directories
-  const filePath = props.currentPath
-    ? `${props.currentPath}/${CirrusService.getFileName(file)}`
-    : CirrusService.getFileName(file);
+  const filePath = normalizePath(
+    props.currentPath
+      ? `${props.currentPath}/${CirrusService.getFileName(file)}`
+      : CirrusService.getFileName(file),
+  );
   event.dataTransfer?.setData('application/x-cirrus-file-path', filePath);
   if (file.deviceSerial) {
     event.dataTransfer?.setData(
@@ -162,23 +171,6 @@ const handleFileDragStart = (event: DragEvent, file: CirrusFileNode) => {
       file.deviceSerial,
     );
   }
-};
-
-const handleFileMove = async (
-  oldPath: string,
-  newPath: string,
-  oldDeviceSerial?: string,
-  newDeviceSerial?: string,
-) => {
-  await CirrusService.moveFile(
-    oldPath,
-    newPath,
-    oldDeviceSerial,
-    newDeviceSerial,
-  );
-  // Wait for backend to update, then refresh
-  await nextTick();
-  emit('files-uploaded', []); // Triggers refresh (or use a dedicated refresh event if available)
 };
 
 // Sorting state
@@ -214,9 +206,7 @@ const {
 
 const hoveredDirectoryPath = ref<string | null>(null);
 
-const normalizeCurrentPath = computed(() =>
-  CirrusService.normalizePath(props.currentPath),
-);
+const normalizeCurrentPath = computed(() => normalizePath(props.currentPath));
 
 const resolveDirectoryTargetPath = (file: CirrusFileNode) => {
   const directoryName = CirrusService.getFileName(file);
@@ -289,7 +279,7 @@ const handleDirectoryDrop = async (event: DragEvent, file: CirrusFileNode) => {
 
   // Check if this is a file move (internal drag)
   const dt = event.dataTransfer;
-  let movedFilePath = dt?.getData('application/x-cirrus-file-path');
+  const movedFilePath = dt?.getData('application/x-cirrus-file-path');
   const movedDeviceSerial =
     dt?.getData('application/x-cirrus-device-serial') || undefined;
   if (movedFilePath) {
@@ -298,14 +288,12 @@ const handleDirectoryDrop = async (event: DragEvent, file: CirrusFileNode) => {
       return;
     }
     // Just get the last part of the path (the file or directory name)
-    while (movedFilePath.endsWith('/')) {
-      movedFilePath = movedFilePath.slice(0, -1);
-    }
     const fileName = movedFilePath.split('/').pop();
     // Remove trailing slash from targetPath to avoid double slashes
-    const cleanTargetPath = targetPath.replace(/\/+$/, '');
+    const cleanTargetPath = normalizePath(targetPath);
     const newPath = `${cleanTargetPath}/${fileName}`;
-    await handleFileMove(
+    emit(
+      'file-move',
       movedFilePath,
       newPath,
       movedDeviceSerial,
@@ -437,8 +425,8 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 
 // Utility to check if a path is a subpath of another
 const isSubPath = (parent: string, child: string) => {
-  const normParent = parent.replace(/\\/g, '/').replace(/\/+$/, '') + '/';
-  const normChild = child.replace(/\\/g, '/').replace(/\/+$/, '') + '/';
+  const normParent = normalizePath(parent) + '/';
+  const normChild = normalizePath(child) + '/';
   return normChild.startsWith(normParent);
 };
 </script>

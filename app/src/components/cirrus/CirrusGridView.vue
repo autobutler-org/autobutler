@@ -36,6 +36,8 @@
         @dragover="handleDirectoryDragOver($event, file)"
         @dragleave="handleDirectoryDragLeave($event, file)"
         @drop="handleDirectoryDrop($event, file)"
+        @dragstart="handleFileDragStart($event, file)"
+        draggable="true"
       >
         <button
           class="context-menu-trigger"
@@ -95,6 +97,7 @@ import SlideshowIcon from '@/components/icons/SlideshowIcon.vue';
 import { useCirrusFileDropZone } from '@/composables/useCirrusFileDropZone';
 import CirrusService from '@/services/cirrusService';
 import type { CirrusFileNode } from '@/types/cirrus';
+import { normalizePath } from '@/util/filepath';
 import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{
@@ -111,6 +114,12 @@ const emit = defineEmits<{
   select: [file: CirrusFileNode, event?: MouseEvent];
   'files-uploaded': [files: CirrusFileNode[]];
   'deselect-all': [];
+  'file-move': [
+    oldPath: string,
+    newPath: string,
+    oldDeviceSerial?: string,
+    newDeviceSerial?: string,
+  ];
 }>();
 
 const {
@@ -124,11 +133,25 @@ const {
   onFilesUploaded: (files) => emit('files-uploaded', files),
 });
 
+const handleFileDragStart = (event: DragEvent, file: CirrusFileNode) => {
+  // Allow dragging both files and directories
+  const filePath = normalizePath(
+    props.currentPath
+      ? `${props.currentPath}/${CirrusService.getFileName(file)}`
+      : CirrusService.getFileName(file),
+  );
+  event.dataTransfer?.setData('application/x-cirrus-file-path', filePath);
+  if (file.deviceSerial) {
+    event.dataTransfer?.setData(
+      'application/x-cirrus-device-serial',
+      file.deviceSerial,
+    );
+  }
+};
+
 const hoveredDirectoryPath = ref<string | null>(null);
 
-const normalizeCurrentPath = computed(() =>
-  CirrusService.normalizePath(props.currentPath),
-);
+const normalizeCurrentPath = computed(() => normalizePath(props.currentPath));
 
 const resolveDirectoryTargetPath = (file: CirrusFileNode) => {
   const directoryName = CirrusService.getFileName(file);
@@ -149,13 +172,31 @@ watch(isDragOver, (active) => {
 const handleDirectoryDragEnter = (event: DragEvent, file: CirrusFileNode) => {
   if (!CirrusService.isDirectory(file)) return;
   event.preventDefault();
-  hoveredDirectoryPath.value = resolveDirectoryTargetPath(file);
+  const targetPath = resolveDirectoryTargetPath(file);
+  // Get the dragged file path from dataTransfer
+  const movedFilePath = event.dataTransfer?.getData(
+    'application/x-cirrus-file-path',
+  );
+  // Don't highlight if dragging a folder into itself or its subdirectory
+  if (movedFilePath && isSubPath(movedFilePath, targetPath)) {
+    return;
+  }
+  hoveredDirectoryPath.value = targetPath;
 };
 
 const handleDirectoryDragOver = (event: DragEvent, file: CirrusFileNode) => {
   if (!CirrusService.isDirectory(file)) return;
   event.preventDefault();
-  hoveredDirectoryPath.value = resolveDirectoryTargetPath(file);
+  const targetPath = resolveDirectoryTargetPath(file);
+  // Get the dragged file path from dataTransfer
+  const movedFilePath = event.dataTransfer?.getData(
+    'application/x-cirrus-file-path',
+  );
+  // Don't highlight if dragging a folder into itself or its subdirectory
+  if (movedFilePath && isSubPath(movedFilePath, targetPath)) {
+    return;
+  }
+  hoveredDirectoryPath.value = targetPath;
 };
 
 const handleDirectoryDragLeave = (event: DragEvent, file: CirrusFileNode) => {
@@ -180,6 +221,32 @@ const handleDirectoryDrop = async (event: DragEvent, file: CirrusFileNode) => {
   event.stopPropagation();
   const targetPath = resolveDirectoryTargetPath(file);
   clearHoveredDirectory();
+
+  // Check if this is a file move (internal drag)
+  const dt = event.dataTransfer;
+  const movedFilePath = dt?.getData('application/x-cirrus-file-path');
+  const movedDeviceSerial =
+    dt?.getData('application/x-cirrus-device-serial') || undefined;
+  if (movedFilePath) {
+    // Prevent moving a directory into itself or its own subdirectory
+    if (isSubPath(movedFilePath, targetPath)) {
+      return;
+    }
+    // Just get the last part of the path (the file or directory name)
+    const fileName = movedFilePath.split('/').pop();
+    // Remove trailing slash from targetPath to avoid double slashes
+    const cleanTargetPath = normalizePath(targetPath);
+    const newPath = `${cleanTargetPath}/${fileName}`;
+    emit(
+      'file-move',
+      movedFilePath,
+      newPath,
+      movedDeviceSerial,
+      file.deviceSerial,
+    );
+    return;
+  }
+  // Otherwise, treat as upload
   await handleDrop(event, targetPath);
 };
 
@@ -220,6 +287,13 @@ const handleClick = (file: CirrusFileNode) => {
 const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   event.preventDefault();
   emit('context-menu', event, file);
+};
+
+// Utility to check if a path is a subpath of another
+const isSubPath = (parent: string, child: string) => {
+  const normParent = normalizePath(parent) + '/';
+  const normChild = normalizePath(child) + '/';
+  return normChild.startsWith(normParent);
 };
 </script>
 
