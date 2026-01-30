@@ -4,6 +4,14 @@
       v-for="(segment, index) in segments"
       :key="index"
       class="file-explorer-breadcrumb"
+      :class="{
+        'breadcrumb--drag-hover':
+          hoveredBreadcrumb === segment.path && index !== segments.length - 1,
+      }"
+      @dragenter="handleBreadcrumbDragEnter($event, segment.path)"
+      @dragover="handleBreadcrumbDragOver($event, segment.path)"
+      @dragleave="handleBreadcrumbDragLeave($event, segment.path)"
+      @drop="handleBreadcrumbDrop($event, segment.path)"
     >
       <a href="#" @click.prevent="navigateTo(segment.path)">
         {{ segment.name }}
@@ -18,7 +26,8 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { normalizePath } from '@/util/filepath';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import CirrusAddFolder from './CirrusAddFolder.vue';
 
@@ -29,7 +38,39 @@ const props = defineProps<{
 const emit = defineEmits<{
   navigate: [path: string];
   'folder-created': [folderName: string];
+  'breadcrumb-drop': [targetPath: string, event: DragEvent];
 }>();
+const hoveredBreadcrumb = ref<string | null>(null);
+
+const handleBreadcrumbDragEnter = (event: DragEvent, path: string) => {
+  event.preventDefault();
+  hoveredBreadcrumb.value = path;
+};
+
+const handleBreadcrumbDragOver = (event: DragEvent, path: string) => {
+  event.preventDefault();
+  hoveredBreadcrumb.value = path;
+};
+
+const handleBreadcrumbDragLeave = (event: DragEvent, path: string) => {
+  event.preventDefault();
+  hoveredBreadcrumb.value = null;
+};
+
+const handleBreadcrumbDrop = (event: DragEvent, path: string) => {
+  event.preventDefault();
+  event.stopPropagation();
+  hoveredBreadcrumb.value = null;
+  // Do not emit if dropped on the last breadcrumb (current location)
+  const currentPath = normalizePath(props.currentPath);
+  const targetPath = normalizePath(
+    (event.target as HTMLAnchorElement).pathname,
+  ).replace(/^\/cirrus\//, '');
+  if (currentPath === targetPath) {
+    return;
+  }
+  emit('breadcrumb-drop', path, event);
+};
 
 const router = useRouter();
 
@@ -80,5 +121,12 @@ const navigateTo = (path: string) => {
       text-decoration: underline;
     }
   }
+}
+
+.breadcrumb--drag-hover {
+  background: $theme-palette-bg-secondary;
+  color: $theme-palette-accent;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px $theme-palette-accent;
 }
 </style>

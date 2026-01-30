@@ -78,6 +78,7 @@
             :current-path="currentPath"
             @navigate="navigateToPath"
             @folder-created="handleFolderCreated"
+            @breadcrumb-drop="handleBreadcrumbDrop"
           />
         </div>
         <div style="display: flex; align-items: center; gap: 1rem">
@@ -339,6 +340,44 @@
 </template>
 
 <script lang="ts" setup>
+// Handle breadcrumb drop event
+const handleBreadcrumbDrop = async (targetPath: string, event: DragEvent) => {
+  console.log('Breadcrumb drop on', targetPath, event);
+  // Only support moving folders/files (dragged from list/grid)
+  // Expect event.dataTransfer to contain 'text/plain' with fullPath
+  const fullPath = event.dataTransfer?.getData('text/plain');
+  if (!fullPath) return;
+  // Only move if not already at target
+  const normalizedTarget = normalizePath(targetPath);
+  const normalizedSource = normalizePath(fullPath);
+  if (normalizedSource === normalizedTarget) return;
+  // Move file/folder to targetPath
+  const name = normalizedSource.split('/').pop() || normalizedSource;
+  const newPath = normalizedTarget ? `${normalizedTarget}/${name}` : name;
+  // Find deviceSerial for source
+  const fileNode = files.value.find(
+    (f) => normalizePath(f.fullPath) === normalizedSource,
+  );
+  const oldDeviceSerial = fileNode?.deviceSerial;
+  try {
+    await CirrusService.moveFile(
+      normalizedSource,
+      normalizePath(newPath),
+      oldDeviceSerial,
+      oldDeviceSerial,
+    );
+    // Remove from in-memory list if no longer in current folder
+    const currentFolder = normalizePath(currentPath.value);
+    const newFolder = normalizePath(newPath.split('/').slice(0, -1).join('/'));
+    if (newFolder !== currentFolder) {
+      files.value = files.value.filter(
+        (f) => normalizePath(f.fullPath) !== normalizedSource,
+      );
+    }
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to move file';
+  }
+};
 import ModalDialog from '@/components/common/ModalDialog.vue';
 import CloseIcon from '@/components/icons/CloseIcon.vue';
 import DeleteIcon from '@/components/icons/DeleteIcon.vue';
