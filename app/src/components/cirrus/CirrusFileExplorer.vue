@@ -765,8 +765,15 @@ const handleFileMove = async (
       oldDeviceSerial,
       newDeviceSerial,
     );
-    // Refresh the file list after move
-    await fetchFiles();
+    const oldName = oldPath.split('/').pop() || oldPath;
+    // Remove the moved file from the in-memory list if it is no longer in the current folder
+    const currentFolder = normalizePath(currentPath.value);
+    const newFolder = normalizePath(newPath.split('/').slice(0, -1).join('/'));
+    if (newFolder !== currentFolder) {
+      files.value = files.value.filter(
+        (f) => normalizePath(f.name) !== normalizePath(oldName),
+      );
+    }
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to move file';
   }
