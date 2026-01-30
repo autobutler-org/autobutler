@@ -151,11 +151,7 @@ const emit = defineEmits<{
 }>();
 
 const handleFileDragStart = (event: DragEvent, file: CirrusFileNode) => {
-  // Only allow dragging files, not directories
-  if (CirrusService.isDirectory(file)) {
-    event.preventDefault();
-    return;
-  }
+  // Allow dragging both files and directories
   const filePath = props.currentPath
     ? `${props.currentPath}/${CirrusService.getFileName(file)}`
     : CirrusService.getFileName(file);
@@ -241,13 +237,31 @@ watch(isDragOver, (active) => {
 const handleDirectoryDragEnter = (event: DragEvent, file: CirrusFileNode) => {
   if (!CirrusService.isDirectory(file)) return;
   event.preventDefault();
-  hoveredDirectoryPath.value = resolveDirectoryTargetPath(file);
+  const targetPath = resolveDirectoryTargetPath(file);
+  // Get the dragged file path from dataTransfer
+  const movedFilePath = event.dataTransfer?.getData(
+    'application/x-cirrus-file-path',
+  );
+  // Don't highlight if dragging a folder into itself or its subdirectory
+  if (movedFilePath && isSubPath(movedFilePath, targetPath)) {
+    return;
+  }
+  hoveredDirectoryPath.value = targetPath;
 };
 
 const handleDirectoryDragOver = (event: DragEvent, file: CirrusFileNode) => {
   if (!CirrusService.isDirectory(file)) return;
   event.preventDefault();
-  hoveredDirectoryPath.value = resolveDirectoryTargetPath(file);
+  const targetPath = resolveDirectoryTargetPath(file);
+  // Get the dragged file path from dataTransfer
+  const movedFilePath = event.dataTransfer?.getData(
+    'application/x-cirrus-file-path',
+  );
+  // Don't highlight if dragging a folder into itself or its subdirectory
+  if (movedFilePath && isSubPath(movedFilePath, targetPath)) {
+    return;
+  }
+  hoveredDirectoryPath.value = targetPath;
 };
 
 const handleDirectoryDragLeave = (event: DragEvent, file: CirrusFileNode) => {
@@ -275,15 +289,22 @@ const handleDirectoryDrop = async (event: DragEvent, file: CirrusFileNode) => {
 
   // Check if this is a file move (internal drag)
   const dt = event.dataTransfer;
-  const movedFilePath = dt?.getData('application/x-cirrus-file-path');
+  let movedFilePath = dt?.getData('application/x-cirrus-file-path');
   const movedDeviceSerial =
     dt?.getData('application/x-cirrus-device-serial') || undefined;
   if (movedFilePath) {
-    // Compose new path
-    const fileName = CirrusService.getFileName({
-      fullPath: movedFilePath,
-    } as CirrusFileNode);
-    const newPath = `${targetPath}/${fileName}`;
+    // Prevent moving a directory into itself or its own subdirectory
+    if (isSubPath(movedFilePath, targetPath)) {
+      return;
+    }
+    // Just get the last part of the path (the file or directory name)
+    while (movedFilePath.endsWith('/')) {
+      movedFilePath = movedFilePath.slice(0, -1);
+    }
+    const fileName = movedFilePath.split('/').pop();
+    // Remove trailing slash from targetPath to avoid double slashes
+    const cleanTargetPath = targetPath.replace(/\/+$/, '');
+    const newPath = `${cleanTargetPath}/${fileName}`;
     await handleFileMove(
       movedFilePath,
       newPath,
@@ -412,6 +433,13 @@ const handleClick = (file: CirrusFileNode) => {
 const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   event.preventDefault();
   emit('context-menu', event, file);
+};
+
+// Utility to check if a path is a subpath of another
+const isSubPath = (parent: string, child: string) => {
+  const normParent = parent.replace(/\\/g, '/').replace(/\/+$/, '') + '/';
+  const normChild = child.replace(/\\/g, '/').replace(/\/+$/, '') + '/';
+  return normChild.startsWith(normParent);
 };
 </script>
 
