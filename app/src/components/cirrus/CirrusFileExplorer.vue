@@ -78,7 +78,7 @@
             :current-path="currentPath"
             @navigate="navigateToPath"
             @folder-created="handleFolderCreated"
-            @breadcrumb-drop="handleBreadcrumbDrop"
+            @file-move="handleFileMove"
           />
         </div>
         <div style="display: flex; align-items: center; gap: 1rem">
@@ -797,6 +797,7 @@ const handleFileMove = async (
   oldDeviceSerial?: string,
   newDeviceSerial?: string,
 ) => {
+  console.log('Moving file from', oldPath, 'to', newPath);
   try {
     await CirrusService.moveFile(
       oldPath,

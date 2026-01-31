@@ -38,7 +38,12 @@ const props = defineProps<{
 const emit = defineEmits<{
   navigate: [path: string];
   'folder-created': [folderName: string];
-  'breadcrumb-drop': [targetPath: string, event: DragEvent];
+  'file-move': [
+    oldPath: string,
+    newPath: string,
+    oldDeviceSerial?: string,
+    newDeviceSerial?: string,
+  ];
 }>();
 const hoveredBreadcrumb = ref<string | null>(null);
 
@@ -52,24 +57,25 @@ const handleBreadcrumbDragOver = (event: DragEvent, path: string) => {
   hoveredBreadcrumb.value = path;
 };
 
-const handleBreadcrumbDragLeave = (event: DragEvent, path: string) => {
+const handleBreadcrumbDragLeave = (event: DragEvent, _: string) => {
   event.preventDefault();
   hoveredBreadcrumb.value = null;
 };
 
-const handleBreadcrumbDrop = (event: DragEvent, path: string) => {
-  event.preventDefault();
-  event.stopPropagation();
+const handleBreadcrumbDrop = (dropEvent: DragEvent, path: string) => {
+  dropEvent.preventDefault();
+  dropEvent.stopPropagation();
+
   hoveredBreadcrumb.value = null;
   // Do not emit if dropped on the last breadcrumb (current location)
-  const currentPath = normalizePath(props.currentPath);
+  path = normalizePath(path);
   const targetPath = normalizePath(
-    (event.target as HTMLAnchorElement).pathname,
+    (dropEvent.target as HTMLAnchorElement).pathname,
   ).replace(/^\/cirrus\//, '');
-  if (currentPath === targetPath) {
+  if (path === targetPath) {
     return;
   }
-  emit('breadcrumb-drop', path, event);
+  emit('file-move', path, targetPath);
 };
 
 const router = useRouter();
