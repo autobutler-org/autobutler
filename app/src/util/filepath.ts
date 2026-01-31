@@ -1,3 +1,13 @@
+export const joinPaths = (
+  basePath: string,
+  ...additionalPaths: (string | null | undefined)[]
+): string => [basePath, ...additionalPaths.filter((_) => _)].join('/');
+
+export const joinPathsNormalized = (
+  basePath: string,
+  ...additionalPaths: (string | null | undefined)[]
+): string => normalizePath(joinPaths(basePath, ...additionalPaths));
+
 export const getFileNameFromPath = (path: string): string => {
   const segments = path.split('/');
   return segments[segments.length - 1] || '';
