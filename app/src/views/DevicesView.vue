@@ -1,37 +1,38 @@
 <template>
-  <div class="landing-main">
-    <GradientOverlays />
-    <div class="landing-container">
-      <div class="devices-page">
-        <div class="devices-header">
-          <div class="devices-header-content">
-            <div>
-              <h1 class="devices-title">Storage Devices</h1>
-              <p class="devices-subtitle">
-                Monitor capacity, usage, and content categories across all
-                connected drives
-              </p>
+  <div class="landing-body">
+    <div class="landing-main">
+      <div class="landing-container">
+        <div class="devices-page">
+          <div class="devices-header">
+            <div class="devices-header-content">
+              <div>
+                <h1 class="devices-title">Storage Devices</h1>
+                <p class="devices-subtitle">
+                  Monitor capacity, usage, and content categories across all
+                  connected drives
+                </p>
+              </div>
+              <button
+                class="devices-refresh-button"
+                :disabled="loading"
+                @click="fetchDevices"
+                title="Refresh storage devices"
+              >
+                <span>Refresh</span>
+              </button>
             </div>
-            <button
-              class="devices-refresh-button"
-              :disabled="loading"
-              @click="fetchDevices"
-              title="Refresh storage devices"
-            >
-              <span>Refresh</span>
-            </button>
           </div>
-        </div>
-        <div id="devices-content">
-          <div v-if="devices.length === 0 && !loading" class="devices-empty">
-            <p>No storage devices detected</p>
-          </div>
-          <div v-else class="devices-grid">
-            <DeviceCard
-              v-for="device in devices"
-              :key="device.devicePath"
-              :device="device"
-            />
+          <div id="devices-content">
+            <div v-if="devices.length === 0 && !loading" class="devices-empty">
+              <p>No storage devices detected</p>
+            </div>
+            <div v-else class="devices-grid">
+              <DeviceCard
+                v-for="device in devices"
+                :key="device.devicePath"
+                :device="device"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -42,7 +43,6 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue';
 
-import GradientOverlays from '@/components/home/GradientOverlays.vue';
 import DevicesService from '@/services/devicesService';
 import type { Device } from '@/types/device';
 import type { Summary } from '@/types/summary';
@@ -95,6 +95,16 @@ onMounted(fetchDevices);
 </script>
 
 <style lang="scss" scoped>
+.landing-body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .landing-main {
   min-height: 100vh;
   display: flex;
