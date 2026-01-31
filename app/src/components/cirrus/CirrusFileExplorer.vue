@@ -78,6 +78,7 @@
             :current-path="currentPath"
             @navigate="navigateToPath"
             @folder-created="handleFolderCreated"
+            @breadcrumb-drop="handleBreadcrumbDrop"
           />
         </div>
         <div style="display: flex; align-items: center; gap: 1rem">
@@ -155,6 +156,7 @@
               @context-menu="handleContextMenu"
               @files-uploaded="handleFilesUploaded"
               @deselect-all="handleDeselectAll"
+              @file-move="onFileMove"
             />
           </div>
         </template>
@@ -344,7 +346,16 @@ import DeleteIcon from '@/components/icons/DeleteIcon.vue';
 import DownloadIcon from '@/components/icons/DownloadIcon.vue';
 import UploadIcon from '@/components/icons/UploadIcon.vue';
 import CirrusService from '@/services/cirrusService';
-import type { CirrusFileNode, FileType } from '@/types/cirrus';
+import type {
+  CirrusFileMoveParams,
+  CirrusFileNode,
+  FileType,
+} from '@/types/cirrus';
+import {
+  getFileNameFromPath,
+  joinPathsNormalized,
+  normalizePath,
+} from '@/util/filepath';
 import { computed, onMounted, ref, ref as vueRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import GridViewIcon from '../icons/GridViewIcon.vue';
@@ -374,6 +385,47 @@ const fileViewComponent = computed(() => {
       return CirrusListView;
   }
 });
+
+const handleBreadcrumbDrop = async (event: DragEvent, targetPath: string) => {
+  const dt = event.dataTransfer;
+  const multi = dt?.getData('application/x-cirrus-multi');
+  let moves: CirrusFileMoveParams[] = [];
+  if (multi) {
+    try {
+      const filesArr = JSON.parse(multi) as {
+        path: string;
+        deviceSerial: string | undefined;
+      }[];
+      moves = filesArr.map((f) => {
+        const fileName = getFileNameFromPath(f.path || '');
+        const newTargetPath = joinPathsNormalized(targetPath, fileName);
+        return {
+          oldPath: f.path,
+          newPath: newTargetPath,
+          oldDeviceSerial: f.deviceSerial,
+          newDeviceSerial: f.deviceSerial,
+        };
+      });
+    } catch {}
+  } else {
+    // Single file fallback
+    const fullPath = dt?.getData('application/x-cirrus-file-path');
+    if (!fullPath) return;
+    const fileName = getFileNameFromPath(fullPath || '');
+    const newTargetPath = joinPathsNormalized(targetPath, fileName);
+    const deviceSerial =
+      dt?.getData('application/x-cirrus-device-serial') || undefined;
+    moves = [
+      {
+        oldPath: fullPath,
+        newPath: newTargetPath,
+        oldDeviceSerial: deviceSerial,
+        newDeviceSerial: deviceSerial,
+      },
+    ];
+  }
+  await handleFileMove(moves);
+};
 
 // Unselect all files when CirrusListView emits deselect-all
 const handleDeselectAll = () => {
@@ -409,7 +461,7 @@ const handleDownloadSelected = () => {
   for (const file of selectedFiles.value) {
     const fileName = CirrusService.getFileName(file);
     const relativePath = currentPath.value
-      ? `${currentPath.value}/${fileName}`
+      ? joinPathsNormalized(currentPath.value, fileName)
       : fileName;
     const downloadUrl = `/api/v1/download/cirrus/${relativePath}${
       file.deviceSerial
@@ -655,7 +707,7 @@ const handleOpenFile = (file: CirrusFileNode) => {
   // Construct the relative path for the API from currentPath and filename
   const fileName = CirrusService.getFileName(file);
   const relativePath = currentPath.value
-    ? `${currentPath.value}/${fileName}`
+    ? joinPathsNormalized(currentPath.value, fileName)
     : fileName;
   selectedFileSrc.value = constructFileSrc(relativePath);
   selectedFileType.value = CirrusService.determineFileType(file);
@@ -671,19 +723,17 @@ const toggleDeviceBadges = (show: boolean) => {
 };
 
 const getParentPath = (fullPath: string) => {
-  const segments = CirrusService.normalizePath(fullPath)
-    .split('/')
-    .filter(Boolean);
+  const segments = normalizePath(fullPath).split('/').filter(Boolean);
   segments.pop();
   return segments.join('/');
 };
 
 // Handle files uploaded - add them to the list
 const handleFilesUploaded = (uploadedFiles: CirrusFileNode[]) => {
-  const currentPathNormalized = CirrusService.normalizePath(currentPath.value);
+  const currentPathNormalized = normalizePath(currentPath.value);
 
   for (const newFile of uploadedFiles) {
-    const normalizedFullPath = CirrusService.normalizePath(newFile.fullPath);
+    const normalizedFullPath = normalizePath(newFile.fullPath);
     const parentPath = getParentPath(newFile.fullPath);
 
     // Only display the file if it belongs to the directory currently in view
@@ -692,7 +742,7 @@ const handleFilesUploaded = (uploadedFiles: CirrusFileNode[]) => {
     }
 
     const exists = files.value.some((f) => {
-      return CirrusService.normalizePath(f.fullPath) === normalizedFullPath;
+      return normalizePath(f.fullPath) === normalizedFullPath;
     });
 
     if (!exists) {
@@ -707,7 +757,7 @@ const handleFilesUploaded = (uploadedFiles: CirrusFileNode[]) => {
 // Handle folder created - add it to the list
 const handleFolderCreated = (folderName: string) => {
   const fullPath = currentPath.value
-    ? `${currentPath.value}/${folderName}`
+    ? joinPathsNormalized(currentPath.value, folderName)
     : folderName;
   const exists = files.value.some((f) => {
     return f.fullPath === fullPath;
@@ -737,7 +787,7 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 const handleDownload = (file: CirrusFileNode) => {
   const fileName = CirrusService.getFileName(file);
   const relativePath = currentPath.value
-    ? `${currentPath.value}/${fileName}`
+    ? joinPathsNormalized(currentPath.value, fileName)
     : fileName;
   const downloadUrl = `/api/v1/download/cirrus/${relativePath}${
     file.deviceSerial ? `?serial=${encodeURIComponent(file.deviceSerial)}` : ''
@@ -752,11 +802,52 @@ const handleDownload = (file: CirrusFileNode) => {
   document.body.removeChild(link);
 };
 
+// Accepts an array of move params
+const handleFileMove = async (moves: CirrusFileMoveParams[]) => {
+  try {
+    // Batch update files list: remove files that were moved out of the current folder
+    const currentFolder = normalizePath(currentPath.value);
+    const movedOutOldNames = moves
+      .filter((move) => {
+        const newFolder = normalizePath(
+          move.newPath.split('/').slice(0, -1).join('/'),
+        );
+        return newFolder !== currentFolder;
+      })
+      .map((move) => move.oldPath.split('/').pop() || move.oldPath);
+    if (movedOutOldNames.length > 0) {
+      files.value = files.value.filter(
+        (f) => !movedOutOldNames.includes(normalizePath(f.name)),
+      );
+    }
+    // Actually perform the file move
+    await Promise.all(
+      moves.map(async (move) => {
+        await CirrusService.moveFile(
+          move.oldPath,
+          move.newPath,
+          move.oldDeviceSerial,
+          move.newDeviceSerial,
+        );
+      }),
+    );
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to move file(s)';
+  }
+};
+// Adapter for child components: always expects an array
+const onFileMove = (moves: CirrusFileMoveParams[]) => {
+  handleFileMove(moves);
+};
+
 const handleRename = (file: CirrusFileNode) => {
   moveDialogFile.value = file;
   moveDialogError.value = '';
-  // Default to just renaming the file/folder name, not the whole path
-  moveDialogNewPath.value = file.name;
+  // Show the full path including current directory context
+  const currentPathValue = normalizePath(currentPath.value);
+  moveDialogNewPath.value = currentPathValue
+    ? joinPathsNormalized(currentPathValue, file.name)
+    : file.name;
   moveDialogOpen.value = true;
   moveDialogOldDeviceSerial.value = file.deviceSerial;
   // Default target device to current device
@@ -768,11 +859,23 @@ const submitMoveDialog = async () => {
   moveDialogLoading.value = true;
   moveDialogError.value = '';
   try {
-    const oldPath = moveDialogFile.value.name;
-    const newPath = moveDialogNewPath.value.trim();
+    // Include the current path context when constructing the old path
+    const fileName = moveDialogFile.value.name;
+    const oldPath = currentPath.value
+      ? joinPathsNormalized(currentPath.value, fileName)
+      : fileName;
+    const newPathInput = moveDialogNewPath.value.trim();
+
+    // Construct the new full path (in current directory unless it includes a path separator)
+    const newPath = newPathInput.includes('/')
+      ? newPathInput
+      : currentPath.value
+        ? joinPathsNormalized(currentPath.value, newPathInput)
+        : newPathInput;
+
     if (
-      !newPath ||
-      (newPath === oldPath &&
+      !newPathInput ||
+      (newPathInput === fileName &&
         moveDialogTargetDeviceSerial.value === moveDialogOldDeviceSerial.value)
     ) {
       moveDialogError.value = 'Please enter a new name or device.';
@@ -780,28 +883,13 @@ const submitMoveDialog = async () => {
       return;
     }
     await CirrusService.moveFile(
-      oldPath,
-      newPath,
+      normalizePath(oldPath),
+      normalizePath(newPath),
       moveDialogOldDeviceSerial.value,
       moveDialogTargetDeviceSerial.value,
     );
-    // Update the in-memory file list
-    // TODO: When moving to a new directory, we need to filter out the moved file
-    files.value = files.value.map((f) => {
-      if (f.name === oldPath) {
-        return {
-          ...f,
-          name: newPath,
-          fullPath: f.fullPath.replace(oldPath, newPath),
-          deviceSerial: moveDialogTargetDeviceSerial.value,
-          deviceName:
-            devices.value.find(
-              (d) => d.usbInfo?.serial === moveDialogTargetDeviceSerial.value,
-            )?.name || 'Internal',
-        };
-      }
-      return f;
-    });
+    // Refresh the file list after move
+    await fetchFiles();
     // Close the dialog
     moveDialogOpen.value = false;
     moveDialogFile.value = null;

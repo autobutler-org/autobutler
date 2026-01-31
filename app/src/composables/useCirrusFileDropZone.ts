@@ -3,6 +3,7 @@ import { ref, unref, type Ref } from 'vue';
 import CirrusService from '@/services/cirrusService';
 import { useCirrusDeviceStore } from '@/stores/cirrusDeviceStore';
 import type { CirrusFileNode } from '@/types/cirrus';
+import { joinPathsNormalized } from '@/util/filepath';
 
 type MaybeRef<T> = T | Ref<T>;
 
@@ -57,7 +58,7 @@ export const useCirrusFileDropZone = ({
         deviceName,
         devicePath: '',
         fullPath: currentPathValue
-          ? `${currentPathValue}/${file.name}`
+          ? joinPathsNormalized(currentPathValue, file.name)
           : file.name,
         deviceSerial: serial,
       }));
@@ -112,6 +113,11 @@ export const useCirrusFileDropZone = ({
   const handleDrop = async (event: DragEvent, targetPath?: string) => {
     event.preventDefault();
     isDragOver.value = false;
+
+    // If this is a file move, let the directory drop handler handle it
+    if (event.dataTransfer?.getData('application/x-cirrus-file-path')) {
+      return;
+    }
 
     const files = event.dataTransfer?.files;
     if (files && files.length) {

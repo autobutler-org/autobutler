@@ -58,6 +58,8 @@
           @dragover="handleDirectoryDragOver($event, file)"
           @dragleave="handleDirectoryDragLeave($event, file)"
           @drop="handleDirectoryDrop($event, file)"
+          draggable="true"
+          @dragstart="handleFileDragStart($event, file)"
         >
           <td class="file-table-cell file-table-cell--clickable">
             <div
@@ -125,6 +127,7 @@ import SortSwitcherIcon from '@/components/icons/SortSwitcherIcon.vue';
 import { useCirrusFileDropZone } from '@/composables/useCirrusFileDropZone';
 import CirrusService from '@/services/cirrusService';
 import type { CirrusFileNode } from '@/types/cirrus';
+import { joinPathsNormalized, normalizePath } from '@/util/filepath';
 import { computed, ref, watch, type Component } from 'vue';
 import CirrusListViewSortHeader, {
   type HeaderAlignDirection,
@@ -146,7 +149,55 @@ const emit = defineEmits<{
   select: [file: CirrusFileNode, event?: MouseEvent];
   'files-uploaded': [files: CirrusFileNode[]];
   'deselect-all': [];
+  'file-move': [
+    moves: Array<{
+      oldPath: string;
+      newPath: string;
+      oldDeviceSerial?: string;
+      newDeviceSerial?: string;
+    }>,
+  ];
 }>();
+
+const handleFileDragStart = (event: DragEvent, file: CirrusFileNode) => {
+  // Multi-file drag support
+  const selected =
+    props.selectedFiles &&
+    props.selectedFiles.length > 1 &&
+    props.selectedFiles.some((f) => f.fullPath === file.fullPath)
+      ? props.selectedFiles
+      : [file];
+  if (selected.length > 1) {
+    const payload = selected.map((f) => ({
+      path: normalizePath(
+        props.currentPath
+          ? joinPathsNormalized(props.currentPath, CirrusService.getFileName(f))
+          : CirrusService.getFileName(f),
+      ),
+      deviceSerial: f.deviceSerial || undefined,
+    }));
+    event.dataTransfer?.setData(
+      'application/x-cirrus-multi',
+      JSON.stringify(payload),
+    );
+  } else {
+    const filePath = normalizePath(
+      props.currentPath
+        ? joinPathsNormalized(
+            props.currentPath,
+            CirrusService.getFileName(file),
+          )
+        : CirrusService.getFileName(file),
+    );
+    event.dataTransfer?.setData('application/x-cirrus-file-path', filePath);
+    if (file.deviceSerial) {
+      event.dataTransfer?.setData(
+        'application/x-cirrus-device-serial',
+        file.deviceSerial,
+      );
+    }
+  }
+};
 
 // Sorting state
 const sortColumn = ref<SortColumn>(null);
@@ -181,14 +232,14 @@ const {
 
 const hoveredDirectoryPath = ref<string | null>(null);
 
-const normalizeCurrentPath = computed(() =>
-  CirrusService.normalizePath(props.currentPath),
-);
+const normalizeCurrentPath = computed(() => normalizePath(props.currentPath));
 
 const resolveDirectoryTargetPath = (file: CirrusFileNode) => {
   const directoryName = CirrusService.getFileName(file);
   const basePath = normalizeCurrentPath.value;
-  return basePath ? `${basePath}/${directoryName}` : directoryName;
+  return basePath
+    ? joinPathsNormalized(basePath, directoryName)
+    : directoryName;
 };
 
 const clearHoveredDirectory = () => {
@@ -204,13 +255,31 @@ watch(isDragOver, (active) => {
 const handleDirectoryDragEnter = (event: DragEvent, file: CirrusFileNode) => {
   if (!CirrusService.isDirectory(file)) return;
   event.preventDefault();
-  hoveredDirectoryPath.value = resolveDirectoryTargetPath(file);
+  const targetPath = resolveDirectoryTargetPath(file);
+  // Get the dragged file path from dataTransfer
+  const movedFilePath = event.dataTransfer?.getData(
+    'application/x-cirrus-file-path',
+  );
+  // Don't highlight if dragging a folder into itself or its subdirectory
+  if (movedFilePath && isSubPath(movedFilePath, targetPath)) {
+    return;
+  }
+  hoveredDirectoryPath.value = targetPath;
 };
 
 const handleDirectoryDragOver = (event: DragEvent, file: CirrusFileNode) => {
   if (!CirrusService.isDirectory(file)) return;
   event.preventDefault();
-  hoveredDirectoryPath.value = resolveDirectoryTargetPath(file);
+  const targetPath = resolveDirectoryTargetPath(file);
+  // Get the dragged file path from dataTransfer
+  const movedFilePath = event.dataTransfer?.getData(
+    'application/x-cirrus-file-path',
+  );
+  // Don't highlight if dragging a folder into itself or its subdirectory
+  if (movedFilePath && isSubPath(movedFilePath, targetPath)) {
+    return;
+  }
+  hoveredDirectoryPath.value = targetPath;
 };
 
 const handleDirectoryDragLeave = (event: DragEvent, file: CirrusFileNode) => {
@@ -235,7 +304,48 @@ const handleDirectoryDrop = async (event: DragEvent, file: CirrusFileNode) => {
   event.stopPropagation();
   const targetPath = resolveDirectoryTargetPath(file);
   clearHoveredDirectory();
-  await handleDrop(event, targetPath);
+
+  const dt = event.dataTransfer;
+  const multi = dt?.getData('application/x-cirrus-multi');
+  if (multi) {
+    try {
+      const files = JSON.parse(multi);
+      const moves = (files as Array<{ path: string; deviceSerial?: string }>)
+        .filter((f) => !isSubPath(f.path, targetPath))
+        .map((f) => {
+          const fileName = f.path.split('/').pop();
+          const cleanTargetPath = normalizePath(targetPath);
+          const newPath = joinPathsNormalized(cleanTargetPath, fileName || '');
+          return {
+            oldPath: f.path,
+            newPath,
+            oldDeviceSerial: f.deviceSerial,
+            newDeviceSerial: file.deviceSerial,
+          };
+        });
+      if (moves.length > 0) emit('file-move', moves);
+    } catch {}
+    return;
+  }
+  // Single file fallback
+  const movedFilePath = dt?.getData('application/x-cirrus-file-path');
+  const movedDeviceSerial =
+    dt?.getData('application/x-cirrus-device-serial') || undefined;
+  if (movedFilePath) {
+    if (isSubPath(movedFilePath, targetPath)) return;
+    const fileName = movedFilePath.split('/').pop();
+    const cleanTargetPath = normalizePath(targetPath);
+    const newPath = joinPathsNormalized(cleanTargetPath, fileName || '');
+    emit('file-move', [
+      {
+        oldPath: movedFilePath,
+        newPath,
+        oldDeviceSerial: movedDeviceSerial,
+        newDeviceSerial: file.deviceSerial,
+      },
+    ]);
+    return;
+  }
 };
 
 // Toggle mixed sorting mode (folders mixed with files vs folders first)
@@ -343,7 +453,7 @@ const handleClick = (file: CirrusFileNode) => {
   if (CirrusService.isDirectory(file)) {
     // Navigate to folder
     const newPath = props.currentPath
-      ? `${props.currentPath}/${fileName}`
+      ? joinPathsNormalized(props.currentPath, fileName)
       : fileName;
     emit('navigate-folder', newPath);
   } else {
@@ -354,6 +464,13 @@ const handleClick = (file: CirrusFileNode) => {
 const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   event.preventDefault();
   emit('context-menu', event, file);
+};
+
+// Utility to check if a path is a subpath of another
+const isSubPath = (parent: string, child: string) => {
+  const normParent = normalizePath(parent) + '/';
+  const normChild = normalizePath(child) + '/';
+  return normChild.startsWith(normParent);
 };
 </script>
 
@@ -509,6 +626,10 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
   border-radius: $border-radius-md;
   padding: 0 $spacing-xs;
   transition: background-color 0.15s ease;
+
+  &::selection {
+    background-color: transparent;
+  }
 }
 
 .file-table-device {
