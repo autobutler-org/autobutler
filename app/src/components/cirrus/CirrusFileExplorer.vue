@@ -805,16 +805,6 @@ const handleDownload = (file: CirrusFileNode) => {
 // Accepts an array of move params
 const handleFileMove = async (moves: CirrusFileMoveParams[]) => {
   try {
-    await Promise.all(
-      moves.map(async (move) => {
-        await CirrusService.moveFile(
-          move.oldPath,
-          move.newPath,
-          move.oldDeviceSerial,
-          move.newDeviceSerial,
-        );
-      }),
-    );
     // Batch update files list: remove files that were moved out of the current folder
     const currentFolder = normalizePath(currentPath.value);
     const movedOutOldNames = moves
@@ -830,6 +820,17 @@ const handleFileMove = async (moves: CirrusFileMoveParams[]) => {
         (f) => !movedOutOldNames.includes(normalizePath(f.name)),
       );
     }
+    // Actually perform the file move
+    await Promise.all(
+      moves.map(async (move) => {
+        await CirrusService.moveFile(
+          move.oldPath,
+          move.newPath,
+          move.oldDeviceSerial,
+          move.newDeviceSerial,
+        );
+      }),
+    );
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to move file(s)';
   }
