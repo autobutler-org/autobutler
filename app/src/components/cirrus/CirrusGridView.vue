@@ -134,18 +134,42 @@ const {
 });
 
 const handleFileDragStart = (event: DragEvent, file: CirrusFileNode) => {
-  // Allow dragging both files and directories
-  const filePath = normalizePath(
-    props.currentPath
-      ? joinPathsNormalized(props.currentPath, CirrusService.getFileName(file))
-      : CirrusService.getFileName(file),
-  );
-  event.dataTransfer?.setData('application/x-cirrus-file-path', filePath);
-  if (file.deviceSerial) {
+  // Multi-file drag support
+  const selected =
+    props.selectedFiles &&
+    props.selectedFiles.length > 1 &&
+    props.selectedFiles.some((f) => f.fullPath === file.fullPath)
+      ? props.selectedFiles
+      : [file];
+  if (selected.length > 1) {
+    const payload = selected.map((f) => ({
+      path: normalizePath(
+        props.currentPath
+          ? joinPathsNormalized(props.currentPath, CirrusService.getFileName(f))
+          : CirrusService.getFileName(f),
+      ),
+      deviceSerial: f.deviceSerial || undefined,
+    }));
     event.dataTransfer?.setData(
-      'application/x-cirrus-device-serial',
-      file.deviceSerial,
+      'application/x-cirrus-multi',
+      JSON.stringify(payload),
     );
+  } else {
+    const filePath = normalizePath(
+      props.currentPath
+        ? joinPathsNormalized(
+            props.currentPath,
+            CirrusService.getFileName(file),
+          )
+        : CirrusService.getFileName(file),
+    );
+    event.dataTransfer?.setData('application/x-cirrus-file-path', filePath);
+    if (file.deviceSerial) {
+      event.dataTransfer?.setData(
+        'application/x-cirrus-device-serial',
+        file.deviceSerial,
+      );
+    }
   }
 };
 
@@ -224,19 +248,28 @@ const handleDirectoryDrop = async (event: DragEvent, file: CirrusFileNode) => {
   const targetPath = resolveDirectoryTargetPath(file);
   clearHoveredDirectory();
 
-  // Check if this is a file move (internal drag)
   const dt = event.dataTransfer;
+  const multi = dt?.getData('application/x-cirrus-multi');
+  if (multi) {
+    try {
+      const files = JSON.parse(multi);
+      for (const f of files) {
+        if (isSubPath(f.path, targetPath)) continue;
+        const fileName = f.path.split('/').pop();
+        const cleanTargetPath = normalizePath(targetPath);
+        const newPath = joinPathsNormalized(cleanTargetPath, fileName || '');
+        emit('file-move', f.path, newPath, f.deviceSerial, file.deviceSerial);
+      }
+    } catch {}
+    return;
+  }
+  // Single file fallback
   const movedFilePath = dt?.getData('application/x-cirrus-file-path');
   const movedDeviceSerial =
     dt?.getData('application/x-cirrus-device-serial') || undefined;
   if (movedFilePath) {
-    // Prevent moving a directory into itself or its own subdirectory
-    if (isSubPath(movedFilePath, targetPath)) {
-      return;
-    }
-    // Just get the last part of the path (the file or directory name)
+    if (isSubPath(movedFilePath, targetPath)) return;
     const fileName = movedFilePath.split('/').pop();
-    // Remove trailing slash from targetPath to avoid double slashes
     const cleanTargetPath = normalizePath(targetPath);
     const newPath = joinPathsNormalized(cleanTargetPath, fileName || '');
     emit(
