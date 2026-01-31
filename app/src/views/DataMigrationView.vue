@@ -235,26 +235,6 @@ const handleGoogleTakeout = () => {
   router.push('/data-migration/google-takeout');
 };
 
-const handleICloud = () => {
-  showUploadSection.value = true;
-  uploadMessage.value = '';
-};
-
-const handleDropbox = () => {
-  showUploadSection.value = true;
-  uploadMessage.value = '';
-};
-
-const handleOneDrive = () => {
-  showUploadSection.value = true;
-  uploadMessage.value = '';
-};
-
-const handleBox = () => {
-  showUploadSection.value = true;
-  uploadMessage.value = '';
-};
-
 const handleDragOver = (e: DragEvent) => {
   e.preventDefault();
   e.stopPropagation();
