@@ -1,7 +1,3 @@
-import CirrusView from '@/views/CirrusView.vue';
-import DevicesView from '@/views/DevicesView.vue';
-import HomeView from '@/views/HomeView.vue';
-import PhotosView from '@/views/PhotosView.vue';
 import { createRouter, createWebHistory } from 'vue-router';
 
 const router = createRouter({
@@ -10,35 +6,33 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView,
+      component: import('@/views/HomeView.vue'),
     },
     {
       path: '/cirrus/:pathMatch(.*)*',
       name: 'cirrus',
-      component: CirrusView,
+      component: import('@/views/CirrusView.vue'),
     },
     {
       path: '/photos',
       name: 'photos',
-      component: PhotosView,
+      component: import('@/views/PhotosView.vue'),
     },
-    // TODO: This is incomplete is why it is hidden
-    // {
-    //   path: '/books',
-    //   name: 'books',
-    //   component: BooksView,
-    // },
+    {
+      path: '/books',
+      name: 'books',
+      component: import('@/views/BooksView.vue'),
+    },
     {
       path: '/devices',
       name: 'devices',
-      component: DevicesView,
+      component: import('@/views/DevicesView.vue'),
     },
-    // TODO: This is incomplete is why it is hidden
-    // {
-    //   path: '/settings',
-    //   name: 'settings',
-    //   component: SettingsView,
-    // },
+    {
+      path: '/settings',
+      name: 'settings',
+      component: import('@/views/SettingsView.vue'),
+    },
   ],
 });
 
