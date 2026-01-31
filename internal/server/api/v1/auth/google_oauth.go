@@ -17,7 +17,8 @@ import (
 
 var (
 	googleOAuthConfig *oauth2.Config
-	oauthStateStore   = make(map[string]time.Time) // state -> timestamp
+	oauthStateStore   = make(map[string]time.Time)     // state -> timestamp
+	tokenStore        = make(map[string]*oauth2.Token) // email -> token
 )
 
 func init() {
@@ -115,6 +116,9 @@ var googleCallbackRoute = serverutil.ApiRoute(
 			return serverutil.InternalServerError(fmt.Errorf("failed to decode user info: %w", err))
 		}
 
+		// Store token for later use (in production, save to database)
+		tokenStore[userInfo.Email] = token
+
 		// Store token (in production, save to database associated with user)
 		// For now, we'll return a simple HTML page that posts message to opener
 		html := fmt.Sprintf(`
@@ -165,21 +169,44 @@ var googleCallbackRoute = serverutil.ApiRoute(
 </html>
 `, userInfo.Email, userInfo.Name, token.AccessToken)
 
-		c.Header("Content-Type", "text/html")
-		c.String(200, html)
-		return nil // Already handled response
+		// Return HTML response directly
+		return serverutil.NewResponse().
+			WithContentType(serverutil.ContentTypeHTML).
+			WithStatusCode(200).
+			WithData(html)
 	},
 )
 
 var googleDisconnectRoute = serverutil.ApiRoute(
 	"POST", "/auth/google/disconnect", func(c *gin.Context) *serverutil.Response {
-		// In production: Remove stored token from database
-		// For now, just return success
+		// Get email from request body
+		var req struct {
+			Email string `json:"email"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil || req.Email == "" {
+			// If no email provided, clear all tokens (for simplicity)
+			tokenStore = make(map[string]*oauth2.Token)
+		} else {
+			// Remove specific user's token
+			delete(tokenStore, req.Email)
+		}
+
 		return serverutil.Ok().WithData(gin.H{
 			"message": "Disconnected successfully",
 		})
 	},
 )
+
+// GetGoogleToken retrieves a stored OAuth token by email
+func GetGoogleToken(email string) (*oauth2.Token, bool) {
+	token, exists := tokenStore[email]
+	return token, exists
+}
+
+// GetGoogleOAuthConfig returns the configured OAuth config
+func GetGoogleOAuthConfig() *oauth2.Config {
+	return googleOAuthConfig
+}
 
 func generateStateToken() (string, error) {
 	b := make([]byte, 32)

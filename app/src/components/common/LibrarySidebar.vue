@@ -9,15 +9,30 @@
         {{ section.title }}
       </h2>
       <ul class="library-sidebar-list">
-        <li
-          v-for="item in section.items"
-          :key="item.label"
-          :class="['library-sidebar-item', { active: item.active }]"
-        >
-          <span>{{ item.label }}</span>
-          <span v-if="item.count !== undefined" class="library-sidebar-count">{{
-            item.count
-          }}</span>
+        <li v-for="item in section.items" :key="item.label">
+          <router-link
+            v-if="item.href"
+            :to="item.href"
+            :class="['library-sidebar-item', { active: item.active }]"
+          >
+            <span>{{ item.label }}</span>
+            <span
+              v-if="item.count !== undefined"
+              class="library-sidebar-count"
+              >{{ item.count }}</span
+            >
+          </router-link>
+          <div
+            v-else
+            :class="['library-sidebar-item', { active: item.active }]"
+          >
+            <span>{{ item.label }}</span>
+            <span
+              v-if="item.count !== undefined"
+              class="library-sidebar-count"
+              >{{ item.count }}</span
+            >
+          </div>
         </li>
       </ul>
     </div>
@@ -29,6 +44,7 @@ export interface SidebarItem {
   label: string;
   count?: number;
   active?: boolean;
+  href?: string;
 }
 export interface SidebarSection {
   title: string;
