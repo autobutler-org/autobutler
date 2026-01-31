@@ -43,91 +43,95 @@
           <h3>Select Data to Import</h3>
           <p>Choose which Google services you want to import from:</p>
 
-          <div class="service-checkboxes">
-            <label class="service-checkbox">
-              <input type="checkbox" v-model="selectedServices.photos" />
-              <div class="checkbox-content">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <path d="m21 15-5-5L5 21" />
-                </svg>
-                <div>
-                  <strong>Google Photos</strong>
-                  <span>Import all your photos and videos</span>
-                </div>
+          <div class="service-options">
+            <button
+              class="service-option"
+              :class="{ selected: selectedServices.photos }"
+              @click="selectedServices.photos = !selectedServices.photos"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path d="m21 15-5-5L5 21" />
+              </svg>
+              <div>
+                <strong>Google Photos</strong>
+                <span>Import all your photos and videos</span>
               </div>
-            </label>
+            </button>
 
-            <label class="service-checkbox">
-              <input type="checkbox" v-model="selectedServices.drive" />
-              <div class="checkbox-content">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-4M17 8l-5-5-5 5M12 3v12"
-                  />
-                </svg>
-                <div>
-                  <strong>Google Drive</strong>
-                  <span>Import your files and folders</span>
-                </div>
+            <button
+              class="service-option"
+              :class="{ selected: selectedServices.drive }"
+              @click="selectedServices.drive = !selectedServices.drive"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-4M17 8l-5-5-5 5M12 3v12"
+                />
+              </svg>
+              <div>
+                <strong>Google Drive</strong>
+                <span>Import your files and folders</span>
               </div>
-            </label>
+            </button>
 
-            <label class="service-checkbox">
-              <input type="checkbox" v-model="selectedServices.contacts" />
-              <div class="checkbox-content">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-                </svg>
-                <div>
-                  <strong>Contacts</strong>
-                  <span>Import your contact list</span>
-                </div>
+            <button
+              class="service-option"
+              :class="{ selected: selectedServices.contacts }"
+              @click="selectedServices.contacts = !selectedServices.contacts"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+              </svg>
+              <div>
+                <strong>Contacts</strong>
+                <span>Import your contact list</span>
               </div>
-            </label>
+            </button>
 
-            <label class="service-checkbox">
-              <input type="checkbox" v-model="selectedServices.calendar" />
-              <div class="checkbox-content">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-                <div>
-                  <strong>Calendar</strong>
-                  <span>Import your events and reminders</span>
-                </div>
+            <button
+              class="service-option"
+              :class="{ selected: selectedServices.calendar }"
+              @click="selectedServices.calendar = !selectedServices.calendar"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+              <div>
+                <strong>Calendar</strong>
+                <span>Import your events and reminders</span>
               </div>
-            </label>
+            </button>
           </div>
         </div>
 
@@ -550,23 +554,27 @@ onMounted(() => {
 .migration-content {
   flex: 1;
   overflow-y: auto;
-  padding: var(--spacing-2xl);
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: $spacing-lg;
   max-width: 900px;
+  width: 100%;
   margin: 0 auto;
+  padding: $spacing-xl;
+  padding-top: $spacing-2xl;
+  padding-bottom: $spacing-xl;
 }
 
 .auth-status-card {
   background: rgba(34, 197, 94, 0.1);
   border: 1px solid rgba(34, 197, 94, 0.3);
   border-radius: 12px;
-  padding: var(--spacing-xl);
+  padding: $spacing-lg;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--spacing-lg);
+  gap: $spacing-md;
 }
 
 .auth-status-header {
@@ -576,8 +584,8 @@ onMounted(() => {
   flex: 1;
 
   .user-avatar {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     background: rgba(34, 197, 94, 0.2);
     border-radius: 50%;
     display: flex;
@@ -585,14 +593,14 @@ onMounted(() => {
     justify-content: center;
 
     svg {
-      width: 24px;
-      height: 24px;
+      width: 20px;
+      height: 20px;
       color: #22c55e;
     }
   }
 
   h3 {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-base);
     font-weight: 600;
     color: #22c55e;
     margin: 0 0 4px 0;
@@ -609,7 +617,7 @@ onMounted(() => {
 .device-selection-card {
   background: var(--color-gray-800);
   border-radius: 12px;
-  padding: var(--spacing-xl);
+  padding: $spacing-lg;
 
   @media (prefers-color-scheme: light) {
     background: white;
@@ -617,10 +625,10 @@ onMounted(() => {
   }
 
   h3 {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     font-weight: 600;
     color: white;
-    margin: 0 0 var(--spacing-xs) 0;
+    margin: 0 0 $spacing-xs 0;
 
     @media (prefers-color-scheme: light) {
       color: var(--color-gray-900);
@@ -629,7 +637,8 @@ onMounted(() => {
 
   > p {
     color: var(--color-gray-400);
-    margin: 0 0 var(--spacing-lg) 0;
+    margin: 0 0 $spacing-md 0;
+    font-size: var(--font-size-sm);
 
     @media (prefers-color-scheme: light) {
       color: var(--color-gray-600);
@@ -637,72 +646,96 @@ onMounted(() => {
   }
 }
 
-.service-checkboxes {
+.service-options {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: $spacing-sm;
 }
 
-.service-checkbox {
+.service-option {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md);
+  gap: $spacing-md;
+  padding: $spacing-md;
   background: var(--color-gray-750);
+  border: 1px solid transparent;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  text-align: left;
+  width: 100%;
 
   @media (prefers-color-scheme: light) {
     background: var(--color-gray-50);
   }
 
-  &:hover {
-    background: var(--color-gray-700);
+  svg {
+    width: 20px;
+    height: 20px;
+    color: white;
+    flex-shrink: 0;
+    align-self: center;
 
     @media (prefers-color-scheme: light) {
-      background: var(--color-gray-100);
+      color: var(--color-gray-700);
     }
   }
 
-  input[type='checkbox'] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-  }
-
-  .checkbox-content {
+  > div {
     display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
+    flex-direction: column;
+    gap: 2px;
     flex: 1;
 
+    strong {
+      color: white;
+      font-size: var(--font-size-sm);
+
+      @media (prefers-color-scheme: light) {
+        color: var(--color-gray-900);
+      }
+    }
+
+    span {
+      color: white;
+      font-size: var(--font-size-xs);
+      opacity: 0.8;
+
+      @media (prefers-color-scheme: light) {
+        color: var(--color-gray-600);
+        opacity: 1;
+      }
+    }
+  }
+
+  &:hover:not(.selected) {
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+    @media (prefers-color-scheme: light) {
+      border-color: var(--color-gray-400);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  &.selected {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: rgba(34, 197, 94, 0.3);
+
     svg {
-      width: 24px;
-      height: 24px;
-      color: var(--color-primary-500);
+      color: #22c55e;
     }
 
     > div {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-
       strong {
-        color: white;
-        font-size: var(--font-size-base);
-
-        @media (prefers-color-scheme: light) {
-          color: var(--color-gray-900);
-        }
+        color: #22c55e;
       }
 
       span {
-        color: var(--color-gray-400);
-        font-size: var(--font-size-sm);
+        color: rgba(34, 197, 94, 0.8);
 
         @media (prefers-color-scheme: light) {
-          color: var(--color-gray-600);
+          color: rgba(34, 197, 94, 0.9);
         }
       }
     }
@@ -740,14 +773,14 @@ onMounted(() => {
 .device-list {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: $spacing-sm;
 }
 
 .device-option {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-lg);
+  gap: $spacing-md;
+  padding: $spacing-md;
   background: var(--color-gray-750);
   border: 2px solid transparent;
   border-radius: 12px;
@@ -776,8 +809,8 @@ onMounted(() => {
 }
 
 .device-icon {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -790,8 +823,8 @@ onMounted(() => {
   }
 
   svg {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     color: var(--color-gray-300);
 
     @media (prefers-color-scheme: light) {
@@ -804,11 +837,11 @@ onMounted(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 
   strong {
     color: white;
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
     font-weight: 600;
 
     @media (prefers-color-scheme: light) {
@@ -818,7 +851,7 @@ onMounted(() => {
 
   .device-capacity {
     color: var(--color-gray-400);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
 
     @media (prefers-color-scheme: light) {
       color: var(--color-gray-600);
@@ -836,8 +869,8 @@ onMounted(() => {
 }
 
 .device-check {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   background: var(--color-primary-500);
   color: white;
   border-radius: 50%;
@@ -850,12 +883,12 @@ onMounted(() => {
 
 .import-actions {
   display: flex;
-  gap: var(--spacing-md);
+  gap: $spacing-md;
   flex-wrap: wrap;
 }
 
 .progress-container {
-  padding: var(--spacing-xl);
+  padding: $spacing-lg;
   background: var(--color-gray-750);
   border-radius: 12px;
   border: 2px solid var(--color-primary-500);
@@ -869,11 +902,11 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: $spacing-md;
 
   h3 {
     color: white;
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-base);
     font-weight: 600;
     margin: 0;
 
@@ -884,7 +917,7 @@ onMounted(() => {
 
   .progress-stats {
     color: var(--color-gray-400);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
 
     @media (prefers-color-scheme: light) {
       color: var(--color-gray-600);
@@ -894,11 +927,11 @@ onMounted(() => {
 
 .progress-bar {
   width: 100%;
-  height: 12px;
+  height: 8px;
   background: var(--color-gray-700);
-  border-radius: 6px;
+  border-radius: 4px;
   overflow: hidden;
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: $spacing-sm;
 
   @media (prefers-color-scheme: light) {
     background: var(--color-gray-200);
@@ -913,20 +946,21 @@ onMounted(() => {
     var(--color-primary-600)
   );
   transition: width 0.3s ease;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 .progress-percentage {
   text-align: right;
   color: var(--color-primary-500);
   font-weight: 600;
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
 }
 
 .status-message {
-  padding: var(--spacing-lg);
+  padding: $spacing-md;
   border-radius: 8px;
   font-weight: 500;
+  font-size: var(--font-size-sm);
 
   &.success {
     background: rgba(34, 197, 94, 0.1);
@@ -952,17 +986,17 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   gap: var(--spacing-xs);
-  padding: var(--spacing-md) var(--spacing-xl);
+  padding: $spacing-sm $spacing-lg;
   border-radius: 8px;
   font-weight: 600;
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   cursor: pointer;
   transition: all 0.2s;
   border: none;
 
   &--large {
-    padding: var(--spacing-lg) var(--spacing-2xl);
-    font-size: var(--font-size-lg);
+    padding: $spacing-md $spacing-xl;
+    font-size: var(--font-size-base);
   }
 
   &--primary {

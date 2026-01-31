@@ -32,87 +32,19 @@
     </template>
     <template #main>
       <div class="migration-content">
+        <p class="page-description">
+          Connect your cloud storage accounts to automatically import your
+          photos, files, contacts, and calendar events. Choose a service below
+          to get started.
+        </p>
         <div class="migration-container">
-          <!-- Google Takeout Option -->
-          <div class="migration-card google-takeout">
-            <div class="migration-card-header">
-              <div class="migration-card-icon google">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-              </div>
-              <h3>Google</h3>
-            </div>
-            <p class="migration-card-description">
-              Automatically download and import your Google Photos, Drive files,
-              contacts, and calendar events directly from your Google Account.
-            </p>
-            <div class="migration-card-features">
-              <div class="feature-item">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  width="16"
-                  height="16"
-                >
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>Photos & Videos</span>
-              </div>
-              <div class="feature-item">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  width="16"
-                  height="16"
-                >
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>Drive Files & Folders</span>
-              </div>
-              <div class="feature-item">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  width="16"
-                  height="16"
-                >
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>Contacts & Calendar</span>
-              </div>
-            </div>
-            <button class="btn btn--primary" @click="handleGoogleTakeout">
+          <!-- Google Option -->
+          <button class="migration-card" @click="handleGoogleTakeout">
+            <div class="migration-card-icon google">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
-                width="18"
-                height="18"
               >
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -127,105 +59,77 @@
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              Connect with Google
-            </button>
-          </div>
+            </div>
+            <h3>Google</h3>
+          </button>
 
           <!-- iCloud Option -->
-          <div class="migration-card icloud disabled">
-            <div class="migration-card-header">
-              <div class="migration-card-icon icloud">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path
-                    d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"
-                  />
-                </svg>
-              </div>
-              <h3>iCloud</h3>
-              <span class="coming-soon-badge">Coming Soon</span>
+          <button class="migration-card disabled" disabled>
+            <div class="migration-card-icon icloud">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"
+                />
+              </svg>
             </div>
-            <p class="migration-card-description">
-              Import your photos, files, and data from iCloud. Automatic sync
-              and import will be available soon.
-            </p>
-            <button class="btn btn--primary" disabled>Coming Soon</button>
-          </div>
+            <h3>iCloud</h3>
+            <span class="coming-soon-badge">Coming Soon</span>
+          </button>
 
           <!-- Dropbox Option -->
-          <div class="migration-card dropbox disabled">
-            <div class="migration-card-header">
-              <div class="migration-card-icon dropbox">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path
-                    d="M6 1.8L0 5.4l6 3.6 6-3.6-6-3.6zm12 0l-6 3.6 6 3.6 6-3.6-6-3.6zM0 12.6l6 3.6 6-3.6-6-3.6-6 3.6zm18-3.6l-6 3.6 6 3.6 6-3.6-6-3.6zM6 17.4l6 3.6 6-3.6-6-3.6-6 3.6z"
-                  />
-                </svg>
-              </div>
-              <h3>Dropbox</h3>
-              <span class="coming-soon-badge">Coming Soon</span>
+          <button class="migration-card disabled" disabled>
+            <div class="migration-card-icon dropbox">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  d="M6 1.8L0 5.4l6 3.6 6-3.6-6-3.6zm12 0l-6 3.6 6 3.6 6-3.6-6-3.6zM0 12.6l6 3.6 6-3.6-6-3.6-6 3.6zm18-3.6l-6 3.6 6 3.6 6-3.6-6-3.6zM6 17.4l6 3.6 6-3.6-6-3.6-6 3.6z"
+                />
+              </svg>
             </div>
-            <p class="migration-card-description">
-              Import files and folders from Dropbox cloud storage. Automatic
-              sync coming soon.
-            </p>
-            <button class="btn btn--primary" disabled>Coming Soon</button>
-          </div>
+            <h3>Dropbox</h3>
+            <span class="coming-soon-badge">Coming Soon</span>
+          </button>
 
           <!-- OneDrive Option -->
-          <div class="migration-card onedrive disabled">
-            <div class="migration-card-header">
-              <div class="migration-card-icon onedrive">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path
-                    d="M13.5 7.5c-1.5-2-4-3.5-7-3.5C3.5 4 1 6.5 1 9.5c0 .5.1 1 .2 1.5C.5 11.5 0 12.7 0 14c0 2.2 1.8 4 4 4h15c2.8 0 5-2.2 5-5 0-2.6-2-4.7-4.5-4.9-.3-2.6-2.5-4.6-5-4.6z"
-                  />
-                </svg>
-              </div>
-              <h3>OneDrive</h3>
-              <span class="coming-soon-badge">Coming Soon</span>
+          <button class="migration-card disabled" disabled>
+            <div class="migration-card-icon onedrive">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  d="M13.5 7.5c-1.5-2-4-3.5-7-3.5C3.5 4 1 6.5 1 9.5c0 .5.1 1 .2 1.5C.5 11.5 0 12.7 0 14c0 2.2 1.8 4 4 4h15c2.8 0 5-2.2 5-5 0-2.6-2-4.7-4.5-4.9-.3-2.6-2.5-4.6-5-4.6z"
+                />
+              </svg>
             </div>
-            <p class="migration-card-description">
-              Import documents and files from Microsoft OneDrive. Integration
-              coming soon.
-            </p>
-            <button class="btn btn--primary" disabled>Coming Soon</button>
-          </div>
+            <h3>OneDrive</h3>
+            <span class="coming-soon-badge">Coming Soon</span>
+          </button>
 
           <!-- Box Option -->
-          <div class="migration-card box disabled">
-            <div class="migration-card-header">
-              <div class="migration-card-icon box">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path
-                    d="M3 3h18a2 2 0 012 2v14a2 2 0 01-2 2H3a2 2 0 01-2-2V5a2 2 0 012-2zm9 4l-7 4 7 4 7-4-7-4z"
-                  />
-                </svg>
-              </div>
-              <h3>Box</h3>
-              <span class="coming-soon-badge">Coming Soon</span>
+          <button class="migration-card disabled" disabled>
+            <div class="migration-card-icon box">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  d="M3 3h18a2 2 0 012 2v14a2 2 0 01-2 2H3a2 2 0 01-2-2V5a2 2 0 012-2zm9 4l-7 4 7 4 7-4-7-4z"
+                />
+              </svg>
             </div>
-            <p class="migration-card-description">
-              Import enterprise files and content from Box. Enterprise
-              integration coming soon.
-            </p>
-            <button class="btn btn--primary" disabled>Coming Soon</button>
-          </div>
+            <h3>Box</h3>
+            <span class="coming-soon-badge">Coming Soon</span>
+          </button>
         </div>
 
         <!-- Upload Section -->
@@ -421,15 +325,33 @@ const uploadFiles = async () => {
   padding-bottom: $spacing-2xl;
 }
 
+.page-description {
+  color: var(--color-gray-400);
+  font-size: var(--font-size-lg);
+  line-height: 1.6;
+  margin: 0 0 $spacing-3xl 0;
+  text-align: center;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+
+  @media (prefers-color-scheme: light) {
+    color: var(--color-gray-600);
+  }
+}
+
 .migration-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: $spacing-3xl;
-  margin-bottom: $spacing-4xl;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: $spacing-xl;
+  margin-bottom: $spacing-3xl;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
 
   @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: $spacing-2xl;
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-lg;
   }
 }
 
@@ -437,21 +359,35 @@ const uploadFiles = async () => {
   background: var(--color-gray-800);
   border: 2px solid transparent;
   border-radius: 12px;
-  padding: $spacing-3xl;
-  margin: 2px;
+  padding: $spacing-xl;
   display: flex;
   flex-direction: column;
-  gap: $spacing-xl;
+  align-items: center;
+  gap: $spacing-md;
   transition: all 0.2s ease;
+  cursor: pointer;
+  text-align: center;
+  position: relative;
 
   @media (prefers-color-scheme: light) {
     background: white;
     border-color: var(--color-gray-300);
   }
 
+  h3 {
+    margin: 0;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: white;
+
+    @media (prefers-color-scheme: light) {
+      color: var(--color-gray-900);
+    }
+  }
+
   &:not(.disabled):hover {
     border-color: var(--color-primary-500);
-    transform: translateY(-2px);
+    transform: translateY(-4px);
 
     @media (prefers-color-scheme: light) {
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
@@ -459,27 +395,8 @@ const uploadFiles = async () => {
   }
 
   &.disabled {
-    opacity: 0.7;
+    opacity: 0.6;
     cursor: not-allowed;
-  }
-}
-
-.migration-card-header {
-  display: flex;
-  align-items: center;
-  gap: $spacing-md;
-  margin-bottom: $spacing-sm;
-  flex-wrap: wrap;
-
-  h3 {
-    margin: 0;
-    font-size: var(--font-size-xl);
-    font-weight: 600;
-    color: white;
-
-    @media (prefers-color-scheme: light) {
-      color: var(--color-gray-900);
-    }
   }
 }
 
@@ -493,20 +410,23 @@ const uploadFiles = async () => {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border: 1px solid rgba(251, 191, 36, 0.3);
+  position: absolute;
+  top: $spacing-sm;
+  right: $spacing-sm;
 }
 
 .migration-card-icon {
-  width: 40px;
-  height: 40px;
+  width: 64px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: 12px;
   flex-shrink: 0;
 
   svg {
-    width: 24px;
-    height: 24px;
+    width: 36px;
+    height: 36px;
   }
 
   &.google {
@@ -604,7 +524,7 @@ const uploadFiles = async () => {
 }
 
 .upload-section {
-  margin-top: $spacing-4xl;
+  margin-top: $spacing-3xl;
   padding: $spacing-3xl;
   background: var(--color-gray-900);
   border: 1px solid var(--color-gray-800);
