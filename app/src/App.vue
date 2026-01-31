@@ -6,7 +6,9 @@
       :minimize-key-combo="minimizeKeyCombo"
     />
     <ThemeModal :open="themeModalOpen" @close="themeModalOpen = false" />
-    <RouterView />
+    <div class="view-body">
+      <RouterView />
+    </div>
     <AppFooter />
   </main>
 </template>
@@ -122,5 +124,15 @@ nav {
     padding: 1rem 0;
     margin-top: 1rem;
   }
+}
+
+.view-body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 </style>

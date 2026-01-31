@@ -1,10 +1,8 @@
 <template>
-  <div class="landing-body">
-    <div class="landing-main site-fullscreen-col">
-      <GradientOverlays />
-      <div class="landing-container">
-        <HeroSection />
-      </div>
+  <div class="view-content site-fullscreen-col">
+    <GradientOverlays />
+    <div class="landing-container">
+      <HeroSection />
     </div>
   </div>
 </template>
@@ -15,17 +13,7 @@ import HeroSection from '@/components/home/HeroSection.vue';
 </script>
 
 <style lang="scss" scoped>
-.landing-body {
-  margin: 0;
-  padding: 0;
-  width: 100vw;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.landing-main {
+.view-content {
   min-height: 100vh;
   display: flex;
   flex-direction: column;

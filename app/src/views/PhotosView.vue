@@ -1,30 +1,28 @@
 <template>
-  <div class="landing-body">
-    <LibraryLayout>
-      <template #sidebar>
-        <PhotosSidebar :photo-count="totalPhotos" :summary="summary" />
-        <div id="mobile-photos-arrival-location" />
-      </template>
-      <template #title>
-        <h2 class="library-title" @click="scrollToArrival">All Photos</h2>
-      </template>
-      <template #subtitle>
-        <div class="library-subtitle">
-          {{ formatPhotoCount(totalPhotos) }}
-        </div>
-      </template>
-      <template #main>
-        <div class="photos-grid-container">
-          <PhotoGrid
-            :photos="photos"
-            :page="1"
-            :total-photos="totalPhotos"
-            @photo-click="onPhotoClick"
-          />
-        </div>
-      </template>
-    </LibraryLayout>
-  </div>
+  <LibraryLayout>
+    <template #sidebar>
+      <PhotosSidebar :photo-count="totalPhotos" :summary="summary" />
+      <div id="mobile-photos-arrival-location" />
+    </template>
+    <template #title>
+      <h2 class="library-title" @click="scrollToArrival">All Photos</h2>
+    </template>
+    <template #subtitle>
+      <div class="library-subtitle">
+        {{ formatPhotoCount(totalPhotos) }}
+      </div>
+    </template>
+    <template #main>
+      <div class="photos-grid-container">
+        <PhotoGrid
+          :photos="photos"
+          :page="1"
+          :total-photos="totalPhotos"
+          @photo-click="onPhotoClick"
+        />
+      </div>
+    </template>
+  </LibraryLayout>
 </template>
 
 <script lang="ts" setup>
@@ -85,16 +83,6 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
-.landing-body {
-  margin: 0;
-  padding: 0;
-  width: 100vw;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
 .photos-grid-container {
   flex: 1;
   overflow-y: auto;
