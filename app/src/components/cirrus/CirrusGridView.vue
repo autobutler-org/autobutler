@@ -97,7 +97,7 @@ import SlideshowIcon from '@/components/icons/SlideshowIcon.vue';
 import { useCirrusFileDropZone } from '@/composables/useCirrusFileDropZone';
 import CirrusService from '@/services/cirrusService';
 import type { CirrusFileNode } from '@/types/cirrus';
-import { normalizePath } from '@/util/filepath';
+import { joinPathsNormalized, normalizePath } from '@/util/filepath';
 import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{
@@ -137,7 +137,7 @@ const handleFileDragStart = (event: DragEvent, file: CirrusFileNode) => {
   // Allow dragging both files and directories
   const filePath = normalizePath(
     props.currentPath
-      ? `${props.currentPath}/${CirrusService.getFileName(file)}`
+      ? joinPathsNormalized(props.currentPath, CirrusService.getFileName(file))
       : CirrusService.getFileName(file),
   );
   event.dataTransfer?.setData('application/x-cirrus-file-path', filePath);
@@ -156,7 +156,9 @@ const normalizeCurrentPath = computed(() => normalizePath(props.currentPath));
 const resolveDirectoryTargetPath = (file: CirrusFileNode) => {
   const directoryName = CirrusService.getFileName(file);
   const basePath = normalizeCurrentPath.value;
-  return basePath ? `${basePath}/${directoryName}` : directoryName;
+  return basePath
+    ? joinPathsNormalized(basePath, directoryName)
+    : directoryName;
 };
 
 const clearHoveredDirectory = () => {
@@ -236,7 +238,7 @@ const handleDirectoryDrop = async (event: DragEvent, file: CirrusFileNode) => {
     const fileName = movedFilePath.split('/').pop();
     // Remove trailing slash from targetPath to avoid double slashes
     const cleanTargetPath = normalizePath(targetPath);
-    const newPath = `${cleanTargetPath}/${fileName}`;
+    const newPath = joinPathsNormalized(cleanTargetPath, fileName || '');
     emit(
       'file-move',
       movedFilePath,
@@ -276,7 +278,7 @@ const handleClick = (file: CirrusFileNode) => {
   const fileName = CirrusService.getFileName(file);
   if (CirrusService.isDirectory(file)) {
     const newPath = props.currentPath
-      ? `${props.currentPath}/${fileName}`
+      ? joinPathsNormalized(props.currentPath, fileName)
       : fileName;
     emit('navigate-folder', newPath);
   } else {

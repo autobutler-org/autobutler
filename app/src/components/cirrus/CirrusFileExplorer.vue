@@ -78,7 +78,7 @@
             :current-path="currentPath"
             @navigate="navigateToPath"
             @folder-created="handleFolderCreated"
-            @file-move="handleFileMove"
+            @breadcrumb-drop="handleBreadcrumbDrop"
           />
         </div>
         <div style="display: flex; align-items: center; gap: 1rem">
@@ -340,44 +340,6 @@
 </template>
 
 <script lang="ts" setup>
-// Handle breadcrumb drop event
-const handleBreadcrumbDrop = async (targetPath: string, event: DragEvent) => {
-  console.log('Breadcrumb drop on', targetPath, event);
-  // Only support moving folders/files (dragged from list/grid)
-  // Expect event.dataTransfer to contain 'text/plain' with fullPath
-  const fullPath = event.dataTransfer?.getData('text/plain');
-  if (!fullPath) return;
-  // Only move if not already at target
-  const normalizedTarget = normalizePath(targetPath);
-  const normalizedSource = normalizePath(fullPath);
-  if (normalizedSource === normalizedTarget) return;
-  // Move file/folder to targetPath
-  const name = normalizedSource.split('/').pop() || normalizedSource;
-  const newPath = normalizedTarget ? `${normalizedTarget}/${name}` : name;
-  // Find deviceSerial for source
-  const fileNode = files.value.find(
-    (f) => normalizePath(f.fullPath) === normalizedSource,
-  );
-  const oldDeviceSerial = fileNode?.deviceSerial;
-  try {
-    await CirrusService.moveFile(
-      normalizedSource,
-      normalizePath(newPath),
-      oldDeviceSerial,
-      oldDeviceSerial,
-    );
-    // Remove from in-memory list if no longer in current folder
-    const currentFolder = normalizePath(currentPath.value);
-    const newFolder = normalizePath(newPath.split('/').slice(0, -1).join('/'));
-    if (newFolder !== currentFolder) {
-      files.value = files.value.filter(
-        (f) => normalizePath(f.fullPath) !== normalizedSource,
-      );
-    }
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to move file';
-  }
-};
 import ModalDialog from '@/components/common/ModalDialog.vue';
 import CloseIcon from '@/components/icons/CloseIcon.vue';
 import DeleteIcon from '@/components/icons/DeleteIcon.vue';
@@ -385,7 +347,11 @@ import DownloadIcon from '@/components/icons/DownloadIcon.vue';
 import UploadIcon from '@/components/icons/UploadIcon.vue';
 import CirrusService from '@/services/cirrusService';
 import type { CirrusFileNode, FileType } from '@/types/cirrus';
-import { normalizePath } from '@/util/filepath';
+import {
+  getFileNameFromPath,
+  joinPathsNormalized,
+  normalizePath,
+} from '@/util/filepath';
 import { computed, onMounted, ref, ref as vueRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import GridViewIcon from '../icons/GridViewIcon.vue';
@@ -415,6 +381,22 @@ const fileViewComponent = computed(() => {
       return CirrusListView;
   }
 });
+
+// Handle breadcrumb drop event
+const handleBreadcrumbDrop = async (event: DragEvent, targetPath: string) => {
+  // Only support moving folders/files (dragged from list/grid)
+  // Expect event.dataTransfer to contain 'application/x-cirrus-file-path' with fullPath
+  const fullPath = event.dataTransfer?.getData(
+    'application/x-cirrus-file-path',
+  );
+  if (!fullPath) return;
+  const fileName = getFileNameFromPath(fullPath || '');
+  targetPath = joinPathsNormalized(targetPath, fileName);
+  const deviceSerial =
+    event.dataTransfer?.getData('application/x-cirrus-device-serial') ||
+    undefined;
+  handleFileMove(fullPath, targetPath, deviceSerial, deviceSerial);
+};
 
 // Unselect all files when CirrusListView emits deselect-all
 const handleDeselectAll = () => {
@@ -450,7 +432,7 @@ const handleDownloadSelected = () => {
   for (const file of selectedFiles.value) {
     const fileName = CirrusService.getFileName(file);
     const relativePath = currentPath.value
-      ? `${currentPath.value}/${fileName}`
+      ? joinPathsNormalized(currentPath.value, fileName)
       : fileName;
     const downloadUrl = `/api/v1/download/cirrus/${relativePath}${
       file.deviceSerial
@@ -696,7 +678,7 @@ const handleOpenFile = (file: CirrusFileNode) => {
   // Construct the relative path for the API from currentPath and filename
   const fileName = CirrusService.getFileName(file);
   const relativePath = currentPath.value
-    ? `${currentPath.value}/${fileName}`
+    ? joinPathsNormalized(currentPath.value, fileName)
     : fileName;
   selectedFileSrc.value = constructFileSrc(relativePath);
   selectedFileType.value = CirrusService.determineFileType(file);
@@ -746,7 +728,7 @@ const handleFilesUploaded = (uploadedFiles: CirrusFileNode[]) => {
 // Handle folder created - add it to the list
 const handleFolderCreated = (folderName: string) => {
   const fullPath = currentPath.value
-    ? `${currentPath.value}/${folderName}`
+    ? joinPathsNormalized(currentPath.value, folderName)
     : folderName;
   const exists = files.value.some((f) => {
     return f.fullPath === fullPath;
@@ -776,7 +758,7 @@ const handleContextMenu = (event: MouseEvent, file: CirrusFileNode) => {
 const handleDownload = (file: CirrusFileNode) => {
   const fileName = CirrusService.getFileName(file);
   const relativePath = currentPath.value
-    ? `${currentPath.value}/${fileName}`
+    ? joinPathsNormalized(currentPath.value, fileName)
     : fileName;
   const downloadUrl = `/api/v1/download/cirrus/${relativePath}${
     file.deviceSerial ? `?serial=${encodeURIComponent(file.deviceSerial)}` : ''
@@ -825,7 +807,7 @@ const handleRename = (file: CirrusFileNode) => {
   // Show the full path including current directory context
   const currentPathValue = normalizePath(currentPath.value);
   moveDialogNewPath.value = currentPathValue
-    ? `${currentPathValue}/${file.name}`
+    ? joinPathsNormalized(currentPathValue, file.name)
     : file.name;
   moveDialogOpen.value = true;
   moveDialogOldDeviceSerial.value = file.deviceSerial;
@@ -841,7 +823,7 @@ const submitMoveDialog = async () => {
     // Include the current path context when constructing the old path
     const fileName = moveDialogFile.value.name;
     const oldPath = currentPath.value
-      ? `${currentPath.value}/${fileName}`
+      ? joinPathsNormalized(currentPath.value, fileName)
       : fileName;
     const newPathInput = moveDialogNewPath.value.trim();
 
@@ -849,7 +831,7 @@ const submitMoveDialog = async () => {
     const newPath = newPathInput.includes('/')
       ? newPathInput
       : currentPath.value
-        ? `${currentPath.value}/${newPathInput}`
+        ? joinPathsNormalized(currentPath.value, newPathInput)
         : newPathInput;
 
     if (

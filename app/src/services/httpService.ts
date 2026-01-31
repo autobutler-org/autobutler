@@ -1,3 +1,5 @@
+import { joinPaths } from '@/util/filepath';
+
 export default class HttpService {
   // NOTE: Can be empty in most of all cases, but is available in case you have a need for it
   static baseUrl: string = ``;
@@ -52,7 +54,7 @@ export default class HttpService {
     while (url.startsWith('/')) {
       url = url.slice(1);
     }
-    return `${HttpService.baseUrl}/${url}`;
+    return joinPaths(HttpService.baseUrl, url);
   };
 
   private static _genericRequest = async (

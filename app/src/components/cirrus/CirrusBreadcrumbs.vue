@@ -26,7 +26,7 @@
 </template>
 
 <script lang="ts" setup>
-import { normalizePath } from '@/util/filepath';
+import { joinPathsNormalized, normalizePath } from '@/util/filepath';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import CirrusAddFolder from './CirrusAddFolder.vue';
@@ -38,12 +38,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   navigate: [path: string];
   'folder-created': [folderName: string];
-  'file-move': [
-    oldPath: string,
-    newPath: string,
-    oldDeviceSerial?: string,
-    newDeviceSerial?: string,
-  ];
+  'breadcrumb-drop': [dropEvent: DragEvent, dropPath: string];
 }>();
 const hoveredBreadcrumb = ref<string | null>(null);
 
@@ -62,20 +57,20 @@ const handleBreadcrumbDragLeave = (event: DragEvent, _: string) => {
   hoveredBreadcrumb.value = null;
 };
 
-const handleBreadcrumbDrop = (dropEvent: DragEvent, path: string) => {
-  dropEvent.preventDefault();
-  dropEvent.stopPropagation();
+const handleBreadcrumbDrop = (event: DragEvent, path: string) => {
+  event.preventDefault();
+  event.stopPropagation();
 
   hoveredBreadcrumb.value = null;
   // Do not emit if dropped on the last breadcrumb (current location)
   path = normalizePath(path);
   const targetPath = normalizePath(
-    (dropEvent.target as HTMLAnchorElement).pathname,
+    (event.target as HTMLAnchorElement).pathname,
   ).replace(/^\/cirrus\//, '');
   if (path === targetPath) {
     return;
   }
-  emit('file-move', path, targetPath);
+  emit('breadcrumb-drop', event, path);
 };
 
 const router = useRouter();
@@ -89,7 +84,9 @@ const segments = computed(() => {
 
   let accumulatedPath = '';
   for (const part of parts) {
-    accumulatedPath = accumulatedPath ? `${accumulatedPath}/${part}` : part;
+    accumulatedPath = accumulatedPath
+      ? joinPathsNormalized(accumulatedPath, part)
+      : part;
     result.push({ name: part, path: accumulatedPath });
   }
 
