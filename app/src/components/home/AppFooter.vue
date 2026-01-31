@@ -73,9 +73,7 @@ const formatBytes = (bytes: number): string => {
 const loadStorageData = async () => {
   try {
     isLoading.value = true;
-    console.log('AppFooter: Loading storage data...');
     const response = await DevicesService.getDeviceStatuses();
-    console.log('AppFooter: Received response:', response);
 
     // Aggregate storage from all devices
     const aggregated = response.devices.reduce(
@@ -89,7 +87,6 @@ const loadStorageData = async () => {
       { totalBytes: 0, usedBytes: 0, availableBytes: 0 },
     );
 
-    console.log('AppFooter: Aggregated storage:', aggregated);
     storageData.value = aggregated;
   } catch (error) {
     console.error('Failed to load storage data:', error);
@@ -99,7 +96,6 @@ const loadStorageData = async () => {
 };
 
 onMounted(() => {
-  console.log('AppFooter: Component mounted');
   loadStorageData();
 });
 </script>

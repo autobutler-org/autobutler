@@ -7,6 +7,7 @@
     />
     <ThemeModal :open="themeModalOpen" @close="themeModalOpen = false" />
     <RouterView />
+    <AppFooter />
   </main>
 </template>
 
@@ -18,11 +19,12 @@ import type { NavLink } from '@/types/nav_link';
 import { fromKeyComboString, toEventListenerFunc } from '@/util/keycombo';
 import { onBeforeUnmount, onMounted, ref, ref as vueRef } from 'vue';
 import { RouterView } from 'vue-router';
+import AppFooter from './components/home/AppFooter.vue';
 
 const navLinks: NavLink[] = [
   { name: 'Cirrus', href: '/cirrus' },
   { name: 'Photos', href: '/photos' },
-  { name: 'Books', href: '/books' },
+  // { name: 'Books', href: '/books' },
 ];
 
 const isMinimal = ref(false);
