@@ -150,10 +150,12 @@ const emit = defineEmits<{
   'files-uploaded': [files: CirrusFileNode[]];
   'deselect-all': [];
   'file-move': [
-    oldPath: string,
-    newPath: string,
-    oldDeviceSerial?: string,
-    newDeviceSerial?: string,
+    moves: Array<{
+      oldPath: string;
+      newPath: string;
+      oldDeviceSerial?: string;
+      newDeviceSerial?: string;
+    }>,
   ];
 }>();
 
@@ -308,13 +310,20 @@ const handleDirectoryDrop = async (event: DragEvent, file: CirrusFileNode) => {
   if (multi) {
     try {
       const files = JSON.parse(multi);
-      for (const f of files) {
-        if (isSubPath(f.path, targetPath)) continue;
-        const fileName = f.path.split('/').pop();
-        const cleanTargetPath = normalizePath(targetPath);
-        const newPath = joinPathsNormalized(cleanTargetPath, fileName || '');
-        emit('file-move', f.path, newPath, f.deviceSerial, file.deviceSerial);
-      }
+      const moves = (files as Array<{ path: string; deviceSerial?: string }>)
+        .filter((f) => !isSubPath(f.path, targetPath))
+        .map((f) => {
+          const fileName = f.path.split('/').pop();
+          const cleanTargetPath = normalizePath(targetPath);
+          const newPath = joinPathsNormalized(cleanTargetPath, fileName || '');
+          return {
+            oldPath: f.path,
+            newPath,
+            oldDeviceSerial: f.deviceSerial,
+            newDeviceSerial: file.deviceSerial,
+          };
+        });
+      if (moves.length > 0) emit('file-move', moves);
     } catch {}
     return;
   }
@@ -327,13 +336,14 @@ const handleDirectoryDrop = async (event: DragEvent, file: CirrusFileNode) => {
     const fileName = movedFilePath.split('/').pop();
     const cleanTargetPath = normalizePath(targetPath);
     const newPath = joinPathsNormalized(cleanTargetPath, fileName || '');
-    emit(
-      'file-move',
-      movedFilePath,
-      newPath,
-      movedDeviceSerial,
-      file.deviceSerial,
-    );
+    emit('file-move', [
+      {
+        oldPath: movedFilePath,
+        newPath,
+        oldDeviceSerial: movedDeviceSerial,
+        newDeviceSerial: file.deviceSerial,
+      },
+    ]);
     return;
   }
 };

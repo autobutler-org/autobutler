@@ -30,3 +30,16 @@ export interface CirrusState {
   loading: boolean;
   error: string | null;
 }
+
+// Accepts an array of move params: { oldPath, newPath, oldDeviceSerial, newDeviceSerial }
+export type CirrusFileMoveParams = {
+  oldPath: string;
+  newPath: string;
+  oldDeviceSerial?: string;
+  newDeviceSerial?: string;
+};
+
+export type CirrusDragFileData = {
+  path: string;
+  deviceSerial: string | undefined;
+};
