@@ -4,6 +4,7 @@ import DataMigrationView from '@/views/DataMigrationView.vue';
 import DevicesView from '@/views/DevicesView.vue';
 import GoogleTakeoutView from '@/views/GoogleTakeoutView.vue';
 import HomeView from '@/views/HomeView.vue';
+import MigrationServiceView from '@/views/MigrationServiceView.vue';
 import PhotosView from '@/views/PhotosView.vue';
 import SettingsView from '@/views/SettingsView.vue';
 import { createRouter, createWebHistory } from 'vue-router';
@@ -50,6 +51,11 @@ const router = createRouter({
       path: '/data-migration/google-takeout',
       name: 'google-takeout',
       component: GoogleTakeoutView,
+    },
+    {
+      path: '/migrationservice',
+      name: 'migration-service',
+      component: MigrationServiceView,
     },
   ],
 });

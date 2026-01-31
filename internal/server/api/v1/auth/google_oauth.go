@@ -121,8 +121,7 @@ var googleCallbackRoute = serverutil.ApiRoute(
 
 		// Store token (in production, save to database associated with user)
 		// For now, we'll return a simple HTML page that posts message to opener
-		html := fmt.Sprintf(`
-<!DOCTYPE html>
+		html := fmt.Sprintf(`<!DOCTYPE html>
 <html>
 <head>
 	<title>Authorization Successful</title>
@@ -152,28 +151,44 @@ var googleCallbackRoute = serverutil.ApiRoute(
 	<div class="container">
 		<div class="success">✓</div>
 		<h1>Authorization Successful</h1>
-		<p>You can close this window and return to AutoButler.</p>
+		<p>Redirecting to AutoButler...</p>
 	</div>
 	<script>
-		if (window.opener) {
-			window.opener.postMessage({
-				type: 'google-auth-success',
+		console.log('OAuth callback page loaded');
+		console.log('Email: %s, Name: %s');
+		
+		// Store in localStorage on port 8080
+		try {
+			localStorage.setItem('google_auth_email', '%s');
+			localStorage.setItem('google_auth_token', '%s');
+			localStorage.setItem('google_auth_name', '%s');
+			localStorage.setItem('google_auth_timestamp', Date.now().toString());
+			console.log('Stored credentials in localStorage (port 8080)');
+		} catch (e) {
+			console.error('Failed to store in localStorage:', e);
+		}
+		
+		// Redirect to frontend with credentials in URL hash (will be parsed by frontend)
+		console.log('Redirecting to frontend...');
+		setTimeout(() => {
+			const params = new URLSearchParams({
 				email: '%s',
 				name: '%s',
 				token: '%s'
-			}, window.location.origin);
-			setTimeout(() => window.close(), 2000);
-		}
+			});
+			window.location.href = 'http://localhost:5173/migrationservice#' + params.toString();
+		}, 1000);
 	</script>
 </body>
-</html>
-`, userInfo.Email, userInfo.Name, token.AccessToken)
+</html>`,
+			userInfo.Email, userInfo.Name,
+			userInfo.Email, token.AccessToken, userInfo.Name,
+			userInfo.Email, userInfo.Name, token.AccessToken)
 
-		// Return HTML response directly
-		return serverutil.NewResponse().
-			WithContentType(serverutil.ContentTypeHTML).
-			WithStatusCode(200).
-			WithData(html)
+		// Return HTML response
+		c.Header("Content-Type", "text/html; charset=utf-8")
+		c.String(200, html)
+		return nil
 	},
 )
 

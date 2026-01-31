@@ -23,6 +23,10 @@ func BadRequest(err error) *Response {
 	return NewResponse().WithStatusCode(http.StatusBadRequest).WithError(err)
 }
 
+func Unauthorized(err error) *Response {
+	return NewResponse().WithStatusCode(http.StatusUnauthorized).WithError(err)
+}
+
 func InternalServerError(err error) *Response {
 	return NewResponse().WithStatusCode(http.StatusInternalServerError).WithError(err)
 }

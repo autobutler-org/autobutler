@@ -43,17 +43,19 @@ const (
 )
 
 type ImportJob struct {
-	ID             string
-	ExportID       string
-	Status         ImportJobStatus
-	Services       []string
-	Progress       float64
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	CompletedAt    *time.Time
-	ErrorMsg       string
-	FilesProcessed int
-	TotalFiles     int
+	ID              string
+	ExportID        string
+	Status          ImportJobStatus
+	Services        []string
+	Progress        float64
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	CompletedAt     *time.Time
+	ErrorMsg        string
+	FilesProcessed  int
+	TotalFiles      int
+	DownloadedBytes int64
+	TotalBytes      int64
 }
 
 type GoogleTakeoutClient interface {

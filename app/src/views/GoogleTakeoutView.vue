@@ -26,13 +26,19 @@
       <h2 class="library-title">Google Takeout Import</h2>
     </template>
     <template #subtitle>
-      <div class="library-subtitle">Upload and import your Google Takeout data</div>
+      <div class="library-subtitle">
+        Upload and import your Google Takeout data
+      </div>
     </template>
     <template #main>
       <div class="migration-content">
         <div class="takeout-header">
           <div class="takeout-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
               />
@@ -50,8 +56,8 @@
           <div>
             <h3>Automated Google Import</h3>
             <p>
-              Connect your Google account and AutoButler will automatically request and import your
-              data.
+              Connect your Google account and AutoButler will automatically
+              request and import your data.
             </p>
           </div>
         </div>
@@ -72,21 +78,28 @@
                 <div class="process-number">2</div>
                 <div class="process-text">
                   <strong>Request Export</strong>
-                  <span>AutoButler automatically requests your data from Google Takeout</span>
+                  <span
+                    >AutoButler automatically requests your data from Google
+                    Takeout</span
+                  >
                 </div>
               </div>
               <div class="process-step">
                 <div class="process-number">3</div>
                 <div class="process-text">
                   <strong>Auto-Download</strong>
-                  <span>When ready, your data is automatically downloaded and imported</span>
+                  <span
+                    >When ready, your data is automatically downloaded and
+                    imported</span
+                  >
                 </div>
               </div>
             </div>
 
             <p class="auth-description">
-              AutoButler will request access to your Google Photos and Drive. You can review and
-              revoke these permissions at any time from your Google Account settings.
+              AutoButler will request access to your Google Photos and Drive.
+              You can review and revoke these permissions at any time from your
+              Google Account settings.
             </p>
             <div class="permissions-list">
               <h4>Requested Permissions:</h4>
@@ -135,7 +148,11 @@
                 </li>
               </ul>
             </div>
-            <button class="btn btn--google" @click="initiateGoogleAuth" :disabled="authenticating">
+            <button
+              class="btn btn--google"
+              @click="initiateGoogleAuth"
+              :disabled="authenticating"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -159,8 +176,8 @@
               {{ authenticating ? 'Connecting...' : 'Sign in with Google' }}
             </button>
             <p class="privacy-note">
-              We never store your Google password. Authentication is handled securely through
-              Google's OAuth 2.0 protocol.
+              We never store your Google password. Authentication is handled
+              securely through Google's OAuth 2.0 protocol.
             </p>
           </div>
         </div>
@@ -182,13 +199,18 @@
             </div>
             <div>
               <h4>Connected as {{ userEmail }}</h4>
-              <button class="btn-link" @click="disconnectGoogle">Disconnect</button>
+              <button class="btn-link" @click="disconnectGoogle">
+                Disconnect
+              </button>
             </div>
           </div>
 
           <div class="data-selection-card">
             <h3>Select Data to Import</h3>
-            <p>AutoButler will automatically request, download, and import your selected data:</p>
+            <p>
+              AutoButler will automatically request, download, and import your
+              selected data:
+            </p>
 
             <div class="service-checkboxes">
               <label class="service-checkbox">
@@ -222,7 +244,9 @@
                     stroke="currentColor"
                     stroke-width="2"
                   >
-                    <path d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                    <path
+                      d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-4M17 8l-5-5-5 5M12 3v12"
+                    />
                   </svg>
                   <div>
                     <strong>Google Drive</strong>
@@ -243,7 +267,9 @@
                   >
                     <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
                     <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                    <path
+                      d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"
+                    />
                   </svg>
                   <div>
                     <strong>Contacts</strong>
@@ -309,20 +335,121 @@
             </div>
           </div>
 
-          <div v-if="importStatus" :class="['status-message', importStatus.type]">
+          <div
+            v-if="importStatus"
+            :class="['status-message', importStatus.type]"
+          >
             {{ importStatus.message }}
           </div>
         </div>
       </div>
     </template>
   </LibraryLayout>
+
+  <!-- Device Selection Modal -->
+  <Teleport to="body">
+    <div
+      v-if="showDeviceModal"
+      class="modal-overlay"
+      @click="showDeviceModal = false"
+    >
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>Select Storage Device</h3>
+          <button class="modal-close" @click="showDeviceModal = false">
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-description">
+            Where do you want your Google data stored? Select a device from your
+            connected storage.
+          </p>
+          <div v-if="loadingDevices" class="loading-devices">
+            <div class="spinner"></div>
+            <span>Loading devices...</span>
+          </div>
+          <div v-else-if="devices.length === 0" class="no-devices">
+            <p>
+              No storage devices available. Please connect a storage device.
+            </p>
+          </div>
+          <div v-else class="device-list">
+            <button
+              v-for="device in devices"
+              :key="device.devicePath"
+              :class="[
+                'device-option',
+                { selected: selectedDevice === device },
+              ]"
+              @click="selectedDevice = device"
+            >
+              <div class="device-icon">
+                <svg
+                  v-if="device.isInternal"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                <svg
+                  v-else
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M20 16v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 4v12M5 11l7-7 7 7"
+                  ></path>
+                </svg>
+              </div>
+              <div class="device-info">
+                <strong>{{ device.name }}</strong>
+                <span class="device-capacity"
+                  >{{ formatBytes(device.availableBytes) }} available of
+                  {{ formatBytes(device.totalBytes) }}</span
+                >
+                <span
+                  v-if="!device.isInternal && device.usbInfo"
+                  class="device-model"
+                  >{{ device.usbInfo.manufacturer }}</span
+                >
+              </div>
+              <div class="device-check" v-if="selectedDevice === device">✓</div>
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn--secondary" @click="showDeviceModal = false">
+            Cancel
+          </button>
+          <button
+            class="btn btn--primary"
+            @click="confirmDeviceAndStartImport"
+            :disabled="!selectedDevice || importing"
+          >
+            {{ importing ? 'Starting...' : 'Continue' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { RouterLink } from 'vue-router'
-import LibraryLayout from '@/components/common/LibraryLayout.vue'
-import LibrarySidebar from '@/components/common/LibrarySidebar.vue'
+import LibraryLayout from '@/components/common/LibraryLayout.vue';
+import LibrarySidebar from '@/components/common/LibrarySidebar.vue';
+import DevicesService from '@/services/devicesService';
+import type { Device } from '@/types/device';
+import { computed, onMounted, ref } from 'vue';
+import { RouterLink } from 'vue-router';
 
 const sidebarSections = [
   {
@@ -341,19 +468,28 @@ const sidebarSections = [
     title: 'Data',
     items: [{ label: 'Data Migration', href: '/data-migration' }],
   },
-]
+];
 
-const isAuthenticated = ref(false)
-const authenticating = ref(false)
-const userEmail = ref('')
-const importing = ref(false)
-const importStatus = ref<{ type: 'success' | 'error' | 'info'; message: string } | null>(null)
+const isAuthenticated = ref(false);
+const authenticating = ref(false);
+const userEmail = ref('');
+const importing = ref(false);
+const importStatus = ref<{
+  type: 'success' | 'error' | 'info';
+  message: string;
+} | null>(null);
+
+// Device selection
+const showDeviceModal = ref(false);
+const devices = ref<Device[]>([]);
+const selectedDevice = ref<Device | null>(null);
+const loadingDevices = ref(false);
 
 interface SelectedServices {
-  photos: boolean
-  drive: boolean
-  contacts: boolean
-  calendar: boolean
+  photos: boolean;
+  drive: boolean;
+  contacts: boolean;
+  calendar: boolean;
 }
 
 const selectedServices = ref<SelectedServices>({
@@ -361,102 +497,182 @@ const selectedServices = ref<SelectedServices>({
   drive: false,
   contacts: false,
   calendar: false,
-})
+});
 
 const hasSelectedServices = computed(() => {
-  return Object.values(selectedServices.value).some((selected) => selected)
-})
+  return Object.values(selectedServices.value).some((selected) => selected);
+});
+
+const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+};
 
 const initiateGoogleAuth = async () => {
-  authenticating.value = true
-  importStatus.value = null
+  authenticating.value = true;
+  importStatus.value = null;
 
   try {
     // Request OAuth authorization URL from backend
     const response = await fetch('/api/v1/auth/google/authorize', {
       method: 'GET',
-    })
+    });
 
     if (!response.ok) {
-      throw new Error('Failed to initiate authentication')
+      throw new Error('Failed to initiate authentication');
     }
 
-    const data = await response.json()
+    const data = await response.json();
+
+    // Listen for OAuth callback BEFORE opening the popup
+    console.log('Setting up message listener...');
+    window.addEventListener('message', handleAuthCallback);
 
     // Open OAuth popup
-    window.open(data.authUrl, 'Google Authentication', 'width=600,height=700,left=100,top=100')
+    console.log('Opening OAuth popup with URL:', data.authUrl);
+    const popup = window.open(
+      data.authUrl,
+      'Google Authentication',
+      'width=600,height=700,left=100,top=100',
+    );
 
-    // Listen for OAuth callback
-    window.addEventListener('message', handleAuthCallback)
+    if (!popup) {
+      console.error('Failed to open popup - may be blocked by browser');
+      importStatus.value = {
+        type: 'error',
+        message:
+          'Failed to open authentication popup. Please allow popups for this site.',
+      };
+      window.removeEventListener('message', handleAuthCallback);
+    } else {
+      console.log('Popup opened successfully');
+    }
   } catch (error) {
     importStatus.value = {
       type: 'error',
       message: 'Failed to connect to Google. Please try again.',
-    }
-    console.error('Auth error:', error)
+    };
+    console.error('Auth error:', error);
   } finally {
-    authenticating.value = false
+    authenticating.value = false;
   }
-}
+};
 
 const handleAuthCallback = async (event: MessageEvent) => {
-  if (event.origin !== window.location.origin) return
+  console.log('Message received:', {
+    origin: event.origin,
+    type: event.data?.type,
+    email: event.data?.email,
+  });
+
+  // Accept messages from the backend (localhost:8080) or same origin
+  const validOrigins = [
+    window.location.origin,
+    'http://localhost:8080',
+    'https://localhost:8080',
+  ];
+
+  if (!validOrigins.includes(event.origin)) {
+    console.warn('Rejected message from invalid origin:', event.origin);
+    return;
+  }
 
   if (event.data.type === 'google-auth-success') {
-    isAuthenticated.value = true
-    userEmail.value = event.data.email
-    window.removeEventListener('message', handleAuthCallback)
-    importStatus.value = {
-      type: 'success',
-      message: 'Successfully connected to Google!',
-    }
+    console.log('OAuth success! Storing credentials and redirecting...');
+
+    // Store auth data in localStorage
+    localStorage.setItem('google_auth_email', event.data.email);
+    localStorage.setItem('google_auth_token', event.data.token);
+    localStorage.setItem('google_auth_name', event.data.name);
+
+    window.removeEventListener('message', handleAuthCallback);
+
+    console.log('Redirecting to /migrationservice');
+    // Redirect to migration service page
+    window.location.href = '/migrationservice';
   } else if (event.data.type === 'google-auth-error') {
+    console.error('OAuth error received');
     importStatus.value = {
       type: 'error',
       message: 'Authentication failed. Please try again.',
-    }
-    window.removeEventListener('message', handleAuthCallback)
+    };
+    window.removeEventListener('message', handleAuthCallback);
   }
-}
+};
 
 const disconnectGoogle = async () => {
   try {
     await fetch('/api/v1/auth/google/disconnect', {
       method: 'POST',
-    })
-    isAuthenticated.value = false
-    userEmail.value = ''
+    });
+    isAuthenticated.value = false;
+    userEmail.value = '';
     selectedServices.value = {
       photos: false,
       drive: false,
       contacts: false,
       calendar: false,
-    }
+    };
     importStatus.value = {
       type: 'info',
       message: 'Disconnected from Google.',
+    };
+  } catch (error) {
+    console.error('Disconnect error:', error);
+  }
+};
+
+const fetchDevices = async () => {
+  loadingDevices.value = true;
+  try {
+    const response = await DevicesService.getDeviceStatuses();
+    devices.value = response.devices || [];
+    // Auto-select first device if only one available
+    if (devices.value.length === 1 && devices.value[0]) {
+      selectedDevice.value = devices.value[0];
     }
   } catch (error) {
-    console.error('Disconnect error:', error)
+    console.error('Failed to fetch devices:', error);
+    importStatus.value = {
+      type: 'error',
+      message: 'Failed to load storage devices. Please try again.',
+    };
+  } finally {
+    loadingDevices.value = false;
   }
-}
+};
 
 const startImport = async () => {
-  if (!hasSelectedServices.value) return
+  if (!hasSelectedServices.value) return;
 
-  importing.value = true
+  // Show device selection modal
+  showDeviceModal.value = true;
+  await fetchDevices();
+};
+
+const confirmDeviceAndStartImport = async () => {
+  if (!selectedDevice.value) return;
+
+  showDeviceModal.value = false;
+  importing.value = true;
   importStatus.value = {
     type: 'info',
     message:
       'Requesting your data from Google Takeout... This process happens in the background and may take several hours for large accounts.',
-  }
+  };
 
   try {
+    // Get device serial (empty string for internal drives)
+    const deviceSerial = selectedDevice.value.usbInfo?.serial || '';
+
     // Backend will:
     // 1. Use Google Takeout API to request export with selected services
     // 2. Poll for export completion
     // 3. Download zip files when ready
-    // 4. Automatically upload to /api/v1/cirrus endpoint
+    // 4. Automatically upload to /api/v1/cirrus endpoint with device serial
     // 5. Worker processes the files asynchronously
     const response = await fetch('/api/v1/migration/google/start', {
       method: 'POST',
@@ -465,19 +681,20 @@ const startImport = async () => {
       },
       body: JSON.stringify({
         services: selectedServices.value,
+        deviceSerial: deviceSerial,
       }),
-    })
+    });
 
     if (!response.ok) {
-      throw new Error('Import failed')
+      throw new Error('Import failed');
     }
 
-    const data = await response.json()
+    const data = await response.json();
 
     importStatus.value = {
       type: 'success',
-      message: `Export requested successfully! Export ID: ${data.exportId}. Google is preparing your data. You'll be notified when the download and import begins. This typically takes 2-24 hours depending on data size.`,
-    }
+      message: `Export requested successfully! Export ID: ${data.exportId}. Google is preparing your data on ${selectedDevice.value.name}. You'll be notified when the download and import begins. This typically takes 2-24 hours depending on data size.`,
+    };
 
     // Reset selections
     selectedServices.value = {
@@ -485,18 +702,34 @@ const startImport = async () => {
       drive: false,
       contacts: false,
       calendar: false,
-    }
+    };
+    selectedDevice.value = null;
   } catch (error) {
     importStatus.value = {
       type: 'error',
       message:
         'Failed to request export. Please try again or contact support if the issue persists.',
-    }
-    console.error('Import error:', error)
+    };
+    console.error('Import error:', error);
   } finally {
-    importing.value = false
+    importing.value = false;
   }
-}
+};
+
+onMounted(() => {
+  // Check if already authenticated
+  const storedEmail = localStorage.getItem('google_auth_email');
+  const storedToken = localStorage.getItem('google_auth_token');
+
+  if (storedEmail && storedToken) {
+    // Already authenticated, redirect to migration service page
+    window.location.href = '/migrationservice';
+    return;
+  }
+
+  // Preload devices for faster modal display
+  fetchDevices();
+});
 </script>
 
 <style lang="scss" scoped>
@@ -1025,7 +1258,11 @@ const startImport = async () => {
   text-decoration: none;
 
   &--primary {
-    background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-700) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--color-primary-600) 0%,
+      var(--color-primary-700) 100%
+    );
     color: white;
     box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
 
@@ -1094,6 +1331,252 @@ const startImport = async () => {
 
   &:hover {
     text-decoration: underline;
+  }
+}
+
+// Modal styles
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: var(--color-gray-900);
+  border-radius: 16px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+
+  @media (prefers-color-scheme: light) {
+    background: white;
+  }
+}
+
+.modal-header {
+  padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-md);
+  border-bottom: 1px solid var(--color-gray-800);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  @media (prefers-color-scheme: light) {
+    border-bottom-color: var(--color-gray-200);
+  }
+
+  h3 {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: white;
+    margin: 0;
+
+    @media (prefers-color-scheme: light) {
+      color: var(--color-gray-900);
+    }
+  }
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--color-gray-400);
+  font-size: 32px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+
+  &:hover {
+    background: var(--color-gray-800);
+    color: white;
+
+    @media (prefers-color-scheme: light) {
+      background: var(--color-gray-200);
+      color: var(--color-gray-900);
+    }
+  }
+}
+
+.modal-body {
+  padding: var(--spacing-xl);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-description {
+  color: var(--color-gray-400);
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--font-size-base);
+
+  @media (prefers-color-scheme: light) {
+    color: var(--color-gray-600);
+  }
+}
+
+.loading-devices {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-2xl);
+  color: var(--color-gray-400);
+
+  .spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--color-gray-700);
+    border-top-color: var(--color-primary-500);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+}
+
+.no-devices {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  color: var(--color-gray-400);
+
+  @media (prefers-color-scheme: light) {
+    color: var(--color-gray-600);
+  }
+}
+
+.device-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.device-option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: var(--color-gray-800);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  width: 100%;
+
+  @media (prefers-color-scheme: light) {
+    background: var(--color-gray-50);
+  }
+
+  &:hover {
+    background: var(--color-gray-750);
+    border-color: var(--color-primary-500);
+
+    @media (prefers-color-scheme: light) {
+      background: var(--color-gray-100);
+    }
+  }
+
+  &.selected {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: var(--color-primary-500);
+  }
+}
+
+.device-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-gray-700);
+  border-radius: 8px;
+  flex-shrink: 0;
+
+  @media (prefers-color-scheme: light) {
+    background: var(--color-gray-200);
+  }
+
+  svg {
+    width: 24px;
+    height: 24px;
+    color: var(--color-gray-300);
+
+    @media (prefers-color-scheme: light) {
+      color: var(--color-gray-600);
+    }
+  }
+}
+
+.device-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  strong {
+    color: white;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+
+    @media (prefers-color-scheme: light) {
+      color: var(--color-gray-900);
+    }
+  }
+
+  .device-capacity {
+    color: var(--color-gray-400);
+    font-size: var(--font-size-sm);
+
+    @media (prefers-color-scheme: light) {
+      color: var(--color-gray-600);
+    }
+  }
+
+  .device-model {
+    color: var(--color-gray-500);
+    font-size: var(--font-size-xs);
+
+    @media (prefers-color-scheme: light) {
+      color: var(--color-gray-500);
+    }
+  }
+}
+
+.device-check {
+  width: 28px;
+  height: 28px;
+  background: var(--color-primary-500);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.modal-footer {
+  padding: var(--spacing-md) var(--spacing-xl) var(--spacing-xl);
+  border-top: 1px solid var(--color-gray-800);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+
+  @media (prefers-color-scheme: light) {
+    border-top-color: var(--color-gray-200);
   }
 }
 </style>

@@ -37,7 +37,11 @@
           <div class="migration-card google-takeout">
             <div class="migration-card-header">
               <div class="migration-card-icon google">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
                   <path
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                   />
@@ -52,128 +56,186 @@
                   />
                 </svg>
               </div>
-              <h3>Google Takeout</h3>
+              <h3>Google</h3>
             </div>
             <p class="migration-card-description">
-              Import your photos, files, and data from your Google Account using Google Takeout.
+              Automatically download and import your Google Photos, Drive files,
+              contacts, and calendar events directly from your Google Account.
             </p>
-            <div class="migration-card-steps">
-              <ol>
-                <li>Request your data from Google Takeout</li>
-                <li>Download the exported files</li>
-                <li>Upload them here to import</li>
-              </ol>
+            <div class="migration-card-features">
+              <div class="feature-item">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  width="16"
+                  height="16"
+                >
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>Photos & Videos</span>
+              </div>
+              <div class="feature-item">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  width="16"
+                  height="16"
+                >
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>Drive Files & Folders</span>
+              </div>
+              <div class="feature-item">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  width="16"
+                  height="16"
+                >
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>Contacts & Calendar</span>
+              </div>
             </div>
             <button class="btn btn--primary" @click="handleGoogleTakeout">
-              Import from Google Takeout
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                width="18"
+                height="18"
+              >
+                <path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                />
+                <path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                />
+              </svg>
+              Connect with Google
             </button>
           </div>
 
           <!-- iCloud Option -->
-          <div class="migration-card icloud">
+          <div class="migration-card icloud disabled">
             <div class="migration-card-header">
               <div class="migration-card-icon icloud">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
                   <path
                     d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"
                   />
                 </svg>
               </div>
               <h3>iCloud</h3>
+              <span class="coming-soon-badge">Coming Soon</span>
             </div>
             <p class="migration-card-description">
-              Sync and import your photos and files from your iCloud account.
+              Import your photos, files, and data from iCloud. Automatic sync
+              and import will be available soon.
             </p>
-            <div class="migration-card-steps">
-              <ol>
-                <li>Sign in to your iCloud account</li>
-                <li>Select files and photos to import</li>
-                <li>Confirm and start migration</li>
-              </ol>
-            </div>
-            <button class="btn btn--primary" @click="handleICloud">Import from iCloud</button>
+            <button class="btn btn--primary" disabled>Coming Soon</button>
           </div>
 
           <!-- Dropbox Option -->
-          <div class="migration-card dropbox">
+          <div class="migration-card dropbox disabled">
             <div class="migration-card-header">
               <div class="migration-card-icon dropbox">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
                   <path
                     d="M6 1.8L0 5.4l6 3.6 6-3.6-6-3.6zm12 0l-6 3.6 6 3.6 6-3.6-6-3.6zM0 12.6l6 3.6 6-3.6-6-3.6-6 3.6zm18-3.6l-6 3.6 6 3.6 6-3.6-6-3.6zM6 17.4l6 3.6 6-3.6-6-3.6-6 3.6z"
                   />
                 </svg>
               </div>
               <h3>Dropbox</h3>
+              <span class="coming-soon-badge">Coming Soon</span>
             </div>
             <p class="migration-card-description">
-              Import files and folders from your Dropbox cloud storage.
+              Import files and folders from Dropbox cloud storage. Automatic
+              sync coming soon.
             </p>
-            <div class="migration-card-steps">
-              <ol>
-                <li>Connect your Dropbox account</li>
-                <li>Choose files and folders to import</li>
-                <li>Start the migration process</li>
-              </ol>
-            </div>
-            <button class="btn btn--primary" @click="handleDropbox">Import from Dropbox</button>
+            <button class="btn btn--primary" disabled>Coming Soon</button>
           </div>
 
           <!-- OneDrive Option -->
-          <div class="migration-card onedrive">
+          <div class="migration-card onedrive disabled">
             <div class="migration-card-header">
               <div class="migration-card-icon onedrive">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
                   <path
                     d="M13.5 7.5c-1.5-2-4-3.5-7-3.5C3.5 4 1 6.5 1 9.5c0 .5.1 1 .2 1.5C.5 11.5 0 12.7 0 14c0 2.2 1.8 4 4 4h15c2.8 0 5-2.2 5-5 0-2.6-2-4.7-4.5-4.9-.3-2.6-2.5-4.6-5-4.6z"
                   />
                 </svg>
               </div>
               <h3>OneDrive</h3>
+              <span class="coming-soon-badge">Coming Soon</span>
             </div>
             <p class="migration-card-description">
-              Import your documents and files from Microsoft OneDrive.
+              Import documents and files from Microsoft OneDrive. Integration
+              coming soon.
             </p>
-            <div class="migration-card-steps">
-              <ol>
-                <li>Sign in to your Microsoft account</li>
-                <li>Select OneDrive files to transfer</li>
-                <li>Complete the import</li>
-              </ol>
-            </div>
-            <button class="btn btn--primary" @click="handleOneDrive">Import from OneDrive</button>
+            <button class="btn btn--primary" disabled>Coming Soon</button>
           </div>
 
           <!-- Box Option -->
-          <div class="migration-card box">
+          <div class="migration-card box disabled">
             <div class="migration-card-header">
               <div class="migration-card-icon box">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
                   <path
                     d="M3 3h18a2 2 0 012 2v14a2 2 0 01-2 2H3a2 2 0 01-2-2V5a2 2 0 012-2zm9 4l-7 4 7 4 7-4-7-4z"
                   />
                 </svg>
               </div>
               <h3>Box</h3>
+              <span class="coming-soon-badge">Coming Soon</span>
             </div>
             <p class="migration-card-description">
-              Import enterprise files and content from your Box account.
+              Import enterprise files and content from Box. Enterprise
+              integration coming soon.
             </p>
-            <div class="migration-card-steps">
-              <ol>
-                <li>Authenticate with Box</li>
-                <li>Select folders and files</li>
-                <li>Begin data migration</li>
-              </ol>
-            </div>
-            <button class="btn btn--primary" @click="handleBox">Import from Box</button>
+            <button class="btn btn--primary" disabled>Coming Soon</button>
           </div>
         </div>
 
         <!-- Upload Section -->
         <div class="upload-section" v-if="showUploadSection">
           <h3>Upload Your Data</h3>
-          <div class="upload-area" @drop="handleDrop" @dragover="handleDragOver">
+          <div
+            class="upload-area"
+            @drop="handleDrop"
+            @dragover="handleDragOver"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -194,7 +256,9 @@
               style="display: none"
             />
           </div>
-          <button class="btn btn--secondary" @click="() => fileInput?.click()">Browse Files</button>
+          <button class="btn btn--secondary" @click="() => fileInput?.click()">
+            Browse Files
+          </button>
           <button
             v-if="selectedFiles.length > 0"
             class="btn btn--primary"
@@ -204,14 +268,23 @@
             {{ uploading ? 'Uploading...' : 'Upload Files' }}
           </button>
           <div v-if="selectedFiles.length > 0" class="file-list">
-            <p class="file-count">{{ selectedFiles.length }} file(s) selected</p>
+            <p class="file-count">
+              {{ selectedFiles.length }} file(s) selected
+            </p>
             <div class="file-items">
-              <div v-for="(file, idx) in selectedFiles" :key="idx" class="file-item">
+              <div
+                v-for="(file, idx) in selectedFiles"
+                :key="idx"
+                class="file-item"
+              >
                 {{ file.name }}
               </div>
             </div>
           </div>
-          <div v-if="uploadMessage" :class="['upload-message', uploadMessageType]">
+          <div
+            v-if="uploadMessage"
+            :class="['upload-message', uploadMessageType]"
+          >
             {{ uploadMessage }}
           </div>
         </div>
@@ -221,12 +294,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import LibraryLayout from '@/components/common/LibraryLayout.vue'
-import LibrarySidebar from '@/components/common/LibrarySidebar.vue'
+import LibraryLayout from '@/components/common/LibraryLayout.vue';
+import LibrarySidebar from '@/components/common/LibrarySidebar.vue';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
-const router = useRouter()
+const router = useRouter();
 
 const sidebarSections = [
   {
@@ -245,110 +318,118 @@ const sidebarSections = [
     title: 'Data',
     items: [{ label: 'Data Migration', href: '/data-migration', active: true }],
   },
-]
+];
 
-const showUploadSection = ref(false)
-const selectedFiles = ref<File[]>([])
-const fileInput = ref<HTMLInputElement>()
-const uploading = ref(false)
-const uploadMessage = ref('')
-const uploadMessageType = ref<'success' | 'error'>('success')
+const showUploadSection = ref(false);
+const selectedFiles = ref<File[]>([]);
+const fileInput = ref<HTMLInputElement>();
+const uploading = ref(false);
+const uploadMessage = ref('');
+const uploadMessageType = ref<'success' | 'error'>('success');
 
 const handleGoogleTakeout = () => {
-  router.push('/data-migration/google-takeout')
-}
+  router.push('/data-migration/google-takeout');
+};
 
 const handleICloud = () => {
-  showUploadSection.value = true
-  uploadMessage.value = ''
-}
+  showUploadSection.value = true;
+  uploadMessage.value = '';
+};
 
 const handleDropbox = () => {
-  showUploadSection.value = true
-  uploadMessage.value = ''
-}
+  showUploadSection.value = true;
+  uploadMessage.value = '';
+};
 
 const handleOneDrive = () => {
-  showUploadSection.value = true
-  uploadMessage.value = ''
-}
+  showUploadSection.value = true;
+  uploadMessage.value = '';
+};
 
 const handleBox = () => {
-  showUploadSection.value = true
-  uploadMessage.value = ''
-}
+  showUploadSection.value = true;
+  uploadMessage.value = '';
+};
 
 const handleDragOver = (e: DragEvent) => {
-  e.preventDefault()
-  e.stopPropagation()
-}
+  e.preventDefault();
+  e.stopPropagation();
+};
 
 const handleDrop = (e: DragEvent) => {
-  e.preventDefault()
-  e.stopPropagation()
-  const files = Array.from(e.dataTransfer?.files || [])
-  selectedFiles.value = files
-}
+  e.preventDefault();
+  e.stopPropagation();
+  const files = Array.from(e.dataTransfer?.files || []);
+  selectedFiles.value = files;
+};
 
 const handleFileSelect = (e: Event) => {
-  const target = e.target as HTMLInputElement
-  const files = Array.from(target.files || [])
-  selectedFiles.value = files
-}
+  const target = e.target as HTMLInputElement;
+  const files = Array.from(target.files || []);
+  selectedFiles.value = files;
+};
 
 const uploadFiles = async () => {
-  if (selectedFiles.value.length === 0) return
+  if (selectedFiles.value.length === 0) return;
 
-  uploading.value = true
-  uploadMessage.value = ''
+  uploading.value = true;
+  uploadMessage.value = '';
 
   try {
-    const formData = new FormData()
+    const formData = new FormData();
     selectedFiles.value.forEach((file) => {
-      formData.append('files', file)
-    })
+      formData.append('files', file);
+    });
 
     const response = await fetch('/api/v1/upload', {
       method: 'POST',
       body: formData,
-    })
+    });
 
     if (response.ok) {
-      uploadMessage.value = 'Files uploaded successfully!'
-      uploadMessageType.value = 'success'
-      selectedFiles.value = []
+      uploadMessage.value = 'Files uploaded successfully!';
+      uploadMessageType.value = 'success';
+      selectedFiles.value = [];
     } else {
-      uploadMessage.value = 'Failed to upload files. Please try again.'
-      uploadMessageType.value = 'error'
+      uploadMessage.value = 'Failed to upload files. Please try again.';
+      uploadMessageType.value = 'error';
     }
   } catch (error) {
     uploadMessage.value =
-      error instanceof Error ? error.message : 'An error occurred during upload.'
-    uploadMessageType.value = 'error'
+      error instanceof Error
+        ? error.message
+        : 'An error occurred during upload.';
+    uploadMessageType.value = 'error';
   } finally {
-    uploading.value = false
+    uploading.value = false;
   }
-}
+};
 </script>
 
 <style lang="scss" scoped>
 .migration-content {
   flex: 1;
   overflow-y: auto;
-  padding: var(--spacing-2xl);
+  padding: 0;
   display: flex;
   flex-direction: column;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: $spacing-2xl;
+  padding-top: 5rem;
+  padding-bottom: $spacing-2xl;
 }
 
 .migration-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: var(--spacing-3xl);
-  margin-bottom: var(--spacing-3xl);
+  gap: $spacing-3xl;
+  margin-bottom: $spacing-4xl;
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
-    gap: var(--spacing-2xl);
+    gap: $spacing-2xl;
   }
 }
 
@@ -356,11 +437,11 @@ const uploadFiles = async () => {
   background: var(--color-gray-800);
   border: 2px solid transparent;
   border-radius: 12px;
-  padding: var(--spacing-3xl);
+  padding: $spacing-3xl;
   margin: 2px;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: $spacing-xl;
   transition: all 0.2s ease;
 
   @media (prefers-color-scheme: light) {
@@ -368,7 +449,7 @@ const uploadFiles = async () => {
     border-color: var(--color-gray-300);
   }
 
-  &:hover {
+  &:not(.disabled):hover {
     border-color: var(--color-primary-500);
     transform: translateY(-2px);
 
@@ -376,13 +457,19 @@ const uploadFiles = async () => {
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     }
   }
+
+  &.disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
 }
 
 .migration-card-header {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-sm);
+  gap: $spacing-md;
+  margin-bottom: $spacing-sm;
+  flex-wrap: wrap;
 
   h3 {
     margin: 0;
@@ -394,6 +481,18 @@ const uploadFiles = async () => {
       color: var(--color-gray-900);
     }
   }
+}
+
+.coming-soon-badge {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: 6px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(251, 191, 36, 0.3);
 }
 
 .migration-card-icon {
@@ -447,6 +546,33 @@ const uploadFiles = async () => {
   }
 }
 
+.migration-card-features {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    color: var(--color-gray-400);
+    font-size: var(--font-size-sm);
+
+    @media (prefers-color-scheme: light) {
+      color: var(--color-gray-600);
+    }
+
+    svg {
+      flex-shrink: 0;
+      color: var(--color-primary-500);
+    }
+
+    span {
+      line-height: 1.6;
+    }
+  }
+}
+
 .migration-card-steps {
   background: rgba(255, 255, 255, 0.03);
   border-radius: 8px;
@@ -478,8 +604,8 @@ const uploadFiles = async () => {
 }
 
 .upload-section {
-  margin-top: var(--spacing-3xl);
-  padding: var(--spacing-2xl);
+  margin-top: $spacing-4xl;
+  padding: $spacing-3xl;
   background: var(--color-gray-900);
   border: 1px solid var(--color-gray-800);
   border-radius: var(--border-radius-lg);
@@ -490,7 +616,7 @@ const uploadFiles = async () => {
   }
 
   h3 {
-    margin: 0 0 var(--spacing-xl) 0;
+    margin: 0 0 $spacing-xl 0;
     color: white;
 
     @media (prefers-color-scheme: light) {
@@ -604,7 +730,8 @@ const uploadFiles = async () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-md) var(--spacing-lg);
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
   border-radius: var(--border-radius-lg);
   font-size: var(--font-size-base);
   font-weight: 600;
@@ -613,8 +740,16 @@ const uploadFiles = async () => {
   border: none;
   text-decoration: none;
 
+  svg {
+    flex-shrink: 0;
+  }
+
   &--primary {
-    background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-700) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--color-primary-600) 0%,
+      var(--color-primary-700) 100%
+    );
     color: white;
     box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
 
