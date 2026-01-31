@@ -384,18 +384,32 @@ const fileViewComponent = computed(() => {
 
 // Handle breadcrumb drop event
 const handleBreadcrumbDrop = async (event: DragEvent, targetPath: string) => {
-  // Only support moving folders/files (dragged from list/grid)
-  // Expect event.dataTransfer to contain 'application/x-cirrus-file-path' with fullPath
-  const fullPath = event.dataTransfer?.getData(
-    'application/x-cirrus-file-path',
-  );
+  const dt = event.dataTransfer;
+  const multi = dt?.getData('application/x-cirrus-multi');
+  if (multi) {
+    try {
+      const filesArr = JSON.parse(multi);
+      for (const f of filesArr) {
+        const fileName = getFileNameFromPath(f.path || '');
+        const newTargetPath = joinPathsNormalized(targetPath, fileName);
+        await handleFileMove(
+          f.path,
+          newTargetPath,
+          f.deviceSerial,
+          f.deviceSerial,
+        );
+      }
+    } catch {}
+    return;
+  }
+  // Single file fallback
+  const fullPath = dt?.getData('application/x-cirrus-file-path');
   if (!fullPath) return;
   const fileName = getFileNameFromPath(fullPath || '');
-  targetPath = joinPathsNormalized(targetPath, fileName);
+  const newTargetPath = joinPathsNormalized(targetPath, fileName);
   const deviceSerial =
-    event.dataTransfer?.getData('application/x-cirrus-device-serial') ||
-    undefined;
-  handleFileMove(fullPath, targetPath, deviceSerial, deviceSerial);
+    dt?.getData('application/x-cirrus-device-serial') || undefined;
+  await handleFileMove(fullPath, newTargetPath, deviceSerial, deviceSerial);
 };
 
 // Unselect all files when CirrusListView emits deselect-all
