@@ -388,17 +388,22 @@ const handleBreadcrumbDrop = async (event: DragEvent, targetPath: string) => {
   const multi = dt?.getData('application/x-cirrus-multi');
   if (multi) {
     try {
-      const filesArr = JSON.parse(multi);
-      for (const f of filesArr) {
-        const fileName = getFileNameFromPath(f.path || '');
-        const newTargetPath = joinPathsNormalized(targetPath, fileName);
-        await handleFileMove(
-          f.path,
-          newTargetPath,
-          f.deviceSerial,
-          f.deviceSerial,
-        );
-      }
+      const filesArr = JSON.parse(multi) as {
+        path: string;
+        deviceSerial: string | undefined;
+      }[];
+      await Promise.all(
+        filesArr.map((f) => {
+          const fileName = getFileNameFromPath(f.path || '');
+          const newTargetPath = joinPathsNormalized(targetPath, fileName);
+          return handleFileMove(
+            f.path,
+            newTargetPath,
+            f.deviceSerial,
+            f.deviceSerial,
+          );
+        }),
+      );
     } catch {}
     return;
   }
