@@ -311,10 +311,10 @@
       <form @submit.prevent="confirmDelete" class="move-dialog-form">
         <h3 class="move-dialog-title">Delete File</h3>
         <div class="move-dialog-field">
-          <template v-if="deleteDialogFiles.length > 0">
+          <template v-if="deleteDialogFiles.length > 1">
             <span
-              >Are you sure you want to delete {{ deleteDialogFiles.length }}
-              {{ deleteDialogFiles.length > 1 ? 'files' : 'file' }}?</span
+              >Are you sure you want to delete
+              {{ deleteDialogFiles.length }} files?</span
             >
             <ul
               style="
@@ -332,7 +332,10 @@
           <template v-else>
             <span
               >Are you sure you want to delete "{{
-                deleteDialogFile?.name
+                (deleteDialogFiles.length > 0
+                  ? deleteDialogFiles[0]
+                  : deleteDialogFile
+                )?.name
               }}"?</span
             >
           </template>
