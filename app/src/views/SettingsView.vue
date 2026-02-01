@@ -213,6 +213,10 @@ const sidebarSections = [
       { label: 'Advanced' },
     ],
   },
+  {
+    title: 'Data',
+    items: [{ label: 'Data Migration', href: '/data-migration' }],
+  },
 ];
 </script>
 
