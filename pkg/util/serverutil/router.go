@@ -47,6 +47,10 @@ func ApiRoute(method, path string, handler func(c *gin.Context) *Response) *Rout
 func WrapApiRoute(handler func(c *gin.Context) *Response) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		resp := handler(c)
+		// If handler wrote the response itself and returned nil, just return.
+		if resp == nil {
+			return
+		}
 		if resp.Data == nil && resp.Error == nil {
 			c.Status(resp.StatusCode)
 			return
