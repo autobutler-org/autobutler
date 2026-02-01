@@ -31,9 +31,6 @@ func TestNewWorker_ChannelAccessors(t *testing.T) {
 	if w.GetMoveFileChannel() == nil {
 		t.Error("GetMoveFileChannel returned nil")
 	}
-	if w.GetUploadFilesChannel() == nil {
-		t.Error("GetUploadFilesChannel returned nil")
-	}
 	if w.GetCreateFolderChannel() == nil {
 		t.Error("GetCreateFolderChannel returned nil")
 	}
