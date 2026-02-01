@@ -2,11 +2,7 @@
   <div id="file-explorer" class="file-explorer">
     <div class="file-explorer-header">
       <div class="file-explorer-header-row">
-        <h2 class="file-explorer-title">Cirrus</h2>
-        <div
-          class="file-explorer-upload-row"
-          style="display: flex; align-items: center; gap: 0.5rem"
-        >
+        <div class="file-explorer-upload-row header-left">
           <template v-if="devices.length > 1">
             <select
               v-model="selectedDeviceSerial"
@@ -23,11 +19,9 @@
               </option>
             </select>
           </template>
-          <span v-if="uploadProgress" class="upload-progress">{{
-            uploadProgress
-          }}</span>
+          <span v-if="uploadProgress" class="upload-progress">{{ uploadProgress }}</span>
           <button
-            class="action-btn"
+            class="action-btn toolbar-rect upload-rect"
             type="button"
             :disabled="isUploading || devices.length === 0"
             @click="handleUploadClick"
@@ -65,9 +59,27 @@
             aria-label="Select files to upload"
           />
         </div>
-      </div>
-      <div style="display: flex; gap: 0.5rem; align-items: center">
-        <!-- Navigation and download controls would go here -->
+
+        <h2 class="file-explorer-title centered-title">Cirrus</h2>
+
+        <div class="view-switcher header-right">
+          <button
+            :class="['action-btn', 'toolbar-rect', view === 'list' ? 'active' : '']"
+            @click="switchView('list')"
+            title="List View"
+            type="button"
+          >
+            <ListViewIcon />
+          </button>
+          <button
+            :class="['action-btn', 'toolbar-rect', view === 'grid' ? 'active' : '']"
+            @click="switchView('grid')"
+            title="Grid View"
+            type="button"
+          >
+            <GridViewIcon />
+          </button>
+        </div>
       </div>
     </div>
 
@@ -989,7 +1001,43 @@ const handleDelete = (file: CirrusFileNode) => {
   gap: $spacing-xs;
   margin-bottom: $spacing-xs;
   justify-content: space-between;
+  flex-wrap: nowrap;
   width: 100%;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.centered-title {
+  flex: 1 1 auto;
+  text-align: center;
+  margin: 0;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.toolbar-rect {
+  padding: 0.5rem 1rem;
+  min-width: 44px;
+  min-height: 40px;
+  border-radius: $border-radius-md;
+  background: #ffffff;
+  color: $theme-palette-text-primary;
+  border: 1px solid $theme-palette-border-strong;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.toolbar-rect.active {
+  background-color: $theme-palette-accent;
+  color: $theme-palette-text-inverse;
+  border-color: $theme-palette-accent;
 }
 
 .file-explorer-loading {
