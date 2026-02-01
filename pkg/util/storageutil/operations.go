@@ -260,17 +260,95 @@ func UploadFilesStreamed(params UploadFilesStreamedParams) error {
 				}
 			}
 
-			outFile, err := os.Create(destPath)
+			// Write to a temp file in data/tmp, then atomically move into place.
+			// Determine tmp base adjacent to the cirrus/data dir so it's on the
+			// same filesystem as the final destination.
+			dataDir := GetDataDir()
+			if device != nil {
+				// device.CirrusDir is <dataDir>/cirrus, so parent is device data dir
+				dataDir = filepath.Dir(cirrusDir)
+			}
+			tmpBase := filepath.Join(dataDir, "tmp")
+			if err := os.MkdirAll(tmpBase, 0755); err != nil {
+				part.Close()
+				return fmt.Errorf("failed to create tmp directory: %w", err)
+			}
+
+			// Create a temp file and write the uploaded content to it
+			tmpFile, err := os.CreateTemp(tmpBase, "upload-*")
 			if err != nil {
 				part.Close()
-				return fmt.Errorf("failed to create file: %w", err)
+				return fmt.Errorf("failed to create temp file: %w", err)
 			}
-			if _, err := io.Copy(outFile, part); err != nil {
-				outFile.Close()
+			tmpPath := tmpFile.Name()
+			if _, err := io.Copy(tmpFile, part); err != nil {
+				tmpFile.Close()
+				os.Remove(tmpPath)
 				part.Close()
-				return fmt.Errorf("failed to write file: %w", err)
+				return fmt.Errorf("failed to write temp file: %w", err)
 			}
-			outFile.Close()
+			tmpFile.Close()
+
+			// Try to place the file into destDir using a hard link (will fail if dest exists).
+			// If hard link is not possible (cross-device), fall back to creating the
+			// destination with O_EXCL and copying from the temp file.
+			ext := filepath.Ext(fileName)
+			name := fileName[:len(fileName)-len(ext)]
+			if name == "" {
+				name = "file"
+			}
+			candidate := fileName
+			i := 0
+			for {
+				destPath = filepath.Join(destDir, candidate)
+
+				// Attempt hard link first (atomic and avoids extra copy)
+				if err := os.Link(tmpPath, destPath); err == nil {
+					// Success: remove temp and we're done
+					os.Remove(tmpPath)
+					break
+				} else if os.IsExist(err) {
+					// Destination exists; pick next candidate name and retry
+					i++
+					candidate = fmt.Sprintf("%s_(%d)%s", name, i, ext)
+					continue
+				} else {
+					// Hard link failed for another reason (e.g., EXDEV). Try exclusive create + copy.
+					// Open temp for reading
+					tmpR, rerr := os.Open(tmpPath)
+					if rerr != nil {
+						os.Remove(tmpPath)
+						part.Close()
+						return fmt.Errorf("failed to open temp file for fallback copy: %w", rerr)
+					}
+					dst, derr := os.OpenFile(destPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
+					if derr == nil {
+						// Copy content from temp to destination
+						if _, cerr := io.Copy(dst, tmpR); cerr != nil {
+							dst.Close()
+							tmpR.Close()
+							os.Remove(tmpPath)
+							part.Close()
+							return fmt.Errorf("failed to copy temp to destination: %w", cerr)
+						}
+						dst.Close()
+						tmpR.Close()
+						os.Remove(tmpPath)
+						break
+					}
+					tmpR.Close()
+					if os.IsExist(derr) {
+						// Destination exists; try next candidate name
+						i++
+						candidate = fmt.Sprintf("%s_(%d)%s", name, i, ext)
+						continue
+					}
+					// Unknown error creating destination
+					os.Remove(tmpPath)
+					part.Close()
+					return fmt.Errorf("failed to move uploaded file into place: linkErr=%v createErr=%v", err, derr)
+				}
+			}
 			part.Close()
 		} else {
 			part.Close()
