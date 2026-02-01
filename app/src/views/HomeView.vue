@@ -1,31 +1,19 @@
-<script lang="ts" setup>
-import AppFooter from '@/components/home/AppFooter.vue';
-import GradientOverlays from '@/components/home/GradientOverlays.vue';
-import HeroSection from '@/components/home/HeroSection.vue';
-</script>
 <template>
-  <div class="landing-body">
-    <div class="landing-main site-fullscreen-col">
-      <GradientOverlays />
-      <div class="landing-container">
-        <HeroSection />
-        <AppFooter />
-      </div>
+  <div class="view-content site-fullscreen-col">
+    <GradientOverlays />
+    <div class="landing-container">
+      <HeroSection />
     </div>
   </div>
 </template>
 
-<style lang="scss" scoped>
-.landing-body {
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  width: 100vw;
-  display: flex;
-  flex-direction: column;
-}
+<script lang="ts" setup>
+import GradientOverlays from '@/components/home/GradientOverlays.vue';
+import HeroSection from '@/components/home/HeroSection.vue';
+</script>
 
-.landing-main {
+<style lang="scss" scoped>
+.view-content {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -44,7 +32,7 @@ import HeroSection from '@/components/home/HeroSection.vue';
   flex: 1;
   justify-content: center;
   align-items: center;
-  max-width: 1400px;
+  // max-width: 1400px;
   margin: 0 auto;
   width: 100%;
   padding: 0 $spacing-2xl;

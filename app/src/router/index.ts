@@ -1,10 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import CirrusView from '@/views/CirrusView.vue';
-import HomeView from '@/views/HomeView.vue';
-import BooksView from '@/views/BooksView.vue';
-import SettingsView from '@/views/SettingsView.vue';
-import PhotosView from '@/views/PhotosView.vue';
-import DevicesView from '@/views/DevicesView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -12,32 +6,32 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView,
+      component: import('@/views/HomeView.vue'),
     },
     {
       path: '/cirrus/:pathMatch(.*)*',
       name: 'cirrus',
-      component: CirrusView,
+      component: import('@/views/CirrusView.vue'),
     },
     {
       path: '/photos',
       name: 'photos',
-      component: PhotosView,
+      component: import('@/views/PhotosView.vue'),
     },
     {
       path: '/books',
       name: 'books',
-      component: BooksView,
+      component: import('@/views/BooksView.vue'),
     },
     {
       path: '/devices',
       name: 'devices',
-      component: DevicesView,
+      component: import('@/views/DevicesView.vue'),
     },
     {
       path: '/settings',
       name: 'settings',
-      component: SettingsView,
+      component: import('@/views/SettingsView.vue'),
     },
   ],
 });

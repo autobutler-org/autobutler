@@ -1,7 +1,7 @@
 <template>
   <div class="library-layout">
     <div class="library-container">
-      <aside class="library-sidebar">
+      <aside v-if="!hideSidebar" class="library-sidebar">
         <slot name="sidebar" />
       </aside>
       <div class="library-separator" aria-hidden="true" />
@@ -15,6 +15,12 @@
     </div>
   </div>
 </template>
+
+<script lang="ts" setup>
+defineProps<{
+  hideSidebar?: boolean;
+}>();
+</script>
 
 <style lang="scss" scoped>
 .library-container {
