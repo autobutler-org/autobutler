@@ -1354,9 +1354,5 @@ const handleDelete = (file: CirrusFileNode) => {
   .file-explorer-header-row {
     justify-content: space-between;
   }
-
-  .device-badge-toggle span {
-    display: none; /* hide label text to save space, toggle still usable */
-  }
 }
 </style>
