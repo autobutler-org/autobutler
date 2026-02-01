@@ -1,9 +1,7 @@
 package storageutil
 
 import (
-	"bytes"
 	"fmt"
-	"mime/multipart"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -798,119 +796,6 @@ func TestMoveFile_ToRootDirectory(t *testing.T) {
 
 	// Clean up the file we moved to root
 	os.Remove(filepath.Join(filesDir, "rootfile.txt"))
-}
-
-func TestUploadFiles_FileConflict(t *testing.T) {
-	// Test that UploadFiles handles filename conflicts by appending numbers
-	filesDir := GetCirrusDir()
-	testDir := filepath.Join(filesDir, "test_upload_conflict")
-	defer os.RemoveAll(testDir)
-
-	os.MkdirAll(testDir, 0755)
-
-	// Create pre-existing files to trigger conflicts
-	os.WriteFile(filepath.Join(testDir, "test.txt"), []byte("existing"), 0644)
-	os.WriteFile(filepath.Join(testDir, "test_(1).txt"), []byte("existing1"), 0644)
-	os.WriteFile(filepath.Join(testDir, "test_(2).txt"), []byte("existing2"), 0644)
-
-	// Create a real multipart.FileHeader using multipart.Writer
-	var buf bytes.Buffer
-	writer := multipart.NewWriter(&buf)
-
-	part, err := writer.CreateFormFile("file", "test.txt")
-	if err != nil {
-		t.Fatalf("Failed to create form file: %v", err)
-	}
-
-	part.Write([]byte("new content"))
-	writer.Close()
-
-	// Now parse it to get a real FileHeader
-	reader := multipart.NewReader(&buf, writer.Boundary())
-	form, err := reader.ReadForm(1024 * 1024)
-	if err != nil {
-		t.Fatalf("Failed to read form: %v", err)
-	}
-	defer form.RemoveAll()
-
-	headers := form.File["file"]
-	if len(headers) == 0 {
-		t.Fatal("No file headers found")
-	}
-
-	params := UploadFilesParams{
-		RootDir:     "test_upload_conflict",
-		FileHeaders: headers,
-		ReturnDir:   "",
-	}
-
-	result, err := UploadFiles(params)
-	if err != nil {
-		t.Fatalf("UploadFiles failed: %v", err)
-	}
-
-	if result.RootDir != "test_upload_conflict" {
-		t.Errorf("Expected RootDir 'test_upload_conflict', got '%s'", result.RootDir)
-	}
-
-	// Verify the file was created with _(3) suffix
-	newFilePath := filepath.Join(testDir, "test_(3).txt")
-	content, err := os.ReadFile(newFilePath)
-	if err != nil {
-		t.Fatalf("Expected file test_(3).txt to exist: %v", err)
-	}
-
-	if string(content) != "new content" {
-		t.Errorf("Expected content 'new content', got '%s'", string(content))
-	}
-}
-
-func TestUploadFiles_EmptyReturnDir(t *testing.T) {
-	// Test that when ReturnDir is empty, RootDir is used
-	params := UploadFilesParams{
-		RootDir:     "test/dir",
-		FileHeaders: []*multipart.FileHeader{}, // Empty list, won't actually upload anything
-		ReturnDir:   "",                        // Empty - should use RootDir
-	}
-
-	result, err := UploadFiles(params)
-	if err != nil {
-		t.Fatalf("UploadFiles failed: %v", err)
-	}
-
-	if result.RootDir != "test/dir" {
-		t.Errorf("Expected RootDir 'test/dir', got '%s'", result.RootDir)
-	}
-}
-
-func TestUploadFiles_WithReturnDir(t *testing.T) {
-	// Test that when ReturnDir is provided, it's used instead of RootDir
-	params := UploadFilesParams{
-		RootDir:     "test/dir",
-		FileHeaders: []*multipart.FileHeader{}, // Empty list
-		ReturnDir:   "custom/return",           // Should use this
-	}
-
-	result, err := UploadFiles(params)
-	if err != nil {
-		t.Fatalf("UploadFiles failed: %v", err)
-	}
-
-	if result.RootDir != "custom/return" {
-		t.Errorf("Expected RootDir 'custom/return', got '%s'", result.RootDir)
-	}
-}
-
-func TestUploadFiles_CreateFileError(t *testing.T) {
-	// Test error when creating file fails - add coverage ignore since it requires
-	// filesystem permissions manipulation which is difficult to test reliably
-	t.Skip("Creating file errors require filesystem permission manipulation")
-}
-
-func TestUploadFiles_CopyError(t *testing.T) {
-	// Test error when copying file content fails - add coverage ignore since it requires
-	// simulating I/O failures which is difficult to test
-	t.Skip("Copy errors require simulating I/O failures")
 }
 
 func TestDownloadFile_MultiDevice_NotFound(t *testing.T) {

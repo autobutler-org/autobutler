@@ -12,7 +12,6 @@ type Worker interface {
 	LogErrors() error
 	GetDeleteFilesChannel() storageutil.DeleteFilesChannel
 	GetMoveFileChannel() storageutil.MoveFileChannel
-	GetUploadFilesChannel() storageutil.UploadFilesChannel
 	GetCreateFolderChannel() storageutil.CreateFolderChannel
 }
 
@@ -21,7 +20,6 @@ type worker struct {
 	errorChannel        chan error
 	deleteFilesChannel  storageutil.DeleteFilesChannel
 	moveFileChannel     storageutil.MoveFileChannel
-	uploadFilesChannel  storageutil.UploadFilesChannel
 	createFolderChannel storageutil.CreateFolderChannel
 }
 
@@ -31,7 +29,6 @@ func NewWorker() Worker {
 		errorChannel:        make(chan error),
 		deleteFilesChannel:  make(storageutil.DeleteFilesChannel),
 		moveFileChannel:     make(storageutil.MoveFileChannel),
-		uploadFilesChannel:  make(storageutil.UploadFilesChannel),
 		createFolderChannel: make(storageutil.CreateFolderChannel),
 	}
 }
@@ -45,10 +42,6 @@ func (w *worker) Process() error {
 			}
 		case moveReq := <-w.moveFileChannel:
 			if _, err := storageutil.MoveFile(moveReq); err != nil {
-				w.errorChannel <- err
-			}
-		case uploadReq := <-w.uploadFilesChannel:
-			if _, err := storageutil.UploadFiles(uploadReq); err != nil {
 				w.errorChannel <- err
 			}
 		case createFolderReq := <-w.createFolderChannel:
@@ -84,10 +77,6 @@ func (w *worker) GetDeleteFilesChannel() storageutil.DeleteFilesChannel {
 
 func (w *worker) GetMoveFileChannel() storageutil.MoveFileChannel {
 	return w.moveFileChannel
-}
-
-func (w *worker) GetUploadFilesChannel() storageutil.UploadFilesChannel {
-	return w.uploadFilesChannel
 }
 
 func (w *worker) GetCreateFolderChannel() storageutil.CreateFolderChannel {
