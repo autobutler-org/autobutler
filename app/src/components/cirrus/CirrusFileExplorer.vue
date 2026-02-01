@@ -996,9 +996,12 @@ const handleDelete = (file: CirrusFileNode) => {
 }
 
 .centered-title {
-  flex: 1 1 auto;
-  text-align: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
   margin: 0;
+  z-index: 1;
 }
 
 .header-right {
