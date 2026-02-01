@@ -12,9 +12,7 @@
       <thead class="file-table-header">
         <tr>
           <CirrusListViewSortHeader
-            v-for="column in showDeviceBadges
-              ? sortColumns
-              : sortColumnsNoDevice"
+            v-for="column in displayedColumns"
             :key="column.column ? column.column : ''"
             :header="column.column"
             :active-sort-column="sortColumn"
@@ -90,7 +88,7 @@
               @click.stop="emit('rename', file)"
             />
           </td>
-          <td class="file-table-cell file-table-size">
+          <td v-if="props.showFileSizes !== false" class="file-table-cell file-table-size">
             {{ CirrusService.formatBytes(CirrusService.getFileSize(file)) }}
           </td>
           <td class="file-table-cell file-table-cell--menu">
@@ -140,6 +138,7 @@ const props = defineProps<{
   files: CirrusFileNode[];
   currentPath: string;
   showDeviceBadges?: boolean;
+  showFileSizes?: boolean;
   selectedFiles?: CirrusFileNode[];
 }>();
 
@@ -217,9 +216,16 @@ const sortColumns: {
   { column: 'size' },
 ];
 
-const sortColumnsNoDevice = sortColumns.filter(
-  (col) => col.column !== 'device',
-);
+const sortColumnsNoDevice = sortColumns.filter((col) => col.column !== 'device');
+
+// Compute which columns to display based on props
+const displayedColumns = computed(() => {
+  let cols = props.showDeviceBadges ? sortColumns : sortColumnsNoDevice;
+  if (props.showFileSizes === false) {
+    cols = cols.filter((c) => c.column !== 'size');
+  }
+  return cols;
+});
 
 const {
   isDragOver,
