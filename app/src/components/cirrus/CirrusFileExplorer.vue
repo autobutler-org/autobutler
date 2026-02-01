@@ -311,11 +311,31 @@
       <form @submit.prevent="confirmDelete" class="move-dialog-form">
         <h3 class="move-dialog-title">Delete File</h3>
         <div class="move-dialog-field">
-          <span
-            >Are you sure you want to delete "{{
-              deleteDialogFile?.name
-            }}"?</span
-          >
+          <template v-if="deleteDialogFiles.length > 0">
+            <span
+              >Are you sure you want to delete {{ deleteDialogFiles.length }}
+              {{ deleteDialogFiles.length > 1 ? 'files' : 'file' }}?</span
+            >
+            <ul
+              style="
+                max-height: 200px;
+                overflow: auto;
+                margin: 0.5rem 0;
+                padding-left: 1rem;
+              "
+            >
+              <li v-for="f in deleteDialogFiles" :key="f.fullPath">
+                {{ f.name }}
+              </li>
+            </ul>
+          </template>
+          <template v-else>
+            <span
+              >Are you sure you want to delete "{{
+                deleteDialogFile?.name
+              }}"?</span
+            >
+          </template>
         </div>
         <div v-if="deleteDialogError" class="move-dialog-error">
           {{ deleteDialogError }}
@@ -428,27 +448,11 @@ const handleDeselectAll = () => {
   selectedFiles.value = [];
   lastSelectedFile.value = null;
 };
-// Delete all selected files
+// Delete all selected files (open confirmation dialog)
 const handleDeleteSelected = async () => {
   if (selectedFiles.value.length === 0) return;
-  for (const file of [...selectedFiles.value]) {
-    try {
-      await CirrusService.deleteFile(
-        currentPath.value,
-        CirrusService.getFileName(file),
-        file.deviceSerial,
-      );
-      files.value = files.value.filter((f) => f.fullPath !== file.fullPath);
-      selectedFiles.value = selectedFiles.value.filter(
-        (f) => f.fullPath !== file.fullPath,
-      );
-    } catch (e) {
-      console.error(
-        `Failed to delete file ${CirrusService.getFileName(file)}:`,
-        e,
-      );
-    }
-  }
+  // Open the confirmation dialog for bulk deletion
+  openDeleteDialog();
 };
 
 // Download all selected files
@@ -569,44 +573,56 @@ const deleteDialogOpen = ref(false);
 const deleteDialogLoading = ref(false);
 const deleteDialogError = ref('');
 const deleteDialogFile = ref<CirrusFileNode | null>(null);
+const deleteDialogFiles = ref<CirrusFileNode[]>([]);
 
-const openDeleteDialog = (file: CirrusFileNode) => {
-  deleteDialogFile.value = file;
+const openDeleteDialog = (file?: CirrusFileNode) => {
   deleteDialogError.value = '';
+  if (file) {
+    deleteDialogFile.value = file;
+    deleteDialogFiles.value = [];
+  } else {
+    // bulk delete: copy current selection
+    deleteDialogFiles.value = selectedFiles.value.slice();
+    deleteDialogFile.value = null;
+  }
   deleteDialogOpen.value = true;
 };
 const closeDeleteDialog = () => {
   deleteDialogOpen.value = false;
   deleteDialogFile.value = null;
+  deleteDialogFiles.value = [];
   deleteDialogError.value = '';
 };
 
 const confirmDelete = async () => {
-  if (!deleteDialogFile.value) return;
+  // Determine targets: either the files array (bulk) or single file
+  const targets =
+    deleteDialogFiles.value.length > 0
+      ? deleteDialogFiles.value
+      : deleteDialogFile.value
+        ? [deleteDialogFile.value]
+        : [];
+  if (targets.length === 0) return;
   deleteDialogLoading.value = true;
   deleteDialogError.value = '';
-  const file = deleteDialogFile.value;
-  const fileName = CirrusService.getFileName(file);
   try {
-    // Build query params - API expects rootDir and filePaths as query parameters
-    const params = new URLSearchParams();
-    params.append('rootDir', currentPath.value);
-    params.append('filePaths', fileName);
-
-    await CirrusService.deleteFile(
-      currentPath.value,
-      fileName,
-      file.deviceSerial,
-    );
-
-    // Remove the file from the in-memory list
-    files.value = files.value.filter((f) => {
-      return f.fullPath !== file.fullPath;
-    });
+    for (const file of targets) {
+      const fileName = CirrusService.getFileName(file);
+      await CirrusService.deleteFile(
+        currentPath.value,
+        fileName,
+        file.deviceSerial,
+      );
+      // Remove from in-memory lists
+      files.value = files.value.filter((f) => f.fullPath !== file.fullPath);
+      selectedFiles.value = selectedFiles.value.filter(
+        (f) => f.fullPath !== file.fullPath,
+      );
+    }
     closeDeleteDialog();
   } catch (e) {
     deleteDialogError.value =
-      e instanceof Error ? e.message : 'Failed to delete file';
+      e instanceof Error ? e.message : 'Failed to delete file(s)';
   } finally {
     deleteDialogLoading.value = false;
   }
