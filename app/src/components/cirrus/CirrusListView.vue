@@ -88,7 +88,10 @@
               @click.stop="emit('rename', file)"
             />
           </td>
-          <td v-if="props.showFileSizes !== false" class="file-table-cell file-table-size">
+          <td
+            v-if="props.showFileSizes !== false"
+            class="file-table-cell file-table-size"
+          >
             {{ CirrusService.formatBytes(CirrusService.getFileSize(file)) }}
           </td>
           <td class="file-table-cell file-table-cell--menu">
@@ -216,7 +219,9 @@ const sortColumns: {
   { column: 'size' },
 ];
 
-const sortColumnsNoDevice = sortColumns.filter((col) => col.column !== 'device');
+const sortColumnsNoDevice = sortColumns.filter(
+  (col) => col.column !== 'device',
+);
 
 // Compute which columns to display based on props
 const displayedColumns = computed(() => {
@@ -629,11 +634,14 @@ const isSubPath = (parent: string, child: string) => {
 }
 
 .file-table-name-label {
-  display: inline-flex;
+  display: block;
   align-items: center;
   border-radius: $border-radius-md;
   padding: 0 $spacing-xs;
   transition: background-color 0.15s ease;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 
   &::selection {
     background-color: transparent;
