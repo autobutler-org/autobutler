@@ -1323,4 +1323,40 @@ const handleDelete = (file: CirrusFileNode) => {
   max-width: 13.75rem;
   margin-right: 0.5rem;
 }
+
+// Mobile-specific adjustments
+@media (max-width: 640px) {
+  .file-explorer-header-row {
+    /* allow wrapping and make space for controls */
+    flex-wrap: wrap;
+    gap: $spacing-xs;
+    align-items: center;
+  }
+
+  /* hide the large centered title on small screens to avoid overlapping controls */
+  .file-explorer-title.centered-title {
+    display: none;
+  }
+
+  .file-explorer {
+    padding: $spacing-md;
+  }
+
+  .action-btn {
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 420px) {
+  /* compact header layout for very small screens */
+  .file-explorer-header-row {
+    justify-content: space-between;
+  }
+
+  .device-badge-toggle span {
+    display: none; /* hide label text to save space, toggle still usable */
+  }
+}
 </style>
