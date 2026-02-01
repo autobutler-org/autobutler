@@ -1,5 +1,6 @@
 <template>
-  <LibraryLayout>
+  <!-- TODO: Unhide sidebar later -->
+  <LibraryLayout :hide-sidebar="true">
     <template #sidebar>
       <PhotosSidebar :photo-count="totalPhotos" :summary="summary" />
       <div id="mobile-photos-arrival-location" />
@@ -28,7 +29,6 @@
 <script lang="ts" setup>
 import LibraryLayout from '@/components/common/LibraryLayout.vue';
 import PhotoGrid from '@/components/photos/PhotoGrid.vue';
-import PhotosSidebar from '@/components/photos/PhotosSidebar.vue';
 import PhotosService, { type PhotoApiResponse } from '@/services/photosService';
 import type { Photo } from '@/types/photo';
 import { onMounted, ref } from 'vue';

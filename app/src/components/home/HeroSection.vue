@@ -58,7 +58,7 @@ const defaultServiceIcons: ServiceIcon[] = [
     name: 'books',
     label: 'Books',
     href: '/books',
-    enabled: true,
+    enabled: false,
     component: BookIcon,
   },
   {

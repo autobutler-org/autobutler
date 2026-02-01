@@ -1,6 +1,5 @@
 <template>
-  <div class="landing-main">
-    <GradientOverlays />
+  <div class="view-content">
     <div class="landing-container">
       <div class="devices-page">
         <div class="devices-header">
@@ -42,7 +41,6 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue';
 
-import GradientOverlays from '@/components/home/GradientOverlays.vue';
 import DevicesService from '@/services/devicesService';
 import type { Device } from '@/types/device';
 import type { Summary } from '@/types/summary';
@@ -95,7 +93,7 @@ onMounted(fetchDevices);
 </script>
 
 <style lang="scss" scoped>
-.landing-main {
+.view-content {
   min-height: 100vh;
   display: flex;
   flex-direction: column;

@@ -1,12 +1,3 @@
-import BooksView from '@/views/BooksView.vue';
-import CirrusView from '@/views/CirrusView.vue';
-import DataMigrationView from '@/views/DataMigrationView.vue';
-import DevicesView from '@/views/DevicesView.vue';
-import GoogleTakeoutView from '@/views/GoogleTakeoutView.vue';
-import HomeView from '@/views/HomeView.vue';
-import MigrationServiceView from '@/views/MigrationServiceView.vue';
-import PhotosView from '@/views/PhotosView.vue';
-import SettingsView from '@/views/SettingsView.vue';
 import { createRouter, createWebHistory } from 'vue-router';
 
 const router = createRouter({
@@ -15,47 +6,47 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView,
+      component: import('@/views/HomeView.vue'),
     },
     {
       path: '/cirrus/:pathMatch(.*)*',
       name: 'cirrus',
-      component: CirrusView,
+      component: import('@/views/CirrusView.vue'),
     },
     {
       path: '/photos',
       name: 'photos',
-      component: PhotosView,
+      component: import('@/views/PhotosView.vue'),
     },
     {
       path: '/books',
       name: 'books',
-      component: BooksView,
+      component: import('@/views/BooksView.vue'),
     },
     {
       path: '/devices',
       name: 'devices',
-      component: DevicesView,
+      component: import('@/views/DevicesView.vue'),
     },
     {
       path: '/settings',
       name: 'settings',
-      component: SettingsView,
+      component: import('@/views/SettingsView.vue'),
     },
     {
       path: '/data-migration',
       name: 'data-migration',
-      component: DataMigrationView,
+      component: import('@/views/DataMigrationView.vue'),
     },
     {
       path: '/data-migration/google-takeout',
       name: 'google-takeout',
-      component: GoogleTakeoutView,
+      component: import('@/views/GoogleTakeoutView.vue'),
     },
     {
       path: '/migrationservice',
       name: 'migration-service',
-      component: MigrationServiceView,
+      component: import('@/views/MigrationServiceView.vue'),
     },
   ],
 });

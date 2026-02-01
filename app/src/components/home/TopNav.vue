@@ -25,9 +25,10 @@
       </RouterLink>
     </div>
     <div class="landing-nav-right">
-      <RouterLink to="/settings" class="landing-nav-button" title="Settings">
+      <!-- TODO: This is incomplete is why it is hidden -->
+      <!-- <RouterLink to="/settings" class="landing-nav-button" title="Settings">
         <SettingsIcon />
-      </RouterLink>
+      </RouterLink> -->
       <div class="version-container" id="version-container">
         <button
           class="landing-nav-version version-display"
@@ -120,14 +121,15 @@
           <PhotoIcon />
           <span>Photos</span>
         </RouterLink>
-        <RouterLink
+        <!-- TODO: This is incomplete is why it is hidden -->
+        <!-- <RouterLink
           to="/books"
           class="mobile-menu-link"
           @click="closeMobileMenu"
         >
           <BookIcon />
           <span>Books</span>
-        </RouterLink>
+        </RouterLink> -->
         <RouterLink
           to="/devices"
           class="mobile-menu-link"
@@ -138,7 +140,8 @@
         </RouterLink>
       </nav>
       <div class="mobile-menu-footer">
-        <RouterLink
+        <!-- TODO: This is incomplete is why it is hidden -->
+        <!-- <RouterLink
           to="/settings"
           class="mobile-menu-link"
           title="Settings"
@@ -146,7 +149,7 @@
         >
           <SettingsIcon />
           <span>Settings</span>
-        </RouterLink>
+        </RouterLink> -->
         <div class="mobile-menu-divider" />
         <span class="mobile-menu-version">Version: {{ currentVersion }}</span>
       </div>
@@ -162,14 +165,12 @@ import type { NavLink } from '@/types/nav_link';
 import { toKeyComboString, type KeyCombo } from '@/util/keycombo';
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
-import BookIcon from '../icons/BookIcon.vue';
 import CloseIcon from '../icons/CloseIcon.vue';
 import DeviceIcon from '../icons/DeviceIcon.vue';
 import FolderIcon from '../icons/FolderIcon.vue';
 import HamburgerIcon from '../icons/HamburgerIcon.vue';
 import HomeIcon from '../icons/HomeIcon.vue';
 import PhotoIcon from '../icons/PhotoIcon.vue';
-import SettingsIcon from '../icons/SettingsIcon.vue';
 
 const props = defineProps<{
   isMinimal?: boolean;
