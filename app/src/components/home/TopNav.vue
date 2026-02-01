@@ -495,8 +495,9 @@ const closeMobileMenu = () => {
   bottom: 0;
   width: 300px;
   max-width: 85vw;
-  background: $theme-palette-bg-inverse;
-  box-shadow: 2px 0 12px rgba($theme-palette-bg-inverse, 0.3);
+  /* Use primary app background so the mobile menu matches the theme */
+  background: $theme-palette-bg-primary;
+  box-shadow: 2px 0 24px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
   transition: transform 0.3s ease;
@@ -512,7 +513,7 @@ const closeMobileMenu = () => {
   justify-content: space-between;
   align-items: center;
   padding: $spacing-xl $spacing-lg;
-  border-bottom: 1px solid rgba($theme-palette-bg-primary, 0.1);
+  border-bottom: 1px solid $theme-palette-border;
   flex-shrink: 0;
 
   @media (prefers-color-scheme: light) {
@@ -523,7 +524,7 @@ const closeMobileMenu = () => {
 .mobile-menu-title {
   font-size: $theme-font-size-lg;
   font-weight: 600;
-  color: $theme-palette-text-inverse;
+  color: $theme-palette-text-primary;
 
   @media (prefers-color-scheme: light) {
     color: $theme-palette-text-primary;
@@ -573,7 +574,7 @@ const closeMobileMenu = () => {
   align-items: center;
   gap: $spacing-lg;
   padding: $spacing-lg $spacing-xl;
-  color: $theme-palette-text-muted;
+  color: $theme-palette-text-primary;
   text-decoration: none;
   border: none;
   background: none;
@@ -609,7 +610,7 @@ const closeMobileMenu = () => {
 .mobile-menu-footer {
   margin-top: auto;
   padding: 0;
-  border-top: 1px solid rgba($theme-palette-bg-primary, 0.1);
+  border-top: 1px solid $theme-palette-border;
   flex-shrink: 0;
 
   @media (prefers-color-scheme: light) {
