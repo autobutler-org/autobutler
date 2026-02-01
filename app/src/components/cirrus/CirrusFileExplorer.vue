@@ -150,6 +150,7 @@
               @open-file="handleOpenFile"
               @select="handleSelectFile"
               @context-menu="handleContextMenu"
+              @rename="handleRename"
               @files-uploaded="handleFilesUploaded"
               @deselect-all="handleDeselectAll"
               @file-move="onFileMove"
