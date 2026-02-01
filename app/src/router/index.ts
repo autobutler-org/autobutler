@@ -1,52 +1,62 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
+import BooksView from '@/views/BooksView.vue';
+import CirrusView from '@/views/CirrusView.vue';
+import DataMigrationView from '@/views/DataMigrationView.vue';
+import DevicesView from '@/views/DevicesView.vue';
+import GoogleTakeoutView from '@/views/GoogleTakeoutView.vue';
+import HomeView from '@/views/HomeView.vue';
+import MigrationServiceView from '@/views/MigrationServiceView.vue';
+import PhotosView from '@/views/PhotosView.vue';
+import SettingsView from '@/views/SettingsView.vue';
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
       name: 'home',
-      component: import('@/views/HomeView.vue'),
+      component: HomeView,
     },
     {
       path: '/cirrus/:pathMatch(.*)*',
       name: 'cirrus',
-      component: import('@/views/CirrusView.vue'),
+      component: CirrusView,
     },
     {
       path: '/photos',
       name: 'photos',
-      component: import('@/views/PhotosView.vue'),
+      component: PhotosView,
     },
     {
       path: '/books',
       name: 'books',
-      component: import('@/views/BooksView.vue'),
+      component: BooksView,
     },
     {
       path: '/devices',
       name: 'devices',
-      component: import('@/views/DevicesView.vue'),
+      component: DevicesView,
     },
     {
       path: '/settings',
       name: 'settings',
-      component: import('@/views/SettingsView.vue'),
+      component: SettingsView,
     },
     {
       path: '/data-migration',
       name: 'data-migration',
-      component: import('@/views/DataMigrationView.vue'),
+      component: DataMigrationView,
     },
     {
       path: '/data-migration/google-takeout',
       name: 'google-takeout',
-      component: import('@/views/GoogleTakeoutView.vue'),
+      component: GoogleTakeoutView,
     },
     {
       path: '/migrationservice',
       name: 'migration-service',
-      component: import('@/views/MigrationServiceView.vue'),
+      component: MigrationServiceView,
     },
   ],
 });
