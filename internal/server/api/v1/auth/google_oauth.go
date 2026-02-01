@@ -38,8 +38,6 @@ func init() {
 		Scopes: []string{
 			"https://www.googleapis.com/auth/photoslibrary.readonly",
 			"https://www.googleapis.com/auth/drive.readonly",
-			"https://www.googleapis.com/auth/userinfo.email",
-			"https://www.googleapis.com/auth/userinfo.profile",
 		},
 		Endpoint: google.Endpoint,
 	}
@@ -156,7 +154,7 @@ var googleCallbackRoute = serverutil.ApiRoute(
 	<script>
 		console.log('OAuth callback page loaded');
 		console.log('Email: %s, Name: %s');
-		
+
 		// Store in localStorage on port 8080
 		try {
 			localStorage.setItem('google_auth_email', '%s');
@@ -167,7 +165,7 @@ var googleCallbackRoute = serverutil.ApiRoute(
 		} catch (e) {
 			console.error('Failed to store in localStorage:', e);
 		}
-		
+
 		// Redirect to frontend with credentials in URL hash (will be parsed by frontend)
 		console.log('Redirecting to frontend...');
 		setTimeout(() => {
