@@ -38,6 +38,8 @@ func init() {
 		Scopes: []string{
 			"https://www.googleapis.com/auth/photoslibrary.readonly",
 			"https://www.googleapis.com/auth/drive.readonly",
+			"https://www.googleapis.com/auth/userinfo.email",
+			"https://www.googleapis.com/auth/userinfo.profile",
 		},
 		Endpoint: google.Endpoint,
 	}
