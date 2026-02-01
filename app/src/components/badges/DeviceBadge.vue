@@ -62,7 +62,7 @@ defineProps<{
   }
 
   .device-badge-name {
-    display: none;
+    max-width: 1ch;
   }
 }
 </style>
