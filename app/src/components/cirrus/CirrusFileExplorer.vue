@@ -19,7 +19,9 @@
               </option>
             </select>
           </template>
-          <span v-if="uploadProgress" class="upload-progress">{{ uploadProgress }}</span>
+          <span v-if="uploadProgress" class="upload-progress">{{
+            uploadProgress
+          }}</span>
           <button
             class="action-btn toolbar-rect upload-rect"
             type="button"
@@ -64,7 +66,11 @@
 
         <div class="view-switcher header-right">
           <button
-            :class="['action-btn', 'toolbar-rect', view === 'list' ? 'active' : '']"
+            :class="[
+              'btn',
+              'btn--icon',
+              view === 'list' ? 'btn--primary' : 'btn--secondary',
+            ]"
             @click="switchView('list')"
             title="List View"
             type="button"
@@ -72,7 +78,11 @@
             <ListViewIcon />
           </button>
           <button
-            :class="['action-btn', 'toolbar-rect', view === 'grid' ? 'active' : '']"
+            :class="[
+              'btn',
+              'btn--icon',
+              view === 'grid' ? 'btn--primary' : 'btn--secondary',
+            ]"
             @click="switchView('grid')"
             title="Grid View"
             type="button"
@@ -105,32 +115,6 @@
             />
             <span>Show devices</span>
           </label>
-          <div class="view-switcher">
-            <button
-              :class="[
-                'btn',
-                'btn--icon',
-                view === 'list' ? 'btn--primary' : 'btn--secondary',
-              ]"
-              @click="switchView('list')"
-              title="List View"
-              type="button"
-            >
-              <ListViewIcon />
-            </button>
-            <button
-              :class="[
-                'btn',
-                'btn--icon',
-                view === 'grid' ? 'btn--primary' : 'btn--secondary',
-              ]"
-              @click="switchView('grid')"
-              title="Grid View"
-              type="button"
-            >
-              <GridViewIcon />
-            </button>
-          </div>
         </div>
       </div>
 
@@ -1213,6 +1197,17 @@ const handleDelete = (file: CirrusFileNode) => {
 .view-switcher {
   display: flex;
   gap: $spacing-xs;
+  align-items: center;
+
+  .btn {
+    min-width: 44px;
+    min-height: 40px;
+    border-radius: $border-radius-md;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: $spacing-xs;
+  }
 }
 
 /* File Details Dialog Styles */
