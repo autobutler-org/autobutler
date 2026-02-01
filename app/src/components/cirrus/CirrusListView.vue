@@ -87,6 +87,7 @@
             <DeviceBadge
               v-if="props.showDeviceBadges && file.deviceName"
               :device-name="file.deviceName"
+              @click.stop="emit('rename', file)"
             />
           </td>
           <td class="file-table-cell file-table-size">
@@ -147,6 +148,7 @@ const emit = defineEmits<{
   'open-file': [file: CirrusFileNode];
   'context-menu': [event: MouseEvent, file: CirrusFileNode];
   select: [file: CirrusFileNode, event?: MouseEvent];
+  rename: [file: CirrusFileNode];
   'files-uploaded': [files: CirrusFileNode[]];
   'deselect-all': [];
   'file-move': [
