@@ -71,7 +71,13 @@
               :device-name="file.deviceName"
               @click.stop="emit('rename', file)"
             />
-            <div v-if="!CirrusService.isDirectory(file)" class="grid-view-size">
+            <div
+              v-if="
+                props.showFileSizes !== false &&
+                !CirrusService.isDirectory(file)
+              "
+              class="grid-view-size"
+            >
               {{ CirrusService.formatBytes(CirrusService.getFileSize(file)) }}
             </div>
           </div>
@@ -105,6 +111,7 @@ const props = defineProps<{
   files: CirrusFileNode[];
   currentPath: string;
   showDeviceBadges?: boolean;
+  showFileSizes?: boolean;
   selectedFiles?: CirrusFileNode[];
 }>();
 

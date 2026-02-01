@@ -145,6 +145,7 @@
               :files="files"
               :current-path="currentPath"
               :show-device-badges="showDeviceBadges"
+              :show-file-sizes="showFileSizes"
               :selected-files="selectedFiles"
               @navigate-folder="handleNavigateFolder"
               @open-file="handleOpenFile"
@@ -376,7 +377,14 @@ import {
   joinPathsNormalized,
   normalizePath,
 } from '@/util/filepath';
-import { computed, onMounted, ref, ref as vueRef, watch } from 'vue';
+import {
+  computed,
+  onMounted,
+  onUnmounted,
+  ref,
+  ref as vueRef,
+  watch,
+} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import GridViewIcon from '../icons/GridViewIcon.vue';
 import ListViewIcon from '../icons/ListViewIcon.vue';
@@ -521,11 +529,6 @@ const fetchDevices = async () => {
   }
 };
 
-onMounted(() => {
-  fetchFiles();
-  fetchDevices();
-});
-
 const route = useRoute();
 const router = useRouter();
 
@@ -536,6 +539,9 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 const view = ref<'list' | 'grid'>('list');
 const showDeviceBadges = ref(true);
+const showFileSizes = ref(true);
+
+const isMobileSize = () => window.innerWidth <= 640;
 
 // File viewer state
 const fileViewerOpen = ref(false);
@@ -924,6 +930,23 @@ const handleFileDetails = (file: CirrusFileNode) => {
 const handleDelete = (file: CirrusFileNode) => {
   openDeleteDialog(file);
 };
+
+onMounted(() => {
+  fetchFiles();
+  fetchDevices();
+  showFileSizes.value = !isMobileSize();
+
+  // On window size change, check if we should show file sizes
+  window.addEventListener('resize', () => {
+    showFileSizes.value = !isMobileSize();
+  });
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', () => {
+    showFileSizes.value = !isMobileSize();
+  });
+});
 </script>
 
 <style lang="scss" scoped>
@@ -1322,5 +1345,58 @@ const handleDelete = (file: CirrusFileNode) => {
   min-width: 7.5rem;
   max-width: 13.75rem;
   margin-right: 0.5rem;
+}
+
+// Mobile-specific adjustments
+@media (max-width: 640px) {
+  .file-explorer-header-row {
+    /* allow wrapping and make space for controls */
+    flex-wrap: wrap;
+    gap: $spacing-xs;
+    align-items: center;
+  }
+
+  /* hide the large centered title on small screens to avoid overlapping controls */
+  .file-explorer-title.centered-title {
+    display: none;
+  }
+
+  .file-explorer {
+    padding: $spacing-md;
+  }
+
+  .action-btn {
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 420px) {
+  /* compact header layout for very small screens */
+  .file-explorer-header-row {
+    justify-content: space-between;
+  }
+
+  .size-toggle span {
+    display: inline-block;
+  }
+}
+
+/* Hide file size on small screens but keep device badge visible when toggled off */
+@media (max-width: 640px) {
+  /* List view: hide the size header and size cells */
+  .file-table-header-cell--size {
+    display: none;
+  }
+
+  .file-table-cell.file-table-size {
+    display: none;
+  }
+
+  /* Grid view: hide the small size label */
+  .grid-view-size {
+    display: none;
+  }
 }
 </style>

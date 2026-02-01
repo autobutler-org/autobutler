@@ -39,4 +39,30 @@ defineProps<{
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+// Improve readability on small/mobile screens
+@media (max-width: 640px) {
+  .device-badge-container {
+    padding: 4px 8px;
+    gap: $spacing-xs;
+    font-size: $theme-font-size-sm;
+  }
+
+  .device-badge-name {
+    max-width: 120px;
+  }
+}
+
+// On very small screens, collapse badge to icon-only to avoid overlaying text
+@media (max-width: 420px) {
+  .device-badge-container {
+    padding: 4px;
+    gap: 0.25rem;
+    border-radius: $border-radius;
+  }
+
+  .device-badge-name {
+    max-width: 5ch;
+  }
+}
 </style>
