@@ -15,8 +15,8 @@
             v-for="column in displayedColumns"
             :key="column.column ? column.column : ''"
             :header="column.column"
-            :active-sort-column="sortColumn"
-            :sort-direction="sortDirection"
+            :active-sort-column="props.sortColumn"
+            :sort-direction="props.sortDirection"
             :align-direction="column.alignDirection"
             @toggle:sort="toggleSort"
           />
@@ -25,20 +25,20 @@
               class="sort-switcher"
               type="button"
               :title="
-                mixedSorting
+                props.mixedSorting
                   ? 'Switch to Folders First sorting'
                   : 'Switch to Mixed sorting'
               "
               @click="toggleMixedSorting"
             >
-              <SortSwitcherIcon :mixed-sorting="mixedSorting" />
+              <SortSwitcherIcon :mixed-sorting="props.mixedSorting" />
             </button>
           </th>
         </tr>
       </thead>
       <tbody id="file-explorer-list" class="file-table-body">
         <tr
-          v-for="file in sortedFiles"
+          v-for="file in props.files"
           :key="`${file.fullPath}-${file.deviceSerial}`"
           class="file-table-row file-node"
           :class="{
@@ -143,6 +143,10 @@ const props = defineProps<{
   showDeviceBadges?: boolean;
   showFileSizes?: boolean;
   selectedFiles?: CirrusFileNode[];
+  // Parent-controlled sorting
+  sortColumn: SortColumn;
+  sortDirection: SortDirection;
+  mixedSorting: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -153,6 +157,8 @@ const emit = defineEmits<{
   rename: [file: CirrusFileNode];
   'files-uploaded': [files: CirrusFileNode[]];
   'deselect-all': [];
+  'request-sort': [column: SortColumn];
+  'toggle-mixed-sorting': [];
   'file-move': [
     moves: Array<{
       oldPath: string;
@@ -203,10 +209,6 @@ const handleFileDragStart = (event: DragEvent, file: CirrusFileNode) => {
   }
 };
 
-// Sorting state
-const sortColumn = ref<SortColumn>(null);
-const sortDirection = ref<SortDirection>('asc');
-const mixedSorting = ref(false);
 const sortColumns: {
   column: SortColumn;
   alignDirection?: HeaderAlignDirection;
@@ -361,82 +363,12 @@ const handleDirectoryDrop = async (event: DragEvent, file: CirrusFileNode) => {
   }
 };
 
-// Toggle mixed sorting mode (folders mixed with files vs folders first)
-const toggleMixedSorting = () => {
-  mixedSorting.value = !mixedSorting.value;
+const toggleSort = (column: SortColumn): void => {
+  emit('request-sort', column);
 };
 
-// Sorted files computed property
-// TODO: Move the sorting into a super generic utility module, which allows you to sort by "sections" (e.g., folders first)
-// or as a whole, accepting predicates for the "sections"
-const sortedFiles = computed(() => {
-  if (!sortColumn.value) {
-    // Default: folders first (unless mixed), then alphabetically by name
-    return [...props.files].sort((a, b) => {
-      const aIsDir = CirrusService.isDirectory(a);
-      const bIsDir = CirrusService.isDirectory(b);
-
-      // Folders first unless mixed sorting is enabled
-      if (!mixedSorting.value) {
-        if (aIsDir && !bIsDir) return -1;
-        if (!aIsDir && bIsDir) return 1;
-      }
-
-      return CirrusService.getFileName(a).localeCompare(
-        CirrusService.getFileName(b),
-        undefined,
-        {
-          numeric: true,
-          sensitivity: 'base',
-        },
-      );
-    });
-  }
-
-  return [...props.files].sort((a, b) => {
-    const aIsDir = CirrusService.isDirectory(a);
-    const bIsDir = CirrusService.isDirectory(b);
-
-    // Folders first unless mixed sorting is enabled
-    if (!mixedSorting.value) {
-      if (aIsDir && !bIsDir) return -1;
-      if (!aIsDir && bIsDir) return 1;
-    }
-
-    let comparison = 0;
-
-    if (sortColumn.value === 'name') {
-      comparison = CirrusService.getFileName(a).localeCompare(
-        CirrusService.getFileName(b),
-        undefined,
-        {
-          numeric: true,
-          sensitivity: 'base',
-        },
-      );
-    } else if (sortColumn.value === 'size') {
-      comparison = CirrusService.getFileSize(a) - CirrusService.getFileSize(b);
-    } else if (sortColumn.value === 'device') {
-      comparison = (a.deviceName || '').localeCompare(
-        b.deviceName || '',
-        undefined,
-        { sensitivity: 'base' },
-      );
-    }
-
-    return sortDirection.value === 'asc' ? comparison : -comparison;
-  });
-});
-
-const toggleSort = (column: SortColumn): void => {
-  if (sortColumn.value === column) {
-    // Toggle direction
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
-  } else {
-    // New column, start ascending
-    sortColumn.value = column;
-    sortDirection.value = 'asc';
-  }
+const toggleMixedSorting = () => {
+  emit('toggle-mixed-sorting');
 };
 
 // TODO: CirrusGridView has the exact same functions/code, after this point
