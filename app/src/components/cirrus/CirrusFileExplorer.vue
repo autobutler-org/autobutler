@@ -606,6 +606,16 @@ const sortedFiles = computed(() => {
   });
 });
 
+// Handle sort requests from child views
+const onRequestSort = (col: SortColumn | null) => {
+  if (sortColumn.value === col) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortColumn.value = col;
+    sortDirection.value = 'asc';
+  }
+};
+
 const isMobileSize = () => window.innerWidth <= 640;
 
 // File viewer state
@@ -762,7 +772,8 @@ const handleSelectFile = (file: CirrusFileNode, event?: MouseEvent) => {
     lastSelectedFile.value = file;
   } else if (event && event.shiftKey && lastSelectedFile.value) {
     // Range select (from lastSelectedFile to clicked)
-    const filesList = files.value;
+    // Use the parent-sorted order for range selection
+    const filesList = sortedFiles.value;
     const startIdx = filesList.findIndex(
       (f) => f.fullPath === lastSelectedFile.value?.fullPath,
     );
@@ -994,15 +1005,6 @@ const handleFileDetails = (file: CirrusFileNode) => {
 
 const handleDelete = (file: CirrusFileNode) => {
   openDeleteDialog(file);
-};
-
-const onRequestSort = (column: SortColumn) => {
-  if (sortColumn.value === column) {
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
-  } else {
-    sortColumn.value = column;
-    sortDirection.value = 'asc';
-  }
 };
 
 onMounted(() => {

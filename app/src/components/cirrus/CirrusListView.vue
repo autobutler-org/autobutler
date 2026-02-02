@@ -157,7 +157,7 @@ const emit = defineEmits<{
   rename: [file: CirrusFileNode];
   'files-uploaded': [files: CirrusFileNode[]];
   'deselect-all': [];
-  'request-sort': [column: SortColumn];
+  'request-sort': [column: SortColumn | null];
   'toggle-mixed-sorting': [];
   'file-move': [
     moves: Array<{
