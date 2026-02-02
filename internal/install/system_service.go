@@ -13,6 +13,7 @@ After=network.target
 [Service]
 ExecStart=/usr/local/bin/autobutler serve
 Environment="PORT=80"
+Environment="GIN_MODE=release"
 Restart=always
 StandardOutput=append:/var/log/autobutler.app
 StandardError=append:/var/log/autobutler.err
@@ -36,6 +37,8 @@ WantedBy=multi-user.target`
     <dict>
         <key>PORT</key>
         <string>80</string>
+        <key>GIN_MODE</key>
+        <string>release</string>
     </dict>
     <key>RunAtLoad</key>
     <true/>
