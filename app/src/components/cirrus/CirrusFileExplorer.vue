@@ -142,11 +142,14 @@
           >
             <component
               :is="fileViewComponent"
-              :files="files"
+              :files="sortedFiles"
               :current-path="currentPath"
               :show-device-badges="showDeviceBadges"
               :show-file-sizes="showFileSizes"
               :selected-files="selectedFiles"
+              :sort-column="sortColumn"
+              :sort-direction="sortDirection"
+              :mixed-sorting="mixedSorting"
               @navigate-folder="handleNavigateFolder"
               @open-file="handleOpenFile"
               @select="handleSelectFile"
@@ -155,6 +158,12 @@
               @files-uploaded="handleFilesUploaded"
               @deselect-all="handleDeselectAll"
               @file-move="onFileMove"
+              @request-sort="onRequestSort"
+              @toggle-mixed-sorting="
+                () => {
+                  mixedSorting = !mixedSorting;
+                }
+              "
             />
           </div>
         </template>
@@ -541,6 +550,72 @@ const view = ref<'list' | 'grid'>('list');
 const showDeviceBadges = ref(true);
 const showFileSizes = ref(true);
 
+// Sorting state — parent manages sorting and passes sorted files to children
+type SortColumn = 'name' | 'size' | 'device' | null;
+type SortDirection = 'asc' | 'desc';
+const sortColumn = ref<SortColumn>(null);
+const sortDirection = ref<SortDirection>('asc');
+const mixedSorting = ref(false);
+
+// Compute sorted files here (parent-controlled)
+const sortedFiles = computed(() => {
+  const src = files.value || [];
+  // If no explicit sort column, use default behavior: folders first unless mixed, then name
+  if (!sortColumn.value) {
+    return [...src].sort((a, b) => {
+      const aIsDir = a.isDir;
+      const bIsDir = b.isDir;
+      if (!mixedSorting.value) {
+        if (aIsDir && !bIsDir) return -1;
+        if (!aIsDir && bIsDir) return 1;
+      }
+      return CirrusService.getFileName(a).localeCompare(
+        CirrusService.getFileName(b),
+        undefined,
+        { numeric: true, sensitivity: 'base' },
+      );
+    });
+  }
+
+  return [...src].sort((a, b) => {
+    const aIsDir = a.isDir;
+    const bIsDir = b.isDir;
+    if (!mixedSorting.value) {
+      if (aIsDir && !bIsDir) return -1;
+      if (!aIsDir && bIsDir) return 1;
+    }
+
+    let comparison = 0;
+    if (sortColumn.value === 'name') {
+      comparison = CirrusService.getFileName(a).localeCompare(
+        CirrusService.getFileName(b),
+        undefined,
+        { numeric: true, sensitivity: 'base' },
+      );
+    } else if (sortColumn.value === 'size') {
+      comparison = CirrusService.getFileSize(a) - CirrusService.getFileSize(b);
+    } else if (sortColumn.value === 'device') {
+      comparison = (a.deviceName || '').localeCompare(
+        b.deviceName || '',
+        undefined,
+        { sensitivity: 'base' },
+      );
+    }
+
+    return sortDirection.value === 'asc' ? comparison : -comparison;
+  });
+});
+
+// Handle sort requests from child views
+const onRequestSort = (col: SortColumn | null) => {
+  if (sortColumn.value === col) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortColumn.value = col;
+    sortDirection.value = 'asc';
+  }
+};
+
 const isMobileSize = () => window.innerWidth <= 640;
 
 // File viewer state
@@ -697,7 +772,8 @@ const handleSelectFile = (file: CirrusFileNode, event?: MouseEvent) => {
     lastSelectedFile.value = file;
   } else if (event && event.shiftKey && lastSelectedFile.value) {
     // Range select (from lastSelectedFile to clicked)
-    const filesList = files.value;
+    // Use the parent-sorted order for range selection
+    const filesList = sortedFiles.value;
     const startIdx = filesList.findIndex(
       (f) => f.fullPath === lastSelectedFile.value?.fullPath,
     );

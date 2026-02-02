@@ -113,6 +113,10 @@ const props = defineProps<{
   showDeviceBadges?: boolean;
   showFileSizes?: boolean;
   selectedFiles?: CirrusFileNode[];
+  // Parent-controlled sorting (optional for grid)
+  sortColumn: 'name' | 'size' | 'device' | null;
+  sortDirection: 'asc' | 'desc';
+  mixedSorting: boolean;
 }>();
 
 const emit = defineEmits<{
