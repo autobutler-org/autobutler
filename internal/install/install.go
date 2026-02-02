@@ -14,7 +14,16 @@ func installSystemdService() error {
 	if err := os.WriteFile(serviceFilePath, []byte(buildServiceFile()), 0644); err != nil {
 		return fmt.Errorf("failed to write systemd service file: %w", err)
 	}
-	if err := exec.Command("systemctl", "start", strings.Split(systemdServiceName, ".")[0]).Run(); err != nil {
+	// Reload systemd to recognize the new service
+	if err := exec.Command("systemctl", "daemon-reload").Run(); err != nil {
+		return fmt.Errorf("failed to reload systemd daemon: %w", err)
+	}
+	// Enable the service to start on boot
+	if err := exec.Command("systemctl", "enable", strings.Split(systemdServiceName, ".")[0]).Run(); err != nil {
+		return fmt.Errorf("failed to enable systemctl service: %w", err)
+	}
+	// Start the service immediately
+	if err := exec.Command("systemctl", "restart", strings.Split(systemdServiceName, ".")[0]).Run(); err != nil {
 		return fmt.Errorf("failed to start systemctl service: %w", err)
 	}
 	return nil
