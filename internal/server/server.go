@@ -28,7 +28,13 @@ func setupServices(deps deputil.Dependencies) error {
 
 func setupSwagger(router *gin.Engine) {
 	docs.SwaggerInfo.BasePath = "/api/v1"
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	router.GET("/swagger", func(c *gin.Context) {
+		c.Redirect(302, "/swagger/index.html")
+	})
+	router.GET("/swagger/", func(c *gin.Context) {
+		c.Redirect(302, "/swagger/index.html")
+	})
+	router.GET("/swagger/:any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 }
 
 func StartServer(deps deputil.Dependencies) error {
