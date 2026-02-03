@@ -10,6 +10,15 @@
         >
           <img src="/img/github/github-mark-white.svg" alt="GitHub logo" />
         </a>
+        <a
+          :href="swaggerLink"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="swagger-link"
+        >
+          <img src="/favicons/swagger.png" alt="Swagger logo" />
+          Interactive API Docs
+        </a>
       </div>
 
       <div class="storage-bar-container">
@@ -94,6 +103,11 @@ const loadStorageData = async () => {
     isLoading.value = false;
   }
 };
+
+const swaggerLink =
+  import.meta.env.MODE === 'development'
+    ? 'http://localhost:8080/swagger'
+    : '/swagger';
 
 onMounted(() => {
   loadStorageData();
@@ -225,5 +239,21 @@ onMounted(() => {
 .storage-error {
   color: $theme-palette-text-secondary;
   opacity: 0.7;
+}
+
+.swagger-link {
+  // Same as other links, like top nav
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $theme-font-size-sm;
+  color: $theme-palette-text-muted;
+  text-decoration: none;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: $theme-palette-text-primary;
+    text-decoration: underline;
+  }
 }
 </style>

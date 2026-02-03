@@ -13,10 +13,9 @@ func (r *router) Routes() []*serverutil.Route {
 		deleteFilesRoute,
 		downloadFileRoute,
 		listFilesRoute,
-		listFilesNestedRoute,
 		moveFileRoute,
 		newFolderRoute,
-		uploadNestedFilesRoutes,
-		uploadRootFilesRoute,
+		uploadFilesRoute,
+		uploadFilesNestedRoute,
 	}
 }

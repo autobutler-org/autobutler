@@ -1,6 +1,7 @@
 package server
 
 import (
+	docs "autobutler/docs/swagger"
 	"autobutler/internal/server/middleware"
 	"autobutler/pkg/botel"
 	"autobutler/pkg/util/deputil"
@@ -12,6 +13,8 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func setupServices(deps deputil.Dependencies) error {
@@ -21,6 +24,17 @@ func setupServices(deps deputil.Dependencies) error {
 	go deps.Worker().Process()
 	go deps.Worker().LogErrors()
 	return nil
+}
+
+func setupSwagger(router *gin.Engine) {
+	docs.SwaggerInfo.BasePath = "/api/v1"
+	router.GET("/swagger", func(c *gin.Context) {
+		c.Redirect(302, "/swagger/index.html")
+	})
+	router.GET("/swagger/", func(c *gin.Context) {
+		c.Redirect(302, "/swagger/index.html")
+	})
+	router.GET("/swagger/:any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 }
 
 func StartServer(deps deputil.Dependencies) error {
@@ -49,6 +63,7 @@ func StartServer(deps deputil.Dependencies) error {
 	}
 
 	router := gin.Default()
+
 	// IMPORTANT: middleware.Use MUST be called before setupRoutes
 	middleware.Use(router, deps)
 	setupRoutes(router)
@@ -56,6 +71,8 @@ func StartServer(deps deputil.Dependencies) error {
 	if port == "" {
 		port = "8080"
 	}
+
+	setupSwagger(router)
 
 	if err := router.Run(fmt.Sprintf(":%s", port)); err != nil {
 		return err

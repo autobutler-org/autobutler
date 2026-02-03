@@ -21,6 +21,8 @@ jobs:
           go-version-file: go.mod
       - name: Setup sqlc
         uses: ./.github/actions/setup-sqlc
+      - name: Setup swag
+        uses: ./.github/actions/setup-swag
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:

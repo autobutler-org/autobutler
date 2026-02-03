@@ -30,18 +30,31 @@ export default class HttpService {
   ): Promise<Response> =>
     HttpService._genericRequest(url, 'DELETE', undefined, options);
 
-  static get = async (url: string, options?: RequestInit): Promise<Response> =>
-    HttpService._genericRequest(url, 'GET', undefined, options);
+  static get = async (
+    url: string,
+    queryParams?: URLSearchParams,
+    options?: RequestInit,
+  ): Promise<Response> =>
+    HttpService._genericRequest(
+      queryParams ? url + `?${queryParams}` : url,
+      'GET',
+      undefined,
+      options,
+    );
 
   static getAsJson = async <T>(
     url: string,
+    queryParams?: URLSearchParams,
     options?: RequestInit,
   ): Promise<T> =>
-    HttpService._genericRequest(url, 'GET', undefined, options).then(
-      async (response: Response) => {
-        return response.json() as Promise<T>;
-      },
-    );
+    HttpService._genericRequest(
+      queryParams ? url + `?${queryParams}` : url,
+      'GET',
+      undefined,
+      options,
+    ).then(async (response: Response) => {
+      return response.json() as Promise<T>;
+    });
 
   static put = async (
     url: string,
