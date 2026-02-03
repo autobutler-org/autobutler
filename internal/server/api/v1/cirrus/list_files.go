@@ -3,6 +3,7 @@ package v1_files
 import (
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/storageutil"
+	"fmt"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
@@ -32,6 +33,7 @@ type FileNodeJSON struct {
 // @Router /cirrus [get]
 func listFiles(c *gin.Context) *serverutil.Response {
 	rootDir := c.Query("rootDir")
+	fmt.Printf("List %s\n", rootDir)
 	serial := c.Query("serial")
 
 	devices, err := storageutil.GetManagedDevices()

@@ -25,9 +25,12 @@ export default class CirrusService {
    */
   static getFiles = async (path: string): Promise<CirrusFileNode[]> => {
     const normalizedPath = CirrusService.normalizePath(path);
-    return await HttpService.getAsJson<CirrusFileNode[]>('/api/v1/cirrus', {
-      body: new URLSearchParams({ filePath: normalizedPath }),
-    });
+    return await HttpService.getAsJson<CirrusFileNode[]>(
+      '/api/v1/cirrus',
+      normalizedPath
+        ? new URLSearchParams({ rootDir: normalizedPath })
+        : undefined,
+    );
   };
 
   /**
