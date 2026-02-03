@@ -20,8 +20,8 @@ type FileNodeJSON struct {
 }
 
 // getCirrusFilesAcrossDevices godoc
-// @Summary merges files across all managed devices for the given filePath
-// @Schemes
+// @Summary Lists files on a file path
+// @Schemes http https
 // @Description merges files across all managed devices for the given filePath. If deviceSerial is empty, list files across all devices. Otherwise, only for the specified device
 // @Tags cirrus
 // @Produce json
