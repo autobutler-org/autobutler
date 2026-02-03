@@ -1,0 +1,13 @@
+name: Setup swag
+runs:
+  using: composite
+  steps:
+    - name: Install swag
+      shell: bash
+      run: |
+        make setup/swag
+
+    - name: Fix PATH
+      shell: bash
+      run: |
+        echo "${HOME}/go/bin" >> ${GITHUB_PATH}
