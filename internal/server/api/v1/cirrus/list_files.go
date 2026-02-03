@@ -19,41 +19,44 @@ type FileNodeJSON struct {
 	DeviceSerial string `json:"deviceSerial"`
 }
 
-// getCirrusFilesAcrossDevices godoc
-// @Summary Lists files on a file path
+// listFiles godoc
+// @Summary Lists files
 // @Schemes http https
 // @Description merges files across all managed devices for the given filePath. If deviceSerial is empty, list files across all devices. Otherwise, only for the specified device
 // @Tags cirrus
 // @Produce json
 // @Success 200 {array} FileNodeJSON
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Param filePath path string false "File path to list"
+// @Param rootDir query string false "File dir to list"
 // @Param serial query string false "Device serial number to filter by"
 // @Router /cirrus [get]
-func getCirrusFilesForDevice(filePath string, deviceSerial string) ([]*storageutil.DeviceFileInfo, error) {
+func listFiles(c *gin.Context) *serverutil.Response {
+	rootDir := c.Query("rootDir")
+	serial := c.Query("serial")
+
 	devices, err := storageutil.GetManagedDevices()
 	if err != nil {
-		return nil, err
+		return serverutil.InternalServerError(err)
 	}
 	var selectedDevices []storageutil.ManagedDevice
-	if deviceSerial == "" {
+	if serial == "" {
 		selectedDevices = devices
 	} else {
 		for _, d := range devices {
-			if d.UsbInfo != nil && d.UsbInfo.GetSerial() == deviceSerial {
+			if d.UsbInfo != nil && d.UsbInfo.GetSerial() == serial {
 				selectedDevices = append(selectedDevices, d)
 				break
 			}
 		}
 		if len(selectedDevices) == 0 {
-			return nil, nil // Device not found, return empty
+			return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData([]FileNodeJSON{})
 		}
 	}
 	var allFiles []*storageutil.DeviceFileInfo
 	for _, device := range selectedDevices {
 		cirrusDir := device.CirrusDir
-		fullPathDir := filepath.Join(cirrusDir, filePath)
-		deviceSerial := deviceSerial
+		fullPathDir := filepath.Join(cirrusDir, rootDir)
+		deviceSerial := serial
 		if device.UsbInfo != nil {
 			deviceSerial = device.UsbInfo.GetSerial()
 		}
@@ -77,19 +80,9 @@ func getCirrusFilesForDevice(filePath string, deviceSerial string) ([]*storageut
 		filteredFiles = append(filteredFiles, file)
 	}
 	allFiles = filteredFiles
-	return allFiles, nil
-}
-
-func cirrusRouteCommon(c *gin.Context, filePath string) *serverutil.Response {
-	serial := c.Query("serial")
-	data, err := getCirrusFilesForDevice(filePath, serial)
-	if err != nil {
-		return serverutil.NewResponse().WithStatusCode(500).WithError(err)
-	}
-
 	// Convert to JSON-serializable format
-	jsonData := make([]FileNodeJSON, len(data))
-	for i, file := range data {
+	jsonData := make([]FileNodeJSON, len(allFiles))
+	for i, file := range allFiles {
 		jsonData[i] = FileNodeJSON{
 			Name:         file.Name(),
 			Size:         file.Size(),
@@ -100,19 +93,11 @@ func cirrusRouteCommon(c *gin.Context, filePath string) *serverutil.Response {
 			DeviceSerial: file.DeviceSerial,
 		}
 	}
-
 	return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(jsonData)
 }
 
 var listFilesRoute = serverutil.ApiRoute(
 	"GET", "/cirrus", func(c *gin.Context) *serverutil.Response {
-		return cirrusRouteCommon(c, "")
-	},
-)
-
-var listFilesNestedRoute = serverutil.ApiRoute(
-	"GET", "/cirrus/*filePath", func(c *gin.Context) *serverutil.Response {
-		filePath := c.Param("filePath")
-		return cirrusRouteCommon(c, filePath)
+		return listFiles(c)
 	},
 )

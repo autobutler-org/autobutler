@@ -42,6 +42,7 @@
     "fstype",
     "githubutil",
     "GOARCH",
+    "godoc",
     "goexif",
     "gofmt",
     "gonic",

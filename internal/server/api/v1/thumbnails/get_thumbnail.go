@@ -20,6 +20,16 @@ const (
 	thumbnailHeight = 400
 )
 
+// getThumbnail godoc
+// @Summary Get thumbnail for an image
+// @Description Generates and returns a thumbnail (resized image) for the specified file
+// @Tags thumbnails
+// @Produce image/png image/jpeg
+// @Param filePath path string true "Path to the image file"
+// @Success 200 {file} file
+// @Failure 404 {object} serverutil.Response "Not Found"
+// @Failure 500 {object} serverutil.Response "Internal Server Error"
+// @Router /thumbnails/{filePath} [get]
 var getThumbnailRoute = serverutil.ApiRoute(
 	"GET", "/thumbnails/*filePath", func(c *gin.Context) *serverutil.Response {
 		filePath := c.Param("filePath")

@@ -1,44 +1,18 @@
 package v1_books
 
-import (
-	"autobutler/pkg/util/bookutil"
-	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/storageutil"
+import "autobutler/pkg/util/serverutil"
 
-	"github.com/gin-gonic/gin"
-)
+// Router for /api/v1/books endpoints
+// Registers the /books route
 
-type BookJSON struct {
-	RelPath  string `json:"relPath"`
-	FileName string `json:"fileName"`
-	Size     int64  `json:"size"`
-	Type     string `json:"type"`
-	MTime    int64  `json:"mtime"`
+type router struct{}
+
+func NewRouter() serverutil.Router {
+	return &router{}
 }
 
-func getBooksHandler(c *gin.Context) *serverutil.Response {
-	rootDir := storageutil.GetCirrusDir()
-	books, err := bookutil.FindAllBooksRecursively(rootDir)
-	if err != nil {
-		return serverutil.NewResponse().WithStatusCode(500).WithError(err)
+func (r *router) Routes() []*serverutil.Route {
+	return []*serverutil.Route{
+		listBooksRoute,
 	}
-
-	result := make([]BookJSON, len(books))
-	for i, book := range books {
-		info := book.FileInfo
-		fileType := storageutil.DetermineFileTypeFromPath(info.Name())
-		result[i] = BookJSON{
-			RelPath:  book.RelPath,
-			FileName: info.Name(),
-			Size:     info.Size(),
-			MTime:    info.ModTime().Unix(),
-			Type:     string(fileType),
-		}
-	}
-
-	return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(result)
 }
-
-var getBooksRoute = serverutil.ApiRoute(
-	"GET", "/books", getBooksHandler,
-)

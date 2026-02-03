@@ -7,19 +7,34 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var uploadRootFilesRoute = serverutil.ApiRoute(
-	"POST", "/cirrus", func(c *gin.Context) *serverutil.Response {
-		return uploadFilesImpl(c, "")
-	},
-)
-var uploadNestedFilesRoutes = serverutil.ApiRoute(
-	"POST", "/cirrus/*rootDir", func(c *gin.Context) *serverutil.Response {
-		rootDir := c.Param("rootDir")
-		return uploadFilesImpl(c, rootDir)
-	},
-)
+// uploadFiles godoc
+// @Summary Upload files to the top-level directory
+// @Description Upload one or more files via multipart/form-data
+// @Tags cirrus
+// @Accept multipart/form-data
+// @Produce json
+// @Param serial query string false "Device serial number to upload to"
+// @Param file formData file true "File to upload"
+// @Success 200 {object} serverutil.Response "OK"
+// @Failure 400 {object} serverutil.Response "Bad Request"
+// @Router /cirrus [post]
+func uploadFiles(c *gin.Context) *serverutil.Response {
+	return uploadFilesNested(c, "")
+}
 
-func uploadFilesImpl(c *gin.Context, rootDir string) *serverutil.Response {
+// uploadFiles godoc
+// @Summary Upload files to a nested directory
+// @Description Upload one or more files via multipart/form-data
+// @Tags cirrus
+// @Accept multipart/form-data
+// @Produce json
+// @Param rootDir path string true "Directory to upload into"
+// @Param serial query string false "Device serial number to upload to"
+// @Param file formData file true "File to upload"
+// @Success 200 {object} serverutil.Response "OK"
+// @Failure 400 {object} serverutil.Response "Bad Request"
+// @Router /cirrus/{rootDir} [post]
+func uploadFilesNested(c *gin.Context, rootDir string) *serverutil.Response {
 	serial := c.Query("serial")
 	reader, err := c.Request.MultipartReader()
 	if err != nil {
@@ -35,3 +50,15 @@ func uploadFilesImpl(c *gin.Context, rootDir string) *serverutil.Response {
 	}
 	return serverutil.Ok()
 }
+
+var uploadFilesRoute = serverutil.ApiRoute(
+	"POST", "/cirrus", func(c *gin.Context) *serverutil.Response {
+		return uploadFiles(c)
+	},
+)
+
+var uploadFilesNestedRoute = serverutil.ApiRoute(
+	"POST", "/cirrus/*rootDir", func(c *gin.Context) *serverutil.Response {
+		return uploadFilesNested(c, c.Param("rootDir"))
+	},
+)
