@@ -1,0 +1,69 @@
+definitions:
+  serverutil.ContentType:
+    enum:
+    - text/html
+    - application/json
+    type: string
+    x-enum-varnames:
+    - ContentTypeHTML
+    - ContentTypeJSON
+  serverutil.Response:
+    properties:
+      contentType:
+        $ref: '#/definitions/serverutil.ContentType'
+      data: {}
+      error: {}
+      statusCode:
+        type: integer
+    type: object
+  v1_files.FileNodeJSON:
+    properties:
+      deviceName:
+        type: string
+      devicePath:
+        type: string
+      deviceSerial:
+        type: string
+      fullPath:
+        type: string
+      isDir:
+        type: boolean
+      name:
+        type: string
+      size:
+        type: integer
+    type: object
+info:
+  contact: {}
+paths:
+  /cirrus:
+    get:
+      description: merges files across all managed devices for the given filePath.
+        If deviceSerial is empty, list files across all devices. Otherwise, only for
+        the specified device
+      parameters:
+      - description: File path to list
+        in: path
+        name: filePath
+        type: string
+      - description: Device serial number to filter by
+        in: query
+        name: serial
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1_files.FileNodeJSON'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: merges files across all managed devices for the given filePath
+      tags:
+      - cirrus
+swagger: "2.0"

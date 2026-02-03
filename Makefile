@@ -39,7 +39,7 @@ clean/tests:
 	rm -rf playwright-report/
 	rm -rf test-results/
 
-setup: setup/gotools setup/sqlc setup/air setup/node setup/playwright ## Setup development environment
+setup: setup/gotools setup/sqlc setup/air setup/swag setup/node setup/playwright ## Setup development environment
 
 setup/gotools: ## Install go tools
 	$(GO) install golang.org/x/tools/gopls@latest
@@ -54,6 +54,9 @@ setup/sqlc: ## Install sqlc tool
 
 setup/air: ## Install air tool
 	$(GO) install github.com/air-verse/air@latest
+
+setup/swag: ## Install swag tool
+	$(GO) install github.com/swaggo/swag/cmd/swag@latest
 
 setup/node: ## Setup Node.js environment
 	npm install --prefix ./app
@@ -93,10 +96,13 @@ install/mac: env-INSTALL_VERSION ## Install startup service on Mac
 	sudo launchctl load /Library/LaunchDaemons/com.autobutler.autobutler.plist
 	echo "Installed autobutler successfully. Will run at startup."
 
-generate: generate/sqlc ## Generate files
+generate: generate/sqlc generate/swagger ## Generate files
 
 generate/sqlc: ## Generate sqlc files
 	sqlc generate
+
+generate/swagger: ## Generate Swagger docs
+	swag init -g ./cmd/autobutler/main.go -o ./docs/swagger --parseInternal
 
 build: ## Build backend and frontend
 	# Order matters: frontend must be built before backend

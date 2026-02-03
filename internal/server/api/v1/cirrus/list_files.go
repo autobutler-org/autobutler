@@ -19,8 +19,17 @@ type FileNodeJSON struct {
 	DeviceSerial string `json:"deviceSerial"`
 }
 
-// getCirrusFilesAcrossDevices merges files across all managed devices for the given filePath
-// If deviceSerial is empty, list files across all devices. Otherwise, only for the specified device.
+// getCirrusFilesAcrossDevices godoc
+// @Summary merges files across all managed devices for the given filePath
+// @Schemes
+// @Description merges files across all managed devices for the given filePath. If deviceSerial is empty, list files across all devices. Otherwise, only for the specified device
+// @Tags cirrus
+// @Produce json
+// @Success 200 {array} FileNodeJSON
+// @Failure 500 {object} serverutil.Response "Internal Server Error"
+// @Param filePath path string false "File path to list"
+// @Param serial query string false "Device serial number to filter by"
+// @Router /cirrus [get]
 func getCirrusFilesForDevice(filePath string, deviceSerial string) ([]*storageutil.DeviceFileInfo, error) {
 	devices, err := storageutil.GetManagedDevices()
 	if err != nil {
