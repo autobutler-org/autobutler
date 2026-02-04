@@ -125,6 +125,18 @@ export default class CirrusService {
   }
 
   /**
+   * Construct a download URL for a Cirrus file. Clients may use this
+   * directly as an `src` for iframes or anchors.
+   */
+  static getDownloadUrl(filePath: string, serial?: string): string {
+    const params = new URLSearchParams({ filePath });
+    if (serial) {
+      params.append('serial', serial);
+    }
+    return `/api/v1/cirrus/download?${params}`;
+  }
+
+  /**
    * Delete a file in Cirrus
    */
   static async deleteFile(

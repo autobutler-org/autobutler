@@ -1,5 +1,9 @@
 <template>
-  <iframe class="pdf-viewer-frame" :src="fileSrc" type="application/pdf" />
+  <iframe
+    class="pdf-viewer-frame"
+    :src="CirrusService.getDownloadUrl(filePath)"
+    type="application/pdf"
+  />
 </template>
 
 <script lang="ts" setup>
@@ -7,7 +11,7 @@ defineProps<{
   filePath: string;
 }>();
 
-const fileSrc = `/api/v1/cirrus/download?${new URLSearchParams({ filePath })}`;
+import CirrusService from '@/services/cirrusService';
 </script>
 
 <style lang="scss" scoped>

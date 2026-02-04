@@ -47,7 +47,7 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 			return serverutil.Ok()
 		}
 		c.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip", filepath.Base(result.FullPath)))
-		c.Writer.Header().Set("Content-Type", "application/zip")
+		c.Writer.Header().Set("Content-Type", "application/octet-stream")
 	} else {
 		file, err := os.Open(result.FullPath)
 		if err != nil {

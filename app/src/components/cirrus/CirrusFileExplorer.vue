@@ -752,9 +752,6 @@ onMounted(() => {
 });
 
 // Methods
-// TODO: Move to a common utility file
-const constructFileSrc = (relativePath: string) =>
-  `/api/v1/cirrus/download?${new URLSearchParams({ filePath: relativePath })}`;
 
 const handleSelectFile = (file: CirrusFileNode, event?: MouseEvent) => {
   // Multi-select logic: ctrl/cmd for toggle, shift for range, else single select
@@ -806,7 +803,7 @@ const handleOpenFile = (file: CirrusFileNode) => {
   const relativePath = currentPath.value
     ? joinPathsNormalized(currentPath.value, fileName)
     : fileName;
-  selectedFileSrc.value = constructFileSrc(relativePath);
+  selectedFileSrc.value = CirrusService.getDownloadUrl(relativePath);
   selectedFileType.value = CirrusService.determineFileType(file);
   fileViewerOpen.value = true;
 };

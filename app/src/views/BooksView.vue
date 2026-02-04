@@ -52,6 +52,7 @@ import BooksSidebar from '@/components/books/BooksSidebar.vue';
 import CirrusFileViewer from '@/components/cirrus/CirrusFileViewer.vue';
 import LibraryLayout from '@/components/common/LibraryLayout.vue';
 import BooksService, { type BookApiResponse } from '@/services/booksService';
+import CirrusService from '@/services/cirrusService';
 import type { Book } from '@/types/book';
 import type { FileType } from '@/types/cirrus';
 import { onMounted, ref } from 'vue';
@@ -63,14 +64,10 @@ const fileViewerOpen = ref(false);
 const selectedFileSrc = ref('');
 const selectedFileType = ref<FileType>('pdf');
 
-// TODO: Move to a common utility file
-const constructFileSrc = (relativePath: string) =>
-  `/api/v1/cirrus/download?${new URLSearchParams({ filePath: relativePath })}`;
-
 const selectBook = (book: Book) => {
   console.log('Selected book:', book);
   if (book.relPath) {
-    selectedFileSrc.value = constructFileSrc(book.relPath);
+    selectedFileSrc.value = CirrusService.getDownloadUrl(book.relPath);
     selectedFileType.value = book.type.toLowerCase() as FileType;
     fileViewerOpen.value = true;
   }
