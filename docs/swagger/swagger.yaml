@@ -88,6 +88,37 @@ definitions:
       size:
         type: integer
     type: object
+  v1_update.ReleaseJSON:
+    properties:
+      htmlUrl:
+        type: string
+      isCurrentVersion:
+        type: boolean
+      name:
+        type: string
+      publishedAt:
+        type: string
+      tagName:
+        type: string
+    type: object
+  v1_update.UpdateRequest:
+    properties:
+      version:
+        type: string
+    required:
+    - version
+    type: object
+  v1_update.VersionJSON:
+    properties:
+      buildDate:
+        type: string
+      gitCommit:
+        type: string
+      goVersion:
+        type: string
+      semver:
+        type: string
+    type: object
 info:
   contact: {}
 paths:
@@ -600,4 +631,70 @@ paths:
       summary: Enable (mount) a USB storage device
       tags:
       - storage
+  /update:
+    post:
+      consumes:
+      - application/json
+      description: Performs an update to the specified version
+      parameters:
+      - description: Update Request
+        in: body
+        name: update
+        required: true
+        schema:
+          $ref: '#/definitions/v1_update.UpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_update.UpdateRequest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Perform update
+      tags:
+      - update
+  /version:
+    get:
+      description: Retrieves the current version of the application
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_update.VersionJSON'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Get current version
+      tags:
+      - update
+  /versions:
+    get:
+      description: Lists all available versions for update
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1_update.ReleaseJSON'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: List available versions
+      tags:
+      - update
 swagger: "2.0"
