@@ -121,6 +121,7 @@ autobutler/
 - **Node.js & npm** - For frontend tooling and tests
 - **air** - Hot reloading tool
 - **sqlc** - SQL code generator (for database layer development)
+- **swag** - Generator for Swagger documentation
 
 ### Installation
 
@@ -162,6 +163,10 @@ make watch
 ```bash
 make serve
 ```
+
+#### Access the Swagger UI
+
+Go to [`http://localhost:8080/swagger`](http://localhost:8080/swagger)
 
 ### Root Privileges
 
