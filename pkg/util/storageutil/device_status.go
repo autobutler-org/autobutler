@@ -4,9 +4,9 @@ package storageutil
 // enabled for Autobutler file management
 type DeviceStatus struct {
 	Device
-	IsEnabled bool   `json:"is_enabled"`
-	DataDir   string `json:"data_dir,omitempty"`
-	CirrusDir string `json:"cirrus_dir,omitempty"`
+	IsEnabled bool   `json:"isEnabled"`
+	DataDir   string `json:"dataDir,omitempty"`
+	CirrusDir string `json:"cirrusDir,omitempty"`
 }
 
 // GetDeviceStatuses returns all detected devices with their enable status
@@ -33,15 +33,23 @@ func GetDeviceStatuses() ([]*DeviceStatus, error) {
 	// Build status list
 	var statuses []*DeviceStatus
 	for _, device := range devices {
-		status := &DeviceStatus{
-			Device:    device,
-			IsEnabled: false,
+		// Internal devices are enabled by default
+		isEnabled := device.IsInternal
+		dataDir := ""
+		cirrusDir := ""
+
+		// Check if device is in managed devices (explicitly enabled)
+		if md, exists := enabledMap[device.MountPoint]; exists {
+			isEnabled = true
+			dataDir = md.DataDir
+			cirrusDir = md.CirrusDir
 		}
 
-		if md, exists := enabledMap[device.MountPoint]; exists {
-			status.IsEnabled = true
-			status.DataDir = md.DataDir
-			status.CirrusDir = md.CirrusDir
+		status := &DeviceStatus{
+			Device:    device,
+			IsEnabled: isEnabled,
+			DataDir:   dataDir,
+			CirrusDir: cirrusDir,
 		}
 
 		statuses = append(statuses, status)

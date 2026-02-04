@@ -39,13 +39,13 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 
 import DevicesService from '@/services/devicesService';
+import { useDeviceNotificationStore } from '@/stores/deviceNotifications';
 import type { Device } from '@/types/device';
 import type { Summary } from '@/types/summary';
 import DeviceCard from '../components/DeviceCard.vue';
-import { useDeviceNotificationStore } from '@/stores/deviceNotifications';
 
 const devices = ref<Device[]>([]);
 const summary = ref<Summary>({

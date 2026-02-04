@@ -3,8 +3,8 @@ package storageutil
 // ManagedDevice represents a storage device that has an autobutler data directory
 type ManagedDevice struct {
 	Device
-	DataDir   string `json:"data_dir"`   // Path to autobutler data directory on this device
-	CirrusDir string `json:"cirrus_dir"` // Path to cirrus subdirectory
+	DataDir   string `json:"dataDir"`   // Path to autobutler data directory on this device
+	CirrusDir string `json:"cirrusDir"` // Path to cirrus subdirectory
 }
 
 // FindManagedDeviceBySerial finds a managed device by its USB serial number

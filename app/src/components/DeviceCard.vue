@@ -3,7 +3,7 @@
     class="device-card"
     :class="{
       'device-card--disabled': !displayedDevice.isEnabled,
-      'device-card--backup': isBackupDrive && displayedDevice.isEnabled
+      'device-card--backup': isBackupDrive && displayedDevice.isEnabled,
     }"
   >
     <div class="device-card-header">
@@ -94,7 +94,11 @@ const isEnabling = ref(false);
 // Check if device is likely a backup drive based on naming convention
 const isBackupDrive = computed(() => {
   const name = displayedDevice.value.name.toLowerCase();
-  return name.includes('backup') || name.includes('time machine') || name.includes('timemachine');
+  return (
+    name.includes('backup') ||
+    name.includes('time machine') ||
+    name.includes('timemachine')
+  );
 });
 
 const onToggleUsbMount = async (checked: boolean) => {
@@ -175,14 +179,14 @@ const goToCirrus = () => {
 
 .device-card--backup {
   border: 2px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 
+  box-shadow:
     0 2px 12px 0 rgba($theme-palette-bg-nav, 0.15),
     0 0 0 1px rgba(255, 255, 255, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  
+
   @media (prefers-color-scheme: light) {
     border: 2px solid rgba(255, 255, 255, 0.5);
-    box-shadow: 
+    box-shadow:
       0 2px 12px 0 rgba(0, 0, 0, 0.08),
       0 0 0 1px rgba(255, 255, 255, 0.3),
       inset 0 1px 0 rgba(255, 255, 255, 0.5);

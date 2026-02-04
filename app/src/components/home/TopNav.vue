@@ -138,7 +138,10 @@
         >
           <DeviceIcon />
           <span>Devices</span>
-          <span v-if="hasUnviewedDevices" class="notification-badge notification-badge--mobile"></span>
+          <span
+            v-if="hasUnviewedDevices"
+            class="notification-badge notification-badge--mobile"
+          ></span>
         </RouterLink>
       </nav>
       <div class="mobile-menu-footer">
@@ -161,8 +164,9 @@
 
 <script lang="ts" setup>
 import FlashBanner from '@/components/common/FlashBanner.vue';
-import VersionService, { type Release } from '@/services/versionService';
 import DevicesService from '@/services/devicesService';
+import VersionService, { type Release } from '@/services/versionService';
+import { useDeviceNotificationStore } from '@/stores/deviceNotifications';
 import type { NavLink } from '@/types/nav_link';
 import { toKeyComboString, type KeyCombo } from '@/util/keycombo';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
@@ -173,7 +177,6 @@ import FolderIcon from '../icons/FolderIcon.vue';
 import HamburgerIcon from '../icons/HamburgerIcon.vue';
 import HomeIcon from '../icons/HomeIcon.vue';
 import PhotoIcon from '../icons/PhotoIcon.vue';
-import { useDeviceNotificationStore } from '@/stores/deviceNotifications';
 
 const props = defineProps<{
   isMinimal?: boolean;
@@ -182,7 +185,9 @@ const props = defineProps<{
 }>();
 
 const deviceNotificationStore = useDeviceNotificationStore();
-const hasUnviewedDevices = computed(() => deviceNotificationStore.hasUnviewedDevices);
+const hasUnviewedDevices = computed(
+  () => deviceNotificationStore.hasUnviewedDevices,
+);
 
 // --- Flash banner logic ---
 const showBanner = ref(false);
@@ -215,10 +220,13 @@ const checkForNewDevices = async () => {
   try {
     const data = await DevicesService.getDeviceStatuses();
     const devices = data.devices || [];
-    const disabledDevices = devices.filter(d => !d.isEnabled);
-    
+    const disabledDevices = devices.filter((d) => !d.isEnabled);
+
     // If we have more disabled devices than before, there's a new device
-    if (previousDeviceCount.value > 0 && disabledDevices.length > previousDeviceCount.value) {
+    if (
+      previousDeviceCount.value > 0 &&
+      disabledDevices.length > previousDeviceCount.value
+    ) {
       deviceNotificationStore.setHasUnviewedDevices(true);
       bannerMessage.value = 'New storage device detected';
       showBanner.value = true;
@@ -227,7 +235,7 @@ const checkForNewDevices = async () => {
         showBanner.value = false;
       }, 3000);
     }
-    
+
     previousDeviceCount.value = disabledDevices.length;
   } catch (e) {
     console.error('Failed to check for new devices:', e);
@@ -240,10 +248,10 @@ onMounted(async () => {
 
   // Add click outside listener for version dropdown
   document.addEventListener('click', handleClickOutside);
-  
+
   // Initial check for devices
   await checkForNewDevices();
-  
+
   // Poll for new devices every 10 seconds
   devicePollInterval = setInterval(checkForNewDevices, 10000);
 });
@@ -442,7 +450,8 @@ const closeMobileMenu = () => {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
