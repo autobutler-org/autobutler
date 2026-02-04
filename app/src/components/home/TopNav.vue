@@ -72,6 +72,7 @@
       <RouterLink to="/devices" class="landing-nav-button" title="Devices">
         <DeviceIcon />
         <span>Devices</span>
+        <span v-if="hasUnviewedDevices" class="notification-badge"></span>
       </RouterLink>
       <button
         class="landing-nav-hamburger"
@@ -137,6 +138,10 @@
         >
           <DeviceIcon />
           <span>Devices</span>
+          <span
+            v-if="hasUnviewedDevices"
+            class="notification-badge notification-badge--mobile"
+          ></span>
         </RouterLink>
       </nav>
       <div class="mobile-menu-footer">
@@ -159,10 +164,12 @@
 
 <script lang="ts" setup>
 import FlashBanner from '@/components/common/FlashBanner.vue';
+import DevicesService from '@/services/devicesService';
 import VersionService, { type Release } from '@/services/versionService';
+import { useDeviceNotificationStore } from '@/stores/deviceNotifications';
 import type { NavLink } from '@/types/nav_link';
 import { toKeyComboString, type KeyCombo } from '@/util/keycombo';
-import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import CloseIcon from '../icons/CloseIcon.vue';
 import DeviceIcon from '../icons/DeviceIcon.vue';
@@ -176,6 +183,12 @@ const props = defineProps<{
   minimizeKeyCombo?: KeyCombo;
   navLinks?: NavLink[];
 }>();
+
+const deviceNotificationStore = useDeviceNotificationStore();
+const hasUnviewedDevices = computed(
+  () => deviceNotificationStore.hasUnviewedDevices,
+);
+
 // --- Flash banner logic ---
 const showBanner = ref(false);
 const bannerMessage = ref('');
@@ -199,6 +212,35 @@ const currentVersion = ref('vX.Y.Z');
 const releases = ref<Release[]>([]);
 const loadingReleases = ref(false);
 const updatingVersion = ref<string | null>(null);
+const previousDeviceCount = ref<number>(0);
+let devicePollInterval: ReturnType<typeof setInterval> | null = null;
+
+// Check for new devices
+const checkForNewDevices = async () => {
+  try {
+    const data = await DevicesService.getDeviceStatuses();
+    const devices = data.devices || [];
+    const disabledDevices = devices.filter((d) => !d.isEnabled);
+
+    // If we have more disabled devices than before, there's a new device
+    if (
+      previousDeviceCount.value > 0 &&
+      disabledDevices.length > previousDeviceCount.value
+    ) {
+      deviceNotificationStore.setHasUnviewedDevices(true);
+      bannerMessage.value = 'New storage device detected';
+      showBanner.value = true;
+      if (bannerTimeout) clearTimeout(bannerTimeout);
+      bannerTimeout = setTimeout(() => {
+        showBanner.value = false;
+      }, 3000);
+    }
+
+    previousDeviceCount.value = disabledDevices.length;
+  } catch (e) {
+    console.error('Failed to check for new devices:', e);
+  }
+};
 
 // Fetch current version on mount
 onMounted(async () => {
@@ -206,11 +248,18 @@ onMounted(async () => {
 
   // Add click outside listener for version dropdown
   document.addEventListener('click', handleClickOutside);
+
+  // Initial check for devices
+  await checkForNewDevices();
+
+  // Poll for new devices every 10 seconds
+  devicePollInterval = setInterval(checkForNewDevices, 10000);
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
   if (bannerTimeout) clearTimeout(bannerTimeout);
+  if (devicePollInterval) clearInterval(devicePollInterval);
 });
 
 const handleClickOutside = (event: MouseEvent) => {
@@ -359,6 +408,7 @@ const closeMobileMenu = () => {
   cursor: pointer;
   transition: all 0.2s ease;
   text-decoration: none;
+  position: relative;
 
   &:hover {
     background: hsl(from $theme-palette-accent h s l / 0.12);
@@ -384,6 +434,28 @@ const closeMobileMenu = () => {
 
   @media (max-width: 768px) {
     display: none !important;
+  }
+}
+
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 10px;
+  height: 10px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid $theme-palette-bg-nav;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
   }
 }
 
@@ -584,6 +656,7 @@ const closeMobileMenu = () => {
   font-weight: 500;
   min-height: 56px;
   cursor: pointer;
+  position: relative;
 
   &:hover {
     background: $theme-palette-accent;
@@ -604,6 +677,13 @@ const closeMobileMenu = () => {
       color: $theme-palette-accent;
     }
   }
+}
+
+.notification-badge--mobile {
+  position: absolute;
+  right: $spacing-xl;
+  width: 12px;
+  height: 12px;
 }
 
 .mobile-menu-footer {
