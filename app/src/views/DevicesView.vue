@@ -39,12 +39,13 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 
 import DevicesService from '@/services/devicesService';
 import type { Device } from '@/types/device';
 import type { Summary } from '@/types/summary';
 import DeviceCard from '../components/DeviceCard.vue';
+import { useDeviceNotificationStore } from '@/stores/deviceNotifications';
 
 const devices = ref<Device[]>([]);
 const summary = ref<Summary>({
@@ -57,6 +58,7 @@ const summary = ref<Summary>({
   avail_tb: 0,
 });
 const loading = ref(false);
+const deviceNotificationStore = useDeviceNotificationStore();
 
 const fetchDevices = async () => {
   loading.value = true;
@@ -89,7 +91,11 @@ const calculateSummary = (devices: Device[]): Summary => {
   };
 };
 
-onMounted(fetchDevices);
+onMounted(() => {
+  fetchDevices();
+  // Mark devices as viewed when page is opened
+  deviceNotificationStore.markDevicesAsViewed();
+});
 </script>
 
 <style lang="scss" scoped>

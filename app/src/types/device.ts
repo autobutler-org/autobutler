@@ -20,4 +20,5 @@ export interface Device {
   model: string;
   categories: Record<string, number>;
   usbInfo?: UsbInfo;
+  isEnabled: boolean;
 }
