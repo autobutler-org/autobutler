@@ -33,7 +33,7 @@ const selectedFileType = ref<FileType>('image');
 
 // TODO: Move to a common utility file
 const constructFileSrc = (relativePath: string) =>
-  `/api/v1/cirrus/download/${relativePath}`;
+  `/api/v1/cirrus/download?${new URLSearchParams({ filePath: relativePath }).toString()}`;
 
 const selectPhoto = (photo: Photo) => {
   if (photo.relPath) {

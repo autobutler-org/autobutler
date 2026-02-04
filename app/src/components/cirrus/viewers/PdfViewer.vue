@@ -1,15 +1,13 @@
 <template>
-  <iframe
-    class="pdf-viewer-frame"
-    :src="`/api/v1/cirrus/download/${filePath}`"
-    type="application/pdf"
-  />
+  <iframe class="pdf-viewer-frame" :src="fileSrc" type="application/pdf" />
 </template>
 
 <script lang="ts" setup>
 defineProps<{
   filePath: string;
 }>();
+
+const fileSrc = `/api/v1/cirrus/download?${new URLSearchParams({ filePath })}`;
 </script>
 
 <style lang="scss" scoped>

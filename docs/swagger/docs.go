@@ -341,7 +341,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/cirrus/download/{filePath}": {
+        "/cirrus/download": {
             "get": {
                 "description": "Downloads a single file or zips a folder and streams it back to the client",
                 "produces": [
@@ -356,8 +356,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "File path to download",
                         "name": "filePath",
-                        "in": "path",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",

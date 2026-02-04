@@ -138,7 +138,7 @@ export default class CirrusService {
     if (deviceSerial) {
       params.append('serial', deviceSerial);
     }
-    const url = `/api/v1/cirrus?${params.toString()}`;
+    const url = `/api/v1/cirrus?${params}`;
     const response = await HttpService.delete(url);
     if (!response.ok) throw new Error('Failed to delete file');
   }

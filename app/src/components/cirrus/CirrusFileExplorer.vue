@@ -484,11 +484,10 @@ const handleDownloadSelected = () => {
     const relativePath = currentPath.value
       ? joinPathsNormalized(currentPath.value, fileName)
       : fileName;
-    const downloadUrl = `/api/v1/cirrus/download/${relativePath}${
-      file.deviceSerial
-        ? `?serial=${encodeURIComponent(file.deviceSerial)}`
-        : ''
-    }`;
+    const downloadUrl = `/api/v1/cirrus/download?${new URLSearchParams({
+      filePath: relativePath,
+      serial: file.deviceSerial || '',
+    })}`;
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = fileName;
@@ -755,7 +754,7 @@ onMounted(() => {
 // Methods
 // TODO: Move to a common utility file
 const constructFileSrc = (relativePath: string) =>
-  `/api/v1/cirrus/download/${relativePath}`;
+  `/api/v1/cirrus/download?${new URLSearchParams({ filePath: relativePath })}`;
 
 const handleSelectFile = (file: CirrusFileNode, event?: MouseEvent) => {
   // Multi-select logic: ctrl/cmd for toggle, shift for range, else single select
@@ -887,9 +886,10 @@ const handleDownload = (file: CirrusFileNode) => {
   const relativePath = currentPath.value
     ? joinPathsNormalized(currentPath.value, fileName)
     : fileName;
-  const downloadUrl = `/api/v1/cirrus/download/${relativePath}${
-    file.deviceSerial ? `?serial=${encodeURIComponent(file.deviceSerial)}` : ''
-  }`;
+  const downloadUrl = `/api/v1/cirrus/download?${new URLSearchParams({
+    filePath: relativePath,
+    serial: file.deviceSerial || '',
+  })}`;
 
   // Create a temporary link and click it to trigger download
   const link = document.createElement('a');

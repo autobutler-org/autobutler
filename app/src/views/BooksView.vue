@@ -65,7 +65,7 @@ const selectedFileType = ref<FileType>('pdf');
 
 // TODO: Move to a common utility file
 const constructFileSrc = (relativePath: string) =>
-  `/api/v1/cirrus/download/${relativePath}`;
+  `/api/v1/cirrus/download?${new URLSearchParams({ filePath: relativePath })}`;
 
 const selectBook = (book: Book) => {
   console.log('Selected book:', book);

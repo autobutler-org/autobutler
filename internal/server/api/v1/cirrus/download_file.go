@@ -17,14 +17,14 @@ import (
 // @Description Downloads a single file or zips a folder and streams it back to the client
 // @Tags cirrus
 // @Produce application/octet-stream
-// @Param filePath path string true "File path to download"
+// @Param filePath query string false "File path to download"
 // @Param serial query string false "Device serial number to filter by"
 // @Success 200 {file} file
 // @Failure 404 {object} serverutil.Response "Not Found"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Router /cirrus/download/{filePath} [get]
+// @Router /cirrus/download [get]
 func downloadFile(c *gin.Context) *serverutil.Response {
-	filePath := c.Param("filePath")
+	filePath := c.Query("filePath")
 	serial := c.Query("serial")
 
 	result, err := storageutil.DownloadFile(storageutil.DownloadFileParams{
@@ -70,5 +70,5 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 }
 
 var downloadFileRoute = serverutil.ApiRoute(
-	"GET", "/cirrus/download/*filePath", downloadFile,
+	"GET", "/cirrus/download", downloadFile,
 )
