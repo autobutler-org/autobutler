@@ -10,7 +10,7 @@ import (
 )
 
 type UpdateRequest struct {
-	Version string `form:"version" binding:"required"`
+	Version string `json:"version"`
 }
 
 // doUpdate godoc

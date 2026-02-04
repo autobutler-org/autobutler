@@ -112,8 +112,6 @@ definitions:
     properties:
       version:
         type: string
-    required:
-    - version
     type: object
   v1_version.VersionJSON:
     properties:

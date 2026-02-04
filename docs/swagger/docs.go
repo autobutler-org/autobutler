@@ -1103,9 +1103,6 @@ const docTemplate = `{
         },
         "v1_version.UpdateRequest": {
             "type": "object",
-            "required": [
-                "version"
-            ],
             "properties": {
                 "version": {
                     "type": "string"
