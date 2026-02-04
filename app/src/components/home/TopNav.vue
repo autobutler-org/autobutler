@@ -159,7 +159,6 @@
 
 <script lang="ts" setup>
 import FlashBanner from '@/components/common/FlashBanner.vue';
-import UpdateService from '@/services/updateService';
 import VersionService, { type Release } from '@/services/versionService';
 import type { NavLink } from '@/types/nav_link';
 import { toKeyComboString, type KeyCombo } from '@/util/keycombo';
@@ -240,7 +239,7 @@ const handleUpdate = async (version: string) => {
   try {
     bannerMessage.value = `Update to ${version} started. The server will restart once it downloads.`;
     showBanner.value = true;
-    await UpdateService.performUpdate(version);
+    await VersionService.doUpdate(version);
   } catch (err) {
     showBanner.value = true;
     bannerMessage.value = `Update failed: ${err}`;

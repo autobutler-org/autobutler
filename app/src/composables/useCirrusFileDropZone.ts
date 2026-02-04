@@ -34,9 +34,6 @@ export const useCirrusFileDropZone = ({
       const targetUploadPath = targetPath
         ? CirrusService.normalizePath(targetPath)
         : resolveCurrentPath();
-      const uploadUrl = targetUploadPath
-        ? `/api/v1/cirrus/${targetUploadPath}`
-        : '/api/v1/cirrus';
 
       // Get selected device serial and name from Pinia store
       const cirrusDeviceStore = useCirrusDeviceStore();
@@ -47,7 +44,7 @@ export const useCirrusFileDropZone = ({
         ) || cirrusDeviceStore.devices.find((d) => !d.usbInfo?.serial);
       const deviceName = selectedDevice ? selectedDevice.name : '';
 
-      await CirrusService.uploadFiles(uploadUrl, files, serial);
+      await CirrusService.uploadFiles(targetUploadPath, files, serial);
 
       const currentPathValue = targetUploadPath;
 

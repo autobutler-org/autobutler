@@ -88,6 +88,37 @@ definitions:
       size:
         type: integer
     type: object
+  v1_version.ReleaseJSON:
+    properties:
+      htmlUrl:
+        type: string
+      isCurrentVersion:
+        type: boolean
+      name:
+        type: string
+      publishedAt:
+        type: string
+      tagName:
+        type: string
+    type: object
+  v1_version.UpdateRequest:
+    properties:
+      version:
+        type: string
+    required:
+    - version
+    type: object
+  v1_version.VersionJSON:
+    properties:
+      buildDate:
+        type: string
+      gitCommit:
+        type: string
+      goVersion:
+        type: string
+      semver:
+        type: string
+    type: object
 info:
   contact: {}
 paths:
@@ -248,34 +279,6 @@ paths:
       summary: Lists files
       tags:
       - cirrus
-    post:
-      consumes:
-      - multipart/form-data
-      description: Upload one or more files via multipart/form-data
-      parameters:
-      - description: Device serial number to upload to
-        in: query
-        name: serial
-        type: string
-      - description: File to upload
-        in: formData
-        name: file
-        required: true
-        type: file
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      summary: Upload files to the top-level directory
-      tags:
-      - cirrus
     put:
       consumes:
       - application/json
@@ -305,7 +308,7 @@ paths:
       summary: Move or rename a file
       tags:
       - cirrus
-  /cirrus/{rootDir}:
+  /cirrus//upload/{rootDir}:
     post:
       consumes:
       - multipart/form-data
@@ -339,15 +342,14 @@ paths:
       summary: Upload files to a nested directory
       tags:
       - cirrus
-  /download/cirrus/{filePath}:
+  /cirrus/download:
     get:
       description: Downloads a single file or zips a folder and streams it back to
         the client
       parameters:
       - description: File path to download
-        in: path
+        in: query
         name: filePath
-        required: true
         type: string
       - description: Device serial number to filter by
         in: query
@@ -371,7 +373,7 @@ paths:
       summary: Download a file or folder
       tags:
       - cirrus
-  /folder/cirrus/{folderDir}:
+  /cirrus/folder/{folderDir}:
     post:
       consumes:
       - multipart/form-data
@@ -407,6 +409,35 @@ paths:
           schema:
             $ref: '#/definitions/serverutil.Response'
       summary: Create a new folder
+      tags:
+      - cirrus
+  /cirrus/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload one or more files via multipart/form-data
+      parameters:
+      - description: Device serial number to upload to
+        in: query
+        name: serial
+        type: string
+      - description: File to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Upload files to the top-level directory
       tags:
       - cirrus
   /migration/google/start:
@@ -600,4 +631,70 @@ paths:
       summary: Enable (mount) a USB storage device
       tags:
       - storage
+  /version:
+    get:
+      description: Retrieves the installed version of the application
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_version.VersionJSON'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Get installed version
+      tags:
+      - version
+  /version/available:
+    get:
+      description: Lists all available versions for update
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1_version.ReleaseJSON'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: List available versions
+      tags:
+      - version
+  /version/update:
+    post:
+      consumes:
+      - application/json
+      description: Performs an update to the specified version
+      parameters:
+      - description: Update Request
+        in: body
+        name: update
+        required: true
+        schema:
+          $ref: '#/definitions/v1_version.UpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_version.UpdateRequest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Perform update
+      tags:
+      - version
 swagger: "2.0"

@@ -1,0 +1,34 @@
+package v1_version
+
+import (
+	"autobutler/pkg/util/serverutil"
+	"autobutler/pkg/util/versionutil"
+
+	"github.com/gin-gonic/gin"
+)
+
+// getInstalledVersion godoc
+// @Summary Get installed version
+// @Description Retrieves the installed version of the application
+// @Tags version
+// @Produce json
+// @Success 200 {object} VersionJSON
+// @Failure 500 {object} serverutil.Response "Internal Server Error"
+// @Router /version [get]
+func getInstalledVersion(c *gin.Context) *serverutil.Response {
+	version := versionutil.GetVersion()
+
+	return serverutil.NewResponse().
+		WithStatusCode(200).
+		WithContentType(serverutil.ContentTypeJSON).
+		WithData(VersionJSON{
+			Semver:    version.Semver,
+			GitCommit: version.GitCommit,
+			GoVersion: version.GoVersion,
+			BuildDate: version.BuildDate,
+		})
+}
+
+var getInstalledVersionRoute = serverutil.ApiRoute(
+	"GET", "/version", getInstalledVersion,
+)

@@ -234,48 +234,6 @@ const docTemplate = `{
                     }
                 }
             },
-            "post": {
-                "description": "Upload one or more files via multipart/form-data",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cirrus"
-                ],
-                "summary": "Upload files to the top-level directory",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Device serial number to upload to",
-                        "name": "serial",
-                        "in": "query"
-                    },
-                    {
-                        "type": "file",
-                        "description": "File to upload",
-                        "name": "file",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            },
             "delete": {
                 "description": "Enqueue deletion of files under the specified root directory",
                 "produces": [
@@ -332,7 +290,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/cirrus/{rootDir}": {
+        "/cirrus//upload/{rootDir}": {
             "post": {
                 "description": "Upload one or more files via multipart/form-data",
                 "consumes": [
@@ -383,7 +341,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/download/cirrus/{filePath}": {
+        "/cirrus/download": {
             "get": {
                 "description": "Downloads a single file or zips a folder and streams it back to the client",
                 "produces": [
@@ -398,8 +356,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "File path to download",
                         "name": "filePath",
-                        "in": "path",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -430,7 +387,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/folder/cirrus/{folderDir}": {
+        "/cirrus/folder/{folderDir}": {
             "post": {
                 "description": "Enqueue create-folder operation under the given folder directory",
                 "consumes": [
@@ -480,6 +437,50 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/cirrus/upload": {
+            "post": {
+                "description": "Upload one or more files via multipart/form-data",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cirrus"
+                ],
+                "summary": "Upload files to the top-level directory",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device serial number to upload to",
+                        "name": "serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "file",
+                        "description": "File to upload",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -773,6 +774,107 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/version": {
+            "get": {
+                "description": "Retrieves the installed version of the application",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "version"
+                ],
+                "summary": "Get installed version",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1_version.VersionJSON"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/version/available": {
+            "get": {
+                "description": "Lists all available versions for update",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "version"
+                ],
+                "summary": "List available versions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1_version.ReleaseJSON"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/version/update": {
+            "post": {
+                "description": "Performs an update to the specified version",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "version"
+                ],
+                "summary": "Perform update",
+                "parameters": [
+                    {
+                        "description": "Update Request",
+                        "name": "update",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1_version.UpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1_version.UpdateRequest"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -907,6 +1009,54 @@ const docTemplate = `{
                 },
                 "size": {
                     "type": "integer"
+                }
+            }
+        },
+        "v1_version.ReleaseJSON": {
+            "type": "object",
+            "properties": {
+                "htmlUrl": {
+                    "type": "string"
+                },
+                "isCurrentVersion": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "publishedAt": {
+                    "type": "string"
+                },
+                "tagName": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1_version.UpdateRequest": {
+            "type": "object",
+            "required": [
+                "version"
+            ],
+            "properties": {
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1_version.VersionJSON": {
+            "type": "object",
+            "properties": {
+                "buildDate": {
+                    "type": "string"
+                },
+                "gitCommit": {
+                    "type": "string"
+                },
+                "goVersion": {
+                    "type": "string"
+                },
+                "semver": {
+                    "type": "string"
                 }
             }
         }

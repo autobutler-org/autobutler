@@ -484,11 +484,10 @@ const handleDownloadSelected = () => {
     const relativePath = currentPath.value
       ? joinPathsNormalized(currentPath.value, fileName)
       : fileName;
-    const downloadUrl = `/api/v1/download/cirrus/${relativePath}${
-      file.deviceSerial
-        ? `?serial=${encodeURIComponent(file.deviceSerial)}`
-        : ''
-    }`;
+    const downloadUrl = CirrusService.getDownloadUrl(
+      relativePath,
+      file.deviceSerial || undefined,
+    );
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = fileName;
@@ -509,9 +508,8 @@ const handleFileInputChange = async (event: Event) => {
   uploadProgress.value = `Uploading ${input.files.length} file${input.files.length > 1 ? 's' : ''}...`;
   try {
     // Actually upload the files to the backend, include device as query param
-    const uploadPath = `/api/v1/cirrus/${currentPath.value || ''}`;
     await CirrusService.uploadFiles(
-      uploadPath,
+      currentPath.value || '',
       input.files,
       selectedDeviceSerial.value,
     );
@@ -753,9 +751,6 @@ onMounted(() => {
 });
 
 // Methods
-// TODO: Move to a common utility file
-const constructFileSrc = (relativePath: string) =>
-  `/api/v1/download/cirrus/${relativePath}`;
 
 const handleSelectFile = (file: CirrusFileNode, event?: MouseEvent) => {
   // Multi-select logic: ctrl/cmd for toggle, shift for range, else single select
@@ -807,7 +802,7 @@ const handleOpenFile = (file: CirrusFileNode) => {
   const relativePath = currentPath.value
     ? joinPathsNormalized(currentPath.value, fileName)
     : fileName;
-  selectedFileSrc.value = constructFileSrc(relativePath);
+  selectedFileSrc.value = CirrusService.getDownloadUrl(relativePath);
   selectedFileType.value = CirrusService.determineFileType(file);
   fileViewerOpen.value = true;
 };
@@ -887,9 +882,10 @@ const handleDownload = (file: CirrusFileNode) => {
   const relativePath = currentPath.value
     ? joinPathsNormalized(currentPath.value, fileName)
     : fileName;
-  const downloadUrl = `/api/v1/download/cirrus/${relativePath}${
-    file.deviceSerial ? `?serial=${encodeURIComponent(file.deviceSerial)}` : ''
-  }`;
+  const downloadUrl = CirrusService.getDownloadUrl(
+    relativePath,
+    file.deviceSerial || undefined,
+  );
 
   // Create a temporary link and click it to trigger download
   const link = document.createElement('a');

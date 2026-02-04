@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 )
 
 func ListPossibleUpdates() ([]githubutil.GitHubRelease, error) {
@@ -37,6 +38,7 @@ func ListPossibleUpdates() ([]githubutil.GitHubRelease, error) {
 
 func RestartAutobutler() {
 	fmt.Println("Update complete. Exiting to allow process manager (launchctl/systemd) to restart...")
+	time.Sleep(time.Second * 2)
 	os.Exit(0)
 }
 

@@ -9,7 +9,7 @@ import (
 	v1_photos "autobutler/internal/server/api/v1/photos"
 	v1_storage "autobutler/internal/server/api/v1/storage"
 	v1_thumbnails "autobutler/internal/server/api/v1/thumbnails"
-	v1_update "autobutler/internal/server/api/v1/update"
+	v1_version "autobutler/internal/server/api/v1/version"
 	"autobutler/pkg/util/serverutil"
 	"embed"
 	"net/http"
@@ -34,10 +34,10 @@ func setupRouters(engine *gin.Engine) {
 		v1_files.NewRouter(),
 		v1_metrics.NewRouter(),
 		v1_migration.NewRouter(),
+		v1_photos.NewRouter(),
 		v1_storage.NewRouter(),
 		v1_thumbnails.NewRouter(),
-		v1_update.NewRouter(),
-		v1_photos.NewRouter(),
+		v1_version.NewRouter(),
 	}
 	for _, r := range apiRouters {
 		serverutil.RegisterRouterWithGroup(group, r)
