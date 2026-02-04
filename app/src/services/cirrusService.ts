@@ -170,6 +170,17 @@ export default class CirrusService {
     for (const file of Array.from(files)) {
       formData.append('files', file);
     }
+    return CirrusService.uploadFilesFromFormData(uploadPath, formData, serial);
+  }
+
+  /**
+   * Upload files to Cirrus with formData
+   */
+  static async uploadFilesFromFormData(
+    uploadPath: string,
+    formData: FormData,
+    serial?: string,
+  ): Promise<Response> {
     const url = `${joinPaths('/api/v1/cirrus/upload', uploadPath)}${serial ? new URLSearchParams({ serial }) : ''}`;
     const response = await HttpService.postForm(url, formData);
     if (!response.ok) throw new Error('Upload failed');

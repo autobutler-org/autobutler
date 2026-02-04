@@ -200,6 +200,7 @@
 <script setup lang="ts">
 import LibraryLayout from '@/components/common/LibraryLayout.vue';
 import LibrarySidebar from '@/components/common/LibrarySidebar.vue';
+import CirrusService from '@/services/cirrusService';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -265,11 +266,7 @@ const uploadFiles = async () => {
       formData.append('files', file);
     });
 
-    const response = await fetch('/api/v1/upload', {
-      method: 'POST',
-      body: formData,
-    });
-
+    const response = await CirrusService.uploadFilesFromFormData('', formData);
     if (response.ok) {
       uploadMessage.value = 'Files uploaded successfully!';
       uploadMessageType.value = 'success';
