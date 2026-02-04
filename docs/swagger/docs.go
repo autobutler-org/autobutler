@@ -345,7 +345,7 @@ const docTemplate = `{
             "get": {
                 "description": "Downloads a single file or zips a folder and streams it back to the client",
                 "produces": [
-                    "application/zip"
+                    "application/octet-stream"
                 ],
                 "tags": [
                     "cirrus"

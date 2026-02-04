@@ -356,7 +356,7 @@ paths:
         name: serial
         type: string
       produces:
-      - application/zip
+      - application/octet-stream
       responses:
         "200":
           description: OK

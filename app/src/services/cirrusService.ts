@@ -1,5 +1,6 @@
 import type { CirrusFileNode, FileType } from '@/types/cirrus';
 
+import { joinPaths } from '@/util/filepath';
 import HttpService from './httpService';
 
 export default class CirrusService {
@@ -169,9 +170,7 @@ export default class CirrusService {
     for (const file of Array.from(files)) {
       formData.append('files', file);
     }
-    const url =
-      (uploadPath.startsWith('/') ? uploadPath : '/' + uploadPath) +
-      (serial ? `?serial=${encodeURIComponent(serial)}` : '');
+    const url = `${joinPaths('/api/v1/cirrus/upload', uploadPath)}${serial ? new URLSearchParams({ serial }) : ''}`;
     const response = await HttpService.postForm(url, formData);
     if (!response.ok) throw new Error('Upload failed');
     return response;

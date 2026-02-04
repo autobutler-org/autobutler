@@ -508,9 +508,8 @@ const handleFileInputChange = async (event: Event) => {
   uploadProgress.value = `Uploading ${input.files.length} file${input.files.length > 1 ? 's' : ''}...`;
   try {
     // Actually upload the files to the backend, include device as query param
-    const uploadPath = `/api/v1/cirrus/upload/${currentPath.value || ''}`;
     await CirrusService.uploadFiles(
-      uploadPath,
+      currentPath.value || '',
       input.files,
       selectedDeviceSerial.value,
     );
