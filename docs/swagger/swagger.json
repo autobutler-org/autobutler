@@ -223,48 +223,6 @@
                     }
                 }
             },
-            "post": {
-                "description": "Upload one or more files via multipart/form-data",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cirrus"
-                ],
-                "summary": "Upload files to the top-level directory",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Device serial number to upload to",
-                        "name": "serial",
-                        "in": "query"
-                    },
-                    {
-                        "type": "file",
-                        "description": "File to upload",
-                        "name": "file",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            },
             "delete": {
                 "description": "Enqueue deletion of files under the specified root directory",
                 "produces": [
@@ -321,7 +279,7 @@
                 }
             }
         },
-        "/cirrus/{rootDir}": {
+        "/cirrus//upload/{rootDir}": {
             "post": {
                 "description": "Upload one or more files via multipart/form-data",
                 "consumes": [
@@ -372,7 +330,7 @@
                 }
             }
         },
-        "/download/cirrus/{filePath}": {
+        "/cirrus/download/{filePath}": {
             "get": {
                 "description": "Downloads a single file or zips a folder and streams it back to the client",
                 "produces": [
@@ -419,7 +377,7 @@
                 }
             }
         },
-        "/folder/cirrus/{folderDir}": {
+        "/cirrus/folder/{folderDir}": {
             "post": {
                 "description": "Enqueue create-folder operation under the given folder directory",
                 "consumes": [
@@ -469,6 +427,50 @@
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/cirrus/upload": {
+            "post": {
+                "description": "Upload one or more files via multipart/form-data",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cirrus"
+                ],
+                "summary": "Upload files to the top-level directory",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device serial number to upload to",
+                        "name": "serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "file",
+                        "description": "File to upload",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -763,7 +765,62 @@
                 }
             }
         },
-        "/update": {
+        "/version": {
+            "get": {
+                "description": "Retrieves the installed version of the application",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "version"
+                ],
+                "summary": "Get installed version",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1_version.VersionJSON"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/version/available": {
+            "get": {
+                "description": "Lists all available versions for update",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "version"
+                ],
+                "summary": "List available versions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1_version.ReleaseJSON"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/version/update": {
             "post": {
                 "description": "Performs an update to the specified version",
                 "consumes": [
@@ -773,7 +830,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "version"
                 ],
                 "summary": "Perform update",
                 "parameters": [
@@ -783,7 +840,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1_update.UpdateRequest"
+                            "$ref": "#/definitions/v1_version.UpdateRequest"
                         }
                     }
                 ],
@@ -791,68 +848,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1_update.UpdateRequest"
+                            "$ref": "#/definitions/v1_version.UpdateRequest"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/version": {
-            "get": {
-                "description": "Retrieves the current version of the application",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "update"
-                ],
-                "summary": "Get current version",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1_update.VersionJSON"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/versions": {
-            "get": {
-                "description": "Lists all available versions for update",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "update"
-                ],
-                "summary": "List available versions",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1_update.ReleaseJSON"
-                            }
                         }
                     },
                     "500": {
@@ -1000,7 +1002,7 @@
                 }
             }
         },
-        "v1_update.ReleaseJSON": {
+        "v1_version.ReleaseJSON": {
             "type": "object",
             "properties": {
                 "htmlUrl": {
@@ -1020,7 +1022,7 @@
                 }
             }
         },
-        "v1_update.UpdateRequest": {
+        "v1_version.UpdateRequest": {
             "type": "object",
             "required": [
                 "version"
@@ -1031,7 +1033,7 @@
                 }
             }
         },
-        "v1_update.VersionJSON": {
+        "v1_version.VersionJSON": {
             "type": "object",
             "properties": {
                 "buildDate": {

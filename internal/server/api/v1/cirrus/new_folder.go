@@ -22,7 +22,7 @@ import (
 // @Success 202 {object} serverutil.Response "Accepted"
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Router /folder/cirrus/{folderDir} [post]
+// @Router /cirrus/folder/{folderDir} [post]
 func newFolder(c *gin.Context) *serverutil.Response {
 	folderDir := c.Param("folderDir")
 	folderName := c.PostForm("folderName")
@@ -42,5 +42,5 @@ func newFolder(c *gin.Context) *serverutil.Response {
 }
 
 var newFolderRoute = serverutil.ApiRoute(
-	"POST", "/folder/cirrus/*folderDir", newFolder,
+	"POST", "/cirrus/folder/*folderDir", newFolder,
 )

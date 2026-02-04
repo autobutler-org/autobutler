@@ -16,6 +16,10 @@ export interface VersionResponse {
 }
 
 export default class VersionService {
+  static async doUpdate(version: string): Promise<void> {
+    await HttpService.post('/api/v1/version/update', { version });
+  }
+
   static getCurrentVersion = async (): Promise<string> => {
     try {
       const data =
@@ -28,7 +32,9 @@ export default class VersionService {
 
   static getAvailableReleases = async (): Promise<Release[]> => {
     try {
-      const data = await HttpService.getAsJson<Release[]>('/api/v1/versions');
+      const data = await HttpService.getAsJson<Release[]>(
+        '/api/v1/version/available',
+      );
       return data || [];
     } catch {
       return [];

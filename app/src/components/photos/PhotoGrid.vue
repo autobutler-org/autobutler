@@ -15,11 +15,11 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import CirrusFileViewer from '@/components/cirrus/CirrusFileViewer.vue';
 import type { FileType } from '@/types/cirrus';
 import type { Photo } from '@/types/photo';
+import { ref } from 'vue';
 import PhotoGridItem from './PhotoGridItem.vue';
-import CirrusFileViewer from '@/components/cirrus/CirrusFileViewer.vue';
 
 defineProps<{
   photos: Photo[];
@@ -33,7 +33,7 @@ const selectedFileType = ref<FileType>('image');
 
 // TODO: Move to a common utility file
 const constructFileSrc = (relativePath: string) =>
-  `/api/v1/download/cirrus/${relativePath}`;
+  `/api/v1/cirrus/download/${relativePath}`;
 
 const selectPhoto = (photo: Photo) => {
   if (photo.relPath) {

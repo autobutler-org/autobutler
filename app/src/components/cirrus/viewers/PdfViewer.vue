@@ -1,7 +1,7 @@
 <template>
   <iframe
     class="pdf-viewer-frame"
-    :src="`/api/v1/download/cirrus/${filePath}`"
+    :src="`/api/v1/cirrus/download/${filePath}`"
     type="application/pdf"
   />
 </template>

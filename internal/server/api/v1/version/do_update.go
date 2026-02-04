@@ -1,4 +1,4 @@
-package v1_update
+package v1_version
 
 import (
 	"autobutler/internal/update"
@@ -16,14 +16,14 @@ type UpdateRequest struct {
 // doUpdate godoc
 // @Summary Perform update
 // @Description Performs an update to the specified version
-// @Tags update
+// @Tags version
 // @Accept json
 // @Produce json
 // @Param update body UpdateRequest true "Update Request"
 // @Success 200 {object} UpdateRequest
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Router /update [post]
+// @Router /version/update [post]
 func doUpdate(c *gin.Context) *serverutil.Response {
 	updateRequest := UpdateRequest{}
 	if err := c.ShouldBind(&updateRequest); err != nil {
@@ -46,5 +46,5 @@ func doUpdate(c *gin.Context) *serverutil.Response {
 }
 
 var doUpdateRoute = serverutil.ApiRoute(
-	"POST", "/update", doUpdate,
+	"POST", "/version/update", doUpdate,
 )

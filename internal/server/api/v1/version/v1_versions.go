@@ -1,4 +1,4 @@
-package v1_update
+package v1_version
 
 import "autobutler/pkg/util/serverutil"
 
@@ -11,7 +11,7 @@ func NewRouter() serverutil.Router {
 func (r *router) Routes() []*serverutil.Route {
 	return []*serverutil.Route{
 		doUpdateRoute,
-		getCurrentVersionRoute,
+		getInstalledVersionRoute,
 		listVersionsRoute,
 	}
 }
