@@ -4,6 +4,7 @@ import (
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/updateutil"
 	"autobutler/pkg/util/versionutil"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,7 +18,7 @@ import (
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /version/available [get]
 func listVersions(c *gin.Context) *serverutil.Response {
-	result, err := updateutil.ListPossibleUpdates(updateutil.ListPossibleUpdatesParams{})
+	result, err := updateutil.ListPossibleUpdates(org, repo)
 	if err != nil {
 		return serverutil.NewResponse().
 			WithStatusCode(500).
@@ -34,7 +35,7 @@ func listVersions(c *gin.Context) *serverutil.Response {
 		releases = append(releases, ReleaseJSON{
 			TagName:          r.TagName,
 			Name:             r.TagName, // GitHub releases often use tag as name
-			HtmlUrl:          "https://github.com/autobutler-org/autobutler.org/releases/tag/" + r.TagName,
+			HtmlUrl:          fmt.Sprintf("https://github.com/%s/%s/releases/tag/%s", org, repo, r.TagName),
 			PublishedAt:      "",
 			IsCurrentVersion: r.TagName == currentVersion.Semver,
 		})

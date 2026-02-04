@@ -12,8 +12,11 @@ import (
 	"time"
 )
 
-func ListPossibleUpdates() ([]githubutil.GitHubRelease, error) {
-	releases, err := githubutil.FetchGitHubReleases("autobutler-org", "autobutler.org")
+func ListPossibleUpdates(
+	org string,
+	repo string,
+) ([]githubutil.GitHubRelease, error) {
+	releases, err := githubutil.FetchGitHubReleases(org, repo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch releases: %w", err)
 	}

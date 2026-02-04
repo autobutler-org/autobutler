@@ -24,17 +24,14 @@ func IsDevelopmentVersion(version string) bool {
 	return false
 }
 
-// ListPossibleUpdatesParams contains parameters for listing possible updates
-type ListPossibleUpdatesParams struct{}
-
 // ListPossibleUpdatesResult contains the result of listing possible updates
 type ListPossibleUpdatesResult struct {
 	Releases []githubutil.GitHubRelease
 }
 
 // ListPossibleUpdates retrieves all available releases that are newer than the current version
-func ListPossibleUpdates(params ListPossibleUpdatesParams) (*ListPossibleUpdatesResult, error) {
-	releases, err := githubutil.FetchGitHubReleases("autobutler-org", "autobutler.org")
+func ListPossibleUpdates(org string, repo string) (*ListPossibleUpdatesResult, error) {
+	releases, err := githubutil.FetchGitHubReleases(org, repo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch releases: %w", err)
 	}
@@ -67,14 +64,24 @@ func ListPossibleUpdates(params ListPossibleUpdatesParams) (*ListPossibleUpdates
 	}, nil
 }
 
-// UpdateParams contains parameters for updating the application
+func GetLatestVersion(org string, repo string) (*githubutil.GitHubRelease, error) {
+	release, err := githubutil.FetchLatestGitHubRelease(org, repo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch releases: %w", err)
+	}
+
+	return release, nil
+}
+
 type UpdateParams struct {
-	Version string
+	Version       string `json:"version"`
+	BaseUpdateURL string `json:"baseUpdateURL,omitempty"`
 }
 
 // Update downloads and installs a new version of the application
 func Update(params UpdateParams) error {
-	if params.Version == "" {
+	version := params.Version
+	if version == "" {
 		return fmt.Errorf("version cannot be empty")
 	}
 
@@ -83,13 +90,13 @@ func Update(params UpdateParams) error {
 		return fmt.Errorf("failed to copy current binary: %w", err)
 	}
 
-	baseUrl := os.Getenv("AUTOBUTLER_UPDATE_URL")
+	baseUrl := params.BaseUpdateURL
 	if baseUrl == "" {
 		baseUrl = "https://github.com/autobutler-org/autobutler.org/releases/download"
 	}
 
 	goos := fmt.Sprintf("%s%s", strings.ToUpper(string(runtime.GOOS[0])), string(runtime.GOOS[1:]))
-	url := fmt.Sprintf("%s/%s/autobutler_%s_%s.tar.gz", baseUrl, params.Version, goos, runtime.GOARCH)
+	url := fmt.Sprintf("%s/%s/autobutler_%s_%s.tar.gz", baseUrl, version, goos, runtime.GOARCH)
 	fmt.Println("Downloading update from", url)
 
 	resp, err := http.Get(url)
