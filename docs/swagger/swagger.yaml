@@ -16,6 +16,13 @@ definitions:
       statusCode:
         type: integer
     type: object
+  updateutil.UpdateParams:
+    properties:
+      baseUpdateURL:
+        type: string
+      version:
+        type: string
+    type: object
   v1_books.BookJSON:
     properties:
       fileName:
@@ -667,6 +674,44 @@ paths:
       summary: List available versions
       tags:
       - version
+  /version/latest:
+    get:
+      description: Retrieves the latest available version of the application
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_version.ReleaseJSON'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Get latest version
+      tags:
+      - version
+    post:
+      description: Finds and installs the latest version
+      parameters:
+      - description: Base URL for updates
+        in: query
+        name: baseUpdateURL
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_version.UpdateRequest'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Update to the latest version
+      tags:
+      - version
   /version/update:
     post:
       consumes:
@@ -678,7 +723,7 @@ paths:
         name: update
         required: true
         schema:
-          $ref: '#/definitions/v1_version.UpdateRequest'
+          $ref: '#/definitions/updateutil.UpdateParams'
       produces:
       - application/json
       responses:

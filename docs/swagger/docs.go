@@ -830,6 +830,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/version/latest": {
+            "get": {
+                "description": "Retrieves the latest available version of the application",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "version"
+                ],
+                "summary": "Get latest version",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1_version.ReleaseJSON"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Finds and installs the latest version",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "version"
+                ],
+                "summary": "Update to the latest version",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Base URL for updates",
+                        "name": "baseUpdateURL",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1_version.UpdateRequest"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/version/update": {
             "post": {
                 "description": "Performs an update to the specified version",
@@ -850,7 +908,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1_version.UpdateRequest"
+                            "$ref": "#/definitions/updateutil.UpdateParams"
                         }
                     }
                 ],
@@ -899,6 +957,17 @@ const docTemplate = `{
                 "error": {},
                 "statusCode": {
                     "type": "integer"
+                }
+            }
+        },
+        "updateutil.UpdateParams": {
+            "type": "object",
+            "properties": {
+                "baseUpdateURL": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
                 }
             }
         },
