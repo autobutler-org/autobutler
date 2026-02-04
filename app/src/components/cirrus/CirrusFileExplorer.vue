@@ -484,10 +484,10 @@ const handleDownloadSelected = () => {
     const relativePath = currentPath.value
       ? joinPathsNormalized(currentPath.value, fileName)
       : fileName;
-    const downloadUrl = `/api/v1/cirrus/download?${new URLSearchParams({
-      filePath: relativePath,
-      serial: file.deviceSerial || '',
-    })}`;
+    const downloadUrl = CirrusService.getDownloadUrl(
+      relativePath,
+      file.deviceSerial || undefined,
+    );
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = fileName;
@@ -883,10 +883,10 @@ const handleDownload = (file: CirrusFileNode) => {
   const relativePath = currentPath.value
     ? joinPathsNormalized(currentPath.value, fileName)
     : fileName;
-  const downloadUrl = `/api/v1/cirrus/download?${new URLSearchParams({
-    filePath: relativePath,
-    serial: file.deviceSerial || '',
-  })}`;
+  const downloadUrl = CirrusService.getDownloadUrl(
+    relativePath,
+    file.deviceSerial || undefined,
+  );
 
   // Create a temporary link and click it to trigger download
   const link = document.createElement('a');

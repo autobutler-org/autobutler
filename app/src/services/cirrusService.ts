@@ -3,74 +3,27 @@ import type { CirrusFileNode, FileType } from '@/types/cirrus';
 import HttpService from './httpService';
 
 export default class CirrusService {
-  /**
-   * Move or rename a file or directory in Cirrus
-   */
-  static moveFile = async (
-    oldPath: string,
-    newPath: string,
-    oldDeviceSerial?: string,
-    newDeviceSerial?: string,
-  ): Promise<void> => {
-    await HttpService.put('/api/v1/cirrus', {
-      oldFilePath: oldPath,
-      newFilePath: newPath,
-      oldDeviceSerial: oldDeviceSerial,
-      newDeviceSerial: newDeviceSerial,
-    });
-  };
-
-  /**
-   * Fetch files for a given path from the backend API
-   */
-  static getFiles = async (path: string): Promise<CirrusFileNode[]> => {
-    const normalizedPath = CirrusService.normalizePath(path);
-    return await HttpService.getAsJson<CirrusFileNode[]>(
-      '/api/v1/cirrus',
-      normalizedPath
-        ? new URLSearchParams({ rootDir: normalizedPath })
-        : undefined,
-    );
-  };
-
-  /**
-   * Get available space in bytes (mocked)
-   */
-  static getAvailableSpace = (): number => 100 * 1024 * 1024 * 1024;
-
-  // Utility methods can be static or exported as needed
-  static formatBytes(bytes: number): string {
-    if (bytes < 1024) {
-      return `${bytes} B`;
-    } else if (bytes < 1024 * 1024) {
-      return `${(bytes / 1024).toFixed(1)} KB`;
-    } else if (bytes < 1024 * 1024 * 1024) {
-      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    } else if (bytes < 1024 * 1024 * 1024 * 1024) {
-      return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-    } else {
-      return `${(bytes / (1024 * 1024 * 1024 * 1024)).toFixed(1)} TB`;
-    }
-  }
-
   static bytesToGB(bytes: number): number {
     return bytes / (1024 * 1024 * 1024);
   }
 
-  static getFileName(node: CirrusFileNode): string {
-    if (node.name) {
-      return node.name;
+  /**
+   * Delete a file in Cirrus
+   */
+  static async deleteFile(
+    rootDir: string,
+    fileName: string,
+    deviceSerial?: string,
+  ): Promise<void> {
+    const params = new URLSearchParams();
+    params.append('rootDir', rootDir);
+    params.append('filePaths', fileName);
+    if (deviceSerial) {
+      params.append('serial', deviceSerial);
     }
-    const parts = node.fullPath.split('/');
-    return parts[parts.length - 1] || '';
-  }
-
-  static isDirectory(node: CirrusFileNode): boolean {
-    return node.isDir;
-  }
-
-  static getFileSize(node: CirrusFileNode): number {
-    return node.size || 0;
+    const url = `/api/v1/cirrus?${params}`;
+    const response = await HttpService.delete(url);
+    if (!response.ok) throw new Error('Failed to delete file');
   }
 
   static determineFileType(node: CirrusFileNode): FileType {
@@ -120,8 +73,26 @@ export default class CirrusService {
     }
   }
 
-  static normalizePath(path: string): string {
-    return path.replace(/^\/+|\/+$/g, '').trim();
+  // Utility methods can be static or exported as needed
+  static formatBytes(bytes: number): string {
+    if (bytes < 1024) {
+      return `${bytes} B`;
+    } else if (bytes < 1024 * 1024) {
+      return `${(bytes / 1024).toFixed(1)} KB`;
+    } else if (bytes < 1024 * 1024 * 1024) {
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    } else if (bytes < 1024 * 1024 * 1024 * 1024) {
+      return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+    } else {
+      return `${(bytes / (1024 * 1024 * 1024 * 1024)).toFixed(1)} TB`;
+    }
+  }
+
+  /**
+   * Get available space in bytes (mocked)
+   */
+  static getAvailableSpace(): number {
+    return 100 * 1024 * 1024 * 1024;
   }
 
   /**
@@ -137,22 +108,53 @@ export default class CirrusService {
   }
 
   /**
-   * Delete a file in Cirrus
+   * Fetch files for a given path from the backend API
    */
-  static async deleteFile(
-    rootDir: string,
-    fileName: string,
-    deviceSerial?: string,
-  ): Promise<void> {
-    const params = new URLSearchParams();
-    params.append('rootDir', rootDir);
-    params.append('filePaths', fileName);
-    if (deviceSerial) {
-      params.append('serial', deviceSerial);
+  static async getFiles(path: string): Promise<CirrusFileNode[]> {
+    const normalizedPath = CirrusService.normalizePath(path);
+    return await HttpService.getAsJson<CirrusFileNode[]>(
+      '/api/v1/cirrus',
+      normalizedPath
+        ? new URLSearchParams({ rootDir: normalizedPath })
+        : undefined,
+    );
+  }
+
+  static getFileName(node: CirrusFileNode): string {
+    if (node.name) {
+      return node.name;
     }
-    const url = `/api/v1/cirrus?${params}`;
-    const response = await HttpService.delete(url);
-    if (!response.ok) throw new Error('Failed to delete file');
+    const parts = node.fullPath.split('/');
+    return parts[parts.length - 1] || '';
+  }
+
+  static getFileSize(node: CirrusFileNode): number {
+    return node.size || 0;
+  }
+
+  static isDirectory(node: CirrusFileNode): boolean {
+    return node.isDir;
+  }
+
+  /**
+   * Move or rename a file or directory in Cirrus
+   */
+  static async moveFile(
+    oldPath: string,
+    newPath: string,
+    oldDeviceSerial?: string,
+    newDeviceSerial?: string,
+  ): Promise<void> {
+    await HttpService.put('/api/v1/cirrus', {
+      oldFilePath: oldPath,
+      newFilePath: newPath,
+      oldDeviceSerial: oldDeviceSerial,
+      newDeviceSerial: newDeviceSerial,
+    });
+  }
+
+  static normalizePath(path: string): string {
+    return path.replace(/^\/+|\/+$/g, '').trim();
   }
 
   /**
