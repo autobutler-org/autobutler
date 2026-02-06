@@ -231,9 +231,10 @@ import OpenTelemetryIcon from '@/components/icons/OpenTelemetryIcon.vue';
 import RefreshIcon from '@/components/icons/RefreshIcon.vue';
 import SaveIcon from '@/components/icons/SaveIcon.vue';
 import SearchIcon from '@/components/icons/SearchIcon.vue';
-import { computed } from 'vue';
 import DevicesService from '@/services/devicesService';
 import { useCirrusDeviceStore } from '@/stores/cirrusDeviceStore';
+import type { Device } from '@/types/device';
+import { computed } from 'vue';
 
 const sidebarSections = [
   {
@@ -256,11 +257,9 @@ const sidebarSections = [
 const deviceStore = useCirrusDeviceStore();
 const devices = computed(() => deviceStore.devices);
 
-function isBackup(d: any) {
-  return !!d.isBackup;
-}
+const isBackup = (d: Device) => !!d.isBackup;
 
-async function toggleBackup(d: any) {
+const toggleBackup = async (d: Device) => {
   const makeBackup = !d.isBackup;
   if (makeBackup) {
     if (
@@ -292,7 +291,7 @@ async function toggleBackup(d: any) {
     console.error('Failed to update backup state', e);
     window.alert('Failed to update backup setting');
   }
-}
+};
 </script>
 
 <style lang="scss" scoped>
