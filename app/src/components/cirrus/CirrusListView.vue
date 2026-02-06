@@ -75,7 +75,11 @@
                 <span class="file-table-name-label">
                   {{ CirrusService.getFileName(file) }}
                 </span>
-                <span v-if="file.isBackedUp === false && !file.isDir" class="backup-dot" title="Not backed up"></span>
+                <span
+                  v-if="file.isBackedUp === false && !file.isDir"
+                  class="backup-dot"
+                  title="Not backed up"
+                ></span>
               </span>
             </div>
           </td>

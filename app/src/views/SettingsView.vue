@@ -47,13 +47,26 @@
               <h2>Storage & Backups</h2>
             </div>
             <div class="settings-section-card">
-              <p class="settings-section-description">Mark a USB device as a backup device. When set, files on that device will be treated as backups and protected from accidental deletion.</p>
+              <p class="settings-section-description">
+                Mark a USB device as a backup device. When set, files on that
+                device will be treated as backups and protected from accidental
+                deletion.
+              </p>
               <ul class="device-list">
-                <li v-for="d in devices" :key="d.usbInfo?.serial || d.devicePath" class="device-list-item">
+                <li
+                  v-for="d in devices"
+                  :key="d.usbInfo?.serial || d.devicePath"
+                  class="device-list-item"
+                >
                   <div class="device-name">{{ d.name || d.devicePath }}</div>
                   <div>
                     <label>
-                      <input type="checkbox" :checked="isBackup(d)" @change="toggleBackup(d)" /> Backup
+                      <input
+                        type="checkbox"
+                        :checked="isBackup(d)"
+                        @change="toggleBackup(d)"
+                      />
+                      Backup
                     </label>
                   </div>
                 </li>
@@ -250,11 +263,19 @@ function isBackup(d: any) {
 async function toggleBackup(d: any) {
   const makeBackup = !d.isBackup;
   if (makeBackup) {
-    if (!window.confirm('Mark this device as a backup device? It will be treated as a backup and protected.')) {
+    if (
+      !window.confirm(
+        'Mark this device as a backup device? It will be treated as a backup and protected.',
+      )
+    ) {
       return;
     }
   } else {
-    if (!window.confirm('Unmark this device as a backup device? This will remove backup protection.')) {
+    if (
+      !window.confirm(
+        'Unmark this device as a backup device? This will remove backup protection.',
+      )
+    ) {
       return;
     }
   }

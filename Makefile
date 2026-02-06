@@ -170,20 +170,20 @@ format/go: ## Format Go code
 format/ts: ## Format TypeScript files
 	npm run format --prefix ./app
 
-lint: lint/go lint/sqlc lint/ts lint/yaml ## Lint code
+check: check/go check/sqlc check/ts check/yaml ## Check code
 
-lint/go: ## Lint Go code
+check/go: ## Check Go code
 	$(MAKE) _ensure/public
 	$(GO) vet ./...
 
-lint/sqlc: ## Lint sqlc
+check/sqlc: ## Check sqlc
 	sqlc vet
 
-lint/ts: ## Lint TypeScript files
-	npm run lint:ts --prefix ./app
+check/ts: ## Check TypeScript files
+	npm run check:ts --prefix ./app
 
-lint/yaml: ## Lint YAML files
-	npm run lint:yaml --prefix ./app
+check/yaml: ## Check YAML files
+	npm run check:yaml --prefix ./app
 
 fix: fix/go fix/ts ## Fix code issues
 

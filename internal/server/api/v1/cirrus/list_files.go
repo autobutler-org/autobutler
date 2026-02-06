@@ -4,8 +4,8 @@ import (
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/storageutil"
 	"fmt"
-	"path/filepath"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
