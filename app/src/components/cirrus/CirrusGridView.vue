@@ -65,6 +65,7 @@
               :title="CirrusService.getFileName(file)"
             >
               {{ CirrusService.getFileName(file) }}
+              <span v-if="file.isBackedUp === false && !file.isDir" class="backup-dot" title="Not backed up"></span>
             </div>
             <DeviceBadge
               v-if="props.showDeviceBadges && file.deviceName"
@@ -469,6 +470,16 @@ const isSubPath = (parent: string, child: string) => {
   &::selection {
     background-color: transparent;
   }
+}
+
+.backup-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ff6b6b;
+  margin-left: 8px;
+  vertical-align: middle;
 }
 
 .grid-view-size {

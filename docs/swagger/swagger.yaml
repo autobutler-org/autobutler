@@ -46,6 +46,8 @@ definitions:
         type: string
       fullPath:
         type: string
+      isBackedUp:
+        type: boolean
       isDir:
         type: boolean
       name:
@@ -526,6 +528,59 @@ paths:
       summary: List photos
       tags:
       - photos
+  /storage/devices/{serial}/backup:
+    delete:
+      description: Remove backup marking for a USB device
+      parameters:
+      - description: Device serial
+        in: path
+        name: serial
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Unmark a device as a backup device
+      tags:
+      - storage
+    post:
+      description: Persistently mark a USB device (by serial) as a backup device
+      parameters:
+      - description: Device serial
+        in: path
+        name: serial
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Mark a device as a backup device
+      tags:
+      - storage
   /storage/devices/status:
     get:
       description: Returns statuses for all known storage devices

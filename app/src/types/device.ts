@@ -21,4 +21,6 @@ export interface Device {
   categories: Record<string, number>;
   usbInfo?: UsbInfo;
   isEnabled: boolean;
+  // Indicates this device is configured as a backup device and should be treated as such
+  isBackup?: boolean;
 }

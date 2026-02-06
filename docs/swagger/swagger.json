@@ -764,6 +764,86 @@
                 }
             }
         },
+        "/storage/devices/{serial}/backup": {
+            "post": {
+                "description": "Persistently mark a USB device (by serial) as a backup device",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "storage"
+                ],
+                "summary": "Mark a device as a backup device",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device serial",
+                        "name": "serial",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Remove backup marking for a USB device",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "storage"
+                ],
+                "summary": "Unmark a device as a backup device",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device serial",
+                        "name": "serial",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/version": {
             "get": {
                 "description": "Retrieves the installed version of the application",
@@ -994,6 +1074,9 @@
                 },
                 "fullPath": {
                     "type": "string"
+                },
+                "isBackedUp": {
+                    "type": "boolean"
                 },
                 "isDir": {
                     "type": "boolean"

@@ -227,13 +227,13 @@ ifeq ($(AS_ROOT), 1)
 		--build.cmd "sudo $(MAKE) build/backend" \
 		--build.entrypoint "$(EXE)" \
 		--build.args_bin "serve" \
-		--build.exclude_dir "app,build,cd,datalinks,docs,internal/db,node_modules,playwright-report,scripts,sql,teststest-results"
+		--build.exclude_dir "app,build,cd,datalinks,docs,internal/db,node_modules,playwright-report,scripts,sql,test-results"
 else
 	$(AIR) \
 		--build.cmd "$(MAKE) build/backend" \
 		--build.entrypoint "$(EXE)" \
 		--build.args_bin "serve" \
-		--build.exclude_dir "app,build,cd,datalinks,docs,internal/db,node_modules,playwright-report,scripts,sql,teststest-results"
+		--build.exclude_dir "app,build,cd,datalinks,docs,internal/db,node_modules,playwright-report,scripts,sql,test-results"
 endif
 
 serve/frontend: ## Serve frontend

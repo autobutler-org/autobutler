@@ -42,6 +42,24 @@
               <p>Configure where telemetry is sent and how it's batched</p>
             </div>
           </section>
+          <section id="storage" class="settings-section settings-card">
+            <div class="settings-section-header">
+              <h2>Storage & Backups</h2>
+            </div>
+            <div class="settings-section-card">
+              <p class="settings-section-description">Mark a USB device as a backup device. When set, files on that device will be treated as backups and protected from accidental deletion.</p>
+              <ul class="device-list">
+                <li v-for="d in devices" :key="d.usbInfo?.serial || d.devicePath" class="device-list-item">
+                  <div class="device-name">{{ d.name || d.devicePath }}</div>
+                  <div>
+                    <label>
+                      <input type="checkbox" :checked="isBackup(d)" @change="toggleBackup(d)" /> Backup
+                    </label>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </section>
         </div>
         <section class="settings-metrics-section settings-card">
           <span class="mock-badge">mock</span>
@@ -200,6 +218,9 @@ import OpenTelemetryIcon from '@/components/icons/OpenTelemetryIcon.vue';
 import RefreshIcon from '@/components/icons/RefreshIcon.vue';
 import SaveIcon from '@/components/icons/SaveIcon.vue';
 import SearchIcon from '@/components/icons/SearchIcon.vue';
+import { computed } from 'vue';
+import DevicesService from '@/services/devicesService';
+import { useCirrusDeviceStore } from '@/stores/cirrusDeviceStore';
 
 const sidebarSections = [
   {
@@ -218,6 +239,39 @@ const sidebarSections = [
     items: [{ label: 'Data Migration', href: '/data-migration' }],
   },
 ];
+
+const deviceStore = useCirrusDeviceStore();
+const devices = computed(() => deviceStore.devices);
+
+function isBackup(d: any) {
+  return !!d.isBackup;
+}
+
+async function toggleBackup(d: any) {
+  const makeBackup = !d.isBackup;
+  if (makeBackup) {
+    if (!window.confirm('Mark this device as a backup device? It will be treated as a backup and protected.')) {
+      return;
+    }
+  } else {
+    if (!window.confirm('Unmark this device as a backup device? This will remove backup protection.')) {
+      return;
+    }
+  }
+  // Persist change to backend and update local state on success
+  try {
+    const serial = d.usbInfo?.serial || '';
+    if (makeBackup) {
+      await DevicesService.setDeviceBackup(serial);
+    } else {
+      await DevicesService.unsetDeviceBackup(serial);
+    }
+    d.isBackup = makeBackup;
+  } catch (e) {
+    console.error('Failed to update backup state', e);
+    window.alert('Failed to update backup setting');
+  }
+}
 </script>
 
 <style lang="scss" scoped>

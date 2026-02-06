@@ -75,6 +75,7 @@
                 <span class="file-table-name-label">
                   {{ CirrusService.getFileName(file) }}
                 </span>
+                <span v-if="file.isBackedUp === false && !file.isDir" class="backup-dot" title="Not backed up"></span>
               </span>
             </div>
           </td>
@@ -578,6 +579,16 @@ const isSubPath = (parent: string, child: string) => {
   &::selection {
     background-color: transparent;
   }
+}
+
+.backup-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ff6b6b; /* red dot for not backed up */
+  margin-left: 8px;
+  vertical-align: middle;
 }
 
 .file-table-device {
