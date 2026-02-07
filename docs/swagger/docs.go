@@ -627,6 +627,12 @@ const docTemplate = `{
                         "name": "serial",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Whether to include the list of files in the backup job(s) (default: false)",
+                        "name": "includeFiles",
+                        "in": "query"
                     }
                 ],
                 "responses": {

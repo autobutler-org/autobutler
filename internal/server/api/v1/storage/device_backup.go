@@ -87,6 +87,7 @@ func unsetDeviceBackup(c *gin.Context) *serverutil.Response {
 // @Tags storage
 // @Produce json
 // @Param serial path string true "Device serial"
+// @Param includeFiles query bool false "Whether to include the list of files in the backup job(s) (default: false)"
 // @Success 200 {object} object
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"

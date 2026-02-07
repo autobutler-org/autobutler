@@ -564,6 +564,11 @@ paths:
         name: serial
         required: true
         type: string
+      - description: 'Whether to include the list of files in the backup job(s) (default:
+          false)'
+        in: query
+        name: includeFiles
+        type: boolean
       produces:
       - application/json
       responses:
