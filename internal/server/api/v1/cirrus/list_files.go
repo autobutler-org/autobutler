@@ -45,7 +45,14 @@ func listFiles(c *gin.Context) *serverutil.Response {
 	}
 	var selectedDevices []storageutil.ManagedDevice
 	if serial == "" {
-		selectedDevices = devices
+		// exclude devices marked as backups from main list
+		prefs, _ := storageutil.LoadDevicePrefs()
+		for _, d := range devices {
+			if d.UsbInfo != nil && prefs.IsBackup(d.UsbInfo.GetSerial()) {
+				continue
+			}
+			selectedDevices = append(selectedDevices, d)
+		}
 	} else {
 		for _, d := range devices {
 			if d.UsbInfo != nil && d.UsbInfo.GetSerial() == serial {
