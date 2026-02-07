@@ -610,6 +610,86 @@ const docTemplate = `{
                 }
             }
         },
+        "/storage/devices/backup/{serial}": {
+            "post": {
+                "description": "Persistently mark a USB device (by serial) as a backup device",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "storage"
+                ],
+                "summary": "Mark a device as a backup device",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device serial",
+                        "name": "serial",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Remove backup marking for a USB device",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "storage"
+                ],
+                "summary": "Unmark a device as a backup device",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device serial",
+                        "name": "serial",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/storage/devices/status": {
             "get": {
                 "description": "Returns statuses for all known storage devices",
@@ -762,86 +842,6 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/storage/devices/backup/{serial}": {
-            "post": {
-                "description": "Persistently mark a USB device (by serial) as a backup device",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "storage"
-                ],
-                "summary": "Mark a device as a backup device",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Device serial",
-                        "name": "serial",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Remove backup marking for a USB device",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "storage"
-                ],
-                "summary": "Unmark a device as a backup device",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Device serial",
-                        "name": "serial",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
