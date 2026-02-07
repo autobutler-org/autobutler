@@ -146,7 +146,8 @@ func runBackupJob(ctx context.Context, job *BackupJob) {
 	job.TotalFiles = len(sources)
 	mu.Unlock()
 
-	// perform copies
+	// submit copy tasks to the copy worker channel instead of copying inline
+	results := make([]chan error, 0, len(sources))
 	for _, src := range sources {
 		select {
 		case <-ctx.Done():
@@ -164,7 +165,7 @@ func runBackupJob(ctx context.Context, job *BackupJob) {
 			}
 		}
 		if base == "" {
-			// can't determine relative path; skip
+			// can't determine relative path; count as processed and skip
 			mu.Lock()
 			job.FilesCopied++
 			mu.Unlock()
@@ -176,13 +177,30 @@ func runBackupJob(ctx context.Context, job *BackupJob) {
 			finishJobWithError(job, fmt.Errorf("mkdir failed: %w", err))
 			return
 		}
-		if err := copyFile(src, dest); err != nil {
-			// log and continue
-			_ = err
+		// create task and submit
+		task := &CopyTask{JobID: job.ID, Src: src, Dest: dest, Result: make(chan error, 1)}
+		if err := SubmitCopyTask(task); err != nil {
+			// queue full or submit failed; count as processed but continue
+			mu.Lock()
+			job.FilesCopied++
+			mu.Unlock()
+			continue
 		}
-		mu.Lock()
-		job.FilesCopied++
-		mu.Unlock()
+		results = append(results, task.Result)
+	}
+
+	// wait for all results (or cancellation)
+	for _, res := range results {
+		select {
+		case <-ctx.Done():
+			finishJobCanceled(job)
+			return
+		case err := <-res:
+			_ = err // currently just count successes/failures uniformly; could log
+			mu.Lock()
+			job.FilesCopied++
+			mu.Unlock()
+		}
 	}
 
 	finishJobCompleted(job)
