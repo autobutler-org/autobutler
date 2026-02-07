@@ -20,14 +20,25 @@ func GetCirrusDir() string {
 	return cirrusPath
 }
 
-func GetCirrusDirForDevice(mountPoint string) string {
-	// TODO: Probably should not panic here
+func GetCirrusDirForDevice(mountPoint string) (string, error) {
+	if mountPoint == "" {
+		return "", fmt.Errorf("mount point is empty")
+	}
+
+	mountInfo, err := os.Stat(mountPoint)
+	if err != nil {
+		return "", err
+	}
+	if !mountInfo.IsDir() {
+		return "", fmt.Errorf("mount point is not a directory")
+	}
+
 	dataDir := GetDataDirForDevice(mountPoint)
 	cirrusPath := ConstructCirrusDir(dataDir)
 	if err := os.MkdirAll(cirrusPath, 0755); err != nil {
-		panic(fmt.Sprintf("failed to create cirrus directory for device at %s: %v", mountPoint, err)) // coverage: ignore - panic on filesystem error
+		return "", fmt.Errorf("failed to create cirrus directory for device at %s: %v", mountPoint, err)
 	}
-	return cirrusPath
+	return cirrusPath, nil
 }
 
 // GetDataDirForDevice returns the data directory path for a specific device mount point

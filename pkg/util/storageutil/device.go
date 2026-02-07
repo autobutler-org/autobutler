@@ -38,7 +38,10 @@ func (d *Device) ApplySimpleCategorization() {
 	}
 
 	// Traverse the mount point
-	cirrusDir := GetCirrusDirForDevice(d.MountPoint)
+	cirrusDir, err := GetCirrusDirForDevice(d.MountPoint)
+	if err != nil {
+		return
+	}
 	docBytes := uint64(0)
 	mediaBytes := uint64(0)
 	backupBytes := uint64(0)
