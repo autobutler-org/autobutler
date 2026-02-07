@@ -775,7 +775,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/storage/devices/{serial}/backup": {
+        "/storage/devices/backup/{serial}": {
             "post": {
                 "description": "Persistently mark a USB device (by serial) as a backup device",
                 "produces": [

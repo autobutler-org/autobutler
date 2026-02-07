@@ -528,7 +528,7 @@ paths:
       summary: List photos
       tags:
       - photos
-  /storage/devices/{serial}/backup:
+  /storage/devices/backup/{serial}:
     delete:
       description: Remove backup marking for a USB device
       parameters:

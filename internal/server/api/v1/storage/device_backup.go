@@ -19,7 +19,7 @@ import (
 // @Success 200 {object} object
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Router /storage/devices/{serial}/backup [post]
+// @Router /storage/devices/backup/{serial} [post]
 func setDeviceBackup(c *gin.Context) *serverutil.Response {
 	serial := c.Param("serial")
 	if serial == "" {
@@ -49,7 +49,7 @@ func setDeviceBackup(c *gin.Context) *serverutil.Response {
 // @Success 200 {object} object
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Router /storage/devices/{serial}/backup [delete]
+// @Router /storage/devices/backup/{serial} [delete]
 func unsetDeviceBackup(c *gin.Context) *serverutil.Response {
 	serial := c.Param("serial")
 	if serial == "" {
@@ -71,9 +71,9 @@ func unsetDeviceBackup(c *gin.Context) *serverutil.Response {
 }
 
 var setDeviceBackupRoute = serverutil.ApiRoute(
-	"POST", "/storage/devices/:serial/backup", setDeviceBackup,
+	"POST", "/storage/devices/backup/:serial", setDeviceBackup,
 )
 
 var unsetDeviceBackupRoute = serverutil.ApiRoute(
-	"DELETE", "/storage/devices/:serial/backup", unsetDeviceBackup,
+	"DELETE", "/storage/devices/backup/:serial", unsetDeviceBackup,
 )

@@ -32,11 +32,11 @@ export default class DevicesService {
   }
 
   static async setDeviceBackup(serial: string): Promise<void> {
-    await HttpService.post(`/api/v1/storage/devices/${serial}/backup`);
+    await HttpService.post(`/api/v1/storage/devices/backup/${serial}`);
   }
 
   static async unsetDeviceBackup(serial: string): Promise<void> {
-    await HttpService.delete(`/api/v1/storage/devices/${serial}/backup`);
+    await HttpService.delete(`/api/v1/storage/devices/backup/${serial}`);
   }
 
   static async getDeviceStatuses(): Promise<DevicesStatusResponse> {
