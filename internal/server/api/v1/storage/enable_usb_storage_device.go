@@ -88,12 +88,6 @@ func enableUsbStorageDevice(c *gin.Context) *serverutil.Response {
 			WithError(fmt.Errorf("Failed to create mount target directory: %w", err))
 	}
 	mountCommand := partition.MountCommand(mountTargetPath)
-	if err != nil {
-		return serverutil.NewResponse().
-			WithContentType(serverutil.ContentTypeJSON).
-			WithStatusCode(http.StatusInternalServerError).
-			WithError(fmt.Errorf("Failed to generate mount command: %w", err))
-	}
 	if err := mountCommand.Run(); err != nil {
 		return serverutil.NewResponse().
 			WithContentType(serverutil.ContentTypeJSON).
