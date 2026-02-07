@@ -611,6 +611,45 @@ const docTemplate = `{
             }
         },
         "/storage/devices/backup/{serial}": {
+            "get": {
+                "description": "Returns status of backup job(s) associated with the given storage device serial",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "storage"
+                ],
+                "summary": "Get backup job(s) status for a device",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device serial",
+                        "name": "serial",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Persistently mark a USB device (by serial) as a backup device",
                 "produces": [
