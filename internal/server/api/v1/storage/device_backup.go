@@ -99,9 +99,23 @@ func getDeviceBackupStatus(c *gin.Context) *serverutil.Response {
 			WithStatusCode(http.StatusBadRequest).
 			WithError(errors.New("`serial` path parameter is required"))
 	}
+	includeFiles := false
+	if val := c.Query("includeFiles"); val == "true" || val == "1" {
+		includeFiles = true
+	}
 	jobs, err := storage.GetJobsForTarget(serial)
 	if err != nil {
 		return serverutil.InternalServerError(err)
+	}
+	if !includeFiles {
+		// return copies without the file lists
+		out := make([]*storage.BackupJob, 0, len(jobs))
+		for _, j := range jobs {
+			cp := *j
+			cp.Files = nil
+			out = append(out, &cp)
+		}
+		return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(out)
 	}
 	return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(jobs)
 }

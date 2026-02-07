@@ -35,6 +35,7 @@ type BackupJob struct {
 	ErrorMsg     string       `json:"errorMsg,omitempty"`
 	TotalFiles   int          `json:"totalFiles,omitempty"`
 	FilesCopied  int          `json:"filesCopied,omitempty"`
+	Files        []string     `json:"files,omitempty"`
 
 	cancel context.CancelFunc `json:"-"`
 }
@@ -113,8 +114,10 @@ func runBackupJob(ctx context.Context, job *BackupJob) {
 		return
 	}
 
-	// build list of source files
-	sources := make([]string, 0)
+	// build per-source device file lists
+	filesByDevice := make(map[string][]string)
+	cirrusByDevice := make(map[string]string)
+	total := 0
 	for _, d := range devices {
 		if d.UsbInfo == nil {
 			continue
@@ -126,10 +129,11 @@ func runBackupJob(ctx context.Context, job *BackupJob) {
 		if prefs.IsBackup(serial) {
 			continue
 		}
-		// walk cirrus dir
 		if d.CirrusDir == "" {
 			continue
 		}
+		cirrusByDevice[serial] = d.CirrusDir
+		files := make([]string, 0)
 		_ = filepath.Walk(d.CirrusDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return nil
@@ -137,60 +141,51 @@ func runBackupJob(ctx context.Context, job *BackupJob) {
 			if info.IsDir() {
 				return nil
 			}
-			sources = append(sources, path)
+			files = append(files, path)
 			return nil
 		})
+		if len(files) == 0 {
+			continue
+		}
+		filesByDevice[serial] = files
+		total += len(files)
 	}
 
 	mu.Lock()
-	job.TotalFiles = len(sources)
+	job.TotalFiles = total
+	// store list of gathered files for optional inclusion in status
+	allFiles := make([]string, 0, total)
+	for _, fs := range filesByDevice {
+		allFiles = append(allFiles, fs...)
+	}
+	job.Files = allFiles
 	mu.Unlock()
 
-	// submit copy tasks to the copy worker channel instead of copying inline
-	results := make([]chan error, 0, len(sources))
-	for _, src := range sources {
+	// submit backup tasks (one per source device) to the backup worker channel
+	results := make([]chan error, 0, len(filesByDevice))
+	counts := make([]int, 0, len(filesByDevice))
+	for serial, files := range filesByDevice {
 		select {
 		case <-ctx.Done():
 			finishJobCanceled(job)
 			return
 		default:
 		}
-		// build relative path from source cirrus base
-		var base string
-		var rel string
-		for _, d := range devices {
-			if d.CirrusDir != "" && filepath.HasPrefix(src, filepath.Clean(d.CirrusDir)) {
-				base = d.CirrusDir
-				break
-			}
-		}
-		if base == "" {
-			// can't determine relative path; count as processed and skip
+		srcBase := cirrusByDevice[serial]
+		task := &BackupTask{JobID: job.ID, SrcDir: srcBase, DestDir: target.CirrusDir, Result: make(chan error, 1)}
+		if err := SubmitBackupTask(task); err != nil {
+			// queue full or submit failed; count all files for this device as processed but continue
 			mu.Lock()
-			job.FilesCopied++
-			mu.Unlock()
-			continue
-		}
-		rel, _ = filepath.Rel(base, src)
-		dest := filepath.Join(target.CirrusDir, rel)
-		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
-			finishJobWithError(job, fmt.Errorf("mkdir failed: %w", err))
-			return
-		}
-		// create task and submit
-		task := &CopyTask{JobID: job.ID, Src: src, Dest: dest, Result: make(chan error, 1)}
-		if err := SubmitCopyTask(task); err != nil {
-			// queue full or submit failed; count as processed but continue
-			mu.Lock()
-			job.FilesCopied++
+			job.FilesCopied += len(files)
 			mu.Unlock()
 			continue
 		}
 		results = append(results, task.Result)
+		counts = append(counts, len(files))
 	}
 
 	// wait for all results (or cancellation)
-	for _, res := range results {
+	for i, res := range results {
 		select {
 		case <-ctx.Done():
 			finishJobCanceled(job)
@@ -198,7 +193,7 @@ func runBackupJob(ctx context.Context, job *BackupJob) {
 		case err := <-res:
 			_ = err // currently just count successes/failures uniformly; could log
 			mu.Lock()
-			job.FilesCopied++
+			job.FilesCopied += counts[i]
 			mu.Unlock()
 		}
 	}

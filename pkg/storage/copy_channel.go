@@ -2,44 +2,70 @@ package storage
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 )
 
-// CopyTask represents a single file copy operation submitted to the worker pool.
-type CopyTask struct {
-	JobID  string
-	Src    string
-	Dest   string
-	Result chan error
+// BackupTask represents a backup operation from a source device directory to a target device directory.
+type BackupTask struct {
+	JobID   string
+	SrcDir  string
+	DestDir string
+	Result  chan error
 }
 
-var copyQueue chan *CopyTask
+var backupQueue chan *BackupTask
 
 func init() {
 	// buffered queue and a small pool of workers
-	copyQueue = make(chan *CopyTask, 1000)
+	backupQueue = make(chan *BackupTask, 100)
 	for i := 0; i < 2; i++ {
-		go copyWorker()
+		go backupWorker()
 	}
 }
 
-// SubmitCopyTask enqueues a copy task for processing. Returns error if queue is full.
-func SubmitCopyTask(t *CopyTask) error {
+// SubmitBackupTask enqueues a backup task for processing. Returns error if queue is full.
+func SubmitBackupTask(t *BackupTask) error {
 	select {
-	case copyQueue <- t:
+	case backupQueue <- t:
 		return nil
 	default:
-		return errors.New("copy queue full")
+		return errors.New("backup queue full")
 	}
 }
 
-func copyWorker() {
-	for t := range copyQueue {
-		// perform the actual file copy using package-level copyFile
-		err := copyFile(t.Src, t.Dest)
+func backupWorker() {
+	for t := range backupQueue {
+		// perform the backup for the device directory
+		err := runBackupForDevice(t.SrcDir, t.DestDir)
 		// deliver result and close channel
 		if t.Result != nil {
 			t.Result <- err
 			close(t.Result)
 		}
 	}
+}
+
+func runBackupForDevice(srcDir, destDir string) error {
+	return filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() {
+			return nil
+		}
+		rel, relErr := filepath.Rel(srcDir, path)
+		if relErr != nil {
+			return nil
+		}
+		dest := filepath.Join(destDir, rel)
+		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+			return err
+		}
+		// copyFile is available in this package
+		if err := copyFile(path, dest); err != nil {
+			return err
+		}
+		return nil
+	})
 }
