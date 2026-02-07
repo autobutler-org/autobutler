@@ -12,7 +12,7 @@
           <button aria-label="Save">
             <SaveIcon />
           </button>
-          <button aria-label="Refresh">
+          <button aria-label="Refresh" @click="fetchDevices">
             <RefreshIcon />
           </button>
         </div>
@@ -234,7 +234,7 @@ import SearchIcon from '@/components/icons/SearchIcon.vue';
 import DevicesService from '@/services/devicesService';
 import { useCirrusDeviceStore } from '@/stores/cirrusDeviceStore';
 import type { Device } from '@/types/device';
-import { computed } from 'vue';
+import { onMounted, ref } from 'vue';
 
 const sidebarSections = [
   {
@@ -255,7 +255,22 @@ const sidebarSections = [
 ];
 
 const deviceStore = useCirrusDeviceStore();
-const devices = computed(() => deviceStore.devices);
+const devices = ref<Device[]>([]);
+
+const fetchDevices = async () => {
+  try {
+    const resp = await DevicesService.getDeviceStatuses();
+    devices.value = resp.devices || [];
+    deviceStore.setDevices(resp.devices || []);
+  } catch {
+    devices.value = [];
+    deviceStore.setDevices([]);
+  }
+};
+
+onMounted(() => {
+  fetchDevices();
+});
 
 const isBackup = (d: Device) => !!d.isBackup;
 
