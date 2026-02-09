@@ -42,9 +42,7 @@ func listFiles(c *gin.Context) *serverutil.Response {
 	}
 	var selectedDevices []storageutil.ManagedDevice
 	if serial == "" {
-		for _, d := range devices {
-			selectedDevices = append(selectedDevices, d)
-		}
+		selectedDevices = devices
 	} else {
 		for _, d := range devices {
 			if d.UsbInfo != nil && d.UsbInfo.GetSerial() == serial {
