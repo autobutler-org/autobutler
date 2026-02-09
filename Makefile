@@ -237,7 +237,7 @@ else
 endif
 
 serve/frontend: ## Serve frontend
-	npm run dev --prefix ./app
+	npm run dev --prefix ./app -- --host
 
 watch/frontend: serve/frontend ## Watch frontend
 
