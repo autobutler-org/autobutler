@@ -61,7 +61,12 @@
                   <div class="device-name">{{ d.name || d.devicePath }}</div>
                   <div>
                     <!-- Button to do a backup to the device -->
-                    <button @click="backupToDevice(d)">Backup to device</button>
+                    <button
+                      class="backup-action-button"
+                      @click="backupToDevice(d)"
+                    >
+                      Backup to device
+                    </button>
                   </div>
                 </li>
               </ul>
@@ -458,6 +463,23 @@ const backupToDevice = async (d: Device) => {
   transition: background 0.2s;
 }
 .settings-section-toolbar button:hover {
+  background: $theme-palette-accent;
+  color: $theme-palette-text-inverse;
+}
+.backup-action-button {
+  background: $theme-palette-bg-secondary;
+  color: $theme-palette-text-primary;
+  border: none;
+  border-radius: $border-radius;
+  padding: 4px 12px;
+  font-size: $theme-font-size-sm;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.backup-action-button:hover {
   background: $theme-palette-accent;
   color: $theme-palette-text-inverse;
 }
