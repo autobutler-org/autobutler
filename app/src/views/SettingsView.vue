@@ -285,7 +285,8 @@ const backupToDevice = async (d: Device) => {
   // Persist change to backend and update local state on success
   try {
     const serial = d.usbInfo?.serial || '';
-    await DevicesService.backupToDevice(serial);
+    // Currently, sourceDeviceSerial is empty string to denote the primary storage device
+    await DevicesService.backupToDevice('', serial);
   } catch (e) {
     console.error('Failed to start backup', e);
   }

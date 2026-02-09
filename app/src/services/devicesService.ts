@@ -31,9 +31,13 @@ export default class DevicesService {
     await HttpService.post(`/api/v1/storage/devices/usb/${serial}`);
   }
 
-  static async backupToDevice(targetSerial: string): Promise<void> {
+  static async backupToDevice(
+    sourceDeviceSerial: string,
+    targetDeviceSerial: string,
+  ): Promise<void> {
     await HttpService.post(`/api/v1/storage/devices/backup`, {
-      targetDeviceSerial: targetSerial,
+      sourceDeviceSerial,
+      targetDeviceSerial,
     });
   }
 
