@@ -26,6 +26,10 @@ func backupToDevice(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(fmt.Errorf("Invalid request body: %w", err))
 	}
 
+	if params.SourceDeviceSerial == params.TargetDeviceSerial {
+		return serverutil.BadRequest(fmt.Errorf("Source and target device cannot be the same"))
+	}
+
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	if !ok {
 		return serverutil.InternalServerError(fmt.Errorf("dependencies not found in context"))
