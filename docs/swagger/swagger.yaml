@@ -16,6 +16,13 @@ definitions:
       statusCode:
         type: integer
     type: object
+  storageutil.BackupToDeviceParams:
+    properties:
+      sourceDeviceSerial:
+        type: string
+      targetDeviceSerial:
+        type: string
+    type: object
   updateutil.UpdateParams:
     properties:
       baseUpdateURL:
@@ -46,8 +53,6 @@ definitions:
         type: string
       fullPath:
         type: string
-      isBackedUp:
-        type: boolean
       isDir:
         type: boolean
       name:
@@ -528,73 +533,16 @@ paths:
       summary: List photos
       tags:
       - photos
-  /storage/devices/backup/{serial}:
-    delete:
-      description: Remove backup marking for a USB device
-      parameters:
-      - description: Device serial
-        in: path
-        name: serial
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      summary: Unmark a device as a backup device
-      tags:
-      - storage
-    get:
-      description: Returns status of backup job(s) associated with the given storage
-        device serial
-      parameters:
-      - description: Device serial
-        in: path
-        name: serial
-        required: true
-        type: string
-      - description: 'Whether to include the list of files in the backup job(s) (default:
-          false)'
-        in: query
-        name: includeFiles
-        type: boolean
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      summary: Get backup job(s) status for a device
-      tags:
-      - storage
+  /storage/devices/backup:
     post:
-      description: Persistently mark a USB device (by serial) as a backup device
+      description: Begin a backup to a device
       parameters:
-      - description: Device serial
-        in: path
-        name: serial
+      - description: Backup parameters
+        in: body
+        name: backupParams
         required: true
-        type: string
+        schema:
+          $ref: '#/definitions/storageutil.BackupToDeviceParams'
       produces:
       - application/json
       responses:
@@ -610,7 +558,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/serverutil.Response'
-      summary: Mark a device as a backup device
+      summary: Do a one-time backup to a device
       tags:
       - storage
   /storage/devices/status:

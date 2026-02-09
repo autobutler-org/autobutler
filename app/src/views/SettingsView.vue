@@ -54,20 +54,14 @@
               </p>
               <ul class="device-list">
                 <li
-                  v-for="d in devices"
+                  v-for="d in devicesForBackup"
                   :key="d.usbInfo?.serial || d.devicePath"
                   class="device-list-item"
                 >
                   <div class="device-name">{{ d.name || d.devicePath }}</div>
                   <div>
-                    <label>
-                      <input
-                        type="checkbox"
-                        :checked="isBackup(d)"
-                        @change="toggleBackup(d)"
-                      />
-                      Backup
-                    </label>
+                    <!-- Button to do a backup to the device -->
+                    <button @click="backupToDevice(d)">Backup to device</button>
                   </div>
                 </li>
               </ul>
@@ -234,7 +228,7 @@ import SearchIcon from '@/components/icons/SearchIcon.vue';
 import DevicesService from '@/services/devicesService';
 import { useCirrusDeviceStore } from '@/stores/cirrusDeviceStore';
 import type { Device } from '@/types/device';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 const sidebarSections = [
   {
@@ -256,6 +250,9 @@ const sidebarSections = [
 
 const deviceStore = useCirrusDeviceStore();
 const devices = ref<Device[]>([]);
+const devicesForBackup = computed<Device[]>(() =>
+  devices.value.filter((d) => d.usbInfo && d.isEnabled),
+);
 
 const fetchDevices = async () => {
   try {
@@ -272,39 +269,20 @@ onMounted(() => {
   fetchDevices();
 });
 
-const isBackup = (d: Device) => !!d.isBackup;
-
-const toggleBackup = async (d: Device) => {
-  const makeBackup = !d.isBackup;
-  if (makeBackup) {
-    if (
-      !window.confirm(
-        'Mark this device as a backup device? It will be treated as a backup and protected.',
-      )
-    ) {
-      return;
-    }
-  } else {
-    if (
-      !window.confirm(
-        'Unmark this device as a backup device? This will remove backup protection.',
-      )
-    ) {
-      return;
-    }
+const backupToDevice = async (d: Device) => {
+  if (
+    !window.confirm(
+      `Backup data to device ${d.name || d.devicePath}? This will copy all files to the device.`,
+    )
+  ) {
+    return;
   }
   // Persist change to backend and update local state on success
   try {
     const serial = d.usbInfo?.serial || '';
-    if (makeBackup) {
-      await DevicesService.setDeviceBackup(serial);
-    } else {
-      await DevicesService.unsetDeviceBackup(serial);
-    }
-    d.isBackup = makeBackup;
+    await DevicesService.backupToDevice(serial);
   } catch (e) {
-    console.error('Failed to update backup state', e);
-    window.alert('Failed to update backup setting');
+    console.error('Failed to start backup', e);
   }
 };
 </script>

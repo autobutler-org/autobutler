@@ -10,32 +10,39 @@ type Worker interface {
 	GetQuitChannel() chan struct{}
 	GetErrorChannel() chan error
 	LogErrors() error
+	GetBackupToDeviceChannel() storageutil.BackupToDeviceChannel
 	GetDeleteFilesChannel() storageutil.DeleteFilesChannel
 	GetMoveFileChannel() storageutil.MoveFileChannel
 	GetCreateFolderChannel() storageutil.CreateFolderChannel
 }
 
 type worker struct {
-	quitChannel         chan struct{}
-	errorChannel        chan error
-	deleteFilesChannel  storageutil.DeleteFilesChannel
-	moveFileChannel     storageutil.MoveFileChannel
-	createFolderChannel storageutil.CreateFolderChannel
+	quitChannel           chan struct{}
+	errorChannel          chan error
+	backupToDeviceChannel storageutil.BackupToDeviceChannel
+	deleteFilesChannel    storageutil.DeleteFilesChannel
+	moveFileChannel       storageutil.MoveFileChannel
+	createFolderChannel   storageutil.CreateFolderChannel
 }
 
 func NewWorker() Worker {
 	return &worker{
-		quitChannel:         make(chan struct{}),
-		errorChannel:        make(chan error),
-		deleteFilesChannel:  make(storageutil.DeleteFilesChannel),
-		moveFileChannel:     make(storageutil.MoveFileChannel),
-		createFolderChannel: make(storageutil.CreateFolderChannel),
+		quitChannel:           make(chan struct{}),
+		errorChannel:          make(chan error),
+		backupToDeviceChannel: make(storageutil.BackupToDeviceChannel),
+		deleteFilesChannel:    make(storageutil.DeleteFilesChannel),
+		moveFileChannel:       make(storageutil.MoveFileChannel),
+		createFolderChannel:   make(storageutil.CreateFolderChannel),
 	}
 }
 
 func (w *worker) Process() error {
 	for {
 		select {
+		case backupReq := <-w.backupToDeviceChannel:
+			if _, err := storageutil.BackupToDevice(backupReq); err != nil {
+				w.errorChannel <- err
+			}
 		case deleteReq := <-w.deleteFilesChannel:
 			if _, err := storageutil.DeleteFiles(deleteReq); err != nil {
 				w.errorChannel <- err
@@ -69,6 +76,10 @@ func (w *worker) LogErrors() error {
 			log.Printf("Worker service error: %v\n", err)
 		}
 	}
+}
+
+func (w *worker) GetBackupToDeviceChannel() storageutil.BackupToDeviceChannel {
+	return w.backupToDeviceChannel
 }
 
 func (w *worker) GetDeleteFilesChannel() storageutil.DeleteFilesChannel {

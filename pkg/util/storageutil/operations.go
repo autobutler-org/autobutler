@@ -9,6 +9,49 @@ import (
 	"path/filepath"
 )
 
+// BackupToDeviceParams contains parameters for backing up a device
+type BackupToDeviceParams struct {
+	SourceDeviceSerial string `json:"sourceDeviceSerial"`
+	TargetDeviceSerial string `json:"targetDeviceSerial"`
+}
+
+// BackupToDeviceResult contains the data of a backup operation
+type BackupToDeviceResult struct {
+	SourceDeviceSerial string
+	TargetDeviceSerial string
+}
+
+// BackupToDeviceChannel is a channel for backing up devices
+type BackupToDeviceChannel chan BackupToDeviceParams
+
+func BackupToDevice(params BackupToDeviceParams) (*BackupToDeviceResult, error) {
+	// NOTE: Empty string returns the first internal storage
+	sourceDevice, err := FindManagedDeviceBySerial(params.SourceDeviceSerial)
+	if err != nil {
+		return nil, err // coverage: ignore - requires device detection failure
+	}
+
+	targetDevice, err := FindManagedDeviceBySerial(params.TargetDeviceSerial)
+	if err != nil {
+		return nil, err // coverage: ignore - requires device detection failure
+	}
+
+	if params.SourceDeviceSerial == params.TargetDeviceSerial {
+		return nil, fmt.Errorf("source and target devices cannot be the same")
+	}
+
+	err = os.CopyFS(targetDevice.CirrusDir, os.DirFS(sourceDevice.CirrusDir))
+	if err != nil {
+		return nil, fmt.Errorf("failed to backup device: %w", err) // coverage: ignore - requires filesystem permission errors
+	}
+
+	// Placeholder implementation - in a real implementation, this would perform the backup logic
+	return &BackupToDeviceResult{
+		SourceDeviceSerial: params.SourceDeviceSerial,
+		TargetDeviceSerial: params.TargetDeviceSerial,
+	}, nil
+}
+
 // DeleteFilesParams contains parameters for deleting files
 type DeleteFilesParams struct {
 	RootDir      string

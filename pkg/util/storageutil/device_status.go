@@ -5,7 +5,6 @@ package storageutil
 type DeviceStatus struct {
 	Device
 	IsEnabled bool   `json:"isEnabled"`
-	IsBackup  bool   `json:"isBackup,omitempty"`
 	DataDir   string `json:"dataDir,omitempty"`
 	CirrusDir string `json:"cirrusDir,omitempty"`
 }
@@ -51,13 +50,6 @@ func GetDeviceStatuses() ([]*DeviceStatus, error) {
 			IsEnabled: isEnabled,
 			DataDir:   dataDir,
 			CirrusDir: cirrusDir,
-		}
-
-		// Load persisted device preferences (e.g., backup flags) from main data dir
-		if prefs, err := LoadDevicePrefs(); err == nil {
-			if device.UsbInfo != nil && prefs.IsBackup(device.UsbInfo.GetSerial()) {
-				status.IsBackup = true
-			}
 		}
 
 		statuses = append(statuses, status)

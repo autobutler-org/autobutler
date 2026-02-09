@@ -4,9 +4,7 @@ import (
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/storageutil"
 	"fmt"
-	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,7 +18,6 @@ type FileNodeJSON struct {
 	DevicePath   string `json:"devicePath"`
 	FullPath     string `json:"fullPath"`
 	DeviceSerial string `json:"deviceSerial"`
-	IsBackedUp   bool   `json:"isBackedUp"`
 }
 
 // listFiles godoc
@@ -45,12 +42,7 @@ func listFiles(c *gin.Context) *serverutil.Response {
 	}
 	var selectedDevices []storageutil.ManagedDevice
 	if serial == "" {
-		// exclude devices marked as backups from main list
-		prefs, _ := storageutil.LoadDevicePrefs()
 		for _, d := range devices {
-			if d.UsbInfo != nil && prefs.IsBackup(d.UsbInfo.GetSerial()) {
-				continue
-			}
 			selectedDevices = append(selectedDevices, d)
 		}
 	} else {
@@ -94,39 +86,7 @@ func listFiles(c *gin.Context) *serverutil.Response {
 	allFiles = filteredFiles
 	// Convert to JSON-serializable format
 	jsonData := make([]FileNodeJSON, len(allFiles))
-	// Load device prefs once to identify backup devices
-	prefs, _ := storageutil.LoadDevicePrefs()
 	for i, file := range allFiles {
-		// Attempt to locate the cirrus base dir for this file's device
-		baseCirrus := ""
-		for _, md := range devices {
-			if md.DevicePath == file.DevicePath || (md.UsbInfo != nil && md.UsbInfo.GetSerial() == file.DeviceSerial) {
-				baseCirrus = md.CirrusDir
-				break
-			}
-		}
-		relPath := file.FullPath
-		if baseCirrus != "" {
-			relPath = strings.TrimPrefix(file.FullPath, filepath.Clean(baseCirrus)+string(os.PathSeparator))
-		}
-		isBackedUp := false
-		// Check all managed devices marked as backups for existence of this relative path
-		for _, md := range devices {
-			if md.UsbInfo == nil {
-				continue
-			}
-			serial := md.UsbInfo.GetSerial()
-			if !prefs.IsBackup(serial) {
-				continue
-			}
-			// Stat the candidate path on the backup device
-			candidate := filepath.Join(md.CirrusDir, relPath)
-			if _, err := os.Stat(candidate); err == nil {
-				isBackedUp = true
-				break
-			}
-		}
-
 		jsonData[i] = FileNodeJSON{
 			Name:         file.Name(),
 			Size:         file.Size(),
@@ -135,10 +95,9 @@ func listFiles(c *gin.Context) *serverutil.Response {
 			DevicePath:   file.DevicePath,
 			FullPath:     file.FullPath,
 			DeviceSerial: file.DeviceSerial,
-			IsBackedUp:   isBackedUp,
 		}
 	}
-	return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(jsonData)
+	return serverutil.Ok().WithData(jsonData)
 }
 
 var listFilesRoute = serverutil.ApiRoute(

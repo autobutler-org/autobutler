@@ -65,11 +65,6 @@
               :title="CirrusService.getFileName(file)"
             >
               {{ CirrusService.getFileName(file) }}
-              <span
-                v-if="file.isBackedUp === false && !file.isDir"
-                class="backup-dot"
-                title="Not backed up"
-              ></span>
             </div>
             <DeviceBadge
               v-if="props.showDeviceBadges && file.deviceName"

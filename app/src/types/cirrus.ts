@@ -20,8 +20,6 @@ export interface CirrusFileNode {
   devicePath: string;
   fullPath: string;
   deviceSerial: string;
-  // Indicates whether this file exists on a configured backup device
-  isBackedUp?: boolean;
 }
 
 export interface CirrusState {

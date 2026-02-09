@@ -610,107 +610,25 @@ const docTemplate = `{
                 }
             }
         },
-        "/storage/devices/backup/{serial}": {
-            "get": {
-                "description": "Returns status of backup job(s) associated with the given storage device serial",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "storage"
-                ],
-                "summary": "Get backup job(s) status for a device",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Device serial",
-                        "name": "serial",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Whether to include the list of files in the backup job(s) (default: false)",
-                        "name": "includeFiles",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            },
+        "/storage/devices/backup": {
             "post": {
-                "description": "Persistently mark a USB device (by serial) as a backup device",
+                "description": "Begin a backup to a device",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "storage"
                 ],
-                "summary": "Mark a device as a backup device",
+                "summary": "Do a one-time backup to a device",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Device serial",
-                        "name": "serial",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
+                        "description": "Backup parameters",
+                        "name": "backupParams",
+                        "in": "body",
+                        "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/storageutil.BackupToDeviceParams"
                         }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Remove backup marking for a USB device",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "storage"
-                ],
-                "summary": "Unmark a device as a backup device",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Device serial",
-                        "name": "serial",
-                        "in": "path",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -1085,6 +1003,17 @@ const docTemplate = `{
                 }
             }
         },
+        "storageutil.BackupToDeviceParams": {
+            "type": "object",
+            "properties": {
+                "sourceDeviceSerial": {
+                    "type": "string"
+                },
+                "targetDeviceSerial": {
+                    "type": "string"
+                }
+            }
+        },
         "updateutil.UpdateParams": {
             "type": "object",
             "properties": {
@@ -1130,9 +1059,6 @@ const docTemplate = `{
                 },
                 "fullPath": {
                     "type": "string"
-                },
-                "isBackedUp": {
-                    "type": "boolean"
                 },
                 "isDir": {
                     "type": "boolean"

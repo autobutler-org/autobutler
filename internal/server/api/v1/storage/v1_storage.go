@@ -13,9 +13,7 @@ func (r *router) Routes() []*serverutil.Route {
 		disableUsbStorageDeviceRoute,
 		enableUsbStorageDeviceRoute,
 		getDeviceStatusBySerialRoute,
-		setDeviceBackupRoute,
-		getDeviceBackupStatusRoute,
-		unsetDeviceBackupRoute,
+		backupToDeviceRoute,
 		listDeviceStatusesRoute,
 	}
 }
