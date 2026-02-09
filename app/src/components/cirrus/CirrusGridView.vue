@@ -471,16 +471,6 @@ const isSubPath = (parent: string, child: string) => {
   }
 }
 
-.backup-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #ff6b6b;
-  margin-left: 8px;
-  vertical-align: middle;
-}
-
 .grid-view-size {
   font-size: 0.75rem;
   color: $theme-palette-text-muted;

@@ -580,16 +580,6 @@ const isSubPath = (parent: string, child: string) => {
   }
 }
 
-.backup-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #ff6b6b; /* red dot for not backed up */
-  margin-left: 8px;
-  vertical-align: middle;
-}
-
 .file-table-device {
   color: $theme-palette-text-muted;
   font-size: $theme-font-size-sm;
