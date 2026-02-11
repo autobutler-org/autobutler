@@ -185,18 +185,16 @@ const handleBodyClick = (event?: MouseEvent) => {
   margin: 0;
 }
 
-/* Clickable cards (used for upload-device selection) get subtle hover/press styles without changing default devices page */
-.device-card--clickable {
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease;
-}
-.device-card--clickable:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba($theme-palette-bg-nav, 0.2);
-}
+/* Clickable cards (used for upload-device selection) get subtle hover styles and an outline to indicate targets */
 .device-card--clickable {
   cursor: pointer;
+  /* subtle default outline for upload targets */
+  box-shadow: 0 0 0 1px rgba($theme-palette-border, 0.02);
+}
+
+.device-card--clickable:hover {
+  background-color: rgba($theme-palette-bg-secondary, 0.04);
+  box-shadow: 0 0 0 1px rgba($theme-palette-border, 0.08);
 }
 
 .device-card--disabled {
