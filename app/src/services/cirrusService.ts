@@ -111,16 +111,22 @@ export default class CirrusService {
   /**
    * Fetch files for a given path from the backend API
    */
-  static async getFiles(path: string, serials?: string[]): Promise<CirrusFileNode[]> {
+  static async getFiles(
+    path: string,
+    serials?: string[],
+  ): Promise<CirrusFileNode[]> {
     const normalizedPath = CirrusService.normalizePath(path);
-    const params = normalizedPath ? new URLSearchParams({ rootDir: normalizedPath }) : new URLSearchParams();
+    const params = normalizedPath
+      ? new URLSearchParams({ rootDir: normalizedPath })
+      : new URLSearchParams();
     if (serials && serials.length > 0) {
       for (const s of serials) {
         // append each serial as repeated query param
         params.append('serial', s);
       }
     }
-    const useParams = params && params.toString().length > 0 ? params : undefined;
+    const useParams =
+      params && params.toString().length > 0 ? params : undefined;
     return await HttpService.getAsJson<CirrusFileNode[]>(
       '/api/v1/cirrus',
       useParams,
@@ -187,7 +193,7 @@ export default class CirrusService {
     formData: FormData,
     serial?: string,
   ): Promise<Response> {
-    const url = `${joinPaths('/api/v1/cirrus/upload', uploadPath)}${serial ? new URLSearchParams({ serial }) : ''}`;
+    const url = `${joinPaths('/api/v1/cirrus/upload', uploadPath)}${serial ? `?${new URLSearchParams({ serial })}` : ''}`;
     const response = await HttpService.postForm(url, formData);
     if (!response.ok) throw new Error('Upload failed');
     return response;

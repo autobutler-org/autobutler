@@ -9,6 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const DefaultDeviceSerial = ""
+
 // FileNodeJSON is a JSON-serializable representation of a file node
 type FileNodeJSON struct {
 	Name         string `json:"name"`
@@ -56,7 +58,7 @@ func listFiles(c *gin.Context) *serverutil.Response {
 				}
 			} else {
 				// Internal device (no UsbInfo) represented by empty serial string
-				if serialSet[""] {
+				if serialSet[DefaultDeviceSerial] {
 					selectedDevices = append(selectedDevices, d)
 				}
 			}
@@ -69,7 +71,7 @@ func listFiles(c *gin.Context) *serverutil.Response {
 	for _, device := range selectedDevices {
 		cirrusDir := device.CirrusDir
 		fullPathDir := filepath.Join(cirrusDir, rootDir)
-		deviceSerial := ""
+		deviceSerial := DefaultDeviceSerial
 		if device.UsbInfo != nil {
 			deviceSerial = device.UsbInfo.GetSerial()
 		}

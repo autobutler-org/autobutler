@@ -1,9 +1,10 @@
 import type { Device } from '@/types/device';
 import { defineStore } from 'pinia';
+import { DEFAULT_DEVICE_SERIAL } from '@/constants/device';
 
 export const useCirrusDeviceStore = defineStore('cirrusDevice', {
   state: () => ({
-    selectedDeviceSerial: '' as string,
+    selectedDeviceSerial: DEFAULT_DEVICE_SERIAL as string,
     selectedDeviceSerials: [] as string[],
     devices: [] as Device[],
   }),
@@ -20,8 +21,8 @@ export const useCirrusDeviceStore = defineStore('cirrusDevice', {
       ) {
         const internal = filtered.find((d) => !d.usbInfo?.serial);
         this.selectedDeviceSerial = internal
-          ? ''
-          : filtered[0]?.usbInfo?.serial || '';
+          ? DEFAULT_DEVICE_SERIAL
+          : filtered[0]?.usbInfo?.serial || DEFAULT_DEVICE_SERIAL;
       }
       // Default selectedDeviceSerials to only the currently selected device so the UI shows the default
       this.selectedDeviceSerials = [this.selectedDeviceSerial];
@@ -33,7 +34,7 @@ export const useCirrusDeviceStore = defineStore('cirrusDevice', {
     getSelectedDevice() {
       return (
         this.devices.find(
-          (d) => (d.usbInfo?.serial || '') === this.selectedDeviceSerial,
+          (d) => (d.usbInfo?.serial || DEFAULT_DEVICE_SERIAL) === this.selectedDeviceSerial,
         ) ||
         this.devices.find((d) => !d.usbInfo?.serial) ||
         this.devices[0] ||
