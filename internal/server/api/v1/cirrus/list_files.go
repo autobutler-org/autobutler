@@ -54,6 +54,11 @@ func listFiles(c *gin.Context) *serverutil.Response {
 				if serialSet[d.UsbInfo.GetSerial()] {
 					selectedDevices = append(selectedDevices, d)
 				}
+			} else {
+				// Internal device (no UsbInfo) represented by empty serial string
+				if serialSet[""] {
+					selectedDevices = append(selectedDevices, d)
+				}
 			}
 		}
 		if len(selectedDevices) == 0 {
