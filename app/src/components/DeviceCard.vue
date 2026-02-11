@@ -189,12 +189,13 @@ const handleBodyClick = (event?: MouseEvent) => {
 .device-card--clickable {
   cursor: pointer;
   /* subtle default outline for upload targets */
-  box-shadow: 0 0 0 1px rgba($theme-palette-border, 0.02);
+  background-color: $theme-palette-bg-secondary;
+  box-shadow: 0 0 0 1px $theme-palette-border;
 }
 
 .device-card--clickable:hover {
-  background-color: rgba($theme-palette-bg-secondary, 0.04);
-  box-shadow: 0 0 0 1px rgba($theme-palette-border, 0.08);
+  background-color: $theme-palette-bg-primary;
+  box-shadow: 0 0 0 1px $theme-palette-border;
 }
 
 .device-card--disabled {
