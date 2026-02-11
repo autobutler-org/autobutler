@@ -11,9 +11,6 @@
               placeholder="Filter devices"
             />
           </template>
-          <span v-if="uploadProgress" class="upload-progress">{{
-            uploadProgress
-          }}</span>
           <button
             class="action-btn toolbar-rect upload-rect"
             type="button"
@@ -425,7 +422,6 @@ import { storeToRefs } from 'pinia';
 
 const fileInputRef = vueRef<HTMLInputElement | null>(null);
 const isUploading = vueRef(false);
-const uploadProgress = vueRef('');
 const cirrusDeviceStore = useCirrusDeviceStore();
 const { devices, selectedDeviceSerials } = storeToRefs(cirrusDeviceStore);
 
@@ -533,18 +529,11 @@ const performUpload = async (
 ) => {
   if (!files) return;
   isUploading.value = true;
-  uploadProgress.value = `Uploading ${files.length} file${files.length > 1 ? 's' : ''}...`;
   try {
     await CirrusService.uploadFiles(currentPath.value || '', files, serial);
-    uploadProgress.value = 'Upload complete!';
     await fetchFiles();
-  } catch {
-    uploadProgress.value = 'Upload failed';
   } finally {
     isUploading.value = false;
-    setTimeout(() => {
-      uploadProgress.value = '';
-    }, 1500);
     pendingUploadFiles.value = null;
   }
 };
