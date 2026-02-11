@@ -1498,27 +1498,45 @@ onUnmounted(() => {
 // Mobile-specific adjustments
 @media (max-width: 640px) {
   .file-explorer-header-row {
-    /* keep controls on a single row on small screens */
-    flex-wrap: nowrap;
+    /* allow wrapping so combobox can be on its own row */
+    flex-wrap: wrap;
     gap: $spacing-xs;
-    align-items: center;
+    align-items: flex-start;
   }
 
-  /* keep upload/actions and view toggles on same row on small screens */
+  /* make the device combobox occupy its own full-width row */
   .file-explorer-upload-row {
     order: 1;
     display: flex;
     gap: 0.5rem;
     align-items: center;
-    flex: 1 1 auto;
-    width: auto;
+    flex-wrap: wrap;
+    width: 100%;
   }
 
-  .view-switcher {
+  .file-explorer-upload-row .device-select {
+    order: 1;
+    width: 100%;
+    flex: 1 1 100%;
+    margin-right: 0;
+    margin-bottom: $spacing-xs;
+  }
+
+  /* upload/action buttons (and progress) go on their own row left-aligned */
+  .file-explorer-upload-row .action-btn,
+  .file-explorer-upload-row .upload-progress {
     order: 2;
+    flex: 0 1 auto;
+    margin-right: 0.5rem;
+  }
+
+  /* view selections stay right-aligned on the same row as actions */
+  .view-switcher {
+    order: 3;
     margin-left: auto;
     display: flex;
     gap: 0.25rem;
+    align-items: center;
   }
 
   /* hide the large centered title on small screens to avoid overlapping controls */
@@ -1536,12 +1554,18 @@ onUnmounted(() => {
     font-size: 1.25rem;
   }
 
-  /* make device select compact on small screens */
   .device-select {
     min-width: 8rem;
-    max-width: calc(100% - 4rem);
+    max-width: 100%;
     flex: 1 1 auto;
-    margin-right: 0.5rem;
+  }
+
+  /* ensure file-explorer-controls sit on their own row below header */
+  .file-explorer-controls {
+    width: 100%;
+    margin-top: $spacing-xs;
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 
