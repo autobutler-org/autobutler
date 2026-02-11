@@ -398,6 +398,7 @@
 </template>
 
 <script lang="ts" setup>
+import ComboBox from '@/components/common/ComboBox.vue';
 import ModalDialog from '@/components/common/ModalDialog.vue';
 import CloseIcon from '@/components/icons/CloseIcon.vue';
 import DeleteIcon from '@/components/icons/DeleteIcon.vue';
@@ -430,7 +431,6 @@ import CirrusContextMenu from './CirrusContextMenu.vue';
 import CirrusFileViewer from './CirrusFileViewer.vue';
 import CirrusGridView from './CirrusGridView.vue';
 import CirrusListView from './CirrusListView.vue';
-import ComboBox from '@/components/common/ComboBox.vue';
 
 import DeviceCard from '@/components/DeviceCard.vue';
 import DevicesService from '@/services/devicesService';
@@ -445,7 +445,10 @@ const { devices, selectedDeviceSerial, selectedDeviceSerials } =
   storeToRefs(cirrusDeviceStore);
 
 const deviceItems = computed(() =>
-  (devices.value || []).map((d: any) => ({ value: d.usbInfo?.serial || '', label: d.name })),
+  (devices.value || []).map((d: any) => ({
+    value: d.usbInfo?.serial || '',
+    label: d.name,
+  })),
 );
 
 const fileViewComponent = computed(() => {
@@ -1481,8 +1484,7 @@ onUnmounted(() => {
   border: 0.09rem solid $theme-palette-border-strong;
   font-size: $theme-font-size-base;
   background: $theme-palette-bg-inverse;
-  min-width: 7.5rem;
-  max-width: 13.75rem;
+  min-width: 40rem;
   margin-right: 0.5rem;
 }
 

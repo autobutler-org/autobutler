@@ -140,47 +140,58 @@ onMounted(() => {
 .combobox {
   position: relative;
   width: 100%;
-  max-width: 420px;
+  max-width: 40rem;
   font-family: inherit;
+  color: var(--text, #0f172a);
   .control {
     display: flex;
     align-items: center;
-    gap: 8px;
-    border: 1px solid var(--border, #cfcfcf);
-    padding: 6px 8px;
-    border-radius: 6px;
+    gap: 0.5rem;
+    border: 0.0625rem solid var(--border, #cfcfcf);
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.375rem;
     background: var(--bg, #fff);
     cursor: text;
     &.open {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.08);
     }
     .tags {
       display: flex;
-      gap: 6px;
+      gap: 0.375rem;
       flex-wrap: wrap;
+      flex: 0 1 auto;
+      align-items: center;
+      /* allow input to shrink properly */
       .tag {
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         background: #eef2ff;
         color: #1e293b;
-        padding: 2px 6px;
+        padding: 0.125rem 0.375rem;
         border-radius: 999px;
-        font-size: 12px;
+        font-size: 0.75rem;
+        white-space: nowrap;
       }
     }
     .input {
       flex: 1 1 auto;
       border: 0;
       outline: none;
-      min-width: 36px;
+      min-width: 2.25rem;
+      min-width: 0; /* ensure it can shrink */
       background: transparent;
+      color: inherit;
+      &::placeholder {
+        color: #64748b;
+        opacity: 1;
+      }
     }
     .chev {
       background: transparent;
       border: none;
       cursor: pointer;
-      padding: 2px 6px;
+      padding: 0.125rem 0.375rem;
     }
   }
 
@@ -189,19 +200,19 @@ onMounted(() => {
     z-index: 40;
     left: 0;
     right: 0;
-    margin-top: 6px;
-    border: 1px solid var(--border, #e5e7eb);
+    margin-top: 0.375rem; /* 6px */
+    border: 0.0625rem solid var(--border, #e5e7eb); /* 1px */
     background: white;
-    border-radius: 8px;
-    max-height: 220px;
+    border-radius: 0.5rem;
+    max-height: 13.75rem;
     overflow: auto;
     list-style: none;
-    padding: 6px 4px;
+    padding: 0.375rem 0.25rem;
     li {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
+      gap: 0.5rem;
+      padding: 0.5rem 0.625rem;
       cursor: pointer;
       user-select: none;
       .label {
@@ -218,7 +229,7 @@ onMounted(() => {
       }
     }
     .empty {
-      padding: 8px 10px;
+      padding: 0.5rem 0.625rem;
       color: #9ca3af;
     }
   }
