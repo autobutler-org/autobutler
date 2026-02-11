@@ -54,8 +54,6 @@
           />
         </div>
 
-        <h2 class="file-explorer-title centered-title">Cirrus</h2>
-
         <div class="view-switcher header-right">
           <button
             :class="[
