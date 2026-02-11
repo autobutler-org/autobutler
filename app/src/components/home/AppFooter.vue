@@ -2,14 +2,43 @@
   <footer class="app-footer">
     <div class="footer-content">
       <div class="footer-left">
-        <p class="footer-text">Autobutler LLC.</p>
-        <a
-          href="https://github.com/autobutler-org/autobutler"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="/img/github/github-mark-white.svg" alt="GitHub logo" />
-        </a>
+        <div class="storage-bar-container">
+          <div v-if="storageData" class="storage-info">
+            <span class="storage-label">Total Storage</span>
+            <span class="storage-stats">
+              {{ formatBytes(storageData.usedBytes) }} of
+              {{ formatBytes(storageData.totalBytes) }} used
+              <span class="storage-available"
+                >({{ formatBytes(storageData.availableBytes) }} available)</span
+              >
+            </span>
+          </div>
+          <div v-if="storageData" class="storage-bar">
+            <div
+              class="storage-bar-fill"
+              :style="{ width: usagePercentage + '%' }"
+            ></div>
+          </div>
+          <div v-if="!storageData && !isLoading" class="storage-error">
+            Storage information unavailable
+          </div>
+          <div v-if="isLoading" class="storage-loading">
+            Loading storage data...
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-right-container">
+        <span class="footer-text-container">
+          <a
+            href="https://github.com/autobutler-org/autobutler"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <p class="footer-text">Autobutler LLC.</p>
+            <img src="/img/github/github-mark-white.svg" alt="GitHub logo" />
+          </a>
+        </span>
         <a
           :href="swaggerLink"
           target="_blank"
@@ -19,31 +48,6 @@
           <img src="/favicons/swagger.png" alt="Swagger logo" />
           Interactive API Docs
         </a>
-      </div>
-
-      <div class="storage-bar-container">
-        <div v-if="storageData" class="storage-info">
-          <span class="storage-label">Total Storage</span>
-          <span class="storage-stats">
-            {{ formatBytes(storageData.usedBytes) }} of
-            {{ formatBytes(storageData.totalBytes) }} used
-            <span class="storage-available"
-              >({{ formatBytes(storageData.availableBytes) }} available)</span
-            >
-          </span>
-        </div>
-        <div v-if="storageData" class="storage-bar">
-          <div
-            class="storage-bar-fill"
-            :style="{ width: usagePercentage + '%' }"
-          ></div>
-        </div>
-        <div v-if="!storageData && !isLoading" class="storage-error">
-          Storage information unavailable
-        </div>
-        <div v-if="isLoading" class="storage-loading">
-          Loading storage data...
-        </div>
       </div>
     </div>
   </footer>
@@ -149,6 +153,27 @@ onMounted(() => {
   align-items: center;
   gap: $spacing-md;
   flex-shrink: 0;
+}
+
+.footer-text-container {
+  .footer-text {
+    font-size: $theme-font-size-xs;
+    margin: 0;
+  }
+}
+
+.footer-right-container {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    width: 100%;
+    // Evenly space out the items across the full width on mobile
+    justify-content: space-around;
+  }
 
   img {
     width: 20px;
@@ -157,14 +182,21 @@ onMounted(() => {
     transition: opacity 0.2s ease;
   }
 
-  a:hover img {
-    opacity: 1;
-  }
-}
+  a {
+    text-decoration: none;
+    color: $theme-palette-text-secondary;
 
-.footer-text {
-  font-size: $theme-font-size-xs;
-  margin: 0;
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+
+    &:hover {
+      & img {
+        opacity: 1;
+      }
+      text-decoration: underline;
+    }
+  }
 }
 
 .storage-bar-container {
