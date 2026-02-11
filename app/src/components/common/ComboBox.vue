@@ -148,15 +148,15 @@ onMounted(() => {
   width: 100%;
   max-width: 30rem;
   font-family: inherit;
-  color: var(--text, #0f172a);
+  color: $theme-palette-text-primary;
   .control {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    border: 0.0625rem solid var(--border, #cfcfcf);
+    border: 0.0625rem solid $theme-palette-border-strong;
     padding: 0.375rem 0.5rem;
     border-radius: 0.375rem;
-    background: var(--bg, #fff);
+    background: $theme-palette-bg-inverse;
     cursor: text;
     &.open {
       box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.08);
@@ -172,15 +172,16 @@ onMounted(() => {
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        background: #eef2ff;
-        color: #1e293b;
+        background: $theme-palette-accent-hover;
+        color: $theme-palette-text-inverse;
         padding: 0.125rem 0.375rem;
         border-radius: 999px;
         font-size: 0.75rem;
         white-space: nowrap;
 
         &:hover {
-          background: #6b6b6b;
+          background: $theme-palette-accent;
+          color: $theme-palette-text-inverse;
         }
       }
     }
@@ -193,7 +194,7 @@ onMounted(() => {
       background: transparent;
       color: inherit;
       &::placeholder {
-        color: #64748b;
+        color: $theme-palette-text-muted;
         opacity: 1;
       }
     }
@@ -211,8 +212,8 @@ onMounted(() => {
     left: 0;
     right: 0;
     margin-top: 0.375rem; /* 6px */
-    border: 0.0625rem solid var(--border, #e5e7eb); /* 1px */
-    background: white;
+    border: 0.0625rem solid $theme-palette-border-strong; /* 1px */
+    background: $theme-palette-bg-primary;
     border-radius: 0.5rem;
     max-height: 13.75rem;
     overflow: auto;
@@ -229,10 +230,10 @@ onMounted(() => {
         flex: 1;
       }
       &:hover {
-        background: #f8fafc;
+        background: $theme-palette-bg-secondary;
       }
       &.selected {
-        background: #eef2ff;
+        background: $theme-palette-accent-hover;
       }
       input[type='checkbox'] {
         pointer-events: none;
@@ -240,7 +241,7 @@ onMounted(() => {
     }
     .empty {
       padding: 0.5rem 0.625rem;
-      color: #9ca3af;
+      color: $theme-palette-text-muted;
     }
   }
 }
