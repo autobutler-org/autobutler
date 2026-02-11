@@ -3,12 +3,15 @@
     <div class="file-explorer-header">
       <div class="file-explorer-header-row">
         <div class="file-explorer-upload-row header-left">
-          <template v-if="devices.length > 1">
+          <template v-if="devices.length > 0">
             <select
-              v-model="selectedDeviceSerial"
+              v-model="selectedDeviceSerials"
+              multiple
+              size="2"
               class="device-select"
               :disabled="isUploading || devices.length === 0"
-              aria-label="Select upload location"
+              aria-label="Filter devices to show"
+              title="Hold Ctrl/Cmd to select multiple devices"
             >
               <option
                 v-for="device in devices"
@@ -169,6 +172,36 @@
         </template>
       </div>
     </div>
+
+    <!-- Device picker for upload when multiple devices are selected -->
+    <ModalDialog
+      v-if="showUploadDevicePicker"
+      @close="showUploadDevicePicker = false"
+      :transparent="true"
+      :hide-close-button="true"
+    >
+      <div class="custom-modal-close-wrapper">
+        <button
+          class="custom-modal-close"
+          @click="showUploadDevicePicker = false"
+          aria-label="Close"
+        >
+          <CloseIcon />
+        </button>
+      </div>
+      <div class="details-dialog-form">
+        <h3 class="move-dialog-title">Select upload target</h3>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem">
+          <DeviceCard
+            v-for="d in devices"
+            :key="d.devicePath"
+            :device="d"
+            :minimal="true"
+            @click.prevent.stop="() => chooseUploadDevice(d.usbInfo?.serial || '')"
+          />
+        </div>
+      </div>
+    </ModalDialog>
 
     <!-- File Viewer Modal -->
     <CirrusFileViewer
@@ -406,12 +439,13 @@ import CirrusListView from './CirrusListView.vue';
 import DevicesService from '@/services/devicesService';
 import { useCirrusDeviceStore } from '@/stores/cirrusDeviceStore';
 import { storeToRefs } from 'pinia';
+import DeviceCard from '@/components/DeviceCard.vue';
 
 const fileInputRef = vueRef<HTMLInputElement | null>(null);
 const isUploading = vueRef(false);
 const uploadProgress = vueRef('');
 const cirrusDeviceStore = useCirrusDeviceStore();
-const { devices, selectedDeviceSerial } = storeToRefs(cirrusDeviceStore);
+const { devices, selectedDeviceSerial, selectedDeviceSerials } = storeToRefs(cirrusDeviceStore);
 
 const fileViewComponent = computed(() => {
   switch (view.value) {
@@ -501,20 +535,16 @@ const handleUploadClick = () => {
   fileInputRef.value?.click();
 };
 
-const handleFileInputChange = async (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  if (!input.files || input.files.length === 0) return;
+const pendingUploadFiles = ref<FileList | null>(null);
+const showUploadDevicePicker = ref(false);
+
+const performUpload = async (files: FileList | null, serial?: string | undefined) => {
+  if (!files) return;
   isUploading.value = true;
-  uploadProgress.value = `Uploading ${input.files.length} file${input.files.length > 1 ? 's' : ''}...`;
+  uploadProgress.value = `Uploading ${files.length} file${files.length > 1 ? 's' : ''}...`;
   try {
-    // Actually upload the files to the backend, include device as query param
-    await CirrusService.uploadFiles(
-      currentPath.value || '',
-      input.files,
-      selectedDeviceSerial.value,
-    );
+    await CirrusService.uploadFiles(currentPath.value || '', files, serial);
     uploadProgress.value = 'Upload complete!';
-    // Refresh the file list after upload
     await fetchFiles();
   } catch {
     uploadProgress.value = 'Upload failed';
@@ -523,8 +553,29 @@ const handleFileInputChange = async (event: Event) => {
     setTimeout(() => {
       uploadProgress.value = '';
     }, 1500);
-    input.value = '';
+    pendingUploadFiles.value = null;
   }
+};
+
+const handleFileInputChange = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (!input.files || input.files.length === 0) return;
+  // Determine selected device(s)
+  const selected = selectedDeviceSerials.value || [];
+  if (selected.length === 1) {
+    const serial = selected[0] || undefined;
+    await performUpload(input.files, serial);
+  } else {
+    // More than one device (or none) selected: show picker to choose target
+    pendingUploadFiles.value = input.files;
+    showUploadDevicePicker.value = true;
+  }
+  input.value = '';
+};
+
+const chooseUploadDevice = async (serial: string | undefined) => {
+  showUploadDevicePicker.value = false;
+  await performUpload(pendingUploadFiles.value, serial);
 };
 // Fetch available storage devices
 const fetchDevices = async () => {
@@ -716,7 +767,7 @@ const fetchFiles = async () => {
   loading.value = true;
   error.value = null;
   try {
-    files.value = await CirrusService.getFiles(currentPath.value);
+    files.value = await CirrusService.getFiles(currentPath.value, selectedDeviceSerials.value || []);
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to load files';
     files.value = [];
@@ -744,6 +795,15 @@ watch(
 watch(currentPath, () => {
   fetchFiles();
 });
+
+// Watch selected devices filter to refetch files when changed
+watch(
+  () => selectedDeviceSerials.value,
+  () => {
+    fetchFiles();
+  },
+  { deep: true },
+);
 
 // Fetch files on mount
 onMounted(() => {

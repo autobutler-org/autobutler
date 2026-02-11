@@ -34,20 +34,26 @@ type FileNodeJSON struct {
 func listFiles(c *gin.Context) *serverutil.Response {
 	rootDir := c.Query("rootDir")
 	fmt.Printf("List %s\n", rootDir)
-	serial := c.Query("serial")
+	serials := c.QueryArray("serial")
 
 	devices, err := storageutil.GetManagedDevices()
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
 	var selectedDevices []storageutil.ManagedDevice
-	if serial == "" {
+	if len(serials) == 0 {
 		selectedDevices = devices
 	} else {
+		// Build a set for quick lookup
+		serialSet := make(map[string]bool)
+		for _, s := range serials {
+			serialSet[s] = true
+		}
 		for _, d := range devices {
-			if d.UsbInfo != nil && d.UsbInfo.GetSerial() == serial {
-				selectedDevices = append(selectedDevices, d)
-				break
+			if d.UsbInfo != nil {
+				if serialSet[d.UsbInfo.GetSerial()] {
+					selectedDevices = append(selectedDevices, d)
+				}
 			}
 		}
 		if len(selectedDevices) == 0 {
@@ -58,7 +64,7 @@ func listFiles(c *gin.Context) *serverutil.Response {
 	for _, device := range selectedDevices {
 		cirrusDir := device.CirrusDir
 		fullPathDir := filepath.Join(cirrusDir, rootDir)
-		deviceSerial := serial
+		deviceSerial := ""
 		if device.UsbInfo != nil {
 			deviceSerial = device.UsbInfo.GetSerial()
 		}

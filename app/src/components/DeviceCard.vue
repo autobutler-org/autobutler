@@ -34,6 +34,12 @@
       </div>
       <div class="storage-bar-disabled" />
     </div>
+    <div v-else-if="minimal" class="device-card-body device-card-body--minimal">
+      <div class="device-card-minimal">
+        <div class="device-card-title">{{ displayedDevice.name }}</div>
+        <div class="device-card-type">{{ displayedDevice.isInternal ? 'Internal' : 'External' }}</div>
+      </div>
+    </div>
     <div v-else class="device-card-body" @click="goToCirrus">
       <StoragePartition :device="displayedDevice" />
     </div>
@@ -84,9 +90,12 @@ import ToggleSwitch from './ToggleSwitch.vue';
 
 const props = defineProps<{
   device: Device;
+  minimal?: boolean;
 }>();
 
 const displayedDevice = ref<Device>(props.device);
+const minimal = props.minimal || false;
+
 const showEnableModal = ref(false);
 const isEnabling = ref(false);
 

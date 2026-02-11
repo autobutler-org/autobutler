@@ -111,13 +111,19 @@ export default class CirrusService {
   /**
    * Fetch files for a given path from the backend API
    */
-  static async getFiles(path: string): Promise<CirrusFileNode[]> {
+  static async getFiles(path: string, serials?: string[]): Promise<CirrusFileNode[]> {
     const normalizedPath = CirrusService.normalizePath(path);
+    const params = normalizedPath ? new URLSearchParams({ rootDir: normalizedPath }) : new URLSearchParams();
+    if (serials && serials.length > 0) {
+      for (const s of serials) {
+        // append each serial as repeated query param
+        params.append('serial', s);
+      }
+    }
+    const useParams = params && params.toString().length > 0 ? params : undefined;
     return await HttpService.getAsJson<CirrusFileNode[]>(
       '/api/v1/cirrus',
-      normalizedPath
-        ? new URLSearchParams({ rootDir: normalizedPath })
-        : undefined,
+      useParams,
     );
   }
 
