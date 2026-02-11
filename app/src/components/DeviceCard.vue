@@ -3,7 +3,11 @@
     class="device-card"
     :class="{
       'device-card--disabled': !displayedDevice.isEnabled,
+      'device-card--clickable': !!cardClick,
     }"
+    @click="handleCardClick"
+    :role="cardClick ? 'button' : undefined"
+    :tabindex="cardClick ? 0 : undefined"
   >
     <div class="device-card-header">
       <DeviceCardIcon />
@@ -13,7 +17,12 @@
         </h3>
         <p class="device-card-type">
           {{ displayedDevice.isInternal ? 'Internal' : 'External' }}
-          <span v-if="!displayedDevice.isInternal && displayedDevice.isEnabled"
+          <span
+            v-if="
+              !minimal &&
+              !displayedDevice.isInternal &&
+              displayedDevice.isEnabled
+            "
             >• Mounted?
             <ToggleSwitch
               :model-value="!!displayedDevice.usbInfo?.mountPath"
@@ -34,13 +43,7 @@
       </div>
       <div class="storage-bar-disabled" />
     </div>
-    <div v-else-if="minimal" class="device-card-body device-card-body--minimal">
-      <div class="device-card-minimal">
-        <div class="device-card-title">{{ displayedDevice.name }}</div>
-        <div class="device-card-type">{{ displayedDevice.isInternal ? 'Internal' : 'External' }}</div>
-      </div>
-    </div>
-    <div v-else class="device-card-body" @click="goToCirrus">
+    <div v-else class="device-card-body" @click="handleBodyClick">
       <StoragePartition :device="displayedDevice" />
     </div>
   </div>
@@ -91,10 +94,14 @@ import ToggleSwitch from './ToggleSwitch.vue';
 const props = defineProps<{
   device: Device;
   minimal?: boolean;
+  cardClick?: () => void;
 }>();
 
 const displayedDevice = ref<Device>(props.device);
 const minimal = props.minimal || false;
+
+// Expose cardClick as a prop; when provided the whole card becomes clickable and hover styles apply
+const cardClick = props.cardClick;
 
 const showEnableModal = ref(false);
 const isEnabling = ref(false);
@@ -149,6 +156,18 @@ const handleEnableDevice = async () => {
 const goToCirrus = () => {
   window.location.href = '/cirrus';
 };
+
+// When a cardClick prop is provided we want the entire card to be clickable for upload-selection
+const handleCardClick = (event?: MouseEvent) => {
+  if (props.cardClick) props.cardClick();
+};
+
+// Body clicks should navigate to Cirrus only when no cardClick prop is supplied
+const handleBodyClick = (event?: MouseEvent) => {
+  if (!props.cardClick) {
+    goToCirrus();
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -164,6 +183,20 @@ const goToCirrus = () => {
   max-width: 37.5rem;
   flex: 1 1 20rem;
   margin: 0;
+}
+
+/* Clickable cards (used for upload-device selection) get subtle hover/press styles without changing default devices page */
+.device-card--clickable {
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.device-card--clickable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba($theme-palette-bg-nav, 0.2);
+}
+.device-card--clickable {
+  cursor: pointer;
 }
 
 .device-card--disabled {
