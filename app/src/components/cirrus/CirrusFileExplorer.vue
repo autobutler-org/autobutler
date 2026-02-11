@@ -93,19 +93,6 @@
             @breadcrumb-drop="handleBreadcrumbDrop"
           />
         </div>
-        <div style="display: flex; align-items: center; gap: 1rem">
-          <label class="device-badge-toggle">
-            <input
-              type="checkbox"
-              id="toggle-device-badges"
-              :checked="showDeviceBadges"
-              @change="
-                toggleDeviceBadges(($event.target as HTMLInputElement).checked)
-              "
-            />
-            <span>Show devices</span>
-          </label>
-        </div>
       </div>
 
       <div id="file-explorer-status" />
@@ -877,10 +864,6 @@ const handleOpenFile = (file: CirrusFileNode) => {
 
 const switchView = (newView: 'list' | 'grid') => {
   view.value = newView;
-};
-
-const toggleDeviceBadges = (show: boolean) => {
-  showDeviceBadges.value = show;
 };
 
 const getParentPath = (fullPath: string) => {
