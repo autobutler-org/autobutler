@@ -2,9 +2,13 @@
   <div class="combobox" @keydown.esc="close">
     <div class="control" @click="toggle" :class="{ open: isOpen }">
       <div class="tags" v-if="selected.length">
-        <span class="tag" v-for="s in selected" :key="s.value">
+        <span
+          class="tag"
+          v-for="s in selected"
+          :key="s.value"
+          @click.stop="deselect(s.value)"
+        >
           {{ s.label }}
-          <button class="remove" @click.stop="deselect(s.value)">×</button>
         </span>
       </div>
       <input
@@ -155,6 +159,7 @@ onMounted(() => {
       gap: 6px;
       flex-wrap: wrap;
       .tag {
+        cursor: pointer;
         display: inline-flex;
         align-items: center;
         background: #eef2ff;
@@ -162,12 +167,6 @@ onMounted(() => {
         padding: 2px 6px;
         border-radius: 999px;
         font-size: 12px;
-        .remove {
-          background: transparent;
-          border: 0;
-          margin-left: 6px;
-          cursor: pointer;
-        }
       }
     }
     .input {
