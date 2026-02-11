@@ -95,7 +95,7 @@ func listFiles(c *gin.Context) *serverutil.Response {
 			DeviceSerial: file.DeviceSerial,
 		}
 	}
-	return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(jsonData)
+	return serverutil.Ok().WithData(jsonData)
 }
 
 var listFilesRoute = serverutil.ApiRoute(

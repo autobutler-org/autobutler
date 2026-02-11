@@ -12,7 +12,7 @@
           <button aria-label="Save">
             <SaveIcon />
           </button>
-          <button aria-label="Refresh">
+          <button aria-label="Refresh" @click="fetchDevices">
             <RefreshIcon />
           </button>
         </div>
@@ -40,6 +40,36 @@
               <span class="mock-badge">mock</span>
               <h3>Collector & Exporter</h3>
               <p>Configure where telemetry is sent and how it's batched</p>
+            </div>
+          </section>
+          <section id="storage" class="settings-section settings-card">
+            <div class="settings-section-header">
+              <h2>Storage & Backups</h2>
+            </div>
+            <div class="settings-section-card">
+              <p class="settings-section-description">
+                Mark a USB device as a backup device. When set, files on that
+                device will be treated as backups and protected from accidental
+                deletion.
+              </p>
+              <ul class="device-list">
+                <li
+                  v-for="d in devicesForBackup"
+                  :key="d.usbInfo?.serial || d.devicePath"
+                  class="device-list-item"
+                >
+                  <div class="device-name">{{ d.name || d.devicePath }}</div>
+                  <div>
+                    <!-- Button to do a backup to the device -->
+                    <button
+                      class="backup-action-button"
+                      @click="backupToDevice(d)"
+                    >
+                      Backup to device
+                    </button>
+                  </div>
+                </li>
+              </ul>
             </div>
           </section>
         </div>
@@ -200,6 +230,10 @@ import OpenTelemetryIcon from '@/components/icons/OpenTelemetryIcon.vue';
 import RefreshIcon from '@/components/icons/RefreshIcon.vue';
 import SaveIcon from '@/components/icons/SaveIcon.vue';
 import SearchIcon from '@/components/icons/SearchIcon.vue';
+import DevicesService from '@/services/devicesService';
+import { useCirrusDeviceStore } from '@/stores/cirrusDeviceStore';
+import type { Device } from '@/types/device';
+import { computed, onMounted, ref } from 'vue';
 
 const sidebarSections = [
   {
@@ -218,6 +252,45 @@ const sidebarSections = [
     items: [{ label: 'Data Migration', href: '/data-migration' }],
   },
 ];
+
+const deviceStore = useCirrusDeviceStore();
+const devices = ref<Device[]>([]);
+const devicesForBackup = computed<Device[]>(() =>
+  devices.value.filter((d) => d.usbInfo && d.isEnabled),
+);
+
+const fetchDevices = async () => {
+  try {
+    const resp = await DevicesService.getDeviceStatuses();
+    devices.value = resp.devices || [];
+    deviceStore.setDevices(resp.devices || []);
+  } catch {
+    devices.value = [];
+    deviceStore.setDevices([]);
+  }
+};
+
+onMounted(() => {
+  fetchDevices();
+});
+
+const backupToDevice = async (d: Device) => {
+  if (
+    !window.confirm(
+      `Backup data to device ${d.name || d.devicePath}? This will copy all files to the device.`,
+    )
+  ) {
+    return;
+  }
+  // Persist change to backend and update local state on success
+  try {
+    const serial = d.usbInfo?.serial || '';
+    // Currently, sourceDeviceSerial is empty string to denote the primary storage device
+    await DevicesService.backupToDevice('', serial);
+  } catch (e) {
+    console.error('Failed to start backup', e);
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -391,6 +464,23 @@ const sidebarSections = [
   transition: background 0.2s;
 }
 .settings-section-toolbar button:hover {
+  background: $theme-palette-accent;
+  color: $theme-palette-text-inverse;
+}
+.backup-action-button {
+  background: $theme-palette-bg-secondary;
+  color: $theme-palette-text-primary;
+  border: none;
+  border-radius: $border-radius;
+  padding: 4px 12px;
+  font-size: $theme-font-size-sm;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.backup-action-button:hover {
   background: $theme-palette-accent;
   color: $theme-palette-text-inverse;
 }

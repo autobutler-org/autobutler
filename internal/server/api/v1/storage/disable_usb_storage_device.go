@@ -55,12 +55,6 @@ func disableUsbStorageDevice(c *gin.Context) *serverutil.Response {
 	}
 
 	unmountCommand := storageutil.UnmountCommand(mountPath)
-	if err != nil {
-		return serverutil.NewResponse().
-			WithContentType(serverutil.ContentTypeJSON).
-			WithStatusCode(http.StatusInternalServerError).
-			WithError(fmt.Errorf("Failed to generate unmount command: %w", err))
-	}
 	if err := unmountCommand.Run(); err != nil {
 		return serverutil.NewResponse().
 			WithContentType(serverutil.ContentTypeJSON).

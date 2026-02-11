@@ -6,7 +6,7 @@
 # Distribution directory
 internal/server/public/*
 !internal/server/public/stub.txt
-# Datlinks
+# Datalinks
 datalinks/mac
 
 tmp/
@@ -47,3 +47,6 @@ test-output.log
 
 # Javascript
 node_modules/
+
+# Ralph loops
+.ralph

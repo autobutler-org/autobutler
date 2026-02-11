@@ -36,7 +36,10 @@ func GetManagedDevices() ([]ManagedDevice, error) {
 	var managedDevices []ManagedDevice
 	for _, device := range devices {
 		dataDir := GetDataDirForDevice(device.MountPoint)
-		cirrusDir := GetCirrusDirForDevice(device.MountPoint)
+		cirrusDir, err := GetCirrusDirForDevice(device.MountPoint)
+		if err != nil {
+			continue
+		}
 
 		managedDevices = append(managedDevices, ManagedDevice{
 			Device:    device,

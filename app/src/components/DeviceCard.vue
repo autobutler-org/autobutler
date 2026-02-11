@@ -3,7 +3,6 @@
     class="device-card"
     :class="{
       'device-card--disabled': !displayedDevice.isEnabled,
-      'device-card--backup': isBackupDrive && displayedDevice.isEnabled,
     }"
   >
     <div class="device-card-header">
@@ -79,7 +78,7 @@
 import DeviceCardIcon from '@/components/icons/DeviceCardIcon.vue';
 import DevicesService from '@/services/devicesService';
 import type { Device } from '@/types/device';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import StoragePartition from './StoragePartition.vue';
 import ToggleSwitch from './ToggleSwitch.vue';
 
@@ -90,16 +89,6 @@ const props = defineProps<{
 const displayedDevice = ref<Device>(props.device);
 const showEnableModal = ref(false);
 const isEnabling = ref(false);
-
-// Check if device is likely a backup drive based on naming convention
-const isBackupDrive = computed(() => {
-  const name = displayedDevice.value.name.toLowerCase();
-  return (
-    name.includes('backup') ||
-    name.includes('time machine') ||
-    name.includes('timemachine')
-  );
-});
 
 const onToggleUsbMount = async (checked: boolean) => {
   const serial = displayedDevice.value.usbInfo?.serial;

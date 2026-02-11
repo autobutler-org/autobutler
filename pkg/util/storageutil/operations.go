@@ -4,10 +4,93 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
+	"io/fs"
 	"mime/multipart"
 	"os"
 	"path/filepath"
 )
+
+// BackupToDeviceParams contains parameters for backing up a device
+type BackupToDeviceParams struct {
+	SourceDeviceSerial string `json:"sourceDeviceSerial"`
+	TargetDeviceSerial string `json:"targetDeviceSerial"`
+}
+
+// BackupToDeviceResult contains the data of a backup operation
+type BackupToDeviceResult struct {
+	SourceDeviceSerial string
+	TargetDeviceSerial string
+}
+
+// BackupToDeviceChannel is a channel for backing up devices
+type BackupToDeviceChannel chan BackupToDeviceParams
+
+func BackupToDevice(params BackupToDeviceParams) (*BackupToDeviceResult, error) {
+	// NOTE: Empty string returns the first internal storage
+	sourceDevice, err := FindManagedDeviceBySerial(params.SourceDeviceSerial)
+	if err != nil {
+		return nil, err // coverage: ignore - requires device detection failure
+	}
+
+	targetDevice, err := FindManagedDeviceBySerial(params.TargetDeviceSerial)
+	if err != nil {
+		return nil, err // coverage: ignore - requires device detection failure
+	}
+
+	if params.SourceDeviceSerial == params.TargetDeviceSerial {
+		return nil, fmt.Errorf("source and target devices cannot be the same")
+	}
+
+	sourceDirFs := os.DirFS(sourceDevice.CirrusDir)
+	// Walk all contents of sourceDirFs. If the file exists in targetDevice.CirrusDir, it will be overwritten. If it doesn't exist, it will be created.
+	err = fs.WalkDir(sourceDirFs, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		sourcePath := filepath.Join(sourceDevice.CirrusDir, path)
+		targetPath := filepath.Join(targetDevice.CirrusDir, path)
+
+		// Backup directory
+		if d.IsDir() {
+			return os.MkdirAll(targetPath, 0755)
+		}
+
+		// Backup file
+		// For files, copy the content from source to target
+		srcFile, err := os.Open(sourcePath)
+		if err != nil {
+			return fmt.Errorf("failed to open source file: %w", err)
+		}
+		defer srcFile.Close()
+
+		destDir := filepath.Dir(targetPath)
+		if err := os.MkdirAll(destDir, 0755); err != nil {
+			return fmt.Errorf("failed to create target directory: %w", err)
+		}
+
+		// Truncate the file if it already exists, or create it if it doesn't exist
+		destFile, err := os.Create(targetPath)
+		if err != nil {
+			return fmt.Errorf("failed to create target file: %w", err)
+		}
+		defer destFile.Close()
+
+		if _, err := io.Copy(destFile, srcFile); err != nil {
+			return fmt.Errorf("failed to copy file content: %w", err)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("backup failed: %w", err)
+	}
+
+	// Placeholder implementation - in a real implementation, this would perform the backup logic
+	return &BackupToDeviceResult{
+		SourceDeviceSerial: params.SourceDeviceSerial,
+		TargetDeviceSerial: params.TargetDeviceSerial,
+	}, nil
+}
 
 // DeleteFilesParams contains parameters for deleting files
 type DeleteFilesParams struct {
