@@ -433,17 +433,17 @@ import CirrusListView from './CirrusListView.vue';
 import DeviceCard from '@/components/DeviceCard.vue';
 import DevicesService from '@/services/devicesService';
 import { useCirrusDeviceStore } from '@/stores/cirrusDeviceStore';
+import type { Device } from '@/types/device';
 import { storeToRefs } from 'pinia';
 
 const fileInputRef = vueRef<HTMLInputElement | null>(null);
 const isUploading = vueRef(false);
 const uploadProgress = vueRef('');
 const cirrusDeviceStore = useCirrusDeviceStore();
-const { devices, selectedDeviceSerial, selectedDeviceSerials } =
-  storeToRefs(cirrusDeviceStore);
+const { devices, selectedDeviceSerials } = storeToRefs(cirrusDeviceStore);
 
 const deviceItems = computed(() =>
-  (devices.value || []).map((d: any) => ({
+  (devices.value || []).map((d: Device) => ({
     value: d.usbInfo?.serial || '',
     label: d.name,
   })),
@@ -1504,18 +1504,18 @@ onUnmounted(() => {
     align-items: center;
   }
 
-  /* place upload/actions on their own full-width row and keep view toggles on a second row */
+  /* keep upload/actions and view toggles on same row on small screens */
   .file-explorer-upload-row {
     order: 1;
-    width: 100%;
     display: flex;
     gap: 0.5rem;
     align-items: center;
-    flex-wrap: wrap;
+    flex: 1 1 auto;
+    width: auto;
   }
 
   .view-switcher {
-    order: 2;
+    order: 1;
     margin-left: auto;
     display: flex;
     gap: 0.25rem;
