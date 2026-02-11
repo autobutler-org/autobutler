@@ -1484,7 +1484,7 @@ onUnmounted(() => {
   border: 0.09rem solid $theme-palette-border-strong;
   font-size: $theme-font-size-base;
   background: $theme-palette-bg-inverse;
-  min-width: 40rem;
+  min-width: 30rem;
   margin-right: 0.5rem;
 }
 

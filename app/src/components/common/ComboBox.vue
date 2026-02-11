@@ -140,7 +140,7 @@ onMounted(() => {
 .combobox {
   position: relative;
   width: 100%;
-  max-width: 40rem;
+  max-width: 30rem;
   font-family: inherit;
   color: var(--text, #0f172a);
   .control {
