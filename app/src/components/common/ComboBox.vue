@@ -148,7 +148,7 @@ onMounted(() => {
   width: 100%;
   max-width: 30rem;
   font-family: inherit;
-  color: $theme-palette-text-primary;
+  color: $theme-palette-text-inverse;
   .control {
     display: flex;
     align-items: center;
@@ -213,7 +213,7 @@ onMounted(() => {
     right: 0;
     margin-top: 0.375rem; /* 6px */
     border: 0.0625rem solid $theme-palette-border-strong; /* 1px */
-    background: $theme-palette-bg-primary;
+    background: $theme-palette-bg-inverse;
     border-radius: 0.5rem;
     max-height: 13.75rem;
     overflow: auto;
