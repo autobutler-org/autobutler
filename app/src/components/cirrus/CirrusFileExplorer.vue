@@ -192,13 +192,12 @@
       <div class="details-dialog-form">
         <h3 class="move-dialog-title">Select upload target</h3>
         <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem">
-          <DeviceCard
-            v-for="d in devices"
-            :key="d.devicePath"
-            :device="d"
-            :minimal="true"
-            @click.prevent.stop="() => chooseUploadDevice(d.usbInfo?.serial || '')"
-          />
+          <div v-for="d in devices" :key="d.devicePath" class="upload-device-tile" @click.prevent.stop="() => chooseUploadDevice(d.usbInfo?.serial || '')">
+            <DeviceCard
+              :device="d"
+              :minimal="true"
+            />
+          </div>
         </div>
       </div>
     </ModalDialog>
