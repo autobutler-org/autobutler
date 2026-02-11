@@ -1484,8 +1484,10 @@ onUnmounted(() => {
   border: 0.09rem solid $theme-palette-border-strong;
   font-size: $theme-font-size-base;
   background: $theme-palette-bg-inverse;
-  min-width: 30rem;
+  min-width: 18rem;
+  max-width: 100%;
   margin-right: 0.5rem;
+  flex: 0 1 auto;
 }
 
 .upload-device-list {
@@ -1504,6 +1506,23 @@ onUnmounted(() => {
     align-items: center;
   }
 
+  /* place upload/actions on their own full-width row and keep view toggles on a second row */
+  .file-explorer-upload-row {
+    order: 1;
+    width: 100%;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .view-switcher {
+    order: 2;
+    margin-left: auto;
+    display: flex;
+    gap: 0.25rem;
+  }
+
   /* hide the large centered title on small screens to avoid overlapping controls */
   .file-explorer-title.centered-title {
     display: none;
@@ -1517,6 +1536,14 @@ onUnmounted(() => {
     min-width: 36px;
     min-height: 36px;
     font-size: 1.25rem;
+  }
+
+  /* make device select compact on small screens */
+  .device-select {
+    min-width: 8rem;
+    max-width: calc(100% - 4rem);
+    flex: 1 1 auto;
+    margin-right: 0.5rem;
   }
 }
 

@@ -178,6 +178,10 @@ onMounted(() => {
         border-radius: 999px;
         font-size: 0.75rem;
         white-space: nowrap;
+
+        &:hover {
+          background: #6b6b6b;
+        }
       }
     }
     .input {
