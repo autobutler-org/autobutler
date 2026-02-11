@@ -1,6 +1,6 @@
 <template>
   <div class="combobox" @keydown.esc="close">
-    <div class="control" @click="toggle" :class="{ open: isOpen }">
+    <div class="control" @click.self="toggle" :class="{ open: isOpen }">
       <div class="tags" v-if="selected.length">
         <span
           class="tag"
