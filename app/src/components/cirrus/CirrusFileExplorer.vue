@@ -1198,7 +1198,7 @@ onUnmounted(() => {
   min-width: 44px;
   min-height: 40px;
   border-radius: $border-radius-md;
-  background: #ffffff;
+  background: $theme-palette-bg-primary;
   color: $theme-palette-text-primary;
   border: 1px solid $theme-palette-border-strong;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -1498,8 +1498,8 @@ onUnmounted(() => {
 // Mobile-specific adjustments
 @media (max-width: 640px) {
   .file-explorer-header-row {
-    /* allow wrapping and make space for controls */
-    flex-wrap: wrap;
+    /* keep controls on a single row on small screens */
+    flex-wrap: nowrap;
     gap: $spacing-xs;
     align-items: center;
   }
@@ -1515,7 +1515,7 @@ onUnmounted(() => {
   }
 
   .view-switcher {
-    order: 1;
+    order: 2;
     margin-left: auto;
     display: flex;
     gap: 0.25rem;
