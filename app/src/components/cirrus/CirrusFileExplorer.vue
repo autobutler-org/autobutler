@@ -4,23 +4,12 @@
       <div class="file-explorer-header-row">
         <div class="file-explorer-upload-row header-left">
           <template v-if="devices.length > 0">
-            <select
+            <ComboBox
+              :items="deviceItems"
               v-model="selectedDeviceSerials"
-              multiple
-              size="2"
               class="device-select"
-              :disabled="isUploading || devices.length === 0"
-              aria-label="Filter devices to show"
-              title="Hold Ctrl/Cmd to select multiple devices"
-            >
-              <option
-                v-for="device in devices"
-                :key="device.name"
-                :value="device.usbInfo?.serial || ''"
-              >
-                {{ device.name }}
-              </option>
-            </select>
+              placeholder="Filter devices"
+            />
           </template>
           <span v-if="uploadProgress" class="upload-progress">{{
             uploadProgress
@@ -441,6 +430,7 @@ import CirrusContextMenu from './CirrusContextMenu.vue';
 import CirrusFileViewer from './CirrusFileViewer.vue';
 import CirrusGridView from './CirrusGridView.vue';
 import CirrusListView from './CirrusListView.vue';
+import ComboBox from '@/components/common/ComboBox.vue';
 
 import DeviceCard from '@/components/DeviceCard.vue';
 import DevicesService from '@/services/devicesService';
@@ -453,6 +443,10 @@ const uploadProgress = vueRef('');
 const cirrusDeviceStore = useCirrusDeviceStore();
 const { devices, selectedDeviceSerial, selectedDeviceSerials } =
   storeToRefs(cirrusDeviceStore);
+
+const deviceItems = computed(() =>
+  (devices.value || []).map((d: any) => ({ value: d.usbInfo?.serial || '', label: d.name })),
+);
 
 const fileViewComponent = computed(() => {
   switch (view.value) {
