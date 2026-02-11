@@ -120,6 +120,7 @@ const filteredItems = computed(() => {
 
 // click outside directive polyfill for simple cases
 onMounted(() => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const root = (getCurrentInstance() as any)?.vnode?.el as
     | HTMLElement
     | undefined;
