@@ -74,8 +74,13 @@ watch(
 
 const placeholder = props.placeholder ?? 'Select...';
 
+const ignoreDocumentClick = ref(false);
+
 const open = () => {
   isOpen.value = true;
+  // ignore the next document click that may be caused by the mousedown/click that opened the input
+  ignoreDocumentClick.value = true;
+  setTimeout(() => (ignoreDocumentClick.value = false), 0);
 };
 const close = () => {
   isOpen.value = false;
@@ -130,6 +135,7 @@ onMounted(() => {
     | undefined;
   if (!root) return;
   const handler = (e: MouseEvent) => {
+    if (ignoreDocumentClick.value) return;
     if (!root.contains(e.target as Node)) close();
   };
   document.addEventListener('click', handler);
