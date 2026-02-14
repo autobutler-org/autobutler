@@ -3,7 +3,7 @@
     <div class="file-explorer-header">
       <div class="file-explorer-header-row">
         <div class="header-left">
-          <template v-if="devices.length > 0">
+          <template v-if="enabledDevices.length > 1">
             <ComboBox
               class="device-select"
               :items="deviceItems"
@@ -429,8 +429,12 @@ const isUploading = vueRef(false);
 const cirrusDeviceStore = useCirrusDeviceStore();
 const { devices, selectedDeviceSerials } = storeToRefs(cirrusDeviceStore);
 
+const enabledDevices = computed(() =>
+  (devices.value || []).filter((d: Device) => d.isEnabled),
+);
+
 const deviceItems = computed(() =>
-  (devices.value || []).map((d: Device) => ({
+  enabledDevices.value.map((d: Device) => ({
     value: d.usbInfo?.serial || '',
     label: d.name,
   })),

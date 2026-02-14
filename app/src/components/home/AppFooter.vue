@@ -181,7 +181,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: calc($spacing-xs / 2);
-  padding: calc($spacing-xs / 2) $spacing-sm;
+  padding: $spacing-xs $spacing-sm;
   border-radius: $border-radius-md;
   background: hsl(from $theme-palette-bg-primary h s l / 0.2);
   border: 0.0625rem solid hsl(from $theme-palette-bg-primary h s l / 0.35);
