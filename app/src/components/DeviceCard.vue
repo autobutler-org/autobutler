@@ -158,12 +158,12 @@ const goToCirrus = () => {
 };
 
 // When a cardClick prop is provided we want the entire card to be clickable for upload-selection
-const handleCardClick = (event?: MouseEvent) => {
+const handleCardClick = (_?: MouseEvent) => {
   if (props.cardClick) props.cardClick();
 };
 
 // Body clicks should navigate to Cirrus only when no cardClick prop is supplied
-const handleBodyClick = (event?: MouseEvent) => {
+const handleBodyClick = (_?: MouseEvent) => {
   if (!props.cardClick) {
     goToCirrus();
   }
