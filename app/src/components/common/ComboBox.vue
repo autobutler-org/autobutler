@@ -28,9 +28,12 @@
 
     <ul v-if="isOpen" class="menu" role="listbox">
       <li
-        v-for="item in filteredItems"
+        v-for="(item, index) in filteredItems"
         :key="item.value"
-        :class="{ selected: isSelected(item.value) }"
+        :class="{
+          selected: isSelected(item.value),
+          active: activeOptionIndex === index,
+        }"
         @click="toggleSelect(item.value)"
         role="option"
         :aria-selected="isSelected(item.value)"
@@ -64,6 +67,7 @@ const isOpen = ref(false);
 const query = ref('');
 const internal = ref<Item[]>(props.items || []);
 const activeChipIndex = ref(-1);
+const activeOptionIndex = ref(-1);
 
 const selected = computed(() => {
   const vals = props.modelValue || [];
@@ -92,6 +96,7 @@ const open = () => {
 };
 const close = () => {
   isOpen.value = false;
+  activeOptionIndex.value = -1;
 };
 const toggle = () => {
   isOpen.value = !isOpen.value;
@@ -124,14 +129,54 @@ const toggleSelect = (val: string | number) => {
 
 const onInput = () => {
   activeChipIndex.value = -1;
+  activeOptionIndex.value = -1;
   if (!isOpen.value) isOpen.value = true;
 };
 
 const onInputKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (!isOpen.value) isOpen.value = true;
+    if (!filteredItems.value.length) {
+      activeOptionIndex.value = -1;
+      return;
+    }
+
+    activeChipIndex.value = -1;
+
+    if (e.key === 'ArrowDown') {
+      if (activeOptionIndex.value === -1) {
+        activeOptionIndex.value = 0;
+        return;
+      }
+      activeOptionIndex.value = Math.min(
+        filteredItems.value.length - 1,
+        activeOptionIndex.value + 1,
+      );
+      return;
+    }
+
+    if (activeOptionIndex.value === -1) {
+      activeOptionIndex.value = filteredItems.value.length - 1;
+      return;
+    }
+    activeOptionIndex.value = Math.max(0, activeOptionIndex.value - 1);
+    return;
+  }
+
+  if (e.key === 'Enter' && isOpen.value && activeOptionIndex.value !== -1) {
+    const option = filteredItems.value[activeOptionIndex.value];
+    if (!option) return;
+    e.preventDefault();
+    toggleSelect(option.value);
+    return;
+  }
+
   if (!selected.value.length) return;
 
   if (e.key === 'ArrowLeft' && !query.value.length) {
     e.preventDefault();
+    activeOptionIndex.value = -1;
     if (activeChipIndex.value === -1) {
       activeChipIndex.value = selected.value.length - 1;
       return;
@@ -142,6 +187,7 @@ const onInputKeydown = (e: KeyboardEvent) => {
 
   if (e.key === 'ArrowRight' && activeChipIndex.value !== -1) {
     e.preventDefault();
+    activeOptionIndex.value = -1;
     if (activeChipIndex.value >= selected.value.length - 1) {
       activeChipIndex.value = -1;
       return;
@@ -192,6 +238,17 @@ const filteredItems = computed(() => {
     props.filterBy ||
     ((item: Item, s: string) => item.label.toLowerCase().includes(s));
   return internal.value.filter((i) => fn(i, q));
+});
+
+watch(filteredItems, (items) => {
+  if (!items.length) {
+    activeOptionIndex.value = -1;
+    return;
+  }
+
+  if (activeOptionIndex.value > items.length - 1) {
+    activeOptionIndex.value = items.length - 1;
+  }
 });
 
 // click outside directive polyfill for simple cases
@@ -313,8 +370,8 @@ onMounted(() => {
       &:hover {
         background: $theme-palette-bg-secondary;
       }
-      &.selected {
-        background: $theme-palette-accent-hover;
+      &.active {
+        background: $theme-palette-bg-secondary;
       }
       input[type='checkbox'] {
         pointer-events: none;
