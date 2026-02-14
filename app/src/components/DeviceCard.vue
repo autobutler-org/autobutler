@@ -3,7 +3,11 @@
     class="device-card"
     :class="{
       'device-card--disabled': !displayedDevice.isEnabled,
+      'device-card--clickable': !!cardClick,
     }"
+    @click="handleCardClick"
+    :role="cardClick ? 'button' : undefined"
+    :tabindex="cardClick ? 0 : undefined"
   >
     <div class="device-card-header">
       <DeviceCardIcon />
@@ -13,7 +17,12 @@
         </h3>
         <p class="device-card-type">
           {{ displayedDevice.isInternal ? 'Internal' : 'External' }}
-          <span v-if="!displayedDevice.isInternal && displayedDevice.isEnabled"
+          <span
+            v-if="
+              !minimal &&
+              !displayedDevice.isInternal &&
+              displayedDevice.isEnabled
+            "
             >• Mounted?
             <ToggleSwitch
               :model-value="!!displayedDevice.usbInfo?.mountPath"
@@ -34,7 +43,7 @@
       </div>
       <div class="storage-bar-disabled" />
     </div>
-    <div v-else class="device-card-body" @click="goToCirrus">
+    <div v-else class="device-card-body" @click="handleBodyClick">
       <StoragePartition :device="displayedDevice" />
     </div>
   </div>
@@ -84,9 +93,16 @@ import ToggleSwitch from './ToggleSwitch.vue';
 
 const props = defineProps<{
   device: Device;
+  minimal?: boolean;
+  cardClick?: () => void;
 }>();
 
 const displayedDevice = ref<Device>(props.device);
+const minimal = props.minimal || false;
+
+// Expose cardClick as a prop; when provided the whole card becomes clickable and hover styles apply
+const cardClick = props.cardClick;
+
 const showEnableModal = ref(false);
 const isEnabling = ref(false);
 
@@ -140,6 +156,18 @@ const handleEnableDevice = async () => {
 const goToCirrus = () => {
   window.location.href = '/cirrus';
 };
+
+// When a cardClick prop is provided we want the entire card to be clickable for upload-selection
+const handleCardClick = (_?: MouseEvent) => {
+  if (props.cardClick) props.cardClick();
+};
+
+// Body clicks should navigate to Cirrus only when no cardClick prop is supplied
+const handleBodyClick = (_?: MouseEvent) => {
+  if (!props.cardClick) {
+    goToCirrus();
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -155,6 +183,19 @@ const goToCirrus = () => {
   max-width: 37.5rem;
   flex: 1 1 20rem;
   margin: 0;
+}
+
+/* Clickable cards (used for upload-device selection) get subtle hover styles and an outline to indicate targets */
+.device-card--clickable {
+  cursor: pointer;
+  /* subtle default outline for upload targets */
+  background-color: $theme-palette-bg-secondary;
+  box-shadow: 0 0 0 1px $theme-palette-border;
+}
+
+.device-card--clickable:hover {
+  background-color: $theme-palette-bg-primary;
+  box-shadow: 0 0 0 1px $theme-palette-border;
 }
 
 .device-card--disabled {

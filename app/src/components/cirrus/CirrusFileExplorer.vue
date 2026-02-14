@@ -2,56 +2,49 @@
   <div id="file-explorer" class="file-explorer">
     <div class="file-explorer-header">
       <div class="file-explorer-header-row">
-        <div class="file-explorer-upload-row header-left">
-          <template v-if="devices.length > 1">
-            <select
-              v-model="selectedDeviceSerial"
+        <div class="header-left">
+          <template v-if="enabledDevices.length > 1">
+            <ComboBox
               class="device-select"
-              :disabled="isUploading || devices.length === 0"
-              aria-label="Select upload location"
-            >
-              <option
-                v-for="device in devices"
-                :key="device.name"
-                :value="device.usbInfo?.serial || ''"
-              >
-                {{ device.name }}
-              </option>
-            </select>
+              :items="deviceItems"
+              v-model="selectedDeviceSerials"
+              placeholder="Filter devices"
+            />
           </template>
-          <span v-if="uploadProgress" class="upload-progress">{{
-            uploadProgress
-          }}</span>
-          <button
-            class="action-btn toolbar-rect upload-rect"
-            type="button"
-            :disabled="isUploading || devices.length === 0"
-            @click="handleUploadClick"
-            title="Upload files"
-            aria-label="Upload files"
-          >
-            <UploadIcon />
-          </button>
-          <button
-            class="action-btn"
-            type="button"
-            :disabled="selectedFiles.length === 0 || isUploading"
-            @click="handleDownloadSelected"
-            title="Download selected files"
-            aria-label="Download selected files"
-          >
-            <DownloadIcon />
-          </button>
-          <button
-            class="action-btn"
-            type="button"
-            :disabled="selectedFiles.length === 0 || isUploading"
-            @click="handleDeleteSelected"
-            title="Delete selected files"
-            aria-label="Delete selected files"
-          >
-            <DeleteIcon />
-          </button>
+
+          <div class="file-explorer-upload-row">
+            <button
+              class="action-btn toolbar-rect upload-rect"
+              type="button"
+              :disabled="isUploading || devices.length === 0"
+              @click="handleUploadClick"
+              title="Upload files"
+              aria-label="Upload files"
+            >
+              <UploadIcon />
+            </button>
+            <button
+              class="action-btn"
+              type="button"
+              :disabled="selectedFiles.length === 0 || isUploading"
+              @click="handleDownloadSelected"
+              title="Download selected files"
+              aria-label="Download selected files"
+            >
+              <DownloadIcon />
+            </button>
+            <button
+              class="action-btn"
+              type="button"
+              :disabled="selectedFiles.length === 0 || isUploading"
+              @click="handleDeleteSelected"
+              title="Delete selected files"
+              aria-label="Delete selected files"
+            >
+              <DeleteIcon />
+            </button>
+          </div>
+
           <input
             ref="fileInputRef"
             type="file"
@@ -61,8 +54,6 @@
             aria-label="Select files to upload"
           />
         </div>
-
-        <h2 class="file-explorer-title centered-title">Cirrus</h2>
 
         <div class="view-switcher header-right">
           <button
@@ -102,19 +93,6 @@
             @folder-created="handleFolderCreated"
             @breadcrumb-drop="handleBreadcrumbDrop"
           />
-        </div>
-        <div style="display: flex; align-items: center; gap: 1rem">
-          <label class="device-badge-toggle">
-            <input
-              type="checkbox"
-              id="toggle-device-badges"
-              :checked="showDeviceBadges"
-              @change="
-                toggleDeviceBadges(($event.target as HTMLInputElement).checked)
-              "
-            />
-            <span>Show devices</span>
-          </label>
         </div>
       </div>
 
@@ -169,6 +147,42 @@
         </template>
       </div>
     </div>
+
+    <!-- Device picker for upload when multiple devices are selected -->
+    <ModalDialog
+      v-if="showUploadDevicePicker"
+      @close="showUploadDevicePicker = false"
+      :transparent="true"
+      :hide-close-button="true"
+    >
+      <div class="custom-modal-close-wrapper">
+        <button
+          class="custom-modal-close"
+          @click="showUploadDevicePicker = false"
+          aria-label="Close"
+        >
+          <CloseIcon />
+        </button>
+      </div>
+      <div class="details-dialog-form">
+        <h3 class="move-dialog-title">Select upload target</h3>
+        <div class="upload-device-list">
+          <div
+            v-for="d in devices"
+            :key="d.devicePath"
+            class="upload-device-tile"
+          >
+            <DeviceCard
+              :device="d"
+              :minimal="true"
+              :card-click="
+                () => chooseUploadDevice(d.usbInfo?.serial || undefined)
+              "
+            />
+          </div>
+        </div>
+      </div>
+    </ModalDialog>
 
     <!-- File Viewer Modal -->
     <CirrusFileViewer
@@ -370,6 +384,7 @@
 </template>
 
 <script lang="ts" setup>
+import ComboBox from '@/components/common/ComboBox.vue';
 import ModalDialog from '@/components/common/ModalDialog.vue';
 import CloseIcon from '@/components/icons/CloseIcon.vue';
 import DeleteIcon from '@/components/icons/DeleteIcon.vue';
@@ -403,15 +418,27 @@ import CirrusFileViewer from './CirrusFileViewer.vue';
 import CirrusGridView from './CirrusGridView.vue';
 import CirrusListView from './CirrusListView.vue';
 
+import DeviceCard from '@/components/DeviceCard.vue';
 import DevicesService from '@/services/devicesService';
 import { useCirrusDeviceStore } from '@/stores/cirrusDeviceStore';
+import type { Device } from '@/types/device';
 import { storeToRefs } from 'pinia';
 
 const fileInputRef = vueRef<HTMLInputElement | null>(null);
 const isUploading = vueRef(false);
-const uploadProgress = vueRef('');
 const cirrusDeviceStore = useCirrusDeviceStore();
-const { devices, selectedDeviceSerial } = storeToRefs(cirrusDeviceStore);
+const { devices, selectedDeviceSerials } = storeToRefs(cirrusDeviceStore);
+
+const enabledDevices = computed(() =>
+  (devices.value || []).filter((d: Device) => d.isEnabled),
+);
+
+const deviceItems = computed(() =>
+  enabledDevices.value.map((d: Device) => ({
+    value: d.usbInfo?.serial || '',
+    label: d.name,
+  })),
+);
 
 const fileViewComponent = computed(() => {
   switch (view.value) {
@@ -501,30 +528,43 @@ const handleUploadClick = () => {
   fileInputRef.value?.click();
 };
 
+const pendingUploadFiles = ref<FileList | null>(null);
+const showUploadDevicePicker = ref(false);
+
+const performUpload = async (
+  files: FileList | null,
+  serial?: string | undefined,
+) => {
+  if (!files) return;
+  isUploading.value = true;
+  try {
+    await CirrusService.uploadFiles(currentPath.value || '', files, serial);
+    await fetchFiles();
+  } finally {
+    isUploading.value = false;
+    pendingUploadFiles.value = null;
+  }
+};
+
 const handleFileInputChange = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   if (!input.files || input.files.length === 0) return;
-  isUploading.value = true;
-  uploadProgress.value = `Uploading ${input.files.length} file${input.files.length > 1 ? 's' : ''}...`;
-  try {
-    // Actually upload the files to the backend, include device as query param
-    await CirrusService.uploadFiles(
-      currentPath.value || '',
-      input.files,
-      selectedDeviceSerial.value,
-    );
-    uploadProgress.value = 'Upload complete!';
-    // Refresh the file list after upload
-    await fetchFiles();
-  } catch {
-    uploadProgress.value = 'Upload failed';
-  } finally {
-    isUploading.value = false;
-    setTimeout(() => {
-      uploadProgress.value = '';
-    }, 1500);
-    input.value = '';
+  // Determine selected device(s)
+  const selected = selectedDeviceSerials.value || [];
+  if (selected.length === 1) {
+    const serial = selected[0] || undefined;
+    await performUpload(input.files, serial);
+  } else {
+    // More than one device (or none) selected: show picker to choose target
+    pendingUploadFiles.value = input.files;
+    showUploadDevicePicker.value = true;
   }
+  input.value = '';
+};
+
+const chooseUploadDevice = async (serial: string | undefined) => {
+  showUploadDevicePicker.value = false;
+  await performUpload(pendingUploadFiles.value, serial);
 };
 // Fetch available storage devices
 const fetchDevices = async () => {
@@ -716,7 +756,10 @@ const fetchFiles = async () => {
   loading.value = true;
   error.value = null;
   try {
-    files.value = await CirrusService.getFiles(currentPath.value);
+    files.value = await CirrusService.getFiles(
+      currentPath.value,
+      selectedDeviceSerials.value || [],
+    );
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to load files';
     files.value = [];
@@ -744,6 +787,15 @@ watch(
 watch(currentPath, () => {
   fetchFiles();
 });
+
+// Watch selected devices filter to refetch files when changed
+watch(
+  () => selectedDeviceSerials.value,
+  () => {
+    fetchFiles();
+  },
+  { deep: true },
+);
 
 // Fetch files on mount
 onMounted(() => {
@@ -809,10 +861,6 @@ const handleOpenFile = (file: CirrusFileNode) => {
 
 const switchView = (newView: 'list' | 'grid') => {
   view.value = newView;
-};
-
-const toggleDeviceBadges = (show: boolean) => {
-  showDeviceBadges.value = show;
 };
 
 const getParentPath = (fullPath: string) => {
@@ -1130,7 +1178,7 @@ onUnmounted(() => {
   min-width: 44px;
   min-height: 40px;
   border-radius: $border-radius-md;
-  background: #ffffff;
+  background: $theme-palette-bg-primary;
   color: $theme-palette-text-primary;
   border: 1px solid $theme-palette-border-strong;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -1155,18 +1203,14 @@ onUnmounted(() => {
   min-height: 0;
 }
 
-.file-explorer-title {
-  font-size: $theme-font-size-2xl;
-  font-weight: 700;
-  margin-right: $spacing-lg;
-  white-space: nowrap;
-  color: $theme-palette-text-primary;
-}
-
 .file-explorer-upload-row {
   display: flex;
   align-items: center;
   gap: $spacing-sm;
+}
+
+.device-select {
+  min-width: 220px;
 }
 
 #file-explorer-view-content {
@@ -1408,29 +1452,43 @@ onUnmounted(() => {
   }
 }
 
-.device-select {
-  padding: 0.4rem 0.7rem;
-  border-radius: $border-radius-md;
-  border: 0.09rem solid $theme-palette-border-strong;
-  font-size: $theme-font-size-base;
-  background: $theme-palette-bg-inverse;
-  min-width: 7.5rem;
-  max-width: 13.75rem;
-  margin-right: 0.5rem;
+.upload-device-list {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
 }
 
 // Mobile-specific adjustments
 @media (max-width: 640px) {
   .file-explorer-header-row {
-    /* allow wrapping and make space for controls */
     flex-wrap: wrap;
     gap: $spacing-xs;
     align-items: center;
   }
 
-  /* hide the large centered title on small screens to avoid overlapping controls */
-  .file-explorer-title.centered-title {
-    display: none;
+  .header-left {
+    display: contents;
+  }
+
+  .device-select {
+    order: 1;
+    flex: 1 1 100%;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .file-explorer-upload-row {
+    order: 2;
+    width: auto;
+  }
+
+  .view-switcher {
+    order: 3;
+    margin-left: auto;
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
   }
 
   .file-explorer {
@@ -1441,6 +1499,14 @@ onUnmounted(() => {
     min-width: 36px;
     min-height: 36px;
     font-size: 1.25rem;
+  }
+
+  /* ensure file-explorer-controls sit on their own row below header */
+  .file-explorer-controls {
+    width: 100%;
+    margin-top: $spacing-xs;
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 

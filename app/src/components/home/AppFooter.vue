@@ -1,35 +1,23 @@
 <template>
   <footer class="app-footer">
     <div class="footer-content">
-      <div class="footer-left">
-        <p class="footer-text">Autobutler LLC.</p>
+      <span class="footer-text-container">
         <a
           href="https://github.com/autobutler-org/autobutler"
           target="_blank"
           rel="noopener noreferrer"
         >
+          <p class="footer-text">Autobutler LLC.</p>
           <img src="/img/github/github-mark-white.svg" alt="GitHub logo" />
         </a>
-        <a
-          :href="swaggerLink"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="swagger-link"
-        >
-          <img src="/favicons/swagger.png" alt="Swagger logo" />
-          Interactive API Docs
-        </a>
-      </div>
+      </span>
 
       <div class="storage-bar-container">
         <div v-if="storageData" class="storage-info">
-          <span class="storage-label">Total Storage</span>
+          <span class="storage-label">Storage</span>
           <span class="storage-stats">
             {{ formatBytes(storageData.usedBytes) }} of
             {{ formatBytes(storageData.totalBytes) }} used
-            <span class="storage-available"
-              >({{ formatBytes(storageData.availableBytes) }} available)</span
-            >
           </span>
         </div>
         <div v-if="storageData" class="storage-bar">
@@ -45,6 +33,16 @@
           Loading storage data...
         </div>
       </div>
+
+      <a
+        :href="swaggerLink"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="swagger-link"
+      >
+        <img src="/favicons/swagger.png" alt="Swagger logo" />
+        Interactive API Docs
+      </a>
     </div>
   </footer>
 </template>
@@ -122,8 +120,8 @@ onMounted(() => {
   padding: $spacing-md $spacing-lg;
   color: $theme-palette-text-muted;
   background: hsl(from $theme-palette-bg-nav h s l / 0.95);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid hsl(from $theme-palette-bg-primary h s l / 0.1);
+  backdrop-filter: blur(1.25rem);
+  border-top: 0.0625rem solid hsl(from $theme-palette-bg-primary h s l / 0.1);
   width: 100%;
   margin-top: auto;
   flex-shrink: 0;
@@ -136,46 +134,60 @@ onMounted(() => {
   width: 100%;
   max-width: 100%;
   gap: $spacing-lg;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: $spacing-md;
+  @media (max-width: 48rem) {
+    gap: $spacing-sm;
   }
 }
 
-.footer-left {
-  display: flex;
-  align-items: center;
-  gap: $spacing-md;
+.footer-text-container {
   flex-shrink: 0;
+  margin-right: auto;
+
+  .footer-text {
+    font-size: $theme-font-size-xs;
+    margin: 0;
+  }
 
   img {
-    width: 20px;
-    height: 20px;
+    width: 1.25rem;
+    height: 1.25rem;
     opacity: 0.7;
     transition: opacity 0.2s ease;
   }
 
-  a:hover img {
-    opacity: 1;
+  a {
+    text-decoration: none;
+    color: $theme-palette-text-secondary;
+
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+
+    &:hover {
+      & img {
+        opacity: 1;
+      }
+      text-decoration: underline;
+    }
   }
 }
 
-.footer-text {
-  font-size: $theme-font-size-xs;
-  margin: 0;
-}
-
 .storage-bar-container {
-  flex: 1;
-  max-width: 400px;
-  min-width: 200px;
+  flex: 1 1 22.5rem;
+  max-width: 32.5rem;
+  min-width: 15rem;
   display: flex;
   flex-direction: column;
-  gap: $spacing-xs;
+  gap: calc($spacing-xs / 2);
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $border-radius-md;
+  background: hsl(from $theme-palette-bg-primary h s l / 0.2);
+  border: 0.0625rem solid hsl(from $theme-palette-bg-primary h s l / 0.35);
 
-  @media (max-width: 768px) {
+  @media (max-width: 48rem) {
+    min-width: 0;
     max-width: 100%;
     width: 100%;
   }
@@ -187,11 +199,22 @@ onMounted(() => {
   align-items: center;
   font-size: $theme-font-size-xs;
   gap: $spacing-xs;
+  line-height: 1.2;
 
-  @media (max-width: 480px) {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
+  .storage-stats {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 30rem) {
+    align-items: center;
+    justify-content: center;
+    gap: 0.125rem;
+
+    .storage-stats {
+      text-align: center;
+      white-space: normal;
+    }
   }
 }
 
@@ -204,15 +227,12 @@ onMounted(() => {
   color: $theme-palette-text-muted;
 }
 
-.storage-available {
-  color: $theme-palette-text-muted;
-  opacity: 0.8;
-}
-
 .storage-bar {
-  height: 8px;
+  width: 100%;
+  align-self: stretch;
+  height: 0.5rem;
   background: hsl(from $theme-palette-bg-primary h s l / 0.3);
-  border-radius: 4px;
+  border-radius: 0.25rem;
   overflow: hidden;
   position: relative;
 }
@@ -225,7 +245,7 @@ onMounted(() => {
     $theme-palette-accent-hover 100%
   );
   transition: width 0.3s ease;
-  border-radius: 4px;
+  border-radius: 0.25rem;
 }
 
 .storage-loading,
@@ -246,10 +266,16 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: $spacing-xs;
-  font-size: $theme-font-size-sm;
+  font-size: $theme-font-size-xs;
   color: $theme-palette-text-muted;
   text-decoration: none;
   transition: color 0.2s ease;
+  margin-left: auto;
+
+  img {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
 
   &:hover {
     color: $theme-palette-text-primary;
