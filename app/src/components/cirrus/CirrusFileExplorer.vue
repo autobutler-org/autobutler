@@ -2,44 +2,49 @@
   <div id="file-explorer" class="file-explorer">
     <div class="file-explorer-header">
       <div class="file-explorer-header-row">
-        <div class="file-explorer-upload-row header-left">
+        <div class="header-left">
           <template v-if="devices.length > 0">
             <ComboBox
+              class="device-select"
               :items="deviceItems"
               v-model="selectedDeviceSerials"
               placeholder="Filter devices"
             />
           </template>
-          <button
-            class="action-btn toolbar-rect upload-rect"
-            type="button"
-            :disabled="isUploading || devices.length === 0"
-            @click="handleUploadClick"
-            title="Upload files"
-            aria-label="Upload files"
-          >
-            <UploadIcon />
-          </button>
-          <button
-            class="action-btn"
-            type="button"
-            :disabled="selectedFiles.length === 0 || isUploading"
-            @click="handleDownloadSelected"
-            title="Download selected files"
-            aria-label="Download selected files"
-          >
-            <DownloadIcon />
-          </button>
-          <button
-            class="action-btn"
-            type="button"
-            :disabled="selectedFiles.length === 0 || isUploading"
-            @click="handleDeleteSelected"
-            title="Delete selected files"
-            aria-label="Delete selected files"
-          >
-            <DeleteIcon />
-          </button>
+
+          <div class="file-explorer-upload-row">
+            <button
+              class="action-btn toolbar-rect upload-rect"
+              type="button"
+              :disabled="isUploading || devices.length === 0"
+              @click="handleUploadClick"
+              title="Upload files"
+              aria-label="Upload files"
+            >
+              <UploadIcon />
+            </button>
+            <button
+              class="action-btn"
+              type="button"
+              :disabled="selectedFiles.length === 0 || isUploading"
+              @click="handleDownloadSelected"
+              title="Download selected files"
+              aria-label="Download selected files"
+            >
+              <DownloadIcon />
+            </button>
+            <button
+              class="action-btn"
+              type="button"
+              :disabled="selectedFiles.length === 0 || isUploading"
+              @click="handleDeleteSelected"
+              title="Delete selected files"
+              aria-label="Delete selected files"
+            >
+              <DeleteIcon />
+            </button>
+          </div>
+
           <input
             ref="fileInputRef"
             type="file"
@@ -1208,6 +1213,10 @@ onUnmounted(() => {
   gap: $spacing-sm;
 }
 
+.device-select {
+  min-width: 220px;
+}
+
 #file-explorer-view-content {
   flex: 1;
   min-height: 0;
@@ -1457,31 +1466,27 @@ onUnmounted(() => {
 // Mobile-specific adjustments
 @media (max-width: 640px) {
   .file-explorer-header-row {
-    /* allow wrapping so combobox can be on its own row */
     flex-wrap: wrap;
     gap: $spacing-xs;
-    align-items: flex-start;
+    align-items: center;
   }
 
-  /* make the device combobox occupy its own full-width row */
-  .file-explorer-upload-row {
+  .header-left {
+    display: contents;
+  }
+
+  .device-select {
     order: 1;
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    flex-wrap: wrap;
+    flex: 1 1 100%;
+    min-width: 0;
     width: 100%;
   }
 
-  /* upload/action buttons (and progress) go on their own row left-aligned */
-  .file-explorer-upload-row .action-btn,
-  .file-explorer-upload-row .upload-progress {
+  .file-explorer-upload-row {
     order: 2;
-    flex: 0 1 auto;
-    margin-right: 0.5rem;
+    width: auto;
   }
 
-  /* view selections stay right-aligned on the same row as actions */
   .view-switcher {
     order: 3;
     margin-left: auto;
