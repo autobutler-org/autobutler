@@ -1,54 +1,51 @@
 <template>
   <footer class="app-footer">
     <div class="footer-content">
-      <div class="footer-left">
-        <div class="storage-bar-container">
-          <div v-if="storageData" class="storage-info">
-            <span class="storage-label">Total Storage</span>
-            <span class="storage-stats">
-              {{ formatBytes(storageData.usedBytes) }} of
-              {{ formatBytes(storageData.totalBytes) }} used
-              <span class="storage-available"
-                >({{ formatBytes(storageData.availableBytes) }} available)</span
-              >
-            </span>
-          </div>
-          <div v-if="storageData" class="storage-bar">
-            <div
-              class="storage-bar-fill"
-              :style="{ width: usagePercentage + '%' }"
-            ></div>
-          </div>
-          <div v-if="!storageData && !isLoading" class="storage-error">
-            Storage information unavailable
-          </div>
-          <div v-if="isLoading" class="storage-loading">
-            Loading storage data...
-          </div>
+      <span class="footer-text-container">
+        <a
+          href="https://github.com/autobutler-org/autobutler"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <p class="footer-text">Autobutler LLC.</p>
+          <img src="/img/github/github-mark-white.svg" alt="GitHub logo" />
+        </a>
+      </span>
+
+      <div class="storage-bar-container">
+        <div v-if="storageData" class="storage-info">
+          <span class="storage-label">Total Storage</span>
+          <span class="storage-stats">
+            {{ formatBytes(storageData.usedBytes) }} of
+            {{ formatBytes(storageData.totalBytes) }} used
+            <span class="storage-available"
+              >({{ formatBytes(storageData.availableBytes) }} available)</span
+            >
+          </span>
+        </div>
+        <div v-if="storageData" class="storage-bar">
+          <div
+            class="storage-bar-fill"
+            :style="{ width: usagePercentage + '%' }"
+          ></div>
+        </div>
+        <div v-if="!storageData && !isLoading" class="storage-error">
+          Storage information unavailable
+        </div>
+        <div v-if="isLoading" class="storage-loading">
+          Loading storage data...
         </div>
       </div>
 
-      <div class="footer-right-container">
-        <span class="footer-text-container">
-          <a
-            href="https://github.com/autobutler-org/autobutler"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <p class="footer-text">Autobutler LLC.</p>
-            <img src="/img/github/github-mark-white.svg" alt="GitHub logo" />
-          </a>
-        </span>
-        <a
-          :href="swaggerLink"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="swagger-link"
-        >
-          <img src="/favicons/swagger.png" alt="Swagger logo" />
-          Interactive API Docs
-        </a>
-      </div>
+      <a
+        :href="swaggerLink"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="swagger-link"
+      >
+        <img src="/favicons/swagger.png" alt="Swagger logo" />
+        Interactive API Docs
+      </a>
     </div>
   </footer>
 </template>
@@ -140,39 +137,20 @@ onMounted(() => {
   width: 100%;
   max-width: 100%;
   gap: $spacing-lg;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 
   @media (max-width: 768px) {
-    flex-direction: column;
-    gap: $spacing-md;
+    gap: $spacing-sm;
   }
-}
-
-.footer-left {
-  display: flex;
-  align-items: center;
-  gap: $spacing-md;
-  flex-shrink: 0;
 }
 
 .footer-text-container {
+  flex-shrink: 0;
+  margin-right: auto;
+
   .footer-text {
     font-size: $theme-font-size-xs;
     margin: 0;
-  }
-}
-
-.footer-right-container {
-  display: flex;
-  align-items: center;
-  gap: $spacing-md;
-  flex-shrink: 0;
-
-  @media (max-width: 768px) {
-    max-width: 100%;
-    width: 100%;
-    // Evenly space out the items across the full width on mobile
-    justify-content: space-around;
   }
 
   img {
@@ -200,16 +178,20 @@ onMounted(() => {
 }
 
 .storage-bar-container {
-  flex: 1;
+  flex: 1 1 auto;
   max-width: 400px;
-  min-width: 200px;
+  min-width: 140px;
   display: flex;
   flex-direction: column;
   gap: $spacing-xs;
 
   @media (max-width: 768px) {
+    min-width: 110px;
+  }
+
+  @media (max-width: 768px) {
     max-width: 100%;
-    width: 100%;
+    width: auto;
   }
 }
 
@@ -282,6 +264,7 @@ onMounted(() => {
   color: $theme-palette-text-muted;
   text-decoration: none;
   transition: color 0.2s ease;
+  margin-left: auto;
 
   &:hover {
     color: $theme-palette-text-primary;
