@@ -34,7 +34,9 @@ export const useCirrusDeviceStore = defineStore('cirrusDevice', {
     getSelectedDevice() {
       return (
         this.devices.find(
-          (d) => (d.usbInfo?.serial || DEFAULT_DEVICE_SERIAL) === this.selectedDeviceSerial,
+          (d) =>
+            (d.usbInfo?.serial || DEFAULT_DEVICE_SERIAL) ===
+            this.selectedDeviceSerial,
         ) ||
         this.devices.find((d) => !d.usbInfo?.serial) ||
         this.devices[0] ||
