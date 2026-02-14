@@ -227,6 +227,7 @@ onMounted(() => {
     overflow: auto;
     list-style: none;
     padding: 0.375rem 0.25rem;
+
     li {
       display: flex;
       align-items: center;
