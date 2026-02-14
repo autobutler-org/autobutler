@@ -6,6 +6,7 @@
           class="tag"
           v-for="s in selected"
           :key="s.value"
+          :class="{ active: activeChipValue === s.value }"
           @click.stop="deselect(s.value)"
         >
           {{ s.label }}
@@ -16,6 +17,7 @@
         :placeholder="selected.length ? '' : placeholder"
         @focus="open"
         @input="onInput"
+        @keydown="onInputKeydown"
         class="input"
         type="text"
         aria-haspopup="listbox"
@@ -61,10 +63,16 @@ const emit = defineEmits(['update:modelValue']);
 const isOpen = ref(false);
 const query = ref('');
 const internal = ref<Item[]>(props.items || []);
+const activeChipIndex = ref(-1);
 
 const selected = computed(() => {
   const vals = props.modelValue || [];
   return internal.value.filter((i) => vals.includes(i.value));
+});
+
+const activeChipValue = computed(() => {
+  if (activeChipIndex.value < 0) return null;
+  return selected.value[activeChipIndex.value]?.value ?? null;
 });
 
 watch(
@@ -115,8 +123,67 @@ const toggleSelect = (val: string | number) => {
 };
 
 const onInput = () => {
+  activeChipIndex.value = -1;
   if (!isOpen.value) isOpen.value = true;
 };
+
+const onInputKeydown = (e: KeyboardEvent) => {
+  if (!selected.value.length) return;
+
+  if (e.key === 'ArrowLeft' && !query.value.length) {
+    e.preventDefault();
+    if (activeChipIndex.value === -1) {
+      activeChipIndex.value = selected.value.length - 1;
+      return;
+    }
+    activeChipIndex.value = Math.max(0, activeChipIndex.value - 1);
+    return;
+  }
+
+  if (e.key === 'ArrowRight' && activeChipIndex.value !== -1) {
+    e.preventDefault();
+    if (activeChipIndex.value >= selected.value.length - 1) {
+      activeChipIndex.value = -1;
+      return;
+    }
+    activeChipIndex.value += 1;
+    return;
+  }
+
+  if (e.key !== 'Backspace' || query.value.length) return;
+
+  e.preventDefault();
+  if (activeChipIndex.value === -1) {
+    const last = selected.value[selected.value.length - 1];
+    if (!last) return;
+    deselect(last.value);
+    return;
+  }
+
+  const indexToRemove = activeChipIndex.value;
+  const chip = selected.value[indexToRemove];
+  if (!chip) {
+    activeChipIndex.value = -1;
+    return;
+  }
+
+  deselect(chip.value);
+  activeChipIndex.value = Math.max(-1, indexToRemove - 1);
+};
+
+watch(
+  () => props.modelValue,
+  () => {
+    if (!selected.value.length) {
+      activeChipIndex.value = -1;
+      return;
+    }
+
+    if (activeChipIndex.value > selected.value.length - 1) {
+      activeChipIndex.value = selected.value.length - 1;
+    }
+  },
+);
 
 const filteredItems = computed(() => {
   const q = query.value.trim().toLowerCase();
@@ -188,6 +255,11 @@ onMounted(() => {
         white-space: nowrap;
 
         &:hover {
+          background: $theme-palette-accent;
+          color: $theme-palette-text-inverse;
+        }
+
+        &.active {
           background: $theme-palette-accent;
           color: $theme-palette-text-inverse;
         }
