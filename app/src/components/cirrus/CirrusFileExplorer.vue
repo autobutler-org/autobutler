@@ -1203,14 +1203,6 @@ onUnmounted(() => {
   min-height: 0;
 }
 
-.file-explorer-title {
-  font-size: $theme-font-size-2xl;
-  font-weight: 700;
-  margin-right: $spacing-lg;
-  white-space: nowrap;
-  color: $theme-palette-text-primary;
-}
-
 .file-explorer-upload-row {
   display: flex;
   align-items: center;
@@ -1497,11 +1489,6 @@ onUnmounted(() => {
     display: flex;
     gap: 0.25rem;
     align-items: center;
-  }
-
-  /* hide the large centered title on small screens to avoid overlapping controls */
-  .file-explorer-title.centered-title {
-    display: none;
   }
 
   .file-explorer {

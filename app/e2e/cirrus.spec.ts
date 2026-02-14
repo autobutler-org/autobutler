@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Cirrus Page', () => {
   test('loads cirrus page successfully', async ({ page }) => {
@@ -7,15 +7,10 @@ test.describe('Cirrus Page', () => {
     await expect(page.locator('#file-explorer')).toBeVisible();
   });
 
-  test('displays file explorer header with title and space info', async ({
-    page,
-  }) => {
+  test('displays file explorer header', async ({ page }) => {
     await page.goto('/cirrus');
     const header = page.locator('.file-explorer-header');
     await expect(header).toBeVisible();
-    const title = page.locator('h2.file-explorer-title');
-    await expect(title).toBeVisible();
-    await expect(title).toHaveText('Cirrus');
   });
 
   test('displays view switcher with three view options', async ({ page }) => {
