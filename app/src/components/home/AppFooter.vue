@@ -120,8 +120,8 @@ onMounted(() => {
   padding: $spacing-md $spacing-lg;
   color: $theme-palette-text-muted;
   background: hsl(from $theme-palette-bg-nav h s l / 0.95);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid hsl(from $theme-palette-bg-primary h s l / 0.1);
+  backdrop-filter: blur(1.25rem);
+  border-top: 0.0625rem solid hsl(from $theme-palette-bg-primary h s l / 0.1);
   width: 100%;
   margin-top: auto;
   flex-shrink: 0;
@@ -136,7 +136,7 @@ onMounted(() => {
   gap: $spacing-lg;
   flex-wrap: nowrap;
 
-  @media (max-width: 768px) {
+  @media (max-width: 48rem) {
     gap: $spacing-sm;
   }
 }
@@ -151,8 +151,8 @@ onMounted(() => {
   }
 
   img {
-    width: 20px;
-    height: 20px;
+    width: 1.25rem;
+    height: 1.25rem;
     opacity: 0.7;
     transition: opacity 0.2s ease;
   }
@@ -175,18 +175,18 @@ onMounted(() => {
 }
 
 .storage-bar-container {
-  flex: 1 1 360px;
-  max-width: 520px;
-  min-width: 240px;
+  flex: 1 1 22.5rem;
+  max-width: 32.5rem;
+  min-width: 15rem;
   display: flex;
   flex-direction: column;
   gap: calc($spacing-xs / 2);
   padding: calc($spacing-xs / 2) $spacing-sm;
   border-radius: $border-radius-md;
   background: hsl(from $theme-palette-bg-primary h s l / 0.2);
-  border: 1px solid hsl(from $theme-palette-bg-primary h s l / 0.35);
+  border: 0.0625rem solid hsl(from $theme-palette-bg-primary h s l / 0.35);
 
-  @media (max-width: 768px) {
+  @media (max-width: 48rem) {
     min-width: 0;
     max-width: 100%;
     width: 100%;
@@ -206,10 +206,10 @@ onMounted(() => {
     white-space: nowrap;
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 30rem) {
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 0.125rem;
 
     .storage-stats {
       text-align: center;
@@ -230,9 +230,9 @@ onMounted(() => {
 .storage-bar {
   width: 100%;
   align-self: stretch;
-  height: 8px;
+  height: 0.5rem;
   background: hsl(from $theme-palette-bg-primary h s l / 0.3);
-  border-radius: 4px;
+  border-radius: 0.25rem;
   overflow: hidden;
   position: relative;
 }
@@ -245,7 +245,7 @@ onMounted(() => {
     $theme-palette-accent-hover 100%
   );
   transition: width 0.3s ease;
-  border-radius: 4px;
+  border-radius: 0.25rem;
 }
 
 .storage-loading,
@@ -266,11 +266,16 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: $spacing-xs;
-  font-size: $theme-font-size-sm;
+  font-size: $theme-font-size-xs;
   color: $theme-palette-text-muted;
   text-decoration: none;
   transition: color 0.2s ease;
   margin-left: auto;
+
+  img {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
 
   &:hover {
     color: $theme-palette-text-primary;
