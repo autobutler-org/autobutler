@@ -14,13 +14,10 @@
 
       <div class="storage-bar-container">
         <div v-if="storageData" class="storage-info">
-          <span class="storage-label">Total Storage</span>
+          <span class="storage-label">Storage</span>
           <span class="storage-stats">
             {{ formatBytes(storageData.usedBytes) }} of
             {{ formatBytes(storageData.totalBytes) }} used
-            <span class="storage-available"
-              >({{ formatBytes(storageData.availableBytes) }} available)</span
-            >
           </span>
         </div>
         <div v-if="storageData" class="storage-bar">
@@ -178,20 +175,21 @@ onMounted(() => {
 }
 
 .storage-bar-container {
-  flex: 1 1 auto;
-  max-width: 400px;
-  min-width: 140px;
+  flex: 1 1 360px;
+  max-width: 520px;
+  min-width: 240px;
   display: flex;
   flex-direction: column;
-  gap: $spacing-xs;
+  gap: calc($spacing-xs / 2);
+  padding: calc($spacing-xs / 2) $spacing-sm;
+  border-radius: $border-radius-md;
+  background: hsl(from $theme-palette-bg-primary h s l / 0.2);
+  border: 1px solid hsl(from $theme-palette-bg-primary h s l / 0.35);
 
   @media (max-width: 768px) {
-    min-width: 110px;
-  }
-
-  @media (max-width: 768px) {
+    min-width: 0;
     max-width: 100%;
-    width: auto;
+    width: 100%;
   }
 }
 
@@ -201,11 +199,22 @@ onMounted(() => {
   align-items: center;
   font-size: $theme-font-size-xs;
   gap: $spacing-xs;
+  line-height: 1.2;
+
+  .storage-stats {
+    text-align: right;
+    white-space: nowrap;
+  }
 
   @media (max-width: 480px) {
-    flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    justify-content: center;
     gap: 2px;
+
+    .storage-stats {
+      text-align: center;
+      white-space: normal;
+    }
   }
 }
 
@@ -218,12 +227,9 @@ onMounted(() => {
   color: $theme-palette-text-muted;
 }
 
-.storage-available {
-  color: $theme-palette-text-muted;
-  opacity: 0.8;
-}
-
 .storage-bar {
+  width: 100%;
+  align-self: stretch;
   height: 8px;
   background: hsl(from $theme-palette-bg-primary h s l / 0.3);
   border-radius: 4px;
