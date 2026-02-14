@@ -33,8 +33,11 @@ $theme-font-size-5xl: var(--theme-font-size-5xl);
   --theme-palette-bg-nav: #0d101a; // TopNav background (much darker)
   --theme-palette-bg-primary: #181e29; // Main site background
   --theme-palette-bg-secondary: #{$color-gray-800}; // Slightly lighter dark
+  --theme-palette-border-dark: #363b3d; // Dark border for dark bg
   --theme-palette-border-strong: #{$color-gray-200}; // Strong border for light bg
   --theme-palette-border: #{$color-gray-700}; // Subtle border
+  --theme-palette-component-primary: #1b1d1e;
+  --theme-palette-component-inverse: #{$color-gray-50}; // For light mode or highlights
   --theme-palette-danger: #{$color-red-400};
   --theme-palette-error: #{$color-red-600}; // Error color for forms, alerts, etc.
   --theme-palette-info: #{$color-blue-400};
@@ -52,8 +55,11 @@ $theme-palette-bg-inverse: var(--theme-palette-bg-inverse);
 $theme-palette-bg-nav: var(--theme-palette-bg-nav);
 $theme-palette-bg-primary: var(--theme-palette-bg-primary);
 $theme-palette-bg-secondary: var(--theme-palette-bg-secondary);
+$theme-palette-border-dark: var(--theme-palette-border-dark);
 $theme-palette-border-strong: var(--theme-palette-border-strong);
 $theme-palette-border: var(--theme-palette-border);
+$theme-palette-component-primary: var(theme-palette-component-primary);
+$theme-palette-component-inverse: var(theme-palette-component-inverse);
 $theme-palette-danger: var(--theme-palette-danger);
 $theme-palette-error: var(--theme-palette-error);
 $theme-palette-info: var(--theme-palette-info);

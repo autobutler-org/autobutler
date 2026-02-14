@@ -153,10 +153,10 @@ onMounted(() => {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    border: 0.0625rem solid $theme-palette-border-strong;
+    border: 0.0625rem solid $theme-palette-border-dark;
     padding: 0.375rem 0.5rem;
     border-radius: 0.375rem;
-    background: $theme-palette-bg-inverse;
+    background: $theme-palette-component-primary;
     cursor: text;
     &.open {
       box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.08);
@@ -213,7 +213,7 @@ onMounted(() => {
     right: 0;
     margin-top: 0.375rem; /* 6px */
     border: 0.0625rem solid $theme-palette-border-strong; /* 1px */
-    background: $theme-palette-bg-inverse;
+    background: $theme-palette-component-primary;
     border-radius: 0.5rem;
     max-height: 13.75rem;
     overflow: auto;

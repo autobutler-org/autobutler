@@ -1451,9 +1451,9 @@ onUnmounted(() => {
 .device-select {
   padding: 0.4rem 0.7rem;
   border-radius: $border-radius-md;
-  border: 0.09rem solid $theme-palette-border-strong;
+  border: 0.09rem solid $theme-palette-border-dark;
   font-size: $theme-font-size-base;
-  background: $theme-palette-bg-inverse;
+  background: $theme-palette-component-primary;
   min-width: 18rem;
   max-width: 100%;
   margin-right: 0.5rem;
