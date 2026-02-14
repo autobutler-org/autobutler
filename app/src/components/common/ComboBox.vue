@@ -144,11 +144,19 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .combobox {
+  background: $theme-palette-component-primary;
+  border-radius: $border-radius-md;
+  border: 0.09rem solid $theme-palette-border-dark;
+  color: $theme-palette-text-inverse;
+  flex: 0 1 auto;
+  font-family: inherit;
+  font-size: $theme-font-size-base;
+  margin-right: 0.5rem;
+  max-width: 100%;
+  min-width: 18rem;
+  padding: 0.4rem 0.7rem;
   position: relative;
   width: 100%;
-  max-width: 30rem;
-  font-family: inherit;
-  color: $theme-palette-text-inverse;
   .control {
     display: flex;
     align-items: center;
@@ -243,6 +251,18 @@ onMounted(() => {
       padding: 0.5rem 0.625rem;
       color: $theme-palette-text-muted;
     }
+  }
+}
+
+@media (max-width: 640px) {
+  .combobox {
+    flex: 1 1 auto;
+    margin-bottom: $spacing-xs;
+    margin-right: 0;
+    max-width: 100%;
+    min-width: 8rem;
+    order: 1;
+    width: 100%;
   }
 }
 </style>

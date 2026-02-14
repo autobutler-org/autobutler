@@ -7,7 +7,6 @@
             <ComboBox
               :items="deviceItems"
               v-model="selectedDeviceSerials"
-              class="device-select"
               placeholder="Filter devices"
             />
           </template>
@@ -1448,18 +1447,6 @@ onUnmounted(() => {
   }
 }
 
-.device-select {
-  padding: 0.4rem 0.7rem;
-  border-radius: $border-radius-md;
-  border: 0.09rem solid $theme-palette-border-dark;
-  font-size: $theme-font-size-base;
-  background: $theme-palette-component-primary;
-  min-width: 18rem;
-  max-width: 100%;
-  margin-right: 0.5rem;
-  flex: 0 1 auto;
-}
-
 .upload-device-list {
   display: flex;
   gap: 1rem;
@@ -1484,14 +1471,6 @@ onUnmounted(() => {
     align-items: center;
     flex-wrap: wrap;
     width: 100%;
-  }
-
-  .file-explorer-upload-row .device-select {
-    order: 1;
-    width: 100%;
-    flex: 1 1 100%;
-    margin-right: 0;
-    margin-bottom: $spacing-xs;
   }
 
   /* upload/action buttons (and progress) go on their own row left-aligned */
@@ -1524,12 +1503,6 @@ onUnmounted(() => {
     min-width: 36px;
     min-height: 36px;
     font-size: 1.25rem;
-  }
-
-  .device-select {
-    min-width: 8rem;
-    max-width: 100%;
-    flex: 1 1 auto;
   }
 
   /* ensure file-explorer-controls sit on their own row below header */
