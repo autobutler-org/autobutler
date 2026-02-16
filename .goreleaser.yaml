@@ -59,7 +59,6 @@ release:
 
     Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
 
----
 blobs:
   - provider: azblob
     bucket: releases?storage_account=autobutlerrelease
