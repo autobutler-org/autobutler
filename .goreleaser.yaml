@@ -46,8 +46,8 @@ changelog:
   sort: asc
   filters:
     exclude:
-      - "^docs:"
-      - "^test:"
+      - '^docs:'
+      - '^test:'
 
 release:
   github:
@@ -58,3 +58,8 @@ release:
     ---
 
     Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
+
+---
+blobs:
+  - provider: azblob
+    bucket: releases?storage_account=autobutlerrelease
