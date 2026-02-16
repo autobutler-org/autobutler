@@ -2,7 +2,7 @@ package updateutil
 
 import (
 	"archive/tar"
-	"autobutler/pkg/util/githubutil"
+	github "autobutler/pkg/util/githubutil"
 	"autobutler/pkg/util/versionutil"
 	"compress/gzip"
 	"fmt"
@@ -13,6 +13,15 @@ import (
 	"runtime"
 	"strings"
 )
+
+func GetLatestVersion(org string, repo string) (*github.Release, error) {
+	release, err := github.FetchLatestRelease(org, repo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch releases: %w", err)
+	}
+
+	return release, nil
+}
 
 func IsDevelopmentVersion(version string) bool {
 	if matched, err := regexp.MatchString("^.*-", version); err != nil || matched {
@@ -26,12 +35,12 @@ func IsDevelopmentVersion(version string) bool {
 
 // ListPossibleUpdatesResult contains the result of listing possible updates
 type ListPossibleUpdatesResult struct {
-	Releases []githubutil.GitHubRelease
+	Releases []github.Release
 }
 
 // ListPossibleUpdates retrieves all available releases that are newer than the current version
 func ListPossibleUpdates(org string, repo string, allVersions bool) (*ListPossibleUpdatesResult, error) {
-	releases, err := githubutil.FetchGitHubReleases(org, repo)
+	releases, err := github.FetchReleases(org, repo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch releases: %w", err)
 	}
@@ -49,7 +58,7 @@ func ListPossibleUpdates(org string, repo string, allVersions bool) (*ListPossib
 		}, nil
 	}
 
-	var possibleUpdates []githubutil.GitHubRelease
+	var possibleUpdates []github.Release
 	for _, release := range releases {
 		if IsDevelopmentVersion(release.TagName) {
 			continue
@@ -68,15 +77,6 @@ func ListPossibleUpdates(org string, repo string, allVersions bool) (*ListPossib
 	return &ListPossibleUpdatesResult{
 		Releases: possibleUpdates,
 	}, nil
-}
-
-func GetLatestVersion(org string, repo string) (*githubutil.GitHubRelease, error) {
-	release, err := githubutil.FetchLatestGitHubRelease(org, repo)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch releases: %w", err)
-	}
-
-	return release, nil
 }
 
 type UpdateParams struct {
