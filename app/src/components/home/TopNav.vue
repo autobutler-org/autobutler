@@ -45,22 +45,27 @@
           <template v-else-if="releases.length > 0">
             <button
               v-for="release in releases"
-              :key="release.tagName"
-              :disabled="release.isCurrentVersion || !!updatingVersion"
-              @click="handleUpdate(release.tagName)"
+              :key="release.version"
+              :disabled="
+                release.version === currentVersion || !!updatingVersion
+              "
+              @click="handleUpdate(release.version)"
               :class="[
                 'version-dropdown-item',
-                { 'version-dropdown-item--current': release.isCurrentVersion },
+                {
+                  'version-dropdown-item--current':
+                    release.version === currentVersion,
+                },
               ]"
             >
-              <span class="version-dropdown-tag">{{ release.tagName }}</span>
+              <span class="version-dropdown-tag">{{ release.version }}</span>
               <span
-                v-if="release.isCurrentVersion"
+                v-if="release.version === currentVersion"
                 class="version-dropdown-badge"
                 >Current</span
               >
               <span
-                v-if="updatingVersion === release.tagName"
+                v-if="updatingVersion === release.version"
                 style="margin-left: 8px"
                 >Updating...</span
               >

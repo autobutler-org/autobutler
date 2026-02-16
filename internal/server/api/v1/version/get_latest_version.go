@@ -3,7 +3,6 @@ package v1_version
 import (
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/updateutil"
-	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,7 +12,7 @@ import (
 // @Description Retrieves the latest available version of the application
 // @Tags version
 // @Produce json
-// @Success 200 {object} ReleaseJSON
+// @Success 200 {object} updateutil.UpdateVersion "Latest version information"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /version/latest [get]
 func getLatestVersion(c *gin.Context) *serverutil.Response {
@@ -22,12 +21,7 @@ func getLatestVersion(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(err)
 	}
 
-	return serverutil.Ok().WithData(ReleaseJSON{
-		TagName:     version.TagName,
-		Name:        version.TagName, // GitHub releases often use tag as name
-		HtmlUrl:     fmt.Sprintf("https://github.com/%s/%s/releases/tag/%s", org, repo, version.TagName),
-		PublishedAt: "",
-	})
+	return serverutil.Ok().WithData(version)
 }
 
 var getLatestVersionRoute = serverutil.ApiRoute(

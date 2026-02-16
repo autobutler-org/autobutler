@@ -1,11 +1,8 @@
 import HttpService from './httpService';
 
 export interface Release {
-  tagName: string;
-  name: string;
-  htmlUrl: string;
-  publishedAt: string;
-  isCurrentVersion: boolean;
+  version: string;
+  url: string;
 }
 
 export interface VersionResponse {

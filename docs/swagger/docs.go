@@ -864,11 +864,11 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "List of available versions",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1_version.ReleaseJSON"
+                                "$ref": "#/definitions/updateutil.UpdateVersion"
                             }
                         }
                     },
@@ -893,9 +893,9 @@ const docTemplate = `{
                 "summary": "Get latest version",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Latest version information",
                         "schema": {
-                            "$ref": "#/definitions/v1_version.ReleaseJSON"
+                            "$ref": "#/definitions/updateutil.UpdateVersion"
                         }
                     },
                     "500": {
@@ -1036,6 +1036,17 @@ const docTemplate = `{
                 }
             }
         },
+        "updateutil.UpdateVersion": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
         "v1_books.BookJSON": {
             "type": "object",
             "properties": {
@@ -1143,26 +1154,6 @@ const docTemplate = `{
                 },
                 "size": {
                     "type": "integer"
-                }
-            }
-        },
-        "v1_version.ReleaseJSON": {
-            "type": "object",
-            "properties": {
-                "htmlUrl": {
-                    "type": "string"
-                },
-                "isCurrentVersion": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "publishedAt": {
-                    "type": "string"
-                },
-                "tagName": {
-                    "type": "string"
                 }
             }
         },

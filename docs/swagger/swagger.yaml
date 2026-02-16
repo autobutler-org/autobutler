@@ -32,6 +32,13 @@ definitions:
       version:
         type: string
     type: object
+  updateutil.UpdateVersion:
+    properties:
+      url:
+        type: string
+      version:
+        type: string
+    type: object
   v1_books.BookJSON:
     properties:
       fileName:
@@ -103,19 +110,6 @@ definitions:
         type: string
       size:
         type: integer
-    type: object
-  v1_version.ReleaseJSON:
-    properties:
-      htmlUrl:
-        type: string
-      isCurrentVersion:
-        type: boolean
-      name:
-        type: string
-      publishedAt:
-        type: string
-      tagName:
-        type: string
     type: object
   v1_version.UpdateRequest:
     properties:
@@ -702,10 +696,10 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: List of available versions
           schema:
             items:
-              $ref: '#/definitions/v1_version.ReleaseJSON'
+              $ref: '#/definitions/updateutil.UpdateVersion'
             type: array
         "500":
           description: Internal Server Error
@@ -721,9 +715,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Latest version information
           schema:
-            $ref: '#/definitions/v1_version.ReleaseJSON'
+            $ref: '#/definitions/updateutil.UpdateVersion'
         "500":
           description: Internal Server Error
           schema:

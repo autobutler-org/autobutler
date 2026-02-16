@@ -23,7 +23,7 @@ func updateToLatest(c *gin.Context) *serverutil.Response {
 	}
 
 	if err := updateutil.Update(updateutil.UpdateParams{
-		Version:       latestVersion.TagName,
+		Version:       latestVersion.Version,
 		BaseUpdateURL: c.Query("baseUpdateURL"),
 	}); err != nil {
 		return serverutil.InternalServerError(err)
@@ -31,7 +31,7 @@ func updateToLatest(c *gin.Context) *serverutil.Response {
 
 	restartAutobutler()
 	return serverutil.Ok().WithData(UpdateRequest{
-		Version: latestVersion.TagName,
+		Version: latestVersion.Version,
 	})
 }
 

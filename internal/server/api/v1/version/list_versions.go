@@ -3,8 +3,6 @@ package v1_version
 import (
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/updateutil"
-	"autobutler/pkg/util/versionutil"
-	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,7 +13,7 @@ import (
 // @Tags version
 // @Produce json
 // @Param all query bool false "Include all versions, including old and development versions"
-// @Success 200 {array} ReleaseJSON
+// @Success 200 {array} updateutil.UpdateVersion "List of available versions"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /version/available [get]
 func listVersions(c *gin.Context) *serverutil.Response {
@@ -30,23 +28,10 @@ func listVersions(c *gin.Context) *serverutil.Response {
 			})
 	}
 
-	currentVersion := versionutil.GetVersion()
-
-	var releases []ReleaseJSON
-	for _, r := range result.Releases {
-		releases = append(releases, ReleaseJSON{
-			TagName:          r.TagName,
-			Name:             r.TagName, // GitHub releases often use tag as name
-			HtmlUrl:          fmt.Sprintf("https://github.com/%s/%s/releases/tag/%s", org, repo, r.TagName),
-			PublishedAt:      "",
-			IsCurrentVersion: r.TagName == currentVersion.Semver,
-		})
-	}
-
 	return serverutil.NewResponse().
 		WithStatusCode(200).
 		WithContentType(serverutil.ContentTypeJSON).
-		WithData(releases)
+		WithData(result.Versions)
 }
 
 var listVersionsRoute = serverutil.ApiRoute(

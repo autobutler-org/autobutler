@@ -14,13 +14,21 @@ import (
 	"strings"
 )
 
-func GetLatestVersion(org string, repo string) (*github.Release, error) {
+func GetLatestVersion(org string, repo string) (*UpdateVersion, error) {
 	release, err := github.FetchLatestRelease(org, repo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch releases: %w", err)
 	}
 
-	return release, nil
+	url := getAssetURLFromRelease(release)
+	if url == "" {
+		return nil, fmt.Errorf("no suitable asset found in latest release")
+	}
+
+	return &UpdateVersion{
+		Version: release.TagName,
+		URL:     url,
+	}, nil
 }
 
 func IsDevelopmentVersion(version string) bool {
@@ -35,7 +43,7 @@ func IsDevelopmentVersion(version string) bool {
 
 // ListPossibleUpdatesResult contains the result of listing possible updates
 type ListPossibleUpdatesResult struct {
-	Releases []github.Release
+	Versions []*UpdateVersion
 }
 
 // ListPossibleUpdates retrieves all available releases that are newer than the current version
@@ -45,27 +53,39 @@ func ListPossibleUpdates(org string, repo string, allVersions bool) (*ListPossib
 		return nil, fmt.Errorf("failed to fetch releases: %w", err)
 	}
 
+	updateReleases := []*UpdateVersion{}
+	for _, release := range releases {
+		url := getAssetURLFromRelease(release)
+		if url == "" {
+			continue
+		}
+		updateReleases = append(updateReleases, &UpdateVersion{
+			Version: release.TagName,
+			URL:     url,
+		})
+	}
+
 	if allVersions {
 		return &ListPossibleUpdatesResult{
-			Releases: releases,
+			Versions: updateReleases,
 		}, nil
 	}
 
 	currentVersion := versionutil.GetVersion()
 	if currentVersion.Semver == "" {
 		return &ListPossibleUpdatesResult{
-			Releases: releases,
+			Versions: updateReleases,
 		}, nil
 	}
 
-	var possibleUpdates []github.Release
-	for _, release := range releases {
-		if IsDevelopmentVersion(release.TagName) {
+	var possibleUpdates []*UpdateVersion
+	for _, release := range updateReleases {
+		if IsDevelopmentVersion(release.Version) {
 			continue
 		}
 		comparison := versionutil.CompareVersions(
 			versionutil.Version{
-				Semver: release.TagName,
+				Semver: release.Version,
 			},
 			*currentVersion,
 		)
@@ -75,7 +95,7 @@ func ListPossibleUpdates(org string, repo string, allVersions bool) (*ListPossib
 	}
 
 	return &ListPossibleUpdatesResult{
-		Releases: possibleUpdates,
+		Versions: possibleUpdates,
 	}, nil
 }
 

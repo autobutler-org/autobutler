@@ -7,7 +7,7 @@ import (
 )
 
 // FetchReleases fetches all releases from a GitHub repository
-func FetchReleases(organization string, repository string) ([]Release, error) {
+func FetchReleases(organization string, repository string) ([]*Release, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases", organization, repository)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -29,7 +29,7 @@ func FetchReleases(organization string, repository string) ([]Release, error) {
 		return nil, fmt.Errorf("GitHub API returned status %d: %s", resp.StatusCode, resp.Status)
 	}
 
-	var releases []Release
+	var releases []*Release
 	decoder := json.NewDecoder(resp.Body)
 	if err := decoder.Decode(&releases); err != nil { // coverage: ignore - requires malformed JSON from GitHub API
 		return nil, fmt.Errorf("failed to decode releases: %w", err)
