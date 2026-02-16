@@ -127,6 +127,11 @@ definitions:
       semver:
         type: string
     type: object
+  v1_version.updateLatestParams:
+    properties:
+      baseUpdateURL:
+        type: string
+    type: object
 info:
   contact: {}
 paths:
@@ -728,10 +733,11 @@ paths:
     post:
       description: Finds and installs the latest version
       parameters:
-      - description: Base URL for updates
-        in: query
-        name: baseUpdateURL
-        type: string
+      - description: Update Request
+        in: body
+        name: update
+        schema:
+          $ref: '#/definitions/v1_version.updateLatestParams'
       produces:
       - application/json
       responses:

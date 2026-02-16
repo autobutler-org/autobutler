@@ -917,10 +917,12 @@ const docTemplate = `{
                 "summary": "Update to the latest version",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Base URL for updates",
-                        "name": "baseUpdateURL",
-                        "in": "query"
+                        "description": "Update Request",
+                        "name": "update",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/v1_version.updateLatestParams"
+                        }
                     }
                 ],
                 "responses": {
@@ -1178,6 +1180,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "semver": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1_version.updateLatestParams": {
+            "type": "object",
+            "properties": {
+                "baseUpdateURL": {
                     "type": "string"
                 }
             }
