@@ -27,6 +27,8 @@ definitions:
     properties:
       baseUpdateURL:
         type: string
+      force:
+        type: boolean
       version:
         type: string
     type: object
@@ -691,6 +693,11 @@ paths:
   /version/available:
     get:
       description: Lists all available versions for update
+      parameters:
+      - description: Include all versions, including old and development versions
+        in: query
+        name: all
+        type: boolean
       produces:
       - application/json
       responses:

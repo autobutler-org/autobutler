@@ -1,10 +1,12 @@
 package v1_version
 
 import (
-	"autobutler/internal/update"
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/updateutil"
 	"errors"
+	"fmt"
+	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -39,10 +41,16 @@ func doUpdate(c *gin.Context) *serverutil.Response {
 		return serverutil.NewResponse().WithStatusCode(500).WithError(err)
 	}
 
-	go update.RestartAutobutler()
+	go restartAutobutler()
 	return serverutil.Ok().WithData(params)
 }
 
 var doUpdateRoute = serverutil.ApiRoute(
 	"POST", "/version/update", doUpdate,
 )
+
+func restartAutobutler() {
+	fmt.Println("Update complete. Exiting to allow process manager (launchctl/systemd) to restart...")
+	time.Sleep(time.Second * 2)
+	os.Exit(0)
+}

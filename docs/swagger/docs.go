@@ -854,6 +854,14 @@ const docTemplate = `{
                     "version"
                 ],
                 "summary": "List available versions",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Include all versions, including old and development versions",
+                        "name": "all",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1019,6 +1027,9 @@ const docTemplate = `{
             "properties": {
                 "baseUpdateURL": {
                     "type": "string"
+                },
+                "force": {
+                    "type": "boolean"
                 },
                 "version": {
                     "type": "string"

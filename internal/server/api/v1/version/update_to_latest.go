@@ -1,7 +1,6 @@
 package v1_version
 
 import (
-	"autobutler/internal/update"
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/updateutil"
 
@@ -30,7 +29,7 @@ func updateToLatest(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(err)
 	}
 
-	go update.RestartAutobutler()
+	restartAutobutler()
 	return serverutil.Ok().WithData(UpdateRequest{
 		Version: latestVersion.TagName,
 	})

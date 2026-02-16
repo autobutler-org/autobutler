@@ -15,7 +15,7 @@ func TestListPossibleUpdates_NoCurrentVersion(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	result, err := ListPossibleUpdates("autobutler-org", "autobutler.org")
+	result, err := ListPossibleUpdates("autobutler-org", "autobutler.org", false)
 
 	if err != nil {
 		t.Logf("Got error (expected in some environments): %v", err)

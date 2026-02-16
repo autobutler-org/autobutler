@@ -14,11 +14,13 @@ import (
 // @Description Lists all available versions for update
 // @Tags version
 // @Produce json
+// @Param all query bool false "Include all versions, including old and development versions"
 // @Success 200 {array} ReleaseJSON
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /version/available [get]
 func listVersions(c *gin.Context) *serverutil.Response {
-	result, err := updateutil.ListPossibleUpdates(org, repo)
+	all := c.Query("all") == "true"
+	result, err := updateutil.ListPossibleUpdates(org, repo, all)
 	if err != nil {
 		return serverutil.NewResponse().
 			WithStatusCode(500).

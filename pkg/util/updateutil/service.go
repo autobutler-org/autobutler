@@ -30,10 +30,16 @@ type ListPossibleUpdatesResult struct {
 }
 
 // ListPossibleUpdates retrieves all available releases that are newer than the current version
-func ListPossibleUpdates(org string, repo string) (*ListPossibleUpdatesResult, error) {
+func ListPossibleUpdates(org string, repo string, allVersions bool) (*ListPossibleUpdatesResult, error) {
 	releases, err := githubutil.FetchGitHubReleases(org, repo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch releases: %w", err)
+	}
+
+	if allVersions {
+		return &ListPossibleUpdatesResult{
+			Releases: releases,
+		}, nil
 	}
 
 	currentVersion := versionutil.GetVersion()
@@ -76,6 +82,7 @@ func GetLatestVersion(org string, repo string) (*githubutil.GitHubRelease, error
 type UpdateParams struct {
 	Version       string `json:"version"`
 	BaseUpdateURL string `json:"baseUpdateURL,omitempty"`
+	Force         bool   `json:"force,omitempty"`
 }
 
 // Update downloads and installs a new version of the application
