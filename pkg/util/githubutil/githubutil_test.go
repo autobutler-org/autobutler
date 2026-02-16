@@ -1,6 +1,7 @@
-package githubutil
+package githubutil_test
 
 import (
+	"autobutler/pkg/util/githubutil"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -9,16 +10,16 @@ import (
 
 func TestFetchGitHubReleases_Success(t *testing.T) {
 	// Create a mock server
-	mockReleases := []GitHubRelease{
+	mockReleases := []githubutil.Release{
 		{
 			TagName: "v1.0.0",
-			Assets: []GitHubAsset{
+			Assets: []githubutil.Asset{
 				{BrowserDownloadURL: "https://example.com/v1.0.0/binary.tar.gz"},
 			},
 		},
 		{
 			TagName: "v1.1.0",
-			Assets: []GitHubAsset{
+			Assets: []githubutil.Asset{
 				{BrowserDownloadURL: "https://example.com/v1.1.0/binary.tar.gz"},
 			},
 		},
@@ -60,7 +61,7 @@ func TestFetchGitHubReleases_Integration(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	releases, err := FetchGitHubReleases("autobutler-org", "autobutler")
+	releases, err := githubutil.FetchReleases("autobutler-org", "autobutler")
 	if err != nil {
 		t.Fatalf("FetchGitHubReleases failed: %v", err)
 	}
@@ -83,7 +84,7 @@ func TestFetchGitHubReleases_NonExistentRepo(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	_, err := FetchGitHubReleases("nonexistent-org-12345", "nonexistent-repo-67890")
+	_, err := githubutil.FetchReleases("nonexistent-org-12345", "nonexistent-repo-67890")
 	if err == nil {
 		t.Error("Expected error for non-existent repository, got nil")
 	}
@@ -101,7 +102,7 @@ func TestGitHubRelease_JSONUnmarshal(t *testing.T) {
 		]
 	}`
 
-	var release GitHubRelease
+	var release githubutil.Release
 	err := json.Unmarshal([]byte(jsonData), &release)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal JSON: %v", err)
@@ -127,7 +128,7 @@ func TestGitHubAsset_JSONUnmarshal(t *testing.T) {
 		"size": 1024
 	}`
 
-	var asset GitHubAsset
+	var asset githubutil.Asset
 	err := json.Unmarshal([]byte(jsonData), &asset)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal JSON: %v", err)

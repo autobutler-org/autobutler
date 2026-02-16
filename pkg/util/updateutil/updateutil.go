@@ -2,7 +2,7 @@ package updateutil
 
 import (
 	"archive/tar"
-	"autobutler/pkg/util/githubutil"
+	github "autobutler/pkg/util/githubutil"
 	"autobutler/pkg/util/versionutil"
 	"compress/gzip"
 	"fmt"
@@ -13,6 +13,23 @@ import (
 	"runtime"
 	"strings"
 )
+
+func GetLatestVersion(org string, repo string) (*UpdateVersion, error) {
+	release, err := github.FetchLatestRelease(org, repo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch releases: %w", err)
+	}
+
+	url := getAssetURLFromRelease(release)
+	if url == "" {
+		return nil, fmt.Errorf("no suitable asset found in latest release")
+	}
+
+	return &UpdateVersion{
+		Version: release.TagName,
+		URL:     url,
+	}, nil
+}
 
 func IsDevelopmentVersion(version string) bool {
 	if matched, err := regexp.MatchString("^.*-", version); err != nil || matched {
@@ -26,31 +43,49 @@ func IsDevelopmentVersion(version string) bool {
 
 // ListPossibleUpdatesResult contains the result of listing possible updates
 type ListPossibleUpdatesResult struct {
-	Releases []githubutil.GitHubRelease
+	Versions []*UpdateVersion
 }
 
 // ListPossibleUpdates retrieves all available releases that are newer than the current version
-func ListPossibleUpdates(org string, repo string) (*ListPossibleUpdatesResult, error) {
-	releases, err := githubutil.FetchGitHubReleases(org, repo)
+func ListPossibleUpdates(org string, repo string, allVersions bool) (*ListPossibleUpdatesResult, error) {
+	releases, err := github.FetchReleases(org, repo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch releases: %w", err)
+	}
+
+	updateReleases := []*UpdateVersion{}
+	for _, release := range releases {
+		url := getAssetURLFromRelease(release)
+		if url == "" {
+			continue
+		}
+		updateReleases = append(updateReleases, &UpdateVersion{
+			Version: release.TagName,
+			URL:     url,
+		})
+	}
+
+	if allVersions {
+		return &ListPossibleUpdatesResult{
+			Versions: updateReleases,
+		}, nil
 	}
 
 	currentVersion := versionutil.GetVersion()
 	if currentVersion.Semver == "" {
 		return &ListPossibleUpdatesResult{
-			Releases: releases,
+			Versions: updateReleases,
 		}, nil
 	}
 
-	var possibleUpdates []githubutil.GitHubRelease
-	for _, release := range releases {
-		if IsDevelopmentVersion(release.TagName) {
+	var possibleUpdates []*UpdateVersion
+	for _, release := range updateReleases {
+		if IsDevelopmentVersion(release.Version) {
 			continue
 		}
 		comparison := versionutil.CompareVersions(
 			versionutil.Version{
-				Semver: release.TagName,
+				Semver: release.Version,
 			},
 			*currentVersion,
 		)
@@ -60,22 +95,14 @@ func ListPossibleUpdates(org string, repo string) (*ListPossibleUpdatesResult, e
 	}
 
 	return &ListPossibleUpdatesResult{
-		Releases: possibleUpdates,
+		Versions: possibleUpdates,
 	}, nil
-}
-
-func GetLatestVersion(org string, repo string) (*githubutil.GitHubRelease, error) {
-	release, err := githubutil.FetchLatestGitHubRelease(org, repo)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch releases: %w", err)
-	}
-
-	return release, nil
 }
 
 type UpdateParams struct {
 	Version       string `json:"version"`
 	BaseUpdateURL string `json:"baseUpdateURL,omitempty"`
+	Force         bool   `json:"force,omitempty"`
 }
 
 // Update downloads and installs a new version of the application

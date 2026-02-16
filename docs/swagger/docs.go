@@ -854,13 +854,21 @@ const docTemplate = `{
                     "version"
                 ],
                 "summary": "List available versions",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Include all versions, including old and development versions",
+                        "name": "all",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "List of available versions",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1_version.ReleaseJSON"
+                                "$ref": "#/definitions/updateutil.UpdateVersion"
                             }
                         }
                     },
@@ -885,9 +893,9 @@ const docTemplate = `{
                 "summary": "Get latest version",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Latest version information",
                         "schema": {
-                            "$ref": "#/definitions/v1_version.ReleaseJSON"
+                            "$ref": "#/definitions/updateutil.UpdateVersion"
                         }
                     },
                     "500": {
@@ -909,10 +917,12 @@ const docTemplate = `{
                 "summary": "Update to the latest version",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Base URL for updates",
-                        "name": "baseUpdateURL",
-                        "in": "query"
+                        "description": "Update Request",
+                        "name": "update",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/v1_version.updateLatestParams"
+                        }
                     }
                 ],
                 "responses": {
@@ -1018,6 +1028,20 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "baseUpdateURL": {
+                    "type": "string"
+                },
+                "force": {
+                    "type": "boolean"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "updateutil.UpdateVersion": {
+            "type": "object",
+            "properties": {
+                "url": {
                     "type": "string"
                 },
                 "version": {
@@ -1135,26 +1159,6 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_version.ReleaseJSON": {
-            "type": "object",
-            "properties": {
-                "htmlUrl": {
-                    "type": "string"
-                },
-                "isCurrentVersion": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "publishedAt": {
-                    "type": "string"
-                },
-                "tagName": {
-                    "type": "string"
-                }
-            }
-        },
         "v1_version.UpdateRequest": {
             "type": "object",
             "properties": {
@@ -1176,6 +1180,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "semver": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1_version.updateLatestParams": {
+            "type": "object",
+            "properties": {
+                "baseUpdateURL": {
                     "type": "string"
                 }
             }

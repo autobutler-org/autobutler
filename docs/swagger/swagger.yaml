@@ -27,6 +27,15 @@ definitions:
     properties:
       baseUpdateURL:
         type: string
+      force:
+        type: boolean
+      version:
+        type: string
+    type: object
+  updateutil.UpdateVersion:
+    properties:
+      url:
+        type: string
       version:
         type: string
     type: object
@@ -102,19 +111,6 @@ definitions:
       size:
         type: integer
     type: object
-  v1_version.ReleaseJSON:
-    properties:
-      htmlUrl:
-        type: string
-      isCurrentVersion:
-        type: boolean
-      name:
-        type: string
-      publishedAt:
-        type: string
-      tagName:
-        type: string
-    type: object
   v1_version.UpdateRequest:
     properties:
       version:
@@ -129,6 +125,11 @@ definitions:
       goVersion:
         type: string
       semver:
+        type: string
+    type: object
+  v1_version.updateLatestParams:
+    properties:
+      baseUpdateURL:
         type: string
     type: object
 info:
@@ -691,14 +692,19 @@ paths:
   /version/available:
     get:
       description: Lists all available versions for update
+      parameters:
+      - description: Include all versions, including old and development versions
+        in: query
+        name: all
+        type: boolean
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: List of available versions
           schema:
             items:
-              $ref: '#/definitions/v1_version.ReleaseJSON'
+              $ref: '#/definitions/updateutil.UpdateVersion'
             type: array
         "500":
           description: Internal Server Error
@@ -714,9 +720,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Latest version information
           schema:
-            $ref: '#/definitions/v1_version.ReleaseJSON'
+            $ref: '#/definitions/updateutil.UpdateVersion'
         "500":
           description: Internal Server Error
           schema:
@@ -727,10 +733,11 @@ paths:
     post:
       description: Finds and installs the latest version
       parameters:
-      - description: Base URL for updates
-        in: query
-        name: baseUpdateURL
-        type: string
+      - description: Update Request
+        in: body
+        name: update
+        schema:
+          $ref: '#/definitions/v1_version.updateLatestParams'
       produces:
       - application/json
       responses:

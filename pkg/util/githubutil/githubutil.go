@@ -6,8 +6,8 @@ import (
 	"net/http"
 )
 
-// FetchGitHubReleases fetches all releases from a GitHub repository
-func FetchGitHubReleases(organization string, repository string) ([]GitHubRelease, error) {
+// FetchReleases fetches all releases from a GitHub repository
+func FetchReleases(organization string, repository string) ([]*Release, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases", organization, repository)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -29,7 +29,7 @@ func FetchGitHubReleases(organization string, repository string) ([]GitHubReleas
 		return nil, fmt.Errorf("GitHub API returned status %d: %s", resp.StatusCode, resp.Status)
 	}
 
-	var releases []GitHubRelease
+	var releases []*Release
 	decoder := json.NewDecoder(resp.Body)
 	if err := decoder.Decode(&releases); err != nil { // coverage: ignore - requires malformed JSON from GitHub API
 		return nil, fmt.Errorf("failed to decode releases: %w", err)
@@ -38,8 +38,8 @@ func FetchGitHubReleases(organization string, repository string) ([]GitHubReleas
 	return releases, nil
 }
 
-// FetchLatestGitHubRelease fetches the latest release from a GitHub repository
-func FetchLatestGitHubRelease(organization string, repository string) (*GitHubRelease, error) {
+// FetchLatestRelease fetches the latest release from a GitHub repository
+func FetchLatestRelease(organization string, repository string) (*Release, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", organization, repository)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -61,7 +61,7 @@ func FetchLatestGitHubRelease(organization string, repository string) (*GitHubRe
 		return nil, fmt.Errorf("GitHub API returned status %d: %s", resp.StatusCode, resp.Status)
 	}
 
-	var release GitHubRelease
+	var release Release
 	decoder := json.NewDecoder(resp.Body)
 	if err := decoder.Decode(&release); err != nil { // coverage: ignore - requires malformed JSON from GitHub API
 		return nil, fmt.Errorf("failed to decode releases: %w", err)

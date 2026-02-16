@@ -1,38 +1,47 @@
 package v1_version
 
 import (
-	"autobutler/internal/update"
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/updateutil"
 
 	"github.com/gin-gonic/gin"
 )
 
+type updateLatestParams struct {
+	BaseUpdateURL string `json:"baseUpdateURL" form:"baseUpdateURL"`
+}
+
 // updateToLatest godoc
 // @Summary Update to the latest version
 // @Description Finds and installs the latest version
 // @Tags version
 // @Produce json
-// @Param baseUpdateURL query string false "Base URL for updates"
+// @Param update body updateLatestParams false "Update Request"
 // @Success 200 {object} UpdateRequest
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /version/latest [post]
 func updateToLatest(c *gin.Context) *serverutil.Response {
+	params := updateLatestParams{}
+	baseUpdateUrl := ""
+	if err := c.ShouldBind(&params); err == nil {
+		baseUpdateUrl = params.BaseUpdateURL
+	}
+
 	latestVersion, err := updateutil.GetLatestVersion(org, repo)
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
 
 	if err := updateutil.Update(updateutil.UpdateParams{
-		Version:       latestVersion.TagName,
-		BaseUpdateURL: c.Query("baseUpdateURL"),
+		Version:       latestVersion.Version,
+		BaseUpdateURL: baseUpdateUrl,
 	}); err != nil {
 		return serverutil.InternalServerError(err)
 	}
 
-	go update.RestartAutobutler()
+	restartAutobutler()
 	return serverutil.Ok().WithData(UpdateRequest{
-		Version: latestVersion.TagName,
+		Version: latestVersion.Version,
 	})
 }
 
