@@ -7,32 +7,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type updateLatestParams struct {
-	Source *updateutil.UpdateSource `json:"source" form:"source"`
-}
-
 // updateToLatest godoc
 // @Summary Update to the latest version
 // @Description Finds and installs the latest version
 // @Tags version
 // @Produce json
-// @Param update body updateLatestParams false "Update Request"
 // @Success 200 {object} UpdateRequest
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /version/latest [post]
 func updateToLatest(c *gin.Context) *serverutil.Response {
-	params := updateLatestParams{}
-	source := &updateutil.UpdateSource{}
-	if err := c.ShouldBind(&params); err == nil {
-		source = params.Source
-	}
-
-	latestVersion, err := updateutil.GetLatestVersion(source)
+	latestVersion, err := updateutil.GetLatestVersionFromDefaultSources()
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
 
-	if err := updateutil.Update(source, latestVersion.Version); err != nil {
+	if err := updateutil.UpdateFromDefaultSources(latestVersion.Version); err != nil {
 		return serverutil.InternalServerError(err)
 	}
 
