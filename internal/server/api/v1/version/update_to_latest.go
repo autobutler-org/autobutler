@@ -21,13 +21,13 @@ func updateToLatest(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(err)
 	}
 
-	if err := updateutil.UpdateFromDefaultSources(latestVersion.Version); err != nil {
+	if err := updateutil.UpdateFromDefaultSources(latestVersion); err != nil {
 		return serverutil.InternalServerError(err)
 	}
 
 	restartAutobutler()
 	return serverutil.Ok().WithData(UpdateRequest{
-		Version: latestVersion.Version,
+		Version: latestVersion,
 	})
 }
 

@@ -27,7 +27,7 @@ func init() {
 	}
 }
 
-func GetLatestVersionFromDefaultSources() (*UpdateVersion, error) {
+func GetLatestVersionFromDefaultSources() (string, error) {
 	for _, source := range DefaultUpdateSources {
 		version, err := GetLatestVersion(source)
 		if err != nil {
@@ -35,10 +35,10 @@ func GetLatestVersionFromDefaultSources() (*UpdateVersion, error) {
 		}
 		return version, nil
 	}
-	return nil, fmt.Errorf("failed to get latest version from all default sources")
+	return "", fmt.Errorf("failed to get latest version from all default sources")
 }
 
-func GetLatestVersion(source *UpdateSource) (*UpdateVersion, error) {
+func GetLatestVersion(source *UpdateSource) (string, error) {
 	if source == nil {
 		return GetLatestVersionFromDefaultSources()
 	}
@@ -47,23 +47,27 @@ func GetLatestVersion(source *UpdateSource) (*UpdateVersion, error) {
 		org, repo := source.Account, source.Path
 		release, err := github.FetchLatestRelease(org, repo)
 		if err != nil {
-			return nil, fmt.Errorf("failed to fetch releases: %w", err)
+			return "", fmt.Errorf("failed to fetch releases: %w", err)
 		}
 
 		url := getAssetURLFromRelease(release)
 		if url == "" {
-			return nil, fmt.Errorf("no suitable asset found in latest release")
+			return "", fmt.Errorf("no suitable asset found in latest release")
 		}
 
-		return &UpdateVersion{
-			Version: release.TagName,
-			URL:     url,
-		}, nil
+		return release.TagName, nil
 	case UpdateSourceKindAzure:
-		// TODO: Implement Azure release fetching logic here
-		return nil, fmt.Errorf("Azure update source not implemented yet")
+		releases, err := ListPossibleUpdates(source, false)
+		if err != nil {
+			return "", fmt.Errorf("failed to list releases: %w", err)
+		}
+		if len(releases.Versions) == 0 {
+			return "", fmt.Errorf("no releases found in Azure source")
+		}
+		// List is in lexicographical order, so the latest version should be the last one
+		return releases.Versions[len(releases.Versions)-1].Version, nil
 	default:
-		return nil, fmt.Errorf("unsupported update source kind: %s", source.Kind)
+		return "", fmt.Errorf("unsupported update source kind: %s", source.Kind)
 	}
 }
 
@@ -119,7 +123,6 @@ func ListPossibleUpdates(source *UpdateSource, allVersions bool) (*ListPossibleU
 			})
 		}
 	case UpdateSourceKindAzure:
-		// TODO: Implement Azure release fetching logic here
 		prefix := source.BlobPrefix()
 		pager := client.NewListBlobsFlatPager(
 			source.Container(),
