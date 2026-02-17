@@ -1,12 +1,12 @@
 package v1_version
 
-// ReleaseJSON is the JSON representation of a release for the Vue frontend
-type ReleaseJSON struct {
-	TagName          string `json:"tagName"`
-	Name             string `json:"name"`
-	HtmlUrl          string `json:"htmlUrl"`
-	PublishedAt      string `json:"publishedAt"`
-	IsCurrentVersion bool   `json:"isCurrentVersion"`
+import "autobutler/pkg/util/updateutil"
+
+// UpdateParams defines the parameters for updating to a specific version
+type UpdateParams struct {
+	Version string                   `json:"version"`
+	Source  *updateutil.UpdateSource `json:"source,omitempty"`
+	Force   bool                     `json:"force,omitempty"`
 }
 
 // VersionJSON is the JSON representation of the current version

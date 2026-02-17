@@ -18,7 +18,7 @@ import (
 // @Router /version/available [get]
 func listVersions(c *gin.Context) *serverutil.Response {
 	all := c.Query("all") == "true"
-	result, err := updateutil.ListPossibleUpdates(org, repo, all)
+	result, err := updateutil.ListPossibleUpdatesFromDefaultSources(all)
 	if err != nil {
 		return serverutil.NewResponse().
 			WithStatusCode(500).

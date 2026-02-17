@@ -5,6 +5,7 @@ import (
 	github "autobutler/pkg/util/githubutil"
 	"autobutler/pkg/util/versionutil"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,23 +13,62 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 )
 
-func GetLatestVersion(org string, repo string) (*UpdateVersion, error) {
-	release, err := github.FetchLatestRelease(org, repo)
+var client *azblob.Client
+
+func init() {
+	var err error
+	client, err = azblob.NewClientWithNoCredential(DefaultUpdateSources[0].BaseUrl(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch releases: %w", err)
+		panic(fmt.Sprintf("Failed to create Azure Blob client: %v", err))
 	}
+}
 
-	url := getAssetURLFromRelease(release)
-	if url == "" {
-		return nil, fmt.Errorf("no suitable asset found in latest release")
+func GetLatestVersionFromDefaultSources() (string, error) {
+	for _, source := range DefaultUpdateSources {
+		version, err := GetLatestVersion(source)
+		if err != nil {
+			continue
+		}
+		return version, nil
 	}
+	return "", fmt.Errorf("failed to get latest version from all default sources")
+}
 
-	return &UpdateVersion{
-		Version: release.TagName,
-		URL:     url,
-	}, nil
+func GetLatestVersion(source *UpdateSource) (string, error) {
+	if source == nil {
+		return GetLatestVersionFromDefaultSources()
+	}
+	switch source.Kind {
+	case UpdateSourceKindGithub:
+		org, repo := source.Account, source.Path
+		release, err := github.FetchLatestRelease(org, repo)
+		if err != nil {
+			return "", fmt.Errorf("failed to fetch releases: %w", err)
+		}
+
+		url := getAssetURLFromRelease(release)
+		if url == "" {
+			return "", fmt.Errorf("no suitable asset found in latest release")
+		}
+
+		return release.TagName, nil
+	case UpdateSourceKindAzure:
+		releases, err := ListPossibleUpdates(source, false)
+		if err != nil {
+			return "", fmt.Errorf("failed to list releases: %w", err)
+		}
+		if len(releases.Versions) == 0 {
+			return "", fmt.Errorf("no releases found in Azure source")
+		}
+		// List is in lexicographical order, so the latest version should be the last one
+		return releases.Versions[len(releases.Versions)-1].Version, nil
+	default:
+		return "", fmt.Errorf("unsupported update source kind: %s", source.Kind)
+	}
 }
 
 func IsDevelopmentVersion(version string) bool {
@@ -46,23 +86,74 @@ type ListPossibleUpdatesResult struct {
 	Versions []*UpdateVersion
 }
 
+// ListPossibleUpdatesFromDefaultSources lists possible updates from all default sources
+func ListPossibleUpdatesFromDefaultSources(allVersions bool) (*ListPossibleUpdatesResult, error) {
+	for _, source := range DefaultUpdateSources {
+		result, err := ListPossibleUpdates(source, allVersions)
+		if err != nil {
+			continue
+		}
+		return result, nil
+	}
+	return nil, fmt.Errorf("failed to list updates from all default sources")
+}
+
 // ListPossibleUpdates retrieves all available releases that are newer than the current version
-func ListPossibleUpdates(org string, repo string, allVersions bool) (*ListPossibleUpdatesResult, error) {
-	releases, err := github.FetchReleases(org, repo)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch releases: %w", err)
+func ListPossibleUpdates(source *UpdateSource, allVersions bool) (*ListPossibleUpdatesResult, error) {
+	if source == nil {
+		return ListPossibleUpdatesFromDefaultSources(allVersions)
 	}
 
 	updateReleases := []*UpdateVersion{}
-	for _, release := range releases {
-		url := getAssetURLFromRelease(release)
-		if url == "" {
-			continue
+	switch source.Kind {
+	case UpdateSourceKindGithub:
+		org, repo := source.Account, source.Path
+		releases, err := github.FetchReleases(org, repo)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch releases: %w", err)
 		}
-		updateReleases = append(updateReleases, &UpdateVersion{
-			Version: release.TagName,
-			URL:     url,
-		})
+		for _, release := range releases {
+			url := getAssetURLFromRelease(release)
+			if url == "" {
+				continue
+			}
+			updateReleases = append(updateReleases, &UpdateVersion{
+				Version: release.TagName,
+				URL:     url,
+			})
+		}
+	case UpdateSourceKindAzure:
+		prefix := source.BlobPrefix()
+		pager := client.NewListBlobsFlatPager(
+			source.Container(),
+			&azblob.ListBlobsFlatOptions{
+				Prefix: prefix,
+			},
+		)
+
+		for pager.More() {
+			resp, err := pager.NextPage(context.TODO())
+			if err != nil {
+				fmt.Printf("Failed to list blobs: %v", err)
+				return nil, fmt.Errorf("failed to list blobs: %w", err)
+			}
+
+			for _, blob := range resp.Segment.BlobItems {
+				trimmed := strings.TrimPrefix(*blob.Name, *prefix)
+				split := strings.Split(trimmed, "/")
+				version, artifact := split[0], split[1]
+				if strings.HasSuffix(artifact, ".txt") {
+					continue
+				}
+				updateReleases = append(updateReleases, &UpdateVersion{
+					Version: version,
+					URL:     fmt.Sprintf("%s/%s/%s", source.BaseUrl(), source.Container(), *blob.Name),
+				})
+				fmt.Println(*blob.Name)
+			}
+		}
+	default:
+		return nil, fmt.Errorf("unsupported update source kind: %s", source.Kind)
 	}
 
 	if allVersions {
@@ -99,15 +190,24 @@ func ListPossibleUpdates(org string, repo string, allVersions bool) (*ListPossib
 	}, nil
 }
 
-type UpdateParams struct {
-	Version       string `json:"version"`
-	BaseUpdateURL string `json:"baseUpdateURL,omitempty"`
-	Force         bool   `json:"force,omitempty"`
+// UpdateFromDefaultSources tries to update from all default sources until one succeeds
+func UpdateFromDefaultSources(version string) error {
+	for _, source := range DefaultUpdateSources {
+		err := Update(source, version)
+		if err != nil {
+			continue
+		}
+		return nil
+	}
+	return fmt.Errorf("failed to update from all default sources")
 }
 
 // Update downloads and installs a new version of the application
-func Update(params UpdateParams) error {
-	version := params.Version
+func Update(source *UpdateSource, version string) error {
+	if source == nil {
+		return UpdateFromDefaultSources(version)
+	}
+
 	if version == "" {
 		return fmt.Errorf("version cannot be empty")
 	}
@@ -117,9 +217,9 @@ func Update(params UpdateParams) error {
 		return fmt.Errorf("failed to copy current binary: %w", err)
 	}
 
-	baseUrl := params.BaseUpdateURL
+	baseUrl := source.UpdateUrl()
 	if baseUrl == "" {
-		baseUrl = "https://github.com/autobutler-org/autobutler.org/releases/download"
+		return fmt.Errorf("invalid update source: %s", source.Kind)
 	}
 
 	goos := fmt.Sprintf("%s%s", strings.ToUpper(string(runtime.GOOS[0])), string(runtime.GOOS[1:]))
@@ -135,7 +235,6 @@ func Update(params UpdateParams) error {
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("failed to download update from %s: %s", url, resp.Status)
 	}
-
 	if err := replaceSelf(resp.Body); err != nil {
 		return fmt.Errorf("failed to replace self with update from %s: %w", url, err)
 	}

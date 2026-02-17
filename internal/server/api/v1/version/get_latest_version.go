@@ -16,7 +16,7 @@ import (
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /version/latest [get]
 func getLatestVersion(c *gin.Context) *serverutil.Response {
-	version, err := updateutil.GetLatestVersion(org, repo)
+	version, err := updateutil.GetLatestVersionFromDefaultSources()
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}

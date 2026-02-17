@@ -23,15 +23,23 @@ definitions:
       targetDeviceSerial:
         type: string
     type: object
-  updateutil.UpdateParams:
+  updateutil.UpdateSource:
     properties:
-      baseUpdateURL:
+      account:
         type: string
-      force:
-        type: boolean
-      version:
+      kind:
+        $ref: '#/definitions/updateutil.UpdateSourceKind'
+      path:
         type: string
     type: object
+  updateutil.UpdateSourceKind:
+    enum:
+    - azure
+    - github
+    type: string
+    x-enum-varnames:
+    - UpdateSourceKindAzure
+    - UpdateSourceKindGithub
   updateutil.UpdateVersion:
     properties:
       url:
@@ -111,6 +119,15 @@ definitions:
       size:
         type: integer
     type: object
+  v1_version.UpdateParams:
+    properties:
+      force:
+        type: boolean
+      source:
+        $ref: '#/definitions/updateutil.UpdateSource'
+      version:
+        type: string
+    type: object
   v1_version.UpdateRequest:
     properties:
       version:
@@ -125,11 +142,6 @@ definitions:
       goVersion:
         type: string
       semver:
-        type: string
-    type: object
-  v1_version.updateLatestParams:
-    properties:
-      baseUpdateURL:
         type: string
     type: object
 info:
@@ -732,12 +744,6 @@ paths:
       - version
     post:
       description: Finds and installs the latest version
-      parameters:
-      - description: Update Request
-        in: body
-        name: update
-        schema:
-          $ref: '#/definitions/v1_version.updateLatestParams'
       produces:
       - application/json
       responses:
@@ -763,7 +769,7 @@ paths:
         name: update
         required: true
         schema:
-          $ref: '#/definitions/updateutil.UpdateParams'
+          $ref: '#/definitions/v1_version.UpdateParams'
       produces:
       - application/json
       responses:
