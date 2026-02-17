@@ -12,16 +12,16 @@ var DefaultUpdateSources = []*UpdateSource{
 		"autobutlerrelease",
 		"releases/autobutler",
 	),
-	// NewUpdateSource(
-	// 	UpdateSourceKindGithub,
-	// 	"autobutler-org",
-	// 	"autobutler.org",
-	// ),
-	// NewUpdateSource(
-	// 	UpdateSourceKindGithub,
-	// 	"autobutler-org",
-	// 	"autobutler",
-	// ),
+	NewUpdateSource(
+		UpdateSourceKindGithub,
+		"autobutler-org",
+		"autobutler.org",
+	),
+	NewUpdateSource(
+		UpdateSourceKindGithub,
+		"autobutler-org",
+		"autobutler",
+	),
 }
 
 type UpdateSourceKind string
