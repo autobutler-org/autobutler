@@ -18,7 +18,6 @@ func GetLatestVersionFromDefaultSources() (*UpdateVersion, error) {
 	for _, source := range DefaultUpdateSources {
 		version, err := GetLatestVersion(source)
 		if err != nil {
-			fmt.Printf("Failed to get latest version from source %s: %v\n", source.BaseUrl(), err)
 			continue
 		}
 		return version, nil
@@ -75,7 +74,6 @@ func ListPossibleUpdatesFromDefaultSources(allVersions bool) (*ListPossibleUpdat
 	for _, source := range DefaultUpdateSources {
 		result, err := ListPossibleUpdates(source, allVersions)
 		if err != nil {
-			fmt.Printf("Failed to list updates from source %s: %v\n", source.BaseUrl(), err)
 			continue
 		}
 		return result, nil
@@ -153,7 +151,6 @@ func UpdateFromDefaultSources(version string) error {
 	for _, source := range DefaultUpdateSources {
 		err := Update(source, version)
 		if err != nil {
-			fmt.Printf("Failed to update from source %s: %v\n", source.BaseUrl(), err)
 			continue
 		}
 		return nil
