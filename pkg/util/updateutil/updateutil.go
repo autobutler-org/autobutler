@@ -5,6 +5,7 @@ import (
 	github "autobutler/pkg/util/githubutil"
 	"autobutler/pkg/util/versionutil"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,7 +13,19 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 )
+
+var client *azblob.Client
+
+func init() {
+	var err error
+	client, err = azblob.NewClientWithNoCredential(DefaultUpdateSources[0].BaseUrl(), nil)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create Azure Blob client: %v", err))
+	}
+}
 
 func GetLatestVersionFromDefaultSources() (*UpdateVersion, error) {
 	for _, source := range DefaultUpdateSources {
@@ -31,7 +44,7 @@ func GetLatestVersion(source *UpdateSource) (*UpdateVersion, error) {
 	}
 	switch source.Kind {
 	case UpdateSourceKindGithub:
-		org, repo := source.Container, source.Path
+		org, repo := source.Account, source.Path
 		release, err := github.FetchLatestRelease(org, repo)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch releases: %w", err)
@@ -90,7 +103,7 @@ func ListPossibleUpdates(source *UpdateSource, allVersions bool) (*ListPossibleU
 	updateReleases := []*UpdateVersion{}
 	switch source.Kind {
 	case UpdateSourceKindGithub:
-		org, repo := source.Container, source.Path
+		org, repo := source.Account, source.Path
 		releases, err := github.FetchReleases(org, repo)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch releases: %w", err)
@@ -107,6 +120,25 @@ func ListPossibleUpdates(source *UpdateSource, allVersions bool) (*ListPossibleU
 		}
 	case UpdateSourceKindAzure:
 		// TODO: Implement Azure release fetching logic here
+		fmt.Println("Checking azure...")
+		pager := client.NewListBlobsFlatPager(source.Container(), &azblob.ListBlobsFlatOptions{
+			Prefix: source.BlobPrefix(),
+		})
+		fmt.Println("Pager created...")
+		for pager.More() {
+			fmt.Println("Pager has something...")
+			resp, err := pager.NextPage(context.TODO())
+			if err != nil {
+				fmt.Printf("Failed to list blobs: %v", err)
+				return nil, fmt.Errorf("failed to list blobs: %w", err)
+			}
+
+			fmt.Printf("Got %d items", len(resp.Segment.BlobItems))
+			for _, blob := range resp.Segment.BlobItems {
+				fmt.Println(*blob.Name)
+			}
+		}
+		fmt.Println("Done listing blobs.")
 		return nil, fmt.Errorf("Azure update source not implemented yet")
 	default:
 		return nil, fmt.Errorf("unsupported update source kind: %s", source.Kind)
@@ -173,7 +205,7 @@ func Update(source *UpdateSource, version string) error {
 		return fmt.Errorf("failed to copy current binary: %w", err)
 	}
 
-	baseUrl := source.BaseUrl()
+	baseUrl := source.UpdateUrl()
 	if baseUrl == "" {
 		return fmt.Errorf("invalid update source: %s", source.Kind)
 	}

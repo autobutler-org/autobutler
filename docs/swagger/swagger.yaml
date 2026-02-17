@@ -25,7 +25,7 @@ definitions:
     type: object
   updateutil.UpdateSource:
     properties:
-      container:
+      account:
         type: string
       kind:
         $ref: '#/definitions/updateutil.UpdateSourceKind'

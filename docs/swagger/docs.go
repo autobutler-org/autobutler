@@ -1017,7 +1017,7 @@ const docTemplate = `{
         "updateutil.UpdateSource": {
             "type": "object",
             "properties": {
-                "container": {
+                "account": {
                     "type": "string"
                 },
                 "kind": {
