@@ -961,7 +961,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/updateutil.UpdateParams"
+                            "$ref": "#/definitions/v1_version.UpdateParams"
                         }
                     }
                 ],
@@ -1024,19 +1024,30 @@ const docTemplate = `{
                 }
             }
         },
-        "updateutil.UpdateParams": {
+        "updateutil.UpdateSource": {
             "type": "object",
             "properties": {
-                "baseUpdateURL": {
+                "container": {
                     "type": "string"
                 },
-                "force": {
-                    "type": "boolean"
+                "kind": {
+                    "$ref": "#/definitions/updateutil.UpdateSourceKind"
                 },
-                "version": {
+                "path": {
                     "type": "string"
                 }
             }
+        },
+        "updateutil.UpdateSourceKind": {
+            "type": "string",
+            "enum": [
+                "azure",
+                "github"
+            ],
+            "x-enum-varnames": [
+                "UpdateSourceKindAzure",
+                "UpdateSourceKindGithub"
+            ]
         },
         "updateutil.UpdateVersion": {
             "type": "object",
@@ -1159,6 +1170,20 @@ const docTemplate = `{
                 }
             }
         },
+        "v1_version.UpdateParams": {
+            "type": "object",
+            "properties": {
+                "force": {
+                    "type": "boolean"
+                },
+                "source": {
+                    "$ref": "#/definitions/updateutil.UpdateSource"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
         "v1_version.UpdateRequest": {
             "type": "object",
             "properties": {
@@ -1187,8 +1212,8 @@ const docTemplate = `{
         "v1_version.updateLatestParams": {
             "type": "object",
             "properties": {
-                "baseUpdateURL": {
-                    "type": "string"
+                "source": {
+                    "$ref": "#/definitions/updateutil.UpdateSource"
                 }
             }
         }

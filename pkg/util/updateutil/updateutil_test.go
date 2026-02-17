@@ -10,15 +10,20 @@ import (
 	"testing"
 )
 
+var defaultUpdateSource = DefaultUpdateSources[0]
+
 func TestListPossibleUpdates_NoCurrentVersion(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	result, err := ListPossibleUpdates("autobutler-org", "autobutler.org", false)
+	result, err := ListPossibleUpdates(
+		defaultUpdateSource,
+		false,
+	)
 
 	if err != nil {
-		t.Logf("Got error (expected in some environments): %v", err)
+		t.Fatalf("ListPossibleUpdates failed: %v", err)
 		return
 	}
 
@@ -28,11 +33,7 @@ func TestListPossibleUpdates_NoCurrentVersion(t *testing.T) {
 }
 
 func TestUpdate_EmptyVersion(t *testing.T) {
-	params := UpdateParams{
-		Version: "",
-	}
-
-	err := Update(params)
+	err := Update(defaultUpdateSource, "")
 	if err == nil {
 		t.Error("Expected error for empty version")
 	}
@@ -51,11 +52,7 @@ func TestUpdate_404Response(t *testing.T) {
 	os.Setenv("AUTOBUTLER_UPDATE_URL", server.URL)
 	defer os.Unsetenv("AUTOBUTLER_UPDATE_URL")
 
-	params := UpdateParams{
-		Version: "v1.0.0",
-	}
-
-	err := Update(params)
+	err := Update(defaultUpdateSource, "v1.0.0")
 	if err == nil {
 		t.Error("Expected error for 404 response")
 	}

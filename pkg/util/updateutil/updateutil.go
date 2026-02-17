@@ -9,26 +9,48 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
 )
 
-func GetLatestVersion(org string, repo string) (*UpdateVersion, error) {
-	release, err := github.FetchLatestRelease(org, repo)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch releases: %w", err)
+func GetLatestVersionFromDefaultSources() (*UpdateVersion, error) {
+	for _, source := range DefaultUpdateSources {
+		version, err := GetLatestVersion(source)
+		if err != nil {
+			fmt.Printf("Failed to get latest version from source %s: %v\n", source.BaseUrl(), err)
+			continue
+		}
+		return version, nil
 	}
+	return nil, fmt.Errorf("failed to get latest version from all default sources")
+}
 
-	url := getAssetURLFromRelease(release)
-	if url == "" {
-		return nil, fmt.Errorf("no suitable asset found in latest release")
+func GetLatestVersion(source *UpdateSource) (*UpdateVersion, error) {
+	switch source.Kind {
+	case UpdateSourceKindGithub:
+		org, repo := source.Container, source.Path
+		release, err := github.FetchLatestRelease(org, repo)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch releases: %w", err)
+		}
+
+		url := getAssetURLFromRelease(release)
+		if url == "" {
+			return nil, fmt.Errorf("no suitable asset found in latest release")
+		}
+
+		return &UpdateVersion{
+			Version: release.TagName,
+			URL:     url,
+		}, nil
+	case UpdateSourceKindAzure:
+		// TODO: Implement Azure release fetching logic here
+		return nil, fmt.Errorf("Azure update source not implemented yet")
+	default:
+		return nil, fmt.Errorf("unsupported update source kind: %s", source.Kind)
 	}
-
-	return &UpdateVersion{
-		Version: release.TagName,
-		URL:     url,
-	}, nil
 }
 
 func IsDevelopmentVersion(version string) bool {
@@ -46,23 +68,45 @@ type ListPossibleUpdatesResult struct {
 	Versions []*UpdateVersion
 }
 
-// ListPossibleUpdates retrieves all available releases that are newer than the current version
-func ListPossibleUpdates(org string, repo string, allVersions bool) (*ListPossibleUpdatesResult, error) {
-	releases, err := github.FetchReleases(org, repo)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch releases: %w", err)
-	}
-
-	updateReleases := []*UpdateVersion{}
-	for _, release := range releases {
-		url := getAssetURLFromRelease(release)
-		if url == "" {
+// ListPossibleUpdatesFromDefaultSources lists possible updates from all default sources
+func ListPossibleUpdatesFromDefaultSources(allVersions bool) (*ListPossibleUpdatesResult, error) {
+	for _, source := range DefaultUpdateSources {
+		result, err := ListPossibleUpdates(source, allVersions)
+		if err != nil {
+			fmt.Printf("Failed to list updates from source %s: %v\n", source.BaseUrl(), err)
 			continue
 		}
-		updateReleases = append(updateReleases, &UpdateVersion{
-			Version: release.TagName,
-			URL:     url,
-		})
+		return result, nil
+	}
+	return nil, fmt.Errorf("failed to list updates from all default sources")
+}
+
+// ListPossibleUpdates retrieves all available releases that are newer than the current version
+func ListPossibleUpdates(source *UpdateSource, allVersions bool) (*ListPossibleUpdatesResult, error) {
+	updateReleases := []*UpdateVersion{}
+
+	switch source.Kind {
+	case UpdateSourceKindGithub:
+		org, repo := source.Container, source.Path
+		releases, err := github.FetchReleases(org, repo)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch releases: %w", err)
+		}
+		for _, release := range releases {
+			url := getAssetURLFromRelease(release)
+			if url == "" {
+				continue
+			}
+			updateReleases = append(updateReleases, &UpdateVersion{
+				Version: release.TagName,
+				URL:     url,
+			})
+		}
+	case UpdateSourceKindAzure:
+		// TODO: Implement Azure release fetching logic here
+		return nil, fmt.Errorf("Azure update source not implemented yet")
+	default:
+		return nil, fmt.Errorf("unsupported update source kind: %s", source.Kind)
 	}
 
 	if allVersions {
@@ -99,15 +143,21 @@ func ListPossibleUpdates(org string, repo string, allVersions bool) (*ListPossib
 	}, nil
 }
 
-type UpdateParams struct {
-	Version       string `json:"version"`
-	BaseUpdateURL string `json:"baseUpdateURL,omitempty"`
-	Force         bool   `json:"force,omitempty"`
+// UpdateFromDefaultSources tries to update from all default sources until one succeeds
+func UpdateFromDefaultSources(version string) error {
+	for _, source := range DefaultUpdateSources {
+		err := Update(source, version)
+		if err != nil {
+			fmt.Printf("Failed to update from source %s: %v\n", source.BaseUrl(), err)
+			continue
+		}
+		return nil
+	}
+	return fmt.Errorf("failed to update from all default sources")
 }
 
 // Update downloads and installs a new version of the application
-func Update(params UpdateParams) error {
-	version := params.Version
+func Update(source *UpdateSource, version string) error {
 	if version == "" {
 		return fmt.Errorf("version cannot be empty")
 	}
@@ -117,13 +167,13 @@ func Update(params UpdateParams) error {
 		return fmt.Errorf("failed to copy current binary: %w", err)
 	}
 
-	baseUrl := params.BaseUpdateURL
+	baseUrl := source.BaseUrl()
 	if baseUrl == "" {
-		baseUrl = "https://github.com/autobutler-org/autobutler.org/releases/download"
+		return fmt.Errorf("invalid update source: %s", source.Kind)
 	}
 
 	goos := fmt.Sprintf("%s%s", strings.ToUpper(string(runtime.GOOS[0])), string(runtime.GOOS[1:]))
-	url := fmt.Sprintf("%s/%s/autobutler_%s_%s.tar.gz", baseUrl, version, goos, runtime.GOARCH)
+	url := fmt.Sprintf("%s/autobutler_%s_%s.tar.gz", filepath.Join(baseUrl, version), goos, runtime.GOARCH)
 	fmt.Println("Downloading update from", url)
 
 	resp, err := http.Get(url)
@@ -135,7 +185,6 @@ func Update(params UpdateParams) error {
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("failed to download update from %s: %s", url, resp.Status)
 	}
-
 	if err := replaceSelf(resp.Body); err != nil {
 		return fmt.Errorf("failed to replace self with update from %s: %w", url, err)
 	}

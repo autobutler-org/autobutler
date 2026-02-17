@@ -8,7 +8,7 @@ import (
 )
 
 type updateLatestParams struct {
-	BaseUpdateURL string `json:"baseUpdateURL" form:"baseUpdateURL"`
+	Source *updateutil.UpdateSource `json:"source" form:"source"`
 }
 
 // updateToLatest godoc
@@ -22,20 +22,17 @@ type updateLatestParams struct {
 // @Router /version/latest [post]
 func updateToLatest(c *gin.Context) *serverutil.Response {
 	params := updateLatestParams{}
-	baseUpdateUrl := ""
+	source := &updateutil.UpdateSource{}
 	if err := c.ShouldBind(&params); err == nil {
-		baseUpdateUrl = params.BaseUpdateURL
+		source = params.Source
 	}
 
-	latestVersion, err := updateutil.GetLatestVersion(org, repo)
+	latestVersion, err := updateutil.GetLatestVersion(source)
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
 
-	if err := updateutil.Update(updateutil.UpdateParams{
-		Version:       latestVersion.Version,
-		BaseUpdateURL: baseUpdateUrl,
-	}); err != nil {
+	if err := updateutil.Update(source, latestVersion.Version); err != nil {
 		return serverutil.InternalServerError(err)
 	}
 
