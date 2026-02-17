@@ -64,7 +64,7 @@ func (s *UpdateSource) BaseUrl() string {
 	case UpdateSourceKindGithub:
 		return fmt.Sprintf("https://github.com/%s/%s/releases/download", s.Account, s.Path)
 	case UpdateSourceKindAzure:
-		return fmt.Sprintf("https://%s.blob.core.windows.net/", s.Account)
+		return fmt.Sprintf("https://%s.blob.core.windows.net", s.Account)
 	default:
 		return ""
 	}
@@ -92,7 +92,7 @@ func (s *UpdateSource) BlobPrefix() *string {
 	if s.Kind == UpdateSourceKindAzure {
 		parts := strings.Split(s.Path, "/")
 		if len(parts) > 1 {
-			prefix := strings.Join(parts[1:], "/")
+			prefix := strings.Join(parts[1:], "/") + "/"
 			return &prefix
 		}
 	}

@@ -120,26 +120,35 @@ func ListPossibleUpdates(source *UpdateSource, allVersions bool) (*ListPossibleU
 		}
 	case UpdateSourceKindAzure:
 		// TODO: Implement Azure release fetching logic here
-		fmt.Println("Checking azure...")
-		pager := client.NewListBlobsFlatPager(source.Container(), &azblob.ListBlobsFlatOptions{
-			Prefix: source.BlobPrefix(),
-		})
-		fmt.Println("Pager created...")
+		prefix := source.BlobPrefix()
+		pager := client.NewListBlobsFlatPager(
+			source.Container(),
+			&azblob.ListBlobsFlatOptions{
+				Prefix: prefix,
+			},
+		)
+
 		for pager.More() {
-			fmt.Println("Pager has something...")
 			resp, err := pager.NextPage(context.TODO())
 			if err != nil {
 				fmt.Printf("Failed to list blobs: %v", err)
 				return nil, fmt.Errorf("failed to list blobs: %w", err)
 			}
 
-			fmt.Printf("Got %d items", len(resp.Segment.BlobItems))
 			for _, blob := range resp.Segment.BlobItems {
+				trimmed := strings.TrimPrefix(*blob.Name, *prefix)
+				split := strings.Split(trimmed, "/")
+				version, artifact := split[0], split[1]
+				if strings.HasSuffix(artifact, ".txt") {
+					continue
+				}
+				updateReleases = append(updateReleases, &UpdateVersion{
+					Version: version,
+					URL:     fmt.Sprintf("%s/%s/%s", source.BaseUrl(), source.Container(), *blob.Name),
+				})
 				fmt.Println(*blob.Name)
 			}
 		}
-		fmt.Println("Done listing blobs.")
-		return nil, fmt.Errorf("Azure update source not implemented yet")
 	default:
 		return nil, fmt.Errorf("unsupported update source kind: %s", source.Kind)
 	}
