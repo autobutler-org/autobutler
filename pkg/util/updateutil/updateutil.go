@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -28,6 +27,9 @@ func GetLatestVersionFromDefaultSources() (*UpdateVersion, error) {
 }
 
 func GetLatestVersion(source *UpdateSource) (*UpdateVersion, error) {
+	if source == nil {
+		return GetLatestVersionFromDefaultSources()
+	}
 	switch source.Kind {
 	case UpdateSourceKindGithub:
 		org, repo := source.Container, source.Path
@@ -83,8 +85,11 @@ func ListPossibleUpdatesFromDefaultSources(allVersions bool) (*ListPossibleUpdat
 
 // ListPossibleUpdates retrieves all available releases that are newer than the current version
 func ListPossibleUpdates(source *UpdateSource, allVersions bool) (*ListPossibleUpdatesResult, error) {
-	updateReleases := []*UpdateVersion{}
+	if source == nil {
+		return ListPossibleUpdatesFromDefaultSources(allVersions)
+	}
 
+	updateReleases := []*UpdateVersion{}
 	switch source.Kind {
 	case UpdateSourceKindGithub:
 		org, repo := source.Container, source.Path
@@ -158,6 +163,10 @@ func UpdateFromDefaultSources(version string) error {
 
 // Update downloads and installs a new version of the application
 func Update(source *UpdateSource, version string) error {
+	if source == nil {
+		return UpdateFromDefaultSources(version)
+	}
+
 	if version == "" {
 		return fmt.Errorf("version cannot be empty")
 	}
@@ -173,7 +182,7 @@ func Update(source *UpdateSource, version string) error {
 	}
 
 	goos := fmt.Sprintf("%s%s", strings.ToUpper(string(runtime.GOOS[0])), string(runtime.GOOS[1:]))
-	url := fmt.Sprintf("%s/autobutler_%s_%s.tar.gz", filepath.Join(baseUrl, version), goos, runtime.GOARCH)
+	url := fmt.Sprintf("%s/%s/autobutler_%s_%s.tar.gz", baseUrl, version, goos, runtime.GOARCH)
 	fmt.Println("Downloading update from", url)
 
 	resp, err := http.Get(url)
