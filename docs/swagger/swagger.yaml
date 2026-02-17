@@ -144,11 +144,6 @@ definitions:
       semver:
         type: string
     type: object
-  v1_version.updateLatestParams:
-    properties:
-      source:
-        $ref: '#/definitions/updateutil.UpdateSource'
-    type: object
 info:
   contact: {}
 paths:
@@ -749,12 +744,6 @@ paths:
       - version
     post:
       description: Finds and installs the latest version
-      parameters:
-      - description: Update Request
-        in: body
-        name: update
-        schema:
-          $ref: '#/definitions/v1_version.updateLatestParams'
       produces:
       - application/json
       responses:

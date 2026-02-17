@@ -915,16 +915,6 @@ const docTemplate = `{
                     "version"
                 ],
                 "summary": "Update to the latest version",
-                "parameters": [
-                    {
-                        "description": "Update Request",
-                        "name": "update",
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/v1_version.updateLatestParams"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1206,14 +1196,6 @@ const docTemplate = `{
                 },
                 "semver": {
                     "type": "string"
-                }
-            }
-        },
-        "v1_version.updateLatestParams": {
-            "type": "object",
-            "properties": {
-                "source": {
-                    "$ref": "#/definitions/updateutil.UpdateSource"
                 }
             }
         }
