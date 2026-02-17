@@ -46,19 +46,6 @@ func NewUpdateSource(kind UpdateSourceKind, account string, path string) *Update
 	}
 }
 
-// NewUpdateSourceFromString creates a new UpdateSource from a string in the format "kind:account:path"
-func NewUpdateSourceFromString(source string) (*UpdateSource, error) {
-	parts := strings.Split(source, ":")
-	if len(parts) != 3 {
-		return nil, fmt.Errorf("invalid update source format: %s", source)
-	}
-	return &UpdateSource{
-		Kind:    UpdateSourceKind(parts[0]),
-		Account: parts[1],
-		Path:    parts[2],
-	}, nil
-}
-
 func (s *UpdateSource) BaseUrl() string {
 	switch s.Kind {
 	case UpdateSourceKindGithub:
