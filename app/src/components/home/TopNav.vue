@@ -724,7 +724,6 @@ const closeMobileMenu = () => {
   top: 100%;
   right: 0;
   margin-top: $spacing-sm;
-  min-width: 200px;
   background: $theme-palette-bg-nav;
   border: 1px solid hsl(from $theme-palette-border h s l / 0.1);
   border-radius: $border-radius-lg;
@@ -766,6 +765,7 @@ const closeMobileMenu = () => {
   transition:
     background-color 0.2s,
     color 0.2s;
+  width: 100%;
 
   &:hover {
     background: $theme-palette-accent;
