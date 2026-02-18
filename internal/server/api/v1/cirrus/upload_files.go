@@ -41,7 +41,6 @@ func uploadFilesNested(c *gin.Context, rootDir string) *serverutil.Response {
 	if err != nil {
 		return serverutil.BadRequest(err)
 	}
-	fmt.Println(rootDir)
 	err = storageutil.UploadFilesStreamed(storageutil.UploadFilesStreamedParams{
 		Reader:       reader,
 		RootDir:      rootDir,
