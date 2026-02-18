@@ -3,7 +3,6 @@ package v1_files
 import (
 	"autobutler/pkg/util/serverutil"
 	"autobutler/pkg/util/storageutil"
-	"fmt"
 
 	"github.com/gin-gonic/gin"
 )

@@ -12,6 +12,7 @@ import (
 	"os"
 	"regexp"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
@@ -25,6 +26,11 @@ func init() {
 	if err != nil {
 		panic(fmt.Sprintf("Failed to create Azure Blob client: %v", err))
 	}
+}
+
+func ConstructArchiveName() string {
+	goos := fmt.Sprintf("%s%s", strings.ToUpper(string(runtime.GOOS[0])), string(runtime.GOOS[1:]))
+	return fmt.Sprintf("autobutler_%s_%s.tar.gz", goos, runtime.GOARCH)
 }
 
 func GetLatestVersionFromDefaultSources() (string, error) {
@@ -145,12 +151,16 @@ func ListPossibleUpdates(source *UpdateSource, allVersions bool) (*ListPossibleU
 				if strings.HasSuffix(artifact, ".txt") {
 					continue
 				}
+				if !strings.Contains(artifact, ConstructArchiveName()) {
+					continue
+				}
 				updateReleases = append(updateReleases, &UpdateVersion{
 					Version: version,
 					URL:     fmt.Sprintf("%s/%s/%s", source.BaseUrl(), source.Container(), *blob.Name),
 				})
 			}
 		}
+		slices.Reverse(updateReleases)
 	default:
 		return nil, fmt.Errorf("unsupported update source kind: %s", source.Kind)
 	}
@@ -221,8 +231,7 @@ func Update(source *UpdateSource, version string) error {
 		return fmt.Errorf("invalid update source: %s", source.Kind)
 	}
 
-	goos := fmt.Sprintf("%s%s", strings.ToUpper(string(runtime.GOOS[0])), string(runtime.GOOS[1:]))
-	url := fmt.Sprintf("%s/%s/autobutler_%s_%s.tar.gz", baseUrl, version, goos, runtime.GOARCH)
+	url := fmt.Sprintf("%s/%s/%s", baseUrl, version, ConstructArchiveName())
 	fmt.Println("Downloading update from", url)
 
 	resp, err := http.Get(url)
