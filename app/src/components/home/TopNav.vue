@@ -294,9 +294,9 @@ const handleUpdate = async (version: string) => {
     bannerMessage.value = `Update to ${version} started. The server will restart once it downloads.`;
     showBanner.value = true;
     await VersionService.doUpdate(version);
-  } catch (err) {
+  } catch {
     showBanner.value = true;
-    bannerMessage.value = `Update failed: ${err}`;
+    bannerMessage.value = `Update failed`;
   } finally {
     updatingVersion.value = null;
   }

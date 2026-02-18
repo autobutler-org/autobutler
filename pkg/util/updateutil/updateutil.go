@@ -149,7 +149,6 @@ func ListPossibleUpdates(source *UpdateSource, allVersions bool) (*ListPossibleU
 					Version: version,
 					URL:     fmt.Sprintf("%s/%s/%s", source.BaseUrl(), source.Container(), *blob.Name),
 				})
-				fmt.Println(*blob.Name)
 			}
 		}
 	default:
