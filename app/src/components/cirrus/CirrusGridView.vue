@@ -78,7 +78,7 @@
               "
               class="grid-view-size"
             >
-              {{ CirrusService.formatBytes(CirrusService.getFileSize(file)) }}
+              {{ formatBytes(CirrusService.getFileSize(file)) }}
             </div>
           </div>
         </div>
@@ -104,6 +104,7 @@ import SlideshowIcon from '@/components/icons/SlideshowIcon.vue';
 import { useCirrusFileDropZone } from '@/composables/useCirrusFileDropZone';
 import CirrusService from '@/services/cirrusService';
 import type { CirrusDragFileData, CirrusFileNode } from '@/types/cirrus';
+import { formatBytes } from '@/util/bytes';
 import { joinPathsNormalized, normalizePath } from '@/util/filepath';
 import { computed, ref, watch } from 'vue';
 

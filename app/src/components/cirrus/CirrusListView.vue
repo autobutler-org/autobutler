@@ -92,7 +92,7 @@
             v-if="props.showFileSizes !== false"
             class="file-table-cell file-table-size"
           >
-            {{ CirrusService.formatBytes(CirrusService.getFileSize(file)) }}
+            {{ formatBytes(CirrusService.getFileSize(file)) }}
           </td>
           <td class="file-table-cell file-table-cell--menu">
             <button
@@ -129,6 +129,7 @@ import SortSwitcherIcon from '@/components/icons/SortSwitcherIcon.vue';
 import { useCirrusFileDropZone } from '@/composables/useCirrusFileDropZone';
 import CirrusService from '@/services/cirrusService';
 import type { CirrusFileNode } from '@/types/cirrus';
+import { formatBytes } from '@/util/bytes';
 import { joinPathsNormalized, normalizePath } from '@/util/filepath';
 import { computed, ref, watch, type Component } from 'vue';
 import CirrusListViewSortHeader, {
