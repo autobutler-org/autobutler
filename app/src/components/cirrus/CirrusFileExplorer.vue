@@ -306,7 +306,14 @@
               </tr>
               <tr v-if="detailsDialogFile.size !== undefined">
                 <th>Size</th>
-                <td>{{ detailsDialogFile.size }} bytes</td>
+                <td>
+                  {{ formatBytes(detailsDialogFile.size) }}
+                  {{
+                    detailsDialogFile.size > 1024
+                      ? `(${detailsDialogFile.size} B)`
+                      : ''
+                  }}
+                </td>
               </tr>
               <tr>
                 <th>Type</th>
@@ -422,6 +429,7 @@ import DeviceCard from '@/components/DeviceCard.vue';
 import DevicesService from '@/services/devicesService';
 import { useCirrusDeviceStore } from '@/stores/cirrusDeviceStore';
 import type { Device } from '@/types/device';
+import { formatBytes } from '@/util/bytes';
 import { storeToRefs } from 'pinia';
 
 const fileInputRef = vueRef<HTMLInputElement | null>(null);
