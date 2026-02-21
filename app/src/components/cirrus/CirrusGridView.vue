@@ -1,11 +1,12 @@
 <template>
   <div
+    ref="scrollContainerRef"
     class="grid-view-container"
     :class="{ 'grid-view-container--dragging': isDragOver }"
     @dragenter="handleDragEnter"
-    @dragover="handleDragOver"
-    @dragleave="handleDragLeave"
-    @drop="handleDrop"
+    @dragover="handleContainerDragOver"
+    @dragleave="handleContainerDragLeave"
+    @drop="handleContainerDrop"
   >
     <div class="grid-view-drop-overlay" v-show="isDragOver" />
     <div class="grid-view-grid">
@@ -102,11 +103,12 @@ import ImageIcon from '@/components/icons/ImageIcon.vue';
 import PdfIcon from '@/components/icons/PdfIcon.vue';
 import SlideshowIcon from '@/components/icons/SlideshowIcon.vue';
 import { useCirrusFileDropZone } from '@/composables/useCirrusFileDropZone';
+import { useDragEdgeAutoScroll } from '@/composables/useDragEdgeAutoScroll';
 import CirrusService from '@/services/cirrusService';
 import type { CirrusDragFileData, CirrusFileNode } from '@/types/cirrus';
 import { formatBytes } from '@/util/bytes';
 import { joinPathsNormalized, normalizePath } from '@/util/filepath';
-import { computed, ref, watch } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
 
 const props = defineProps<{
   files: CirrusFileNode[];
@@ -141,13 +143,34 @@ const emit = defineEmits<{
 const {
   isDragOver,
   handleDragEnter,
-  handleDragOver,
-  handleDragLeave,
-  handleDrop,
+  handleDragOver: handleDropZoneDragOver,
+  handleDragLeave: handleDropZoneDragLeave,
+  handleDrop: handleDropZoneDrop,
 } = useCirrusFileDropZone({
   currentPath: computed(() => props.currentPath),
   onFilesUploaded: (files) => emit('files-uploaded', files),
 });
+
+const scrollContainerRef = ref<HTMLElement | null>(null);
+
+const { handleDragOverAutoScroll, stopAutoScroll } = useDragEdgeAutoScroll();
+
+const handleContainerDragOver = (event: DragEvent) => {
+  handleDropZoneDragOver(event);
+  handleDragOverAutoScroll(event, scrollContainerRef.value);
+};
+
+const handleContainerDragLeave = (event: DragEvent) => {
+  handleDropZoneDragLeave(event);
+  if (!isDragOver.value) {
+    stopAutoScroll();
+  }
+};
+
+const handleContainerDrop = async (event: DragEvent) => {
+  stopAutoScroll();
+  await handleDropZoneDrop(event);
+};
 
 const handleFileDragStart = (event: DragEvent, file: CirrusFileNode) => {
   // Multi-file drag support
@@ -229,6 +252,7 @@ const handleDirectoryDragEnter = (event: DragEvent, file: CirrusFileNode) => {
 const handleDirectoryDragOver = (event: DragEvent, file: CirrusFileNode) => {
   if (!CirrusService.isDirectory(file)) return;
   event.preventDefault();
+  handleDragOverAutoScroll(event, scrollContainerRef.value);
   const targetPath = resolveDirectoryTargetPath(file);
   // Get the dragged file path from dataTransfer
   const movedFilePath = event.dataTransfer?.getData(
@@ -261,6 +285,7 @@ const handleDirectoryDrop = async (event: DragEvent, file: CirrusFileNode) => {
   if (!CirrusService.isDirectory(file)) return;
   event.preventDefault();
   event.stopPropagation();
+  stopAutoScroll();
   const targetPath = resolveDirectoryTargetPath(file);
   clearHoveredDirectory();
 
@@ -354,6 +379,10 @@ const isSubPath = (parent: string, child: string) => {
   const normChild = normalizePath(child) + '/';
   return normChild.startsWith(normParent);
 };
+
+onUnmounted(() => {
+  stopAutoScroll();
+});
 </script>
 
 <style lang="scss" scoped>
