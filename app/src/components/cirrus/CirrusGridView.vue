@@ -331,7 +331,7 @@ const handleDirectoryDrop = async (event: DragEvent, file: CirrusFileNode) => {
     return;
   }
   // Otherwise, treat as upload
-  await handleDrop(event, targetPath);
+  await handleDropZoneDrop(event);
 };
 
 // TODO: CirrusListView has the exact same functions/code, after this point
