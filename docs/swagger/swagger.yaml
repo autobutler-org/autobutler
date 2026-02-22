@@ -333,40 +333,6 @@ paths:
       summary: Move or rename a file
       tags:
       - cirrus
-  /cirrus//upload/{rootDir}:
-    post:
-      consumes:
-      - multipart/form-data
-      description: Upload one or more files via multipart/form-data
-      parameters:
-      - description: Directory to upload into
-        in: path
-        name: rootDir
-        required: true
-        type: string
-      - description: Device serial number to upload to
-        in: query
-        name: serial
-        type: string
-      - description: File to upload
-        in: formData
-        name: file
-        required: true
-        type: file
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      summary: Upload files to a nested directory
-      tags:
-      - cirrus
   /cirrus/download:
     get:
       description: Downloads a single file or zips a folder and streams it back to
@@ -463,6 +429,40 @@ paths:
           schema:
             $ref: '#/definitions/serverutil.Response'
       summary: Upload files to the top-level directory
+      tags:
+      - cirrus
+  /cirrus/upload/{rootDir}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload one or more files via multipart/form-data
+      parameters:
+      - description: Directory to upload into
+        in: path
+        name: rootDir
+        required: true
+        type: string
+      - description: Device serial number to upload to
+        in: query
+        name: serial
+        type: string
+      - description: File to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Upload files to a nested directory
       tags:
       - cirrus
   /migration/google/start:

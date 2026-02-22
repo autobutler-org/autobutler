@@ -27,7 +27,7 @@
 <script lang="ts" setup>
 import { nextTick, ref } from 'vue';
 
-import FolderService from '@/services/folderService';
+import CirrusService from '@/services/cirrusService';
 import AddFolderIcon from '../icons/AddFolderIcon.vue';
 
 const props = defineProps<{
@@ -49,7 +49,7 @@ const createFolder = async () => {
 
   isCreating.value = true;
   try {
-    await FolderService.createFolder(
+    await CirrusService.createFolder(
       props.currentPath,
       folderName.value.trim(),
     );

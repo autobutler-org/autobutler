@@ -8,6 +8,19 @@ export default class CirrusService {
     return bytes / (1024 * 1024 * 1024);
   }
 
+  static async createFolder(
+    folderPath: string,
+    folderName: string,
+  ): Promise<void> {
+    const formData = new FormData();
+    formData.append('folderName', folderName);
+    const url = folderPath
+      ? `/api/v1/cirrus/folder/${folderPath}`
+      : '/api/v1/cirrus/folder/';
+    const response = await HttpService.postForm(url, formData);
+    if (!response.ok) throw new Error('Failed to create folder');
+  }
+
   /**
    * Delete a file in Cirrus
    */

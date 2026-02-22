@@ -290,57 +290,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/cirrus//upload/{rootDir}": {
-            "post": {
-                "description": "Upload one or more files via multipart/form-data",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cirrus"
-                ],
-                "summary": "Upload files to a nested directory",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Directory to upload into",
-                        "name": "rootDir",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Device serial number to upload to",
-                        "name": "serial",
-                        "in": "query"
-                    },
-                    {
-                        "type": "file",
-                        "description": "File to upload",
-                        "name": "file",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/cirrus/download": {
             "get": {
                 "description": "Downloads a single file or zips a folder and streams it back to the client",
@@ -458,6 +407,57 @@ const docTemplate = `{
                 ],
                 "summary": "Upload files to the top-level directory",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device serial number to upload to",
+                        "name": "serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "file",
+                        "description": "File to upload",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/cirrus/upload/{rootDir}": {
+            "post": {
+                "description": "Upload one or more files via multipart/form-data",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cirrus"
+                ],
+                "summary": "Upload files to a nested directory",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Directory to upload into",
+                        "name": "rootDir",
+                        "in": "path",
+                        "required": true
+                    },
                     {
                         "type": "string",
                         "description": "Device serial number to upload to",
