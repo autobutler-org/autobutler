@@ -1,7 +1,6 @@
 package v1_files
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
@@ -36,7 +35,6 @@ type FileNodeJSON struct {
 // @Router /cirrus [get]
 func listFiles(c *gin.Context) *serverutil.Response {
 	rootDir := c.Query("rootDir")
-	fmt.Printf("List %s\n", rootDir)
 	serials := c.QueryArray("serial")
 
 	devices, err := storageutil.GetManagedDevices()
