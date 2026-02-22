@@ -1,10 +1,11 @@
 package botel
 
 import (
-	"autobutler/pkg/botel/exporters/botelsqlite"
-	"autobutler/pkg/util/deputil"
 	"fmt"
 	"time"
+
+	"github.com/autobutler-org/autobutler/pkg/botel/exporters/botelsqlite"
+	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"

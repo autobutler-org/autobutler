@@ -1,7 +1,6 @@
 package v1_auth
 
 import (
-	"autobutler/pkg/util/serverutil"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
@@ -9,6 +8,8 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"

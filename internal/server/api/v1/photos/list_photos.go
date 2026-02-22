@@ -1,9 +1,9 @@
 package v1_photos
 
 import (
-	"autobutler/pkg/util/photoutil"
-	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/autobutler/pkg/util/photoutil"
+	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
 	"github.com/gin-gonic/gin"
 )

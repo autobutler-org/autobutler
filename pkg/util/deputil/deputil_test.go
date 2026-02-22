@@ -1,9 +1,10 @@
 package deputil
 
 import (
-	"autobutler/internal/db"
-	"autobutler/pkg/botel/exporters/botelsqlite"
 	"testing"
+
+	"github.com/autobutler-org/autobutler/internal/db"
+	"github.com/autobutler-org/autobutler/pkg/botel/exporters/botelsqlite"
 )
 
 func TestNewDependencies(t *testing.T) {

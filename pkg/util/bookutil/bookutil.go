@@ -1,10 +1,11 @@
 package bookutil
 
 import (
-	"autobutler/pkg/util/storageutil"
 	"fmt"
 	"io/fs"
 	"path/filepath"
+
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 )
 
 // FindAllBooksRecursively finds all book files (PDF and EPUB) in a directory and its subdirectories

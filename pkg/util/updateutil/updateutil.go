@@ -2,8 +2,6 @@ package updateutil
 
 import (
 	"archive/tar"
-	github "autobutler/pkg/util/githubutil"
-	"autobutler/pkg/util/versionutil"
 	"compress/gzip"
 	"context"
 	"fmt"
@@ -14,6 +12,9 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+
+	github "github.com/autobutler-org/autobutler/pkg/util/githubutil"
+	"github.com/autobutler-org/autobutler/pkg/util/versionutil"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 )

@@ -1,8 +1,9 @@
 package install
 
 import (
-	"autobutler/internal/install"
 	"fmt"
+
+	"github.com/autobutler-org/autobutler/internal/install"
 
 	"github.com/spf13/cobra"
 )

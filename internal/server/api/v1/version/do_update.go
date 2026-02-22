@@ -1,12 +1,13 @@
 package v1_version
 
 import (
-	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/updateutil"
 	"errors"
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/updateutil"
 
 	"github.com/gin-gonic/gin"
 )

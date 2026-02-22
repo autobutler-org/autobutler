@@ -1,16 +1,17 @@
 package server
 
 import (
-	docs "autobutler/docs/swagger"
-	"autobutler/internal/server/middleware"
-	"autobutler/pkg/botel"
-	"autobutler/pkg/util/deputil"
-	"autobutler/pkg/util/storageutil"
-	"autobutler/pkg/util/workerutil"
 	"context"
 	"fmt"
 	"log"
 	"os"
+
+	docs "github.com/autobutler-org/autobutler/docs/swagger"
+	"github.com/autobutler-org/autobutler/internal/server/middleware"
+	"github.com/autobutler-org/autobutler/pkg/botel"
+	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/autobutler/pkg/util/workerutil"
 
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"

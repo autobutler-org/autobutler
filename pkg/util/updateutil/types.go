@@ -1,9 +1,10 @@
 package updateutil
 
 import (
-	"autobutler/pkg/util/githubutil"
 	"fmt"
 	"strings"
+
+	"github.com/autobutler-org/autobutler/pkg/util/githubutil"
 )
 
 var DefaultUpdateSources = []*UpdateSource{

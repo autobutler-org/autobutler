@@ -1,11 +1,12 @@
 package v1_storage
 
 import (
-	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/storageutil"
 	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
 	"github.com/gin-gonic/gin"
 )

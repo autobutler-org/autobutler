@@ -1,6 +1,6 @@
 package v1_photos
 
-import "autobutler/pkg/util/serverutil"
+import "github.com/autobutler-org/autobutler/pkg/util/serverutil"
 
 // Router for /api/v1/photos endpoints
 // Registers the /photos route

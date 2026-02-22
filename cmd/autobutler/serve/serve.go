@@ -3,8 +3,8 @@ package serve
 import (
 	"fmt"
 
-	"autobutler/internal/server"
-	"autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/internal/server"
+	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 
 	"github.com/spf13/cobra"
 )

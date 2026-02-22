@@ -1,4 +1,4 @@
-module autobutler
+module github.com/autobutler-org/autobutler
 
 go 1.25.5
 

@@ -1,10 +1,11 @@
 package v1_metrics
 
 import (
-	"autobutler/pkg/util/ctxutil"
-	"autobutler/pkg/util/deputil"
-	"autobutler/pkg/util/serverutil"
 	"net/http"
+
+	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
+	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 
 	"github.com/gin-gonic/gin"
 )

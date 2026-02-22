@@ -1,9 +1,10 @@
 package middleware
 
 import (
-	"autobutler/pkg/util/ctxutil"
-	"autobutler/pkg/util/deputil"
 	"time"
+
+	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
+	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

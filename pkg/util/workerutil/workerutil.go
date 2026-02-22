@@ -1,8 +1,9 @@
 package workerutil
 
 import (
-	"autobutler/pkg/util/storageutil"
 	"log"
+
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 )
 
 type Worker interface {
