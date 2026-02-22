@@ -1,13 +1,14 @@
 package photoutil
 
 import (
-	"autobutler/pkg/util/storageutil"
 	"fmt"
 	"image"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
 	"github.com/KononK/resize"
 	"github.com/rwcarlsen/goexif/exif"

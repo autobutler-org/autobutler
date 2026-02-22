@@ -1,11 +1,12 @@
 package db
 
 import (
-	"autobutler/pkg/calendar"
 	"context"
 	"database/sql"
 	"fmt"
 	"time"
+
+	"github.com/autobutler-org/autobutler/pkg/calendar"
 )
 
 func NewCalendarEvent(

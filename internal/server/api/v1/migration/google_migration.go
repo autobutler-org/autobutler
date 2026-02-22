@@ -1,12 +1,13 @@
 package v1_migration
 
 import (
-	v1_auth "autobutler/internal/server/api/v1/auth"
-	"autobutler/pkg/migration"
-	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/storageutil"
 	"fmt"
 	"log"
+
+	v1_auth "github.com/autobutler-org/autobutler/internal/server/api/v1/auth"
+	"github.com/autobutler-org/autobutler/pkg/migration"
+	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
 	"github.com/gin-gonic/gin"
 )

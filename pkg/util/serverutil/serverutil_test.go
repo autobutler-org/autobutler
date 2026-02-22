@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 
 	"github.com/gin-gonic/gin"
 )

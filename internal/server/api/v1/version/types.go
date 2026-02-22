@@ -1,6 +1,6 @@
 package v1_version
 
-import "autobutler/pkg/util/updateutil"
+import "github.com/autobutler-org/autobutler/pkg/util/updateutil"
 
 // UpdateParams defines the parameters for updating to a specific version
 type UpdateParams struct {

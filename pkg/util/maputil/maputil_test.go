@@ -3,7 +3,7 @@ package maputil_test
 import (
 	"testing"
 
-	"autobutler/pkg/util/maputil"
+	"github.com/autobutler-org/autobutler/pkg/util/maputil"
 )
 
 func TestNewOrderedMap(t *testing.T) {

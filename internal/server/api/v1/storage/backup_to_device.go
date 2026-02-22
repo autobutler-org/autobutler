@@ -1,11 +1,12 @@
 package v1_storage
 
 import (
-	"autobutler/pkg/util/ctxutil"
-	"autobutler/pkg/util/deputil"
-	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/storageutil"
 	"fmt"
+
+	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
+	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
 	"github.com/gin-gonic/gin"
 )

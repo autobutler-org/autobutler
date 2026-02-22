@@ -1,10 +1,11 @@
 package deputil
 
 import (
-	"autobutler/internal/db"
-	"autobutler/pkg/botel/exporters/botelsqlite"
-	"autobutler/pkg/util/workerutil"
 	"fmt"
+
+	"github.com/autobutler-org/autobutler/internal/db"
+	"github.com/autobutler-org/autobutler/pkg/botel/exporters/botelsqlite"
+	"github.com/autobutler-org/autobutler/pkg/util/workerutil"
 )
 
 type Dependencies interface {

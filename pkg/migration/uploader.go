@@ -1,7 +1,6 @@
 package migration
 
 import (
-	"autobutler/pkg/util/storageutil"
 	"bytes"
 	"context"
 	"fmt"
@@ -9,6 +8,8 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 )
 
 // CirrusFileUploader uploads files to cirrus storage

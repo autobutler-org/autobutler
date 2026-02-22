@@ -1,10 +1,11 @@
 package v1_metrics
 
 import (
-	"autobutler/pkg/util/serverutil"
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 )
 
 type QueryRangeResponse struct {

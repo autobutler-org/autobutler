@@ -1,6 +1,6 @@
 package v1_version
 
-import "autobutler/pkg/util/serverutil"
+import "github.com/autobutler-org/autobutler/pkg/util/serverutil"
 
 const (
 	org  = "autobutler-org"

@@ -1,9 +1,9 @@
 package v1_books
 
 import (
-	"autobutler/pkg/util/bookutil"
-	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/autobutler/pkg/util/bookutil"
+	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
 	"github.com/gin-gonic/gin"
 )

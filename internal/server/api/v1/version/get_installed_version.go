@@ -1,8 +1,8 @@
 package v1_version
 
 import (
-	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/versionutil"
+	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/versionutil"
 
 	"github.com/gin-gonic/gin"
 )

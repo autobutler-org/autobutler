@@ -1,18 +1,19 @@
 package server
 
 import (
-	v1_auth "autobutler/internal/server/api/v1/auth"
-	v1_books "autobutler/internal/server/api/v1/books"
-	v1_files "autobutler/internal/server/api/v1/cirrus"
-	v1_metrics "autobutler/internal/server/api/v1/metrics"
-	v1_migration "autobutler/internal/server/api/v1/migration"
-	v1_photos "autobutler/internal/server/api/v1/photos"
-	v1_storage "autobutler/internal/server/api/v1/storage"
-	v1_thumbnails "autobutler/internal/server/api/v1/thumbnails"
-	v1_version "autobutler/internal/server/api/v1/version"
-	"autobutler/pkg/util/serverutil"
 	"embed"
 	"net/http"
+
+	v1_auth "github.com/autobutler-org/autobutler/internal/server/api/v1/auth"
+	v1_books "github.com/autobutler-org/autobutler/internal/server/api/v1/books"
+	v1_files "github.com/autobutler-org/autobutler/internal/server/api/v1/cirrus"
+	v1_metrics "github.com/autobutler-org/autobutler/internal/server/api/v1/metrics"
+	v1_migration "github.com/autobutler-org/autobutler/internal/server/api/v1/migration"
+	v1_photos "github.com/autobutler-org/autobutler/internal/server/api/v1/photos"
+	v1_storage "github.com/autobutler-org/autobutler/internal/server/api/v1/storage"
+	v1_thumbnails "github.com/autobutler-org/autobutler/internal/server/api/v1/thumbnails"
+	v1_version "github.com/autobutler-org/autobutler/internal/server/api/v1/version"
+	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"

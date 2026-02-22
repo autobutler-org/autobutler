@@ -2,12 +2,13 @@ package v1_files
 
 import (
 	"archive/zip"
-	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/storageutil"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
 	"github.com/gin-gonic/gin"
 )

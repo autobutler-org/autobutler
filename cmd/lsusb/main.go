@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 )
 
 func main() {

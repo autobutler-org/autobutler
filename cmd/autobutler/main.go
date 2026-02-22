@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"autobutler/cmd/autobutler/install"
-	"autobutler/cmd/autobutler/serve"
-	"autobutler/cmd/autobutler/version"
+	"github.com/autobutler-org/autobutler/cmd/autobutler/install"
+	"github.com/autobutler-org/autobutler/cmd/autobutler/serve"
+	"github.com/autobutler-org/autobutler/cmd/autobutler/version"
 
 	"github.com/spf13/cobra"
 )

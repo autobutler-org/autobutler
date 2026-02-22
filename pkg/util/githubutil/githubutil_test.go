@@ -1,11 +1,12 @@
 package githubutil_test
 
 import (
-	"autobutler/pkg/util/githubutil"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/autobutler-org/autobutler/pkg/util/githubutil"
 )
 
 func TestFetchGitHubReleases_Success(t *testing.T) {

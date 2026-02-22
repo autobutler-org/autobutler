@@ -3,7 +3,7 @@ package version
 import (
 	"fmt"
 
-	"autobutler/pkg/util/versionutil"
+	"github.com/autobutler-org/autobutler/pkg/util/versionutil"
 
 	"github.com/spf13/cobra"
 )

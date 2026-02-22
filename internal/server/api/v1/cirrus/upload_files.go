@@ -1,8 +1,8 @@
 package v1_files
 
 import (
-	"autobutler/pkg/util/serverutil"
-	"autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
 	"github.com/gin-gonic/gin"
 )

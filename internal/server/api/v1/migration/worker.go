@@ -1,10 +1,11 @@
 package v1_migration
 
 import (
-	"autobutler/pkg/migration"
 	"context"
 	"log"
 	"sync"
+
+	"github.com/autobutler-org/autobutler/pkg/migration"
 )
 
 // JobWorker processes import jobs in the background

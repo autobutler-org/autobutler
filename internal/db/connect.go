@@ -1,12 +1,13 @@
 package db
 
 import (
-	"autobutler/pkg/util/storageutil"
 	"context"
 	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 )
 
 func ConnectToDatabase() (*DatabaseSqlc, error) {
