@@ -33,7 +33,7 @@ func uploadFiles(c *gin.Context) *serverutil.Response {
 // @Param file formData file true "File to upload"
 // @Success 200 {object} serverutil.Response "OK"
 // @Failure 400 {object} serverutil.Response "Bad Request"
-// @Router /cirrus//upload/{rootDir} [post]
+// @Router /cirrus/upload/{rootDir} [post]
 func uploadFilesNested(c *gin.Context, rootDir string) *serverutil.Response {
 	serial := c.Query("serial")
 	reader, err := c.Request.MultipartReader()
