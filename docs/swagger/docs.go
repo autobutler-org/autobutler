@@ -215,7 +215,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "202": {
-                        "description": "Accepted",
+                        "description": "Ok",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -270,7 +270,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "202": {
-                        "description": "Accepted",
+                        "description": "Ok",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -373,7 +373,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "202": {
-                        "description": "Accepted",
+                        "description": "Ok",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }

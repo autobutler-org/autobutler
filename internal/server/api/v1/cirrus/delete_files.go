@@ -1,10 +1,8 @@
 package v1_files
 
 import (
-	"fmt"
+	"errors"
 
-	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
-	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
@@ -19,7 +17,7 @@ import (
 // @Param rootDir query string false "Root directory"
 // @Param filePaths query []string true "Array of file paths to delete"
 // @Param serial query string false "Device serial number to filter by"
-// @Success 202 {object} serverutil.Response "Accepted"
+// @Success 202 {object} serverutil.Response "Ok"
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /cirrus [delete]
@@ -28,17 +26,19 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 	filePaths := c.QueryArray("filePaths")
 	serial := c.Query("serial")
 
-	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
-	if !ok {
-		return serverutil.InternalServerError(fmt.Errorf("dependencies not found in context"))
+	if len(filePaths) == 0 {
+		return serverutil.BadRequest(errors.New("filePaths query parameter is required and must contain at least one file path"))
 	}
-	channel := deps.Worker().GetDeleteFilesChannel()
-	channel <- storageutil.DeleteFilesParams{
+
+	if _, err := storageutil.DeleteFiles(storageutil.DeleteFilesParams{
 		RootDir:      rootDir,
 		FilePaths:    filePaths,
 		DeviceSerial: serial,
+	}); err != nil {
+		return serverutil.InternalServerError(err)
 	}
-	return serverutil.Accepted()
+
+	return serverutil.Ok()
 }
 
 var deleteFilesRoute = serverutil.ApiRoute(

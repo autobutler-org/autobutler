@@ -204,7 +204,7 @@
                 ],
                 "responses": {
                     "202": {
-                        "description": "Accepted",
+                        "description": "Ok",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -259,7 +259,7 @@
                 ],
                 "responses": {
                     "202": {
-                        "description": "Accepted",
+                        "description": "Ok",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -362,7 +362,7 @@
                 ],
                 "responses": {
                     "202": {
-                        "description": "Accepted",
+                        "description": "Ok",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
