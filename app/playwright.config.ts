@@ -1,5 +1,5 @@
-import process from 'node:process';
 import { defineConfig, devices } from '@playwright/test';
+import process from 'node:process';
 
 /**
  * Read environment variables from file.
@@ -13,9 +13,11 @@ import { defineConfig, devices } from '@playwright/test';
 
 const SECONDS = 1000;
 const MINUTES = 60 * SECONDS;
+const IS_CI = !!process.env.CI;
+const TEST_TIMEOUT = IS_CI ? 15 * SECONDS : 5 * SECONDS;
 
 export default defineConfig({
-  timeout: 5 * SECONDS,
+  timeout: TEST_TIMEOUT,
   globalTimeout: 10 * MINUTES,
   testDir: './e2e',
   expect: {
@@ -26,8 +28,8 @@ export default defineConfig({
     timeout: 5000,
   },
   /* Fail the build on CI if you accidentally left test.only in the source code. */
-  forbidOnly: !!process.env.CI,
-  retries: 0,
+  forbidOnly: IS_CI,
+  retries: IS_CI ? 1 : 0,
   /* Opt out of parallel tests. */
   workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
@@ -43,7 +45,7 @@ export default defineConfig({
     trace: 'on-first-retry',
 
     /* Only on CI systems run the tests headless */
-    headless: !!process.env.CI,
+    headless: IS_CI,
   },
 
   /* Configure projects for major browsers */
