@@ -1,10 +1,6 @@
 package v1_files
 
 import (
-	"fmt"
-
-	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
-	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
@@ -25,7 +21,7 @@ type moveFileRequest struct {
 // @Accept json
 // @Produce json
 // @Param body body moveFileRequest true "Move file request"
-// @Success 202 {object} serverutil.Response "Accepted"
+// @Success 202 {object} serverutil.Response "Ok"
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /cirrus [put]
@@ -35,18 +31,16 @@ func moveFile(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(err)
 	}
 
-	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
-	if !ok {
-		return serverutil.InternalServerError(fmt.Errorf("dependencies not found in context"))
-	}
-	channel := deps.Worker().GetMoveFileChannel()
-	channel <- storageutil.MoveFileParams{
+	if _, err := storageutil.MoveFile(storageutil.MoveFileParams{
 		OldFilePath:     req.OldFilePath,
 		NewFilePath:     req.NewFilePath,
 		OldDeviceSerial: req.OldDeviceSerial,
 		NewDeviceSerial: req.NewDeviceSerial,
+	}); err != nil {
+		return serverutil.InternalServerError(err)
 	}
-	return serverutil.Accepted()
+
+	return serverutil.Ok()
 }
 
 var moveFileRoute = serverutil.ApiRoute(

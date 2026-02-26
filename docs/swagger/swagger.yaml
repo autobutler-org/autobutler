@@ -261,7 +261,7 @@ paths:
       - application/json
       responses:
         "202":
-          description: Accepted
+          description: Ok
           schema:
             $ref: '#/definitions/serverutil.Response'
         "400":
@@ -319,7 +319,7 @@ paths:
       - application/json
       responses:
         "202":
-          description: Accepted
+          description: Ok
           schema:
             $ref: '#/definitions/serverutil.Response'
         "400":
@@ -388,7 +388,7 @@ paths:
       - application/json
       responses:
         "202":
-          description: Accepted
+          description: Ok
           schema:
             $ref: '#/definitions/serverutil.Response'
         "400":

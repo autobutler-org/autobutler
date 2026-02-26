@@ -1,17 +1,15 @@
 package v1_files
 
 import (
-	"fmt"
+	"errors"
 
-	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
-	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
 	"github.com/gin-gonic/gin"
 )
 
-// createCirrusFolder godoc
+// newFolder godoc
 // @Summary Create a new folder
 // @Description Enqueue create-folder operation under the given folder directory
 // @Tags cirrus
@@ -20,7 +18,7 @@ import (
 // @Param folderDir path string true "Folder directory"
 // @Param folderName formData string true "Name of the new folder"
 // @Param serial query string false "Device serial number to create folder on"
-// @Success 202 {object} serverutil.Response "Accepted"
+// @Success 202 {object} serverutil.Response "Ok"
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /cirrus/folder/{folderDir} [post]
@@ -29,17 +27,22 @@ func newFolder(c *gin.Context) *serverutil.Response {
 	folderName := c.PostForm("folderName")
 	serial := c.Query("serial")
 
-	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
-	if !ok {
-		return serverutil.InternalServerError(fmt.Errorf("dependencies not found in context"))
+	if folderDir == "" {
+		return serverutil.BadRequest(errors.New("folderDir is required"))
 	}
-	channel := deps.Worker().GetCreateFolderChannel()
-	channel <- storageutil.CreateFolderParams{
+	if folderName == "" {
+		return serverutil.BadRequest(errors.New("folderName is required"))
+	}
+
+	if _, err := storageutil.CreateFolder(storageutil.CreateFolderParams{
 		FolderDir:    folderDir,
 		FolderName:   folderName,
 		DeviceSerial: serial,
+	}); err != nil {
+		return serverutil.InternalServerError(err)
 	}
-	return serverutil.Accepted()
+
+	return serverutil.Ok()
 }
 
 var newFolderRoute = serverutil.ApiRoute(
