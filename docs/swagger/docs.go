@@ -393,6 +393,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/cirrus/search": {
+            "get": {
+                "description": "searches for a file across all managed devices for the given search term. If deviceSerial is empty, search across all devices. Otherwise, only for the specified device",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cirrus"
+                ],
+                "summary": "Searches for files",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search term to find",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device serial number to filter by",
+                        "name": "serial",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1_files.FileNodeJSON"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/cirrus/upload": {
             "post": {
                 "description": "Upload one or more files via multipart/form-data",
@@ -1080,6 +1123,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "deviceSerial": {
+                    "type": "string"
+                },
+                "dirPath": {
+                    "description": "Directory path containing the file, for easier client-side handling",
                     "type": "string"
                 },
                 "fullPath": {

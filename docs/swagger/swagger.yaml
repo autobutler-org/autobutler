@@ -68,6 +68,9 @@ definitions:
         type: string
       deviceSerial:
         type: string
+      dirPath:
+        description: Directory path containing the file, for easier client-side handling
+        type: string
       fullPath:
         type: string
       isDir:
@@ -400,6 +403,36 @@ paths:
           schema:
             $ref: '#/definitions/serverutil.Response'
       summary: Create a new folder
+      tags:
+      - cirrus
+  /cirrus/search:
+    get:
+      description: searches for a file across all managed devices for the given search
+        term. If deviceSerial is empty, search across all devices. Otherwise, only
+        for the specified device
+      parameters:
+      - description: Search term to find
+        in: query
+        name: search
+        type: string
+      - description: Device serial number to filter by
+        in: query
+        name: serial
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1_files.FileNodeJSON'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Searches for files
       tags:
       - cirrus
   /cirrus/upload:
