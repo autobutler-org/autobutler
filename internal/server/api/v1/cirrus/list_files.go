@@ -18,8 +18,54 @@ type FileNodeJSON struct {
 	IsDir        bool   `json:"isDir"`
 	DeviceName   string `json:"deviceName"`
 	DevicePath   string `json:"devicePath"`
+	DirPath      string `json:"dirPath"` // Directory path containing the file, for easier client-side handling
 	FullPath     string `json:"fullPath"`
 	DeviceSerial string `json:"deviceSerial"`
+}
+
+func listFilesImpl(rootDir string, devices []storageutil.ManagedDevice) ([]FileNodeJSON, error) {
+	var allFiles []*storageutil.DeviceFileInfo
+	for _, device := range devices {
+		cirrusDir := device.CirrusDir
+		fullPathDir := filepath.Join(cirrusDir, rootDir)
+		deviceSerial := DefaultDeviceSerial
+		if device.UsbInfo != nil {
+			deviceSerial = device.UsbInfo.GetSerial()
+		}
+		files, err := storageutil.StatFilesInDir(fullPathDir, device.Name, device.DataDir, deviceSerial)
+		if err != nil {
+			continue
+		}
+		allFiles = append(allFiles, files...)
+	}
+	// Only deduplicate folders (isDir), show all files across all devices
+	seenFolders := make(map[string]bool)
+	filteredFiles := make([]*storageutil.DeviceFileInfo, 0, len(allFiles))
+	for _, file := range allFiles {
+		name := file.FileInfo.Name()
+		if file.IsDir() {
+			if seenFolders[name] {
+				continue
+			}
+			seenFolders[name] = true
+		}
+		filteredFiles = append(filteredFiles, file)
+	}
+	allFiles = filteredFiles
+	result := make([]FileNodeJSON, len(allFiles))
+	for i, file := range allFiles {
+		result[i] = FileNodeJSON{
+			Name:         file.Name(),
+			Size:         file.Size(),
+			IsDir:        file.IsDir(),
+			DeviceName:   file.DeviceName,
+			DevicePath:   file.DevicePath,
+			DirPath:      filepath.Join(rootDir, file.Name()),
+			FullPath:     file.FullPath,
+			DeviceSerial: file.DeviceSerial,
+		}
+	}
+	return result, nil
 }
 
 // listFiles godoc
@@ -66,46 +112,9 @@ func listFiles(c *gin.Context) *serverutil.Response {
 			return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData([]FileNodeJSON{})
 		}
 	}
-	var allFiles []*storageutil.DeviceFileInfo
-	for _, device := range selectedDevices {
-		cirrusDir := device.CirrusDir
-		fullPathDir := filepath.Join(cirrusDir, rootDir)
-		deviceSerial := DefaultDeviceSerial
-		if device.UsbInfo != nil {
-			deviceSerial = device.UsbInfo.GetSerial()
-		}
-		files, err := storageutil.StatFilesInDir(fullPathDir, device.Name, device.DataDir, deviceSerial)
-		if err != nil {
-			continue
-		}
-		allFiles = append(allFiles, files...)
-	}
-	// Only deduplicate folders (isDir), show all files across all devices
-	seenFolders := make(map[string]bool)
-	filteredFiles := make([]*storageutil.DeviceFileInfo, 0, len(allFiles))
-	for _, file := range allFiles {
-		name := file.FileInfo.Name()
-		if file.IsDir() {
-			if seenFolders[name] {
-				continue
-			}
-			seenFolders[name] = true
-		}
-		filteredFiles = append(filteredFiles, file)
-	}
-	allFiles = filteredFiles
-	// Convert to JSON-serializable format
-	jsonData := make([]FileNodeJSON, len(allFiles))
-	for i, file := range allFiles {
-		jsonData[i] = FileNodeJSON{
-			Name:         file.Name(),
-			Size:         file.Size(),
-			IsDir:        file.IsDir(),
-			DeviceName:   file.DeviceName,
-			DevicePath:   file.DevicePath,
-			FullPath:     file.FullPath,
-			DeviceSerial: file.DeviceSerial,
-		}
+	jsonData, err := listFilesImpl(rootDir, selectedDevices)
+	if err != nil {
+		return serverutil.InternalServerError(err)
 	}
 	return serverutil.Ok().WithData(jsonData)
 }
