@@ -9,6 +9,7 @@ class FileBrowserView extends StatelessWidget {
     required this.onFileMenuAction,
     required this.onOpenDirectory,
     required this.isGridView,
+    this.showFileSizeAndMenu = true,
     this.isSearchMode = false,
     this.onNavigateToFolder,
     super.key,
@@ -18,6 +19,7 @@ class FileBrowserView extends StatelessWidget {
   final Future<void> Function(CirrusFileNode, FileMenuAction) onFileMenuAction;
   final void Function(CirrusFileNode) onOpenDirectory;
   final bool isGridView;
+  final bool showFileSizeAndMenu;
   final bool isSearchMode;
   final void Function(CirrusFileNode)? onNavigateToFolder;
 
@@ -88,49 +90,52 @@ class FileBrowserView extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Flexible(
-                              child: Text(
-                                _formatSize(item.size, item.isDir),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                            if (showFileSizeAndMenu)
+                              Flexible(
+                                child: Text(
+                                  _formatSize(item.size, item.isDir),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                            ),
-                            PopupMenuButton<FileMenuAction>(
-                              icon: const Icon(Icons.more_vert),
-                              itemBuilder: (context) => [
-                                PopupMenuItem<FileMenuAction>(
-                                  value: FileMenuAction.download,
-                                  onTap: () => _dispatchMenuAction(
-                                    item,
-                                    FileMenuAction.download,
-                                  ),
-                                  child: Text('Download'),
-                                ),
-                                PopupMenuItem<FileMenuAction>(
-                                  value: FileMenuAction.moveRename,
-                                  onTap: () => _dispatchMenuAction(
-                                    item,
-                                    FileMenuAction.moveRename,
-                                  ),
-                                  child: Text('Move/Rename'),
-                                ),
-                                PopupMenuItem<FileMenuAction>(
-                                  value: FileMenuAction.delete,
-                                  onTap: () => _dispatchMenuAction(
-                                    item,
-                                    FileMenuAction.delete,
-                                  ),
-                                  child: Text('Delete'),
-                                ),
-                                if (isSearchMode && onNavigateToFolder != null)
+                            if (showFileSizeAndMenu)
+                              PopupMenuButton<FileMenuAction>(
+                                icon: const Icon(Icons.more_vert),
+                                itemBuilder: (context) => [
                                   PopupMenuItem<FileMenuAction>(
-                                    // Reuse an existing enum value; action is handled via onNavigateToFolder
                                     value: FileMenuAction.download,
-                                    onTap: () => onNavigateToFolder!(item),
-                                    child: Text('Navigate to folder'),
+                                    onTap: () => _dispatchMenuAction(
+                                      item,
+                                      FileMenuAction.download,
+                                    ),
+                                    child: Text('Download'),
                                   ),
-                              ],
-                            ),
+                                  PopupMenuItem<FileMenuAction>(
+                                    value: FileMenuAction.moveRename,
+                                    onTap: () => _dispatchMenuAction(
+                                      item,
+                                      FileMenuAction.moveRename,
+                                    ),
+                                    child: Text('Move/Rename'),
+                                  ),
+                                  PopupMenuItem<FileMenuAction>(
+                                    value: FileMenuAction.delete,
+                                    onTap: () => _dispatchMenuAction(
+                                      item,
+                                      FileMenuAction.delete,
+                                    ),
+                                    child: Text('Delete'),
+                                  ),
+                                  if (isSearchMode &&
+                                      onNavigateToFolder != null)
+                                    PopupMenuItem<FileMenuAction>(
+                                      // Reuse an existing enum value; action is handled via onNavigateToFolder
+                                      value: FileMenuAction.download,
+                                      onTap: () => onNavigateToFolder!(item),
+                                      child: Text('Navigate to folder'),
+                                    ),
+                                ],
+                              ),
                           ],
                         ),
                       ],
@@ -150,71 +155,83 @@ class FileBrowserView extends StatelessWidget {
           ),
           itemBuilder: (context, index) {
             final item = files[index];
-            return ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 2,
+            return Material(
+              color: Colors.transparent,
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 2,
+                ),
+                leading: Icon(_iconForNode(item)),
+                title: Row(
+                  children: [
+                    Expanded(
+                      flex: 5,
+                      child: Text(
+                        item.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        item.deviceName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (showFileSizeAndMenu)
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          _formatSize(item.size, item.isDir),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                ),
+                trailing: showFileSizeAndMenu
+                    ? PopupMenuButton<FileMenuAction>(
+                        icon: const Icon(Icons.more_vert),
+                        itemBuilder: (context) => [
+                          PopupMenuItem<FileMenuAction>(
+                            value: FileMenuAction.download,
+                            onTap: () => _dispatchMenuAction(
+                              item,
+                              FileMenuAction.download,
+                            ),
+                            child: Text('Download'),
+                          ),
+                          PopupMenuItem<FileMenuAction>(
+                            value: FileMenuAction.moveRename,
+                            onTap: () => _dispatchMenuAction(
+                              item,
+                              FileMenuAction.moveRename,
+                            ),
+                            child: Text('Move/Rename'),
+                          ),
+                          PopupMenuItem<FileMenuAction>(
+                            value: FileMenuAction.delete,
+                            onTap: () => _dispatchMenuAction(
+                              item,
+                              FileMenuAction.delete,
+                            ),
+                            child: Text('Delete'),
+                          ),
+                          if (isSearchMode && onNavigateToFolder != null)
+                            PopupMenuItem<FileMenuAction>(
+                              // Reuse an existing enum value; action is handled via onNavigateToFolder
+                              value: FileMenuAction.download,
+                              onTap: () => onNavigateToFolder!(item),
+                              child: Text('Navigate to folder'),
+                            ),
+                        ],
+                      )
+                    : null,
+                onTap: () => onOpenDirectory(item),
               ),
-              leading: Icon(_iconForNode(item)),
-              title: Row(
-                children: [
-                  Expanded(
-                    flex: 5,
-                    child: Text(
-                      item.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      item.deviceName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      _formatSize(item.size, item.isDir),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              trailing: PopupMenuButton<FileMenuAction>(
-                icon: const Icon(Icons.more_vert),
-                itemBuilder: (context) => [
-                  PopupMenuItem<FileMenuAction>(
-                    value: FileMenuAction.download,
-                    onTap: () =>
-                        _dispatchMenuAction(item, FileMenuAction.download),
-                    child: Text('Download'),
-                  ),
-                  PopupMenuItem<FileMenuAction>(
-                    value: FileMenuAction.moveRename,
-                    onTap: () =>
-                        _dispatchMenuAction(item, FileMenuAction.moveRename),
-                    child: Text('Move/Rename'),
-                  ),
-                  PopupMenuItem<FileMenuAction>(
-                    value: FileMenuAction.delete,
-                    onTap: () =>
-                        _dispatchMenuAction(item, FileMenuAction.delete),
-                    child: Text('Delete'),
-                  ),
-                  if (isSearchMode && onNavigateToFolder != null)
-                    PopupMenuItem<FileMenuAction>(
-                      // Reuse an existing enum value; action is handled via onNavigateToFolder
-                      value: FileMenuAction.download,
-                      onTap: () => onNavigateToFolder!(item),
-                      child: Text('Navigate to folder'),
-                    ),
-                ],
-              ),
-              onTap: () => onOpenDirectory(item),
             );
           },
         );

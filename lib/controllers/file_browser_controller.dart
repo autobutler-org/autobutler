@@ -4,6 +4,7 @@ import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/services/file_browser_actions.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_dialog_utils.dart';
+import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:flutter/material.dart';
@@ -78,7 +79,14 @@ class FileBrowserController {
         }
         return FileMenuActionOutcome(message: downloadedMessage(node));
       case FileMenuAction.moveRename:
-        final targetInput = await promptForMoveRenamePath(context);
+        final targetInput = await promptForMoveRenamePath(
+          context,
+          startPath: currentPath,
+          initialName: node.name,
+        );
+        if (!context.mounted) {
+          return null;
+        }
         if (targetInput == null) {
           return null;
         }
@@ -90,6 +98,35 @@ class FileBrowserController {
         if (targetPath == null) {
           return null;
         }
+
+        // Prevent moving a directory into itself or its own subtree
+        if (node.isDir) {
+          final oldPath = joinPath(currentPath, trimTrailingSlashes(node.name));
+          final normalizedOld = normalizePath(oldPath);
+          final normalizedTarget = normalizePath(targetPath);
+          if (normalizedTarget == normalizedOld ||
+              normalizedTarget.startsWith('$normalizedOld/')) {
+            // show an error dialog
+            await AutobutlerWidget.showDialog<void>(
+              context,
+              useRootNavigator: true,
+              builder: (dialogContext) => AutobutlerWidget.alertDialog(
+                title: const Text('Invalid target'),
+                content: const Text(
+                  'Cannot move a folder into itself or one of its subfolders.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+            return null;
+          }
+        }
+
         await moveRenameNode(
           currentPath: currentPath,
           node: node,

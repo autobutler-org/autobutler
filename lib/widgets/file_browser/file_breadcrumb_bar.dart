@@ -35,7 +35,7 @@ class FileBreadcrumbBar extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  InkWell(
+                  GestureDetector(
                     onTap: onGoHome,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -95,7 +95,7 @@ class FileBreadcrumbBar extends StatelessWidget {
 
       final targetPath = '/${segments.take(index + 1).join('/')}';
       children.add(
-        InkWell(
+        GestureDetector(
           onTap: () => onPathSelected(targetPath),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
