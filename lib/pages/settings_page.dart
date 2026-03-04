@@ -121,6 +121,37 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.all(16),
         children: [
           const Text(
+            'Theme',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          RadioGroup<ThemeMode>(
+            groupValue: _theme,
+            onChanged: (v) async {
+              if (v == null) return;
+              await AppSettings.instance.setThemeMode(v);
+              setState(() {
+                _theme = v;
+              });
+            },
+            child: const Column(
+              children: [
+                RadioListTile<ThemeMode>(
+                  title: Text('System'),
+                  value: ThemeMode.system,
+                ),
+                RadioListTile<ThemeMode>(
+                  title: Text('Light'),
+                  value: ThemeMode.light,
+                ),
+                RadioListTile<ThemeMode>(
+                  title: Text('Dark'),
+                  value: ThemeMode.dark,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
             'Backend hosts',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
@@ -171,37 +202,6 @@ class _SettingsPageState extends State<SettingsPage> {
             onPressed: () => _addOrEditHost(),
             icon: const Icon(Icons.add),
             label: const Text('Add host'),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Theme',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          RadioGroup<ThemeMode>(
-            groupValue: _theme,
-            onChanged: (v) async {
-              if (v == null) return;
-              await AppSettings.instance.setThemeMode(v);
-              setState(() {
-                _theme = v;
-              });
-            },
-            child: const Column(
-              children: [
-                RadioListTile<ThemeMode>(
-                  title: Text('System'),
-                  value: ThemeMode.system,
-                ),
-                RadioListTile<ThemeMode>(
-                  title: Text('Light'),
-                  value: ThemeMode.light,
-                ),
-                RadioListTile<ThemeMode>(
-                  title: Text('Dark'),
-                  value: ThemeMode.dark,
-                ),
-              ],
-            ),
           ),
         ],
       ),
