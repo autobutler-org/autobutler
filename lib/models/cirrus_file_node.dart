@@ -7,6 +7,7 @@ class CirrusFileNode {
     required this.devicePath,
     required this.fullPath,
     required this.deviceSerial,
+    required this.dirPath,
   });
 
   final String name;
@@ -16,6 +17,7 @@ class CirrusFileNode {
   final String devicePath;
   final String fullPath;
   final String deviceSerial;
+  final String dirPath;
 
   factory CirrusFileNode.fromJson(Map<String, dynamic> json) {
     int parseSize(Object? value) {
@@ -53,6 +55,7 @@ class CirrusFileNode {
       devicePath: parseString(json['devicePath'] ?? json['device_path']),
       fullPath: parseString(json['fullPath'] ?? json['full_path']),
       deviceSerial: parseString(json['deviceSerial'] ?? json['device_serial']),
+      dirPath: parseString(json['dirPath'] ?? json['dir_path']),
     );
   }
 }

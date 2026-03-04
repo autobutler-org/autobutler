@@ -70,6 +70,41 @@ class CirrusService {
         .toList(growable: false);
   }
 
+  static Future<List<CirrusFileNode>> searchFiles(
+    String query, {
+    List<String>? serials,
+  }) async {
+    final serialValues =
+        serials
+            ?.map((value) => value.trim())
+            .where((value) => value.isNotEmpty)
+            .toList(growable: false) ??
+        const <String>[];
+    final querySegments = <String>[];
+    querySegments.add('search=${Uri.encodeQueryComponent(query)}');
+    for (final serial in serialValues) {
+      querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
+    }
+    final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus/search');
+    final uri = querySegments.isEmpty
+        ? endpointUri
+        : endpointUri.replace(query: querySegments.join('&'));
+    final response = await http.get(uri);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to load cirrus files (${response.statusCode})');
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is! List) {
+      throw Exception('Unexpected cirrus response format');
+    }
+
+    return decoded
+        .whereType<Map<String, dynamic>>()
+        .map(CirrusFileNode.fromJson)
+        .toList(growable: false);
+  }
+
   static Future<void> deleteFile(
     String rootDir,
     String fileName, {

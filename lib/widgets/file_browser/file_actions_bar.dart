@@ -7,6 +7,7 @@ class FileActionsBar extends StatelessWidget {
     required this.onUploadPressed,
     required this.onCreateFolderPressed,
     required this.onRefreshPressed,
+    required this.isSearchMode,
     super.key,
   });
 
@@ -15,9 +16,13 @@ class FileActionsBar extends StatelessWidget {
   final VoidCallback onUploadPressed;
   final VoidCallback onCreateFolderPressed;
   final VoidCallback onRefreshPressed;
+  final bool isSearchMode;
 
   @override
   Widget build(BuildContext context) {
+    if (isSearchMode) {
+      return const SizedBox.shrink();
+    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Row(

@@ -9,6 +9,8 @@ class FileBrowserView extends StatelessWidget {
     required this.onFileMenuAction,
     required this.onOpenDirectory,
     required this.isGridView,
+    this.isSearchMode = false,
+    this.onNavigateToFolder,
     super.key,
   });
 
@@ -16,6 +18,8 @@ class FileBrowserView extends StatelessWidget {
   final Future<void> Function(CirrusFileNode, FileMenuAction) onFileMenuAction;
   final void Function(CirrusFileNode) onOpenDirectory;
   final bool isGridView;
+  final bool isSearchMode;
+  final void Function(CirrusFileNode)? onNavigateToFolder;
 
   void _dispatchMenuAction(CirrusFileNode item, FileMenuAction action) {
     Future<void>.delayed(Duration.zero, () async {
@@ -118,6 +122,13 @@ class FileBrowserView extends StatelessWidget {
                                   ),
                                   child: Text('Delete'),
                                 ),
+                                if (isSearchMode && onNavigateToFolder != null)
+                                  PopupMenuItem<FileMenuAction>(
+                                    // Reuse an existing enum value; action is handled via onNavigateToFolder
+                                    value: FileMenuAction.download,
+                                    onTap: () => onNavigateToFolder!(item),
+                                    child: Text('Navigate to folder'),
+                                  ),
                               ],
                             ),
                           ],
@@ -194,6 +205,13 @@ class FileBrowserView extends StatelessWidget {
                         _dispatchMenuAction(item, FileMenuAction.delete),
                     child: Text('Delete'),
                   ),
+                  if (isSearchMode && onNavigateToFolder != null)
+                    PopupMenuItem<FileMenuAction>(
+                      // Reuse an existing enum value; action is handled via onNavigateToFolder
+                      value: FileMenuAction.download,
+                      onTap: () => onNavigateToFolder!(item),
+                      child: Text('Navigate to folder'),
+                    ),
                 ],
               ),
               onTap: () => onOpenDirectory(item),

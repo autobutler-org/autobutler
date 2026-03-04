@@ -26,6 +26,15 @@ Future<String?> promptForMoveRenamePath(BuildContext context) {
   );
 }
 
+Future<String?> promptForSearchQuery(BuildContext context) {
+  return _promptForText(
+    context: context,
+    title: 'Search files',
+    hintText: 'Search term',
+    confirmLabel: 'Search',
+  );
+}
+
 Future<bool?> confirmDelete(BuildContext context, String itemName) async {
   await Future<void>.delayed(Duration.zero);
   if (!context.mounted) {

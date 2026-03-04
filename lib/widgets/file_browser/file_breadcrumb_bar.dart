@@ -6,6 +6,7 @@ class FileBreadcrumbBar extends StatelessWidget {
     required this.onGoHome,
     required this.onGoUp,
     required this.onPathSelected,
+    required this.isSearchMode,
     super.key,
   });
 
@@ -13,9 +14,13 @@ class FileBreadcrumbBar extends StatelessWidget {
   final VoidCallback onGoHome;
   final VoidCallback onGoUp;
   final ValueChanged<String> onPathSelected;
+  final bool isSearchMode;
 
   @override
   Widget build(BuildContext context) {
+    if (isSearchMode) {
+      return const SizedBox.shrink();
+    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Row(

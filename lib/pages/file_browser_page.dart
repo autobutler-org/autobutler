@@ -5,6 +5,9 @@ import 'package:autobutler/widgets/file_browser/file_actions_bar.dart';
 import 'package:autobutler/widgets/file_browser/file_breadcrumb_bar.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
+
+import 'package:autobutler/utils/file_browser_dialog_utils.dart';
+import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/pages/settings_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:flutter/material.dart';
@@ -26,6 +29,11 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
   bool _isUploading = false;
   bool _isCreatingFolder = false;
   bool _noHostSelected = false;
+
+  // Search state
+  bool _isSearchMode = false;
+  Future<List<CirrusFileNode>>? _searchFuture;
+  String? _searchQuery;
 
   @override
   void initState() {
@@ -212,6 +220,30 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     );
   }
 
+  Future<void> _handleSearchPressed() async {
+    final query = await promptForSearchQuery(context);
+    if (query == null) {
+      return;
+    }
+
+    setState(() {
+      _isSearchMode = true;
+      _searchFuture = CirrusService.searchFiles(query);
+      _searchQuery = query;
+    });
+  }
+
+  void _navigateToFolder(CirrusFileNode node) {
+    // Use the node's fullPath to determine the containing folder and switch to it
+    final parent = parentPath(node.dirPath);
+    _setPath(parent);
+    setState(() {
+      _isSearchMode = false;
+      _searchFuture = null;
+      _searchQuery = null;
+    });
+  }
+
   void _goUpOneLevel() {
     if (_currentPath.isEmpty) {
       return;
@@ -244,7 +276,10 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
       appBar: AppBar(
         title: const Text('Cirrus'),
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
+          IconButton(
+            onPressed: _handleSearchPressed,
+            icon: const Icon(Icons.search),
+          ),
           IconButton(
             onPressed: () {
               setState(() => _isGridView = !_isGridView);
@@ -269,14 +304,23 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
             onUploadPressed: _handleUploadPressed,
             onCreateFolderPressed: _handleCreateFolderPressed,
             onRefreshPressed: _refreshFileState,
+            isSearchMode: _isSearchMode,
           ),
           FileBreadcrumbBar(
             currentPath: _currentPath,
             onGoHome: () => _setPath(''),
             onGoUp: _goUpOneLevel,
             onPathSelected: _setPath,
+            isSearchMode: _isSearchMode,
           ),
-          FileBrowserHeader(isGridView: _isGridView),
+          FileBrowserHeader(
+            isGridView: _isGridView,
+            isSearchMode: _isSearchMode,
+            filesFuture: _isSearchMode
+                ? (_searchFuture ?? Future.value(const <CirrusFileNode>[]))
+                : _filesFuture,
+            searchQuery: _searchQuery,
+          ),
           Expanded(
             child: _noHostSelected
                 ? Center(
@@ -307,10 +351,15 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                     ),
                   )
                 : FileBrowserView(
-                    filesFuture: _filesFuture,
+                    filesFuture: _isSearchMode
+                        ? (_searchFuture ??
+                              Future.value(const <CirrusFileNode>[]))
+                        : _filesFuture,
                     onFileMenuAction: _handleFileMenuAction,
-                    onOpenDirectory: _openDirectory,
+                    onOpenDirectory: _isSearchMode ? (_) {} : _openDirectory,
                     isGridView: _isGridView,
+                    isSearchMode: _isSearchMode,
+                    onNavigateToFolder: _navigateToFolder,
                   ),
           ),
         ],
