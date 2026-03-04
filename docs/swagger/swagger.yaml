@@ -413,7 +413,7 @@ paths:
       parameters:
       - description: Search term to find
         in: query
-        name: search
+        name: query
         type: string
       - description: Device serial number to filter by
         in: query

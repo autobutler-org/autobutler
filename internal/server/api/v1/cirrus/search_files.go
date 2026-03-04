@@ -17,11 +17,11 @@ import (
 // @Produce json
 // @Success 200 {array} FileNodeJSON
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Param search query string false "Search term to find"
+// @Param query query string false "Search term to find"
 // @Param serial query string false "Device serial number to filter by"
 // @Router /cirrus/search [get]
 func searchFiles(c *gin.Context) *serverutil.Response {
-	search := strings.TrimSpace(c.Query("search"))
+	query := strings.TrimSpace(c.Query("query"))
 	serials := c.QueryArray("serial")
 
 	devices, err := storageutil.GetManagedDevices()
@@ -75,7 +75,7 @@ func searchFiles(c *gin.Context) *serverutil.Response {
 				continue
 			}
 
-			if search == "" || strings.Contains(strings.ToLower(entry.Name), strings.ToLower(search)) {
+			if query == "" || strings.Contains(strings.ToLower(entry.Name), strings.ToLower(query)) {
 				allFiles = append(allFiles, entry)
 			}
 		}
