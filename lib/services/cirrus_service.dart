@@ -3,17 +3,20 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:autobutler/models/cirrus_file_node.dart';
+import 'package:autobutler/services/app_settings.dart';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:http/http.dart' as http;
 
 class CirrusService {
-  static const String _apiBaseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://localhost:8080',
-  );
-
   static Uri get _apiBaseUri {
-    final uri = Uri.parse(_apiBaseUrl);
+    final configured = AppSettings.instance.activeHost;
+    final base =
+        configured ??
+        String.fromEnvironment(
+          'API_BASE_URL',
+          defaultValue: 'http://localhost:8080',
+        );
+    final uri = Uri.parse(base);
     final isLoopbackHost =
         uri.host == 'localhost' || uri.host == '127.0.0.1' || uri.host == '::1';
 

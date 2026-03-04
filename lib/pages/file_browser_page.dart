@@ -5,6 +5,8 @@ import 'package:autobutler/widgets/file_browser/file_actions_bar.dart';
 import 'package:autobutler/widgets/file_browser/file_breadcrumb_bar.dart';
 import 'package:autobutler/widgets/file_browser/file_list_header.dart';
 import 'package:autobutler/widgets/file_browser/file_list_view.dart';
+import 'package:autobutler/pages/settings_page.dart';
+import 'package:autobutler/services/app_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -22,14 +24,28 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
   String _currentPath = '';
   bool _isUploading = false;
   bool _isCreatingFolder = false;
+  bool _noHostSelected = false;
 
   @override
   void initState() {
     super.initState();
-    _reloadFiles();
+
+    // Don't attempt to load files if no host is configured; show a prompt instead.
+    _noHostSelected = AppSettings.instance.activeHost == null;
+    if (_noHostSelected) {
+      _filesFuture = Future.value(const <CirrusFileNode>[]);
+    } else {
+      _reloadFiles();
+    }
   }
 
   void _reloadFiles() {
+    _noHostSelected = AppSettings.instance.activeHost == null;
+    if (_noHostSelected) {
+      _filesFuture = Future.value(const <CirrusFileNode>[]);
+      return;
+    }
+
     _filesFuture = _controller.fetchFiles(_currentPath);
   }
 
@@ -232,6 +248,14 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
             onPressed: () {},
             icon: const Icon(Icons.grid_view_rounded),
           ),
+          IconButton(
+            onPressed: () async {
+              await Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const SettingsPage()));
+            },
+            icon: const Icon(Icons.settings),
+          ),
         ],
       ),
       body: Column(
@@ -251,11 +275,39 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
           ),
           const FileListHeader(),
           Expanded(
-            child: FileListView(
-              filesFuture: _filesFuture,
-              onFileMenuAction: _handleFileMenuAction,
-              onOpenDirectory: _openDirectory,
-            ),
+            child: _noHostSelected
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('No target host configured.'),
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: () async {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const SettingsPage(),
+                              ),
+                            );
+                            // After returning from settings, attempt to reload files if a host was added.
+                            setState(() {
+                              _noHostSelected =
+                                  AppSettings.instance.activeHost == null;
+                              if (!_noHostSelected) {
+                                _reloadFiles();
+                              }
+                            });
+                          },
+                          child: const Text('Add target host'),
+                        ),
+                      ],
+                    ),
+                  )
+                : FileListView(
+                    filesFuture: _filesFuture,
+                    onFileMenuAction: _handleFileMenuAction,
+                    onOpenDirectory: _openDirectory,
+                  ),
           ),
         ],
       ),

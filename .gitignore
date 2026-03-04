@@ -46,3 +46,4 @@ app.*.map.json
 
 # Setup artifacts
 flutter.zip
+.ralph
