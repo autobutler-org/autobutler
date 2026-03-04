@@ -407,7 +407,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Search term to find",
-                        "name": "search",
+                        "name": "query",
                         "in": "query"
                     },
                     {
