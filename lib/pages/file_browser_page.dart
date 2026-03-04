@@ -320,6 +320,14 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                 ? (_searchFuture ?? Future.value(const <CirrusFileNode>[]))
                 : _filesFuture,
             searchQuery: _searchQuery,
+            onClose: () {
+              setState(() {
+                _isSearchMode = false;
+                _searchFuture = null;
+                _searchQuery = null;
+                _reloadFiles();
+              });
+            },
           ),
           Expanded(
             child: _noHostSelected

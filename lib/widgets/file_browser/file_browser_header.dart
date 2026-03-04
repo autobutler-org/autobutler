@@ -7,6 +7,7 @@ class FileBrowserHeader extends StatelessWidget {
     required this.isSearchMode,
     this.filesFuture,
     this.searchQuery,
+    this.onClose,
     super.key,
   });
 
@@ -14,6 +15,7 @@ class FileBrowserHeader extends StatelessWidget {
   final bool isSearchMode;
   final Future<List<CirrusFileNode>>? filesFuture;
   final String? searchQuery;
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +47,11 @@ class FileBrowserHeader extends StatelessWidget {
                     "$count result${count == 1 ? '' : 's'} for '$query'",
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
+                ),
+                IconButton(
+                  onPressed: onClose,
+                  icon: const Icon(Icons.close),
+                  tooltip: 'Close search',
                 ),
               ],
             );
