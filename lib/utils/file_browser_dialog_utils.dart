@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:flutter/material.dart';
 
 Future<String?> promptForFolderName(BuildContext context) async {
@@ -32,11 +32,11 @@ Future<bool?> confirmDelete(BuildContext context, String itemName) async {
     return null;
   }
 
-  return showAdaptiveDialog<bool>(
-    context: context,
+  return AutobutlerWidget.showDialog<bool>(
+    context,
     useRootNavigator: true,
     builder: (dialogContext) {
-      return AlertDialog.adaptive(
+      return AutobutlerWidget.alertDialog(
         title: const Text('Delete'),
         content: Text('Delete $itemName?'),
         actions: [
@@ -66,79 +66,43 @@ Future<String?> _promptForText({
   }
 
   final textController = TextEditingController();
-  final platform = Theme.of(context).platform;
-  final isCupertinoPlatform =
-      platform == TargetPlatform.iOS || platform == TargetPlatform.macOS;
-
   final String? value;
   try {
-    if (isCupertinoPlatform) {
-      value = await showCupertinoDialog<String>(
-        context: context,
-        useRootNavigator: true,
-        builder: (dialogContext) {
-          return CupertinoAlertDialog(
-            title: Text(title),
-            content: Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: CupertinoTextField(
-                controller: textController,
-                autofocus: true,
-                placeholder: hintText,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) {
-                  Navigator.of(dialogContext).pop(textController.text.trim());
-                },
-              ),
-            ),
-            actions: [
-              CupertinoDialogAction(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancel'),
-              ),
-              CupertinoDialogAction(
-                isDefaultAction: true,
-                onPressed: () {
-                  Navigator.of(dialogContext).pop(textController.text.trim());
-                },
-                child: Text(confirmLabel),
-              ),
-            ],
-          );
-        },
-      );
-    } else {
-      value = await showDialog<String>(
-        context: context,
-        useRootNavigator: true,
-        builder: (dialogContext) {
-          return AlertDialog(
-            title: Text(title),
-            content: TextField(
+    value = await AutobutlerWidget.showDialog(
+      context,
+      useRootNavigator: true,
+      builder: (dialogContext) {
+        return AutobutlerWidget.alertDialog(
+          title: Text(title),
+          content: Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: AutobutlerWidget.textField(
+              context,
               controller: textController,
               autofocus: true,
-              decoration: InputDecoration(hintText: hintText),
+              hintText: hintText,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) {
                 Navigator.of(dialogContext).pop(textController.text.trim());
               },
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop(textController.text.trim());
-                },
-                child: Text(confirmLabel),
-              ),
-            ],
-          );
-        },
-      );
-    }
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              autofocus: true,
+              onPressed: () {
+                Navigator.of(dialogContext).pop(textController.text.trim());
+              },
+              child: Text(confirmLabel),
+            ),
+          ],
+        );
+      },
+    );
   } finally {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       textController.dispose();

@@ -1,3 +1,4 @@
+import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:autobutler/services/app_settings.dart';
 
@@ -36,20 +37,24 @@ class _SettingsPageState extends State<SettingsPage> {
       text: isEdit ? _hosts[idx].hostAddress : '',
     );
 
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
+    final result = await AutobutlerWidget.showDialog<bool>(
+      context,
+      builder: (context) => AutobutlerWidget.alertDialog(
         title: Text(isEdit ? 'Edit host' : 'Add host'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
+            AutobutlerWidget.textField(
+              context,
               controller: nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
+              autofocus: true,
+              hintText: 'Name',
             ),
-            TextField(
+            const SizedBox(height: 8),
+            AutobutlerWidget.textField(
+              context,
               controller: hostController,
-              decoration: const InputDecoration(labelText: 'Host address'),
+              hintText: 'http://<hostname>:<port>',
             ),
           ],
         ),
@@ -84,9 +89,9 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _removeHost(int index) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
+    final confirm = await AutobutlerWidget.showDialog(
+      context,
+      builder: (context) => AutobutlerWidget.alertDialog(
         title: const Text('Remove host'),
         content: const Text('Are you sure you want to remove this host?'),
         actions: [
