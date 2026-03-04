@@ -3,8 +3,8 @@ import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/widgets/file_browser/file_actions_bar.dart';
 import 'package:autobutler/widgets/file_browser/file_breadcrumb_bar.dart';
-import 'package:autobutler/widgets/file_browser/file_list_header.dart';
-import 'package:autobutler/widgets/file_browser/file_list_view.dart';
+import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
+import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:autobutler/pages/settings_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +22,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
 
   late Future<List<CirrusFileNode>> _filesFuture;
   String _currentPath = '';
+  bool _isGridView = false;
   bool _isUploading = false;
   bool _isCreatingFolder = false;
   bool _noHostSelected = false;
@@ -245,8 +246,10 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
         actions: [
           IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
           IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.grid_view_rounded),
+            onPressed: () {
+              setState(() => _isGridView = !_isGridView);
+            },
+            icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view_rounded),
           ),
           IconButton(
             onPressed: () async {
@@ -273,7 +276,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
             onGoUp: _goUpOneLevel,
             onPathSelected: _setPath,
           ),
-          const FileListHeader(),
+          FileBrowserHeader(isGridView: _isGridView),
           Expanded(
             child: _noHostSelected
                 ? Center(
@@ -303,10 +306,11 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                       ],
                     ),
                   )
-                : FileListView(
+                : FileBrowserView(
                     filesFuture: _filesFuture,
                     onFileMenuAction: _handleFileMenuAction,
                     onOpenDirectory: _openDirectory,
+                    isGridView: _isGridView,
                   ),
           ),
         ],

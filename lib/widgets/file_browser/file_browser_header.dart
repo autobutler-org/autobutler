@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 
-class FileListHeader extends StatelessWidget {
-  const FileListHeader({super.key});
+class FileBrowserHeader extends StatelessWidget {
+  const FileBrowserHeader({required this.isGridView, super.key});
+
+  final bool isGridView;
 
   @override
   Widget build(BuildContext context) {
+    if (isGridView) {
+      // Effectively empty
+      return const SizedBox.shrink();
+    }
     final colors = Theme.of(context).colorScheme;
 
     return Container(
