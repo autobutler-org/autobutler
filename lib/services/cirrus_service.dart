@@ -81,7 +81,7 @@ class CirrusService {
             .toList(growable: false) ??
         const <String>[];
     final querySegments = <String>[];
-    querySegments.add('search=${Uri.encodeQueryComponent(query)}');
+    querySegments.add('query=${Uri.encodeQueryComponent(query)}');
     for (final serial in serialValues) {
       querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
     }
