@@ -27,6 +27,19 @@ class CirrusService {
     return uri;
   }
 
+  static Uri constructMediaUrl(String filePath, {String? serial}) {
+    final querySegments = <String>[
+      'filePath=${Uri.encodeQueryComponent(filePath)}',
+    ];
+
+    final serialValue = serial?.trim() ?? '';
+    if (serialValue.isNotEmpty) {
+      querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
+    }
+    final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus/download');
+    return endpointUri.replace(query: querySegments.join('&'));
+  }
+
   static Future<List<CirrusFileNode>> getFiles(
     String path, {
     List<String>? serials,
@@ -215,7 +228,7 @@ class CirrusService {
     return response;
   }
 
-  static Future<String?> downloadFile(
+  static Future<String?> saveFile(
     String filePath, {
     String? serial,
     String? fileName,
@@ -237,6 +250,20 @@ class CirrusService {
       fileName: resolvedName,
     );
     return FlutterFileDialog.saveFile(params: params);
+  }
+
+  static Future<Uint8List?> downloadFileBytes(
+    String filePath, {
+    String? serial,
+    String? fileName,
+  }) async {
+    final uri = _buildDownloadUri(filePath, serial: serial);
+    final response = await http.get(uri);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to download file (${response.statusCode})');
+    }
+
+    return response.bodyBytes;
   }
 
   static Uri _buildDownloadUri(String filePath, {String? serial}) {

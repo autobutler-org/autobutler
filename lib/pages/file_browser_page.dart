@@ -12,6 +12,8 @@ import 'package:autobutler/pages/settings_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:autobutler/pages/image_viewer_page.dart';
+import 'package:autobutler/pages/video_viewer_page.dart';
 
 class FileBrowserPage extends StatefulWidget {
   const FileBrowserPage({super.key});
@@ -207,6 +209,85 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     }
   }
 
+  Future<void> _handleOpenNode(CirrusFileNode node) async {
+    if (node.isDir) {
+      _openDirectory(node);
+      return;
+    }
+
+    final lowerName = node.name.toLowerCase();
+    final viewable =
+        lowerName.endsWith('.jpg') ||
+        lowerName.endsWith('.jpeg') ||
+        lowerName.endsWith('.png') ||
+        lowerName.endsWith('.gif') ||
+        lowerName.endsWith('.webp') ||
+        lowerName.endsWith('.mp4') ||
+        lowerName.endsWith('.mov') ||
+        lowerName.endsWith('.mkv') ||
+        lowerName.endsWith('.webm') ||
+        lowerName.endsWith('.avi') ||
+        lowerName.endsWith('.mp3') ||
+        lowerName.endsWith('.wav') ||
+        lowerName.endsWith('.m4a') ||
+        lowerName.endsWith('.aac');
+    if (!viewable) {
+      return;
+    }
+
+    try {
+      final filePath = toRootDir(
+        joinPath(_currentPath, trimTrailingSlashes(node.name)),
+      );
+      // Open images in-app using ImageViewer; fallback to platform handlers for other types.
+      final lower = lowerName;
+      if (lower.endsWith('.jpg') ||
+          lower.endsWith('.jpeg') ||
+          lower.endsWith('.png') ||
+          lower.endsWith('.gif') ||
+          lower.endsWith('.webp')) {
+        final bytes = await CirrusService.downloadFileBytes(
+          filePath,
+          serial: serialOrNull(node.deviceSerial),
+          fileName: trimTrailingSlashes(node.name),
+        );
+        if (bytes == null || !mounted) {
+          return;
+        }
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ImageViewerPage(bytes: bytes, name: node.name),
+          ),
+        );
+        return;
+      }
+      if (lower.endsWith('.mp4') ||
+          lower.endsWith('.mov') ||
+          lower.endsWith('.mkv') ||
+          lower.endsWith('.webm') ||
+          lower.endsWith('.avi') ||
+          lower.endsWith('.mp3') ||
+          lower.endsWith('.wav') ||
+          lower.endsWith('.m4a') ||
+          lower.endsWith('.aac')) {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => VideoViewerPage(
+              url: CirrusService.constructMediaUrl(filePath),
+              name: node.name,
+            ),
+          ),
+        );
+        return;
+      }
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      _showMessage('Unable to open file');
+    }
+  }
+
   void _openDirectory(CirrusFileNode node) {
     if (!node.isDir) {
       return;
@@ -364,7 +445,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                               Future.value(const <CirrusFileNode>[]))
                         : _filesFuture,
                     onFileMenuAction: _handleFileMenuAction,
-                    onOpenDirectory: _isSearchMode ? (_) {} : _openDirectory,
+                    onOpenDirectory: _isSearchMode ? (_) {} : _handleOpenNode,
                     isGridView: _isGridView,
                     isSearchMode: _isSearchMode,
                     onNavigateToFolder: _navigateToFolder,

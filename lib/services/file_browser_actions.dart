@@ -25,7 +25,7 @@ Future<String?> downloadNode({
   final itemName = trimTrailingSlashes(node.name);
   final filePath = toRootDir(joinPath(currentPath, itemName));
 
-  return CirrusService.downloadFile(
+  return CirrusService.saveFile(
     filePath,
     serial: serialOrNull(node.deviceSerial),
     fileName: itemName,
