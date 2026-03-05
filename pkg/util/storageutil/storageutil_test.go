@@ -334,6 +334,35 @@ func TestDetermineFileTypeFromPath(t *testing.T) {
 	}
 }
 
+func TestVideoMIMETypeFromExtension(t *testing.T) {
+	tests := []struct {
+		extension string
+		expected  string
+	}{
+		{extension: ".mp4", expected: "video/mp4"},
+		{extension: ".m4v", expected: "video/x-m4v"},
+		{extension: ".webm", expected: "video/webm"},
+		{extension: ".ogg", expected: "video/ogg"},
+		{extension: ".avi", expected: "video/x-msvideo"},
+		{extension: ".mov", expected: "video/quicktime"},
+		{extension: "mp4", expected: "video/mp4"},
+		{extension: ".MP4", expected: "video/mp4"},
+		{extension: " .mov ", expected: "video/quicktime"},
+		{extension: ".mkv", expected: "video/x-matroska"},
+		{extension: ".unknown", expected: "application/octet-stream"},
+		{extension: "", expected: "application/octet-stream"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.extension, func(t *testing.T) {
+			result := VideoMIMETypeFromExtension(tt.extension)
+			if result != tt.expected {
+				t.Errorf("VideoMIMETypeFromExtension(%q) = %q; want %q", tt.extension, result, tt.expected)
+			}
+		})
+	}
+}
+
 func TestSizeBytesToString(t *testing.T) {
 	tests := []struct {
 		name     string
