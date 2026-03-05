@@ -132,7 +132,7 @@ build: ## Build web frontend and backend
 	$(MAKE) build/backend
 
 .PHONY: build/backend
-build/backend: internal/server/public/stub.txt generate ## Build backend
+build/backend: internal/server/public/stub.txt generate/backend ## Build backend
 	mkdir -p ./build
 	$(GO) build -o $(EXE) $(MAIN)
 
