@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/services/file_browser_actions.dart';
 import 'package:autobutler/services/cirrus_service.dart';
@@ -7,8 +5,9 @@ import 'package:autobutler/utils/file_browser_dialog_utils.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_file_dialog/flutter_file_dialog.dart';
+import 'package:http/http.dart' as http;
 
 class FileMenuActionOutcome {
   const FileMenuActionOutcome({
@@ -27,22 +26,38 @@ class FileBrowserController {
     return CirrusService.getFiles(currentPath);
   }
 
-  Future<File?> pickUploadFile() async {
-    final selectedPath = await FlutterFileDialog.pickFile(
-      params: const OpenFileDialogParams(copyFileToCacheDir: true),
-    );
-    if (selectedPath == null || selectedPath.isEmpty) {
+  Future<http.MultipartFile?> pickUploadFile() async {
+    final result = await FilePicker.platform.pickFiles(withData: true);
+    if (result == null || result.files.isEmpty) {
       return null;
     }
 
-    return File(selectedPath);
+    final selected = result.files.first;
+    final path = selected.path;
+    if (path != null && path.isNotEmpty) {
+      return http.MultipartFile.fromPath(
+        'files',
+        path,
+        filename: selected.name,
+      );
+    }
+
+    final bytes = selected.bytes;
+    if (bytes == null) {
+      return null;
+    }
+    return http.MultipartFile.fromBytes(
+      'files',
+      bytes,
+      filename: selected.name,
+    );
   }
 
   Future<void> uploadFile({
     required String currentPath,
-    required File selectedFile,
+    required http.MultipartFile selectedFile,
   }) {
-    return uploadFileToCurrentPath(
+    return uploadMultipartFileToCurrentPath(
       currentPath: currentPath,
       selectedFile: selectedFile,
     );

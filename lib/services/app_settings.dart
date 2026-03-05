@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -52,7 +51,7 @@ class AppSettings {
     // host appropriate for the running platform so developers can quickly connect.
     if (_hosts.isEmpty && kDebugMode) {
       var loopback = 'http://localhost:8080';
-      if (Platform.isAndroid) {
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
         loopback = 'http://10.0.2.2:8080';
       }
       _hosts = [HostEntry(name: 'Local', hostAddress: loopback)];

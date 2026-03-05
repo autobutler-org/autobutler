@@ -213,15 +213,16 @@ serve/backend: generate/backend ## Serve backend
 	$(GO) run $(MAIN) serve
 
 .PHONY: serve/frontend
-serve/frontend: generate/frontend ## Serve frontend
-	echo "Will run app on connected device or emulator..."
+serve/frontend: serve/frontend/web ## Serve frontend
+
+.PHONY: serve/frontend/mobile
+serve/frontend/mobile: ## Serve mobile frontend
 	flutter run
 
 .PHONY: serve/frontend/web
 serve/frontend/web: generate/frontend ## Serve web frontend
 	flutter run \
-		-d web-server \
-		--web-port 8000
+		-d web-server
 
 PRINT_COVERAGE ?= 0
 
@@ -294,9 +295,9 @@ else
 endif
 
 .PHONY: watch/frontend
-watch/frontend: ## Watch frontend for changes
-	echo 'Flutter does not have a built-in watch mode, but you can use "flutter run" to achieve a similar effect. This will run the app and allow you to reload on changes.'
-	$(MAKE) serve/frontend
+watch/frontend: ## Watch frontend on web
+	echo "Defaulting to web since it supports hot reload..."
+	$(MAKE) serve/frontend/web
 
 ##@ Code quality
 

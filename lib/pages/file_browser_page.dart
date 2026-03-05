@@ -92,7 +92,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
 
       _refreshFileState();
 
-      _showMessage('Uploaded ${selectedFile.uri.pathSegments.last}');
+      _showMessage('Uploaded ${selectedFile.filename ?? 'file'}');
     } on MissingPluginException {
       if (!mounted) {
         return;
