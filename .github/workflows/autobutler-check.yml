@@ -23,7 +23,7 @@ jobs:
         uses: ./.github/actions/setup-swag
       - name: Generate code
         run: |
-          make generate
+          make generate/backend
       - name: Check formatting
         run: |
           make check/format/go
