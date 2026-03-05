@@ -1,0 +1,70 @@
+name: Check code quality
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+defaults:
+  run:
+    shell: bash
+jobs:
+  check-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Setup go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Setup sqlc
+        uses: ./.github/actions/setup-sqlc
+      - name: Setup swag
+        uses: ./.github/actions/setup-swag
+      - name: Generate code
+        run: |
+          make generate
+      - name: Check formatting
+        run: |
+          make check/format/go
+      - name: Lint go
+        run: |
+          make check/lint/go
+      - name: Lint sqlc
+        run: |
+          make check/lint/sqlc
+      - name: Tidy
+        run: |
+          make tidy/go
+      - name: Check for uncommitted changes
+        run: |
+          if ! git diff --exit-code; then
+            echo "There are uncommitted changes after linting and generating. Please fix them before committing.";
+            exit 1;
+          fi
+
+  check-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Set up Flutter
+        uses: ./.github/actions/setup-flutter
+      - name: Generate code
+        run: |
+          make generate/frontend
+      - name: Check formatting
+        run: |
+          make check/format/flutter
+      - name: Lint
+        run: |
+          make check/lint/flutter
+      - name: Tidy
+        run: |
+          make tidy/flutter
+      - name: Check for uncommitted changes
+        run: |
+          if ! git diff --exit-code; then
+            echo "Error: Uncommitted changes found. Please commit the generated code."
+            exit 1
+          fi

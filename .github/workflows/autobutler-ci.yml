@@ -1,4 +1,4 @@
-name: Build
+name: CI
 on:
   pull_request:
     branches:
@@ -8,10 +8,8 @@ defaults:
   run:
     shell: bash
 jobs:
-  autobutler-build:
+  autobutler-ci-backend:
     runs-on: ubuntu-latest
-    outputs:
-      run-id: ${{ github.run_id }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -23,16 +21,9 @@ jobs:
         uses: ./.github/actions/setup-sqlc
       - name: Setup swag
         uses: ./.github/actions/setup-swag
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: .nvmrc
-      - name: Install Node dependencies
-        run: |
-          npm ci --prefix ./app
       - name: Build
         run: |
-          make build
+          make build/backend
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -50,11 +41,21 @@ jobs:
           GOARCH: arm64
         run: |
           make build/backend
-  autobutler-build-test:
-    uses: ./.github/workflows/autobutler-test.yml
-    needs:
-      - autobutler-build
-    with:
-      is-remote: false
-      run-id: ${{ needs.autobutler-build.outputs.run-id }}
-
+      - name: Run unit tests
+        env:
+          PRINT_COVERAGE: true
+        run: |
+          make test/unit/backend
+  autobutler-ci-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
+      - name: Build Android
+        run: |
+          make build/frontend/android
+      - name: Run unit tests
+        run: |
+          make test/unit/frontend

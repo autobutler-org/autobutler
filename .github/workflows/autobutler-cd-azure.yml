@@ -1,8 +1,5 @@
 name: Deploy to Azure
 on:
-  push:
-    branches:
-      - main
   pull_request:
     types:
       - labeled

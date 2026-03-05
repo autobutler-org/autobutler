@@ -59,11 +59,10 @@ AutoButler is built as a full-stack web application designed to run on dedicated
 
 #### Backend
 
-- **Go 1.24+** - High-performance, compiled backend server
+- **Go+** - High-performance, compiled backend server
 - **Gin Web Framework** - Fast HTTP routing and middleware
 - **SQLite** (modernc.org/sqlite) - Embedded database for local data storage
 - **golang-migrate** - Database schema migrations
-- **templ** - Type-safe HTML templating for Go
 
 #### Frontend
 
@@ -112,7 +111,7 @@ AutoButler is built as a full-stack web application designed to run on dedicated
    make setup
    ```
 
-3. **Generate code** (templ templates, database code, etc.)
+3. **Generate code**
 
    ```bash
    make generate

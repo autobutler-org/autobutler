@@ -4,47 +4,12 @@
 
 - Respect the linting and formatting conventions of the various linting and formatting configurations and tools being used.
 
-## Vue SFC layout
-
-Always order the sections of a Vue Single File Component (SFC) as follows:
-
-1. `<template>` block
-2. `<script lang="ts" setup>` block
-3. `<style lang="scss">` block, adding `scoped` if styles are component-scoped
-
-## No-scroll page layout principle
-
-- **The page body/viewport should NEVER scroll.** Page scrolling creates a poor user experience.
-- Pages should use viewport-constrained layouts (e.g., `height: 100vh`, `overflow: hidden` on main containers).
-- When content needs to scroll, it should be within an **explicit, contained scrollable region** (e.g., a table tbody, a content area, a modal body).
-- Use flexbox layouts with `flex: 1` and `min-height: 0` to create flexible containers that fit within the viewport.
-- Example pattern:
-  ```css
-  .page-container {
-  	height: 100vh;
-  	display: flex;
-  	flex-direction: column;
-  	overflow: hidden;
-  }
-  .scrollable-content {
-  	flex: 1;
-  	overflow-y: auto;
-  	min-height: 0;
-  }
-  ```
-
 ## Backend development assumptions
 
 - Assume the developer is running the backend via `make watch` and that it will auto-reload on code changes.
 - Never run the `make generate` target. Just assume the code is generated automatically as a part of `make watch`.
 - Never attempt to start, stop, or restart the backend server yourself.
 - Focus on code changes only; the running server will pick them up automatically.
-
-## Mock UI Elements
-
-- When generating mock UI elements for testing or demonstration purposes, ensure they are clearly marked as mock components.
-- To mark a UI element as mock, use the `mock_badge` component.
-- If most of a page is a mock, use the `mock_banner` component.
 
 ## API endpoint architecture
 

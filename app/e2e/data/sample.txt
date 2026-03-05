@@ -1,7 +1,0 @@
-This is a sample text file for testing file uploads.
-
-It contains multiple lines of text to ensure the file has some content.
-
-Test timestamp: 2025-11-12
-File type: Plain text
-Purpose: E2E testing

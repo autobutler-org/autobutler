@@ -29,7 +29,7 @@ UNAME_S := $(shell uname -s)
 FLUTTER_VERSION=$(shell grep -Eo 'flutter: (.+)' pubspec.yaml | sed -E 's/^flutter: (.+)$$/\1/')
 
 .PHONY: clean
-clean: clean/go clean/flutter clean/tests ## Clean all build and test artifacts
+clean: clean/go clean/flutter ## Clean all build and test artifacts
 
 .PHONY: clean/go
 clean/go: ## Clean Go build artifacts
@@ -38,11 +38,6 @@ clean/go: ## Clean Go build artifacts
 .PHONY: clean/flutter
 clean/flutter: ## Clean flutter project
 	flutter clean
-
-.PHONY: clean/tests
-clean/tests:
-	rm -rf playwright-report/
-	rm -rf test-results/
 
 .PHONY: setup
 setup: setup/gotools setup/air setup/sqlc setup/swag setup/flutter ## Setup development environment
@@ -286,13 +281,13 @@ ifeq ($(AS_ROOT), 1)
 		--build.cmd "sudo $(MAKE) build/backend" \
 		--build.entrypoint "$(EXE)" \
 		--build.args_bin "serve" \
-		--build.exclude_dir "app,build,cd,datalinks,docs,internal/db,node_modules,playwright-report,scripts,sql,test-results"
+		--build.exclude_dir ".dart_tool,.idea,.ralph,app,build,cd,datalinks,docs,internal/db,scripts,sql"
 else
 	$(AIR) \
 		--build.cmd "$(MAKE) build/backend" \
 		--build.entrypoint "$(EXE)" \
 		--build.args_bin "serve" \
-		--build.exclude_dir "app,build,cd,datalinks,docs,internal/db,node_modules,playwright-report,scripts,sql,test-results"
+		--build.exclude_dir ".dart_tool,.idea,.ralph,app,build,cd,datalinks,docs,internal/db,scripts,sql"
 endif
 
 .PHONY: watch/frontend
@@ -304,6 +299,12 @@ watch/frontend: ## Watch frontend for changes
 
 .PHONY: check
 check: check/format check/lint ## Check code
+
+.PHONY: check/backend
+check/backend: check/format/go check/lint/go check/lint/sqlc ## Check backend code
+
+.PHONY: check/frontend
+check/frontend: check/format/flutter check/lint/flutter ## Check frontend code
 
 .PHONY: check/flutter
 check/flutter: check/format/flutter check/lint/flutter ## Check Flutter/Dart code
