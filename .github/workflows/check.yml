@@ -1,0 +1,32 @@
+name: Check code quality
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+defaults:
+  run:
+    shell: bash
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Set up Flutter
+        uses: ./.github/actions/setup-flutter
+      - name: Check formatting
+        run: |
+          make check/format/dart
+      - name: Lint
+        run: |
+          make check/lint/dart
+      - name: Generate code
+        run: |
+          make generate
+      - name: Check for uncommitted changes
+        run: |
+          if ! git diff --exit-code; then
+            echo "Error: Uncommitted changes found. Please commit the generated code."
+            exit 1
+          fi

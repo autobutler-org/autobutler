@@ -67,15 +67,11 @@ AutoButler is built as a full-stack web application designed to run on dedicated
 
 #### Frontend
 
-- **Vanilla JavaScript** - No heavy frameworks, just fast, clean JS
-- **Tailwind CSS** - Utility-first CSS framework
-- **Flowbite Icons** - Beautiful SVG icon library
-
-#### Testing & Quality
-
-- **Playwright** - End-to-end testing framework
-- **ESLint & Prettier** - Code quality and formatting
-- **Go standard testing** - Unit and integration tests
+- **Flutter** - A cross-platform UI framework from Google
+  - [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
+  - [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+  - [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+  - [Flutter Documentation](https://docs.flutter.dev/)
 
 #### Observability
 
@@ -84,31 +80,9 @@ AutoButler is built as a full-stack web application designed to run on dedicated
 
 ### Key Features Implemented
 
-- **Document Management** - View and organize documents (DOCX support with custom parser)
 - **Photo Library** - Browse, organize, and automatically backup photos with EXIF data support
 - **File Storage** - Cross-platform device detection and file browsing
 - **Device Management** - Track and manage connected storage devices
-- **Health Monitoring** - System health checks and status reporting
-
-### Architecture
-
-```plaintext
-autobutler/
-├── cmd/autobutler/          # CLI entry points (serve, install, version)
-├── internal/
-│   ├── server/              # HTTP server, routes, middleware
-│   │   ├── api/v1/          # REST API endpoints
-│   │   ├── ui/              # HTML UI handlers and components
-│   │   └── public/          # Static assets (CSS, JS, images)
-│   └── install/             # Installation and service management
-├── pkg/
-│   ├── calendar/            # Calendar domain logic
-│   ├── db/                  # Database layer with sqlc-generated code
-│   ├── storage/             # Cross-platform storage detection
-│   └── util/                # Shared utilities
-├── sql/queries/             # SQL queries for code generation
-└── tests/e2e/               # End-to-end Playwright tests
-```
 
 ---
 
@@ -116,9 +90,9 @@ autobutler/
 
 ### Prerequisites
 
-- **Go 1.24+** - [Install Go](https://golang.org/doc/install)
+- **Go+** - [Install Go](https://golang.org/doc/install)
 - **Make** - Build automation
-- **Node.js & npm** - For frontend tooling and tests
+- **Flutter** - For frontend tooling and tests
 - **air** - Hot reloading tool
 - **sqlc** - SQL code generator (for database layer development)
 - **swag** - Generator for Swagger documentation
@@ -152,17 +126,19 @@ autobutler/
 
 ### Development
 
-#### Run the frontend and backend with hot-reloading
+#### Run the backend with hot-reloading
 
 ```bash
-make watch
+make watch/backend
 ```
 
-#### Run the frontend and backend (production mode)
+#### Run the frontend
 
 ```bash
-make serve
+make serve/frontend
 ```
+
+Reloading in Flutter is managed by the developer, with keystrokes in the executing terminal
 
 #### Access the Swagger UI
 
@@ -174,34 +150,28 @@ Go to [`http://localhost:8080/swagger`](http://localhost:8080/swagger)
 must run the backend as root to perform these operations. The Makefile supports this with the `AS_ROOT=1` environment variable:
 
 ```bash
-make watch/backend AS_ROOT=1
+make serve/backend AS_ROOT=1
 ```
 
 or
 
 ```bash
-make serve/backend AS_ROOT=1
+make watch/backend AS_ROOT=1
 ```
 
 This ensures the backend process has the necessary permissions to execute mount and unmount commands. Without root, device
 mounting and unmounting will fail with permission errors.
 
-#### Run end-to-end tests
+#### Lint code
 
 ```bash
-npm run test/e2e
+make check
 ```
 
-#### View test reports
+#### Format code
 
 ```bash
-npm run test/e2e/report
-```
-
-#### Format and lint code
-
-```bash
-make format        # Format all code
+make format
 ```
 
 #### Project Commands
@@ -228,7 +198,7 @@ Before contributing, please:
 
 ### Quick Contributing Tips
 
-- **Code Style**: Follow existing conventions; use `make fmt` before committing
+- **Code Style**: Follow existing conventions; use `make check` before committing
 - **Commit Messages**: Clear, concise, under 80 characters
 - **Pull Requests**: One focused change per PR
 - **Testing**: Add tests for new features; ensure existing tests pass
@@ -268,5 +238,3 @@ The future is about the people of the internet, not the corporations. We stand f
 
 Instead of renting your device and storage, you own your own private cloud. Pay for fixes or upgrades... or do them yourself.
 It's yours to manage as you please.
-
-Stop renting your digital life. **Start owning it.**

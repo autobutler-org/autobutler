@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug server",
+      "name": "Debug: backend",
       "type": "go",
       "request": "launch",
       "mode": "debug",
@@ -16,14 +16,10 @@
       "envFile": "${workspaceFolder}/.env",
     },
     {
-      "name": "Debug lsusb",
-      "type": "go",
+      "name": "Debug: frontend",
+      "type": "dart",
       "request": "launch",
-      "mode": "debug",
-      "program": "${workspaceFolder}/cmd/lsusb/main.go",
-      "args": [
-        "-storage",
-      ]
-    },
+      "program": "lib/main.dart"
+    }
   ]
 }

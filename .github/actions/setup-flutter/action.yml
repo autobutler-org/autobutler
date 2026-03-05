@@ -1,0 +1,9 @@
+name: Setup flutter
+runs:
+  using: composite
+  steps:
+    - name: Install flutter SDK
+      uses: subosito/flutter-action@v2
+      with:
+        channel: stable
+        flutter-version-file: pubspec.yaml
