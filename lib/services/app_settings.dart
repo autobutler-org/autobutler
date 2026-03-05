@@ -49,14 +49,21 @@ class AppSettings {
 
     // If no hosts configured and running in debug (local development), add a local loopback
     // host appropriate for the running platform so developers can quickly connect.
-    if (_hosts.isEmpty && kDebugMode) {
-      var loopback = 'http://localhost:8080';
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-        loopback = 'http://10.0.2.2:8080';
+    if (_hosts.isEmpty) {
+      if (kDebugMode) {
+        var loopback = 'http://localhost:8080';
+        if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+          loopback = 'http://10.0.2.2:8080';
+        }
+        _hosts = [HostEntry(name: 'Local', hostAddress: loopback)];
+        _activeIndex = 0;
+        await _saveHosts();
+      } else {
+        // Otherwise, add an default that targets the URL it is  hosted on
+        _hosts = [HostEntry(name: 'Default', hostAddress: '/')];
+        _activeIndex = 0;
+        await _saveHosts();
       }
-      _hosts = [HostEntry(name: 'Local', hostAddress: loopback)];
-      _activeIndex = 0;
-      await _saveHosts();
     }
   }
 
