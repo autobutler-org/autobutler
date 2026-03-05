@@ -226,8 +226,7 @@ test: test/unit
 test/unit: test/unit/backend test/unit/frontend ## Run unit tests
 
 .PHONY: test/unit/backend
-test/unit/backend: ## Run unit tests for backend
-	$(MAKE) _ensure/public
+test/unit/backend: internal/server/public/stub.txt ## Run unit tests for backend
 	# Generate coverage report for unit tests
 	$(GO) test -v ./... \
 		-coverprofile=coverage.out \
