@@ -376,7 +376,9 @@ class CirrusService {
     final endpointUri = _apiBaseUri.resolve('/api/v1/version');
     final response = await http.get(endpointUri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to get installed version (${response.statusCode})');
+      throw Exception(
+        'Failed to get installed version (${response.statusCode})',
+      );
     }
     final decoded = jsonDecode(response.body);
     if (decoded is! Map) {
@@ -385,18 +387,25 @@ class CirrusService {
     return Map<String, dynamic>.from(decoded);
   }
 
-  static Future<List<Map<String, dynamic>>> listAvailableVersions({bool all = false}) async {
+  static Future<List<Map<String, dynamic>>> listAvailableVersions({
+    bool all = false,
+  }) async {
     final endpointUri = _apiBaseUri.resolve('/api/v1/version/available');
     final uri = all ? endpointUri.replace(query: 'all=true') : endpointUri;
     final response = await http.get(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to list available versions (${response.statusCode})');
+      throw Exception(
+        'Failed to list available versions (${response.statusCode})',
+      );
     }
     final decoded = jsonDecode(response.body);
     if (decoded is! List) {
       throw Exception('Unexpected available versions response format');
     }
-    return decoded.whereType<Map<String, dynamic>>().map(Map<String, dynamic>.from).toList(growable: false);
+    return decoded
+        .whereType<Map<String, dynamic>>()
+        .map(Map<String, dynamic>.from)
+        .toList(growable: false);
   }
 
   static Future<void> updateToVersion(String version) async {
@@ -408,8 +417,9 @@ class CirrusService {
       body: body,
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to perform update (${response.statusCode}): ${response.body}');
+      throw Exception(
+        'Failed to perform update (${response.statusCode}): ${response.body}',
+      );
     }
   }
 }
-
