@@ -32,6 +32,8 @@ jobs:
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
       - name: Build frontend [web]
+        env:
+          FLUTTER_BUILD_MODE: release
         run: |
           make build/frontend/web
       - name: Run GoReleaser
