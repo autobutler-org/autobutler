@@ -1,11 +1,12 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
-import 'package:autobutler/services/file_browser_actions.dart';
 import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/utils/file_browser_dialog_utils.dart';
+import 'package:autobutler/services/file_browser_actions.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
+import 'package:autobutler/utils/file_browser_dialog_utils.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -33,6 +34,20 @@ class FileBrowserController {
     }
 
     final selected = result.files.first;
+    final bytes = selected.bytes;
+
+    // Web cannot use MultipartFile.fromPath because it depends on dart:io.
+    if (kIsWeb) {
+      if (bytes == null) {
+        return null;
+      }
+      return http.MultipartFile.fromBytes(
+        'files',
+        bytes,
+        filename: selected.name,
+      );
+    }
+
     final path = selected.path;
     if (path != null && path.isNotEmpty) {
       return http.MultipartFile.fromPath(
@@ -42,7 +57,6 @@ class FileBrowserController {
       );
     }
 
-    final bytes = selected.bytes;
     if (bytes == null) {
       return null;
     }
