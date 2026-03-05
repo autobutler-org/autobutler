@@ -133,9 +133,37 @@ make watch/backend
 
 #### Run the frontend
 
+Web is coming soon, but for now you must do mobile development.
+
+##### Emulation
+
+Running the frontend depends largely on what you are trying to do.
+
+If doing mobile development, you must first set up an emulator.
+
+If you want the default for your development OS:
+
+```bash
+make emulate
+```
+
+But you can also directly select a platform, such as android or ios:
+
+```bash
+make emulate/android # emulate/ios
+```
+
+##### Running it
+
+Once at least one emulator is running, serve the frontend:
+
 ```bash
 make serve/frontend
 ```
+
+If more than one emulator is running, this target will ask you to select the device you wish to run on. A great side effect
+of this is that if you run the make command in multiple different terminals, you can connect the codebase to each emulator
+individually, allowing you to parallel develop for multiple emulated platforms.
 
 Reloading in Flutter is managed by the developer, with keystrokes in the executing terminal
 
