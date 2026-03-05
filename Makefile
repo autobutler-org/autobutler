@@ -164,7 +164,6 @@ build/frontend/ios: ## Build iOS app
 build/frontend/web: internal/server/public/stub.txt ## Build web app
 	flutter build web --$(FLUTTER_BUILD_MODE)
 	cp -R ./build/web/. ./internal/server/public/
-	find ./internal/server/public -mindepth 1 -maxdepth 1 -name 'stub.txt' -exec rm -rf {} +
 
 .PHONY: build/lsusb
 build/lsusb: ## Build lsusb utility
