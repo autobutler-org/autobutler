@@ -1,9 +1,9 @@
+import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
-import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
-import 'package:autobutler/widgets/file_browser/file_breadcrumb_bar.dart';
-import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
+import 'package:autobutler/widgets/file_browser/file_breadcrumb_bar.dart';
+import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -140,7 +140,6 @@ Future<String?> promptForMoveRenamePath(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       AutobutlerWidget.textField(
-                        context,
                         controller: nameController,
                         hintText: 'New file name',
                         autofocus: true,
@@ -274,7 +273,6 @@ Future<String?> _promptForText({
           content: Padding(
             padding: const EdgeInsets.only(top: 12),
             child: AutobutlerWidget.textField(
-              context,
               controller: textController,
               autofocus: true,
               hintText: hintText,
