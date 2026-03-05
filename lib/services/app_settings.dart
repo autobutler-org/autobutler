@@ -58,8 +58,8 @@ class AppSettings {
         _hosts = [HostEntry(name: 'Local', hostAddress: loopback)];
         _activeIndex = 0;
         await _saveHosts();
-      } else {
-        // Otherwise, add an default that targets the URL it is  hosted on
+      } else if (kIsWeb) {
+        // Otherwise, add a default that targets the URL it is the web version
         _hosts = [HostEntry(name: 'Default', hostAddress: '/')];
         _activeIndex = 0;
         await _saveHosts();
