@@ -43,13 +43,13 @@ changelog:
   sort: asc
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
+      - "^docs:"
+      - "^test:"
 
 release:
   github:
     owner: autobutler-org
-    name: autobutler.org
+    name: autobutler
   footer: >-
 
     ---
