@@ -217,6 +217,12 @@ serve/frontend: generate/frontend ## Serve frontend
 	echo "Will run app on connected device or emulator..."
 	flutter run
 
+.PHONY: serve/frontend/web
+serve/frontend/web: generate/frontend ## Serve web frontend
+	flutter run \
+		-d web-server \
+		--web-port 8000
+
 PRINT_COVERAGE ?= 0
 
 .PHONY: test

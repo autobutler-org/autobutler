@@ -133,7 +133,13 @@ make watch/backend
 
 #### Run the frontend
 
-Web is coming soon, but for now you must do mobile development.
+##### Web
+
+For web, run
+
+```bash
+make serve/frontend/web # Serves on http://localhost:8000
+```
 
 ##### Emulation
 
