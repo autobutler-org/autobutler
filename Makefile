@@ -150,19 +150,21 @@ else
 	$(error "Unsupported OS: $(UNAME_S)")
 endif
 
+FLUTTER_BUILD_MODE ?= debug
+
 .PHONY: build/frontend/android
 build/frontend/android: ## Build Android app
-	flutter build apk --debug
+	flutter build apk --$(FLUTTER_BUILD_MODE)
 
 .PHONY: build/frontend/ios
 build/frontend/ios: ## Build iOS app
-	flutter build ios --debug --no-codesign
+	flutter build ios --$(FLUTTER_BUILD_MODE) --no-codesign
 
 .PHONY: build/frontend/web
 build/frontend/web: internal/server/public/stub.txt ## Build web app
-	flutter build web --debug
+	flutter build web --$(FLUTTER_BUILD_MODE)
 	cp -R ./build/web/. ./internal/server/public/
-	find ./internal/server/public -mindepth 1 -maxdepth 1 ! -name 'stub.txt' -exec rm -rf {} +
+	find ./internal/server/public -mindepth 1 -maxdepth 1 -name 'stub.txt' -exec rm -rf {} +
 
 .PHONY: build/lsusb
 build/lsusb: ## Build lsusb utility
