@@ -53,6 +53,9 @@ jobs:
         uses: actions/checkout@v6
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
+      - name: Build Web
+        run: |
+          make build/frontend/web
       - name: Build Android
         run: |
           make build/frontend/android
