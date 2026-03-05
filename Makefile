@@ -332,6 +332,9 @@ check/format/go: ## Check Go code formatting
 		exit 1
 	fi
 
+.PHONY: check/lint
+check/lint: check/lint/flutter check/lint/go check/lint/sqlc ## Check
+
 .PHONY: check/lint/flutter
 check/lint/flutter: ## Lint Flutter/Dart code
 	flutter analyze
