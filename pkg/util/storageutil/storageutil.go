@@ -27,6 +27,47 @@ const (
 	FileTypeArchive   FileType = "archive"
 )
 
+func VideoMIMETypeFromExtension(extension string) string {
+	normalizedExt := strings.TrimSpace(strings.ToLower(extension))
+	if normalizedExt == "" {
+		return "application/octet-stream"
+	}
+	if !strings.HasPrefix(normalizedExt, ".") {
+		normalizedExt = "." + normalizedExt
+	}
+
+	switch normalizedExt {
+	case ".mp4":
+		return "video/mp4"
+	case ".m4v":
+		return "video/x-m4v"
+	case ".webm":
+		return "video/webm"
+	case ".ogg", ".ogv":
+		return "video/ogg"
+	case ".avi":
+		return "video/x-msvideo"
+	case ".mov":
+		return "video/quicktime"
+	case ".mpeg", ".mpg":
+		return "video/mpeg"
+	case ".mkv":
+		return "video/x-matroska"
+	case ".3gp":
+		return "video/3gpp"
+	case ".3g2":
+		return "video/3gpp2"
+	case ".wmv":
+		return "video/x-ms-wmv"
+	case ".flv":
+		return "video/x-flv"
+	case ".ts":
+		return "video/mp2t"
+	default:
+		return "application/octet-stream"
+	}
+}
+
 func DetermineFileTypeFromPath(filePath string) FileType {
 	// Empty string or "/" represents a folder
 	if filePath == "" || filePath == "/" {

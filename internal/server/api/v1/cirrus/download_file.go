@@ -62,6 +62,12 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 		if result.FileType == storageutil.FileTypePDF {
 			disposition = "inline"
 			contentType = "application/pdf"
+		} else if result.FileType == storageutil.FileTypeImage {
+			disposition = "inline"
+			contentType = "image/*"
+		} else if result.FileType == storageutil.FileTypeVideo {
+			disposition = "inline"
+			contentType = storageutil.VideoMIMETypeFromExtension(filepath.Ext(result.FullPath))
 		}
 		c.Header("Content-Disposition", fmt.Sprintf("%s; filename=%s", disposition, filepath.Base(result.FullPath)))
 		c.Header("Content-Type", contentType)
