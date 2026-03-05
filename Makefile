@@ -259,8 +259,6 @@ tidy/flutter: ## Tidy Flutter dependencies
 .PHONY: tidy/go
 tidy/go: ## Tidy go mod
 	$(GO) mod tidy
-	refresh: ## Refresh build manifest
-	flutter pub get
 
 .PHONY: upgrade
 upgrade: upgrade/flutter upgrade/go ## Upgrade dependencies
