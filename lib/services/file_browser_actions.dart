@@ -1,14 +1,15 @@
-import 'dart:io';
-
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
+import 'package:http/http.dart' as http;
 
-Future<void> uploadFileToCurrentPath({
+Future<void> uploadMultipartFileToCurrentPath({
   required String currentPath,
-  required File selectedFile,
+  required http.MultipartFile selectedFile,
 }) {
-  return CirrusService.uploadFiles(toRootDir(currentPath), [selectedFile]);
+  return CirrusService.uploadFilesFromFormData(toRootDir(currentPath), [
+    selectedFile,
+  ]);
 }
 
 Future<void> createFolderAtCurrentPath({

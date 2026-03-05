@@ -1,6 +1,6 @@
+import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:autobutler/services/app_settings.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -45,14 +45,12 @@ class _SettingsPageState extends State<SettingsPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             AutobutlerWidget.textField(
-              context,
               controller: nameController,
               autofocus: true,
               hintText: 'Name',
             ),
             const SizedBox(height: 8),
             AutobutlerWidget.textField(
-              context,
               controller: hostController,
               hintText: 'http://<hostname>:<port>',
             ),

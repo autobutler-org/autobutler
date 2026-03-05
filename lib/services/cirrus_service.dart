@@ -1,9 +1,11 @@
 import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/services/app_settings.dart';
+import 'package:autobutler/utils/web_download_stub.dart'
+    if (dart.library.html) 'package:autobutler/utils/web_download_web.dart'
+    as web_download;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:http/http.dart' as http;
 
@@ -20,7 +22,9 @@ class CirrusService {
     final isLoopbackHost =
         uri.host == 'localhost' || uri.host == '127.0.0.1' || uri.host == '::1';
 
-    if (Platform.isAndroid && isLoopbackHost) {
+    if (!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android &&
+        isLoopbackHost) {
       return uri.replace(host: '10.0.2.2');
     }
 
@@ -192,18 +196,6 @@ class CirrusService {
     }
   }
 
-  static Future<http.StreamedResponse> uploadFiles(
-    String uploadPath,
-    List<File> files, {
-    String? serial,
-  }) async {
-    final formDataFiles = await Future.wait(
-      files.map((file) => http.MultipartFile.fromPath('files', file.path)),
-    );
-
-    return uploadFilesFromFormData(uploadPath, formDataFiles, serial: serial);
-  }
-
   static Future<http.StreamedResponse> uploadFilesFromFormData(
     String uploadPath,
     List<http.MultipartFile> formDataFiles, {
@@ -245,10 +237,14 @@ class CirrusService {
       fallbackPath: filePath,
     );
 
-    final params = SaveFileDialogParams(
-      data: Uint8List.fromList(response.bodyBytes),
-      fileName: resolvedName,
-    );
+    final bytes = Uint8List.fromList(response.bodyBytes);
+
+    if (kIsWeb) {
+      return web_download.saveBytesForDownload(bytes, resolvedName);
+    }
+
+    final params = SaveFileDialogParams(data: bytes, fileName: resolvedName);
+
     return FlutterFileDialog.saveFile(params: params);
   }
 

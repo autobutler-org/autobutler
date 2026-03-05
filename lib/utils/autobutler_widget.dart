@@ -1,15 +1,14 @@
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:flutter/services.dart';
 
 class AutobutlerWidget {
-  static bool _isCupertinoPlatform(BuildContext context) {
-    final platform = material.Theme.of(context).platform;
-    return platform == TargetPlatform.iOS || platform == TargetPlatform.macOS;
-  }
+  static bool get _useCupertino =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
   static Future<T?> showDialog<T>(
     BuildContext context, {
@@ -25,10 +24,22 @@ class AutobutlerWidget {
     bool? requestFocus,
     AnimationStyle? animationStyle,
   }) {
-    return material.showAdaptiveDialog<T>(
+    if (_useCupertino) {
+      return showCupertinoDialog<T>(
+        context: context,
+        builder: builder,
+        barrierDismissible: barrierDismissible ?? false,
+        useRootNavigator: useRootNavigator,
+        routeSettings: routeSettings,
+        anchorPoint: anchorPoint,
+        requestFocus: requestFocus,
+      );
+    }
+
+    return material.showDialog<T>(
       context: context,
       builder: builder,
-      barrierDismissible: barrierDismissible,
+      barrierDismissible: barrierDismissible ?? true,
       barrierColor: barrierColor,
       barrierLabel: barrierLabel,
       useSafeArea: useSafeArea,
@@ -78,7 +89,16 @@ class AutobutlerWidget {
     Duration insetAnimationDuration = const Duration(milliseconds: 100),
     Curve insetAnimationCurve = Curves.decelerate,
   }) {
-    return material.AlertDialog.adaptive(
+    if (_useCupertino) {
+      return CupertinoAlertDialog(
+        key: key,
+        title: title,
+        content: content,
+        actions: actions ?? const <Widget>[],
+      );
+    }
+
+    return material.AlertDialog(
       key: key,
       icon: icon,
       iconPadding: iconPadding,
@@ -107,15 +127,10 @@ class AutobutlerWidget {
       alignment: alignment,
       constraints: constraints,
       scrollable: scrollable,
-      scrollController: scrollController,
-      actionScrollController: actionScrollController,
-      insetAnimationDuration: insetAnimationDuration,
-      insetAnimationCurve: insetAnimationCurve,
     );
   }
 
-  static Widget textField(
-    BuildContext context, {
+  static Widget textField({
     Key? key,
     Object groupId = EditableText,
     TextEditingController? controller,
@@ -201,7 +216,7 @@ class AutobutlerWidget {
     OverlayVisibilityMode clearButtonMode = OverlayVisibilityMode.never,
     String? clearButtonSemanticLabel,
   }) {
-    if (_isCupertinoPlatform(context)) {
+    if (_useCupertino) {
       return CupertinoTextField(
         key: key,
         groupId: groupId,

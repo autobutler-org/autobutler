@@ -133,11 +133,15 @@ make watch/backend
 
 #### Run the frontend
 
-Web is coming soon, but for now you must do mobile development.
+##### Web
+
+For web, run
+
+```bash
+make serve/frontend
+```
 
 ##### Emulation
-
-Running the frontend depends largely on what you are trying to do.
 
 If doing mobile development, you must first set up an emulator.
 
@@ -158,7 +162,7 @@ make emulate/android # emulate/ios
 Once at least one emulator is running, serve the frontend:
 
 ```bash
-make serve/frontend
+make serve/frontend/mobile
 ```
 
 If more than one emulator is running, this target will ask you to select the device you wish to run on. A great side effect

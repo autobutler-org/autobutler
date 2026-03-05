@@ -150,17 +150,21 @@ else
 	$(error "Unsupported OS: $(UNAME_S)")
 endif
 
+FLUTTER_BUILD_MODE ?= debug
+
 .PHONY: build/frontend/android
 build/frontend/android: ## Build Android app
-	flutter build apk --debug
+	flutter build apk --$(FLUTTER_BUILD_MODE)
 
 .PHONY: build/frontend/ios
 build/frontend/ios: ## Build iOS app
-	flutter build ios --debug --no-codesign
+	flutter build ios --$(FLUTTER_BUILD_MODE) --no-codesign
 
 .PHONY: build/frontend/web
-build/frontend/web: ## Build web app
-	flutter build web --debug
+build/frontend/web: internal/server/public/stub.txt ## Build web app
+	flutter build web --$(FLUTTER_BUILD_MODE)
+	cp -R ./build/web/. ./internal/server/public/
+	find ./internal/server/public -mindepth 1 -maxdepth 1 -name 'stub.txt' -exec rm -rf {} +
 
 .PHONY: build/lsusb
 build/lsusb: ## Build lsusb utility
@@ -213,9 +217,16 @@ serve/backend: generate/backend ## Serve backend
 	$(GO) run $(MAIN) serve
 
 .PHONY: serve/frontend
-serve/frontend: generate/frontend ## Serve frontend
-	echo "Will run app on connected device or emulator..."
+serve/frontend: serve/frontend/web ## Serve frontend
+
+.PHONY: serve/frontend/mobile
+serve/frontend/mobile: ## Serve mobile frontend
 	flutter run
+
+.PHONY: serve/frontend/web
+serve/frontend/web: generate/frontend ## Serve web frontend
+	flutter run \
+		-d web-server
 
 PRINT_COVERAGE ?= 0
 
@@ -288,9 +299,9 @@ else
 endif
 
 .PHONY: watch/frontend
-watch/frontend: ## Watch frontend for changes
-	echo 'Flutter does not have a built-in watch mode, but you can use "flutter run" to achieve a similar effect. This will run the app and allow you to reload on changes.'
-	$(MAKE) serve/frontend
+watch/frontend: ## Watch frontend on web
+	echo "Defaulting to web since it supports hot reload..."
+	$(MAKE) serve/frontend/web
 
 ##@ Code quality
 
@@ -324,6 +335,9 @@ check/format/go: ## Check Go code formatting
 	if [[ -n $$($(GO) fmt ./...) ]]; then
 		exit 1
 	fi
+
+.PHONY: check/lint
+check/lint: check/lint/flutter check/lint/go check/lint/sqlc ## Check
 
 .PHONY: check/lint/flutter
 check/lint/flutter: ## Lint Flutter/Dart code
