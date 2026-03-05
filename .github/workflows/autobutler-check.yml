@@ -8,7 +8,7 @@ defaults:
   run:
     shell: bash
 jobs:
-  check-backend:
+  autobutler-check-backend:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -42,8 +42,7 @@ jobs:
             echo "There are uncommitted changes after linting and generating. Please fix them before committing.";
             exit 1;
           fi
-
-  check-frontend:
+  autobutler-check-frontend:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
