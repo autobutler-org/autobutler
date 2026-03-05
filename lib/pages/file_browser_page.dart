@@ -36,6 +36,11 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
   Future<List<CirrusFileNode>>? _searchFuture;
   String? _searchQuery;
 
+  // Server/version state
+  String? _serverVersionSemver;
+  List<Map<String, dynamic>> _availableVersions = [];
+  bool _isUpdatingVersion = false;
+
   @override
   void initState() {
     super.initState();
@@ -46,6 +51,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
       _filesFuture = Future.value(const <CirrusFileNode>[]);
     } else {
       _reloadFiles();
+      _loadServerVersion();
     }
   }
 
@@ -57,6 +63,45 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     }
 
     _filesFuture = _controller.fetchFiles(_currentPath);
+  }
+
+  Future<void> _loadServerVersion() async {
+    if (AppSettings.instance.activeHost == null) return;
+    try {
+      final v = await CirrusService.getInstalledVersion();
+      final versions = await CirrusService.listAvailableVersions();
+      if (!mounted) return;
+      setState(() {
+        _serverVersionSemver =
+            v['semver'] as String? ?? v['version'] as String?;
+        _availableVersions = versions;
+      });
+    } catch (_) {
+      // ignore failures silently
+    } finally {
+      if (mounted) {}
+    }
+  }
+
+  Future<void> _performUpdate(String version) async {
+    if (_isUpdatingVersion) return;
+    setState(() {
+      _isUpdatingVersion = true;
+    });
+    try {
+      await CirrusService.updateToVersion(version);
+      if (!mounted) return;
+      _showMessage('Update started for $version');
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage('Update failed: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdatingVersion = false;
+        });
+      }
+    }
   }
 
   void _refreshFileState() {
@@ -354,7 +399,18 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cirrus'),
+        title: Row(
+          children: [
+            const Text('Cirrus'),
+            if (_serverVersionSemver != null) ...[
+              const SizedBox(width: 8),
+              Text(
+                'v$_serverVersionSemver',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ],
+        ),
         actions: [
           IconButton(
             onPressed: _handleSearchPressed,
@@ -366,11 +422,42 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
             },
             icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view_rounded),
           ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.update),
+            tooltip: 'Update Autobutler',
+            onSelected: (val) async {
+              if (val.isEmpty) return;
+              await _performUpdate(val);
+            },
+            itemBuilder: (ctx) {
+              if (_availableVersions.isEmpty) {
+                return [
+                  const PopupMenuItem<String>(
+                    value: '',
+                    enabled: false,
+                    child: Text('No updates available'),
+                  ),
+                ];
+              }
+              return _availableVersions.map((m) {
+                final ver = (m['version'] as String?) ?? '';
+                return PopupMenuItem<String>(value: ver, child: Text(ver));
+              }).toList();
+            },
+          ),
           IconButton(
             onPressed: () async {
               await Navigator.of(
                 context,
               ).push(MaterialPageRoute(builder: (_) => const SettingsPage()));
+              // After returning from settings, attempt to reload files if a host was added.
+              setState(() {
+                _noHostSelected = AppSettings.instance.activeHost == null;
+                if (!_noHostSelected) {
+                  _reloadFiles();
+                  _loadServerVersion();
+                }
+              });
             },
             icon: const Icon(Icons.settings),
           ),
@@ -430,6 +517,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                                   AppSettings.instance.activeHost == null;
                               if (!_noHostSelected) {
                                 _reloadFiles();
+                                _loadServerVersion();
                               }
                             });
                           },
