@@ -120,19 +120,8 @@ class _PhotosPageState extends State<PhotosPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Library', style: theme.textTheme.titleLarge),
+          Text('Photos', style: theme.textTheme.titleLarge),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              const Icon(Icons.photo_library_outlined),
-              const SizedBox(width: 8),
-              Text(
-                'Cirrus Photos: $photoCount',
-                style: theme.textTheme.titleMedium,
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
           Text('Photos per row', style: theme.textTheme.titleSmall),
           const SizedBox(height: 8),
           Slider(
@@ -145,6 +134,14 @@ class _PhotosPageState extends State<PhotosPage> {
                 _previewColumns = value.round();
               });
             },
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              const Icon(Icons.photo_library_outlined),
+              const SizedBox(width: 8),
+              Text('Cirrus: $photoCount', style: theme.textTheme.titleMedium),
+            ],
           ),
         ],
       ),
