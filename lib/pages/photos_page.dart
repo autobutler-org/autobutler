@@ -127,7 +127,7 @@ class _PhotosPageState extends State<PhotosPage> {
               const Icon(Icons.photo_library_outlined),
               const SizedBox(width: 8),
               Text(
-                'All Photos: $photoCount',
+                'Cirrus Photos: $photoCount',
                 style: theme.textTheme.titleMedium,
               ),
             ],
