@@ -93,7 +93,8 @@ class FileBrowserView extends StatelessWidget {
                         // otherwise show a representative icon.
                         (() {
                           final lower = item.name.toLowerCase();
-                          final isImage = lower.endsWith('.jpg') ||
+                          final isImage =
+                              lower.endsWith('.jpg') ||
                               lower.endsWith('.jpeg') ||
                               lower.endsWith('.png') ||
                               lower.endsWith('.gif') ||
@@ -118,7 +119,9 @@ class FileBrowserView extends StatelessWidget {
                               ),
                             );
                           }
-                          return Center(child: Icon(_iconForNode(item), size: 48));
+                          return Center(
+                            child: Icon(_iconForNode(item), size: 48),
+                          );
                         })(),
                         const SizedBox(height: 8),
                         Flexible(

@@ -51,7 +51,10 @@ class CirrusService {
   static Uri constructThumbnailUrl(String filePath, {String? serial}) {
     final trimmed = filePath.trim();
     final normalized = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
-    final encodedPath = normalized.split('/').map((s) => Uri.encodeComponent(s)).join('/');
+    final encodedPath = normalized
+        .split('/')
+        .map((s) => Uri.encodeComponent(s))
+        .join('/');
     final endpointUri = _apiBaseUri.resolve('/api/v1/thumbnails/$encodedPath');
 
     final serialValue = serial?.trim() ?? '';

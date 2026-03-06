@@ -19,9 +19,7 @@ Future<void> createFolderAtCurrentPath({
   return CirrusService.createFolder(toRootDir(currentPath), folderName);
 }
 
-Future<String?> downloadNode({
-  required CirrusFileNode node,
-}) {
+Future<String?> downloadNode({required CirrusFileNode node}) {
   final itemName = trimTrailingSlashes(node.name);
   final filePath = node.apiPath;
 
@@ -51,9 +49,7 @@ Future<void> moveRenameNode({
   );
 }
 
-Future<void> deleteNode({
-  required CirrusFileNode node,
-}) {
+Future<void> deleteNode({required CirrusFileNode node}) {
   final rootDir = toRootDir(parentPath(node.apiPath));
   return CirrusService.deleteFile(
     rootDir,

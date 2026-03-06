@@ -98,9 +98,7 @@ class FileBrowserController {
   }) async {
     switch (action) {
       case FileMenuAction.download:
-        final savedPath = await downloadNode(
-          node: node,
-        );
+        final savedPath = await downloadNode(node: node);
         if (savedPath == null) {
           return const FileMenuActionOutcome(message: 'Download canceled');
         }
@@ -154,10 +152,7 @@ class FileBrowserController {
           }
         }
 
-        await moveRenameNode(
-          node: node,
-          targetInput: targetInput,
-        );
+        await moveRenameNode(node: node, targetInput: targetInput);
         return const FileMenuActionOutcome(
           message: 'Move/Rename complete',
           shouldRefresh: true,

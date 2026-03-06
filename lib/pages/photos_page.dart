@@ -15,8 +15,14 @@ class PhotosPage extends StatefulWidget {
 }
 
 class _PhotosPageState extends State<PhotosPage> {
+  static const int _defaultCrossAxisCount = 4;
+  static const int _minPreviewColumns = 1;
+  static const int _maxPreviewColumns = 8;
+  static const double _minTileWidth = 80;
+
   late Future<List<CirrusFileNode>> _photosFuture;
   bool _noHostSelected = false;
+  int _previewColumns = _defaultCrossAxisCount;
 
   @override
   void initState() {
@@ -47,6 +53,160 @@ class _PhotosPageState extends State<PhotosPage> {
     setState(() {
       _photosFuture = _loadPhotos();
     });
+  }
+
+  int _minColumnsByScale() {
+    return _minPreviewColumns;
+  }
+
+  int _maxColumnsByScale() {
+    return _maxPreviewColumns;
+  }
+
+  int _maxColumnsByWidth(double availableWidth) {
+    return (availableWidth / _minTileWidth).floor().clamp(1, 100);
+  }
+
+  int _effectiveCrossAxisCount(double availableWidth) {
+    final maxByWidth = _maxColumnsByWidth(availableWidth);
+    var minColumns = _minColumnsByScale();
+    var maxColumns = _maxColumnsByScale();
+
+    if (minColumns > maxByWidth) {
+      minColumns = maxByWidth;
+    }
+    if (maxColumns > maxByWidth) {
+      maxColumns = maxByWidth;
+    }
+    if (minColumns > maxColumns) {
+      minColumns = maxColumns;
+    }
+
+    return _previewColumns.clamp(minColumns, maxColumns);
+  }
+
+  double _previewScaleForColumns(int columns) {
+    return _defaultCrossAxisCount / columns;
+  }
+
+  Widget _buildSidebar(
+    BuildContext context,
+    double availableWidth,
+    int photoCount, {
+    bool compact = false,
+  }) {
+    final theme = Theme.of(context);
+    final maxByWidth = _maxColumnsByWidth(availableWidth);
+    var minColumns = _minColumnsByScale();
+    var maxColumns = _maxColumnsByScale();
+    if (minColumns > maxByWidth) {
+      minColumns = maxByWidth;
+    }
+    if (maxColumns > maxByWidth) {
+      maxColumns = maxByWidth;
+    }
+    if (minColumns > maxColumns) {
+      minColumns = maxColumns;
+    }
+
+    final selectedColumns = _previewColumns.clamp(minColumns, maxColumns);
+    final selectedScale = _previewScaleForColumns(selectedColumns);
+    final divisions = maxColumns - minColumns;
+
+    return Container(
+      width: compact ? double.infinity : 280,
+      padding: const EdgeInsets.all(16),
+      color: theme.colorScheme.surfaceContainerLowest,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Library', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              const Icon(Icons.photo_library_outlined),
+              const SizedBox(width: 8),
+              Text(
+                'All Photos: $photoCount',
+                style: theme.textTheme.titleMedium,
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text('Photos per row', style: theme.textTheme.titleSmall),
+          const SizedBox(height: 8),
+          Slider(
+            min: minColumns.toDouble(),
+            max: maxColumns.toDouble(),
+            divisions: divisions > 0 ? divisions : null,
+            value: selectedColumns.toDouble(),
+            onChanged: (value) {
+              setState(() {
+                _previewColumns = value.round();
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhotoGrid(List<CirrusFileNode> photos, int crossAxisCount) {
+    return RefreshIndicator(
+      onRefresh: () async => _refresh(),
+      child: photos.isEmpty
+          ? ListView(
+              children: const [
+                SizedBox(height: 120),
+                Center(child: Text('No photos found')),
+              ],
+            )
+          : GridView.builder(
+              padding: const EdgeInsets.all(2),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 2,
+                mainAxisSpacing: 2,
+              ),
+              itemCount: photos.length,
+              itemBuilder: (context, idx) {
+                final p = photos[idx];
+                final url = CirrusService.constructThumbnailUrl(
+                  p.apiPath,
+                  serial: p.deviceSerial,
+                );
+                return MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: () async {
+                      final bytes = await CirrusService.downloadFileBytes(
+                        p.apiPath,
+                        serial: p.deviceSerial,
+                      );
+                      if (bytes == null) return;
+                      if (!mounted) return;
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ImageViewerPage(bytes: bytes, name: p.name),
+                        ),
+                      );
+                    },
+                    child: Image.network(
+                      url.toString(),
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, progress) {
+                        if (progress == null) return child;
+                        return Container(color: Colors.grey[300]);
+                      },
+                      errorBuilder: (context, error, stack) =>
+                          Container(color: Colors.grey[300]),
+                    ),
+                  ),
+                );
+              },
+            ),
+    );
   }
 
   @override
@@ -99,59 +259,59 @@ class _PhotosPageState extends State<PhotosPage> {
               future: _photosFuture,
               builder: (context, snapshot) {
                 final photos = snapshot.data ?? const <CirrusFileNode>[];
-                if (photos.isEmpty) {
-                  return const Center(child: Text('No photos found'));
-                }
-                return RefreshIndicator(
-                  onRefresh: () async => _refresh(),
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(2),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          crossAxisSpacing: 2,
-                          mainAxisSpacing: 2,
-                        ),
-                    itemCount: photos.length,
-                    itemBuilder: (context, idx) {
-                      final p = photos[idx];
-                      final url = CirrusService.constructThumbnailUrl(
-                        p.apiPath,
-                        serial: p.deviceSerial,
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compact = constraints.maxWidth < 900;
+                    final contentWidth = compact
+                        ? constraints.maxWidth
+                        : (constraints.maxWidth - 281)
+                              .clamp(1.0, double.infinity)
+                              .toDouble();
+                    final crossAxisCount = _effectiveCrossAxisCount(
+                      contentWidth,
+                    );
+                    final sidebar = _buildSidebar(
+                      context,
+                      contentWidth,
+                      photos.length,
+                      compact: compact,
+                    );
+
+                    Widget buildShell(Widget content) {
+                      if (compact) {
+                        return Column(
+                          children: [
+                            sidebar,
+                            const Divider(height: 1),
+                            Expanded(child: content),
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        children: [
+                          sidebar,
+                          const VerticalDivider(width: 1),
+                          Expanded(child: content),
+                        ],
                       );
-                      return MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: GestureDetector(
-                          onTap: () async {
-                            final bytes = await CirrusService.downloadFileBytes(
-                              p.apiPath,
-                              serial: p.deviceSerial,
-                            );
-                            if (bytes == null) return;
-                            if (!mounted) return;
-                            await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => ImageViewerPage(
-                                  bytes: bytes,
-                                  name: p.name,
-                                ),
-                              ),
-                            );
-                          },
-                          child: Image.network(
-                            url.toString(),
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, progress) {
-                              if (progress == null) return child;
-                              return Container(color: Colors.grey[300]);
-                            },
-                            errorBuilder: (context, error, stack) =>
-                                Container(color: Colors.grey[300]),
-                          ),
-                        ),
+                    }
+
+                    if (snapshot.connectionState == ConnectionState.waiting &&
+                        photos.isEmpty) {
+                      return buildShell(
+                        const Center(child: CircularProgressIndicator()),
                       );
-                    },
-                  ),
+                    }
+
+                    if (snapshot.hasError) {
+                      return buildShell(
+                        const Center(child: Text('Failed to load photos')),
+                      );
+                    }
+
+                    return buildShell(_buildPhotoGrid(photos, crossAxisCount));
+                  },
                 );
               },
             ),
