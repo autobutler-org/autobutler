@@ -55,15 +55,26 @@ class FileBrowserView extends StatelessWidget {
         }
 
         if (isGridView) {
+          final screenWidth = MediaQuery.sizeOf(context).width;
+          const horizontalPadding = 16.0;
+          const crossAxisSpacing = 8.0;
+          const minTileWidth = 180.0;
+          final usableWidth = screenWidth - horizontalPadding;
+          final calculatedCount =
+              ((usableWidth + crossAxisSpacing) /
+                      (minTileWidth + crossAxisSpacing))
+                  .floor();
+          final crossAxisCount = calculatedCount < 1 ? 1 : calculatedCount;
+
           return GridView.builder(
             padding: const EdgeInsets.all(8),
             itemCount: files.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               // Number of tiles per row
-              crossAxisCount: 2,
+              crossAxisCount: crossAxisCount,
               // How tall each tile is relative to its width (1.0 = square)
               childAspectRatio: 1.1,
-              crossAxisSpacing: 8,
+              crossAxisSpacing: crossAxisSpacing,
               mainAxisSpacing: 8,
             ),
             itemBuilder: (context, index) {
