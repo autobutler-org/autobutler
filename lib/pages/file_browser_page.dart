@@ -3,11 +3,13 @@ import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/settings_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
+import 'package:autobutler/pages/photos_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_dialog_utils.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/widgets/file_browser/file_actions_bar.dart';
+import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/file_browser/file_breadcrumb_bar.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
@@ -399,6 +401,12 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
         title: Row(
           children: [
             const Text('Cirrus'),
@@ -445,23 +453,30 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
               }).toList();
             },
           ),
-          IconButton(
-            onPressed: () async {
-              await Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const SettingsPage()));
-              // After returning from settings, attempt to reload files if a host was added.
-              setState(() {
-                _noHostSelected = AppSettings.instance.activeHost == null;
-                if (!_noHostSelected) {
-                  _reloadFiles();
-                  _loadServerVersion();
-                }
-              });
-            },
-            icon: const Icon(Icons.settings),
-          ),
         ],
+      ),
+      drawer: AutobutlerDrawer(
+        activeSection: AutobutlerDrawerSection.cirrus,
+        onTapCirrus: () {
+          Navigator.of(context).pop();
+        },
+        onTapPhotos: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const PhotosPage()),
+          );
+        },
+        onTapSettings: () async {
+          await Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const SettingsPage()));
+          setState(() {
+            _noHostSelected = AppSettings.instance.activeHost == null;
+            if (!_noHostSelected) {
+              _reloadFiles();
+              _loadServerVersion();
+            }
+          });
+        },
       ),
       body: Column(
         children: [
