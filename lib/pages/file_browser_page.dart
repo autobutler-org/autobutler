@@ -208,7 +208,6 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
   ) async {
     try {
       final outcome = await _controller.handleFileAction(
-        currentPath: _currentPath,
         node: node,
         action: action,
         context: context,
@@ -282,9 +281,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     }
 
     try {
-      final filePath = toRootDir(
-        joinPath(_currentPath, trimTrailingSlashes(node.name)),
-      );
+      final filePath = node.apiPath;
       // Open images in-app using ImageViewer; fallback to platform handlers for other types.
       final lower = lowerName;
       if (lower.endsWith('.jpg') ||
@@ -361,8 +358,8 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
   }
 
   void _navigateToFolder(CirrusFileNode node) {
-    // Use the node's fullPath to determine the containing folder and switch to it
-    final parent = parentPath(node.dirPath);
+    // Use the node's API path to determine the containing folder and switch to it.
+    final parent = parentPath(node.apiPath);
     _setPath(parent);
     setState(() {
       _isSearchMode = false;

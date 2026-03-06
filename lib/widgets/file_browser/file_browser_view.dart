@@ -1,5 +1,6 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler/services/cirrus_service.dart';
 
 enum FileMenuAction { download, moveRename, delete }
 
@@ -88,7 +89,37 @@ class FileBrowserView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Center(child: Icon(_iconForNode(item), size: 48)),
+                        // If the node is an image, show a thumbnail from the backend thumbnails endpoint;
+                        // otherwise show a representative icon.
+                        (() {
+                          final lower = item.name.toLowerCase();
+                          final isImage = lower.endsWith('.jpg') ||
+                              lower.endsWith('.jpeg') ||
+                              lower.endsWith('.png') ||
+                              lower.endsWith('.gif') ||
+                              lower.endsWith('.webp');
+                          if (isImage) {
+                            final url = CirrusService.constructThumbnailUrl(
+                              item.apiPath,
+                              serial: item.deviceSerial,
+                            );
+                            return SizedBox(
+                              height: 96,
+                              width: double.infinity,
+                              child: Image.network(
+                                url.toString(),
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, progress) {
+                                  if (progress == null) return child;
+                                  return Container(color: Colors.grey[300]);
+                                },
+                                errorBuilder: (context, error, stack) =>
+                                    Container(color: Colors.grey[300]),
+                              ),
+                            );
+                          }
+                          return Center(child: Icon(_iconForNode(item), size: 48));
+                        })(),
                         const SizedBox(height: 8),
                         Flexible(
                           child: Text(

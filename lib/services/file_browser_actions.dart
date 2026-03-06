@@ -20,11 +20,10 @@ Future<void> createFolderAtCurrentPath({
 }
 
 Future<String?> downloadNode({
-  required String currentPath,
   required CirrusFileNode node,
 }) {
   final itemName = trimTrailingSlashes(node.name);
-  final filePath = toRootDir(joinPath(currentPath, itemName));
+  final filePath = node.apiPath;
 
   return CirrusService.saveFile(
     filePath,
@@ -34,15 +33,14 @@ Future<String?> downloadNode({
 }
 
 Future<void> moveRenameNode({
-  required String currentPath,
   required CirrusFileNode node,
   required String targetInput,
 }) {
-  final itemName = trimTrailingSlashes(node.name);
-  final oldPath = joinPath(currentPath, itemName);
+  final basePath = parentPath(node.apiPath);
+  final oldPath = normalizePath(node.apiPath);
   final targetPath = targetInput.startsWith('/')
       ? normalizePath(targetInput)
-      : joinPath(currentPath, targetInput);
+      : joinPath(basePath, targetInput);
 
   final serial = serialOrNull(node.deviceSerial);
   return CirrusService.moveFile(
@@ -54,11 +52,11 @@ Future<void> moveRenameNode({
 }
 
 Future<void> deleteNode({
-  required String currentPath,
   required CirrusFileNode node,
 }) {
+  final rootDir = toRootDir(parentPath(node.apiPath));
   return CirrusService.deleteFile(
-    toRootDir(currentPath),
+    rootDir,
     trimTrailingSlashes(node.name),
     deviceSerial: serialOrNull(node.deviceSerial),
   );
