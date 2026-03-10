@@ -1,0 +1,16 @@
+# Relynce project configuration
+# Used by detect-risks and reliability-review skills for consistent service naming
+project: autobutler
+components:
+  - name: autobutler-backend
+    path: cmd/autobutler/
+  - name: lsusb
+    path: cmd/lsusb/
+  - name: autobutler-frontend-shared
+    path: lib/
+  - name: autobutler-frontend-android
+    path: android/
+  - name: autobutler-frontend-ios
+    path: ios/
+  - name: autobutler-frontend-web
+    path: web/
