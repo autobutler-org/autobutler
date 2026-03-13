@@ -425,6 +425,7 @@ class _PhotosPageState extends State<PhotosPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Photos'),
+        centerTitle: true,
         actions: [
           IconButton(
             onPressed: () async {

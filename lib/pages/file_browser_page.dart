@@ -353,7 +353,6 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        centerTitle: true,
         leading: Builder(
           builder: (context) => IconButton(
             icon: const Icon(Icons.menu),
@@ -361,6 +360,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
           ),
         ),
         title: const Text('Cirrus'),
+        centerTitle: true,
         actions: [
           IconButton(
             onPressed: _handleSearchPressed,

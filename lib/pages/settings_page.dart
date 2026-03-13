@@ -212,6 +212,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
         title: const Text('Settings'),
+        centerTitle: true,
       ),
       drawer: AutobutlerDrawer(
         activeSection: AutobutlerDrawerSection.settings,
