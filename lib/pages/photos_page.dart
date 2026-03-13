@@ -44,6 +44,7 @@ class _PhotosPageState extends State<PhotosPage> {
   List<PhotoItem> _mobilePhotos = const <PhotoItem>[];
 
   bool _noHostSelected = false;
+  bool _categoriesExpanded = false;
   int _previewColumns = _defaultCrossAxisCount;
   PhotoCategory _selectedCategory = PhotoCategory.cirrus;
 
@@ -201,31 +202,29 @@ class _PhotosPageState extends State<PhotosPage> {
 
     Widget categoryButton(PhotoCategory cat, String label, int count) {
       final selected = _selectedCategory == cat;
-      return TextButton(
-        onPressed: () => _selectCategory(cat),
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          alignment: Alignment.centerLeft,
+      return ListTile(
+        dense: true,
+        visualDensity: VisualDensity.compact,
+        contentPadding: EdgeInsets.zero,
+        onTap: () => _selectCategory(cat),
+        leading: Icon(
+          cat == PhotoCategory.cirrus
+              ? Icons.cloud
+              : (cat == PhotoCategory.mobile
+                    ? Icons.smartphone
+                    : Icons.photo_library),
+          color: selected ? theme.colorScheme.primary : null,
         ),
-        child: Row(
-          children: [
-            Icon(
-              cat == PhotoCategory.cirrus
-                  ? Icons.cloud
-                  : (cat == PhotoCategory.mobile
-                        ? Icons.smartphone
-                        : Icons.photo_library),
-              color: selected ? theme.colorScheme.primary : null,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text('$label: $count', style: theme.textTheme.titleMedium),
-            ),
-            if (selected) const Icon(Icons.check, size: 16),
-          ],
-        ),
+        title: Text('$label: $count', style: theme.textTheme.titleMedium),
+        trailing: selected ? const Icon(Icons.check, size: 16) : null,
       );
     }
+
+    final selectedLabel = switch (_selectedCategory) {
+      PhotoCategory.all => 'All',
+      PhotoCategory.cirrus => 'Cirrus',
+      PhotoCategory.mobile => 'Mobile',
+    };
 
     return Container(
       width: compact ? double.infinity : 280,
@@ -260,10 +259,32 @@ class _PhotosPageState extends State<PhotosPage> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          categoryButton(PhotoCategory.all, 'All', cirrusCount + mobileCount),
-          categoryButton(PhotoCategory.cirrus, 'Cirrus', cirrusCount),
-          categoryButton(PhotoCategory.mobile, 'Mobile', mobileCount),
+          const SizedBox(height: 8),
+          ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Showing'),
+            subtitle: Text(
+              '$selectedLabel: ${switch (_selectedCategory) {
+                PhotoCategory.all => cirrusCount + mobileCount,
+                PhotoCategory.cirrus => cirrusCount,
+                PhotoCategory.mobile => mobileCount,
+              }}',
+            ),
+            trailing: Icon(
+              _categoriesExpanded ? Icons.expand_less : Icons.expand_more,
+            ),
+            onTap: () {
+              setState(() {
+                _categoriesExpanded = !_categoriesExpanded;
+              });
+            },
+          ),
+          if (_categoriesExpanded) ...[
+            categoryButton(PhotoCategory.all, 'All', cirrusCount + mobileCount),
+            categoryButton(PhotoCategory.cirrus, 'Cirrus', cirrusCount),
+            categoryButton(PhotoCategory.mobile, 'Mobile', mobileCount),
+          ],
         ],
       ),
     );
