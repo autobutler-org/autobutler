@@ -236,7 +236,20 @@ class _PhotosPageState extends State<PhotosPage> {
         children: [
           Row(
             children: [
-              const Icon(Icons.crop_square_outlined),
+              IconButton(
+                onPressed: selectedColumns > minColumns
+                    ? () {
+                        setState(() {
+                          _previewColumns = (selectedColumns - 1).clamp(
+                            minColumns,
+                            maxColumns,
+                          );
+                        });
+                      }
+                    : null,
+                icon: const Icon(Icons.crop_square_outlined),
+                tooltip: 'Smaller photos',
+              ),
               Expanded(
                 child: Slider(
                   min: minColumns.toDouble(),
@@ -250,7 +263,20 @@ class _PhotosPageState extends State<PhotosPage> {
                   },
                 ),
               ),
-              const Icon(Icons.grid_view_outlined),
+              IconButton(
+                onPressed: selectedColumns < maxColumns
+                    ? () {
+                        setState(() {
+                          _previewColumns = (selectedColumns + 1).clamp(
+                            minColumns,
+                            maxColumns,
+                          );
+                        });
+                      }
+                    : null,
+                icon: const Icon(Icons.grid_view_outlined),
+                tooltip: 'Larger photos',
+              ),
               IconButton(
                 onPressed: () async {
                   await _refresh();
