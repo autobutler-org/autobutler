@@ -462,17 +462,10 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
             MaterialPageRoute(builder: (_) => const PhotosPage()),
           );
         },
-        onTapSettings: () async {
-          await Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const SettingsPage()));
-          setState(() {
-            _noHostSelected = AppSettings.instance.activeHost == null;
-            if (!_noHostSelected) {
-              _reloadFiles();
-              _loadServerVersion();
-            }
-          });
+        onTapSettings: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const SettingsPage()),
+          );
         },
       ),
       body: Column(

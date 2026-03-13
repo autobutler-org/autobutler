@@ -397,17 +397,10 @@ class _PhotosPageState extends State<PhotosPage> {
         onTapPhotos: () {
           Navigator.of(context).pop();
         },
-        onTapSettings: () async {
-          await Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const SettingsPage()));
-          final noHostSelected = AppSettings.instance.activeHost == null;
-          if (_noHostSelected != noHostSelected) {
-            setState(() {
-              _noHostSelected = noHostSelected;
-            });
-            await _refresh();
-          }
+        onTapSettings: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const SettingsPage()),
+          );
         },
       ),
       body: FutureBuilder<List<PhotoItem>>(

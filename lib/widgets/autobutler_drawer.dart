@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-enum AutobutlerDrawerSection { cirrus, photos }
+enum AutobutlerDrawerSection { cirrus, photos, settings }
 
 class AutobutlerDrawer extends StatelessWidget {
   const AutobutlerDrawer({
@@ -54,6 +54,7 @@ class AutobutlerDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.settings),
             title: const Text('Settings'),
+            selected: activeSection == AutobutlerDrawerSection.settings,
             onTap: () {
               onTapSettings?.call();
             },
