@@ -1,6 +1,3 @@
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/file_browser_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
@@ -8,6 +5,7 @@ import 'package:autobutler/pages/settings_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 
@@ -61,8 +59,13 @@ class _PhotosPageState extends State<PhotosPage> {
       if (_noHostSelected) return const <PhotoItem>[];
       return _loadCirrusPhotos();
     });
-    final mobileFuture = _safeLoadPhotos(_loadMobilePhotos);
+    if (kIsWeb) {
+      _cirrusPhotos = await cirrusFuture;
+      _mobilePhotos = const <PhotoItem>[];
+      return;
+    }
 
+    final mobileFuture = _safeLoadPhotos(_loadMobilePhotos);
     final lists = await Future.wait([cirrusFuture, mobileFuture]);
     _cirrusPhotos = lists[0];
     _mobilePhotos = lists[1];
@@ -81,6 +84,10 @@ class _PhotosPageState extends State<PhotosPage> {
   Future<List<PhotoItem>> _photosForCategory(PhotoCategory category) async {
     _primeFuture ??= _primeSources();
     await _primeFuture;
+
+    if (kIsWeb) {
+      return _cirrusPhotos;
+    }
 
     switch (category) {
       case PhotoCategory.cirrus:
@@ -110,7 +117,11 @@ class _PhotosPageState extends State<PhotosPage> {
 
   Future<List<PhotoItem>> _loadMobilePhotos() async {
     // Only attempt mobile photo loading on Android or iOS devices.
-    if (!(Platform.isAndroid || Platform.isIOS)) return [];
+    if (kIsWeb ||
+        (defaultTargetPlatform != TargetPlatform.android &&
+            defaultTargetPlatform != TargetPlatform.iOS)) {
+      return [];
+    }
 
     final permission = await PhotoManager.requestPermissionExtend();
     if (!permission.isAuth) return [];
@@ -248,7 +259,7 @@ class _PhotosPageState extends State<PhotosPage> {
                       }
                     : null,
                 icon: const Icon(Icons.crop_square_outlined),
-                tooltip: 'Smaller photos',
+                tooltip: 'Larger photos',
               ),
               Expanded(
                 child: Slider(
@@ -275,42 +286,41 @@ class _PhotosPageState extends State<PhotosPage> {
                       }
                     : null,
                 icon: const Icon(Icons.grid_view_outlined),
-                tooltip: 'Larger photos',
-              ),
-              IconButton(
-                onPressed: () async {
-                  await _refresh();
-                },
-                icon: const Icon(Icons.refresh),
-                tooltip: 'Reload photos',
+                tooltip: 'Smaller photos',
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          ListTile(
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Showing'),
-            subtitle: Text(
-              '$selectedLabel: ${switch (_selectedCategory) {
-                PhotoCategory.all => cirrusCount + mobileCount,
-                PhotoCategory.cirrus => cirrusCount,
-                PhotoCategory.mobile => mobileCount,
-              }}',
+          if (!kIsWeb) ...[
+            const SizedBox(height: 8),
+            ListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Showing'),
+              subtitle: Text(
+                '$selectedLabel: ${switch (_selectedCategory) {
+                  PhotoCategory.all => cirrusCount + mobileCount,
+                  PhotoCategory.cirrus => cirrusCount,
+                  PhotoCategory.mobile => mobileCount,
+                }}',
+              ),
+              trailing: Icon(
+                _categoriesExpanded ? Icons.expand_less : Icons.expand_more,
+              ),
+              onTap: () {
+                setState(() {
+                  _categoriesExpanded = !_categoriesExpanded;
+                });
+              },
             ),
-            trailing: Icon(
-              _categoriesExpanded ? Icons.expand_less : Icons.expand_more,
-            ),
-            onTap: () {
-              setState(() {
-                _categoriesExpanded = !_categoriesExpanded;
-              });
-            },
-          ),
-          if (_categoriesExpanded) ...[
-            categoryButton(PhotoCategory.all, 'All', cirrusCount + mobileCount),
-            categoryButton(PhotoCategory.cirrus, 'Cirrus', cirrusCount),
-            categoryButton(PhotoCategory.mobile, 'Mobile', mobileCount),
+            if (_categoriesExpanded) ...[
+              categoryButton(
+                PhotoCategory.all,
+                'All',
+                cirrusCount + mobileCount,
+              ),
+              categoryButton(PhotoCategory.cirrus, 'Cirrus', cirrusCount),
+              categoryButton(PhotoCategory.mobile, 'Mobile', mobileCount),
+            ],
           ],
         ],
       ),
@@ -413,7 +423,18 @@ class _PhotosPageState extends State<PhotosPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Photos')),
+      appBar: AppBar(
+        title: const Text('Photos'),
+        actions: [
+          IconButton(
+            onPressed: () async {
+              await _refresh();
+            },
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Reload photos',
+          ),
+        ],
+      ),
       drawer: AutobutlerDrawer(
         activeSection: AutobutlerDrawerSection.photos,
         onTapCirrus: () {

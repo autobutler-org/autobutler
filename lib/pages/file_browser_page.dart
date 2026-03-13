@@ -418,6 +418,11 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
         ),
         actions: [
           IconButton(
+            onPressed: _refreshFileState,
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh files',
+          ),
+          IconButton(
             onPressed: _handleSearchPressed,
             icon: const Icon(Icons.search),
           ),
@@ -475,7 +480,6 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
             isCreatingFolder: _isCreatingFolder,
             onUploadPressed: _handleUploadPressed,
             onCreateFolderPressed: _handleCreateFolderPressed,
-            onRefreshPressed: _refreshFileState,
             isSearchMode: _isSearchMode,
           ),
           FileBreadcrumbBar(
