@@ -134,6 +134,7 @@ class _PhotosPageState extends State<PhotosPage> {
   Future<void> _selectCategory(PhotoCategory cat) async {
     setState(() {
       _selectedCategory = cat;
+      _categoriesExpanded = false;
       _photosFuture = _photosForCategory(cat);
     });
   }
