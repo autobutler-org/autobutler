@@ -18,6 +18,8 @@
     "streetsidesoftware.code-spell-checker",
     "tyriar.sort-lines",
     "vitest.explorer",
-    "vscode-icons-team.vscode-icons"
+    "vscode-icons-team.vscode-icons",
+    "anthropic.claude-code",
+    "github.copilot-chat"
   ]
 }
