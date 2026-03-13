@@ -38,8 +38,10 @@ class _PhotosPageState extends State<PhotosPage> {
   static const double _minTileWidth = 80;
 
   late Future<List<PhotoItem>> _photosFuture;
-  Future<List<PhotoItem>>? _cirrusFuture;
-  Future<List<PhotoItem>>? _mobileFuture;
+  Future<void>? _primeFuture;
+
+  List<PhotoItem> _cirrusPhotos = const <PhotoItem>[];
+  List<PhotoItem> _mobilePhotos = const <PhotoItem>[];
 
   bool _noHostSelected = false;
   int _previewColumns = _defaultCrossAxisCount;
@@ -49,10 +51,44 @@ class _PhotosPageState extends State<PhotosPage> {
   void initState() {
     super.initState();
     _noHostSelected = AppSettings.instance.activeHost == null;
-    _cirrusFuture = _noHostSelected
-        ? Future.value(const <PhotoItem>[])
-        : _loadCirrusPhotos();
-    _photosFuture = _cirrusFuture!;
+    _primeFuture = _primeSources();
+    _photosFuture = _photosForCategory(_selectedCategory);
+  }
+
+  Future<void> _primeSources() async {
+    final cirrusFuture = _safeLoadPhotos(() async {
+      if (_noHostSelected) return const <PhotoItem>[];
+      return _loadCirrusPhotos();
+    });
+    final mobileFuture = _safeLoadPhotos(_loadMobilePhotos);
+
+    final lists = await Future.wait([cirrusFuture, mobileFuture]);
+    _cirrusPhotos = lists[0];
+    _mobilePhotos = lists[1];
+  }
+
+  Future<List<PhotoItem>> _safeLoadPhotos(
+    Future<List<PhotoItem>> Function() loader,
+  ) async {
+    try {
+      return await loader();
+    } catch (_) {
+      return const <PhotoItem>[];
+    }
+  }
+
+  Future<List<PhotoItem>> _photosForCategory(PhotoCategory category) async {
+    _primeFuture ??= _primeSources();
+    await _primeFuture;
+
+    switch (category) {
+      case PhotoCategory.cirrus:
+        return _cirrusPhotos;
+      case PhotoCategory.mobile:
+        return _mobilePhotos;
+      case PhotoCategory.all:
+        return [..._cirrusPhotos, ..._mobilePhotos];
+    }
   }
 
   Future<List<PhotoItem>> _loadCirrusPhotos() async {
@@ -97,34 +133,16 @@ class _PhotosPageState extends State<PhotosPage> {
   Future<void> _selectCategory(PhotoCategory cat) async {
     setState(() {
       _selectedCategory = cat;
+      _photosFuture = _photosForCategory(cat);
     });
-
-    if (cat == PhotoCategory.cirrus) {
-      _cirrusFuture ??= _loadCirrusPhotos();
-      setState(() {
-        _photosFuture = _cirrusFuture!;
-      });
-    } else if (cat == PhotoCategory.mobile) {
-      _mobileFuture ??= _loadMobilePhotos();
-      setState(() {
-        _photosFuture = _mobileFuture!;
-      });
-    } else {
-      _cirrusFuture ??= _loadCirrusPhotos();
-      _mobileFuture ??= _loadMobilePhotos();
-      setState(() {
-        _photosFuture = Future.wait([
-          _cirrusFuture!,
-          _mobileFuture!,
-        ]).then((lists) => lists.expand((l) => l).toList(growable: false));
-      });
-    }
   }
 
   Future<void> _refresh() async {
-    _cirrusFuture = null;
-    _mobileFuture = null;
-    await _selectCategory(_selectedCategory);
+    _primeFuture = _primeSources();
+    setState(() {
+      _photosFuture = _photosForCategory(_selectedCategory);
+    });
+    await _photosFuture;
   }
 
   int _minColumnsByScale() {
@@ -351,9 +369,13 @@ class _PhotosPageState extends State<PhotosPage> {
           await Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (_) => const SettingsPage()));
-          setState(() {
-            _noHostSelected = AppSettings.instance.activeHost == null;
-          });
+          final noHostSelected = AppSettings.instance.activeHost == null;
+          if (_noHostSelected != noHostSelected) {
+            setState(() {
+              _noHostSelected = noHostSelected;
+            });
+            await _refresh();
+          }
         },
       ),
       body: FutureBuilder<List<PhotoItem>>(
@@ -374,9 +396,8 @@ class _PhotosPageState extends State<PhotosPage> {
               final sidebar = _buildSidebar(
                 context,
                 contentWidth,
-                // provide counts if futures completed, otherwise 0
-                photos.where((p) => p.isCirrus).length,
-                photos.where((p) => !p.isCirrus).length,
+                _cirrusPhotos.length,
+                _mobilePhotos.length,
                 compact: compact,
               );
 
