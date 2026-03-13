@@ -320,8 +320,9 @@ class _PhotosPageState extends State<PhotosPage> {
                       future: a.thumbnailDataWithSize(ThumbnailSize(200, 200)),
                       builder: (context, snap) {
                         final thumb = snap.data;
-                        if (thumb == null)
+                        if (thumb == null) {
                           return Container(color: Colors.grey[300]);
+                        }
                         return Image.memory(thumb, fit: BoxFit.cover);
                       },
                     ),
