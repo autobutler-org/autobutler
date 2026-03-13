@@ -1,5 +1,5 @@
-import 'dart:typed_data';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/file_browser_page.dart';
@@ -49,7 +49,9 @@ class _PhotosPageState extends State<PhotosPage> {
   void initState() {
     super.initState();
     _noHostSelected = AppSettings.instance.activeHost == null;
-    _cirrusFuture = _noHostSelected ? Future.value(const <PhotoItem>[]) : _loadCirrusPhotos();
+    _cirrusFuture = _noHostSelected
+        ? Future.value(const <PhotoItem>[])
+        : _loadCirrusPhotos();
     _photosFuture = _cirrusFuture!;
   }
 
@@ -85,7 +87,10 @@ class _PhotosPageState extends State<PhotosPage> {
 
     final AssetPathEntity all = paths.first;
     // Lazy: fetch an initial safe page size; UI can be extended to load more on scroll.
-    final List<AssetEntity> assets = await all.getAssetListPaged(page: 0, size: 200);
+    final List<AssetEntity> assets = await all.getAssetListPaged(
+      page: 0,
+      size: 200,
+    );
     return assets.map((a) => PhotoItem.fromAsset(a)).toList(growable: false);
   }
 
@@ -108,8 +113,10 @@ class _PhotosPageState extends State<PhotosPage> {
       _cirrusFuture ??= _loadCirrusPhotos();
       _mobileFuture ??= _loadMobilePhotos();
       setState(() {
-        _photosFuture = Future.wait([_cirrusFuture!, _mobileFuture!])
-            .then((lists) => lists.expand((l) => l).toList(growable: false));
+        _photosFuture = Future.wait([
+          _cirrusFuture!,
+          _mobileFuture!,
+        ]).then((lists) => lists.expand((l) => l).toList(growable: false));
       });
     }
   }
@@ -150,7 +157,6 @@ class _PhotosPageState extends State<PhotosPage> {
     return _previewColumns.clamp(minColumns, maxColumns);
   }
 
-
   Widget _buildSidebar(
     BuildContext context,
     double availableWidth,
@@ -186,11 +192,17 @@ class _PhotosPageState extends State<PhotosPage> {
         child: Row(
           children: [
             Icon(
-              cat == PhotoCategory.cirrus ? Icons.cloud : (cat == PhotoCategory.mobile ? Icons.smartphone : Icons.photo_library),
+              cat == PhotoCategory.cirrus
+                  ? Icons.cloud
+                  : (cat == PhotoCategory.mobile
+                        ? Icons.smartphone
+                        : Icons.photo_library),
               color: selected ? theme.colorScheme.primary : null,
             ),
             const SizedBox(width: 8),
-            Expanded(child: Text('$label: $count', style: theme.textTheme.titleMedium)),
+            Expanded(
+              child: Text('$label: $count', style: theme.textTheme.titleMedium),
+            ),
             if (selected) const Icon(Icons.check, size: 16),
           ],
         ),
@@ -220,9 +232,9 @@ class _PhotosPageState extends State<PhotosPage> {
             },
           ),
           const SizedBox(height: 20),
+          categoryButton(PhotoCategory.all, 'All', cirrusCount + mobileCount),
           categoryButton(PhotoCategory.cirrus, 'Cirrus', cirrusCount),
           categoryButton(PhotoCategory.mobile, 'Mobile', mobileCount),
-          categoryButton(PhotoCategory.all, 'All', cirrusCount + mobileCount),
         ],
       ),
     );
@@ -268,7 +280,8 @@ class _PhotosPageState extends State<PhotosPage> {
                         if (!mounted) return;
                         await navigator.push(
                           MaterialPageRoute(
-                            builder: (_) => ImageViewerPage(bytes: bytes, name: c.name),
+                            builder: (_) =>
+                                ImageViewerPage(bytes: bytes, name: c.name),
                           ),
                         );
                       },
@@ -279,7 +292,8 @@ class _PhotosPageState extends State<PhotosPage> {
                           if (progress == null) return child;
                           return Container(color: Colors.grey[300]);
                         },
-                        errorBuilder: (context, error, stack) => Container(color: Colors.grey[300]),
+                        errorBuilder: (context, error, stack) =>
+                            Container(color: Colors.grey[300]),
                       ),
                     ),
                   );
@@ -297,7 +311,8 @@ class _PhotosPageState extends State<PhotosPage> {
                       if (!mounted) return;
                       await navigator.push(
                         MaterialPageRoute(
-                          builder: (_) => ImageViewerPage(bytes: bytes, name: a.id),
+                          builder: (_) =>
+                              ImageViewerPage(bytes: bytes, name: a.id),
                         ),
                       );
                     },
@@ -305,7 +320,8 @@ class _PhotosPageState extends State<PhotosPage> {
                       future: a.thumbnailDataWithSize(ThumbnailSize(200, 200)),
                       builder: (context, snap) {
                         final thumb = snap.data;
-                        if (thumb == null) return Container(color: Colors.grey[300]);
+                        if (thumb == null)
+                          return Container(color: Colors.grey[300]);
                         return Image.memory(thumb, fit: BoxFit.cover);
                       },
                     ),
@@ -331,7 +347,9 @@ class _PhotosPageState extends State<PhotosPage> {
           Navigator.of(context).pop();
         },
         onTapSettings: () async {
-          await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsPage()));
+          await Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const SettingsPage()));
           setState(() {
             _noHostSelected = AppSettings.instance.activeHost == null;
           });
@@ -347,7 +365,9 @@ class _PhotosPageState extends State<PhotosPage> {
               final compact = constraints.maxWidth < 900;
               final contentWidth = compact
                   ? constraints.maxWidth
-                  : (constraints.maxWidth - 281).clamp(1.0, double.infinity).toDouble();
+                  : (constraints.maxWidth - 281)
+                        .clamp(1.0, double.infinity)
+                        .toDouble();
               final crossAxisCount = _effectiveCrossAxisCount(contentWidth);
 
               final sidebar = _buildSidebar(
@@ -379,12 +399,17 @@ class _PhotosPageState extends State<PhotosPage> {
                 );
               }
 
-              if (snapshot.connectionState == ConnectionState.waiting && photos.isEmpty) {
-                return buildShell(const Center(child: CircularProgressIndicator()));
+              if (snapshot.connectionState == ConnectionState.waiting &&
+                  photos.isEmpty) {
+                return buildShell(
+                  const Center(child: CircularProgressIndicator()),
+                );
               }
 
               if (snapshot.hasError) {
-                return buildShell(const Center(child: Text('Failed to load photos')));
+                return buildShell(
+                  const Center(child: Text('Failed to load photos')),
+                );
               }
 
               return buildShell(_buildPhotoGrid(photos, crossAxisCount));
