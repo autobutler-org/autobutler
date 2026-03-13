@@ -275,11 +275,12 @@ upgrade: upgrade/flutter upgrade/go ## Upgrade dependencies
 .PHONY: upgrade/flutter
 upgrade/flutter: ## Upgrade Flutter dependencies
 	flutter pub upgrade
+	$(MAKE) tidy/flutter
 
-.PHONY: upgrade/flutter/go
-upgrade/go: generate ## Upgrade dependencies (go)
+.PHONY: upgrade/go
+upgrade/go: generate/backend ## Upgrade dependencies (go)
 	$(GO) get -u ./...
-	$(MAKE) tidy
+	$(MAKE) tidy/go
 
 .PHONY: watch/backend
 watch/backend: build/backend ## Watch backend for changes
