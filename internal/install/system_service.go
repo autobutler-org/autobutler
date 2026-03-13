@@ -27,7 +27,7 @@ WantedBy=multi-user.target`
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.autobutler.autobutler</string>
+    <string>org.autobutler</string>
     <key>ProgramArguments</key>
     <array>
         <string>/Applications/autobutler</string>
