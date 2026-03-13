@@ -43,7 +43,7 @@ dependencies:
   path_provider: ^2.0.0
   video_player: ^2.6.0
   web: ^1.1.1
-  photo_manager: ^2.7.0
+  photo_manager: ^3.9.0
 
 dev_dependencies:
   flutter_test:

@@ -412,10 +412,10 @@ packages:
     dependency: "direct main"
     description:
       name: photo_manager
-      sha256: "74e5cb8a9e359e7fd461f684564c5a3e82b2d360f0e46d64264b4b381628c86d"
+      sha256: fb3bc8ea653370f88742b3baa304700107c83d12748aa58b2b9f2ed3ef15e6c2
       url: "https://pub.dev"
     source: hosted
-    version: "2.8.2"
+    version: "3.9.0"
   platform:
     dependency: transitive
     description:
