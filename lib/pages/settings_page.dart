@@ -274,7 +274,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: _selectedUpdateVersion,
+                    initialValue: _selectedUpdateVersion,
                     items: _availableVersions
                         .map(
                           (v) => DropdownMenuItem<String>(
