@@ -236,18 +236,6 @@ class _PhotosPageState extends State<PhotosPage> {
         children: [
           Row(
             children: [
-              const Spacer(),
-              IconButton(
-                onPressed: () async {
-                  await _refresh();
-                },
-                icon: const Icon(Icons.refresh),
-                tooltip: 'Reload photos',
-              ),
-            ],
-          ),
-          Row(
-            children: [
               const Icon(Icons.crop_square_outlined),
               Expanded(
                 child: Slider(
@@ -263,6 +251,13 @@ class _PhotosPageState extends State<PhotosPage> {
                 ),
               ),
               const Icon(Icons.grid_view_outlined),
+              IconButton(
+                onPressed: () async {
+                  await _refresh();
+                },
+                icon: const Icon(Icons.refresh),
+                tooltip: 'Reload photos',
+              ),
             ],
           ),
           const SizedBox(height: 20),
