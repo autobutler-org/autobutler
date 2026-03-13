@@ -1,12 +1,14 @@
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
+import 'package:autobutler/pages/photos_page.dart';
 import 'package:autobutler/pages/settings_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_dialog_utils.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
+import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/file_browser/file_actions_bar.dart';
 import 'package:autobutler/widgets/file_browser/file_breadcrumb_bar.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
@@ -36,11 +38,6 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
   Future<List<CirrusFileNode>>? _searchFuture;
   String? _searchQuery;
 
-  // Server/version state
-  String? _serverVersionSemver;
-  List<Map<String, dynamic>> _availableVersions = [];
-  bool _isUpdatingVersion = false;
-
   @override
   void initState() {
     super.initState();
@@ -51,7 +48,6 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
       _filesFuture = Future.value(const <CirrusFileNode>[]);
     } else {
       _reloadFiles();
-      _loadServerVersion();
     }
   }
 
@@ -63,45 +59,6 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     }
 
     _filesFuture = _controller.fetchFiles(_currentPath);
-  }
-
-  Future<void> _loadServerVersion() async {
-    if (AppSettings.instance.activeHost == null) return;
-    try {
-      final v = await CirrusService.getInstalledVersion();
-      final versions = await CirrusService.listAvailableVersions();
-      if (!mounted) return;
-      setState(() {
-        _serverVersionSemver =
-            v['semver'] as String? ?? v['version'] as String?;
-        _availableVersions = versions;
-      });
-    } catch (_) {
-      // ignore failures silently
-    } finally {
-      if (mounted) {}
-    }
-  }
-
-  Future<void> _performUpdate(String version) async {
-    if (_isUpdatingVersion) return;
-    setState(() {
-      _isUpdatingVersion = true;
-    });
-    try {
-      await CirrusService.updateToVersion(version);
-      if (!mounted) return;
-      _showMessage('Update started for $version');
-    } catch (e) {
-      if (!mounted) return;
-      _showMessage('Update failed: ${e.toString()}');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isUpdatingVersion = false;
-        });
-      }
-    }
   }
 
   void _refreshFileState() {
@@ -206,7 +163,6 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
   ) async {
     try {
       final outcome = await _controller.handleFileAction(
-        currentPath: _currentPath,
         node: node,
         action: action,
         context: context,
@@ -280,9 +236,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     }
 
     try {
-      final filePath = toRootDir(
-        joinPath(_currentPath, trimTrailingSlashes(node.name)),
-      );
+      final filePath = node.apiPath;
       // Open images in-app using ImageViewer; fallback to platform handlers for other types.
       final lower = lowerName;
       if (lower.endsWith('.jpg') ||
@@ -359,8 +313,8 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
   }
 
   void _navigateToFolder(CirrusFileNode node) {
-    // Use the node's fullPath to determine the containing folder and switch to it
-    final parent = parentPath(node.dirPath);
+    // Use the node's API path to determine the containing folder and switch to it.
+    final parent = parentPath(node.apiPath);
     _setPath(parent);
     setState(() {
       _isSearchMode = false;
@@ -399,18 +353,14 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            const Text('Cirrus'),
-            if (_serverVersionSemver != null) ...[
-              const SizedBox(width: 8),
-              Text(
-                'v$_serverVersionSemver',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ],
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
         ),
+        title: const Text('Cirrus'),
+        centerTitle: true,
         actions: [
           IconButton(
             onPressed: _handleSearchPressed,
@@ -422,46 +372,28 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
             },
             icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view_rounded),
           ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.update),
-            tooltip: 'Update Autobutler',
-            onSelected: (val) async {
-              if (val.isEmpty) return;
-              await _performUpdate(val);
-            },
-            itemBuilder: (ctx) {
-              if (_availableVersions.isEmpty) {
-                return [
-                  const PopupMenuItem<String>(
-                    value: '',
-                    enabled: false,
-                    child: Text('No updates available'),
-                  ),
-                ];
-              }
-              return _availableVersions.map((m) {
-                final ver = (m['version'] as String?) ?? '';
-                return PopupMenuItem<String>(value: ver, child: Text(ver));
-              }).toList();
-            },
-          ),
           IconButton(
-            onPressed: () async {
-              await Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const SettingsPage()));
-              // After returning from settings, attempt to reload files if a host was added.
-              setState(() {
-                _noHostSelected = AppSettings.instance.activeHost == null;
-                if (!_noHostSelected) {
-                  _reloadFiles();
-                  _loadServerVersion();
-                }
-              });
-            },
-            icon: const Icon(Icons.settings),
+            onPressed: _refreshFileState,
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh files',
           ),
         ],
+      ),
+      drawer: AutobutlerDrawer(
+        activeSection: AutobutlerDrawerSection.cirrus,
+        onTapCirrus: () {
+          Navigator.of(context).pop();
+        },
+        onTapPhotos: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const PhotosPage()),
+          );
+        },
+        onTapSettings: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const SettingsPage()),
+          );
+        },
       ),
       body: Column(
         children: [
@@ -470,7 +402,6 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
             isCreatingFolder: _isCreatingFolder,
             onUploadPressed: _handleUploadPressed,
             onCreateFolderPressed: _handleCreateFolderPressed,
-            onRefreshPressed: _refreshFileState,
             isSearchMode: _isSearchMode,
           ),
           FileBreadcrumbBar(
@@ -517,7 +448,6 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                                   AppSettings.instance.activeHost == null;
                               if (!_noHostSelected) {
                                 _reloadFiles();
-                                _loadServerVersion();
                               }
                             });
                           },

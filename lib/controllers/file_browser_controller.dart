@@ -92,25 +92,22 @@ class FileBrowserController {
   }
 
   Future<FileMenuActionOutcome?> handleFileAction({
-    required String currentPath,
     required CirrusFileNode node,
     required FileMenuAction action,
     required BuildContext context,
   }) async {
     switch (action) {
       case FileMenuAction.download:
-        final savedPath = await downloadNode(
-          currentPath: currentPath,
-          node: node,
-        );
+        final savedPath = await downloadNode(node: node);
         if (savedPath == null) {
           return const FileMenuActionOutcome(message: 'Download canceled');
         }
         return FileMenuActionOutcome(message: downloadedMessage(node));
       case FileMenuAction.moveRename:
+        final startPath = parentPath(node.apiPath);
         final targetInput = await promptForMoveRenamePath(
           context,
-          startPath: currentPath,
+          startPath: startPath,
           initialName: node.name,
         );
         if (!context.mounted) {
@@ -120,8 +117,8 @@ class FileBrowserController {
           return null;
         }
         final targetPath = resolveMoveRenameTargetPath(
-          currentPath: currentPath,
-          nodeName: node.name,
+          currentPath: startPath,
+          nodeApiPath: node.apiPath,
           targetInput: targetInput,
         );
         if (targetPath == null) {
@@ -130,8 +127,7 @@ class FileBrowserController {
 
         // Prevent moving a directory into itself or its own subtree
         if (node.isDir) {
-          final oldPath = joinPath(currentPath, trimTrailingSlashes(node.name));
-          final normalizedOld = normalizePath(oldPath);
+          final normalizedOld = normalizePath(node.apiPath);
           final normalizedTarget = normalizePath(targetPath);
           if (normalizedTarget == normalizedOld ||
               normalizedTarget.startsWith('$normalizedOld/')) {
@@ -156,11 +152,7 @@ class FileBrowserController {
           }
         }
 
-        await moveRenameNode(
-          currentPath: currentPath,
-          node: node,
-          targetInput: targetInput,
-        );
+        await moveRenameNode(node: node, targetInput: targetInput);
         return const FileMenuActionOutcome(
           message: 'Move/Rename complete',
           shouldRefresh: true,
@@ -173,7 +165,7 @@ class FileBrowserController {
         if (shouldDelete != true) {
           return null;
         }
-        await deleteNode(currentPath: currentPath, node: node);
+        await deleteNode(node: node);
         return const FileMenuActionOutcome(
           message: 'Deleted',
           shouldRefresh: true,
@@ -194,10 +186,10 @@ class FileBrowserController {
 
   String? resolveMoveRenameTargetPath({
     required String currentPath,
-    required String nodeName,
+    required String nodeApiPath,
     required String targetInput,
   }) {
-    final oldPath = joinPath(currentPath, trimTrailingSlashes(nodeName));
+    final oldPath = normalizePath(nodeApiPath);
     final targetPath = targetInput.startsWith('/')
         ? normalizePath(targetInput)
         : joinPath(currentPath, targetInput);

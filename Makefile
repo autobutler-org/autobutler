@@ -300,7 +300,7 @@ endif
 .PHONY: watch/frontend
 watch/frontend: ## Watch frontend on web
 	echo "Defaulting to web since it supports hot reload..."
-	$(MAKE) serve/frontend/web
+	flutter run -d chrome
 
 ##@ Code quality
 

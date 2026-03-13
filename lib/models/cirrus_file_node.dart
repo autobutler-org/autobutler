@@ -5,7 +5,6 @@ class CirrusFileNode {
     required this.isDir,
     required this.deviceName,
     required this.devicePath,
-    required this.fullPath,
     required this.deviceSerial,
     required this.dirPath,
   });
@@ -15,9 +14,14 @@ class CirrusFileNode {
   final bool isDir;
   final String deviceName;
   final String devicePath;
-  final String fullPath;
   final String deviceSerial;
   final String dirPath;
+
+  /// API path relative to the Cirrus root, safe to use in API calls.
+  String get apiPath {
+    final raw = dirPath.trim().isNotEmpty ? dirPath : name;
+    return raw.trim().replaceAll(RegExp(r'^/+|/+$'), '');
+  }
 
   factory CirrusFileNode.fromJson(Map<String, dynamic> json) {
     int parseSize(Object? value) {
@@ -53,7 +57,6 @@ class CirrusFileNode {
       isDir: parseBool(json['isDir'] ?? json['is_dir']),
       deviceName: parseString(json['deviceName'] ?? json['device_name']),
       devicePath: parseString(json['devicePath'] ?? json['device_path']),
-      fullPath: parseString(json['fullPath'] ?? json['full_path']),
       deviceSerial: parseString(json['deviceSerial'] ?? json['device_serial']),
       dirPath: parseString(json['dirPath'] ?? json['dir_path']),
     );

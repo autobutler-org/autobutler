@@ -1,6 +1,11 @@
 import 'package:autobutler/services/app_settings.dart';
+import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
+import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:flutter/material.dart';
+
+import 'file_browser_page.dart';
+import 'photos_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -13,6 +18,12 @@ class _SettingsPageState extends State<SettingsPage> {
   List<HostEntry> _hosts = [];
   int _active = -1;
   ThemeMode _theme = ThemeMode.system;
+  String? _installedVersion;
+  List<String> _availableVersions = [];
+  String? _selectedUpdateVersion;
+  bool _isLoadingVersionInfo = false;
+  bool _isUpdatingVersion = false;
+  String? _versionLoadError;
 
   @override
   void initState() {
@@ -25,6 +36,85 @@ class _SettingsPageState extends State<SettingsPage> {
     _active = AppSettings.instance.activeIndex;
     _theme = AppSettings.instance.themeMode.value;
     setState(() {});
+    _loadVersionInfo();
+  }
+
+  Future<void> _loadVersionInfo() async {
+    if (AppSettings.instance.activeHost == null) {
+      setState(() {
+        _installedVersion = null;
+        _availableVersions = const [];
+        _selectedUpdateVersion = null;
+        _versionLoadError = null;
+        _isLoadingVersionInfo = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingVersionInfo = true;
+      _versionLoadError = null;
+    });
+
+    try {
+      final installed = await CirrusService.getInstalledVersion();
+      final versions = await CirrusService.listAvailableVersions();
+      if (!mounted) return;
+
+      final installedVersion =
+          (installed['semver'] as String?) ??
+          (installed['version'] as String?) ??
+          'Unknown';
+      final availableVersions = versions
+          .map((m) => (m['version'] as String?) ?? '')
+          .where((v) => v.isNotEmpty)
+          .toList(growable: false);
+      final selectedVersion = availableVersions.contains(_selectedUpdateVersion)
+          ? _selectedUpdateVersion
+          : (availableVersions.isNotEmpty ? availableVersions.first : null);
+
+      setState(() {
+        _installedVersion = installedVersion;
+        _availableVersions = availableVersions;
+        _selectedUpdateVersion = selectedVersion;
+        _isLoadingVersionInfo = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _versionLoadError = e.toString();
+        _isLoadingVersionInfo = false;
+      });
+    }
+  }
+
+  Future<void> _performUpdate() async {
+    final version = _selectedUpdateVersion;
+    if (version == null || _isUpdatingVersion) return;
+
+    setState(() {
+      _isUpdatingVersion = true;
+    });
+
+    try {
+      await CirrusService.updateToVersion(version);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Update started for $version')));
+      await _loadVersionInfo();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Update failed: ${e.toString()}')));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdatingVersion = false;
+        });
+      }
+    }
   }
 
   Future<void> _addOrEditHost({int? index}) async {
@@ -114,10 +204,128 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+        title: const Text('Settings'),
+        centerTitle: true,
+      ),
+      drawer: AutobutlerDrawer(
+        activeSection: AutobutlerDrawerSection.settings,
+        onTapCirrus: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const FileBrowserPage()),
+          );
+        },
+        onTapPhotos: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const PhotosPage()),
+          );
+        },
+        onTapSettings: () {
+          Navigator.of(context).pop();
+        },
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const Text(
+            'Autobutler',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Installed version',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 6),
+                  if (AppSettings.instance.activeHost == null)
+                    const Text('No target host configured')
+                  else if (_isLoadingVersionInfo)
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else if (_versionLoadError != null)
+                    Text(
+                      'Failed to load version info',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    )
+                  else
+                    Text(
+                      _installedVersion ?? 'Unknown',
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedUpdateVersion,
+                    items: _availableVersions
+                        .map(
+                          (v) => DropdownMenuItem<String>(
+                            value: v,
+                            child: Text(v),
+                          ),
+                        )
+                        .toList(),
+                    onChanged:
+                        (AppSettings.instance.activeHost == null ||
+                            _isLoadingVersionInfo ||
+                            _isUpdatingVersion ||
+                            _availableVersions.isEmpty)
+                        ? null
+                        : (v) {
+                            setState(() {
+                              _selectedUpdateVersion = v;
+                            });
+                          },
+                    decoration: const InputDecoration(
+                      labelText: 'Update Autobutler to version',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton.icon(
+                      onPressed:
+                          (_selectedUpdateVersion == null ||
+                              _isUpdatingVersion ||
+                              AppSettings.instance.activeHost == null)
+                          ? null
+                          : _performUpdate,
+                      icon: _isUpdatingVersion
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.update),
+                      label: Text(
+                        _isUpdatingVersion ? 'Updating...' : 'Start update',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
           const Text(
             'Theme',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

@@ -6,7 +6,6 @@ class FileActionsBar extends StatelessWidget {
     required this.isCreatingFolder,
     required this.onUploadPressed,
     required this.onCreateFolderPressed,
-    required this.onRefreshPressed,
     required this.isSearchMode,
     super.key,
   });
@@ -15,7 +14,6 @@ class FileActionsBar extends StatelessWidget {
   final bool isCreatingFolder;
   final VoidCallback onUploadPressed;
   final VoidCallback onCreateFolderPressed;
-  final VoidCallback onRefreshPressed;
   final bool isSearchMode;
 
   @override
@@ -37,12 +35,6 @@ class FileActionsBar extends StatelessWidget {
             onPressed: isCreatingFolder ? null : onCreateFolderPressed,
             icon: const Icon(Icons.create_new_folder_outlined),
             label: Text(isCreatingFolder ? 'Creating...' : 'New Folder'),
-          ),
-          const Spacer(),
-          IconButton(
-            onPressed: onRefreshPressed,
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh files',
           ),
         ],
       ),

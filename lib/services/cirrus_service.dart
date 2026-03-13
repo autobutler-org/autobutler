@@ -44,6 +44,25 @@ class CirrusService {
     return endpointUri.replace(query: querySegments.join('&'));
   }
 
+  /// Construct a URL for the thumbnail endpoint.
+  /// The backend exposes thumbnails at /api/v1/thumbnails/*filePath where filePath is a
+  /// path-like segment. Each path segment is percent-encoded to preserve slashes.
+  static Uri constructThumbnailUrl(String filePath, {String? serial}) {
+    final trimmed = filePath.trim();
+    final normalized = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
+    final encodedPath = normalized
+        .split('/')
+        .map((s) => Uri.encodeComponent(s))
+        .join('/');
+    final endpointUri = _apiBaseUri.resolve('/api/v1/thumbnails/$encodedPath');
+
+    final serialValue = serial?.trim() ?? '';
+    if (serialValue.isNotEmpty) {
+      return endpointUri.replace(queryParameters: {'serial': serialValue});
+    }
+    return endpointUri;
+  }
+
   static Future<List<CirrusFileNode>> getFiles(
     String path, {
     List<String>? serials,
@@ -259,6 +278,20 @@ class CirrusService {
       throw Exception('Failed to download file (${response.statusCode})');
     }
 
+    return response.bodyBytes;
+  }
+
+  /// Download thumbnail bytes for the specified filePath using the thumbnails endpoint.
+  /// Returns the raw bytes of the thumbnail image, or throws on non-success status codes.
+  static Future<Uint8List?> downloadThumbnailBytes(
+    String filePath, {
+    String? serial,
+  }) async {
+    final uri = constructThumbnailUrl(filePath, serial: serial);
+    final response = await http.get(uri);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to download thumbnail (${response.statusCode})');
+    }
     return response.bodyBytes;
   }
 
