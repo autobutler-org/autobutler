@@ -234,9 +234,19 @@ class _PhotosPageState extends State<PhotosPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Photos', style: theme.textTheme.titleLarge),
-          const SizedBox(height: 16),
-          Text('Photos per row', style: theme.textTheme.titleSmall),
+          Row(
+            children: [
+              Text('Photos per row', style: theme.textTheme.titleSmall),
+              const Spacer(),
+              IconButton(
+                onPressed: () async {
+                  await _refresh();
+                },
+                icon: const Icon(Icons.refresh),
+                tooltip: 'Reload photos',
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
           Slider(
             min: minColumns.toDouble(),
