@@ -236,7 +236,6 @@ class _PhotosPageState extends State<PhotosPage> {
         children: [
           Row(
             children: [
-              Text('Photos per row', style: theme.textTheme.titleSmall),
               const Spacer(),
               IconButton(
                 onPressed: () async {
@@ -247,17 +246,24 @@ class _PhotosPageState extends State<PhotosPage> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Slider(
-            min: minColumns.toDouble(),
-            max: maxColumns.toDouble(),
-            divisions: divisions > 0 ? divisions : null,
-            value: selectedColumns.toDouble(),
-            onChanged: (value) {
-              setState(() {
-                _previewColumns = value.round();
-              });
-            },
+          Row(
+            children: [
+              const Icon(Icons.crop_square_outlined),
+              Expanded(
+                child: Slider(
+                  min: minColumns.toDouble(),
+                  max: maxColumns.toDouble(),
+                  divisions: divisions > 0 ? divisions : null,
+                  value: selectedColumns.toDouble(),
+                  onChanged: (value) {
+                    setState(() {
+                      _previewColumns = value.round();
+                    });
+                  },
+                ),
+              ),
+              const Icon(Icons.grid_view_outlined),
+            ],
           ),
           const SizedBox(height: 20),
           categoryButton(PhotoCategory.all, 'All', cirrusCount + mobileCount),
