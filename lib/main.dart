@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:autobutler/pages/file_browser_page.dart';
 import 'package:autobutler/services/app_settings.dart';
+import 'package:flutter/material.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +18,7 @@ class AutobutlerApp extends StatelessWidget {
       builder: (context, mode, _) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'Autobutler Mobile',
+          title: 'Autobutler',
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
               seedColor: Colors.blue,
