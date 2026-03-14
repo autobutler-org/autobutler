@@ -1,6 +1,9 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
-import 'package:flutter/material.dart';
 import 'package:autobutler/services/cirrus_service.dart';
+import 'package:autobutler/utils/file_browser_path_utils.dart';
+import 'package:desktop_drop/desktop_drop.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 enum FileMenuAction { download, moveRename, delete }
 
@@ -10,6 +13,8 @@ class FileBrowserView extends StatelessWidget {
     required this.onFileMenuAction,
     required this.onOpenDirectory,
     required this.isGridView,
+    required this.currentPath,
+    this.onDropToFolder,
     this.showFileSizeAndMenu = true,
     this.isSearchMode = false,
     this.onNavigateToFolder,
@@ -20,9 +25,27 @@ class FileBrowserView extends StatelessWidget {
   final Future<void> Function(CirrusFileNode, FileMenuAction) onFileMenuAction;
   final void Function(CirrusFileNode) onOpenDirectory;
   final bool isGridView;
+  final String currentPath;
+  final Future<void> Function(List<DropItem> droppedItems, String targetPath)?
+  onDropToFolder;
   final bool showFileSizeAndMenu;
   final bool isSearchMode;
   final void Function(CirrusFileNode)? onNavigateToFolder;
+
+  Widget _buildFolderDropWrapper({
+    required CirrusFileNode item,
+    required Widget child,
+  }) {
+    if (!kIsWeb || onDropToFolder == null || !item.isDir) {
+      return child;
+    }
+
+    return _FolderDropTarget(
+      targetPath: normalizePath(joinPath(currentPath, item.name)),
+      onDropToFolder: onDropToFolder!,
+      child: child,
+    );
+  }
 
   void _dispatchMenuAction(CirrusFileNode item, FileMenuAction action) {
     Future<void>.delayed(Duration.zero, () async {
@@ -80,110 +103,113 @@ class FileBrowserView extends StatelessWidget {
             ),
             itemBuilder: (context, index) {
               final item = files[index];
-              return Card(
-                clipBehavior: Clip.hardEdge,
-                child: InkWell(
-                  onTap: () => onOpenDirectory(item),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // If the node is an image, show a thumbnail from the backend thumbnails endpoint;
-                        // otherwise show a representative icon.
-                        (() {
-                          final lower = item.name.toLowerCase();
-                          final isImage =
-                              lower.endsWith('.jpg') ||
-                              lower.endsWith('.jpeg') ||
-                              lower.endsWith('.png') ||
-                              lower.endsWith('.gif') ||
-                              lower.endsWith('.webp');
-                          if (isImage) {
-                            final url = CirrusService.constructThumbnailUrl(
-                              item.apiPath,
-                              serial: item.deviceSerial,
-                            );
-                            return SizedBox(
-                              height: 96,
-                              width: double.infinity,
-                              child: Image.network(
-                                url.toString(),
-                                fit: BoxFit.cover,
-                                loadingBuilder: (context, child, progress) {
-                                  if (progress == null) return child;
-                                  return Container(color: Colors.grey[300]);
-                                },
-                                errorBuilder: (context, error, stack) =>
-                                    Container(color: Colors.grey[300]),
-                              ),
-                            );
-                          }
-                          return Center(
-                            child: Icon(_iconForNode(item), size: 48),
-                          );
-                        })(),
-                        const SizedBox(height: 8),
-                        Flexible(
-                          child: Text(
-                            item.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const Spacer(),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            if (showFileSizeAndMenu)
-                              Flexible(
-                                child: Text(
-                                  _formatSize(item.size, item.isDir),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+              return _buildFolderDropWrapper(
+                item: item,
+                child: Card(
+                  clipBehavior: Clip.hardEdge,
+                  child: InkWell(
+                    onTap: () => onOpenDirectory(item),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // If the node is an image, show a thumbnail from the backend thumbnails endpoint;
+                          // otherwise show a representative icon.
+                          (() {
+                            final lower = item.name.toLowerCase();
+                            final isImage =
+                                lower.endsWith('.jpg') ||
+                                lower.endsWith('.jpeg') ||
+                                lower.endsWith('.png') ||
+                                lower.endsWith('.gif') ||
+                                lower.endsWith('.webp');
+                            if (isImage) {
+                              final url = CirrusService.constructThumbnailUrl(
+                                item.apiPath,
+                                serial: item.deviceSerial,
+                              );
+                              return SizedBox(
+                                height: 96,
+                                width: double.infinity,
+                                child: Image.network(
+                                  url.toString(),
+                                  fit: BoxFit.cover,
+                                  loadingBuilder: (context, child, progress) {
+                                    if (progress == null) return child;
+                                    return Container(color: Colors.grey[300]);
+                                  },
+                                  errorBuilder: (context, error, stack) =>
+                                      Container(color: Colors.grey[300]),
                                 ),
-                              ),
-                            if (showFileSizeAndMenu)
-                              PopupMenuButton<FileMenuAction>(
-                                icon: const Icon(Icons.more_vert),
-                                itemBuilder: (context) => [
-                                  PopupMenuItem<FileMenuAction>(
-                                    value: FileMenuAction.download,
-                                    onTap: () => _dispatchMenuAction(
-                                      item,
-                                      FileMenuAction.download,
-                                    ),
-                                    child: Text('Download'),
+                              );
+                            }
+                            return Center(
+                              child: Icon(_iconForNode(item), size: 48),
+                            );
+                          })(),
+                          const SizedBox(height: 8),
+                          Flexible(
+                            child: Text(
+                              item.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const Spacer(),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              if (showFileSizeAndMenu)
+                                Flexible(
+                                  child: Text(
+                                    _formatSize(item.size, item.isDir),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  PopupMenuItem<FileMenuAction>(
-                                    value: FileMenuAction.moveRename,
-                                    onTap: () => _dispatchMenuAction(
-                                      item,
-                                      FileMenuAction.moveRename,
-                                    ),
-                                    child: Text('Move/Rename'),
-                                  ),
-                                  PopupMenuItem<FileMenuAction>(
-                                    value: FileMenuAction.delete,
-                                    onTap: () => _dispatchMenuAction(
-                                      item,
-                                      FileMenuAction.delete,
-                                    ),
-                                    child: Text('Delete'),
-                                  ),
-                                  if (isSearchMode &&
-                                      onNavigateToFolder != null)
+                                ),
+                              if (showFileSizeAndMenu)
+                                PopupMenuButton<FileMenuAction>(
+                                  icon: const Icon(Icons.more_vert),
+                                  itemBuilder: (context) => [
                                     PopupMenuItem<FileMenuAction>(
-                                      // Reuse an existing enum value; action is handled via onNavigateToFolder
                                       value: FileMenuAction.download,
-                                      onTap: () => onNavigateToFolder!(item),
-                                      child: Text('Navigate to folder'),
+                                      onTap: () => _dispatchMenuAction(
+                                        item,
+                                        FileMenuAction.download,
+                                      ),
+                                      child: Text('Download'),
                                     ),
-                                ],
-                              ),
-                          ],
-                        ),
-                      ],
+                                    PopupMenuItem<FileMenuAction>(
+                                      value: FileMenuAction.moveRename,
+                                      onTap: () => _dispatchMenuAction(
+                                        item,
+                                        FileMenuAction.moveRename,
+                                      ),
+                                      child: Text('Move/Rename'),
+                                    ),
+                                    PopupMenuItem<FileMenuAction>(
+                                      value: FileMenuAction.delete,
+                                      onTap: () => _dispatchMenuAction(
+                                        item,
+                                        FileMenuAction.delete,
+                                      ),
+                                      child: Text('Delete'),
+                                    ),
+                                    if (isSearchMode &&
+                                        onNavigateToFolder != null)
+                                      PopupMenuItem<FileMenuAction>(
+                                        // Reuse an existing enum value; action is handled via onNavigateToFolder
+                                        value: FileMenuAction.download,
+                                        onTap: () => onNavigateToFolder!(item),
+                                        child: Text('Navigate to folder'),
+                                      ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -200,82 +226,85 @@ class FileBrowserView extends StatelessWidget {
           ),
           itemBuilder: (context, index) {
             final item = files[index];
-            return Material(
-              color: Colors.transparent,
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 2,
-                ),
-                leading: Icon(_iconForNode(item)),
-                title: Row(
-                  children: [
-                    Expanded(
-                      flex: 5,
-                      child: Text(
-                        item.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        item.deviceName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (showFileSizeAndMenu)
+            return _buildFolderDropWrapper(
+              item: item,
+              child: Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 2,
+                  ),
+                  leading: Icon(_iconForNode(item)),
+                  title: Row(
+                    children: [
                       Expanded(
-                        flex: 2,
+                        flex: 5,
                         child: Text(
-                          _formatSize(item.size, item.isDir),
+                          item.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                  ],
-                ),
-                trailing: showFileSizeAndMenu
-                    ? PopupMenuButton<FileMenuAction>(
-                        icon: const Icon(Icons.more_vert),
-                        itemBuilder: (context) => [
-                          PopupMenuItem<FileMenuAction>(
-                            value: FileMenuAction.download,
-                            onTap: () => _dispatchMenuAction(
-                              item,
-                              FileMenuAction.download,
-                            ),
-                            child: Text('Download'),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          item.deviceName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (showFileSizeAndMenu)
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            _formatSize(item.size, item.isDir),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          PopupMenuItem<FileMenuAction>(
-                            value: FileMenuAction.moveRename,
-                            onTap: () => _dispatchMenuAction(
-                              item,
-                              FileMenuAction.moveRename,
-                            ),
-                            child: Text('Move/Rename'),
-                          ),
-                          PopupMenuItem<FileMenuAction>(
-                            value: FileMenuAction.delete,
-                            onTap: () => _dispatchMenuAction(
-                              item,
-                              FileMenuAction.delete,
-                            ),
-                            child: Text('Delete'),
-                          ),
-                          if (isSearchMode && onNavigateToFolder != null)
+                        ),
+                    ],
+                  ),
+                  trailing: showFileSizeAndMenu
+                      ? PopupMenuButton<FileMenuAction>(
+                          icon: const Icon(Icons.more_vert),
+                          itemBuilder: (context) => [
                             PopupMenuItem<FileMenuAction>(
-                              // Reuse an existing enum value; action is handled via onNavigateToFolder
                               value: FileMenuAction.download,
-                              onTap: () => onNavigateToFolder!(item),
-                              child: Text('Navigate to folder'),
+                              onTap: () => _dispatchMenuAction(
+                                item,
+                                FileMenuAction.download,
+                              ),
+                              child: Text('Download'),
                             ),
-                        ],
-                      )
-                    : null,
-                onTap: () => onOpenDirectory(item),
+                            PopupMenuItem<FileMenuAction>(
+                              value: FileMenuAction.moveRename,
+                              onTap: () => _dispatchMenuAction(
+                                item,
+                                FileMenuAction.moveRename,
+                              ),
+                              child: Text('Move/Rename'),
+                            ),
+                            PopupMenuItem<FileMenuAction>(
+                              value: FileMenuAction.delete,
+                              onTap: () => _dispatchMenuAction(
+                                item,
+                                FileMenuAction.delete,
+                              ),
+                              child: Text('Delete'),
+                            ),
+                            if (isSearchMode && onNavigateToFolder != null)
+                              PopupMenuItem<FileMenuAction>(
+                                // Reuse an existing enum value; action is handled via onNavigateToFolder
+                                value: FileMenuAction.download,
+                                onTap: () => onNavigateToFolder!(item),
+                                child: Text('Navigate to folder'),
+                              ),
+                          ],
+                        )
+                      : null,
+                  onTap: () => onOpenDirectory(item),
+                ),
               ),
             );
           },
@@ -323,5 +352,67 @@ class FileBrowserView extends StatelessWidget {
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     }
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+  }
+}
+
+class _FolderDropTarget extends StatefulWidget {
+  const _FolderDropTarget({
+    required this.targetPath,
+    required this.onDropToFolder,
+    required this.child,
+  });
+
+  final String targetPath;
+  final Future<void> Function(List<DropItem> droppedItems, String targetPath)
+  onDropToFolder;
+  final Widget child;
+
+  @override
+  State<_FolderDropTarget> createState() => _FolderDropTargetState();
+}
+
+class _FolderDropTargetState extends State<_FolderDropTarget> {
+  bool _isDragOver = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return DropTarget(
+      onDragEntered: (_) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _isDragOver = true;
+        });
+      },
+      onDragExited: (_) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _isDragOver = false;
+        });
+      },
+      onDragDone: (details) async {
+        if (mounted) {
+          setState(() {
+            _isDragOver = false;
+          });
+        }
+        await widget.onDropToFolder(details.files, widget.targetPath);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        decoration: _isDragOver
+            ? BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: colorScheme.primary, width: 1.5),
+                color: colorScheme.primaryContainer.withValues(alpha: 0.35),
+              )
+            : null,
+        child: widget.child,
+      ),
+    );
   }
 }

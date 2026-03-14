@@ -44,6 +44,7 @@ dependencies:
   video_player: ^2.6.0
   web: ^1.1.1
   photo_manager: ^3.9.0
+  desktop_drop: ^0.7.0
 
 dev_dependencies:
   flutter_test:

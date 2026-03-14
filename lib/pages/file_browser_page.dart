@@ -13,8 +13,11 @@ import 'package:autobutler/widgets/file_browser/file_actions_bar.dart';
 import 'package:autobutler/widgets/file_browser/file_breadcrumb_bar.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
+import 'package:desktop_drop/desktop_drop.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 
 class FileBrowserPage extends StatefulWidget {
   const FileBrowserPage({super.key});
@@ -31,6 +34,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
   bool _isGridView = false;
   bool _isUploading = false;
   bool _isCreatingFolder = false;
+  bool _isWebDragging = false;
   bool _noHostSelected = false;
 
   // Search state
@@ -67,13 +71,11 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     });
   }
 
-  Future<void> _handleUploadPressed() async {
-    if (_isUploading) {
-      return;
-    }
-
-    final selectedFile = await _controller.pickUploadFile();
-    if (selectedFile == null) {
+  Future<void> _uploadSelectedFiles(
+    List<http.MultipartFile> selectedFiles,
+    String uploadPath,
+  ) async {
+    if (_isUploading || selectedFiles.isEmpty) {
       return;
     }
 
@@ -82,9 +84,9 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     });
 
     try {
-      await _controller.uploadFile(
-        currentPath: _currentPath,
-        selectedFile: selectedFile,
+      await _controller.uploadFiles(
+        currentPath: uploadPath,
+        selectedFiles: selectedFiles,
       );
 
       if (!mounted) {
@@ -93,13 +95,10 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
 
       _refreshFileState();
 
-      _showMessage('Uploaded ${selectedFile.filename ?? 'file'}');
-    } on MissingPluginException {
-      if (!mounted) {
-        return;
-      }
-
-      _showMessage('File picker plugin not available. Fully restart the app.');
+      final uploadedLabel = selectedFiles.length == 1
+          ? selectedFiles.first.filename ?? 'file'
+          : '${selectedFiles.length} files';
+      _showMessage('Uploaded $uploadedLabel');
     } catch (_) {
       if (!mounted) {
         return;
@@ -113,6 +112,75 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
         });
       }
     }
+  }
+
+  Future<void> _handleUploadPressed() async {
+    if (_isUploading) {
+      return;
+    }
+
+    try {
+      final selectedFile = await _controller.pickUploadFile();
+      if (selectedFile == null) {
+        return;
+      }
+
+      await _uploadSelectedFiles([selectedFile], _currentPath);
+    } on MissingPluginException {
+      if (!mounted) {
+        return;
+      }
+
+      _showMessage('File picker plugin not available. Fully restart the app.');
+    }
+  }
+
+  Future<void> _handleDroppedItems({
+    required List<DropItem> droppedItems,
+    required String uploadPath,
+  }) async {
+    if (!kIsWeb || droppedItems.isEmpty || _isUploading) {
+      return;
+    }
+
+    final selectedFiles = <http.MultipartFile>[];
+    for (final droppedItem in droppedItems) {
+      if (droppedItem is! DropItemFile) {
+        continue;
+      }
+
+      final bytes = await droppedItem.readAsBytes();
+      selectedFiles.add(
+        _controller.multipartFileFromBytes(
+          bytes: bytes,
+          filename: droppedItem.name,
+        ),
+      );
+    }
+
+    if (selectedFiles.isEmpty) {
+      _showMessage('No files to upload');
+      return;
+    }
+
+    await _uploadSelectedFiles(selectedFiles, uploadPath);
+  }
+
+  Future<void> _handleDropToCurrentFolder(DropDoneDetails details) {
+    return _handleDroppedItems(
+      droppedItems: details.files,
+      uploadPath: _currentPath,
+    );
+  }
+
+  Future<void> _handleDropToFolder(
+    List<DropItem> droppedItems,
+    String folderPath,
+  ) {
+    return _handleDroppedItems(
+      droppedItems: droppedItems,
+      uploadPath: folderPath,
+    );
   }
 
   Future<void> _handleCreateFolderPressed() async {
@@ -456,16 +524,76 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                       ],
                     ),
                   )
-                : FileBrowserView(
-                    filesFuture: _isSearchMode
-                        ? (_searchFuture ??
-                              Future.value(const <CirrusFileNode>[]))
-                        : _filesFuture,
-                    onFileMenuAction: _handleFileMenuAction,
-                    onOpenDirectory: _isSearchMode ? (_) {} : _handleOpenNode,
-                    isGridView: _isGridView,
-                    isSearchMode: _isSearchMode,
-                    onNavigateToFolder: _navigateToFolder,
+                : DropTarget(
+                    enable: kIsWeb && !_isSearchMode && !_isUploading,
+                    onDragEntered: (_) {
+                      if (!mounted) {
+                        return;
+                      }
+                      setState(() {
+                        _isWebDragging = true;
+                      });
+                    },
+                    onDragExited: (_) {
+                      if (!mounted) {
+                        return;
+                      }
+                      setState(() {
+                        _isWebDragging = false;
+                      });
+                    },
+                    onDragDone: (details) async {
+                      if (mounted) {
+                        setState(() {
+                          _isWebDragging = false;
+                        });
+                      }
+                      await _handleDropToCurrentFolder(details);
+                    },
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        FileBrowserView(
+                          filesFuture: _isSearchMode
+                              ? (_searchFuture ??
+                                    Future.value(const <CirrusFileNode>[]))
+                              : _filesFuture,
+                          onFileMenuAction: _handleFileMenuAction,
+                          onOpenDirectory: _isSearchMode
+                              ? (_) {}
+                              : _handleOpenNode,
+                          isGridView: _isGridView,
+                          isSearchMode: _isSearchMode,
+                          onNavigateToFolder: _navigateToFolder,
+                          currentPath: _currentPath,
+                          onDropToFolder: _handleDropToFolder,
+                        ),
+                        if (_isWebDragging)
+                          IgnorePointer(
+                            child: Container(
+                              margin: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  width: 1.5,
+                                ),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer
+                                    .withValues(alpha: 0.20),
+                              ),
+                              alignment: Alignment.topCenter,
+                              padding: const EdgeInsets.only(top: 10),
+                              child: Text(
+                                'Drop on a folder to upload there, or anywhere else to upload to current folder',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
           ),
         ],
