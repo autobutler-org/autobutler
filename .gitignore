@@ -90,3 +90,6 @@ flutter.zip
 
 # Ralph loops
 .ralph/
+
+# Sable's personal dev context (AI co-developer workspace)
+sable/
