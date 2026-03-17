@@ -298,7 +298,10 @@ func TestGetDataDirForDevice_ExternalDevice(t *testing.T) {
 }
 
 func TestGetCirrusDir(t *testing.T) {
-	filesDir := GetCirrusDir()
+	filesDir, err := GetCirrusDir()
+	if err != nil {
+		t.Fatalf("GetCirrusDir() failed: %v", err)
+	}
 	if filesDir == "" {
 		t.Error("Expected non-empty files directory")
 	}
@@ -780,7 +783,10 @@ func TestMoveFile_ToRootDirectory(t *testing.T) {
 	os.WriteFile(sourceFile, []byte("test"), 0644)
 
 	// Get the current files dir and construct paths relative to it
-	filesDir := GetCirrusDir()
+	filesDir, err := GetCirrusDir()
+	if err != nil {
+		t.Fatalf("GetCirrusDir() failed: %v", err)
+	}
 
 	// Create test structure in actual filesDir
 	testSourceDir := filepath.Join(filesDir, "test_move_root")
@@ -946,7 +952,10 @@ func TestDetermineFileType_Directory(t *testing.T) {
 func TestDetermineFileType_RegularFile(t *testing.T) {
 	// Test with a regular file - should use DetermineFileTypeFromPath
 	// Create a test file in the actual filesDir
-	filesDir := GetCirrusDir()
+	filesDir, err := GetCirrusDir()
+	if err != nil {
+		t.Fatalf("GetCirrusDir() failed: %v", err)
+	}
 	testDir := filepath.Join(filesDir, "test_determine_type")
 	testFile := filepath.Join(testDir, "test.pdf")
 

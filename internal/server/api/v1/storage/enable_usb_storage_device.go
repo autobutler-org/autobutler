@@ -80,7 +80,13 @@ func enableUsbStorageDevice(c *gin.Context) *serverutil.Response {
 			WithError(errors.New("Partition is already mounted"))
 	}
 
-	mountTargetDir := storageutil.GetMountsDir()
+	mountTargetDir, err := storageutil.GetMountsDir()
+	if err != nil {
+		return serverutil.NewResponse().
+			WithContentType(serverutil.ContentTypeJSON).
+			WithStatusCode(http.StatusInternalServerError).
+			WithError(fmt.Errorf("Failed to get mounts directory: %w", err))
+	}
 	mountTargetPath := filepath.Join(mountTargetDir, targetDevice.GetSerial())
 	if err := os.MkdirAll(mountTargetPath, os.ModeDir|os.ModePerm); err != nil {
 		return serverutil.NewResponse().

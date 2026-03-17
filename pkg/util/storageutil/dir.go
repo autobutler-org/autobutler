@@ -11,13 +11,12 @@ func ConstructCirrusDir(dataDir string) string {
 	return filepath.Join(dataDir, "cirrus")
 }
 
-func GetCirrusDir() string {
-	// TODO: Probably should not panic here
+func GetCirrusDir() (string, error) {
 	cirrusPath := ConstructCirrusDir(GetDataDir())
 	if err := os.MkdirAll(cirrusPath, 0755); err != nil {
-		panic(fmt.Sprintf("failed to create cirrus directory: %v", err)) // coverage: ignore - panic on filesystem error
+		return "", fmt.Errorf("failed to create cirrus directory: %w", err)
 	}
-	return cirrusPath
+	return cirrusPath, nil
 }
 
 func GetCirrusDirForDevice(mountPoint string) (string, error) {
@@ -83,11 +82,10 @@ func GetDataDir() string {
 	}
 }
 
-func GetMountsDir() string {
+func GetMountsDir() (string, error) {
 	mountDir := filepath.Join(GetDataDir(), "mounts")
-	// TODO: Probably should not panic here
 	if err := os.MkdirAll(mountDir, 0755); err != nil {
-		panic(fmt.Sprintf("failed to create mount directory: %v", err)) // coverage: ignore - panic on filesystem error
+		return "", fmt.Errorf("failed to create mount directory: %w", err)
 	}
-	return mountDir
+	return mountDir, nil
 }
