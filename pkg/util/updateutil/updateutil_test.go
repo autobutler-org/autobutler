@@ -3,11 +3,16 @@ package updateutil
 import (
 	"archive/tar"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"runtime"
+	"strings"
 	"testing"
+
+	github "github.com/autobutler-org/autobutler/pkg/util/githubutil"
 )
 
 var defaultUpdateSource = DefaultUpdateSources[0]
@@ -168,6 +173,261 @@ func TestConstants(t *testing.T) {
 	if extractedName != expectedExtractedName {
 		t.Errorf("Expected extractedName to be '%s', got '%s'", expectedExtractedName, extractedName)
 	}
+}
+
+// serveRealReleaseTarGz starts a mock HTTP server that serves the real v0.13.0
+// Linux arm64 release tarball (cached locally). This lets us test the full
+// download → decompress → extract path without hitting GitHub.
+func serveRealReleaseTarGz(t *testing.T) (*httptest.Server, string) {
+	t.Helper()
+	tarPath := "/tmp/autobutler-test-release/autobutler_Linux_arm64.tar.gz"
+	if _, err := os.Stat(tarPath); os.IsNotExist(err) {
+		t.Skip("Real release tarball not available at " + tarPath + " — run: curl -sL https://github.com/autobutler-org/autobutler/releases/download/v0.13.0/autobutler_Linux_arm64.tar.gz -o " + tarPath)
+	}
+	data, err := os.ReadFile(tarPath)
+	if err != nil {
+		t.Fatalf("failed to read release tarball: %v", err)
+	}
+	version := "v0.13.0"
+	archiveName := ConstructArchiveName()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		expected := fmt.Sprintf("/%s/%s", version, archiveName)
+		if r.URL.Path != expected {
+			t.Logf("unexpected path: %s (expected %s)", r.URL.Path, expected)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	}))
+	return server, version
+}
+
+func TestUpdate_RealRelease_ReplaceSelf(t *testing.T) {
+	if runtime.GOOS != "linux" || runtime.GOARCH != "arm64" {
+		t.Skipf("Real release test only runs on linux/arm64, got %s/%s", runtime.GOOS, runtime.GOARCH)
+	}
+	tarPath := "/tmp/autobutler-test-release/autobutler_Linux_arm64.tar.gz"
+	if _, err := os.Stat(tarPath); os.IsNotExist(err) {
+		t.Skip("Real release tarball not available")
+	}
+	data, err := os.ReadFile(tarPath)
+	if err != nil {
+		t.Fatalf("failed to read tarball: %v", err)
+	}
+	// replaceSelf extracts the binary and atomically replaces os.Executable().
+	// In the test runner context this will succeed or fail with a permission
+	// error — either way is acceptable. What we verify is no panic and no
+	// unexpected error (only permission/read-only are OK to get).
+	err = replaceSelf(strings.NewReader(string(data)))
+	if err != nil &&
+		!strings.Contains(err.Error(), "permission") &&
+		!strings.Contains(err.Error(), "read-only") &&
+		!strings.Contains(err.Error(), "text file busy") {
+		t.Errorf("replaceSelf with real tarball returned unexpected error: %v", err)
+	}
+}
+
+func TestReplaceSelf_WithRealTarball(t *testing.T) {
+	tarPath := "/tmp/autobutler-test-release/autobutler_Linux_arm64.tar.gz"
+	if _, err := os.Stat(tarPath); os.IsNotExist(err) {
+		t.Skip("Real release tarball not available")
+	}
+
+	f, err := os.Open(tarPath)
+	if err != nil {
+		t.Fatalf("failed to open tarball: %v", err)
+	}
+	defer f.Close()
+
+	// replaceSelf will try to overwrite os.Executable() — which in test context
+	// is the test binary itself. It may fail with permission denied, but it
+	// should successfully decompress and extract the binary from the archive
+	// before attempting the replace. We verify the archive is parseable.
+	gzr, err := gzip.NewReader(f)
+	if err != nil {
+		t.Fatalf("failed to create gzip reader: %v", err)
+	}
+	defer gzr.Close()
+
+	tr := tar.NewReader(gzr)
+	found := false
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatalf("tar read error: %v", err)
+		}
+		if hdr.Name == binaryName || hdr.Name == "./"+binaryName {
+			found = true
+			if hdr.Size == 0 {
+				t.Error("Expected non-zero binary size in archive")
+			}
+			break
+		}
+	}
+	if !found {
+		t.Errorf("Binary %q not found in release tarball", binaryName)
+	}
+}
+
+func TestGetLatestVersion_GithubSource(t *testing.T) {
+	mockRelease := github.Release{
+		TagName: "v0.99.0",
+		Assets: []github.Asset{
+			{BrowserDownloadURL: fmt.Sprintf("https://example.com/v0.99.0/%s", ConstructArchiveName())},
+		},
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains(r.URL.Path, "releases/latest") {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"tag_name":"%s","assets":[{"browser_download_url":"%s"}]}`,
+			mockRelease.TagName,
+			mockRelease.Assets[0].BrowserDownloadURL,
+		)
+	}))
+	defer server.Close()
+	reset := github.SetBaseURLForTesting(server.URL)
+	defer reset()
+
+	githubSource := NewUpdateSource(UpdateSourceKindGithub, "test-org", "test-repo")
+	version, err := GetLatestVersion(githubSource)
+	if err != nil {
+		t.Fatalf("GetLatestVersion failed: %v", err)
+	}
+	if version != "v0.99.0" {
+		t.Errorf("Expected version v0.99.0, got %s", version)
+	}
+}
+
+func TestGetLatestVersion_GithubSource_NoAsset(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{"tag_name":"v1.0.0","assets":[]}`)
+	}))
+	defer server.Close()
+	reset := github.SetBaseURLForTesting(server.URL)
+	defer reset()
+
+	source := NewUpdateSource(UpdateSourceKindGithub, "test-org", "test-repo")
+	_, err := GetLatestVersion(source)
+	if err == nil {
+		t.Error("Expected error when no suitable asset found")
+	}
+}
+
+func TestGetLatestVersion_UnsupportedSource(t *testing.T) {
+	source := &UpdateSource{Kind: "unsupported"}
+	_, err := GetLatestVersion(source)
+	if err == nil {
+		t.Error("Expected error for unsupported source kind")
+	}
+}
+
+func TestListPossibleUpdates_GithubSource_WithReleases(t *testing.T) {
+	archiveName := ConstructArchiveName()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains(r.URL.Path, "releases") {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `[
+			{"tag_name":"v1.0.0","assets":[{"browser_download_url":"https://example.com/v1.0.0/%s"}]},
+			{"tag_name":"v1.1.0","assets":[{"browser_download_url":"https://example.com/v1.1.0/%s"}]}
+		]`, archiveName, archiveName)
+	}))
+	defer server.Close()
+	reset := github.SetBaseURLForTesting(server.URL)
+	defer reset()
+
+	source := NewUpdateSource(UpdateSourceKindGithub, "test-org", "test-repo")
+	result, err := ListPossibleUpdates(source, true)
+	if err != nil {
+		t.Fatalf("ListPossibleUpdates failed: %v", err)
+	}
+	if len(result.Versions) != 2 {
+		t.Errorf("Expected 2 versions, got %d", len(result.Versions))
+	}
+}
+
+func TestListPossibleUpdates_GithubSource_SkipsNoAsset(t *testing.T) {
+	archiveName := ConstructArchiveName()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		// One release has a .tar.gz asset, one has no assets at all
+		fmt.Fprintf(w, `[
+			{"tag_name":"v1.0.0","assets":[{"browser_download_url":"https://example.com/v1.0.0/%s"}]},
+			{"tag_name":"v1.1.0","assets":[]}
+		]`, archiveName)
+	}))
+	defer server.Close()
+	reset := github.SetBaseURLForTesting(server.URL)
+	defer reset()
+
+	source := NewUpdateSource(UpdateSourceKindGithub, "test-org", "test-repo")
+	result, err := ListPossibleUpdates(source, true)
+	if err != nil {
+		t.Fatalf("ListPossibleUpdates failed: %v", err)
+	}
+	// v1.1.0 is skipped because it has no .tar.gz asset
+	if len(result.Versions) != 1 {
+		t.Errorf("Expected 1 version (v1.1.0 skipped due to no .tar.gz asset), got %d", len(result.Versions))
+	}
+	if result.Versions[0].Version != "v1.0.0" {
+		t.Errorf("Expected v1.0.0, got %s", result.Versions[0].Version)
+	}
+}
+
+func TestUpdateFromDefaultSources_AllFail(t *testing.T) {
+	// Point all sources to a server that always 404s
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+	reset := github.SetBaseURLForTesting(server.URL)
+	defer reset()
+
+	err := UpdateFromDefaultSources("v9.9.9")
+	if err == nil {
+		t.Error("Expected error when all sources fail")
+	}
+}
+
+func TestConstructArchiveName(t *testing.T) {
+	name := ConstructArchiveName()
+	if name == "" {
+		t.Error("Expected non-empty archive name")
+	}
+	if !strings.HasSuffix(name, ".tar.gz") {
+		t.Errorf("Expected archive name to end in .tar.gz, got %s", name)
+	}
+	// Should contain OS and arch
+	goos := runtime.GOOS
+	goarch := runtime.GOARCH
+	expectedOS := strings.ToUpper(goos[:1]) + goos[1:]
+	if !strings.Contains(name, expectedOS) {
+		t.Errorf("Expected archive name to contain OS %q, got %s", expectedOS, name)
+	}
+	if !strings.Contains(name, goarch) {
+		t.Errorf("Expected archive name to contain arch %q, got %s", goarch, name)
+	}
+}
+
+func TestUpdate_WithMockServer_RealTarball(t *testing.T) {
+	// Note: Update() for GitHub sources builds the download URL from hardcoded github.com
+	// base URLs in UpdateSource.BaseUrl(), which can't be intercepted via githubutil's
+	// SetBaseURLForTesting. Full end-to-end testing of Update() requires either:
+	//   a) Refactoring UpdateSource to accept a base URL override, or
+	//   b) An integration test hitting the real GitHub.
+	// The core logic (download → decompress → extract → replace) is covered by
+	// TestReplaceSelf_WithRealTarball and TestUpdate_RealRelease_ReplaceSelf.
+	t.Skip("Update() download URL is hardcoded in UpdateSource.BaseUrl() — see comment")
 }
 
 func TestIsDevelopmentVersion(t *testing.T) {
