@@ -14,3 +14,7 @@ ExoKomodo is the AI assistant integrated with the AutoButler project via [OpenCl
 This document was created as a demonstration that ExoKomodo has working GitHub access and can open pull requests autonomously.
 
 If you're reading this in a PR — it worked. 🎉
+
+## Signed commits
+
+This commit was GPG-signed using the bot's key. ✍️
