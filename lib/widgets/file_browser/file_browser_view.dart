@@ -4,6 +4,7 @@ import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 enum FileMenuAction { download, moveRename, delete }
 
@@ -398,6 +399,25 @@ class _FolderDropTarget extends StatefulWidget {
 class _FolderDropTargetState extends State<_FolderDropTarget> {
   bool _isDragOver = false;
 
+  void _setStateSafely(VoidCallback update) {
+    if (!mounted) {
+      return;
+    }
+
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        setState(update);
+      });
+      return;
+    }
+
+    setState(update);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -406,7 +426,7 @@ class _FolderDropTargetState extends State<_FolderDropTarget> {
         if (!mounted) {
           return;
         }
-        setState(() {
+        _setStateSafely(() {
           _isDragOver = true;
         });
         widget.onFolderDragEnter?.call();
@@ -415,14 +435,14 @@ class _FolderDropTargetState extends State<_FolderDropTarget> {
         if (!mounted) {
           return;
         }
-        setState(() {
+        _setStateSafely(() {
           _isDragOver = false;
         });
         widget.onFolderDragExit?.call();
       },
       onDragDone: (details) async {
         if (mounted) {
-          setState(() {
+          _setStateSafely(() {
             _isDragOver = false;
           });
         }

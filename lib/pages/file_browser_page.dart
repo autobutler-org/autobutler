@@ -16,6 +16,7 @@ import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
@@ -70,6 +71,25 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     setState(() {
       _reloadFiles();
     });
+  }
+
+  void _setStateSafely(VoidCallback update) {
+    if (!mounted) {
+      return;
+    }
+
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        setState(update);
+      });
+      return;
+    }
+
+    setState(update);
   }
 
   Future<void> _uploadSelectedFiles(
@@ -222,7 +242,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     if (!mounted || _isHoveringFolderDropTarget) {
       return;
     }
-    setState(() {
+    _setStateSafely(() {
       _isHoveringFolderDropTarget = true;
     });
   }
@@ -231,7 +251,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     if (!mounted || !_isHoveringFolderDropTarget) {
       return;
     }
-    setState(() {
+    _setStateSafely(() {
       _isHoveringFolderDropTarget = false;
     });
   }
@@ -587,7 +607,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                       if (!mounted) {
                         return;
                       }
-                      setState(() {
+                      _setStateSafely(() {
                         _isWebDragging = true;
                       });
                     },
@@ -595,13 +615,13 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                       if (!mounted) {
                         return;
                       }
-                      setState(() {
+                      _setStateSafely(() {
                         _isWebDragging = false;
                       });
                     },
                     onDragDone: (details) async {
                       if (mounted) {
-                        setState(() {
+                        _setStateSafely(() {
                           _isWebDragging = false;
                           _isHoveringFolderDropTarget = false;
                         });
