@@ -10,6 +10,7 @@ import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_dialog_utils.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
+import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/file_browser/file_actions_bar.dart';
 import 'package:autobutler/widgets/file_browser/file_breadcrumb_bar.dart';
@@ -18,7 +19,6 @@ import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
@@ -29,7 +29,8 @@ class FileBrowserPage extends StatefulWidget {
   State<FileBrowserPage> createState() => _FileBrowserPageState();
 }
 
-class _FileBrowserPageState extends State<FileBrowserPage> {
+class _FileBrowserPageState extends State<FileBrowserPage>
+    with SafeSetStateMixin {
   final _controller = const FileBrowserController();
 
   late Future<List<CirrusFileNode>> _filesFuture;
@@ -80,25 +81,6 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     setState(() {
       _reloadFiles();
     });
-  }
-
-  void _setStateSafely(VoidCallback update) {
-    if (!mounted) {
-      return;
-    }
-
-    if (SchedulerBinding.instance.schedulerPhase ==
-        SchedulerPhase.persistentCallbacks) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) {
-          return;
-        }
-        setState(update);
-      });
-      return;
-    }
-
-    setState(update);
   }
 
   Future<void> _uploadSelectedFiles(
@@ -259,7 +241,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     if (!mounted || _isHoveringFolderDropTarget) {
       return;
     }
-    _setStateSafely(() {
+    setStateSafely(() {
       _isHoveringFolderDropTarget = true;
       _isWebDragging = false;
     });
@@ -271,7 +253,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
       if (!mounted || !_isHoveringFolderDropTarget) {
         return;
       }
-      _setStateSafely(() {
+      setStateSafely(() {
         _isHoveringFolderDropTarget = false;
       });
     });
@@ -628,7 +610,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                       if (!mounted) {
                         return;
                       }
-                      _setStateSafely(() {
+                      setStateSafely(() {
                         _isWebDragging = true;
                       });
                     },
@@ -636,14 +618,14 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                       if (!mounted) {
                         return;
                       }
-                      _setStateSafely(() {
+                      setStateSafely(() {
                         _isWebDragging = false;
                       });
                     },
                     onDragDone: (details) async {
                       _folderDragExitTimer?.cancel();
                       if (mounted) {
-                        _setStateSafely(() {
+                        setStateSafely(() {
                           _isWebDragging = false;
                           _isHoveringFolderDropTarget = false;
                         });

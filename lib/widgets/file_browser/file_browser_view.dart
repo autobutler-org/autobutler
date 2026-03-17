@@ -1,12 +1,12 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
+import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 
-enum FileMenuAction { download, moveRename, delete }
+enum FileMenuAction { download, moveRename, delete, navigateToFolder }
 
 class FileBrowserView extends StatelessWidget {
   const FileBrowserView({
@@ -219,8 +219,7 @@ class FileBrowserView extends StatelessWidget {
                                     if (isSearchMode &&
                                         onNavigateToFolder != null)
                                       PopupMenuItem<FileMenuAction>(
-                                        // Reuse an existing enum value; action is handled via onNavigateToFolder
-                                        value: FileMenuAction.download,
+                                        value: FileMenuAction.navigateToFolder,
                                         onTap: () => onNavigateToFolder!(item),
                                         child: Text('Navigate to folder'),
                                       ),
@@ -318,8 +317,7 @@ class FileBrowserView extends StatelessWidget {
                             ),
                             if (isSearchMode && onNavigateToFolder != null)
                               PopupMenuItem<FileMenuAction>(
-                                // Reuse an existing enum value; action is handled via onNavigateToFolder
-                                value: FileMenuAction.download,
+                                value: FileMenuAction.navigateToFolder,
                                 onTap: () => onNavigateToFolder!(item),
                                 child: Text('Navigate to folder'),
                               ),
@@ -398,27 +396,9 @@ class _FolderDropTarget extends StatefulWidget {
   State<_FolderDropTarget> createState() => _FolderDropTargetState();
 }
 
-class _FolderDropTargetState extends State<_FolderDropTarget> {
+class _FolderDropTargetState extends State<_FolderDropTarget>
+    with SafeSetStateMixin {
   bool _isDragOver = false;
-
-  void _setStateSafely(VoidCallback update) {
-    if (!mounted) {
-      return;
-    }
-
-    if (SchedulerBinding.instance.schedulerPhase ==
-        SchedulerPhase.persistentCallbacks) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) {
-          return;
-        }
-        setState(update);
-      });
-      return;
-    }
-
-    setState(update);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -428,7 +408,7 @@ class _FolderDropTargetState extends State<_FolderDropTarget> {
         if (!mounted) {
           return;
         }
-        _setStateSafely(() {
+        setStateSafely(() {
           _isDragOver = true;
         });
         widget.onFolderDragEnter?.call();
@@ -437,14 +417,14 @@ class _FolderDropTargetState extends State<_FolderDropTarget> {
         if (!mounted) {
           return;
         }
-        _setStateSafely(() {
+        setStateSafely(() {
           _isDragOver = false;
         });
         widget.onFolderDragExit?.call();
       },
       onDragDone: (details) async {
         if (mounted) {
-          _setStateSafely(() {
+          setStateSafely(() {
             _isDragOver = false;
           });
         }
