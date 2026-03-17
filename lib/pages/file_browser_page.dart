@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
@@ -38,6 +40,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
   bool _isWebDragging = false;
   bool _isHoveringFolderDropTarget = false;
   bool _noHostSelected = false;
+  Timer? _folderDragExitTimer;
 
   // Search state
   bool _isSearchMode = false;
@@ -55,6 +58,12 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     } else {
       _reloadFiles();
     }
+  }
+
+  @override
+  void dispose() {
+    _folderDragExitTimer?.cancel();
+    super.dispose();
   }
 
   void _reloadFiles() {
@@ -239,20 +248,26 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
   }
 
   void _handleFolderDragEnter() {
+    _folderDragExitTimer?.cancel();
+
     if (!mounted || _isHoveringFolderDropTarget) {
       return;
     }
     _setStateSafely(() {
       _isHoveringFolderDropTarget = true;
+      _isWebDragging = false;
     });
   }
 
   void _handleFolderDragExit() {
-    if (!mounted || !_isHoveringFolderDropTarget) {
-      return;
-    }
-    _setStateSafely(() {
-      _isHoveringFolderDropTarget = false;
+    _folderDragExitTimer?.cancel();
+    _folderDragExitTimer = Timer(const Duration(milliseconds: 90), () {
+      if (!mounted || !_isHoveringFolderDropTarget) {
+        return;
+      }
+      _setStateSafely(() {
+        _isHoveringFolderDropTarget = false;
+      });
     });
   }
 
@@ -620,6 +635,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                       });
                     },
                     onDragDone: (details) async {
+                      _folderDragExitTimer?.cancel();
                       if (mounted) {
                         _setStateSafely(() {
                           _isWebDragging = false;
@@ -648,7 +664,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                           onFolderDragEnter: _handleFolderDragEnter,
                           onFolderDragExit: _handleFolderDragExit,
                         ),
-                        if (_isWebDragging)
+                        if (_isWebDragging && !_isHoveringFolderDropTarget)
                           IgnorePointer(
                             child: Container(
                               decoration: BoxDecoration(
