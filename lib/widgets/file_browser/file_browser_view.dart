@@ -47,8 +47,16 @@ class FileBrowserView extends StatelessWidget {
     );
   }
 
-  void _dispatchMenuAction(CirrusFileNode item, FileMenuAction action) {
+  void _dispatchMenuAction(
+    BuildContext context,
+    CirrusFileNode item,
+    FileMenuAction action,
+  ) {
     Future<void>.delayed(Duration.zero, () async {
+      // Check context is still valid before proceeding
+      if (!context.mounted) {
+        return;
+      }
       await onFileMenuAction(item, action);
     });
   }
@@ -175,6 +183,7 @@ class FileBrowserView extends StatelessWidget {
                                     PopupMenuItem<FileMenuAction>(
                                       value: FileMenuAction.download,
                                       onTap: () => _dispatchMenuAction(
+                                        context,
                                         item,
                                         FileMenuAction.download,
                                       ),
@@ -183,6 +192,7 @@ class FileBrowserView extends StatelessWidget {
                                     PopupMenuItem<FileMenuAction>(
                                       value: FileMenuAction.moveRename,
                                       onTap: () => _dispatchMenuAction(
+                                        context,
                                         item,
                                         FileMenuAction.moveRename,
                                       ),
@@ -191,6 +201,7 @@ class FileBrowserView extends StatelessWidget {
                                     PopupMenuItem<FileMenuAction>(
                                       value: FileMenuAction.delete,
                                       onTap: () => _dispatchMenuAction(
+                                        context,
                                         item,
                                         FileMenuAction.delete,
                                       ),
@@ -272,6 +283,7 @@ class FileBrowserView extends StatelessWidget {
                             PopupMenuItem<FileMenuAction>(
                               value: FileMenuAction.download,
                               onTap: () => _dispatchMenuAction(
+                                context,
                                 item,
                                 FileMenuAction.download,
                               ),
@@ -280,6 +292,7 @@ class FileBrowserView extends StatelessWidget {
                             PopupMenuItem<FileMenuAction>(
                               value: FileMenuAction.moveRename,
                               onTap: () => _dispatchMenuAction(
+                                context,
                                 item,
                                 FileMenuAction.moveRename,
                               ),
@@ -288,6 +301,7 @@ class FileBrowserView extends StatelessWidget {
                             PopupMenuItem<FileMenuAction>(
                               value: FileMenuAction.delete,
                               onTap: () => _dispatchMenuAction(
+                                context,
                                 item,
                                 FileMenuAction.delete,
                               ),
