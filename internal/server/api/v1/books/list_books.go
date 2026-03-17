@@ -25,7 +25,10 @@ type BookJSON struct {
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /books [get]
 func listBooks(c *gin.Context) *serverutil.Response {
-	rootDir := storageutil.GetCirrusDir()
+	rootDir, err := storageutil.GetCirrusDir()
+	if err != nil {
+		return serverutil.NewResponse().WithStatusCode(500).WithError(err)
+	}
 	books, err := bookutil.FindAllBooksRecursively(rootDir)
 	if err != nil {
 		return serverutil.InternalServerError(err)

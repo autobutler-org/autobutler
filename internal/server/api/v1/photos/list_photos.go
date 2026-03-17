@@ -24,7 +24,10 @@ type PhotoJSON struct {
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /photos [get]
 func listPhotos(c *gin.Context) *serverutil.Response {
-	rootDir := storageutil.GetCirrusDir()
+	rootDir, err := storageutil.GetCirrusDir()
+	if err != nil {
+		return serverutil.NewResponse().WithStatusCode(500).WithError(err)
+	}
 	photos, err := photoutil.FindAllPhotosRecursively(rootDir)
 	if err != nil {
 		return serverutil.InternalServerError(err)
