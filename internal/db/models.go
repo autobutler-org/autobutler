@@ -16,3 +16,18 @@ type ConnectedDevice struct {
 	LastSeenAt   time.Time
 	RequestCount int64
 }
+
+type Session struct {
+	Token     string
+	UserID    int64
+	ExpiresAt time.Time
+	CreatedAt time.Time
+}
+
+type User struct {
+	ID                 int64
+	Username           string
+	PasswordHash       string
+	RecoveryPhraseHash string
+	CreatedAt          time.Time
+}
