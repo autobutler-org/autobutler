@@ -6,9 +6,15 @@ import (
 	"net/http"
 )
 
+const defaultBaseURL = "https://api.github.com"
+
+// baseURL allows tests to override the GitHub API base URL via a mock server.
+// Set this in tests using t.Setenv or direct assignment; reset after test.
+var baseURL = defaultBaseURL
+
 // FetchReleases fetches all releases from a GitHub repository
 func FetchReleases(organization string, repository string) ([]*Release, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases", organization, repository)
+	url := fmt.Sprintf("%s/repos/%s/%s/releases", baseURL, organization, repository)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil { // coverage: ignore - http.NewRequest rarely fails with valid inputs
@@ -40,7 +46,7 @@ func FetchReleases(organization string, repository string) ([]*Release, error) {
 
 // FetchLatestRelease fetches the latest release from a GitHub repository
 func FetchLatestRelease(organization string, repository string) (*Release, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", organization, repository)
+	url := fmt.Sprintf("%s/repos/%s/%s/releases/latest", baseURL, organization, repository)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil { // coverage: ignore - http.NewRequest rarely fails with valid inputs
@@ -68,4 +74,10 @@ func FetchLatestRelease(organization string, repository string) (*Release, error
 	}
 
 	return &release, nil
+}
+
+// SetBaseURLForTesting overrides the GitHub API base URL. Only for use in tests.
+func SetBaseURLForTesting(url string) func() {
+	baseURL = url
+	return func() { baseURL = defaultBaseURL }
 }
