@@ -418,13 +418,16 @@ class _FolderDropTargetState extends State<_FolderDropTarget> {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
-        decoration: _isDragOver
-            ? BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: colorScheme.primary, width: 1.5),
-                color: colorScheme.primaryContainer.withValues(alpha: 0.35),
-              )
-            : null,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: _isDragOver ? colorScheme.primary : Colors.transparent,
+            width: 1.5,
+          ),
+          color: _isDragOver
+              ? colorScheme.primaryContainer.withValues(alpha: 0.35)
+              : null,
+        ),
         child: widget.child,
       ),
     );
