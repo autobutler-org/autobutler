@@ -441,6 +441,16 @@ class CirrusService {
         .toList(growable: false);
   }
 
+  static Future<void> updateToLatest() async {
+    final endpointUri = _apiBaseUri.resolve('/api/v1/version/latest');
+    final response = await http.post(endpointUri);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        'Failed to update to latest (${response.statusCode}): ${response.body}',
+      );
+    }
+  }
+
   static Future<void> updateToVersion(String version) async {
     final endpointUri = _apiBaseUri.resolve('/api/v1/version/update');
     final body = jsonEncode({'version': version});
