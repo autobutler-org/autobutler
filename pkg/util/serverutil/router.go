@@ -56,7 +56,10 @@ func WrapApiRoute(handler func(c *gin.Context) *Response) gin.HandlerFunc {
 			c.Status(resp.StatusCode)
 			return
 		}
-		// If the error is an HttpError, use its status code.
+		// If the error wraps an HttpError, its status code takes precedence over
+		// whatever status code the handler passed in. This means service functions
+		// can signal HTTP semantics with fmt.Errorf("...: %w", httpErr) and the
+		// HTTP layer will pick it up automatically.
 		if resp.Error != nil {
 			var httpErr *HttpError
 			if errors.As(resp.Error, &httpErr) {
