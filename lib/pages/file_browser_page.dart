@@ -143,27 +143,61 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
       return;
     }
 
-    final selectedFiles = <http.MultipartFile>[];
-    for (final droppedItem in droppedItems) {
-      if (droppedItem is! DropItemFile) {
-        continue;
+    try {
+      final selectedFiles = <http.MultipartFile>[];
+      for (final droppedItem in droppedItems) {
+        if (droppedItem is! DropItemFile) {
+          continue;
+        }
+
+        final bytes = await _readDroppedFileBytes(droppedItem);
+        if (bytes == null || bytes.isEmpty) {
+          continue;
+        }
+
+        selectedFiles.add(
+          _controller.multipartFileFromBytes(
+            bytes: bytes,
+            filename: droppedItem.name,
+          ),
+        );
       }
 
-      final bytes = await droppedItem.readAsBytes();
-      selectedFiles.add(
-        _controller.multipartFileFromBytes(
-          bytes: bytes,
-          filename: droppedItem.name,
-        ),
+      if (selectedFiles.isEmpty) {
+        _showMessage('No files to upload');
+        return;
+      }
+
+      await _uploadSelectedFiles(selectedFiles, uploadPath);
+    } catch (_) {
+      _showMessage('Unable to read dropped files');
+    }
+  }
+
+  Future<Uint8List?> _readDroppedFileBytes(DropItemFile droppedItem) async {
+    try {
+      return await droppedItem.readAsBytes();
+    } catch (_) {
+      // On web, some drag sources provide blob URLs that may need an explicit fetch fallback.
+      if (!kIsWeb) {
+        rethrow;
+      }
+
+      final path = droppedItem.path;
+      if (path.isEmpty) {
+        return null;
+      }
+
+      final fallbackResponse = await http.get(Uri.parse(path));
+      if (fallbackResponse.statusCode >= 200 &&
+          fallbackResponse.statusCode < 300) {
+        return fallbackResponse.bodyBytes;
+      }
+
+      throw Exception(
+        'Dropped file read failed (${fallbackResponse.statusCode})',
       );
     }
-
-    if (selectedFiles.isEmpty) {
-      _showMessage('No files to upload');
-      return;
-    }
-
-    await _uploadSelectedFiles(selectedFiles, uploadPath);
   }
 
   Future<void> _handleDropToCurrentFolder(DropDoneDetails details) {
