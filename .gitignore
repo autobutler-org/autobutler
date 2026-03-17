@@ -90,3 +90,6 @@ flutter.zip
 
 # Ralph loops
 .ralph/
+
+# ExoKomodo's personal dev context (AI co-developer workspace)
+exokomodo/
