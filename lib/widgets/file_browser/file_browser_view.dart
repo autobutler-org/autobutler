@@ -41,6 +41,8 @@ class FileBrowserView extends StatelessWidget {
     required CirrusFileNode item,
     required Widget child,
   }) {
+    // Folder drop targets are web-only for now; see _handleDroppedItems for
+    // notes on enabling native desktop support in a follow-up.
     if (!kIsWeb || onDropToFolder == null || !item.isDir) {
       return child;
     }

@@ -169,6 +169,9 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     required List<DropItem> droppedItems,
     required String uploadPath,
   }) async {
+    // Drag-and-drop upload is currently web-only. The desktop_drop package
+    // supports native desktop platforms too — native support can be enabled
+    // here in a follow-up once it's been validated on macOS/Linux/Windows.
     if (!kIsWeb || droppedItems.isEmpty || _isUploading) {
       return;
     }
@@ -208,7 +211,10 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     try {
       return await droppedItem.readAsBytes();
     } catch (_) {
-      // On web, some drag sources provide blob URLs that may need an explicit fetch fallback.
+      // Some browser drag sources (e.g. dragging from another browser tab or
+      // certain file managers) expose an HTTP/HTTPS URL via droppedItem.path
+      // rather than providing raw bytes directly. Blob URLs (blob:...) are
+      // not fetchable this way — this fallback only applies to http/https paths.
       if (!kIsWeb) {
         rethrow;
       }
