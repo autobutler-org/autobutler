@@ -297,6 +297,11 @@ test/integration: test/integration/backend ## Run integration tests
 test/integration/backend: internal/server/public/stub.txt ## Run backend integration tests (requires real filesystem, spins up gin engine)
 	$(GO) test -v ./internal/server/api/v1/...
 
+.PHONY: coverage
+coverage: test/unit/backend ## Run backend tests and print coverage percentage
+	$(GO) tool cover \
+		-func=coverage.out.ignored | tail -1
+
 .PHONY: tidy
 tidy: tidy/flutter tidy/go ## Tidy dependencies
 
