@@ -679,11 +679,6 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                               ),
                               alignment: Alignment.topCenter,
                               padding: const EdgeInsets.only(top: 10),
-                              child: Text(
-                                'Drop on a folder to upload there, or anywhere else to upload to current folder',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                                textAlign: TextAlign.center,
-                              ),
                             ),
                           ),
                       ],
