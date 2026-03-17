@@ -15,6 +15,8 @@ class FileBrowserView extends StatelessWidget {
     required this.isGridView,
     required this.currentPath,
     this.onDropToFolder,
+    this.onFolderDragEnter,
+    this.onFolderDragExit,
     this.showFileSizeAndMenu = true,
     this.isSearchMode = false,
     this.onNavigateToFolder,
@@ -28,6 +30,8 @@ class FileBrowserView extends StatelessWidget {
   final String currentPath;
   final Future<void> Function(List<DropItem> droppedItems, String targetPath)?
   onDropToFolder;
+  final VoidCallback? onFolderDragEnter;
+  final VoidCallback? onFolderDragExit;
   final bool showFileSizeAndMenu;
   final bool isSearchMode;
   final void Function(CirrusFileNode)? onNavigateToFolder;
@@ -43,6 +47,8 @@ class FileBrowserView extends StatelessWidget {
     return _FolderDropTarget(
       targetPath: normalizePath(joinPath(currentPath, item.name)),
       onDropToFolder: onDropToFolder!,
+      onFolderDragEnter: onFolderDragEnter,
+      onFolderDragExit: onFolderDragExit,
       child: child,
     );
   }
@@ -373,12 +379,16 @@ class _FolderDropTarget extends StatefulWidget {
   const _FolderDropTarget({
     required this.targetPath,
     required this.onDropToFolder,
+    this.onFolderDragEnter,
+    this.onFolderDragExit,
     required this.child,
   });
 
   final String targetPath;
   final Future<void> Function(List<DropItem> droppedItems, String targetPath)
   onDropToFolder;
+  final VoidCallback? onFolderDragEnter;
+  final VoidCallback? onFolderDragExit;
   final Widget child;
 
   @override
@@ -399,6 +409,7 @@ class _FolderDropTargetState extends State<_FolderDropTarget> {
         setState(() {
           _isDragOver = true;
         });
+        widget.onFolderDragEnter?.call();
       },
       onDragExited: (_) {
         if (!mounted) {
@@ -407,6 +418,7 @@ class _FolderDropTargetState extends State<_FolderDropTarget> {
         setState(() {
           _isDragOver = false;
         });
+        widget.onFolderDragExit?.call();
       },
       onDragDone: (details) async {
         if (mounted) {
@@ -414,6 +426,7 @@ class _FolderDropTargetState extends State<_FolderDropTarget> {
             _isDragOver = false;
           });
         }
+        widget.onFolderDragExit?.call();
         await widget.onDropToFolder(details.files, widget.targetPath);
       },
       child: AnimatedContainer(

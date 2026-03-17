@@ -35,6 +35,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
   bool _isUploading = false;
   bool _isCreatingFolder = false;
   bool _isWebDragging = false;
+  bool _isHoveringFolderDropTarget = false;
   bool _noHostSelected = false;
 
   // Search state
@@ -215,6 +216,24 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
       droppedItems: droppedItems,
       uploadPath: folderPath,
     );
+  }
+
+  void _handleFolderDragEnter() {
+    if (!mounted || _isHoveringFolderDropTarget) {
+      return;
+    }
+    setState(() {
+      _isHoveringFolderDropTarget = true;
+    });
+  }
+
+  void _handleFolderDragExit() {
+    if (!mounted || !_isHoveringFolderDropTarget) {
+      return;
+    }
+    setState(() {
+      _isHoveringFolderDropTarget = false;
+    });
   }
 
   Future<void> _handleCreateFolderPressed() async {
@@ -559,7 +578,11 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                     ),
                   )
                 : DropTarget(
-                    enable: kIsWeb && !_isSearchMode && !_isUploading,
+                    enable:
+                        kIsWeb &&
+                        !_isSearchMode &&
+                        !_isUploading &&
+                        !_isHoveringFolderDropTarget,
                     onDragEntered: (_) {
                       if (!mounted) {
                         return;
@@ -580,6 +603,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                       if (mounted) {
                         setState(() {
                           _isWebDragging = false;
+                          _isHoveringFolderDropTarget = false;
                         });
                       }
                       await _handleDropToCurrentFolder(details);
@@ -601,6 +625,8 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                           onNavigateToFolder: _navigateToFolder,
                           currentPath: _currentPath,
                           onDropToFolder: _handleDropToFolder,
+                          onFolderDragEnter: _handleFolderDragEnter,
+                          onFolderDragExit: _handleFolderDragExit,
                         ),
                         if (_isWebDragging)
                           IgnorePointer(
