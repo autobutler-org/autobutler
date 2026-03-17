@@ -571,9 +571,7 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                         if (_isWebDragging)
                           IgnorePointer(
                             child: Container(
-                              margin: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: Theme.of(context).colorScheme.primary,
                                   width: 1.5,
