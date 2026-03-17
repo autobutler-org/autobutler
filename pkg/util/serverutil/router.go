@@ -1,6 +1,7 @@
 package serverutil
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -54,6 +55,13 @@ func WrapApiRoute(handler func(c *gin.Context) *Response) gin.HandlerFunc {
 		if resp.Data == nil && resp.Error == nil {
 			c.Status(resp.StatusCode)
 			return
+		}
+		// If the error is an HttpError, use its status code.
+		if resp.Error != nil {
+			var httpErr *HttpError
+			if errors.As(resp.Error, &httpErr) {
+				resp.StatusCode = httpErr.StatusCode
+			}
 		}
 		switch resp.ContentType {
 		case ContentTypeHTML:
