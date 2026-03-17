@@ -32,7 +32,7 @@ func (d *DatabaseSqlc) Query(query string, args ...any) (*sql.Rows, error) {
 	if d == nil {
 		return nil, fmt.Errorf("database not initialized")
 	}
-	return d.Query(query, args...)
+	return d.Db.Query(query, args...)
 }
 
 func (d *DatabaseRaw) Exec(query string, args ...any) (sql.Result, error) {
@@ -46,7 +46,7 @@ func (d *DatabaseRaw) Query(query string, args ...any) (*sql.Rows, error) {
 	if d == nil {
 		return nil, fmt.Errorf("database not initialized")
 	}
-	return d.Query(query, args...)
+	return d.Db.Query(query, args...)
 }
 
 //go:embed migrations
