@@ -23,6 +23,7 @@ class _SettingsPageState extends State<SettingsPage> {
   List<HostEntry> _hosts = [];
   int _active = -1;
   ThemeMode _theme = ThemeMode.system;
+  bool _autoUpdate = false;
   String? _installedVersion;
   List<String> _availableVersions = [];
   String? _selectedUpdateVersion;
@@ -51,6 +52,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _hosts = AppSettings.instance.hosts;
     _active = AppSettings.instance.activeIndex;
     _theme = AppSettings.instance.themeMode.value;
+    _autoUpdate = AppSettings.instance.autoUpdate;
     setState(() {});
     _loadVersionInfo();
     _loadSbom();
@@ -436,6 +438,24 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ],
               ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: SwitchListTile(
+              title: const Text('Automatic updates'),
+              subtitle: const Text(
+                'Automatically update Autobutler when a new version is available',
+              ),
+              value: _autoUpdate,
+              onChanged: AppSettings.instance.activeHost == null
+                  ? null
+                  : (value) async {
+                      await AppSettings.instance.setAutoUpdate(value);
+                      setState(() {
+                        _autoUpdate = value;
+                      });
+                    },
             ),
           ),
           const SizedBox(height: 24),

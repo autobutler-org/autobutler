@@ -1,12 +1,23 @@
 import 'package:autobutler/pages/auth_gate.dart';
 import 'package:autobutler/pages/file_browser_page.dart';
 import 'package:autobutler/services/app_settings.dart';
+import 'package:autobutler/services/cirrus_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppSettings.instance.load();
+  _maybeAutoUpdate();
   runApp(const AutobutlerApp());
+}
+
+void _maybeAutoUpdate() {
+  if (!AppSettings.instance.autoUpdate) return;
+  if (AppSettings.instance.activeHost == null) return;
+  CirrusService.updateToLatest().catchError((e) {
+    debugPrint('Auto-update failed: $e');
+  });
 }
 
 class AutobutlerApp extends StatelessWidget {

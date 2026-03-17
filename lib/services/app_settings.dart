@@ -26,6 +26,7 @@ class AppSettings {
 
   List<HostEntry> _hosts = [];
   int _activeIndex = -1;
+  bool _autoUpdate = false;
   String? _sessionToken;
   SharedPreferences? _prefs;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
@@ -53,6 +54,8 @@ class AppSettings {
 
     _activeIndex =
         _prefs!.getInt('activeHostIndex') ?? (_hosts.isEmpty ? -1 : 0);
+
+    _autoUpdate = _prefs!.getBool('autoUpdate') ?? false;
 
     if (kIsWeb) {
       // On web, use shared_preferences (localStorage) — flutter_secure_storage
@@ -84,6 +87,7 @@ class AppSettings {
 
   List<HostEntry> get hosts => List.unmodifiable(_hosts);
   int get activeIndex => _activeIndex;
+  bool get autoUpdate => _autoUpdate;
 
   /// Session token set after a successful login or setup.
   /// Persisted via [FlutterSecureStorage] — survives app restarts.
@@ -149,6 +153,11 @@ class AppSettings {
       _activeIndex = idx;
       await _prefs?.setInt('activeHostIndex', _activeIndex);
     }
+  }
+
+  Future<void> setAutoUpdate(bool value) async {
+    _autoUpdate = value;
+    await _prefs?.setBool('autoUpdate', value);
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
