@@ -4,7 +4,7 @@ Thanks for wanting to help. Here's how it works.
 
 ## Before you start
 
-Make sure your git config (`user.name` and `user.email`) matches your GitHub profile, and [sign your commits](https://gist.github.com/Beneboe/3183a8a9eb53439dbee07c90b344c77e).
+Make sure your git config (`user.name` and `user.email`) matches your GitHub profile. **Sign your commits** — here's [how to set that up](https://gist.github.com/Beneboe/3183a8a9eb53439dbee07c90b344c77e) if you haven't already.
 
 ## The workflow
 

@@ -126,6 +126,23 @@ func (q *Queries) GetSession(ctx context.Context, token string) (GetSessionRow, 
 	return i, err
 }
 
+const getFirstUser = `-- name: GetFirstUser :one
+SELECT id, username, password_hash, recovery_phrase_hash, created_at FROM users ORDER BY id ASC LIMIT 1
+`
+
+func (q *Queries) GetFirstUser(ctx context.Context) (User, error) {
+	row := q.db.QueryRowContext(ctx, getFirstUser)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.PasswordHash,
+		&i.RecoveryPhraseHash,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getUserByID = `-- name: GetUserByID :one
 SELECT id, username, password_hash, recovery_phrase_hash, created_at FROM users WHERE id = ? LIMIT 1
 `

@@ -148,11 +148,7 @@ func Recover(ctx context.Context, queries *db.Queries, params RecoverParams) (*L
 		return nil, fmt.Errorf("invalid recovery phrase")
 	}
 
-	// Find the user whose recovery phrase matches
-	// Since single-user for now, get user by ID 1 is too brittle — iterate via username
-	// We don't expose a ListUsers query, so use GetUserByID starting at 1
-	// A better approach: add a recovery phrase lookup query. For now scan first user.
-	user, err := queries.GetUserByID(ctx, 1)
+	user, err := queries.GetFirstUser(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("invalid recovery phrase")
 	}
