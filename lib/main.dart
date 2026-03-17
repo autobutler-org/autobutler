@@ -14,7 +14,9 @@ Future<void> main() async {
 void _maybeAutoUpdate() {
   if (!AppSettings.instance.autoUpdate) return;
   if (AppSettings.instance.activeHost == null) return;
-  CirrusService.updateToLatest().catchError((e) {
+  CirrusService.updateToLatest().then((_) {
+    debugPrint('Auto-update: completed successfully');
+  }).catchError((e) {
     debugPrint('Auto-update failed: $e');
   });
 }
