@@ -182,6 +182,10 @@ class FileBrowserController {
           message: 'Deleted',
           shouldRefresh: true,
         );
+      case FileMenuAction.navigateToFolder:
+        // Handled via the onNavigateToFolder callback in FileBrowserView;
+        // should never reach handleFileAction.
+        return null;
     }
   }
 
@@ -193,6 +197,8 @@ class FileBrowserController {
         return 'Move/Rename failed';
       case FileMenuAction.delete:
         return 'Delete failed';
+      case FileMenuAction.navigateToFolder:
+        return 'Navigation failed';
     }
   }
 
