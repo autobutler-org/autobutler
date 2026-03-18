@@ -63,11 +63,15 @@ class CirrusService with AuthenticatedService {
         .join('/');
     final endpointUri = _apiBaseUri.resolve('/api/v1/thumbnails/$encodedPath');
 
+    // Build query params — include token when set so Image.network() (which
+    // cannot set custom headers) can still authenticate.
+    final params = <String, String>{};
     final serialValue = serial?.trim() ?? '';
-    if (serialValue.isNotEmpty) {
-      return endpointUri.replace(queryParameters: {'serial': serialValue});
-    }
-    return endpointUri;
+    if (serialValue.isNotEmpty) params['serial'] = serialValue;
+    final token = AppSettings.instance.sessionToken;
+    if (token != null && token.isNotEmpty) params['token'] = token;
+
+    return params.isEmpty ? endpointUri : endpointUri.replace(queryParameters: params);
   }
 
   static Future<List<CirrusFileNode>> getFiles(
