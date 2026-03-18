@@ -376,7 +376,7 @@ class _MetricCard extends StatelessWidget {
                       : Theme.of(context).colorScheme.primary;
                   return Chip(
                     label: Text(
-                      'C${e.key}: ${e.value.toStringAsFixed(0)}%',
+                      'Core ${e.key + 1}: ${e.value.toStringAsFixed(0)}%',
                       style: TextStyle(fontSize: 11, color: coreColor),
                     ),
                     padding: EdgeInsets.zero,
