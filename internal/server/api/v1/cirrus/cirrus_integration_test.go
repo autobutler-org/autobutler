@@ -14,6 +14,8 @@ import (
 	"testing"
 
 	v1_files "github.com/autobutler-org/autobutler/internal/server/api/v1/cirrus"
+	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
+	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 	"github.com/gin-gonic/gin"
@@ -39,8 +41,15 @@ func newTestEngine(t *testing.T) (*gin.Engine, string) {
 		t.Fatalf("failed to get cirrus dir: %v", err)
 	}
 
+	svc := storageutil.NewStorageService(storageutil.NewDetector())
+	deps := deputil.NewDependencies().WithStorageService(svc)
+
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()
+	engine.Use(func(c *gin.Context) {
+		c = ctxutil.With(c, "deps", deps)
+		c.Next()
+	})
 	group := engine.Group("/api/v1")
 	serverutil.RegisterRouterWithGroup(group, v1_files.NewRouter())
 	return engine, cirrusDir

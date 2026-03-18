@@ -46,6 +46,9 @@ jobs:
           PRINT_COVERAGE: true
         run: |
           make test/unit/backend
+      - name: Run integration tests
+        run: |
+          make test/integration/backend
   autobutler-ci-frontend:
     runs-on: ubuntu-latest
     steps:
