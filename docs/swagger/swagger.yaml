@@ -122,6 +122,37 @@ definitions:
       size:
         type: integer
     type: object
+  v1_version.SbomDependencyJSON:
+    properties:
+      path:
+        type: string
+      replace:
+        $ref: '#/definitions/v1_version.SbomDependencyJSON'
+      sum:
+        type: string
+      version:
+        type: string
+    type: object
+  v1_version.SbomJSON:
+    properties:
+      dependencies:
+        items:
+          $ref: '#/definitions/v1_version.SbomDependencyJSON'
+        type: array
+      goVersion:
+        type: string
+      main:
+        $ref: '#/definitions/v1_version.SbomModuleJSON'
+    type: object
+  v1_version.SbomModuleJSON:
+    properties:
+      path:
+        type: string
+      sum:
+        type: string
+      version:
+        type: string
+    type: object
   v1_version.UpdateParams:
     properties:
       force:
@@ -579,6 +610,24 @@ paths:
       summary: List photos
       tags:
       - photos
+  /sbom:
+    get:
+      description: Returns the Go version and all embedded dependency information
+        from the compiled binary
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_version.SbomJSON'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Get software bill of materials
+      tags:
+      - version
   /storage/devices/backup:
     post:
       description: Begin a backup to a device
