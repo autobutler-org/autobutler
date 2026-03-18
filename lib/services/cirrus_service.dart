@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/services/app_settings.dart';
+import 'package:autobutler/services/authenticated_service.dart';
 import 'package:autobutler/utils/web_download_stub.dart'
     if (dart.library.html) 'package:autobutler/utils/web_download_web.dart'
     as web_download;
@@ -9,13 +10,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:http/http.dart' as http;
 
-class CirrusService {
-  /// Returns Authorization header if a session token is set, empty map otherwise.
-  static Map<String, String> get _authHeaders {
-    final token = AppSettings.instance.sessionToken;
-    if (token == null || token.isEmpty) return const {};
-    return {'Authorization': 'Bearer $token'};
-  }
+class CirrusService with AuthenticatedService {
+  static final CirrusService _instance = CirrusService._();
+  CirrusService._();
+  static CirrusService get instance => _instance;
+
+  static Map<String, String> get _authHeaders => instance.authHeaders;
 
   static Uri get _apiBaseUri {
     final configured = AppSettings.instance.activeHost;
@@ -63,11 +63,17 @@ class CirrusService {
         .join('/');
     final endpointUri = _apiBaseUri.resolve('/api/v1/thumbnails/$encodedPath');
 
+    // Build query params — include token when set so Image.network() (which
+    // cannot set custom headers) can still authenticate.
+    final params = <String, String>{};
     final serialValue = serial?.trim() ?? '';
-    if (serialValue.isNotEmpty) {
-      return endpointUri.replace(queryParameters: {'serial': serialValue});
-    }
-    return endpointUri;
+    if (serialValue.isNotEmpty) params['serial'] = serialValue;
+    final token = AppSettings.instance.sessionToken;
+    if (token != null && token.isNotEmpty) params['token'] = token;
+
+    return params.isEmpty
+        ? endpointUri
+        : endpointUri.replace(queryParameters: params);
   }
 
   static Future<List<CirrusFileNode>> getFiles(

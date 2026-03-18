@@ -88,12 +88,16 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 			setupDone.Store(true)
 		}
 
-		// Extract token from Authorization header or cookie
+		// Extract token from Authorization header, cookie, or ?token= query param.
+		// The query param form exists solely for browser contexts that can't set headers
+		// (e.g. <img src="..."> tags, Image.network() in Flutter web). Prefer the header.
 		token := ""
 		if auth := c.GetHeader("Authorization"); strings.HasPrefix(auth, "Bearer ") {
 			token = strings.TrimPrefix(auth, "Bearer ")
 		} else if cookie, err := c.Cookie("session"); err == nil {
 			token = cookie
+		} else if q := c.Query("token"); q != "" {
+			token = q
 		}
 
 		if token == "" {

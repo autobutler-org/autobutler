@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:autobutler/services/app_settings.dart';
+import 'package:autobutler/services/authenticated_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -33,7 +34,13 @@ class ConnectedDevice {
   final int requestCount;
 }
 
-class ConnectedDevicesService {
+class ConnectedDevicesService with AuthenticatedService {
+  static final ConnectedDevicesService _instance = ConnectedDevicesService._();
+  ConnectedDevicesService._();
+  static ConnectedDevicesService get instance => _instance;
+
+  static Map<String, String> get _authHeaders => instance.authHeaders;
+
   static Uri get _apiBaseUri {
     final configured = AppSettings.instance.activeHost;
     final base =
@@ -55,7 +62,7 @@ class ConnectedDevicesService {
 
   static Future<List<ConnectedDevice>> listDevices() async {
     final uri = _apiBaseUri.resolve('/api/v1/devices');
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to fetch devices (${response.statusCode})');
     }
@@ -79,7 +86,7 @@ class ConnectedDevicesService {
 
   static Future<void> deleteDevice(int id) async {
     final uri = _apiBaseUri.resolve('/api/v1/devices/$id');
-    final response = await http.delete(uri);
+    final response = await http.delete(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to delete device (${response.statusCode})');
     }
