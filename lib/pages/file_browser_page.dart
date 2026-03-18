@@ -9,6 +9,7 @@ import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_dialog_utils.dart';
+import 'package:autobutler/utils/file_browser_drag_config.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
@@ -252,14 +253,19 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   void _handleFolderDragExit() {
     _folderDragExitTimer?.cancel();
-    _folderDragExitTimer = Timer(const Duration(milliseconds: 90), () {
-      if (!mounted || !_isHoveringFolderDropTarget) {
-        return;
-      }
-      setStateSafely(() {
-        _isHoveringFolderDropTarget = false;
-      });
-    });
+    _folderDragExitTimer = Timer(
+      const Duration(
+        milliseconds: FileBrowserDragConfig.folderHoverExitDebounceMs,
+      ),
+      () {
+        if (!mounted || !_isHoveringFolderDropTarget) {
+          return;
+        }
+        setStateSafely(() {
+          _isHoveringFolderDropTarget = false;
+        });
+      },
+    );
   }
 
   void _maybeAutoScrollDuringDrag(double localDy) {
@@ -272,9 +278,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
-    const edgeActivation = 92.0;
-    const baseDelta = 3.0;
-    const maxExtraDelta = 17.0;
+    const edgeActivation = FileBrowserDragConfig.autoScrollEdgeActivationPx;
+    const baseDelta = FileBrowserDragConfig.autoScrollBaseDeltaPx;
+    const maxExtraDelta = FileBrowserDragConfig.autoScrollMaxExtraDeltaPx;
 
     double delta = 0;
     if (localDy < edgeActivation) {

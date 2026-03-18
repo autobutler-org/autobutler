@@ -62,6 +62,10 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
 - Put network/data-source concerns in `lib/services/`, not in pages/widgets.
 - Put pure mapping/parsing/domain helpers in `lib/utils/` or `lib/models/` as appropriate.
 - Keep files focused and avoid large, mixed-responsibility classes.
+- For obvious global tuning/configuration values (for example thresholds,
+  debounce durations, and UI behavior constants), prefer a dedicated static
+  const config class under `lib/utils/` and reference it from feature code
+  instead of scattering hardcoded literals.
 
 ### Flutter UI/layout principles
 
