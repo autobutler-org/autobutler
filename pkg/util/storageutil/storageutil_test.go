@@ -188,6 +188,33 @@ func TestCalculateSummary_EmptyDevices(t *testing.T) {
 	}
 }
 
+// mockDetector is a Detector implementation for use in tests.
+type mockDetector struct {
+	devices []Device
+	err     error
+}
+
+func (m *mockDetector) DetectDevices() ([]Device, error) {
+	return m.devices, m.err
+}
+
+// mockUsbDevice is a minimal UsbDevice implementation for use in tests.
+type mockUsbDevice struct {
+	serial     string
+	mountPoint string
+}
+
+func (m *mockUsbDevice) GetPath() string          { return "" }
+func (m *mockUsbDevice) GetVendorID() string       { return "" }
+func (m *mockUsbDevice) GetProductID() string      { return "" }
+func (m *mockUsbDevice) GetManufacturer() string   { return "" }
+func (m *mockUsbDevice) GetProduct() string        { return "" }
+func (m *mockUsbDevice) GetSerial() string         { return m.serial }
+func (m *mockUsbDevice) GetMountPath() string      { return m.mountPoint }
+func (m *mockUsbDevice) BlockDevicePath() (string, bool) { return "", false }
+func (m *mockUsbDevice) IsStorageDevice() bool     { return true }
+func (m *mockUsbDevice) Partitions() ([]Partition, error) { return nil, nil }
+
 func TestGetManagedDevices(t *testing.T) {
 	// Create a temporary directory to simulate a managed device
 	tempDir := t.TempDir()
@@ -196,14 +223,13 @@ func TestGetManagedDevices(t *testing.T) {
 		t.Fatalf("Failed to create test cirrus directory: %v", err)
 	}
 
-	// Note: This test will find actual system devices that have autobutler directories
-	// We can't easily mock the detector, but we can verify the function executes
+	// Verify the function executes against the real detector without error.
 	devices, err := GetManagedDevices()
 	if err != nil {
 		t.Fatalf("GetManagedDevices() error = %v", err)
 	}
 
-	// Should return a slice (possibly empty if no managed devices exist)
+	// Should return a slice (possibly empty if no managed devices exist in CI)
 	if devices == nil {
 		t.Error("GetManagedDevices() should return non-nil slice")
 	}
@@ -216,6 +242,103 @@ func TestGetManagedDevices(t *testing.T) {
 		if device.CirrusDir == "" {
 			t.Errorf("Device %d has empty FilesDir", i)
 		}
+	}
+}
+
+func TestSetDetectorForTesting_ReturnsInjectedDevices(t *testing.T) {
+	tempDir := t.TempDir()
+	cirrusDir := ConstructCirrusDir(tempDir)
+	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
+		t.Fatalf("failed to create cirrus dir: %v", err)
+	}
+
+	mock := &mockDetector{
+		devices: []Device{
+			{Name: "test-disk", MountPoint: tempDir, IsInternal: true},
+		},
+	}
+	cleanup := SetDetectorForTesting(mock)
+	defer cleanup()
+
+	devices, err := GetManagedDevices()
+	if err != nil {
+		t.Fatalf("GetManagedDevices() error = %v", err)
+	}
+	if len(devices) != 1 {
+		t.Fatalf("expected 1 managed device, got %d", len(devices))
+	}
+	if devices[0].Name != "test-disk" {
+		t.Errorf("expected device name 'test-disk', got %q", devices[0].Name)
+	}
+}
+
+func TestSetDetectorForTesting_CleanupRestoresOriginal(t *testing.T) {
+	original := activeDetector
+	mock := &mockDetector{}
+	cleanup := SetDetectorForTesting(mock)
+	if activeDetector != mock {
+		t.Error("expected activeDetector to be replaced by mock")
+	}
+	cleanup()
+	if activeDetector != original {
+		t.Error("cleanup did not restore original detector")
+	}
+}
+
+func TestFindManagedDeviceBySerial_WithMockDetector(t *testing.T) {
+	tempDir := t.TempDir()
+	cirrusDir := ConstructCirrusDir(tempDir)
+	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
+		t.Fatalf("failed to create cirrus dir: %v", err)
+	}
+
+	serial := "ABC123"
+	usbInfo := &mockUsbDevice{serial: serial, mountPoint: tempDir}
+	mock := &mockDetector{
+		devices: []Device{
+			{Name: "usb-disk", MountPoint: tempDir, IsInternal: false, UsbInfo: usbInfo},
+		},
+	}
+	cleanup := SetDetectorForTesting(mock)
+	defer cleanup()
+
+	device, err := FindManagedDeviceBySerial(serial)
+	if err != nil {
+		t.Fatalf("FindManagedDeviceBySerial() error = %v", err)
+	}
+	if device == nil {
+		t.Fatal("expected to find device, got nil")
+	}
+	if device.Name != "usb-disk" {
+		t.Errorf("expected 'usb-disk', got %q", device.Name)
+	}
+}
+
+func TestFindManagedDeviceBySerial_MissingSerial_WithMockDetector(t *testing.T) {
+	tempDir := t.TempDir()
+	cirrusDir := ConstructCirrusDir(tempDir)
+	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
+		t.Fatalf("failed to create cirrus dir: %v", err)
+	}
+
+	mock := &mockDetector{
+		devices: []Device{
+			{Name: "internal", MountPoint: tempDir, IsInternal: true},
+		},
+	}
+	cleanup := SetDetectorForTesting(mock)
+	defer cleanup()
+
+	// Empty serial should return first internal device
+	device, err := FindManagedDeviceBySerial("")
+	if err != nil {
+		t.Fatalf("FindManagedDeviceBySerial() error = %v", err)
+	}
+	if device == nil {
+		t.Fatal("expected to find internal device, got nil")
+	}
+	if device.Name != "internal" {
+		t.Errorf("expected 'internal', got %q", device.Name)
 	}
 }
 
