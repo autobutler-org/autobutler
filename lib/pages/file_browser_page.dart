@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:autobutler/controllers/file_browser_controller.dart';
+import 'package:autobutler/utils/auto_refresh_mixin.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/health_page.dart';
@@ -33,7 +34,7 @@ class FileBrowserPage extends StatefulWidget {
 }
 
 class _FileBrowserPageState extends State<FileBrowserPage>
-    with SafeSetStateMixin {
+    with SafeSetStateMixin, WidgetsBindingObserver, AutoRefreshMixin {
   final _controller = const FileBrowserController();
   final _dropRegionKey = GlobalKey();
   final _fileBrowserScrollController = ScrollController();
@@ -44,7 +45,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   String _currentPath = '';
   bool _isGridView = false;
   bool _isUploading = false;
-  bool _isRefreshing = false;
   bool _isCreatingFolder = false;
   bool _isWebDragging = false;
   bool _isHoveringFolderDropTarget = false;
@@ -57,16 +57,16 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   String? _searchQuery;
 
   @override
-  void initState() {
-    super.initState();
-
-    // Don't attempt to load files if no host is configured; show a prompt instead.
+  Future<void> refresh() async {
     _noHostSelected = AppSettings.instance.activeHost == null;
     if (_noHostSelected) {
-      _filesFuture = Future.value(const <CirrusFileNode>[]);
-    } else {
-      _reloadFiles();
+      setState(() {
+        _filesFuture = Future.value(const <CirrusFileNode>[]);
+      });
+      return;
     }
+    setState(() => _reloadFiles());
+    await _filesFuture;
   }
 
   @override
@@ -89,17 +89,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     });
   }
 
-  Future<void> _refreshFileState() async {
-    setState(() {
-      _isRefreshing = true;
-      _reloadFiles();
-    });
-    try {
-      await _filesFuture;
-    } finally {
-      if (mounted) setState(() => _isRefreshing = false);
-    }
-  }
+  Future<void> _refreshFileState() => manualRefresh();
 
   Future<void> _uploadSelectedFiles(
     List<http.MultipartFile> selectedFiles,
@@ -584,7 +574,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view_rounded),
           ),
           RefreshIconButton(
-            isRefreshing: _isRefreshing,
+            isRefreshing: isRefreshing,
             onPressed: _refreshFileState,
             tooltip: 'Refresh files',
           ),

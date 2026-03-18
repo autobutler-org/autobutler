@@ -1,4 +1,5 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
+import 'package:autobutler/utils/auto_refresh_mixin.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:autobutler/pages/file_browser_page.dart';
 import 'package:autobutler/pages/health_page.dart';
@@ -31,7 +32,8 @@ class PhotoItem {
   factory PhotoItem.fromAsset(AssetEntity a) => PhotoItem._(asset: a);
 }
 
-class _PhotosPageState extends State<PhotosPage> {
+class _PhotosPageState extends State<PhotosPage>
+    with WidgetsBindingObserver, AutoRefreshMixin {
   static const int _defaultCrossAxisCount = 4;
   static const int _minPreviewColumns = 1;
   static const int _maxPreviewColumns = 8;
@@ -43,19 +45,12 @@ class _PhotosPageState extends State<PhotosPage> {
   List<PhotoItem> _cirrusPhotos = const <PhotoItem>[];
   List<PhotoItem> _mobilePhotos = const <PhotoItem>[];
 
-  bool _isRefreshing = false;
   bool _noHostSelected = false;
   bool _categoriesExpanded = false;
   int _previewColumns = _defaultCrossAxisCount;
   PhotoCategory _selectedCategory = PhotoCategory.cirrus;
 
-  @override
-  void initState() {
-    super.initState();
-    _noHostSelected = AppSettings.instance.activeHost == null;
-    _primeFuture = _primeSources();
-    _photosFuture = _photosForCategory(_selectedCategory);
-  }
+  // initState is handled by AutoRefreshMixin (calls refresh() on start)
 
   Future<void> _primeSources() async {
     final cirrusFuture = _safeLoadPhotos(() async {
@@ -153,14 +148,14 @@ class _PhotosPageState extends State<PhotosPage> {
     });
   }
 
-  Future<void> _refresh() async {
-    setState(() => _isRefreshing = true);
+  @override
+  Future<void> refresh() async {
+    _noHostSelected = AppSettings.instance.activeHost == null;
     _primeFuture = _primeSources();
     setState(() {
       _photosFuture = _photosForCategory(_selectedCategory);
     });
     await _photosFuture;
-    if (mounted) setState(() => _isRefreshing = false);
   }
 
   int _minColumnsByScale() {
@@ -334,7 +329,7 @@ class _PhotosPageState extends State<PhotosPage> {
 
   Widget _buildPhotoGrid(List<PhotoItem> photos, int crossAxisCount) {
     return RefreshIndicator(
-      onRefresh: () async => _refresh(),
+      onRefresh: manualRefresh,
       child: photos.isEmpty
           ? ListView(
               children: const [
@@ -433,8 +428,8 @@ class _PhotosPageState extends State<PhotosPage> {
         centerTitle: true,
         actions: [
           RefreshIconButton(
-            isRefreshing: _isRefreshing,
-            onPressed: _refresh,
+            isRefreshing: isRefreshing,
+            onPressed: manualRefresh,
             tooltip: 'Reload photos',
           ),
         ],
