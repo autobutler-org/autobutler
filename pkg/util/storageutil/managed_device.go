@@ -7,50 +7,17 @@ type ManagedDevice struct {
 	CirrusDir string `json:"cirrusDir"` // Path to cirrus subdirectory
 }
 
-// activeDetector is the package-level detector used by GetManagedDevices.
-// It defaults to the real hardware detector and can be swapped in tests
-// by directly assigning this variable.
-var activeDetector Detector = NewDetector()
-
-// FindManagedDeviceBySerial finds a managed device by its USB serial number.
-// Empty serial returns first internal device.
-func FindManagedDeviceBySerial(serial string) (*ManagedDevice, error) {
-	managedDevices, err := GetManagedDevices()
-	if err != nil {
-		return nil, err // coverage: ignore - requires device detection failure
-	}
-	for _, d := range managedDevices {
-		if serial == "" && d.IsInternal {
-			return &d, nil
-		}
-		if d.UsbInfo != nil && d.UsbInfo.GetSerial() == serial {
-			return &d, nil
-		}
-	}
-	return nil, nil
-}
+// defaultStorageService is used by the package-level function wrappers below
+// so that existing callers (operations.go, etc.) continue to compile without changes.
+var defaultStorageService = NewStorageService(NewDetector())
 
 // GetManagedDevices returns all devices that have an autobutler data directory.
 func GetManagedDevices() ([]ManagedDevice, error) {
-	devices, err := activeDetector.DetectDevices()
-	if err != nil {
-		return nil, err // coverage: ignore - requires device detection failure
-	}
+	return defaultStorageService.GetManagedDevices()
+}
 
-	var managedDevices []ManagedDevice
-	for _, device := range devices {
-		dataDir := GetDataDirForDevice(device.MountPoint)
-		cirrusDir, err := GetCirrusDirForDevice(device.MountPoint)
-		if err != nil {
-			continue
-		}
-
-		managedDevices = append(managedDevices, ManagedDevice{
-			Device:    device,
-			DataDir:   dataDir,
-			CirrusDir: cirrusDir,
-		})
-	}
-
-	return managedDevices, nil
+// FindManagedDeviceBySerial finds a managed device by its USB serial number.
+// Empty serial returns the first internal device.
+func FindManagedDeviceBySerial(serial string) (*ManagedDevice, error) {
+	return defaultStorageService.FindManagedDeviceBySerial(serial)
 }

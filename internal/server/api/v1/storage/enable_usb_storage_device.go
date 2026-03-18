@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
+	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
@@ -29,7 +31,12 @@ func enableUsbStorageDevice(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(errors.New("`serial` path parameter is required"))
 	}
 
-	targetDevice, err := storageutil.FindUsbDeviceBySerial(serial)
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		return serverutil.InternalServerError(nil)
+	}
+
+	targetDevice, err := deps.StorageService().FindUsbDeviceBySerial(serial)
 	if err != nil {
 		return serverutil.NotFound(fmt.Errorf("USB device not found: %w", err))
 	}

@@ -188,18 +188,6 @@ func TestCalculateSummary_EmptyDevices(t *testing.T) {
 	}
 }
 
-// setDetectorForTesting replaces the package-level detector with d and returns
-// a cleanup function that restores the original. Use with defer in tests:
-//
-//	cleanup := setDetectorForTesting(t, mock)
-//	defer cleanup()
-func setDetectorForTesting(t *testing.T, d Detector) func() {
-	t.Helper()
-	original := activeDetector
-	activeDetector = d
-	return func() { activeDetector = original }
-}
-
 // mockDetector is a Detector implementation for use in tests.
 type mockDetector struct {
 	devices []Device
@@ -257,7 +245,7 @@ func TestGetManagedDevices(t *testing.T) {
 	}
 }
 
-func TestSetDetectorForTesting_ReturnsInjectedDevices(t *testing.T) {
+func TestStorageService_GetManagedDevices(t *testing.T) {
 	tempDir := t.TempDir()
 	cirrusDir := ConstructCirrusDir(tempDir)
 	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
@@ -269,12 +257,11 @@ func TestSetDetectorForTesting_ReturnsInjectedDevices(t *testing.T) {
 			{Name: "test-disk", MountPoint: tempDir, IsInternal: true},
 		},
 	}
-	cleanup := setDetectorForTesting(t, mock)
-	defer cleanup()
+	svc := NewStorageService(mock)
 
-	devices, err := GetManagedDevices()
+	devices, err := svc.GetManagedDevices()
 	if err != nil {
-		t.Fatalf("GetManagedDevices() error = %v", err)
+		t.Fatalf("svc.GetManagedDevices() error = %v", err)
 	}
 	if len(devices) != 1 {
 		t.Fatalf("expected 1 managed device, got %d", len(devices))
@@ -284,20 +271,20 @@ func TestSetDetectorForTesting_ReturnsInjectedDevices(t *testing.T) {
 	}
 }
 
-func TestSetDetectorForTesting_CleanupRestoresOriginal(t *testing.T) {
-	original := activeDetector
+func TestStorageService_IsolatedFromDefault(t *testing.T) {
+	// Constructing a StorageService with a mock does not affect the package default.
 	mock := &mockDetector{}
-	cleanup := setDetectorForTesting(t, mock)
-	if activeDetector != mock {
-		t.Error("expected activeDetector to be replaced by mock")
+	svc := NewStorageService(mock)
+	if svc == nil {
+		t.Fatal("expected non-nil StorageService")
 	}
-	cleanup()
-	if activeDetector != original {
-		t.Error("cleanup did not restore original detector")
+	// The default service must be distinct from the one we just created.
+	if svc == defaultStorageService {
+		t.Error("NewStorageService returned the same instance as defaultStorageService")
 	}
 }
 
-func TestFindManagedDeviceBySerial_WithMockDetector(t *testing.T) {
+func TestStorageService_FindManagedDeviceBySerial(t *testing.T) {
 	tempDir := t.TempDir()
 	cirrusDir := ConstructCirrusDir(tempDir)
 	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
@@ -311,10 +298,9 @@ func TestFindManagedDeviceBySerial_WithMockDetector(t *testing.T) {
 			{Name: "usb-disk", MountPoint: tempDir, IsInternal: false, UsbInfo: usbInfo},
 		},
 	}
-	cleanup := setDetectorForTesting(t, mock)
-	defer cleanup()
+	svc := NewStorageService(mock)
 
-	device, err := FindManagedDeviceBySerial(serial)
+	device, err := svc.FindManagedDeviceBySerial(serial)
 	if err != nil {
 		t.Fatalf("FindManagedDeviceBySerial() error = %v", err)
 	}
@@ -326,7 +312,7 @@ func TestFindManagedDeviceBySerial_WithMockDetector(t *testing.T) {
 	}
 }
 
-func TestFindManagedDeviceBySerial_MissingSerial_WithMockDetector(t *testing.T) {
+func TestStorageService_FindManagedDeviceBySerial_EmptySerial(t *testing.T) {
 	tempDir := t.TempDir()
 	cirrusDir := ConstructCirrusDir(tempDir)
 	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
@@ -338,11 +324,10 @@ func TestFindManagedDeviceBySerial_MissingSerial_WithMockDetector(t *testing.T) 
 			{Name: "internal", MountPoint: tempDir, IsInternal: true},
 		},
 	}
-	cleanup := setDetectorForTesting(t, mock)
-	defer cleanup()
+	svc := NewStorageService(mock)
 
 	// Empty serial should return first internal device
-	device, err := FindManagedDeviceBySerial("")
+	device, err := svc.FindManagedDeviceBySerial("")
 	if err != nil {
 		t.Fatalf("FindManagedDeviceBySerial() error = %v", err)
 	}
