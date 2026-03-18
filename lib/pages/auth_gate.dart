@@ -32,7 +32,9 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _check() async {
-    // If there's no active host configured, skip auth and go straight in.
+    // No host configured — the app has its own "no host" state handling.
+    // Skip the auth check entirely; the user will be prompted to add a host
+    // before any butler calls are made, so there's nothing to authenticate against.
     if (AppSettings.instance.activeHost == null) {
       if (mounted) setState(() => _state = _GateState.authenticated);
       return;
