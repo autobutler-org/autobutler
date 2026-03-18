@@ -3,9 +3,17 @@
 # Install: make setup/hooks
 set -euo pipefail
 
-echo "Running make check..."
-if ! make check; then
+# Prefer gmake (GNU make) when available — required on macOS where the
+# system make is BSD make and incompatible with this Makefile.
+if command -v gmake &>/dev/null; then
+  MAKE=gmake
+else
+  MAKE=make
+fi
+
+echo "Running ${MAKE} check..."
+if ! "${MAKE}" check; then
   echo ""
-  echo "❌ make check failed. Fix the issues above before committing."
+  echo "❌ ${MAKE} check failed. Fix the issues above before committing."
   exit 1
 fi
