@@ -11,7 +11,11 @@ type HealthJSON struct {
 	Alerts             []string `json:"alerts"`
 	CPUPercent         float64  `json:"cpuPercent"`
 	MemPercent         float64  `json:"memPercent"`
+	MemUsedBytes       uint64   `json:"memUsedBytes"`
+	MemTotalBytes      uint64   `json:"memTotalBytes"`
 	DiskPercent        float64  `json:"diskPercent"`
+	DiskUsedBytes      uint64   `json:"diskUsedBytes"`
+	DiskTotalBytes     uint64   `json:"diskTotalBytes"`
 	TemperatureCelsius float64  `json:"temperatureCelsius"`
 }
 
@@ -34,7 +38,11 @@ func (r *router) getHealthRoute() *serverutil.Route {
 			Alerts:             alerts,
 			CPUPercent:         status.CPUPercent,
 			MemPercent:         status.MemPercent,
+			MemUsedBytes:       status.MemUsedBytes,
+			MemTotalBytes:      status.MemTotalBytes,
 			DiskPercent:        status.DiskPercent,
+			DiskUsedBytes:      status.DiskUsedBytes,
+			DiskTotalBytes:     status.DiskTotalBytes,
 			TemperatureCelsius: status.TemperatureCelsius,
 		})
 	})
