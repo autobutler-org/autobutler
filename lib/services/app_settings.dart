@@ -23,6 +23,7 @@ class AppSettings {
 
   List<HostEntry> _hosts = [];
   int _activeIndex = -1;
+  String? _sessionToken;
   SharedPreferences? _prefs;
 
   Future<void> load() async {
@@ -69,6 +70,16 @@ class AppSettings {
 
   List<HostEntry> get hosts => List.unmodifiable(_hosts);
   int get activeIndex => _activeIndex;
+
+  /// In-memory session token set after a successful login or setup.
+  /// Not persisted to disk — the user must log in again after an app restart.
+  /// Populated by [AuthService] after login/setup; consumed by [CirrusService].
+  String? get sessionToken => _sessionToken;
+
+  void setSessionToken(String? token) {
+    _sessionToken = token;
+  }
+
   String? get activeHost => (_activeIndex >= 0 && _activeIndex < _hosts.length)
       ? _hosts[_activeIndex].hostAddress
       : null;
