@@ -3,10 +3,12 @@ package storageutil
 import (
 	"bufio"
 	"fmt"
-	"os/exec"
+	"io"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 )
 
 // detector implements storage detection for Linux
@@ -24,64 +26,21 @@ func NewDetector() Detector {
 func (d *detector) DetectDevices() ([]Device, error) {
 	devices := []Device{}
 
-	// TODO(#663): Stop using df, which can be unreliable. Consider parsing /proc/mounts
-	// Use df to get only the root volume ("/")
-	cmd := exec.Command("df", "-B1", "--output=source,fstype,size,used,avail,pcent,target")
-	output, err := cmd.Output()
+	rootDevice, err := detectRootDevice()
 	if err != nil {
-		return devices, fmt.Errorf("failed to run df: %w", err)
+		return devices, err
 	}
-
-	scanner := bufio.NewScanner(strings.NewReader(string(output)))
-	scanner.Scan() // Skip header
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		fields := strings.Fields(line)
-		if len(fields) < 7 {
-			continue
-		}
-
-		mountPoint := fields[6]
-		if mountPoint != "/" {
-			continue
-		}
-
-		devicePath := fields[0]
-		fsType := fields[1]
-		totalBytes, _ := strconv.ParseUint(fields[2], 10, 64)
-		usedBytes, _ := strconv.ParseUint(fields[3], 10, 64)
-		availableBytes, _ := strconv.ParseUint(fields[4], 10, 64)
-
-		device := &Device{
-			DevicePath:     devicePath,
-			MountPoint:     mountPoint,
-			FileSystem:     fsType,
-			TotalBytes:     totalBytes,
-			UsedBytes:      usedBytes,
-			AvailableBytes: availableBytes,
-			IsInternal:     true,
-		}
-
-		device.Name = filepath.Base(device.MountPoint)
-		if device.Name == "" || device.Name == "/" {
-			device.Name = "Root Volume"
-		}
-
-		device.ApplySimpleCategorization()
-		devices = append(devices, *device)
-		break // Only need the root volume
+	if rootDevice != nil {
+		devices = append(devices, *rootDevice)
 	}
 
 	// Now add USB storage devices
 	usbDevices, err := ListUsbDevices(true)
 	if err == nil {
 		for _, usb := range usbDevices {
-			const storageType = "External USB"
 			name := fmt.Sprintf("%s - %s", usb.GetManufacturer(), usb.GetProduct())
 			mountPath := usb.GetMountPath()
 			if mountPath == "" {
-				// Default values, used if not mounted
 				dev := Device{
 					Name:           name,
 					DevicePath:     "",
@@ -125,10 +84,84 @@ func (d *detector) DetectDevices() ([]Device, error) {
 				Model:          usb.GetProduct(),
 				UsbInfo:        usb,
 			}
-			devices = append(devices, device)
 			device.ApplySimpleCategorization()
+			devices = append(devices, device)
 		}
 	}
 
 	return devices, nil
+}
+
+// parseProcMountsRoot scans /proc/mounts-formatted content from r and returns
+// the device path and filesystem type for the root ("/") mount, or empty
+// strings if not found.
+func parseProcMountsRoot(r io.Reader) (devicePath, fsType string, err error) {
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		fields := strings.Fields(scanner.Text())
+		if len(fields) < 3 {
+			continue
+		}
+		// /proc/mounts fields: device mountPoint fsType options dump pass
+		if fields[1] == "/" {
+			return fields[0], fields[2], nil
+		}
+	}
+	return "", "", scanner.Err()
+}
+
+// detectRootDevice parses /proc/mounts to find the root filesystem mount
+// and uses syscall.Statfs to get size information.
+// This replaces the previous df-based approach which spawned a subprocess.
+func detectRootDevice() (*Device, error) {
+	f, err := os.Open("/proc/mounts")
+	if err != nil {
+		return nil, fmt.Errorf("failed to open /proc/mounts: %w", err)
+	}
+	defer f.Close()
+
+	rootSource, rootFsType, err := parseProcMountsRoot(f)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read /proc/mounts: %w", err)
+	}
+	if rootSource == "" {
+		return nil, nil // coverage: ignore - root mount always present on Linux
+	}
+
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs("/", &stat); err != nil {
+		return nil, fmt.Errorf("failed to stat root filesystem: %w", err)
+	}
+
+	blockSize := uint64(stat.Bsize)
+	totalBytes := stat.Blocks * blockSize
+	availableBytes := stat.Bavail * blockSize
+	usedBytes := totalBytes - availableBytes
+
+	// Express used/available as percentage to match original df output intent
+	var pct string
+	if totalBytes > 0 {
+		pct = strconv.Itoa(int(usedBytes*100/totalBytes)) + "%"
+	} else {
+		pct = "0%"
+	}
+	_ = pct // available for future use in Device
+
+	device := &Device{
+		DevicePath:     rootSource,
+		MountPoint:     "/",
+		FileSystem:     rootFsType,
+		TotalBytes:     totalBytes,
+		UsedBytes:      usedBytes,
+		AvailableBytes: availableBytes,
+		IsInternal:     true,
+	}
+
+	device.Name = filepath.Base(device.MountPoint)
+	if device.Name == "" || device.Name == "/" {
+		device.Name = "Root Volume"
+	}
+
+	device.ApplySimpleCategorization()
+	return device, nil
 }
