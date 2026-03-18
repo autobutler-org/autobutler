@@ -3,7 +3,6 @@ package v1_version
 import (
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/updateutil"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,18 +19,10 @@ func listVersions(c *gin.Context) *serverutil.Response {
 	all := c.Query("all") == "true"
 	result, err := updateutil.ListPossibleUpdatesFromDefaultSources(all)
 	if err != nil {
-		return serverutil.NewResponse().
-			WithStatusCode(500).
-			WithContentType(serverutil.ContentTypeJSON).
-			WithData(map[string]string{
-				"error": err.Error(),
-			})
+		return serverutil.InternalServerError(err)
 	}
 
-	return serverutil.NewResponse().
-		WithStatusCode(200).
-		WithContentType(serverutil.ContentTypeJSON).
-		WithData(result.Versions)
+	return serverutil.Ok().WithData(result.Versions)
 }
 
 var listVersionsRoute = serverutil.ApiRoute(

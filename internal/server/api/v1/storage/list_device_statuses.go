@@ -1,8 +1,6 @@
 package v1_storage
 
 import (
-	"net/http"
-
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
@@ -20,22 +18,13 @@ import (
 func listDeviceStatuses(c *gin.Context) *serverutil.Response {
 	statuses, err := storageutil.GetDeviceStatuses()
 	if err != nil {
-		return serverutil.NewResponse().
-			WithContentType(serverutil.ContentTypeJSON).
-			WithStatusCode(http.StatusInternalServerError).
-			WithData(gin.H{
-				"error":   "Failed to get device statuses",
-				"details": err.Error(),
-			})
+		return serverutil.InternalServerError(err)
 	}
 
-	return serverutil.NewResponse().
-		WithContentType(serverutil.ContentTypeJSON).
-		WithStatusCode(http.StatusOK).
-		WithData(gin.H{
-			"devices": statuses,
-			"count":   len(statuses),
-		})
+	return serverutil.Ok().WithData(gin.H{
+		"devices": statuses,
+		"count":   len(statuses),
+	})
 }
 
 var listDeviceStatusesRoute = serverutil.ApiRoute(

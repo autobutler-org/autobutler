@@ -1,6 +1,7 @@
 package serverutil
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -54,6 +55,16 @@ func WrapApiRoute(handler func(c *gin.Context) *Response) gin.HandlerFunc {
 		if resp.Data == nil && resp.Error == nil {
 			c.Status(resp.StatusCode)
 			return
+		}
+		// If the error wraps an HttpError, its status code takes precedence over
+		// whatever status code the handler passed in. This means service functions
+		// can signal HTTP semantics with fmt.Errorf("...: %w", httpErr) and the
+		// HTTP layer will pick it up automatically.
+		if resp.Error != nil {
+			var httpErr *HttpError
+			if errors.As(resp.Error, &httpErr) {
+				resp.StatusCode = httpErr.StatusCode
+			}
 		}
 		switch resp.ContentType {
 		case ContentTypeHTML:

@@ -31,6 +31,14 @@ func InternalServerError(err error) *Response {
 	return NewResponse().WithStatusCode(http.StatusInternalServerError).WithError(err)
 }
 
+func NotFound(err error) *Response {
+	return NewResponse().WithStatusCode(http.StatusNotFound).WithError(err)
+}
+
+func ServiceUnavailable(err error) *Response {
+	return NewResponse().WithStatusCode(http.StatusServiceUnavailable).WithError(err)
+}
+
 func NewResponse() *Response {
 	return (&Response{}).WithContentType(ContentTypeJSON).WithStatusCode(http.StatusOK).WithData(nil).WithError(nil)
 }

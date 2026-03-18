@@ -3,7 +3,6 @@ package v1_version
 import (
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/versionutil"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,15 +17,12 @@ import (
 func getInstalledVersion(c *gin.Context) *serverutil.Response {
 	version := versionutil.GetVersion()
 
-	return serverutil.NewResponse().
-		WithStatusCode(200).
-		WithContentType(serverutil.ContentTypeJSON).
-		WithData(VersionJSON{
-			Semver:    version.Semver,
-			GitCommit: version.GitCommit,
-			GoVersion: version.GoVersion,
-			BuildDate: version.BuildDate,
-		})
+	return serverutil.Ok().WithData(VersionJSON{
+		Semver:    version.Semver,
+		GitCommit: version.GitCommit,
+		GoVersion: version.GoVersion,
+		BuildDate: version.BuildDate,
+	})
 }
 
 var getInstalledVersionRoute = serverutil.ApiRoute(

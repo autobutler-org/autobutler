@@ -3,11 +3,9 @@ package v1_storage
 import (
 	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,39 +23,21 @@ import (
 func getDeviceStatusBySerial(c *gin.Context) *serverutil.Response {
 	serial := c.Param("serial")
 	if serial == "" {
-		return serverutil.NewResponse().
-			WithContentType(serverutil.ContentTypeJSON).
-			WithStatusCode(http.StatusBadRequest).
-			WithError(errors.New("Serial parameter is required"))
-	}
-	statuses, err := storageutil.GetDeviceStatuses()
-	if err != nil {
-		return serverutil.NewResponse().
-			WithContentType(serverutil.ContentTypeJSON).
-			WithStatusCode(http.StatusInternalServerError).
-			WithError(fmt.Errorf("Failed to get device statuses: %w", err))
-	}
-	var device *storageutil.DeviceStatus
-	for _, ds := range statuses {
-		if ds.UsbInfo == nil {
-			continue
-		}
-		if ds.UsbInfo.GetSerial() == serial {
-			device = ds
-			break
-		}
-	}
-	if device == nil || device.UsbInfo == nil {
-		return serverutil.NewResponse().
-			WithContentType(serverutil.ContentTypeJSON).
-			WithStatusCode(http.StatusNotFound).
-			WithError(errors.New("Device with specified serial not found"))
+		return serverutil.BadRequest(errors.New("serial parameter is required"))
 	}
 
-	return serverutil.NewResponse().
-		WithContentType(serverutil.ContentTypeJSON).
-		WithStatusCode(http.StatusOK).
-		WithData(device)
+	statuses, err := storageutil.GetDeviceStatuses()
+	if err != nil {
+		return serverutil.InternalServerError(fmt.Errorf("failed to get device statuses: %w", err))
+	}
+
+	for _, ds := range statuses {
+		if ds.UsbInfo != nil && ds.UsbInfo.GetSerial() == serial {
+			return serverutil.Ok().WithData(ds)
+		}
+	}
+
+	return serverutil.NotFound(errors.New("device with specified serial not found"))
 }
 
 var getDeviceStatusBySerialRoute = serverutil.ApiRoute(

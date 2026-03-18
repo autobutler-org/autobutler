@@ -312,6 +312,64 @@ func TestWrapApiRoute_UnsupportedContentType(t *testing.T) {
 	}
 }
 
+func TestHttpError_Error(t *testing.T) {
+	err := serverutil.NewHttpError(http.StatusNotFound, "resource not found")
+	if err.Error() != "resource not found" {
+		t.Errorf("expected 'resource not found', got %q", err.Error())
+	}
+	if err.StatusCode != http.StatusNotFound {
+		t.Errorf("expected status %d, got %d", http.StatusNotFound, err.StatusCode)
+	}
+}
+
+func TestHttpErrorf(t *testing.T) {
+	err := serverutil.NewHttpErrorf(http.StatusBadRequest, "invalid param: %s", "foo")
+	if err.Error() != "invalid param: foo" {
+		t.Errorf("expected 'invalid param: foo', got %q", err.Error())
+	}
+}
+
+func TestWrapApiRoute_HttpErrorOverridesStatusCode(t *testing.T) {
+	handler := func(c *gin.Context) *serverutil.Response {
+		httpErr := serverutil.NewHttpError(http.StatusNotFound, "thing not found")
+		return serverutil.InternalServerError(httpErr)
+	}
+
+	wrapped := serverutil.WrapApiRoute(handler)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	wrapped(c)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected status %d (from HttpError), got %d", http.StatusNotFound, w.Code)
+	}
+
+	if !strings.Contains(w.Body.String(), "thing not found") {
+		t.Errorf("expected body to contain 'thing not found', got: %s", w.Body.String())
+	}
+}
+
+func TestWrapApiRoute_WrappedHttpError(t *testing.T) {
+	handler := func(c *gin.Context) *serverutil.Response {
+		httpErr := serverutil.NewHttpError(http.StatusForbidden, "access denied")
+		wrapped := fmt.Errorf("outer: %w", httpErr)
+		return serverutil.InternalServerError(wrapped)
+	}
+
+	wrappedHandler := serverutil.WrapApiRoute(handler)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	wrappedHandler(c)
+
+	if w.Code != http.StatusForbidden {
+		t.Errorf("expected status %d (unwrapped from HttpError), got %d", http.StatusForbidden, w.Code)
+	}
+}
+
 type mockRouter struct {
 	routes []*serverutil.Route
 }
