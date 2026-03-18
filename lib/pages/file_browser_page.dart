@@ -32,6 +32,8 @@ class FileBrowserPage extends StatefulWidget {
 class _FileBrowserPageState extends State<FileBrowserPage>
     with SafeSetStateMixin {
   final _controller = const FileBrowserController();
+  final _dropRegionKey = GlobalKey();
+  final _fileBrowserScrollController = ScrollController();
 
   late Future<List<CirrusFileNode>> _filesFuture;
   String _currentPath = '';
@@ -64,6 +66,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   @override
   void dispose() {
     _folderDragExitTimer?.cancel();
+    _fileBrowserScrollController.dispose();
     super.dispose();
   }
 
@@ -257,6 +260,50 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         _isHoveringFolderDropTarget = false;
       });
     });
+  }
+
+  void _maybeAutoScrollDuringDrag(double localDy) {
+    if (!_fileBrowserScrollController.hasClients) {
+      return;
+    }
+
+    final viewportHeight = _dropRegionKey.currentContext?.size?.height;
+    if (viewportHeight == null || viewportHeight <= 0) {
+      return;
+    }
+
+    const edgeActivation = 92.0;
+    const baseDelta = 3.0;
+    const maxExtraDelta = 17.0;
+
+    double delta = 0;
+    if (localDy < edgeActivation) {
+      final strength = ((edgeActivation - localDy) / edgeActivation).clamp(
+        0.0,
+        1.0,
+      );
+      delta = -(baseDelta + maxExtraDelta * strength);
+    } else if (localDy > viewportHeight - edgeActivation) {
+      final strength =
+          ((localDy - (viewportHeight - edgeActivation)) / edgeActivation)
+              .clamp(0.0, 1.0);
+      delta = baseDelta + maxExtraDelta * strength;
+    }
+
+    if (delta == 0) {
+      return;
+    }
+
+    final position = _fileBrowserScrollController.position;
+    final targetOffset = (position.pixels + delta).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+    if (targetOffset == position.pixels) {
+      return;
+    }
+
+    _fileBrowserScrollController.jumpTo(targetOffset);
   }
 
   Future<void> _handleCreateFolderPressed() async {
@@ -601,11 +648,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                     ),
                   )
                 : DropTarget(
-                    enable:
-                        kIsWeb &&
-                        !_isSearchMode &&
-                        !_isUploading &&
-                        !_isHoveringFolderDropTarget,
+                    key: _dropRegionKey,
+                    enable: kIsWeb && !_isSearchMode && !_isUploading,
                     onDragEntered: (_) {
                       if (!mounted) {
                         return;
@@ -622,14 +666,21 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                         _isWebDragging = false;
                       });
                     },
+                    onDragUpdated: (details) {
+                      _maybeAutoScrollDuringDrag(details.localPosition.dy);
+                    },
                     onDragDone: (details) async {
                       _folderDragExitTimer?.cancel();
                       if (mounted) {
                         setStateSafely(() {
                           _isWebDragging = false;
-                          _isHoveringFolderDropTarget = false;
                         });
                       }
+
+                      if (_isHoveringFolderDropTarget) {
+                        return;
+                      }
+
                       await _handleDropToCurrentFolder(details);
                     },
                     child: Stack(
@@ -651,6 +702,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                           onDropToFolder: _handleDropToFolder,
                           onFolderDragEnter: _handleFolderDragEnter,
                           onFolderDragExit: _handleFolderDragExit,
+                          scrollController: _fileBrowserScrollController,
                         ),
                         if (_isWebDragging && !_isHoveringFolderDropTarget)
                           IgnorePointer(

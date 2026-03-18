@@ -18,6 +18,7 @@ class FileBrowserView extends StatelessWidget {
     this.onDropToFolder,
     this.onFolderDragEnter,
     this.onFolderDragExit,
+    this.scrollController,
     this.showFileSizeAndMenu = true,
     this.isSearchMode = false,
     this.onNavigateToFolder,
@@ -33,6 +34,7 @@ class FileBrowserView extends StatelessWidget {
   onDropToFolder;
   final VoidCallback? onFolderDragEnter;
   final VoidCallback? onFolderDragExit;
+  final ScrollController? scrollController;
   final bool showFileSizeAndMenu;
   final bool isSearchMode;
   final void Function(CirrusFileNode)? onNavigateToFolder;
@@ -108,6 +110,7 @@ class FileBrowserView extends StatelessWidget {
           final crossAxisCount = calculatedCount < 1 ? 1 : calculatedCount;
 
           return GridView.builder(
+            controller: scrollController,
             padding: const EdgeInsets.all(8),
             itemCount: files.length,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -238,6 +241,7 @@ class FileBrowserView extends StatelessWidget {
         }
 
         return ListView.separated(
+          controller: scrollController,
           itemCount: files.length,
           separatorBuilder: (_, _) => Divider(
             height: 1,
