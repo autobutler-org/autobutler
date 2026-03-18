@@ -44,7 +44,7 @@ func StartServer(deps deputil.Dependencies) error {
 		return fmt.Errorf("failed to initialize otel trace: %w", err)
 	}
 
-	mp, err := botel.InitMetrics(deps)
+	mp, systemCollector, err := botel.InitMetrics(deps)
 	if err != nil {
 		return fmt.Errorf("failed to initialize otel metrics: %w", err)
 	}
@@ -67,7 +67,7 @@ func StartServer(deps deputil.Dependencies) error {
 
 	// IMPORTANT: middleware.Use MUST be called before setupRoutes
 	middleware.Use(router, deps)
-	setupRoutes(router)
+	setupRoutes(router, systemCollector)
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
