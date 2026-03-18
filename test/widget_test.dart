@@ -8,14 +8,13 @@ void main() {
   // it goes straight to the child widget. Full mock-client-based flow
   // testing (login page, setup page) is deferred to #691 once DI is in place.
 
-  testWidgets('AuthGate passes through to child when no host is configured',
-      (WidgetTester tester) async {
+  testWidgets('AuthGate passes through to child when no host is configured', (
+    WidgetTester tester,
+  ) async {
     // AppSettings has no host by default in test environment (no SharedPreferences data).
     // AuthGate should skip auth and render the child immediately.
     await tester.pumpWidget(
-      const MaterialApp(
-        home: AuthGate(child: FileBrowserPage()),
-      ),
+      const MaterialApp(home: AuthGate(child: FileBrowserPage())),
     );
     // Let initState/_check() complete synchronously (no host = no async work).
     await tester.pump();
@@ -25,13 +24,10 @@ void main() {
     expect(find.byIcon(Icons.menu), findsOneWidget);
   });
 
-  testWidgets('FileBrowserPage renders core UI elements',
-      (WidgetTester tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: FileBrowserPage(),
-      ),
-    );
+  testWidgets('FileBrowserPage renders core UI elements', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MaterialApp(home: FileBrowserPage()));
     await tester.pump();
 
     expect(find.byIcon(Icons.menu), findsOneWidget);
