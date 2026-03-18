@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/autobutler-org/autobutler/pkg/botel/exporters/botelsqlite"
+	"github.com/autobutler-org/autobutler/pkg/botel/system"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
@@ -33,10 +34,10 @@ func InitTracer(deps deputil.Dependencies) (*sdktrace.TracerProvider, error) {
 	return tp, nil
 }
 
-func InitMetrics(deps deputil.Dependencies) (*metric.MeterProvider, error) {
+func InitMetrics(deps deputil.Dependencies) (*metric.MeterProvider, *system.Collector, error) {
 	metricsExp, err := botelsqlite.NewMetricsExporter(deps.HealthDatabase().Db)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create metrics exporter: %w", err)
+		return nil, nil, fmt.Errorf("failed to create metrics exporter: %w", err)
 	}
 
 	mp := metric.NewMeterProvider(
@@ -47,8 +48,14 @@ func InitMetrics(deps deputil.Dependencies) (*metric.MeterProvider, error) {
 	// Start collecting runtime metrics (Go GC, memory, goroutines, etc.)
 	err = runtime.Start(runtime.WithMinimumReadMemStatsInterval(time.Second))
 	if err != nil {
-		return nil, fmt.Errorf("failed to start runtime metrics: %w", err)
+		return nil, nil, fmt.Errorf("failed to start runtime metrics: %w", err)
 	}
 
-	return mp, nil
+	// Register system hardware metrics (CPU, memory, disk, temperature, load)
+	collector, err := system.Register()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to register system metrics: %w", err)
+	}
+
+	return mp, collector, nil
 }
