@@ -269,8 +269,8 @@ test/unit: test/unit/backend test/unit/frontend ## Run unit tests
 
 .PHONY: test/unit/backend
 test/unit/backend: internal/server/public/stub.txt ## Run unit tests for backend
-	# Generate coverage report for unit tests
-	$(GO) test -v ./... \
+	# Generate coverage report for unit tests (excludes integration test packages)
+	$(GO) test -v $(shell $(GO) list ./... | grep -v '/internal/server/api/v1/') \
 		-coverprofile=coverage.out \
 		-covermode=atomic
 	# Apply coverage ignore directives
@@ -289,6 +289,13 @@ test/unit/backend: internal/server/public/stub.txt ## Run unit tests for backend
 .PHONY: test/unit/frontend
 test/unit/frontend: ## Run unit tests for frontend
 	flutter test
+
+.PHONY: test/integration
+test/integration: test/integration/backend ## Run integration tests
+
+.PHONY: test/integration/backend
+test/integration/backend: internal/server/public/stub.txt ## Run backend integration tests (requires real filesystem, spins up gin engine)
+	$(GO) test -v ./internal/server/api/v1/...
 
 .PHONY: tidy
 tidy: tidy/flutter tidy/go ## Tidy dependencies
