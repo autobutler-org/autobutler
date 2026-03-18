@@ -33,9 +33,12 @@ const (
 )
 
 type UpdateSource struct {
-	Kind    UpdateSourceKind `json:"kind"`
-	Account string           `json:"account"`
-	Path    string           `json:"path"`
+	Kind            UpdateSourceKind `json:"kind"`
+	Account         string           `json:"account"`
+	Path            string           `json:"path"`
+	// BaseURLOverride replaces the computed base URL when set. Used in tests to
+	// point requests at a mock HTTP server instead of github.com or Azure.
+	BaseURLOverride string `json:"-"`
 }
 
 // NewUpdateSource creates a new UpdateSource with the specified kind, account, and path
@@ -48,6 +51,9 @@ func NewUpdateSource(kind UpdateSourceKind, account string, path string) *Update
 }
 
 func (s *UpdateSource) BaseUrl() string {
+	if s.BaseURLOverride != "" {
+		return s.BaseURLOverride
+	}
 	switch s.Kind {
 	case UpdateSourceKindGithub:
 		return fmt.Sprintf("https://github.com/%s/%s/releases/download", s.Account, s.Path)
@@ -61,7 +67,8 @@ func (s *UpdateSource) BaseUrl() string {
 func (s *UpdateSource) UpdateUrl() string {
 	switch s.Kind {
 	case UpdateSourceKindGithub:
-		return fmt.Sprintf("%s/releases/download", s.BaseUrl())
+		// BaseUrl() already includes /releases/download for GitHub sources.
+		return s.BaseUrl()
 	case UpdateSourceKindAzure:
 		return fmt.Sprintf("%s/%s", s.BaseUrl(), s.Path)
 	default:
