@@ -490,3 +490,34 @@ func TestUpdate_WithBaseURLOverride_404(t *testing.T) {
 		t.Error("Expected error for 404 response")
 	}
 }
+
+func TestListPossibleUpdates_FilteredToEmpty_ReturnsEmptySliceNotNil(t *testing.T) {
+	// When version filtering leaves no results, Versions must be a non-nil
+	// empty slice so it marshals to JSON [] rather than null.
+	// Use a GitHub source with no matching assets so updateReleases is empty
+	// and the filter loop never appends — this exercises the zero-item path.
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains(r.URL.Path, "releases") {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		// Release exists but has no assets matching this platform's archive name
+		fmt.Fprint(w, `[{"tag_name":"v1.0.0","assets":[{"browser_download_url":"https://example.com/other-platform.zip"}]}]`)
+	}))
+	defer server.Close()
+	reset := github.SetBaseURLForTesting(server.URL)
+	defer reset()
+
+	source := NewUpdateSource(UpdateSourceKindGithub, "test-org", "test-repo")
+	result, err := ListPossibleUpdates(source, true) // allVersions=true, no filter
+	if err != nil {
+		t.Fatalf("ListPossibleUpdates failed: %v", err)
+	}
+	if result.Versions == nil {
+		t.Error("Expected non-nil empty slice, got nil (would marshal to JSON null)")
+	}
+	if len(result.Versions) != 0 {
+		t.Errorf("Expected 0 versions (no matching assets), got %d", len(result.Versions))
+	}
+}

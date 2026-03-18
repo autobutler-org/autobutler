@@ -64,15 +64,25 @@ func GetLatestVersion(source *UpdateSource) (string, error) {
 
 		return release.TagName, nil
 	case UpdateSourceKindAzure:
-		releases, err := ListPossibleUpdates(source, false)
+		releases, err := ListPossibleUpdates(source, true)
 		if err != nil {
 			return "", fmt.Errorf("failed to list releases: %w", err)
 		}
 		if len(releases.Versions) == 0 {
 			return "", fmt.Errorf("no releases found in Azure source")
 		}
-		// List is in lexicographical order, so the latest version should be the last one
-		return releases.Versions[len(releases.Versions)-1].Version, nil
+		// Sort by semver and return the highest. Lexicographic order is not
+		// reliable for semver (e.g. "v0.9.0" > "v0.16.0" lexicographically).
+		latest := releases.Versions[0]
+		for _, v := range releases.Versions[1:] {
+			if versionutil.CompareVersions(
+				versionutil.Version{Semver: v.Version},
+				versionutil.Version{Semver: latest.Version},
+			) == 1 {
+				latest = v
+			}
+		}
+		return latest.Version, nil
 	default:
 		return "", fmt.Errorf("unsupported update source kind: %s", source.Kind)
 	}
@@ -179,7 +189,7 @@ func ListPossibleUpdates(source *UpdateSource, allVersions bool) (*ListPossibleU
 		}, nil
 	}
 
-	var possibleUpdates []*UpdateVersion
+	possibleUpdates := make([]*UpdateVersion, 0)
 	for _, release := range updateReleases {
 		if IsDevelopmentVersion(release.Version) {
 			continue
