@@ -531,6 +531,26 @@ const docTemplate = `{
                 }
             }
         },
+        "/health": {
+            "get": {
+                "description": "Returns current hardware health: CPU, memory, disk usage and temperature. Sets healthy=false with alert messages when any metric exceeds its critical threshold.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Get system health status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1_health.HealthJSON"
+                        }
+                    }
+                }
+            }
+        },
         "/migration/google/start": {
             "post": {
                 "description": "Starts an import job for selected Google services for the given email",
@@ -1183,6 +1203,32 @@ const docTemplate = `{
                 },
                 "oldFilePath": {
                     "type": "string"
+                }
+            }
+        },
+        "v1_health.HealthJSON": {
+            "type": "object",
+            "properties": {
+                "alerts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cpuPercent": {
+                    "type": "number"
+                },
+                "diskPercent": {
+                    "type": "number"
+                },
+                "healthy": {
+                    "type": "boolean"
+                },
+                "memPercent": {
+                    "type": "number"
+                },
+                "temperatureCelsius": {
+                    "type": "number"
                 }
             }
         },

@@ -91,6 +91,23 @@ definitions:
       oldFilePath:
         type: string
     type: object
+  v1_health.HealthJSON:
+    properties:
+      alerts:
+        items:
+          type: string
+        type: array
+      cpuPercent:
+        type: number
+      diskPercent:
+        type: number
+      healthy:
+        type: boolean
+      memPercent:
+        type: number
+      temperatureCelsius:
+        type: number
+    type: object
   v1_migration.StartImportRequest:
     properties:
       deviceSerial:
@@ -529,6 +546,21 @@ paths:
       summary: Upload files to a nested directory
       tags:
       - cirrus
+  /health:
+    get:
+      description: 'Returns current hardware health: CPU, memory, disk usage and temperature.
+        Sets healthy=false with alert messages when any metric exceeds its critical
+        threshold.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_health.HealthJSON'
+      summary: Get system health status
+      tags:
+      - health
   /migration/google/start:
     post:
       consumes:
