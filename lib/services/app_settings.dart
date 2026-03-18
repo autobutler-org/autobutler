@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+// flutter_secure_storage requires a secure context (HTTPS) on web.
+// We only use it on native platforms; on web we fall back to in-memory only.
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -52,7 +54,9 @@ class AppSettings {
     _activeIndex =
         _prefs!.getInt('activeHostIndex') ?? (_hosts.isEmpty ? -1 : 0);
 
-    _sessionToken = await _secureStorage.read(key: _sessionTokenKey);
+    if (!kIsWeb) {
+      _sessionToken = await _secureStorage.read(key: _sessionTokenKey);
+    }
 
     // If no hosts configured and running in debug (local development), add a local loopback
     // host appropriate for the running platform so developers can quickly connect.
@@ -84,10 +88,14 @@ class AppSettings {
 
   Future<void> setSessionToken(String? token) async {
     _sessionToken = token;
-    if (token != null) {
-      await _secureStorage.write(key: _sessionTokenKey, value: token);
-    } else {
-      await _secureStorage.delete(key: _sessionTokenKey);
+    // flutter_secure_storage requires a secure context (HTTPS) on web.
+    // On web we keep the token in-memory only; on native it's persisted.
+    if (!kIsWeb) {
+      if (token != null) {
+        await _secureStorage.write(key: _sessionTokenKey, value: token);
+      } else {
+        await _secureStorage.delete(key: _sessionTokenKey);
+      }
     }
   }
 
