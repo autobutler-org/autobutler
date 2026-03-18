@@ -472,16 +472,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ),
-            if (_goSbom != null)
-              _SbomExpansionTile(
-                title: 'Go dependencies',
-                subtitle:
-                    '${_goSbom!.dependencies.length} packages · ${_goSbom!.goVersion}',
-                items: _goSbom!.dependencies
-                    .map((d) => _SbomEntry(name: d.path, version: d.version))
-                    .toList(),
-              ),
-            const SizedBox(height: 8),
             if (_flutterSbom != null)
               _SbomExpansionTile(
                 title: 'Flutter dependencies',
@@ -494,6 +484,16 @@ class _SettingsPageState extends State<SettingsPage> {
                         url: p.url,
                       ),
                     )
+                    .toList(),
+              ),
+            const SizedBox(height: 8),
+            if (_goSbom != null)
+              _SbomExpansionTile(
+                title: 'Go dependencies',
+                subtitle:
+                    '${_goSbom!.dependencies.length} packages · ${_goSbom!.goVersion}',
+                items: _goSbom!.dependencies
+                    .map((d) => _SbomEntry(name: d.path, version: d.version))
                     .toList(),
               ),
             if (_goSbom == null && _flutterSbom == null)
