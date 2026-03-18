@@ -1,10 +1,13 @@
 package storageutil
 
 import (
+	"bytes"
 	"fmt"
+	"mime/multipart"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -1765,4 +1768,117 @@ func TestBackupToDeviceWithDevices(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(target.CirrusDir, "sub", "b.txt")); err != nil {
 		t.Errorf("Expected sub/b.txt in target: %v", err)
 	}
+}
+
+func TestUploadFilesStreamed_SingleFile(t *testing.T) {
+	device := makeManagedDeviceForImpl(t, "test-device")
+	content := []byte("hello world")
+	body, contentType := makeMultipartBody(t, "files", "test.txt", content)
+	r := multipart.NewReader(body, boundaryFromContentType(t, contentType))
+	err := UploadFilesStreamedImpl(UploadFilesStreamedParams{
+		Reader:       r,
+		RootDir:      "",
+		DeviceSerial: "",
+	}, device, device.CirrusDir)
+	if err != nil {
+		t.Fatalf("UploadFilesStreamedImpl failed: %v", err)
+	}
+	dest := filepath.Join(device.CirrusDir, "test.txt")
+	got, err := os.ReadFile(dest)
+	if err != nil {
+		t.Fatalf("Expected uploaded file at %s: %v", dest, err)
+	}
+	if string(got) != string(content) {
+		t.Errorf("Expected content %q, got %q", content, got)
+	}
+}
+
+func TestUploadFilesStreamed_ConflictRename(t *testing.T) {
+	device := makeManagedDeviceForImpl(t, "test-device")
+	existing := filepath.Join(device.CirrusDir, "file.txt")
+	if err := os.WriteFile(existing, []byte("old"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	content := []byte("new content")
+	body, contentType := makeMultipartBody(t, "files", "file.txt", content)
+	r := multipart.NewReader(body, boundaryFromContentType(t, contentType))
+	err := UploadFilesStreamedImpl(UploadFilesStreamedParams{
+		Reader:       r,
+		RootDir:      "",
+		DeviceSerial: "",
+	}, device, device.CirrusDir)
+	if err != nil {
+		t.Fatalf("UploadFilesStreamedImpl failed: %v", err)
+	}
+	old, _ := os.ReadFile(existing)
+	if string(old) != "old" {
+		t.Error("Original file was overwritten, expected conflict rename")
+	}
+	renamed := filepath.Join(device.CirrusDir, "file_(1).txt")
+	got, err := os.ReadFile(renamed)
+	if err != nil {
+		t.Fatalf("Expected renamed file at %s: %v", renamed, err)
+	}
+	if string(got) != string(content) {
+		t.Errorf("Expected new content %q, got %q", content, got)
+	}
+}
+
+func TestUploadFilesStreamed_SubDirectory(t *testing.T) {
+	device := makeManagedDeviceForImpl(t, "test-device")
+	content := []byte("nested file")
+	body, contentType := makeMultipartBody(t, "files", "notes.txt", content)
+	r := multipart.NewReader(body, boundaryFromContentType(t, contentType))
+	err := UploadFilesStreamedImpl(UploadFilesStreamedParams{
+		Reader:       r,
+		RootDir:      "docs/2024",
+		DeviceSerial: "",
+	}, device, device.CirrusDir)
+	if err != nil {
+		t.Fatalf("UploadFilesStreamedImpl failed: %v", err)
+	}
+	dest := filepath.Join(device.CirrusDir, "docs", "2024", "notes.txt")
+	got, err := os.ReadFile(dest)
+	if err != nil {
+		t.Fatalf("Expected uploaded file at %s: %v", dest, err)
+	}
+	if string(got) != string(content) {
+		t.Errorf("Expected content %q, got %q", content, got)
+	}
+}
+
+func TestBackupToDevice_SameSerial(t *testing.T) {
+	source := makeManagedDeviceForImpl(t, "source")
+	_, err := BackupToDeviceWithDevices(BackupToDeviceParams{
+		SourceDeviceSerial: "same-serial",
+		TargetDeviceSerial: "same-serial",
+	}, source, source)
+	if err == nil {
+		t.Error("Expected error when source and target serials are the same")
+	}
+}
+
+// makeMultipartBody builds a multipart/form-data body for testing uploads.
+func makeMultipartBody(t *testing.T, field, filename string, content []byte) (*bytes.Buffer, string) {
+	t.Helper()
+	var buf bytes.Buffer
+	w := multipart.NewWriter(&buf)
+	part, err := w.CreateFormFile(field, filename)
+	if err != nil {
+		t.Fatalf("failed to create form file: %v", err)
+	}
+	if _, err := part.Write(content); err != nil {
+		t.Fatalf("failed to write form content: %v", err)
+	}
+	w.Close()
+	return &buf, w.FormDataContentType()
+}
+
+func boundaryFromContentType(t *testing.T, ct string) string {
+	t.Helper()
+	parts := strings.SplitN(ct, "boundary=", 2)
+	if len(parts) != 2 {
+		t.Fatalf("unexpected content type: %s", ct)
+	}
+	return parts[1]
 }
