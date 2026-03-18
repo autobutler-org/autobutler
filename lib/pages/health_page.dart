@@ -1,6 +1,8 @@
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/health_service.dart';
+import 'package:autobutler/utils/auto_refresh_mixin.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
+import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:flutter/material.dart';
 
 import 'file_browser_page.dart';
@@ -14,45 +16,33 @@ class HealthPage extends StatefulWidget {
   State<HealthPage> createState() => _HealthPageState();
 }
 
-class _HealthPageState extends State<HealthPage> {
+class _HealthPageState extends State<HealthPage>
+    with WidgetsBindingObserver, AutoRefreshMixin {
   HealthStatus? _status;
-  bool _isLoading = false;
   String? _error;
 
   @override
-  void initState() {
-    super.initState();
-    _load();
-  }
+  Duration? get refreshInterval => const Duration(seconds: 15);
 
-  Future<void> _load() async {
+  @override
+  Future<void> refresh() async {
     if (AppSettings.instance.activeHost == null) {
       setState(() {
         _status = null;
         _error = null;
-        _isLoading = false;
       });
       return;
     }
-
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
     try {
       final status = await HealthService.getHealth();
       if (!mounted) return;
       setState(() {
         _status = status;
-        _isLoading = false;
+        _error = null;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      setState(() => _error = e.toString());
     }
   }
 
@@ -69,10 +59,9 @@ class _HealthPageState extends State<HealthPage> {
         title: const Text('Health'),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: _load,
+          RefreshIconButton(
+            isRefreshing: isRefreshing,
+            onPressed: manualRefresh,
           ),
         ],
       ),
@@ -114,7 +103,7 @@ class _HealthPageState extends State<HealthPage> {
       );
     }
 
-    if (_isLoading) {
+    if (isInitialLoad) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -143,7 +132,7 @@ class _HealthPageState extends State<HealthPage> {
               ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
-                onPressed: _load,
+                onPressed: manualRefresh,
                 icon: const Icon(Icons.refresh),
                 label: const Text('Retry'),
               ),

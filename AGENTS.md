@@ -83,6 +83,21 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
 - Represent loading, success, and error states explicitly in UI flows.
 - Handle service errors deterministically and surface user-friendly feedback.
 
+### Refresh pattern (always follow this)
+
+- **All pages with a refresh action must use `AutoRefreshMixin`** (`lib/utils/auto_refresh_mixin.dart`).
+  - Add `with WidgetsBindingObserver, AutoRefreshMixin` to the `State` class.
+  - Implement `Future<void> refresh()` with the data-fetching logic.
+  - Do NOT override `initState` for initial data loads — the mixin calls `refresh()` on startup automatically.
+  - Use `manualRefresh()` for button/pull-to-refresh wiring.
+- **All refresh buttons must use `RefreshIconButton`** (`lib/widgets/refresh_icon_button.dart`).
+  - Pass `isRefreshing: isRefreshing` (from the mixin) and `onPressed: manualRefresh`.
+  - Do NOT use raw `IconButton(icon: Icon(Icons.refresh))` for refresh actions.
+- **Loading state must distinguish initial load from subsequent refreshes:**
+  - Show a full-screen spinner only when `isInitialLoad == true` (no data yet).
+  - While refreshing with existing data, keep current content visible — do not replace it with a spinner.
+  - For `FutureBuilder`-based pages, pass `initialData: _cachedData` to preserve stale content during refresh.
+
 ### Testing and validation
 
 - Prefer adding or updating focused tests under `test/` for non-trivial logic changes.

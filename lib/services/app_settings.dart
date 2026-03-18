@@ -160,4 +160,12 @@ class AppSettings {
         : 'system';
     await _prefs?.setString('themeMode', key);
   }
+
+  /// Auto-refresh interval in seconds. 0 = disabled.
+  int get refreshIntervalSeconds =>
+      _prefs?.getInt('refreshIntervalSeconds') ?? 15;
+
+  Future<void> setRefreshIntervalSeconds(int seconds) async {
+    await _prefs?.setInt('refreshIntervalSeconds', seconds);
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:autobutler/pages/auth_gate.dart';
 import 'package:autobutler/services/app_settings.dart';
+import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:autobutler/services/auth_service.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/services/connected_devices_service.dart';
@@ -36,6 +37,8 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isLoadingSbom = false;
   String? _sbomError;
 
+  int _refreshIntervalSeconds = 15;
+
   // Connected devices state
   List<ConnectedDevice> _connectedDevices = [];
   bool _isLoadingDevices = false;
@@ -51,6 +54,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _hosts = AppSettings.instance.hosts;
     _active = AppSettings.instance.activeIndex;
     _theme = AppSettings.instance.themeMode.value;
+    _refreshIntervalSeconds = AppSettings.instance.refreshIntervalSeconds;
     setState(() {});
     _loadVersionInfo();
     _loadSbom();
@@ -440,6 +444,33 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 24),
           const Text(
+            'Auto-refresh interval',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<int>(
+            initialValue: _refreshIntervalSeconds,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            items: const [
+              DropdownMenuItem(value: 0, child: Text('Disabled')),
+              DropdownMenuItem(value: 10, child: Text('10 seconds')),
+              DropdownMenuItem(value: 15, child: Text('15 seconds')),
+              DropdownMenuItem(value: 30, child: Text('30 seconds')),
+              DropdownMenuItem(value: 60, child: Text('1 minute')),
+              DropdownMenuItem(value: 120, child: Text('2 minutes')),
+              DropdownMenuItem(value: 300, child: Text('5 minutes')),
+            ],
+            onChanged: (v) async {
+              if (v == null) return;
+              await AppSettings.instance.setRefreshIntervalSeconds(v);
+              setState(() => _refreshIntervalSeconds = v);
+            },
+          ),
+          const SizedBox(height: 24),
+          const Text(
             'Theme',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
@@ -551,10 +582,10 @@ class _SettingsPageState extends State<SettingsPage> {
                     alignment: Alignment.centerRight,
                     child: Padding(
                       padding: const EdgeInsets.only(right: 12),
-                      child: TextButton.icon(
-                        onPressed: _isLoadingDevices ? null : _loadDevices,
-                        icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text('Refresh'),
+                      child: RefreshIconButton(
+                        isRefreshing: _isLoadingDevices,
+                        onPressed: _loadDevices,
+                        tooltip: 'Refresh devices',
                       ),
                     ),
                   ),
