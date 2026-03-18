@@ -6,6 +6,7 @@ import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:flutter/material.dart';
 
 import 'file_browser_page.dart';
+import 'health_page.dart';
 import 'photos_page.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -265,6 +266,11 @@ class _SettingsPageState extends State<SettingsPage> {
         onTapPhotos: () {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const PhotosPage()),
+          );
+        },
+        onTapHealth: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HealthPage()),
           );
         },
         onTapSettings: () {

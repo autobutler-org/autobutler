@@ -1,5 +1,6 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/file_browser_page.dart';
+import 'package:autobutler/pages/health_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/settings_page.dart';
 import 'package:autobutler/services/app_settings.dart';
@@ -445,6 +446,11 @@ class _PhotosPageState extends State<PhotosPage> {
         },
         onTapPhotos: () {
           Navigator.of(context).pop();
+        },
+        onTapHealth: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HealthPage()),
+          );
         },
         onTapSettings: () {
           Navigator.of(context).pushReplacement(
