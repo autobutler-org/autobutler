@@ -3,6 +3,8 @@ package v1_files
 import (
 	"path/filepath"
 
+	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
+	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
@@ -80,10 +82,14 @@ func listFilesImpl(rootDir string, devices []storageutil.ManagedDevice) ([]FileN
 // @Param serial query string false "Device serial number to filter by"
 // @Router /cirrus [get]
 func listFiles(c *gin.Context) *serverutil.Response {
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		return serverutil.InternalServerError(nil)
+	}
 	rootDir := c.Query("rootDir")
 	serials := c.QueryArray("serial")
 
-	devices, err := storageutil.GetManagedDevices()
+	devices, err := deps.StorageService().GetManagedDevices()
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}

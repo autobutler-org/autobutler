@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
+	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
@@ -28,7 +30,11 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 	filePath := c.Query("filePath")
 	serial := c.Query("serial")
 
-	result, err := storageutil.DownloadFile(storageutil.DownloadFileParams{
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		return serverutil.InternalServerError(nil)
+	}
+	result, err := deps.StorageService().DownloadFile(storageutil.DownloadFileParams{
 		FilePath:     filePath,
 		DeviceSerial: serial,
 	})

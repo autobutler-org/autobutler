@@ -5,6 +5,7 @@ import (
 
 	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/pkg/botel/exporters/botelsqlite"
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 	"github.com/autobutler-org/autobutler/pkg/util/workerutil"
 )
 
@@ -12,10 +13,12 @@ type Dependencies interface {
 	Database() *db.DatabaseSqlc
 	HealthDatabase() *db.DatabaseRaw
 	MetricsExporter() *botelsqlite.TraceExporter
+	StorageService() *storageutil.StorageService
 	Worker() workerutil.Worker
 	WithDatabase(database *db.DatabaseSqlc) Dependencies
 	WithHealthDatabase(healthDatabase *db.DatabaseRaw) Dependencies
 	WithMetricsExporter(exporter *botelsqlite.TraceExporter) Dependencies
+	WithStorageService(s *storageutil.StorageService) Dependencies
 	WithWorker(worker workerutil.Worker) Dependencies
 }
 
@@ -23,6 +26,7 @@ type dependencies struct {
 	database        *db.DatabaseSqlc
 	healthDatabase  *db.DatabaseRaw
 	metricsExporter *botelsqlite.TraceExporter
+	storageService  *storageutil.StorageService
 	worker          workerutil.Worker
 }
 
@@ -42,7 +46,8 @@ func DefaultDependencies() (Dependencies, error) {
 	} else { // coverage: ignore - requires health database connection failure
 		return nil, fmt.Errorf("failed to connect to health database: %w", err)
 	}
-	return deps, nil // coverage: ignore - requires database connection
+	deps.WithStorageService(storageutil.NewStorageService(storageutil.NewDetector())) // coverage: ignore
+	return deps, nil                                                                  // coverage: ignore - requires database connection
 }
 
 func (d *dependencies) WithDatabase(database *db.DatabaseSqlc) Dependencies {
@@ -57,6 +62,11 @@ func (d *dependencies) WithHealthDatabase(database *db.DatabaseRaw) Dependencies
 
 func (d *dependencies) WithMetricsExporter(exporter *botelsqlite.TraceExporter) Dependencies {
 	d.metricsExporter = exporter
+	return d
+}
+
+func (d *dependencies) WithStorageService(s *storageutil.StorageService) Dependencies {
+	d.storageService = s
 	return d
 }
 
@@ -75,6 +85,10 @@ func (d *dependencies) HealthDatabase() *db.DatabaseRaw {
 
 func (d *dependencies) MetricsExporter() *botelsqlite.TraceExporter {
 	return d.metricsExporter
+}
+
+func (d *dependencies) StorageService() *storageutil.StorageService {
+	return d.storageService
 }
 
 func (d *dependencies) Worker() workerutil.Worker {

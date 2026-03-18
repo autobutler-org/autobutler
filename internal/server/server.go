@@ -58,7 +58,7 @@ func StartServer(deps deputil.Dependencies) error {
 		}
 	}()
 
-	deps.WithWorker(workerutil.NewWorker())
+	deps.WithWorker(workerutil.NewWorker(deps.StorageService()))
 	if err := setupServices(deps); err != nil {
 		return fmt.Errorf("failed to setup services: %w", err)
 	}

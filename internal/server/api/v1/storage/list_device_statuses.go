@@ -1,8 +1,9 @@
 package v1_storage
 
 import (
+	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
+	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,7 +17,11 @@ import (
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /storage/devices/status [get]
 func listDeviceStatuses(c *gin.Context) *serverutil.Response {
-	statuses, err := storageutil.GetDeviceStatuses()
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		return serverutil.InternalServerError(nil)
+	}
+	statuses, err := deps.StorageService().GetDeviceStatuses()
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}

@@ -4,8 +4,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
+	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,12 +22,16 @@ import (
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /storage/devices/status/{serial} [get]
 func getDeviceStatusBySerial(c *gin.Context) *serverutil.Response {
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		return serverutil.InternalServerError(nil)
+	}
 	serial := c.Param("serial")
 	if serial == "" {
 		return serverutil.BadRequest(errors.New("serial parameter is required"))
 	}
 
-	statuses, err := storageutil.GetDeviceStatuses()
+	statuses, err := deps.StorageService().GetDeviceStatuses()
 	if err != nil {
 		return serverutil.InternalServerError(fmt.Errorf("failed to get device statuses: %w", err))
 	}

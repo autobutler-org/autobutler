@@ -3,6 +3,8 @@ package v1_files
 import (
 	"errors"
 
+	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
+	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
@@ -30,7 +32,11 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(errors.New("filePaths query parameter is required and must contain at least one file path"))
 	}
 
-	if _, err := storageutil.DeleteFiles(storageutil.DeleteFilesParams{
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		return serverutil.InternalServerError(nil)
+	}
+	if _, err := deps.StorageService().DeleteFiles(storageutil.DeleteFilesParams{
 		RootDir:      rootDir,
 		FilePaths:    filePaths,
 		DeviceSerial: serial,

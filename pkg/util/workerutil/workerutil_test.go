@@ -3,6 +3,8 @@ package workerutil
 import (
 	"testing"
 	"time"
+
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 )
 
 ////////////////
@@ -15,7 +17,7 @@ type dummyMoveFileParams struct{}
 type dummyCreateFolderParams struct{}
 
 func TestNewWorker_ChannelAccessors(t *testing.T) {
-	w := NewWorker()
+	w := NewWorker(storageutil.NewStorageService(storageutil.NewDetector()))
 	if w.GetQuitChannel() == nil {
 		t.Error("GetQuitChannel returned nil")
 	}
@@ -25,7 +27,7 @@ func TestNewWorker_ChannelAccessors(t *testing.T) {
 }
 
 func TestWorker_Process_Quit(t *testing.T) {
-	w := NewWorker()
+	w := NewWorker(storageutil.NewStorageService(storageutil.NewDetector()))
 	quit := w.GetQuitChannel()
 	done := make(chan struct{})
 	go func() {
@@ -47,7 +49,7 @@ func TestWorker_Process_Quit(t *testing.T) {
 }
 
 func TestWorker_LogErrors_ReceivesError(t *testing.T) {
-	w := NewWorker()
+	w := NewWorker(storageutil.NewStorageService(storageutil.NewDetector()))
 	errCh := w.GetErrorChannel()
 	// Run LogErrors in a goroutine, send an error, and check that it does not panic
 	go func() {
@@ -71,7 +73,7 @@ func (logErrorMock) Error() string { return "mock error" }
 ///////////////////////
 
 func startWorkerAndQuitOnDone(t *testing.T, fn func(w Worker)) {
-	w := NewWorker()
+	w := NewWorker(storageutil.NewStorageService(storageutil.NewDetector()))
 	quit := w.GetQuitChannel()
 	done := make(chan struct{})
 	go func() {

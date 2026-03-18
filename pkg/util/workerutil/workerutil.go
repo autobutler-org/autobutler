@@ -18,13 +18,15 @@ type worker struct {
 	quitChannel           chan struct{}
 	errorChannel          chan error
 	backupToDeviceChannel storageutil.BackupToDeviceChannel
+	storageService        *storageutil.StorageService
 }
 
-func NewWorker() Worker {
+func NewWorker(svc *storageutil.StorageService) Worker {
 	return &worker{
 		quitChannel:           make(chan struct{}),
 		errorChannel:          make(chan error),
 		backupToDeviceChannel: make(storageutil.BackupToDeviceChannel),
+		storageService:        svc,
 	}
 }
 
@@ -32,7 +34,7 @@ func (w *worker) Process() error {
 	for {
 		select {
 		case backupReq := <-w.backupToDeviceChannel:
-			if _, err := storageutil.BackupToDevice(backupReq); err != nil {
+			if _, err := w.storageService.BackupToDevice(backupReq); err != nil {
 				w.errorChannel <- err
 			}
 		case <-w.quitChannel:

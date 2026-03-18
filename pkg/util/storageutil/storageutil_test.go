@@ -188,6 +188,33 @@ func TestCalculateSummary_EmptyDevices(t *testing.T) {
 	}
 }
 
+// mockDetector is a Detector implementation for use in tests.
+type mockDetector struct {
+	devices []Device
+	err     error
+}
+
+func (m *mockDetector) DetectDevices() ([]Device, error) {
+	return m.devices, m.err
+}
+
+// mockUsbDevice is a minimal UsbDevice implementation for use in tests.
+type mockUsbDevice struct {
+	serial     string
+	mountPoint string
+}
+
+func (m *mockUsbDevice) GetPath() string                  { return "" }
+func (m *mockUsbDevice) GetVendorID() string              { return "" }
+func (m *mockUsbDevice) GetProductID() string             { return "" }
+func (m *mockUsbDevice) GetManufacturer() string          { return "" }
+func (m *mockUsbDevice) GetProduct() string               { return "" }
+func (m *mockUsbDevice) GetSerial() string                { return m.serial }
+func (m *mockUsbDevice) GetMountPath() string             { return m.mountPoint }
+func (m *mockUsbDevice) BlockDevicePath() (string, bool)  { return "", false }
+func (m *mockUsbDevice) IsStorageDevice() bool            { return true }
+func (m *mockUsbDevice) Partitions() ([]Partition, error) { return nil, nil }
+
 func TestGetManagedDevices(t *testing.T) {
 	// Create a temporary directory to simulate a managed device
 	tempDir := t.TempDir()
@@ -196,14 +223,14 @@ func TestGetManagedDevices(t *testing.T) {
 		t.Fatalf("Failed to create test cirrus directory: %v", err)
 	}
 
-	// Note: This test will find actual system devices that have autobutler directories
-	// We can't easily mock the detector, but we can verify the function executes
-	devices, err := GetManagedDevices()
+	// Verify the function executes against the real detector without error.
+	svc := NewStorageService(NewDetector())
+	devices, err := svc.GetManagedDevices()
 	if err != nil {
 		t.Fatalf("GetManagedDevices() error = %v", err)
 	}
 
-	// Should return a slice (possibly empty if no managed devices exist)
+	// Should return a slice (possibly empty if no managed devices exist in CI)
 	if devices == nil {
 		t.Error("GetManagedDevices() should return non-nil slice")
 	}
@@ -219,10 +246,101 @@ func TestGetManagedDevices(t *testing.T) {
 	}
 }
 
+func TestStorageService_GetManagedDevices(t *testing.T) {
+	tempDir := t.TempDir()
+	cirrusDir := ConstructCirrusDir(tempDir)
+	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
+		t.Fatalf("failed to create cirrus dir: %v", err)
+	}
+
+	mock := &mockDetector{
+		devices: []Device{
+			{Name: "test-disk", MountPoint: tempDir, IsInternal: true},
+		},
+	}
+	svc := NewStorageService(mock)
+
+	devices, err := svc.GetManagedDevices()
+	if err != nil {
+		t.Fatalf("svc.GetManagedDevices() error = %v", err)
+	}
+	if len(devices) != 1 {
+		t.Fatalf("expected 1 managed device, got %d", len(devices))
+	}
+	if devices[0].Name != "test-disk" {
+		t.Errorf("expected device name 'test-disk', got %q", devices[0].Name)
+	}
+}
+
+func TestStorageService_IsolatedFromDefault(t *testing.T) {
+	// Constructing a StorageService with a mock should return a non-nil instance.
+	mock := &mockDetector{}
+	svc := NewStorageService(mock)
+	if svc == nil {
+		t.Fatal("expected non-nil StorageService")
+	}
+}
+
+func TestStorageService_FindManagedDeviceBySerial(t *testing.T) {
+	tempDir := t.TempDir()
+	cirrusDir := ConstructCirrusDir(tempDir)
+	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
+		t.Fatalf("failed to create cirrus dir: %v", err)
+	}
+
+	serial := "ABC123"
+	usbInfo := &mockUsbDevice{serial: serial, mountPoint: tempDir}
+	mock := &mockDetector{
+		devices: []Device{
+			{Name: "usb-disk", MountPoint: tempDir, IsInternal: false, UsbInfo: usbInfo},
+		},
+	}
+	svc := NewStorageService(mock)
+
+	device, err := svc.FindManagedDeviceBySerial(serial)
+	if err != nil {
+		t.Fatalf("FindManagedDeviceBySerial() error = %v", err)
+	}
+	if device == nil {
+		t.Fatal("expected to find device, got nil")
+	}
+	if device.Name != "usb-disk" {
+		t.Errorf("expected 'usb-disk', got %q", device.Name)
+	}
+}
+
+func TestStorageService_FindManagedDeviceBySerial_EmptySerial(t *testing.T) {
+	tempDir := t.TempDir()
+	cirrusDir := ConstructCirrusDir(tempDir)
+	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
+		t.Fatalf("failed to create cirrus dir: %v", err)
+	}
+
+	mock := &mockDetector{
+		devices: []Device{
+			{Name: "internal", MountPoint: tempDir, IsInternal: true},
+		},
+	}
+	svc := NewStorageService(mock)
+
+	// Empty serial should return first internal device
+	device, err := svc.FindManagedDeviceBySerial("")
+	if err != nil {
+		t.Fatalf("FindManagedDeviceBySerial() error = %v", err)
+	}
+	if device == nil {
+		t.Fatal("expected to find internal device, got nil")
+	}
+	if device.Name != "internal" {
+		t.Errorf("expected 'internal', got %q", device.Name)
+	}
+}
+
 func TestGetDeviceStatuses(t *testing.T) {
 	// This test verifies that GetDeviceStatuses properly merges
 	// detected devices with managed devices to build status information
-	statuses, err := GetDeviceStatuses()
+	svc := NewStorageService(NewDetector())
+	statuses, err := svc.GetDeviceStatuses()
 	if err != nil {
 		t.Fatalf("GetDeviceStatuses() error = %v", err)
 	}
@@ -565,7 +683,8 @@ func TestDeleteFiles_SingleDevice(t *testing.T) {
 
 	// Note: This will fail in testing because GetCirrusDir returns a fixed path
 	// In a real app, you'd use dependency injection
-	_, err := DeleteFiles(params)
+	svc := NewStorageService(NewDetector())
+	_, err := svc.DeleteFiles(params)
 	// We expect an error since the file isn't in the actual GetCirrusDir()
 	_ = err // Just verify it doesn't panic
 }
@@ -578,7 +697,8 @@ func TestMoveFile(t *testing.T) {
 
 	// This will fail because GetCirrusDir returns a fixed path
 	// but it tests the code doesn't panic
-	_, err := MoveFile(params)
+	svc := NewStorageService(NewDetector())
+	_, err := svc.MoveFile(params)
 	_ = err
 }
 
@@ -590,7 +710,8 @@ func TestCreateFolder(t *testing.T) {
 
 	// This will create a real folder in the GetCirrusDir
 	// Clean up afterwards if needed
-	result, err := CreateFolder(params)
+	svc := NewStorageService(NewDetector())
+	result, err := svc.CreateFolder(params)
 	if err != nil {
 		// Expected since we can't control GetCirrusDir in tests
 		t.Logf("CreateFolder returned error (expected): %v", err)
@@ -607,7 +728,8 @@ func TestDownloadFile(t *testing.T) {
 		FilePath: "nonexistent/file.txt",
 	}
 
-	_, err := DownloadFile(params)
+	svc := NewStorageService(NewDetector())
+	_, err := svc.DownloadFile(params)
 	// Should fail because file doesn't exist
 	if err == nil {
 		t.Error("Expected error for non-existent file")
@@ -739,7 +861,8 @@ func TestMoveFile_CreateDirectory(t *testing.T) {
 		NewFilePath: "new/path/file.txt",
 	}
 
-	_, err := MoveFile(params)
+	svc := NewStorageService(NewDetector())
+	_, err := svc.MoveFile(params)
 	// Expected to fail since the source doesn't exist
 	if err == nil {
 		t.Error("Expected error when source file doesn't exist")
@@ -749,6 +872,7 @@ func TestMoveFile_CreateDirectory(t *testing.T) {
 func TestMoveFile_ToRootDirectory(t *testing.T) {
 	// Test the newDir == "." condition by using a file in the current directory
 	// When NewFilePath has no directory component, filepath.Dir returns "."
+	svc := NewStorageService(NewDetector())
 
 	params := MoveFileParams{
 		OldFilePath: "subdir/file.txt",
@@ -757,7 +881,7 @@ func TestMoveFile_ToRootDirectory(t *testing.T) {
 
 	// This will fail because the file doesn't exist, but we can at least
 	// verify the NewDir logic would work correctly
-	_, err := MoveFile(params)
+	_, err := svc.MoveFile(params)
 
 	// We expect an error because the file doesn't exist
 	if err == nil {
@@ -800,7 +924,7 @@ func TestMoveFile_ToRootDirectory(t *testing.T) {
 		NewFilePath: "test_move_root/moved.txt",
 	}
 
-	result2, err := MoveFile(params2)
+	result2, err := svc.MoveFile(params2)
 	if err != nil {
 		t.Fatalf("MoveFile failed: %v", err)
 	}
@@ -819,7 +943,7 @@ func TestMoveFile_ToRootDirectory(t *testing.T) {
 		NewFilePath: "rootfile.txt", // No directory path, filepath.Dir will return "."
 	}
 
-	result3, err := MoveFile(params3)
+	result3, err := svc.MoveFile(params3)
 	if err != nil {
 		t.Fatalf("MoveFile to root failed: %v", err)
 	}
@@ -838,7 +962,8 @@ func TestDownloadFile_MultiDevice_NotFound(t *testing.T) {
 		FilePath: "test/nonexistent.txt",
 	}
 
-	_, err := DownloadFile(params)
+	svc := NewStorageService(NewDetector())
+	_, err := svc.DownloadFile(params)
 	if err == nil {
 		t.Error("Expected error when file doesn't exist on any device")
 	}

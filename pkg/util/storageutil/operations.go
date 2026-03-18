@@ -25,14 +25,14 @@ type BackupToDeviceResult struct {
 // BackupToDeviceChannel is a channel for backing up devices
 type BackupToDeviceChannel chan BackupToDeviceParams
 
-func BackupToDevice(params BackupToDeviceParams) (*BackupToDeviceResult, error) {
+func (s *StorageService) BackupToDevice(params BackupToDeviceParams) (*BackupToDeviceResult, error) {
 	// NOTE: Empty string returns the first internal storage
-	sourceDevice, err := FindManagedDeviceBySerial(params.SourceDeviceSerial)
+	sourceDevice, err := s.FindManagedDeviceBySerial(params.SourceDeviceSerial)
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
 
-	targetDevice, err := FindManagedDeviceBySerial(params.TargetDeviceSerial)
+	targetDevice, err := s.FindManagedDeviceBySerial(params.TargetDeviceSerial)
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
@@ -121,8 +121,8 @@ type DeleteFilesResult struct {
 type DeleteFilesChannel chan DeleteFilesParams
 
 // DeleteFiles removes files from the filesystem, handling both single and multi-device scenarios
-func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
-	device, err := FindManagedDeviceBySerial(params.DeviceSerial)
+func (s *StorageService) DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
+	device, err := s.FindManagedDeviceBySerial(params.DeviceSerial)
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
@@ -171,12 +171,12 @@ type MoveFileResult struct {
 type MoveFileChannel chan MoveFileParams
 
 // MoveFile moves a file from one location to another
-func MoveFile(params MoveFileParams) (*MoveFileResult, error) {
-	oldDevice, err := FindManagedDeviceBySerial(params.OldDeviceSerial)
+func (s *StorageService) MoveFile(params MoveFileParams) (*MoveFileResult, error) {
+	oldDevice, err := s.FindManagedDeviceBySerial(params.OldDeviceSerial)
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
-	newDevice, err := FindManagedDeviceBySerial(params.NewDeviceSerial)
+	newDevice, err := s.FindManagedDeviceBySerial(params.NewDeviceSerial)
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
@@ -265,8 +265,8 @@ type CreateFolderResult struct {
 type CreateFolderChannel chan CreateFolderParams
 
 // CreateFolder creates a new folder in the filesystem
-func CreateFolder(params CreateFolderParams) (*CreateFolderResult, error) {
-	device, err := FindManagedDeviceBySerial(params.DeviceSerial)
+func (s *StorageService) CreateFolder(params CreateFolderParams) (*CreateFolderResult, error) {
+	device, err := s.FindManagedDeviceBySerial(params.DeviceSerial)
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
@@ -311,8 +311,8 @@ type DownloadFileResult struct {
 }
 
 // DownloadFile prepares a file for download, handling both files and folders (as zip)
-func DownloadFile(params DownloadFileParams) (*DownloadFileResult, error) {
-	device, err := FindManagedDeviceBySerial(params.DeviceSerial)
+func (s *StorageService) DownloadFile(params DownloadFileParams) (*DownloadFileResult, error) {
+	device, err := s.FindManagedDeviceBySerial(params.DeviceSerial)
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
@@ -352,8 +352,8 @@ type UploadFilesStreamedParams struct {
 }
 
 // UploadFilesStreamed streams multipart file uploads directly to disk
-func UploadFilesStreamed(params UploadFilesStreamedParams) error {
-	device, err := FindManagedDeviceBySerial(params.DeviceSerial)
+func (s *StorageService) UploadFilesStreamed(params UploadFilesStreamedParams) error {
+	device, err := s.FindManagedDeviceBySerial(params.DeviceSerial)
 	if err != nil {
 		return fmt.Errorf("device not found: %w", err)
 	}

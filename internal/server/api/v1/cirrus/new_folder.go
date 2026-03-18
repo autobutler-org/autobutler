@@ -3,6 +3,8 @@ package v1_files
 import (
 	"errors"
 
+	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
+	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
@@ -34,7 +36,11 @@ func newFolder(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(errors.New("folderName is required"))
 	}
 
-	if _, err := storageutil.CreateFolder(storageutil.CreateFolderParams{
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		return serverutil.InternalServerError(nil)
+	}
+	if _, err := deps.StorageService().CreateFolder(storageutil.CreateFolderParams{
 		FolderDir:    folderDir,
 		FolderName:   folderName,
 		DeviceSerial: serial,
