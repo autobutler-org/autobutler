@@ -41,7 +41,7 @@ clean/flutter: ## Clean flutter project
 	flutter clean
 
 .PHONY: setup
-setup: setup/gotools setup/air setup/sqlc setup/swag setup/flutter ## Setup development environment
+setup: setup/gotools setup/air setup/sqlc setup/swag setup/flutter setup/hooks ## Setup development environment
 
 .PHONY: setup/air
 setup/air: ## Install air tool
@@ -146,6 +146,12 @@ setup/sqlc: ## Install sqlc tool
 .PHONY: setup/swag
 setup/swag: ## Install swag tool
 	$(GO) install github.com/swaggo/swag/cmd/swag@latest
+
+.PHONY: setup/hooks
+setup/hooks: ## Install git hooks (pre-commit runs make check)
+	cp hooks/pre-commit .git/hooks/pre-commit
+	chmod +x .git/hooks/pre-commit
+	@echo "✅ Git hooks installed"
 
 ##@ Development
 
