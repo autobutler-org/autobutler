@@ -97,14 +97,28 @@ definitions:
         items:
           type: string
         type: array
+      cpuCoreCount:
+        type: integer
+      cpuCorePercents:
+        items:
+          type: number
+        type: array
       cpuPercent:
         type: number
       diskPercent:
         type: number
+      diskTotalBytes:
+        type: integer
+      diskUsedBytes:
+        type: integer
       healthy:
         type: boolean
       memPercent:
         type: number
+      memTotalBytes:
+        type: integer
+      memUsedBytes:
+        type: integer
       temperatureCelsius:
         type: number
     type: object
@@ -267,6 +281,110 @@ paths:
           schema:
             type: object
       summary: Disconnect Google account
+      tags:
+      - auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates with username and password, returns a session token
+      parameters:
+      - description: '{username, password}'
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Login
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      description: Invalidates the current session
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Logout
+      tags:
+      - auth
+  /auth/recover:
+    post:
+      consumes:
+      - application/json
+      description: Resets password using recovery phrase
+      parameters:
+      - description: '{recoveryPhrase, newPassword}'
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Recover account
+      tags:
+      - auth
+  /auth/setup:
+    post:
+      consumes:
+      - application/json
+      description: Creates the owner account. Can only be called once.
+      parameters:
+      - description: '{username, password}'
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: First-boot user setup
+      tags:
+      - auth
+  /auth/status:
+    get:
+      description: Returns whether initial setup has been completed
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Check auth setup status
       tags:
       - auth
   /books:

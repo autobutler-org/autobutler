@@ -35,8 +35,13 @@ type HealthStatus struct {
 	Healthy            bool
 	Alerts             []string
 	CPUPercent         float64
+	CPUCorePercents    []float64 // per-core utilization
 	MemPercent         float64
+	MemUsedBytes       uint64
+	MemTotalBytes      uint64
 	DiskPercent        float64
+	DiskUsedBytes      uint64
+	DiskTotalBytes     uint64
 	TemperatureCelsius float64 // highest thermal zone reading, 0 if unavailable
 }
 
@@ -189,7 +194,10 @@ func (c *Collector) CurrentHealth() HealthStatus {
 	status := HealthStatus{Healthy: true}
 
 	// CPU
-	if agg, err := cpu.Percent(100*time.Millisecond, false); err == nil && len(agg) > 0 {
+	if cores, err := cpu.Percent(100*time.Millisecond, true); err == nil {
+		status.CPUCorePercents = cores
+	}
+	if agg, err := cpu.Percent(0, false); err == nil && len(agg) > 0 {
 		status.CPUPercent = agg[0]
 		if agg[0] >= CPUCriticalPercent {
 			now := time.Now()
@@ -208,6 +216,8 @@ func (c *Collector) CurrentHealth() HealthStatus {
 	// Memory
 	if v, err := mem.VirtualMemory(); err == nil {
 		status.MemPercent = v.UsedPercent
+		status.MemUsedBytes = v.Used
+		status.MemTotalBytes = v.Total
 		if v.UsedPercent >= MemCriticalPercent {
 			status.Healthy = false
 			status.Alerts = append(status.Alerts,
@@ -218,6 +228,8 @@ func (c *Collector) CurrentHealth() HealthStatus {
 	// Disk (root)
 	if usage, err := disk.Usage("/"); err == nil {
 		status.DiskPercent = usage.UsedPercent
+		status.DiskUsedBytes = usage.Used
+		status.DiskTotalBytes = usage.Total
 		if usage.UsedPercent >= DiskCriticalPercent {
 			status.Healthy = false
 			status.Alerts = append(status.Alerts,

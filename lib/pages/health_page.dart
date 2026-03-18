@@ -172,6 +172,12 @@ class _HealthPageState extends State<HealthPage> {
           value: status.cpuPercent,
           unit: '%',
           criticalThreshold: 90,
+          detail: status.cpuCorePercents.isNotEmpty
+              ? '${(status.cpuPercent / 100 * status.cpuCorePercents.length).toStringAsFixed(1)} of ${status.cpuCorePercents.length} cores'
+              : null,
+          corePercents: status.cpuCorePercents.isNotEmpty
+              ? status.cpuCorePercents
+              : null,
         ),
         const SizedBox(height: 8),
         _MetricCard(
@@ -180,6 +186,8 @@ class _HealthPageState extends State<HealthPage> {
           value: status.memPercent,
           unit: '%',
           criticalThreshold: 95,
+          detail:
+              '${_formatBytes(status.memUsedBytes)} used of ${_formatBytes(status.memTotalBytes)}',
         ),
         const SizedBox(height: 8),
         _MetricCard(
@@ -188,6 +196,8 @@ class _HealthPageState extends State<HealthPage> {
           value: status.diskPercent,
           unit: '%',
           criticalThreshold: 90,
+          detail:
+              '${_formatBytes(status.diskUsedBytes)} used of ${_formatBytes(status.diskTotalBytes)}',
         ),
         if (status.temperatureCelsius > 0) ...[
           const SizedBox(height: 8),
@@ -262,6 +272,18 @@ class _StatusBanner extends StatelessWidget {
   }
 }
 
+String _formatBytes(int bytes) {
+  if (bytes <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  int i = 0;
+  double val = bytes.toDouble();
+  while (val >= 1024 && i < units.length - 1) {
+    val /= 1024;
+    i++;
+  }
+  return '${val.toStringAsFixed(1)} ${units[i]}';
+}
+
 class _MetricCard extends StatelessWidget {
   const _MetricCard({
     required this.label,
@@ -270,6 +292,8 @@ class _MetricCard extends StatelessWidget {
     required this.unit,
     required this.criticalThreshold,
     this.maxValue = 100,
+    this.detail,
+    this.corePercents,
   });
 
   final String label;
@@ -278,6 +302,8 @@ class _MetricCard extends StatelessWidget {
   final String unit;
   final double criticalThreshold;
   final double maxValue;
+  final String? detail;
+  final List<double>? corePercents;
 
   Color _barColor(BuildContext context) {
     if (value >= criticalThreshold) return Theme.of(context).colorScheme.error;
@@ -315,6 +341,16 @@ class _MetricCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (detail != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                detail!,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
             const SizedBox(height: 10),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
@@ -327,6 +363,37 @@ class _MetricCard extends StatelessWidget {
                 minHeight: 8,
               ),
             ),
+            if (corePercents != null && corePercents!.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: () {
+                  final total = corePercents!.fold(0.0, (s, v) => s + v);
+                  return corePercents!.asMap().entries.map((e) {
+                    final contribution = total > 0
+                        ? (e.value / total * 100)
+                        : 0.0;
+                    final coreColor = e.value >= 90
+                        ? Theme.of(context).colorScheme.error
+                        : e.value >= 67
+                        ? Colors.orange
+                        : Theme.of(context).colorScheme.primary;
+                    return Chip(
+                      label: Text(
+                        'Core ${e.key + 1}: ${e.value.toStringAsFixed(0)}% (${contribution.toStringAsFixed(0)}%)',
+                        style: TextStyle(fontSize: 11, color: coreColor),
+                      ),
+                      padding: EdgeInsets.zero,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                      side: BorderSide(color: coreColor.withValues(alpha: 0.4)),
+                      backgroundColor: coreColor.withValues(alpha: 0.08),
+                    );
+                  }).toList();
+                }(),
+              ),
+            ],
           ],
         ),
       ),

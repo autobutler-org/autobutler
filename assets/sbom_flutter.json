@@ -150,6 +150,42 @@
       "url": "https://pub.dev"
     },
     {
+      "name": "flutter_secure_storage",
+      "version": "9.2.4",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "flutter_secure_storage_linux",
+      "version": "1.2.3",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "flutter_secure_storage_macos",
+      "version": "3.1.3",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "flutter_secure_storage_platform_interface",
+      "version": "1.1.2",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "flutter_secure_storage_web",
+      "version": "1.2.1",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "flutter_secure_storage_windows",
+      "version": "3.1.2",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
       "name": "flutter_test",
       "version": "0.0.0",
       "source": "sdk"
@@ -192,6 +228,12 @@
     {
       "name": "image",
       "version": "4.8.0",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "js",
+      "version": "0.6.7",
       "source": "hosted",
       "url": "https://pub.dev"
     },

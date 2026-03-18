@@ -1,38 +1,28 @@
-# Contributing Guide
+# Contributing
 
-Thank you for considering contributing to this project. Your help is greatly appreciated!
+Thanks for wanting to help. Here's how it works.
 
-## Getting Started
+## Before you start
 
-Before you begin, please take a moment to review the [README](README.md) for an overview of the project.
-Familiarize yourself with the following steps and guidelines.
+Make sure your git config (`user.name` and `user.email`) matches your GitHub profile. **Sign your commits** — here's [how to set that up](https://gist.github.com/Beneboe/3183a8a9eb53439dbee07c90b344c77e) if you haven't already.
 
-## Code Contributions
+## The workflow
 
-- Ensure your local Git configuration (`user.name` and `user.email`) matches your GitHub profile.
-- [Sign your commits](https://gist.github.com/Beneboe/3183a8a9eb53439dbee07c90b344c77e)
-- Use clear, concise commit messages (under 80 characters, or under 120 character lines for body)
+1. Branch off `main`
+2. Keep your branch up to date with `main`
+3. Open a PR with a brief description of what changed and why
+4. A maintainer will review it
 
-## Branching and Pull Requests
+We do linear commit history. One focused commit per PR is the norm — if you've got a stack of commits, we'll ask you to squash or rebase them cleanly. [This post](https://www.bitsnbites.eu/a-tidy-linear-git-history/) explains the reasoning.
 
-- Create a new branch for your changes.
-- Make sure your branch is up-to-date with the `main` branch.
-- Open a pull request describing your changes briefly.
-- A maintainer or team member will review your changes and provide feedback.
+## Commit messages
 
-## Communication
+Clear and concise. Under 80 characters for the subject line. If you need more context, add a body (120 char line limit).
 
-- [Create an issue](https://github.com/autobutler-org/autobutler/issues/new) if you find a bug or have an enhancement suggestion.
+## Code style
 
-## Additional Guidelines
+Run `make check` before you push. If the linter is unhappy, fix it first.
 
-- Keep contributions minimal and focused.
-  - We do linear commit history with (generally) single commit pull requests.
-  - Sometimes we will accept a multi-commit PR as a linear rebase of commits.
-  - [This guide](https://www.bitsnbites.eu/a-tidy-linear-git-history/) explains our reasoning quite completely.
-- Avoid guidelines that are overly specific to a particular technology or tool chain.
-- Follow the project's existing structure and naming conventions.
+## Found a bug or have an idea?
 
-## Epilogue
-
-Thank you for your support and happy coding!
+[Open an issue](https://github.com/autobutler-org/autobutler/issues/new). We read them.

@@ -1626,3 +1626,138 @@ func TestGetNonConflictingPath(t *testing.T) {
 		})
 	}
 }
+
+// --- Impl function tests (using dependency injection) ---
+
+func makeManagedDeviceForImpl(t *testing.T, name string) *ManagedDevice {
+	t.Helper()
+	dir := t.TempDir()
+	cirrusDir := filepath.Join(dir, "cirrus")
+	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
+		t.Fatalf("failed to create cirrus dir: %v", err)
+	}
+	return &ManagedDevice{
+		Device: Device{
+			Name:       name,
+			MountPoint: dir,
+			IsInternal: true,
+		},
+		DataDir:   dir,
+		CirrusDir: cirrusDir,
+	}
+}
+
+func TestDeleteFilesImpl(t *testing.T) {
+	device := makeManagedDeviceForImpl(t, "test-device")
+	testFile := filepath.Join(device.CirrusDir, "to-delete.txt")
+	if err := os.WriteFile(testFile, []byte("content"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	params := DeleteFilesParams{RootDir: "", FilePaths: []string{"to-delete.txt"}}
+	_, err := DeleteFilesImpl(params, device, "")
+	if err != nil {
+		t.Fatalf("DeleteFilesImpl failed: %v", err)
+	}
+	if _, err := os.Stat(testFile); !os.IsNotExist(err) {
+		t.Error("Expected file to be deleted")
+	}
+}
+
+func TestCreateFolderImpl(t *testing.T) {
+	device := makeManagedDeviceForImpl(t, "test-device")
+
+	params := CreateFolderParams{FolderDir: "", FolderName: "new-folder"}
+	result, err := CreateFolderImpl(params, device, "")
+	if err != nil {
+		t.Fatalf("CreateFolderImpl failed: %v", err)
+	}
+	if result.CurrentDir != "" {
+		t.Errorf("Expected empty CurrentDir, got %q", result.CurrentDir)
+	}
+	if _, err := os.Stat(filepath.Join(device.CirrusDir, "new-folder")); err != nil {
+		t.Errorf("Expected folder to exist: %v", err)
+	}
+}
+
+func TestDownloadFileImpl(t *testing.T) {
+	device := makeManagedDeviceForImpl(t, "test-device")
+	testFile := filepath.Join(device.CirrusDir, "file.txt")
+	if err := os.WriteFile(testFile, []byte("hello"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	params := DownloadFileParams{FilePath: "file.txt"}
+	result, err := DownloadFileImpl(params, device, "")
+	if err != nil {
+		t.Fatalf("DownloadFileImpl failed: %v", err)
+	}
+	if result.FullPath != testFile {
+		t.Errorf("Expected FullPath %s, got %s", testFile, result.FullPath)
+	}
+	if result.IsFolder {
+		t.Error("Expected IsFolder false for a file")
+	}
+}
+
+func TestDownloadFileImpl_NotFound(t *testing.T) {
+	device := makeManagedDeviceForImpl(t, "test-device")
+	params := DownloadFileParams{FilePath: "nonexistent.txt"}
+	_, err := DownloadFileImpl(params, device, "")
+	if err == nil {
+		t.Error("Expected error for non-existent file")
+	}
+}
+
+func TestMoveFileImpl(t *testing.T) {
+	device := makeManagedDeviceForImpl(t, "test-device")
+	src := filepath.Join(device.CirrusDir, "source.txt")
+	if err := os.WriteFile(src, []byte("move me"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	params := MoveFileParams{OldFilePath: "source.txt", NewFilePath: "dest.txt"}
+	result, err := MoveFileImpl(params, device, device, device.CirrusDir)
+	if err != nil {
+		t.Fatalf("MoveFileImpl failed: %v", err)
+	}
+	_ = result
+	if _, err := os.Stat(src); !os.IsNotExist(err) {
+		t.Error("Expected source file to be gone")
+	}
+	if _, err := os.Stat(filepath.Join(device.CirrusDir, "dest.txt")); err != nil {
+		t.Errorf("Expected dest file to exist: %v", err)
+	}
+}
+
+func TestBackupToDeviceWithDevices(t *testing.T) {
+	source := makeManagedDeviceForImpl(t, "source")
+	target := makeManagedDeviceForImpl(t, "target")
+
+	// Write some files to source
+	if err := os.WriteFile(filepath.Join(source.CirrusDir, "a.txt"), []byte("hello"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	subDir := filepath.Join(source.CirrusDir, "sub")
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(subDir, "b.txt"), []byte("world"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	params := BackupToDeviceParams{SourceDeviceSerial: "source", TargetDeviceSerial: "target"}
+	result, err := BackupToDeviceWithDevices(params, source, target)
+	if err != nil {
+		t.Fatalf("BackupToDeviceWithDevices failed: %v", err)
+	}
+	if result.SourceDeviceSerial != "source" || result.TargetDeviceSerial != "target" {
+		t.Errorf("Unexpected result: %+v", result)
+	}
+	if _, err := os.Stat(filepath.Join(target.CirrusDir, "a.txt")); err != nil {
+		t.Errorf("Expected a.txt in target: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(target.CirrusDir, "sub", "b.txt")); err != nil {
+		t.Errorf("Expected sub/b.txt in target: %v", err)
+	}
+}

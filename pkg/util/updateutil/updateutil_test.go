@@ -195,3 +195,38 @@ func TestIsDevelopmentVersion(t *testing.T) {
 		}
 	}
 }
+
+func TestUpdateSource_BaseURLOverride(t *testing.T) {
+	source := NewUpdateSource(UpdateSourceKindGithub, "autobutler-org", "autobutler")
+
+	// Without override: should return real github.com URL
+	if got := source.BaseUrl(); got == "" {
+		t.Error("Expected non-empty BaseUrl without override")
+	}
+
+	// With override: should return the override
+	source.BaseURLOverride = "http://localhost:9999"
+	if got := source.BaseUrl(); got != "http://localhost:9999" {
+		t.Errorf("Expected override URL, got %q", got)
+	}
+
+	// UpdateUrl for GitHub should equal BaseUrl (no double /releases/download)
+	if got := source.UpdateUrl(); got != "http://localhost:9999" {
+		t.Errorf("Expected UpdateUrl to equal BaseUrl for GitHub, got %q", got)
+	}
+}
+
+func TestUpdate_WithBaseURLOverride_404(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	source := NewUpdateSource(UpdateSourceKindGithub, "autobutler-org", "autobutler")
+	source.BaseURLOverride = server.URL
+
+	err := Update(source, "v1.0.0")
+	if err == nil {
+		t.Error("Expected error for 404 response")
+	}
+}

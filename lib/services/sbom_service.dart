@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:autobutler/services/app_settings.dart';
+import 'package:autobutler/services/authenticated_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -81,7 +82,13 @@ class FlutterPackage {
   final String? url;
 }
 
-class SbomService {
+class SbomService with AuthenticatedService {
+  static final SbomService _instance = SbomService._();
+  SbomService._();
+  static SbomService get instance => _instance;
+
+  static Map<String, String> get _authHeaders => instance.authHeaders;
+
   static Uri get _apiBaseUri {
     final configured = AppSettings.instance.activeHost;
     final base =
@@ -104,7 +111,7 @@ class SbomService {
   /// Fetch Go SBOM from the backend.
   static Future<GoSbom> getGoSbom() async {
     final uri = _apiBaseUri.resolve('/api/v1/sbom');
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode != 200) {
       throw Exception('Failed to load Go SBOM: ${response.statusCode}');
     }

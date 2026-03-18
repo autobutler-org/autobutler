@@ -7,12 +7,18 @@ import (
 
 // HealthJSON is the response for the health endpoint.
 type HealthJSON struct {
-	Healthy            bool     `json:"healthy"`
-	Alerts             []string `json:"alerts"`
-	CPUPercent         float64  `json:"cpuPercent"`
-	MemPercent         float64  `json:"memPercent"`
-	DiskPercent        float64  `json:"diskPercent"`
-	TemperatureCelsius float64  `json:"temperatureCelsius"`
+	Healthy            bool      `json:"healthy"`
+	Alerts             []string  `json:"alerts"`
+	CPUPercent         float64   `json:"cpuPercent"`
+	CPUCorePercents    []float64 `json:"cpuCorePercents"`
+	CPUCoreCount       int       `json:"cpuCoreCount"`
+	MemPercent         float64   `json:"memPercent"`
+	MemUsedBytes       uint64    `json:"memUsedBytes"`
+	MemTotalBytes      uint64    `json:"memTotalBytes"`
+	DiskPercent        float64   `json:"diskPercent"`
+	DiskUsedBytes      uint64    `json:"diskUsedBytes"`
+	DiskTotalBytes     uint64    `json:"diskTotalBytes"`
+	TemperatureCelsius float64   `json:"temperatureCelsius"`
 }
 
 // getHealth godoc
@@ -29,12 +35,22 @@ func (r *router) getHealthRoute() *serverutil.Route {
 		if alerts == nil {
 			alerts = []string{}
 		}
+		corePercents := status.CPUCorePercents
+		if corePercents == nil {
+			corePercents = []float64{}
+		}
 		return serverutil.Ok().WithData(HealthJSON{
 			Healthy:            status.Healthy,
 			Alerts:             alerts,
 			CPUPercent:         status.CPUPercent,
+			CPUCorePercents:    corePercents,
+			CPUCoreCount:       len(corePercents),
 			MemPercent:         status.MemPercent,
+			MemUsedBytes:       status.MemUsedBytes,
+			MemTotalBytes:      status.MemTotalBytes,
 			DiskPercent:        status.DiskPercent,
+			DiskUsedBytes:      status.DiskUsedBytes,
+			DiskTotalBytes:     status.DiskTotalBytes,
 			TemperatureCelsius: status.TemperatureCelsius,
 		})
 	})

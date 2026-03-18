@@ -10,6 +10,13 @@ func NewRouter() serverutil.Router {
 
 func (r *router) Routes() []*serverutil.Route {
 	return []*serverutil.Route{
+		// Local auth
+		authStatusRoute,
+		authSetupRoute,
+		authLoginRoute,
+		authLogoutRoute,
+		authRecoverRoute,
+		// Google OAuth (for cloud migration feature)
 		googleAuthorizeRoute,
 		googleCallbackRoute,
 		googleDisconnectRoute,
