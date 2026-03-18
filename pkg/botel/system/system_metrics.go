@@ -32,18 +32,18 @@ const (
 
 // HealthStatus summarises the current alert state for the health indicator.
 type HealthStatus struct {
-	Healthy          bool
-	Alerts           []string
-	CPUPercent       float64
-	MemPercent       float64
-	DiskPercent      float64
+	Healthy            bool
+	Alerts             []string
+	CPUPercent         float64
+	MemPercent         float64
+	DiskPercent        float64
 	TemperatureCelsius float64 // highest thermal zone reading, 0 if unavailable
 }
 
 // Collector registers OTel observable gauges and provides HealthStatus polling.
 type Collector struct {
-	meter            metric.Meter
-	cpuHighSince     *time.Time
+	meter        metric.Meter
+	cpuHighSince *time.Time
 }
 
 // Register creates observable gauges on the global MeterProvider.
