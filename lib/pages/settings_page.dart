@@ -52,28 +52,32 @@ class _SettingsPageState extends State<SettingsPage> {
       _isLoadingSbom = true;
       _sbomError = null;
     });
-    try {
-      final results = await Future.wait([
-        if (AppSettings.instance.activeHost != null) SbomService.getGoSbom(),
-        SbomService.getFlutterSbom(),
-      ]);
-      if (!mounted) return;
-      setState(() {
-        if (AppSettings.instance.activeHost != null) {
-          _goSbom = results[0] as GoSbom;
-          _flutterSbom = results[1] as List<FlutterPackage>;
-        } else {
-          _flutterSbom = results[0] as List<FlutterPackage>;
-        }
-        _isLoadingSbom = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _sbomError = e.toString();
-        _isLoadingSbom = false;
-      });
+
+    GoSbom? nextGoSbom;
+    List<FlutterPackage>? nextFlutterSbom;
+    final errors = <String>[];
+
+    if (AppSettings.instance.activeHost != null) {
+      try {
+        nextGoSbom = await SbomService.getGoSbom();
+      } catch (e) {
+        errors.add('Go SBOM: $e');
+      }
     }
+
+    try {
+      nextFlutterSbom = await SbomService.getFlutterSbom();
+    } catch (e) {
+      errors.add('Flutter SBOM: $e');
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _goSbom = nextGoSbom;
+      _flutterSbom = nextFlutterSbom;
+      _sbomError = errors.isEmpty ? null : errors.join('\n');
+      _isLoadingSbom = false;
+    });
   }
 
   Future<void> _loadVersionInfo() async {
@@ -459,12 +463,15 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: CircularProgressIndicator(),
               ),
             )
-          else if (_sbomError != null)
-            Text(
-              'Failed to load SBOM: $_sbomError',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            )
           else ...[
+            if (_sbomError != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Failed to load some SBOM sources:\n$_sbomError',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
             if (_goSbom != null)
               _SbomExpansionTile(
                 title: 'Go dependencies',
@@ -489,6 +496,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     )
                     .toList(),
               ),
+            if (_goSbom == null && _flutterSbom == null)
+              const Text('No SBOM data available.'),
           ],
         ],
       ),
