@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:autobutler/services/app_settings.dart';
 import 'package:flutter/widgets.dart';
 
 /// Adds auto-refresh and non-disruptive loading state to a [State].
@@ -36,9 +37,13 @@ mixin AutoRefreshMixin<T extends StatefulWidget>
 
   // ── Overrides ──────────────────────────────────────────────────────────────
 
-  /// How often to auto-refresh. Override to change; return [Duration.zero]
-  /// or null to disable auto-refresh.
-  Duration? get refreshInterval => null;
+  /// How often to auto-refresh. Reads from [AppSettings.refreshIntervalSeconds]
+  /// by default. Override to use a fixed interval regardless of settings.
+  /// Return null or [Duration.zero] to disable auto-refresh.
+  Duration? get refreshInterval {
+    final seconds = AppSettings.instance.refreshIntervalSeconds;
+    return seconds > 0 ? Duration(seconds: seconds) : null;
+  }
 
   /// Perform the data fetch. Called on initial load and on each auto-refresh.
   /// Update your widget state inside this method.

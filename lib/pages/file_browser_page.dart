@@ -39,6 +39,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   final _fileBrowserScrollController = ScrollController();
 
   late Future<List<CirrusFileNode>> _filesFuture;
+  List<CirrusFileNode>?
+  _cachedFiles; // last successful result, shown during refresh
   String _currentPath = '';
   bool _isGridView = false;
   bool _isUploading = false;
@@ -81,7 +83,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
-    _filesFuture = _controller.fetchFiles(_currentPath);
+    _filesFuture = _controller.fetchFiles(_currentPath).then((files) {
+      if (mounted) setState(() => _cachedFiles = files);
+      return files;
+    });
   }
 
   Future<void> _refreshFileState() async {
@@ -711,6 +716,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                               ? (_searchFuture ??
                                     Future.value(const <CirrusFileNode>[]))
                               : _filesFuture,
+                          initialData: _isSearchMode ? null : _cachedFiles,
                           onFileMenuAction: _handleFileMenuAction,
                           onOpenDirectory: _isSearchMode
                               ? (_) {}

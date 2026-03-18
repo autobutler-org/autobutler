@@ -15,6 +15,7 @@ class FileBrowserView extends StatelessWidget {
     required this.onOpenDirectory,
     required this.isGridView,
     required this.currentPath,
+    this.initialData,
     this.onDropToFolder,
     this.onFolderDragEnter,
     this.onFolderDragExit,
@@ -26,6 +27,7 @@ class FileBrowserView extends StatelessWidget {
   });
 
   final Future<List<CirrusFileNode>> filesFuture;
+  final List<CirrusFileNode>? initialData;
   final Future<void> Function(CirrusFileNode, FileMenuAction) onFileMenuAction;
   final void Function(CirrusFileNode) onOpenDirectory;
   final bool isGridView;
@@ -78,8 +80,12 @@ class FileBrowserView extends StatelessWidget {
 
     return FutureBuilder<List<CirrusFileNode>>(
       future: filesFuture,
+      initialData: initialData,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        // Only show full-screen spinner on initial load (no data yet).
+        // While refreshing, initialData keeps stale content visible.
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
