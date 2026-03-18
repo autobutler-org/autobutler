@@ -12,6 +12,11 @@ Looking for setup instructions? Start with the [README](../README.md).
 - [Dev Onboarding](./dev-onboarding.md) — Get the codebase running locally
 - [UI Components](./ui/index.md) — How to edit the frontend
 
+## Features
+
+- [Authentication](./auth.md) — local auth setup, login, recovery
+- [Mobile Setup](./mobile-setup.md) — running the app on a physical Android or iOS device
+
 ## Deployment
 
 - [Azure App Service](./azure-deployment.md) — Deploy to Azure with persistent storage
