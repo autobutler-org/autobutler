@@ -8,20 +8,9 @@ type ManagedDevice struct {
 }
 
 // activeDetector is the package-level detector used by GetManagedDevices.
-// It defaults to the real hardware detector and can be overridden in tests
-// via SetDetectorForTesting.
+// It defaults to the real hardware detector and can be swapped in tests
+// by directly assigning this variable.
 var activeDetector Detector = NewDetector()
-
-// SetDetectorForTesting replaces the package-level detector with the provided
-// one and returns a cleanup function that restores the original. Use in tests:
-//
-//	cleanup := storageutil.SetDetectorForTesting(mockDetector)
-//	defer cleanup()
-func SetDetectorForTesting(d Detector) func() {
-	original := activeDetector
-	activeDetector = d
-	return func() { activeDetector = original }
-}
 
 // FindManagedDeviceBySerial finds a managed device by its USB serial number.
 // Empty serial returns first internal device.

@@ -188,6 +188,18 @@ func TestCalculateSummary_EmptyDevices(t *testing.T) {
 	}
 }
 
+// setDetectorForTesting replaces the package-level detector with d and returns
+// a cleanup function that restores the original. Use with defer in tests:
+//
+//	cleanup := setDetectorForTesting(t, mock)
+//	defer cleanup()
+func setDetectorForTesting(t *testing.T, d Detector) func() {
+	t.Helper()
+	original := activeDetector
+	activeDetector = d
+	return func() { activeDetector = original }
+}
+
 // mockDetector is a Detector implementation for use in tests.
 type mockDetector struct {
 	devices []Device
@@ -257,7 +269,7 @@ func TestSetDetectorForTesting_ReturnsInjectedDevices(t *testing.T) {
 			{Name: "test-disk", MountPoint: tempDir, IsInternal: true},
 		},
 	}
-	cleanup := SetDetectorForTesting(mock)
+	cleanup := setDetectorForTesting(t, mock)
 	defer cleanup()
 
 	devices, err := GetManagedDevices()
@@ -275,7 +287,7 @@ func TestSetDetectorForTesting_ReturnsInjectedDevices(t *testing.T) {
 func TestSetDetectorForTesting_CleanupRestoresOriginal(t *testing.T) {
 	original := activeDetector
 	mock := &mockDetector{}
-	cleanup := SetDetectorForTesting(mock)
+	cleanup := setDetectorForTesting(t, mock)
 	if activeDetector != mock {
 		t.Error("expected activeDetector to be replaced by mock")
 	}
@@ -299,7 +311,7 @@ func TestFindManagedDeviceBySerial_WithMockDetector(t *testing.T) {
 			{Name: "usb-disk", MountPoint: tempDir, IsInternal: false, UsbInfo: usbInfo},
 		},
 	}
-	cleanup := SetDetectorForTesting(mock)
+	cleanup := setDetectorForTesting(t, mock)
 	defer cleanup()
 
 	device, err := FindManagedDeviceBySerial(serial)
@@ -326,7 +338,7 @@ func TestFindManagedDeviceBySerial_MissingSerial_WithMockDetector(t *testing.T) 
 			{Name: "internal", MountPoint: tempDir, IsInternal: true},
 		},
 	}
-	cleanup := SetDetectorForTesting(mock)
+	cleanup := setDetectorForTesting(t, mock)
 	defer cleanup()
 
 	// Empty serial should return first internal device
