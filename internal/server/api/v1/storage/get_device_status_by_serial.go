@@ -22,14 +22,13 @@ import (
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /storage/devices/status/{serial} [get]
 func getDeviceStatusBySerial(c *gin.Context) *serverutil.Response {
-	serial := c.Param("serial")
-	if serial == "" {
-		return serverutil.BadRequest(errors.New("serial parameter is required"))
-	}
-
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	if !ok {
 		return serverutil.InternalServerError(nil)
+	}
+	serial := c.Param("serial")
+	if serial == "" {
+		return serverutil.BadRequest(errors.New("serial parameter is required"))
 	}
 
 	statuses, err := deps.StorageService().GetDeviceStatuses()
