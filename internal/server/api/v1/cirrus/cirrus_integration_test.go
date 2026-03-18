@@ -21,31 +21,44 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// newTestEngine creates a gin engine with the cirrus routes registered,
-// pointed at a temp directory via the HOME env var so tests never touch
-// the real user data directory.
-//
-// The cirrus dir is resolved via storageutil.GetCirrusDir() after setting
-// HOME so the path is correct on all platforms (macOS uses
-// ~/Library/Application Support/Autobutler/data, Linux uses ~/autobutler/data).
+// fakeDetector implements storageutil.Detector and returns a single internal
+// device pointing at the provided temp directory. Used to inject a controlled
+// device into the StorageService without touching the real filesystem.
+type fakeDetector struct {
+	mountPoint string
+}
+
+func (f *fakeDetector) DetectDevices() ([]storageutil.Device, error) {
+	return []storageutil.Device{
+		{
+			Name:       "Test Device",
+			MountPoint: f.mountPoint,
+			IsInternal: true,
+		},
+	}, nil
+}
+
+// newTestEngine creates a gin engine with the cirrus routes registered and
+// a fake StorageService pointing at a temp directory injected via deps.
+// This avoids relying on HOME env var tricks and works across all platforms.
 func newTestEngine(t *testing.T) (*gin.Engine, string) {
 	t.Helper()
 
-	tempHome := t.TempDir()
-	t.Setenv("HOME", tempHome)
-
-	// Ask storageutil for the real platform-specific cirrus path so the engine
-	// and the test helper write to the same directory on every OS.
-	cirrusDir, err := storageutil.GetCirrusDir()
-	if err != nil {
-		t.Fatalf("failed to get cirrus dir: %v", err)
+	// Create a temp dir to act as the device mount point.
+	mountPoint := t.TempDir()
+	cirrusDir := filepath.Join(mountPoint, "autobutler", "data", "cirrus")
+	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
+		t.Fatalf("failed to create cirrus dir: %v", err)
 	}
 
-	svc := storageutil.NewStorageService(storageutil.NewDetector())
+	// Build a deps with a fake StorageService so handlers get a real-looking
+	// device list pointing at our temp dir — no real device detection happens.
+	svc := storageutil.NewStorageService(&fakeDetector{mountPoint: mountPoint})
 	deps := deputil.NewDependencies().WithStorageService(svc)
 
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()
+	// Inject deps so handlers can call deps.StorageService().GetManagedDevices().
 	engine.Use(func(c *gin.Context) {
 		c = ctxutil.With(c, "deps", deps)
 		c.Next()
