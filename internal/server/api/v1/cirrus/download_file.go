@@ -35,7 +35,7 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 
 	if err != nil {
 		c.Status(http.StatusNotFound)
-		return serverutil.Ok()
+		return nil
 	}
 
 	if result.IsFolder {
@@ -45,7 +45,7 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 		err := zipWriter.AddFS(dirFs)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			return serverutil.Ok()
+			return nil
 		}
 		c.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip", filepath.Base(result.FullPath)))
 		c.Writer.Header().Set("Content-Type", "application/octet-stream")
@@ -53,7 +53,7 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 		file, err := os.Open(result.FullPath)
 		if err != nil {
 			c.Status(http.StatusNotFound)
-			return serverutil.Ok()
+			return nil
 		}
 		defer file.Close()
 
@@ -73,7 +73,7 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 		c.Header("Content-Type", contentType)
 		c.File(result.FullPath)
 	}
-	return serverutil.Ok()
+	return nil
 }
 
 var downloadFileRoute = serverutil.ApiRoute(

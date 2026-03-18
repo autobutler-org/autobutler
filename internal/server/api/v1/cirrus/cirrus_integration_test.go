@@ -207,12 +207,8 @@ func TestDownloadNonExistentFile(t *testing.T) {
 	engine, _ := newTestEngine(t)
 
 	w := doRequest(engine, http.MethodGet, "/api/v1/cirrus/download?filePath=ghost.txt", nil, "")
-	// The download handler sets c.Status(404) then returns serverutil.Ok() which
-	// overwrites the status with 200 — this is a known handler bug. Until it is
-	// fixed, assert the body is empty rather than the status code.
-	// TODO: fix download handler to return 404 correctly, then assert w.Code == 404.
-	if w.Body.Len() != 0 {
-		t.Errorf("expected empty body for missing file, got: %q", w.Body.String())
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d: %s", w.Code, w.Body.String())
 	}
 }
 
