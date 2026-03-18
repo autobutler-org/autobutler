@@ -33,9 +33,9 @@ const (
 )
 
 type UpdateSource struct {
-	Kind            UpdateSourceKind `json:"kind"`
-	Account         string           `json:"account"`
-	Path            string           `json:"path"`
+	Kind    UpdateSourceKind `json:"kind"`
+	Account string           `json:"account"`
+	Path    string           `json:"path"`
 	// BaseURLOverride replaces the computed base URL when set. Used in tests to
 	// point requests at a mock HTTP server instead of github.com or Azure.
 	BaseURLOverride string `json:"-"`
