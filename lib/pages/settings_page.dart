@@ -1,5 +1,6 @@
 import 'package:autobutler/pages/auth_gate.dart';
 import 'package:autobutler/services/app_settings.dart';
+import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:autobutler/services/auth_service.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/services/connected_devices_service.dart';
@@ -581,10 +582,10 @@ class _SettingsPageState extends State<SettingsPage> {
                     alignment: Alignment.centerRight,
                     child: Padding(
                       padding: const EdgeInsets.only(right: 12),
-                      child: TextButton.icon(
-                        onPressed: _isLoadingDevices ? null : _loadDevices,
-                        icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text('Refresh'),
+                      child: RefreshIconButton(
+                        isRefreshing: _isLoadingDevices,
+                        onPressed: _loadDevices,
+                        tooltip: 'Refresh devices',
                       ),
                     ),
                   ),
