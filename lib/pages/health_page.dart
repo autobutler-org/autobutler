@@ -200,15 +200,6 @@ class _HealthPageState extends State<HealthPage> {
             maxValue: 100,
           ),
         ],
-        const SizedBox(height: 24),
-        const Text(
-          'Timeseries & gauges coming soon',
-          style: TextStyle(
-            fontStyle: FontStyle.italic,
-            color: Colors.grey,
-          ),
-          textAlign: TextAlign.center,
-        ),
       ],
     );
   }
@@ -330,8 +321,9 @@ class _MetricCard extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: progress,
                 color: barColor,
-                backgroundColor:
-                    Theme.of(context).colorScheme.surfaceContainerHighest,
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest,
                 minHeight: 8,
               ),
             ),

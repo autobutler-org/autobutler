@@ -17,15 +17,15 @@ class HealthStatus {
   factory HealthStatus.fromJson(Map<String, dynamic> json) {
     return HealthStatus(
       healthy: json['healthy'] as bool? ?? true,
-      alerts: (json['alerts'] as List<dynamic>?)
-              ?.cast<String>()
-              .toList(growable: false) ??
+      alerts:
+          (json['alerts'] as List<dynamic>?)?.cast<String>().toList(
+            growable: false,
+          ) ??
           const [],
       cpuPercent: (json['cpuPercent'] as num?)?.toDouble() ?? 0,
       memPercent: (json['memPercent'] as num?)?.toDouble() ?? 0,
       diskPercent: (json['diskPercent'] as num?)?.toDouble() ?? 0,
-      temperatureCelsius:
-          (json['temperatureCelsius'] as num?)?.toDouble() ?? 0,
+      temperatureCelsius: (json['temperatureCelsius'] as num?)?.toDouble() ?? 0,
     );
   }
 
@@ -40,7 +40,8 @@ class HealthStatus {
 class HealthService {
   static Uri get _apiBaseUri {
     final configured = AppSettings.instance.activeHost;
-    final base = configured ??
+    final base =
+        configured ??
         String.fromEnvironment(
           'API_BASE_URL',
           defaultValue: 'http://localhost:8080',
@@ -62,7 +63,17 @@ class HealthService {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to fetch health (${response.statusCode})');
     }
-    final json = jsonDecode(response.body) as Map<String, dynamic>;
-    return HealthStatus.fromJson(json['data'] as Map<String, dynamic>);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException('Invalid health response format');
+    }
+
+    // Accept both {"data": {...}} and flat health payloads.
+    final data = decoded['data'];
+    if (data is Map<String, dynamic>) {
+      return HealthStatus.fromJson(data);
+    }
+
+    return HealthStatus.fromJson(decoded);
   }
 }
