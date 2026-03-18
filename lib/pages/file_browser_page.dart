@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
@@ -7,14 +9,19 @@ import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_dialog_utils.dart';
+import 'package:autobutler/utils/file_browser_drag_config.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
+import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/file_browser/file_actions_bar.dart';
 import 'package:autobutler/widgets/file_browser/file_breadcrumb_bar.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
+import 'package:desktop_drop/desktop_drop.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 
 class FileBrowserPage extends StatefulWidget {
   const FileBrowserPage({super.key});
@@ -23,15 +30,21 @@ class FileBrowserPage extends StatefulWidget {
   State<FileBrowserPage> createState() => _FileBrowserPageState();
 }
 
-class _FileBrowserPageState extends State<FileBrowserPage> {
+class _FileBrowserPageState extends State<FileBrowserPage>
+    with SafeSetStateMixin {
   final _controller = const FileBrowserController();
+  final _dropRegionKey = GlobalKey();
+  final _fileBrowserScrollController = ScrollController();
 
   late Future<List<CirrusFileNode>> _filesFuture;
   String _currentPath = '';
   bool _isGridView = false;
   bool _isUploading = false;
   bool _isCreatingFolder = false;
+  bool _isWebDragging = false;
+  bool _isHoveringFolderDropTarget = false;
   bool _noHostSelected = false;
+  Timer? _folderDragExitTimer;
 
   // Search state
   bool _isSearchMode = false;
@@ -51,6 +64,13 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     }
   }
 
+  @override
+  void dispose() {
+    _folderDragExitTimer?.cancel();
+    _fileBrowserScrollController.dispose();
+    super.dispose();
+  }
+
   void _reloadFiles() {
     _noHostSelected = AppSettings.instance.activeHost == null;
     if (_noHostSelected) {
@@ -67,13 +87,11 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     });
   }
 
-  Future<void> _handleUploadPressed() async {
-    if (_isUploading) {
-      return;
-    }
-
-    final selectedFile = await _controller.pickUploadFile();
-    if (selectedFile == null) {
+  Future<void> _uploadSelectedFiles(
+    List<http.MultipartFile> selectedFiles,
+    String uploadPath,
+  ) async {
+    if (_isUploading || selectedFiles.isEmpty) {
       return;
     }
 
@@ -82,9 +100,9 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
     });
 
     try {
-      await _controller.uploadFile(
-        currentPath: _currentPath,
-        selectedFile: selectedFile,
+      await _controller.uploadFiles(
+        currentPath: uploadPath,
+        selectedFiles: selectedFiles,
       );
 
       if (!mounted) {
@@ -93,13 +111,10 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
 
       _refreshFileState();
 
-      _showMessage('Uploaded ${selectedFile.filename ?? 'file'}');
-    } on MissingPluginException {
-      if (!mounted) {
-        return;
-      }
-
-      _showMessage('File picker plugin not available. Fully restart the app.');
+      final uploadedLabel = selectedFiles.length == 1
+          ? selectedFiles.first.filename ?? 'file'
+          : '${selectedFiles.length} files';
+      _showMessage('Uploaded $uploadedLabel');
     } catch (_) {
       if (!mounted) {
         return;
@@ -113,6 +128,188 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
         });
       }
     }
+  }
+
+  Future<void> _handleUploadPressed() async {
+    if (_isUploading) {
+      return;
+    }
+
+    try {
+      final selectedFile = await _controller.pickUploadFile();
+      if (selectedFile == null) {
+        return;
+      }
+
+      await _uploadSelectedFiles([selectedFile], _currentPath);
+    } on MissingPluginException {
+      if (!mounted) {
+        return;
+      }
+
+      _showMessage('File picker plugin not available. Fully restart the app.');
+    }
+  }
+
+  Future<void> _handleDroppedItems({
+    required List<DropItem> droppedItems,
+    required String uploadPath,
+  }) async {
+    // Drag-and-drop upload is currently web-only. The desktop_drop package
+    // supports native desktop platforms too — native support can be enabled
+    // here in a follow-up once it's been validated on macOS/Linux/Windows.
+    if (!kIsWeb || droppedItems.isEmpty || _isUploading) {
+      return;
+    }
+
+    try {
+      final selectedFiles = <http.MultipartFile>[];
+      for (final droppedItem in droppedItems) {
+        if (droppedItem is! DropItemFile) {
+          continue;
+        }
+
+        final bytes = await _readDroppedFileBytes(droppedItem);
+        if (bytes == null || bytes.isEmpty) {
+          continue;
+        }
+
+        selectedFiles.add(
+          _controller.multipartFileFromBytes(
+            bytes: bytes,
+            filename: droppedItem.name,
+          ),
+        );
+      }
+
+      if (selectedFiles.isEmpty) {
+        _showMessage('No files to upload');
+        return;
+      }
+
+      await _uploadSelectedFiles(selectedFiles, uploadPath);
+    } catch (_) {
+      _showMessage('Unable to read dropped files');
+    }
+  }
+
+  Future<Uint8List?> _readDroppedFileBytes(DropItemFile droppedItem) async {
+    try {
+      return await droppedItem.readAsBytes();
+    } catch (_) {
+      // Some browser drag sources (e.g. dragging from another browser tab or
+      // certain file managers) expose an HTTP/HTTPS URL via droppedItem.path
+      // rather than providing raw bytes directly. Blob URLs (blob:...) are
+      // not fetchable this way — this fallback only applies to http/https paths.
+      if (!kIsWeb) {
+        rethrow;
+      }
+
+      final path = droppedItem.path;
+      if (path.isEmpty) {
+        return null;
+      }
+
+      final fallbackResponse = await http.get(Uri.parse(path));
+      if (fallbackResponse.statusCode >= 200 &&
+          fallbackResponse.statusCode < 300) {
+        return fallbackResponse.bodyBytes;
+      }
+
+      throw Exception(
+        'Dropped file read failed (${fallbackResponse.statusCode})',
+      );
+    }
+  }
+
+  Future<void> _handleDropToCurrentFolder(DropDoneDetails details) {
+    return _handleDroppedItems(
+      droppedItems: details.files,
+      uploadPath: _currentPath,
+    );
+  }
+
+  Future<void> _handleDropToFolder(
+    List<DropItem> droppedItems,
+    String folderPath,
+  ) {
+    return _handleDroppedItems(
+      droppedItems: droppedItems,
+      uploadPath: folderPath,
+    );
+  }
+
+  void _handleFolderDragEnter() {
+    _folderDragExitTimer?.cancel();
+
+    if (!mounted || _isHoveringFolderDropTarget) {
+      return;
+    }
+    setStateSafely(() {
+      _isHoveringFolderDropTarget = true;
+      _isWebDragging = false;
+    });
+  }
+
+  void _handleFolderDragExit() {
+    _folderDragExitTimer?.cancel();
+    _folderDragExitTimer = Timer(
+      const Duration(
+        milliseconds: FileBrowserDragConfig.folderHoverExitDebounceMs,
+      ),
+      () {
+        if (!mounted || !_isHoveringFolderDropTarget) {
+          return;
+        }
+        setStateSafely(() {
+          _isHoveringFolderDropTarget = false;
+        });
+      },
+    );
+  }
+
+  void _maybeAutoScrollDuringDrag(double localDy) {
+    if (!_fileBrowserScrollController.hasClients) {
+      return;
+    }
+
+    final viewportHeight = _dropRegionKey.currentContext?.size?.height;
+    if (viewportHeight == null || viewportHeight <= 0) {
+      return;
+    }
+
+    const edgeActivation = FileBrowserDragConfig.autoScrollEdgeActivationPx;
+    const baseDelta = FileBrowserDragConfig.autoScrollBaseDeltaPx;
+    const maxExtraDelta = FileBrowserDragConfig.autoScrollMaxExtraDeltaPx;
+
+    double delta = 0;
+    if (localDy < edgeActivation) {
+      final strength = ((edgeActivation - localDy) / edgeActivation).clamp(
+        0.0,
+        1.0,
+      );
+      delta = -(baseDelta + maxExtraDelta * strength);
+    } else if (localDy > viewportHeight - edgeActivation) {
+      final strength =
+          ((localDy - (viewportHeight - edgeActivation)) / edgeActivation)
+              .clamp(0.0, 1.0);
+      delta = baseDelta + maxExtraDelta * strength;
+    }
+
+    if (delta == 0) {
+      return;
+    }
+
+    final position = _fileBrowserScrollController.position;
+    final targetOffset = (position.pixels + delta).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+    if (targetOffset == position.pixels) {
+      return;
+    }
+
+    _fileBrowserScrollController.jumpTo(targetOffset);
   }
 
   Future<void> _handleCreateFolderPressed() async {
@@ -456,16 +653,82 @@ class _FileBrowserPageState extends State<FileBrowserPage> {
                       ],
                     ),
                   )
-                : FileBrowserView(
-                    filesFuture: _isSearchMode
-                        ? (_searchFuture ??
-                              Future.value(const <CirrusFileNode>[]))
-                        : _filesFuture,
-                    onFileMenuAction: _handleFileMenuAction,
-                    onOpenDirectory: _isSearchMode ? (_) {} : _handleOpenNode,
-                    isGridView: _isGridView,
-                    isSearchMode: _isSearchMode,
-                    onNavigateToFolder: _navigateToFolder,
+                : DropTarget(
+                    key: _dropRegionKey,
+                    enable: kIsWeb && !_isSearchMode && !_isUploading,
+                    onDragEntered: (_) {
+                      if (!mounted) {
+                        return;
+                      }
+                      setStateSafely(() {
+                        _isWebDragging = true;
+                      });
+                    },
+                    onDragExited: (_) {
+                      if (!mounted) {
+                        return;
+                      }
+                      setStateSafely(() {
+                        _isWebDragging = false;
+                      });
+                    },
+                    onDragUpdated: (details) {
+                      _maybeAutoScrollDuringDrag(details.localPosition.dy);
+                    },
+                    onDragDone: (details) async {
+                      _folderDragExitTimer?.cancel();
+                      if (mounted) {
+                        setStateSafely(() {
+                          _isWebDragging = false;
+                        });
+                      }
+
+                      if (_isHoveringFolderDropTarget) {
+                        return;
+                      }
+
+                      await _handleDropToCurrentFolder(details);
+                    },
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        FileBrowserView(
+                          filesFuture: _isSearchMode
+                              ? (_searchFuture ??
+                                    Future.value(const <CirrusFileNode>[]))
+                              : _filesFuture,
+                          onFileMenuAction: _handleFileMenuAction,
+                          onOpenDirectory: _isSearchMode
+                              ? (_) {}
+                              : _handleOpenNode,
+                          isGridView: _isGridView,
+                          isSearchMode: _isSearchMode,
+                          onNavigateToFolder: _navigateToFolder,
+                          currentPath: _currentPath,
+                          onDropToFolder: _handleDropToFolder,
+                          onFolderDragEnter: _handleFolderDragEnter,
+                          onFolderDragExit: _handleFolderDragExit,
+                          scrollController: _fileBrowserScrollController,
+                        ),
+                        if (_isWebDragging && !_isHoveringFolderDropTarget)
+                          IgnorePointer(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  width: 1.5,
+                                ),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer
+                                    .withValues(alpha: 0.20),
+                              ),
+                              alignment: Alignment.topCenter,
+                              padding: const EdgeInsets.only(top: 10),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
           ),
         ],

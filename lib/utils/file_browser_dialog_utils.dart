@@ -131,6 +131,7 @@ Future<String?> promptForMoveRenamePath(
                       onFileMenuAction: (node, action) async {},
                       onOpenDirectory: openDirectory,
                       isGridView: false,
+                      currentPath: currentAbsolutePath,
                       showFileSizeAndMenu: false,
                     ),
                   ),

@@ -146,17 +146,17 @@ class CirrusService {
     String fileName, {
     String? deviceSerial,
   }) async {
-    final querySegments = <String>[
-      'rootDir=${Uri.encodeQueryComponent(rootDir)}',
-      'filePaths=${Uri.encodeQueryComponent(fileName)}',
-    ];
+    final queryParams = <String, Object>{
+      'rootDir': rootDir,
+      'filePaths': fileName,
+    };
     final serial = deviceSerial?.trim() ?? '';
     if (serial.isNotEmpty) {
-      querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
+      queryParams['serial'] = serial;
     }
 
     final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus');
-    final uri = endpointUri.replace(query: querySegments.join('&'));
+    final uri = endpointUri.replace(queryParameters: queryParams);
 
     final response = await http.delete(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {

@@ -34,6 +34,12 @@ class FileBrowserController {
     }
 
     final selected = result.files.first;
+    return multipartFileFromPlatformFile(selected);
+  }
+
+  Future<http.MultipartFile?> multipartFileFromPlatformFile(
+    PlatformFile selected,
+  ) async {
     final bytes = selected.bytes;
 
     // Web cannot use MultipartFile.fromPath because it depends on dart:io.
@@ -41,11 +47,7 @@ class FileBrowserController {
       if (bytes == null) {
         return null;
       }
-      return http.MultipartFile.fromBytes(
-        'files',
-        bytes,
-        filename: selected.name,
-      );
+      return multipartFileFromBytes(bytes: bytes, filename: selected.name);
     }
 
     final path = selected.path;
@@ -60,20 +62,30 @@ class FileBrowserController {
     if (bytes == null) {
       return null;
     }
-    return http.MultipartFile.fromBytes(
-      'files',
-      bytes,
-      filename: selected.name,
-    );
+    return multipartFileFromBytes(bytes: bytes, filename: selected.name);
+  }
+
+  http.MultipartFile multipartFileFromBytes({
+    required Uint8List bytes,
+    required String filename,
+  }) {
+    return http.MultipartFile.fromBytes('files', bytes, filename: filename);
   }
 
   Future<void> uploadFile({
     required String currentPath,
     required http.MultipartFile selectedFile,
   }) {
-    return uploadMultipartFileToCurrentPath(
+    return uploadFiles(currentPath: currentPath, selectedFiles: [selectedFile]);
+  }
+
+  Future<void> uploadFiles({
+    required String currentPath,
+    required List<http.MultipartFile> selectedFiles,
+  }) {
+    return uploadMultipartFilesToCurrentPath(
       currentPath: currentPath,
-      selectedFile: selectedFile,
+      selectedFiles: selectedFiles,
     );
   }
 
@@ -170,6 +182,10 @@ class FileBrowserController {
           message: 'Deleted',
           shouldRefresh: true,
         );
+      case FileMenuAction.navigateToFolder:
+        // Handled via the onNavigateToFolder callback in FileBrowserView;
+        // should never reach handleFileAction.
+        return null;
     }
   }
 
@@ -181,6 +197,8 @@ class FileBrowserController {
         return 'Move/Rename failed';
       case FileMenuAction.delete:
         return 'Delete failed';
+      case FileMenuAction.navigateToFolder:
+        return 'Navigation failed';
     }
   }
 

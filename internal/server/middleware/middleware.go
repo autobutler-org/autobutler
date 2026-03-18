@@ -22,7 +22,7 @@ func inject(deps deputil.Dependencies) gin.HandlerFunc {
 func Use(router *gin.Engine, deps deputil.Dependencies) {
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
-	config.AllowMethods = []string{"POST", "GET", "PUT", "OPTIONS"}
+	config.AllowMethods = []string{"POST", "GET", "PUT", "DELETE", "OPTIONS"}
 	config.AllowHeaders = []string{"*"}
 	config.ExposeHeaders = []string{"Content-Length"}
 	config.AllowCredentials = true
