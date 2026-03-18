@@ -205,11 +205,15 @@ generate/backend/swagger: ## Generate Swagger docs
 	swag init -g ./cmd/autobutler/main.go -o ./docs/swagger --parseInternal
 
 .PHONY: generate/frontend
-generate/frontend: generate/frontend/icons ## Generate frontend files
+generate/frontend: generate/frontend/icons generate/frontend/sbom ## Generate frontend files
 
 .PHONY: generate/frontend/icons
 generate/frontend/icons: ## Generate app icons
 	dart run flutter_launcher_icons
+
+.PHONY: generate/frontend/sbom
+generate/frontend/sbom: ## Generate Flutter SBOM asset from pubspec.lock
+	dart run scripts/generate_flutter_sbom.dart
 
 .PHONY: serve/backend
 serve/backend: generate/backend ## Serve backend

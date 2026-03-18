@@ -1,5 +1,6 @@
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
+import 'package:autobutler/services/sbom_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +26,12 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isUpdatingVersion = false;
   String? _versionLoadError;
 
+  // SBOM state
+  GoSbom? _goSbom;
+  List<FlutterPackage>? _flutterSbom;
+  bool _isLoadingSbom = false;
+  String? _sbomError;
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +44,36 @@ class _SettingsPageState extends State<SettingsPage> {
     _theme = AppSettings.instance.themeMode.value;
     setState(() {});
     _loadVersionInfo();
+    _loadSbom();
+  }
+
+  Future<void> _loadSbom() async {
+    setState(() {
+      _isLoadingSbom = true;
+      _sbomError = null;
+    });
+    try {
+      final results = await Future.wait([
+        if (AppSettings.instance.activeHost != null) SbomService.getGoSbom(),
+        SbomService.getFlutterSbom(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        if (AppSettings.instance.activeHost != null) {
+          _goSbom = results[0] as GoSbom;
+          _flutterSbom = results[1] as List<FlutterPackage>;
+        } else {
+          _flutterSbom = results[0] as List<FlutterPackage>;
+        }
+        _isLoadingSbom = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _sbomError = e.toString();
+        _isLoadingSbom = false;
+      });
+    }
   }
 
   Future<void> _loadVersionInfo() async {
@@ -409,7 +446,99 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: const Icon(Icons.add),
             label: const Text('Add host'),
           ),
+          const SizedBox(height: 24),
+          const Text(
+            'Software Bill of Materials',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          if (_isLoadingSbom)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else if (_sbomError != null)
+            Text(
+              'Failed to load SBOM: $_sbomError',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            )
+          else ...[
+            if (_goSbom != null)
+              _SbomExpansionTile(
+                title: 'Go dependencies',
+                subtitle:
+                    '${_goSbom!.dependencies.length} packages · ${_goSbom!.goVersion}',
+                items: _goSbom!.dependencies
+                    .map((d) => _SbomEntry(name: d.path, version: d.version))
+                    .toList(),
+              ),
+            const SizedBox(height: 8),
+            if (_flutterSbom != null)
+              _SbomExpansionTile(
+                title: 'Flutter dependencies',
+                subtitle: '${_flutterSbom!.length} packages',
+                items: _flutterSbom!
+                    .map(
+                      (p) => _SbomEntry(
+                        name: p.name,
+                        version: p.version,
+                        url: p.url,
+                      ),
+                    )
+                    .toList(),
+              ),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+class _SbomEntry {
+  const _SbomEntry({required this.name, required this.version, this.url});
+  final String name;
+  final String version;
+  final String? url;
+}
+
+class _SbomExpansionTile extends StatelessWidget {
+  const _SbomExpansionTile({
+    required this.title,
+    required this.subtitle,
+    required this.items,
+  });
+
+  final String title;
+  final String subtitle;
+  final List<_SbomEntry> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ExpansionTile(
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text(subtitle),
+        children: items
+            .map(
+              (item) => ListTile(
+                dense: true,
+                title: Text(
+                  item.name,
+                  style: const TextStyle(fontSize: 13),
+                ),
+                trailing: Text(
+                  item.version,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.secondary,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+            )
+            .toList(),
       ),
     );
   }
