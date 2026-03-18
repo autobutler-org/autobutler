@@ -28,7 +28,7 @@ func listBooks(c *gin.Context) *serverutil.Response {
 	rootDir := storageutil.GetCirrusDir()
 	books, err := bookutil.FindAllBooksRecursively(rootDir)
 	if err != nil {
-		return serverutil.NewResponse().WithStatusCode(500).WithError(err)
+		return serverutil.InternalServerError(err)
 	}
 
 	result := make([]BookJSON, len(books))

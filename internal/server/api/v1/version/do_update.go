@@ -39,7 +39,7 @@ func doUpdate(c *gin.Context) *serverutil.Response {
 	}
 
 	if err := updateutil.Update(params.Source, params.Version); err != nil {
-		return serverutil.NewResponse().WithStatusCode(500).WithError(err)
+		return serverutil.InternalServerError(err)
 	}
 
 	go restartAutobutler()
