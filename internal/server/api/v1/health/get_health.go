@@ -13,12 +13,12 @@ type HealthJSON struct {
 	CPUCorePercents    []float64 `json:"cpuCorePercents"`
 	CPUCoreCount       int       `json:"cpuCoreCount"`
 	MemPercent         float64   `json:"memPercent"`
-	MemUsedBytes       uint64   `json:"memUsedBytes"`
-	MemTotalBytes      uint64   `json:"memTotalBytes"`
-	DiskPercent        float64  `json:"diskPercent"`
-	DiskUsedBytes      uint64   `json:"diskUsedBytes"`
-	DiskTotalBytes     uint64   `json:"diskTotalBytes"`
-	TemperatureCelsius float64  `json:"temperatureCelsius"`
+	MemUsedBytes       uint64    `json:"memUsedBytes"`
+	MemTotalBytes      uint64    `json:"memTotalBytes"`
+	DiskPercent        float64   `json:"diskPercent"`
+	DiskUsedBytes      uint64    `json:"diskUsedBytes"`
+	DiskTotalBytes     uint64    `json:"diskTotalBytes"`
+	TemperatureCelsius float64   `json:"temperatureCelsius"`
 }
 
 // getHealth godoc
