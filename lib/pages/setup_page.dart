@@ -354,18 +354,21 @@ class _RecoveryPhraseStep extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: phrase));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Recovery phrase copied to clipboard'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.copy_outlined, size: 16),
-                  label: const Text('Copy to clipboard'),
+                Builder(
+                  builder: (innerContext) => OutlinedButton.icon(
+                    onPressed: () async {
+                      await Clipboard.setData(ClipboardData(text: phrase));
+                      if (!innerContext.mounted) return;
+                      ScaffoldMessenger.of(innerContext).showSnackBar(
+                        const SnackBar(
+                          content: Text('Recovery phrase copied to clipboard'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.copy_outlined, size: 16),
+                    label: const Text('Copy to clipboard'),
+                  ),
                 ),
               ],
             ),
