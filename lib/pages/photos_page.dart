@@ -1,15 +1,14 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/utils/auto_refresh_mixin.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
-import 'package:autobutler/pages/file_browser_page.dart';
-import 'package:autobutler/pages/health_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
-import 'package:autobutler/pages/settings_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:flutter/foundation.dart';
+import 'package:autobutler/router.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 class PhotosPage extends StatefulWidget {
@@ -437,22 +436,16 @@ class _PhotosPageState extends State<PhotosPage>
       drawer: AutobutlerDrawer(
         activeSection: AutobutlerDrawerSection.photos,
         onTapCirrus: () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const FileBrowserPage()),
-          );
+          context.go(AppRoutes.cirrus);
         },
         onTapPhotos: () {
           Navigator.of(context).pop();
         },
         onTapHealth: () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HealthPage()),
-          );
+          context.go(AppRoutes.health);
         },
         onTapSettings: () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const SettingsPage()),
-          );
+          context.go(AppRoutes.settings);
         },
       ),
       body: FutureBuilder<List<PhotoItem>>(

@@ -1,9 +1,10 @@
-import 'package:autobutler/pages/auth_gate.dart';
-import 'package:autobutler/pages/file_browser_page.dart';
+import 'package:autobutler/router.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:flutter/material.dart';
 
 Future<void> main() async {
+  usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
   await AppSettings.instance.load();
   runApp(const AutobutlerApp());
@@ -17,7 +18,7 @@ class AutobutlerApp extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: AppSettings.instance.themeMode,
       builder: (context, mode, _) {
-        return MaterialApp(
+        return MaterialApp.router(
           debugShowCheckedModeBanner: false,
           title: 'Autobutler',
           theme: ThemeData(
@@ -36,7 +37,7 @@ class AutobutlerApp extends StatelessWidget {
             useMaterial3: true,
           ),
           themeMode: mode,
-          home: const AuthGate(child: FileBrowserPage()),
+          routerConfig: router,
         );
       },
     );

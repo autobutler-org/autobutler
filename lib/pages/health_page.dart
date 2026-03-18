@@ -3,11 +3,9 @@ import 'package:autobutler/services/health_service.dart';
 import 'package:autobutler/utils/auto_refresh_mixin.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
+import 'package:autobutler/router.dart';
 import 'package:flutter/material.dart';
-
-import 'file_browser_page.dart';
-import 'photos_page.dart';
-import 'settings_page.dart';
+import 'package:go_router/go_router.dart';
 
 class HealthPage extends StatefulWidget {
   const HealthPage({super.key});
@@ -68,22 +66,16 @@ class _HealthPageState extends State<HealthPage>
       drawer: AutobutlerDrawer(
         activeSection: AutobutlerDrawerSection.health,
         onTapCirrus: () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const FileBrowserPage()),
-          );
+          context.go(AppRoutes.cirrus);
         },
         onTapPhotos: () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const PhotosPage()),
-          );
+          context.go(AppRoutes.photos);
         },
         onTapHealth: () {
           Navigator.of(context).pop();
         },
         onTapSettings: () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const SettingsPage()),
-          );
+          context.go(AppRoutes.settings);
         },
       ),
       body: _buildBody(context),

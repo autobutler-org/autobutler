@@ -4,9 +4,7 @@ import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/utils/auto_refresh_mixin.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
-import 'package:autobutler/pages/health_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
-import 'package:autobutler/pages/photos_page.dart';
 import 'package:autobutler/pages/settings_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/services/app_settings.dart';
@@ -22,7 +20,9 @@ import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
+import 'package:autobutler/router.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
@@ -586,19 +586,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           Navigator.of(context).pop();
         },
         onTapPhotos: () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const PhotosPage()),
-          );
+          context.go(AppRoutes.photos);
         },
         onTapHealth: () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HealthPage()),
-          );
+          context.go(AppRoutes.health);
         },
         onTapSettings: () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const SettingsPage()),
-          );
+          context.go(AppRoutes.settings);
         },
       ),
       body: Column(
