@@ -149,8 +149,7 @@ setup/swag: ## Install swag tool
 
 .PHONY: setup/hooks
 setup/hooks: ## Install git hooks (pre-commit runs make check)
-	cp hooks/pre-commit .git/hooks/pre-commit
-	chmod +x .git/hooks/pre-commit
+	ln -sf "$(PWD)/git/hooks/pre-commit" .git/hooks/pre-commit
 	@echo "✅ Git hooks installed"
 
 ##@ Development
