@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Pre-commit hook — runs make check before every commit.
+# Install: make setup/hooks
+set -euo pipefail
+
+# Prefer gmake (GNU make) when available — required on macOS where the
+# system make is BSD make and incompatible with this Makefile.
+if command -v gmake &>/dev/null; then
+  MAKE=gmake
+else
+  MAKE=make
+fi
+
+echo "Running ${MAKE} check..."
+if ! "${MAKE}" check; then
+  echo ""
+  echo "❌ ${MAKE} check failed. Fix the issues above before committing."
+  exit 1
+fi
