@@ -16,10 +16,12 @@ const sessionCookieName = "session"
 const sessionCookieMaxAge = int(30 * 24 * time.Hour / time.Second)
 
 func setSessionCookie(c *gin.Context, token string) {
+	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie(sessionCookieName, token, sessionCookieMaxAge, "/", "", false, true)
 }
 
 func clearSessionCookie(c *gin.Context) {
+	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie(sessionCookieName, "", -1, "/", "", false, true)
 }
 
