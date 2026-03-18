@@ -24,7 +24,7 @@ func NewDetector() Detector {
 func (d *detector) DetectDevices() ([]Device, error) {
 	devices := []Device{}
 
-	// TODO: Stop using df, which can be unreliable. Consider parsing /proc/mounts
+	// TODO(#663): Stop using df, which can be unreliable. Consider parsing /proc/mounts
 	// Use df to get only the root volume ("/")
 	cmd := exec.Command("df", "-B1", "--output=source,fstype,size,used,avail,pcent,target")
 	output, err := cmd.Output()
