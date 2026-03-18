@@ -1,7 +1,6 @@
 package v1_thumbnails
 
 import (
-	"errors"
 	"fmt"
 	"image/jpeg"
 	"image/png"
@@ -52,7 +51,7 @@ var getThumbnailRoute = serverutil.ApiRoute(
 		fullPath := filepath.Join(filesDir, filePath)
 
 		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-			return serverutil.NotFound(errors.New("thumbnail not found"))
+			return serverutil.NotFound(fmt.Errorf("thumbnail not found: %s", filePath))
 		}
 
 		result, err := photoutil.GenerateThumbnail(photoutil.GenerateThumbnailParams{
