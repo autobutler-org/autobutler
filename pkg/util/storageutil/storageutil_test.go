@@ -204,15 +204,15 @@ type mockUsbDevice struct {
 	mountPoint string
 }
 
-func (m *mockUsbDevice) GetPath() string          { return "" }
-func (m *mockUsbDevice) GetVendorID() string       { return "" }
-func (m *mockUsbDevice) GetProductID() string      { return "" }
-func (m *mockUsbDevice) GetManufacturer() string   { return "" }
-func (m *mockUsbDevice) GetProduct() string        { return "" }
-func (m *mockUsbDevice) GetSerial() string         { return m.serial }
-func (m *mockUsbDevice) GetMountPath() string      { return m.mountPoint }
-func (m *mockUsbDevice) BlockDevicePath() (string, bool) { return "", false }
-func (m *mockUsbDevice) IsStorageDevice() bool     { return true }
+func (m *mockUsbDevice) GetPath() string                  { return "" }
+func (m *mockUsbDevice) GetVendorID() string              { return "" }
+func (m *mockUsbDevice) GetProductID() string             { return "" }
+func (m *mockUsbDevice) GetManufacturer() string          { return "" }
+func (m *mockUsbDevice) GetProduct() string               { return "" }
+func (m *mockUsbDevice) GetSerial() string                { return m.serial }
+func (m *mockUsbDevice) GetMountPath() string             { return m.mountPoint }
+func (m *mockUsbDevice) BlockDevicePath() (string, bool)  { return "", false }
+func (m *mockUsbDevice) IsStorageDevice() bool            { return true }
 func (m *mockUsbDevice) Partitions() ([]Partition, error) { return nil, nil }
 
 func TestGetManagedDevices(t *testing.T) {
