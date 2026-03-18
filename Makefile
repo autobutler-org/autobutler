@@ -293,13 +293,13 @@ ifeq ($(AS_ROOT), 1)
 		--build.cmd "sudo $(MAKE) build/backend" \
 		--build.entrypoint "$(EXE)" \
 		--build.args_bin "serve" \
-		--build.exclude_dir ".dart_tool,.idea,.ralph,app,build,cd,datalinks,docs,internal/db,scripts,sql"
+		--build.exclude_dir ".dart_tool,.idea,.ralph,app,build,cd,datalinks,docs,internal/db,scripts,sql,android,ios,lib"
 else
 	$(AIR) \
 		--build.cmd "$(MAKE) build/backend" \
 		--build.entrypoint "$(EXE)" \
 		--build.args_bin "serve" \
-		--build.exclude_dir ".dart_tool,.idea,.ralph,app,build,cd,datalinks,docs,internal/db,scripts,sql"
+		--build.exclude_dir ".dart_tool,.idea,.ralph,app,build,cd,datalinks,docs,internal/db,scripts,sql,android,ios,lib"
 endif
 
 .PHONY: watch/frontend
