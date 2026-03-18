@@ -71,7 +71,9 @@ class CirrusService with AuthenticatedService {
     final token = AppSettings.instance.sessionToken;
     if (token != null && token.isNotEmpty) params['token'] = token;
 
-    return params.isEmpty ? endpointUri : endpointUri.replace(queryParameters: params);
+    return params.isEmpty
+        ? endpointUri
+        : endpointUri.replace(queryParameters: params);
   }
 
   static Future<List<CirrusFileNode>> getFiles(
