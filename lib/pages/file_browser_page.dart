@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
+import 'package:autobutler/pages/health_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/photos_page.dart';
 import 'package:autobutler/pages/settings_page.dart';
@@ -584,6 +585,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         onTapPhotos: () {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const PhotosPage()),
+          );
+        },
+        onTapHealth: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HealthPage()),
           );
         },
         onTapSettings: () {

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-enum AutobutlerDrawerSection { cirrus, photos, settings }
+enum AutobutlerDrawerSection { cirrus, photos, health, settings }
 
 class AutobutlerDrawer extends StatelessWidget {
   const AutobutlerDrawer({
@@ -10,12 +10,14 @@ class AutobutlerDrawer extends StatelessWidget {
     required this.activeSection,
     this.onTapCirrus,
     this.onTapPhotos,
+    this.onTapHealth,
     this.onTapSettings,
   });
 
   final AutobutlerDrawerSection activeSection;
   final FutureOr<void> Function()? onTapCirrus;
   final FutureOr<void> Function()? onTapPhotos;
+  final FutureOr<void> Function()? onTapHealth;
   final FutureOr<void> Function()? onTapSettings;
 
   @override
@@ -49,6 +51,14 @@ class AutobutlerDrawer extends StatelessWidget {
             selected: activeSection == AutobutlerDrawerSection.photos,
             onTap: () {
               onTapPhotos?.call();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.monitor_heart),
+            title: const Text('Health'),
+            selected: activeSection == AutobutlerDrawerSection.health,
+            onTap: () {
+              onTapHealth?.call();
             },
           ),
           ListTile(
