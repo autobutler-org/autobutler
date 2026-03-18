@@ -19,6 +19,6 @@ repos:
       - id: make-check
         name: make check
         language: system
-        entry: make check
+        entry: bash -c 'export PATH="/home/linuxbrew/.linuxbrew/bin:${FLUTTER_ROOT:-$HOME/flutter}/bin:$HOME/go/bin:$PATH"; make check'
         pass_filenames: false
         always_run: true
