@@ -36,6 +36,8 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   flutter_file_dialog: ^3.0.2
+  flutter_web_plugins:
+    sdk: flutter
   file_picker: ^10.3.3
   http: ^1.5.0
   flutter_secure_storage: ^10.0.0

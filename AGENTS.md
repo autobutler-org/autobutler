@@ -100,7 +100,7 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
 
 ### Navigation and routing (always follow this)
 
-- The app uses `go_router` with hash-based URL strategy (`/#/cirrus`, `/#/photos`, etc.).
+- The app uses `go_router` with `PathUrlStrategy` — clean URLs (`/cirrus`, `/photos`, no `#`).
 - All routes are declared in `lib/router.dart`. Route path strings are constants on `AppRoutes`.
 - **When adding a new top-level page, you must:**
   1. Add a `static const` path to `AppRoutes` in `lib/router.dart`

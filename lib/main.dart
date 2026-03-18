@@ -1,8 +1,10 @@
 import 'package:autobutler/router.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:flutter/material.dart';
 
 Future<void> main() async {
+  usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
   await AppSettings.instance.load();
   runApp(const AutobutlerApp());
