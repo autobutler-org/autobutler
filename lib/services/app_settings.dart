@@ -24,6 +24,7 @@ class AppSettings {
   List<HostEntry> _hosts = [];
   int _activeIndex = -1;
   bool _autoUpdate = false;
+  String? _sessionToken;
   SharedPreferences? _prefs;
 
   Future<void> load() async {
@@ -73,6 +74,16 @@ class AppSettings {
   List<HostEntry> get hosts => List.unmodifiable(_hosts);
   int get activeIndex => _activeIndex;
   bool get autoUpdate => _autoUpdate;
+
+  /// In-memory session token set after successful login. Not persisted to disk.
+  /// Used to populate Authorization headers for API requests.
+  /// Will be populated by the login UI (#649) once basic-auth (#650) ships.
+  String? get sessionToken => _sessionToken;
+
+  void setSessionToken(String? token) {
+    _sessionToken = token;
+  }
+
   String? get activeHost => (_activeIndex >= 0 && _activeIndex < _hosts.length)
       ? _hosts[_activeIndex].hostAddress
       : null;

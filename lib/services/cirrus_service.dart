@@ -10,6 +10,14 @@ import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:http/http.dart' as http;
 
 class CirrusService {
+  /// Returns Authorization header if a session token is set, empty map otherwise.
+  /// All API requests should include this to support basic-auth (#650).
+  static Map<String, String> get _authHeaders {
+    final token = AppSettings.instance.sessionToken;
+    if (token == null || token.isEmpty) return const {};
+    return {'Authorization': 'Bearer $token'};
+  }
+
   static Uri get _apiBaseUri {
     final configured = AppSettings.instance.activeHost;
     final base =
@@ -90,7 +98,7 @@ class CirrusService {
         ? endpointUri
         : endpointUri.replace(query: querySegments.join('&'));
 
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to load cirrus files (${response.statusCode})');
     }
@@ -125,7 +133,7 @@ class CirrusService {
     final uri = querySegments.isEmpty
         ? endpointUri
         : endpointUri.replace(query: querySegments.join('&'));
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to load cirrus files (${response.statusCode})');
     }
@@ -158,7 +166,7 @@ class CirrusService {
     final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus');
     final uri = endpointUri.replace(query: querySegments.join('&'));
 
-    final response = await http.delete(uri);
+    final response = await http.delete(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to delete file (${response.statusCode})');
     }
@@ -190,7 +198,7 @@ class CirrusService {
 
     final response = await http.put(
       endpointUri,
-      headers: const {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json', ..._authHeaders},
       body: body,
     );
 
@@ -208,6 +216,7 @@ class CirrusService {
 
     final request = http.MultipartRequest('POST', endpointUri);
     request.fields['folderName'] = folderName;
+    request.headers.addAll(_authHeaders);
 
     final response = await request.send();
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -230,6 +239,7 @@ class CirrusService {
 
     final request = http.MultipartRequest('POST', uri);
     request.files.addAll(formDataFiles);
+    request.headers.addAll(_authHeaders);
 
     final response = await request.send();
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -245,7 +255,7 @@ class CirrusService {
     String? fileName,
   }) async {
     final uri = _buildDownloadUri(filePath, serial: serial);
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to download file (${response.statusCode})');
     }
@@ -273,7 +283,7 @@ class CirrusService {
     String? fileName,
   }) async {
     final uri = _buildDownloadUri(filePath, serial: serial);
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to download file (${response.statusCode})');
     }
@@ -288,7 +298,7 @@ class CirrusService {
     String? serial,
   }) async {
     final uri = constructThumbnailUrl(filePath, serial: serial);
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to download thumbnail (${response.statusCode})');
     }
@@ -407,7 +417,7 @@ class CirrusService {
 
   static Future<Map<String, dynamic>> getInstalledVersion() async {
     final endpointUri = _apiBaseUri.resolve('/api/v1/version');
-    final response = await http.get(endpointUri);
+    final response = await http.get(endpointUri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
         'Failed to get installed version (${response.statusCode})',
@@ -425,7 +435,7 @@ class CirrusService {
   }) async {
     final endpointUri = _apiBaseUri.resolve('/api/v1/version/available');
     final uri = all ? endpointUri.replace(query: 'all=true') : endpointUri;
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
         'Failed to list available versions (${response.statusCode})',
@@ -443,7 +453,7 @@ class CirrusService {
 
   static Future<void> updateToLatest() async {
     final endpointUri = _apiBaseUri.resolve('/api/v1/version/latest');
-    final response = await http.post(endpointUri);
+    final response = await http.post(endpointUri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
         'Failed to update to latest (${response.statusCode}): ${response.body}',
@@ -456,7 +466,7 @@ class CirrusService {
     final body = jsonEncode({'version': version});
     final response = await http.post(
       endpointUri,
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json', ..._authHeaders},
       body: body,
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
