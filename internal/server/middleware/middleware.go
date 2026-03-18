@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"log/slog"
 	"time"
 
@@ -32,8 +33,10 @@ func trackDevice(deps deputil.Dependencies) gin.HandlerFunc {
 		ip := c.ClientIP()
 		ua := c.Request.UserAgent()
 		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
 			if _, err := deps.Database().Queries.UpsertConnectedDevice(
-				c.Request.Context(),
+				ctx,
 				db.UpsertConnectedDeviceParams{IpAddress: ip, UserAgent: ua},
 			); err != nil {
 				slog.Debug("trackDevice: upsert failed", "err", err)
