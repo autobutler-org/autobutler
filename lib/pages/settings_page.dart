@@ -335,6 +335,22 @@ class _SettingsPageState extends State<SettingsPage> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
+          // Sign out — only show if there's an active session
+          if (AppSettings.instance.sessionToken != null) ...[
+            const Text(
+              'Account',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('Sign out'),
+                onTap: _signOut,
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -597,23 +613,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
           const SizedBox(height: 24),
-
-          // Sign out — only show if there's an active session
-          if (AppSettings.instance.sessionToken != null) ...[
-            const Text(
-              'Account',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.logout),
-                title: const Text('Sign out'),
-                onTap: _signOut,
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
 
           const Text(
             'Software Bill of Materials',
