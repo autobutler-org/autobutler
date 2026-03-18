@@ -202,6 +202,12 @@
       "url": "https://pub.dev"
     },
     {
+      "name": "go_router",
+      "version": "17.1.0",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
       "name": "hooks",
       "version": "1.0.2",
       "source": "hosted",
