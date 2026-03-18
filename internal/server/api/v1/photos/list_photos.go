@@ -26,7 +26,7 @@ type PhotoJSON struct {
 func listPhotos(c *gin.Context) *serverutil.Response {
 	rootDir, err := storageutil.GetCirrusDir()
 	if err != nil {
-		return serverutil.NewResponse().WithStatusCode(500).WithError(err)
+		return serverutil.InternalServerError(err)
 	}
 	photos, err := photoutil.FindAllPhotosRecursively(rootDir)
 	if err != nil {
