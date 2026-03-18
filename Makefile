@@ -26,6 +26,7 @@ MAIN := ./cmd/autobutler/main.go
 EXE := ./build/autobutler
 
 UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
 FLUTTER_VERSION=$(shell grep -Eo 'flutter: (.+)' pubspec.yaml | sed -E 's/^flutter: (.+)$$/\1/')
 
 .PHONY: clean
@@ -76,11 +77,33 @@ ifeq ($(UNAME_S),Linux)
 		unzip \
 		xz-utils \
 		zip
+ifeq ($(UNAME_M),aarch64)
+	# The official Flutter Linux tarball ships with an x86_64 Dart SDK only.
+	# On ARM64 (e.g. Raspberry Pi), we download the tarball for Flutter's tooling
+	# and directory structure, then swap in the native ARM64 Dart SDK from apt.
+	curl --fail -L \
+		"https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_$(FLUTTER_VERSION)-stable.tar.xz" \
+		-o /tmp/flutter.tar.xz
+	tar -xf /tmp/flutter.tar.xz -C "${HOME}"
+	rm -f /tmp/flutter.tar.xz
+	# Install ARM64 Dart SDK
+	curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/dart.gpg
+	echo 'deb [signed-by=/usr/share/keyrings/dart.gpg arch=arm64] https://storage.googleapis.com/download.dartlang.org/linux/debian stable main' | sudo tee /etc/apt/sources.list.d/dart_stable.list
+	sudo apt-get update -y
+	sudo apt-get install -y dart
+	# Replace the x86_64 Dart SDK bundled with Flutter with the native ARM64 one
+	rsync -a /usr/lib/dart/ "${HOME}/flutter/bin/cache/dart-sdk/"
+	# Remove the pre-compiled x86_64 flutter_tools snapshot so Flutter rebuilds it
+	# with the ARM64 Dart SDK on first run
+	rm -f "${HOME}/flutter/bin/cache/flutter_tools.snapshot" \
+		  "${HOME}/flutter/bin/cache/flutter_tools.stamp"
+else
 	curl --fail -L \
 		"https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_$(FLUTTER_VERSION)-stable.tar.xz" | \
 			tar \
 				-xf \
 				-C "${HOME}"
+endif
 else ifeq ($(UNAME_S),Darwin)
 	rm -f flutter.zip
 	set -v
