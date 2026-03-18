@@ -15,21 +15,28 @@ import (
 
 	v1_files "github.com/autobutler-org/autobutler/internal/server/api/v1/cirrus"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 	"github.com/gin-gonic/gin"
 )
 
 // newTestEngine creates a gin engine with the cirrus routes registered,
 // pointed at a temp directory via the HOME env var so tests never touch
 // the real user data directory.
+//
+// The cirrus dir is resolved via storageutil.GetCirrusDir() after setting
+// HOME so the path is correct on all platforms (macOS uses
+// ~/Library/Application Support/Autobutler/data, Linux uses ~/autobutler/data).
 func newTestEngine(t *testing.T) (*gin.Engine, string) {
 	t.Helper()
 
 	tempHome := t.TempDir()
 	t.Setenv("HOME", tempHome)
 
-	cirrusDir := filepath.Join(tempHome, "autobutler", "data", "cirrus")
-	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
-		t.Fatalf("failed to create cirrus dir: %v", err)
+	// Ask storageutil for the real platform-specific cirrus path so the engine
+	// and the test helper write to the same directory on every OS.
+	cirrusDir, err := storageutil.GetCirrusDir()
+	if err != nil {
+		t.Fatalf("failed to get cirrus dir: %v", err)
 	}
 
 	gin.SetMode(gin.TestMode)
