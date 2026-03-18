@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS connected_devices;
+
 CREATE TABLE
     IF NOT EXISTS calendars (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

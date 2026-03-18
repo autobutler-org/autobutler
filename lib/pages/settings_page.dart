@@ -1,5 +1,6 @@
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
+import 'package:autobutler/services/connected_devices_service.dart';
 import 'package:autobutler/services/sbom_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
@@ -33,6 +34,11 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isLoadingSbom = false;
   String? _sbomError;
 
+  // Connected devices state
+  List<ConnectedDevice> _connectedDevices = [];
+  bool _isLoadingDevices = false;
+  String? _devicesError;
+
   @override
   void initState() {
     super.initState();
@@ -46,6 +52,48 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() {});
     _loadVersionInfo();
     _loadSbom();
+    _loadDevices();
+  }
+
+  Future<void> _loadDevices() async {
+    if (AppSettings.instance.activeHost == null) {
+      setState(() {
+        _connectedDevices = [];
+        _devicesError = null;
+        _isLoadingDevices = false;
+      });
+      return;
+    }
+    setState(() {
+      _isLoadingDevices = true;
+      _devicesError = null;
+    });
+    try {
+      final devices = await ConnectedDevicesService.listDevices();
+      if (!mounted) return;
+      setState(() {
+        _connectedDevices = devices;
+        _isLoadingDevices = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _devicesError = e.toString();
+        _isLoadingDevices = false;
+      });
+    }
+  }
+
+  Future<void> _deleteDevice(int id) async {
+    try {
+      await ConnectedDevicesService.deleteDevice(id);
+      await _loadDevices();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to remove device: $e')));
+    }
   }
 
   Future<void> _loadSbom() async {
@@ -458,6 +506,96 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 24),
           const Text(
+            'Connected Devices',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          if (AppSettings.instance.activeHost == null)
+            const Text('No target host configured')
+          else
+            Card(
+              child: ExpansionTile(
+                title: const Text(
+                  'Client connections',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  _isLoadingDevices
+                      ? 'Loading...'
+                      : _devicesError != null
+                      ? 'Failed to load devices'
+                      : _connectedDevices.isEmpty
+                      ? 'No devices recorded yet'
+                      : '${_connectedDevices.length} device${_connectedDevices.length == 1 ? '' : 's'}',
+                ),
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: TextButton.icon(
+                        onPressed: _isLoadingDevices ? null : _loadDevices,
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: const Text('Refresh'),
+                      ),
+                    ),
+                  ),
+                  if (_isLoadingDevices)
+                    const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    )
+                  else if (_devicesError != null)
+                    ListTile(
+                      leading: Icon(
+                        Icons.error_outline,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      title: const Text('Failed to load devices'),
+                      subtitle: Text(_devicesError!),
+                    )
+                  else if (_connectedDevices.isEmpty)
+                    const ListTile(title: Text('No devices recorded yet'))
+                  else
+                    ..._connectedDevices.map((device) {
+                      return ListTile(
+                        leading: const Icon(Icons.devices),
+                        title: Text(device.ipAddress),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (device.userAgent.isNotEmpty)
+                              Text(
+                                device.userAgent,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            Text(
+                              '${device.requestCount} request${device.requestCount == 1 ? '' : 's'} · last seen ${_formatRelative(device.lastSeenAt)}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+                        isThreeLine: device.userAgent.isNotEmpty,
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          tooltip: 'Remove',
+                          onPressed: () => _deleteDevice(device.id),
+                        ),
+                      );
+                    }),
+                ],
+              ),
+            ),
+          const SizedBox(height: 24),
+          const Text(
             'Software Bill of Materials',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
@@ -508,6 +646,14 @@ class _SettingsPageState extends State<SettingsPage> {
         ],
       ),
     );
+  }
+
+  String _formatRelative(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inSeconds < 60) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
   }
 }
 
