@@ -1,11 +1,13 @@
+import 'package:autobutler/router.dart';
 import 'package:autobutler/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 /// Password recovery screen — resets password using the recovery phrase.
 class RecoverPage extends StatefulWidget {
-  final VoidCallback onRecoverSuccess;
+  final VoidCallback? onRecoverSuccess;
 
-  const RecoverPage({super.key, required this.onRecoverSuccess});
+  const RecoverPage({super.key, this.onRecoverSuccess});
 
   @override
   State<RecoverPage> createState() => _RecoverPageState();
@@ -42,7 +44,11 @@ class _RecoverPageState extends State<RecoverPage> {
         newPassword: _passwordController.text,
       );
       if (!mounted) return;
-      widget.onRecoverSuccess();
+      if (widget.onRecoverSuccess != null) {
+        widget.onRecoverSuccess!();
+      } else if (mounted) {
+        context.go(AppRoutes.login);
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {

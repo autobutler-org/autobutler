@@ -1,4 +1,5 @@
-import 'package:autobutler/pages/recover_page.dart';
+import 'package:autobutler/router.dart';
+import 'package:go_router/go_router.dart';
 import 'package:autobutler/services/auth_service.dart';
 import 'package:flutter/material.dart';
 
@@ -56,11 +57,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _goToRecover() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => RecoverPage(onRecoverSuccess: widget.onLoginSuccess),
-      ),
-    );
+    context.push(AppRoutes.recover);
   }
 
   @override

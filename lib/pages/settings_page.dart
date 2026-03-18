@@ -1,4 +1,3 @@
-import 'package:autobutler/pages/auth_gate.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:autobutler/services/auth_service.dart';
@@ -7,11 +6,9 @@ import 'package:autobutler/services/connected_devices_service.dart';
 import 'package:autobutler/services/sbom_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
+import 'package:autobutler/router.dart';
 import 'package:flutter/material.dart';
-
-import 'file_browser_page.dart';
-import 'health_page.dart';
-import 'photos_page.dart';
+import 'package:go_router/go_router.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -313,19 +310,13 @@ class _SettingsPageState extends State<SettingsPage> {
       drawer: AutobutlerDrawer(
         activeSection: AutobutlerDrawerSection.settings,
         onTapCirrus: () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const FileBrowserPage()),
-          );
+          context.go(AppRoutes.cirrus);
         },
         onTapPhotos: () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const PhotosPage()),
-          );
+          context.go(AppRoutes.photos);
         },
         onTapHealth: () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HealthPage()),
-          );
+          context.go(AppRoutes.health);
         },
         onTapSettings: () {
           Navigator.of(context).pop();
@@ -719,12 +710,7 @@ class _SettingsPageState extends State<SettingsPage> {
     if (confirmed != true || !mounted) return;
     await AuthService.logout();
     if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(
-        builder: (_) => const AuthGate(child: FileBrowserPage()),
-      ),
-      (_) => false,
-    );
+    if (mounted) context.go(AppRoutes.cirrus);
   }
 
   String _formatRelative(DateTime dt) {
