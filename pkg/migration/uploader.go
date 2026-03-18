@@ -14,13 +14,15 @@ import (
 
 // CirrusFileUploader uploads files to cirrus storage
 type CirrusFileUploader struct {
-	deviceSerial string
+	deviceSerial   string
+	storageService *storageutil.StorageService
 }
 
 // NewCirrusFileUploader creates a new cirrus file uploader
-func NewCirrusFileUploader(deviceSerial string) *CirrusFileUploader {
+func NewCirrusFileUploader(deviceSerial string, svc *storageutil.StorageService) *CirrusFileUploader {
 	return &CirrusFileUploader{
-		deviceSerial: deviceSerial,
+		deviceSerial:   deviceSerial,
+		storageService: svc,
 	}
 }
 
@@ -49,7 +51,7 @@ func (u *CirrusFileUploader) UploadFile(ctx context.Context, filePath string, co
 	writer.Close()
 
 	// Use storageutil to upload
-	err = storageutil.UploadFilesStreamed(storageutil.UploadFilesStreamedParams{
+	err = u.storageService.UploadFilesStreamed(storageutil.UploadFilesStreamedParams{
 		Reader:       multipart.NewReader(&buf, writer.Boundary()),
 		RootDir:      filepath.Dir(filePath),
 		DeviceSerial: serial,

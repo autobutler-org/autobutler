@@ -1,6 +1,8 @@
 package v1_files
 
 import (
+	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
+	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
@@ -26,12 +28,16 @@ type moveFileRequest struct {
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /cirrus [put]
 func moveFile(c *gin.Context) *serverutil.Response {
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		return serverutil.InternalServerError(nil)
+	}
 	var req moveFileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return serverutil.BadRequest(err)
 	}
 
-	if _, err := storageutil.MoveFile(storageutil.MoveFileParams{
+	if _, err := deps.StorageService().MoveFile(storageutil.MoveFileParams{
 		OldFilePath:     req.OldFilePath,
 		NewFilePath:     req.NewFilePath,
 		OldDeviceSerial: req.OldDeviceSerial,

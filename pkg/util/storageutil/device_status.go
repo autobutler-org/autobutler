@@ -8,8 +8,3 @@ type DeviceStatus struct {
 	DataDir   string `json:"dataDir,omitempty"`
 	CirrusDir string `json:"cirrusDir,omitempty"`
 }
-
-// GetDeviceStatuses returns all detected devices with their enable status.
-func GetDeviceStatuses() ([]*DeviceStatus, error) {
-	return defaultStorageService.GetDeviceStatuses()
-}

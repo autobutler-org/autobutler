@@ -1,6 +1,8 @@
 package v1_files
 
 import (
+	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
+	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
@@ -35,12 +37,16 @@ func uploadFiles(c *gin.Context) *serverutil.Response {
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Router /cirrus/upload/{rootDir} [post]
 func uploadFilesNested(c *gin.Context, rootDir string) *serverutil.Response {
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		return serverutil.InternalServerError(nil)
+	}
 	serial := c.Query("serial")
 	reader, err := c.Request.MultipartReader()
 	if err != nil {
 		return serverutil.BadRequest(err)
 	}
-	err = storageutil.UploadFilesStreamed(storageutil.UploadFilesStreamedParams{
+	err = deps.StorageService().UploadFilesStreamed(storageutil.UploadFilesStreamedParams{
 		Reader:       reader,
 		RootDir:      rootDir,
 		DeviceSerial: serial,

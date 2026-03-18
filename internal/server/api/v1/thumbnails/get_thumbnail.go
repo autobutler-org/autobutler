@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
+	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/photoutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
@@ -32,6 +34,10 @@ const (
 // @Router /thumbnails/{filePath} [get]
 var getThumbnailRoute = serverutil.ApiRoute(
 	"GET", "/thumbnails/*filePath", func(c *gin.Context) *serverutil.Response {
+		deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+		if !ok {
+			return serverutil.InternalServerError(nil)
+		}
 		filePath := c.Param("filePath")
 		// Default to the global cirrus directory but allow selecting a specific device by serial
 		filesDir, err := storageutil.GetCirrusDir()
@@ -40,7 +46,7 @@ var getThumbnailRoute = serverutil.ApiRoute(
 		}
 		serial := c.Query("serial")
 		if serial != "" {
-			if devices, err := storageutil.GetManagedDevices(); err == nil {
+			if devices, err := deps.StorageService().GetManagedDevices(); err == nil {
 				for _, d := range devices {
 					if d.UsbInfo != nil && d.UsbInfo.GetSerial() == serial {
 						filesDir = d.CirrusDir
