@@ -10,6 +10,7 @@ class HealthStatus {
     required this.healthy,
     required this.alerts,
     required this.cpuPercent,
+    required this.cpuCorePercents,
     required this.memPercent,
     required this.memUsedBytes,
     required this.memTotalBytes,
@@ -28,6 +29,11 @@ class HealthStatus {
           ) ??
           const [],
       cpuPercent: (json['cpuPercent'] as num?)?.toDouble() ?? 0,
+      cpuCorePercents:
+          (json['cpuCorePercents'] as List<dynamic>?)
+              ?.map((e) => (e as num).toDouble())
+              .toList(growable: false) ??
+          const [],
       memPercent: (json['memPercent'] as num?)?.toDouble() ?? 0,
       memUsedBytes: (json['memUsedBytes'] as num?)?.toInt() ?? 0,
       memTotalBytes: (json['memTotalBytes'] as num?)?.toInt() ?? 0,
@@ -41,6 +47,7 @@ class HealthStatus {
   final bool healthy;
   final List<String> alerts;
   final double cpuPercent;
+  final List<double> cpuCorePercents;
   final int memUsedBytes;
   final int memTotalBytes;
   final double memPercent;

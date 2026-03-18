@@ -172,6 +172,12 @@ class _HealthPageState extends State<HealthPage> {
           value: status.cpuPercent,
           unit: '%',
           criticalThreshold: 90,
+          detail: status.cpuCorePercents.isNotEmpty
+              ? '${(status.cpuPercent / 100 * status.cpuCorePercents.length).toStringAsFixed(1)} of ${status.cpuCorePercents.length} cores'
+              : null,
+          corePercents: status.cpuCorePercents.isNotEmpty
+              ? status.cpuCorePercents
+              : null,
         ),
         const SizedBox(height: 8),
         _MetricCard(
@@ -287,6 +293,7 @@ class _MetricCard extends StatelessWidget {
     required this.criticalThreshold,
     this.maxValue = 100,
     this.detail,
+    this.corePercents,
   });
 
   final String label;
@@ -296,6 +303,7 @@ class _MetricCard extends StatelessWidget {
   final double criticalThreshold;
   final double maxValue;
   final String? detail;
+  final List<double>? corePercents;
 
   Color _barColor(BuildContext context) {
     if (value >= criticalThreshold) return Theme.of(context).colorScheme.error;
@@ -355,6 +363,31 @@ class _MetricCard extends StatelessWidget {
                 minHeight: 8,
               ),
             ),
+            if (corePercents != null && corePercents!.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: corePercents!.asMap().entries.map((e) {
+                  final coreColor = e.value >= 90
+                      ? Theme.of(context).colorScheme.error
+                      : e.value >= 67
+                      ? Colors.orange
+                      : Theme.of(context).colorScheme.primary;
+                  return Chip(
+                    label: Text(
+                      'C\${e.key}: \${e.value.toStringAsFixed(0)}%',
+                      style: TextStyle(fontSize: 11, color: coreColor),
+                    ),
+                    padding: EdgeInsets.zero,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                    side: BorderSide(color: coreColor.withValues(alpha: 0.4)),
+                    backgroundColor: coreColor.withValues(alpha: 0.08),
+                  );
+                }).toList(),
+              ),
+            ],
           ],
         ),
       ),

@@ -1375,6 +1375,15 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "cpuCoreCount": {
+                    "type": "integer"
+                },
+                "cpuCorePercents": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
                 "cpuPercent": {
                     "type": "number"
                 },

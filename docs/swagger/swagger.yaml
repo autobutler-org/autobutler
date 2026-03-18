@@ -97,6 +97,12 @@ definitions:
         items:
           type: string
         type: array
+      cpuCoreCount:
+        type: integer
+      cpuCorePercents:
+        items:
+          type: number
+        type: array
       cpuPercent:
         type: number
       diskPercent:
