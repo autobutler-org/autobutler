@@ -2,7 +2,6 @@ import 'package:autobutler/pages/auth_gate.dart';
 import 'package:autobutler/pages/file_browser_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 Future<void> main() async {
