@@ -148,6 +148,8 @@ func Recover(ctx context.Context, queries *db.Queries, params RecoverParams) (*L
 		return nil, fmt.Errorf("invalid recovery phrase")
 	}
 
+	// TODO(#350): multi-user recovery needs to match the recovery phrase to a
+	// specific user. For now, single-user mode — find the first (only) user.
 	user, err := queries.GetFirstUser(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("invalid recovery phrase")

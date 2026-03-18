@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/autobutler-org/autobutler/internal/db"
@@ -58,7 +59,11 @@ func trackDevice(deps deputil.Dependencies) gin.HandlerFunc {
 // requireAuth validates the session token from cookie or Authorization header.
 // Exempt paths (setup, login, recover, status) are always allowed through.
 // If no users have been set up yet, all requests are allowed through (first-boot).
+//
+// setupDone caches whether initial setup has been completed. Once true it is
+// never re-checked, avoiding a DB query on every request.
 func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
+	var setupDone atomic.Bool
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path
 		if authExemptPaths[path] {
@@ -72,11 +77,15 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 			return
 		}
 
-		// Allow all requests through if setup hasn't been completed yet
-		complete, err := authutil.IsSetupComplete(c.Request.Context(), db.Queries)
-		if err != nil || !complete {
-			c.Next()
-			return
+		// Check if setup is complete. Once confirmed, cache the result so we
+		// don't query the DB on every subsequent request.
+		if !setupDone.Load() {
+			complete, err := authutil.IsSetupComplete(c.Request.Context(), db.Queries)
+			if err != nil || !complete {
+				c.Next()
+				return
+			}
+			setupDone.Store(true)
 		}
 
 		// Extract token from Authorization header or cookie
