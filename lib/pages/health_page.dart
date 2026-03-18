@@ -368,24 +368,30 @@ class _MetricCard extends StatelessWidget {
               Wrap(
                 spacing: 6,
                 runSpacing: 4,
-                children: corePercents!.asMap().entries.map((e) {
-                  final coreColor = e.value >= 90
-                      ? Theme.of(context).colorScheme.error
-                      : e.value >= 67
-                      ? Colors.orange
-                      : Theme.of(context).colorScheme.primary;
-                  return Chip(
-                    label: Text(
-                      'Core ${e.key + 1}: ${e.value.toStringAsFixed(0)}%',
-                      style: TextStyle(fontSize: 11, color: coreColor),
-                    ),
-                    padding: EdgeInsets.zero,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                    side: BorderSide(color: coreColor.withValues(alpha: 0.4)),
-                    backgroundColor: coreColor.withValues(alpha: 0.08),
-                  );
-                }).toList(),
+                children: () {
+                  final total = corePercents!.fold(0.0, (s, v) => s + v);
+                  return corePercents!.asMap().entries.map((e) {
+                    final contribution = total > 0
+                        ? (e.value / total * 100)
+                        : 0.0;
+                    final coreColor = e.value >= 90
+                        ? Theme.of(context).colorScheme.error
+                        : e.value >= 67
+                        ? Colors.orange
+                        : Theme.of(context).colorScheme.primary;
+                    return Chip(
+                      label: Text(
+                        'Core ${e.key + 1}: ${e.value.toStringAsFixed(0)}% (${contribution.toStringAsFixed(0)}%)',
+                        style: TextStyle(fontSize: 11, color: coreColor),
+                      ),
+                      padding: EdgeInsets.zero,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                      side: BorderSide(color: coreColor.withValues(alpha: 0.4)),
+                      backgroundColor: coreColor.withValues(alpha: 0.08),
+                    );
+                  }).toList();
+                }(),
               ),
             ],
           ],
