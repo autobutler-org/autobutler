@@ -93,12 +93,11 @@ type UpdateVersion struct {
 }
 
 func getAssetURLFromRelease(release *githubutil.Release) string {
-	url := ""
+	archiveName := ConstructArchiveName()
 	for _, asset := range release.Assets {
-		if strings.HasSuffix(asset.BrowserDownloadURL, ".tar.gz") {
-			url = asset.BrowserDownloadURL
-			break
+		if strings.HasSuffix(asset.BrowserDownloadURL, archiveName) {
+			return asset.BrowserDownloadURL
 		}
 	}
-	return url
+	return ""
 }
