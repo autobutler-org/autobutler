@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:autobutler/controllers/file_browser_controller.dart';
+import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/health_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
@@ -41,6 +42,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   String _currentPath = '';
   bool _isGridView = false;
   bool _isUploading = false;
+  bool _isRefreshing = false;
   bool _isCreatingFolder = false;
   bool _isWebDragging = false;
   bool _isHoveringFolderDropTarget = false;
@@ -82,10 +84,16 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     _filesFuture = _controller.fetchFiles(_currentPath);
   }
 
-  void _refreshFileState() {
+  Future<void> _refreshFileState() async {
     setState(() {
+      _isRefreshing = true;
       _reloadFiles();
     });
+    try {
+      await _filesFuture;
+    } finally {
+      if (mounted) setState(() => _isRefreshing = false);
+    }
   }
 
   Future<void> _uploadSelectedFiles(
@@ -570,9 +578,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             },
             icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view_rounded),
           ),
-          IconButton(
+          RefreshIconButton(
+            isRefreshing: _isRefreshing,
             onPressed: _refreshFileState,
-            icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Refresh files',
           ),
         ],

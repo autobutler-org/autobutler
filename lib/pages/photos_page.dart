@@ -1,4 +1,5 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
+import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:autobutler/pages/file_browser_page.dart';
 import 'package:autobutler/pages/health_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
@@ -42,6 +43,7 @@ class _PhotosPageState extends State<PhotosPage> {
   List<PhotoItem> _cirrusPhotos = const <PhotoItem>[];
   List<PhotoItem> _mobilePhotos = const <PhotoItem>[];
 
+  bool _isRefreshing = false;
   bool _noHostSelected = false;
   bool _categoriesExpanded = false;
   int _previewColumns = _defaultCrossAxisCount;
@@ -152,11 +154,13 @@ class _PhotosPageState extends State<PhotosPage> {
   }
 
   Future<void> _refresh() async {
+    setState(() => _isRefreshing = true);
     _primeFuture = _primeSources();
     setState(() {
       _photosFuture = _photosForCategory(_selectedCategory);
     });
     await _photosFuture;
+    if (mounted) setState(() => _isRefreshing = false);
   }
 
   int _minColumnsByScale() {
@@ -428,11 +432,9 @@ class _PhotosPageState extends State<PhotosPage> {
         title: const Text('Photos'),
         centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: () async {
-              await _refresh();
-            },
-            icon: const Icon(Icons.refresh_rounded),
+          RefreshIconButton(
+            isRefreshing: _isRefreshing,
+            onPressed: _refresh,
             tooltip: 'Reload photos',
           ),
         ],
