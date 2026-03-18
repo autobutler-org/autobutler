@@ -246,7 +246,7 @@ serve/backend: generate/backend ## Serve backend
 serve/frontend: serve/frontend/web ## Serve frontend
 
 .PHONY: serve/frontend/mobile
-serve/frontend/mobile: ## Serve mobile frontend
+serve/frontend/mobile: generate/frontend ## Serve mobile frontend
 	flutter run
 
 .PHONY: serve/frontend/web
@@ -326,7 +326,7 @@ else
 endif
 
 .PHONY: watch/frontend
-watch/frontend: ## Watch frontend on web
+watch/frontend: generate/frontend ## Watch frontend on web
 	echo "Defaulting to web since it supports hot reload..."
 	flutter run -d chrome
 

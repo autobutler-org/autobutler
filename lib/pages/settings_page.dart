@@ -1,4 +1,6 @@
+import 'package:autobutler/pages/auth_gate.dart';
 import 'package:autobutler/services/app_settings.dart';
+import 'package:autobutler/services/auth_service.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/services/connected_devices_service.dart';
 import 'package:autobutler/services/sbom_service.dart';
@@ -333,6 +335,22 @@ class _SettingsPageState extends State<SettingsPage> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
+          // Sign out — only show if there's an active session
+          if (AppSettings.instance.sessionToken != null) ...[
+            const Text(
+              'Account',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('Sign out'),
+                onTap: _signOut,
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -595,6 +613,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
           const SizedBox(height: 24),
+
           const Text(
             'Software Bill of Materials',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -645,6 +664,35 @@ class _SettingsPageState extends State<SettingsPage> {
           ],
         ],
       ),
+    );
+  }
+
+  Future<void> _signOut() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Sign out'),
+        content: const Text('Are you sure you want to sign out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Sign out'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await AuthService.logout();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => const AuthGate(child: FileBrowserPage()),
+      ),
+      (_) => false,
     );
   }
 
