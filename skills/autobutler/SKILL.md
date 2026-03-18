@@ -80,3 +80,4 @@ curl -s $BUTLER_URL/api/v1/storage/devices/status -H "Authorization: Bearer $TOK
 - The butler runs on port 80 locally; may be on a different port remotely
 - All endpoints are under `/api/v1/` prefix
 - Swagger UI available at `$BUTLER_URL/swagger` when the backend is running
+- **Always set a `User-Agent` header** matching your agent name (e.g. `exokomodo-bot`, `sable-bot`). The butler tracks connected devices by IP + User-Agent — this is how the admin sees which agent is talking to the butler in the devices list.
