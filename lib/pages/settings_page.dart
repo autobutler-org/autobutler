@@ -385,17 +385,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       !_isLoadingVersionInfo &&
                       _versionLoadError == null &&
                       AppSettings.instance.activeHost != null)
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.check_circle_outline,
-                          size: 18,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text('No updates available'),
-                      ],
-                    )
+                    const Text('No updates available')
                   else if (_availableVersions.isNotEmpty) ...[
                     DropdownButtonFormField<String>(
                       initialValue: _selectedUpdateVersion,
