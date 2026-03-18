@@ -1,18 +1,10 @@
 CREATE TABLE
-    IF NOT EXISTS calendars (
+    IF NOT EXISTS connected_devices (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL
-    );
-
-CREATE TABLE
-    IF NOT EXISTS calendar_events (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        description TEXT,
-        start_time DATETIME NOT NULL,
-        end_time DATETIME,
-        all_day BOOLEAN NOT NULL DEFAULT 0,
-        location TEXT NOT NULL,
-        calendar_id INTEGER NOT NULL,
-        FOREIGN KEY (calendar_id) REFERENCES calendars (id)
+        ip_address TEXT NOT NULL,
+        user_agent TEXT NOT NULL DEFAULT '',
+        first_seen_at DATETIME NOT NULL DEFAULT (datetime('now')),
+        last_seen_at DATETIME NOT NULL DEFAULT (datetime('now')),
+        request_count INTEGER NOT NULL DEFAULT 1,
+        UNIQUE (ip_address, user_agent)
     );

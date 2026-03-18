@@ -5,22 +5,14 @@
 package db
 
 import (
-	"database/sql"
 	"time"
 )
 
-type Calendar struct {
-	ID   int64
-	Name string
-}
-
-type CalendarEvent struct {
-	ID          int64
-	Title       string
-	Description sql.NullString
-	StartTime   time.Time
-	EndTime     sql.NullTime
-	AllDay      bool
-	Location    string
-	CalendarID  int64
+type ConnectedDevice struct {
+	ID           int64
+	IpAddress    string
+	UserAgent    string
+	FirstSeenAt  time.Time
+	LastSeenAt   time.Time
+	RequestCount int64
 }
