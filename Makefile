@@ -148,9 +148,9 @@ setup/swag: ## Install swag tool
 	$(GO) install github.com/swaggo/swag/cmd/swag@latest
 
 .PHONY: setup/hooks
-setup/hooks: ## Install git hooks (pre-commit runs make check)
-	cp hooks/pre-commit .git/hooks/pre-commit
-	chmod +x .git/hooks/pre-commit
+setup/hooks: ## Install git hooks via pre-commit (runs make check on commit)
+	pip install pre-commit
+	pre-commit install
 	@echo "✅ Git hooks installed"
 
 ##@ Development
