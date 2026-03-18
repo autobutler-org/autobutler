@@ -90,9 +90,9 @@ class _SettingsPageState extends State<SettingsPage> {
       await _loadDevices();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to remove device: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to remove device: $e')));
     }
   }
 
