@@ -1364,17 +1364,38 @@
                         "type": "string"
                     }
                 },
+                "cpuCoreCount": {
+                    "type": "integer"
+                },
+                "cpuCorePercents": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
                 "cpuPercent": {
                     "type": "number"
                 },
                 "diskPercent": {
                     "type": "number"
                 },
+                "diskTotalBytes": {
+                    "type": "integer"
+                },
+                "diskUsedBytes": {
+                    "type": "integer"
+                },
                 "healthy": {
                     "type": "boolean"
                 },
                 "memPercent": {
                     "type": "number"
+                },
+                "memTotalBytes": {
+                    "type": "integer"
+                },
+                "memUsedBytes": {
+                    "type": "integer"
                 },
                 "temperatureCelsius": {
                     "type": "number"

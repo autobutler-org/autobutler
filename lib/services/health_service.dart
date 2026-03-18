@@ -10,8 +10,13 @@ class HealthStatus {
     required this.healthy,
     required this.alerts,
     required this.cpuPercent,
+    required this.cpuCorePercents,
     required this.memPercent,
+    required this.memUsedBytes,
+    required this.memTotalBytes,
     required this.diskPercent,
+    required this.diskUsedBytes,
+    required this.diskTotalBytes,
     required this.temperatureCelsius,
   });
 
@@ -24,8 +29,17 @@ class HealthStatus {
           ) ??
           const [],
       cpuPercent: (json['cpuPercent'] as num?)?.toDouble() ?? 0,
+      cpuCorePercents:
+          (json['cpuCorePercents'] as List<dynamic>?)
+              ?.map((e) => (e as num).toDouble())
+              .toList(growable: false) ??
+          const [],
       memPercent: (json['memPercent'] as num?)?.toDouble() ?? 0,
+      memUsedBytes: (json['memUsedBytes'] as num?)?.toInt() ?? 0,
+      memTotalBytes: (json['memTotalBytes'] as num?)?.toInt() ?? 0,
       diskPercent: (json['diskPercent'] as num?)?.toDouble() ?? 0,
+      diskUsedBytes: (json['diskUsedBytes'] as num?)?.toInt() ?? 0,
+      diskTotalBytes: (json['diskTotalBytes'] as num?)?.toInt() ?? 0,
       temperatureCelsius: (json['temperatureCelsius'] as num?)?.toDouble() ?? 0,
     );
   }
@@ -33,8 +47,13 @@ class HealthStatus {
   final bool healthy;
   final List<String> alerts;
   final double cpuPercent;
+  final List<double> cpuCorePercents;
+  final int memUsedBytes;
+  final int memTotalBytes;
   final double memPercent;
   final double diskPercent;
+  final int diskUsedBytes;
+  final int diskTotalBytes;
   final double temperatureCelsius;
 }
 
@@ -75,7 +94,6 @@ class HealthService with AuthenticatedService {
       throw const FormatException('Invalid health response format');
     }
 
-    // Accept both {"data": {...}} and flat health payloads.
     final data = decoded['data'];
     if (data is Map<String, dynamic>) {
       return HealthStatus.fromJson(data);
