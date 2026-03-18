@@ -381,54 +381,68 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedUpdateVersion,
-                    items: _availableVersions
-                        .map(
-                          (v) => DropdownMenuItem<String>(
-                            value: v,
-                            child: Text(v),
-                          ),
-                        )
-                        .toList(),
-                    onChanged:
-                        (AppSettings.instance.activeHost == null ||
-                            _isLoadingVersionInfo ||
-                            _isUpdatingVersion ||
-                            _availableVersions.isEmpty)
-                        ? null
-                        : (v) {
-                            setState(() {
-                              _selectedUpdateVersion = v;
-                            });
-                          },
-                    decoration: const InputDecoration(
-                      labelText: 'Update Autobutler to version',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: ElevatedButton.icon(
-                      onPressed:
-                          (_selectedUpdateVersion == null ||
-                              _isUpdatingVersion ||
-                              AppSettings.instance.activeHost == null)
+                  if (_availableVersions.isEmpty &&
+                      !_isLoadingVersionInfo &&
+                      _versionLoadError == null &&
+                      AppSettings.instance.activeHost != null)
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.check_circle_outline,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('No updates available'),
+                      ],
+                    )
+                  else if (_availableVersions.isNotEmpty) ...[
+                    DropdownButtonFormField<String>(
+                      initialValue: _selectedUpdateVersion,
+                      items: _availableVersions
+                          .map(
+                            (v) => DropdownMenuItem<String>(
+                              value: v,
+                              child: Text(v),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (_isLoadingVersionInfo || _isUpdatingVersion)
                           ? null
-                          : _performUpdate,
-                      icon: _isUpdatingVersion
-                          ? const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.update),
-                      label: Text(
-                        _isUpdatingVersion ? 'Updating...' : 'Start update',
+                          : (v) {
+                              setState(() {
+                                _selectedUpdateVersion = v;
+                              });
+                            },
+                      decoration: const InputDecoration(
+                        labelText: 'Update Autobutler to version',
+                        border: OutlineInputBorder(),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton.icon(
+                        onPressed:
+                            (_selectedUpdateVersion == null ||
+                                _isUpdatingVersion)
+                            ? null
+                            : _performUpdate,
+                        icon: _isUpdatingVersion
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.update),
+                        label: Text(
+                          _isUpdatingVersion ? 'Updating...' : 'Start update',
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
