@@ -458,7 +458,7 @@ class CirrusService with AuthenticatedService {
 
   static Future<void> updateToLatest() async {
     final endpointUri = _apiBaseUri.resolve('/api/v1/version/latest');
-    final response = await http.post(endpointUri);
+    final response = await http.post(endpointUri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
         'Failed to update to latest (${response.statusCode}): ${response.body}',
