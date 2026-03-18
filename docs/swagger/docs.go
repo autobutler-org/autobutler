@@ -653,6 +653,32 @@ const docTemplate = `{
                 }
             }
         },
+        "/sbom": {
+            "get": {
+                "description": "Returns the Go version and all embedded dependency information from the compiled binary",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "version"
+                ],
+                "summary": "Get software bill of materials",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1_version.SbomJSON"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/storage/devices/backup": {
             "post": {
                 "description": "Begin a backup to a device",
@@ -1204,6 +1230,54 @@ const docTemplate = `{
                 },
                 "size": {
                     "type": "integer"
+                }
+            }
+        },
+        "v1_version.SbomDependencyJSON": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string"
+                },
+                "replace": {
+                    "$ref": "#/definitions/v1_version.SbomDependencyJSON"
+                },
+                "sum": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1_version.SbomJSON": {
+            "type": "object",
+            "properties": {
+                "dependencies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1_version.SbomDependencyJSON"
+                    }
+                },
+                "goVersion": {
+                    "type": "string"
+                },
+                "main": {
+                    "$ref": "#/definitions/v1_version.SbomModuleJSON"
+                }
+            }
+        },
+        "v1_version.SbomModuleJSON": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string"
+                },
+                "sum": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
                 }
             }
         },

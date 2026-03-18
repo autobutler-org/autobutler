@@ -16,3 +16,25 @@ type VersionJSON struct {
 	GoVersion string `json:"goVersion"`
 	BuildDate string `json:"buildDate"`
 }
+
+// SbomDependencyJSON is a single dependency in the software bill of materials
+type SbomDependencyJSON struct {
+	Path    string              `json:"path"`
+	Version string              `json:"version"`
+	Sum     string              `json:"sum,omitempty"`
+	Replace *SbomDependencyJSON `json:"replace,omitempty"`
+}
+
+// SbomModuleJSON is the main module in the software bill of materials
+type SbomModuleJSON struct {
+	Path    string `json:"path"`
+	Version string `json:"version"`
+	Sum     string `json:"sum,omitempty"`
+}
+
+// SbomJSON is the full software bill of materials for the Go binary
+type SbomJSON struct {
+	GoVersion    string               `json:"goVersion"`
+	Main         SbomModuleJSON       `json:"main"`
+	Dependencies []SbomDependencyJSON `json:"dependencies"`
+}

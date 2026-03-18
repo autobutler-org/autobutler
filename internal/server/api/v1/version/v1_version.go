@@ -18,6 +18,7 @@ func (r *router) Routes() []*serverutil.Route {
 		doUpdateRoute,
 		getInstalledVersionRoute,
 		getLatestVersionRoute,
+		getSbomRoute,
 		listVersionsRoute,
 		updateToLatestRoute,
 	}
