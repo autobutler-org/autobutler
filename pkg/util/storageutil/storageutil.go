@@ -108,7 +108,10 @@ func DetermineFileType(rootDir string, file *DeviceFileInfo) FileType {
 	if file.IsDir() {
 		return FileTypeFolder
 	}
-	filesDir := GetCirrusDir()
+	filesDir, err := GetCirrusDir()
+	if err != nil {
+		return FileTypeGeneric
+	}
 	stat, err := os.Stat(filepath.Join(filesDir, rootDir, file.Name()))
 	if err != nil || stat == nil {
 		return FileTypeGeneric // If we can't stat the file, treat it as generic

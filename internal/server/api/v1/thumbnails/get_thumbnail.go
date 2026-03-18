@@ -33,9 +33,11 @@ const (
 var getThumbnailRoute = serverutil.ApiRoute(
 	"GET", "/thumbnails/*filePath", func(c *gin.Context) *serverutil.Response {
 		filePath := c.Param("filePath")
-
-		filesDir := storageutil.GetCirrusDir()
-
+		// Default to the global cirrus directory but allow selecting a specific device by serial
+		filesDir, err := storageutil.GetCirrusDir()
+		if err != nil {
+			return serverutil.InternalServerError(err)
+		}
 		serial := c.Query("serial")
 		if serial != "" {
 			if devices, err := storageutil.GetManagedDevices(); err == nil {

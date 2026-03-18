@@ -114,7 +114,10 @@ func DeleteFiles(params DeleteFilesParams) (*DeleteFilesResult, error) {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
 
-	cirrusDir := GetCirrusDir()
+	cirrusDir, err := GetCirrusDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+	}
 	if device != nil {
 		cirrusDir = device.CirrusDir
 	}
@@ -157,7 +160,10 @@ func MoveFile(params MoveFileParams) (*MoveFileResult, error) {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
 
-	defaultCirrusDir := GetCirrusDir()
+	defaultCirrusDir, err := GetCirrusDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+	}
 
 	oldCirrusDir := defaultCirrusDir
 	if oldDevice != nil {
@@ -237,7 +243,10 @@ func CreateFolder(params CreateFolderParams) (*CreateFolderResult, error) {
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
-	rootDir := GetCirrusDir()
+	rootDir, err := GetCirrusDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+	}
 	if device != nil {
 		rootDir = device.CirrusDir
 	}
@@ -273,7 +282,10 @@ func DownloadFile(params DownloadFileParams) (*DownloadFileResult, error) {
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
-	cirrusDir := GetCirrusDir()
+	cirrusDir, err := GetCirrusDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+	}
 	if device != nil {
 		cirrusDir = device.CirrusDir
 	}
@@ -304,7 +316,10 @@ func UploadFilesStreamed(params UploadFilesStreamedParams) error {
 	if err != nil {
 		return fmt.Errorf("device not found: %w", err)
 	}
-	cirrusDir := GetCirrusDir()
+	cirrusDir, err := GetCirrusDir()
+	if err != nil {
+		return fmt.Errorf("failed to get cirrus directory: %w", err)
+	}
 	if device != nil {
 		cirrusDir = device.CirrusDir
 	}
