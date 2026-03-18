@@ -54,7 +54,11 @@ class AppSettings {
     _activeIndex =
         _prefs!.getInt('activeHostIndex') ?? (_hosts.isEmpty ? -1 : 0);
 
-    if (!kIsWeb) {
+    if (kIsWeb) {
+      // On web, use shared_preferences (localStorage) — flutter_secure_storage
+      // requires HTTPS and will fail over plain HTTP during development.
+      _sessionToken = _prefs!.getString(_sessionTokenKey);
+    } else {
       _sessionToken = await _secureStorage.read(key: _sessionTokenKey);
     }
 
@@ -88,9 +92,15 @@ class AppSettings {
 
   Future<void> setSessionToken(String? token) async {
     _sessionToken = token;
-    // flutter_secure_storage requires a secure context (HTTPS) on web.
-    // On web we keep the token in-memory only; on native it's persisted.
-    if (!kIsWeb) {
+    if (kIsWeb) {
+      // Use shared_preferences (localStorage) on web — flutter_secure_storage
+      // requires HTTPS and fails over plain HTTP in development.
+      if (token != null) {
+        await _prefs?.setString(_sessionTokenKey, token);
+      } else {
+        await _prefs?.remove(_sessionTokenKey);
+      }
+    } else {
       if (token != null) {
         await _secureStorage.write(key: _sessionTokenKey, value: token);
       } else {
