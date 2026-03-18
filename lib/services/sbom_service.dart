@@ -84,7 +84,8 @@ class FlutterPackage {
 class SbomService {
   static Uri get _apiBaseUri {
     final configured = AppSettings.instance.activeHost;
-    final base = configured ??
+    final base =
+        configured ??
         String.fromEnvironment(
           'API_BASE_URL',
           defaultValue: 'http://localhost:8080',

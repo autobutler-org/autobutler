@@ -524,10 +524,7 @@ class _SbomExpansionTile extends StatelessWidget {
             .map(
               (item) => ListTile(
                 dense: true,
-                title: Text(
-                  item.name,
-                  style: const TextStyle(fontSize: 13),
-                ),
+                title: Text(item.name, style: const TextStyle(fontSize: 13)),
                 trailing: Text(
                   item.version,
                   style: TextStyle(

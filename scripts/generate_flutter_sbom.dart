@@ -26,12 +26,14 @@ void main() async {
     final packageMatch = RegExp(r'^  (\S+):$').firstMatch(line);
     if (packageMatch != null) {
       if (currentPackage != null && currentVersion != null) {
-        packages.add(_buildEntry(
-          currentPackage,
-          currentVersion,
-          currentSource,
-          currentUrl,
-        ));
+        packages.add(
+          _buildEntry(
+            currentPackage,
+            currentVersion,
+            currentSource,
+            currentUrl,
+          ),
+        );
       }
       currentPackage = packageMatch.group(1);
       currentVersion = null;
@@ -63,12 +65,9 @@ void main() async {
 
   // Flush last package
   if (currentPackage != null && currentVersion != null) {
-    packages.add(_buildEntry(
-      currentPackage,
-      currentVersion,
-      currentSource,
-      currentUrl,
-    ));
+    packages.add(
+      _buildEntry(currentPackage, currentVersion, currentSource, currentUrl),
+    );
   }
 
   packages.sort((a, b) => (a['name'] as String).compareTo(b['name'] as String));
