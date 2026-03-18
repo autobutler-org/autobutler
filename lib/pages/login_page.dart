@@ -98,7 +98,9 @@ class _LoginPageState extends State<LoginPage> {
                     Text(
                       'Enter your butler credentials.',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
                       ),
                       textAlign: TextAlign.center,
                     ),

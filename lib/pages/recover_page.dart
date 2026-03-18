@@ -91,7 +91,9 @@ class _RecoverPageState extends State<RecoverPage> {
                     Text(
                       'Enter your recovery phrase and choose a new password.',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
                       ),
                       textAlign: TextAlign.center,
                     ),
