@@ -505,74 +505,93 @@ class _SettingsPageState extends State<SettingsPage> {
             label: const Text('Add host'),
           ),
           const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Connected Devices',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              if (AppSettings.instance.activeHost != null)
-                IconButton(
-                  icon: const Icon(Icons.refresh, size: 20),
-                  tooltip: 'Refresh',
-                  onPressed: _loadDevices,
-                ),
-            ],
+          const Text(
+            'Connected Devices',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           if (AppSettings.instance.activeHost == null)
             const Text('No target host configured')
-          else if (_isLoadingDevices)
-            const Padding(
-              padding: EdgeInsets.all(8),
-              child: Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-            )
-          else if (_devicesError != null)
-            Text(
-              'Failed to load devices',
-              style:
-                  TextStyle(color: Theme.of(context).colorScheme.error),
-            )
-          else if (_connectedDevices.isEmpty)
-            const Text('No devices recorded yet')
           else
             Card(
-              child: Column(
-                children: _connectedDevices.map((device) {
-                  return ListTile(
-                    leading: const Icon(Icons.devices),
-                    title: Text(device.ipAddress),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (device.userAgent.isNotEmpty)
-                          Text(
-                            device.userAgent,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        Text(
-                          '${device.requestCount} request${device.requestCount == 1 ? '' : 's'} · last seen ${_formatRelative(device.lastSeenAt)}',
-                          style: const TextStyle(fontSize: 12),
+              child: ExpansionTile(
+                title: const Text(
+                  'Client connections',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  _isLoadingDevices
+                      ? 'Loading...'
+                      : _devicesError != null
+                      ? 'Failed to load devices'
+                      : _connectedDevices.isEmpty
+                      ? 'No devices recorded yet'
+                      : '${_connectedDevices.length} device${_connectedDevices.length == 1 ? '' : 's'}',
+                ),
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: TextButton.icon(
+                        onPressed: _isLoadingDevices ? null : _loadDevices,
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: const Text('Refresh'),
+                      ),
+                    ),
+                  ),
+                  if (_isLoadingDevices)
+                    const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         ),
-                      ],
-                    ),
-                    isThreeLine: device.userAgent.isNotEmpty,
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      tooltip: 'Remove',
-                      onPressed: () => _deleteDevice(device.id),
-                    ),
-                  );
-                }).toList(),
+                      ),
+                    )
+                  else if (_devicesError != null)
+                    ListTile(
+                      leading: Icon(
+                        Icons.error_outline,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      title: const Text('Failed to load devices'),
+                      subtitle: Text(_devicesError!),
+                    )
+                  else if (_connectedDevices.isEmpty)
+                    const ListTile(title: Text('No devices recorded yet'))
+                  else
+                    ..._connectedDevices.map((device) {
+                      return ListTile(
+                        leading: const Icon(Icons.devices),
+                        title: Text(device.ipAddress),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (device.userAgent.isNotEmpty)
+                              Text(
+                                device.userAgent,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            Text(
+                              '${device.requestCount} request${device.requestCount == 1 ? '' : 's'} · last seen ${_formatRelative(device.lastSeenAt)}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+                        isThreeLine: device.userAgent.isNotEmpty,
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          tooltip: 'Remove',
+                          onPressed: () => _deleteDevice(device.id),
+                        ),
+                      );
+                    }),
+                ],
               ),
             ),
           const SizedBox(height: 24),

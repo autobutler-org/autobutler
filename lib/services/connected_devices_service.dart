@@ -36,7 +36,8 @@ class ConnectedDevice {
 class ConnectedDevicesService {
   static Uri get _apiBaseUri {
     final configured = AppSettings.instance.activeHost;
-    final base = configured ??
+    final base =
+        configured ??
         String.fromEnvironment(
           'API_BASE_URL',
           defaultValue: 'http://localhost:8080',
@@ -58,8 +59,18 @@ class ConnectedDevicesService {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to fetch devices (${response.statusCode})');
     }
-    final json = jsonDecode(response.body) as Map<String, dynamic>;
-    final data = json['data'] as List<dynamic>;
+    final decoded = jsonDecode(response.body);
+
+    // Accept both [{...}] and {"data": [{...}]}
+    final List<dynamic> data;
+    if (decoded is List<dynamic>) {
+      data = decoded;
+    } else if (decoded is Map<String, dynamic> && decoded['data'] is List) {
+      data = decoded['data'] as List<dynamic>;
+    } else {
+      throw const FormatException('Invalid connected devices response format');
+    }
+
     return data
         .cast<Map<String, dynamic>>()
         .map(ConnectedDevice.fromJson)
