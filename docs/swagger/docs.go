@@ -1381,11 +1381,23 @@ const docTemplate = `{
                 "diskPercent": {
                     "type": "number"
                 },
+                "diskTotalBytes": {
+                    "type": "integer"
+                },
+                "diskUsedBytes": {
+                    "type": "integer"
+                },
                 "healthy": {
                     "type": "boolean"
                 },
                 "memPercent": {
                     "type": "number"
+                },
+                "memTotalBytes": {
+                    "type": "integer"
+                },
+                "memUsedBytes": {
+                    "type": "integer"
                 },
                 "temperatureCelsius": {
                     "type": "number"

@@ -23,9 +23,9 @@ class HealthStatus {
     return HealthStatus(
       healthy: json['healthy'] as bool? ?? true,
       alerts:
-          (json['alerts'] as List<dynamic>?)
-              ?.cast<String>()
-              .toList(growable: false) ??
+          (json['alerts'] as List<dynamic>?)?.cast<String>().toList(
+            growable: false,
+          ) ??
           const [],
       cpuPercent: (json['cpuPercent'] as num?)?.toDouble() ?? 0,
       memPercent: (json['memPercent'] as num?)?.toDouble() ?? 0,

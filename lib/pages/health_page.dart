@@ -180,7 +180,8 @@ class _HealthPageState extends State<HealthPage> {
           value: status.memPercent,
           unit: '%',
           criticalThreshold: 95,
-          detail: '${_formatBytes(status.memUsedBytes)} used of ${_formatBytes(status.memTotalBytes)}',
+          detail:
+              '${_formatBytes(status.memUsedBytes)} used of ${_formatBytes(status.memTotalBytes)}',
         ),
         const SizedBox(height: 8),
         _MetricCard(
@@ -189,7 +190,8 @@ class _HealthPageState extends State<HealthPage> {
           value: status.diskPercent,
           unit: '%',
           criticalThreshold: 90,
-          detail: '${_formatBytes(status.diskUsedBytes)} used of ${_formatBytes(status.diskTotalBytes)}',
+          detail:
+              '${_formatBytes(status.diskUsedBytes)} used of ${_formatBytes(status.diskTotalBytes)}',
         ),
         if (status.temperatureCelsius > 0) ...[
           const SizedBox(height: 8),
