@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HostEntry {
@@ -18,6 +19,9 @@ class HostEntry {
 class AppSettings {
   AppSettings._();
   static final AppSettings instance = AppSettings._();
+
+  static const _secureStorage = FlutterSecureStorage();
+  static const _tokenKey = 'session_token';
 
   final ValueNotifier<ThemeMode> themeMode = ValueNotifier(ThemeMode.system);
 
@@ -48,6 +52,14 @@ class AppSettings {
     _activeIndex =
         _prefs!.getInt('activeHostIndex') ?? (_hosts.isEmpty ? -1 : 0);
 
+    // Restore persisted session token from secure storage (if any).
+    // On web, secure storage falls back to localStorage — acceptable trade-off.
+    try {
+      _sessionToken = await _secureStorage.read(key: _tokenKey);
+    } catch (_) {
+      _sessionToken = null;
+    }
+
     // If no hosts configured and running in debug (local development), add a local loopback
     // host appropriate for the running platform so developers can quickly connect.
     if (_hosts.isEmpty) {
@@ -71,13 +83,22 @@ class AppSettings {
   List<HostEntry> get hosts => List.unmodifiable(_hosts);
   int get activeIndex => _activeIndex;
 
-  /// In-memory session token set after a successful login or setup.
-  /// Not persisted to disk — the user must log in again after an app restart.
+  /// Session token set after a successful login or setup.
+  /// Persisted to secure storage so the user stays logged in across app restarts.
   /// Populated by [AuthService] after login/setup; consumed by [CirrusService].
   String? get sessionToken => _sessionToken;
 
-  void setSessionToken(String? token) {
+  Future<void> setSessionToken(String? token) async {
     _sessionToken = token;
+    try {
+      if (token != null) {
+        await _secureStorage.write(key: _tokenKey, value: token);
+      } else {
+        await _secureStorage.delete(key: _tokenKey);
+      }
+    } catch (_) {
+      // Secure storage failure is non-fatal — session still works in-memory.
+    }
   }
 
   String? get activeHost => (_activeIndex >= 0 && _activeIndex < _hosts.length)

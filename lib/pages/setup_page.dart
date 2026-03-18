@@ -1,5 +1,6 @@
 import 'package:autobutler/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 
 /// First-boot setup screen — creates the owner account on the butler.
@@ -179,7 +180,7 @@ class _SetupForm extends StatelessWidget {
           Text(
             'Create your owner account. This is the only account that can manage the butler.',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             textAlign: TextAlign.center,
           ),
@@ -326,7 +327,7 @@ class _RecoveryPhraseStep extends StatelessWidget {
           'This phrase is the only way to reset your password if you forget it. '
           "It will not be shown again. Write it down somewhere safe — don't store it digitally on this device.",
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
           ),
           textAlign: TextAlign.center,
         ),

@@ -1,5 +1,6 @@
 import 'package:autobutler/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 
 /// Password recovery screen — resets password using the recovery phrase.
 class RecoverPage extends StatefulWidget {
@@ -92,7 +93,7 @@ class _RecoverPageState extends State<RecoverPage> {
                     Text(
                       'Enter your recovery phrase and choose a new password.',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       textAlign: TextAlign.center,
                     ),

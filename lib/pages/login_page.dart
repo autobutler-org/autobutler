@@ -1,6 +1,7 @@
 import 'package:autobutler/pages/recover_page.dart';
 import 'package:autobutler/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 
 /// Login screen shown when the butler has been set up but no session exists.
 class LoginPage extends StatefulWidget {
@@ -99,7 +100,7 @@ class _LoginPageState extends State<LoginPage> {
                     Text(
                       'Enter your butler credentials.',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       textAlign: TextAlign.center,
                     ),
