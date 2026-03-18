@@ -24,8 +24,6 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   _GateState _state = _GateState.loading;
-  bool _setupComplete = false;
-  String? _error;
 
   @override
   void initState() {
@@ -50,7 +48,6 @@ class _AuthGateState extends State<AuthGate> {
       final status = await AuthService.checkStatus();
       if (!mounted) return;
       setState(() {
-        _setupComplete = status.setupComplete;
         _state = status.setupComplete ? _GateState.login : _GateState.firstBoot;
       });
     } catch (e) {

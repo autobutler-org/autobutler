@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HostEntry {
@@ -25,6 +26,9 @@ class AppSettings {
   int _activeIndex = -1;
   String? _sessionToken;
   SharedPreferences? _prefs;
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+
+  static const _sessionTokenKey = 'session_token';
 
   Future<void> load() async {
     _prefs = await SharedPreferences.getInstance();
@@ -47,6 +51,8 @@ class AppSettings {
 
     _activeIndex =
         _prefs!.getInt('activeHostIndex') ?? (_hosts.isEmpty ? -1 : 0);
+
+    _sessionToken = await _secureStorage.read(key: _sessionTokenKey);
 
     // If no hosts configured and running in debug (local development), add a local loopback
     // host appropriate for the running platform so developers can quickly connect.
@@ -71,13 +77,18 @@ class AppSettings {
   List<HostEntry> get hosts => List.unmodifiable(_hosts);
   int get activeIndex => _activeIndex;
 
-  /// In-memory session token set after a successful login or setup.
-  /// Not persisted to disk — the user must log in again after an app restart.
+  /// Session token set after a successful login or setup.
+  /// Persisted via [FlutterSecureStorage] — survives app restarts.
   /// Populated by [AuthService] after login/setup; consumed by [CirrusService].
   String? get sessionToken => _sessionToken;
 
-  void setSessionToken(String? token) {
+  Future<void> setSessionToken(String? token) async {
     _sessionToken = token;
+    if (token != null) {
+      await _secureStorage.write(key: _sessionTokenKey, value: token);
+    } else {
+      await _secureStorage.delete(key: _sessionTokenKey);
+    }
   }
 
   String? get activeHost => (_activeIndex >= 0 && _activeIndex < _hosts.length)

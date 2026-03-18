@@ -66,7 +66,6 @@ class _SetupPageState extends State<SetupPage> {
         _error = e.toString().replaceFirst('Exception: ', '');
         _loading = false;
       });
-      SemanticsService.announce(_error!, TextDirection.ltr);
     }
   }
 
@@ -179,7 +178,7 @@ class _SetupForm extends StatelessWidget {
           Text(
             'Create your owner account. This is the only account that can manage the butler.',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             textAlign: TextAlign.center,
           ),
@@ -326,7 +325,7 @@ class _RecoveryPhraseStep extends StatelessWidget {
           'This phrase is the only way to reset your password if you forget it. '
           "It will not be shown again. Write it down somewhere safe — don't store it digitally on this device.",
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
           ),
           textAlign: TextAlign.center,
         ),

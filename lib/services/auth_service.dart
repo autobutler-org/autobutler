@@ -71,7 +71,7 @@ class AuthService {
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final token = body['token'] as String;
     final phrase = body['recoveryPhrase'] as String;
-    AppSettings.instance.setSessionToken(token);
+    await AppSettings.instance.setSessionToken(token);
     return SetupResult(sessionToken: token, recoveryPhrase: phrase);
   }
 
@@ -95,7 +95,7 @@ class AuthService {
     }
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final token = body['token'] as String;
-    AppSettings.instance.setSessionToken(token);
+    await AppSettings.instance.setSessionToken(token);
     return LoginResult(sessionToken: token);
   }
 
@@ -119,14 +119,14 @@ class AuthService {
     }
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final token = body['token'] as String;
-    AppSettings.instance.setSessionToken(token);
+    await AppSettings.instance.setSessionToken(token);
     return LoginResult(sessionToken: token);
   }
 
   /// Logs out — clears the in-memory session token and notifies the server.
   static Future<void> logout() async {
     final token = AppSettings.instance.sessionToken;
-    AppSettings.instance.setSessionToken(null);
+    await AppSettings.instance.setSessionToken(null);
     if (token == null) return;
     try {
       final uri = _baseUri.resolve('/api/v1/auth/logout');
