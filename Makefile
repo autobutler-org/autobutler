@@ -415,6 +415,20 @@ format/flutter: ## Format Flutter/Dart code
 format/go: ## Format Go code
 	gofmt -s -w .
 
+##@ Release
+
+.PHONY: release/yank
+release/yank: ## Yank a release: remove from Azure + mark GitHub release as pre-release (VERSION=v0.X.Y)
+	@if [ -z "$(VERSION)" ]; then echo "Error: VERSION is required. Usage: make release/yank VERSION=v0.X.Y"; exit 1; fi
+	@echo "Yanking $(VERSION) from Azure Blob Storage..."
+	az storage blob delete-batch \
+		--account-name autobutlerrelease \
+		--source releases \
+		--pattern "autobutler/$(VERSION)/*"
+	@echo "Marking $(VERSION) as pre-release on GitHub..."
+	gh release edit $(VERSION) --prerelease --repo autobutler-org/autobutler
+	@echo "✅ $(VERSION) yanked. Ship a patch release ASAP."
+
 ##@ Helpers
 
 .PHONY: version
