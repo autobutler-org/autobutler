@@ -3,7 +3,6 @@ package v1_files
 import (
 	"archive/zip"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 
@@ -38,48 +37,39 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 		FilePath:     filePath,
 		DeviceSerial: serial,
 	})
-
 	if err != nil {
-		c.Status(http.StatusNotFound)
-		return nil
+		return serverutil.NotFound(err)
 	}
 
 	if result.IsFolder {
 		zipWriter := zip.NewWriter(c.Writer)
 		defer zipWriter.Close()
 		dirFs := os.DirFS(result.FullPath)
-		err := zipWriter.AddFS(dirFs)
-		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			return nil
+		if err := zipWriter.AddFS(dirFs); err != nil {
+			return serverutil.InternalServerError(fmt.Errorf("failed to zip folder: %w", err))
 		}
 		c.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip", filepath.Base(result.FullPath)))
 		c.Writer.Header().Set("Content-Type", "application/octet-stream")
-	} else {
-		file, err := os.Open(result.FullPath)
-		if err != nil {
-			c.Status(http.StatusNotFound)
-			return nil
-		}
-		defer file.Close()
-
-		disposition := "inline"
-		contentType := "application/octet-stream"
-		if result.FileType == storageutil.FileTypePDF {
-			disposition = "inline"
-			contentType = "application/pdf"
-		} else if result.FileType == storageutil.FileTypeImage {
-			disposition = "inline"
-			contentType = "image/*"
-		} else if result.FileType == storageutil.FileTypeVideo {
-			disposition = "inline"
-			contentType = storageutil.VideoMIMETypeFromExtension(filepath.Ext(result.FullPath))
-		}
-		c.Header("Content-Disposition", fmt.Sprintf("%s; filename=%s", disposition, filepath.Base(result.FullPath)))
-		c.Header("Content-Type", contentType)
-		c.File(result.FullPath)
+		return nil // response written directly to writer
 	}
-	return nil
+
+	if _, err := os.Stat(result.FullPath); os.IsNotExist(err) {
+		return serverutil.NotFound(fmt.Errorf("file not found: %s", filePath))
+	}
+
+	disposition := "inline"
+	contentType := "application/octet-stream"
+	if result.FileType == storageutil.FileTypePDF {
+		contentType = "application/pdf"
+	} else if result.FileType == storageutil.FileTypeImage {
+		contentType = "image/*"
+	} else if result.FileType == storageutil.FileTypeVideo {
+		contentType = storageutil.VideoMIMETypeFromExtension(filepath.Ext(result.FullPath))
+	}
+	c.Header("Content-Disposition", fmt.Sprintf("%s; filename=%s", disposition, filepath.Base(result.FullPath)))
+	c.Header("Content-Type", contentType)
+	c.File(result.FullPath)
+	return nil // response written directly via c.File
 }
 
 var downloadFileRoute = serverutil.ApiRoute(
