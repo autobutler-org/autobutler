@@ -1,4 +1,5 @@
 import 'package:autobutler/router.dart';
+import 'package:autobutler/theme/autobutler_theme.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:flutter/material.dart';
@@ -21,21 +22,8 @@ class AutobutlerApp extends StatelessWidget {
         return MaterialApp.router(
           debugShowCheckedModeBanner: false,
           title: 'Autobutler',
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.blue,
-              brightness: Brightness.light,
-            ),
-            useMaterial3: true,
-          ),
-          darkTheme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.blue,
-              brightness: Brightness.dark,
-            ),
-            scaffoldBackgroundColor: const Color(0xFF070D19),
-            useMaterial3: true,
-          ),
+          theme: AutobutlerTheme.light(),
+          darkTheme: AutobutlerTheme.dark(),
           themeMode: mode,
           routerConfig: router,
         );
