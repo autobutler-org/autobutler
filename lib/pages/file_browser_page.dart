@@ -43,6 +43,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   List<CirrusFileNode>?
   _cachedFiles; // last successful result, shown during refresh
   int _generation = 0; // incremented on each reload to discard stale fetches
+  // Optimistic overlay: when non-null, shown instead of _cachedFiles until
+  // the next real fetch completes. Allows instant UI feedback for mutations.
+  List<CirrusFileNode>? _optimisticFiles;
   String _currentPath = '';
   bool _isGridView = false;
   bool _isUploading = false;
@@ -87,13 +90,72 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     final generation = ++_generation;
     _filesFuture = _controller.fetchFiles(_currentPath).then((files) {
       if (mounted && _generation == generation) {
-        setState(() => _cachedFiles = files);
+        setState(() {
+          _cachedFiles = files;
+          _optimisticFiles =
+              null; // ground truth arrived — clear optimistic overlay
+        });
       }
       return files;
     });
   }
 
   Future<void> _refreshFileState() => manualRefresh();
+
+  /// Returns the current display list: optimistic overlay if set, otherwise
+  /// the last cached result.
+  List<CirrusFileNode>? get _displayFiles => _optimisticFiles ?? _cachedFiles;
+
+  /// Applies an optimistic mutation to the current display list and triggers
+  /// a real refresh in the background. If the real fetch fails, the optimistic
+  /// state remains until the next successful fetch.
+  void _applyOptimisticUpdate(
+    List<CirrusFileNode> Function(List<CirrusFileNode>) mutate,
+  ) {
+    final current = _displayFiles ?? const [];
+    setState(() => _optimisticFiles = mutate(current));
+    // Background refresh — updates _cachedFiles and clears _optimisticFiles.
+    _refreshFileState();
+  }
+
+  /// Optimistically adds a file placeholder after an upload.
+  void _optimisticAddFile(String fileName, String uploadPath) {
+    _applyOptimisticUpdate((files) {
+      final newNode = CirrusFileNode(
+        name: fileName,
+        size: 0,
+        isDir: false,
+        deviceName: files.isNotEmpty ? files.first.deviceName : '',
+        devicePath: files.isNotEmpty ? files.first.devicePath : '',
+        deviceSerial: files.isNotEmpty ? files.first.deviceSerial : '',
+        dirPath: uploadPath.isEmpty ? fileName : '$uploadPath/$fileName',
+      );
+      return [...files, newNode];
+    });
+  }
+
+  /// Optimistically removes a node after delete.
+  void _optimisticRemoveNode(CirrusFileNode node) {
+    _applyOptimisticUpdate(
+      (files) => files.where((f) => f.apiPath != node.apiPath).toList(),
+    );
+  }
+
+  /// Optimistically adds a folder placeholder after creation.
+  void _optimisticAddFolder(String folderName, String currentPath) {
+    _applyOptimisticUpdate((files) {
+      final newNode = CirrusFileNode(
+        name: folderName,
+        size: 0,
+        isDir: true,
+        deviceName: files.isNotEmpty ? files.first.deviceName : '',
+        devicePath: files.isNotEmpty ? files.first.devicePath : '',
+        deviceSerial: files.isNotEmpty ? files.first.deviceSerial : '',
+        dirPath: currentPath.isEmpty ? folderName : '$currentPath/$folderName',
+      );
+      return [...files, newNode];
+    });
+  }
 
   Future<void> _uploadSelectedFiles(
     List<http.MultipartFile> selectedFiles,
@@ -107,6 +169,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       _isUploading = true;
     });
 
+    // Optimistically add placeholders immediately so the UI reflects the
+    // pending upload without waiting for the backend round-trip.
+    for (final file in selectedFiles) {
+      if (file.filename != null) {
+        _optimisticAddFile(file.filename!, uploadPath);
+      }
+    }
+
     try {
       await _controller.uploadFiles(
         currentPath: uploadPath,
@@ -117,18 +187,20 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         return;
       }
 
-      _refreshFileState();
-
       final uploadedLabel = selectedFiles.length == 1
           ? selectedFiles.first.filename ?? 'file'
           : '${selectedFiles.length} files';
       _showMessage('Uploaded $uploadedLabel');
-    } catch (_) {
-      debugPrint('[file_browser_page.dart] Error in catch block');
+      // _applyOptimisticUpdate already triggered a background refresh;
+      // no explicit call needed here.
+    } catch (e) {
+      debugPrint('[file_browser_page.dart] Upload error: $e');
       if (!mounted) {
         return;
       }
-
+      // Rollback: clear the optimistic overlay so the stale cache is shown
+      // instead of the phantom files.
+      setState(() => _optimisticFiles = null);
       _showMessage('Upload failed');
     } finally {
       if (mounted) {
@@ -336,6 +408,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       _isCreatingFolder = true;
     });
 
+    // Optimistic: add folder placeholder immediately.
+    _optimisticAddFolder(folderName, _currentPath);
+
     try {
       await _controller.createFolder(
         currentPath: _currentPath,
@@ -346,15 +421,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         return;
       }
 
-      _refreshFileState();
-
       _showMessage('Created folder $folderName');
-    } catch (_) {
-      debugPrint('[file_browser_page.dart] Error in catch block');
+    } catch (e) {
+      debugPrint('[file_browser_page.dart] Create folder error: $e');
       if (!mounted) {
         return;
       }
-
+      setState(() => _optimisticFiles = null);
       _showMessage('Failed to create folder');
     } finally {
       if (mounted) {
@@ -380,16 +453,24 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         return;
       }
 
-      if (action == FileMenuAction.moveRename) {
-        if (outcome.shouldRefresh) {
-          _refreshFileState();
+      // Apply optimistic updates immediately after a confirmed successful
+      // action — the UI reflects the change before the background refresh
+      // returns ground truth from the backend.
+      if (outcome.shouldRefresh) {
+        switch (action) {
+          case FileMenuAction.delete:
+            _optimisticRemoveNode(node);
+          case FileMenuAction.moveRename:
+            // The outcome message carries the new path; fall back to refresh.
+            _refreshFileState();
+          default:
+            _refreshFileState();
         }
-        return;
       }
 
-      _applyOutcome(outcome);
-    } catch (_) {
-      debugPrint('[file_browser_page.dart] Error in catch block');
+      _showOutcomeMessage(outcome);
+    } catch (e) {
+      debugPrint('[file_browser_page.dart] File action error: $e');
       if (!mounted) {
         return;
       }
@@ -402,13 +483,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
   }
 
-  void _applyOutcome(FileMenuActionOutcome outcome) {
+  void _showOutcomeMessage(FileMenuActionOutcome outcome) {
     if (!mounted) {
       return;
-    }
-
-    if (outcome.shouldRefresh) {
-      _refreshFileState();
     }
 
     final messenger = ScaffoldMessenger.maybeOf(context);
@@ -709,7 +786,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                               ? (_searchFuture ??
                                     Future.value(const <CirrusFileNode>[]))
                               : _filesFuture,
-                          initialData: _isSearchMode ? null : _cachedFiles,
+                          initialData: _isSearchMode ? null : _displayFiles,
                           onFileMenuAction: _handleFileMenuAction,
                           onOpenDirectory: _isSearchMode
                               ? (_) {}
