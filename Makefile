@@ -329,17 +329,9 @@ upgrade/go: generate/backend ## Upgrade dependencies (go)
 .PHONY: watch/backend
 watch/backend: build/backend ## Watch backend for changes
 ifeq ($(AS_ROOT), 1)
-	$(AIR) \
-		--build.cmd "sudo $(MAKE) build/backend" \
-		--build.entrypoint "$(EXE)" \
-		--build.args_bin "serve" \
-		--build.exclude_dir ".dart_tool,.idea,.ralph,app,build,cd,datalinks,docs,internal/db,scripts,sql,android,ios,lib"
+	$(AIR) --build.cmd "sudo $(MAKE) build/backend"
 else
-	$(AIR) \
-		--build.cmd "$(MAKE) build/backend" \
-		--build.entrypoint "$(EXE)" \
-		--build.args_bin "serve" \
-		--build.exclude_dir ".dart_tool,.idea,.ralph,app,build,cd,datalinks,docs,internal/db,scripts,sql,android,ios,lib"
+	$(AIR)
 endif
 
 .PHONY: watch/frontend
