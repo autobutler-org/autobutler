@@ -372,6 +372,10 @@ class _PhotosPageState extends State<PhotosPage>
                               name: c.name,
                               initialIndex: idx,
                               imageCount: photos.length,
+                              getImageCount: () async =>
+                                  (await _photosForCategory(
+                                    _selectedCategory,
+                                  )).length,
                               onLoadImage: (newIdx) async {
                                 final live = await _photosForCategory(
                                   _selectedCategory,
@@ -432,6 +436,10 @@ class _PhotosPageState extends State<PhotosPage>
                             name: a.id,
                             initialIndex: idx,
                             imageCount: photos.length,
+                            getImageCount: () async =>
+                                (await _photosForCategory(
+                                  _selectedCategory,
+                                )).length,
                             onLoadImage: (newIdx) async {
                               final live = await _photosForCategory(
                                 _selectedCategory,

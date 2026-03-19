@@ -28,6 +28,10 @@ class ImageViewerPage extends StatefulWidget {
   /// Required when [imageCount] > 1.
   final Future<(Uint8List?, String)> Function(int index)? onLoadImage;
 
+  /// Optional callback to get the current total image count.
+  /// When provided, the counter in the app bar stays live.
+  final Future<int> Function()? getImageCount;
+
   const ImageViewerPage({
     super.key,
     required this.bytes,
@@ -35,6 +39,7 @@ class ImageViewerPage extends StatefulWidget {
     this.initialIndex = 0,
     this.imageCount = 1,
     this.onLoadImage,
+    this.getImageCount,
   });
 
   @override
@@ -46,6 +51,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
   late Uint8List _currentBytes;
   late String _currentName;
   bool _loading = false;
+  late int _liveImageCount;
 
   final _focusNode = FocusNode();
 
@@ -55,6 +61,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
     _currentIndex = widget.initialIndex;
     _currentBytes = widget.bytes;
     _currentName = widget.name;
+    _liveImageCount = widget.imageCount;
   }
 
   @override
@@ -64,7 +71,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
   }
 
   bool get _hasPrev => _currentIndex > 0;
-  bool get _hasNext => _currentIndex < widget.imageCount - 1;
+  bool get _hasNext => _currentIndex < _liveImageCount - 1;
 
   Future<void> _navigate(int delta) async {
     if (_loading) return;
@@ -88,10 +95,16 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
         }
         return;
       }
+      int updatedCount = widget.imageCount;
+      if (widget.getImageCount != null) {
+        updatedCount = await widget.getImageCount!();
+      }
+      if (!mounted) return;
       setState(() {
         _currentIndex = newIndex;
         _currentBytes = bytes;
         _currentName = name;
+        _liveImageCount = updatedCount;
         _loading = false;
       });
     } catch (e) {
@@ -127,7 +140,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
 
   @override
   Widget build(BuildContext context) {
-    final showNav = widget.imageCount > 1;
+    final showNav = _liveImageCount > 1;
     return KeyboardListener(
       focusNode: _focusNode,
       autofocus: true,
@@ -147,7 +160,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
               ),
               if (showNav)
                 Text(
-                  '${_currentIndex + 1} / ${widget.imageCount}',
+                  '${_currentIndex + 1} / $_liveImageCount',
                   style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
             ],
