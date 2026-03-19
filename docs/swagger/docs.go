@@ -902,6 +902,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/storage/devices/rename": {
+            "patch": {
+                "description": "Sets a custom display name for a storage device identified by its device path",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "storage"
+                ],
+                "summary": "Rename a storage device",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device path (e.g. /dev/disk3s5 — leading slash included in wildcard)",
+                        "name": "devicePath",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "{name: string}",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/storage/devices/status": {
             "get": {
                 "description": "Returns statuses for all known storage devices",
@@ -1054,59 +1107,6 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/storage/devices/{devicePath}/name": {
-            "patch": {
-                "description": "Sets a custom display name for a storage device identified by its device path",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "storage"
-                ],
-                "summary": "Rename a storage device",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "URL-encoded device path (e.g. %2Fdev%2Fmmcblk0p2)",
-                        "name": "devicePath",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "{name: string}",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }

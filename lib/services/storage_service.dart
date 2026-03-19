@@ -103,8 +103,11 @@ class StorageService with AuthenticatedService {
 
   /// Sets a custom display name for a device identified by [devicePath].
   static Future<void> renameDevice(String devicePath, String name) async {
-    final encoded = Uri.encodeComponent(devicePath);
-    final uri = _apiBaseUri.resolve('/api/v1/storage/devices/$encoded/name');
+    // Device paths contain slashes (e.g. /dev/disk3s5) — pass as a query
+    // param so they don't get misinterpreted as URL path segments.
+    final uri = _apiBaseUri
+        .resolve('/api/v1/storage/devices/rename')
+        .replace(queryParameters: {'devicePath': devicePath});
     final response = await http.patch(
       uri,
       headers: {'Content-Type': 'application/json', ..._authHeaders},

@@ -20,19 +20,21 @@ const maxDeviceNameLength = 64
 // @Tags storage
 // @Accept json
 // @Produce json
-// @Param devicePath path string true "URL-encoded device path (e.g. %2Fdev%2Fmmcblk0p2)"
+// @Param devicePath path string true "Device path (e.g. /dev/disk3s5 — leading slash included in wildcard)"
 // @Param body body object true "{name: string}"
 // @Success 200 {object} object
 // @Failure 400 {object} serverutil.Response
 // @Failure 500 {object} serverutil.Response
-// @Router /storage/devices/{devicePath}/name [patch]
+// @Router /storage/devices/rename [patch]
 func renameDevice(c *gin.Context) *serverutil.Response {
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	if !ok || deps.Database() == nil {
 		return serverutil.InternalServerError(nil)
 	}
 
-	devicePath := c.Param("devicePath")
+	// Device paths contain slashes (e.g. /dev/disk3s5) which can't be
+	// embedded in a URL path segment without ambiguity. Accept via query param.
+	devicePath := c.Query("devicePath")
 	if devicePath == "" {
 		return serverutil.BadRequest(nil)
 	}
@@ -68,5 +70,5 @@ func renameDevice(c *gin.Context) *serverutil.Response {
 }
 
 var renameDeviceRoute = serverutil.ApiRoute(
-	"PATCH", "/storage/devices/:devicePath/name", renameDevice,
+	"PATCH", "/storage/devices/rename", renameDevice,
 )
