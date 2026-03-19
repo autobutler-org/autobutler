@@ -77,7 +77,15 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
       final (bytes, name) = await widget.onLoadImage!(newIndex);
       if (!mounted) return;
       if (bytes == null) {
-        setState(() => _loading = false);
+        if (mounted) {
+          setState(() => _loading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Image no longer available'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
         return;
       }
       setState(() {
@@ -88,7 +96,15 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
       });
     } catch (e) {
       debugPrint('[image_viewer_page.dart] Navigation error: $e');
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Image no longer available'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
