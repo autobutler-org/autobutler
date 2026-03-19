@@ -128,6 +128,7 @@ class SbomService with AuthenticatedService {
     try {
       return GoSbom.fromJson(goSbomJson);
     } catch (e) {
+      debugPrint('[sbom_service.dart] Error: $e');
       throw Exception('Failed to parse Go SBOM response: $e');
     }
   }
@@ -145,6 +146,7 @@ class SbomService with AuthenticatedService {
         final raw = await rootBundle.loadString(assetPath);
         return _parseFlutterPackages(raw);
       } catch (e) {
+        debugPrint('[sbom_service.dart] Error: $e');
         rootBundleError = e;
       }
     }

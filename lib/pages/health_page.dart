@@ -39,6 +39,7 @@ class _HealthPageState extends State<HealthPage>
         _error = null;
       });
     } catch (e) {
+      debugPrint('[health_page.dart] Error: $e');
       if (!mounted) return;
       setState(() => _error = e.toString());
     }

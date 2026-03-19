@@ -48,6 +48,7 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
       });
       await networkController.play();
     } catch (_) {
+      debugPrint('[video_viewer_page.dart] Error in catch block');
       await _disposeController();
       if (!mounted) {
         return;

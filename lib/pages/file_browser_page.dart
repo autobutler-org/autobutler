@@ -42,6 +42,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   late Future<List<CirrusFileNode>> _filesFuture;
   List<CirrusFileNode>?
   _cachedFiles; // last successful result, shown during refresh
+  int _generation = 0; // incremented on each reload to discard stale fetches
   String _currentPath = '';
   bool _isGridView = false;
   bool _isUploading = false;
@@ -83,8 +84,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    final generation = ++_generation;
     _filesFuture = _controller.fetchFiles(_currentPath).then((files) {
-      if (mounted) setState(() => _cachedFiles = files);
+      if (mounted && _generation == generation) {
+        setState(() => _cachedFiles = files);
+      }
       return files;
     });
   }
@@ -120,6 +124,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           : '${selectedFiles.length} files';
       _showMessage('Uploaded $uploadedLabel');
     } catch (_) {
+      debugPrint('[file_browser_page.dart] Error in catch block');
       if (!mounted) {
         return;
       }
@@ -193,6 +198,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
       await _uploadSelectedFiles(selectedFiles, uploadPath);
     } catch (_) {
+      debugPrint('[file_browser_page.dart] Error in catch block');
       _showMessage('Unable to read dropped files');
     }
   }
@@ -344,6 +350,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
       _showMessage('Created folder $folderName');
     } catch (_) {
+      debugPrint('[file_browser_page.dart] Error in catch block');
       if (!mounted) {
         return;
       }
@@ -382,6 +389,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
       _applyOutcome(outcome);
     } catch (_) {
+      debugPrint('[file_browser_page.dart] Error in catch block');
       if (!mounted) {
         return;
       }
@@ -480,6 +488,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         return;
       }
     } catch (_) {
+      debugPrint('[file_browser_page.dart] Error in catch block');
       if (!mounted) {
         return;
       }

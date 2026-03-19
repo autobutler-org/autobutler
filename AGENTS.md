@@ -117,6 +117,20 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
 - Use `flutter analyze` and relevant tests to validate changes when possible.
 - Keep changes minimal, targeted, and consistent with existing patterns in the repository.
 
+### Pull request and commit conventions (always follow this)
+
+- **PR titles must use conventional commits format:** `type: description`
+  - `feat:` — new feature
+  - `fix:` — bug fix
+  - `chore:` — maintenance, tooling, config
+  - `refactor:` — code change with no behaviour change
+  - `docs:` — documentation only
+  - `test:` — adding or fixing tests
+  - `perf:` — performance improvement
+- The description should be lowercase, imperative mood: `fix: add null check` not `Fix: Added null check`
+- Include the issue number in the PR body (`Closes #N`), not the title
+- Branch names should reflect the issue: `fix/123-short-description`, `feat/456-short-description`
+
 ### Platform and generated code
 
 - Do not manually edit generated artifacts or build outputs (for example under `build/`, `ios/Flutter/ephemeral/`, or

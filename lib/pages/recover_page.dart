@@ -50,6 +50,7 @@ class _RecoverPageState extends State<RecoverPage> {
         context.go(AppRoutes.login);
       }
     } catch (e) {
+      debugPrint('[recover_page.dart] Error: $e');
       if (!mounted) return;
       setState(() {
         _error = e.toString().replaceFirst('Exception: ', '');

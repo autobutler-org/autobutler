@@ -61,6 +61,7 @@ class _SetupPageState extends State<SetupPage> {
         _loading = false;
       });
     } catch (e) {
+      debugPrint('[setup_page.dart] Error: $e');
       if (!mounted) return;
       setState(() {
         _error = e.toString().replaceFirst('Exception: ', '');
@@ -118,7 +119,7 @@ class _SetupPageState extends State<SetupPage> {
   }
 }
 
-class _SetupForm extends StatelessWidget {
+class _SetupForm extends StatefulWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController usernameController;
   final TextEditingController passwordController;
@@ -152,10 +153,34 @@ class _SetupForm extends StatelessWidget {
   });
 
   @override
+  State<_SetupForm> createState() => _SetupFormState();
+}
+
+class _SetupFormState extends State<_SetupForm> {
+  void _onPasswordChanged() {
+    // Re-validate so the confirm field updates its error state in real-time
+    // when the password field changes after the confirm field has been touched.
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    widget.passwordController.addListener(_onPasswordChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.passwordController.removeListener(_onPasswordChanged);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Form(
-      key: formKey,
+      key: widget.formKey,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -184,14 +209,14 @@ class _SetupForm extends StatelessWidget {
           ),
           const SizedBox(height: 32),
 
-          if (error != null) ...[
-            _ErrorBanner(message: error!),
+          if (widget.error != null) ...[
+            _ErrorBanner(message: widget.error!),
             const SizedBox(height: 16),
           ],
 
           TextFormField(
-            controller: usernameController,
-            focusNode: usernameFocus,
+            controller: widget.usernameController,
+            focusNode: widget.usernameFocus,
             decoration: const InputDecoration(
               labelText: 'Username',
               border: OutlineInputBorder(),
@@ -201,7 +226,7 @@ class _SetupForm extends StatelessWidget {
             autofillHints: const [AutofillHints.newUsername],
             autocorrect: false,
             onFieldSubmitted: (_) {
-              FocusScope.of(context).requestFocus(passwordFocus);
+              FocusScope.of(context).requestFocus(widget.passwordFocus);
             },
             validator: (v) =>
                 (v == null || v.trim().isEmpty) ? 'Username is required' : null,
@@ -209,9 +234,9 @@ class _SetupForm extends StatelessWidget {
           const SizedBox(height: 16),
 
           TextFormField(
-            controller: passwordController,
-            focusNode: passwordFocus,
-            obscureText: obscurePassword,
+            controller: widget.passwordController,
+            focusNode: widget.passwordFocus,
+            obscureText: widget.obscurePassword,
             decoration: InputDecoration(
               labelText: 'Password',
               helperText: 'At least 8 characters',
@@ -219,18 +244,20 @@ class _SetupForm extends StatelessWidget {
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
                 icon: Icon(
-                  obscurePassword
+                  widget.obscurePassword
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
                 ),
-                tooltip: obscurePassword ? 'Show password' : 'Hide password',
-                onPressed: onTogglePassword,
+                tooltip: widget.obscurePassword
+                    ? 'Show password'
+                    : 'Hide password',
+                onPressed: widget.onTogglePassword,
               ),
             ),
             textInputAction: TextInputAction.next,
             autofillHints: const [AutofillHints.newPassword],
             onFieldSubmitted: (_) {
-              FocusScope.of(context).requestFocus(confirmFocus);
+              FocusScope.of(context).requestFocus(widget.confirmFocus);
             },
             validator: (v) {
               if (v == null || v.isEmpty) return 'Password is required';
@@ -241,37 +268,41 @@ class _SetupForm extends StatelessWidget {
           const SizedBox(height: 16),
 
           TextFormField(
-            controller: confirmController,
-            focusNode: confirmFocus,
-            obscureText: obscureConfirm,
+            controller: widget.confirmController,
+            focusNode: widget.confirmFocus,
+            obscureText: widget.obscureConfirm,
             decoration: InputDecoration(
               labelText: 'Confirm password',
               border: const OutlineInputBorder(),
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
                 icon: Icon(
-                  obscureConfirm
+                  widget.obscureConfirm
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
                 ),
-                tooltip: obscureConfirm ? 'Show password' : 'Hide password',
-                onPressed: onToggleConfirm,
+                tooltip: widget.obscureConfirm
+                    ? 'Show password'
+                    : 'Hide password',
+                onPressed: widget.onToggleConfirm,
               ),
             ),
             textInputAction: TextInputAction.done,
             autofillHints: const [AutofillHints.newPassword],
-            onFieldSubmitted: (_) => loading ? null : onSubmit(),
+            onFieldSubmitted: (_) => widget.loading ? null : widget.onSubmit(),
             validator: (v) {
               if (v == null || v.isEmpty) return 'Please confirm your password';
-              if (v != passwordController.text) return 'Passwords do not match';
+              if (v != widget.passwordController.text) {
+                return 'Passwords do not match';
+              }
               return null;
             },
           ),
           const SizedBox(height: 24),
 
           FilledButton(
-            onPressed: loading ? null : onSubmit,
-            child: loading
+            onPressed: widget.loading ? null : widget.onSubmit,
+            child: widget.loading
                 ? const SizedBox(
                     height: 20,
                     width: 20,

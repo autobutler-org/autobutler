@@ -74,6 +74,7 @@ class _PhotosPageState extends State<PhotosPage>
     try {
       return await loader();
     } catch (_) {
+      debugPrint('[photos_page.dart] Error in catch block');
       return const <PhotoItem>[];
     }
   }
@@ -366,8 +367,41 @@ class _PhotosPageState extends State<PhotosPage>
                         if (!mounted) return;
                         await navigator.push(
                           MaterialPageRoute(
-                            builder: (_) =>
-                                ImageViewerPage(bytes: bytes, name: c.name),
+                            builder: (_) => ImageViewerPage(
+                              bytes: bytes,
+                              name: c.name,
+                              initialIndex: idx,
+                              imageCount: photos.length,
+                              getImageCount: () async =>
+                                  (await _photosForCategory(
+                                    _selectedCategory,
+                                  )).length,
+                              onLoadImage: (newIdx) async {
+                                final live = await _photosForCategory(
+                                  _selectedCategory,
+                                );
+                                if (newIdx >= live.length) return (null, '');
+                                final item = live[newIdx];
+                                if (item.isCirrus) {
+                                  final nc = item.cirrus!;
+                                  var b = await CirrusService.downloadFileBytes(
+                                    nc.apiPath,
+                                    serial: nc.deviceSerial,
+                                  );
+                                  if (b == null) {
+                                    // File missing — refresh the list and return null
+                                    // so the viewer can show 'no longer available'.
+                                    await manualRefresh();
+                                  }
+                                  return (b, nc.name);
+                                } else {
+                                  final na = item.asset!;
+                                  final b = await na.originBytes;
+                                  if (b == null) await manualRefresh();
+                                  return (b, na.id);
+                                }
+                              },
+                            ),
                           ),
                         );
                       },
@@ -397,8 +431,37 @@ class _PhotosPageState extends State<PhotosPage>
                       if (!mounted) return;
                       await navigator.push(
                         MaterialPageRoute(
-                          builder: (_) =>
-                              ImageViewerPage(bytes: bytes, name: a.id),
+                          builder: (_) => ImageViewerPage(
+                            bytes: bytes,
+                            name: a.id,
+                            initialIndex: idx,
+                            imageCount: photos.length,
+                            getImageCount: () async =>
+                                (await _photosForCategory(
+                                  _selectedCategory,
+                                )).length,
+                            onLoadImage: (newIdx) async {
+                              final live = await _photosForCategory(
+                                _selectedCategory,
+                              );
+                              if (newIdx >= live.length) return (null, '');
+                              final item = live[newIdx];
+                              if (item.isCirrus) {
+                                final nc = item.cirrus!;
+                                var b = await CirrusService.downloadFileBytes(
+                                  nc.apiPath,
+                                  serial: nc.deviceSerial,
+                                );
+                                if (b == null) await manualRefresh();
+                                return (b, nc.name);
+                              } else {
+                                final na = item.asset!;
+                                final b = await na.originBytes;
+                                if (b == null) await manualRefresh();
+                                return (b, na.id);
+                              }
+                            },
+                          ),
                         ),
                       );
                     },
