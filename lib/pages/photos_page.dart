@@ -380,15 +380,20 @@ class _PhotosPageState extends State<PhotosPage>
                                 final item = live[newIdx];
                                 if (item.isCirrus) {
                                   final nc = item.cirrus!;
-                                  final b =
-                                      await CirrusService.downloadFileBytes(
-                                        nc.apiPath,
-                                        serial: nc.deviceSerial,
-                                      );
+                                  var b = await CirrusService.downloadFileBytes(
+                                    nc.apiPath,
+                                    serial: nc.deviceSerial,
+                                  );
+                                  if (b == null) {
+                                    // File missing — refresh the list and return null
+                                    // so the viewer can show 'no longer available'.
+                                    await manualRefresh();
+                                  }
                                   return (b, nc.name);
                                 } else {
                                   final na = item.asset!;
                                   final b = await na.originBytes;
+                                  if (b == null) await manualRefresh();
                                   return (b, na.id);
                                 }
                               },
@@ -435,14 +440,16 @@ class _PhotosPageState extends State<PhotosPage>
                               final item = live[newIdx];
                               if (item.isCirrus) {
                                 final nc = item.cirrus!;
-                                final b = await CirrusService.downloadFileBytes(
+                                var b = await CirrusService.downloadFileBytes(
                                   nc.apiPath,
                                   serial: nc.deviceSerial,
                                 );
+                                if (b == null) await manualRefresh();
                                 return (b, nc.name);
                               } else {
                                 final na = item.asset!;
                                 final b = await na.originBytes;
+                                if (b == null) await manualRefresh();
                                 return (b, na.id);
                               }
                             },
