@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/utils/auto_refresh_mixin.dart';
-import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/settings_page.dart';
@@ -14,10 +13,9 @@ import 'package:autobutler/utils/file_browser_drag_config.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
-import 'package:autobutler/widgets/file_browser/file_actions_bar.dart';
-import 'package:autobutler/widgets/file_browser/file_breadcrumb_bar.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
+import 'package:autobutler/widgets/file_browser/file_top_bar.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:autobutler/router.dart';
@@ -553,33 +551,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        title: const Text('Cirrus'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            onPressed: _handleSearchPressed,
-            icon: const Icon(Icons.search),
-          ),
-          IconButton(
-            onPressed: () {
-              setState(() => _isGridView = !_isGridView);
-            },
-            icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view_rounded),
-          ),
-          RefreshIconButton(
-            isRefreshing: isRefreshing,
-            onPressed: _refreshFileState,
-            tooltip: 'Refresh files',
-          ),
-        ],
-      ),
       drawer: AutobutlerDrawer(
         activeSection: AutobutlerDrawerSection.cirrus,
         onTapCirrus: () {
@@ -597,19 +568,25 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       ),
       body: Column(
         children: [
-          FileActionsBar(
-            isUploading: _isUploading,
-            isCreatingFolder: _isCreatingFolder,
-            onUploadPressed: _handleUploadPressed,
-            onCreateFolderPressed: _handleCreateFolderPressed,
-            isSearchMode: _isSearchMode,
-          ),
-          FileBreadcrumbBar(
-            currentPath: _currentPath,
-            onGoHome: () => _setPath(''),
-            onGoUp: _goUpOneLevel,
-            onPathSelected: _setPath,
-            isSearchMode: _isSearchMode,
+          Builder(
+            builder: (context) => FileTopBar(
+              currentPath: _currentPath,
+              isGridView: _isGridView,
+              isSearchMode: _isSearchMode,
+              isUploading: _isUploading,
+              isCreatingFolder: _isCreatingFolder,
+              isRefreshing: isRefreshing,
+              onGoHome: () => _setPath(''),
+              onGoUp: _goUpOneLevel,
+              onPathSelected: _setPath,
+              onToggleView: () => setState(() => _isGridView = !_isGridView),
+              onSearchPressed: _handleSearchPressed,
+              onRefresh: _refreshFileState,
+              onUploadPressed: _handleUploadPressed,
+              onCreateFolderPressed: _handleCreateFolderPressed,
+              onOpenDrawer: () => Scaffold.of(context).openDrawer(),
+              onOpenSettings: () => context.go(AppRoutes.settings),
+            ),
           ),
           FileBrowserHeader(
             isGridView: _isGridView,
