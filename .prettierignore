@@ -1,0 +1,4 @@
+build/
+dist/
+*.min.css
+internal/server/public/vendor/
