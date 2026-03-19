@@ -62,7 +62,7 @@ final router = GoRouter(
       Scaffold(body: Center(child: Text('Page not found: ${state.uri}'))),
 );
 
-/// Top-level redirect — handles auth gating.
+/// Top-level redirect — handles auth gating and butler instance mismatch detection.
 Future<String?> _authRedirect(BuildContext context, GoRouterState state) async {
   final publicRoutes = {AppRoutes.setup, AppRoutes.login, AppRoutes.recover};
 
@@ -72,14 +72,55 @@ Future<String?> _authRedirect(BuildContext context, GoRouterState state) async {
   // No host configured — let the main app handle the "add host" prompt.
   if (AppSettings.instance.activeHost == null) return null;
 
-  // Already authenticated.
-  if (AppSettings.instance.sessionToken != null) return null;
-
-  // Check server-side status.
+  // Check server-side status — always, even when authenticated, to catch
+  // instance mismatch (e.g. connected to a different butler than expected).
   try {
     final status = await AuthService.checkStatus();
+
+    // Warn the user if we detected a different butler at this host address.
+    // This can happen after a device swap or on a network with another butler
+    // at the same address (e.g. a neighbour's butler — issue #414).
+    if (status.instanceMismatch && context.mounted) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Different butler detected'),
+          content: Text(
+            'The butler at ${AppSettings.instance.activeHost ?? "this host"} '
+            'has a different identity than the one you previously connected to. '
+            'This can happen if you\'re on a different network, or if another '
+            'butler is reachable at the same address.\n\n'
+            'Your session has been cleared. Please log in to confirm '
+            'you\'re connecting to the right butler.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('OK, connect'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed == true) {
+        final host = AppSettings.instance.activeHost;
+        if (host != null) {
+          await AppSettings.instance.clearInstanceId(host);
+        }
+        await AppSettings.instance.setSessionToken(null);
+      }
+    }
+
     if (!status.setupComplete) return AppRoutes.setup;
-    return AppRoutes.login;
+
+    // If no session token, go to login.
+    if (AppSettings.instance.sessionToken == null) return AppRoutes.login;
+
+    return null;
   } catch (_) {
     // Can't reach butler — allow through; individual pages will surface errors.
     return null;
