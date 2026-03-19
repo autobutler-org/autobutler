@@ -68,8 +68,10 @@ class AppSettings {
     }
 
     // Load persisted instance IDs for all known hosts.
-    final instanceIdsJson = _prefs!.getString('instanceIds') ?? '{}';
+    // Wrap getString in a try/catch as a defensive measure — on Flutter web,
+    // manually edited localStorage values may return non-string types.
     try {
+      final instanceIdsJson = _prefs!.getString('instanceIds') ?? '{}';
       final decoded = jsonDecode(instanceIdsJson) as Map<String, dynamic>;
       _instanceIds = decoded.map((k, v) => MapEntry(k, v.toString()));
     } catch (_) {
