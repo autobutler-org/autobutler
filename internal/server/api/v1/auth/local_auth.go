@@ -7,6 +7,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/authutil"
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/instanceutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 
 	"github.com/gin-gonic/gin"
@@ -40,14 +41,20 @@ func getQueries(c *gin.Context) (*deputil.Dependencies, bool) {
 func authStatus(c *gin.Context) *serverutil.Response {
 	deps, ok := getQueries(c)
 	if !ok || (*deps).Database() == nil {
-		return serverutil.Ok().WithData(gin.H{"setup": false})
+		return serverutil.Ok().WithData(gin.H{"setup": false, "instanceId": ""})
 	}
 
 	complete, err := authutil.IsSetupComplete(c.Request.Context(), (*deps).Database().Queries)
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
-	return serverutil.Ok().WithData(gin.H{"setup": complete})
+
+	// Include the instance ID so clients can detect when they've connected
+	// to a different butler than expected (e.g. neighbor's butler at the
+	// same LAN hostname — see issue #414).
+	instanceID, _ := instanceutil.GetInstanceID(c.Request.Context(), (*deps).Database().Queries)
+
+	return serverutil.Ok().WithData(gin.H{"setup": complete, "instanceId": instanceID})
 }
 
 var authStatusRoute = serverutil.ApiRoute("GET", "/auth/status", authStatus)

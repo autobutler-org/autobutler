@@ -10,6 +10,7 @@ import (
 	"github.com/autobutler-org/autobutler/internal/server/middleware"
 	"github.com/autobutler-org/autobutler/pkg/botel"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/instanceutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 	"github.com/autobutler-org/autobutler/pkg/util/workerutil"
 
@@ -61,6 +62,15 @@ func StartServer(deps deputil.Dependencies) error {
 	deps.WithWorker(workerutil.NewWorker(deps.StorageService()))
 	if err := setupServices(deps); err != nil {
 		return fmt.Errorf("failed to setup services: %w", err)
+	}
+
+	// Ensure the butler has a stable instance ID. This is a no-op after
+	// first boot. The ID is served via /auth/status so Flutter clients can
+	// detect when they've connected to a different butler (issue #414).
+	if db := deps.Database(); db != nil {
+		if err := instanceutil.EnsureInstanceID(context.Background(), db.Queries); err != nil {
+			log.Printf("Warning: failed to ensure instance ID: %v", err)
+		}
 	}
 
 	router := gin.Default()

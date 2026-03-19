@@ -49,6 +49,13 @@ class _AuthGateState extends State<AuthGate> {
     try {
       final status = await AuthService.checkStatus();
       if (!mounted) return;
+
+      // Warn the user if we detected a different butler at this host address.
+      if (status.instanceMismatch) {
+        await _showInstanceMismatchWarning();
+        if (!mounted) return;
+      }
+
       setState(() {
         _state = status.setupComplete ? _GateState.login : _GateState.firstBoot;
       });
@@ -58,6 +65,39 @@ class _AuthGateState extends State<AuthGate> {
       // If we can't reach the butler, let the main app handle the error.
       setState(() => _state = _GateState.authenticated);
     }
+  }
+
+  Future<void> _showInstanceMismatchWarning() async {
+    final host = AppSettings.instance.activeHost ?? 'this host';
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Different butler detected'),
+        content: Text(
+          'The butler at $host has a different identity than the one '
+          'you previously connected to. This can happen if you\'re on a '
+          'different network, or if another butler is reachable at the '
+          'same address (e.g. a neighbour\'s butler).\n\n'
+          'Your session has been cleared. Please log in to confirm '
+          'you\'re connecting to the right butler.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () {
+              // Clear the stored ID so it adopts the new butler's ID on next check.
+              final host = AppSettings.instance.activeHost;
+              if (host != null) {
+                AppSettings.instance.clearInstanceId(host);
+              }
+              AppSettings.instance.setSessionToken(null);
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _onAuthenticated() {

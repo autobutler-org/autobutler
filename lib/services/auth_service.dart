@@ -9,7 +9,20 @@ class AuthStatus {
   /// Whether the butler has been set up with a local account.
   final bool setupComplete;
 
-  const AuthStatus({required this.setupComplete});
+  /// The butler's unique instance ID. Empty string if the server doesn't
+  /// support it yet (older firmware). Used to detect when the app has
+  /// connected to a different butler than expected (issue #414).
+  final String instanceId;
+
+  /// True if the app previously connected to a different butler at this
+  /// host address. The UI should warn the user.
+  final bool instanceMismatch;
+
+  const AuthStatus({
+    required this.setupComplete,
+    this.instanceId = '',
+    this.instanceMismatch = false,
+  });
 }
 
 /// Result of [AuthService.setup] — shown once, must be surfaced to the user.
@@ -42,14 +55,40 @@ class AuthService {
   }
 
   /// Checks whether initial setup has been completed on the butler.
+  ///
+  /// Also verifies the butler's instance ID against the stored value for
+  /// this host. If the IDs differ, [AuthStatus.instanceMismatch] is true
+  /// and the caller should warn the user that they may be connected to a
+  /// different butler than expected (e.g. a neighbour's butler at the same
+  /// LAN hostname — issue #414).
   static Future<AuthStatus> checkStatus() async {
+    final host = AppSettings.instance.activeHost ?? '';
     final uri = _baseUri.resolve('/api/v1/auth/status');
     final response = await http.get(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to check auth status (${response.statusCode})');
     }
     final body = jsonDecode(response.body) as Map<String, dynamic>;
-    return AuthStatus(setupComplete: body['setup'] as bool? ?? false);
+    final setupComplete = body['setup'] as bool? ?? false;
+    final instanceId = body['instanceId'] as String? ?? '';
+
+    bool instanceMismatch = false;
+    if (instanceId.isNotEmpty && host.isNotEmpty) {
+      final stored = AppSettings.instance.instanceIdFor(host);
+      if (stored == null) {
+        // First time connecting to this host — store the ID.
+        await AppSettings.instance.setInstanceId(host, instanceId);
+      } else if (stored != instanceId) {
+        // Different butler at same address.
+        instanceMismatch = true;
+      }
+    }
+
+    return AuthStatus(
+      setupComplete: setupComplete,
+      instanceId: instanceId,
+      instanceMismatch: instanceMismatch,
+    );
   }
 
   /// Creates the owner account on first boot.

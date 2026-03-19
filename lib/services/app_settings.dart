@@ -27,6 +27,10 @@ class AppSettings {
   List<HostEntry> _hosts = [];
   int _activeIndex = -1;
   String? _sessionToken;
+  // Instance ID per host — keyed by host address. Persisted so the app can
+  // detect when it connects to a different butler (e.g. neighbour's butler
+  // at the same LAN hostname). See issue #414.
+  Map<String, String> _instanceIds = {};
   SharedPreferences? _prefs;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
@@ -61,6 +65,15 @@ class AppSettings {
       _sessionToken = _prefs!.getString(_sessionTokenKey);
     } else {
       _sessionToken = await _secureStorage.read(key: _sessionTokenKey);
+    }
+
+    // Load persisted instance IDs for all known hosts.
+    final instanceIdsJson = _prefs!.getString('instanceIds') ?? '{}';
+    try {
+      final decoded = jsonDecode(instanceIdsJson) as Map<String, dynamic>;
+      _instanceIds = decoded.map((k, v) => MapEntry(k, v.toString()));
+    } catch (_) {
+      _instanceIds = {};
     }
 
     // If no hosts configured and running in debug (local development), add a local loopback
@@ -113,6 +126,22 @@ class AppSettings {
   String? get activeHost => (_activeIndex >= 0 && _activeIndex < _hosts.length)
       ? _hosts[_activeIndex].hostAddress
       : null;
+
+  /// Returns the stored instance ID for [host], or null if not yet verified.
+  String? instanceIdFor(String host) => _instanceIds[host];
+
+  /// Stores the instance ID for [host] after a successful connection.
+  Future<void> setInstanceId(String host, String instanceId) async {
+    _instanceIds[host] = instanceId;
+    await _prefs?.setString('instanceIds', jsonEncode(_instanceIds));
+  }
+
+  /// Clears the stored instance ID for [host] (e.g. after explicit logout
+  /// or when the user adds the host afresh).
+  Future<void> clearInstanceId(String host) async {
+    _instanceIds.remove(host);
+    await _prefs?.setString('instanceIds', jsonEncode(_instanceIds));
+  }
 
   Future<void> _saveHosts() async {
     await _prefs?.setString(
