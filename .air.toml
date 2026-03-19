@@ -1,0 +1,72 @@
+# Air configuration for hot-reloading the autobutler backend.
+# https://github.com/air-verse/air
+#
+# This file provides the default (non-root) configuration.
+# `make watch/backend` may override individual flags on the CLI — CLI flags
+# always take precedence over this file, so the Makefile's AS_ROOT=1 branch
+# (which prefixes the build command with sudo) continues to work unchanged.
+#
+# Run directly:  air
+# Via Makefile:  make watch/backend
+
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  # Build command — overridden by Makefile when AS_ROOT=1
+  cmd = "make build/backend"
+
+  # Binary to run after a successful build
+  entrypoint = ["./build/autobutler"]
+
+  # Arguments passed to the binary on startup
+  args_bin = ["serve"]
+
+  # Directories to ignore when watching for changes.
+  # Flutter/Dart dirs excluded so frontend edits don't trigger a backend rebuild.
+  exclude_dir = [
+    ".dart_tool",
+    ".idea",
+    ".ralph",
+    "app",
+    "build",
+    "cd",
+    "datalinks",
+    "docs",
+    "internal/db",
+    "scripts",
+    "sql",
+    "android",
+    "ios",
+    "lib",
+  ]
+
+  # Only watch Go source files
+  include_ext = ["go"]
+
+  # Ignore test files — tests are run separately
+  exclude_regex = ["_test\\.go$"]
+
+  # Milliseconds to wait before rebuilding after a change
+  delay = 1000
+
+  stop_on_error = false
+  send_interrupt = false
+  kill_delay = "0s"
+
+[log]
+  time = false
+  silent = false
+
+[color]
+  build = "yellow"
+  runner = "green"
+  watcher = "cyan"
+  main = "magenta"
+
+[misc]
+  clean_on_exit = false
+
+[screen]
+  clear_on_rebuild = false
+  keep_scroll = true
