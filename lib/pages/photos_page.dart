@@ -373,7 +373,11 @@ class _PhotosPageState extends State<PhotosPage>
                               initialIndex: idx,
                               imageCount: photos.length,
                               onLoadImage: (newIdx) async {
-                                final item = photos[newIdx];
+                                final live = await _photosForCategory(
+                                  _selectedCategory,
+                                );
+                                if (newIdx >= live.length) return (null, '');
+                                final item = live[newIdx];
                                 if (item.isCirrus) {
                                   final nc = item.cirrus!;
                                   final b =
@@ -424,7 +428,11 @@ class _PhotosPageState extends State<PhotosPage>
                             initialIndex: idx,
                             imageCount: photos.length,
                             onLoadImage: (newIdx) async {
-                              final item = photos[newIdx];
+                              final live = await _photosForCategory(
+                                _selectedCategory,
+                              );
+                              if (newIdx >= live.length) return (null, '');
+                              final item = live[newIdx];
                               if (item.isCirrus) {
                                 final nc = item.cirrus!;
                                 final b = await CirrusService.downloadFileBytes(
