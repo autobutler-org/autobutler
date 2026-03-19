@@ -74,6 +74,7 @@ class _PhotosPageState extends State<PhotosPage>
     try {
       return await loader();
     } catch (_) {
+      debugPrint('[photos_page.dart] Error in catch block');
       return const <PhotoItem>[];
     }
   }

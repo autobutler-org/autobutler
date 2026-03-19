@@ -61,6 +61,7 @@ class _SetupPageState extends State<SetupPage> {
         _loading = false;
       });
     } catch (e) {
+      debugPrint('[setup_page.dart] Error: $e');
       if (!mounted) return;
       setState(() {
         _error = e.toString().replaceFirst('Exception: ', '');

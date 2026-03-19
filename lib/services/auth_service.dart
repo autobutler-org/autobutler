@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:autobutler/services/app_settings.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 /// Result of a successful [AuthService.checkStatus] call.
@@ -141,6 +142,7 @@ class AuthService {
       final decoded = jsonDecode(body) as Map<String, dynamic>;
       return decoded['error'] as String? ?? decoded['message'] as String?;
     } catch (_) {
+      debugPrint('[auth_service.dart] Error in catch block');
       return null;
     }
   }
