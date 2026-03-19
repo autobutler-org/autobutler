@@ -26,6 +26,15 @@ func listDeviceStatuses(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(err)
 	}
 
+	// Overlay custom display names when available.
+	if db := deps.Database(); db != nil {
+		for _, s := range statuses {
+			if name, err := db.Queries.GetDeviceName(c.Request.Context(), s.DevicePath); err == nil && name != "" {
+				s.Name = name
+			}
+		}
+	}
+
 	return serverutil.Ok().WithData(gin.H{
 		"devices": statuses,
 		"count":   len(statuses),

@@ -4,6 +4,7 @@ import 'package:autobutler/services/auth_service.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/services/connected_devices_service.dart';
 import 'package:autobutler/services/sbom_service.dart';
+import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/router.dart';
@@ -41,6 +42,11 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isLoadingDevices = false;
   String? _devicesError;
 
+  // Storage devices state
+  List<StorageDevice> _storageDevices = [];
+  bool _isLoadingStorage = false;
+  String? _storageError;
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +62,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _loadVersionInfo();
     _loadSbom();
     _loadDevices();
+    _loadStorageDevices();
   }
 
   Future<void> _loadDevices() async {
@@ -96,6 +103,74 @@ class _SettingsPageState extends State<SettingsPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to remove device: $e')));
+    }
+  }
+
+  Future<void> _loadStorageDevices() async {
+    if (AppSettings.instance.activeHost == null) {
+      setState(() {
+        _storageDevices = [];
+        _storageError = null;
+        _isLoadingStorage = false;
+      });
+      return;
+    }
+    setState(() {
+      _isLoadingStorage = true;
+      _storageError = null;
+    });
+    try {
+      final devices = await StorageService.listDevices();
+      if (!mounted) return;
+      setState(() {
+        _storageDevices = devices;
+        _isLoadingStorage = false;
+      });
+    } catch (e) {
+      debugPrint('[settings_page.dart] Error loading storage devices: $e');
+      if (!mounted) return;
+      setState(() {
+        _storageError = e.toString();
+        _isLoadingStorage = false;
+      });
+    }
+  }
+
+  Future<void> _renameStorageDevice(StorageDevice device) async {
+    final controller = TextEditingController(text: device.name);
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Rename device'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(labelText: 'Display name'),
+          autofocus: true,
+          onSubmitted: (v) => Navigator.of(ctx).pop(v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+            child: const Text('Rename'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (newName == null || newName.isEmpty) return;
+    try {
+      await StorageService.renameDevice(device.devicePath, newName);
+      await _loadStorageDevices();
+    } catch (e) {
+      debugPrint('[settings_page.dart] Error renaming storage device: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to rename device: $e')));
     }
   }
 
@@ -639,6 +714,92 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
           const SizedBox(height: 24),
+
+          // Storage devices
+          if (AppSettings.instance.activeHost != null) ...[
+            const Text(
+              'Storage',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: ExpansionTile(
+                title: const Text(
+                  'Storage devices',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  _isLoadingStorage
+                      ? 'Loading...'
+                      : _storageError != null
+                      ? 'Failed to load'
+                      : _storageDevices.isEmpty
+                      ? 'No devices found'
+                      : '${_storageDevices.length} device${_storageDevices.length == 1 ? '' : 's'}',
+                ),
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: RefreshIconButton(
+                        isRefreshing: _isLoadingStorage,
+                        onPressed: _loadStorageDevices,
+                        tooltip: 'Refresh',
+                      ),
+                    ),
+                  ),
+                  if (_isLoadingStorage)
+                    const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    )
+                  else if (_storageError != null)
+                    ListTile(
+                      leading: Icon(
+                        Icons.error_outline,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      title: const Text('Failed to load storage devices'),
+                      subtitle: Text(_storageError!),
+                    )
+                  else if (_storageDevices.isEmpty)
+                    const ListTile(title: Text('No storage devices found'))
+                  else
+                    ..._storageDevices.map((device) {
+                      return ListTile(
+                        leading: Icon(
+                          device.isInternal
+                              ? Icons.storage_rounded
+                              : Icons.usb_rounded,
+                        ),
+                        title: Text(
+                          device.name.isNotEmpty
+                              ? device.name
+                              : device.devicePath,
+                        ),
+                        subtitle: Text(
+                          '${device.usedDisplay} · ${device.usedPercent.toStringAsFixed(1)}% used · ${device.fileSystem}',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.edit_outlined),
+                          tooltip: 'Rename',
+                          onPressed: () => _renameStorageDevice(device),
+                        ),
+                      );
+                    }),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
 
           const Text(
             'Software Bill of Materials',
