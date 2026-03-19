@@ -42,6 +42,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   late Future<List<CirrusFileNode>> _filesFuture;
   List<CirrusFileNode>?
   _cachedFiles; // last successful result, shown during refresh
+  int _generation = 0; // incremented on each reload to discard stale fetches
   String _currentPath = '';
   bool _isGridView = false;
   bool _isUploading = false;
@@ -83,8 +84,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    final generation = ++_generation;
     _filesFuture = _controller.fetchFiles(_currentPath).then((files) {
-      if (mounted) setState(() => _cachedFiles = files);
+      if (mounted && _generation == generation) {
+        setState(() => _cachedFiles = files);
+      }
       return files;
     });
   }
