@@ -367,8 +367,28 @@ class _PhotosPageState extends State<PhotosPage>
                         if (!mounted) return;
                         await navigator.push(
                           MaterialPageRoute(
-                            builder: (_) =>
-                                ImageViewerPage(bytes: bytes, name: c.name),
+                            builder: (_) => ImageViewerPage(
+                              bytes: bytes,
+                              name: c.name,
+                              initialIndex: idx,
+                              imageCount: photos.length,
+                              onLoadImage: (newIdx) async {
+                                final item = photos[newIdx];
+                                if (item.isCirrus) {
+                                  final nc = item.cirrus!;
+                                  final b =
+                                      await CirrusService.downloadFileBytes(
+                                        nc.apiPath,
+                                        serial: nc.deviceSerial,
+                                      );
+                                  return (b, nc.name);
+                                } else {
+                                  final na = item.asset!;
+                                  final b = await na.originBytes;
+                                  return (b, na.id);
+                                }
+                              },
+                            ),
                           ),
                         );
                       },
@@ -398,8 +418,27 @@ class _PhotosPageState extends State<PhotosPage>
                       if (!mounted) return;
                       await navigator.push(
                         MaterialPageRoute(
-                          builder: (_) =>
-                              ImageViewerPage(bytes: bytes, name: a.id),
+                          builder: (_) => ImageViewerPage(
+                            bytes: bytes,
+                            name: a.id,
+                            initialIndex: idx,
+                            imageCount: photos.length,
+                            onLoadImage: (newIdx) async {
+                              final item = photos[newIdx];
+                              if (item.isCirrus) {
+                                final nc = item.cirrus!;
+                                final b = await CirrusService.downloadFileBytes(
+                                  nc.apiPath,
+                                  serial: nc.deviceSerial,
+                                );
+                                return (b, nc.name);
+                              } else {
+                                final na = item.asset!;
+                                final b = await na.originBytes;
+                                return (b, na.id);
+                              }
+                            },
+                          ),
                         ),
                       );
                     },
