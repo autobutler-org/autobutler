@@ -15,7 +15,9 @@ import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
+import 'package:autobutler/widgets/file_browser/file_storage_footer.dart';
 import 'package:autobutler/widgets/file_browser/file_top_bar.dart';
+import 'package:autobutler/widgets/file_browser/file_upload_zone.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:autobutler/router.dart';
@@ -604,6 +606,16 @@ class _FileBrowserPageState extends State<FileBrowserPage>
               });
             },
           ),
+          if (!_isSearchMode && !_noHostSelected)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: FileUploadZone(
+                isUploading: _isUploading,
+                isDragging: _isWebDragging,
+                onUploadPressed: _handleUploadPressed,
+                onDownloadPressed: null,
+              ),
+            ),
           Expanded(
             child: _noHostSelected
                 ? Center(
@@ -712,6 +724,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                     ),
                   ),
           ),
+          if (!_noHostSelected) const FileStorageFooter(),
         ],
       ),
     );
