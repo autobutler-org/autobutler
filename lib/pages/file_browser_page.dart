@@ -479,6 +479,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         return;
       }
 
+      // Rollback any optimistic state that may have been applied before the
+      // error (e.g. if the action partially executed).
+      setState(() => _optimisticFiles = null);
       _showMessage(_controller.failureMessage(action));
     }
   }
