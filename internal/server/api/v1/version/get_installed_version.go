@@ -17,8 +17,13 @@ import (
 func getInstalledVersion(c *gin.Context) *serverutil.Response {
 	version := versionutil.GetVersion()
 
+	semver := version.Semver
+	if semver == versionutil.NoSemver {
+		semver = ""
+	}
+
 	return serverutil.Ok().WithData(VersionJSON{
-		Semver:    version.Semver,
+		Semver:    semver,
 		GitCommit: version.GitCommit,
 		GoVersion: version.GoVersion,
 		BuildDate: version.BuildDate,

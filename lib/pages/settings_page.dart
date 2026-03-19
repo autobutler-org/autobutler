@@ -154,9 +154,12 @@ class _SettingsPageState extends State<SettingsPage> {
       final versions = await CirrusService.listAvailableVersions();
       if (!mounted) return;
 
+      String? semverString(dynamic v) =>
+          v is String && v.isNotEmpty && v != 'NOSEMVER' ? v : null;
+
       final installedVersion =
-          (installed['semver'] as String?) ??
-          (installed['version'] as String?) ??
+          semverString(installed['semver']) ??
+          semverString(installed['version']) ??
           'Unknown';
       final availableVersions = versions
           .map((m) => (m['version'] as String?) ?? '')
