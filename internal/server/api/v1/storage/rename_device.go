@@ -2,6 +2,7 @@ package v1_storage
 
 import (
 	"strings"
+	"unicode"
 
 	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
@@ -10,6 +11,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+const maxDeviceNameLength = 64
 
 // renameDevice godoc
 // @Summary Rename a storage device
@@ -44,6 +47,14 @@ func renameDevice(c *gin.Context) *serverutil.Response {
 	name := strings.TrimSpace(req.Name)
 	if name == "" {
 		return serverutil.BadRequest(nil)
+	}
+	if len([]rune(name)) > maxDeviceNameLength {
+		return serverutil.BadRequest(nil)
+	}
+	for _, r := range name {
+		if unicode.IsControl(r) {
+			return serverutil.BadRequest(nil)
+		}
 	}
 
 	if err := deps.Database().Queries.UpsertDeviceName(c.Request.Context(), db.UpsertDeviceNameParams{
