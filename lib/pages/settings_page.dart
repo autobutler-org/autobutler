@@ -79,6 +79,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _isLoadingDevices = false;
       });
     } catch (e) {
+      debugPrint('[settings_page.dart] Error: $e');
       if (!mounted) return;
       setState(() {
         _devicesError = e.toString();
@@ -92,6 +93,7 @@ class _SettingsPageState extends State<SettingsPage> {
       await ConnectedDevicesService.deleteDevice(id);
       await _loadDevices();
     } catch (e) {
+      debugPrint('[settings_page.dart] Error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -113,6 +115,7 @@ class _SettingsPageState extends State<SettingsPage> {
       try {
         nextGoSbom = await SbomService.getGoSbom();
       } catch (e) {
+        debugPrint('[settings_page.dart] Error: $e');
         errors.add('Go SBOM: $e');
       }
     }
@@ -120,6 +123,7 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       nextFlutterSbom = await SbomService.getFlutterSbom();
     } catch (e) {
+      debugPrint('[settings_page.dart] Error: $e');
       errors.add('Flutter SBOM: $e');
     }
 
@@ -173,6 +177,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _isLoadingVersionInfo = false;
       });
     } catch (e) {
+      debugPrint('[settings_page.dart] Error: $e');
       if (!mounted) return;
       setState(() {
         _versionLoadError = e.toString();
@@ -197,6 +202,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ).showSnackBar(SnackBar(content: Text('Update started for $version')));
       await _loadVersionInfo();
     } catch (e) {
+      debugPrint('[settings_page.dart] Error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,

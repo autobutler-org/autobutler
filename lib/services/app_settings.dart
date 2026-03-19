@@ -48,6 +48,7 @@ class AppSettings {
           .map((e) => HostEntry.fromJson(e as Map<String, dynamic>))
           .toList();
     } catch (_) {
+      debugPrint('[app_settings.dart] Error in catch block');
       _hosts = [];
     }
 

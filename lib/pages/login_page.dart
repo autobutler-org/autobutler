@@ -47,6 +47,7 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       widget.onLoginSuccess();
     } catch (e) {
+      debugPrint('[login_page.dart] Error: $e');
       if (!mounted) return;
       setState(() {
         _error = e.toString().replaceFirst('Exception: ', '');

@@ -53,6 +53,7 @@ class _AuthGateState extends State<AuthGate> {
         _state = status.setupComplete ? _GateState.login : _GateState.firstBoot;
       });
     } catch (e) {
+      debugPrint('[auth_gate.dart] Error: $e');
       if (!mounted) return;
       // If we can't reach the butler, let the main app handle the error.
       setState(() => _state = _GateState.authenticated);
