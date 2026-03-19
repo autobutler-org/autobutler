@@ -38,6 +38,12 @@ func getDeviceStatusBySerial(c *gin.Context) *serverutil.Response {
 
 	for _, ds := range statuses {
 		if ds.UsbInfo != nil && ds.UsbInfo.GetSerial() == serial {
+			// Overlay custom display name when available.
+			if database := deps.Database(); database != nil {
+				if name, err := database.Queries.GetDeviceName(c.Request.Context(), ds.DevicePath); err == nil && name != "" {
+					ds.Name = name
+				}
+			}
 			return serverutil.Ok().WithData(ds)
 		}
 	}

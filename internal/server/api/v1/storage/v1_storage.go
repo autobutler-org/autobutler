@@ -15,5 +15,6 @@ func (r *router) Routes() []*serverutil.Route {
 		getDeviceStatusBySerialRoute,
 		backupToDeviceRoute,
 		listDeviceStatusesRoute,
+		renameDeviceRoute,
 	}
 }

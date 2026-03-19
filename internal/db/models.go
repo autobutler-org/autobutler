@@ -17,6 +17,12 @@ type ConnectedDevice struct {
 	RequestCount int64
 }
 
+type DeviceName struct {
+	DevicePath  string
+	DisplayName string
+	UpdatedAt   time.Time
+}
+
 type Session struct {
 	Token     string
 	UserID    int64

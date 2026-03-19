@@ -806,6 +806,42 @@ paths:
       summary: Do a one-time backup to a device
       tags:
       - storage
+  /storage/devices/rename:
+    patch:
+      consumes:
+      - application/json
+      description: Sets a custom display name for a storage device identified by its
+        device path
+      parameters:
+      - description: Device path (e.g. /dev/disk3s5 — leading slash included in wildcard)
+        in: path
+        name: devicePath
+        required: true
+        type: string
+      - description: '{name: string}'
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Rename a storage device
+      tags:
+      - storage
   /storage/devices/status:
     get:
       description: Returns statuses for all known storage devices
