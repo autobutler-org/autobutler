@@ -28,9 +28,9 @@ func listDeviceStatuses(c *gin.Context) *serverutil.Response {
 
 	// Overlay custom display names when available.
 	if db := deps.Database(); db != nil {
-		for _, s := range statuses {
-			if name, err := db.Queries.GetDeviceName(c.Request.Context(), s.DevicePath); err == nil && name != "" {
-				s.Name = name
+		for i := range statuses {
+			if name, err := db.Queries.GetDeviceName(c.Request.Context(), statuses[i].DevicePath); err == nil && name != "" {
+				statuses[i].Name = name
 			}
 		}
 	}
