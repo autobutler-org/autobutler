@@ -1,5 +1,5 @@
+import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
-import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:autobutler/services/auth_service.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/services/connected_devices_service.dart';
@@ -7,7 +7,7 @@ import 'package:autobutler/services/sbom_service.dart';
 import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
-import 'package:autobutler/router.dart';
+import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -576,6 +576,90 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
           ),
+          // Storage devices
+          if (AppSettings.instance.activeHost != null) ...[
+            const Text(
+              'Storage',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: ExpansionTile(
+                title: const Text(
+                  'Storage devices',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  _isLoadingStorage
+                      ? 'Loading...'
+                      : _storageError != null
+                      ? 'Failed to load'
+                      : _storageDevices.isEmpty
+                      ? 'No devices found'
+                      : '${_storageDevices.length} device${_storageDevices.length == 1 ? '' : 's'}',
+                ),
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: RefreshIconButton(
+                        isRefreshing: _isLoadingStorage,
+                        onPressed: _loadStorageDevices,
+                        tooltip: 'Refresh',
+                      ),
+                    ),
+                  ),
+                  if (_isLoadingStorage)
+                    const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    )
+                  else if (_storageError != null)
+                    ListTile(
+                      leading: Icon(
+                        Icons.error_outline,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      title: const Text('Failed to load storage devices'),
+                      subtitle: Text(_storageError!),
+                    )
+                  else if (_storageDevices.isEmpty)
+                    const ListTile(title: Text('No storage devices found'))
+                  else
+                    ..._storageDevices.map((device) {
+                      return ListTile(
+                        leading: Icon(
+                          device.isInternal
+                              ? Icons.storage_rounded
+                              : Icons.usb_rounded,
+                        ),
+                        title: Text(
+                          device.name.isNotEmpty
+                              ? device.name
+                              : device.devicePath,
+                        ),
+                        subtitle: Text(
+                          '${device.usedDisplay} · ${device.usedPercent.toStringAsFixed(1)}% used · ${device.fileSystem}',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.edit_outlined),
+                          tooltip: 'Rename',
+                          onPressed: () => _renameStorageDevice(device),
+                        ),
+                      );
+                    }),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
           const Text(
             'Backend hosts',
@@ -720,92 +804,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
           const SizedBox(height: 24),
-
-          // Storage devices
-          if (AppSettings.instance.activeHost != null) ...[
-            const Text(
-              'Storage',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Card(
-              child: ExpansionTile(
-                title: const Text(
-                  'Storage devices',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                subtitle: Text(
-                  _isLoadingStorage
-                      ? 'Loading...'
-                      : _storageError != null
-                      ? 'Failed to load'
-                      : _storageDevices.isEmpty
-                      ? 'No devices found'
-                      : '${_storageDevices.length} device${_storageDevices.length == 1 ? '' : 's'}',
-                ),
-                children: [
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: RefreshIconButton(
-                        isRefreshing: _isLoadingStorage,
-                        onPressed: _loadStorageDevices,
-                        tooltip: 'Refresh',
-                      ),
-                    ),
-                  ),
-                  if (_isLoadingStorage)
-                    const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Center(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      ),
-                    )
-                  else if (_storageError != null)
-                    ListTile(
-                      leading: Icon(
-                        Icons.error_outline,
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                      title: const Text('Failed to load storage devices'),
-                      subtitle: Text(_storageError!),
-                    )
-                  else if (_storageDevices.isEmpty)
-                    const ListTile(title: Text('No storage devices found'))
-                  else
-                    ..._storageDevices.map((device) {
-                      return ListTile(
-                        leading: Icon(
-                          device.isInternal
-                              ? Icons.storage_rounded
-                              : Icons.usb_rounded,
-                        ),
-                        title: Text(
-                          device.name.isNotEmpty
-                              ? device.name
-                              : device.devicePath,
-                        ),
-                        subtitle: Text(
-                          '${device.usedDisplay} · ${device.usedPercent.toStringAsFixed(1)}% used · ${device.fileSystem}',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.edit_outlined),
-                          tooltip: 'Rename',
-                          onPressed: () => _renameStorageDevice(device),
-                        ),
-                      );
-                    }),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
 
           const Text(
             'Software Bill of Materials',
