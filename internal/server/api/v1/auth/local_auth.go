@@ -31,17 +31,28 @@ func getQueries(c *gin.Context) (*deputil.Dependencies, bool) {
 	return &deps, ok
 }
 
+// AuthStatusJSON is the response body for GET /auth/status.
+type AuthStatusJSON struct {
+	// Setup indicates whether the initial account setup has been completed.
+	Setup bool `json:"setup"`
+	// InstanceID is the stable UUID assigned to this butler on first boot.
+	// Clients use it to detect when a host address now points to a different
+	// butler (e.g. a neighbour's device on the same LAN hostname).
+	// Empty string when setup has not yet been completed.
+	InstanceID string `json:"instanceId"`
+}
+
 // authStatus godoc
 // @Summary Check auth setup status
-// @Description Returns whether initial setup has been completed
+// @Description Returns whether initial setup has been completed, and the butler's stable instance ID.
 // @Tags auth
 // @Produce json
-// @Success 200 {object} object
+// @Success 200 {object} AuthStatusJSON
 // @Router /auth/status [get]
 func authStatus(c *gin.Context) *serverutil.Response {
 	deps, ok := getQueries(c)
 	if !ok || (*deps).Database() == nil {
-		return serverutil.Ok().WithData(gin.H{"setup": false, "instanceId": ""})
+		return serverutil.Ok().WithData(AuthStatusJSON{Setup: false, InstanceID: ""})
 	}
 
 	complete, err := authutil.IsSetupComplete(c.Request.Context(), (*deps).Database().Queries)
@@ -50,11 +61,11 @@ func authStatus(c *gin.Context) *serverutil.Response {
 	}
 
 	// Include the instance ID so clients can detect when they've connected
-	// to a different butler than expected (e.g. neighbor's butler at the
+	// to a different butler than expected (e.g. neighbour's butler at the
 	// same LAN hostname — see issue #414).
 	instanceID, _ := instanceutil.GetInstanceID(c.Request.Context(), (*deps).Database().Queries)
 
-	return serverutil.Ok().WithData(gin.H{"setup": complete, "instanceId": instanceID})
+	return serverutil.Ok().WithData(AuthStatusJSON{Setup: complete, InstanceID: instanceID})
 }
 
 var authStatusRoute = serverutil.ApiRoute("GET", "/auth/status", authStatus)

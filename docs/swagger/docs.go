@@ -261,7 +261,7 @@ const docTemplate = `{
         },
         "/auth/status": {
             "get": {
-                "description": "Returns whether initial setup has been completed",
+                "description": "Returns whether initial setup has been completed, and the butler's stable instance ID.",
                 "produces": [
                     "application/json"
                 ],
@@ -273,7 +273,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/v1_auth.AuthStatusJSON"
                         }
                     }
                 }
@@ -1296,6 +1296,19 @@ const docTemplate = `{
                 },
                 "version": {
                     "type": "string"
+                }
+            }
+        },
+        "v1_auth.AuthStatusJSON": {
+            "type": "object",
+            "properties": {
+                "instanceId": {
+                    "description": "InstanceID is the stable UUID assigned to this butler on first boot.\nClients use it to detect when a host address now points to a different\nbutler (e.g. a neighbour's device on the same LAN hostname).\nEmpty string when setup has not yet been completed.",
+                    "type": "string"
+                },
+                "setup": {
+                    "description": "Setup indicates whether the initial account setup has been completed.",
+                    "type": "boolean"
                 }
             }
         },
