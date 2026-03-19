@@ -162,7 +162,9 @@ class _SettingsPageState extends State<SettingsPage> {
         ],
       ),
     );
-    controller.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.dispose();
+    });
     if (newName == null || newName.isEmpty) return;
     try {
       await StorageService.renameDevice(device.devicePath, newName);
@@ -344,6 +346,10 @@ class _SettingsPageState extends State<SettingsPage> {
         ],
       ),
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      nameController.dispose();
+      hostController.dispose();
+    });
 
     if (result == true) {
       _load();
