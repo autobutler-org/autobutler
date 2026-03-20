@@ -812,6 +812,15 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 24),
 
           const Text(
+            'Network Drive',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          _NetworkDriveCard(host: AppSettings.instance.activeHost),
+
+          const SizedBox(height: 24),
+
+          const Text(
             'Software Bill of Materials',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
@@ -937,6 +946,106 @@ class _SbomExpansionTile extends StatelessWidget {
               ),
             )
             .toList(),
+      ),
+    );
+  }
+}
+
+/// Shows instructions for mounting AutoButler as a network drive.
+class _NetworkDriveCard extends StatelessWidget {
+  const _NetworkDriveCard({required this.host});
+
+  final String? host;
+
+  String _stripPort(String? h) {
+    if (h == null) return 'autobutler.local';
+    final uri = Uri.tryParse(h);
+    return uri?.host ?? h;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hostname = _stripPort(host);
+    final webdavUrl = host != null ? '$host/webdav' : 'http://autobutler.local/webdav';
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Mount as network drive',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Access your AutoButler files directly from your operating system\'s file browser.',
+            ),
+            const SizedBox(height: 16),
+
+            // macOS
+            const Text('macOS', style: TextStyle(fontWeight: FontWeight.w500)),
+            const SizedBox(height: 4),
+            const Text('Finder → Go → Connect to Server (⌘K), then enter:'),
+            const SizedBox(height: 4),
+            _CodeBlock(text: 'smb://$hostname'),
+            const SizedBox(height: 12),
+
+            // Windows
+            const Text('Windows', style: TextStyle(fontWeight: FontWeight.w500)),
+            const SizedBox(height: 4),
+            const Text('File Explorer → Map network drive, then enter:'),
+            const SizedBox(height: 4),
+            _CodeBlock(text: r'\\' + hostname),
+            const SizedBox(height: 12),
+
+            // Linux
+            const Text('Linux', style: TextStyle(fontWeight: FontWeight.w500)),
+            const SizedBox(height: 4),
+            const Text('Files → Other Locations, or mount via terminal:'),
+            const SizedBox(height: 4),
+            _CodeBlock(text: 'smb://$hostname'),
+            const SizedBox(height: 12),
+
+            // WebDAV fallback
+            const Text(
+              'WebDAV (all platforms)',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 4),
+            const Text('Use any WebDAV client with:'),
+            const SizedBox(height: 4),
+            _CodeBlock(text: webdavUrl),
+            const SizedBox(height: 8),
+            const Text(
+              'Log in with your AutoButler username and password.',
+              style: TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CodeBlock extends StatelessWidget {
+  const _CodeBlock({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: SelectableText(
+        text,
+        style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
       ),
     );
   }
