@@ -57,6 +57,7 @@ class HealthStatus {
   final int diskUsedBytes;
   final int diskTotalBytes;
   final double temperatureCelsius;
+
   /// The OS hostname of the butler device (e.g. "openclaw").
   /// Used to display accurate LAN mount paths in Settings.
   final String hostname;

@@ -1037,7 +1037,10 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
             const SizedBox(height: 12),
 
             // Windows
-            const Text('Windows', style: TextStyle(fontWeight: FontWeight.w500)),
+            const Text(
+              'Windows',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
             const SizedBox(height: 4),
             const Text('File Explorer → Map network drive, then enter:'),
             const SizedBox(height: 4),
