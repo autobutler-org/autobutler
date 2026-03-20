@@ -27,14 +27,38 @@ class FileBrowserController {
     return CirrusService.getFiles(currentPath);
   }
 
-  Future<http.MultipartFile?> pickUploadFile() async {
-    final result = await FilePicker.platform.pickFiles(withData: true);
+  /// Picks one or more files for upload.
+  ///
+  /// On web and desktop, multiple file selection is supported.
+  /// On mobile (iOS/Android), the platform picker typically supports
+  /// multi-select — enabled via [allowMultiple: true]. If the platform
+  /// returns only a single file, the list will have one entry.
+  ///
+  /// Folder selection is not supported via the browser/platform file picker
+  /// (browser security restriction). Folder upload is tracked separately.
+  ///
+  /// Returns an empty list if the user cancelled.
+  Future<List<http.MultipartFile>> pickUploadFiles() async {
+    final result = await FilePicker.platform.pickFiles(
+      withData: true,
+      allowMultiple: true,
+    );
     if (result == null || result.files.isEmpty) {
-      return null;
+      return [];
     }
 
-    final selected = result.files.first;
-    return multipartFileFromPlatformFile(selected);
+    final files = <http.MultipartFile>[];
+    for (final platformFile in result.files) {
+      final f = await multipartFileFromPlatformFile(platformFile);
+      if (f != null) files.add(f);
+    }
+    return files;
+  }
+
+  /// @deprecated Use [pickUploadFiles] instead.
+  Future<http.MultipartFile?> pickUploadFile() async {
+    final files = await pickUploadFiles();
+    return files.isEmpty ? null : files.first;
   }
 
   Future<http.MultipartFile?> multipartFileFromPlatformFile(
