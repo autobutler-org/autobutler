@@ -320,6 +320,7 @@ upgrade: upgrade/flutter upgrade/go ## Upgrade dependencies
 upgrade/flutter: ## Upgrade Flutter dependencies
 	flutter pub upgrade
 	$(MAKE) tidy/flutter
+	$(MAKE) generate/frontend/sbom
 
 .PHONY: upgrade/go
 upgrade/go: generate/backend ## Upgrade dependencies (go)

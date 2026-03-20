@@ -275,7 +275,7 @@
     },
     {
       "name": "matcher",
-      "version": "0.12.18",
+      "version": "0.12.19",
       "source": "hosted",
       "url": "https://pub.dev"
     },
@@ -466,7 +466,7 @@
     },
     {
       "name": "test_api",
-      "version": "0.7.9",
+      "version": "0.7.10",
       "source": "hosted",
       "url": "https://pub.dev"
     },
