@@ -46,6 +46,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   String _currentPath = '';
   bool _isGridView = false;
   bool _isUploading = false;
+  int _uploadTotal = 0;
+  int _uploadCompleted = 0;
   bool _isCreatingFolder = false;
   bool _isWebDragging = false;
   bool _isHoveringFolderDropTarget = false;
@@ -105,35 +107,44 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     setState(() {
       _isUploading = true;
+      _uploadTotal = selectedFiles.length;
+      _uploadCompleted = 0;
     });
 
+    int failed = 0;
     try {
-      await _controller.uploadFiles(
-        currentPath: uploadPath,
-        selectedFiles: selectedFiles,
-      );
-
-      if (!mounted) {
-        return;
+      for (final file in selectedFiles) {
+        try {
+          await _controller.uploadFiles(
+            currentPath: uploadPath,
+            selectedFiles: [file],
+          );
+        } catch (_) {
+          failed++;
+          debugPrint('[file_browser_page.dart] Failed to upload ${file.filename}');
+        }
+        if (mounted) setState(() => _uploadCompleted++);
       }
+
+      if (!mounted) return;
 
       _refreshFileState();
 
-      final uploadedLabel = selectedFiles.length == 1
-          ? selectedFiles.first.filename ?? 'file'
-          : '${selectedFiles.length} files';
-      _showMessage('Uploaded $uploadedLabel');
-    } catch (_) {
-      debugPrint('[file_browser_page.dart] Error in catch block');
-      if (!mounted) {
-        return;
+      final succeeded = selectedFiles.length - failed;
+      if (failed == 0) {
+        final label = selectedFiles.length == 1
+            ? selectedFiles.first.filename ?? 'file'
+            : '${selectedFiles.length} files';
+        _showMessage('Uploaded $label');
+      } else {
+        _showMessage('Uploaded $succeeded of ${selectedFiles.length} ($failed failed)');
       }
-
-      _showMessage('Upload failed');
     } finally {
       if (mounted) {
         setState(() {
           _isUploading = false;
+          _uploadTotal = 0;
+          _uploadCompleted = 0;
         });
       }
     }
@@ -612,6 +623,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             onUploadPressed: _handleUploadPressed,
             onCreateFolderPressed: _handleCreateFolderPressed,
             isSearchMode: _isSearchMode,
+            uploadTotal: _uploadTotal,
+            uploadCompleted: _uploadCompleted,
           ),
           FileBreadcrumbBar(
             currentPath: _currentPath,

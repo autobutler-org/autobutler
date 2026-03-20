@@ -7,6 +7,8 @@ class FileActionsBar extends StatelessWidget {
     required this.onUploadPressed,
     required this.onCreateFolderPressed,
     required this.isSearchMode,
+    this.uploadTotal = 0,
+    this.uploadCompleted = 0,
     super.key,
   });
 
@@ -15,6 +17,16 @@ class FileActionsBar extends StatelessWidget {
   final VoidCallback onUploadPressed;
   final VoidCallback onCreateFolderPressed;
   final bool isSearchMode;
+  /// Total number of files in the current upload batch. 0 when not uploading.
+  final int uploadTotal;
+  /// Number of files completed so far in the current batch.
+  final int uploadCompleted;
+
+  String get _uploadLabel {
+    if (!isUploading) return 'Upload';
+    if (uploadTotal > 1) return 'Uploading $uploadCompleted of $uploadTotal...';
+    return 'Uploading...';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,8 +39,18 @@ class FileActionsBar extends StatelessWidget {
         children: [
           FilledButton.tonalIcon(
             onPressed: isUploading ? null : onUploadPressed,
-            icon: const Icon(Icons.upload_rounded),
-            label: Text(isUploading ? 'Uploading...' : 'Upload'),
+            icon: isUploading
+                ? SizedBox.square(
+                    dimension: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      value: uploadTotal > 1
+                          ? uploadCompleted / uploadTotal
+                          : null,
+                    ),
+                  )
+                : const Icon(Icons.upload_rounded),
+            label: Text(_uploadLabel),
           ),
           const SizedBox(width: 8),
           OutlinedButton.icon(
