@@ -1,6 +1,7 @@
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/auth_service.dart';
+import 'package:autobutler/services/health_service.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/services/connected_devices_service.dart';
 import 'package:autobutler/services/sbom_service.dart';
@@ -952,21 +953,55 @@ class _SbomExpansionTile extends StatelessWidget {
 }
 
 /// Shows instructions for mounting AutoButler as a network drive.
-class _NetworkDriveCard extends StatelessWidget {
+/// Fetches the butler's hostname from the health endpoint so the paths
+/// reflect the device's actual LAN name rather than the connection URL.
+class _NetworkDriveCard extends StatefulWidget {
   const _NetworkDriveCard({required this.host});
 
   final String? host;
 
-  String _stripPort(String? h) {
+  @override
+  State<_NetworkDriveCard> createState() => _NetworkDriveCardState();
+}
+
+class _NetworkDriveCardState extends State<_NetworkDriveCard> {
+  String? _hostname;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchHostname();
+  }
+
+  Future<void> _fetchHostname() async {
+    if (AppSettings.instance.activeHost == null) return;
+    try {
+      final status = await HealthService.getHealth();
+      if (mounted && status.hostname.isNotEmpty) {
+        setState(() => _hostname = status.hostname);
+      }
+    } catch (_) {
+      // Fall back to extracting from URL — better than nothing.
+    }
+  }
+
+  String get _displayHostname {
+    if (_hostname != null && _hostname!.isNotEmpty) return _hostname!;
+    final h = widget.host;
     if (h == null) return 'autobutler.local';
     final uri = Uri.tryParse(h);
     return uri?.host ?? h;
   }
 
+  String get _webdavUrl {
+    final h = widget.host;
+    if (h == null) return 'http://autobutler.local/webdav';
+    return '$h/webdav';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final hostname = _stripPort(host);
-    final webdavUrl = host != null ? '$host/webdav' : 'http://autobutler.local/webdav';
+    final hostname = _displayHostname;
 
     return Card(
       child: Padding(
@@ -989,7 +1024,7 @@ class _NetworkDriveCard extends StatelessWidget {
             const SizedBox(height: 4),
             const Text('Finder → Go → Connect to Server (⌘K), then enter:'),
             const SizedBox(height: 4),
-            _CodeBlock(text: 'smb://$hostname'),
+            _CodeBlock(text: 'smb://$hostname.local'),
             const SizedBox(height: 12),
 
             // Windows
@@ -997,7 +1032,7 @@ class _NetworkDriveCard extends StatelessWidget {
             const SizedBox(height: 4),
             const Text('File Explorer → Map network drive, then enter:'),
             const SizedBox(height: 4),
-            _CodeBlock(text: r'\\' + hostname),
+            _CodeBlock(text: '\\\\$hostname.local'),
             const SizedBox(height: 12),
 
             // Linux
@@ -1005,7 +1040,7 @@ class _NetworkDriveCard extends StatelessWidget {
             const SizedBox(height: 4),
             const Text('Files → Other Locations, or mount via terminal:'),
             const SizedBox(height: 4),
-            _CodeBlock(text: 'smb://$hostname'),
+            _CodeBlock(text: 'smb://$hostname.local'),
             const SizedBox(height: 12),
 
             // WebDAV fallback
@@ -1016,7 +1051,7 @@ class _NetworkDriveCard extends StatelessWidget {
             const SizedBox(height: 4),
             const Text('Use any WebDAV client with:'),
             const SizedBox(height: 4),
-            _CodeBlock(text: webdavUrl),
+            _CodeBlock(text: _webdavUrl),
             const SizedBox(height: 8),
             const Text(
               'Log in with your AutoButler username and password.',

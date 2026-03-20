@@ -18,6 +18,7 @@ class HealthStatus {
     required this.diskUsedBytes,
     required this.diskTotalBytes,
     required this.temperatureCelsius,
+    this.hostname = '',
   });
 
   factory HealthStatus.fromJson(Map<String, dynamic> json) {
@@ -41,6 +42,7 @@ class HealthStatus {
       diskUsedBytes: (json['diskUsedBytes'] as num?)?.toInt() ?? 0,
       diskTotalBytes: (json['diskTotalBytes'] as num?)?.toInt() ?? 0,
       temperatureCelsius: (json['temperatureCelsius'] as num?)?.toDouble() ?? 0,
+      hostname: json['hostname'] as String? ?? '',
     );
   }
 
@@ -55,6 +57,9 @@ class HealthStatus {
   final int diskUsedBytes;
   final int diskTotalBytes;
   final double temperatureCelsius;
+  /// The OS hostname of the butler device (e.g. "openclaw").
+  /// Used to display accurate LAN mount paths in Settings.
+  final String hostname;
 }
 
 class HealthService with AuthenticatedService {

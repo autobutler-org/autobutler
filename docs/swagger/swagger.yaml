@@ -113,6 +113,11 @@ definitions:
         type: integer
       healthy:
         type: boolean
+      hostname:
+        description: |-
+          Hostname is the OS hostname of the butler device.
+          Clients can use this to display accurate LAN mount paths (e.g. smb://hostname.local).
+        type: string
       memPercent:
         type: number
       memTotalBytes:
