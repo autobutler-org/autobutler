@@ -36,6 +36,9 @@ PODS:
   - Flutter (1.0.0)
   - flutter_file_dialog (0.0.1):
     - Flutter
+  - flutter_secure_storage_darwin (10.0.0):
+    - Flutter
+    - FlutterMacOS
   - open_filex (0.0.2):
     - Flutter
   - photo_manager (3.9.0):
@@ -56,6 +59,7 @@ DEPENDENCIES:
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
   - flutter_file_dialog (from `.symlinks/plugins/flutter_file_dialog/ios`)
+  - flutter_secure_storage_darwin (from `.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
   - open_filex (from `.symlinks/plugins/open_filex/ios`)
   - photo_manager (from `.symlinks/plugins/photo_manager/darwin`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -75,6 +79,8 @@ EXTERNAL SOURCES:
     :path: Flutter
   flutter_file_dialog:
     :path: ".symlinks/plugins/flutter_file_dialog/ios"
+  flutter_secure_storage_darwin:
+    :path: ".symlinks/plugins/flutter_secure_storage_darwin/darwin"
   open_filex:
     :path: ".symlinks/plugins/open_filex/ios"
   photo_manager:
@@ -90,6 +96,7 @@ SPEC CHECKSUMS:
   file_picker: a0560bc09d61de87f12d246fc47d2119e6ef37be
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_file_dialog: ca8d7fbd1772d4f0c2777b4ab20a7787ef4e7dd8
+  flutter_secure_storage_darwin: acdb3f316ed05a3e68f856e0353b133eec373a23
   open_filex: 432f3cd11432da3e39f47fcc0df2b1603854eff1
   photo_manager: 25fd77df14f4f0ba5ef99e2c61814dde77e2bceb
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
