@@ -16,6 +16,7 @@ class FileBrowserView extends StatelessWidget {
     required this.isGridView,
     required this.currentPath,
     this.initialData,
+    this.isUnifiedView = true,
     this.onDropToFolder,
     this.onFolderDragEnter,
     this.onFolderDragExit,
@@ -31,6 +32,10 @@ class FileBrowserView extends StatelessWidget {
   final Future<void> Function(CirrusFileNode, FileMenuAction) onFileMenuAction;
   final void Function(CirrusFileNode) onOpenDirectory;
   final bool isGridView;
+
+  /// When true (default), files from all devices are shown merged.
+  /// When false, files are grouped by device with a section header per device.
+  final bool isUnifiedView;
   final String currentPath;
   final Future<void> Function(List<DropItem> droppedItems, String targetPath)?
   onDropToFolder;
@@ -101,6 +106,39 @@ class FileBrowserView extends StatelessWidget {
         final files = snapshot.data ?? const <CirrusFileNode>[];
         if (files.isEmpty) {
           return const Center(child: Text('No files found'));
+        }
+
+        // In segmented view, group files by device and render each group
+        // as a collapsible ExpansionTile.
+        if (!isUnifiedView && !isSearchMode) {
+          final groups = <String, List<CirrusFileNode>>{};
+          for (final f in files) {
+            final key = f.deviceName.isNotEmpty
+                ? f.deviceName
+                : 'Unknown Device';
+            groups.putIfAbsent(key, () => []).add(f);
+          }
+          return ListView(
+            controller: scrollController,
+            children: [
+              for (final entry in groups.entries)
+                ExpansionTile(
+                  initiallyExpanded: true,
+                  leading: const Icon(Icons.storage_rounded),
+                  title: Text(entry.key),
+                  subtitle: Text(
+                    '${entry.value.length} item${entry.value.length == 1 ? '' : 's'}',
+                  ),
+                  children: [
+                    for (final item in entry.value)
+                      _buildFolderDropWrapper(
+                        item: item,
+                        child: _buildListTile(context, item),
+                      ),
+                  ],
+                ),
+            ],
+          );
         }
 
         if (isGridView) {
@@ -341,6 +379,86 @@ class FileBrowserView extends StatelessWidget {
           },
         );
       },
+    );
+  }
+
+  Widget _buildListTile(BuildContext context, CirrusFileNode item) {
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+        leading: Icon(_iconForNode(item)),
+        title: Row(
+          children: [
+            Expanded(
+              flex: 5,
+              child: Text(
+                item.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Text(
+                item.deviceName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (showFileSizeAndMenu)
+              Expanded(
+                flex: 2,
+                child: Text(
+                  _formatSize(item.size, item.isDir),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+          ],
+        ),
+        trailing: showFileSizeAndMenu
+            ? PopupMenuButton<FileMenuAction>(
+                icon: const Icon(Icons.more_vert),
+                itemBuilder: (context) => [
+                  PopupMenuItem<FileMenuAction>(
+                    value: FileMenuAction.download,
+                    onTap: () => _dispatchMenuAction(
+                      context,
+                      item,
+                      FileMenuAction.download,
+                    ),
+                    child: const Text('Download'),
+                  ),
+                  PopupMenuItem<FileMenuAction>(
+                    value: FileMenuAction.moveRename,
+                    onTap: () => _dispatchMenuAction(
+                      context,
+                      item,
+                      FileMenuAction.moveRename,
+                    ),
+                    child: const Text('Move/Rename'),
+                  ),
+                  PopupMenuItem<FileMenuAction>(
+                    value: FileMenuAction.delete,
+                    onTap: () => _dispatchMenuAction(
+                      context,
+                      item,
+                      FileMenuAction.delete,
+                    ),
+                    child: const Text('Delete'),
+                  ),
+                  if (isSearchMode && onNavigateToFolder != null)
+                    PopupMenuItem<FileMenuAction>(
+                      value: FileMenuAction.navigateToFolder,
+                      onTap: () => onNavigateToFolder!(item),
+                      child: const Text('Navigate to folder'),
+                    ),
+                ],
+              )
+            : null,
+        onTap: () => onOpenDirectory(item),
+      ),
     );
   }
 
