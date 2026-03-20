@@ -45,6 +45,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   int _generation = 0; // incremented on each reload to discard stale fetches
   String _currentPath = '';
   bool _isGridView = false;
+
   /// When true, files from all devices are shown merged (unified).
   /// When false, they are grouped by device with section headers.
   bool _isUnifiedView = true;
@@ -605,9 +606,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
               setState(() => _isUnifiedView = !_isUnifiedView);
             },
             icon: Icon(
-              _isUnifiedView ? Icons.folder_copy_outlined : Icons.device_hub_outlined,
+              _isUnifiedView
+                  ? Icons.folder_copy_outlined
+                  : Icons.device_hub_outlined,
             ),
-            tooltip: _isUnifiedView ? 'Switch to per-device view' : 'Switch to unified view',
+            tooltip: _isUnifiedView
+                ? 'Switch to per-device view'
+                : 'Switch to unified view',
           ),
           RefreshIconButton(
             isRefreshing: isRefreshing,

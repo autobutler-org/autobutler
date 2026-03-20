@@ -32,6 +32,7 @@ class FileBrowserView extends StatelessWidget {
   final Future<void> Function(CirrusFileNode, FileMenuAction) onFileMenuAction;
   final void Function(CirrusFileNode) onOpenDirectory;
   final bool isGridView;
+
   /// When true (default), files from all devices are shown merged.
   /// When false, files are grouped by device with a section header per device.
   final bool isUnifiedView;
@@ -112,7 +113,9 @@ class FileBrowserView extends StatelessWidget {
         if (!isUnifiedView && !isSearchMode) {
           final groups = <String, List<CirrusFileNode>>{};
           for (final f in files) {
-            final key = f.deviceName.isNotEmpty ? f.deviceName : 'Unknown Device';
+            final key = f.deviceName.isNotEmpty
+                ? f.deviceName
+                : 'Unknown Device';
             groups.putIfAbsent(key, () => []).add(f);
           }
           return CustomScrollView(
@@ -438,17 +441,29 @@ class FileBrowserView extends StatelessWidget {
                 itemBuilder: (context) => [
                   PopupMenuItem<FileMenuAction>(
                     value: FileMenuAction.download,
-                    onTap: () => _dispatchMenuAction(context, item, FileMenuAction.download),
+                    onTap: () => _dispatchMenuAction(
+                      context,
+                      item,
+                      FileMenuAction.download,
+                    ),
                     child: const Text('Download'),
                   ),
                   PopupMenuItem<FileMenuAction>(
                     value: FileMenuAction.moveRename,
-                    onTap: () => _dispatchMenuAction(context, item, FileMenuAction.moveRename),
+                    onTap: () => _dispatchMenuAction(
+                      context,
+                      item,
+                      FileMenuAction.moveRename,
+                    ),
                     child: const Text('Move/Rename'),
                   ),
                   PopupMenuItem<FileMenuAction>(
                     value: FileMenuAction.delete,
-                    onTap: () => _dispatchMenuAction(context, item, FileMenuAction.delete),
+                    onTap: () => _dispatchMenuAction(
+                      context,
+                      item,
+                      FileMenuAction.delete,
+                    ),
                     child: const Text('Delete'),
                   ),
                   if (isSearchMode && onNavigateToFolder != null)
