@@ -812,19 +812,13 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           const SizedBox(height: 24),
 
-          const Text(
-            'Network Drive',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+          const _InfoSectionHeader(label: 'Network Drive'),
           const SizedBox(height: 8),
           _NetworkDriveCard(host: AppSettings.instance.activeHost),
 
           const SizedBox(height: 24),
 
-          const Text(
-            'Software Bill of Materials',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+          const _InfoSectionHeader(label: 'Software Bill of Materials'),
           const SizedBox(height: 8),
           if (_isLoadingSbom)
             const Center(
@@ -948,6 +942,35 @@ class _SbomExpansionTile extends StatelessWidget {
             )
             .toList(),
       ),
+    );
+  }
+}
+
+/// Section header for read-only informational sections.
+/// Uses a subtler visual treatment than action-oriented sections to signal
+/// that the content is reference material, not something the user configures.
+class _InfoSectionHeader extends StatelessWidget {
+  const _InfoSectionHeader({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Row(
+      children: [
+        Icon(Icons.info_outline, size: 16, color: color),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: color,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
     );
   }
 }
