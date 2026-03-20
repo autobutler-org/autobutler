@@ -160,12 +160,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
 
     try {
-      final selectedFile = await _controller.pickUploadFile();
-      if (selectedFile == null) {
+      final selectedFiles = await _controller.pickUploadFiles();
+      if (selectedFiles.isEmpty) {
         return;
       }
 
-      await _uploadSelectedFiles([selectedFile], _currentPath);
+      await _uploadSelectedFiles(selectedFiles, _currentPath);
     } on MissingPluginException {
       if (!mounted) {
         return;
