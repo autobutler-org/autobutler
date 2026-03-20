@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -11,12 +12,41 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/authutil"
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/ratelimitutil"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
+
+// authRateLimiter protects auth endpoints (login, setup, recover) from
+// brute-force attacks. Shared across all requests — 5 req/s per IP, burst 10.
+var authRateLimiter = ratelimitutil.New()
+
+// authRateLimitedPaths are the API paths that require rate limiting.
+var authRateLimitedPaths = map[string]bool{
+	"/api/v1/auth/login":   true,
+	"/api/v1/auth/setup":   true,
+	"/api/v1/auth/recover": true,
+}
+
+// rateLimit is a middleware that enforces per-IP rate limiting on auth endpoints.
+func rateLimit() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !authRateLimitedPaths[c.Request.URL.Path] {
+			c.Next()
+			return
+		}
+		ip := ratelimitutil.ExtractIP(c.ClientIP())
+		if !authRateLimiter.Allow(ip) {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "too many requests, please slow down"})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
 
 // authExemptPaths are API paths that don't require a valid session.
 var authExemptPaths = map[string]bool{
@@ -139,5 +169,6 @@ func Use(router *gin.Engine, deps deputil.Dependencies) {
 	router.Use(cors.New(config))
 	router.Use(inject(deps))
 	router.Use(trackDevice(deps))
+	router.Use(rateLimit())
 	router.Use(requireAuth(deps))
 }
