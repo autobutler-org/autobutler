@@ -986,11 +986,20 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
   }
 
   String get _displayHostname {
-    if (_hostname != null && _hostname!.isNotEmpty) return _hostname!;
-    final h = widget.host;
-    if (h == null) return 'autobutler.local';
-    final uri = Uri.tryParse(h);
-    return uri?.host ?? h;
+    String raw;
+    if (_hostname != null && _hostname!.isNotEmpty) {
+      raw = _hostname!;
+    } else {
+      final h = widget.host;
+      if (h == null) return 'autobutler.local';
+      final uri = Uri.tryParse(h);
+      raw = uri?.host ?? h;
+    }
+    // Strip .local suffix — the card appends it, so avoid doubling.
+    if (raw.endsWith('.local')) {
+      return raw.substring(0, raw.length - '.local'.length);
+    }
+    return raw;
   }
 
   String get _webdavUrl {
