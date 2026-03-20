@@ -3,6 +3,10 @@
 # Install: make setup/hooks
 set -euo pipefail
 
+# Augment PATH with common tool locations so the hook works correctly
+# whether invoked from a GUI, IDE, or shell with a minimal environment.
+export PATH="/usr/local/go/bin:${HOME}/go/bin:${HOME}/flutter/bin:${PATH}"
+
 # Prefer gmake (GNU make) when available — required on macOS where the
 # system make is BSD make and incompatible with this Makefile.
 if command -v gmake &>/dev/null; then
