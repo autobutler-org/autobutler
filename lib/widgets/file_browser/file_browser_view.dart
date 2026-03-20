@@ -109,7 +109,7 @@ class FileBrowserView extends StatelessWidget {
         }
 
         // In segmented view, group files by device and render each group
-        // under a device section header.
+        // as a collapsible ExpansionTile.
         if (!isUnifiedView && !isSearchMode) {
           final groups = <String, List<CirrusFileNode>>{};
           for (final f in files) {
@@ -118,43 +118,25 @@ class FileBrowserView extends StatelessWidget {
                 : 'Unknown Device';
             groups.putIfAbsent(key, () => []).add(f);
           }
-          return CustomScrollView(
+          return ListView(
             controller: scrollController,
-            slivers: [
-              for (final entry in groups.entries) ...[
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.storage_rounded, size: 16),
-                        const SizedBox(width: 6),
-                        Text(
-                          entry.key,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '(${entry.value.length})',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ],
-                    ),
+            children: [
+              for (final entry in groups.entries)
+                ExpansionTile(
+                  initiallyExpanded: true,
+                  leading: const Icon(Icons.storage_rounded),
+                  title: Text(entry.key),
+                  subtitle: Text(
+                    '${entry.value.length} item${entry.value.length == 1 ? '' : 's'}',
                   ),
+                  children: [
+                    for (final item in entry.value)
+                      _buildFolderDropWrapper(
+                        item: item,
+                        child: _buildListTile(context, item),
+                      ),
+                  ],
                 ),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, i) => _buildFolderDropWrapper(
-                      item: entry.value[i],
-                      child: _buildListTile(context, entry.value[i]),
-                    ),
-                    childCount: entry.value.length,
-                  ),
-                ),
-              ],
             ],
           );
         }
