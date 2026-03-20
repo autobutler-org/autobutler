@@ -17,8 +17,10 @@ class FileActionsBar extends StatelessWidget {
   final VoidCallback onUploadPressed;
   final VoidCallback onCreateFolderPressed;
   final bool isSearchMode;
+
   /// Total number of files in the current upload batch. 0 when not uploading.
   final int uploadTotal;
+
   /// Number of files completed so far in the current batch.
   final int uploadCompleted;
 

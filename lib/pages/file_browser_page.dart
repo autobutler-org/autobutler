@@ -121,7 +121,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           );
         } catch (_) {
           failed++;
-          debugPrint('[file_browser_page.dart] Failed to upload ${file.filename}');
+          debugPrint(
+            '[file_browser_page.dart] Failed to upload ${file.filename}',
+          );
         }
         if (mounted) setState(() => _uploadCompleted++);
       }
@@ -137,7 +139,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             : '${selectedFiles.length} files';
         _showMessage('Uploaded $label');
       } else {
-        _showMessage('Uploaded $succeeded of ${selectedFiles.length} ($failed failed)');
+        _showMessage(
+          'Uploaded $succeeded of ${selectedFiles.length} ($failed failed)',
+        );
       }
     } finally {
       if (mounted) {
