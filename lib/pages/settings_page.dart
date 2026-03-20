@@ -1,6 +1,7 @@
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/auth_service.dart';
+import 'package:autobutler/services/health_service.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/services/connected_devices_service.dart';
 import 'package:autobutler/services/sbom_service.dart';
@@ -811,10 +812,13 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           const SizedBox(height: 24),
 
-          const Text(
-            'Software Bill of Materials',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+          const _InfoSectionHeader(label: 'Network Drive'),
+          const SizedBox(height: 8),
+          _NetworkDriveCard(host: AppSettings.instance.activeHost),
+
+          const SizedBox(height: 24),
+
+          const _InfoSectionHeader(label: 'Software Bill of Materials'),
           const SizedBox(height: 8),
           if (_isLoadingSbom)
             const Center(
@@ -937,6 +941,181 @@ class _SbomExpansionTile extends StatelessWidget {
               ),
             )
             .toList(),
+      ),
+    );
+  }
+}
+
+/// Section header for read-only informational sections.
+/// Uses a subtler visual treatment than action-oriented sections to signal
+/// that the content is reference material, not something the user configures.
+class _InfoSectionHeader extends StatelessWidget {
+  const _InfoSectionHeader({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Row(
+      children: [
+        Icon(Icons.info_outline, size: 16, color: color),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: color,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Shows instructions for mounting AutoButler as a network drive.
+/// Fetches the butler's hostname from the health endpoint so the paths
+/// reflect the device's actual LAN name rather than the connection URL.
+class _NetworkDriveCard extends StatefulWidget {
+  const _NetworkDriveCard({required this.host});
+
+  final String? host;
+
+  @override
+  State<_NetworkDriveCard> createState() => _NetworkDriveCardState();
+}
+
+class _NetworkDriveCardState extends State<_NetworkDriveCard> {
+  String? _hostname;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchHostname();
+  }
+
+  Future<void> _fetchHostname() async {
+    if (AppSettings.instance.activeHost == null) return;
+    try {
+      final status = await HealthService.getHealth();
+      if (mounted && status.hostname.isNotEmpty) {
+        setState(() => _hostname = status.hostname);
+      }
+    } catch (_) {
+      // Fall back to extracting from URL — better than nothing.
+    }
+  }
+
+  String get _displayHostname {
+    String raw;
+    if (_hostname != null && _hostname!.isNotEmpty) {
+      raw = _hostname!;
+    } else {
+      final h = widget.host;
+      if (h == null) return 'autobutler.local';
+      final uri = Uri.tryParse(h);
+      raw = uri?.host ?? h;
+    }
+    // Strip .local suffix — the card appends it, so avoid doubling.
+    if (raw.endsWith('.local')) {
+      return raw.substring(0, raw.length - '.local'.length);
+    }
+    return raw;
+  }
+
+  String get _webdavUrl {
+    final h = widget.host;
+    if (h == null) return 'http://autobutler.local/webdav';
+    return '$h/webdav';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hostname = _displayHostname;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Mount as network drive',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Access your AutoButler files directly from your operating system\'s file browser.',
+            ),
+            const SizedBox(height: 16),
+
+            // macOS
+            const Text('macOS', style: TextStyle(fontWeight: FontWeight.w500)),
+            const SizedBox(height: 4),
+            const Text('Finder → Go → Connect to Server (⌘K), then enter:'),
+            const SizedBox(height: 4),
+            _CodeBlock(text: 'smb://$hostname.local'),
+            const SizedBox(height: 12),
+
+            // Windows
+            const Text(
+              'Windows',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 4),
+            const Text('File Explorer → Map network drive, then enter:'),
+            const SizedBox(height: 4),
+            _CodeBlock(text: '\\\\$hostname.local'),
+            const SizedBox(height: 12),
+
+            // Linux
+            const Text('Linux', style: TextStyle(fontWeight: FontWeight.w500)),
+            const SizedBox(height: 4),
+            const Text('Files → Other Locations, or mount via terminal:'),
+            const SizedBox(height: 4),
+            _CodeBlock(text: 'smb://$hostname.local'),
+            const SizedBox(height: 12),
+
+            // WebDAV fallback
+            const Text(
+              'WebDAV (all platforms)',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 4),
+            const Text('Use any WebDAV client with:'),
+            const SizedBox(height: 4),
+            _CodeBlock(text: _webdavUrl),
+            const SizedBox(height: 8),
+            const Text(
+              'Log in with your AutoButler username and password.',
+              style: TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CodeBlock extends StatelessWidget {
+  const _CodeBlock({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: SelectableText(
+        text,
+        style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
       ),
     );
   }

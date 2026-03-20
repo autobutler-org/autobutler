@@ -1,6 +1,8 @@
 package v1_health
 
 import (
+	"os"
+
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/gin-gonic/gin"
 )
@@ -19,6 +21,9 @@ type HealthJSON struct {
 	DiskUsedBytes      uint64    `json:"diskUsedBytes"`
 	DiskTotalBytes     uint64    `json:"diskTotalBytes"`
 	TemperatureCelsius float64   `json:"temperatureCelsius"`
+	// Hostname is the OS hostname of the butler device.
+	// Clients can use this to display accurate LAN mount paths (e.g. smb://hostname.local).
+	Hostname string `json:"hostname"`
 }
 
 // getHealth godoc
@@ -39,6 +44,7 @@ func (r *router) getHealthRoute() *serverutil.Route {
 		if corePercents == nil {
 			corePercents = []float64{}
 		}
+		hostname, _ := os.Hostname()
 		return serverutil.Ok().WithData(HealthJSON{
 			Healthy:            status.Healthy,
 			Alerts:             alerts,
@@ -52,6 +58,7 @@ func (r *router) getHealthRoute() *serverutil.Route {
 			DiskUsedBytes:      status.DiskUsedBytes,
 			DiskTotalBytes:     status.DiskTotalBytes,
 			TemperatureCelsius: status.TemperatureCelsius,
+			Hostname:           hostname,
 		})
 	})
 }
