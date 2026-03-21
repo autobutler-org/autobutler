@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	v1_auth "github.com/autobutler-org/autobutler/internal/server/api/v1/auth"
-	v1_smb "github.com/autobutler-org/autobutler/internal/server/api/v1/smb"
 	v1_books "github.com/autobutler-org/autobutler/internal/server/api/v1/books"
 	v1_files "github.com/autobutler-org/autobutler/internal/server/api/v1/cirrus"
 	v1_devices "github.com/autobutler-org/autobutler/internal/server/api/v1/devices"
@@ -13,6 +12,7 @@ import (
 	v1_metrics "github.com/autobutler-org/autobutler/internal/server/api/v1/metrics"
 	v1_migration "github.com/autobutler-org/autobutler/internal/server/api/v1/migration"
 	v1_photos "github.com/autobutler-org/autobutler/internal/server/api/v1/photos"
+	v1_smb "github.com/autobutler-org/autobutler/internal/server/api/v1/smb"
 	v1_storage "github.com/autobutler-org/autobutler/internal/server/api/v1/storage"
 	v1_thumbnails "github.com/autobutler-org/autobutler/internal/server/api/v1/thumbnails"
 	v1_version "github.com/autobutler-org/autobutler/internal/server/api/v1/version"
