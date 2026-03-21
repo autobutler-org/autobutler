@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	v1_auth "github.com/autobutler-org/autobutler/internal/server/api/v1/auth"
+	v1_smb "github.com/autobutler-org/autobutler/internal/server/api/v1/smb"
 	v1_books "github.com/autobutler-org/autobutler/internal/server/api/v1/books"
 	v1_files "github.com/autobutler-org/autobutler/internal/server/api/v1/cirrus"
 	v1_devices "github.com/autobutler-org/autobutler/internal/server/api/v1/devices"
@@ -43,6 +44,7 @@ func setupRouters(engine *gin.Engine, systemCollector *system.Collector) {
 		v1_photos.NewRouter(),
 		v1_storage.NewRouter(),
 		v1_thumbnails.NewRouter(),
+		v1_smb.NewRouter(),
 		v1_version.NewRouter(),
 	}
 	for _, r := range apiRouters {

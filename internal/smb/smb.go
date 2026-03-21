@@ -158,3 +158,50 @@ func Setup(username, password string) error {
 	fmt.Printf("   Path:    %s\n", filepath.Join(filesDir))
 	return nil
 }
+
+// Teardown removes the AutoButler share from smb.conf and stops the smbd service.
+// Must be run as root (or via sudo).
+func Teardown() error {
+	if !IsLinux() {
+		return errNotLinux
+	}
+
+	// Remove the share block from smb.conf.
+	if IsConfigured() {
+		data, err := os.ReadFile(smbConfigPath)
+		if err != nil {
+			return fmt.Errorf("failed to read %s: %w", smbConfigPath, err)
+		}
+		block := shareBlock("")
+		// Strip any variant of the share block (path may differ), so match on the header.
+		lines := strings.Split(string(data), "\n")
+		var kept []string
+		skip := false
+		for _, line := range lines {
+			if strings.TrimSpace(line) == fmt.Sprintf("[%s]", shareName) {
+				skip = true
+			} else if skip && strings.HasPrefix(strings.TrimSpace(line), "[") {
+				skip = false
+			}
+			if !skip {
+				kept = append(kept, line)
+			}
+		}
+		_ = block // suppress unused warning
+		if err := os.WriteFile(smbConfigPath, []byte(strings.Join(kept, "\n")), 0o644); err != nil {
+			return fmt.Errorf("failed to write %s (try running with sudo): %w", smbConfigPath, err)
+		}
+	}
+
+	// Stop and disable the smbd service.
+	for _, args := range [][]string{
+		{"systemctl", "stop", smbService},
+		{"systemctl", "disable", smbService},
+	} {
+		if err := exec.Command(args[0], args[1:]...).Run(); err != nil {
+			return fmt.Errorf("failed to run %s: %w", strings.Join(args, " "), err)
+		}
+	}
+
+	return nil
+}

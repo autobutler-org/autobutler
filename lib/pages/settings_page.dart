@@ -1,5 +1,6 @@
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
+import 'package:autobutler/services/smb_service.dart';
 import 'package:autobutler/services/auth_service.dart';
 import 'package:autobutler/services/health_service.dart';
 import 'package:autobutler/services/cirrus_service.dart';
@@ -989,11 +990,141 @@ class _NetworkDriveCard extends StatefulWidget {
 
 class _NetworkDriveCardState extends State<_NetworkDriveCard> {
   String? _hostname;
+  SmbStatus? _smbStatus;
+  bool _smbLoading = false;
+  bool _smbBusy = false;
 
   @override
   void initState() {
     super.initState();
     _fetchHostname();
+    _loadSmbStatus();
+  }
+
+  Future<void> _loadSmbStatus() async {
+    if (AppSettings.instance.activeHost == null) return;
+    setState(() => _smbLoading = true);
+    try {
+      final status = await SmbService.getStatus();
+      if (mounted) setState(() => _smbStatus = status);
+    } catch (_) {
+      debugPrint('[settings_page.dart] Failed to load SMB status');
+    } finally {
+      if (mounted) setState(() => _smbLoading = false);
+    }
+  }
+
+  Future<void> _setupSmb(String user, String password) async {
+    setState(() => _smbBusy = true);
+    try {
+      final status = await SmbService.setup(user, password);
+      if (!mounted) return;
+      setState(() => _smbStatus = status);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Network drive set up successfully')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Setup failed: $e')));
+    } finally {
+      if (mounted) setState(() => _smbBusy = false);
+    }
+  }
+
+  Future<void> _showSmbSetupDialog({required bool refresh}) async {
+    final userController = TextEditingController();
+    final passController = TextEditingController();
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          refresh ? 'Refresh network drive config' : 'Set up network drive',
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Enter the Linux username and password for Samba access.',
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: userController,
+              decoration: const InputDecoration(
+                labelText: 'Username',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: passController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Set up'),
+          ),
+        ],
+      ),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      userController.dispose();
+      passController.dispose();
+    });
+    if (result != true || !mounted) return;
+    await _setupSmb(userController.text.trim(), passController.text);
+  }
+
+  Future<void> _teardownSmb() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Disable network drive'),
+        content: const Text(
+          'This will stop the Samba service and remove the share. '
+          'Connected clients will lose access. Continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Disable'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _smbBusy = true);
+    try {
+      final status = await SmbService.teardown();
+      if (!mounted) return;
+      setState(() => _smbStatus = status);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Network drive disabled')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to disable: $e')));
+    } finally {
+      if (mounted) setState(() => _smbBusy = false);
+    }
   }
 
   Future<void> _fetchHostname() async {
@@ -1050,6 +1181,80 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
               'Access your AutoButler files directly from your operating system\'s file browser.',
             ),
             const SizedBox(height: 16),
+
+            // SMB setup controls (Linux only)
+            if (AppSettings.instance.activeHost != null) ...[
+              if (_smbLoading)
+                const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else if (_smbStatus != null && _smbStatus!.linux) ...[
+                if (_smbStatus!.configured) ...[
+                  Row(
+                    children: [
+                      Icon(
+                        _smbStatus!.running
+                            ? Icons.check_circle_outline
+                            : Icons.warning_amber,
+                        size: 16,
+                        color: _smbStatus!.running
+                            ? Colors.green
+                            : Colors.orange,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _smbStatus!.running
+                            ? 'Network drive active'
+                            : 'Network drive configured but not running',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: _smbBusy
+                            ? null
+                            : () async {
+                                await _showSmbSetupDialog(refresh: true);
+                              },
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: const Text('Refresh config'),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        onPressed: _smbBusy ? null : _teardownSmb,
+                        icon: const Icon(Icons.link_off, size: 16),
+                        label: const Text('Disable'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  OutlinedButton.icon(
+                    onPressed: _smbBusy
+                        ? null
+                        : () => _showSmbSetupDialog(refresh: false),
+                    icon: _smbBusy
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.add_link, size: 16),
+                    label: const Text('Set up network drive'),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 8),
+              ],
+            ],
 
             // macOS
             const Text('macOS', style: TextStyle(fontWeight: FontWeight.w500)),
