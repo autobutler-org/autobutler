@@ -5,17 +5,20 @@ import (
 
 	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/pkg/botel/exporters/botelsqlite"
+	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 	"github.com/autobutler-org/autobutler/pkg/util/workerutil"
 )
 
 type Dependencies interface {
 	Database() *db.DatabaseSqlc
+	EventBus() *eventbus.Bus
 	HealthDatabase() *db.DatabaseRaw
 	MetricsExporter() *botelsqlite.TraceExporter
 	StorageService() *storageutil.StorageService
 	Worker() workerutil.Worker
 	WithDatabase(database *db.DatabaseSqlc) Dependencies
+	WithEventBus(b *eventbus.Bus) Dependencies
 	WithHealthDatabase(healthDatabase *db.DatabaseRaw) Dependencies
 	WithMetricsExporter(exporter *botelsqlite.TraceExporter) Dependencies
 	WithStorageService(s *storageutil.StorageService) Dependencies
@@ -24,6 +27,7 @@ type Dependencies interface {
 
 type dependencies struct {
 	database        *db.DatabaseSqlc
+	eventBus        *eventbus.Bus
 	healthDatabase  *db.DatabaseRaw
 	metricsExporter *botelsqlite.TraceExporter
 	storageService  *storageutil.StorageService
@@ -47,11 +51,17 @@ func DefaultDependencies() (Dependencies, error) {
 		return nil, fmt.Errorf("failed to connect to health database: %w", err)
 	}
 	deps.WithStorageService(storageutil.NewStorageService(storageutil.NewDetector())) // coverage: ignore
+	deps.WithEventBus(eventbus.New())                                                 // coverage: ignore
 	return deps, nil                                                                  // coverage: ignore - requires database connection
 }
 
 func (d *dependencies) WithDatabase(database *db.DatabaseSqlc) Dependencies {
 	d.database = database
+	return d
+}
+
+func (d *dependencies) WithEventBus(b *eventbus.Bus) Dependencies {
+	d.eventBus = b
 	return d
 }
 
@@ -77,6 +87,10 @@ func (d *dependencies) WithWorker(worker workerutil.Worker) Dependencies {
 
 func (d *dependencies) Database() *db.DatabaseSqlc {
 	return d.database
+}
+
+func (d *dependencies) EventBus() *eventbus.Bus {
+	return d.eventBus
 }
 
 func (d *dependencies) HealthDatabase() *db.DatabaseRaw {
