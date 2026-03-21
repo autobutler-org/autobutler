@@ -555,6 +555,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   setState(() {
                     _autoUpdate = newValue;
                   });
+                  final messenger = ScaffoldMessenger.of(context);
                   try {
                     await SettingsService.setAutoUpdate(newValue);
                   } catch (e) {
@@ -565,7 +566,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     setState(() {
                       _autoUpdate = !newValue;
                     });
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       SnackBar(content: Text('Failed to save setting: $e')),
                     );
                   }

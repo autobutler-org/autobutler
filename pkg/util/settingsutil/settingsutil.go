@@ -18,8 +18,8 @@ type Settings struct {
 }
 
 var (
-	mu       sync.Mutex
-	cached   *Settings
+	mu     sync.Mutex
+	cached *Settings
 )
 
 func settingsPath() (string, error) {

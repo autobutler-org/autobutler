@@ -48,7 +48,7 @@ class SettingsService with AuthenticatedService {
 
   static Future<void> setAutoUpdate(bool enabled) async {
     final uri = _apiBaseUri.resolve('/api/v1/settings');
-    final headers = {...?_authHeaders, 'Content-Type': 'application/json'};
+    final headers = {..._authHeaders, 'Content-Type': 'application/json'};
     final body = jsonEncode({'autoUpdate': enabled});
     final response = await http.post(uri, headers: headers, body: body);
     if (response.statusCode < 200 || response.statusCode >= 300) {
