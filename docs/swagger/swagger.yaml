@@ -158,6 +158,11 @@ definitions:
       size:
         type: integer
     type: object
+  v1_settings.SettingsJSON:
+    properties:
+      autoUpdate:
+        type: boolean
+    type: object
   v1_version.SbomDependencyJSON:
     properties:
       path:
@@ -783,6 +788,52 @@ paths:
       summary: Get software bill of materials
       tags:
       - version
+  /settings:
+    get:
+      description: Retrieves application settings
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_settings.SettingsJSON'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Get settings
+      tags:
+      - settings
+    post:
+      consumes:
+      - application/json
+      description: Updates application settings
+      parameters:
+      - description: Settings
+        in: body
+        name: settings
+        required: true
+        schema:
+          $ref: '#/definitions/v1_settings.SettingsJSON'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_settings.SettingsJSON'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Update settings
+      tags:
+      - settings
   /storage/devices/backup:
     post:
       description: Begin a backup to a device
