@@ -12,6 +12,7 @@ import (
 	v1_metrics "github.com/autobutler-org/autobutler/internal/server/api/v1/metrics"
 	v1_migration "github.com/autobutler-org/autobutler/internal/server/api/v1/migration"
 	v1_photos "github.com/autobutler-org/autobutler/internal/server/api/v1/photos"
+	v1_settings "github.com/autobutler-org/autobutler/internal/server/api/v1/settings"
 	v1_storage "github.com/autobutler-org/autobutler/internal/server/api/v1/storage"
 	v1_thumbnails "github.com/autobutler-org/autobutler/internal/server/api/v1/thumbnails"
 	v1_version "github.com/autobutler-org/autobutler/internal/server/api/v1/version"
@@ -41,6 +42,7 @@ func setupRouters(engine *gin.Engine, systemCollector *system.Collector) {
 		v1_metrics.NewRouter(),
 		v1_migration.NewRouter(),
 		v1_photos.NewRouter(),
+		v1_settings.NewRouter(),
 		v1_storage.NewRouter(),
 		v1_thumbnails.NewRouter(),
 		v1_version.NewRouter(),

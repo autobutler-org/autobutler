@@ -62,6 +62,7 @@ func StartServer(deps deputil.Dependencies) error {
 	if err := setupServices(deps); err != nil {
 		return fmt.Errorf("failed to setup services: %w", err)
 	}
+	go startAutoUpdateChecker()
 
 	router := gin.Default()
 
