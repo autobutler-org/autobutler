@@ -6,6 +6,7 @@ import 'package:autobutler/services/health_service.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/services/connected_devices_service.dart';
 import 'package:autobutler/services/sbom_service.dart';
+import 'package:autobutler/services/settings_service.dart';
 import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:autobutler/widgets/core/copy_button.dart';
@@ -34,6 +35,8 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isLoadingVersionInfo = false;
   bool _isUpdatingVersion = false;
   String? _versionLoadError;
+
+  bool _autoUpdate = false;
 
   // SBOM state
   GoSbom? _goSbom;
@@ -66,6 +69,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _refreshIntervalSeconds = AppSettings.instance.refreshIntervalSeconds;
     setState(() {});
     _loadVersionInfo();
+    _loadSettings();
     _loadSbom();
     _loadDevices();
     _loadStorageDevices();
@@ -234,6 +238,19 @@ class _SettingsPageState extends State<SettingsPage> {
       _sbomError = errors.isEmpty ? null : errors.join('\n');
       _isLoadingSbom = false;
     });
+  }
+
+  Future<void> _loadSettings() async {
+    if (AppSettings.instance.activeHost == null) return;
+    try {
+      final autoUpdate = await SettingsService.getAutoUpdate();
+      if (!mounted) return;
+      setState(() {
+        _autoUpdate = autoUpdate;
+      });
+    } catch (e) {
+      debugPrint('[settings_page.dart] Error loading settings: $e');
+    }
   }
 
   Future<void> _loadVersionInfo() async {
@@ -544,6 +561,36 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
           ),
+          const SizedBox(height: 16),
+          if (AppSettings.instance.activeHost != null)
+            Card(
+              child: SwitchListTile(
+                title: const Text('Automatic updates'),
+                subtitle: const Text(
+                  'AutoButler will check for and install updates daily',
+                ),
+                value: _autoUpdate,
+                onChanged: (newValue) async {
+                  setState(() {
+                    _autoUpdate = newValue;
+                  });
+                  try {
+                    await SettingsService.setAutoUpdate(newValue);
+                  } catch (e) {
+                    debugPrint(
+                      '[settings_page.dart] Error saving auto-update: $e',
+                    );
+                    if (!mounted) return;
+                    setState(() {
+                      _autoUpdate = !newValue;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to save setting: $e')),
+                    );
+                  }
+                },
+              ),
+            ),
           const SizedBox(height: 24),
           const Text(
             'Auto-refresh interval',
