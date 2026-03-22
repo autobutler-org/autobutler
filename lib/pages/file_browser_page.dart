@@ -157,6 +157,38 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   Future<void> _refreshFileState() => manualRefresh();
 
+  // ── Optimistic updates ───────────────────────────────────────────────────
+
+  /// Immediately remove a node from the displayed list.
+  /// If the server call fails, [_refreshFileState] will reconcile.
+  void _optimisticRemove(CirrusFileNode node) {
+    final current = _cachedFiles;
+    if (current == null) return;
+    setState(() {
+      _cachedFiles = current.where((n) => n.apiPath != node.apiPath).toList();
+    });
+  }
+
+  /// Immediately add a placeholder folder to the displayed list.
+  void _optimisticAddFolder(String folderName) {
+    final current = _cachedFiles;
+    if (current == null) return;
+    final placeholder = CirrusFileNode(
+      name: folderName,
+      size: 0,
+      isDir: true,
+      deviceName: current.isNotEmpty ? current.first.deviceName : '',
+      devicePath: current.isNotEmpty ? current.first.devicePath : '',
+      deviceSerial: current.isNotEmpty ? current.first.deviceSerial : '',
+      dirPath: _currentPath.isEmpty
+          ? '$folderName/'
+          : '$_currentPath/$folderName/',
+    );
+    setState(() {
+      _cachedFiles = [...current, placeholder];
+    });
+  }
+
   Future<void> _uploadSelectedFiles(
     List<http.MultipartFile> selectedFiles,
     String uploadPath,
@@ -430,9 +462,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    final snapshot = _cachedFiles;
     setState(() {
       _isCreatingFolder = true;
     });
+
+    // Optimistically show the new folder immediately
+    _optimisticAddFolder(folderName);
 
     try {
       await _controller.createFolder(
@@ -444,14 +480,16 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         return;
       }
 
-      _refreshFileState();
-
+      // Let the WebSocket event or next poll reconcile with the real data
       _showMessage('Created folder $folderName');
     } catch (_) {
       debugPrint('[file_browser_page.dart] Error in catch block');
       if (!mounted) {
         return;
       }
+
+      // Roll back optimistic folder
+      if (snapshot != null) setState(() => _cachedFiles = snapshot);
 
       _showMessage('Failed to create folder');
     } finally {
@@ -467,7 +505,22 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     CirrusFileNode node,
     FileMenuAction action,
   ) async {
+    // Snapshot the pre-mutation cache for rollback on failure
+    final snapshot = _cachedFiles;
     try {
+      // Delete: confirm → optimistic remove → network call
+      if (action == FileMenuAction.delete) {
+        final shouldDelete = await confirmDelete(
+          context,
+          node.name.replaceAll(RegExp(r'/+$'), ''),
+        );
+        if (!mounted || shouldDelete != true) return;
+        _optimisticRemove(node);
+        await _controller.deleteNode(node: node);
+        if (mounted) _showMessage('Deleted');
+        return;
+      }
+
       final outcome = await _controller.handleFileAction(
         node: node,
         action: action,
@@ -490,6 +543,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       debugPrint('[file_browser_page.dart] Error in catch block');
       if (!mounted) {
         return;
+      }
+
+      // Roll back the optimistic update on failure
+      if (snapshot != null) {
+        setState(() => _cachedFiles = snapshot);
       }
 
       if (action == FileMenuAction.moveRename) {
