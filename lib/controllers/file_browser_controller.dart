@@ -127,6 +127,12 @@ class FileBrowserController {
     );
   }
 
+  /// Delete a single node. Caller is responsible for confirmation and
+  /// any optimistic UI updates.
+  Future<void> deleteNode({required CirrusFileNode node}) {
+    return deleteNode(node: node);
+  }
+
   Future<FileMenuActionOutcome?> handleFileAction({
     required CirrusFileNode node,
     required FileMenuAction action,
