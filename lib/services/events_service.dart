@@ -66,8 +66,8 @@ class EventsService {
     if (_disposed) return;
     final host = AppSettings.instance.activeHost;
     if (host == null) {
-      // No host configured — retry later
-      _scheduleReconnect();
+      // No host configured — don't schedule reconnect; caller must call start()
+      // again once a host is set (e.g. from AppSettings change listener).
       return;
     }
 
