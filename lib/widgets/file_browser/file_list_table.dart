@@ -326,8 +326,9 @@ class _FileListTableState extends State<FileListTable> {
   static String _formatSize(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024)
+    if (bytes < 1024 * 1024 * 1024) {
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
@@ -338,34 +339,40 @@ class _FileListTableState extends State<FileListTable> {
         lower.endsWith('.jpeg') ||
         lower.endsWith('.png') ||
         lower.endsWith('.gif') ||
-        lower.endsWith('.webp'))
+        lower.endsWith('.webp')) {
       return Icons.image_outlined;
+    }
     if (lower.endsWith('.zip') ||
         lower.endsWith('.tar') ||
         lower.endsWith('.gz') ||
-        lower.endsWith('.7z'))
+        lower.endsWith('.7z')) {
       return Icons.archive_outlined;
+    }
     if (lower.endsWith('.pdf')) return Icons.picture_as_pdf_outlined;
     if (lower.endsWith('.mp4') ||
         lower.endsWith('.mov') ||
         lower.endsWith('.mkv') ||
-        lower.endsWith('.webm'))
+        lower.endsWith('.webm')) {
       return Icons.video_file_outlined;
+    }
     if (lower.endsWith('.mp3') ||
         lower.endsWith('.wav') ||
-        lower.endsWith('.flac'))
+        lower.endsWith('.flac')) {
       return Icons.audio_file_outlined;
+    }
     if (lower.endsWith('.md') ||
         lower.endsWith('.txt') ||
         lower.endsWith('.doc') ||
-        lower.endsWith('.docx'))
+        lower.endsWith('.docx')) {
       return Icons.description_outlined;
+    }
     if (lower.endsWith('.js') ||
         lower.endsWith('.ts') ||
         lower.endsWith('.dart') ||
         lower.endsWith('.go') ||
-        lower.endsWith('.py'))
+        lower.endsWith('.py')) {
       return Icons.code_outlined;
+    }
     return Icons.insert_drive_file_outlined;
   }
 }
