@@ -542,6 +542,53 @@
                 }
             }
         },
+        "/cirrus/recent": {
+            "get": {
+                "description": "Returns files sorted by modification time (newest first) across all managed devices.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cirrus"
+                ],
+                "summary": "List recently uploaded files",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Maximum number of files to return (default 20, max 200)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Filter by device serial(s)",
+                        "name": "serial",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1_files.FileNodeWithTimeJSON"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/cirrus/search": {
             "get": {
                 "description": "searches for a file across all managed devices for the given search term. If deviceSerial is empty, search across all devices. Otherwise, only for the specified device",
@@ -1382,6 +1429,39 @@
                 },
                 "isDir": {
                     "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                }
+            }
+        },
+        "v1_files.FileNodeWithTimeJSON": {
+            "type": "object",
+            "properties": {
+                "deviceName": {
+                    "type": "string"
+                },
+                "devicePath": {
+                    "type": "string"
+                },
+                "deviceSerial": {
+                    "type": "string"
+                },
+                "dirPath": {
+                    "description": "Directory path containing the file, for easier client-side handling",
+                    "type": "string"
+                },
+                "fullPath": {
+                    "type": "string"
+                },
+                "isDir": {
+                    "type": "boolean"
+                },
+                "modifiedAt": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
