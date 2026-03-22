@@ -8,6 +8,7 @@ import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
+import 'package:autobutler/services/events_service.dart';
 import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/auto_refresh_mixin.dart';
 import 'package:autobutler/utils/file_browser_dialog_utils.dart';
@@ -70,10 +71,26 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   bool _noHostSelected = false;
   Timer? _folderDragExitTimer;
 
+  // WebSocket event subscription for real-time file updates
+  StreamSubscription<FileEvent>? _eventSub;
+
   // Search state
   bool _isSearchMode = false;
   Future<List<CirrusFileNode>>? _searchFuture;
   String? _searchQuery;
+
+  @override
+  void initState() {
+    super
+        .initState(); // AutoRefreshMixin.initState handles timer + initial load
+    EventsService.instance.start();
+    _eventSub = EventsService.instance.events.listen((evt) {
+      // Any file mutation on the server triggers a refresh
+      if ({'upload', 'delete', 'move', 'new_folder'}.contains(evt.kind)) {
+        manualRefresh();
+      }
+    });
+  }
 
   @override
   Future<void> refresh() async {
@@ -131,6 +148,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   @override
   void dispose() {
+    _eventSub?.cancel();
     _folderDragExitTimer?.cancel();
     _fileBrowserScrollController.dispose();
     super.dispose();
