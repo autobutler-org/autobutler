@@ -56,7 +56,9 @@ abstract final class AutobutlerTheme {
           borderRadius: BorderRadius.circular(AutobutlerColors.radiusMd),
           borderSide: const BorderSide(color: AutobutlerColors.primary),
         ),
-        labelStyle: const TextStyle(color: AutobutlerColors.secondaryForeground),
+        labelStyle: const TextStyle(
+          color: AutobutlerColors.secondaryForeground,
+        ),
         hintStyle: const TextStyle(color: AutobutlerColors.mutedForeground),
       ),
 
@@ -81,9 +83,7 @@ abstract final class AutobutlerTheme {
       ),
 
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: AutobutlerColors.primary,
-        ),
+        style: TextButton.styleFrom(foregroundColor: AutobutlerColors.primary),
       ),
 
       dividerTheme: const DividerThemeData(
