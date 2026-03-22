@@ -579,7 +579,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       drawer: AutobutlerDrawer(
         activeSection: AutobutlerDrawerSection.cirrus,
         onTapCirrus: () {
@@ -610,7 +609,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
               onPathSelected: _setPath,
               isUnifiedView: _isUnifiedView,
               onToggleView: () => setState(() => _isGridView = !_isGridView),
-              onToggleUnifiedView: () => setState(() => _isUnifiedView = !_isUnifiedView),
+              onToggleUnifiedView: () =>
+                  setState(() => _isUnifiedView = !_isUnifiedView),
               onSearchPressed: _handleSearchPressed,
               onRefresh: _refreshFileState,
               onUploadPressed: _handleUploadPressed,
@@ -620,7 +620,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
               onOpenDrawer: () => Scaffold.of(context).openDrawer(),
               onOpenSettings: () => context.go(AppRoutes.settings),
             ),
-
           ),
           FileBrowserHeader(
             isGridView: _isGridView,

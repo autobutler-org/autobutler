@@ -53,9 +53,7 @@ class FileTopBar extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: AutobutlerColors.sidebar,
-        border: Border(
-          bottom: BorderSide(color: AutobutlerColors.border),
-        ),
+        border: Border(bottom: BorderSide(color: AutobutlerColors.border)),
       ),
       child: SafeArea(
         bottom: false,
@@ -229,14 +227,16 @@ class FileTopBar extends StatelessWidget {
     final widgets = <Widget>[];
 
     for (var i = 0; i < segments.length; i++) {
-      widgets.add(const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 4),
-        child: Icon(
-          Icons.chevron_right_rounded,
-          size: 14,
-          color: AutobutlerColors.mutedForeground,
+      widgets.add(
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child: Icon(
+            Icons.chevron_right_rounded,
+            size: 14,
+            color: AutobutlerColors.mutedForeground,
+          ),
         ),
-      ));
+      );
 
       final isLast = i == segments.length - 1;
       final targetPath = '/${segments.take(i + 1).join('/')}';
@@ -266,7 +266,9 @@ class FileTopBar extends StatelessWidget {
         _chip(
           icon: Icons.upload_rounded,
           label: isUploading
-              ? (uploadTotal > 0 ? '$uploadCompleted/$uploadTotal' : 'Uploading...')
+              ? (uploadTotal > 0
+                    ? '$uploadCompleted/$uploadTotal'
+                    : 'Uploading...')
               : 'Upload',
           onTap: isUploading ? null : onUploadPressed,
         ),
@@ -353,9 +355,13 @@ class FileTopBar extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: active ? AutobutlerColors.primary.withValues(alpha: 0.12) : AutobutlerColors.input,
+          color: active
+              ? AutobutlerColors.primary.withValues(alpha: 0.12)
+              : AutobutlerColors.input,
           border: Border.all(
-            color: active ? AutobutlerColors.primary.withValues(alpha: 0.3) : AutobutlerColors.border,
+            color: active
+                ? AutobutlerColors.primary.withValues(alpha: 0.3)
+                : AutobutlerColors.border,
           ),
           borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
         ),
