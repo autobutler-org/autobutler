@@ -85,7 +85,8 @@ class _FileListTableState extends State<FileListTable> {
             child: ListView.builder(
               controller: widget.scrollController,
               itemCount: files.length,
-              itemBuilder: (context, index) => _buildRow(context, files[index], index == files.length - 1),
+              itemBuilder: (context, index) =>
+                  _buildRow(context, files[index], index == files.length - 1),
             ),
           ),
         ],
@@ -149,7 +150,9 @@ class _FileListTableState extends State<FileListTable> {
       decoration: BoxDecoration(
         border: isLast
             ? null
-            : const Border(bottom: BorderSide(color: AutobutlerColors.border, width: 0.5)),
+            : const Border(
+                bottom: BorderSide(color: AutobutlerColors.border, width: 0.5),
+              ),
       ),
       child: Material(
         color: Colors.transparent,
@@ -283,15 +286,28 @@ class _FileListTableState extends State<FileListTable> {
       context: context,
       position: RelativeRect.fill,
       items: [
-        const PopupMenuItem(value: FileMenuAction.download, child: Text('Download')),
-        const PopupMenuItem(value: FileMenuAction.moveRename, child: Text('Move/Rename')),
-        const PopupMenuItem(value: FileMenuAction.delete, child: Text('Delete')),
+        const PopupMenuItem(
+          value: FileMenuAction.download,
+          child: Text('Download'),
+        ),
+        const PopupMenuItem(
+          value: FileMenuAction.moveRename,
+          child: Text('Move/Rename'),
+        ),
+        const PopupMenuItem(
+          value: FileMenuAction.delete,
+          child: Text('Delete'),
+        ),
         if (widget.isSearchMode && widget.onNavigateToFolder != null)
-          const PopupMenuItem(value: FileMenuAction.navigateToFolder, child: Text('Navigate to folder')),
+          const PopupMenuItem(
+            value: FileMenuAction.navigateToFolder,
+            child: Text('Navigate to folder'),
+          ),
       ],
     ).then((action) {
       if (action != null) {
-        if (action == FileMenuAction.navigateToFolder && widget.onNavigateToFolder != null) {
+        if (action == FileMenuAction.navigateToFolder &&
+            widget.onNavigateToFolder != null) {
           widget.onNavigateToFolder!(file);
         } else {
           widget.onFileMenuAction(file, action);
@@ -310,20 +326,46 @@ class _FileListTableState extends State<FileListTable> {
   static String _formatSize(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (bytes < 1024 * 1024 * 1024)
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
   static IconData _iconForNode(CirrusFileNode node) {
     if (node.isDir) return Icons.folder_outlined;
     final lower = node.name.toLowerCase();
-    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png') || lower.endsWith('.gif') || lower.endsWith('.webp')) return Icons.image_outlined;
-    if (lower.endsWith('.zip') || lower.endsWith('.tar') || lower.endsWith('.gz') || lower.endsWith('.7z')) return Icons.archive_outlined;
+    if (lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.gif') ||
+        lower.endsWith('.webp'))
+      return Icons.image_outlined;
+    if (lower.endsWith('.zip') ||
+        lower.endsWith('.tar') ||
+        lower.endsWith('.gz') ||
+        lower.endsWith('.7z'))
+      return Icons.archive_outlined;
     if (lower.endsWith('.pdf')) return Icons.picture_as_pdf_outlined;
-    if (lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.mkv') || lower.endsWith('.webm')) return Icons.video_file_outlined;
-    if (lower.endsWith('.mp3') || lower.endsWith('.wav') || lower.endsWith('.flac')) return Icons.audio_file_outlined;
-    if (lower.endsWith('.md') || lower.endsWith('.txt') || lower.endsWith('.doc') || lower.endsWith('.docx')) return Icons.description_outlined;
-    if (lower.endsWith('.js') || lower.endsWith('.ts') || lower.endsWith('.dart') || lower.endsWith('.go') || lower.endsWith('.py')) return Icons.code_outlined;
+    if (lower.endsWith('.mp4') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.mkv') ||
+        lower.endsWith('.webm'))
+      return Icons.video_file_outlined;
+    if (lower.endsWith('.mp3') ||
+        lower.endsWith('.wav') ||
+        lower.endsWith('.flac'))
+      return Icons.audio_file_outlined;
+    if (lower.endsWith('.md') ||
+        lower.endsWith('.txt') ||
+        lower.endsWith('.doc') ||
+        lower.endsWith('.docx'))
+      return Icons.description_outlined;
+    if (lower.endsWith('.js') ||
+        lower.endsWith('.ts') ||
+        lower.endsWith('.dart') ||
+        lower.endsWith('.go') ||
+        lower.endsWith('.py'))
+      return Icons.code_outlined;
     return Icons.insert_drive_file_outlined;
   }
 }

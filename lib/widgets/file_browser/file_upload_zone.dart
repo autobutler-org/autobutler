@@ -23,7 +23,9 @@ class FileUploadZone extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         border: Border.all(
-          color: isDragging ? AutobutlerColors.primary : AutobutlerColors.border,
+          color: isDragging
+              ? AutobutlerColors.primary
+              : AutobutlerColors.border,
           width: isDragging ? 2 : 1,
           strokeAlign: BorderSide.strokeAlignInside,
         ),
@@ -44,7 +46,9 @@ class FileUploadZone extends StatelessWidget {
                 color: AutobutlerColors.input,
               ),
               child: Icon(
-                isUploading ? Icons.hourglass_top_rounded : Icons.upload_rounded,
+                isUploading
+                    ? Icons.hourglass_top_rounded
+                    : Icons.upload_rounded,
                 size: 18,
                 color: AutobutlerColors.secondaryForeground,
               ),
@@ -57,7 +61,11 @@ class FileUploadZone extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  isDragging ? 'Drop files here' : (isUploading ? 'Uploading...' : 'Drag & drop to upload'),
+                  isDragging
+                      ? 'Drop files here'
+                      : (isUploading
+                            ? 'Uploading...'
+                            : 'Drag & drop to upload'),
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,

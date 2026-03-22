@@ -9,9 +9,7 @@ class FileStorageFooter extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: AutobutlerColors.sidebar,
-        border: Border(
-          top: BorderSide(color: AutobutlerColors.border),
-        ),
+        border: Border(top: BorderSide(color: AutobutlerColors.border)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
@@ -46,7 +44,9 @@ class FileStorageFooter extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     color: AutobutlerColors.primary,
-                    borderRadius: BorderRadius.circular(AutobutlerColors.radiusMd),
+                    borderRadius: BorderRadius.circular(
+                      AutobutlerColors.radiusMd,
+                    ),
                   ),
                 ),
               ),
