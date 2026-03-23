@@ -51,6 +51,14 @@ body:
     attributes:
       label: URL of problem
       description: Provide a URL (local or remote) that demonstrates the problem
+  - type: input
+    id: version
+    attributes:
+      label: AutoButler version
+      description: What version of AutoButler are you running? (Find it in Settings → About, or run `autobutler version`)
+      placeholder: "e.g. 0.1.0"
+    validations:
+      required: true
   - type: textarea
     id: logs
     attributes:
