@@ -1,21 +1,25 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/theme/autobutler_colors.dart';
+import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:flutter/material.dart';
 
 /// A horizontally-scrolling strip showing recently uploaded files.
 /// Displayed at the root of the file browser (not in search mode).
 ///
-/// Tapping a file chip triggers [onOpenFile]; tapping the folder badge
-/// triggers [onNavigateToFolder] with the parent directory path.
+/// Tapping a file chip calls [onOpenFile] for viewable types (images/video/audio),
+/// or [onFileMenuAction] with [FileMenuAction.download] for everything else.
+/// Tapping the folder badge triggers [onNavigateToFolder] with the parent directory path.
 class RecentFilesSection extends StatefulWidget {
   const RecentFilesSection({
     required this.onOpenFile,
+    required this.onFileMenuAction,
     required this.onNavigateToFolder,
     super.key,
   });
 
   final void Function(CirrusFileNode) onOpenFile;
+  final Future<void> Function(CirrusFileNode, FileMenuAction) onFileMenuAction;
   final void Function(String path) onNavigateToFolder;
 
   @override
@@ -32,11 +36,36 @@ class _RecentFilesSectionState extends State<RecentFilesSection> {
   }
 
   String _parentPath(CirrusFileNode node) {
-    // apiPath is like "/photos/IMG_001.jpg" — strip the filename.
     final path = node.apiPath;
     final slash = path.lastIndexOf('/');
     if (slash <= 0) return '';
     return path.substring(0, slash);
+  }
+
+  static bool _isViewable(String name) {
+    final lower = name.toLowerCase();
+    return lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.gif') ||
+        lower.endsWith('.webp') ||
+        lower.endsWith('.mp4') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.mkv') ||
+        lower.endsWith('.webm') ||
+        lower.endsWith('.avi') ||
+        lower.endsWith('.mp3') ||
+        lower.endsWith('.wav') ||
+        lower.endsWith('.m4a') ||
+        lower.endsWith('.aac');
+  }
+
+  void _openOrDownload(CirrusFileNode file) {
+    if (_isViewable(file.name)) {
+      widget.onOpenFile(file);
+    } else {
+      widget.onFileMenuAction(file, FileMenuAction.download);
+    }
   }
 
   @override
@@ -85,12 +114,15 @@ class _RecentFilesSectionState extends State<RecentFilesSection> {
                   scrollDirection: Axis.horizontal,
                   itemCount: files.length,
                   separatorBuilder: (_, _) => const SizedBox(width: 8),
-                  itemBuilder: (context, index) => _RecentFileChip(
-                    file: files[index],
-                    onTap: () => widget.onOpenFile(files[index]),
-                    onFolderTap: () =>
-                        widget.onNavigateToFolder(_parentPath(files[index])),
-                  ),
+                  itemBuilder: (context, index) {
+                    final file = files[index];
+                    return _RecentFileChip(
+                      file: file,
+                      onTap: () => _openOrDownload(file),
+                      onFolderTap: () =>
+                          widget.onNavigateToFolder(_parentPath(file)),
+                    );
+                  },
                 ),
               ),
             ],

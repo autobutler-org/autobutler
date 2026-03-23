@@ -646,6 +646,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             RecentFilesSection(
               key: ValueKey(_recentFilesSectionKey),
               onOpenFile: _handleOpenNode,
+              onFileMenuAction: _handleFileMenuAction,
               onNavigateToFolder: _setPath,
             ),
 
