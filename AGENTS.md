@@ -141,6 +141,20 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
 
 This project uses Relynce for reliability risk analysis. The following skills are available:
 
+### Core Skills
+- `/rely:scan` — Scan codebase for reliability risks
+- `/rely:fix R-XXX` — Get remediation guidance and auto-fix a risk
+- `/rely:ask "question"` — Ask any reliability question to a domain expert
+- `/rely:risks` — View risk posture, open risks, and ready-to-fix items
+- `/rely:review` — Review code changes for reliability issues
+- `/rely:evidence RC-XXX` — Submit evidence after implementing a control
+- `/rely:status` — Check connection and configuration
+
+### Quick Reference
+- Run `rely risk list` to see current risks
+- Run `rely risk show <code>` for risk details with mapped controls
+- Run `rely control show <code>` for control implementation guidance
+
 ### Risk Detection
 
 - `/rely:detect-risks` — Scan code for reliability risks and submit findings
