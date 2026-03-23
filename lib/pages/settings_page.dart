@@ -388,6 +388,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: AutobutlerBrandButton.preferredWidth,
         leading: Builder(
           builder: (context) => AutobutlerBrandButton(
             label: 'Settings',

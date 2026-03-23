@@ -4,12 +4,18 @@ import 'package:flutter/material.dart';
 /// Styled brand button used in the top bar across all main pages.
 /// Shows the AutoButler storage icon + a page title label and opens
 /// the navigation drawer when tapped.
+///
+/// When used as [AppBar.leading], set [AppBar.leadingWidth] to
+/// [AutobutlerBrandButton.preferredWidth] to avoid overflow.
 class AutobutlerBrandButton extends StatelessWidget {
   const AutobutlerBrandButton({
     required this.label,
     required this.onTap,
     super.key,
   });
+
+  /// Use this as [AppBar.leadingWidth] when placing this widget in an AppBar.
+  static const double preferredWidth = 140.0;
 
   /// The page label shown next to the icon (e.g. "Files", "Photos").
   final String label;

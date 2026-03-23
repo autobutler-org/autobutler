@@ -487,6 +487,7 @@ class _PhotosPageState extends State<PhotosPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: AutobutlerBrandButton.preferredWidth,
         leading: Builder(
           builder: (context) => AutobutlerBrandButton(
             label: 'Photos',

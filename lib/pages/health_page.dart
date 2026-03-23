@@ -50,6 +50,7 @@ class _HealthPageState extends State<HealthPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: AutobutlerBrandButton.preferredWidth,
         leading: Builder(
           builder: (context) => AutobutlerBrandButton(
             label: 'Health',
