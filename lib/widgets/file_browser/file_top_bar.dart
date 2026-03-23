@@ -1,4 +1,5 @@
 import 'package:autobutler/theme/autobutler_colors.dart';
+import 'package:autobutler/widgets/autobutler_brand_button.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:flutter/material.dart';
 
@@ -87,51 +88,7 @@ class FileTopBar extends StatelessWidget {
   }
 
   Widget _buildBrand(BuildContext context) {
-    final radius = BorderRadius.circular(AutobutlerColors.radiusMd);
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: Material(
-        color: Colors.transparent,
-        clipBehavior: Clip.antiAlias,
-        borderRadius: radius,
-        child: InkWell(
-          onTap: onOpenDrawer,
-          borderRadius: radius,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: AutobutlerColors.primary,
-                    borderRadius: radius,
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.storage_rounded,
-                      size: 16,
-                      color: AutobutlerColors.primaryForeground,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                const Text(
-                  'Files',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AutobutlerColors.cardForeground,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+    return AutobutlerBrandButton(label: 'Files', onTap: onOpenDrawer);
   }
 
   Widget _buildNavButtons(BuildContext context) {

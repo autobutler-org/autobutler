@@ -1,6 +1,7 @@
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/health_service.dart';
 import 'package:autobutler/utils/auto_refresh_mixin.dart';
+import 'package:autobutler/widgets/autobutler_brand_button.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:autobutler/router.dart';
@@ -50,13 +51,12 @@ class _HealthPageState extends State<HealthPage>
     return Scaffold(
       appBar: AppBar(
         leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
+          builder: (context) => AutobutlerBrandButton(
+            label: 'Health',
+            onTap: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        title: const Text('Health'),
-        centerTitle: true,
+        title: null,
         actions: [
           RefreshIconButton(
             isRefreshing: isRefreshing,

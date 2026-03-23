@@ -8,6 +8,7 @@ import 'package:autobutler/services/connected_devices_service.dart';
 import 'package:autobutler/services/sbom_service.dart';
 import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
+import 'package:autobutler/widgets/autobutler_brand_button.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:flutter/material.dart';
@@ -388,13 +389,12 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       appBar: AppBar(
         leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
+          builder: (context) => AutobutlerBrandButton(
+            label: 'Settings',
+            onTap: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        title: const Text('Settings'),
-        centerTitle: true,
+        title: null,
       ),
       drawer: AutobutlerDrawer(
         activeSection: AutobutlerDrawerSection.settings,
