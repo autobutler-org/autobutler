@@ -17,6 +17,7 @@ import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:autobutler/widgets/file_browser/file_storage_footer.dart';
 import 'package:autobutler/widgets/file_browser/file_top_bar.dart';
+import 'package:autobutler/widgets/file_browser/recent_files_section.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:autobutler/router.dart';
@@ -51,6 +52,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   bool _isUploading = false;
   int _uploadTotal = 0;
   int _uploadCompleted = 0;
+  int _recentFilesSectionKey = 0;
   bool _isCreatingFolder = false;
   bool _isWebDragging = false;
   bool _isHoveringFolderDropTarget = false;
@@ -152,6 +154,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           _isUploading = false;
           _uploadTotal = 0;
           _uploadCompleted = 0;
+          _recentFilesSectionKey++;
         });
       }
     }
@@ -638,6 +641,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
               });
             },
           ),
+
+          if (!_isSearchMode && _currentPath.isEmpty && !_noHostSelected)
+            RecentFilesSection(
+              key: ValueKey(_recentFilesSectionKey),
+              onOpenFile: _handleOpenNode,
+              onNavigateToFolder: _setPath,
+            ),
 
           Expanded(
             child: _noHostSelected
