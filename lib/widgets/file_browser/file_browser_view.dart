@@ -1,5 +1,6 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/services/cirrus_service.dart';
+import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:desktop_drop/desktop_drop.dart';
@@ -8,7 +9,11 @@ import 'package:flutter/material.dart';
 
 enum FileMenuAction { download, moveRename, delete, navigateToFolder }
 
-class FileBrowserView extends StatelessWidget {
+enum SortColumn { name, type, size, device }
+
+enum SortDirection { asc, desc }
+
+class FileBrowserView extends StatefulWidget {
   const FileBrowserView({
     required this.filesFuture,
     required this.onFileMenuAction,
@@ -46,21 +51,64 @@ class FileBrowserView extends StatelessWidget {
   final bool isSearchMode;
   final void Function(CirrusFileNode)? onNavigateToFolder;
 
+  @override
+  State<FileBrowserView> createState() => _FileBrowserViewState();
+}
+
+class _FileBrowserViewState extends State<FileBrowserView> {
+  SortColumn _sortColumn = SortColumn.name;
+  SortDirection _sortDirection = SortDirection.asc;
+
+  void _toggleSort(SortColumn column) {
+    setState(() {
+      if (_sortColumn == column) {
+        _sortDirection = _sortDirection == SortDirection.asc
+            ? SortDirection.desc
+            : SortDirection.asc;
+      } else {
+        _sortColumn = column;
+        _sortDirection = SortDirection.asc;
+      }
+    });
+  }
+
+  List<CirrusFileNode> _sorted(List<CirrusFileNode> files) {
+    final sorted = List<CirrusFileNode>.from(files);
+    sorted.sort((a, b) {
+      // Directories always first.
+      final dirCmp = (b.isDir ? 1 : 0) - (a.isDir ? 1 : 0);
+      if (dirCmp != 0) return dirCmp;
+
+      int cmp;
+      switch (_sortColumn) {
+        case SortColumn.name:
+          cmp = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        case SortColumn.type:
+          cmp = _fileType(a).compareTo(_fileType(b));
+        case SortColumn.size:
+          cmp = a.size.compareTo(b.size);
+        case SortColumn.device:
+          cmp = a.deviceName.toLowerCase().compareTo(
+            b.deviceName.toLowerCase(),
+          );
+      }
+      return _sortDirection == SortDirection.asc ? cmp : -cmp;
+    });
+    return sorted;
+  }
+
   Widget _buildFolderDropWrapper({
     required CirrusFileNode item,
     required Widget child,
   }) {
-    // Folder drop targets are web-only for now; see _handleDroppedItems for
-    // notes on enabling native desktop support in a follow-up.
-    if (!kIsWeb || onDropToFolder == null || !item.isDir) {
+    if (!kIsWeb || widget.onDropToFolder == null || !item.isDir) {
       return child;
     }
-
     return _FolderDropTarget(
-      targetPath: normalizePath(joinPath(currentPath, item.name)),
-      onDropToFolder: onDropToFolder!,
-      onFolderDragEnter: onFolderDragEnter,
-      onFolderDragExit: onFolderDragExit,
+      targetPath: normalizePath(joinPath(widget.currentPath, item.name)),
+      onDropToFolder: widget.onDropToFolder!,
+      onFolderDragEnter: widget.onFolderDragEnter,
+      onFolderDragExit: widget.onFolderDragExit,
       child: child,
     );
   }
@@ -71,318 +119,89 @@ class FileBrowserView extends StatelessWidget {
     FileMenuAction action,
   ) {
     Future<void>.delayed(Duration.zero, () async {
-      // Check context is still valid before proceeding
-      if (!context.mounted) {
-        return;
-      }
-      await onFileMenuAction(item, action);
+      if (!context.mounted) return;
+      await widget.onFileMenuAction(item, action);
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+  // ── Sort header ──────────────────────────────────────────────────────────
 
-    return FutureBuilder<List<CirrusFileNode>>(
-      future: filesFuture,
-      initialData: initialData,
-      builder: (context, snapshot) {
-        // Only show full-screen spinner on initial load (no data yet).
-        // While refreshing, initialData keeps stale content visible.
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            !snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              'Unable to load files',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          );
-        }
-
-        final files = snapshot.data ?? const <CirrusFileNode>[];
-        if (files.isEmpty) {
-          return const Center(child: Text('No files found'));
-        }
-
-        // In segmented view, group files by device and render each group
-        // as a collapsible ExpansionTile.
-        if (!isUnifiedView && !isSearchMode) {
-          final groups = <String, List<CirrusFileNode>>{};
-          for (final f in files) {
-            final key = f.deviceName.isNotEmpty
-                ? f.deviceName
-                : 'Unknown Device';
-            groups.putIfAbsent(key, () => []).add(f);
-          }
-          return ListView(
-            controller: scrollController,
-            children: [
-              for (final entry in groups.entries)
-                ExpansionTile(
-                  initiallyExpanded: true,
-                  leading: const Icon(Icons.storage_rounded),
-                  title: Text(entry.key),
-                  subtitle: Text(
-                    '${entry.value.length} item${entry.value.length == 1 ? '' : 's'}',
-                  ),
-                  children: [
-                    for (final item in entry.value)
-                      _buildFolderDropWrapper(
-                        item: item,
-                        child: _buildListTile(context, item),
-                      ),
-                  ],
-                ),
-            ],
-          );
-        }
-
-        if (isGridView) {
-          final screenWidth = MediaQuery.sizeOf(context).width;
-          const horizontalPadding = 16.0;
-          const crossAxisSpacing = 8.0;
-          const minTileWidth = 180.0;
-          final usableWidth = screenWidth - horizontalPadding;
-          final calculatedCount =
-              ((usableWidth + crossAxisSpacing) /
-                      (minTileWidth + crossAxisSpacing))
-                  .floor();
-          final crossAxisCount = calculatedCount < 1 ? 1 : calculatedCount;
-
-          return GridView.builder(
-            controller: scrollController,
-            padding: const EdgeInsets.all(8),
-            itemCount: files.length,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              // Number of tiles per row
-              crossAxisCount: crossAxisCount,
-              // How tall each tile is relative to its width (1.0 = square)
-              childAspectRatio: 1.1,
-              crossAxisSpacing: crossAxisSpacing,
-              mainAxisSpacing: 8,
-            ),
-            itemBuilder: (context, index) {
-              final item = files[index];
-              return _buildFolderDropWrapper(
-                item: item,
-                child: Card(
-                  clipBehavior: Clip.hardEdge,
-                  child: InkWell(
-                    onTap: () => onOpenDirectory(item),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // If the node is an image, show a thumbnail from the backend thumbnails endpoint;
-                          // otherwise show a representative icon.
-                          (() {
-                            final lower = item.name.toLowerCase();
-                            final isImage =
-                                lower.endsWith('.jpg') ||
-                                lower.endsWith('.jpeg') ||
-                                lower.endsWith('.png') ||
-                                lower.endsWith('.gif') ||
-                                lower.endsWith('.webp');
-                            if (isImage) {
-                              final url = CirrusService.constructThumbnailUrl(
-                                item.apiPath,
-                                serial: item.deviceSerial,
-                              );
-                              return SizedBox(
-                                height: 96,
-                                width: double.infinity,
-                                child: Image.network(
-                                  url.toString(),
-                                  fit: BoxFit.cover,
-                                  loadingBuilder: (context, child, progress) {
-                                    if (progress == null) return child;
-                                    return Container(color: Colors.grey[300]);
-                                  },
-                                  errorBuilder: (context, error, stack) =>
-                                      Container(color: Colors.grey[300]),
-                                ),
-                              );
-                            }
-                            return Center(
-                              child: Icon(_iconForNode(item), size: 48),
-                            );
-                          })(),
-                          const SizedBox(height: 8),
-                          Flexible(
-                            child: Text(
-                              item.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const Spacer(),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              if (showFileSizeAndMenu)
-                                Flexible(
-                                  child: Text(
-                                    _formatSize(item.size, item.isDir),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              if (showFileSizeAndMenu)
-                                PopupMenuButton<FileMenuAction>(
-                                  icon: const Icon(Icons.more_vert),
-                                  itemBuilder: (context) => [
-                                    PopupMenuItem<FileMenuAction>(
-                                      value: FileMenuAction.download,
-                                      onTap: () => _dispatchMenuAction(
-                                        context,
-                                        item,
-                                        FileMenuAction.download,
-                                      ),
-                                      child: Text('Download'),
-                                    ),
-                                    PopupMenuItem<FileMenuAction>(
-                                      value: FileMenuAction.moveRename,
-                                      onTap: () => _dispatchMenuAction(
-                                        context,
-                                        item,
-                                        FileMenuAction.moveRename,
-                                      ),
-                                      child: Text('Move/Rename'),
-                                    ),
-                                    PopupMenuItem<FileMenuAction>(
-                                      value: FileMenuAction.delete,
-                                      onTap: () => _dispatchMenuAction(
-                                        context,
-                                        item,
-                                        FileMenuAction.delete,
-                                      ),
-                                      child: Text('Delete'),
-                                    ),
-                                    if (isSearchMode &&
-                                        onNavigateToFolder != null)
-                                      PopupMenuItem<FileMenuAction>(
-                                        value: FileMenuAction.navigateToFolder,
-                                        onTap: () => onNavigateToFolder!(item),
-                                        child: Text('Navigate to folder'),
-                                      ),
-                                  ],
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          );
-        }
-
-        return ListView.separated(
-          controller: scrollController,
-          itemCount: files.length,
-          separatorBuilder: (_, _) => Divider(
-            height: 1,
-            color: colors.outlineVariant.withValues(alpha: 0.5),
-          ),
-          itemBuilder: (context, index) {
-            final item = files[index];
-            return _buildFolderDropWrapper(
-              item: item,
-              child: Material(
-                color: Colors.transparent,
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 2,
-                  ),
-                  leading: Icon(_iconForNode(item)),
-                  title: Row(
-                    children: [
-                      Expanded(
-                        flex: 5,
-                        child: Text(
-                          item.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          item.deviceName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (showFileSizeAndMenu)
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            _formatSize(item.size, item.isDir),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
-                  ),
-                  trailing: showFileSizeAndMenu
-                      ? PopupMenuButton<FileMenuAction>(
-                          icon: const Icon(Icons.more_vert),
-                          itemBuilder: (context) => [
-                            PopupMenuItem<FileMenuAction>(
-                              value: FileMenuAction.download,
-                              onTap: () => _dispatchMenuAction(
-                                context,
-                                item,
-                                FileMenuAction.download,
-                              ),
-                              child: Text('Download'),
-                            ),
-                            PopupMenuItem<FileMenuAction>(
-                              value: FileMenuAction.moveRename,
-                              onTap: () => _dispatchMenuAction(
-                                context,
-                                item,
-                                FileMenuAction.moveRename,
-                              ),
-                              child: Text('Move/Rename'),
-                            ),
-                            PopupMenuItem<FileMenuAction>(
-                              value: FileMenuAction.delete,
-                              onTap: () => _dispatchMenuAction(
-                                context,
-                                item,
-                                FileMenuAction.delete,
-                              ),
-                              child: Text('Delete'),
-                            ),
-                            if (isSearchMode && onNavigateToFolder != null)
-                              PopupMenuItem<FileMenuAction>(
-                                value: FileMenuAction.navigateToFolder,
-                                onTap: () => onNavigateToFolder!(item),
-                                child: Text('Navigate to folder'),
-                              ),
-                          ],
-                        )
-                      : null,
-                  onTap: () => onOpenDirectory(item),
-                ),
-              ),
-            );
-          },
-        );
-      },
+  Widget _buildSortHeader() {
+    return Container(
+      color: AutobutlerColors.sidebar,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          // Leading icon placeholder
+          const SizedBox(width: 40),
+          _headerCell('Name', SortColumn.name, flex: 5),
+          _headerCell('Device', SortColumn.device, flex: 2),
+          if (widget.showFileSizeAndMenu)
+            _headerCell('Size', SortColumn.size, flex: 2),
+          // Trailing menu placeholder
+          if (widget.showFileSizeAndMenu) const SizedBox(width: 48),
+        ],
+      ),
     );
   }
 
+  Widget _buildGridSortHeader() {
+    return Container(
+      color: AutobutlerColors.sidebar,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          _headerCell('Name', SortColumn.name),
+          _headerCell('Type', SortColumn.type),
+          _headerCell('Size', SortColumn.size),
+          _headerCell('Device', SortColumn.device),
+        ],
+      ),
+    );
+  }
+
+  Widget _headerCell(String label, SortColumn column, {int flex = 1}) {
+    final isActive = _sortColumn == column;
+    return Expanded(
+      flex: flex,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () => _toggleSort(column),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: isActive
+                      ? AutobutlerColors.foreground
+                      : AutobutlerColors.secondaryForeground,
+                ),
+              ),
+              if (isActive) ...[
+                const SizedBox(width: 4),
+                Icon(
+                  _sortDirection == SortDirection.asc
+                      ? Icons.arrow_upward_rounded
+                      : Icons.arrow_downward_rounded,
+                  size: 12,
+                  color: AutobutlerColors.foreground,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── List tile ─────────────────────────────────────────────────────────────
+
   Widget _buildListTile(BuildContext context, CirrusFileNode item) {
+    final colors = Theme.of(context).colorScheme;
     return Material(
       color: Colors.transparent,
       child: ListTile(
@@ -404,20 +223,22 @@ class FileBrowserView extends StatelessWidget {
                 item.deviceName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: colors.onSurfaceVariant),
               ),
             ),
-            if (showFileSizeAndMenu)
+            if (widget.showFileSizeAndMenu)
               Expanded(
                 flex: 2,
                 child: Text(
                   _formatSize(item.size, item.isDir),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: colors.onSurfaceVariant),
                 ),
               ),
           ],
         ),
-        trailing: showFileSizeAndMenu
+        trailing: widget.showFileSizeAndMenu
             ? PopupMenuButton<FileMenuAction>(
                 icon: const Icon(Icons.more_vert),
                 itemBuilder: (context) => [
@@ -448,61 +269,316 @@ class FileBrowserView extends StatelessWidget {
                     ),
                     child: const Text('Delete'),
                   ),
-                  if (isSearchMode && onNavigateToFolder != null)
+                  if (widget.isSearchMode && widget.onNavigateToFolder != null)
                     PopupMenuItem<FileMenuAction>(
                       value: FileMenuAction.navigateToFolder,
-                      onTap: () => onNavigateToFolder!(item),
+                      onTap: () => widget.onNavigateToFolder!(item),
                       child: const Text('Navigate to folder'),
                     ),
                 ],
               )
             : null,
-        onTap: () => onOpenDirectory(item),
+        onTap: () => widget.onOpenDirectory(item),
       ),
     );
   }
 
-  static IconData _iconForNode(CirrusFileNode node) {
-    if (node.isDir) {
-      return Icons.folder_outlined;
-    }
+  // ── Build ─────────────────────────────────────────────────────────────────
 
-    final lowerName = node.name.toLowerCase();
-    if (lowerName.endsWith('.jpg') ||
-        lowerName.endsWith('.jpeg') ||
-        lowerName.endsWith('.png') ||
-        lowerName.endsWith('.gif') ||
-        lowerName.endsWith('.webp')) {
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return FutureBuilder<List<CirrusFileNode>>(
+      future: widget.filesFuture,
+      initialData: widget.initialData,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              'Unable to load files',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          );
+        }
+
+        final raw = snapshot.data ?? const <CirrusFileNode>[];
+        if (raw.isEmpty) {
+          return const Center(child: Text('No files found'));
+        }
+
+        final files = _sorted(raw);
+
+        // ── Segmented view ────────────────────────────────────────────────
+        if (!widget.isUnifiedView && !widget.isSearchMode) {
+          final groups = <String, List<CirrusFileNode>>{};
+          for (final f in files) {
+            final key = f.deviceName.isNotEmpty
+                ? f.deviceName
+                : 'Unknown Device';
+            groups.putIfAbsent(key, () => []).add(f);
+          }
+          return Column(
+            children: [
+              _buildSortHeader(),
+              Expanded(
+                child: ListView(
+                  controller: widget.scrollController,
+                  children: [
+                    for (final entry in groups.entries)
+                      ExpansionTile(
+                        initiallyExpanded: true,
+                        leading: const Icon(Icons.storage_rounded),
+                        title: Text(entry.key),
+                        subtitle: Text(
+                          '${entry.value.length} '
+                          'item${entry.value.length == 1 ? '' : 's'}',
+                        ),
+                        children: [
+                          for (final item in entry.value)
+                            _buildFolderDropWrapper(
+                              item: item,
+                              child: _buildListTile(context, item),
+                            ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        }
+
+        // ── Grid view ─────────────────────────────────────────────────────
+        if (widget.isGridView) {
+          final screenWidth = MediaQuery.sizeOf(context).width;
+          const horizontalPadding = 16.0;
+          const crossAxisSpacing = 8.0;
+          const minTileWidth = 180.0;
+          final usableWidth = screenWidth - horizontalPadding;
+          final calculatedCount =
+              ((usableWidth + crossAxisSpacing) /
+                      (minTileWidth + crossAxisSpacing))
+                  .floor();
+          final crossAxisCount = calculatedCount < 1 ? 1 : calculatedCount;
+
+          return Column(
+            children: [
+              _buildGridSortHeader(),
+              Expanded(
+                child: GridView.builder(
+                  controller: widget.scrollController,
+                  padding: const EdgeInsets.all(8),
+                  itemCount: files.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    childAspectRatio: 1.1,
+                    crossAxisSpacing: crossAxisSpacing,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemBuilder: (context, index) {
+                    final item = files[index];
+                    return _buildFolderDropWrapper(
+                      item: item,
+                      child: Card(
+                        clipBehavior: Clip.hardEdge,
+                        child: InkWell(
+                          onTap: () => widget.onOpenDirectory(item),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                (() {
+                                  final lower = item.name.toLowerCase();
+                                  final isImage =
+                                      lower.endsWith('.jpg') ||
+                                      lower.endsWith('.jpeg') ||
+                                      lower.endsWith('.png') ||
+                                      lower.endsWith('.gif') ||
+                                      lower.endsWith('.webp');
+                                  if (isImage) {
+                                    final url =
+                                        CirrusService.constructThumbnailUrl(
+                                          item.apiPath,
+                                          serial: item.deviceSerial,
+                                        );
+                                    return SizedBox(
+                                      height: 96,
+                                      width: double.infinity,
+                                      child: Image.network(
+                                        url.toString(),
+                                        fit: BoxFit.cover,
+                                        loadingBuilder:
+                                            (context, child, progress) {
+                                              if (progress == null) {
+                                                return child;
+                                              }
+                                              return Container(
+                                                color: Colors.grey[300],
+                                              );
+                                            },
+                                        errorBuilder: (context, error, stack) =>
+                                            Container(color: Colors.grey[300]),
+                                      ),
+                                    );
+                                  }
+                                  return Center(
+                                    child: Icon(_iconForNode(item), size: 48),
+                                  );
+                                })(),
+                                const SizedBox(height: 8),
+                                Flexible(
+                                  child: Text(
+                                    item.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    if (widget.showFileSizeAndMenu)
+                                      Flexible(
+                                        child: Text(
+                                          _formatSize(item.size, item.isDir),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    if (widget.showFileSizeAndMenu)
+                                      PopupMenuButton<FileMenuAction>(
+                                        icon: const Icon(Icons.more_vert),
+                                        itemBuilder: (context) => [
+                                          PopupMenuItem<FileMenuAction>(
+                                            value: FileMenuAction.download,
+                                            onTap: () => _dispatchMenuAction(
+                                              context,
+                                              item,
+                                              FileMenuAction.download,
+                                            ),
+                                            child: const Text('Download'),
+                                          ),
+                                          PopupMenuItem<FileMenuAction>(
+                                            value: FileMenuAction.moveRename,
+                                            onTap: () => _dispatchMenuAction(
+                                              context,
+                                              item,
+                                              FileMenuAction.moveRename,
+                                            ),
+                                            child: const Text('Move/Rename'),
+                                          ),
+                                          PopupMenuItem<FileMenuAction>(
+                                            value: FileMenuAction.delete,
+                                            onTap: () => _dispatchMenuAction(
+                                              context,
+                                              item,
+                                              FileMenuAction.delete,
+                                            ),
+                                            child: const Text('Delete'),
+                                          ),
+                                          if (widget.isSearchMode &&
+                                              widget.onNavigateToFolder != null)
+                                            PopupMenuItem<FileMenuAction>(
+                                              value: FileMenuAction
+                                                  .navigateToFolder,
+                                              onTap: () =>
+                                                  widget.onNavigateToFolder!(
+                                                    item,
+                                                  ),
+                                              child: const Text(
+                                                'Navigate to folder',
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        }
+
+        // ── List view ─────────────────────────────────────────────────────
+        return Column(
+          children: [
+            _buildSortHeader(),
+            Expanded(
+              child: ListView.separated(
+                controller: widget.scrollController,
+                itemCount: files.length,
+                separatorBuilder: (_, _) => Divider(
+                  height: 1,
+                  color: colors.outlineVariant.withValues(alpha: 0.5),
+                ),
+                itemBuilder: (context, index) {
+                  final item = files[index];
+                  return _buildFolderDropWrapper(
+                    item: item,
+                    child: _buildListTile(context, item),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  static String _fileType(CirrusFileNode node) {
+    if (node.isDir) return '';
+    final dot = node.name.lastIndexOf('.');
+    if (dot < 0) return 'file';
+    return node.name.substring(dot + 1).toLowerCase();
+  }
+
+  static IconData _iconForNode(CirrusFileNode node) {
+    if (node.isDir) return Icons.folder_outlined;
+    final lower = node.name.toLowerCase();
+    if (lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.gif') ||
+        lower.endsWith('.webp')) {
       return Icons.image_outlined;
     }
-
-    if (lowerName.endsWith('.zip') ||
-        lowerName.endsWith('.tar') ||
-        lowerName.endsWith('.gz') ||
-        lowerName.endsWith('.7z')) {
+    if (lower.endsWith('.zip') ||
+        lower.endsWith('.tar') ||
+        lower.endsWith('.gz') ||
+        lower.endsWith('.7z')) {
       return Icons.archive_outlined;
     }
-
     return Icons.insert_drive_file_outlined;
   }
 
   static String _formatSize(int bytes, bool isDir) {
-    if (isDir) {
-      return '--';
-    }
-
-    if (bytes < 1024) {
-      return '$bytes B';
-    }
-    if (bytes < 1024 * 1024) {
-      return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    }
+    if (isDir) return '--';
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
     if (bytes < 1024 * 1024 * 1024) {
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     }
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 }
+
+// ── Folder drop target ────────────────────────────────────────────────────────
 
 class _FolderDropTarget extends StatefulWidget {
   const _FolderDropTarget({
@@ -533,29 +609,17 @@ class _FolderDropTargetState extends State<_FolderDropTarget>
     final colorScheme = Theme.of(context).colorScheme;
     return DropTarget(
       onDragEntered: (_) {
-        if (!mounted) {
-          return;
-        }
-        setStateSafely(() {
-          _isDragOver = true;
-        });
+        if (!mounted) return;
+        setStateSafely(() => _isDragOver = true);
         widget.onFolderDragEnter?.call();
       },
       onDragExited: (_) {
-        if (!mounted) {
-          return;
-        }
-        setStateSafely(() {
-          _isDragOver = false;
-        });
+        if (!mounted) return;
+        setStateSafely(() => _isDragOver = false);
         widget.onFolderDragExit?.call();
       },
       onDragDone: (details) async {
-        if (mounted) {
-          setStateSafely(() {
-            _isDragOver = false;
-          });
-        }
+        if (mounted) setStateSafely(() => _isDragOver = false);
         widget.onFolderDragExit?.call();
         await widget.onDropToFolder(details.files, widget.targetPath);
       },
