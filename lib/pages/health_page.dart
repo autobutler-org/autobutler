@@ -74,6 +74,9 @@ class _HealthPageState extends State<HealthPage>
         onTapPhotos: () {
           context.go(AppRoutes.photos);
         },
+        onTapDevices: () {
+          context.go(AppRoutes.devices);
+        },
         onTapHealth: () {
           Navigator.of(context).pop();
         },
