@@ -211,12 +211,19 @@ class FileTopBar extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            GestureDetector(
-              onTap: onGoHome,
-              child: const Icon(
-                Icons.home_rounded,
-                size: 16,
-                color: AutobutlerColors.secondaryForeground,
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: InkWell(
+                onTap: onGoHome,
+                borderRadius: BorderRadius.circular(4),
+                child: const Padding(
+                  padding: EdgeInsets.all(2),
+                  child: Icon(
+                    Icons.home_rounded,
+                    size: 16,
+                    color: AutobutlerColors.secondaryForeground,
+                  ),
+                ),
               ),
             ),
             const SizedBox(width: 6),
@@ -255,15 +262,22 @@ class FileTopBar extends StatelessWidget {
       final targetPath = '/${segments.take(i + 1).join('/')}';
 
       widgets.add(
-        GestureDetector(
-          onTap: isLast ? null : () => onPathSelected(targetPath),
-          child: Text(
-            segments[i],
-            style: TextStyle(
-              fontSize: 13,
-              color: isLast
-                  ? AutobutlerColors.foreground
-                  : AutobutlerColors.primary,
+        MouseRegion(
+          cursor: isLast ? SystemMouseCursors.basic : SystemMouseCursors.click,
+          child: InkWell(
+            onTap: isLast ? null : () => onPathSelected(targetPath),
+            borderRadius: BorderRadius.circular(4),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+              child: Text(
+                segments[i],
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isLast
+                      ? AutobutlerColors.foreground
+                      : AutobutlerColors.primary,
+                ),
+              ),
             ),
           ),
         ),
