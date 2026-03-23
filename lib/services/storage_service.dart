@@ -17,9 +17,20 @@ class StorageDevice {
     required this.isInternal,
     required this.isEnabled,
     this.model = '',
+    this.serial = '',
+    this.categories = const {},
   });
 
   factory StorageDevice.fromJson(Map<String, dynamic> json) {
+    // serial lives inside the nested usbInfo object
+    final usbInfo = json['usbInfo'] as Map<String, dynamic>?;
+    final serial = usbInfo?['serial'] as String? ?? '';
+
+    final rawCats = json['categories'] as Map<String, dynamic>?;
+    final categories = rawCats != null
+        ? rawCats.map((k, v) => MapEntry(k, (v as num).toInt()))
+        : const <String, int>{};
+
     return StorageDevice(
       name: json['name'] as String? ?? '',
       devicePath: json['devicePath'] as String? ?? '',
@@ -31,6 +42,8 @@ class StorageDevice {
       isInternal: json['isInternal'] as bool? ?? false,
       isEnabled: json['isEnabled'] as bool? ?? false,
       model: json['model'] as String? ?? '',
+      serial: serial,
+      categories: categories,
     );
   }
 
@@ -45,12 +58,18 @@ class StorageDevice {
   final bool isEnabled;
   final String model;
 
+  /// USB serial number; empty string for internal devices.
+  final String serial;
+
+  /// File category breakdown in bytes, e.g. {'documents': 1024, 'media': 2048}.
+  final Map<String, int> categories;
+
   double get usedPercent => totalBytes > 0 ? usedBytes / totalBytes * 100 : 0;
 
   String get usedDisplay =>
-      '${_formatBytes(usedBytes)} / ${_formatBytes(totalBytes)}';
+      '${formatBytes(usedBytes)} / ${formatBytes(totalBytes)}';
 
-  static String _formatBytes(int bytes) {
+  static String formatBytes(int bytes) {
     if (bytes >= 1e12) return '${(bytes / 1e12).toStringAsFixed(1)} TB';
     if (bytes >= 1e9) return '${(bytes / 1e9).toStringAsFixed(1)} GB';
     if (bytes >= 1e6) return '${(bytes / 1e6).toStringAsFixed(1)} MB';
@@ -99,6 +118,18 @@ class StorageService with AuthenticatedService {
         .whereType<Map<String, dynamic>>()
         .map(StorageDevice.fromJson)
         .toList();
+  }
+
+  /// Mounts a USB device by serial. Requires the butler to be running as root.
+  static Future<void> mountDevice(String serial) async {
+    final uri = _apiBaseUri.resolve('/api/v1/storage/devices/usb/$serial');
+    final response = await http.post(uri, headers: _authHeaders);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>?;
+      final msg =
+          body?['error'] as String? ?? 'Mount failed (${response.statusCode})';
+      throw Exception(msg);
+    }
   }
 
   /// Sets a custom display name for a device identified by [devicePath].

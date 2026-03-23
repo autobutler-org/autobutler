@@ -1,5 +1,6 @@
 import 'package:autobutler/pages/file_browser_page.dart';
 import 'package:autobutler/pages/health_page.dart';
+import 'package:autobutler/pages/storage_devices_page.dart';
 import 'package:autobutler/pages/login_page.dart';
 import 'package:autobutler/pages/photos_page.dart';
 import 'package:autobutler/pages/recover_page.dart';
@@ -14,6 +15,7 @@ import 'package:go_router/go_router.dart';
 class AppRoutes {
   static const cirrus = '/cirrus';
   static const photos = '/photos';
+  static const devices = '/devices';
   static const health = '/health';
   static const settings = '/settings';
   static const setup = '/setup';
@@ -34,6 +36,10 @@ final router = GoRouter(
     GoRoute(
       path: AppRoutes.photos,
       builder: (context, state) => const PhotosPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.devices,
+      builder: (context, state) => const StorageDevicesPage(),
     ),
     GoRoute(
       path: AppRoutes.health,

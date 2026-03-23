@@ -406,6 +406,9 @@ class _SettingsPageState extends State<SettingsPage> {
         onTapPhotos: () {
           context.go(AppRoutes.photos);
         },
+        onTapDevices: () {
+          context.go(AppRoutes.devices);
+        },
         onTapHealth: () {
           context.go(AppRoutes.health);
         },
