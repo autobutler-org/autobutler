@@ -54,6 +54,7 @@ class _HealthPageState extends State<HealthPage>
         leading: Builder(
           builder: (context) => AutobutlerBrandButton(
             label: 'Health',
+            icon: Icons.monitor_heart_outlined,
             onTap: () => Scaffold.of(context).openDrawer(),
           ),
         ),

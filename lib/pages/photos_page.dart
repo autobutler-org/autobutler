@@ -491,6 +491,7 @@ class _PhotosPageState extends State<PhotosPage>
         leading: Builder(
           builder: (context) => AutobutlerBrandButton(
             label: 'Photos',
+            icon: Icons.photo_library_outlined,
             onTap: () => Scaffold.of(context).openDrawer(),
           ),
         ),

@@ -11,6 +11,7 @@ class AutobutlerBrandButton extends StatelessWidget {
   const AutobutlerBrandButton({
     required this.label,
     required this.onTap,
+    this.icon = Icons.storage_rounded,
     super.key,
   });
 
@@ -22,6 +23,10 @@ class AutobutlerBrandButton extends StatelessWidget {
 
   /// Called when the button is tapped — typically opens the drawer.
   final VoidCallback onTap;
+
+  /// Icon shown inside the brand badge. Defaults to [Icons.storage_rounded]
+  /// (used for the Files/Cirrus page). Pass a page-appropriate icon for other pages.
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -47,9 +52,9 @@ class AutobutlerBrandButton extends StatelessWidget {
                     color: AutobutlerColors.primary,
                     borderRadius: radius,
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Icon(
-                      Icons.storage_rounded,
+                      icon,
                       size: 16,
                       color: AutobutlerColors.primaryForeground,
                     ),

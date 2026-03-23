@@ -392,6 +392,7 @@ class _SettingsPageState extends State<SettingsPage> {
         leading: Builder(
           builder: (context) => AutobutlerBrandButton(
             label: 'Settings',
+            icon: Icons.settings_outlined,
             onTap: () => Scaffold.of(context).openDrawer(),
           ),
         ),
