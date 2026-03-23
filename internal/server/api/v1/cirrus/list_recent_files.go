@@ -92,6 +92,13 @@ func listRecentFiles(c *gin.Context) *serverutil.Response {
 				continue // only return files, not directories
 			}
 			fullPath := filepath.Join(info.DevicePath, info.Name())
+			// Compute the API-relative path by stripping the cirrusDir prefix
+			// so the client can use it directly in API calls (same as list_files).
+			relDir, relErr := filepath.Rel(cirrusDir, info.DevicePath)
+			if relErr != nil {
+				relDir = info.DevicePath
+			}
+			dirPath := filepath.Join(relDir, info.Name())
 			allFiles = append(allFiles, FileNodeWithTimeJSON{
 				FileNodeJSON: FileNodeJSON{
 					Name:         info.Name(),
@@ -99,7 +106,7 @@ func listRecentFiles(c *gin.Context) *serverutil.Response {
 					IsDir:        false,
 					DeviceName:   info.DeviceName,
 					DevicePath:   info.DevicePath,
-					DirPath:      info.DevicePath,
+					DirPath:      dirPath,
 					FullPath:     fullPath,
 					DeviceSerial: deviceSerial,
 				},
