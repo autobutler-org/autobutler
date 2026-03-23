@@ -5,6 +5,7 @@ import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
+import 'package:autobutler/widgets/autobutler_brand_button.dart';
 import 'package:flutter/foundation.dart';
 import 'package:autobutler/router.dart';
 import 'package:flutter/material.dart';
@@ -486,8 +487,15 @@ class _PhotosPageState extends State<PhotosPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Photos'),
-        centerTitle: true,
+        leadingWidth: AutobutlerBrandButton.preferredWidth,
+        leading: Builder(
+          builder: (context) => AutobutlerBrandButton(
+            label: 'Photos',
+            icon: Icons.photo_library_outlined,
+            onTap: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+        title: null,
         actions: [
           RefreshIconButton(
             isRefreshing: isRefreshing,

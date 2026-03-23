@@ -38,15 +38,15 @@ class AutobutlerDrawer extends StatelessWidget {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.cloud),
-            title: const Text('Cirrus'),
+            leading: const Icon(Icons.storage_rounded),
+            title: const Text('Files'),
             selected: activeSection == AutobutlerDrawerSection.cirrus,
             onTap: () {
               onTapCirrus?.call();
             },
           ),
           ListTile(
-            leading: const Icon(Icons.photo),
+            leading: const Icon(Icons.photo_library_outlined),
             title: const Text('Photos'),
             selected: activeSection == AutobutlerDrawerSection.photos,
             onTap: () {
@@ -54,7 +54,7 @@ class AutobutlerDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.monitor_heart),
+            leading: const Icon(Icons.monitor_heart_outlined),
             title: const Text('Health'),
             selected: activeSection == AutobutlerDrawerSection.health,
             onTap: () {
@@ -62,7 +62,7 @@ class AutobutlerDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.settings),
+            leading: const Icon(Icons.settings_outlined),
             title: const Text('Settings'),
             selected: activeSection == AutobutlerDrawerSection.settings,
             onTap: () {

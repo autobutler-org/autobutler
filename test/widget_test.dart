@@ -20,8 +20,9 @@ void main() {
     await tester.pump();
 
     // Child renders — file browser is visible, not a login screen.
-    expect(find.text('Cirrus'), findsOneWidget);
-    expect(find.byIcon(Icons.menu), findsOneWidget);
+    // The top bar shows 'Files' as the brand label (restyled from 'Cirrus').
+    expect(find.text('Files'), findsOneWidget);
+    expect(find.byIcon(Icons.storage_rounded), findsOneWidget);
   });
 
   testWidgets('FileBrowserPage renders core UI elements', (
@@ -30,7 +31,7 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: FileBrowserPage()));
     await tester.pump();
 
-    expect(find.byIcon(Icons.menu), findsOneWidget);
-    expect(find.text('Cirrus'), findsOneWidget);
+    expect(find.byIcon(Icons.storage_rounded), findsOneWidget);
+    expect(find.text('Files'), findsOneWidget);
   });
 }
