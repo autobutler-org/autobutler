@@ -80,6 +80,28 @@ definitions:
       size:
         type: integer
     type: object
+  v1_files.FileNodeWithTimeJSON:
+    properties:
+      deviceName:
+        type: string
+      devicePath:
+        type: string
+      deviceSerial:
+        type: string
+      dirPath:
+        description: Directory path containing the file, for easier client-side handling
+        type: string
+      fullPath:
+        type: string
+      isDir:
+        type: boolean
+      modifiedAt:
+        type: string
+      name:
+        type: string
+      size:
+        type: integer
+    type: object
   v1_files.moveFileRequest:
     properties:
       newDeviceSerial:
@@ -574,6 +596,38 @@ paths:
           schema:
             $ref: '#/definitions/serverutil.Response'
       summary: Create a new folder
+      tags:
+      - cirrus
+  /cirrus/recent:
+    get:
+      description: Returns files sorted by modification time (newest first) across
+        all managed devices.
+      parameters:
+      - description: Maximum number of files to return (default 20, max 200)
+        in: query
+        name: limit
+        type: integer
+      - collectionFormat: csv
+        description: Filter by device serial(s)
+        in: query
+        items:
+          type: string
+        name: serial
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1_files.FileNodeWithTimeJSON'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: List recently uploaded files
       tags:
       - cirrus
   /cirrus/search:
