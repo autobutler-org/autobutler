@@ -317,26 +317,32 @@ class FileTopBar extends StatelessWidget {
     required VoidCallback? onTap,
     required String tooltip,
   }) {
+    final radius = BorderRadius.circular(AutobutlerColors.radiusMd);
     return Tooltip(
       message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AutobutlerColors.radiusMd),
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              border: Border.all(color: AutobutlerColors.border),
-              borderRadius: BorderRadius.circular(AutobutlerColors.radiusMd),
-              color: AutobutlerColors.input,
-            ),
-            child: Icon(
-              icon,
-              size: 18,
-              color: onTap != null
-                  ? AutobutlerColors.secondaryForeground
-                  : AutobutlerColors.mutedForeground,
+      child: MouseRegion(
+        cursor: onTap != null
+            ? SystemMouseCursors.click
+            : SystemMouseCursors.basic,
+        child: Material(
+          color: AutobutlerColors.input,
+          shape: RoundedRectangleBorder(
+            side: const BorderSide(color: AutobutlerColors.border),
+            borderRadius: radius,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: radius,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Icon(
+                icon,
+                size: 18,
+                color: onTap != null
+                    ? AutobutlerColors.secondaryForeground
+                    : AutobutlerColors.mutedForeground,
+              ),
             ),
           ),
         ),
@@ -350,42 +356,52 @@ class FileTopBar extends StatelessWidget {
     VoidCallback? onTap,
     bool active = false,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: active
-              ? AutobutlerColors.primary.withValues(alpha: 0.12)
-              : AutobutlerColors.input,
-          border: Border.all(
+    final radius = BorderRadius.circular(AutobutlerColors.radiusLg);
+    return MouseRegion(
+      cursor: onTap != null
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
+      child: Material(
+        color: active
+            ? AutobutlerColors.primary.withValues(alpha: 0.12)
+            : AutobutlerColors.input,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(
             color: active
                 ? AutobutlerColors.primary.withValues(alpha: 0.3)
                 : AutobutlerColors.border,
           ),
-          borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+          borderRadius: radius,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 14,
-              color: active
-                  ? AutobutlerColors.primary
-                  : AutobutlerColors.secondaryForeground,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: radius,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 14,
+                  color: active
+                      ? AutobutlerColors.primary
+                      : AutobutlerColors.secondaryForeground,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: active
+                        ? AutobutlerColors.primary
+                        : AutobutlerColors.secondaryForeground,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                color: active
-                    ? AutobutlerColors.primary
-                    : AutobutlerColors.secondaryForeground,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
