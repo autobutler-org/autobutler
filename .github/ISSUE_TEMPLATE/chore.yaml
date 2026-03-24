@@ -1,0 +1,59 @@
+name: Chore / Maintenance
+description: Dependency updates, refactors, CI changes, tooling, cleanup — work that doesn't change user-facing behavior.
+title: "chore: "
+labels: ["chore"]
+projects: ["autobutler-org/2"]
+type: Task
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For internal work that keeps the project healthy but doesn't add features or fix bugs.
+  - type: dropdown
+    id: chore-type
+    attributes:
+      label: Type of chore
+      multiple: false
+      options:
+        - Dependency update
+        - Refactor / cleanup
+        - CI / tooling
+        - Documentation
+        - Test coverage
+        - Performance
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      description: What part of the codebase does this touch?
+      multiple: true
+      options:
+        - Backend (Go)
+        - Frontend (Flutter)
+        - CI / workflows
+        - Docs
+        - Tooling / scripts
+        - Dependencies
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What needs doing?
+      description: Describe the work. Include links to dependency changelogs, related PRs, or the thing that triggered this if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why now?
+      description: Is this blocking something? Routine hygiene? Security concern? Optional but helpful.
+  - type: textarea
+    id: bot-guidance
+    attributes:
+      label: Bot guidance
+      description: Anything for Sable or ExoKomodo to know when picking this up — scope limits, related issues, things to avoid touching.

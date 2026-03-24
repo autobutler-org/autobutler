@@ -1,0 +1,40 @@
+name: Question / Discussion
+description: Not sure if something is a bug or a feature? Want to discuss an approach before building it? Ask here.
+title: "question: "
+labels: ["question"]
+projects: ["autobutler-org/2"]
+type: Task
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For open-ended questions, design discussions, or "is this intentional?" checks. If you already know what you want to build, use the Feature or Epic template instead.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of question
+      options:
+        - Design / architecture decision
+        - "Is this a bug or intentional?"
+        - How do I do X?
+        - Should we do X at all?
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: What's the question?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What led you here? What have you already tried or considered?
+  - type: textarea
+    id: options
+    attributes:
+      label: Options you're weighing
+      description: If this is a design decision, list the approaches and their tradeoffs.

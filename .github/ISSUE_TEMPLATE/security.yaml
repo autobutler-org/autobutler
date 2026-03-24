@@ -1,0 +1,56 @@
+name: Security Issue
+description: Non-critical security concerns suitable for the public tracker. For vulnerabilities, use the private security advisory instead.
+title: "security: "
+labels: ["security"]
+projects: ["autobutler-org/2"]
+type: Bug
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **Is this a vulnerability?** If it could be exploited to compromise user data or the device, please [file a private security advisory](https://github.com/autobutler-org/autobutler/security/advisories/new) instead of a public issue.
+
+        This template is for security *hardening*, *improvements*, or *non-exploitable* concerns.
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Low (hardening / defense-in-depth)
+        - Medium (exploitable under specific conditions)
+        - High (use private advisory instead)
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Authentication / authorization
+        - API / network
+        - File access / storage
+        - Dependencies
+        - CI / supply chain
+        - Configuration
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What is the concern? What could go wrong, and under what conditions?
+    validations:
+      required: true
+  - type: textarea
+    id: suggested-fix
+    attributes:
+      label: Suggested fix or mitigation
+      description: If you have a fix in mind, describe it here.
+  - type: input
+    id: version
+    attributes:
+      label: AutoButler version
+      placeholder: "e.g. 0.17.0"
