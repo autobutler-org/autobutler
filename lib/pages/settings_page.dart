@@ -8,12 +8,11 @@ import 'package:autobutler/services/connected_devices_service.dart';
 import 'package:autobutler/services/sbom_service.dart';
 import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
-import 'package:autobutler/utils/clipboard_utils.dart';
+import 'package:autobutler/widgets/core/copy_button.dart';
 import 'package:autobutler/widgets/autobutler_brand_button.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -1333,25 +1332,7 @@ class _CodeBlock extends StatelessWidget {
               style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.content_copy, size: 16),
-            tooltip: isClipboardAvailable
-                ? 'Copy to clipboard'
-                : 'Clipboard unavailable — use HTTPS to enable',
-            onPressed: isClipboardAvailable
-                ? () async {
-                    await Clipboard.setData(ClipboardData(text: text));
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Copied to clipboard'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  }
-                : null,
-          ),
+          CopyButton(text: text),
         ],
       ),
     );
