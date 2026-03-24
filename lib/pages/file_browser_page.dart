@@ -686,6 +686,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
               label: Text(device.name),
               selected: isSelected,
               onSelected: (selected) {
+                debugPrint('[before _activeSerials state]: \\$_activeSerials');
                 setState(() {
                   if (selected) {
                     _activeSerials.add(device.serial);
@@ -697,6 +698,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                     }
                   }
                   _reloadFiles();
+                  debugPrint('[after _activeSerials state]: \\$_activeSerials');
                 });
               },
             ),
