@@ -11,7 +11,7 @@ Future<void> uploadMultipartFilesToCurrentPath({
   return CirrusService.uploadFilesFromFormData(
     toRootDir(currentPath),
     selectedFiles,
-    deviceSerial,
+    serial: deviceSerial,
   );
 }
 

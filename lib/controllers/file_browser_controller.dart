@@ -27,7 +27,7 @@ class FileBrowserController {
     String currentPath, {
     List<String>? serials,
   }) {
-    return CirrusService.getFiles(currentPath, serials);
+    return CirrusService.getFiles(currentPath, serials: serials);
   }
 
   /// Picks one or more files for upload.
