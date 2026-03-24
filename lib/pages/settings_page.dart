@@ -12,6 +12,7 @@ import 'package:autobutler/widgets/autobutler_brand_button.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -1318,14 +1319,35 @@ class _CodeBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.only(left: 12, top: 4, bottom: 4, right: 4),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(4),
       ),
-      child: SelectableText(
-        text,
-        style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+      child: Row(
+        children: [
+          Expanded(
+            child: SelectableText(
+              text,
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.content_copy, size: 16),
+            tooltip: 'Copy to clipboard',
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: text));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Copied to clipboard'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+          ),
+        ],
       ),
     );
   }
