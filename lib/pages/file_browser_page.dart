@@ -8,6 +8,7 @@ import 'package:autobutler/pages/settings_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
+import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/file_browser_dialog_utils.dart';
 import 'package:autobutler/utils/file_browser_drag_config.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
@@ -46,6 +47,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   String _currentPath = '';
   bool _isGridView = false;
 
+  // Device filter state (#801)
+  List<StorageDevice> _allDevices = [];
+  Set<String> _activeSerials = {};
+
   /// When true, files from all devices are shown merged (unified).
   /// When false, they are grouped by device with section headers.
   bool _isUnifiedView = true;
@@ -73,8 +78,23 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       });
       return;
     }
+    await _loadDevices();
     setState(() => _reloadFiles());
     await _filesFuture;
+  }
+
+  Future<void> _loadDevices() async {
+    if (AppSettings.instance.activeHost == null) return;
+    try {
+      final devices = await StorageService.listDevices();
+      if (!mounted) return;
+      setState(() {
+        _allDevices = devices;
+        _activeSerials = devices.map((d) => d.serial).toSet();
+      });
+    } catch (_) {
+      debugPrint('[file_browser_page.dart] Failed to load devices');
+    }
   }
 
   @override
@@ -92,7 +112,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
 
     final generation = ++_generation;
-    _filesFuture = _controller.fetchFiles(_currentPath).then((files) {
+    // Pass active serials; empty list means all devices (no filter).
+    final serials = _activeSerials.length == _allDevices.length
+        ? <String>[]
+        : _activeSerials.toList();
+    _filesFuture = _controller.fetchFiles(_currentPath, serials: serials).then((
+      files,
+    ) {
       if (mounted && _generation == generation) {
         setState(() => _cachedFiles = files);
       }
@@ -104,8 +130,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   Future<void> _uploadSelectedFiles(
     List<http.MultipartFile> selectedFiles,
-    String uploadPath,
-  ) async {
+    String uploadPath, {
+    String? deviceSerial,
+  }) async {
     if (_isUploading || selectedFiles.isEmpty) {
       return;
     }
@@ -123,6 +150,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           await _controller.uploadFiles(
             currentPath: uploadPath,
             selectedFiles: [file],
+            deviceSerial: deviceSerial,
           );
         } catch (_) {
           failed++;
@@ -171,7 +199,21 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         return;
       }
 
-      await _uploadSelectedFiles(selectedFiles, _currentPath);
+      // Issue #802: when multiple devices exist, let the user pick which one.
+      String? targetSerial;
+      if (_allDevices.length > 1) {
+        targetSerial = await _showUploadDevicePickerDialog();
+        if (targetSerial == null) {
+          // User cancelled the dialog.
+          return;
+        }
+      }
+
+      await _uploadSelectedFiles(
+        selectedFiles,
+        _currentPath,
+        deviceSerial: targetSerial,
+      );
     } on MissingPluginException {
       if (!mounted) {
         return;
@@ -179,6 +221,47 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
       _showMessage('File picker plugin not available. Fully restart the app.');
     }
+  }
+
+  /// Shows a dialog letting the user pick a target device for upload.
+  /// Returns the selected device's serial, or null if cancelled.
+  Future<String?> _showUploadDevicePickerDialog() async {
+    String? selected = _allDevices.first.serial;
+    return showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Choose upload destination'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: _allDevices.map((device) {
+                  return RadioListTile<String>(
+                    title: Text(device.name),
+                    value: device.serial,
+                    groupValue: selected,
+                    onChanged: (value) {
+                      setDialogState(() => selected = value);
+                    },
+                  );
+                }).toList(),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(null),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(selected),
+                  child: const Text('Upload'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _handleDroppedItems({
@@ -570,6 +653,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     setState(() {
       _currentPath = normalized;
+      // Reset device filter to all devices on navigation.
+      _activeSerials = _allDevices.map((d) => d.serial).toSet();
       _reloadFiles();
     });
   }
@@ -578,6 +663,40 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// Builds the horizontal device filter chip row for issue #801.
+  Widget _buildDeviceFilterChips() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Row(
+        children: _allDevices.map((device) {
+          final isSelected = _activeSerials.contains(device.serial);
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(device.name),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    _activeSerials.add(device.serial);
+                  } else {
+                    _activeSerials.remove(device.serial);
+                    // Snap back to all if none selected.
+                    if (_activeSerials.isEmpty) {
+                      _activeSerials = _allDevices.map((d) => d.serial).toSet();
+                    }
+                  }
+                  _reloadFiles();
+                });
+              },
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
 
   @override
@@ -652,6 +771,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
               onFileMenuAction: _handleFileMenuAction,
               onNavigateToFolder: _setPath,
             ),
+
+          // Issue #801: device filter chip row — only shown when >1 device.
+          if (_allDevices.length > 1 && !_noHostSelected)
+            _buildDeviceFilterChips(),
 
           Expanded(
             child: _noHostSelected

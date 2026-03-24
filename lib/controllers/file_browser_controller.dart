@@ -23,8 +23,11 @@ class FileMenuActionOutcome {
 class FileBrowserController {
   const FileBrowserController();
 
-  Future<List<CirrusFileNode>> fetchFiles(String currentPath) {
-    return CirrusService.getFiles(currentPath);
+  Future<List<CirrusFileNode>> fetchFiles(
+    String currentPath, {
+    List<String>? serials,
+  }) {
+    return CirrusService.getFiles(currentPath, serials);
   }
 
   /// Picks one or more files for upload.
@@ -99,17 +102,24 @@ class FileBrowserController {
   Future<void> uploadFile({
     required String currentPath,
     required http.MultipartFile selectedFile,
+    String? deviceSerial,
   }) {
-    return uploadFiles(currentPath: currentPath, selectedFiles: [selectedFile]);
+    return uploadFiles(
+      currentPath: currentPath,
+      selectedFiles: [selectedFile],
+      deviceSerial: deviceSerial,
+    );
   }
 
   Future<void> uploadFiles({
     required String currentPath,
     required List<http.MultipartFile> selectedFiles,
+    String? deviceSerial,
   }) {
     return uploadMultipartFilesToCurrentPath(
       currentPath: currentPath,
       selectedFiles: selectedFiles,
+      deviceSerial: deviceSerial,
     );
   }
 
