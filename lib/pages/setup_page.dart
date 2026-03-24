@@ -1,6 +1,6 @@
 import 'package:autobutler/services/auth_service.dart';
+import 'package:autobutler/widgets/core/copy_button.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// First-boot setup screen — creates the owner account on the butler.
 ///
@@ -385,21 +385,11 @@ class _RecoveryPhraseStep extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
-                Builder(
-                  builder: (innerContext) => OutlinedButton.icon(
-                    onPressed: () async {
-                      await Clipboard.setData(ClipboardData(text: phrase));
-                      if (!innerContext.mounted) return;
-                      ScaffoldMessenger.of(innerContext).showSnackBar(
-                        const SnackBar(
-                          content: Text('Recovery phrase copied to clipboard'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.copy_outlined, size: 16),
-                    label: const Text('Copy to clipboard'),
-                  ),
+                CopyButton(
+                  text: phrase,
+                  icon: Icons.copy_outlined,
+                  variant: CopyButtonVariant.outlined,
+                  successMessage: 'Recovery phrase copied to clipboard',
                 ),
               ],
             ),
