@@ -90,7 +90,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       if (!mounted) return;
       setState(() {
         _allDevices = devices;
-        debugPrint('[loadDevices resolved]: \\$_allDevices');        _activeSerials = devices.map((d) => d.serial).toSet();
+        debugPrint('[loadDevices resolved]: \\$_allDevices');
+        for (final device in devices) {
+          debugPrint('Device name: \\${device.name}, serial: \\${device.serial}');
+        }        _activeSerials = devices.map((d) => d.serial).toSet();
       });
     } catch (_) {
       debugPrint('[file_browser_page.dart] Failed to load devices');
