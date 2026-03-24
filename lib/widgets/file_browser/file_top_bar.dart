@@ -270,18 +270,18 @@ class FileTopBar extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _chip(
-          icon: Icons.view_list_rounded,
-          label: 'List',
-          onTap: isGridView ? onToggleView : null,
-          active: !isGridView,
-        ),
-        const SizedBox(width: 4),
-        _chip(
-          icon: Icons.grid_view_rounded,
-          label: 'Grid',
-          onTap: isGridView ? null : onToggleView,
-          active: isGridView,
+        _segmentedToggle(
+          segments: const [
+            (icon: Icons.view_list_rounded, label: 'List'),
+            (icon: Icons.grid_view_rounded, label: 'Grid'),
+          ],
+          selectedIndex: isGridView ? 1 : 0,
+          onSelected: (index) {
+            final wantGrid = index == 1;
+            if (wantGrid != isGridView) {
+              onToggleView();
+            }
+          },
         ),
         const SizedBox(width: 4),
         _chip(
@@ -293,6 +293,99 @@ class FileTopBar extends StatelessWidget {
           active: isUnifiedView,
         ),
       ],
+    );
+  }
+
+  Widget _segmentedToggle({
+    required List<({IconData icon, String label})> segments,
+    required int selectedIndex,
+    required ValueChanged<int> onSelected,
+  }) {
+    final radius = BorderRadius.circular(AutobutlerColors.radiusLg);
+    return Material(
+      color: AutobutlerColors.input,
+      shape: RoundedRectangleBorder(
+        side: const BorderSide(color: AutobutlerColors.border),
+        borderRadius: radius,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(segments.length, (i) {
+          final seg = segments[i];
+          final isActive = i == selectedIndex;
+          final isFirst = i == 0;
+          final isLast = i == segments.length - 1;
+
+          BorderRadius segRadius;
+          if (isFirst && isLast) {
+            segRadius = radius;
+          } else if (isFirst) {
+            segRadius = BorderRadius.only(
+              topLeft: Radius.circular(AutobutlerColors.radiusLg),
+              bottomLeft: Radius.circular(AutobutlerColors.radiusLg),
+            );
+          } else if (isLast) {
+            segRadius = BorderRadius.only(
+              topRight: Radius.circular(AutobutlerColors.radiusLg),
+              bottomRight: Radius.circular(AutobutlerColors.radiusLg),
+            );
+          } else {
+            segRadius = BorderRadius.zero;
+          }
+
+          return MouseRegion(
+            cursor: isActive
+                ? SystemMouseCursors.basic
+                : SystemMouseCursors.click,
+            child: Tooltip(
+              message: seg.label,
+              child: InkWell(
+                onTap: isActive ? null : () => onSelected(i),
+                borderRadius: segRadius,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? AutobutlerColors.primary.withValues(alpha: 0.12)
+                        : Colors.transparent,
+                    border: i > 0
+                        ? const Border(
+                            left: BorderSide(color: AutobutlerColors.border),
+                          )
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        seg.icon,
+                        size: 14,
+                        color: isActive
+                            ? AutobutlerColors.primary
+                            : AutobutlerColors.secondaryForeground,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        seg.label,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isActive
+                              ? AutobutlerColors.primary
+                              : AutobutlerColors.secondaryForeground,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
     );
   }
 
