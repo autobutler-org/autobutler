@@ -3,6 +3,3 @@ contact_links:
   - name: Report a Security Vulnerability (Private)
     url: https://github.com/autobutler-org/autobutler/security/advisories/new
     about: For exploitable vulnerabilities — file a private advisory, not a public issue.
-  - name: Community Discord
-    url: https://discord.com/invite/clawd
-    about: Questions, help, and general discussion.
