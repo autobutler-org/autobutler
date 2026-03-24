@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"log"
 	"os"
 	"time"
@@ -14,11 +15,20 @@ import (
 // installs updates every 24 hours, but only when auto-update is enabled in
 // settings. If a newer version is found, it is installed and the process
 // exits to allow the system supervisor to restart it.
-func startAutoUpdateChecker() {
+//
+// The goroutine exits when ctx is cancelled (e.g. on graceful server shutdown).
+func startAutoUpdateChecker(ctx context.Context) {
 	ticker := time.NewTicker(24 * time.Hour)
 	defer ticker.Stop()
 
-	for range ticker.C {
+	for {
+		select {
+		case <-ctx.Done():
+			log.Printf("[autoupdate] shutting down")
+			return
+		case <-ticker.C:
+		}
+
 		if !settingsutil.GetAutoUpdate() {
 			log.Printf("[autoupdate] auto-update is disabled, skipping check")
 			continue
@@ -38,8 +48,10 @@ func startAutoUpdateChecker() {
 			*current,
 		)
 
-		if cmp <= 0 {
-			log.Printf("[autoupdate] already up to date (current: %s, latest: %s)", current.Semver, latestVersion)
+		// cmp == 2 means one or both versions are NOSEMVER or dev- prefixed;
+		// skip to avoid auto-updating dev/untagged builds.
+		if cmp <= 0 || cmp == 2 {
+			log.Printf("[autoupdate] already up to date or version indeterminate (current: %s, latest: %s, cmp: %d)", current.Semver, latestVersion, cmp)
 			continue
 		}
 
@@ -51,7 +63,6 @@ func startAutoUpdateChecker() {
 		}
 
 		log.Printf("[autoupdate] update to %s succeeded, restarting...", latestVersion)
-		time.Sleep(2 * time.Second)
 		os.Exit(0)
 	}
 }

@@ -29,13 +29,8 @@ func postSettings(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(err)
 	}
 
-	s, err := settingsutil.Load()
-	if err != nil {
-		return serverutil.InternalServerError(err)
-	}
-
 	return serverutil.Ok().WithData(SettingsJSON{
-		AutoUpdate: s.AutoUpdate,
+		AutoUpdate: body.AutoUpdate,
 	})
 }
 
