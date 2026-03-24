@@ -19,6 +19,8 @@ import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:autobutler/widgets/file_browser/file_storage_footer.dart';
 import 'package:autobutler/widgets/file_browser/file_top_bar.dart';
 import 'package:autobutler/widgets/file_browser/recent_files_section.dart';
+import 'package:autobutler/services/storage_service.dart';
+import 'package:autobutler/widgets/device_upload_picker.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:autobutler/router.dart';
@@ -111,6 +113,27 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    // Resolve target device serial before starting upload
+    String? targetSerial;
+    try {
+      final devices = (await StorageService.listDevices())
+          .where((d) => d.isEnabled)
+          .toList();
+      if (devices.length > 1) {
+        if (!mounted) return;
+        final picked = await showDeviceUploadPicker(context, devices);
+        if (picked == null) return; // user cancelled
+        targetSerial = picked.serial.isNotEmpty ? picked.serial : null;
+      } else if (devices.length == 1) {
+        targetSerial = devices.first.serial.isNotEmpty
+            ? devices.first.serial
+            : null;
+      }
+    } catch (e) {
+      debugPrint('[file_browser_page.dart] Failed to list devices: $e');
+      // Fall through with null serial (default device)
+    }
+
     setState(() {
       _isUploading = true;
       _uploadTotal = selectedFiles.length;
@@ -124,6 +147,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           await _controller.uploadFiles(
             currentPath: uploadPath,
             selectedFiles: [file],
+            serial: targetSerial,
           );
         } catch (_) {
           failed++;
