@@ -8,6 +8,7 @@ import 'package:autobutler/services/connected_devices_service.dart';
 import 'package:autobutler/services/sbom_service.dart';
 import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
+import 'package:autobutler/utils/clipboard_utils.dart';
 import 'package:autobutler/widgets/autobutler_brand_button.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
@@ -1334,44 +1335,22 @@ class _CodeBlock extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.content_copy, size: 16),
-            tooltip: 'Copy to clipboard',
-            onPressed: () async {
-              try {
-                await Clipboard.setData(ClipboardData(text: text));
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Copied to clipboard'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                }
-              } on PlatformException {
-                // Clipboard unavailable (e.g. non-HTTPS web context).
-                // Fall back to a dialog with selectable text.
-                if (context.mounted) {
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Copy this text'),
-                      content: SelectableText(
-                        text,
-                        style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 13,
+            tooltip: isClipboardAvailable
+                ? 'Copy to clipboard'
+                : 'Clipboard unavailable — use HTTPS to enable',
+            onPressed: isClipboardAvailable
+                ? () async {
+                    await Clipboard.setData(ClipboardData(text: text));
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Copied to clipboard'),
+                          duration: Duration(seconds: 2),
                         ),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(),
-                          child: const Text('Close'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-              }
-            },
+                      );
+                    }
+                  }
+                : null,
           ),
         ],
       ),
