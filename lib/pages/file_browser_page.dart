@@ -480,8 +480,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         return;
       }
 
-      // Let the WebSocket event or next poll reconcile with the real data
       _showMessage('Created folder $folderName');
+      // Belt-and-suspenders: refresh after a short delay in case the WebSocket
+      // event is missed (dropped connection, buffering, etc.).
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) _refreshFileState();
+      });
     } catch (_) {
       debugPrint('[file_browser_page.dart] Error in catch block');
       if (!mounted) {
