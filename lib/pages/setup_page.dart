@@ -1,4 +1,5 @@
 import 'package:autobutler/services/auth_service.dart';
+import 'package:autobutler/utils/clipboard_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -386,19 +387,30 @@ class _RecoveryPhraseStep extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Builder(
-                  builder: (innerContext) => OutlinedButton.icon(
-                    onPressed: () async {
-                      await Clipboard.setData(ClipboardData(text: phrase));
-                      if (!innerContext.mounted) return;
-                      ScaffoldMessenger.of(innerContext).showSnackBar(
-                        const SnackBar(
-                          content: Text('Recovery phrase copied to clipboard'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.copy_outlined, size: 16),
-                    label: const Text('Copy to clipboard'),
+                  builder: (innerContext) => Tooltip(
+                    message: isClipboardAvailable
+                        ? ''
+                        : 'Clipboard unavailable — use HTTPS to enable',
+                    child: OutlinedButton.icon(
+                      onPressed: isClipboardAvailable
+                          ? () async {
+                              await Clipboard.setData(
+                                ClipboardData(text: phrase),
+                              );
+                              if (!innerContext.mounted) return;
+                              ScaffoldMessenger.of(innerContext).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Recovery phrase copied to clipboard',
+                                  ),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          : null,
+                      icon: const Icon(Icons.copy_outlined, size: 16),
+                      label: const Text('Copy to clipboard'),
+                    ),
                   ),
                 ),
               ],
