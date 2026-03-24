@@ -33,12 +33,15 @@ func settingsPath() (string, error) {
 
 // Load reads settings from disk (or returns defaults if not present).
 // The result is cached for the lifetime of the process.
+// Returns a copy of the cached settings to prevent callers from mutating
+// the shared state without holding the lock.
 func Load() (*Settings, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
 	if cached != nil {
-		return cached, nil
+		copy := *cached
+		return &copy, nil
 	}
 
 	path, err := settingsPath()
@@ -49,7 +52,8 @@ func Load() (*Settings, error) {
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		cached = &Settings{}
-		return cached, nil
+		copy := *cached
+		return &copy, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to read settings file: %w", err)
@@ -61,10 +65,12 @@ func Load() (*Settings, error) {
 	}
 
 	cached = s
-	return cached, nil
+	copy := *cached
+	return &copy, nil
 }
 
 // Save writes settings to disk and updates the in-process cache.
+// Stores a copy so the caller's pointer cannot mutate the cache.
 func Save(s *Settings) error {
 	mu.Lock()
 	defer mu.Unlock()
@@ -87,7 +93,8 @@ func Save(s *Settings) error {
 		return fmt.Errorf("failed to write settings file: %w", err)
 	}
 
-	cached = s
+	snapshot := *s
+	cached = &snapshot
 	return nil
 }
 
