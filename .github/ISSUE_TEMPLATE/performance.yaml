@@ -1,0 +1,62 @@
+name: Performance Issue
+description: Something is slow, uses too much memory, or has unacceptable resource usage.
+title: "perf: "
+labels: ["performance"]
+projects: ["autobutler-org/2"]
+type: Bug
+assignees: []
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      multiple: true
+      options:
+        - Cirrus (Drive)
+        - Photos
+        - Docs
+        - Books
+        - General UI
+        - Backend
+        - N/A
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    id: perf-type
+    attributes:
+      label: Type of issue
+      multiple: true
+      options:
+        - Slow load / response time
+        - High memory usage
+        - High CPU usage
+        - Large network payload
+        - Laggy UI / dropped frames
+        - Slow file transfer
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What's slow or heavy?
+      description: Describe what you're doing when you notice the problem and what the impact is.
+    validations:
+      required: true
+  - type: textarea
+    id: measurements
+    attributes:
+      label: Measurements
+      description: Numbers if you have them — response times, memory readings, transfer rates, browser DevTools data, etc.
+  - type: input
+    id: version
+    attributes:
+      label: AutoButler version
+      placeholder: "e.g. 0.17.0"
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Hardware running AutoButler, number of files/devices, network setup — context that might affect the numbers.
