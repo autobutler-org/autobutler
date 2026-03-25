@@ -64,6 +64,9 @@ class StorageDevice {
   /// File category breakdown in bytes, e.g. {'documents': 1024, 'media': 2048}.
   final Map<String, int> categories;
 
+  /// Whether this device is detected but not yet mounted.
+  bool get isUnmounted => !isInternal && mountPoint.isEmpty;
+
   double get usedPercent => totalBytes > 0 ? usedBytes / totalBytes * 100 : 0;
 
   String get usedDisplay =>
