@@ -8,6 +8,7 @@ import 'package:autobutler/pages/settings_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
+import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/file_browser_dialog_utils.dart';
 import 'package:autobutler/utils/file_browser_drag_config.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
@@ -40,7 +41,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   final _dropRegionKey = GlobalKey();
   final _fileBrowserScrollController = ScrollController();
 
-  late Future<List<CirrusFileNode>> _filesFuture;
+  Future<List<CirrusFileNode>> _filesFuture = Future.value(
+    const <CirrusFileNode>[],
+  );
   List<CirrusFileNode>?
   _cachedFiles; // last successful result, shown during refresh
   int _generation = 0; // incremented on each reload to discard stale fetches
@@ -50,6 +53,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// When true, files from all devices are shown merged (unified).
   /// When false, they are grouped by device with section headers.
   bool _isUnifiedView = true;
+
+  // Device filter state (#801)
+  List<StorageDevice> _allDevices = [];
+
+  /// Tracks selected devices by devicePath (unique per device, unlike serial).
+  Set<String> _activeDevicePaths = {};
   bool _isUploading = false;
   int _uploadTotal = 0;
   int _uploadCompleted = 0;
@@ -74,8 +83,40 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       });
       return;
     }
+    await _loadDevices();
     setState(() => _reloadFiles());
     await _filesFuture;
+  }
+
+  Future<void> _loadDevices() async {
+    if (AppSettings.instance.activeHost == null) return;
+    try {
+      final devices = await StorageService.listDevices();
+      if (!mounted) return;
+      setState(() {
+        _allDevices = devices;
+        // Preserve existing selection if devices haven't changed;
+        // otherwise select all.
+        final newPaths = devices.map((d) => d.devicePath).toSet();
+        if (!newPaths.containsAll(_activeDevicePaths) ||
+            _activeDevicePaths.isEmpty) {
+          _activeDevicePaths = newPaths;
+        }
+      });
+    } catch (e) {
+      debugPrint('[file_browser_page.dart] Failed to load devices: $e');
+    }
+  }
+
+  /// Converts the selected devicePaths into the serial values the backend expects.
+  List<String> _serialsForActiveDevices() {
+    if (_activeDevicePaths.length == _allDevices.length) {
+      return const []; // empty = all devices, no filter
+    }
+    return _allDevices
+        .where((d) => _activeDevicePaths.contains(d.devicePath))
+        .map((d) => d.serial) // '' for internal devices — backend expects this
+        .toList();
   }
 
   @override
@@ -93,12 +134,15 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
 
     final generation = ++_generation;
-    _filesFuture = _controller.fetchFiles(_currentPath).then((files) {
-      if (mounted && _generation == generation) {
-        setState(() => _cachedFiles = files);
-      }
-      return files;
-    });
+    final serials = _serialsForActiveDevices();
+    _filesFuture = _controller
+        .fetchFiles(_currentPath, serials: serials.isEmpty ? null : serials)
+        .then((files) {
+          if (mounted && _generation == generation) {
+            setState(() => _cachedFiles = files);
+          }
+          return files;
+        });
   }
 
   Future<void> _refreshFileState() => manualRefresh();
@@ -571,6 +615,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     setState(() {
       _currentPath = normalized;
+      // Reset device filter to all devices on navigation.
+      _activeDevicePaths = _allDevices.map((d) => d.devicePath).toSet();
       _reloadFiles();
     });
   }
@@ -579,6 +625,44 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// Builds the horizontal device filter chip row for issue #801.
+  Widget _buildDeviceFilterChips() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Row(
+        children: _allDevices.map((device) {
+          final isSelected = _activeDevicePaths.contains(device.devicePath);
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(
+                device.name.isNotEmpty ? device.name : device.mountPoint,
+              ),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    _activeDevicePaths.add(device.devicePath);
+                  } else {
+                    _activeDevicePaths.remove(device.devicePath);
+                    // Snap back to all if none selected.
+                    if (_activeDevicePaths.isEmpty) {
+                      _activeDevicePaths = _allDevices
+                          .map((d) => d.devicePath)
+                          .toSet();
+                    }
+                  }
+                  _reloadFiles();
+                });
+              },
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
 
   @override
@@ -645,6 +729,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
               });
             },
           ),
+
+          // Device filter chips (#801) — only shown when >1 device and not searching.
+          if (!_isSearchMode && !_noHostSelected && _allDevices.length > 1)
+            _buildDeviceFilterChips(),
 
           if (!_isSearchMode && _currentPath.isEmpty && !_noHostSelected)
             RecentFilesSection(
