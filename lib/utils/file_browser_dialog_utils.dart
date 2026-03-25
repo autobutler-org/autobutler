@@ -119,7 +119,7 @@ Future<MoveRenameResult?> promptForMoveRenamePath(
                 children: [
                   if (showDevicePicker) ...[
                     DropdownButtonFormField<StorageDevice>(
-                      value: selectedDevice,
+                      initialValue: selectedDevice,
                       decoration: const InputDecoration(
                         labelText: 'Destination device',
                         isDense: true,
