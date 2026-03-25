@@ -63,7 +63,7 @@ func setupStaticRoutes(engine *gin.Engine) error {
 
 			// So this will otherwise automatically redirect -
 			//   https://github.com/golang/go/blob/a7e16abb22f1b249d2691b32a5d20206282898f2/src/net/http/fs.go#L593
-			c.FileFromFS("public/index.htm", http.FS(public))
+			c.FileFromFS("public/index.html", http.FS(public))
 		},
 	)
 	return nil

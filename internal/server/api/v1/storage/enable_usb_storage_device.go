@@ -76,9 +76,15 @@ func enableUsbStorageDevice(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(fmt.Errorf("failed to execute mount command: %w", err))
 	}
 
+	cirrusDir, err := storageutil.GetCirrusDirForDevice(mountTargetPath)
+	if err != nil {
+		return serverutil.InternalServerError(fmt.Errorf("failed to initialize data directory on mounted device: %w", err))
+	}
+
 	return serverutil.Ok().WithData(gin.H{
 		"message":    "USB storage device mounted successfully",
 		"mount_path": mountTargetPath,
+		"data_dir":   cirrusDir,
 	})
 }
 
