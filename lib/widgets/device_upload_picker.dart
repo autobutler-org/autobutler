@@ -56,16 +56,25 @@ class _DeviceUploadPickerState extends State<_DeviceUploadPicker> {
               ),
             ),
             const SizedBox(height: 8),
-            for (final device in widget.devices)
-              RadioListTile<StorageDevice>(
-                title: Text(device.name.isNotEmpty ? device.name : 'Device'),
-                subtitle: Text(_subtitle(device)),
-                value: device,
-                groupValue: _selected,
-                onChanged: (v) {
-                  if (v != null) setState(() => _selected = v);
-                },
+            RadioGroup<StorageDevice>(
+              groupValue: _selected,
+              onChanged: (v) {
+                if (v != null) setState(() => _selected = v);
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final device in widget.devices)
+                    RadioListTile<StorageDevice>(
+                      title: Text(
+                        device.name.isNotEmpty ? device.name : 'Device',
+                      ),
+                      subtitle: Text(_subtitle(device)),
+                      value: device,
+                    ),
+                ],
               ),
+            ),
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
