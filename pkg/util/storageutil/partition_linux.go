@@ -17,11 +17,11 @@ type partition struct {
 }
 
 func (p *partition) MountCommand(mountTargetPath string) *exec.Cmd {
-	return exec.Command("mount", p.path, mountTargetPath)
+	return exec.Command("sudo", "mount", p.path, mountTargetPath)
 }
 
 func UnmountCommand(mountTargetPath string) *exec.Cmd {
-	return exec.Command("umount", mountTargetPath)
+	return exec.Command("sudo", "umount", mountTargetPath)
 }
 
 func (p *partition) MountPath() (string, error) {

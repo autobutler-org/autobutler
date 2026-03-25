@@ -9,7 +9,7 @@ import 'package:autobutler/services/sbom_service.dart';
 import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:autobutler/widgets/core/copy_button.dart';
-import 'package:autobutler/widgets/autobutler_brand_button.dart';
+import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:flutter/material.dart';
@@ -388,16 +388,9 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leadingWidth: AutobutlerBrandButton.preferredWidth,
-        leading: Builder(
-          builder: (context) => AutobutlerBrandButton(
-            label: 'Settings',
-            icon: Icons.settings_outlined,
-            onTap: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        title: null,
+      appBar: const AutobutlerAppBar(
+        label: 'Settings',
+        icon: Icons.settings_outlined,
       ),
       drawer: AutobutlerDrawer(
         activeSection: AutobutlerDrawerSection.settings,
