@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
-import 'package:autobutler/pages/settings_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
@@ -776,28 +775,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
           Expanded(
             child: _noHostSelected
-                ? EmptyStateWidget(
-                    icon: Icons.storage_outlined,
-                    headline: 'Connect to your AutoButler',
-                    subtext:
-                        'Enter the address of your AutoButler device on your local network.',
-                    action: ElevatedButton(
-                      onPressed: () async {
-                        await Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const SettingsPage(),
-                          ),
-                        );
-                        setState(() {
-                          _noHostSelected =
-                              AppSettings.instance.activeHost == null;
-                          if (!_noHostSelected) {
-                            _reloadFiles();
-                          }
-                        });
-                      },
-                      child: const Text('Add target host'),
-                    ),
+                ? _FirstRunSetup(
+                    onConnected: () {
+                      setState(() {
+                        _noHostSelected =
+                            AppSettings.instance.activeHost == null;
+                        if (!_noHostSelected) _reloadFiles();
+                      });
+                    },
                   )
                 : DropTarget(
                     key: _dropRegionKey,
@@ -881,6 +866,129 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           ),
           if (!_noHostSelected) const FileStorageFooter(),
         ],
+      ),
+    );
+  }
+}
+
+class _FirstRunSetup extends StatefulWidget {
+  const _FirstRunSetup({required this.onConnected});
+
+  final VoidCallback onConnected;
+
+  @override
+  State<_FirstRunSetup> createState() => _FirstRunSetupState();
+}
+
+class _FirstRunSetupState extends State<_FirstRunSetup> {
+  final _controller = TextEditingController();
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _connect() async {
+    final raw = _controller.text.trim();
+    if (raw.isEmpty) {
+      setState(() => _error = 'Please enter your AutoButler address.');
+      return;
+    }
+
+    var address = raw;
+    if (!address.startsWith('http://') && !address.startsWith('https://')) {
+      address = 'http://$address';
+    }
+
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+
+    try {
+      await AppSettings.instance.addHost(
+        HostEntry(name: 'My AutoButler', hostAddress: address),
+      );
+      if (mounted) widget.onConnected();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _error = 'Could not connect. Check the address and try again.';
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(
+                Icons.storage_outlined,
+                size: 56,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Connect to your AutoButler',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Enter the address of your AutoButler device on your home network.',
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: _controller,
+                autofocus: true,
+                keyboardType: TextInputType.url,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _connect(),
+                decoration: InputDecoration(
+                  labelText: 'AutoButler address',
+                  hintText: 'http://autobutler.home.local',
+                  helperText:
+                      'Usually http://autobutler.home.local or http://192.168.x.x',
+                  errorText: _error,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.link_rounded),
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: _saving ? null : _connect,
+                child: _saving
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Connect'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

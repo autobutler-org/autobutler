@@ -329,19 +329,24 @@ class _SettingsPageState extends State<SettingsPage> {
     final result = await AutobutlerWidget.showDialog<bool>(
       context,
       builder: (context) => AutobutlerWidget.alertDialog(
-        title: Text(isEdit ? 'Edit host' : 'Add host'),
+        title: Text(isEdit ? 'Edit AutoButler' : 'Add AutoButler'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             AutobutlerWidget.textField(
               controller: nameController,
               autofocus: true,
-              hintText: 'Name',
+              hintText: 'Nickname (e.g. Home)',
             ),
             const SizedBox(height: 8),
             AutobutlerWidget.textField(
               controller: hostController,
-              hintText: 'http://<hostname>:<port>',
+              hintText: 'http://autobutler.home.local',
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Usually http://autobutler.home.local or the IP address shown on your device.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
         ),
@@ -429,488 +434,480 @@ class _SettingsPageState extends State<SettingsPage> {
           Navigator.of(context).pop();
         },
       ),
-      body: SelectionArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const Text(
+            'Autobutler',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          // Sign out — only show if there's an active session
+          if (AppSettings.instance.sessionToken != null) ...[
             const Text(
-              'Autobutler',
+              'Account',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            // Sign out — only show if there's an active session
-            if (AppSettings.instance.sessionToken != null) ...[
-              const Text(
-                'Account',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.logout),
-                  title: const Text('Sign out'),
-                  onTap: _signOut,
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
             Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Installed version',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 6),
-                    if (AppSettings.instance.activeHost == null)
-                      const Text('No target host configured')
-                    else if (_isLoadingVersionInfo)
-                      const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    else if (_versionLoadError != null)
-                      Text(
-                        'Failed to load version info',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      )
-                    else
-                      Text(
-                        _installedVersion ?? 'Unknown',
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    const SizedBox(height: 16),
-                    if (_availableVersions.isEmpty &&
-                        !_isLoadingVersionInfo &&
-                        _versionLoadError == null &&
-                        AppSettings.instance.activeHost != null)
-                      const Text('No updates available')
-                    else if (_availableVersions.isNotEmpty) ...[
-                      DropdownButtonFormField<String>(
-                        initialValue: _selectedUpdateVersion,
-                        items: _availableVersions
-                            .map(
-                              (v) => DropdownMenuItem<String>(
-                                value: v,
-                                child: Text(v),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (_isLoadingVersionInfo || _isUpdatingVersion)
-                            ? null
-                            : (v) {
-                                setState(() {
-                                  _selectedUpdateVersion = v;
-                                });
-                              },
-                        decoration: const InputDecoration(
-                          labelText: 'Update Autobutler to version',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: ElevatedButton.icon(
-                          onPressed:
-                              (_selectedUpdateVersion == null ||
-                                  _isUpdatingVersion)
-                              ? null
-                              : _performUpdate,
-                          icon: _isUpdatingVersion
-                              ? const SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.update),
-                          label: Text(
-                            _isUpdatingVersion ? 'Updating...' : 'Start update',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+              child: ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('Sign out'),
+                onTap: _signOut,
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Auto-refresh interval',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<int>(
-              initialValue: _refreshIntervalSeconds,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-              ),
-              items: const [
-                DropdownMenuItem(value: 0, child: Text('Disabled')),
-                DropdownMenuItem(value: 10, child: Text('10 seconds')),
-                DropdownMenuItem(value: 15, child: Text('15 seconds')),
-                DropdownMenuItem(value: 30, child: Text('30 seconds')),
-                DropdownMenuItem(value: 60, child: Text('1 minute')),
-                DropdownMenuItem(value: 120, child: Text('2 minutes')),
-                DropdownMenuItem(value: 300, child: Text('5 minutes')),
-              ],
-              onChanged: (v) async {
-                if (v == null) return;
-                await AppSettings.instance.setRefreshIntervalSeconds(v);
-                setState(() => _refreshIntervalSeconds = v);
-              },
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Theme',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            RadioGroup<ThemeMode>(
-              groupValue: _theme,
-              onChanged: (v) async {
-                if (v == null) return;
-                await AppSettings.instance.setThemeMode(v);
-                setState(() {
-                  _theme = v;
-                });
-              },
-              child: const Column(
+          ],
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  RadioListTile<ThemeMode>(
-                    title: Text('System'),
-                    value: ThemeMode.system,
+                  const Text(
+                    'Installed version',
+                    style: TextStyle(fontWeight: FontWeight.w600),
                   ),
-                  RadioListTile<ThemeMode>(
-                    title: Text('Light'),
-                    value: ThemeMode.light,
-                  ),
-                  RadioListTile<ThemeMode>(
-                    title: Text('Dark'),
-                    value: ThemeMode.dark,
-                  ),
+                  const SizedBox(height: 6),
+                  if (AppSettings.instance.activeHost == null)
+                    const Text(
+                      'Not connected — add your AutoButler address below',
+                    )
+                  else if (_isLoadingVersionInfo)
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else if (_versionLoadError != null)
+                    Text(
+                      'Failed to load version info',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    )
+                  else
+                    Text(
+                      _installedVersion ?? 'Unknown',
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+                  if (_availableVersions.isEmpty &&
+                      !_isLoadingVersionInfo &&
+                      _versionLoadError == null &&
+                      AppSettings.instance.activeHost != null)
+                    const Text('No updates available')
+                  else if (_availableVersions.isNotEmpty) ...[
+                    DropdownButtonFormField<String>(
+                      initialValue: _selectedUpdateVersion,
+                      items: _availableVersions
+                          .map(
+                            (v) => DropdownMenuItem<String>(
+                              value: v,
+                              child: Text(v),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (_isLoadingVersionInfo || _isUpdatingVersion)
+                          ? null
+                          : (v) {
+                              setState(() {
+                                _selectedUpdateVersion = v;
+                              });
+                            },
+                      decoration: const InputDecoration(
+                        labelText: 'Update Autobutler to version',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton.icon(
+                        onPressed:
+                            (_selectedUpdateVersion == null ||
+                                _isUpdatingVersion)
+                            ? null
+                            : _performUpdate,
+                        icon: _isUpdatingVersion
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.update),
+                        label: Text(
+                          _isUpdatingVersion ? 'Updating...' : 'Start update',
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
-            // Storage devices
-            if (AppSettings.instance.activeHost != null) ...[
-              const Text(
-                'Storage',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Card(
-                child: ExpansionTile(
-                  title: const Text(
-                    'Storage devices',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    _isLoadingStorage
-                        ? 'Loading...'
-                        : _storageError != null
-                        ? 'Failed to load'
-                        : _storageDevices.isEmpty
-                        ? 'No devices found'
-                        : '${_storageDevices.length} device${_storageDevices.length == 1 ? '' : 's'}',
-                  ),
-                  children: [
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 12),
-                        child: RefreshIconButton(
-                          isRefreshing: _isLoadingStorage,
-                          onPressed: _loadStorageDevices,
-                          tooltip: 'Refresh',
-                        ),
-                      ),
-                    ),
-                    if (_isLoadingStorage)
-                      const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ),
-                      )
-                    else if (_storageError != null)
-                      ListTile(
-                        leading: Icon(
-                          Icons.error_outline,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                        title: const Text('Failed to load storage devices'),
-                        subtitle: Text(_storageError!),
-                      )
-                    else if (_storageDevices.isEmpty)
-                      const ListTile(title: Text('No storage devices found'))
-                    else
-                      ..._storageDevices.map((device) {
-                        return ListTile(
-                          leading: Icon(
-                            device.isInternal
-                                ? Icons.storage_rounded
-                                : device.isUnmounted
-                                ? Icons.usb_off_rounded
-                                : Icons.usb_rounded,
-                          ),
-                          title: Text(
-                            device.name.isNotEmpty
-                                ? device.name
-                                : device.devicePath,
-                          ),
-                          subtitle: device.isUnmounted
-                              ? const Text(
-                                  'Detected but not mounted',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.orange,
-                                  ),
-                                )
-                              : Text(
-                                  '${device.usedDisplay} · ${device.usedPercent.toStringAsFixed(1)}% used · ${device.fileSystem}',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                          trailing: device.isUnmounted
-                              ? FilledButton.tonalIcon(
-                                  icon: const Icon(Icons.play_arrow_rounded),
-                                  label: const Text('Mount'),
-                                  onPressed: device.serial.isNotEmpty
-                                      ? () => _mountDevice(device)
-                                      : null,
-                                )
-                              : IconButton(
-                                  icon: const Icon(Icons.edit_outlined),
-                                  tooltip: 'Rename',
-                                  onPressed: () => _renameStorageDevice(device),
-                                ),
-                        );
-                      }),
-                  ],
-                ),
-              ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Auto-refresh interval',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<int>(
+            initialValue: _refreshIntervalSeconds,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            items: const [
+              DropdownMenuItem(value: 0, child: Text('Disabled')),
+              DropdownMenuItem(value: 10, child: Text('10 seconds')),
+              DropdownMenuItem(value: 15, child: Text('15 seconds')),
+              DropdownMenuItem(value: 30, child: Text('30 seconds')),
+              DropdownMenuItem(value: 60, child: Text('1 minute')),
+              DropdownMenuItem(value: 120, child: Text('2 minutes')),
+              DropdownMenuItem(value: 300, child: Text('5 minutes')),
             ],
-            const SizedBox(height: 24),
+            onChanged: (v) async {
+              if (v == null) return;
+              await AppSettings.instance.setRefreshIntervalSeconds(v);
+              setState(() => _refreshIntervalSeconds = v);
+            },
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Theme',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          RadioGroup<ThemeMode>(
+            groupValue: _theme,
+            onChanged: (v) async {
+              if (v == null) return;
+              await AppSettings.instance.setThemeMode(v);
+              setState(() {
+                _theme = v;
+              });
+            },
+            child: const Column(
+              children: [
+                RadioListTile<ThemeMode>(
+                  title: Text('System'),
+                  value: ThemeMode.system,
+                ),
+                RadioListTile<ThemeMode>(
+                  title: Text('Light'),
+                  value: ThemeMode.light,
+                ),
+                RadioListTile<ThemeMode>(
+                  title: Text('Dark'),
+                  value: ThemeMode.dark,
+                ),
+              ],
+            ),
+          ),
+          // Storage devices
+          if (AppSettings.instance.activeHost != null) ...[
             const Text(
-              'Backend hosts',
+              'Storage',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            RadioGroup<int>(
-              groupValue: _active,
-              onChanged: (v) async {
-                if (v == null) return;
-                await AppSettings.instance.setActiveIndex(v);
-                _load();
-              },
-              child: Column(
-                children: _hosts.asMap().entries.map((e) {
-                  final idx = e.key;
-                  final host = e.value;
-                  return Card(
-                    child: ListTile(
-                      leading: Radio<int>(value: idx),
-                      title: Text(host.name),
-                      subtitle: Text(host.hostAddress),
-                      trailing: PopupMenuButton<String>(
-                        onSelected: (action) {
-                          if (action == 'edit') {
-                            _addOrEditHost(index: idx);
-                          } else if (action == 'remove') {
-                            _removeHost(idx);
-                          }
-                        },
-                        itemBuilder: (_) => [
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Text('Edit'),
-                          ),
-                          const PopupMenuItem(
-                            value: 'remove',
-                            child: Text('Remove'),
-                          ),
-                        ],
-                      ),
-                      onTap: () async {
-                        await AppSettings.instance.setActiveIndex(idx);
-                        _load();
-                      },
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton.icon(
-              onPressed: () => _addOrEditHost(),
-              icon: const Icon(Icons.add),
-              label: const Text('Add host'),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Connected Devices',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            if (AppSettings.instance.activeHost == null)
-              const Text('No target host configured')
-            else
-              Card(
-                child: ExpansionTile(
-                  title: const Text(
-                    'Client connections',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    _isLoadingDevices
-                        ? 'Loading...'
-                        : _devicesError != null
-                        ? 'Failed to load devices'
-                        : _connectedDevices.isEmpty
-                        ? 'No devices recorded yet'
-                        : '${_connectedDevices.length} device${_connectedDevices.length == 1 ? '' : 's'}',
-                  ),
-                  children: [
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 12),
-                        child: RefreshIconButton(
-                          isRefreshing: _isLoadingDevices,
-                          onPressed: _loadDevices,
-                          tooltip: 'Refresh devices',
-                        ),
+            Card(
+              child: ExpansionTile(
+                title: const Text(
+                  'Storage devices',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  _isLoadingStorage
+                      ? 'Loading...'
+                      : _storageError != null
+                      ? 'Failed to load'
+                      : _storageDevices.isEmpty
+                      ? 'No devices found'
+                      : '${_storageDevices.length} device${_storageDevices.length == 1 ? '' : 's'}',
+                ),
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: RefreshIconButton(
+                        isRefreshing: _isLoadingStorage,
+                        onPressed: _loadStorageDevices,
+                        tooltip: 'Refresh',
                       ),
                     ),
-                    if (_isLoadingDevices)
-                      const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
+                  ),
+                  if (_isLoadingStorage)
+                    const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         ),
-                      )
-                    else if (_devicesError != null)
-                      ListTile(
+                      ),
+                    )
+                  else if (_storageError != null)
+                    ListTile(
+                      leading: Icon(
+                        Icons.error_outline,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      title: const Text('Failed to load storage devices'),
+                      subtitle: Text(_storageError!),
+                    )
+                  else if (_storageDevices.isEmpty)
+                    const ListTile(title: Text('No storage devices found'))
+                  else
+                    ..._storageDevices.map((device) {
+                      return ListTile(
                         leading: Icon(
-                          Icons.error_outline,
-                          color: Theme.of(context).colorScheme.error,
+                          device.isInternal
+                              ? Icons.storage_rounded
+                              : device.isUnmounted
+                              ? Icons.usb_off_rounded
+                              : Icons.usb_rounded,
                         ),
-                        title: const Text('Failed to load devices'),
-                        subtitle: Text(_devicesError!),
-                      )
-                    else if (_connectedDevices.isEmpty)
-                      const ListTile(title: Text('No devices recorded yet'))
-                    else
-                      ..._connectedDevices.map((device) {
-                        return ListTile(
-                          leading: const Icon(Icons.devices),
-                          title: Text(device.ipAddress),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (device.userAgent.isNotEmpty)
-                                Text(
-                                  device.userAgent,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 12),
+                        title: Text(
+                          device.name.isNotEmpty
+                              ? device.name
+                              : device.devicePath,
+                        ),
+                        subtitle: device.isUnmounted
+                            ? const Text(
+                                'Detected but not mounted',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.orange,
                                 ),
-                              Text(
-                                '${device.requestCount} request${device.requestCount == 1 ? '' : 's'} · last seen ${_formatRelative(device.lastSeenAt)}',
+                              )
+                            : Text(
+                                '${device.usedDisplay} · ${device.usedPercent.toStringAsFixed(1)}% used · ${device.fileSystem}',
                                 style: const TextStyle(fontSize: 12),
                               ),
-                            ],
-                          ),
-                          isThreeLine: device.userAgent.isNotEmpty,
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline),
-                            tooltip: 'Remove',
-                            onPressed: () => _deleteDevice(device.id),
-                          ),
-                        );
-                      }),
-                  ],
-                ),
+                        trailing: device.isUnmounted
+                            ? FilledButton.tonalIcon(
+                                icon: const Icon(Icons.play_arrow_rounded),
+                                label: const Text('Mount'),
+                                onPressed: device.serial.isNotEmpty
+                                    ? () => _mountDevice(device)
+                                    : null,
+                              )
+                            : IconButton(
+                                icon: const Icon(Icons.edit_outlined),
+                                tooltip: 'Rename',
+                                onPressed: () => _renameStorageDevice(device),
+                              ),
+                      );
+                    }),
+                ],
               ),
-            const SizedBox(height: 24),
-
-            const _InfoSectionHeader(label: 'Network Drive'),
-            const SizedBox(height: 8),
-            _NetworkDriveCard(host: AppSettings.instance.activeHost),
-
-            const SizedBox(height: 24),
-
-            const _InfoSectionHeader(label: 'Software Bill of Materials'),
-            const SizedBox(height: 8),
-            if (_isLoadingSbom)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(),
+            ),
+          ],
+          const SizedBox(height: 24),
+          const Text(
+            'Backend hosts',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          RadioGroup<int>(
+            groupValue: _active,
+            onChanged: (v) async {
+              if (v == null) return;
+              await AppSettings.instance.setActiveIndex(v);
+              _load();
+            },
+            child: Column(
+              children: _hosts.asMap().entries.map((e) {
+                final idx = e.key;
+                final host = e.value;
+                return Card(
+                  child: ListTile(
+                    leading: Radio<int>(value: idx),
+                    title: Text(host.name),
+                    subtitle: Text(host.hostAddress),
+                    trailing: PopupMenuButton<String>(
+                      onSelected: (action) {
+                        if (action == 'edit') {
+                          _addOrEditHost(index: idx);
+                        } else if (action == 'remove') {
+                          _removeHost(idx);
+                        }
+                      },
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                        const PopupMenuItem(
+                          value: 'remove',
+                          child: Text('Remove'),
+                        ),
+                      ],
+                    ),
+                    onTap: () async {
+                      await AppSettings.instance.setActiveIndex(idx);
+                      _load();
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: () => _addOrEditHost(),
+            icon: const Icon(Icons.add),
+            label: const Text('Add AutoButler'),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Connected Devices',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          if (AppSettings.instance.activeHost == null)
+            const Text('Not connected — add your AutoButler address below')
+          else
+            Card(
+              child: ExpansionTile(
+                title: const Text(
+                  'Client connections',
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
-              )
-            else ...[
-              if (_sbomError != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'Failed to load some SBOM sources:\n$_sbomError',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
+                subtitle: Text(
+                  _isLoadingDevices
+                      ? 'Loading...'
+                      : _devicesError != null
+                      ? 'Failed to load devices'
+                      : _connectedDevices.isEmpty
+                      ? 'No devices recorded yet'
+                      : '${_connectedDevices.length} device${_connectedDevices.length == 1 ? '' : 's'}',
+                ),
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: RefreshIconButton(
+                        isRefreshing: _isLoadingDevices,
+                        onPressed: _loadDevices,
+                        tooltip: 'Refresh devices',
+                      ),
                     ),
                   ),
-                ),
-              if (_flutterSbom != null)
-                _SbomExpansionTile(
-                  title: 'Flutter dependencies',
-                  subtitle: '${_flutterSbom!.length} packages',
-                  items: _flutterSbom!
-                      .map(
-                        (p) => _SbomEntry(
-                          name: p.name,
-                          version: p.version,
-                          url: p.url,
+                  if (_isLoadingDevices)
+                    const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         ),
-                      )
-                      .toList(),
+                      ),
+                    )
+                  else if (_devicesError != null)
+                    ListTile(
+                      leading: Icon(
+                        Icons.error_outline,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      title: const Text('Failed to load devices'),
+                      subtitle: Text(_devicesError!),
+                    )
+                  else if (_connectedDevices.isEmpty)
+                    const ListTile(title: Text('No devices recorded yet'))
+                  else
+                    ..._connectedDevices.map((device) {
+                      return ListTile(
+                        leading: const Icon(Icons.devices),
+                        title: Text(device.ipAddress),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (device.userAgent.isNotEmpty)
+                              Text(
+                                device.userAgent,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            Text(
+                              '${device.requestCount} request${device.requestCount == 1 ? '' : 's'} · last seen ${_formatRelative(device.lastSeenAt)}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+                        isThreeLine: device.userAgent.isNotEmpty,
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          tooltip: 'Remove',
+                          onPressed: () => _deleteDevice(device.id),
+                        ),
+                      );
+                    }),
+                ],
+              ),
+            ),
+          const SizedBox(height: 24),
+
+          const _InfoSectionHeader(label: 'Network Drive'),
+          const SizedBox(height: 8),
+          _NetworkDriveCard(host: AppSettings.instance.activeHost),
+
+          const SizedBox(height: 24),
+
+          const _InfoSectionHeader(label: 'Software Bill of Materials'),
+          const SizedBox(height: 8),
+          if (_isLoadingSbom)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else ...[
+            if (_sbomError != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Failed to load some SBOM sources:\n$_sbomError',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
-              const SizedBox(height: 8),
-              if (_goSbom != null)
-                _SbomExpansionTile(
-                  title: 'Go dependencies',
-                  subtitle:
-                      '${_goSbom!.dependencies.length} packages · ${_goSbom!.goVersion}',
-                  items: _goSbom!.dependencies
-                      .map((d) => _SbomEntry(name: d.path, version: d.version))
-                      .toList(),
-                ),
-              if (_goSbom == null && _flutterSbom == null)
-                const Text('No SBOM data available.'),
-            ],
+              ),
+            if (_flutterSbom != null)
+              _SbomExpansionTile(
+                title: 'Flutter dependencies',
+                subtitle: '${_flutterSbom!.length} packages',
+                items: _flutterSbom!
+                    .map(
+                      (p) => _SbomEntry(
+                        name: p.name,
+                        version: p.version,
+                        url: p.url,
+                      ),
+                    )
+                    .toList(),
+              ),
+            const SizedBox(height: 8),
+            if (_goSbom != null)
+              _SbomExpansionTile(
+                title: 'Go dependencies',
+                subtitle:
+                    '${_goSbom!.dependencies.length} packages · ${_goSbom!.goVersion}',
+                items: _goSbom!.dependencies
+                    .map((d) => _SbomEntry(name: d.path, version: d.version))
+                    .toList(),
+              ),
+            if (_goSbom == null && _flutterSbom == null)
+              const Text('No SBOM data available.'),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -981,7 +978,7 @@ class _SbomExpansionTile extends StatelessWidget {
                   item.version,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Theme.of(context).colorScheme.secondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontFamily: 'monospace',
                   ),
                 ),
