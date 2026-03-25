@@ -3,9 +3,22 @@ package storageutil
 import (
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime"
 )
+
+func getServiceDataDir() string {
+	return "/var/lib/autobutler/data"
+}
+
+func isRunningAsServiceUser() bool {
+	u, err := user.Current()
+	if err != nil {
+		return false
+	}
+	return u.Username == "autobutler"
+}
 
 func ConstructCirrusDir(dataDir string) string {
 	return filepath.Join(dataDir, "cirrus")
@@ -56,9 +69,12 @@ func GetDataDirForDevice(mountPoint string) string {
 			}
 			return filepath.Join(homeDir, "Library", "Application Support", "Autobutler", "data")
 		case "linux": // coverage: ignore - Not run in mac dev environments
+			if isRunningAsServiceUser() {
+				return getServiceDataDir() // coverage: ignore
+			}
 			homeDir, err := os.UserHomeDir()
 			if err != nil {
-				homeDir = "/var/lib" // coverage: ignore - requires UserHomeDir to fail
+				homeDir = "/var/lib" // coverage: ignore
 			}
 			return filepath.Join(homeDir, "autobutler", "data") // coverage: ignore
 		}

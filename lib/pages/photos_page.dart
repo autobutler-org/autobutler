@@ -1,11 +1,12 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/utils/auto_refresh_mixin.dart';
+import 'package:autobutler/widgets/core/empty_state_widget.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
-import 'package:autobutler/widgets/autobutler_brand_button.dart';
+import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:autobutler/router.dart';
 import 'package:flutter/material.dart';
@@ -332,11 +333,10 @@ class _PhotosPageState extends State<PhotosPage>
     return RefreshIndicator(
       onRefresh: manualRefresh,
       child: photos.isEmpty
-          ? ListView(
-              children: const [
-                SizedBox(height: 120),
-                Center(child: Text('No photos found')),
-              ],
+          ? const EmptyStateWidget(
+              icon: Icons.photo_library_outlined,
+              headline: 'No photos yet',
+              subtext: 'Photos you upload to AutoButler will appear here.',
             )
           : GridView.builder(
               padding: const EdgeInsets.all(2),
@@ -486,16 +486,9 @@ class _PhotosPageState extends State<PhotosPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leadingWidth: AutobutlerBrandButton.preferredWidth,
-        leading: Builder(
-          builder: (context) => AutobutlerBrandButton(
-            label: 'Photos',
-            icon: Icons.photo_library_outlined,
-            onTap: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        title: null,
+      appBar: AutobutlerAppBar(
+        label: 'Photos',
+        icon: Icons.photo_library_outlined,
         actions: [
           RefreshIconButton(
             isRefreshing: isRefreshing,

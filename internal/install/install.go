@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -40,6 +41,45 @@ func installPlistService() error {
 	return nil
 }
 
+const sudoersDropInPath = "/etc/sudoers.d/autobutler"
+
+func createServiceUser() error {
+	if _, err := user.Lookup(serviceUserName); err == nil {
+		return nil
+	}
+	return exec.Command(
+		"useradd",
+		"--system",
+		"--no-create-home",
+		"--shell", "/usr/sbin/nologin",
+		"--comment", "AutoButler service account",
+		serviceUserName,
+	).Run()
+}
+
+func createServiceDataDir() error {
+	if err := os.MkdirAll(serviceDataDir, 0750); err != nil {
+		return fmt.Errorf("failed to create service data dir: %w", err)
+	}
+	svcUser, err := user.Lookup(serviceUserName)
+	if err != nil {
+		return fmt.Errorf("failed to look up service user: %w", err)
+	}
+	return exec.Command("chown", "-R",
+		fmt.Sprintf("%s:%s", svcUser.Uid, svcUser.Gid),
+		serviceDataDir,
+	).Run()
+}
+
+func installSudoersRule() error {
+	mountsDir := filepath.Join(serviceDataDir, "mounts")
+	content := fmt.Sprintf(
+		"%s ALL=(root) NOPASSWD: /bin/mount * %s/*, /bin/umount %s/*\n",
+		serviceUserName, mountsDir, mountsDir,
+	)
+	return os.WriteFile(sudoersDropInPath, []byte(content), 0440)
+}
+
 func Install() error {
 	executable, err := os.Executable()
 	if err != nil {
@@ -48,7 +88,19 @@ func Install() error {
 	switch runtime.GOOS {
 	case "linux":
 		if err := exec.Command("cp", "-v", executable, "/usr/local/bin/autobutler").Run(); err != nil {
-			return fmt.Errorf("failed to copy binary to /usr/local/bin: %w", err)
+			return fmt.Errorf("failed to copy binary: %w", err)
+		}
+		if err := createServiceUser(); err != nil {
+			return fmt.Errorf("failed to create service user: %w", err)
+		}
+		if err := createServiceDataDir(); err != nil {
+			return fmt.Errorf("failed to create service data directory: %w", err)
+		}
+		if err := installSudoersRule(); err != nil {
+			return fmt.Errorf("failed to install sudoers rule: %w", err)
+		}
+		if err := installSudoersRule(); err != nil {
+			return err
 		}
 		return installSystemdService()
 	case "darwin": // coverage: ignore - Not run in CI

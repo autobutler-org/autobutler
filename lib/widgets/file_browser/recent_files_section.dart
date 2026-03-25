@@ -1,6 +1,7 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/theme/autobutler_colors.dart';
+import 'package:autobutler/widgets/core/autobutler_file_icon.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:flutter/material.dart';
 
@@ -162,8 +163,8 @@ class _RecentFileChip extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  _iconForNode(file),
+                AutobutlerFileIcon(
+                  node: file,
                   size: 20,
                   color: AutobutlerColors.secondaryForeground,
                 ),
@@ -222,34 +223,5 @@ class _RecentFileChip extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  static IconData _iconForNode(CirrusFileNode node) {
-    final lower = node.name.toLowerCase();
-    if (lower.endsWith('.jpg') ||
-        lower.endsWith('.jpeg') ||
-        lower.endsWith('.png') ||
-        lower.endsWith('.gif') ||
-        lower.endsWith('.webp')) {
-      return Icons.image_outlined;
-    }
-    if (lower.endsWith('.zip') ||
-        lower.endsWith('.tar') ||
-        lower.endsWith('.gz') ||
-        lower.endsWith('.7z')) {
-      return Icons.archive_outlined;
-    }
-    if (lower.endsWith('.pdf')) return Icons.picture_as_pdf_outlined;
-    if (lower.endsWith('.mp4') ||
-        lower.endsWith('.mov') ||
-        lower.endsWith('.mkv')) {
-      return Icons.video_file_outlined;
-    }
-    if (lower.endsWith('.mp3') ||
-        lower.endsWith('.wav') ||
-        lower.endsWith('.flac')) {
-      return Icons.audio_file_outlined;
-    }
-    return Icons.insert_drive_file_outlined;
   }
 }

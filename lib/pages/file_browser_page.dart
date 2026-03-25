@@ -13,6 +13,7 @@ import 'package:autobutler/utils/file_browser_drag_config.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
+import 'package:autobutler/widgets/core/empty_state_widget.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:autobutler/widgets/file_browser/file_storage_footer.dart';
@@ -655,31 +656,27 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
           Expanded(
             child: _noHostSelected
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('No target host configured.'),
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: () async {
-                            await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const SettingsPage(),
-                              ),
-                            );
-                            // After returning from settings, attempt to reload files if a host was added.
-                            setState(() {
-                              _noHostSelected =
-                                  AppSettings.instance.activeHost == null;
-                              if (!_noHostSelected) {
-                                _reloadFiles();
-                              }
-                            });
-                          },
-                          child: const Text('Add target host'),
-                        ),
-                      ],
+                ? EmptyStateWidget(
+                    icon: Icons.storage_outlined,
+                    headline: 'Connect to your AutoButler',
+                    subtext:
+                        'Enter the address of your AutoButler device on your local network.',
+                    action: ElevatedButton(
+                      onPressed: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const SettingsPage(),
+                          ),
+                        );
+                        setState(() {
+                          _noHostSelected =
+                              AppSettings.instance.activeHost == null;
+                          if (!_noHostSelected) {
+                            _reloadFiles();
+                          }
+                        });
+                      },
+                      child: const Text('Add target host'),
                     ),
                   )
                 : DropTarget(
