@@ -12,8 +12,10 @@ import 'package:autobutler/widgets/core/copy_button.dart';
 import 'package:autobutler/widgets/autobutler_brand_button.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -1265,9 +1267,19 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
             // macOS
             const Text('macOS', style: TextStyle(fontWeight: FontWeight.w500)),
             const SizedBox(height: 4),
-            const Text('Finder → Go → Connect to Server (⌘K), then enter:'),
-            const SizedBox(height: 4),
             _CodeBlock(text: 'smb://$hostname.local'),
+            const SizedBox(height: 8),
+            if (defaultTargetPlatform == TargetPlatform.macOS)
+              FilledButton.icon(
+                onPressed: () => launchUrl(Uri.parse('smb://$hostname.local')),
+                icon: const Icon(Icons.folder_open_outlined, size: 16),
+                label: const Text('Open in Finder'),
+              )
+            else
+              const Text(
+                'On macOS: tap "Open in Finder" to connect automatically.',
+                style: TextStyle(fontSize: 12),
+              ),
             const SizedBox(height: 12),
 
             // Windows
