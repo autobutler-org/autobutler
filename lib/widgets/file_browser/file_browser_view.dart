@@ -314,7 +314,8 @@ class _FileBrowserViewState extends State<FileBrowserView> {
           return const EmptyStateWidget(
             icon: Icons.folder_open_outlined,
             headline: 'No files yet',
-            subtext: 'Upload files using the button above, or drag and drop here.',
+            subtext:
+                'Upload files using the button above, or drag and drop here.',
           );
         }
 
@@ -435,7 +436,10 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                                     );
                                   }
                                   return Center(
-                                    child: AutobutlerFileIcon(node: item, size: 48),
+                                    child: AutobutlerFileIcon(
+                                      node: item,
+                                      size: 48,
+                                    ),
                                   );
                                 })(),
                                 const SizedBox(height: 8),

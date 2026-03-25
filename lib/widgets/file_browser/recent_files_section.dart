@@ -224,5 +224,4 @@ class _RecentFileChip extends StatelessWidget {
       ),
     );
   }
-
 }
