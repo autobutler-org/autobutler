@@ -109,13 +109,22 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   }
 
   /// Converts the selected devicePaths into the serial values the backend expects.
+  /// Returns an empty list when all devices are selected (backend interprets
+  /// empty serials as "no filter — show all").
   List<String> _serialsForActiveDevices() {
-    if (_activeDevicePaths.length == _allDevices.length) {
-      return const []; // empty = all devices, no filter
+    final allPaths = _allDevices.map((d) => d.devicePath).toSet();
+    // If every known device is selected, pass no filter rather than an explicit
+    // serial list. This avoids the edge case where count matches but content
+    // differs (e.g. a device was added/removed between loads), and also avoids
+    // sending serial='' for the internal device which confuses the backend.
+    if (_activeDevicePaths.containsAll(allPaths) &&
+        allPaths.containsAll(_activeDevicePaths)) {
+      return const [];
     }
     return _allDevices
         .where((d) => _activeDevicePaths.contains(d.devicePath))
-        .map((d) => d.serial) // '' for internal devices — backend expects this
+        .map((d) => d.serial)
+        .where((s) => s.isNotEmpty) // never send blank serial as a filter
         .toList();
   }
 
