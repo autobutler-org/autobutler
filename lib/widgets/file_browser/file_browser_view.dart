@@ -1,5 +1,6 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/services/cirrus_service.dart';
+import 'package:autobutler/widgets/core/autobutler_file_icon.dart';
 import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/utils/safe_set_state_mixin.dart';
@@ -206,7 +207,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
       color: Colors.transparent,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        leading: Icon(_iconForNode(item)),
+        leading: Icon(AutobutlerFileIcon.iconForNode(item)),
         title: Row(
           children: [
             Expanded(
@@ -429,7 +430,10 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                                     );
                                   }
                                   return Center(
-                                    child: Icon(_iconForNode(item), size: 48),
+                                    child: AutobutlerFileIcon(
+                                      node: item,
+                                      size: 48,
+                                    ),
                                   );
                                 })(),
                                 const SizedBox(height: 8),
@@ -546,25 +550,6 @@ class _FileBrowserViewState extends State<FileBrowserView> {
     final dot = node.name.lastIndexOf('.');
     if (dot < 0) return 'file';
     return node.name.substring(dot + 1).toLowerCase();
-  }
-
-  static IconData _iconForNode(CirrusFileNode node) {
-    if (node.isDir) return Icons.folder_outlined;
-    final lower = node.name.toLowerCase();
-    if (lower.endsWith('.jpg') ||
-        lower.endsWith('.jpeg') ||
-        lower.endsWith('.png') ||
-        lower.endsWith('.gif') ||
-        lower.endsWith('.webp')) {
-      return Icons.image_outlined;
-    }
-    if (lower.endsWith('.zip') ||
-        lower.endsWith('.tar') ||
-        lower.endsWith('.gz') ||
-        lower.endsWith('.7z')) {
-      return Icons.archive_outlined;
-    }
-    return Icons.insert_drive_file_outlined;
   }
 
   static String _formatSize(int bytes, bool isDir) {
