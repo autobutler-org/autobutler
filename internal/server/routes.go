@@ -58,12 +58,23 @@ func setupStaticRoutes(engine *gin.Engine) error {
 		return err
 	}
 	engine.Use(static.Serve("/", fs))
+
+	// Read index.html once at startup for the SPA fallback.
+	indexHTML, err := public.ReadFile("public/index.html")
+	if err != nil {
+		return err
+	}
+
 	engine.NoRoute(
 		func(c *gin.Context) {
-
-			// So this will otherwise automatically redirect -
-			//   https://github.com/golang/go/blob/a7e16abb22f1b249d2691b32a5d20206282898f2/src/net/http/fs.go#L593
-			c.FileFromFS("public/index.html", http.FS(public))
+			// SPA fallback: serve index.html for any unmatched route so
+			// Flutter's client-side router can handle it.
+			//
+			// We serve the bytes directly instead of using c.FileFromFS
+			// because Go's http.FileServer redirects requests for
+			// index.html to the directory root (fs.go#L593), which
+			// strips the URL path and breaks client-side routing.
+			c.Data(http.StatusOK, "text/html; charset=utf-8", indexHTML)
 		},
 	)
 	return nil
