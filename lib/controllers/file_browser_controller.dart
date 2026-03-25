@@ -1,6 +1,7 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/services/file_browser_actions.dart';
+import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:autobutler/utils/file_browser_dialog_utils.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
@@ -141,17 +142,29 @@ class FileBrowserController {
         return FileMenuActionOutcome(message: downloadedMessage(node));
       case FileMenuAction.moveRename:
         final startPath = parentPath(node.apiPath);
-        final targetInput = await promptForMoveRenamePath(
+        // Fetch devices for cross-device move support
+        List<StorageDevice> enabledDevices = [];
+        try {
+          enabledDevices = (await StorageService.listDevices())
+              .where((d) => d.isEnabled)
+              .toList();
+        } catch (_) {
+          // Fall through with empty list — dialog will skip device picker
+        }
+        if (!context.mounted) return null;
+        final moveResult = await promptForMoveRenamePath(
           context,
           startPath: startPath,
           initialName: node.name,
+          devices: enabledDevices,
         );
         if (!context.mounted) {
           return null;
         }
-        if (targetInput == null) {
+        if (moveResult == null) {
           return null;
         }
+        final targetInput = moveResult.targetInput;
         final targetPath = resolveMoveRenameTargetPath(
           currentPath: startPath,
           nodeApiPath: node.apiPath,
@@ -188,7 +201,11 @@ class FileBrowserController {
           }
         }
 
-        await moveRenameNode(node: node, targetInput: targetInput);
+        await moveRenameNode(
+          node: node,
+          targetInput: targetInput,
+          newDeviceSerial: moveResult.deviceSerial,
+        );
         return const FileMenuActionOutcome(
           message: 'Move/Rename complete',
           shouldRefresh: true,

@@ -1,5 +1,7 @@
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
+import 'package:autobutler/models/move_rename_result.dart';
+import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/widgets/file_browser/file_breadcrumb_bar.dart';
@@ -23,12 +25,14 @@ Future<String?> promptForFolderName(BuildContext context) async {
   return normalized.replaceAll(RegExp(r'^/+|/+$'), '');
 }
 
-// startPath should be the current folder of the item being moved; returns a path
-// relative to startPath (e.g. "sub/folder/newname") or a simple name like "newname".
-Future<String?> promptForMoveRenamePath(
+// startPath should be the current folder of the item being moved; returns a
+// [MoveRenameResult] with the path and optional destination device serial.
+// When [devices] has more than one entry a device picker dropdown is shown.
+Future<MoveRenameResult?> promptForMoveRenamePath(
   BuildContext context, {
   String startPath = '',
   String? initialName,
+  List<StorageDevice> devices = const [],
 }) async {
   await Future<void>.delayed(Duration.zero);
   if (!context.mounted) return null;
@@ -47,7 +51,11 @@ Future<String?> promptForMoveRenamePath(
     text: initialName?.trim().replaceAll('/', '') ?? '',
   );
 
-  final result = await AutobutlerWidget.showDialog<String?>(
+  // Only show device picker when there are multiple devices
+  final showDevicePicker = devices.length > 1;
+  StorageDevice? selectedDevice = devices.isNotEmpty ? devices.first : null;
+
+  final result = await AutobutlerWidget.showDialog<MoveRenameResult?>(
     context,
     useRootNavigator: true,
     builder: (dialogContext) {
@@ -109,6 +117,31 @@ Future<String?> promptForMoveRenamePath(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (showDevicePicker) ...[
+                    DropdownButtonFormField<StorageDevice>(
+                      value: selectedDevice,
+                      decoration: const InputDecoration(
+                        labelText: 'Destination device',
+                        isDense: true,
+                      ),
+                      items: devices
+                          .map(
+                            (d) => DropdownMenuItem<StorageDevice>(
+                              value: d,
+                              child: Text(
+                                d.name.isNotEmpty
+                                    ? '${d.name}${d.isInternal ? ' (Internal)' : ''}'
+                                    : d.mountPoint,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) {
+                        if (v != null) setState(() => selectedDevice = v);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   FileBreadcrumbBar(
                     currentPath: currentAbsolutePath,
                     onGoHome: () {
@@ -191,7 +224,15 @@ Future<String?> promptForMoveRenamePath(
                   } else {
                     out = '$rel/$name';
                   }
-                  Navigator.of(dialogContext).pop(out);
+                  final serial = selectedDevice?.serial;
+                  Navigator.of(dialogContext).pop(
+                    MoveRenameResult(
+                      targetInput: out,
+                      deviceSerial: (serial != null && serial.isNotEmpty)
+                          ? serial
+                          : null,
+                    ),
+                  );
                 },
                 child: const Text('Save'),
               ),
@@ -206,12 +247,17 @@ Future<String?> promptForMoveRenamePath(
     nameController.dispose();
   });
 
-  final normalized = (result ?? '').trim();
+  if (result == null) return null;
+  final normalized = result.targetInput.trim();
   if (normalized.isEmpty) return null;
   // Collapse duplicate slashes and remove trailing slashes, preserving a single leading
   // slash for absolute targets (e.g. "/parent/file").
   final collapsed = normalized.replaceAll(RegExp(r'/+'), '/');
-  return collapsed.replaceAll(RegExp(r'/+$'), '');
+  final cleanPath = collapsed.replaceAll(RegExp(r'/+$'), '');
+  return MoveRenameResult(
+    targetInput: cleanPath,
+    deviceSerial: result.deviceSerial,
+  );
 }
 
 Future<String?> promptForSearchQuery(BuildContext context) {
