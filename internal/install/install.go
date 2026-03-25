@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -41,10 +42,17 @@ func installPlistService() error {
 }
 
 const sudoersDropInPath = "/etc/sudoers.d/autobutler"
-const sudoersDropInContent = "# Allow autobutler to mount/unmount USB storage devices without a password\nALL ALL=(root) NOPASSWD: /bin/mount, /bin/umount\n"
 
 func installSudoersRule() error {
-	if err := os.WriteFile(sudoersDropInPath, []byte(sudoersDropInContent), 0440); err != nil {
+	currentUser, err := user.Current()
+	if err != nil {
+		return fmt.Errorf("failed to determine current user for sudoers rule: %w", err)
+	}
+	content := fmt.Sprintf(
+		"# Allow autobutler to mount/unmount USB storage devices without a password\n%s ALL=(root) NOPASSWD: /bin/mount, /bin/umount\n",
+		currentUser.Username,
+	)
+	if err := os.WriteFile(sudoersDropInPath, []byte(content), 0440); err != nil {
 		return fmt.Errorf("failed to write sudoers drop-in file: %w", err)
 	}
 	return nil
