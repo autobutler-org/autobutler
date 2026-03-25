@@ -40,6 +40,16 @@ func installPlistService() error {
 	return nil
 }
 
+const sudoersDropInPath = "/etc/sudoers.d/autobutler"
+const sudoersDropInContent = "# Allow autobutler to mount/unmount USB storage devices without a password\nALL ALL=(root) NOPASSWD: /bin/mount, /bin/umount\n"
+
+func installSudoersRule() error {
+	if err := os.WriteFile(sudoersDropInPath, []byte(sudoersDropInContent), 0440); err != nil {
+		return fmt.Errorf("failed to write sudoers drop-in file: %w", err)
+	}
+	return nil
+}
+
 func Install() error {
 	executable, err := os.Executable()
 	if err != nil {
@@ -49,6 +59,9 @@ func Install() error {
 	case "linux":
 		if err := exec.Command("cp", "-v", executable, "/usr/local/bin/autobutler").Run(); err != nil {
 			return fmt.Errorf("failed to copy binary to /usr/local/bin: %w", err)
+		}
+		if err := installSudoersRule(); err != nil {
+			return err
 		}
 		return installSystemdService()
 	case "darwin": // coverage: ignore - Not run in CI
