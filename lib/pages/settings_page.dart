@@ -12,7 +12,6 @@ import 'package:autobutler/widgets/core/copy_button.dart';
 import 'package:autobutler/widgets/autobutler_brand_button.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1269,17 +1268,11 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
             const SizedBox(height: 4),
             _CodeBlock(text: 'smb://$hostname.local'),
             const SizedBox(height: 8),
-            if (defaultTargetPlatform == TargetPlatform.macOS)
-              FilledButton.icon(
-                onPressed: () => launchUrl(Uri.parse('smb://$hostname.local')),
-                icon: const Icon(Icons.folder_open_outlined, size: 16),
-                label: const Text('Open in Finder'),
-              )
-            else
-              const Text(
-                'On macOS: tap "Open in Finder" to connect automatically.',
-                style: TextStyle(fontSize: 12),
-              ),
+            FilledButton.icon(
+              onPressed: () => launchUrl(Uri.parse('smb://$hostname.local')),
+              icon: const Icon(Icons.folder_open_outlined, size: 16),
+              label: const Text('Open in Finder'),
+            ),
             const SizedBox(height: 12),
 
             // Windows
@@ -1288,17 +1281,28 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
               style: TextStyle(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 4),
-            const Text('File Explorer → Map network drive, then enter:'),
-            const SizedBox(height: 4),
             _CodeBlock(text: '\\\\$hostname.local'),
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: () => launchUrl(
+                Uri.parse('file://$hostname.local/'),
+                mode: LaunchMode.externalApplication,
+              ),
+              icon: const Icon(Icons.folder_open_outlined, size: 16),
+              label: const Text('Open in File Explorer'),
+            ),
             const SizedBox(height: 12),
 
             // Linux
             const Text('Linux', style: TextStyle(fontWeight: FontWeight.w500)),
             const SizedBox(height: 4),
-            const Text('Files → Other Locations, or mount via terminal:'),
-            const SizedBox(height: 4),
             _CodeBlock(text: 'smb://$hostname.local'),
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: () => launchUrl(Uri.parse('smb://$hostname.local')),
+              icon: const Icon(Icons.folder_open_outlined, size: 16),
+              label: const Text('Open in Files'),
+            ),
             const SizedBox(height: 12),
 
             // WebDAV fallback
