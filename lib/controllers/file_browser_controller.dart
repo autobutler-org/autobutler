@@ -103,17 +103,24 @@ class FileBrowserController {
   Future<void> uploadFile({
     required String currentPath,
     required http.MultipartFile selectedFile,
+    String? serial,
   }) {
-    return uploadFiles(currentPath: currentPath, selectedFiles: [selectedFile]);
+    return uploadFiles(
+      currentPath: currentPath,
+      selectedFiles: [selectedFile],
+      serial: serial,
+    );
   }
 
   Future<void> uploadFiles({
     required String currentPath,
     required List<http.MultipartFile> selectedFiles,
+    String? serial,
   }) {
     return uploadMultipartFilesToCurrentPath(
       currentPath: currentPath,
       selectedFiles: selectedFiles,
+      serial: serial,
     );
   }
 

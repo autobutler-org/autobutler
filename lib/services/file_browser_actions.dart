@@ -6,10 +6,12 @@ import 'package:http/http.dart' as http;
 Future<void> uploadMultipartFilesToCurrentPath({
   required String currentPath,
   required List<http.MultipartFile> selectedFiles,
+  String? serial,
 }) {
   return CirrusService.uploadFilesFromFormData(
     toRootDir(currentPath),
     selectedFiles,
+    serial: serial,
   );
 }
 
