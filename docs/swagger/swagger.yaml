@@ -160,6 +160,7 @@ definitions:
       services:
         properties:
           calendar:
+            description: 'UNUSED: calendar migration is not yet implemented (see #856)'
             type: boolean
           contacts:
             type: boolean

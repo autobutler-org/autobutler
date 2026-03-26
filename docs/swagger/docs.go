@@ -1565,6 +1565,7 @@ const docTemplate = `{
                     "type": "object",
                     "properties": {
                         "calendar": {
+                            "description": "UNUSED: calendar migration is not yet implemented (see #856)",
                             "type": "boolean"
                         },
                         "contacts": {
