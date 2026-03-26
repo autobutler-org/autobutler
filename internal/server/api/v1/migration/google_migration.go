@@ -42,7 +42,7 @@ type StartImportRequest struct {
 		Photos   bool `json:"photos"`
 		Drive    bool `json:"drive"`
 		Contacts bool `json:"contacts"`
-		Calendar bool `json:"calendar"`
+		Calendar bool `json:"calendar"` // UNUSED: calendar migration is not yet implemented (see #856)
 	} `json:"services"`
 	DeviceSerial string `json:"deviceSerial"` // Optional: empty string for internal drive
 }
@@ -86,6 +86,8 @@ func startGoogleMigration(c *gin.Context) *serverutil.Response {
 	if req.Services.Contacts {
 		services = append(services, "contacts")
 	}
+	// NOTE: Calendar migration is not yet implemented. This flag is accepted
+	// but the backend does not currently process calendar data. See #856.
 	if req.Services.Calendar {
 		services = append(services, "calendar")
 	}
