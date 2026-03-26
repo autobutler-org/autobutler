@@ -1164,12 +1164,6 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
     return raw;
   }
 
-  String get _webdavUrl {
-    final h = widget.host;
-    if (h == null) return 'http://autobutler.local/webdav';
-    return '$h/webdav';
-  }
-
   @override
   Widget build(BuildContext context) {
     final hostname = _displayHostname;
@@ -1272,8 +1266,8 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
   }
 
   /// Returns mount instructions for the current platform only.
-  /// On mobile (iOS/Android), shows only the WebDAV fallback.
-  /// On desktop/web, shows the relevant OS section + WebDAV.
+  /// On mobile (iOS/Android), shows nothing (no mount support).
+  /// On desktop/web, shows the relevant OS section.
   List<Widget> _buildMountInstructions(String hostname) {
     final platform = defaultTargetPlatform;
     final isMobile =
@@ -1333,23 +1327,6 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
         widgets.add(const SizedBox(height: 12));
       }
     }
-
-    // WebDAV is always shown as a universal fallback.
-    widgets.addAll([
-      const Text(
-        'WebDAV (all platforms)',
-        style: TextStyle(fontWeight: FontWeight.w500),
-      ),
-      const SizedBox(height: 4),
-      const Text('Use any WebDAV client with:'),
-      const SizedBox(height: 4),
-      _CodeBlock(text: _webdavUrl),
-      const SizedBox(height: 8),
-      const Text(
-        'Log in with your AutoButler username and password.',
-        style: TextStyle(fontSize: 12),
-      ),
-    ]);
 
     return widgets;
   }
