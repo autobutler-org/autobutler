@@ -12,6 +12,7 @@ import 'package:autobutler/widgets/core/copy_button.dart';
 import 'package:autobutler/widgets/autobutler_brand_button.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1263,7 +1264,27 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
               ],
             ],
 
-            // macOS
+            ..._buildMountInstructions(hostname),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Returns mount instructions for the current platform only.
+  /// On mobile (iOS/Android), shows only the WebDAV fallback.
+  /// On desktop/web, shows the relevant OS section + WebDAV.
+  List<Widget> _buildMountInstructions(String hostname) {
+    final platform = defaultTargetPlatform;
+    final isMobile =
+        platform == TargetPlatform.iOS || platform == TargetPlatform.android;
+
+    final widgets = <Widget>[];
+
+    if (!isMobile) {
+      switch (platform) {
+        case TargetPlatform.macOS:
+          widgets.addAll([
             const Text('macOS', style: TextStyle(fontWeight: FontWeight.w500)),
             const SizedBox(height: 4),
             _CodeBlock(text: 'smb://$hostname.local'),
@@ -1273,9 +1294,9 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
               icon: const Icon(Icons.folder_open_outlined, size: 16),
               label: const Text('Open in Finder'),
             ),
-            const SizedBox(height: 12),
-
-            // Windows
+          ]);
+        case TargetPlatform.windows:
+          widgets.addAll([
             const Text(
               'Windows',
               style: TextStyle(fontWeight: FontWeight.w500),
@@ -1291,9 +1312,9 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
               icon: const Icon(Icons.folder_open_outlined, size: 16),
               label: const Text('Open in File Explorer'),
             ),
-            const SizedBox(height: 12),
-
-            // Linux
+          ]);
+        case TargetPlatform.linux:
+          widgets.addAll([
             const Text('Linux', style: TextStyle(fontWeight: FontWeight.w500)),
             const SizedBox(height: 4),
             _CodeBlock(text: 'smb://$hostname.local'),
@@ -1303,26 +1324,34 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
               icon: const Icon(Icons.folder_open_outlined, size: 16),
               label: const Text('Open in Files'),
             ),
-            const SizedBox(height: 12),
+          ]);
+        default:
+          break;
+      }
 
-            // WebDAV fallback
-            const Text(
-              'WebDAV (all platforms)',
-              style: TextStyle(fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 4),
-            const Text('Use any WebDAV client with:'),
-            const SizedBox(height: 4),
-            _CodeBlock(text: _webdavUrl),
-            const SizedBox(height: 8),
-            const Text(
-              'Log in with your AutoButler username and password.',
-              style: TextStyle(fontSize: 12),
-            ),
-          ],
-        ),
+      if (widgets.isNotEmpty) {
+        widgets.add(const SizedBox(height: 12));
+      }
+    }
+
+    // WebDAV is always shown as a universal fallback.
+    widgets.addAll([
+      const Text(
+        'WebDAV (all platforms)',
+        style: TextStyle(fontWeight: FontWeight.w500),
       ),
-    );
+      const SizedBox(height: 4),
+      const Text('Use any WebDAV client with:'),
+      const SizedBox(height: 4),
+      _CodeBlock(text: _webdavUrl),
+      const SizedBox(height: 8),
+      const Text(
+        'Log in with your AutoButler username and password.',
+        style: TextStyle(fontSize: 12),
+      ),
+    ]);
+
+    return widgets;
   }
 }
 
