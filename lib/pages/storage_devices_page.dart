@@ -2,8 +2,9 @@ import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/auto_refresh_mixin.dart';
-import 'package:autobutler/widgets/autobutler_brand_button.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
+import 'package:autobutler/widgets/core/autobutler_storage_bar.dart';
+import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -66,16 +67,9 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leadingWidth: AutobutlerBrandButton.preferredWidth,
-        leading: Builder(
-          builder: (context) => AutobutlerBrandButton(
-            label: 'Devices',
-            icon: Icons.device_hub_outlined,
-            onTap: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        title: null,
+      appBar: AutobutlerAppBar(
+        label: 'Devices',
+        icon: Icons.device_hub_outlined,
         actions: [
           RefreshIconButton(
             isRefreshing: isRefreshing,
@@ -227,19 +221,7 @@ class _DeviceCard extends StatelessWidget {
             // Storage bar (only when totalBytes is known)
             if (device.totalBytes > 0) ...[
               const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: usedPct,
-                  minHeight: 8,
-                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                  color: usedPct > 0.9
-                      ? Colors.red
-                      : usedPct > 0.75
-                      ? Colors.orange
-                      : theme.colorScheme.primary,
-                ),
-              ),
+              AutobutlerStorageBar(usedFraction: usedPct),
               const SizedBox(height: 4),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

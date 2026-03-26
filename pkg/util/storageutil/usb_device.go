@@ -97,7 +97,9 @@ func (u *usbDevice) IsStorageDevice() bool {
 	return exists
 }
 
-// PartitionPaths returns all partitions for this USB device (e.g., /dev/sda1, /dev/sda2, ...)
+// Partitions returns all partitions for this USB device (e.g., /dev/sda1, /dev/sda2, ...).
+// If no sub-partitions exist (whole-disk filesystem), the block device itself is returned
+// as a single partition entry so that mount detection still works.
 func (u *usbDevice) Partitions() ([]Partition, error) {
 	blockDev, exists := u.BlockDevicePath()
 	if !exists {
@@ -114,6 +116,12 @@ func (u *usbDevice) Partitions() ([]Partition, error) {
 			partitions = append(partitions, &partition{path: m})
 		}
 	}
+	// If no sub-partitions found, the drive may use a whole-disk filesystem
+	// (e.g., mkfs.ext4 /dev/sda without a partition table). Include the block
+	// device itself so checkIfMounted can find it in /proc/mounts.
+	if len(partitions) == 0 {
+		partitions = append(partitions, &partition{path: blockDev})
+	}
 	return partitions, nil
 }
 
@@ -128,5 +136,5 @@ func (u *usbDevice) checkIfMounted() (string, error) {
 			return mountPath, nil
 		}
 	}
-	return "", nil
+	return "", fmt.Errorf("no mounted partitions found for device %s", u.Path)
 }

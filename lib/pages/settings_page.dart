@@ -9,11 +9,13 @@ import 'package:autobutler/services/sbom_service.dart';
 import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:autobutler/widgets/core/copy_button.dart';
-import 'package:autobutler/widgets/autobutler_brand_button.dart';
+import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -388,16 +390,9 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leadingWidth: AutobutlerBrandButton.preferredWidth,
-        leading: Builder(
-          builder: (context) => AutobutlerBrandButton(
-            label: 'Settings',
-            icon: Icons.settings_outlined,
-            onTap: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        title: null,
+      appBar: const AutobutlerAppBar(
+        label: 'Settings',
+        icon: Icons.settings_outlined,
       ),
       drawer: AutobutlerDrawer(
         activeSection: AutobutlerDrawerSection.settings,
@@ -1162,12 +1157,6 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
     return raw;
   }
 
-  String get _webdavUrl {
-    final h = widget.host;
-    if (h == null) return 'http://autobutler.local/webdav';
-    return '$h/webdav';
-  }
-
   @override
   Widget build(BuildContext context) {
     final hostname = _displayHostname;
@@ -1262,51 +1251,77 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
               ],
             ],
 
-            // macOS
+            ..._buildMountInstructions(hostname),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Returns mount instructions for the current platform only.
+  /// On mobile (iOS/Android), shows nothing (no mount support).
+  /// On desktop/web, shows the relevant OS section.
+  List<Widget> _buildMountInstructions(String hostname) {
+    final platform = defaultTargetPlatform;
+    final isMobile =
+        platform == TargetPlatform.iOS || platform == TargetPlatform.android;
+
+    final widgets = <Widget>[];
+
+    if (!isMobile) {
+      switch (platform) {
+        case TargetPlatform.macOS:
+          widgets.addAll([
             const Text('macOS', style: TextStyle(fontWeight: FontWeight.w500)),
             const SizedBox(height: 4),
-            const Text('Finder → Go → Connect to Server (⌘K), then enter:'),
-            const SizedBox(height: 4),
             _CodeBlock(text: 'smb://$hostname.local'),
-            const SizedBox(height: 12),
-
-            // Windows
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: () => launchUrl(Uri.parse('smb://$hostname.local')),
+              icon: const Icon(Icons.folder_open_outlined, size: 16),
+              label: const Text('Open in Finder'),
+            ),
+          ]);
+        case TargetPlatform.windows:
+          widgets.addAll([
             const Text(
               'Windows',
               style: TextStyle(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 4),
-            const Text('File Explorer → Map network drive, then enter:'),
-            const SizedBox(height: 4),
             _CodeBlock(text: '\\\\$hostname.local'),
-            const SizedBox(height: 12),
-
-            // Linux
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: () => launchUrl(
+                Uri.parse('file://$hostname.local/'),
+                mode: LaunchMode.externalApplication,
+              ),
+              icon: const Icon(Icons.folder_open_outlined, size: 16),
+              label: const Text('Open in File Explorer'),
+            ),
+          ]);
+        case TargetPlatform.linux:
+          widgets.addAll([
             const Text('Linux', style: TextStyle(fontWeight: FontWeight.w500)),
             const SizedBox(height: 4),
-            const Text('Files → Other Locations, or mount via terminal:'),
-            const SizedBox(height: 4),
             _CodeBlock(text: 'smb://$hostname.local'),
-            const SizedBox(height: 12),
-
-            // WebDAV fallback
-            const Text(
-              'WebDAV (all platforms)',
-              style: TextStyle(fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 4),
-            const Text('Use any WebDAV client with:'),
-            const SizedBox(height: 4),
-            _CodeBlock(text: _webdavUrl),
             const SizedBox(height: 8),
-            const Text(
-              'Log in with your AutoButler username and password.',
-              style: TextStyle(fontSize: 12),
+            FilledButton.icon(
+              onPressed: () => launchUrl(Uri.parse('smb://$hostname.local')),
+              icon: const Icon(Icons.folder_open_outlined, size: 16),
+              label: const Text('Open in Files'),
             ),
-          ],
-        ),
-      ),
-    );
+          ]);
+        default:
+          break;
+      }
+
+      if (widgets.isNotEmpty) {
+        widgets.add(const SizedBox(height: 12));
+      }
+    }
+
+    return widgets;
   }
 }
 

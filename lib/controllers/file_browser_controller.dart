@@ -24,8 +24,11 @@ class FileMenuActionOutcome {
 class FileBrowserController {
   const FileBrowserController();
 
-  Future<List<CirrusFileNode>> fetchFiles(String currentPath) {
-    return CirrusService.getFiles(currentPath);
+  Future<List<CirrusFileNode>> fetchFiles(
+    String currentPath, {
+    List<String>? serials,
+  }) {
+    return CirrusService.getFiles(currentPath, serials: serials);
   }
 
   /// Picks one or more files for upload.
