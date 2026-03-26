@@ -2,6 +2,7 @@ package server
 
 import (
 	"embed"
+	"fmt"
 	"net/http"
 
 	v1_auth "github.com/autobutler-org/autobutler/internal/server/api/v1/auth"
@@ -58,12 +59,24 @@ func setupStaticRoutes(engine *gin.Engine) error {
 		return err
 	}
 	engine.Use(static.Serve("/", fs))
+	// Read index.html once at startup for the SPA fallback.
+	// In dev mode (no built frontend), index.html may not exist — fall back
+	// to a plain 404 so the server still starts.
+	indexHTML, readErr := public.ReadFile("public/index.html")
+	if readErr != nil {
+		fmt.Println("[warn] No embedded index.html — SPA fallback disabled (dev mode?)")
+	}
 	engine.NoRoute(
 		func(c *gin.Context) {
-
-			// So this will otherwise automatically redirect -
-			//   https://github.com/golang/go/blob/a7e16abb22f1b249d2691b32a5d20206282898f2/src/net/http/fs.go#L593
-			c.FileFromFS("public/index.html", http.FS(public))
+			if indexHTML != nil {
+				// Serve index.html for any unmatched route so Flutter's client-side
+				// router can read the URL path (e.g. /health, /photos) and navigate.
+				// Using c.Data instead of c.FileFromFS to avoid http.FileServer's
+				// redirect behavior that strips the path to /.
+				c.Data(http.StatusOK, "text/html; charset=utf-8", indexHTML)
+				return
+			}
+			c.String(http.StatusNotFound, "404 page not found")
 		},
 	)
 	return nil
