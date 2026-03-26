@@ -79,10 +79,10 @@ func TestConvenienceConstructors(t *testing.T) {
 	testErr := fmt.Errorf("test error")
 
 	tests := []struct {
-		name       string
-		resp       *serverutil.Response
-		wantCode   int
-		wantError  bool
+		name      string
+		resp      *serverutil.Response
+		wantCode  int
+		wantError bool
 	}{
 		{"Ok", serverutil.Ok(), http.StatusOK, false},
 		{"Accepted", serverutil.Accepted(), http.StatusAccepted, false},
