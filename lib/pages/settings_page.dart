@@ -12,8 +12,10 @@ import 'package:autobutler/widgets/core/copy_button.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -139,6 +141,23 @@ class _SettingsPageState extends State<SettingsPage> {
         _storageError = e.toString();
         _isLoadingStorage = false;
       });
+    }
+  }
+
+  Future<void> _mountDevice(StorageDevice device) async {
+    try {
+      await StorageService.mountDevice(device.serial);
+      await _loadStorageDevices();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Device mounted successfully')),
+      );
+    } catch (e) {
+      debugPrint('[settings_page.dart] Error mounting device: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to mount device: $e')));
     }
   }
 
@@ -645,6 +664,8 @@ class _SettingsPageState extends State<SettingsPage> {
                         leading: Icon(
                           device.isInternal
                               ? Icons.storage_rounded
+                              : device.isUnmounted
+                              ? Icons.usb_off_rounded
                               : Icons.usb_rounded,
                         ),
                         title: Text(
@@ -652,15 +673,31 @@ class _SettingsPageState extends State<SettingsPage> {
                               ? device.name
                               : device.devicePath,
                         ),
-                        subtitle: Text(
-                          '${device.usedDisplay} · ${device.usedPercent.toStringAsFixed(1)}% used · ${device.fileSystem}',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.edit_outlined),
-                          tooltip: 'Rename',
-                          onPressed: () => _renameStorageDevice(device),
-                        ),
+                        subtitle: device.isUnmounted
+                            ? const Text(
+                                'Detected but not mounted',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.orange,
+                                ),
+                              )
+                            : Text(
+                                '${device.usedDisplay} · ${device.usedPercent.toStringAsFixed(1)}% used · ${device.fileSystem}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                        trailing: device.isUnmounted
+                            ? FilledButton.tonalIcon(
+                                icon: const Icon(Icons.play_arrow_rounded),
+                                label: const Text('Mount'),
+                                onPressed: device.serial.isNotEmpty
+                                    ? () => _mountDevice(device)
+                                    : null,
+                              )
+                            : IconButton(
+                                icon: const Icon(Icons.edit_outlined),
+                                tooltip: 'Rename',
+                                onPressed: () => _renameStorageDevice(device),
+                              ),
                       );
                     }),
                 ],
@@ -1155,12 +1192,6 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
     return raw;
   }
 
-  String get _webdavUrl {
-    final h = widget.host;
-    if (h == null) return 'http://autobutler.local/webdav';
-    return '$h/webdav';
-  }
-
   @override
   Widget build(BuildContext context) {
     final hostname = _displayHostname;
@@ -1255,51 +1286,77 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
               ],
             ],
 
-            // macOS
+            ..._buildMountInstructions(hostname),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Returns mount instructions for the current platform only.
+  /// On mobile (iOS/Android), shows nothing (no mount support).
+  /// On desktop/web, shows the relevant OS section.
+  List<Widget> _buildMountInstructions(String hostname) {
+    final platform = defaultTargetPlatform;
+    final isMobile =
+        platform == TargetPlatform.iOS || platform == TargetPlatform.android;
+
+    final widgets = <Widget>[];
+
+    if (!isMobile) {
+      switch (platform) {
+        case TargetPlatform.macOS:
+          widgets.addAll([
             const Text('macOS', style: TextStyle(fontWeight: FontWeight.w500)),
             const SizedBox(height: 4),
-            const Text('Finder → Go → Connect to Server (⌘K), then enter:'),
-            const SizedBox(height: 4),
             _CodeBlock(text: 'smb://$hostname.local'),
-            const SizedBox(height: 12),
-
-            // Windows
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: () => launchUrl(Uri.parse('smb://$hostname.local')),
+              icon: const Icon(Icons.folder_open_outlined, size: 16),
+              label: const Text('Open in Finder'),
+            ),
+          ]);
+        case TargetPlatform.windows:
+          widgets.addAll([
             const Text(
               'Windows',
               style: TextStyle(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 4),
-            const Text('File Explorer → Map network drive, then enter:'),
-            const SizedBox(height: 4),
             _CodeBlock(text: '\\\\$hostname.local'),
-            const SizedBox(height: 12),
-
-            // Linux
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: () => launchUrl(
+                Uri.parse('file://$hostname.local/'),
+                mode: LaunchMode.externalApplication,
+              ),
+              icon: const Icon(Icons.folder_open_outlined, size: 16),
+              label: const Text('Open in File Explorer'),
+            ),
+          ]);
+        case TargetPlatform.linux:
+          widgets.addAll([
             const Text('Linux', style: TextStyle(fontWeight: FontWeight.w500)),
             const SizedBox(height: 4),
-            const Text('Files → Other Locations, or mount via terminal:'),
-            const SizedBox(height: 4),
             _CodeBlock(text: 'smb://$hostname.local'),
-            const SizedBox(height: 12),
-
-            // WebDAV fallback
-            const Text(
-              'WebDAV (all platforms)',
-              style: TextStyle(fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 4),
-            const Text('Use any WebDAV client with:'),
-            const SizedBox(height: 4),
-            _CodeBlock(text: _webdavUrl),
             const SizedBox(height: 8),
-            const Text(
-              'Log in with your AutoButler username and password.',
-              style: TextStyle(fontSize: 12),
+            FilledButton.icon(
+              onPressed: () => launchUrl(Uri.parse('smb://$hostname.local')),
+              icon: const Icon(Icons.folder_open_outlined, size: 16),
+              label: const Text('Open in Files'),
             ),
-          ],
-        ),
-      ),
-    );
+          ]);
+        default:
+          break;
+      }
+
+      if (widgets.isNotEmpty) {
+        widgets.add(const SizedBox(height: 12));
+      }
+    }
+
+    return widgets;
   }
 }
 
