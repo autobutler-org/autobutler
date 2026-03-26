@@ -1,5 +1,6 @@
 import 'package:autobutler/services/health_service.dart';
 import 'package:autobutler/theme/autobutler_colors.dart';
+import 'package:autobutler/widgets/core/autobutler_storage_bar.dart';
 import 'package:flutter/material.dart';
 
 class FileStorageFooter extends StatefulWidget {
@@ -49,14 +50,9 @@ class _FileStorageFooterState extends State<FileStorageFooter> {
     return '${value.toStringAsFixed(i == 0 ? 0 : 1)} ${units[i]}';
   }
 
-  Color get _barColor {
-    if (_diskPercent >= 0.9) return AutobutlerColors.error;
-    if (_diskPercent >= 0.7) return const Color(0xFFF59E0B); // amber
-    return AutobutlerColors.primary;
-  }
-
   @override
   Widget build(BuildContext context) {
+    final barColor = AutobutlerStorageBar.colorForFraction(_diskPercent);
     return Container(
       decoration: const BoxDecoration(
         color: AutobutlerColors.sidebar,
@@ -80,29 +76,9 @@ class _FileStorageFooterState extends State<FileStorageFooter> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Container(
-              height: 8,
+            child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 320),
-              decoration: BoxDecoration(
-                color: AutobutlerColors.input,
-                border: Border.all(color: AutobutlerColors.border),
-                borderRadius: BorderRadius.circular(AutobutlerColors.radiusMd),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: AnimatedFractionallySizedBox(
-                duration: const Duration(milliseconds: 400),
-                curve: Curves.easeOut,
-                alignment: Alignment.centerLeft,
-                widthFactor: _diskPercent,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: _barColor,
-                    borderRadius: BorderRadius.circular(
-                      AutobutlerColors.radiusMd,
-                    ),
-                  ),
-                ),
-              ),
+              child: AutobutlerStorageBar(usedFraction: _diskPercent),
             ),
           ),
           const SizedBox(width: 8),
@@ -111,7 +87,7 @@ class _FileStorageFooterState extends State<FileStorageFooter> {
               '${(_diskPercent * 100).toStringAsFixed(0)}%',
               style: TextStyle(
                 fontSize: 11,
-                color: _barColor,
+                color: barColor,
                 fontWeight: FontWeight.w500,
               ),
             ),

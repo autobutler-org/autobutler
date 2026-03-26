@@ -5,12 +5,17 @@ import (
 )
 
 const (
-	systemdServiceName    = "autobutler.service"
+	serviceUserName    = "autobutler"
+	serviceDataDir     = "/var/lib/autobutler"
+	systemdServiceName = "autobutler.service"
+
 	systemdServiceContent = `[Unit]
 Description=AutoButler Service
 After=network.target
 
 [Service]
+User=autobutler
+Group=autobutler
 ExecStart=/usr/local/bin/autobutler serve
 Environment="PORT=80"
 Environment="GIN_MODE=release"
