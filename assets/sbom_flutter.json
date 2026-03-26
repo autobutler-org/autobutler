@@ -483,6 +483,54 @@
       "url": "https://pub.dev"
     },
     {
+      "name": "url_launcher",
+      "version": "6.3.2",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "url_launcher_android",
+      "version": "6.3.28",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "url_launcher_ios",
+      "version": "6.4.1",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "url_launcher_linux",
+      "version": "3.2.2",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "url_launcher_macos",
+      "version": "3.2.5",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "url_launcher_platform_interface",
+      "version": "2.3.2",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "url_launcher_web",
+      "version": "2.4.2",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "url_launcher_windows",
+      "version": "3.1.5",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
       "name": "vector_math",
       "version": "2.2.0",
       "source": "hosted",
