@@ -34,6 +34,7 @@ Future<String?> downloadNode({required CirrusFileNode node}) {
 Future<void> moveRenameNode({
   required CirrusFileNode node,
   required String targetInput,
+  String? newDeviceSerial,
 }) {
   final basePath = parentPath(node.apiPath);
   final oldPath = normalizePath(node.apiPath);
@@ -46,7 +47,7 @@ Future<void> moveRenameNode({
     oldPath,
     targetPath,
     oldDeviceSerial: serial,
-    newDeviceSerial: serial,
+    newDeviceSerial: newDeviceSerial ?? serial,
   );
 }
 
