@@ -144,6 +144,23 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Future<void> _mountDevice(StorageDevice device) async {
+    try {
+      await StorageService.mountDevice(device.serial);
+      await _loadStorageDevices();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Device mounted successfully')),
+      );
+    } catch (e) {
+      debugPrint('[settings_page.dart] Error mounting device: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to mount device: $e')));
+    }
+  }
+
   Future<void> _renameStorageDevice(StorageDevice device) async {
     final controller = TextEditingController(text: device.name);
     final newName = await showDialog<String>(
@@ -647,6 +664,8 @@ class _SettingsPageState extends State<SettingsPage> {
                         leading: Icon(
                           device.isInternal
                               ? Icons.storage_rounded
+                              : device.isUnmounted
+                              ? Icons.usb_off_rounded
                               : Icons.usb_rounded,
                         ),
                         title: Text(
@@ -654,15 +673,31 @@ class _SettingsPageState extends State<SettingsPage> {
                               ? device.name
                               : device.devicePath,
                         ),
-                        subtitle: Text(
-                          '${device.usedDisplay} · ${device.usedPercent.toStringAsFixed(1)}% used · ${device.fileSystem}',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.edit_outlined),
-                          tooltip: 'Rename',
-                          onPressed: () => _renameStorageDevice(device),
-                        ),
+                        subtitle: device.isUnmounted
+                            ? const Text(
+                                'Detected but not mounted',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.orange,
+                                ),
+                              )
+                            : Text(
+                                '${device.usedDisplay} · ${device.usedPercent.toStringAsFixed(1)}% used · ${device.fileSystem}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                        trailing: device.isUnmounted
+                            ? FilledButton.tonalIcon(
+                                icon: const Icon(Icons.play_arrow_rounded),
+                                label: const Text('Mount'),
+                                onPressed: device.serial.isNotEmpty
+                                    ? () => _mountDevice(device)
+                                    : null,
+                              )
+                            : IconButton(
+                                icon: const Icon(Icons.edit_outlined),
+                                tooltip: 'Rename',
+                                onPressed: () => _renameStorageDevice(device),
+                              ),
                       );
                     }),
                 ],
