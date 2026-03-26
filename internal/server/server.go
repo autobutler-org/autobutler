@@ -64,6 +64,10 @@ func StartServer(deps deputil.Dependencies) error {
 	}
 
 	router := gin.Default()
+	// Disable automatic redirects so unmatched routes (e.g. /health, /photos)
+	// fall through to the NoRoute SPA handler instead of 301-redirecting to /.
+	router.RedirectTrailingSlash = false
+	router.RedirectFixedPath = false
 
 	// IMPORTANT: middleware.Use MUST be called before setupRoutes
 	middleware.Use(router, deps)
