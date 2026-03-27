@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 
 	"github.com/autobutler-org/autobutler/pkg/util/remoteutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
@@ -19,6 +20,10 @@ import (
 )
 
 const defaultProvisioningURL = "http://165.227.215.101:8081"
+
+// enableMu guards against concurrent calls to enableRemoteAccess, which would
+// mint multiple Headscale keys. Only one enable is allowed at a time.
+var enableMu sync.Mutex
 
 type RemoteAccessResponse struct {
 	Enabled   bool   `json:"enabled"`
@@ -38,6 +43,12 @@ func provisioningURL() string {
 		return u
 	}
 	return defaultProvisioningURL
+}
+
+// provisioningSecret returns the shared secret used to authenticate requests
+// to the provisioning service. Must match PROVISIONING_SECRET on the service.
+func provisioningSecret() string {
+	return os.Getenv("AUTOBUTLER_PROVISIONING_SECRET")
 }
 
 func serverPort() int {
@@ -91,7 +102,18 @@ func provisionAuthKey(deviceID string) (string, error) {
 		return "", fmt.Errorf("marshal provision request: %w", err)
 	}
 
-	resp, err := http.Post(provisioningURL()+"/provision", "application/json", bytes.NewReader(body))
+	req, err := http.NewRequest(http.MethodPost, provisioningURL()+"/provision", bytes.NewReader(body))
+	if err != nil {
+		return "", fmt.Errorf("create provision request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	secret := provisioningSecret()
+	if secret != "" {
+		req.Header.Set("X-Provisioning-Secret", secret)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("provision request: %w", err)
 	}
@@ -141,10 +163,26 @@ var getRemoteAccessRoute = serverutil.ApiRoute(
 // @Accept json
 // @Produce json
 // @Success 200 {object} RemoteAccessResponse
+// @Failure 409 {object} serverutil.Response "Already enabling"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /settings/remote-access [post]
 var enableRemoteAccessRoute = serverutil.ApiRoute(
 	"POST", "/settings/remote-access", func(c *gin.Context) *serverutil.Response {
+		// Guard against concurrent enable calls minting multiple auth keys.
+		if !enableMu.TryLock() {
+			return serverutil.NewResponse().
+				WithStatusCode(http.StatusConflict).
+				WithError(fmt.Errorf("remote access enable already in progress"))
+		}
+		defer enableMu.Unlock()
+
+		if remoteutil.IsRunning() {
+			return serverutil.Ok().WithData(RemoteAccessResponse{
+				Enabled:   true,
+				RemoteURL: remoteutil.RemoteURL(),
+			})
+		}
+
 		deviceID, err := getDeviceID()
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("device id: %w", err))

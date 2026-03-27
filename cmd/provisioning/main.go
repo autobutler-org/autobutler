@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"sync"
@@ -15,6 +16,8 @@ import (
 var (
 	headscaleURL    string
 	headscaleAPIKey string
+	sharedSecret    string
+	keyExpiration   string
 )
 
 type provisionRequest struct {
@@ -29,6 +32,7 @@ type errorResponse struct {
 	Error string `json:"error"`
 }
 
+// rateLimitEntry tracks timestamps for both device ID and IP rate limiting.
 type rateLimitEntry struct {
 	Timestamps []time.Time
 }
@@ -36,36 +40,70 @@ type rateLimitEntry struct {
 var (
 	rateMu    sync.Mutex
 	rateStore = make(map[string]*rateLimitEntry)
+	// lastPrune tracks when we last swept stale entries from rateStore.
+	lastPrune time.Time
 )
 
-const maxRequestsPerHour = 5
+const (
+	maxRequestsPerHour = 5
+	pruneInterval      = 10 * time.Minute
+)
 
-func checkRateLimit(deviceID string) bool {
+// pruneRateStore removes entries that have had no activity in the past hour.
+// Must be called with rateMu held.
+func pruneRateStore(now time.Time) {
+	if now.Sub(lastPrune) < pruneInterval {
+		return
+	}
+	cutoff := now.Add(-1 * time.Hour)
+	for key, entry := range rateStore {
+		active := false
+		for _, t := range entry.Timestamps {
+			if t.After(cutoff) {
+				active = true
+				break
+			}
+		}
+		if !active {
+			delete(rateStore, key)
+		}
+	}
+	lastPrune = now
+}
+
+// checkRateLimit returns true if the request should be allowed, false if rate-limited.
+// It rate-limits by both source IP and device_id, taking the stricter result.
+func checkRateLimit(sourceIP, deviceID string) bool {
 	rateMu.Lock()
 	defer rateMu.Unlock()
 
 	now := time.Now()
 	cutoff := now.Add(-1 * time.Hour)
 
-	entry, ok := rateStore[deviceID]
-	if !ok {
-		rateStore[deviceID] = &rateLimitEntry{Timestamps: []time.Time{now}}
-		return true
-	}
+	pruneRateStore(now)
 
-	filtered := make([]time.Time, 0, len(entry.Timestamps))
-	for _, t := range entry.Timestamps {
-		if t.After(cutoff) {
-			filtered = append(filtered, t)
+	for _, key := range []string{"ip:" + sourceIP, "device:" + deviceID} {
+		entry, ok := rateStore[key]
+		if !ok {
+			rateStore[key] = &rateLimitEntry{Timestamps: []time.Time{now}}
+			continue
 		}
+
+		filtered := make([]time.Time, 0, len(entry.Timestamps))
+		for _, t := range entry.Timestamps {
+			if t.After(cutoff) {
+				filtered = append(filtered, t)
+			}
+		}
+
+		if len(filtered) >= maxRequestsPerHour {
+			entry.Timestamps = filtered
+			return false
+		}
+
+		entry.Timestamps = append(filtered, now)
 	}
 
-	if len(filtered) >= maxRequestsPerHour {
-		entry.Timestamps = filtered
-		return false
-	}
-
-	entry.Timestamps = append(filtered, now)
 	return true
 }
 
@@ -87,7 +125,7 @@ func createPreAuthKey() (string, error) {
 		User:       "autobutler",
 		Reusable:   false,
 		Ephemeral:  false,
-		Expiration: "2027-01-01T00:00:00Z",
+		Expiration: keyExpiration,
 	})
 	if err != nil {
 		return "", fmt.Errorf("marshal request: %w", err)
@@ -133,6 +171,14 @@ func handleProvision(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Authenticate caller via shared secret.
+	if r.Header.Get("X-Provisioning-Secret") != sharedSecret {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(errorResponse{Error: "unauthorized"})
+		return
+	}
+
 	var req provisionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -148,10 +194,16 @@ func handleProvision(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !checkRateLimit(req.DeviceID) {
+	// Extract source IP for rate limiting (strip port if present).
+	sourceIP := r.RemoteAddr
+	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+		sourceIP = host
+	}
+
+	if !checkRateLimit(sourceIP, req.DeviceID) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusTooManyRequests)
-		json.NewEncoder(w).Encode(errorResponse{Error: "rate limit exceeded, max 5 requests per hour per device"})
+		json.NewEncoder(w).Encode(errorResponse{Error: "rate limit exceeded, max 5 requests per hour"})
 		return
 	}
 
@@ -177,6 +229,18 @@ func main() {
 	headscaleAPIKey = os.Getenv("HEADSCALE_API_KEY")
 	if headscaleAPIKey == "" {
 		log.Fatal("HEADSCALE_API_KEY environment variable is required")
+	}
+
+	sharedSecret = os.Getenv("PROVISIONING_SECRET")
+	if sharedSecret == "" {
+		log.Fatal("PROVISIONING_SECRET environment variable is required")
+	}
+
+	keyExpiration = os.Getenv("PROVISIONING_KEY_EXPIRATION")
+	if keyExpiration == "" {
+		// Default: 1 hour from now. Keys are single-use; short expiration limits
+		// blast radius if a key is intercepted before use.
+		keyExpiration = time.Now().UTC().Add(1 * time.Hour).Format(time.RFC3339)
 	}
 
 	mux := http.NewServeMux()
