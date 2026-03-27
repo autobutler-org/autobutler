@@ -52,7 +52,7 @@ class RemoteAccessService with AuthenticatedService {
       );
     }
     final json = jsonDecode(response.body) as Map<String, dynamic>;
-    return RemoteAccessStatus.fromJson(json['data'] as Map<String, dynamic>);
+    return RemoteAccessStatus.fromJson(json);
   }
 
   static Future<RemoteAccessStatus> enable(String authKey) async {
@@ -70,7 +70,7 @@ class RemoteAccessService with AuthenticatedService {
       throw Exception(msg);
     }
     final json = jsonDecode(response.body) as Map<String, dynamic>;
-    return RemoteAccessStatus.fromJson(json['data'] as Map<String, dynamic>);
+    return RemoteAccessStatus.fromJson(json);
   }
 
   static Future<RemoteAccessStatus> disable() async {
@@ -84,6 +84,6 @@ class RemoteAccessService with AuthenticatedService {
       throw Exception(msg);
     }
     final json = jsonDecode(response.body) as Map<String, dynamic>;
-    return RemoteAccessStatus.fromJson(json['data'] as Map<String, dynamic>);
+    return RemoteAccessStatus.fromJson(json);
   }
 }
