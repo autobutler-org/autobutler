@@ -24,12 +24,8 @@ class RemoteAccessService with AuthenticatedService {
 
   static Uri get _apiBaseUri {
     final configured = AppSettings.instance.activeHost;
-<<<<<<< HEAD
     final base =
         configured ??
-=======
-    final base = configured ??
->>>>>>> a943585 (feat(#498): Phase 1 remote access via Tailscale tsnet)
         String.fromEnvironment(
           'API_BASE_URL',
           defaultValue: 'http://localhost:8080',
@@ -59,29 +55,17 @@ class RemoteAccessService with AuthenticatedService {
     return RemoteAccessStatus.fromJson(json['data'] as Map<String, dynamic>);
   }
 
-<<<<<<< HEAD
-  static Future<RemoteAccessStatus> enable() async {
-=======
   static Future<RemoteAccessStatus> enable(String authKey) async {
->>>>>>> a943585 (feat(#498): Phase 1 remote access via Tailscale tsnet)
     final uri = _apiBaseUri.resolve('/api/v1/settings/remote-access');
     final response = await http.post(
       uri,
       headers: {'Content-Type': 'application/json', ..._authHeaders},
-<<<<<<< HEAD
-      body: jsonEncode(<String, dynamic>{}),
+      body: jsonEncode({'authKey': authKey}),
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
       final msg =
           body?['error'] as String? ??
-=======
-      body: jsonEncode({'authKey': authKey}),
-    );
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      final body = jsonDecode(response.body) as Map<String, dynamic>?;
-      final msg = body?['error'] as String? ??
->>>>>>> a943585 (feat(#498): Phase 1 remote access via Tailscale tsnet)
           'Failed to enable remote access (${response.statusCode})';
       throw Exception(msg);
     }
@@ -94,12 +78,8 @@ class RemoteAccessService with AuthenticatedService {
     final response = await http.delete(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
-<<<<<<< HEAD
       final msg =
           body?['error'] as String? ??
-=======
-      final msg = body?['error'] as String? ??
->>>>>>> a943585 (feat(#498): Phase 1 remote access via Tailscale tsnet)
           'Failed to disable remote access (${response.statusCode})';
       throw Exception(msg);
     }

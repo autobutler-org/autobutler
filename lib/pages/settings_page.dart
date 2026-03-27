@@ -7,7 +7,6 @@ import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/services/connected_devices_service.dart';
 import 'package:autobutler/services/remote_access_service.dart';
 import 'package:autobutler/services/sbom_service.dart';
-import 'package:autobutler/services/settings_service.dart';
 import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:autobutler/widgets/core/copy_button.dart';
@@ -36,10 +35,6 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isLoadingVersionInfo = false;
   bool _isUpdatingVersion = false;
   String? _versionLoadError;
-
-  bool _autoUpdate = false;
-  bool _autoUpdateLoadFailed = false;
-  bool _isLoadingAutoUpdate = false;
 
   // SBOM state
   GoSbom? _goSbom;
@@ -77,7 +72,6 @@ class _SettingsPageState extends State<SettingsPage> {
     _refreshIntervalSeconds = AppSettings.instance.refreshIntervalSeconds;
     setState(() {});
     _loadVersionInfo();
-    _loadSettings();
     _loadSbom();
     _loadDevices();
     _loadStorageDevices();
@@ -114,31 +108,18 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-<<<<<<< HEAD
-  Future<void> _enableRemoteAccess() async {
-    setState(() => _isTogglingRemoteAccess = true);
-    try {
-      final status = await RemoteAccessService.enable();
-=======
   Future<void> _enableRemoteAccess(String authKey) async {
     setState(() => _isTogglingRemoteAccess = true);
     try {
       final status = await RemoteAccessService.enable(authKey);
->>>>>>> a943585 (feat(#498): Phase 1 remote access via Tailscale tsnet)
       if (!mounted) return;
       setState(() {
         _remoteAccessStatus = status;
         _isTogglingRemoteAccess = false;
       });
-<<<<<<< HEAD
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Remote access enabled')));
-=======
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Remote access enabled')),
-      );
->>>>>>> a943585 (feat(#498): Phase 1 remote access via Tailscale tsnet)
     } catch (e) {
       if (!mounted) return;
       setState(() => _isTogglingRemoteAccess = false);
@@ -178,15 +159,9 @@ class _SettingsPageState extends State<SettingsPage> {
         _remoteAccessStatus = status;
         _isTogglingRemoteAccess = false;
       });
-<<<<<<< HEAD
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Remote access disabled')));
-=======
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Remote access disabled')),
-      );
->>>>>>> a943585 (feat(#498): Phase 1 remote access via Tailscale tsnet)
     } catch (e) {
       if (!mounted) return;
       setState(() => _isTogglingRemoteAccess = false);
@@ -194,8 +169,6 @@ class _SettingsPageState extends State<SettingsPage> {
         SnackBar(content: Text('Failed to disable remote access: $e')),
       );
     }
-<<<<<<< HEAD
-=======
   }
 
   Future<void> _showEnableRemoteAccessDialog() async {
@@ -252,7 +225,6 @@ class _SettingsPageState extends State<SettingsPage> {
     if (result != null && result.isNotEmpty) {
       await _enableRemoteAccess(result);
     }
->>>>>>> a943585 (feat(#498): Phase 1 remote access via Tailscale tsnet)
   }
 
   Future<void> _loadDevices() async {
@@ -418,29 +390,6 @@ class _SettingsPageState extends State<SettingsPage> {
       _sbomError = errors.isEmpty ? null : errors.join('\n');
       _isLoadingSbom = false;
     });
-  }
-
-  Future<void> _loadSettings() async {
-    if (AppSettings.instance.activeHost == null) return;
-    setState(() {
-      _isLoadingAutoUpdate = true;
-    });
-    try {
-      final autoUpdate = await SettingsService.getAutoUpdate();
-      if (!mounted) return;
-      setState(() {
-        _autoUpdate = autoUpdate;
-        _autoUpdateLoadFailed = false;
-        _isLoadingAutoUpdate = false;
-      });
-    } catch (e) {
-      debugPrint('[settings_page.dart] Error loading settings: $e');
-      if (!mounted) return;
-      setState(() {
-        _autoUpdateLoadFailed = true;
-        _isLoadingAutoUpdate = false;
-      });
-    }
   }
 
   Future<void> _loadVersionInfo() async {
@@ -767,58 +716,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          if (AppSettings.instance.activeHost != null)
-            Card(
-              child: _isLoadingAutoUpdate
-                  ? const ListTile(
-                      title: Text('Automatic updates'),
-                      subtitle: Text(
-                        'AutoButler will check for and install updates daily',
-                      ),
-                      trailing: SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    )
-                  : SwitchListTile(
-                      title: const Text('Automatic updates'),
-                      subtitle: _autoUpdateLoadFailed
-                          ? const Text(
-                              'Could not load setting — server may be unreachable',
-                              style: TextStyle(color: Colors.red),
-                            )
-                          : const Text(
-                              'AutoButler will check for and install updates daily',
-                            ),
-                      value: _autoUpdate,
-                      onChanged: _autoUpdateLoadFailed
-                          ? null
-                          : (newValue) async {
-                              setState(() {
-                                _autoUpdate = newValue;
-                              });
-                              final messenger = ScaffoldMessenger.of(context);
-                              try {
-                                await SettingsService.setAutoUpdate(newValue);
-                              } catch (e) {
-                                debugPrint(
-                                  '[settings_page.dart] Error saving auto-update: $e',
-                                );
-                                if (!mounted) return;
-                                setState(() {
-                                  _autoUpdate = !newValue;
-                                });
-                                messenger.showSnackBar(
-                                  SnackBar(
-                                    content: Text('Failed to save setting: $e'),
-                                  ),
-                                );
-                              }
-                            },
-                    ),
-            ),
           const SizedBox(height: 24),
           const Text(
             'Auto-refresh interval',
@@ -865,7 +762,6 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                       )
                     : _remoteAccessError != null
-<<<<<<< HEAD
                     ? Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -939,7 +835,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           OutlinedButton.icon(
                             onPressed: _isTogglingRemoteAccess
                                 ? null
-                                : _enableRemoteAccess,
+                                : _showEnableRemoteAccessDialog,
                             icon: _isTogglingRemoteAccess
                                 ? const SizedBox(
                                     width: 14,
@@ -953,107 +849,6 @@ class _SettingsPageState extends State<SettingsPage> {
                           ),
                         ],
                       ),
-=======
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Failed to load remote access status',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              OutlinedButton.icon(
-                                onPressed: _loadRemoteAccess,
-                                icon: const Icon(Icons.refresh, size: 16),
-                                label: const Text('Retry'),
-                              ),
-                            ],
-                          )
-                        : _remoteAccessStatus?.enabled == true
-                            ? Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.cloud_done_outlined,
-                                        size: 16,
-                                        color: Colors.green,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      const Text(
-                                        'Connected via Tailscale',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (_remoteAccessStatus?.remoteUrl != null &&
-                                      _remoteAccessStatus!
-                                          .remoteUrl!.isNotEmpty) ...[
-                                    const SizedBox(height: 8),
-                                    _CodeBlock(
-                                      text: _remoteAccessStatus!.remoteUrl!,
-                                    ),
-                                  ],
-                                  const SizedBox(height: 12),
-                                  OutlinedButton.icon(
-                                    onPressed: _isTogglingRemoteAccess
-                                        ? null
-                                        : _disableRemoteAccess,
-                                    icon: _isTogglingRemoteAccess
-                                        ? const SizedBox(
-                                            width: 14,
-                                            height: 14,
-                                            child:
-                                                CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          )
-                                        : const Icon(
-                                            Icons.link_off,
-                                            size: 16,
-                                          ),
-                                    label: const Text('Disable'),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor:
-                                          Theme.of(context).colorScheme.error,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Access your butler from anywhere using Tailscale.',
-                                  ),
-                                  const SizedBox(height: 12),
-                                  OutlinedButton.icon(
-                                    onPressed: _isTogglingRemoteAccess
-                                        ? null
-                                        : _showEnableRemoteAccessDialog,
-                                    icon: _isTogglingRemoteAccess
-                                        ? const SizedBox(
-                                            width: 14,
-                                            height: 14,
-                                            child:
-                                                CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          )
-                                        : const Icon(
-                                            Icons.vpn_key_outlined,
-                                            size: 16,
-                                          ),
-                                    label: const Text('Enable remote access'),
-                                  ),
-                                ],
-                              ),
->>>>>>> a943585 (feat(#498): Phase 1 remote access via Tailscale tsnet)
               ),
             ),
           ],
