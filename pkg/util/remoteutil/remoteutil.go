@@ -37,7 +37,7 @@ func controlURL() string {
 func stateDir() string {
 	if runtime.GOOS == "linux" {
 		svcDir := "/var/lib/autobutler/tsnet"
-		if _, err := os.Stat(filepath.Dir(svcDir)); err == nil {
+		if err := os.MkdirAll(svcDir, 0700); err == nil {
 			return svcDir
 		}
 	}
@@ -55,9 +55,6 @@ func Start(authKey string) error {
 		return nil
 	}
 	dir := stateDir()
-	if err := os.MkdirAll(dir, 0700); err != nil {
-		return fmt.Errorf("failed to create tsnet state dir: %w", err)
-	}
 	srv = &tsnet.Server{
 		Hostname:   hostname,
 		AuthKey:    authKey,
