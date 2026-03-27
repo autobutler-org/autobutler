@@ -39,11 +39,17 @@ class _PhotosPageState extends State<PhotosPage>
   static const int _minPreviewColumns = 1;
   static const int _maxPreviewColumns = 8;
   static const double _minTileWidth = 80;
+  static const int _pageSize = 50;
 
   late Future<List<PhotoItem>> _photosFuture;
-  Future<void>? _primeFuture;
 
-  List<PhotoItem> _cirrusPhotos = const <PhotoItem>[];
+  // Cirrus pagination state
+  List<PhotoItem> _cirrusPhotos = <PhotoItem>[];
+  int _cirrusTotal = 0;
+  int _cirrusOffset = 0;
+  bool _isLoadingMoreCirrus = false;
+  bool _cirrusInitialLoadDone = false;
+
   List<PhotoItem> _mobilePhotos = const <PhotoItem>[];
 
   bool _noHostSelected = false;
@@ -51,13 +57,126 @@ class _PhotosPageState extends State<PhotosPage>
   int _previewColumns = _defaultCrossAxisCount;
   PhotoCategory _selectedCategory = PhotoCategory.cirrus;
 
-  // initState is handled by AutoRefreshMixin (calls refresh() on start)
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    // Trigger fetch when scrolled past 80%
+    if (currentScroll >= maxScroll * 0.8) {
+      _loadMoreCirrusPhotos();
+    }
+  }
+
+  /// Load the next page of cirrus photos via the paginated endpoint.
+  Future<void> _loadMoreCirrusPhotos() async {
+    if (_isLoadingMoreCirrus) return;
+    if (_cirrusOffset >= _cirrusTotal && _cirrusInitialLoadDone) return;
+
+    setState(() {
+      _isLoadingMoreCirrus = true;
+    });
+
+    try {
+      final response = await CirrusService.getPhotos(
+        offset: _cirrusOffset,
+        limit: _pageSize,
+      );
+
+      final newPhotos = response.photos
+          .map(
+            (p) => PhotoItem.fromCirrus(
+              CirrusFileNode(
+                name: p.fileName,
+                size: p.size,
+                isDir: false,
+                deviceName: '',
+                devicePath: '',
+                deviceSerial: p.serial,
+                dirPath: p.relPath,
+              ),
+            ),
+          )
+          .toList(growable: false);
+
+      setState(() {
+        _cirrusPhotos = [..._cirrusPhotos, ...newPhotos];
+        _cirrusTotal = response.total;
+        _cirrusOffset += newPhotos.length;
+        _cirrusInitialLoadDone = true;
+        _isLoadingMoreCirrus = false;
+        // Rebuild the future so FutureBuilder picks up the new list
+        _photosFuture = _photosForCategory(_selectedCategory);
+      });
+    } catch (_) {
+      debugPrint('[photos_page.dart] Error loading more cirrus photos');
+      setState(() {
+        _isLoadingMoreCirrus = false;
+        _cirrusInitialLoadDone = true;
+      });
+    }
+  }
+
+  /// Initial load of cirrus photos (first page).
+  Future<List<PhotoItem>> _loadCirrusPhotos() async {
+    if (_noHostSelected) return const <PhotoItem>[];
+
+    _cirrusPhotos = <PhotoItem>[];
+    _cirrusOffset = 0;
+    _cirrusTotal = 0;
+    _cirrusInitialLoadDone = false;
+
+    try {
+      final response = await CirrusService.getPhotos(
+        offset: 0,
+        limit: _pageSize,
+      );
+
+      final items = response.photos
+          .map(
+            (p) => PhotoItem.fromCirrus(
+              CirrusFileNode(
+                name: p.fileName,
+                size: p.size,
+                isDir: false,
+                deviceName: '',
+                devicePath: '',
+                deviceSerial: p.serial,
+                dirPath: p.relPath,
+              ),
+            ),
+          )
+          .toList(growable: false);
+
+      _cirrusPhotos = items;
+      _cirrusTotal = response.total;
+      _cirrusOffset = items.length;
+      _cirrusInitialLoadDone = true;
+      return items;
+    } catch (_) {
+      debugPrint('[photos_page.dart] Error loading initial cirrus photos');
+      _cirrusInitialLoadDone = true;
+      return const <PhotoItem>[];
+    }
+  }
 
   Future<void> _primeSources() async {
-    final cirrusFuture = _safeLoadPhotos(() async {
-      if (_noHostSelected) return const <PhotoItem>[];
-      return _loadCirrusPhotos();
-    });
+    final cirrusFuture = _safeLoadPhotos(_loadCirrusPhotos);
     if (kIsWeb) {
       _cirrusPhotos = await cirrusFuture;
       _mobilePhotos = const <PhotoItem>[];
@@ -82,9 +201,6 @@ class _PhotosPageState extends State<PhotosPage>
   }
 
   Future<List<PhotoItem>> _photosForCategory(PhotoCategory category) async {
-    _primeFuture ??= _primeSources();
-    await _primeFuture;
-
     if (kIsWeb) {
       return _cirrusPhotos;
     }
@@ -97,22 +213,6 @@ class _PhotosPageState extends State<PhotosPage>
       case PhotoCategory.all:
         return [..._cirrusPhotos, ..._mobilePhotos];
     }
-  }
-
-  Future<List<PhotoItem>> _loadCirrusPhotos() async {
-    final files = await CirrusService.getFiles('');
-    final filtered = files
-        .where((f) {
-          final n = f.name.toLowerCase();
-          return n.endsWith('.jpg') ||
-              n.endsWith('.jpeg') ||
-              n.endsWith('.png') ||
-              n.endsWith('.gif') ||
-              n.endsWith('.webp');
-        })
-        .map((f) => PhotoItem.fromCirrus(f))
-        .toList(growable: false);
-    return filtered;
   }
 
   Future<List<PhotoItem>> _loadMobilePhotos() async {
@@ -153,12 +253,15 @@ class _PhotosPageState extends State<PhotosPage>
   @override
   Future<void> refresh() async {
     _noHostSelected = AppSettings.instance.activeHost == null;
-    _primeFuture = _primeSources();
+    await _primeSources();
     setState(() {
       _photosFuture = _photosForCategory(_selectedCategory);
     });
     await _photosFuture;
   }
+
+  bool get _hasMoreCirrus =>
+      _cirrusInitialLoadDone && _cirrusOffset < _cirrusTotal;
 
   int _minColumnsByScale() {
     return _minPreviewColumns;
@@ -234,6 +337,11 @@ class _PhotosPageState extends State<PhotosPage>
       );
     }
 
+    // For cirrus, show total from server (includes un-fetched pages)
+    final cirrusDisplayCount = _cirrusInitialLoadDone
+        ? _cirrusTotal
+        : cirrusCount;
+
     final selectedLabel = switch (_selectedCategory) {
       PhotoCategory.all => 'All',
       PhotoCategory.cirrus => 'Cirrus',
@@ -300,8 +408,8 @@ class _PhotosPageState extends State<PhotosPage>
               title: const Text('Showing'),
               subtitle: Text(
                 '$selectedLabel: ${switch (_selectedCategory) {
-                  PhotoCategory.all => cirrusCount + mobileCount,
-                  PhotoCategory.cirrus => cirrusCount,
+                  PhotoCategory.all => cirrusDisplayCount + mobileCount,
+                  PhotoCategory.cirrus => cirrusDisplayCount,
                   PhotoCategory.mobile => mobileCount,
                 }}',
               ),
@@ -318,9 +426,13 @@ class _PhotosPageState extends State<PhotosPage>
               categoryButton(
                 PhotoCategory.all,
                 'All',
-                cirrusCount + mobileCount,
+                cirrusDisplayCount + mobileCount,
               ),
-              categoryButton(PhotoCategory.cirrus, 'Cirrus', cirrusCount),
+              categoryButton(
+                PhotoCategory.cirrus,
+                'Cirrus',
+                cirrusDisplayCount,
+              ),
               categoryButton(PhotoCategory.mobile, 'Mobile', mobileCount),
             ],
           ],
@@ -330,23 +442,42 @@ class _PhotosPageState extends State<PhotosPage>
   }
 
   Widget _buildPhotoGrid(List<PhotoItem> photos, int crossAxisCount) {
+    // When viewing cirrus (or all), we may have more pages to load.
+    // Show an extra item as a loading indicator if there are more.
+    final showLoadingIndicator =
+        _hasMoreCirrus &&
+        (_selectedCategory == PhotoCategory.cirrus ||
+            _selectedCategory == PhotoCategory.all);
+    final itemCount = photos.length + (showLoadingIndicator ? 1 : 0);
+
     return RefreshIndicator(
       onRefresh: manualRefresh,
-      child: photos.isEmpty
+      child: photos.isEmpty && !_isLoadingMoreCirrus
           ? const EmptyStateWidget(
               icon: Icons.photo_library_outlined,
               headline: 'No photos yet',
               subtext: 'Photos you upload to AutoButler will appear here.',
             )
           : GridView.builder(
+              controller: _scrollController,
               padding: const EdgeInsets.all(2),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: 2,
                 mainAxisSpacing: 2,
               ),
-              itemCount: photos.length,
+              itemCount: itemCount,
               itemBuilder: (context, idx) {
+                // Loading indicator in the last slot
+                if (idx >= photos.length) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  );
+                }
+
                 final p = photos[idx];
 
                 if (p.isCirrus) {
@@ -390,8 +521,6 @@ class _PhotosPageState extends State<PhotosPage>
                                     serial: nc.deviceSerial,
                                   );
                                   if (b == null) {
-                                    // File missing — refresh the list and return null
-                                    // so the viewer can show 'no longer available'.
                                     await manualRefresh();
                                   }
                                   return (b, nc.name);
