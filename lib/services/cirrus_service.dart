@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:autobutler/models/cirrus_file_node.dart';
+import 'package:autobutler/models/paginated_photos_response.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/authenticated_service.dart';
 import 'package:autobutler/utils/web_download_stub.dart'
@@ -74,6 +75,35 @@ class CirrusService with AuthenticatedService {
     return params.isEmpty
         ? endpointUri
         : endpointUri.replace(queryParameters: params);
+  }
+
+  /// Fetches a paginated list of photos from the dedicated photos endpoint.
+  /// Returns a [PaginatedPhotosResponse] with photos, total count, offset, and limit.
+  static Future<PaginatedPhotosResponse> getPhotos({
+    int offset = 0,
+    int limit = 50,
+    String? serial,
+  }) async {
+    final querySegments = <String>['offset=$offset', 'limit=$limit'];
+    final serialValue = serial?.trim() ?? '';
+    if (serialValue.isNotEmpty) {
+      querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
+    }
+
+    final endpointUri = _apiBaseUri.resolve('/api/v1/photos');
+    final uri = endpointUri.replace(query: querySegments.join('&'));
+
+    final response = await http.get(uri, headers: _authHeaders);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to load photos (${response.statusCode})');
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw Exception('Unexpected photos response format');
+    }
+
+    return PaginatedPhotosResponse.fromJson(decoded);
   }
 
   static Future<List<CirrusFileNode>> getFiles(
