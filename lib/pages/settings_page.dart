@@ -123,9 +123,9 @@ class _SettingsPageState extends State<SettingsPage> {
         _remoteAccessStatus = status;
         _isTogglingRemoteAccess = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Remote access enabled')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Remote access enabled')));
     } catch (e) {
       if (!mounted) return;
       setState(() => _isTogglingRemoteAccess = false);
@@ -165,9 +165,9 @@ class _SettingsPageState extends State<SettingsPage> {
         _remoteAccessStatus = status;
         _isTogglingRemoteAccess = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Remote access disabled')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Remote access disabled')));
     } catch (e) {
       if (!mounted) return;
       setState(() => _isTogglingRemoteAccess = false);
@@ -843,105 +843,93 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                       )
                     : _remoteAccessError != null
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Failed to load remote access status',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: _loadRemoteAccess,
+                            icon: const Icon(Icons.refresh, size: 16),
+                            label: const Text('Retry'),
+                          ),
+                        ],
+                      )
+                    : _remoteAccessStatus?.enabled == true
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Text(
-                                'Failed to load remote access status',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
+                              const Icon(
+                                Icons.cloud_done_outlined,
+                                size: 16,
+                                color: Colors.green,
                               ),
-                              const SizedBox(height: 8),
-                              OutlinedButton.icon(
-                                onPressed: _loadRemoteAccess,
-                                icon: const Icon(Icons.refresh, size: 16),
-                                label: const Text('Retry'),
+                              const SizedBox(width: 6),
+                              const Text(
+                                'Connected via Tailscale',
+                                style: TextStyle(fontWeight: FontWeight.w600),
                               ),
                             ],
-                          )
-                        : _remoteAccessStatus?.enabled == true
-                            ? Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.cloud_done_outlined,
-                                        size: 16,
-                                        color: Colors.green,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      const Text(
-                                        'Connected via Tailscale',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (_remoteAccessStatus?.remoteUrl != null &&
-                                      _remoteAccessStatus!
-                                          .remoteUrl!.isNotEmpty) ...[
-                                    const SizedBox(height: 8),
-                                    _CodeBlock(
-                                      text: _remoteAccessStatus!.remoteUrl!,
+                          ),
+                          if (_remoteAccessStatus?.remoteUrl != null &&
+                              _remoteAccessStatus!.remoteUrl!.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            _CodeBlock(text: _remoteAccessStatus!.remoteUrl!),
+                          ],
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: _isTogglingRemoteAccess
+                                ? null
+                                : _disableRemoteAccess,
+                            icon: _isTogglingRemoteAccess
+                                ? const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
                                     ),
-                                  ],
-                                  const SizedBox(height: 12),
-                                  OutlinedButton.icon(
-                                    onPressed: _isTogglingRemoteAccess
-                                        ? null
-                                        : _disableRemoteAccess,
-                                    icon: _isTogglingRemoteAccess
-                                        ? const SizedBox(
-                                            width: 14,
-                                            height: 14,
-                                            child:
-                                                CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          )
-                                        : const Icon(
-                                            Icons.link_off,
-                                            size: 16,
-                                          ),
-                                    label: const Text('Disable'),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor:
-                                          Theme.of(context).colorScheme.error,
+                                  )
+                                : const Icon(Icons.link_off, size: 16),
+                            label: const Text('Disable'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Theme.of(
+                                context,
+                              ).colorScheme.error,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Access your butler from anywhere using Tailscale.',
+                          ),
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: _isTogglingRemoteAccess
+                                ? null
+                                : _showEnableRemoteAccessDialog,
+                            icon: _isTogglingRemoteAccess
+                                ? const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
                                     ),
-                                  ),
-                                ],
-                              )
-                            : Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Access your butler from anywhere using Tailscale.',
-                                  ),
-                                  const SizedBox(height: 12),
-                                  OutlinedButton.icon(
-                                    onPressed: _isTogglingRemoteAccess
-                                        ? null
-                                        : _showEnableRemoteAccessDialog,
-                                    icon: _isTogglingRemoteAccess
-                                        ? const SizedBox(
-                                            width: 14,
-                                            height: 14,
-                                            child:
-                                                CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          )
-                                        : const Icon(
-                                            Icons.vpn_key_outlined,
-                                            size: 16,
-                                          ),
-                                    label: const Text('Enable remote access'),
-                                  ),
-                                ],
-                              ),
+                                  )
+                                : const Icon(Icons.vpn_key_outlined, size: 16),
+                            label: const Text('Enable remote access'),
+                          ),
+                        ],
+                      ),
               ),
             ),
           ],

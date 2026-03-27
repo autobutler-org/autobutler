@@ -24,7 +24,8 @@ class RemoteAccessService with AuthenticatedService {
 
   static Uri get _apiBaseUri {
     final configured = AppSettings.instance.activeHost;
-    final base = configured ??
+    final base =
+        configured ??
         String.fromEnvironment(
           'API_BASE_URL',
           defaultValue: 'http://localhost:8080',
@@ -63,7 +64,8 @@ class RemoteAccessService with AuthenticatedService {
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
-      final msg = body?['error'] as String? ??
+      final msg =
+          body?['error'] as String? ??
           'Failed to enable remote access (${response.statusCode})';
       throw Exception(msg);
     }
@@ -76,7 +78,8 @@ class RemoteAccessService with AuthenticatedService {
     final response = await http.delete(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
-      final msg = body?['error'] as String? ??
+      final msg =
+          body?['error'] as String? ??
           'Failed to disable remote access (${response.statusCode})';
       throw Exception(msg);
     }
