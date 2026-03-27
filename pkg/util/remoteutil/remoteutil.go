@@ -48,9 +48,10 @@ func Start(authKey string) error {
 		return fmt.Errorf("failed to create tsnet state dir: %w", err)
 	}
 	srv = &tsnet.Server{
-		Hostname: hostname,
-		AuthKey:  authKey,
-		Dir:      dir,
+		Hostname:   hostname,
+		AuthKey:    authKey,
+		Dir:        dir,
+		ControlURL: "http://165.227.215.101:8080",
 		Logf: func(format string, args ...any) {
 			log.Printf("[tsnet] "+format, args...)
 		},
