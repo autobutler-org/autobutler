@@ -934,18 +934,14 @@ class _FirstRunSetupState extends State<_FirstRunSetup> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(
-                Icons.storage_outlined,
-                size: 56,
-                color: Colors.grey,
-              ),
+              const Icon(Icons.storage_outlined, size: 56, color: Colors.grey),
               const SizedBox(height: 16),
               Text(
                 'Connect to your AutoButler',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
               Text(
