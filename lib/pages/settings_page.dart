@@ -114,10 +114,10 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _enableRemoteAccess(String authKey) async {
+  Future<void> _enableRemoteAccess() async {
     setState(() => _isTogglingRemoteAccess = true);
     try {
-      final status = await RemoteAccessService.enable(authKey);
+      final status = await RemoteAccessService.enable();
       if (!mounted) return;
       setState(() {
         _remoteAccessStatus = status;
@@ -174,62 +174,6 @@ class _SettingsPageState extends State<SettingsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to disable remote access: $e')),
       );
-    }
-  }
-
-  Future<void> _showEnableRemoteAccessDialog() async {
-    final controller = TextEditingController();
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Enable remote access'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Enter a Tailscale auth key to connect this butler to your tailnet.',
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Get one from tailscale.com/admin/settings/keys',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Auth key',
-                hintText: 'tskey-auth-...',
-                border: OutlineInputBorder(),
-              ),
-              autofocus: true,
-              onSubmitted: (v) {
-                if (v.trim().isNotEmpty) Navigator.of(ctx).pop(v.trim());
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              final key = controller.text.trim();
-              if (key.isNotEmpty) Navigator.of(ctx).pop(key);
-            },
-            child: const Text('Enable'),
-          ),
-        ],
-      ),
-    );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.dispose();
-    });
-    if (result != null && result.isNotEmpty) {
-      await _enableRemoteAccess(result);
     }
   }
 
@@ -916,7 +860,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           OutlinedButton.icon(
                             onPressed: _isTogglingRemoteAccess
                                 ? null
-                                : _showEnableRemoteAccessDialog,
+                                : _enableRemoteAccess,
                             icon: _isTogglingRemoteAccess
                                 ? const SizedBox(
                                     width: 14,

@@ -193,6 +193,11 @@ build/frontend/web: internal/server/public/stub.txt ## Build web app
 	flutter build web --$(FLUTTER_BUILD_MODE)
 	cp -R ./build/web/. ./internal/server/public/
 
+.PHONY: build/provisioning
+build/provisioning: ## Build provisioning service
+	mkdir -p ./build
+	$(GO) build -o ./build/autobutler-provisioning ./cmd/provisioning/
+
 .PHONY: build/lsusb
 build/lsusb: ## Build lsusb utility
 	$(GO) build -o ./build/lsusb ./cmd/lsusb/main.go

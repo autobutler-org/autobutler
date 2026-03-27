@@ -55,12 +55,12 @@ class RemoteAccessService with AuthenticatedService {
     return RemoteAccessStatus.fromJson(json['data'] as Map<String, dynamic>);
   }
 
-  static Future<RemoteAccessStatus> enable(String authKey) async {
+  static Future<RemoteAccessStatus> enable() async {
     final uri = _apiBaseUri.resolve('/api/v1/settings/remote-access');
     final response = await http.post(
       uri,
       headers: {'Content-Type': 'application/json', ..._authHeaders},
-      body: jsonEncode({'authKey': authKey}),
+      body: jsonEncode(<String, dynamic>{}),
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
