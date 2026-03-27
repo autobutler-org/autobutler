@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -17,11 +18,21 @@ import (
 
 const hostname = "autobutler"
 
+const defaultControlURL = "http://165.227.215.101:8080"
+
 var (
-	mu      sync.Mutex
-	srv     *tsnet.Server
-	running bool
+	mu       sync.Mutex
+	srv      *tsnet.Server
+	proxyLn  net.Listener
+	running  bool
 )
+
+func controlURL() string {
+	if u := os.Getenv("AUTOBUTLER_HEADSCALE_URL"); u != "" {
+		return u
+	}
+	return defaultControlURL
+}
 
 func stateDir() string {
 	if runtime.GOOS == "linux" {
@@ -51,7 +62,7 @@ func Start(authKey string) error {
 		Hostname:   hostname,
 		AuthKey:    authKey,
 		Dir:        dir,
-		ControlURL: "http://165.227.215.101:8080",
+		ControlURL: controlURL(),
 		Logf: func(format string, args ...any) {
 			log.Printf("[tsnet] "+format, args...)
 		},
@@ -67,6 +78,10 @@ func Start(authKey string) error {
 func Stop() {
 	mu.Lock()
 	defer mu.Unlock()
+	if proxyLn != nil {
+		proxyLn.Close()
+		proxyLn = nil
+	}
 	if srv != nil {
 		srv.Close()
 		srv = nil
@@ -103,22 +118,22 @@ func RemoteURL() string {
 
 func StartProxy(localPort int) error {
 	mu.Lock()
-	s := srv
-	mu.Unlock()
-	if s == nil {
+	defer mu.Unlock()
+	if srv == nil {
 		return fmt.Errorf("tsnet not started")
 	}
-	ln, err := s.Listen("tcp", ":80")
+	ln, err := srv.Listen("tcp", ":80")
 	if err != nil {
 		return fmt.Errorf("tsnet listen failed: %w", err)
 	}
+	proxyLn = ln
 	rp := httputil.NewSingleHostReverseProxy(&url.URL{
 		Scheme: "http",
 		Host:   fmt.Sprintf("localhost:%d", localPort),
 	})
 	go func() {
 		if err := http.Serve(ln, rp); err != nil {
-			log.Printf("[tsnet] serve error: %v", err)
+			log.Printf("[tsnet] proxy stopped: %v", err)
 		}
 	}()
 	return nil
