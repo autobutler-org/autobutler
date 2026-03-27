@@ -5,6 +5,7 @@ import 'package:autobutler/services/auth_service.dart';
 import 'package:autobutler/services/health_service.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/services/connected_devices_service.dart';
+import 'package:autobutler/services/remote_access_service.dart';
 import 'package:autobutler/services/sbom_service.dart';
 import 'package:autobutler/services/settings_service.dart';
 import 'package:autobutler/services/storage_service.dart';
@@ -48,6 +49,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
   int _refreshIntervalSeconds = 15;
 
+  RemoteAccessStatus? _remoteAccessStatus;
+  bool _isLoadingRemoteAccess = false;
+  bool _isTogglingRemoteAccess = false;
+  String? _remoteAccessError;
+
   // Connected devices state
   List<ConnectedDevice> _connectedDevices = [];
   bool _isLoadingDevices = false;
@@ -75,6 +81,156 @@ class _SettingsPageState extends State<SettingsPage> {
     _loadSbom();
     _loadDevices();
     _loadStorageDevices();
+    _loadRemoteAccess();
+  }
+
+  Future<void> _loadRemoteAccess() async {
+    if (AppSettings.instance.activeHost == null) {
+      setState(() {
+        _remoteAccessStatus = null;
+        _remoteAccessError = null;
+        _isLoadingRemoteAccess = false;
+      });
+      return;
+    }
+    setState(() {
+      _isLoadingRemoteAccess = true;
+      _remoteAccessError = null;
+    });
+    try {
+      final status = await RemoteAccessService.getStatus();
+      if (!mounted) return;
+      setState(() {
+        _remoteAccessStatus = status;
+        _isLoadingRemoteAccess = false;
+      });
+    } catch (e) {
+      debugPrint('[settings_page.dart] Remote access error: $e');
+      if (!mounted) return;
+      setState(() {
+        _remoteAccessError = e.toString();
+        _isLoadingRemoteAccess = false;
+      });
+    }
+  }
+
+  Future<void> _enableRemoteAccess(String authKey) async {
+    setState(() => _isTogglingRemoteAccess = true);
+    try {
+      final status = await RemoteAccessService.enable(authKey);
+      if (!mounted) return;
+      setState(() {
+        _remoteAccessStatus = status;
+        _isTogglingRemoteAccess = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Remote access enabled')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isTogglingRemoteAccess = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to enable remote access: $e')),
+      );
+    }
+  }
+
+  Future<void> _disableRemoteAccess() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Disable remote access'),
+        content: const Text(
+          'This will disconnect the Tailscale tunnel. '
+          'You will no longer be able to reach this butler remotely. Continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Disable'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _isTogglingRemoteAccess = true);
+    try {
+      final status = await RemoteAccessService.disable();
+      if (!mounted) return;
+      setState(() {
+        _remoteAccessStatus = status;
+        _isTogglingRemoteAccess = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Remote access disabled')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isTogglingRemoteAccess = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to disable remote access: $e')),
+      );
+    }
+  }
+
+  Future<void> _showEnableRemoteAccessDialog() async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Enable remote access'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Enter a Tailscale auth key to connect this butler to your tailnet.',
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Get one from tailscale.com/admin/settings/keys',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Auth key',
+                hintText: 'tskey-auth-...',
+                border: OutlineInputBorder(),
+              ),
+              autofocus: true,
+              onSubmitted: (v) {
+                if (v.trim().isNotEmpty) Navigator.of(ctx).pop(v.trim());
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final key = controller.text.trim();
+              if (key.isNotEmpty) Navigator.of(ctx).pop(key);
+            },
+            child: const Text('Enable'),
+          ),
+        ],
+      ),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.dispose();
+    });
+    if (result != null && result.isNotEmpty) {
+      await _enableRemoteAccess(result);
+    }
   }
 
   Future<void> _loadDevices() async {
@@ -668,6 +824,127 @@ class _SettingsPageState extends State<SettingsPage> {
               setState(() => _refreshIntervalSeconds = v);
             },
           ),
+          if (AppSettings.instance.activeHost != null) ...[
+            const SizedBox(height: 24),
+            const Text(
+              'Remote Access',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: _isLoadingRemoteAccess
+                    ? const Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : _remoteAccessError != null
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Failed to load remote access status',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              OutlinedButton.icon(
+                                onPressed: _loadRemoteAccess,
+                                icon: const Icon(Icons.refresh, size: 16),
+                                label: const Text('Retry'),
+                              ),
+                            ],
+                          )
+                        : _remoteAccessStatus?.enabled == true
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.cloud_done_outlined,
+                                        size: 16,
+                                        color: Colors.green,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      const Text(
+                                        'Connected via Tailscale',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (_remoteAccessStatus?.remoteUrl != null &&
+                                      _remoteAccessStatus!
+                                          .remoteUrl!.isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    _CodeBlock(
+                                      text: _remoteAccessStatus!.remoteUrl!,
+                                    ),
+                                  ],
+                                  const SizedBox(height: 12),
+                                  OutlinedButton.icon(
+                                    onPressed: _isTogglingRemoteAccess
+                                        ? null
+                                        : _disableRemoteAccess,
+                                    icon: _isTogglingRemoteAccess
+                                        ? const SizedBox(
+                                            width: 14,
+                                            height: 14,
+                                            child:
+                                                CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Icon(
+                                            Icons.link_off,
+                                            size: 16,
+                                          ),
+                                    label: const Text('Disable'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor:
+                                          Theme.of(context).colorScheme.error,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Access your butler from anywhere using Tailscale.',
+                                  ),
+                                  const SizedBox(height: 12),
+                                  OutlinedButton.icon(
+                                    onPressed: _isTogglingRemoteAccess
+                                        ? null
+                                        : _showEnableRemoteAccessDialog,
+                                    icon: _isTogglingRemoteAccess
+                                        ? const SizedBox(
+                                            width: 14,
+                                            height: 14,
+                                            child:
+                                                CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Icon(
+                                            Icons.vpn_key_outlined,
+                                            size: 16,
+                                          ),
+                                    label: const Text('Enable remote access'),
+                                  ),
+                                ],
+                              ),
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
           const Text(
             'Theme',

@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	docs "github.com/autobutler-org/autobutler/docs/swagger"
 	"github.com/autobutler-org/autobutler/internal/server/middleware"
 	"github.com/autobutler-org/autobutler/pkg/botel"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/remoteutil"
+	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 	"github.com/autobutler-org/autobutler/pkg/util/workerutil"
 
@@ -64,6 +67,25 @@ func StartServer(deps deputil.Dependencies) error {
 	}
 	go startAutoUpdateChecker(context.Background())
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	if enabled, authKey := settingsutil.GetRemoteAccess(); enabled && authKey != "" {
+		if err := remoteutil.Start(authKey); err != nil {
+			log.Printf("[remote] failed to start: %v", err)
+		} else {
+			portNum, convErr := strconv.Atoi(port)
+			if convErr != nil {
+				portNum = 8080
+			}
+			if err := remoteutil.StartProxy(portNum); err != nil {
+				log.Printf("[remote] failed to start proxy: %v", err)
+			}
+		}
+	}
+
 	router := gin.Default()
 	// Disable automatic redirects so unmatched routes (e.g. /health, /photos)
 	// fall through to the NoRoute SPA handler instead of 301-redirecting to /.
@@ -73,11 +95,6 @@ func StartServer(deps deputil.Dependencies) error {
 	// IMPORTANT: middleware.Use MUST be called before setupRoutes
 	middleware.Use(router, deps)
 	setupRoutes(router, systemCollector)
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
 	setupSwagger(router)
 
 	if err := router.Run(fmt.Sprintf(":%s", port)); err != nil {
