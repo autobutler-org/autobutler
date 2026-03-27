@@ -41,7 +41,7 @@ class _PhotosPageState extends State<PhotosPage>
   static const double _minTileWidth = 80;
   static const int _pageSize = 50;
 
-  late Future<List<PhotoItem>> _photosFuture;
+  Future<List<PhotoItem>> _photosFuture = Future.value(const <PhotoItem>[]);
 
   // Cirrus pagination state
   List<PhotoItem> _cirrusPhotos = <PhotoItem>[];
