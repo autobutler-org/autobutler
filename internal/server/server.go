@@ -101,16 +101,24 @@ func StartServer(deps deputil.Dependencies) error {
 		port = "8080"
 	}
 
-	if enabled, authKey := settingsutil.GetRemoteAccess(); enabled && authKey != "" {
-		if err := remoteutil.Start(authKey); err != nil {
-			log.Printf("[remote] failed to start: %v", err)
+	if settingsutil.GetRemoteAccess() {
+		deviceID, idErr := provisionutil.GetDeviceID()
+		if idErr != nil {
+			log.Printf("[remote] failed to get device id: %v", idErr)
 		} else {
-			portNum, convErr := strconv.Atoi(port)
-			if convErr != nil {
-				portNum = 8080
-			}
-			if err := remoteutil.StartProxy(portNum); err != nil {
-				log.Printf("[remote] failed to start proxy: %v", err)
+			authKey, keyErr := provisionutil.ProvisionAuthKey(deviceID)
+			if keyErr != nil {
+				log.Printf("[remote] failed to provision auth key: %v", keyErr)
+			} else if err := remoteutil.Start(authKey); err != nil {
+				log.Printf("[remote] failed to start: %v", err)
+			} else {
+				portNum, convErr := strconv.Atoi(port)
+				if convErr != nil {
+					portNum = 8080
+				}
+				if err := remoteutil.StartProxy(portNum); err != nil {
+					log.Printf("[remote] failed to start proxy: %v", err)
+				}
 			}
 		}
 	}
