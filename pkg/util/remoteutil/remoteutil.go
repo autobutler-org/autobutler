@@ -21,10 +21,10 @@ const hostname = "autobutler"
 const defaultControlURL = "http://165.227.215.101:8080"
 
 var (
-	mu       sync.Mutex
-	srv      *tsnet.Server
-	proxyLn  net.Listener
-	running  bool
+	mu      sync.Mutex
+	srv     *tsnet.Server
+	proxyLn net.Listener
+	running bool
 )
 
 func controlURL() string {
