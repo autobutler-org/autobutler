@@ -842,7 +842,7 @@
         },
         "/photos": {
             "get": {
-                "description": "Finds all photos in cirrus",
+                "description": "Finds all photos across all managed devices with pagination support.",
                 "produces": [
                     "application/json"
                 ],
@@ -850,14 +850,31 @@
                     "photos"
                 ],
                 "summary": "List photos",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Pagination offset (default 0)",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 50, max 200)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device serial to filter by",
+                        "name": "serial",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1_photos.PhotoJSON"
-                            }
+                            "$ref": "#/definitions/v1_photos.PaginatedPhotosResponse"
                         }
                     },
                     "500": {
@@ -1570,6 +1587,26 @@
                 }
             }
         },
+        "v1_photos.PaginatedPhotosResponse": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "offset": {
+                    "type": "integer"
+                },
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1_photos.PhotoJSON"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "v1_photos.PhotoJSON": {
             "type": "object",
             "properties": {
@@ -1580,6 +1617,9 @@
                     "type": "integer"
                 },
                 "relPath": {
+                    "type": "string"
+                },
+                "serial": {
                     "type": "string"
                 },
                 "size": {
