@@ -40,7 +40,14 @@ jobs:
           GOOS: linux
           GOARCH: arm64
         run: |
-          make build/backend
+          go build -o build/autobutler-linux-arm64 ./cmd/autobutler/
+      - name: Upload arm64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: autobutler-linux-arm64
+          path: build/autobutler-linux-arm64
+          retention-days: 7
+          if-no-files-found: error
       - name: Run unit tests
         env:
           PRINT_COVERAGE: true
