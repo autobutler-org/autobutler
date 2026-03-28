@@ -1689,6 +1689,9 @@ const docTemplate = `{
         "v1_version.UpdateParams": {
             "type": "object",
             "properties": {
+                "branch": {
+                    "type": "string"
+                },
                 "force": {
                     "type": "boolean"
                 },

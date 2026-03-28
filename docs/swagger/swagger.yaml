@@ -229,6 +229,8 @@ definitions:
     type: object
   v1_version.UpdateParams:
     properties:
+      branch:
+        type: string
       force:
         type: boolean
       source:
