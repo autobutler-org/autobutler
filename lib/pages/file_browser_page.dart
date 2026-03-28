@@ -14,7 +14,6 @@ import 'package:autobutler/utils/file_browser_drag_config.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
-import 'package:autobutler/widgets/core/empty_state_widget.dart';
 import 'package:autobutler/widgets/device_upload_picker.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
