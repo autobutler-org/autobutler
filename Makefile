@@ -24,6 +24,8 @@ export GOPROXY ?= https://proxy.golang.org,direct
 
 MAIN := ./cmd/autobutler/main.go
 EXE := ./build/autobutler
+GIT_VERSION ?= $(shell git describe --tags --exact-match 2>/dev/null || git rev-parse --abbrev-ref HEAD)
+LDFLAGS := -ldflags "-X github.com/autobutler-org/autobutler/pkg/util/versionutil.Semver=$(GIT_VERSION)"
 
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
@@ -162,7 +164,7 @@ build: ## Build web frontend and backend
 .PHONY: build/backend
 build/backend: internal/server/public/stub.txt generate/backend ## Build backend
 	mkdir -p ./build
-	$(GO) build -o $(EXE) $(MAIN)
+	$(GO) build $(LDFLAGS) -o $(EXE) $(MAIN)
 
 internal/server/public/stub.txt: ## Ensure public directory exists for embedding
 	mkdir -p ./internal/server/public

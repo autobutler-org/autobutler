@@ -1,6 +1,8 @@
 package v1_version
 
 import (
+	"os"
+
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/versionutil"
 	"github.com/gin-gonic/gin"
@@ -17,8 +19,13 @@ import (
 func getInstalledVersion(c *gin.Context) *serverutil.Response {
 	version := versionutil.GetVersion()
 
+	semver := version.Semver
+	if branch := os.Getenv("AUTOBUTLER_BRANCH"); branch != "" {
+		semver = "dev-" + branch
+	}
+
 	return serverutil.Ok().WithData(VersionJSON{
-		Semver:    version.Semver,
+		Semver:    semver,
 		GitCommit: version.GitCommit,
 		GoVersion: version.GoVersion,
 		BuildDate: version.BuildDate,

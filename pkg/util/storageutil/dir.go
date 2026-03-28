@@ -5,8 +5,16 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"runtime"
 )
+
+var sanitizeBranchRegexp = regexp.MustCompile(`[^a-zA-Z0-9\-_]`)
+
+func sanitizeBranchName(branch string) string {
+	s := regexp.MustCompile(`/`).ReplaceAllString(branch, "-")
+	return sanitizeBranchRegexp.ReplaceAllString(s, "")
+}
 
 func getServiceDataDir() string {
 	return "/var/lib/autobutler/data"
@@ -69,6 +77,13 @@ func GetDataDirForDevice(mountPoint string) string {
 			}
 			return filepath.Join(homeDir, "Library", "Application Support", "Autobutler", "data")
 		case "linux": // coverage: ignore - Not run in mac dev environments
+			if branch := os.Getenv("AUTOBUTLER_BRANCH"); branch != "" {
+				homeDir, err := os.UserHomeDir()
+				if err != nil {
+					homeDir = "/var/lib" // coverage: ignore
+				}
+				return filepath.Join(homeDir, "autobutler", "data-branches", sanitizeBranchName(branch)) // coverage: ignore
+			}
 			if isRunningAsServiceUser() {
 				return getServiceDataDir() // coverage: ignore
 			}

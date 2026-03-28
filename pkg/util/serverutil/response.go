@@ -27,6 +27,10 @@ func Unauthorized(err error) *Response {
 	return NewResponse().WithStatusCode(http.StatusUnauthorized).WithError(err)
 }
 
+func Forbidden(err error) *Response {
+	return NewResponse().WithStatusCode(http.StatusForbidden).WithError(err)
+}
+
 func InternalServerError(err error) *Response {
 	return NewResponse().WithStatusCode(http.StatusInternalServerError).WithError(err)
 }

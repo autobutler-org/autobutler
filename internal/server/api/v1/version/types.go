@@ -5,6 +5,7 @@ import "github.com/autobutler-org/autobutler/pkg/util/updateutil"
 // UpdateParams defines the parameters for updating to a specific version
 type UpdateParams struct {
 	Version string                   `json:"version"`
+	Branch  string                   `json:"branch,omitempty"`
 	Source  *updateutil.UpdateSource `json:"source,omitempty"`
 	Force   bool                     `json:"force,omitempty"`
 }

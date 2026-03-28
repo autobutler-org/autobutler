@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
+	"github.com/autobutler-org/autobutler/pkg/util/systemdutil"
 	"github.com/autobutler-org/autobutler/pkg/util/updateutil"
 
 	"github.com/gin-gonic/gin"
@@ -32,6 +34,21 @@ func doUpdate(c *gin.Context) *serverutil.Response {
 	if err := c.ShouldBind(&params); err != nil {
 		return serverutil.BadRequest(err)
 	}
+
+	if params.Branch != "" {
+		if !settingsutil.GetDevMode() {
+			return serverutil.Forbidden(errors.New("dev mode required for branch updates"))
+		}
+		if err := updateutil.UpdateFromBranch(params.Branch); err != nil {
+			return serverutil.InternalServerError(err)
+		}
+		if err := systemdutil.SetBranchOverride(params.Branch); err != nil {
+			return serverutil.InternalServerError(fmt.Errorf("failed to set branch override: %w", err))
+		}
+		go restartAutobutler()
+		return serverutil.Ok().WithData(params)
+	}
+
 	if params.Version == "" {
 		return serverutil.BadRequest(
 			errors.New("version parameter is required"),
@@ -40,6 +57,10 @@ func doUpdate(c *gin.Context) *serverutil.Response {
 
 	if err := updateutil.Update(params.Source, params.Version); err != nil {
 		return serverutil.InternalServerError(err)
+	}
+
+	if err := systemdutil.SetBranchOverride(""); err != nil {
+		fmt.Printf("warning: failed to clear branch override: %v\n", err)
 	}
 
 	go restartAutobutler()
