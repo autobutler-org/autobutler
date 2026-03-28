@@ -2,22 +2,59 @@ package settingsutil
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
+	"runtime"
 	"strconv"
-
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"sync"
 )
 
 type settings struct {
-	DevMode bool `json:"dev_mode"`
+	DevMode      bool   `json:"dev_mode"`
+	ActiveBranch string `json:"active_branch,omitempty"`
+}
+
+var mu sync.RWMutex
+
+func isRunningAsServiceUser() bool {
+	u, err := user.Current()
+	if err != nil {
+		return false
+	}
+	return u.Username == "autobutler"
+}
+
+func baseDataDir() string {
+	switch runtime.GOOS {
+	case "darwin":
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			homeDir = "/"
+		}
+		return filepath.Join(homeDir, "Library", "Application Support", "Autobutler", "data")
+	case "linux":
+		if isRunningAsServiceUser() {
+			return "/var/lib/autobutler/data"
+		}
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			homeDir = "/var/lib"
+		}
+		return filepath.Join(homeDir, "autobutler", "data")
+	default:
+		panic(fmt.Sprintf("unsupported OS: %s", runtime.GOOS))
+	}
 }
 
 func settingsPath() string {
-	return filepath.Join(storageutil.GetDataDir(), "settings.json")
+	return filepath.Join(baseDataDir(), "settings.json")
 }
 
 func load() (*settings, error) {
+	mu.RLock()
+	defer mu.RUnlock()
 	s := &settings{}
 	data, err := os.ReadFile(settingsPath())
 	if err != nil {
@@ -33,6 +70,8 @@ func load() (*settings, error) {
 }
 
 func save(s *settings) error {
+	mu.Lock()
+	defer mu.Unlock()
 	data, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
 		return err
@@ -64,5 +103,25 @@ func SetDevMode(enabled bool) error {
 		s = &settings{}
 	}
 	s.DevMode = enabled
+	return save(s)
+}
+
+func GetActiveBranch() string {
+	if branch := os.Getenv("AUTOBUTLER_BRANCH"); branch != "" {
+		return branch
+	}
+	s, err := load()
+	if err != nil {
+		return ""
+	}
+	return s.ActiveBranch
+}
+
+func SetActiveBranch(branch string) error {
+	s, err := load()
+	if err != nil {
+		s = &settings{}
+	}
+	s.ActiveBranch = branch
 	return save(s)
 }

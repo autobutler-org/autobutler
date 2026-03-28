@@ -8,7 +8,6 @@ import (
 
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
-	"github.com/autobutler-org/autobutler/pkg/util/systemdutil"
 	"github.com/autobutler-org/autobutler/pkg/util/updateutil"
 
 	"github.com/gin-gonic/gin"
@@ -42,8 +41,8 @@ func doUpdate(c *gin.Context) *serverutil.Response {
 		if err := updateutil.UpdateFromBranch(params.Branch); err != nil {
 			return serverutil.InternalServerError(err)
 		}
-		if err := systemdutil.SetBranchOverride(params.Branch); err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("failed to set branch override: %w", err))
+		if err := settingsutil.SetActiveBranch(params.Branch); err != nil {
+			return serverutil.InternalServerError(fmt.Errorf("failed to set active branch: %w", err))
 		}
 		go restartAutobutler()
 		return serverutil.Ok().WithData(params)
@@ -59,8 +58,8 @@ func doUpdate(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(err)
 	}
 
-	if err := systemdutil.SetBranchOverride(""); err != nil {
-		fmt.Printf("warning: failed to clear branch override: %v\n", err)
+	if err := settingsutil.SetActiveBranch(""); err != nil {
+		fmt.Printf("warning: failed to clear active branch: %v\n", err)
 	}
 
 	go restartAutobutler()

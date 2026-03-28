@@ -40,7 +40,8 @@ jobs:
           GOOS: linux
           GOARCH: arm64
         run: |
-          go build -o build/autobutler-linux-arm64 ./cmd/autobutler/
+          GIT_VERSION=$(git describe --tags --exact-match 2>/dev/null || git rev-parse --abbrev-ref HEAD)
+          go build -ldflags "-X github.com/autobutler-org/autobutler/pkg/util/versionutil.Semver=${GIT_VERSION}" -o build/autobutler-linux-arm64 ./cmd/autobutler/
       - name: Upload arm64 artifact
         uses: actions/upload-artifact@v4
         with:
