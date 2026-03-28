@@ -5,8 +5,10 @@ import 'package:autobutler/services/auth_service.dart';
 import 'package:autobutler/services/health_service.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/services/connected_devices_service.dart';
+import 'package:autobutler/services/branch_service.dart';
 import 'package:autobutler/services/sbom_service.dart';
 import 'package:autobutler/services/storage_service.dart';
+import 'package:autobutler/widgets/settings/branch_testing_section.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:autobutler/widgets/core/copy_button.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
@@ -43,6 +45,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   int _refreshIntervalSeconds = 15;
 
+  bool _devModeEnabled = false;
+
   // Connected devices state
   List<ConnectedDevice> _connectedDevices = [];
   bool _isLoadingDevices = false;
@@ -69,6 +73,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _loadSbom();
     _loadDevices();
     _loadStorageDevices();
+    _loadDevMode();
   }
 
   Future<void> _loadDevices() async {
@@ -198,6 +203,21 @@ class _SettingsPageState extends State<SettingsPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to rename device: $e')));
+    }
+  }
+
+  Future<void> _loadDevMode() async {
+    if (AppSettings.instance.activeHost == null) {
+      setState(() => _devModeEnabled = false);
+      return;
+    }
+    try {
+      final enabled = await BranchService.isDevModeEnabled();
+      if (!mounted) return;
+      setState(() => _devModeEnabled = enabled);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _devModeEnabled = false);
     }
   }
 
@@ -854,6 +874,11 @@ class _SettingsPageState extends State<SettingsPage> {
           _NetworkDriveCard(host: AppSettings.instance.activeHost),
 
           const SizedBox(height: 24),
+
+          if (_devModeEnabled && AppSettings.instance.activeHost != null) ...[
+            BranchTestingSection(currentVersion: _installedVersion),
+            const SizedBox(height: 24),
+          ],
 
           const _InfoSectionHeader(label: 'Software Bill of Materials'),
           const SizedBox(height: 8),

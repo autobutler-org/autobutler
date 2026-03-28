@@ -196,6 +196,24 @@ definitions:
       size:
         type: integer
     type: object
+  v1_settings.DevModeResponse:
+    properties:
+      enabled:
+        type: boolean
+    type: object
+  v1_version.BranchBuild:
+    properties:
+      artifactId:
+        type: integer
+      branch:
+        type: string
+      builtAt:
+        type: string
+      prNumber:
+        type: integer
+      prTitle:
+        type: string
+    type: object
   v1_version.SbomDependencyJSON:
     properties:
       path:
@@ -866,6 +884,19 @@ paths:
       summary: Get software bill of materials
       tags:
       - version
+  /settings/dev-mode:
+    get:
+      description: Returns whether dev mode is enabled
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_settings.DevModeResponse'
+      summary: Get dev mode status
+      tags:
+      - settings
   /storage/devices/backup:
     post:
       description: Begin a backup to a device
@@ -1079,6 +1110,30 @@ paths:
           schema:
             $ref: '#/definitions/serverutil.Response'
       summary: List available versions
+      tags:
+      - version
+  /version/branches:
+    get:
+      description: Returns available PR branch artifacts from the provisioning service.
+        Requires dev mode.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1_version.BranchBuild'
+            type: array
+        "403":
+          description: Dev mode required
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "502":
+          description: Provisioning service error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: List available branch builds
       tags:
       - version
   /version/latest:
