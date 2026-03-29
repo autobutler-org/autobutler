@@ -86,7 +86,16 @@ func trackDevice(deps deputil.Dependencies) gin.HandlerFunc {
 	}
 }
 
-// requireAuth validates the session token from cookie or Authorization header.
+// requireAuth validates the request using a fallthrough chain of auth methods.
+// Each method is tried in order; if one fails, the next is attempted. Only if
+// ALL methods fail does the request get a 401.
+//
+// Precedence (highest to lowest):
+//  1. Bearer token (Authorization: Bearer <token>)
+//  2. Session cookie
+//  3. Query parameter (?token=)
+//  4. HTTP Basic Auth (Authorization: Basic <base64>)
+//
 // Exempt paths (setup, login, recover, status) are always allowed through.
 // If no users have been set up yet, all requests are allowed through (first-boot).
 //
@@ -126,34 +135,43 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 			setupDone.Store(true)
 		}
 
-		// Extract token from Authorization header, cookie, or ?token= query param.
-		// The query param form exists solely for browser contexts that can't set headers
-		// (e.g. <img src="..."> tags, Image.network() in Flutter web). Prefer the header.
-		token := ""
+		ctx := c.Request.Context()
+
+		// Collect all candidate tokens from headers/cookie/query.
+		// Try each in order — fall through on failure.
+		var tokens []string
 		if auth := c.GetHeader("Authorization"); strings.HasPrefix(auth, "Bearer ") {
-			token = strings.TrimPrefix(auth, "Bearer ")
-		} else if cookie, err := c.Cookie("session"); err == nil {
-			token = cookie
-		} else if q := c.Query("token"); q != "" {
-			token = q
+			tokens = append(tokens, strings.TrimPrefix(auth, "Bearer "))
+		}
+		if cookie, err := c.Cookie("session"); err == nil && cookie != "" {
+			tokens = append(tokens, cookie)
+		}
+		if q := c.Query("token"); q != "" {
+			tokens = append(tokens, q)
 		}
 
-		if token == "" {
-			c.JSON(401, gin.H{"error": "authentication required"})
-			c.Abort()
-			return
+		for _, t := range tokens {
+			username, err := authutil.ValidateSession(ctx, db.Queries, t)
+			if err == nil {
+				c = ctxutil.With(c, "username", username)
+				c.Next()
+				return
+			}
 		}
 
-		username, err := authutil.ValidateSession(c.Request.Context(), db.Queries, token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "invalid or expired session"})
-			c.Abort()
-			return
+		// Fall back to HTTP Basic Auth.
+		if username, password, ok := c.Request.BasicAuth(); ok {
+			validUser, err := authutil.ValidateBasicAuth(ctx, db.Queries, username, password)
+			if err == nil {
+				c = ctxutil.With(c, "username", validUser)
+				c.Next()
+				return
+			}
 		}
 
-		// Inject username into context for downstream handlers
-		c = ctxutil.With(c, "username", username)
-		c.Next()
+		// All methods exhausted.
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		c.Abort()
 	}
 }
 

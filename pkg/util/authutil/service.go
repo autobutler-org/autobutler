@@ -130,6 +130,20 @@ func ValidateSession(ctx context.Context, queries *db.Queries, token string) (st
 	return session.Username, nil
 }
 
+// ValidateBasicAuth checks a username/password pair against the user database.
+// Returns the username if valid, or an error if not. Unlike Login, this does
+// not create a session — each request authenticates independently.
+func ValidateBasicAuth(ctx context.Context, queries *db.Queries, username, password string) (string, error) {
+	user, err := queries.GetUserByUsername(ctx, username)
+	if err != nil {
+		return "", fmt.Errorf("invalid credentials")
+	}
+	if !CheckPassword(password, user.PasswordHash) {
+		return "", fmt.Errorf("invalid credentials")
+	}
+	return user.Username, nil
+}
+
 // Logout deletes a session token.
 func Logout(ctx context.Context, queries *db.Queries, token string) error {
 	return queries.DeleteSession(ctx, token)
