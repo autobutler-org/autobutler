@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/autobutler-org/autobutler/internal/db"
+	v1_webdav "github.com/autobutler-org/autobutler/internal/server/api/v1/webdav"
 	"github.com/autobutler-org/autobutler/pkg/util/authutil"
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
@@ -107,8 +108,8 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 		path := c.Request.URL.Path
 
 		// Static assets and the Flutter web app don't need auth — the client-side
-		// AuthGate handles the login flow. Only /api/ routes require a session.
-		if !strings.HasPrefix(path, "/api/") {
+		// AuthGate handles the login flow. Only /api/ and /dav/ routes require a session.
+		if !strings.HasPrefix(path, "/api/") && !v1_webdav.IsWebDAVPath(path) {
 			c.Next()
 			return
 		}
@@ -170,6 +171,10 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 		}
 
 		// All methods exhausted.
+		// WebDAV clients need the WWW-Authenticate header to prompt for credentials.
+		if v1_webdav.IsWebDAVPath(path) {
+			c.Header("WWW-Authenticate", `Basic realm="AutoButler"`)
+		}
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
 		c.Abort()
 	}
