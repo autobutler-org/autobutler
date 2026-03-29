@@ -329,19 +329,24 @@ class _SettingsPageState extends State<SettingsPage> {
     final result = await AutobutlerWidget.showDialog<bool>(
       context,
       builder: (context) => AutobutlerWidget.alertDialog(
-        title: Text(isEdit ? 'Edit host' : 'Add host'),
+        title: Text(isEdit ? 'Edit AutoButler' : 'Add AutoButler'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             AutobutlerWidget.textField(
               controller: nameController,
               autofocus: true,
-              hintText: 'Name',
+              hintText: 'Nickname (e.g. Home)',
             ),
             const SizedBox(height: 8),
             AutobutlerWidget.textField(
               controller: hostController,
-              hintText: 'http://<hostname>:<port>',
+              hintText: 'http://autobutler.home.local',
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Usually http://autobutler.home.local or the IP address shown on your device.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
         ),
@@ -465,7 +470,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   const SizedBox(height: 6),
                   if (AppSettings.instance.activeHost == null)
-                    const Text('No target host configured')
+                    const Text(
+                      'Not connected — add your AutoButler address below',
+                    )
                   else if (_isLoadingVersionInfo)
                     const SizedBox(
                       width: 20,
@@ -755,7 +762,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ElevatedButton.icon(
             onPressed: () => _addOrEditHost(),
             icon: const Icon(Icons.add),
-            label: const Text('Add host'),
+            label: const Text('Add AutoButler'),
           ),
           const SizedBox(height: 24),
           const Text(
@@ -764,7 +771,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 8),
           if (AppSettings.instance.activeHost == null)
-            const Text('No target host configured')
+            const Text('Not connected — add your AutoButler address below')
           else
             Card(
               child: ExpansionTile(
@@ -971,7 +978,7 @@ class _SbomExpansionTile extends StatelessWidget {
                   item.version,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Theme.of(context).colorScheme.secondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontFamily: 'monospace',
                   ),
                 ),
