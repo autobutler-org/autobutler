@@ -496,6 +496,66 @@ const docTemplate = `{
                 }
             }
         },
+        "/cirrus/download-archive-file": {
+            "get": {
+                "description": "Reads the specified entry from the archive and streams it to the client. No data is extracted to disk.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "cirrus"
+                ],
+                "summary": "Download a single file from inside an archive",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Path to the archive file (relative to device cirrus directory)",
+                        "name": "filePath",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Path of the entry inside the archive",
+                        "name": "entryPath",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device serial number",
+                        "name": "serial",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File content",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Entry not found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/cirrus/extract": {
             "post": {
                 "description": "Extracts a zip file into a subdirectory named after the archive (without its extension) in the same directory",
