@@ -496,6 +496,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/cirrus/extract": {
+            "post": {
+                "description": "Extracts a zip file into a subdirectory named after the archive (without its extension) in the same directory",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cirrus"
+                ],
+                "summary": "Extract a zip archive in place",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Path to the zip file to extract",
+                        "name": "filePath",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device serial number",
+                        "name": "serial",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/cirrus/folder/{folderDir}": {
             "post": {
                 "description": "Enqueue create-folder operation under the given folder directory",
@@ -1452,6 +1499,9 @@ const docTemplate = `{
                     "description": "Directory path containing the file, for easier client-side handling",
                     "type": "string"
                 },
+                "fileType": {
+                    "type": "string"
+                },
                 "fullPath": {
                     "type": "string"
                 },
@@ -1480,6 +1530,9 @@ const docTemplate = `{
                 },
                 "dirPath": {
                     "description": "Directory path containing the file, for easier client-side handling",
+                    "type": "string"
+                },
+                "fileType": {
                     "type": "string"
                 },
                 "fullPath": {
