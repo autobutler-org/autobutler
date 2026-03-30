@@ -2,6 +2,9 @@ package main
 
 import (
 	"archive/zip"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -236,9 +239,18 @@ func handleArtifactDownload(w http.ResponseWriter, r *http.Request, branch strin
 	}
 	defer binary.Close()
 
+	binaryBytes, err := io.ReadAll(binary)
+	if err != nil {
+		log.Printf("error reading binary from artifact %d: %v", target.ArtifactID, err)
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "failed to read binary"})
+		return
+	}
+
+	hash := sha256.Sum256(binaryBytes)
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Disposition", `attachment; filename="autobutler"`)
-	io.Copy(w, binary)
+	w.Header().Set("X-Content-SHA256", hex.EncodeToString(hash[:]))
+	w.Write(binaryBytes)
 }
 
 func fetchBranchArtifacts() ([]branchArtifact, error) {
@@ -413,7 +425,7 @@ func ghGet(url string, target interface{}) error {
 
 func authenticate(w http.ResponseWriter, r *http.Request) bool {
 	secret := r.Header.Get("X-Provisioning-Secret")
-	if secret == "" || secret != provisioningSecret {
+	if secret == "" || subtle.ConstantTimeCompare([]byte(secret), []byte(provisioningSecret)) != 1 {
 		jsonResponse(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 		return false
 	}
