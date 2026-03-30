@@ -23,7 +23,7 @@ export GOARCH ?= $(shell $(GO) env GOARCH)
 export GOPROXY ?= https://proxy.golang.org,direct
 
 MAIN := ./cmd/autobutler/main.go
-EXE := ./build/autobutler
+EXE ?= ./build/autobutler
 GIT_VERSION ?= $(shell git describe --tags --exact-match 2>/dev/null || git rev-parse --abbrev-ref HEAD)
 LDFLAGS := -ldflags "-X github.com/autobutler-org/autobutler/pkg/util/versionutil.Semver=$(GIT_VERSION)"
 

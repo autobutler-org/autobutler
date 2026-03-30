@@ -12,10 +12,10 @@ import (
 )
 
 type settings struct {
-	DevMode              bool   `json:"dev_mode"`
-	ActiveBranch         string `json:"active_branch,omitempty"`
-	RemoteAccessEnabled  bool   `json:"remote_access_enabled,omitempty"`
-	DeviceID             string `json:"device_id,omitempty"`
+	DevMode             bool   `json:"dev_mode"`
+	ActiveBranch        string `json:"active_branch,omitempty"`
+	RemoteAccessEnabled bool   `json:"remote_access_enabled,omitempty"`
+	DeviceID            string `json:"device_id,omitempty"`
 }
 
 var mu sync.Mutex
