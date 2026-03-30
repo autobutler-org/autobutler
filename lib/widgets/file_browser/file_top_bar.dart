@@ -17,7 +17,7 @@ class FileTopBar extends StatelessWidget {
     required this.isRefreshing,
     required this.onGoHome,
     required this.onGoUp,
-    required this.onPathSelected,
+    this.onPathSelected,
     required this.onToggleView,
     required this.onSearchPressed,
     required this.onRefresh,
@@ -40,7 +40,7 @@ class FileTopBar extends StatelessWidget {
   final bool isRefreshing;
   final VoidCallback onGoHome;
   final VoidCallback onGoUp;
-  final ValueChanged<String> onPathSelected;
+  final ValueChanged<String>? onPathSelected;
   final VoidCallback onToggleView;
   final VoidCallback onSearchPressed;
   final VoidCallback onRefresh;
@@ -200,7 +200,11 @@ class FileTopBar extends StatelessWidget {
 
   List<Widget> _buildCrumbs(BuildContext context) {
     if (currentPath.isEmpty) return [];
-    final segments = currentPath.substring(1).split('/');
+    final trimmed = currentPath.startsWith('/')
+        ? currentPath.substring(1)
+        : currentPath;
+    if (trimmed.isEmpty) return [];
+    final segments = trimmed.split('/');
     final widgets = <Widget>[];
 
     for (var i = 0; i < segments.length; i++) {
@@ -222,7 +226,9 @@ class FileTopBar extends StatelessWidget {
         MouseRegion(
           cursor: isLast ? SystemMouseCursors.basic : SystemMouseCursors.click,
           child: InkWell(
-            onTap: isLast ? null : () => onPathSelected(targetPath),
+            onTap: (isLast || onPathSelected == null)
+                ? null
+                : () => onPathSelected!(targetPath),
             borderRadius: BorderRadius.circular(4),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),

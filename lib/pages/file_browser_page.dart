@@ -77,6 +77,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   Future<List<CirrusFileNode>>? _searchFuture;
   String? _searchQuery;
 
+  // Archive browser state — non-null when navigating inside an archive.
+  _ArchiveContext? _archiveContext;
+
   @override
   void initState() {
     super
@@ -162,14 +165,28 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     final generation = ++_generation;
     final serials = _serialsForActiveDevices();
-    _filesFuture = _controller
-        .fetchFiles(_currentPath, serials: serials.isEmpty ? null : serials)
-        .then((files) {
-          if (mounted && _generation == generation) {
-            setState(() => _cachedFiles = files);
-          }
-          return files;
-        });
+    final archive = _archiveContext;
+
+    Future<List<CirrusFileNode>> fetchFuture;
+    if (archive != null) {
+      fetchFuture = CirrusService.listArchiveEntries(
+        archive.archivePath,
+        subPath: archive.subPath,
+        serial: serials.isNotEmpty ? serials.first : null,
+      );
+    } else {
+      fetchFuture = _controller.fetchFiles(
+        _currentPath,
+        serials: serials.isEmpty ? null : serials,
+      );
+    }
+
+    _filesFuture = fetchFuture.then((files) {
+      if (mounted && _generation == generation) {
+        setState(() => _cachedFiles = files);
+      }
+      return files;
+    });
   }
 
   Future<void> _refreshFileState() => manualRefresh();
@@ -526,6 +543,27 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     CirrusFileNode node,
     FileMenuAction action,
   ) async {
+    // When inside an archive, handle download specially via the archive endpoint.
+    if (_archiveContext != null && action == FileMenuAction.download) {
+      try {
+        final archive = _archiveContext!;
+        final entryPath = archive.subPath.isEmpty
+            ? node.name
+            : '${archive.subPath}/${node.name}';
+        final bytes = await CirrusService.downloadArchiveFileBytes(
+          archive.archivePath,
+          entryPath,
+        );
+        if (bytes != null && mounted) {
+          await CirrusService.saveBytesToFile(bytes, node.name);
+          _showMessage('Downloaded ${node.name}');
+        }
+      } catch (_) {
+        if (mounted) _showMessage('Download failed');
+      }
+      return;
+    }
+
     // Snapshot the pre-mutation cache for rollback on failure
     final snapshot = _cachedFiles;
     try {
@@ -598,6 +636,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   Future<void> _handleOpenNode(CirrusFileNode node) async {
     if (node.isDir) {
       _openDirectory(node);
+      return;
+    }
+
+    // Navigate into archives as virtual directories.
+    if (node.fileType == 'archive') {
+      _openArchive(node);
       return;
     }
 
@@ -678,12 +722,57 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    // If we're inside an archive, directory taps descend further into it.
+    if (_archiveContext != null) {
+      _descendIntoArchiveDir(node);
+      return;
+    }
+
     _setPath(
       _controller.nextPathForOpenDirectory(
         currentPath: _currentPath,
         node: node,
       ),
     );
+  }
+
+  /// Enter an archive file as a virtual directory.
+  void _openArchive(CirrusFileNode node) {
+    setState(() {
+      _archiveContext = _ArchiveContext(
+        archivePath: node.apiPath,
+        subPath: '',
+        archiveSerial: node.deviceSerial,
+      );
+      _isSearchMode = false;
+      _searchFuture = null;
+      _searchQuery = null;
+      _reloadFiles();
+    });
+  }
+
+  /// Descend into a subdirectory inside the current archive.
+  void _descendIntoArchiveDir(CirrusFileNode node) {
+    final ctx = _archiveContext!;
+    final newSubPath = ctx.subPath.isEmpty
+        ? node.name
+        : '${ctx.subPath}/${node.name}';
+    setState(() {
+      _archiveContext = _ArchiveContext(
+        archivePath: ctx.archivePath,
+        subPath: newSubPath,
+        archiveSerial: ctx.archiveSerial,
+      );
+      _reloadFiles();
+    });
+  }
+
+  /// Exit the current archive, returning to the real filesystem.
+  void _exitArchive() {
+    setState(() {
+      _archiveContext = null;
+      _reloadFiles();
+    });
   }
 
   Future<void> _handleSearchPressed() async {
@@ -711,6 +800,28 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   }
 
   void _goUpOneLevel() {
+    final archive = _archiveContext;
+    if (archive != null) {
+      if (archive.subPath.isEmpty) {
+        // At archive root — exit back to the real filesystem.
+        _exitArchive();
+      } else {
+        // Ascend one level inside the archive.
+        final parent = archive.subPath.contains('/')
+            ? archive.subPath.substring(0, archive.subPath.lastIndexOf('/'))
+            : '';
+        setState(() {
+          _archiveContext = _ArchiveContext(
+            archivePath: archive.archivePath,
+            subPath: parent,
+            archiveSerial: archive.archiveSerial,
+          );
+          _reloadFiles();
+        });
+      }
+      return;
+    }
+
     if (_currentPath.isEmpty) {
       return;
     }
@@ -800,29 +911,38 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       body: Column(
         children: [
           Builder(
-            builder: (context) => FileTopBar(
-              currentPath: _currentPath,
-              isGridView: _isGridView,
-              isSearchMode: _isSearchMode,
-              isUploading: _isUploading,
-              isCreatingFolder: _isCreatingFolder,
-              isRefreshing: isRefreshing,
-              onGoHome: () => _setPath(''),
-              onGoUp: _goUpOneLevel,
-              onPathSelected: _setPath,
-              isUnifiedView: _isUnifiedView,
-              onToggleView: () => setState(() => _isGridView = !_isGridView),
-              onToggleUnifiedView: () =>
-                  setState(() => _isUnifiedView = !_isUnifiedView),
-              onSearchPressed: _handleSearchPressed,
-              onRefresh: _refreshFileState,
-              onUploadPressed: _handleUploadPressed,
-              onCreateFolderPressed: _handleCreateFolderPressed,
-              uploadTotal: _uploadTotal,
-              uploadCompleted: _uploadCompleted,
-              onOpenDrawer: () => Scaffold.of(context).openDrawer(),
-              onOpenSettings: () => context.go(AppRoutes.settings),
-            ),
+            builder: (context) {
+              // When inside an archive, show the archive path as the breadcrumb.
+              final archive = _archiveContext;
+              final displayPath = archive != null
+                  ? (archive.subPath.isEmpty
+                        ? archive.archivePath
+                        : '${archive.archivePath}/${archive.subPath}')
+                  : _currentPath;
+              return FileTopBar(
+                currentPath: displayPath,
+                isGridView: _isGridView,
+                isSearchMode: _isSearchMode,
+                isUploading: _isUploading,
+                isCreatingFolder: _isCreatingFolder,
+                isRefreshing: isRefreshing,
+                onGoHome: archive != null ? _exitArchive : () => _setPath(''),
+                onGoUp: _goUpOneLevel,
+                onPathSelected: archive != null ? null : _setPath,
+                isUnifiedView: _isUnifiedView,
+                onToggleView: () => setState(() => _isGridView = !_isGridView),
+                onToggleUnifiedView: () =>
+                    setState(() => _isUnifiedView = !_isUnifiedView),
+                onSearchPressed: _handleSearchPressed,
+                onRefresh: _refreshFileState,
+                onUploadPressed: _handleUploadPressed,
+                onCreateFolderPressed: _handleCreateFolderPressed,
+                uploadTotal: _uploadTotal,
+                uploadCompleted: _uploadCompleted,
+                onOpenDrawer: () => Scaffold.of(context).openDrawer(),
+                onOpenSettings: () => context.go(AppRoutes.settings),
+              );
+            },
           ),
           FileBrowserHeader(
             isGridView: _isGridView,
@@ -922,6 +1042,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                           onFolderDragEnter: _handleFolderDragEnter,
                           onFolderDragExit: _handleFolderDragExit,
                           scrollController: _fileBrowserScrollController,
+                          inArchive: _archiveContext != null,
                         ),
                         if (_isWebDragging && !_isHoveringFolderDropTarget)
                           IgnorePointer(
@@ -1068,4 +1189,22 @@ class _FirstRunSetupState extends State<_FirstRunSetup> {
       ),
     );
   }
+}
+
+/// Tracks the state when the user has navigated inside an archive file.
+class _ArchiveContext {
+  const _ArchiveContext({
+    required this.archivePath,
+    required this.subPath,
+    required this.archiveSerial,
+  });
+
+  /// Path to the archive file, relative to the device cirrus directory.
+  final String archivePath;
+
+  /// Current virtual subdirectory inside the archive. Empty string = root.
+  final String subPath;
+
+  /// Device serial of the device that holds the archive.
+  final String archiveSerial;
 }
