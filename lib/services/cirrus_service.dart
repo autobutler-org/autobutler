@@ -213,6 +213,42 @@ class CirrusService with AuthenticatedService {
         .toList(growable: false);
   }
 
+  /// Lists the direct children of [subPath] inside the archive at [filePath].
+  /// Returns the entries as [CirrusFileNode]s with [isDir] set appropriately.
+  /// No data is extracted to disk — only archive headers are read.
+  static Future<List<CirrusFileNode>> listArchiveEntries(
+    String filePath, {
+    String subPath = '',
+    String? serial,
+  }) async {
+    final querySegments = <String>[
+      'filePath=${Uri.encodeQueryComponent(filePath)}',
+    ];
+    if (subPath.isNotEmpty) {
+      querySegments.add('subPath=${Uri.encodeQueryComponent(subPath)}');
+    }
+    final serialValue = serial?.trim() ?? '';
+    if (serialValue.isNotEmpty) {
+      querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
+    }
+    final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus/list-archive');
+    final uri = endpointUri.replace(query: querySegments.join('&'));
+    final response = await http.get(uri, headers: _authHeaders);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        'Failed to list archive entries (${response.statusCode})',
+      );
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! List) {
+      throw Exception('Unexpected archive listing response format');
+    }
+    return decoded
+        .whereType<Map<String, dynamic>>()
+        .map(CirrusFileNode.fromJson)
+        .toList(growable: false);
+  }
+
   static Future<void> extractFile(String filePath, {String? serial}) async {
     final querySegments = <String>[
       'filePath=${Uri.encodeQueryComponent(filePath)}',
