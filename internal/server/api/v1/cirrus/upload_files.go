@@ -3,6 +3,7 @@ package v1_files
 import (
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
@@ -54,6 +55,10 @@ func uploadFilesNested(c *gin.Context, rootDir string) *serverutil.Response {
 	if err != nil {
 		return serverutil.BadRequest(err)
 	}
+	deps.EventBus().Publish(eventbus.Event{
+		Kind: eventbus.EventUpload,
+		Path: rootDir,
+	})
 	return serverutil.Ok()
 }
 
