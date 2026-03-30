@@ -1046,6 +1046,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                                     Future.value(const <CirrusFileNode>[]))
                               : _filesFuture,
                           initialData: _isSearchMode ? null : _cachedFiles,
+                          isInitialLoad: isInitialLoad,
                           onFileMenuAction: _handleFileMenuAction,
                           onOpenDirectory: _isSearchMode
                               ? (_) {}
