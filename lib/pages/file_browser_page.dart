@@ -851,9 +851,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       _reloadFiles();
     });
 
-    // Keep the browser URL in sync so users can copy/share deep links.
-    if (context.mounted) {
-      context.go(AppRoutes.cirrusPath(normalized));
+    // Reflect the new path in the browser URL bar (web only) without
+    // triggering a go_router navigation — context.go() would re-create
+    // the widget and cause navigation loops with trailing slashes.
+    if (kIsWeb) {
+      final uri = Uri.parse(AppRoutes.cirrusPath(normalized));
+      SystemNavigator.routeInformationUpdated(uri: uri, replace: false);
     }
   }
 
