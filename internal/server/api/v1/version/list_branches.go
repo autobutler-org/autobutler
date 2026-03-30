@@ -61,7 +61,8 @@ func listBranches(c *gin.Context) *serverutil.Response {
 		req.Header.Set("X-Provisioning-Secret", secret)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
 	if err != nil {
 		return serverutil.NewResponse().WithStatusCode(http.StatusBadGateway).WithError(fmt.Errorf("provisioning service unavailable: %w", err))
 	}

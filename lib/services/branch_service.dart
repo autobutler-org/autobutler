@@ -1,8 +1,7 @@
 import 'dart:convert';
 
-import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/authenticated_service.dart';
-import 'package:flutter/foundation.dart';
+import 'package:autobutler/services/base_service.dart';
 import 'package:http/http.dart' as http;
 
 class BranchBuild {
@@ -39,23 +38,7 @@ class BranchService with AuthenticatedService {
 
   static Map<String, String> get _authHeaders => instance.authHeaders;
 
-  static Uri get _apiBaseUri {
-    final configured = AppSettings.instance.activeHost;
-    final base = configured ??
-        const String.fromEnvironment(
-          'API_BASE_URL',
-          defaultValue: 'http://localhost:8080',
-        );
-    final uri = Uri.parse(base);
-    final isLoopback =
-        uri.host == 'localhost' || uri.host == '127.0.0.1' || uri.host == '::1';
-    if (!kIsWeb &&
-        defaultTargetPlatform == TargetPlatform.android &&
-        isLoopback) {
-      return uri.replace(host: '10.0.2.2');
-    }
-    return uri;
-  }
+  static Uri get _apiBaseUri => ApiBaseUri.apiBaseUri;
 
   static Future<bool> isDevModeEnabled() async {
     final uri = _apiBaseUri.resolve('/api/v1/settings/dev-mode');

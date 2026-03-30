@@ -119,7 +119,7 @@ class _BranchTestingSectionState extends State<BranchTestingSection> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Restarting AutoButler\u2026'),
-        duration: Duration(seconds: 60),
+        duration: Duration(seconds: 120),
       ),
     );
 
@@ -129,7 +129,7 @@ class _BranchTestingSectionState extends State<BranchTestingSection> {
 
     await Future<void>.delayed(const Duration(seconds: 3));
 
-    final deadline = DateTime.now().add(const Duration(seconds: 60));
+    final deadline = DateTime.now().add(const Duration(seconds: 120));
     while (DateTime.now().isBefore(deadline)) {
       if (!mounted) return;
       final ready = await BranchService.checkServerReady();
@@ -152,7 +152,7 @@ class _BranchTestingSectionState extends State<BranchTestingSection> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Server did not respond within 60 seconds')),
+      const SnackBar(content: Text('Server did not respond within 120 seconds')),
     );
     setState(() => _isRestarting = false);
   }
