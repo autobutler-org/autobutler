@@ -24,13 +24,13 @@ var (
 )
 
 const (
-	ghAPIBase     = "https://api.github.com"
-	repoPath      = "autobutler-org/autobutler"
-	artifactName  = "autobutler-linux-arm64"
-	cacheTTL      = 60 * time.Second
-	rateLimit     = 5
-	rateWindow    = time.Hour
-	listenAddr    = ":8090"
+	ghAPIBase    = "https://api.github.com"
+	repoPath     = "autobutler-org/autobutler"
+	artifactName = "autobutler-linux-arm64"
+	cacheTTL     = 60 * time.Second
+	rateLimit    = 5
+	rateWindow   = time.Hour
+	listenAddr   = ":8090"
 )
 
 type ipRateLimiter struct {
@@ -92,12 +92,12 @@ type ghArtifactsResponse struct {
 }
 
 type ghArtifact struct {
-	ID                 int64  `json:"id"`
-	Name               string `json:"name"`
-	WorkflowRunID      int64  `json:"workflow_run_id,omitempty"`
-	CreatedAt          string `json:"created_at"`
-	Expired            bool   `json:"expired"`
-	WorkflowRun        *ghArtifactWorkflowRun `json:"workflow_run,omitempty"`
+	ID            int64                  `json:"id"`
+	Name          string                 `json:"name"`
+	WorkflowRunID int64                  `json:"workflow_run_id,omitempty"`
+	CreatedAt     string                 `json:"created_at"`
+	Expired       bool                   `json:"expired"`
+	WorkflowRun   *ghArtifactWorkflowRun `json:"workflow_run,omitempty"`
 }
 
 type ghArtifactWorkflowRun struct {
