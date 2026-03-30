@@ -100,6 +100,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
     await _loadDevices();
+    if (!mounted) return;
     setState(() => _reloadFiles());
     await _filesFuture;
   }
