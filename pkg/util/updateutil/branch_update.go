@@ -1,8 +1,12 @@
 package updateutil
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -22,6 +26,11 @@ func UpdateFromBranch(branch string) error {
 		return fmt.Errorf("branch cannot be empty")
 	}
 
+	secret := os.Getenv("AUTOBUTLER_PROVISIONING_SECRET")
+	if secret == "" {
+		return fmt.Errorf("AUTOBUTLER_PROVISIONING_SECRET is not set")
+	}
+
 	_, err := backupSelf()
 	if err != nil {
 		return fmt.Errorf("failed to backup current binary: %w", err)
@@ -30,7 +39,13 @@ func UpdateFromBranch(branch string) error {
 	url := fmt.Sprintf("%s/artifacts/%s/latest", getProvisioningURL(), branch)
 	fmt.Println("Downloading branch update from", url)
 
-	resp, err := http.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("X-Provisioning-Secret", secret)
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to download branch artifact: %w", err)
 	}
@@ -40,7 +55,25 @@ func UpdateFromBranch(branch string) error {
 		return fmt.Errorf("failed to download branch artifact from %s: %s", url, resp.Status)
 	}
 
-	if err := replaceSelfFromBinary(resp.Body); err != nil {
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read branch artifact body: %w", err)
+	}
+
+	h := sha256.Sum256(body)
+	checksum := hex.EncodeToString(h[:])
+
+	if expectedChecksum := resp.Header.Get("X-Content-SHA256"); expectedChecksum != "" {
+		if checksum != expectedChecksum {
+			return fmt.Errorf("checksum mismatch: expected %s, got %s", expectedChecksum, checksum)
+		}
+	} else {
+		log.Printf("[branch-update] warning: server did not return X-Content-SHA256 header, skipping checksum verification")
+	}
+
+	log.Printf("[branch-update] installing binary with SHA256: %s", checksum)
+
+	if err := replaceSelfFromBinary(bytes.NewReader(body)); err != nil {
 		return fmt.Errorf("failed to replace self with branch artifact: %w", err)
 	}
 

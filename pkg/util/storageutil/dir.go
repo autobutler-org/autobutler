@@ -7,12 +7,13 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 )
 
 var sanitizeBranchRegexp = regexp.MustCompile(`[^a-zA-Z0-9\-_]`)
 
 func sanitizeBranchName(branch string) string {
-	s := regexp.MustCompile(`/`).ReplaceAllString(branch, "-")
+	s := strings.ReplaceAll(branch, "/", "-")
 	return sanitizeBranchRegexp.ReplaceAllString(s, "")
 }
 
