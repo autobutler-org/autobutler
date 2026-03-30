@@ -38,6 +38,7 @@ class FileBrowserView extends StatefulWidget {
     this.isSearchMode = false,
     this.onNavigateToFolder,
     this.inArchive = false,
+    this.isInitialLoad = false,
     super.key,
   });
 
@@ -63,6 +64,12 @@ class FileBrowserView extends StatefulWidget {
   /// When true, we are browsing inside an archive — only download is available
   /// for files (no move/rename/delete).
   final bool inArchive;
+
+  /// When true, show a spinner unconditionally — used during the initial page
+  /// load before any data has been fetched. Without this, the pre-resolved
+  /// empty default future would immediately show "No files yet" instead of
+  /// a spinner.
+  final bool isInitialLoad;
 
   @override
   State<FileBrowserView> createState() => _FileBrowserViewState();
@@ -344,8 +351,9 @@ class _FileBrowserViewState extends State<FileBrowserView> {
       future: widget.filesFuture,
       initialData: widget.initialData,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            !snapshot.hasData) {
+        if (widget.isInitialLoad ||
+            (snapshot.connectionState == ConnectionState.waiting &&
+                !snapshot.hasData)) {
           return const Center(child: CircularProgressIndicator());
         }
 
