@@ -10,6 +10,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
+	"fmt"
 	"github.com/gin-gonic/gin"
 )
 
@@ -45,6 +46,11 @@ func downloadArchiveFile(c *gin.Context) *serverutil.Response {
 		EntryPath:    entryPath,
 		DeviceSerial: serial,
 	})
+	if err != nil {
+		fmt.Printf("Error: ReadArchiveEntry failed: path=%q entry=%q err=%v\n", archivePath, entryPath, err)
+	} else {
+		fmt.Printf("Success: ReadArchiveEntry: path=%q entry=%q size=%d\n", archivePath, entryPath, size)
+	}
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
