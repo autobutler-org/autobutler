@@ -29,7 +29,11 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 
 class FileBrowserPage extends StatefulWidget {
-  const FileBrowserPage({super.key});
+  /// Optional path to navigate to on load, e.g. 'photos/2024'.
+  /// When non-null and non-empty, the browser opens at this path instead of root.
+  final String? initialPath;
+
+  const FileBrowserPage({super.key, this.initialPath});
 
   @override
   State<FileBrowserPage> createState() => _FileBrowserPageState();
@@ -82,6 +86,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   @override
   void initState() {
+    // Apply deep-link initial path before AutoRefreshMixin triggers the first load.
+    final initial = widget.initialPath;
+    if (initial != null && initial.isNotEmpty) {
+      _currentPath = normalizePath(initial);
+    }
     super
         .initState(); // AutoRefreshMixin.initState handles timer + initial load
     EventsService.instance.start();
@@ -841,6 +850,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       _activeDevicePaths = _allDevices.map((d) => d.devicePath).toSet();
       _reloadFiles();
     });
+
+    // Reflect the new path in the browser URL bar (web only) without
+    // triggering a go_router navigation — context.go() would re-create
+    // the widget and cause navigation loops with trailing slashes.
+    if (kIsWeb) {
+      final uri = Uri.parse(AppRoutes.cirrusPath(normalized));
+      SystemNavigator.routeInformationUpdated(uri: uri, replace: false);
+    }
   }
 
   void _showMessage(String message) {
