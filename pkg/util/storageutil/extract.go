@@ -33,9 +33,31 @@ type ExtractFileResult struct {
 	DestDir string
 }
 
-// ExtractFile extracts a zip archive in place on disk.
-// Files are streamed one at a time; the zip central directory is the only
-// data read up-front (as required by archive/zip.OpenReader).
+// extractorFunc is the signature all format-specific extractors must implement.
+// It receives the full path to the archive and returns the extraction result.
+type extractorFunc func(fullPath string) (*ExtractFileResult, error)
+
+// extractors maps canonical archive extensions to their extractor functions.
+// To add support for a new format (e.g. .zst, .rar), add an entry here and
+// implement the corresponding extractXxxFile function below.
+var extractors = map[string]extractorFunc{
+	".zip":    extractZipFile,
+	".tar.gz": extractTarGzFile,
+	".tgz":    extractTarGzFile,
+}
+
+// SupportedArchiveExts returns the list of archive extensions that can be extracted.
+// Useful for UI hints and validation.
+func SupportedArchiveExts() []string {
+	exts := make([]string, 0, len(extractors))
+	for ext := range extractors {
+		exts = append(exts, ext)
+	}
+	return exts
+}
+
+// ExtractFile extracts an archive in place on disk.
+// The archive format is inferred from the file extension.
 func (s *StorageService) ExtractFile(params ExtractFileParams) (*ExtractFileResult, error) {
 	device, err := s.FindManagedDeviceBySerial(params.DeviceSerial)
 	if err != nil {
@@ -48,7 +70,7 @@ func (s *StorageService) ExtractFile(params ExtractFileParams) (*ExtractFileResu
 	return ExtractFileImpl(params, device, defaultCirrusDir)
 }
 
-// ExtractFileImpl extracts a zip archive using pre-resolved device and cirrus directory.
+// ExtractFileImpl extracts an archive using pre-resolved device and cirrus directory.
 // Use this in tests to inject test devices without hitting the real filesystem detector.
 func ExtractFileImpl(params ExtractFileParams, device *ManagedDevice, defaultCirrusDir string) (*ExtractFileResult, error) {
 	cirrusDir := defaultCirrusDir
@@ -68,14 +90,12 @@ func ExtractFileImpl(params ExtractFileParams, device *ManagedDevice, defaultCir
 	}
 
 	ext := archiveExt(fullPath)
-	switch ext {
-	case ".zip":
-		return extractZipFile(fullPath)
-	case ".tar.gz", ".tgz":
-		return extractTarGzFile(fullPath)
-	default:
-		return nil, fmt.Errorf("unsupported archive format %q: only .zip and .tar.gz are supported", filepath.Ext(fullPath))
+	extractor, ok := extractors[ext]
+	if !ok {
+		return nil, fmt.Errorf("unsupported archive format %q: supported formats are %s",
+			ext, strings.Join(SupportedArchiveExts(), ", "))
 	}
+	return extractor(fullPath)
 }
 
 // archiveExt returns the canonical extension for an archive path, handling
