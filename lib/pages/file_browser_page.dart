@@ -543,6 +543,27 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     CirrusFileNode node,
     FileMenuAction action,
   ) async {
+    // When inside an archive, handle download specially via the archive endpoint.
+    if (_archiveContext != null && action == FileMenuAction.download) {
+      try {
+        final archive = _archiveContext!;
+        final entryPath = archive.subPath.isEmpty
+            ? node.name
+            : '${archive.subPath}/${node.name}';
+        final bytes = await CirrusService.downloadArchiveFileBytes(
+          archive.archivePath,
+          entryPath,
+        );
+        if (bytes != null && mounted) {
+          await CirrusService.saveBytesToFile(bytes, node.name);
+          _showMessage('Downloaded ${node.name}');
+        }
+      } catch (_) {
+        if (mounted) _showMessage('Download failed');
+      }
+      return;
+    }
+
     // Snapshot the pre-mutation cache for rollback on failure
     final snapshot = _cachedFiles;
     try {
@@ -1021,6 +1042,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                           onFolderDragEnter: _handleFolderDragEnter,
                           onFolderDragExit: _handleFolderDragExit,
                           scrollController: _fileBrowserScrollController,
+                          inArchive: _archiveContext != null,
                         ),
                         if (_isWebDragging && !_isHoveringFolderDropTarget)
                           IgnorePointer(

@@ -200,7 +200,11 @@ class FileTopBar extends StatelessWidget {
 
   List<Widget> _buildCrumbs(BuildContext context) {
     if (currentPath.isEmpty) return [];
-    final segments = currentPath.substring(1).split('/');
+    final trimmed = currentPath.startsWith('/')
+        ? currentPath.substring(1)
+        : currentPath;
+    if (trimmed.isEmpty) return [];
+    final segments = trimmed.split('/');
     final widgets = <Widget>[];
 
     for (var i = 0; i < segments.length; i++) {

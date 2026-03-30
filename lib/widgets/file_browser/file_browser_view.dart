@@ -37,6 +37,7 @@ class FileBrowserView extends StatefulWidget {
     this.showFileSizeAndMenu = true,
     this.isSearchMode = false,
     this.onNavigateToFolder,
+    this.inArchive = false,
     super.key,
   });
 
@@ -58,6 +59,10 @@ class FileBrowserView extends StatefulWidget {
   final bool showFileSizeAndMenu;
   final bool isSearchMode;
   final void Function(CirrusFileNode)? onNavigateToFolder;
+
+  /// When true, we are browsing inside an archive — only download is available
+  /// for files (no move/rename/delete).
+  final bool inArchive;
 
   @override
   State<FileBrowserView> createState() => _FileBrowserViewState();
@@ -270,25 +275,27 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                     ),
                     child: const Text('Download'),
                   ),
-                  PopupMenuItem<FileMenuAction>(
-                    value: FileMenuAction.moveRename,
-                    onTap: () => _dispatchMenuAction(
-                      context,
-                      item,
-                      FileMenuAction.moveRename,
+                  if (!widget.inArchive)
+                    PopupMenuItem<FileMenuAction>(
+                      value: FileMenuAction.moveRename,
+                      onTap: () => _dispatchMenuAction(
+                        context,
+                        item,
+                        FileMenuAction.moveRename,
+                      ),
+                      child: const Text('Move/Rename'),
                     ),
-                    child: const Text('Move/Rename'),
-                  ),
-                  PopupMenuItem<FileMenuAction>(
-                    value: FileMenuAction.delete,
-                    onTap: () => _dispatchMenuAction(
-                      context,
-                      item,
-                      FileMenuAction.delete,
+                  if (!widget.inArchive)
+                    PopupMenuItem<FileMenuAction>(
+                      value: FileMenuAction.delete,
+                      onTap: () => _dispatchMenuAction(
+                        context,
+                        item,
+                        FileMenuAction.delete,
+                      ),
+                      child: const Text('Delete'),
                     ),
-                    child: const Text('Delete'),
-                  ),
-                  if (_isArchive(item))
+                  if (!widget.inArchive && _isArchive(item))
                     PopupMenuItem<FileMenuAction>(
                       value: FileMenuAction.extractHere,
                       enabled: !_extractingPaths.contains(item.apiPath),
@@ -518,25 +525,28 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                                             ),
                                             child: const Text('Download'),
                                           ),
-                                          PopupMenuItem<FileMenuAction>(
-                                            value: FileMenuAction.moveRename,
-                                            onTap: () => _dispatchMenuAction(
-                                              context,
-                                              item,
-                                              FileMenuAction.moveRename,
+                                          if (!widget.inArchive)
+                                            PopupMenuItem<FileMenuAction>(
+                                              value: FileMenuAction.moveRename,
+                                              onTap: () => _dispatchMenuAction(
+                                                context,
+                                                item,
+                                                FileMenuAction.moveRename,
+                                              ),
+                                              child: const Text('Move/Rename'),
                                             ),
-                                            child: const Text('Move/Rename'),
-                                          ),
-                                          PopupMenuItem<FileMenuAction>(
-                                            value: FileMenuAction.delete,
-                                            onTap: () => _dispatchMenuAction(
-                                              context,
-                                              item,
-                                              FileMenuAction.delete,
+                                          if (!widget.inArchive)
+                                            PopupMenuItem<FileMenuAction>(
+                                              value: FileMenuAction.delete,
+                                              onTap: () => _dispatchMenuAction(
+                                                context,
+                                                item,
+                                                FileMenuAction.delete,
+                                              ),
+                                              child: const Text('Delete'),
                                             ),
-                                            child: const Text('Delete'),
-                                          ),
-                                          if (_isArchive(item))
+                                          if (!widget.inArchive &&
+                                              _isArchive(item))
                                             PopupMenuItem<FileMenuAction>(
                                               value: FileMenuAction.extractHere,
                                               enabled: !_extractingPaths
