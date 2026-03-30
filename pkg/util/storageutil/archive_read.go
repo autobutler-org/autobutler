@@ -2,6 +2,7 @@ package storageutil
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -93,7 +94,7 @@ func ReadArchiveEntryImpl(params ReadArchiveEntryParams, device *ManagedDevice, 
 		return errEntryFound
 	})
 
-	if err != nil && err != errEntryFound {
+	if err != nil && !errors.Is(err, errEntryFound) {
 		f.Close()
 		return nil, 0, err
 	}
@@ -107,7 +108,7 @@ func ReadArchiveEntryImpl(params ReadArchiveEntryParams, device *ManagedDevice, 
 	return &archiveEntryReader{ReadCloser: found.reader, archive: f}, found.size, nil
 }
 
-var errEntryFound = fmt.Errorf("entry found")
+var errEntryFound = errors.New("entry found")
 
 // archiveEntryReader wraps an entry reader and closes the underlying archive
 // file when the entry reader is closed.
