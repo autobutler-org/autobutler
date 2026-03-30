@@ -579,6 +579,18 @@
       "url": "https://pub.dev"
     },
     {
+      "name": "web_socket",
+      "version": "1.0.1",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "web_socket_channel",
+      "version": "3.0.3",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
       "name": "win32",
       "version": "5.15.0",
       "source": "hosted",

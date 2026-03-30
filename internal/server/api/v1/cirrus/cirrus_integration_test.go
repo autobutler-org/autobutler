@@ -16,6 +16,7 @@ import (
 	v1_files "github.com/autobutler-org/autobutler/internal/server/api/v1/cirrus"
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 	"github.com/gin-gonic/gin"
@@ -54,7 +55,7 @@ func newTestEngine(t *testing.T) (*gin.Engine, string) {
 	// Build a deps with a fake StorageService so handlers get a real-looking
 	// device list pointing at our temp dir — no real device detection happens.
 	svc := storageutil.NewStorageService(&fakeDetector{mountPoint: mountPoint})
-	deps := deputil.NewDependencies().WithStorageService(svc)
+	deps := deputil.NewDependencies().WithStorageService(svc).WithEventBus(eventbus.New())
 
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()

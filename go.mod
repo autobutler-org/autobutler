@@ -30,6 +30,7 @@ require (
 	google.golang.org/api v0.272.0
 	howett.net/plist v1.0.1
 	modernc.org/sqlite v1.47.0
+	nhooyr.io/websocket v1.8.17
 )
 
 require (

@@ -739,6 +739,24 @@ paths:
       summary: Upload files to a nested directory
       tags:
       - cirrus
+  /events:
+    get:
+      description: Upgrades the connection to WebSocket and pushes JSON events for
+        file system mutations (upload, delete, move, new_folder)
+      produces:
+      - application/json
+      responses:
+        "101":
+          description: Switching Protocols
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Stream real-time file/device events
+      tags:
+      - events
   /health:
     get:
       description: 'Returns current hardware health: CPU, memory, disk usage and temperature.
