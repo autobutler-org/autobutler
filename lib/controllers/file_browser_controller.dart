@@ -138,6 +138,17 @@ class FileBrowserController {
     );
   }
 
+  /// Delete a single node. Caller is responsible for confirmation and
+  /// any optimistic UI updates.
+  Future<void> deleteNode({required CirrusFileNode node}) {
+    final rootDir = toRootDir(parentPath(node.apiPath));
+    return CirrusService.deleteFile(
+      rootDir,
+      trimTrailingSlashes(node.name),
+      deviceSerial: serialOrNull(node.deviceSerial),
+    );
+  }
+
   Future<FileMenuActionOutcome?> handleFileAction({
     required CirrusFileNode node,
     required FileMenuAction action,
