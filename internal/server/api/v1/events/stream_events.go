@@ -32,7 +32,13 @@ func streamEvents(c *gin.Context) {
 		return
 	}
 
-	conn, err := websocket.Accept(c.Writer, c.Request, nil)
+	// InsecureSkipVerify disables nhooyr's built-in origin check.
+	// The Flutter web app is served from a different origin than the API server,
+	// so the default check (Origin == Host) always fails with 403.
+	// Auth is already enforced via the requireAuth middleware (?token= / Bearer).
+	conn, err := websocket.Accept(c.Writer, c.Request, &websocket.AcceptOptions{
+		InsecureSkipVerify: true,
+	})
 	if err != nil {
 		c.Status(http.StatusBadRequest)
 		return
