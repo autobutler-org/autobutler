@@ -53,6 +53,13 @@ Future<void> moveRenameNode({
   );
 }
 
+Future<void> extractNode({required CirrusFileNode node}) {
+  return CirrusService.extractFile(
+    node.apiPath,
+    serial: serialOrNull(node.deviceSerial),
+  );
+}
+
 Future<void> deleteNode({required CirrusFileNode node}) {
   final rootDir = toRootDir(parentPath(node.apiPath));
   return CirrusService.deleteFile(

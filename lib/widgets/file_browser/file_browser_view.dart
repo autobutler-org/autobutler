@@ -9,7 +9,7 @@ import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-enum FileMenuAction { download, moveRename, delete, navigateToFolder }
+enum FileMenuAction { download, moveRename, delete, navigateToFolder, extractHere }
 
 enum SortColumn { name, type, size, device }
 
@@ -271,6 +271,16 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                     ),
                     child: const Text('Delete'),
                   ),
+                  if (_isArchive(item))
+                    PopupMenuItem<FileMenuAction>(
+                      value: FileMenuAction.extractHere,
+                      onTap: () => _dispatchMenuAction(
+                        context,
+                        item,
+                        FileMenuAction.extractHere,
+                      ),
+                      child: const Text('Extract here'),
+                    ),
                   if (widget.isSearchMode && widget.onNavigateToFolder != null)
                     PopupMenuItem<FileMenuAction>(
                       value: FileMenuAction.navigateToFolder,
@@ -494,6 +504,16 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                                             ),
                                             child: const Text('Delete'),
                                           ),
+                                          if (_isArchive(item))
+                                            PopupMenuItem<FileMenuAction>(
+                                              value: FileMenuAction.extractHere,
+                                              onTap: () => _dispatchMenuAction(
+                                                context,
+                                                item,
+                                                FileMenuAction.extractHere,
+                                              ),
+                                              child: const Text('Extract here'),
+                                            ),
                                           if (widget.isSearchMode &&
                                               widget.onNavigateToFolder != null)
                                             PopupMenuItem<FileMenuAction>(
@@ -549,6 +569,12 @@ class _FileBrowserViewState extends State<FileBrowserView> {
         );
       },
     );
+  }
+
+  static bool _isArchive(CirrusFileNode node) {
+    if (node.isDir) return false;
+    final lower = node.name.toLowerCase();
+    return lower.endsWith('.zip');
   }
 
   static String _fileType(CirrusFileNode node) {
