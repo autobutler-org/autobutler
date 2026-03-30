@@ -9,7 +9,13 @@ import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-enum FileMenuAction { download, moveRename, delete, navigateToFolder, extractHere }
+enum FileMenuAction {
+  download,
+  moveRename,
+  delete,
+  navigateToFolder,
+  extractHere,
+}
 
 enum SortColumn { name, type, size, device }
 
@@ -533,21 +539,26 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                                           if (_isArchive(item))
                                             PopupMenuItem<FileMenuAction>(
                                               value: FileMenuAction.extractHere,
-                                              enabled: !_extractingPaths.contains(item.apiPath),
+                                              enabled: !_extractingPaths
+                                                  .contains(item.apiPath),
                                               onTap: () => _dispatchMenuAction(
                                                 context,
                                                 item,
                                                 FileMenuAction.extractHere,
                                               ),
-                                              child: _extractingPaths.contains(item.apiPath)
+                                              child:
+                                                  _extractingPaths.contains(
+                                                    item.apiPath,
+                                                  )
                                                   ? const Row(
                                                       children: [
                                                         SizedBox(
                                                           width: 16,
                                                           height: 16,
-                                                          child: CircularProgressIndicator(
-                                                            strokeWidth: 2,
-                                                          ),
+                                                          child:
+                                                              CircularProgressIndicator(
+                                                                strokeWidth: 2,
+                                                              ),
                                                         ),
                                                         SizedBox(width: 8),
                                                         Text('Extracting...'),
@@ -614,7 +625,8 @@ class _FileBrowserViewState extends State<FileBrowserView> {
 
   static bool _isArchive(CirrusFileNode node) {
     if (node.isDir) return false;
-    return node.fileType == 'archive' && node.name.toLowerCase().endsWith('.zip');
+    return node.fileType == 'archive' &&
+        node.name.toLowerCase().endsWith('.zip');
   }
 
   static String _fileType(CirrusFileNode node) {

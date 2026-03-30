@@ -83,10 +83,10 @@ func ExtractFileImpl(params ExtractFileParams, device *ManagedDevice, defaultCir
 	}
 	defer r.Close()
 
-	return extractZip(r, destDir, MaxZipEntries, MaxZipEntryBytes)
+	return extractZip(&r.Reader, destDir, MaxZipEntries, MaxZipEntryBytes)
 }
 
-func extractZip(r *zip.ReadCloser, destDir string, maxEntries int, maxBytesPerEntry int64) (*ExtractFileResult, error) {
+func extractZip(r *zip.Reader, destDir string, maxEntries int, maxBytesPerEntry int64) (*ExtractFileResult, error) {
 	if len(r.File) > maxEntries {
 		return nil, fmt.Errorf("zip archive contains %d entries, which exceeds the limit of %d", len(r.File), maxEntries)
 	}

@@ -169,8 +169,7 @@ func TestExtractZip_EntryCountLimit(t *testing.T) {
 	}
 
 	destDir := t.TempDir()
-	// Wrap in a ReadCloser for extractZip.
-	_, err = extractZip(&zip.ReadCloser{Reader: *rc}, destDir, testMaxEntries, MaxZipEntryBytes)
+	_, err = extractZip(rc, destDir, testMaxEntries, MaxZipEntryBytes)
 	if err == nil {
 		t.Fatal("expected error for entry count limit, got nil")
 	}
