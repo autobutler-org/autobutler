@@ -18,7 +18,8 @@ class BranchBuild {
       branch: json['branch'] as String? ?? '',
       prNumber: json['prNumber'] as int? ?? 0,
       prTitle: json['prTitle'] as String? ?? '',
-      builtAt: DateTime.tryParse(json['builtAt'] as String? ?? '') ??
+      builtAt:
+          DateTime.tryParse(json['builtAt'] as String? ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
       artifactId: (json['artifactId'] as num?)?.toInt() ?? 0,
     );
@@ -103,7 +104,9 @@ class BranchService with AuthenticatedService {
     final uri = _apiBaseUri.resolve('/api/v1/version/available');
     final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to fetch available versions (${response.statusCode})');
+      throw Exception(
+        'Failed to fetch available versions (${response.statusCode})',
+      );
     }
     final decoded = jsonDecode(response.body);
     if (decoded is! List || decoded.isEmpty) return null;

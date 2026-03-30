@@ -4,7 +4,8 @@ import 'package:flutter/foundation.dart';
 mixin ApiBaseUri {
   static Uri get apiBaseUri {
     final configured = AppSettings.instance.activeHost;
-    final base = configured ??
+    final base =
+        configured ??
         const String.fromEnvironment(
           'API_BASE_URL',
           defaultValue: 'http://localhost:8080',

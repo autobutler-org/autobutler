@@ -100,16 +100,18 @@ class _BranchTestingSectionState extends State<BranchTestingSection> {
       if (latestVersion == null) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not determine latest release version')),
+          const SnackBar(
+            content: Text('Could not determine latest release version'),
+          ),
         );
         return;
       }
       await _deployAndWait(() => BranchService.returnToRelease(latestVersion));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed: $e')));
     }
   }
 
@@ -152,7 +154,9 @@ class _BranchTestingSectionState extends State<BranchTestingSection> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Server did not respond within 120 seconds')),
+      const SnackBar(
+        content: Text('Server did not respond within 120 seconds'),
+      ),
     );
     setState(() => _isRestarting = false);
   }
@@ -187,9 +191,9 @@ class _BranchTestingSectionState extends State<BranchTestingSection> {
                       'Current build: ',
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    Text(_isOnBranch
-                        ? widget.currentVersion!
-                        : 'Release build'),
+                    Text(
+                      _isOnBranch ? widget.currentVersion! : 'Release build',
+                    ),
                   ],
                 ),
                 if (_isOnBranch) ...[
@@ -232,27 +236,27 @@ class _BranchTestingSectionState extends State<BranchTestingSection> {
             ),
           )
         else if (_branches == null || _branches!.isEmpty)
-          const Card(
-            child: ListTile(title: Text('No branch builds available')),
-          )
+          const Card(child: ListTile(title: Text('No branch builds available')))
         else
-          ...(_branches!.map((build) => Card(
-                child: ListTile(
-                  title: Text(
-                    build.branch,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text('PR #${build.prNumber} \u2014 ${build.prTitle}'),
-                  trailing: Text(
-                    _formatBuildTime(build.builtAt),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  onTap: _isRestarting ? null : () => _confirmDeploy(build),
+          ...(_branches!.map(
+            (build) => Card(
+              child: ListTile(
+                title: Text(
+                  build.branch,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-              ))),
+                subtitle: Text('PR #${build.prNumber} \u2014 ${build.prTitle}'),
+                trailing: Text(
+                  _formatBuildTime(build.builtAt),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                onTap: _isRestarting ? null : () => _confirmDeploy(build),
+              ),
+            ),
+          )),
         if (_isRestarting)
           const Padding(
             padding: EdgeInsets.all(16),
