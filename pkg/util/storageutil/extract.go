@@ -9,6 +9,17 @@ import (
 	"strings"
 )
 
+const (
+	// MaxZipEntryBytes is the maximum number of bytes that will be written per
+	// zip entry. This guards against zip bombs without rejecting legitimate large
+	// files such as multi-GB Takeout videos.
+	MaxZipEntryBytes int64 = 10 * 1024 * 1024 * 1024 // 10 GiB
+
+	// MaxZipEntries is the maximum number of entries that will be extracted from
+	// a single archive.
+	MaxZipEntries = 100_000
+)
+
 // ExtractFileParams contains parameters for extracting an archive file
 type ExtractFileParams struct {
 	FilePath     string
@@ -72,8 +83,16 @@ func ExtractFileImpl(params ExtractFileParams, device *ManagedDevice, defaultCir
 	}
 	defer r.Close()
 
+	return extractZip(r, destDir, MaxZipEntries, MaxZipEntryBytes)
+}
+
+func extractZip(r *zip.ReadCloser, destDir string, maxEntries int, maxBytesPerEntry int64) (*ExtractFileResult, error) {
+	if len(r.File) > maxEntries {
+		return nil, fmt.Errorf("zip archive contains %d entries, which exceeds the limit of %d", len(r.File), maxEntries)
+	}
+
 	for _, f := range r.File {
-		if err := extractZipEntry(f, destDir); err != nil {
+		if err := extractZipEntry(f, destDir, maxBytesPerEntry); err != nil {
 			return nil, err
 		}
 	}
@@ -83,7 +102,7 @@ func ExtractFileImpl(params ExtractFileParams, device *ManagedDevice, defaultCir
 	}, nil
 }
 
-func extractZipEntry(f *zip.File, destDir string) error {
+func extractZipEntry(f *zip.File, destDir string, maxBytes int64) error {
 	name := f.Name
 
 	// Sanitize: reject entries that try to escape the destination directory.
@@ -132,8 +151,13 @@ func extractZipEntry(f *zip.File, destDir string) error {
 	}
 	defer out.Close()
 
-	if _, err := io.Copy(out, rc); err != nil {
+	limited := io.LimitReader(rc, maxBytes+1)
+	n, err := io.Copy(out, limited)
+	if err != nil {
 		return fmt.Errorf("failed to extract file %s: %w", name, err)
+	}
+	if n > maxBytes {
+		return fmt.Errorf("zip entry %q exceeds maximum allowed size of %d bytes", name, maxBytes)
 	}
 
 	return nil

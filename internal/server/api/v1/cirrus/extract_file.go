@@ -2,6 +2,7 @@ package v1_files
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
@@ -39,6 +40,13 @@ func extractFile(c *gin.Context) *serverutil.Response {
 		FilePath:     filePath,
 		DeviceSerial: serial,
 	}); err != nil {
+		msg := err.Error()
+		if strings.Contains(msg, "file not found") {
+			return serverutil.NotFound(err)
+		}
+		if strings.Contains(msg, "file is not an archive") || strings.Contains(msg, "only zip archives are supported") {
+			return serverutil.BadRequest(err)
+		}
 		return serverutil.InternalServerError(err)
 	}
 

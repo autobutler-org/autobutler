@@ -23,6 +23,7 @@ type FileNodeJSON struct {
 	DirPath      string `json:"dirPath"` // Directory path containing the file, for easier client-side handling
 	FullPath     string `json:"fullPath"`
 	DeviceSerial string `json:"deviceSerial"`
+	FileType     string `json:"fileType"`
 }
 
 func listFilesImpl(rootDir string, devices []storageutil.ManagedDevice) ([]FileNodeJSON, error) {
@@ -65,6 +66,7 @@ func listFilesImpl(rootDir string, devices []storageutil.ManagedDevice) ([]FileN
 			DirPath:      filepath.Join(rootDir, file.Name()),
 			FullPath:     file.FullPath,
 			DeviceSerial: file.DeviceSerial,
+			FileType:     string(storageutil.DetermineFileTypeFromPath(file.FullPath)),
 		}
 	}
 	return result, nil
