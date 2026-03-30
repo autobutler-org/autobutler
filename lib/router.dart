@@ -14,6 +14,11 @@ import 'package:go_router/go_router.dart';
 // Route paths — use these constants everywhere instead of string literals.
 class AppRoutes {
   static const cirrus = '/cirrus';
+
+  /// Deep-link pattern for a specific path inside the file browser.
+  /// e.g. /cirrus/photos/2024 navigates directly to photos/2024.
+  static const cirrusDeep = '/cirrus/:path(.*)';
+
   static const photos = '/photos';
   static const devices = '/devices';
   static const health = '/health';
@@ -23,6 +28,13 @@ class AppRoutes {
   static const recover = '/recover';
   // Note: image/video viewers are push-only overlays (take runtime data),
   // not deep-linkable URL routes.
+
+  /// Build a deep-link URL for a given cirrus path.
+  /// e.g. cirrusPath('photos/2024') → '/cirrus/photos/2024'
+  static String cirrusPath(String path) {
+    final clean = path.replaceAll(RegExp(r'^/+'), '');
+    return clean.isEmpty ? cirrus : '/cirrus/$clean';
+  }
 }
 
 final router = GoRouter(
@@ -32,6 +44,16 @@ final router = GoRouter(
     GoRoute(
       path: AppRoutes.cirrus,
       builder: (context, state) => const FileBrowserPage(),
+      routes: [
+        GoRoute(
+          // Matches /cirrus/<anything>, including slashes.
+          path: ':path(.*)',
+          builder: (context, state) {
+            final raw = state.pathParameters['path'] ?? '';
+            return FileBrowserPage(initialPath: Uri.decodeComponent(raw));
+          },
+        ),
+      ],
     ),
     GoRoute(
       path: AppRoutes.photos,
