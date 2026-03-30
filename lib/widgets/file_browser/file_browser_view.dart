@@ -625,11 +625,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
 
   static bool _isArchive(CirrusFileNode node) {
     if (node.isDir) return false;
-    if (node.fileType != 'archive') return false;
-    final lower = node.name.toLowerCase();
-    return lower.endsWith('.zip') ||
-        lower.endsWith('.tar.gz') ||
-        lower.endsWith('.tgz');
+    return node.fileType == 'archive';
   }
 
   static String _fileType(CirrusFileNode node) {

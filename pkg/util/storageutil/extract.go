@@ -1,63 +1,67 @@
 package storageutil
 
 import (
-	"archive/tar"
-	"archive/zip"
-	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+	"sync/atomic"
+
+	"github.com/mholt/archiver/v4"
 )
 
 const (
-	// MaxZipEntryBytes is the maximum number of bytes that will be written per
-	// zip entry. This guards against zip bombs without rejecting legitimate large
-	// files such as multi-GB Takeout videos.
-	MaxZipEntryBytes int64 = 10 * 1024 * 1024 * 1024 // 10 GiB
-
-	// MaxZipEntries is the maximum number of entries that will be extracted from
-	// a single archive.
-	MaxZipEntries = 100_000
+	// MaxArchiveEntryBytes is the maximum number of bytes written per entry.
+	// Guards against decompression bombs without rejecting legitimate large files.
+	MaxArchiveEntryBytes int64 = 10 * 1024 * 1024 * 1024 // 10 GiB
 )
 
-// ExtractFileParams contains parameters for extracting an archive file
+// MaxArchiveEntries is the maximum number of entries extracted from a single
+// archive. Declared as a var so tests can override it without building 100k
+// files.
+var MaxArchiveEntries = 100_000
+
+// supportedExts is the set of archive extensions we accept for extraction.
+// To add a new format: add its extension here. mholt/archiver handles the rest
+// as long as the underlying Go library for that format is available.
+var supportedExts = map[string]struct{}{
+	".zip":    {},
+	".rar":    {},
+	".tar":    {},
+	".tar.gz": {},
+	".tgz":    {},
+	".gz":     {},
+	".7z":     {},
+}
+
+// ExtractFileParams contains parameters for extracting an archive file.
 type ExtractFileParams struct {
 	FilePath     string
 	DeviceSerial string
 }
 
-// ExtractFileResult contains the result of an extraction operation
+// ExtractFileResult contains the result of an extraction operation.
 type ExtractFileResult struct {
 	DestDir string
 }
 
-// extractorFunc is the signature all format-specific extractors must implement.
-// It receives the full path to the archive and returns the extraction result.
-type extractorFunc func(fullPath string) (*ExtractFileResult, error)
-
-// extractors maps canonical archive extensions to their extractor functions.
-// To add support for a new format (e.g. .zst, .rar), add an entry here and
-// implement the corresponding extractXxxFile function below.
-var extractors = map[string]extractorFunc{
-	".zip":    extractZipFile,
-	".tar.gz": extractTarGzFile,
-	".tgz":    extractTarGzFile,
-}
-
-// SupportedArchiveExts returns the list of archive extensions that can be extracted.
-// Useful for UI hints and validation.
+// SupportedArchiveExts returns the sorted list of archive extensions that can
+// be extracted. Useful for UI hints and validation.
 func SupportedArchiveExts() []string {
-	exts := make([]string, 0, len(extractors))
-	for ext := range extractors {
+	exts := make([]string, 0, len(supportedExts))
+	for ext := range supportedExts {
 		exts = append(exts, ext)
 	}
+	sort.Strings(exts)
 	return exts
 }
 
 // ExtractFile extracts an archive in place on disk.
-// The archive format is inferred from the file extension.
+// The archive format is inferred from the file extension via mholt/archiver.
 func (s *StorageService) ExtractFile(params ExtractFileParams) (*ExtractFileResult, error) {
 	device, err := s.FindManagedDeviceBySerial(params.DeviceSerial)
 	if err != nil {
@@ -70,8 +74,9 @@ func (s *StorageService) ExtractFile(params ExtractFileParams) (*ExtractFileResu
 	return ExtractFileImpl(params, device, defaultCirrusDir)
 }
 
-// ExtractFileImpl extracts an archive using pre-resolved device and cirrus directory.
-// Use this in tests to inject test devices without hitting the real filesystem detector.
+// ExtractFileImpl extracts an archive using a pre-resolved device and cirrus
+// directory. Use this in tests to inject test devices without hitting the real
+// filesystem detector.
 func ExtractFileImpl(params ExtractFileParams, device *ManagedDevice, defaultCirrusDir string) (*ExtractFileResult, error) {
 	cirrusDir := defaultCirrusDir
 	if device != nil {
@@ -90,16 +95,166 @@ func ExtractFileImpl(params ExtractFileParams, device *ManagedDevice, defaultCir
 	}
 
 	ext := archiveExt(fullPath)
-	extractor, ok := extractors[ext]
-	if !ok {
+	if _, ok := supportedExts[ext]; !ok {
 		return nil, fmt.Errorf("unsupported archive format %q: supported formats are %s",
 			ext, strings.Join(SupportedArchiveExts(), ", "))
 	}
-	return extractor(fullPath)
+
+	return extractArchive(fullPath)
+}
+
+// extractArchive opens the archive at fullPath, identifies its format via
+// mholt/archiver, and extracts all entries into a new sibling directory.
+func extractArchive(fullPath string) (*ExtractFileResult, error) {
+	f, err := os.Open(fullPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open archive: %w", err)
+	}
+	defer f.Close()
+
+	format, input, err := archiver.Identify(context.Background(), filepath.Base(fullPath), f)
+	if err != nil {
+		return nil, fmt.Errorf("failed to identify archive format: %w", err)
+	}
+
+	// Bare compression formats (e.g. .gz not wrapping a .tar) implement
+	// Decompressor rather than Extractor. They decompress to a single file.
+	if decomp, ok := format.(archiver.Decompressor); ok {
+		if _, isArchive := format.(archiver.Extractor); !isArchive {
+			return extractDecompressed(decomp, input, fullPath)
+		}
+	}
+
+	ex, ok := format.(archiver.Extractor)
+	if !ok {
+		return nil, fmt.Errorf("archive format %T does not support extraction", format)
+	}
+
+	destDir := archiveDestDir(fullPath)
+	if err := os.MkdirAll(destDir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create destination directory: %w", err) // coverage: ignore
+	}
+
+	var entryCount atomic.Int64
+	err = ex.Extract(context.Background(), input, func(_ context.Context, af archiver.FileInfo) error {
+		n := entryCount.Add(1)
+		if n > int64(MaxArchiveEntries) {
+			return fmt.Errorf("archive exceeds maximum of %d entries", MaxArchiveEntries)
+		}
+		return extractArchiveEntry(af, destDir)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &ExtractFileResult{DestDir: destDir}, nil
+}
+
+// extractDecompressed handles bare compression formats (e.g. bare .gz not
+// wrapping a .tar). It decompresses the stream to a single file in the same
+// directory as the archive, named after the archive stem.
+func extractDecompressed(decomp archiver.Decompressor, r io.Reader, fullPath string) (*ExtractFileResult, error) {
+	rc, err := decomp.OpenReader(r)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decompress: %w", err)
+	}
+	defer rc.Close()
+
+	stem := strings.TrimSuffix(filepath.Base(fullPath), archiveExt(fullPath))
+	// Also strip a trailing .tar if present (e.g. foo.tar.gz → foo).
+	stem = strings.TrimSuffix(stem, ".tar")
+	outPath := GetNonConflictingPath(filepath.Join(filepath.Dir(fullPath), stem))
+
+	out, err := os.Create(outPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create output file: %w", err) // coverage: ignore
+	}
+	defer out.Close()
+
+	limited := io.LimitReader(rc, MaxArchiveEntryBytes+1)
+	n, err := io.Copy(out, limited)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write decompressed output: %w", err)
+	}
+	if n > MaxArchiveEntryBytes {
+		return nil, fmt.Errorf("decompressed output exceeds maximum allowed size of %d bytes", MaxArchiveEntryBytes)
+	}
+
+	return &ExtractFileResult{DestDir: filepath.Dir(outPath)}, nil
+}
+
+// extractArchiveEntry writes a single archiver.FileInfo into destDir, applying
+// path traversal guards and a per-entry size cap.
+func extractArchiveEntry(af archiver.FileInfo, destDir string) error {
+	name := af.NameInArchive
+
+	cleaned := filepath.Clean(name)
+	if strings.HasPrefix(cleaned, "..") || filepath.IsAbs(cleaned) {
+		return fmt.Errorf("invalid archive entry path: %s", name)
+	}
+
+	targetPath := filepath.Join(destDir, cleaned)
+
+	// Double-guard: ensure the resolved path is still within destDir.
+	absDestDir, err := filepath.Abs(destDir)
+	if err != nil {
+		return fmt.Errorf("failed to resolve destination directory: %w", err) // coverage: ignore
+	}
+	absTarget, err := filepath.Abs(targetPath)
+	if err != nil {
+		return fmt.Errorf("failed to resolve target path: %w", err) // coverage: ignore
+	}
+	if !strings.HasPrefix(absTarget, absDestDir+string(os.PathSeparator)) && absTarget != absDestDir {
+		return fmt.Errorf("archive entry %q escapes destination directory", name)
+	}
+
+	if af.IsDir() {
+		if err := os.MkdirAll(targetPath, 0755); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", targetPath, err) // coverage: ignore
+		}
+		return nil
+	}
+
+	// Skip symlinks — they can escape the dest dir via relative targets.
+	if af.LinkTarget != "" {
+		return nil
+	}
+
+	if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+		return fmt.Errorf("failed to create parent directory for %s: %w", targetPath, err) // coverage: ignore
+	}
+
+	var rc fs.File
+	if af.Open != nil {
+		rc, err = af.Open()
+		if err != nil {
+			return fmt.Errorf("failed to open archive entry %s: %w", name, err)
+		}
+	} else {
+		return fmt.Errorf("archive entry %s has no open function", name)
+	}
+	defer rc.Close()
+
+	out, err := os.Create(targetPath)
+	if err != nil {
+		return fmt.Errorf("failed to create file %s: %w", targetPath, err) // coverage: ignore
+	}
+	defer out.Close()
+
+	limited := io.LimitReader(rc, MaxArchiveEntryBytes+1)
+	n, err := io.Copy(out, limited)
+	if err != nil {
+		return fmt.Errorf("failed to extract file %s: %w", name, err)
+	}
+	if n > MaxArchiveEntryBytes {
+		return fmt.Errorf("archive entry %q exceeds maximum allowed size of %d bytes", name, MaxArchiveEntryBytes)
+	}
+
+	return nil
 }
 
 // archiveExt returns the canonical extension for an archive path, handling
-// double-extensions like ".tar.gz" and ".tar.bz2".
+// double-extensions like ".tar.gz".
 func archiveExt(path string) string {
 	lower := strings.ToLower(path)
 	for _, ext := range []string{".tar.gz", ".tar.bz2", ".tar.xz"} {
@@ -119,200 +274,8 @@ func archiveDestDir(fullPath string) string {
 	base := filepath.Base(fullPath)
 	ext := archiveExt(fullPath)
 	stem := strings.TrimSuffix(base, ext)
-	// Also strip a trailing .tar that may remain after stripping .gz/.bz2/.xz.
+	// Strip a trailing .tar that may remain after stripping .gz/.bz2/.xz.
 	stem = strings.TrimSuffix(stem, ".tar")
 	dest := filepath.Join(filepath.Dir(fullPath), stem)
 	return GetNonConflictingPath(dest)
-}
-
-func extractZipFile(fullPath string) (*ExtractFileResult, error) {
-	destDir := archiveDestDir(fullPath)
-	if err := os.MkdirAll(destDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create destination directory: %w", err) // coverage: ignore - requires filesystem permission errors
-	}
-
-	r, err := zip.OpenReader(fullPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open zip file: %w", err)
-	}
-	defer r.Close()
-
-	return extractZip(&r.Reader, destDir, MaxZipEntries, MaxZipEntryBytes)
-}
-
-func extractTarGzFile(fullPath string) (*ExtractFileResult, error) {
-	destDir := archiveDestDir(fullPath)
-	if err := os.MkdirAll(destDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create destination directory: %w", err) // coverage: ignore - requires filesystem permission errors
-	}
-
-	f, err := os.Open(fullPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open archive: %w", err)
-	}
-	defer f.Close()
-
-	gr, err := gzip.NewReader(f)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read gzip stream: %w", err)
-	}
-	defer gr.Close()
-
-	return extractTar(tar.NewReader(gr), destDir, MaxZipEntries, MaxZipEntryBytes)
-}
-
-func extractTar(tr *tar.Reader, destDir string, maxEntries int, maxBytesPerEntry int64) (*ExtractFileResult, error) {
-	count := 0
-	for {
-		hdr, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, fmt.Errorf("failed to read tar entry: %w", err)
-		}
-
-		count++
-		if count > maxEntries {
-			return nil, fmt.Errorf("tar archive exceeds maximum of %d entries", maxEntries)
-		}
-
-		if err := extractTarEntry(hdr, tr, destDir, maxBytesPerEntry); err != nil {
-			return nil, err
-		}
-	}
-	return &ExtractFileResult{DestDir: destDir}, nil
-}
-
-func extractTarEntry(hdr *tar.Header, tr *tar.Reader, destDir string, maxBytes int64) error {
-	name := hdr.Name
-
-	cleaned := filepath.Clean(name)
-	if strings.HasPrefix(cleaned, "..") || filepath.IsAbs(cleaned) {
-		return fmt.Errorf("invalid tar entry path: %s", name)
-	}
-
-	targetPath := filepath.Join(destDir, cleaned)
-
-	absDestDir, err := filepath.Abs(destDir)
-	if err != nil {
-		return fmt.Errorf("failed to resolve destination directory: %w", err) // coverage: ignore
-	}
-	absTarget, err := filepath.Abs(targetPath)
-	if err != nil {
-		return fmt.Errorf("failed to resolve target path: %w", err) // coverage: ignore
-	}
-	if !strings.HasPrefix(absTarget, absDestDir+string(os.PathSeparator)) && absTarget != absDestDir {
-		return fmt.Errorf("tar entry %q escapes destination directory", name)
-	}
-
-	switch hdr.Typeflag {
-	case tar.TypeDir:
-		if err := os.MkdirAll(targetPath, 0755); err != nil {
-			return fmt.Errorf("failed to create directory %s: %w", targetPath, err) // coverage: ignore
-		}
-	case tar.TypeReg, tar.TypeRegA:
-		if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
-			return fmt.Errorf("failed to create parent directory for %s: %w", targetPath, err) // coverage: ignore
-		}
-
-		out, err := os.Create(targetPath)
-		if err != nil {
-			return fmt.Errorf("failed to create file %s: %w", targetPath, err) // coverage: ignore
-		}
-		defer out.Close()
-
-		limited := io.LimitReader(tr, maxBytes+1)
-		n, err := io.Copy(out, limited)
-		if err != nil {
-			return fmt.Errorf("failed to extract file %s: %w", name, err)
-		}
-		if n > maxBytes {
-			return fmt.Errorf("tar entry %q exceeds maximum allowed size of %d bytes", name, maxBytes)
-		}
-	case tar.TypeSymlink:
-		// Skip symlinks — they can escape the dest dir via relative targets.
-		// This matches the behavior of most archive tools in restricted contexts.
-	default:
-		// Skip device files, fifos, etc.
-	}
-
-	return nil
-}
-
-func extractZip(r *zip.Reader, destDir string, maxEntries int, maxBytesPerEntry int64) (*ExtractFileResult, error) {
-	if len(r.File) > maxEntries {
-		return nil, fmt.Errorf("zip archive contains %d entries, which exceeds the limit of %d", len(r.File), maxEntries)
-	}
-
-	for _, f := range r.File {
-		if err := extractZipEntry(f, destDir, maxBytesPerEntry); err != nil {
-			return nil, err
-		}
-	}
-
-	return &ExtractFileResult{
-		DestDir: destDir,
-	}, nil
-}
-
-func extractZipEntry(f *zip.File, destDir string, maxBytes int64) error {
-	name := f.Name
-
-	// Sanitize: reject entries that try to escape the destination directory.
-	// Clean the name and ensure it doesn't start with "/" or contain "..".
-	cleaned := filepath.Clean(name)
-	if strings.HasPrefix(cleaned, "..") || filepath.IsAbs(cleaned) {
-		return fmt.Errorf("invalid zip entry path: %s", name)
-	}
-
-	targetPath := filepath.Join(destDir, cleaned)
-
-	// Ensure the resolved path is still within destDir (second guard).
-	absDestDir, err := filepath.Abs(destDir)
-	if err != nil {
-		return fmt.Errorf("failed to resolve destination directory: %w", err) // coverage: ignore - requires filepath.Abs to fail
-	}
-	absTarget, err := filepath.Abs(targetPath)
-	if err != nil {
-		return fmt.Errorf("failed to resolve target path: %w", err) // coverage: ignore - requires filepath.Abs to fail
-	}
-	if !strings.HasPrefix(absTarget, absDestDir+string(os.PathSeparator)) && absTarget != absDestDir {
-		return fmt.Errorf("zip entry %q escapes destination directory", name)
-	}
-
-	if f.FileInfo().IsDir() {
-		if err := os.MkdirAll(targetPath, 0755); err != nil {
-			return fmt.Errorf("failed to create directory %s: %w", targetPath, err) // coverage: ignore - requires filesystem permission errors
-		}
-		return nil
-	}
-
-	// Ensure parent directory exists.
-	if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
-		return fmt.Errorf("failed to create parent directory for %s: %w", targetPath, err) // coverage: ignore - requires filesystem permission errors
-	}
-
-	rc, err := f.Open()
-	if err != nil {
-		return fmt.Errorf("failed to open zip entry %s: %w", name, err)
-	}
-	defer rc.Close()
-
-	out, err := os.Create(targetPath)
-	if err != nil {
-		return fmt.Errorf("failed to create file %s: %w", targetPath, err) // coverage: ignore - requires filesystem permission errors
-	}
-	defer out.Close()
-
-	limited := io.LimitReader(rc, maxBytes+1)
-	n, err := io.Copy(out, limited)
-	if err != nil {
-		return fmt.Errorf("failed to extract file %s: %w", name, err)
-	}
-	if n > maxBytes {
-		return fmt.Errorf("zip entry %q exceeds maximum allowed size of %d bytes", name, maxBytes)
-	}
-
-	return nil
 }
