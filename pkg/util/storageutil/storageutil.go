@@ -88,7 +88,7 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 		return FileTypeEpub
 	case ".docx":
 		return FileTypeDocx
-	case ".zip", ".rar", ".tar", ".gz", ".7z":
+	case ".zip", ".rar", ".tar", ".gz", ".tgz", ".7z":
 		return FileTypeArchive
 	default:
 		stat, err := os.Stat(filePath)

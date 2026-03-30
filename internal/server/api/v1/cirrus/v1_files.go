@@ -12,6 +12,7 @@ func (r *router) Routes() []*serverutil.Route {
 	return []*serverutil.Route{
 		deleteFilesRoute,
 		downloadFileRoute,
+		extractFileRoute,
 		listFilesRoute,
 		listRecentFilesRoute,
 		moveFileRoute,

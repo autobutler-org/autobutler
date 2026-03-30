@@ -9,7 +9,13 @@ import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-enum FileMenuAction { download, moveRename, delete, navigateToFolder }
+enum FileMenuAction {
+  download,
+  moveRename,
+  delete,
+  navigateToFolder,
+  extractHere,
+}
 
 enum SortColumn { name, type, size, device }
 
@@ -60,6 +66,7 @@ class FileBrowserView extends StatefulWidget {
 class _FileBrowserViewState extends State<FileBrowserView> {
   SortColumn _sortColumn = SortColumn.name;
   SortDirection _sortDirection = SortDirection.asc;
+  final Set<String> _extractingPaths = {};
 
   void _toggleSort(SortColumn column) {
     setState(() {
@@ -122,7 +129,17 @@ class _FileBrowserViewState extends State<FileBrowserView> {
   ) {
     Future<void>.delayed(Duration.zero, () async {
       if (!context.mounted) return;
-      await widget.onFileMenuAction(item, action);
+      if (action == FileMenuAction.extractHere) {
+        if (_extractingPaths.contains(item.apiPath)) return;
+        if (mounted) setState(() => _extractingPaths.add(item.apiPath));
+        try {
+          await widget.onFileMenuAction(item, action);
+        } finally {
+          if (mounted) setState(() => _extractingPaths.remove(item.apiPath));
+        }
+      } else {
+        await widget.onFileMenuAction(item, action);
+      }
     });
   }
 
@@ -271,6 +288,31 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                     ),
                     child: const Text('Delete'),
                   ),
+                  if (_isArchive(item))
+                    PopupMenuItem<FileMenuAction>(
+                      value: FileMenuAction.extractHere,
+                      enabled: !_extractingPaths.contains(item.apiPath),
+                      onTap: () => _dispatchMenuAction(
+                        context,
+                        item,
+                        FileMenuAction.extractHere,
+                      ),
+                      child: _extractingPaths.contains(item.apiPath)
+                          ? const Row(
+                              children: [
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text('Extracting...'),
+                              ],
+                            )
+                          : const Text('Extract here'),
+                    ),
                   if (widget.isSearchMode && widget.onNavigateToFolder != null)
                     PopupMenuItem<FileMenuAction>(
                       value: FileMenuAction.navigateToFolder,
@@ -494,6 +536,36 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                                             ),
                                             child: const Text('Delete'),
                                           ),
+                                          if (_isArchive(item))
+                                            PopupMenuItem<FileMenuAction>(
+                                              value: FileMenuAction.extractHere,
+                                              enabled: !_extractingPaths
+                                                  .contains(item.apiPath),
+                                              onTap: () => _dispatchMenuAction(
+                                                context,
+                                                item,
+                                                FileMenuAction.extractHere,
+                                              ),
+                                              child:
+                                                  _extractingPaths.contains(
+                                                    item.apiPath,
+                                                  )
+                                                  ? const Row(
+                                                      children: [
+                                                        SizedBox(
+                                                          width: 16,
+                                                          height: 16,
+                                                          child:
+                                                              CircularProgressIndicator(
+                                                                strokeWidth: 2,
+                                                              ),
+                                                        ),
+                                                        SizedBox(width: 8),
+                                                        Text('Extracting...'),
+                                                      ],
+                                                    )
+                                                  : const Text('Extract here'),
+                                            ),
                                           if (widget.isSearchMode &&
                                               widget.onNavigateToFolder != null)
                                             PopupMenuItem<FileMenuAction>(
@@ -549,6 +621,11 @@ class _FileBrowserViewState extends State<FileBrowserView> {
         );
       },
     );
+  }
+
+  static bool _isArchive(CirrusFileNode node) {
+    if (node.isDir) return false;
+    return node.fileType == 'archive';
   }
 
   static String _fileType(CirrusFileNode node) {

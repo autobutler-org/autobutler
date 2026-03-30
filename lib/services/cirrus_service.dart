@@ -213,6 +213,22 @@ class CirrusService with AuthenticatedService {
         .toList(growable: false);
   }
 
+  static Future<void> extractFile(String filePath, {String? serial}) async {
+    final querySegments = <String>[
+      'filePath=${Uri.encodeQueryComponent(filePath)}',
+    ];
+    final serialValue = serial?.trim() ?? '';
+    if (serialValue.isNotEmpty) {
+      querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
+    }
+    final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus/extract');
+    final uri = endpointUri.replace(query: querySegments.join('&'));
+    final response = await http.post(uri, headers: _authHeaders);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to extract file (${response.statusCode})');
+    }
+  }
+
   static Future<void> deleteFile(
     String rootDir,
     String fileName, {

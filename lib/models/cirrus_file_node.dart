@@ -7,6 +7,7 @@ class CirrusFileNode {
     required this.devicePath,
     required this.deviceSerial,
     required this.dirPath,
+    this.fileType = '',
   });
 
   final String name;
@@ -16,6 +17,7 @@ class CirrusFileNode {
   final String devicePath;
   final String deviceSerial;
   final String dirPath;
+  final String fileType;
 
   /// API path relative to the Cirrus root, safe to use in API calls.
   String get apiPath {
@@ -59,6 +61,7 @@ class CirrusFileNode {
       devicePath: parseString(json['devicePath'] ?? json['device_path']),
       deviceSerial: parseString(json['deviceSerial'] ?? json['device_serial']),
       dirPath: parseString(json['dirPath'] ?? json['dir_path']),
+      fileType: parseString(json['fileType'] ?? json['file_type']),
     );
   }
 }

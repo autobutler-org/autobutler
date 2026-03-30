@@ -71,6 +71,8 @@ definitions:
       dirPath:
         description: Directory path containing the file, for easier client-side handling
         type: string
+      fileType:
+        type: string
       fullPath:
         type: string
       isDir:
@@ -90,6 +92,8 @@ definitions:
         type: string
       dirPath:
         description: Directory path containing the file, for easier client-side handling
+        type: string
+      fileType:
         type: string
       fullPath:
         type: string
@@ -574,6 +578,38 @@ paths:
           schema:
             $ref: '#/definitions/serverutil.Response'
       summary: Download a file or folder
+      tags:
+      - cirrus
+  /cirrus/extract:
+    post:
+      description: Extracts a zip file into a subdirectory named after the archive
+        (without its extension) in the same directory
+      parameters:
+      - description: Path to the zip file to extract
+        in: query
+        name: filePath
+        required: true
+        type: string
+      - description: Device serial number
+        in: query
+        name: serial
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Extract a zip archive in place
       tags:
       - cirrus
   /cirrus/folder/{folderDir}:
