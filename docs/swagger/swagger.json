@@ -589,6 +589,62 @@
                 }
             }
         },
+        "/cirrus/list-archive": {
+            "get": {
+                "description": "Opens the archive at filePath and returns the direct children of subPath as FileNodeJSON entries. No data is extracted to disk — only archive headers are read.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cirrus"
+                ],
+                "summary": "List contents of an archive file at a given virtual path",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Path to the archive file (relative to device cirrus directory)",
+                        "name": "filePath",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Virtual subdirectory inside the archive to list (empty = root)",
+                        "name": "subPath",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device serial number",
+                        "name": "serial",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1_files.FileNodeJSON"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/cirrus/recent": {
             "get": {
                 "description": "Returns files sorted by modification time (newest first) across all managed devices.",

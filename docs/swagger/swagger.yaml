@@ -650,6 +650,45 @@ paths:
       summary: Create a new folder
       tags:
       - cirrus
+  /cirrus/list-archive:
+    get:
+      description: Opens the archive at filePath and returns the direct children of
+        subPath as FileNodeJSON entries. No data is extracted to disk — only archive
+        headers are read.
+      parameters:
+      - description: Path to the archive file (relative to device cirrus directory)
+        in: query
+        name: filePath
+        required: true
+        type: string
+      - description: Virtual subdirectory inside the archive to list (empty = root)
+        in: query
+        name: subPath
+        type: string
+      - description: Device serial number
+        in: query
+        name: serial
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1_files.FileNodeJSON'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: List contents of an archive file at a given virtual path
+      tags:
+      - cirrus
   /cirrus/recent:
     get:
       description: Returns files sorted by modification time (newest first) across
