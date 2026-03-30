@@ -138,3 +138,19 @@ func StartProxy(localPort int) error {
 	}()
 	return nil
 }
+
+// HasPersistedState returns true if tsnet has previously stored credentials
+// on disk and can reconnect without a new auth key.
+func HasPersistedState() bool {
+	dir := stateDir()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false
+	}
+	for _, e := range entries {
+		if !e.IsDir() {
+			return true
+		}
+	}
+	return false
+}

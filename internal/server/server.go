@@ -11,6 +11,7 @@ import (
 	"github.com/autobutler-org/autobutler/internal/server/middleware"
 	"github.com/autobutler-org/autobutler/pkg/botel"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/provisionutil"
 	"github.com/autobutler-org/autobutler/pkg/util/remoteutil"
 	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
@@ -73,16 +74,12 @@ func StartServer(deps deputil.Dependencies) error {
 	}
 
 	if settingsutil.GetRemoteAccess() {
-		if err := remoteutil.Start(""); err != nil {
-			log.Printf("[remote] failed to restart: %v", err)
-		} else {
-			portNum, convErr := strconv.Atoi(port)
-			if convErr != nil {
-				portNum = 8080
-			}
-			if err := remoteutil.StartProxy(portNum); err != nil {
-				log.Printf("[remote] failed to restart proxy: %v", err)
-			}
+		portNum, convErr := strconv.Atoi(port)
+		if convErr != nil {
+			portNum = 8080
+		}
+		if err := startRemoteAccess(portNum); err != nil {
+			log.Printf("[remote] failed to start: %v", err)
 		}
 	}
 
@@ -102,4 +99,16 @@ func StartServer(deps deputil.Dependencies) error {
 	}
 
 	return nil
+}
+
+func startRemoteAccess(localPort int) error {
+	return remoteutil.EnsureStarted(localPort, provisionForRemoteAccess)
+}
+
+func provisionForRemoteAccess() (string, error) {
+	deviceID, err := provisionutil.GetDeviceID()
+	if err != nil {
+		return "", fmt.Errorf("device id: %w", err)
+	}
+	return provisionutil.ProvisionAuthKey(deviceID)
 }

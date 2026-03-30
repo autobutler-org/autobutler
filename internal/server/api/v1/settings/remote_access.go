@@ -1,25 +1,18 @@
 package v1_settings
 
 import (
-	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"strconv"
 	"sync"
 
+	"github.com/autobutler-org/autobutler/pkg/util/provisionutil"
 	"github.com/autobutler-org/autobutler/pkg/util/remoteutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
-
-const defaultProvisioningURL = "http://165.227.215.101:8081"
 
 // enableMu guards against concurrent calls to enableRemoteAccess, which would
 // mint multiple Headscale keys. Only one enable is allowed at a time.
@@ -28,27 +21,6 @@ var enableMu sync.Mutex
 type RemoteAccessResponse struct {
 	Enabled   bool   `json:"enabled"`
 	RemoteURL string `json:"remoteUrl,omitempty"`
-}
-
-type provisionRequest struct {
-	DeviceID string `json:"device_id"`
-}
-
-type provisionResponse struct {
-	AuthKey string `json:"auth_key"`
-}
-
-func provisioningURL() string {
-	if u := os.Getenv("AUTOBUTLER_PROVISIONING_URL"); u != "" {
-		return u
-	}
-	return defaultProvisioningURL
-}
-
-// provisioningSecret returns the shared secret used to authenticate requests
-// to the provisioning service. Must match PROVISIONING_SECRET on the service.
-func provisioningSecret() string {
-	return os.Getenv("AUTOBUTLER_PROVISIONING_SECRET")
 }
 
 func serverPort() int {
@@ -61,83 +33,6 @@ func serverPort() int {
 		return 8080
 	}
 	return n
-}
-
-func getDeviceID() (string, error) {
-	existing := settingsutil.GetDeviceID()
-	if existing != "" {
-		return existing, nil
-	}
-
-	hostname, _ := os.Hostname()
-
-	var machineID string
-	for _, path := range []string{"/etc/machine-id", "/var/lib/dbus/machine-id"} {
-		data, err := os.ReadFile(path)
-		if err == nil {
-			machineID = string(bytes.TrimSpace(data))
-			break
-		}
-	}
-
-	if machineID != "" {
-		h := sha256.Sum256([]byte(hostname + machineID))
-		id := hex.EncodeToString(h[:])
-		if err := settingsutil.SetDeviceID(id); err != nil {
-			return "", fmt.Errorf("save device id: %w", err)
-		}
-		return id, nil
-	}
-
-	id := uuid.New().String()
-	if err := settingsutil.SetDeviceID(id); err != nil {
-		return "", fmt.Errorf("save device id: %w", err)
-	}
-	return id, nil
-}
-
-func provisionAuthKey(deviceID string) (string, error) {
-	body, err := json.Marshal(provisionRequest{DeviceID: deviceID})
-	if err != nil {
-		return "", fmt.Errorf("marshal provision request: %w", err)
-	}
-
-	req, err := http.NewRequest(http.MethodPost, provisioningURL()+"/provision", bytes.NewReader(body))
-	if err != nil {
-		return "", fmt.Errorf("create provision request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	secret := provisioningSecret()
-	if secret != "" {
-		req.Header.Set("X-Provisioning-Secret", secret)
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("provision request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("read provision response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("provisioning service returned %d: %s", resp.StatusCode, string(respBody))
-	}
-
-	var pResp provisionResponse
-	if err := json.Unmarshal(respBody, &pResp); err != nil {
-		return "", fmt.Errorf("unmarshal provision response: %w", err)
-	}
-
-	if pResp.AuthKey == "" {
-		return "", fmt.Errorf("empty auth key from provisioning service")
-	}
-
-	return pResp.AuthKey, nil
 }
 
 // getRemoteAccess godoc
@@ -183,12 +78,12 @@ var enableRemoteAccessRoute = serverutil.ApiRoute(
 			})
 		}
 
-		deviceID, err := getDeviceID()
+		deviceID, err := provisionutil.GetDeviceID()
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("device id: %w", err))
 		}
 
-		authKey, err := provisionAuthKey(deviceID)
+		authKey, err := provisionutil.ProvisionAuthKey(deviceID)
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("provision: %w", err))
 		}

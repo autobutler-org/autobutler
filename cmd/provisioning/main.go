@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,7 +18,7 @@ var (
 	headscaleURL    string
 	headscaleAPIKey string
 	sharedSecret    string
-	keyExpiration   string
+	keyExpiryHours  time.Duration
 )
 
 type provisionRequest struct {
@@ -73,6 +74,8 @@ func pruneRateStore(now time.Time) {
 
 // checkRateLimit returns true if the request should be allowed, false if rate-limited.
 // It rate-limits by both source IP and device_id, taking the stricter result.
+// Both keys are checked before any timestamps are recorded to avoid partial updates
+// when one key is over limit and the other is not.
 func checkRateLimit(sourceIP, deviceID string) bool {
 	rateMu.Lock()
 	defer rateMu.Unlock()
@@ -82,26 +85,35 @@ func checkRateLimit(sourceIP, deviceID string) bool {
 
 	pruneRateStore(now)
 
-	for _, key := range []string{"ip:" + sourceIP, "device:" + deviceID} {
+	keys := []string{"ip:" + sourceIP, "device:" + deviceID}
+	filtered := make([][]time.Time, len(keys))
+
+	for i, key := range keys {
 		entry, ok := rateStore[key]
 		if !ok {
-			rateStore[key] = &rateLimitEntry{Timestamps: []time.Time{now}}
+			filtered[i] = []time.Time{}
 			continue
 		}
-
-		filtered := make([]time.Time, 0, len(entry.Timestamps))
+		f := make([]time.Time, 0, len(entry.Timestamps))
 		for _, t := range entry.Timestamps {
 			if t.After(cutoff) {
-				filtered = append(filtered, t)
+				f = append(f, t)
 			}
 		}
-
-		if len(filtered) >= maxRequestsPerHour {
-			entry.Timestamps = filtered
+		filtered[i] = f
+		if len(f) >= maxRequestsPerHour {
+			entry.Timestamps = f
 			return false
 		}
+	}
 
-		entry.Timestamps = append(filtered, now)
+	for i, key := range keys {
+		entry, ok := rateStore[key]
+		if !ok {
+			rateStore[key] = &rateLimitEntry{Timestamps: append(filtered[i], now)}
+			continue
+		}
+		entry.Timestamps = append(filtered[i], now)
 	}
 
 	return true
@@ -121,11 +133,12 @@ type headscaleKeyResponse struct {
 }
 
 func createPreAuthKey() (string, error) {
+	expiration := time.Now().UTC().Add(keyExpiryHours).Format(time.RFC3339)
 	body, err := json.Marshal(headscaleKeyRequest{
 		User:       "autobutler",
 		Reusable:   false,
 		Ephemeral:  false,
-		Expiration: keyExpiration,
+		Expiration: expiration,
 	})
 	if err != nil {
 		return "", fmt.Errorf("marshal request: %w", err)
@@ -171,8 +184,9 @@ func handleProvision(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Authenticate caller via shared secret.
-	if r.Header.Get("X-Provisioning-Secret") != sharedSecret {
+	// Authenticate caller via shared secret (constant-time to prevent timing attacks).
+	provided := r.Header.Get("X-Provisioning-Secret")
+	if subtle.ConstantTimeCompare([]byte(provided), []byte(sharedSecret)) != 1 {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(errorResponse{Error: "unauthorized"})
@@ -236,11 +250,11 @@ func main() {
 		log.Fatal("PROVISIONING_SECRET environment variable is required")
 	}
 
-	keyExpiration = os.Getenv("PROVISIONING_KEY_EXPIRATION")
-	if keyExpiration == "" {
-		// Default: 1 hour from now. Keys are single-use; short expiration limits
-		// blast radius if a key is intercepted before use.
-		keyExpiration = time.Now().UTC().Add(1 * time.Hour).Format(time.RFC3339)
+	keyExpiryHours = time.Hour
+	if exp := os.Getenv("PROVISIONING_KEY_EXPIRY_HOURS"); exp != "" {
+		if d, err := time.ParseDuration(exp); err == nil {
+			keyExpiryHours = d
+		}
 	}
 
 	mux := http.NewServeMux()
