@@ -1,10 +1,9 @@
 package v1_events
 
 import (
-	"context"
-	"fmt"
 	"net/http"
-	"time"
+	"strconv"
+	"sync/atomic"
 
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
@@ -13,6 +12,10 @@ import (
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
 )
+
+// nextID is a monotonically increasing counter used to assign unique subscriber
+// IDs to each WebSocket connection, avoiding collisions from concurrent connects.
+var nextID atomic.Uint64
 
 // streamEvents godoc
 // @Summary Stream real-time file/device events
@@ -29,20 +32,18 @@ func streamEvents(c *gin.Context) {
 		return
 	}
 
-	conn, err := websocket.Accept(c.Writer, c.Request, &websocket.AcceptOptions{
-		InsecureSkipVerify: true, // origin check handled by CORS middleware
-	})
+	conn, err := websocket.Accept(c.Writer, c.Request, nil)
 	if err != nil {
 		c.Status(http.StatusBadRequest)
 		return
 	}
 	defer conn.CloseNow()
 
-	id := fmt.Sprintf("%d", time.Now().UnixNano())
+	id := strconv.FormatUint(nextID.Add(1), 10)
 	ch, unsub := deps.EventBus().Subscribe(id)
 	defer unsub()
 
-	ctx := conn.CloseRead(context.Background())
+	ctx := conn.CloseRead(c.Request.Context())
 	for {
 		select {
 		case <-ctx.Done():
