@@ -49,6 +49,7 @@ class EventsService {
   /// Start the WebSocket connection. Safe to call multiple times — no-ops if
   /// already connected. Call [stop] first if you want to force a reconnect.
   void start() {
+    _disposed = false;
     if (_channel != null) return;
     _connect();
   }
@@ -73,8 +74,10 @@ class EventsService {
 
     try {
       final httpUri = Uri.parse(host).resolve('/api/v1/events');
+      final token = AppSettings.instance.sessionToken;
       final wsUri = httpUri.replace(
         scheme: httpUri.scheme == 'https' ? 'wss' : 'ws',
+        queryParameters: token != null ? {'token': token} : null,
       );
       _channel = WebSocketChannel.connect(wsUri);
 
