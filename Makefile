@@ -244,13 +244,12 @@ generate/frontend/sbom: ## Generate Flutter SBOM asset from pubspec.lock
 	dart run scripts/generate_flutter_sbom.dart
 
 DEPLOY_HOST ?= autobutler
-DEPLOY_PATH ?= /usr/local/bin/autobutler
-DEPLOY_SERVICE ?= autobutler
+DEPLOY_PATH ?= ~/autobutler
 
 .PHONY: remote-deploy
-remote-deploy: build ## Build and deploy to a remote host via scp, then restart the service
+remote-deploy: build ## Build and deploy to a remote host via scp, then run the binary
 	scp $(EXE) $(DEPLOY_HOST):$(DEPLOY_PATH)
-	ssh $(DEPLOY_HOST) "sudo systemctl restart $(DEPLOY_SERVICE)"
+	ssh $(DEPLOY_HOST) "pkill -f '$(DEPLOY_PATH) serve' || true; nohup $(DEPLOY_PATH) serve > ~/autobutler.log 2>&1 &"
 
 .PHONY: serve/backend
 serve/backend: generate/backend ## Serve backend
