@@ -64,6 +64,9 @@ class AutobutlerFileIcon extends StatelessWidget {
       return Icons.archive_outlined;
     }
 
+    // AutoButler native document format
+    if (lower.endsWith('.abdoc')) return Icons.edit_document;
+
     if (lower.endsWith('.doc') ||
         lower.endsWith('.docx') ||
         lower.endsWith('.odt') ||

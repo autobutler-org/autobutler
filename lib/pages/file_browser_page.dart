@@ -655,6 +655,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
 
     final lowerName = node.name.toLowerCase();
+
+    // AutoButler native document format — open in editor (see #917).
+    if (lowerName.endsWith('.abdoc')) {
+      // TODO(#917): replace with DocumentEditorPage once implemented.
+      _showMessage('Document editor coming soon');
+      return;
+    }
+
     final viewable =
         lowerName.endsWith('.jpg') ||
         lowerName.endsWith('.jpeg') ||
