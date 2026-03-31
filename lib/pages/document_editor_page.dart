@@ -137,6 +137,15 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
 
       final fileName = '$_displayName.abdoc';
       final parentDir = parentPath(widget.filePath);
+      final serial = serialOrNull(widget.deviceSerial);
+
+      // Delete the existing file first so the upload doesn't hit the
+      // rename-on-conflict logic (which produces a_(1).abdoc, a_(2).abdoc…).
+      await CirrusService.deleteFile(
+        parentDir,
+        fileName,
+        deviceSerial: serial,
+      );
 
       final file = http.MultipartFile.fromBytes(
         'files',
@@ -144,9 +153,11 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         filename: fileName,
       );
 
-      await CirrusService.uploadFilesFromFormData(parentDir, [
-        file,
-      ], serial: serialOrNull(widget.deviceSerial));
+      await CirrusService.uploadFilesFromFormData(
+        parentDir,
+        [file],
+        serial: serial,
+      );
 
       if (!mounted) return;
       setState(() {
