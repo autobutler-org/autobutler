@@ -243,6 +243,15 @@ generate/frontend/icons: ## Generate app icons
 generate/frontend/sbom: ## Generate Flutter SBOM asset from pubspec.lock
 	dart run scripts/generate_flutter_sbom.dart
 
+DEPLOY_HOST ?= autobutler
+DEPLOY_PATH ?= /usr/local/bin/autobutler
+DEPLOY_SERVICE ?= autobutler
+
+.PHONY: remote-deploy
+remote-deploy: build ## Build and deploy to a remote host via scp, then restart the service
+	scp $(EXE) $(DEPLOY_HOST):$(DEPLOY_PATH)
+	ssh $(DEPLOY_HOST) "sudo systemctl restart $(DEPLOY_SERVICE)"
+
 .PHONY: serve/backend
 serve/backend: generate/backend ## Serve backend
 	$(GO) run $(ENTRYPOINT) serve
