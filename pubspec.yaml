@@ -52,6 +52,8 @@ dependencies:
   url_launcher: ^6.3.2
   web_socket_channel: ^3.0.3
   flutter_quill: ^11.5.0
+  flutter_localizations:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:
