@@ -3,8 +3,6 @@ package v1_settings
 import (
 	"fmt"
 	"net/http"
-	"os"
-	"strconv"
 	"sync"
 
 	"github.com/autobutler-org/autobutler/pkg/util/provisionutil"
@@ -21,18 +19,6 @@ var enableMu sync.Mutex
 type RemoteAccessResponse struct {
 	Enabled   bool   `json:"enabled"`
 	RemoteURL string `json:"remoteUrl,omitempty"`
-}
-
-func serverPort() int {
-	p := os.Getenv("PORT")
-	if p == "" {
-		return 8080
-	}
-	n, err := strconv.Atoi(p)
-	if err != nil {
-		return 8080
-	}
-	return n
 }
 
 // getRemoteAccess godoc
@@ -91,7 +77,7 @@ var enableRemoteAccessRoute = serverutil.ApiRoute(
 		if err := remoteutil.Start(authKey); err != nil {
 			return serverutil.InternalServerError(err)
 		}
-		if err := remoteutil.StartProxy(serverPort()); err != nil {
+		if err := remoteutil.StartProxy(serverutil.ServerPort()); err != nil {
 			remoteutil.Stop()
 			return serverutil.InternalServerError(err)
 		}
