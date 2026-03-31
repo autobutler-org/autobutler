@@ -922,43 +922,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   }
 
   /// Builds the horizontal device filter chip row for issue #801.
-  Widget _buildDeviceFilterChips() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Row(
-        children: _allDevices.map((device) {
-          final isSelected = _activeDevicePaths.contains(device.devicePath);
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              label: Text(
-                device.name.isNotEmpty ? device.name : device.mountPoint,
-              ),
-              selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  if (selected) {
-                    _activeDevicePaths.add(device.devicePath);
-                  } else {
-                    _activeDevicePaths.remove(device.devicePath);
-                    // Snap back to all if none selected.
-                    if (_activeDevicePaths.isEmpty) {
-                      _activeDevicePaths = _allDevices
-                          .map((d) => d.devicePath)
-                          .toSet();
-                    }
-                  }
-                  _reloadFiles();
-                });
-              },
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1014,6 +977,23 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                 uploadCompleted: _uploadCompleted,
                 onOpenDrawer: () => Scaffold.of(context).openDrawer(),
                 onOpenSettings: () => context.go(AppRoutes.settings),
+                devices: _allDevices.length > 1 ? _allDevices : null,
+                activeDevicePaths: _activeDevicePaths,
+                onDeviceToggled: (devicePath) {
+                  setState(() {
+                    if (_activeDevicePaths.contains(devicePath)) {
+                      _activeDevicePaths.remove(devicePath);
+                      if (_activeDevicePaths.isEmpty) {
+                        _activeDevicePaths = _allDevices
+                            .map((d) => d.devicePath)
+                            .toSet();
+                      }
+                    } else {
+                      _activeDevicePaths.add(devicePath);
+                    }
+                    _reloadFiles();
+                  });
+                },
               );
             },
           ),
@@ -1034,12 +1014,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             },
           ),
 
-          // Device filter chips (#801) — only shown when >1 device and not searching.
-          if (!_isSearchMode && !_noHostSelected && _allDevices.length > 1)
-            _buildDeviceFilterChips(),
-
-          // Hide Recent Files on mobile — the horizontal chip bar doesn't
-          // work well at narrow widths (#959). Show only on tablet/desktop.
+          // Hide Recent Files on mobile — show only on tablet/desktop (#959).
           if (!_isSearchMode &&
               _currentPath.isEmpty &&
               !_noHostSelected &&

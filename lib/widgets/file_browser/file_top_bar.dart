@@ -1,3 +1,4 @@
+import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:autobutler/widgets/autobutler_brand_button.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
@@ -53,8 +54,8 @@ class FileTopBar extends StatelessWidget {
   final VoidCallback onNewFilePressed;
   final VoidCallback onOpenDrawer;
   final VoidCallback onOpenSettings;
-  final List<dynamic>? devices;
-  final List<String>? activeDevicePaths;
+  final List<StorageDevice>? devices;
+  final Set<String>? activeDevicePaths;
   final ValueChanged<String>? onDeviceToggled;
 
   @override
@@ -200,6 +201,29 @@ class FileTopBar extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildDeviceChips(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: devices!.map((device) {
+        final isSelected =
+            activeDevicePaths?.contains(device.devicePath) ?? true;
+        return Padding(
+          padding: const EdgeInsets.only(right: 6),
+          child: _chip(
+            icon: isSelected
+                ? Icons.check_circle_outline_rounded
+                : Icons.circle_outlined,
+            label: device.name.isNotEmpty ? device.name : device.mountPoint,
+            onTap: onDeviceToggled != null
+                ? () => onDeviceToggled!(device.devicePath)
+                : null,
+            active: isSelected,
+          ),
+        );
+      }).toList(),
     );
   }
 
