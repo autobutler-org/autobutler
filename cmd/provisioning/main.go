@@ -30,7 +30,7 @@ const (
 	cacheTTL     = 60 * time.Second
 	rateLimit    = 5
 	rateWindow   = time.Hour
-	listenAddr   = ":8090"
+	listenAddr   = ":8081"
 )
 
 type ipRateLimiter struct {
@@ -55,6 +55,25 @@ func (r *ipRateLimiter) allow(ip string) bool {
 	}
 	r.hits[ip] = append(recent, now)
 	return true
+}
+
+func (r *ipRateLimiter) prune() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	cutoff := time.Now().Add(-rateWindow)
+	for ip, times := range r.hits {
+		var recent []time.Time
+		for _, t := range times {
+			if t.After(cutoff) {
+				recent = append(recent, t)
+			}
+		}
+		if len(recent) == 0 {
+			delete(r.hits, ip)
+		} else {
+			r.hits[ip] = recent
+		}
+	}
 }
 
 type cache struct {
@@ -121,29 +140,20 @@ func main() {
 	}
 	githubToken = os.Getenv("GITHUB_TOKEN")
 
+	go func() {
+		ticker := time.NewTicker(10 * time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			rateLimiter.prune()
+		}
+	}()
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("/provision", handleProvision)
 	mux.HandleFunc("/artifacts", handleArtifacts)
 	mux.HandleFunc("/artifacts/", handleArtifactsPrefix)
 
 	log.Printf("provisioning service listening on %s", listenAddr)
 	log.Fatal(http.ListenAndServe(listenAddr, mux))
-}
-
-func handleProvision(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	if !authenticate(w, r) {
-		return
-	}
-	if !rateCheck(w, r) {
-		return
-	}
-	// Placeholder — existing provisioning logic for Headscale pre-auth keys
-	// would go here. Kept as a stub for this PR since it's not part of #886.
-	jsonResponse(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
 func handleArtifacts(w http.ResponseWriter, r *http.Request) {
@@ -346,7 +356,8 @@ func downloadArtifactZip(artifactID int64) (string, error) {
 		return "", err
 	}
 
-	if _, err := io.Copy(tmp, resp.Body); err != nil {
+	const maxArtifactBytes = 200 * 1024 * 1024
+	if _, err := io.Copy(tmp, io.LimitReader(resp.Body, maxArtifactBytes)); err != nil {
 		tmp.Close()
 		os.Remove(tmp.Name())
 		return "", err
