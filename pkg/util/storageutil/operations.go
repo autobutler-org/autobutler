@@ -349,6 +349,9 @@ type UploadFilesStreamedParams struct {
 	Reader       *multipart.Reader
 	RootDir      string
 	DeviceSerial string
+	// Overwrite, when true, replaces an existing file with the same name instead
+	// of appending a numeric suffix (e.g. file_(1).abdoc).
+	Overwrite bool
 }
 
 // UploadFilesStreamed streams multipart file uploads directly to disk
@@ -391,18 +394,22 @@ func UploadFilesStreamedImpl(params UploadFilesStreamedParams, device *ManagedDe
 			}
 			destPath := filepath.Join(destDir, fileName)
 
-			// Handle file name conflicts
-			if _, err := os.Stat(destPath); err == nil {
-				ext := filepath.Ext(fileName)
-				name := fileName[:len(fileName)-len(ext)]
-				i := 1
-				for {
-					newFileName := fmt.Sprintf("%s_(%d)%s", name, i, ext)
-					destPath = filepath.Join(destDir, newFileName)
-					if _, err := os.Stat(destPath); os.IsNotExist(err) {
-						break
+			// Handle file name conflicts.
+			// When Overwrite is true, keep destPath as-is (the atomic rename below
+			// will replace the existing file). Otherwise append a numeric suffix.
+			if !params.Overwrite {
+				if _, err := os.Stat(destPath); err == nil {
+					ext := filepath.Ext(fileName)
+					name := fileName[:len(fileName)-len(ext)]
+					i := 1
+					for {
+						newFileName := fmt.Sprintf("%s_(%d)%s", name, i, ext)
+						destPath = filepath.Join(destDir, newFileName)
+						if _, err := os.Stat(destPath); os.IsNotExist(err) {
+							break
+						}
+						i++
 					}
-					i++
 				}
 			}
 

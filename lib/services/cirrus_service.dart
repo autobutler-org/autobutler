@@ -344,14 +344,19 @@ class CirrusService with AuthenticatedService {
     String uploadPath,
     List<http.MultipartFile> formDataFiles, {
     String? serial,
+    bool overwrite = false,
   }) async {
     final uploadEndpointPath = _joinPaths('/api/v1/cirrus/upload', uploadPath);
     final endpointUri = _apiBaseUri.resolve(uploadEndpointPath);
 
     final serialValue = serial?.trim() ?? '';
-    final uri = serialValue.isEmpty
+    final queryParams = <String, String>{
+      if (serialValue.isNotEmpty) 'serial': serialValue,
+      if (overwrite) 'overwrite': 'true',
+    };
+    final uri = queryParams.isEmpty
         ? endpointUri
-        : endpointUri.replace(queryParameters: {'serial': serialValue});
+        : endpointUri.replace(queryParameters: queryParams);
 
     final request = http.MultipartRequest('POST', uri);
     request.files.addAll(formDataFiles);

@@ -139,24 +139,19 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       final parentDir = parentPath(widget.filePath);
       final serial = serialOrNull(widget.deviceSerial);
 
-      // Delete the existing file first so the upload doesn't hit the
-      // rename-on-conflict logic (which produces a_(1).abdoc, a_(2).abdoc…).
-      await CirrusService.deleteFile(
-        parentDir,
-        fileName,
-        deviceSerial: serial,
-      );
-
       final file = http.MultipartFile.fromBytes(
         'files',
         bytes,
         filename: fileName,
       );
 
+      // overwrite: true so the backend replaces the existing file in-place
+      // rather than creating a_(1).abdoc alongside the original.
       await CirrusService.uploadFilesFromFormData(
         parentDir,
         [file],
         serial: serial,
+        overwrite: true,
       );
 
       if (!mounted) return;
