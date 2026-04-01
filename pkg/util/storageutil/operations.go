@@ -442,9 +442,9 @@ func UploadFilesStreamedImpl(params UploadFilesStreamedParams, device *ManagedDe
 			}
 			tmpFile.Close()
 
-			// Try to place the file into destDir using a hard link (will fail if dest exists).
-			// If hard link is not possible (cross-device), fall back to creating the
-			// destination with O_EXCL and copying from the temp file.
+			// Place the temp file at destPath.
+			// Overwrite=true: replace atomically (os.Rename) or truncate on copy.
+			// Overwrite=false: retry with numeric suffixes on conflict.
 			ext := filepath.Ext(fileName)
 			name := fileName[:len(fileName)-len(ext)]
 			if name == "" {
@@ -454,6 +454,38 @@ func UploadFilesStreamedImpl(params UploadFilesStreamedParams, device *ManagedDe
 			i := 0
 			for {
 				destPath = filepath.Join(destDir, candidate)
+
+				if params.Overwrite {
+					// Atomic replace: rename temp over existing file (works same-FS).
+					if err := os.Rename(tmpPath, destPath); err == nil {
+						break
+					}
+					// Cross-device: fall back to truncating copy.
+					tmpR, rerr := os.Open(tmpPath)
+					if rerr != nil {
+						os.Remove(tmpPath)
+						part.Close()
+						return fmt.Errorf("failed to open temp file for fallback copy: %w", rerr)
+					}
+					dst, derr := os.OpenFile(destPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+					if derr != nil {
+						tmpR.Close()
+						os.Remove(tmpPath)
+						part.Close()
+						return fmt.Errorf("failed to open destination for overwrite: %w", derr)
+					}
+					if _, cerr := io.Copy(dst, tmpR); cerr != nil {
+						dst.Close()
+						tmpR.Close()
+						os.Remove(tmpPath)
+						part.Close()
+						return fmt.Errorf("failed to copy temp to destination: %w", cerr)
+					}
+					dst.Close()
+					tmpR.Close()
+					os.Remove(tmpPath)
+					break
+				}
 
 				// Attempt hard link first (atomic and avoids extra copy)
 				if err := os.Link(tmpPath, destPath); err == nil {
