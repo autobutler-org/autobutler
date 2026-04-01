@@ -5,9 +5,11 @@ import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:autobutler/widgets/core/autobutler_file_icon.dart';
 import 'package:autobutler/widgets/core/empty_state_widget.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 
 enum FileMenuAction {
   download,
@@ -237,7 +239,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
       color: Colors.transparent,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        leading: AutobutlerFileIcon(node: item),
+        leading: _buildListLeading(item),
         title: Row(
           children: [
             Expanded(
@@ -458,47 +460,41 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                (() {
-                                  final lower = item.name.toLowerCase();
-                                  final isImage =
-                                      lower.endsWith('.jpg') ||
-                                      lower.endsWith('.jpeg') ||
-                                      lower.endsWith('.png') ||
-                                      lower.endsWith('.gif') ||
-                                      lower.endsWith('.webp');
-                                  if (isImage) {
-                                    final url =
-                                        CirrusService.constructThumbnailUrl(
-                                          item.apiPath,
-                                          serial: item.deviceSerial,
-                                        );
-                                    return SizedBox(
-                                      height: 96,
-                                      width: double.infinity,
-                                      child: Image.network(
-                                        url.toString(),
-                                        fit: BoxFit.cover,
-                                        loadingBuilder:
-                                            (context, child, progress) {
-                                              if (progress == null) {
-                                                return child;
-                                              }
-                                              return Container(
-                                                color: Colors.grey[300],
-                                              );
-                                            },
-                                        errorBuilder: (context, error, stack) =>
-                                            Container(color: Colors.grey[300]),
-                                      ),
-                                    );
-                                  }
-                                  return Center(
+                                if (_isImageFile(item))
+                                  SizedBox(
+                                    height: 96,
+                                    width: double.infinity,
+                                    child: CachedNetworkImage(
+                                      imageUrl:
+                                          CirrusService.constructThumbnailUrl(
+                                            item.apiPath,
+                                            serial: item.deviceSerial,
+                                          ).toString(),
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) =>
+                                          Shimmer.fromColors(
+                                            baseColor: Colors.grey[800]!,
+                                            highlightColor: Colors.grey[700]!,
+                                            child: Container(
+                                              color: Colors.grey[800],
+                                            ),
+                                          ),
+                                      errorWidget: (context, url, error) =>
+                                          Center(
+                                            child: AutobutlerFileIcon(
+                                              node: item,
+                                              size: 48,
+                                            ),
+                                          ),
+                                    ),
+                                  )
+                                else
+                                  Center(
                                     child: AutobutlerFileIcon(
                                       node: item,
                                       size: 48,
                                     ),
-                                  );
-                                })(),
+                                  ),
                                 const SizedBox(height: 8),
                                 Flexible(
                                   child: Text(
@@ -638,6 +634,46 @@ class _FileBrowserViewState extends State<FileBrowserView> {
           ],
         );
       },
+    );
+  }
+
+  static bool _isImageFile(CirrusFileNode node) {
+    if (node.isDir) return false;
+    final lower = node.name.toLowerCase();
+    return lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.gif') ||
+        lower.endsWith('.webp') ||
+        lower.endsWith('.heic') ||
+        lower.endsWith('.heif');
+  }
+
+  Widget _buildListLeading(CirrusFileNode item) {
+    if (!_isImageFile(item)) {
+      return AutobutlerFileIcon(node: item);
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: SizedBox(
+        width: 40,
+        height: 40,
+        child: CachedNetworkImage(
+          imageUrl: CirrusService.constructThumbnailUrl(
+            item.apiPath,
+            serial: item.deviceSerial,
+            size: 'sm',
+          ).toString(),
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Shimmer.fromColors(
+            baseColor: Colors.grey[800]!,
+            highlightColor: Colors.grey[700]!,
+            child: Container(color: Colors.grey[800]),
+          ),
+          errorWidget: (context, url, error) => AutobutlerFileIcon(node: item),
+        ),
+      ),
     );
   }
 
