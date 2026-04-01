@@ -55,7 +55,11 @@ class CirrusService with AuthenticatedService {
   /// Construct a URL for the thumbnail endpoint.
   /// The backend exposes thumbnails at /api/v1/thumbnails/*filePath where filePath is a
   /// path-like segment. Each path segment is percent-encoded to preserve slashes.
-  static Uri constructThumbnailUrl(String filePath, {String? serial}) {
+  static Uri constructThumbnailUrl(
+    String filePath, {
+    String? serial,
+    String? size,
+  }) {
     final trimmed = filePath.trim();
     final normalized = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
     final encodedPath = normalized
@@ -69,6 +73,7 @@ class CirrusService with AuthenticatedService {
     final params = <String, String>{};
     final serialValue = serial?.trim() ?? '';
     if (serialValue.isNotEmpty) params['serial'] = serialValue;
+    if (size != null && size.isNotEmpty) params['size'] = size;
     final token = AppSettings.instance.sessionToken;
     if (token != null && token.isNotEmpty) params['token'] = token;
 
