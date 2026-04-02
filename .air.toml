@@ -34,6 +34,7 @@ tmp_dir = "tmp"
     "datalinks",
     "docs",
     "internal/db",
+    "os",
     "scripts",
     "sql",
     "android",
