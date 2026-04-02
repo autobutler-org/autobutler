@@ -411,7 +411,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     return Column(
       children: [
         ColoredBox(
-          color: theme.colorScheme.surfaceContainerLow,
+          color: theme.colorScheme.surfaceContainer,
           child: QuillSimpleToolbar(
             controller: _controller,
             config: QuillSimpleToolbarConfig(
