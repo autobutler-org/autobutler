@@ -513,36 +513,61 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     final theme = Theme.of(context);
     return Column(
       children: [
-        ColoredBox(
-          color: theme.colorScheme.surfaceContainer,
-          child: QuillSimpleToolbar(
-            controller: _controller,
-            config: QuillSimpleToolbarConfig(
-              toolbarIconAlignment: WrapAlignment.start,
-              buttonOptions: QuillSimpleToolbarButtonOptions(
-                base: QuillToolbarBaseButtonOptions(
-                  iconTheme: QuillIconTheme(
-                    iconButtonUnselectedData: IconButtonData(
-                      color: theme.colorScheme.onSurface,
-                    ),
-                    iconButtonSelectedData: IconButtonData(
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                ),
-              ),
-              showFontFamily: false,
-              showFontSize: false,
-              showInlineCode: true,
-              showCodeBlock: true,
-              showQuote: true,
-              showLink: false,
-              showSearchButton: false,
-              showSubscript: false,
-              showSuperscript: false,
+        // Wrap the toolbar in a Theme override so ALL children — icon buttons,
+        // undo/redo, and the Normal/Heading dropdown — inherit the correct
+        // foreground color rather than fighting per-button options.
+        Theme(
+          data: theme.copyWith(
+            iconTheme: IconThemeData(
+              color: theme.colorScheme.onSurface,
+              size: 20,
+            ),
+            textTheme: theme.textTheme.apply(
+              bodyColor: theme.colorScheme.onSurface,
+              displayColor: theme.colorScheme.onSurface,
             ),
           ),
-        ), // ColoredBox
+          child: ColoredBox(
+            color: theme.colorScheme.surfaceContainer,
+            child: QuillSimpleToolbar(
+              controller: _controller,
+              config: QuillSimpleToolbarConfig(
+                toolbarIconAlignment: WrapAlignment.start,
+                buttonOptions: QuillSimpleToolbarButtonOptions(
+                  base: QuillToolbarBaseButtonOptions(
+                    iconTheme: QuillIconTheme(
+                      iconButtonUnselectedData: IconButtonData(
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      iconButtonSelectedData: IconButtonData(
+                        style: IconButton.styleFrom(
+                          foregroundColor: theme.colorScheme.onPrimary,
+                          backgroundColor: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  selectHeaderStyleDropdownButton:
+                      QuillToolbarSelectHeaderStyleDropdownButtonOptions(
+                        textStyle: TextStyle(
+                          color: theme.colorScheme.onSurface,
+                          fontSize: 13,
+                        ),
+                      ),
+                ),
+                showFontFamily: false,
+                showFontSize: false,
+                showInlineCode: true,
+                showCodeBlock: true,
+                showQuote: true,
+                showLink: false,
+                showSearchButton: false,
+                showSubscript: false,
+                showSuperscript: false,
+              ),
+            ),
+          ),
+        ),
         const Divider(height: 1),
         Expanded(
           child: ColoredBox(
