@@ -23,6 +23,7 @@ class FileTopBar extends StatelessWidget {
     required this.onRefresh,
     required this.onUploadPressed,
     required this.onCreateFolderPressed,
+    required this.onNewFilePressed,
     required this.onOpenDrawer,
     required this.onOpenSettings,
     super.key,
@@ -46,6 +47,7 @@ class FileTopBar extends StatelessWidget {
   final VoidCallback onRefresh;
   final VoidCallback onUploadPressed;
   final VoidCallback onCreateFolderPressed;
+  final VoidCallback onNewFilePressed;
   final VoidCallback onOpenDrawer;
   final VoidCallback onOpenSettings;
 
@@ -265,8 +267,14 @@ class FileTopBar extends StatelessWidget {
         const SizedBox(width: 6),
         _chip(
           icon: Icons.create_new_folder_outlined,
-          label: 'New',
+          label: 'New folder',
           onTap: isCreatingFolder ? null : onCreateFolderPressed,
+        ),
+        const SizedBox(width: 6),
+        _chip(
+          icon: Icons.edit_document,
+          label: 'New file',
+          onTap: onNewFilePressed,
         ),
       ],
     );
