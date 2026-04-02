@@ -412,40 +412,37 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       children: [
         ColoredBox(
           color: theme.colorScheme.surfaceContainer,
-          child: QuillSimpleToolbar(
-            controller: _controller,
-            config: QuillSimpleToolbarConfig(
-              toolbarIconAlignment: WrapAlignment.start,
-              buttonOptions: QuillSimpleToolbarButtonOptions(
-                base: QuillToolbarBaseButtonOptions(
-                  iconTheme: QuillIconTheme(
-                    iconButtonUnselectedData: IconButtonData(
-                      color: theme.colorScheme.onSurface,
-                      style: IconButton.styleFrom(
-                        foregroundColor: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    iconButtonSelectedData: IconButtonData(
-                      color: theme.colorScheme.onPrimary,
-                      style: IconButton.styleFrom(
-                        foregroundColor: theme.colorScheme.onPrimary,
-                        backgroundColor: theme.colorScheme.primary,
+          child: IconTheme(
+            data: IconThemeData(color: theme.colorScheme.onSurface),
+            child: QuillSimpleToolbar(
+              controller: _controller,
+              config: QuillSimpleToolbarConfig(
+                toolbarIconAlignment: WrapAlignment.start,
+                buttonOptions: QuillSimpleToolbarButtonOptions(
+                  base: QuillToolbarBaseButtonOptions(
+                    iconTheme: QuillIconTheme(
+                      iconButtonUnselectedData: const IconButtonData(),
+                      iconButtonSelectedData: IconButtonData(
+                        style: IconButton.styleFrom(
+                          foregroundColor: theme.colorScheme.onPrimary,
+                          backgroundColor: theme.colorScheme.primary,
+                        ),
                       ),
                     ),
                   ),
                 ),
+                showFontFamily: false,
+                showFontSize: false,
+                showInlineCode: true,
+                showCodeBlock: true,
+                showQuote: true,
+                showLink: false,
+                showSearchButton: false,
+                showSubscript: false,
+                showSuperscript: false,
               ),
-              showFontFamily: false,
-              showFontSize: false,
-              showInlineCode: true,
-              showCodeBlock: true,
-              showQuote: true,
-              showLink: false,
-              showSearchButton: false,
-              showSubscript: false,
-              showSuperscript: false,
-            ),
-          ),
+            ), // QuillSimpleToolbar
+          ), // IconTheme
         ), // ColoredBox
         const Divider(height: 1),
         Expanded(
