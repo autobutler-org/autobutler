@@ -44,7 +44,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
 
   // ── Auto-save ─────────────────────────────────────────────────────────────
   static const _prefKeyAutoSave = 'document_editor_auto_save';
-  static const _autoSaveDelay = Duration(seconds: 30);
+  static const _autoSaveDelay = Duration(seconds: 2);
 
   bool _autoSaveEnabled = true;
   Timer? _autoSaveTimer;
