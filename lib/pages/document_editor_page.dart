@@ -7,6 +7,89 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:http/http.dart' as http;
 
+/// Builds [DefaultStyles] that match the current [ThemeData], so the editor
+/// looks correct in both light and dark mode.
+DefaultStyles _quillStylesFromTheme(ThemeData theme) {
+  final textTheme = theme.textTheme;
+  final fg = theme.colorScheme.onSurface;
+  final muted = theme.colorScheme.onSurfaceVariant;
+  final primary = theme.colorScheme.primary;
+  final codeBackground = theme.colorScheme.surfaceContainerHighest;
+  final codeFg = theme.colorScheme.onSurfaceVariant;
+
+  TextStyle base(TextStyle? s) => (s ?? const TextStyle()).copyWith(color: fg);
+
+  return DefaultStyles(
+    paragraph: DefaultTextBlockStyle(
+      base(textTheme.bodyMedium),
+      HorizontalSpacing.zero,
+      VerticalSpacing.zero,
+      VerticalSpacing.zero,
+      null,
+    ),
+    h1: DefaultTextBlockStyle(
+      base(textTheme.headlineLarge).copyWith(fontWeight: FontWeight.bold),
+      HorizontalSpacing.zero,
+      const VerticalSpacing(16, 4),
+      VerticalSpacing.zero,
+      null,
+    ),
+    h2: DefaultTextBlockStyle(
+      base(textTheme.headlineMedium).copyWith(fontWeight: FontWeight.bold),
+      HorizontalSpacing.zero,
+      const VerticalSpacing(12, 4),
+      VerticalSpacing.zero,
+      null,
+    ),
+    h3: DefaultTextBlockStyle(
+      base(textTheme.headlineSmall).copyWith(fontWeight: FontWeight.bold),
+      HorizontalSpacing.zero,
+      const VerticalSpacing(8, 4),
+      VerticalSpacing.zero,
+      null,
+    ),
+    placeHolder: DefaultTextBlockStyle(
+      (textTheme.bodyMedium ?? const TextStyle()).copyWith(color: muted),
+      HorizontalSpacing.zero,
+      VerticalSpacing.zero,
+      VerticalSpacing.zero,
+      null,
+    ),
+    quote: DefaultTextBlockStyle(
+      base(
+        textTheme.bodyMedium,
+      ).copyWith(color: muted, fontStyle: FontStyle.italic),
+      const HorizontalSpacing(16, 0),
+      const VerticalSpacing(6, 6),
+      VerticalSpacing.zero,
+      BoxDecoration(
+        border: Border(left: BorderSide(color: primary, width: 4)),
+      ),
+    ),
+    inlineCode: InlineCodeStyle(
+      style: TextStyle(
+        fontFamily: 'monospace',
+        fontSize: 13,
+        color: codeFg,
+        backgroundColor: codeBackground,
+      ),
+      backgroundColor: codeBackground,
+      radius: const Radius.circular(4),
+    ),
+    code: DefaultTextBlockStyle(
+      TextStyle(fontFamily: 'monospace', fontSize: 13, color: codeFg),
+      const HorizontalSpacing(12, 12),
+      const VerticalSpacing(8, 8),
+      VerticalSpacing.zero,
+      BoxDecoration(
+        color: codeBackground,
+        borderRadius: BorderRadius.circular(8),
+      ),
+    ),
+    color: fg,
+  );
+}
+
 /// Full-screen rich text editor for AutoButler native documents (.abdoc).
 ///
 /// Documents are stored as Quill Delta JSON:
@@ -243,35 +326,56 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       );
     }
 
+    final theme = Theme.of(context);
     return Column(
       children: [
-        QuillSimpleToolbar(
-          controller: _controller,
-          config: const QuillSimpleToolbarConfig(
-            showFontFamily: false,
-            showFontSize: false,
-            showInlineCode: true,
-            showCodeBlock: true,
-            showQuote: true,
-            showLink: false,
-            showSearchButton: false,
-            showSubscript: false,
-            showSuperscript: false,
+        ColoredBox(
+          color: theme.colorScheme.surfaceContainerLow,
+          child: QuillSimpleToolbar(
+            controller: _controller,
+            config: QuillSimpleToolbarConfig(
+              toolbarIconAlignment: WrapAlignment.start,
+              buttonOptions: QuillSimpleToolbarButtonOptions(
+                base: QuillToolbarBaseButtonOptions(
+                  iconTheme: QuillIconTheme(
+                    iconButtonUnselectedData: IconButtonData(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                    iconButtonSelectedData: IconButtonData(
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ),
+              showFontFamily: false,
+              showFontSize: false,
+              showInlineCode: true,
+              showCodeBlock: true,
+              showQuote: true,
+              showLink: false,
+              showSearchButton: false,
+              showSubscript: false,
+              showSuperscript: false,
+            ),
           ),
-        ),
+        ), // ColoredBox
         const Divider(height: 1),
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: QuillEditor.basic(
-              controller: _controller,
-              focusNode: _editorFocus,
-              scrollController: _scrollController,
-              config: const QuillEditorConfig(
-                autoFocus: true,
-                expands: false,
-                padding: EdgeInsets.zero,
-                placeholder: 'Start writing…',
+          child: ColoredBox(
+            color: Theme.of(context).colorScheme.surface,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: QuillEditor.basic(
+                controller: _controller,
+                focusNode: _editorFocus,
+                scrollController: _scrollController,
+                config: QuillEditorConfig(
+                  autoFocus: true,
+                  expands: false,
+                  padding: EdgeInsets.zero,
+                  placeholder: 'Start writing…',
+                  customStyles: _quillStylesFromTheme(Theme.of(context)),
+                ),
               ),
             ),
           ),
