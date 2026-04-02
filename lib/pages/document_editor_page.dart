@@ -421,16 +421,9 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                   iconTheme: QuillIconTheme(
                     iconButtonUnselectedData: IconButtonData(
                       color: theme.colorScheme.onSurface,
-                      style: IconButton.styleFrom(
-                        foregroundColor: theme.colorScheme.onSurface,
-                      ),
                     ),
                     iconButtonSelectedData: IconButtonData(
                       color: theme.colorScheme.onPrimary,
-                      style: IconButton.styleFrom(
-                        foregroundColor: theme.colorScheme.onPrimary,
-                        backgroundColor: theme.colorScheme.primary,
-                      ),
                     ),
                   ),
                 ),
