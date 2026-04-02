@@ -11,15 +11,66 @@ import 'package:http/http.dart' as http;
 import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Builds [DefaultStyles] that match the current [ThemeData], so the editor
-/// looks correct in both light and dark mode.
-DefaultStyles _quillStylesFromTheme(ThemeData theme) {
-  final textTheme = theme.textTheme;
-  final fg = theme.colorScheme.onSurface;
-  final muted = theme.colorScheme.onSurfaceVariant;
+// ── Editor appearance ─────────────────────────────────────────────────────────
+
+/// The user-selectable editor page appearance, independent of the app theme.
+enum EditorPageAppearance {
+  /// White page with dark text — classic word processor feel.
+  light,
+
+  /// Dark page with light text — night writing mode.
+  dark,
+}
+
+extension _EditorPageAppearanceX on EditorPageAppearance {
+  Color get pageColor => this == EditorPageAppearance.light
+      ? Colors.white
+      : const Color(0xFF1A1A2E);
+
+  Color get textColor => this == EditorPageAppearance.light
+      ? const Color(0xFF1A1A1A)
+      : const Color(0xFFE8E8F0);
+
+  Color get mutedColor => this == EditorPageAppearance.light
+      ? const Color(0xFF6B7280)
+      : const Color(0xFF9CA3AF);
+
+  Color get codeBackground => this == EditorPageAppearance.light
+      ? const Color(0xFFF3F4F6)
+      : const Color(0xFF2D2D44);
+
+  Color get toolbarColor => this == EditorPageAppearance.light
+      ? const Color(0xFFF9FAFB)
+      : const Color(0xFF151525);
+
+  Color get dividerColor => this == EditorPageAppearance.light
+      ? const Color(0xFFE5E7EB)
+      : const Color(0xFF2A2A3E);
+
+  EditorPageAppearance get toggled => this == EditorPageAppearance.light
+      ? EditorPageAppearance.dark
+      : EditorPageAppearance.light;
+
+  IconData get icon => this == EditorPageAppearance.light
+      ? Icons.dark_mode_outlined
+      : Icons.light_mode_outlined;
+
+  String get tooltip => this == EditorPageAppearance.light
+      ? 'Switch to dark page'
+      : 'Switch to light page';
+}
+
+// ── Quill styles ──────────────────────────────────────────────────────────────
+
+DefaultStyles _quillStylesForAppearance(
+  EditorPageAppearance appearance,
+  ThemeData theme,
+) {
+  final fg = appearance.textColor;
+  final muted = appearance.mutedColor;
   final primary = theme.colorScheme.primary;
-  final codeBackground = theme.colorScheme.surfaceContainerHighest;
-  final codeFg = theme.colorScheme.onSurfaceVariant;
+  final codeBg = appearance.codeBackground;
+  final textTheme = theme.textTheme;
 
   TextStyle base(TextStyle? s) => (s ?? const TextStyle()).copyWith(color: fg);
 
@@ -74,25 +125,24 @@ DefaultStyles _quillStylesFromTheme(ThemeData theme) {
       style: TextStyle(
         fontFamily: 'monospace',
         fontSize: 13,
-        color: codeFg,
-        backgroundColor: codeBackground,
+        color: muted,
+        backgroundColor: codeBg,
       ),
-      backgroundColor: codeBackground,
+      backgroundColor: codeBg,
       radius: const Radius.circular(4),
     ),
     code: DefaultTextBlockStyle(
-      TextStyle(fontFamily: 'monospace', fontSize: 13, color: codeFg),
+      TextStyle(fontFamily: 'monospace', fontSize: 13, color: muted),
       const HorizontalSpacing(12, 12),
       const VerticalSpacing(8, 8),
       VerticalSpacing.zero,
-      BoxDecoration(
-        color: codeBackground,
-        borderRadius: BorderRadius.circular(8),
-      ),
+      BoxDecoration(color: codeBg, borderRadius: BorderRadius.circular(8)),
     ),
     color: fg,
   );
 }
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 /// Full-screen rich text editor for AutoButler native documents (.abdoc).
 ///
@@ -102,10 +152,7 @@ DefaultStyles _quillStylesFromTheme(ThemeData theme) {
 /// Load: GET /api/v1/cirrus/download?filePath={path}
 /// Save: POST /api/v1/cirrus/upload/{parentDir}  (multipart, replaces file)
 class DocumentEditorPage extends StatefulWidget {
-  /// The Cirrus API path to the .abdoc file, e.g. "my-docs/notes.abdoc".
   final String filePath;
-
-  /// USB serial of the device holding the file; empty for internal devices.
   final String deviceSerial;
 
   const DocumentEditorPage({
@@ -129,14 +176,20 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   bool _exporting = false;
   String? _error;
 
-  // ── Auto-save ─────────────────────────────────────────────────────────────
+  // ── Read-only / edit mode ──────────────────────────────────────────────────
+  /// Documents open in read-only mode by default (#939).
+  bool _isEditing = false;
+
+  // ── Page appearance ────────────────────────────────────────────────────────
+  static const _prefKeyAppearance = 'document_editor_appearance';
+  EditorPageAppearance _appearance = EditorPageAppearance.light;
+
+  // ── Auto-save ──────────────────────────────────────────────────────────────
   static const _prefKeyAutoSave = 'document_editor_auto_save';
   static const _autoSaveDelay = Duration(seconds: 2);
-
   bool _autoSaveEnabled = true;
   Timer? _autoSaveTimer;
 
-  /// Display name shown in the app bar (filename without extension).
   late String _displayName;
 
   @override
@@ -144,7 +197,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     super.initState();
     _displayName = _nameFromPath(widget.filePath);
     _controller = QuillController.basic();
-    _loadAutoSavePref();
+    _loadPrefs();
     _loadDocument();
   }
 
@@ -157,18 +210,22 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     super.dispose();
   }
 
-  // ── Persistence ───────────────────────────────────────────────────────────
+  // ── Prefs ──────────────────────────────────────────────────────────────────
 
   String _nameFromPath(String path) {
     final name = path.split('/').last;
     return name.endsWith('.abdoc') ? name.substring(0, name.length - 6) : name;
   }
 
-  Future<void> _loadAutoSavePref() async {
+  Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
+    final appearanceStr = prefs.getString(_prefKeyAppearance);
     setState(() {
       _autoSaveEnabled = prefs.getBool(_prefKeyAutoSave) ?? true;
+      _appearance = appearanceStr == 'dark'
+          ? EditorPageAppearance.dark
+          : EditorPageAppearance.light;
     });
   }
 
@@ -182,6 +239,16 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       _autoSaveTimer = null;
     }
   }
+
+  Future<void> _toggleAppearance() async {
+    final next = _appearance.toggled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefKeyAppearance, next.name);
+    if (!mounted) return;
+    setState(() => _appearance = next);
+  }
+
+  // ── Document load/save ─────────────────────────────────────────────────────
 
   Future<void> _loadDocument() async {
     setState(() {
@@ -198,9 +265,11 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       if (!mounted) return;
 
       if (bytes == null || bytes.isEmpty) {
+        // New document — open straight into edit mode.
         setState(() {
           _loading = false;
           _dirty = false;
+          _isEditing = true;
         });
         _controller.addListener(_onDocumentChanged);
         _focusEditor();
@@ -218,16 +287,18 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       }
 
       if (!mounted) return;
+      final controller = QuillController(
+        document: doc,
+        selection: const TextSelection.collapsed(offset: 0),
+        readOnly: true, // Existing documents open read-only (#939).
+      );
       setState(() {
-        _controller = QuillController(
-          document: doc,
-          selection: const TextSelection.collapsed(offset: 0),
-        );
+        _controller = controller;
         _loading = false;
         _dirty = false;
+        _isEditing = false;
       });
       _controller.addListener(_onDocumentChanged);
-      _focusEditor();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -237,34 +308,38 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     }
   }
 
-  /// Explicitly request focus on the editor after the frame is rendered.
-  /// autoFocus alone is not reliable on iOS/Android.
   void _focusEditor() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _editorFocus.requestFocus();
     });
   }
 
+  void _enterEditMode() {
+    _controller.readOnly = false;
+    setState(() => _isEditing = true);
+    _focusEditor();
+  }
+
+  void _exitEditMode() {
+    _controller.readOnly = true;
+    setState(() => _isEditing = false);
+  }
+
   void _onDocumentChanged() {
     if (!mounted) return;
     if (!_dirty) setState(() => _dirty = true);
-
-    // (Re)start the auto-save debounce timer on every change.
     if (_autoSaveEnabled) {
       _autoSaveTimer?.cancel();
       _autoSaveTimer = Timer(_autoSaveDelay, _autoSaveSilently);
     }
   }
 
-  /// Auto-save: saves silently (no snackbar on success, subtle indicator on
-  /// failure so it doesn't interrupt the writing flow).
   Future<void> _autoSaveSilently() async {
     if (!_dirty || _saving || !mounted) return;
     try {
       await _doSave();
     } catch (e) {
       if (!mounted) return;
-      // Non-blocking — just show a brief indicator.
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Auto-save failed: $e'),
@@ -293,29 +368,24 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   Future<void> _doSave() async {
     if (_saving) return;
     setState(() => _saving = true);
-
     try {
       final ops = _controller.document.toDelta().toJson();
       final jsonString = jsonEncode({'ops': ops});
       final bytes = utf8.encode(jsonString);
-
       final fileName = '$_displayName.abdoc';
       final parentDir = parentPath(widget.filePath);
       final serial = serialOrNull(widget.deviceSerial);
-
       final file = http.MultipartFile.fromBytes(
         'files',
         bytes,
         filename: fileName,
       );
-
       await CirrusService.uploadFilesFromFormData(
         parentDir,
         [file],
         serial: serial,
         overwrite: true,
       );
-
       if (!mounted) return;
       setState(() {
         _saving = false;
@@ -328,7 +398,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     }
   }
 
-  // ── PDF / Print ───────────────────────────────────────────────────────────
+  // ── PDF / Print ────────────────────────────────────────────────────────────
 
   Future<Uint8List?> _buildPdfBytes() async {
     final converter = PDFConverter(
@@ -388,108 +458,133 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     }
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
+  // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
+    final appearance = _appearance;
     return PopScope(
       canPop: !_dirty,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         final leave = await _confirmDiscard(context);
-        if (leave && context.mounted) {
-          Navigator.of(context).pop();
-        }
+        if (leave && context.mounted) Navigator.of(context).pop();
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _dirty ? '$_displayName •' : _displayName,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            // Auto-save toggle
-            IconButton(
-              icon: Icon(
-                _autoSaveEnabled
-                    ? Icons.cloud_sync_outlined
-                    : Icons.cloud_off_outlined,
-              ),
-              tooltip: _autoSaveEnabled
-                  ? 'Auto-save on — tap to disable'
-                  : 'Auto-save off — tap to enable',
-              onPressed: () => _setAutoSaveEnabled(!_autoSaveEnabled),
-            ),
-            if (_saving)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              )
-            else
-              IconButton(
-                icon: const Icon(Icons.save_outlined),
-                tooltip: 'Save',
-                onPressed: _dirty ? _saveDocument : null,
-              ),
-            if (_exporting)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              )
-            else
-              PopupMenuButton<_DocAction>(
-                icon: const Icon(Icons.more_vert),
-                onSelected: (action) {
-                  switch (action) {
-                    case _DocAction.exportPdf:
-                      _exportPdf();
-                    case _DocAction.print:
-                      _printDocument();
-                  }
-                },
-                itemBuilder: (_) => const [
-                  PopupMenuItem(
-                    value: _DocAction.exportPdf,
-                    child: ListTile(
-                      leading: Icon(Icons.picture_as_pdf_outlined),
-                      title: Text('Export as PDF'),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: _DocAction.print,
-                    child: ListTile(
-                      leading: Icon(Icons.print_outlined),
-                      title: Text('Print'),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                ],
-              ),
-          ],
-        ),
-        body: _buildBody(context),
+        backgroundColor: appearance.pageColor,
+        appBar: _buildAppBar(appearance),
+        body: _buildBody(context, appearance),
       ),
     );
   }
 
-  Widget _buildBody(BuildContext context) {
+  PreferredSizeWidget _buildAppBar(EditorPageAppearance appearance) {
+    final titleText = _dirty ? '$_displayName •' : _displayName;
+    return AppBar(
+      backgroundColor: appearance.toolbarColor,
+      foregroundColor: appearance.textColor,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      title: Text(titleText, overflow: TextOverflow.ellipsis),
+      actions: [
+        // Page appearance toggle (sun/moon) — #938
+        IconButton(
+          icon: Icon(appearance.icon),
+          tooltip: appearance.tooltip,
+          onPressed: _toggleAppearance,
+        ),
+        // Edit / Done toggle
+        if (_isEditing) ...[
+          // Auto-save toggle
+          IconButton(
+            icon: Icon(
+              _autoSaveEnabled
+                  ? Icons.cloud_sync_outlined
+                  : Icons.cloud_off_outlined,
+            ),
+            tooltip: _autoSaveEnabled
+                ? 'Auto-save on — tap to disable'
+                : 'Auto-save off — tap to enable',
+            onPressed: () => _setAutoSaveEnabled(!_autoSaveEnabled),
+          ),
+          if (_saving)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.save_outlined),
+              tooltip: 'Save',
+              onPressed: _dirty ? _saveDocument : null,
+            ),
+          TextButton(
+            onPressed: _exitEditMode,
+            child: Text('Done', style: TextStyle(color: appearance.textColor)),
+          ),
+        ] else
+          TextButton.icon(
+            icon: Icon(
+              Icons.edit_outlined,
+              size: 18,
+              color: appearance.textColor,
+            ),
+            label: Text('Edit', style: TextStyle(color: appearance.textColor)),
+            onPressed: _enterEditMode,
+          ),
+        // Overflow menu (export / print)
+        if (_exporting)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12),
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          )
+        else
+          PopupMenuButton<_DocAction>(
+            icon: Icon(Icons.more_vert, color: appearance.textColor),
+            onSelected: (action) {
+              switch (action) {
+                case _DocAction.exportPdf:
+                  _exportPdf();
+                case _DocAction.print:
+                  _printDocument();
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: _DocAction.exportPdf,
+                child: ListTile(
+                  leading: Icon(Icons.picture_as_pdf_outlined),
+                  title: Text('Export as PDF'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: _DocAction.print,
+                child: ListTile(
+                  leading: Icon(Icons.print_outlined),
+                  title: Text('Print'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _buildBody(BuildContext context, EditorPageAppearance appearance) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: CircularProgressIndicator(color: appearance.textColor),
+      );
     }
 
     if (_error != null) {
@@ -497,9 +592,13 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 48),
+            Icon(Icons.error_outline, size: 48, color: appearance.mutedColor),
             const SizedBox(height: 12),
-            Text(_error!, textAlign: TextAlign.center),
+            Text(
+              _error!,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: appearance.textColor),
+            ),
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: _loadDocument,
@@ -511,54 +610,72 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     }
 
     final theme = Theme.of(context);
+    final styles = _quillStylesForAppearance(appearance, theme);
+
     return Column(
       children: [
-        ColoredBox(
-          color: theme.colorScheme.surfaceContainer,
-          child: QuillSimpleToolbar(
-            controller: _controller,
-            config: QuillSimpleToolbarConfig(
-              toolbarIconAlignment: WrapAlignment.start,
-              buttonOptions: QuillSimpleToolbarButtonOptions(
-                base: QuillToolbarBaseButtonOptions(
-                  iconTheme: QuillIconTheme(
-                    iconButtonUnselectedData: IconButtonData(
-                      color: theme.colorScheme.onSurface,
-                    ),
-                    iconButtonSelectedData: IconButtonData(
-                      color: theme.colorScheme.primary,
+        // Toolbar — only visible in edit mode
+        if (_isEditing) ...[
+          ColoredBox(
+            color: appearance.toolbarColor,
+            child: QuillSimpleToolbar(
+              controller: _controller,
+              config: QuillSimpleToolbarConfig(
+                toolbarIconAlignment: WrapAlignment.start,
+                buttonOptions: QuillSimpleToolbarButtonOptions(
+                  base: QuillToolbarBaseButtonOptions(
+                    iconTheme: QuillIconTheme(
+                      iconButtonUnselectedData: IconButtonData(
+                        color: appearance.textColor,
+                      ),
+                      iconButtonSelectedData: IconButtonData(
+                        color: theme.colorScheme.onPrimary,
+                        style: IconButton.styleFrom(
+                          foregroundColor: theme.colorScheme.onPrimary,
+                          backgroundColor: theme.colorScheme.primary,
+                        ),
+                      ),
                     ),
                   ),
                 ),
+                showFontFamily: false,
+                showFontSize: false,
+                showInlineCode: true,
+                showCodeBlock: true,
+                showQuote: true,
+                showLink: false,
+                showSearchButton: false,
+                showSubscript: false,
+                showSuperscript: false,
               ),
-              showFontFamily: false,
-              showFontSize: false,
-              showInlineCode: true,
-              showCodeBlock: true,
-              showQuote: true,
-              showLink: false,
-              showSearchButton: false,
-              showSubscript: false,
-              showSuperscript: false,
             ),
           ),
-        ), // ColoredBox
-        const Divider(height: 1),
+          Divider(height: 1, color: appearance.dividerColor),
+        ],
+        // Document body — "paper" feel with centred max-width column
         Expanded(
           child: ColoredBox(
-            color: Theme.of(context).colorScheme.surface,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: QuillEditor.basic(
-                controller: _controller,
-                focusNode: _editorFocus,
-                scrollController: _scrollController,
-                config: QuillEditorConfig(
-                  autoFocus: true,
-                  expands: false,
-                  padding: EdgeInsets.zero,
-                  placeholder: 'Start writing…',
-                  customStyles: _quillStylesFromTheme(Theme.of(context)),
+            color: appearance.pageColor,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 760),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 40,
+                  ),
+                  child: QuillEditor.basic(
+                    controller: _controller,
+                    focusNode: _editorFocus,
+                    scrollController: _scrollController,
+                    config: QuillEditorConfig(
+                      autoFocus: false,
+                      expands: false,
+                      padding: EdgeInsets.zero,
+                      placeholder: _isEditing ? 'Start writing…' : '',
+                      customStyles: styles,
+                    ),
+                  ),
                 ),
               ),
             ),
