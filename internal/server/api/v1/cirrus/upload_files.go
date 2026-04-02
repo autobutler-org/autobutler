@@ -43,6 +43,7 @@ func uploadFilesNested(c *gin.Context, rootDir string) *serverutil.Response {
 		return serverutil.InternalServerError(nil)
 	}
 	serial := c.Query("serial")
+	overwrite := c.Query("overwrite") == "true"
 	reader, err := c.Request.MultipartReader()
 	if err != nil {
 		return serverutil.BadRequest(err)
@@ -51,6 +52,7 @@ func uploadFilesNested(c *gin.Context, rootDir string) *serverutil.Response {
 		Reader:       reader,
 		RootDir:      rootDir,
 		DeviceSerial: serial,
+		Overwrite:    overwrite,
 	})
 	if err != nil {
 		return serverutil.BadRequest(err)

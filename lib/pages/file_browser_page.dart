@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
+import 'package:autobutler/pages/document_editor_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/router.dart';
@@ -655,6 +656,20 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
 
     final lowerName = node.name.toLowerCase();
+
+    // AutoButler native document format — open in the rich text editor.
+    if (lowerName.endsWith('.abdoc')) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => DocumentEditorPage(
+            filePath: node.apiPath,
+            deviceSerial: node.deviceSerial,
+          ),
+        ),
+      );
+      return;
+    }
+
     final viewable =
         lowerName.endsWith('.jpg') ||
         lowerName.endsWith('.jpeg') ||

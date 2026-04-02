@@ -22,7 +22,7 @@ export GOOS ?= $(shell $(GO) env GOOS)
 export GOARCH ?= $(shell $(GO) env GOARCH)
 export GOPROXY ?= https://proxy.golang.org,direct
 
-MAIN := ./cmd/autobutler/main.go
+ENTRYPOINT := ./cmd/autobutler
 EXE := ./build/autobutler
 
 UNAME_S := $(shell uname -s)
@@ -162,7 +162,7 @@ build: ## Build web frontend and backend
 .PHONY: build/backend
 build/backend: internal/server/public/stub.txt generate/backend ## Build backend
 	mkdir -p ./build
-	$(GO) build -o $(EXE) $(MAIN)
+	$(GO) build -o $(EXE) $(ENTRYPOINT)
 
 internal/server/public/stub.txt: ## Ensure public directory exists for embedding
 	mkdir -p ./internal/server/public
@@ -245,7 +245,7 @@ generate/frontend/sbom: ## Generate Flutter SBOM asset from pubspec.lock
 
 .PHONY: serve/backend
 serve/backend: generate/backend ## Serve backend
-	$(GO) run $(MAIN) serve
+	$(GO) run $(ENTRYPOINT) serve
 
 .PHONY: serve/frontend
 serve/frontend: serve/frontend/web ## Serve frontend
@@ -426,7 +426,7 @@ release/yank: ## Yank a release: remove from Azure + mark GitHub release as pre-
 
 .PHONY: version
 version: ## Print version
-	$(GO) run $(MAIN) version
+	$(GO) run $(ENTRYPOINT) version
 
 .PHONY: help
 help: ## Displays help info

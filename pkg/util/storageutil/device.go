@@ -28,7 +28,7 @@ func (d *Device) ApplySimpleCategorization() {
 
 	// Define file extensions for categories
 	docExts := map[string]struct{}{
-		".pdf": {}, ".doc": {}, ".docx": {}, ".txt": {}, ".md": {}, ".xls": {}, ".xlsx": {}, ".ppt": {}, ".pptx": {}, ".csv": {},
+		".pdf": {}, ".doc": {}, ".docx": {}, ".abdoc": {}, ".txt": {}, ".md": {}, ".xls": {}, ".xlsx": {}, ".ppt": {}, ".pptx": {}, ".csv": {},
 	}
 	mediaExts := map[string]struct{}{
 		".jpg": {}, ".jpeg": {}, ".png": {}, ".gif": {}, ".bmp": {}, ".mp4": {}, ".mov": {}, ".avi": {}, ".mkv": {}, ".mp3": {}, ".wav": {}, ".flac": {},

@@ -258,10 +258,19 @@ class _SettingsPageState extends State<SettingsPage> {
       final versions = await CirrusService.listAvailableVersions();
       if (!mounted) return;
 
-      final installedVersion =
+      var installedVersion =
           (installed['semver'] as String?) ??
           (installed['version'] as String?) ??
           'Unknown';
+      // When running an untagged dev build, show the short commit hash instead.
+      if (installedVersion == 'NOSEMVER') {
+        final commit = (installed['gitCommit'] as String?) ?? '';
+        if (commit.isNotEmpty && commit != 'NOCOMMIT') {
+          installedVersion = commit.substring(0, commit.length.clamp(0, 7));
+        } else {
+          installedVersion = 'dev (untagged)';
+        }
+      }
       final availableVersions = versions
           .map((m) => (m['version'] as String?) ?? '')
           .where((v) => v.isNotEmpty)
