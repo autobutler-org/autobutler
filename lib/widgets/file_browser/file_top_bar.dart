@@ -145,14 +145,42 @@ class FileTopBar extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          Expanded(child: _buildBreadcrumb(context)),
-          const SizedBox(width: 12),
-          _buildActions(context),
-          const SizedBox(width: 8),
-          _buildViewChips(context),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 860;
+
+          if (isCompact) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildBreadcrumb(context),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildActions(context),
+                      const SizedBox(width: 8),
+                      _buildViewChips(context),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              Expanded(child: _buildBreadcrumb(context)),
+              const SizedBox(width: 12),
+              _buildActions(context),
+              const SizedBox(width: 8),
+              _buildViewChips(context),
+            ],
+          );
+        },
       ),
     );
   }
