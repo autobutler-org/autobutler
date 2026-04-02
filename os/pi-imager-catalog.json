@@ -1,0 +1,32 @@
+{
+  "imager": {
+    "latest_version": "1.7.2",
+    "url": "https://downloads.raspberrypi.com/imager/imager_latest.exe"
+  },
+  "os_list": [
+    {
+      "name": "AutoButler for Raspberry Pi 4",
+      "description": "Ubuntu Server 24.04 LTS with AutoButler pre-installed. Plug-and-play home cloud storage.",
+      "icon": "https://autobutler.org/assets/images/casing.webp",
+      "url": "https://github.com/autobutler-org/autobutler/releases/latest/download/autobutler-pi4.img.xz",
+      "extract_size": 4294967296,
+      "extract_sha256": "placeholder",
+      "image_download_sha256": "placeholder",
+      "release_date": "2026-03-31",
+      "init_format": "cloudinit",
+      "devices": ["pi4-64bit"]
+    },
+    {
+      "name": "AutoButler for Raspberry Pi 5",
+      "description": "Ubuntu Server 24.04 LTS with AutoButler pre-installed. Plug-and-play home cloud storage.",
+      "icon": "https://autobutler.org/assets/images/casing.webp",
+      "url": "https://github.com/autobutler-org/autobutler/releases/latest/download/autobutler-pi5.img.xz",
+      "extract_size": 4294967296,
+      "extract_sha256": "placeholder",
+      "image_download_sha256": "placeholder",
+      "release_date": "2026-03-31",
+      "init_format": "cloudinit",
+      "devices": ["pi5"]
+    }
+  ]
+}
