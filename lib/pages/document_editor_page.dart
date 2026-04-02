@@ -6,6 +6,7 @@ import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Full-screen rich text editor for AutoButler native documents (.abdoc).
 ///
@@ -41,6 +42,13 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   bool _dirty = false;
   String? _error;
 
+  // ── Auto-save ─────────────────────────────────────────────────────────────
+  static const _prefKeyAutoSave = 'document_editor_auto_save';
+  static const _autoSaveDelay = Duration(seconds: 30);
+
+  bool _autoSaveEnabled = true;
+  Timer? _autoSaveTimer;
+
   /// Display name shown in the app bar (filename without extension).
   late String _displayName;
 
@@ -49,22 +57,43 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     super.initState();
     _displayName = _nameFromPath(widget.filePath);
     _controller = QuillController.basic();
+    _loadAutoSavePref();
     _loadDocument();
   }
 
   @override
   void dispose() {
+    _autoSaveTimer?.cancel();
     _controller.dispose();
     _editorFocus.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  // ── Data ──────────────────────────────────────────────────────────────────
+  // ── Persistence ───────────────────────────────────────────────────────────
 
   String _nameFromPath(String path) {
     final name = path.split('/').last;
     return name.endsWith('.abdoc') ? name.substring(0, name.length - 6) : name;
+  }
+
+  Future<void> _loadAutoSavePref() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _autoSaveEnabled = prefs.getBool(_prefKeyAutoSave) ?? true;
+    });
+  }
+
+  Future<void> _setAutoSaveEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefKeyAutoSave, value);
+    if (!mounted) return;
+    setState(() => _autoSaveEnabled = value);
+    if (!value) {
+      _autoSaveTimer?.cancel();
+      _autoSaveTimer = null;
+    }
   }
 
   Future<void> _loadDocument() async {
@@ -82,7 +111,6 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       if (!mounted) return;
 
       if (bytes == null || bytes.isEmpty) {
-        // Brand new file — start with an empty document.
         setState(() {
           _loading = false;
           _dirty = false;
@@ -121,12 +149,51 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   }
 
   void _onDocumentChanged() {
-    if (!_dirty && mounted) {
-      setState(() => _dirty = true);
+    if (!mounted) return;
+    if (!_dirty) setState(() => _dirty = true);
+
+    // (Re)start the auto-save debounce timer on every change.
+    if (_autoSaveEnabled) {
+      _autoSaveTimer?.cancel();
+      _autoSaveTimer = Timer(_autoSaveDelay, _autoSaveSilently);
+    }
+  }
+
+  /// Auto-save: saves silently (no snackbar on success, subtle indicator on
+  /// failure so it doesn't interrupt the writing flow).
+  Future<void> _autoSaveSilently() async {
+    if (!_dirty || _saving || !mounted) return;
+    try {
+      await _doSave();
+    } catch (e) {
+      if (!mounted) return;
+      // Non-blocking — just show a brief indicator.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Auto-save failed: $e'),
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 
   Future<void> _saveDocument() async {
+    _autoSaveTimer?.cancel();
+    try {
+      await _doSave();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Saved')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
+    }
+  }
+
+  Future<void> _doSave() async {
     if (_saving) return;
     setState(() => _saving = true);
 
@@ -145,8 +212,6 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         filename: fileName,
       );
 
-      // overwrite: true so the backend replaces the existing file in-place
-      // rather than creating a_(1).abdoc alongside the original.
       await CirrusService.uploadFilesFromFormData(
         parentDir,
         [file],
@@ -159,16 +224,10 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         _saving = false;
         _dirty = false;
       });
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Saved')));
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
+      rethrow;
     }
   }
 
@@ -198,6 +257,18 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
             ],
           ),
           actions: [
+            // Auto-save toggle
+            IconButton(
+              icon: Icon(
+                _autoSaveEnabled
+                    ? Icons.cloud_sync_outlined
+                    : Icons.cloud_off_outlined,
+              ),
+              tooltip: _autoSaveEnabled
+                  ? 'Auto-save on — tap to disable'
+                  : 'Auto-save off — tap to enable',
+              onPressed: () => _setAutoSaveEnabled(!_autoSaveEnabled),
+            ),
             if (_saving)
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
