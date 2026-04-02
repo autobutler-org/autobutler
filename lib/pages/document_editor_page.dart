@@ -423,7 +423,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                       color: theme.colorScheme.onSurface,
                     ),
                     iconButtonSelectedData: IconButtonData(
-                      color: theme.colorScheme.onPrimary,
+                      color: theme.colorScheme.primary,
                     ),
                   ),
                 ),
