@@ -309,8 +309,15 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   }
 
   void _focusEditor() {
+    // On web, the browser needs a frame to recognize the focusable element
+    // after switching from read-only. Unfocus first, then re-request on the
+    // next frame to ensure the browser hands focus to the editor correctly.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _editorFocus.requestFocus();
+      if (!mounted) return;
+      FocusScope.of(context).unfocus();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _editorFocus.requestFocus();
+      });
     });
   }
 
@@ -580,6 +587,72 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     );
   }
 
+  Widget _buildToolbar(
+    BuildContext context,
+    EditorPageAppearance appearance,
+    ThemeData theme,
+  ) {
+    // Override the ambient theme so ALL toolbar children (icon buttons,
+    // dropdown labels, undo/redo, dividers) pick up the right colors.
+    final toolbarTheme = theme.copyWith(
+      colorScheme: theme.colorScheme.copyWith(
+        onSurface: appearance.textColor,
+        onSurfaceVariant: appearance.mutedColor,
+        surface: appearance.toolbarColor,
+        surfaceContainerLow: appearance.toolbarColor,
+        surfaceContainer: appearance.toolbarColor,
+      ),
+      iconTheme: IconThemeData(color: appearance.textColor, size: 20),
+      // Dropdown / DropdownButton text color
+      textTheme: theme.textTheme.apply(bodyColor: appearance.textColor),
+    );
+
+    return Theme(
+      data: toolbarTheme,
+      child: ColoredBox(
+        color: appearance.toolbarColor,
+        child: QuillSimpleToolbar(
+          controller: _controller,
+          config: QuillSimpleToolbarConfig(
+            toolbarIconAlignment: WrapAlignment.start,
+            buttonOptions: QuillSimpleToolbarButtonOptions(
+              base: QuillToolbarBaseButtonOptions(
+                iconTheme: QuillIconTheme(
+                  iconButtonUnselectedData: IconButtonData(
+                    color: appearance.textColor,
+                  ),
+                  iconButtonSelectedData: IconButtonData(
+                    style: IconButton.styleFrom(
+                      foregroundColor: theme.colorScheme.onPrimary,
+                      backgroundColor: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ),
+              // Explicitly style the header dropdown text
+              selectHeaderStyleDropdownButton:
+                  QuillToolbarSelectHeaderStyleDropdownButtonOptions(
+                    textStyle: TextStyle(
+                      color: appearance.textColor,
+                      fontSize: 13,
+                    ),
+                  ),
+            ),
+            showFontFamily: false,
+            showFontSize: false,
+            showInlineCode: true,
+            showCodeBlock: true,
+            showQuote: true,
+            showLink: false,
+            showSearchButton: false,
+            showSubscript: false,
+            showSuperscript: false,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBody(BuildContext context, EditorPageAppearance appearance) {
     if (_loading) {
       return Center(
@@ -616,40 +689,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       children: [
         // Toolbar — only visible in edit mode
         if (_isEditing) ...[
-          ColoredBox(
-            color: appearance.toolbarColor,
-            child: QuillSimpleToolbar(
-              controller: _controller,
-              config: QuillSimpleToolbarConfig(
-                toolbarIconAlignment: WrapAlignment.start,
-                buttonOptions: QuillSimpleToolbarButtonOptions(
-                  base: QuillToolbarBaseButtonOptions(
-                    iconTheme: QuillIconTheme(
-                      iconButtonUnselectedData: IconButtonData(
-                        color: appearance.textColor,
-                      ),
-                      iconButtonSelectedData: IconButtonData(
-                        color: theme.colorScheme.onPrimary,
-                        style: IconButton.styleFrom(
-                          foregroundColor: theme.colorScheme.onPrimary,
-                          backgroundColor: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                showFontFamily: false,
-                showFontSize: false,
-                showInlineCode: true,
-                showCodeBlock: true,
-                showQuote: true,
-                showLink: false,
-                showSearchButton: false,
-                showSubscript: false,
-                showSuperscript: false,
-              ),
-            ),
-          ),
+          _buildToolbar(context, appearance, theme),
           Divider(height: 1, color: appearance.dividerColor),
         ],
         // Document body — "paper" feel with centred max-width column
