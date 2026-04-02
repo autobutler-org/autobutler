@@ -116,6 +116,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
           _dirty = false;
         });
         _controller.addListener(_onDocumentChanged);
+        _focusEditor();
         return;
       }
 
@@ -139,6 +140,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         _dirty = false;
       });
       _controller.addListener(_onDocumentChanged);
+      _focusEditor();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -146,6 +148,14 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         _error = 'Failed to load document: $e';
       });
     }
+  }
+
+  /// Explicitly request focus on the editor after the frame is rendered.
+  /// autoFocus alone is not reliable on iOS/Android.
+  void _focusEditor() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _editorFocus.requestFocus();
+    });
   }
 
   void _onDocumentChanged() {
