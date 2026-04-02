@@ -1,5 +1,12 @@
 # AutoButler Cloud-Init Configuration
 
+> **Which approach should I use?**
+>
+> - **This directory (cloud-init)** — start from a stock Ubuntu Server image; AutoButler downloads and installs itself on first boot. Requires internet access. Takes 5–10 minutes on first boot.
+> - **Pre-built custom image** — download `autobutler-pi4.img.xz` or `autobutler-pi5.img.xz` from [GitHub Releases](https://github.com/autobutler-org/autobutler/releases). AutoButler is pre-installed. No internet needed at boot. Recommended for most users.
+>
+> These are two separate approaches. You do not need to use cloud-init if you are flashing the pre-built custom image.
+
 This directory contains cloud-init files for installing AutoButler on a fresh Ubuntu Server 24.04 LTS image for Raspberry Pi.
 
 ## What This Does

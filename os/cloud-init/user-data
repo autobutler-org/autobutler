@@ -1,4 +1,15 @@
 #cloud-config
+#
+# This file is for the CLOUD-INIT approach only.
+# Use this when starting from a stock Ubuntu Server image that does NOT have
+# AutoButler pre-installed. The first-boot script downloads and installs the
+# AutoButler binary at boot time (requires internet access).
+#
+# If you are using the pre-built custom image (autobutler-pi4.img.xz or
+# autobutler-pi5.img.xz from GitHub Releases), you do NOT need this file.
+# The binary is already baked into that image — no download happens at boot.
+#
+# See os/README.md for the difference between these two approaches.
 
 hostname: autobutler
 manage_etc_hosts: true
