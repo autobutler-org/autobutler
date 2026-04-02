@@ -3,10 +3,14 @@ import 'dart:convert';
 
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:js_interop';
+
+import 'package:web/web.dart' as web;
 
 /// Full-screen rich text editor for AutoButler native documents (.abdoc).
 ///
@@ -49,6 +53,9 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   bool _autoSaveEnabled = true;
   Timer? _autoSaveTimer;
 
+  // ── Browser tab-close guard ───────────────────────────────────────────────
+  web.EventListener? _beforeUnloadHandler;
+
   /// Display name shown in the app bar (filename without extension).
   late String _displayName;
 
@@ -59,15 +66,35 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     _controller = QuillController.basic();
     _loadAutoSavePref();
     _loadDocument();
+    _registerBeforeUnload();
   }
 
   @override
   void dispose() {
     _autoSaveTimer?.cancel();
+    _unregisterBeforeUnload();
     _controller.dispose();
     _editorFocus.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _registerBeforeUnload() {
+    if (!kIsWeb) return;
+    _beforeUnloadHandler = ((web.Event event) {
+      if (_dirty) {
+        // A non-empty returnValue triggers the browser's built-in
+        // "Leave site?" confirmation dialog.
+        (event as web.BeforeUnloadEvent).returnValue = '';
+      }
+    }).toJS;
+    web.window.addEventListener('beforeunload', _beforeUnloadHandler);
+  }
+
+  void _unregisterBeforeUnload() {
+    if (!kIsWeb || _beforeUnloadHandler == null) return;
+    web.window.removeEventListener('beforeunload', _beforeUnloadHandler);
+    _beforeUnloadHandler = null;
   }
 
   // ── Persistence ───────────────────────────────────────────────────────────
@@ -150,7 +177,10 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
 
   void _onDocumentChanged() {
     if (!mounted) return;
-    if (!_dirty) setState(() => _dirty = true);
+    if (!_dirty) {
+      setState(() => _dirty = true);
+      _registerBeforeUnload();
+    }
 
     // (Re)start the auto-save debounce timer on every change.
     if (_autoSaveEnabled) {
@@ -224,6 +254,8 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         _saving = false;
         _dirty = false;
       });
+      // Document is clean — no need to block tab close.
+      _unregisterBeforeUnload();
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
