@@ -60,8 +60,9 @@ class _NewFileDialogState extends State<_NewFileDialog> {
   String? _validateName(String? value) {
     final v = value?.trim() ?? '';
     if (v.isEmpty) return 'Name cannot be empty';
-    if (v.contains('/') || v.contains('\\'))
+    if (v.contains('/') || v.contains('\\')) {
       return 'Name cannot contain slashes';
+    }
     if (v.contains('\x00')) return 'Name contains invalid characters';
     return null;
   }
