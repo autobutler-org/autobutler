@@ -3,9 +3,12 @@ import 'dart:convert';
 
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill_to_pdf/flutter_quill_to_pdf.dart';
 import 'package:http/http.dart' as http;
+import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Builds [DefaultStyles] that match the current [ThemeData], so the editor
@@ -123,6 +126,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   bool _loading = true;
   bool _saving = false;
   bool _dirty = false;
+  bool _exporting = false;
   String? _error;
 
   // ── Auto-save ─────────────────────────────────────────────────────────────
@@ -324,6 +328,66 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     }
   }
 
+  // ── PDF / Print ───────────────────────────────────────────────────────────
+
+  Future<Uint8List?> _buildPdfBytes() async {
+    final converter = PDFConverter(
+      document: _controller.document.toDelta(),
+      pageFormat: PDFPageFormat.a4,
+      fallbacks: const [],
+      // ignore: experimental_member_use
+      isWeb: kIsWeb,
+    );
+    final doc = await converter.createDocument();
+    return doc?.save();
+  }
+
+  Future<void> _exportPdf() async {
+    if (_exporting) return;
+    setState(() => _exporting = true);
+    try {
+      final bytes = await _buildPdfBytes();
+      if (!mounted) return;
+      if (bytes == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to generate PDF')));
+        return;
+      }
+      await Printing.sharePdf(bytes: bytes, filename: '$_displayName.pdf');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Export failed: $e')));
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  Future<void> _printDocument() async {
+    if (_exporting) return;
+    setState(() => _exporting = true);
+    try {
+      final bytes = await _buildPdfBytes();
+      if (!mounted) return;
+      if (bytes == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to generate PDF for printing')),
+        );
+        return;
+      }
+      await Printing.layoutPdf(onLayout: (_) => bytes);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Print failed: $e')));
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
@@ -376,6 +440,45 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                 icon: const Icon(Icons.save_outlined),
                 tooltip: 'Save',
                 onPressed: _dirty ? _saveDocument : null,
+              ),
+            if (_exporting)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            else
+              PopupMenuButton<_DocAction>(
+                icon: const Icon(Icons.more_vert),
+                onSelected: (action) {
+                  switch (action) {
+                    case _DocAction.exportPdf:
+                      _exportPdf();
+                    case _DocAction.print:
+                      _printDocument();
+                  }
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(
+                    value: _DocAction.exportPdf,
+                    child: ListTile(
+                      leading: Icon(Icons.picture_as_pdf_outlined),
+                      title: Text('Export as PDF'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: _DocAction.print,
+                    child: ListTile(
+                      leading: Icon(Icons.print_outlined),
+                      title: Text('Print'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ],
               ),
           ],
         ),
@@ -486,3 +589,5 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     return result ?? false;
   }
 }
+
+enum _DocAction { exportPdf, print }

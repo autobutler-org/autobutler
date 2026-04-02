@@ -19,6 +19,18 @@
       "url": "https://pub.dev"
     },
     {
+      "name": "barcode",
+      "version": "2.2.9",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "bidi",
+      "version": "2.0.13",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
       "name": "boolean_selector",
       "version": "2.1.2",
       "source": "hosted",
@@ -129,6 +141,24 @@
     {
       "name": "diff_match_patch",
       "version": "0.4.1",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "dio",
+      "version": "5.9.2",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "dio_web_adapter",
+      "version": "2.1.2",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "equatable",
+      "version": "2.0.8",
       "source": "hosted",
       "url": "https://pub.dev"
     },
@@ -257,8 +287,20 @@
       "url": "https://pub.dev"
     },
     {
+      "name": "flutter_quill_delta_easy_parser",
+      "version": "1.1.8",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
       "name": "flutter_quill_delta_from_html",
       "version": "1.5.3",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "flutter_quill_to_pdf",
+      "version": "2.3.9",
       "source": "hosted",
       "url": "https://pub.dev"
     },
@@ -317,6 +359,12 @@
     {
       "name": "go_router",
       "version": "17.1.0",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "highlight",
+      "version": "0.7.0",
       "source": "hosted",
       "url": "https://pub.dev"
     },
@@ -417,8 +465,20 @@
       "url": "https://pub.dev"
     },
     {
+      "name": "mime",
+      "version": "2.0.0",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
       "name": "native_toolchain_c",
       "version": "0.17.6",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "numerus",
+      "version": "2.3.0",
       "source": "hosted",
       "url": "https://pub.dev"
     },
@@ -443,6 +503,12 @@
     {
       "name": "path",
       "version": "1.9.1",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "path_parsing",
+      "version": "1.1.0",
       "source": "hosted",
       "url": "https://pub.dev"
     },
@@ -483,6 +549,18 @@
       "url": "https://pub.dev"
     },
     {
+      "name": "pdf",
+      "version": "3.12.0",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "pdf_widget_wrapper",
+      "version": "1.0.4",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
       "name": "petitparser",
       "version": "7.0.2",
       "source": "hosted",
@@ -513,8 +591,20 @@
       "url": "https://pub.dev"
     },
     {
+      "name": "printing",
+      "version": "5.14.3",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
       "name": "pub_semver",
       "version": "2.2.0",
+      "source": "hosted",
+      "url": "https://pub.dev"
+    },
+    {
+      "name": "qr",
+      "version": "3.0.2",
       "source": "hosted",
       "url": "https://pub.dev"
     },
