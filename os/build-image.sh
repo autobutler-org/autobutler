@@ -65,13 +65,26 @@ fetch_autobutler_binary() {
     log "Fetching latest AutoButler release for arm64..."
     local url
     url=$(curl -fsSL "https://api.github.com/repos/${AUTOBUTLER_REPO}/releases/latest" \
-        | jq -r '.assets[] | select(.name | test("linux-arm64")) | .browser_download_url')
+        | jq -r '.assets[] | select(.name | test("Linux_arm64")) | .browser_download_url')
     if [ -z "$url" ]; then
         log "ERROR: Could not find arm64 release asset"
         exit 1
     fi
     log "Downloading: $url"
-    curl -fsSL -o "$dest" "$url"
+    local temp_dir="${HOME}/tmp/autobutler_extract"
+    mkdir -p "$temp_dir"
+    curl -fsSL -o "$temp_dir/package.tar.gz" "$url"
+    tar -xzf "$temp_dir/package.tar.gz" -C "$temp_dir"
+    # Find the autobutler binary (may be at root or in a subdirectory)
+    if [ -f "$temp_dir/autobutler" ]; then
+        cp "$temp_dir/autobutler" "$dest"
+    elif [ -f "$temp_dir/autobutler/"* ]; then
+        cp "$temp_dir"/autobutler/* "$dest"
+    else
+        log "ERROR: Could not find autobutler binary in tarball"
+        exit 1
+    fi
+    rm -rf "$temp_dir"
     chmod 755 "$dest"
 }
 
