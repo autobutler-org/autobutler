@@ -134,7 +134,13 @@ build_image() {
     mount --bind /proc "${WORK_DIR}/mnt/proc"
     mount --bind /sys "${WORK_DIR}/mnt/sys"
 
-    cp /etc/resolv.conf "${WORK_DIR}/mnt/etc/resolv.conf" 2>/dev/null || true
+    # Set up DNS in chroot
+    mkdir -p "${WORK_DIR}/mnt/etc"
+    cat > "${WORK_DIR}/mnt/etc/resolv.conf" <<'RESOLV_EOF'
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+nameserver 1.1.1.1
+RESOLV_EOF
 
     log "Downloading AutoButler binary..."
     fetch_autobutler_binary "${WORK_DIR}/mnt/usr/local/bin/autobutler"
@@ -169,8 +175,24 @@ EOF
     chroot "${WORK_DIR}/mnt" /bin/bash -e <<'CHROOT_SCRIPT'
 export DEBIAN_FRONTEND=noninteractive
 
-apt-get update
-apt-get install -y --no-install-recommends avahi-daemon ufw udisks2 curl
+# Retry apt-get update up to 3 times to handle network issues
+for attempt in 1 2 3; do
+    echo "apt-get update attempt $attempt..."
+    if apt-get update; then
+        break
+    elif [ $attempt -lt 3 ]; then
+        echo "Retrying in 5 seconds..."
+        sleep 5
+    else
+        echo "WARNING: apt-get update failed after 3 attempts, continuing anyway..."
+    fi
+done
+
+# Install packages with --fix-missing flag in case of network issues
+apt-get install -y --no-install-recommends --fix-missing avahi-daemon ufw udisks2 curl || {
+    echo "First install attempt failed, retrying with --fix-missing..."
+    apt-get install -y --fix-missing avahi-daemon ufw udisks2 curl
+}
 
 useradd --system --no-create-home --shell /usr/sbin/nologin --comment "AutoButler service account" autobutler 2>/dev/null || true
 
