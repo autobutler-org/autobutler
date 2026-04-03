@@ -2,50 +2,54 @@
 set -euo pipefail
 
 #
-# build-image.sh — Build a custom Ubuntu image for Raspberry Pi with AutoButler pre-installed.
+# build-image.sh — Build a custom Ubuntu image for Raspberry Pi with cloud-init AutoButler setup.
 #
 # Usage:
 #   sudo ./build-image.sh pi4
 #   sudo ./build-image.sh pi5
 #   sudo ./build-image.sh all
 #
+# This script creates customized Ubuntu Raspberry Pi images using cloud-init for first-boot setup.
+# All configuration happens automatically on first boot, eliminating chroot complexity.
+#
 # Requirements:
-#   - arm64 Linux host (or x86_64 with QEMU binfmt_misc registered)
-#   - Root privileges (for loopback mount and chroot)
-#   - Packages: xz-utils, qemu-user-static (if cross-arch), curl, jq, kpartx
-#   - ~8GB free disk space per target
+#   - arm64 Linux host or macOS
+#   - Root privileges (for loopback mount)
+#   - Packages: xz-utils (or xz), curl, kpartx (Linux only)
+#   - ~4GB free disk space per target
 #
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK_DIR="${SCRIPT_DIR}/build"
 UBUNTU_IMAGE_URL="https://cdimage.ubuntu.com/releases/24.04/release/ubuntu-24.04.4-preinstalled-server-arm64+raspi.img.xz"
 UBUNTU_IMAGE_XZ="${WORK_DIR}/ubuntu-base.img.xz"
-AUTOBUTLER_REPO="autobutler-org/autobutler"
 
 log() { echo "[$(date -u '+%Y-%m-%d %H:%M:%S UTC')] $*"; }
 
 cleanup() {
     log "Cleaning up..."
-    if mountpoint -q "${WORK_DIR}/mnt/proc" 2>/dev/null; then umount "${WORK_DIR}/mnt/proc" || true; fi
-    if mountpoint -q "${WORK_DIR}/mnt/sys" 2>/dev/null; then umount "${WORK_DIR}/mnt/sys" || true; fi
-    if mountpoint -q "${WORK_DIR}/mnt/dev/pts" 2>/dev/null; then umount "${WORK_DIR}/mnt/dev/pts" || true; fi
-    if mountpoint -q "${WORK_DIR}/mnt/dev" 2>/dev/null; then umount "${WORK_DIR}/mnt/dev" || true; fi
-    if mountpoint -q "${WORK_DIR}/mnt/boot/firmware" 2>/dev/null; then umount "${WORK_DIR}/mnt/boot/firmware" || true; fi
-    if mountpoint -q "${WORK_DIR}/mnt" 2>/dev/null; then umount "${WORK_DIR}/mnt" || true; fi
-    if [ -n "${LOOP_DEV:-}" ]; then losetup -d "$LOOP_DEV" 2>/dev/null || true; fi
+    if mountpoint -q "${WORK_DIR}/mnt" 2>/dev/null; then
+        umount "${WORK_DIR}/mnt" 2>/dev/null || true
+    fi
+    if [ -n "${LOOP_DEV:-}" ] && [ -b "$LOOP_DEV" ]; then
+        losetup -d "$LOOP_DEV" 2>/dev/null || true
+    fi
 }
 trap cleanup EXIT
 
 check_deps() {
     local missing=()
-    for cmd in curl jq xz losetup mount chroot kpartx; do
+    for cmd in curl xz losetup mount; do
         if ! command -v "$cmd" &>/dev/null; then
             missing+=("$cmd")
         fi
     done
+    # kpartx is optional (only needed on Linux)
+    if uname | grep -q Linux && ! command -v kpartx &>/dev/null; then
+        missing+=("kpartx")
+    fi
     if [ ${#missing[@]} -gt 0 ]; then
         log "ERROR: Missing required commands: ${missing[*]}"
-        log "Install them with: apt-get install -y xz-utils kpartx curl jq qemu-user-static"
         exit 1
     fi
 }
@@ -58,34 +62,6 @@ download_base_image() {
     else
         log "Base image already downloaded, skipping."
     fi
-}
-
-fetch_autobutler_binary() {
-    local dest="$1"
-    log "Fetching latest AutoButler release for arm64..."
-    local url
-    url=$(curl -fsSL "https://api.github.com/repos/${AUTOBUTLER_REPO}/releases/latest" \
-        | jq -r '.assets[] | select(.name | test("Linux_arm64")) | .browser_download_url')
-    if [ -z "$url" ]; then
-        log "ERROR: Could not find arm64 release asset"
-        exit 1
-    fi
-    log "Downloading: $url"
-    local temp_dir="${HOME}/tmp/autobutler_extract"
-    mkdir -p "$temp_dir"
-    curl -fsSL -o "$temp_dir/package.tar.gz" "$url"
-    tar -xzf "$temp_dir/package.tar.gz" -C "$temp_dir"
-    # Find the autobutler binary (may be at root or in a subdirectory)
-    if [ -f "$temp_dir/autobutler" ]; then
-        cp "$temp_dir/autobutler" "$dest"
-    elif [ -f "$temp_dir/autobutler/"* ]; then
-        cp "$temp_dir"/autobutler/* "$dest"
-    else
-        log "ERROR: Could not find autobutler binary in tarball"
-        exit 1
-    fi
-    rm -rf "$temp_dir"
-    chmod 755 "$dest"
 }
 
 build_image() {
@@ -106,47 +82,74 @@ build_image() {
 
     sleep 1
 
+    # Detect partition layout
     local root_part="${LOOP_DEV}p2"
     local boot_part="${LOOP_DEV}p1"
 
+    # On some systems, partitions use different naming
     if [ ! -b "$root_part" ]; then
-        kpartx -av "$LOOP_DEV"
-        sleep 1
-        local loop_name
-        loop_name=$(basename "$LOOP_DEV")
-        root_part="/dev/mapper/${loop_name}p2"
-        boot_part="/dev/mapper/${loop_name}p1"
+        if command -v kpartx &>/dev/null; then
+            kpartx -av "$LOOP_DEV"
+            sleep 1
+            local loop_name
+            loop_name=$(basename "$LOOP_DEV")
+            root_part="/dev/mapper/${loop_name}p2"
+            boot_part="/dev/mapper/${loop_name}p1"
+        else
+            log "ERROR: Could not find root partition and kpartx not available"
+            exit 1
+        fi
     fi
 
     log "Mounting root partition..."
     mkdir -p "${WORK_DIR}/mnt"
     mount "$root_part" "${WORK_DIR}/mnt"
 
-    if [ -b "$boot_part" ]; then
-        log "Mounting boot partition..."
-        mkdir -p "${WORK_DIR}/mnt/boot/firmware"
-        mount "$boot_part" "${WORK_DIR}/mnt/boot/firmware"
+    # Create cloud-init directory
+    mkdir -p "${WORK_DIR}/mnt/etc/cloud/cloud.cfg.d"
+
+    log "Injecting cloud-init configuration..."
+    cat > "${WORK_DIR}/mnt/etc/cloud/cloud.cfg.d/99_autobutler.cfg" <<'CLOUD_INIT_EOF'
+#cloud-config
+# AutoButler setup via cloud-init on first boot
+
+hostname: autobutler
+fqdn: autobutler.local
+
+users:
+  - name: autobutler
+    system: true
+    shell: /usr/sbin/nologin
+    home: /var/lib/autobutler
+
+packages:
+  - avahi-daemon
+  - curl
+  - jq
+
+runcmd:
+  # Create directories
+  - mkdir -p /var/lib/autobutler
+  - chown autobutler:autobutler /var/lib/autobutler
+
+  # Download and install latest AutoButler release
+  - |
+    set -e
+    RELEASE_URL=$(curl -fsSL "https://api.github.com/repos/autobutler-org/autobutler/releases/latest" \
+      | jq -r '.assets[] | select(.name | test("Linux_arm64")) | .browser_download_url')
+    if [ -z "$RELEASE_URL" ]; then
+      echo "ERROR: Could not find AutoButler arm64 release"
+      exit 1
     fi
+    TEMP_DIR=$(mktemp -d)
+    curl -fsSL -o "$TEMP_DIR/package.tar.gz" "$RELEASE_URL"
+    tar -xzf "$TEMP_DIR/package.tar.gz" -C "$TEMP_DIR"
+    cp "$TEMP_DIR/autobutler" /usr/local/bin/autobutler
+    chmod 755 /usr/local/bin/autobutler
+    rm -rf "$TEMP_DIR"
 
-    log "Setting up chroot bind mounts..."
-    mount --bind /dev "${WORK_DIR}/mnt/dev"
-    mount --bind /dev/pts "${WORK_DIR}/mnt/dev/pts"
-    mount --bind /proc "${WORK_DIR}/mnt/proc"
-    mount --bind /sys "${WORK_DIR}/mnt/sys"
-
-    # Set up DNS in chroot
-    mkdir -p "${WORK_DIR}/mnt/etc"
-    cat > "${WORK_DIR}/mnt/etc/resolv.conf" <<'RESOLV_EOF'
-nameserver 8.8.8.8
-nameserver 8.8.4.4
-nameserver 1.1.1.1
-RESOLV_EOF
-
-    log "Downloading AutoButler binary..."
-    fetch_autobutler_binary "${WORK_DIR}/mnt/usr/local/bin/autobutler"
-
-    log "Installing systemd service..."
-    cat > "${WORK_DIR}/mnt/etc/systemd/system/autobutler.service" <<'EOF'
+  # Create systemd service
+  - tee /etc/systemd/system/autobutler.service > /dev/null <<'SERVICE_EOF'
 [Unit]
 Description=AutoButler Service
 After=network.target
@@ -163,96 +166,73 @@ StandardError=append:/var/log/autobutler.err
 
 [Install]
 WantedBy=multi-user.target
-EOF
+SERVICE_EOF
 
-    log "Installing sudoers rule..."
-    cat > "${WORK_DIR}/mnt/etc/sudoers.d/autobutler" <<'EOF'
-autobutler ALL=(root) NOPASSWD: /bin/mount * /var/lib/autobutler/mounts/*, /bin/umount /var/lib/autobutler/mounts/*
-EOF
-    chmod 440 "${WORK_DIR}/mnt/etc/sudoers.d/autobutler"
+  # Enable services
+  - systemctl daemon-reload
+  - systemctl enable autobutler.service
+  - systemctl enable avahi-daemon.service
 
-    log "Running chroot setup..."
-    chroot "${WORK_DIR}/mnt" /bin/bash -e <<'CHROOT_SCRIPT'
-export DEBIAN_FRONTEND=noninteractive
+  # Configure firewall
+  - |
+    ufw default deny incoming
+    ufw default allow outgoing
+    ufw allow 80/tcp comment "AutoButler web UI"
+    ufw --force enable
 
-# Retry apt-get update up to 3 times to handle network issues
-for attempt in 1 2 3; do
-    echo "apt-get update attempt $attempt..."
-    if apt-get update; then
-        break
-    elif [ $attempt -lt 3 ]; then
-        echo "Retrying in 5 seconds..."
-        sleep 5
-    else
-        echo "WARNING: apt-get update failed after 3 attempts, continuing anyway..."
-    fi
-done
+  # Sync filesystem
+  - sync
 
-# Install packages with --fix-missing flag in case of network issues
-apt-get install -y --no-install-recommends --fix-missing avahi-daemon ufw udisks2 curl || {
-    echo "First install attempt failed, retrying with --fix-missing..."
-    apt-get install -y --fix-missing avahi-daemon ufw udisks2 curl
-}
+power_state:
+  mode: reboot
+  message: "AutoButler setup complete, rebooting..."
+  timeout: 10
+CLOUD_INIT_EOF
 
-useradd --system --no-create-home --shell /usr/sbin/nologin --comment "AutoButler service account" autobutler 2>/dev/null || true
-
-mkdir -p /var/lib/autobutler
-chown autobutler:autobutler /var/lib/autobutler
-
-echo "autobutler" > /etc/hostname
-sed -i 's/127\.0\.1\.1.*/127.0.1.1\tautobutler/' /etc/hosts || echo "127.0.1.1	autobutler" >> /etc/hosts
-
-systemctl enable autobutler.service
-systemctl enable avahi-daemon.service
-
-ufw default deny incoming
-ufw default allow outgoing
-ufw allow 80/tcp comment "AutoButler web UI"
-ufw --force enable
-
-apt-get clean
-rm -rf /var/lib/apt/lists/*
-CHROOT_SCRIPT
-
-    log "Unmounting chroot bind mounts..."
-    umount "${WORK_DIR}/mnt/proc" || true
-    umount "${WORK_DIR}/mnt/sys" || true
-    umount "${WORK_DIR}/mnt/dev/pts" || true
-    umount "${WORK_DIR}/mnt/dev" || true
-
-    if mountpoint -q "${WORK_DIR}/mnt/boot/firmware" 2>/dev/null; then
-        umount "${WORK_DIR}/mnt/boot/firmware" || true
-    fi
+    log "Unmounting filesystem..."
     umount "${WORK_DIR}/mnt"
-
     losetup -d "$LOOP_DEV"
     LOOP_DEV=""
 
-    log "Compressing image..."
-    xz -9 -T0 "$output"
+    log "Compressing image (xz -6 for speed)..."
+    xz -6 -T0 "$output"
 
     local checksum
     checksum=$(sha256sum "$output_xz" | awk '{print $1}')
     log "=== Build complete ==="
     log "Output: $output_xz"
     log "SHA256: $checksum"
+    mkdir -p "$(dirname "${SCRIPT_DIR}/checksums.sha256")"
     echo "$checksum  $(basename "$output_xz")" >> "${SCRIPT_DIR}/checksums.sha256"
 }
 
 usage() {
-    echo "Usage: sudo $0 <pi4|pi5|all>"
-    echo ""
-    echo "Build a custom Raspberry Pi image with AutoButler pre-installed."
-    echo ""
-    echo "Targets:"
-    echo "  pi4   Build image for Raspberry Pi 4"
-    echo "  pi5   Build image for Raspberry Pi 5"
-    echo "  all   Build images for both Pi 4 and Pi 5"
+    cat <<USAGE_EOF
+Usage: sudo $0 <pi4|pi5|all>
+
+Build a custom Ubuntu Raspberry Pi image with cloud-init AutoButler setup.
+
+This script creates a minimalist image that uses cloud-init for first-boot
+configuration. All setup (downloading binaries, installing services, etc.)
+happens automatically when the image first boots on a Raspberry Pi.
+
+Targets:
+  pi4   Build image for Raspberry Pi 4
+  pi5   Build image for Raspberry Pi 5
+  all   Build images for both Pi 4 and Pi 5
+
+Output:
+  Images are written to: ${SCRIPT_DIR}/autobutler-{pi4,pi5}.img.xz
+  Checksums are written to: ${SCRIPT_DIR}/checksums.sha256
+
+Example:
+  sudo $0 all
+USAGE_EOF
     exit 1
 }
 
 if [ "$(id -u)" -ne 0 ]; then
-    echo "ERROR: This script must be run as root (for loopback mounts and chroot)"
+    echo "ERROR: This script must be run as root (for loopback mounts)"
     exit 1
 fi
 
