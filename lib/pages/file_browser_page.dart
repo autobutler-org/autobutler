@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
+import 'package:autobutler/pages/document_editor_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/router.dart';
@@ -17,6 +18,7 @@ import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/device_upload_picker.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
+import 'package:autobutler/widgets/file_browser/new_file_dialog.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:autobutler/widgets/file_browser/file_storage_footer.dart';
 import 'package:autobutler/widgets/file_browser/file_top_bar.dart';
@@ -548,6 +550,45 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
   }
 
+  Future<void> _handleNewFilePressed() async {
+    final fileName = await showNewFileDialog(context);
+    if (fileName == null || !mounted) return;
+
+    try {
+      // Create an empty .abdoc with an initial Quill delta.
+      final emptyDelta = '{"ops":[{"insert":"\\n"}]}';
+      final bytes = emptyDelta.codeUnits;
+
+      final file = http.MultipartFile.fromBytes(
+        'files',
+        bytes,
+        filename: fileName,
+      );
+
+      await CirrusService.uploadFilesFromFormData(_currentPath, [file]);
+
+      if (!mounted) return;
+
+      _showMessage('Created $fileName');
+
+      // Refresh file list then open the editor.
+      _refreshFileState();
+
+      final filePath = _currentPath.isEmpty
+          ? fileName
+          : '$_currentPath/$fileName';
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => DocumentEditorPage(filePath: filePath),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage('Failed to create file: $e');
+    }
+  }
+
   Future<void> _handleFileMenuAction(
     CirrusFileNode node,
     FileMenuAction action,
@@ -655,6 +696,20 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
 
     final lowerName = node.name.toLowerCase();
+
+    // AutoButler native document format — open in the rich text editor.
+    if (lowerName.endsWith('.abdoc')) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => DocumentEditorPage(
+            filePath: node.apiPath,
+            deviceSerial: node.deviceSerial,
+          ),
+        ),
+      );
+      return;
+    }
+
     final viewable =
         lowerName.endsWith('.jpg') ||
         lowerName.endsWith('.jpeg') ||
@@ -954,6 +1009,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                 onRefresh: _refreshFileState,
                 onUploadPressed: _handleUploadPressed,
                 onCreateFolderPressed: _handleCreateFolderPressed,
+                onNewFilePressed: _handleNewFilePressed,
                 uploadTotal: _uploadTotal,
                 uploadCompleted: _uploadCompleted,
                 onOpenDrawer: () => Scaffold.of(context).openDrawer(),

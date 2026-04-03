@@ -443,6 +443,7 @@ func TestDetermineFileTypeFromPath(t *testing.T) {
 		{"video.mov", FileTypeVideo},
 		{"book.epub", FileTypeEpub},
 		{"document.docx", FileTypeDocx},
+		{"notes.abdoc", FileTypeAbdoc},
 		{"archive.zip", FileTypeArchive},
 		{"file.txt", FileTypeGeneric},
 		{"IMAGE.PNG", FileTypeImage}, // Test case insensitivity

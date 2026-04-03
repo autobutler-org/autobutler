@@ -1,5 +1,7 @@
 import 'package:autobutler/router.dart';
 import 'package:autobutler/theme/autobutler_theme.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:flutter/material.dart';
@@ -26,6 +28,13 @@ class AutobutlerApp extends StatelessWidget {
           darkTheme: AutobutlerTheme.dark(),
           themeMode: mode,
           routerConfig: router,
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            FlutterQuillLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('en')],
         );
       },
     );

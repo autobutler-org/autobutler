@@ -23,6 +23,7 @@ class FileTopBar extends StatelessWidget {
     required this.onRefresh,
     required this.onUploadPressed,
     required this.onCreateFolderPressed,
+    required this.onNewFilePressed,
     required this.onOpenDrawer,
     required this.onOpenSettings,
     super.key,
@@ -46,6 +47,7 @@ class FileTopBar extends StatelessWidget {
   final VoidCallback onRefresh;
   final VoidCallback onUploadPressed;
   final VoidCallback onCreateFolderPressed;
+  final VoidCallback onNewFilePressed;
   final VoidCallback onOpenDrawer;
   final VoidCallback onOpenSettings;
 
@@ -143,14 +145,42 @@ class FileTopBar extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          Expanded(child: _buildBreadcrumb(context)),
-          const SizedBox(width: 12),
-          _buildActions(context),
-          const SizedBox(width: 8),
-          _buildViewChips(context),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 860;
+
+          if (isCompact) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildBreadcrumb(context),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildActions(context),
+                      const SizedBox(width: 8),
+                      _buildViewChips(context),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              Expanded(child: _buildBreadcrumb(context)),
+              const SizedBox(width: 12),
+              _buildActions(context),
+              const SizedBox(width: 8),
+              _buildViewChips(context),
+            ],
+          );
+        },
       ),
     );
   }
@@ -265,8 +295,14 @@ class FileTopBar extends StatelessWidget {
         const SizedBox(width: 6),
         _chip(
           icon: Icons.create_new_folder_outlined,
-          label: 'New',
+          label: 'New folder',
           onTap: isCreatingFolder ? null : onCreateFolderPressed,
+        ),
+        const SizedBox(width: 6),
+        _chip(
+          icon: Icons.edit_document,
+          label: 'New file',
+          onTap: onNewFilePressed,
         ),
       ],
     );

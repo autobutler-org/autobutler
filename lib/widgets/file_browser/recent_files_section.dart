@@ -4,6 +4,7 @@ import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:autobutler/widgets/core/autobutler_file_icon.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler/pages/document_editor_page.dart';
 
 /// A horizontally-scrolling strip showing recently uploaded files.
 /// Displayed at the root of the file browser (not in search mode).
@@ -119,7 +120,20 @@ class _RecentFilesSectionState extends State<RecentFilesSection> {
                     final file = files[index];
                     return _RecentFileChip(
                       file: file,
-                      onTap: () => _openOrDownload(file),
+                      onTap: () {
+                        if (file.name.endsWith('.abdoc')) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => DocumentEditorPage(
+                                filePath: file.apiPath,
+                                deviceSerial: file.deviceSerial,
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        _openOrDownload(file);
+                      },
                       onFolderTap: () =>
                           widget.onNavigateToFolder(_parentPath(file)),
                     );
