@@ -26,6 +26,9 @@ class FileTopBar extends StatelessWidget {
     required this.onNewFilePressed,
     required this.onOpenDrawer,
     required this.onOpenSettings,
+    this.devices,
+    this.activeDevicePaths,
+    this.onDeviceToggled,
     super.key,
   });
 
@@ -50,13 +53,17 @@ class FileTopBar extends StatelessWidget {
   final VoidCallback onNewFilePressed;
   final VoidCallback onOpenDrawer;
   final VoidCallback onOpenSettings;
+  final List<dynamic>? devices;
+  final List<String>? activeDevicePaths;
+  final ValueChanged<String>? onDeviceToggled;
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      decoration: const BoxDecoration(
-        color: AutobutlerColors.sidebar,
-        border: Border(bottom: BorderSide(color: AutobutlerColors.border)),
+      decoration: BoxDecoration(
+        color: colorScheme.secondary,
+        border: Border(bottom: BorderSide(color: colorScheme.outline)),
       ),
       child: SafeArea(
         bottom: false,
@@ -98,12 +105,14 @@ class FileTopBar extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _iconBtn(
+          context: context,
           icon: Icons.arrow_back_rounded,
           onTap: currentPath.isEmpty ? null : onGoUp,
           tooltip: 'Back',
         ),
         const SizedBox(width: 4),
         _iconBtn(
+          context: context,
           icon: Icons.arrow_upward_rounded,
           onTap: currentPath.isEmpty ? null : onGoUp,
           tooltip: 'Up one level',
@@ -123,12 +132,14 @@ class FileTopBar extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _iconBtn(
+          context: context,
           icon: Icons.search_rounded,
           onTap: onSearchPressed,
           tooltip: 'Search',
         ),
         const SizedBox(width: 4),
         _iconBtn(
+          context: context,
           icon: Icons.settings_outlined,
           onTap: onOpenSettings,
           tooltip: 'Settings',
@@ -138,11 +149,10 @@ class FileTopBar extends StatelessWidget {
   }
 
   Widget _buildPathRow(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      decoration: const BoxDecoration(
-        border: Border(
-          top: BorderSide(color: AutobutlerColors.border, width: 0.5),
-        ),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: colorScheme.outline, width: 0.5)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: LayoutBuilder(
@@ -161,6 +171,10 @@ class FileTopBar extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (devices != null && devices!.length > 1) ...[
+                        _buildDeviceChips(context),
+                        const SizedBox(width: 8),
+                      ],
                       _buildActions(context),
                       const SizedBox(width: 8),
                       _buildViewChips(context),
@@ -174,6 +188,10 @@ class FileTopBar extends StatelessWidget {
           return Row(
             children: [
               Expanded(child: _buildBreadcrumb(context)),
+              if (devices != null && devices!.length > 1) ...[
+                const SizedBox(width: 12),
+                _buildDeviceChips(context),
+              ],
               const SizedBox(width: 12),
               _buildActions(context),
               const SizedBox(width: 8),
@@ -186,13 +204,14 @@ class FileTopBar extends StatelessWidget {
   }
 
   Widget _buildBreadcrumb(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: AutobutlerColors.input,
-          border: Border.all(color: AutobutlerColors.border),
+          color: colorScheme.surfaceContainerHighest,
+          border: Border.all(color: colorScheme.outline),
           borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
         ),
         child: Row(
@@ -203,22 +222,22 @@ class FileTopBar extends StatelessWidget {
               child: InkWell(
                 onTap: onGoHome,
                 borderRadius: BorderRadius.circular(4),
-                child: const Padding(
-                  padding: EdgeInsets.all(2),
+                child: Padding(
+                  padding: const EdgeInsets.all(2),
                   child: Icon(
                     Icons.home_rounded,
                     size: 16,
-                    color: AutobutlerColors.secondaryForeground,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
             ),
             const SizedBox(width: 6),
-            const Text(
+            Text(
               '/',
               style: TextStyle(
                 fontSize: 13,
-                color: AutobutlerColors.secondaryForeground,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
             ..._buildCrumbs(context),
@@ -229,6 +248,7 @@ class FileTopBar extends StatelessWidget {
   }
 
   List<Widget> _buildCrumbs(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     if (currentPath.isEmpty) return [];
     final trimmed = currentPath.startsWith('/')
         ? currentPath.substring(1)
@@ -239,12 +259,12 @@ class FileTopBar extends StatelessWidget {
 
     for (var i = 0; i < segments.length; i++) {
       widgets.add(
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Icon(
             Icons.chevron_right_rounded,
             size: 14,
-            color: AutobutlerColors.mutedForeground,
+            color: colorScheme.onSurface.withValues(alpha: 0.4),
           ),
         ),
       );
@@ -266,9 +286,7 @@ class FileTopBar extends StatelessWidget {
                 segments[i],
                 style: TextStyle(
                   fontSize: 13,
-                  color: isLast
-                      ? AutobutlerColors.foreground
-                      : AutobutlerColors.primary,
+                  color: isLast ? colorScheme.onSurface : colorScheme.primary,
                 ),
               ),
             ),
@@ -279,11 +297,34 @@ class FileTopBar extends StatelessWidget {
     return widgets;
   }
 
+  Widget _buildDeviceChips(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: devices!.map((device) {
+        final isSelected =
+            activeDevicePaths?.contains(device.devicePath) ?? true;
+        return Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: _chip(
+            context: context,
+            icon: Icons.devices_rounded,
+            label: device.deviceName ?? device.devicePath,
+            onTap: onDeviceToggled != null
+                ? () => onDeviceToggled!(device.devicePath)
+                : null,
+            active: isSelected,
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildActions(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         _chip(
+          context: context,
           icon: Icons.upload_rounded,
           label: isUploading
               ? (uploadTotal > 0
@@ -294,12 +335,14 @@ class FileTopBar extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         _chip(
+          context: context,
           icon: Icons.create_new_folder_outlined,
           label: 'New folder',
           onTap: isCreatingFolder ? null : onCreateFolderPressed,
         ),
         const SizedBox(width: 6),
         _chip(
+          context: context,
           icon: Icons.edit_document,
           label: 'New file',
           onTap: onNewFilePressed,
@@ -313,6 +356,7 @@ class FileTopBar extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _segmentedToggle(
+          context: context,
           segments: const [
             (icon: Icons.view_list_rounded, label: 'List'),
             (icon: Icons.grid_view_rounded, label: 'Grid'),
@@ -327,6 +371,7 @@ class FileTopBar extends StatelessWidget {
         ),
         const SizedBox(width: 4),
         _chip(
+          context: context,
           icon: isUnifiedView
               ? Icons.folder_copy_outlined
               : Icons.device_hub_outlined,
@@ -339,15 +384,17 @@ class FileTopBar extends StatelessWidget {
   }
 
   Widget _segmentedToggle({
+    required BuildContext context,
     required List<({IconData icon, String label})> segments,
     required int selectedIndex,
     required ValueChanged<int> onSelected,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     final radius = BorderRadius.circular(AutobutlerColors.radiusLg);
     return Material(
-      color: AutobutlerColors.input,
+      color: colorScheme.surfaceContainerHighest,
       shape: RoundedRectangleBorder(
-        side: const BorderSide(color: AutobutlerColors.border),
+        side: BorderSide(color: colorScheme.outline),
         borderRadius: radius,
       ),
       clipBehavior: Clip.antiAlias,
@@ -392,12 +439,10 @@ class FileTopBar extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? AutobutlerColors.primary.withValues(alpha: 0.12)
+                        ? colorScheme.primary.withValues(alpha: 0.12)
                         : Colors.transparent,
                     border: i > 0
-                        ? const Border(
-                            left: BorderSide(color: AutobutlerColors.border),
-                          )
+                        ? Border(left: BorderSide(color: colorScheme.outline))
                         : null,
                   ),
                   child: Row(
@@ -407,8 +452,8 @@ class FileTopBar extends StatelessWidget {
                         seg.icon,
                         size: 14,
                         color: isActive
-                            ? AutobutlerColors.primary
-                            : AutobutlerColors.secondaryForeground,
+                            ? colorScheme.primary
+                            : colorScheme.onSurfaceVariant,
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -416,8 +461,8 @@ class FileTopBar extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           color: isActive
-                              ? AutobutlerColors.primary
-                              : AutobutlerColors.secondaryForeground,
+                              ? colorScheme.primary
+                              : colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -432,10 +477,12 @@ class FileTopBar extends StatelessWidget {
   }
 
   Widget _iconBtn({
+    required BuildContext context,
     required IconData icon,
     required VoidCallback? onTap,
     required String tooltip,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     final radius = BorderRadius.circular(AutobutlerColors.radiusMd);
     return Tooltip(
       message: tooltip,
@@ -444,9 +491,9 @@ class FileTopBar extends StatelessWidget {
             ? SystemMouseCursors.click
             : SystemMouseCursors.basic,
         child: Material(
-          color: AutobutlerColors.input,
+          color: colorScheme.surfaceContainerHighest,
           shape: RoundedRectangleBorder(
-            side: const BorderSide(color: AutobutlerColors.border),
+            side: BorderSide(color: colorScheme.outline),
             borderRadius: radius,
           ),
           clipBehavior: Clip.antiAlias,
@@ -459,8 +506,8 @@ class FileTopBar extends StatelessWidget {
                 icon,
                 size: 18,
                 color: onTap != null
-                    ? AutobutlerColors.secondaryForeground
-                    : AutobutlerColors.mutedForeground,
+                    ? colorScheme.onSurfaceVariant
+                    : colorScheme.onSurface.withValues(alpha: 0.3),
               ),
             ),
           ),
@@ -470,11 +517,13 @@ class FileTopBar extends StatelessWidget {
   }
 
   Widget _chip({
+    required BuildContext context,
     required IconData icon,
     required String label,
     VoidCallback? onTap,
     bool active = false,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     final radius = BorderRadius.circular(AutobutlerColors.radiusLg);
     return MouseRegion(
       cursor: onTap != null
@@ -482,13 +531,13 @@ class FileTopBar extends StatelessWidget {
           : SystemMouseCursors.basic,
       child: Material(
         color: active
-            ? AutobutlerColors.primary.withValues(alpha: 0.12)
-            : AutobutlerColors.input,
+            ? colorScheme.primary.withValues(alpha: 0.12)
+            : colorScheme.surfaceContainerHighest,
         shape: RoundedRectangleBorder(
           side: BorderSide(
             color: active
-                ? AutobutlerColors.primary.withValues(alpha: 0.3)
-                : AutobutlerColors.border,
+                ? colorScheme.primary.withValues(alpha: 0.3)
+                : colorScheme.outline,
           ),
           borderRadius: radius,
         ),
@@ -505,8 +554,8 @@ class FileTopBar extends StatelessWidget {
                   icon,
                   size: 14,
                   color: active
-                      ? AutobutlerColors.primary
-                      : AutobutlerColors.secondaryForeground,
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -514,8 +563,8 @@ class FileTopBar extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     color: active
-                        ? AutobutlerColors.primary
-                        : AutobutlerColors.secondaryForeground,
+                        ? colorScheme.primary
+                        : colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],

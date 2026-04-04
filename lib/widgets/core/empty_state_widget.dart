@@ -1,4 +1,3 @@
-import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:flutter/material.dart';
 
 class EmptyStateWidget extends StatelessWidget {
@@ -17,21 +16,26 @@ class EmptyStateWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 56, color: AutobutlerColors.mutedForeground),
+            Icon(
+              icon,
+              size: 56,
+              color: colorScheme.onSurface.withValues(alpha: 0.4),
+            ),
             const SizedBox(height: 16),
             Text(
               headline,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: AutobutlerColors.cardForeground,
+                color: colorScheme.onSurface,
               ),
             ),
             if (subtext != null) ...[
@@ -39,9 +43,9 @@ class EmptyStateWidget extends StatelessWidget {
               Text(
                 subtext!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: AutobutlerColors.mutedForeground,
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
                   height: 1.5,
                 ),
               ),

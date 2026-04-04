@@ -1,6 +1,5 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:autobutler/widgets/core/autobutler_file_icon.dart';
@@ -160,8 +159,9 @@ class _FileBrowserViewState extends State<FileBrowserView> {
   // ── Sort header ──────────────────────────────────────────────────────────
 
   Widget _buildSortHeader() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      color: AutobutlerColors.sidebar,
+      color: colorScheme.secondary,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
@@ -179,8 +179,9 @@ class _FileBrowserViewState extends State<FileBrowserView> {
   }
 
   Widget _buildGridSortHeader() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      color: AutobutlerColors.sidebar,
+      color: colorScheme.secondary,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
@@ -194,6 +195,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
   }
 
   Widget _headerCell(String label, SortColumn column, {int flex = 1}) {
+    final colorScheme = Theme.of(context).colorScheme;
     final isActive = _sortColumn == column;
     return Expanded(
       flex: flex,
@@ -210,8 +212,8 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                   color: isActive
-                      ? AutobutlerColors.foreground
-                      : AutobutlerColors.secondaryForeground,
+                      ? colorScheme.onSurface
+                      : colorScheme.onSurfaceVariant,
                 ),
               ),
               if (isActive) ...[
@@ -221,7 +223,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                       ? Icons.arrow_upward_rounded
                       : Icons.arrow_downward_rounded,
                   size: 12,
-                  color: AutobutlerColors.foreground,
+                  color: colorScheme.onSurface,
                 ),
               ],
             ],
