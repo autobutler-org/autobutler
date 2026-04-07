@@ -82,9 +82,10 @@ class _RecentFilesSectionState extends State<RecentFilesSection> {
         final files = snapshot.data!.where((f) => !f.isDir).toList();
         if (files.isEmpty) return const SizedBox.shrink();
 
+        final colorScheme = Theme.of(context).colorScheme;
         return Container(
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: AutobutlerColors.border)),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: colorScheme.outline)),
           ),
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
           child: Column(
@@ -93,18 +94,18 @@ class _RecentFilesSectionState extends State<RecentFilesSection> {
             children: [
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.schedule_rounded,
                     size: 14,
-                    color: AutobutlerColors.mutedForeground,
+                    color: colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
                   const SizedBox(width: 6),
-                  const Text(
+                  Text(
                     'Recently uploaded',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: AutobutlerColors.mutedForeground,
+                      color: colorScheme.onSurface.withValues(alpha: 0.4),
                     ),
                   ),
                 ],
@@ -161,12 +162,13 @@ class _RecentFileChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: Material(
-        color: AutobutlerColors.input,
+        color: colorScheme.surfaceContainerHighest,
         shape: RoundedRectangleBorder(
-          side: const BorderSide(color: AutobutlerColors.border),
+          side: BorderSide(color: colorScheme.outline),
           borderRadius: BorderRadius.circular(AutobutlerColors.radiusMd),
         ),
         clipBehavior: Clip.antiAlias,
@@ -180,7 +182,7 @@ class _RecentFileChip extends StatelessWidget {
                 AutobutlerFileIcon(
                   node: file,
                   size: 20,
-                  color: AutobutlerColors.secondaryForeground,
+                  color: colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 8),
                 ConstrainedBox(
@@ -193,9 +195,9 @@ class _RecentFileChip extends StatelessWidget {
                         file.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: AutobutlerColors.cardForeground,
+                          color: colorScheme.onSurface,
                         ),
                       ),
                       if (file.deviceName.isNotEmpty)
@@ -203,9 +205,9 @@ class _RecentFileChip extends StatelessWidget {
                           file.deviceName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: AutobutlerColors.mutedForeground,
+                            color: colorScheme.onSurface.withValues(alpha: 0.4),
                           ),
                         ),
                     ],
@@ -220,12 +222,12 @@ class _RecentFileChip extends StatelessWidget {
                     child: InkWell(
                       onTap: onFolderTap,
                       borderRadius: BorderRadius.circular(4),
-                      child: const Padding(
-                        padding: EdgeInsets.all(4),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
                         child: Icon(
                           Icons.folder_open_rounded,
                           size: 14,
-                          color: AutobutlerColors.mutedForeground,
+                          color: colorScheme.onSurface.withValues(alpha: 0.4),
                         ),
                       ),
                     ),

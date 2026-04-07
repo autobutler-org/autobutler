@@ -1,5 +1,4 @@
 import 'package:autobutler/services/health_service.dart';
-import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:autobutler/widgets/core/autobutler_storage_bar.dart';
 import 'package:flutter/material.dart';
 
@@ -52,26 +51,27 @@ class _FileStorageFooterState extends State<FileStorageFooter> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final barColor = AutobutlerStorageBar.colorForFraction(_diskPercent);
     return Container(
-      decoration: const BoxDecoration(
-        color: AutobutlerColors.sidebar,
-        border: Border(top: BorderSide(color: AutobutlerColors.border)),
+      decoration: BoxDecoration(
+        color: colorScheme.secondary,
+        border: Border(top: BorderSide(color: colorScheme.outline)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.storage_rounded,
             size: 14,
-            color: AutobutlerColors.mutedForeground,
+            color: colorScheme.onSurface.withValues(alpha: 0.4),
           ),
           const SizedBox(width: 8),
           Text(
             _loaded ? _label : 'Storage',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: AutobutlerColors.mutedForeground,
+              color: colorScheme.onSurface.withValues(alpha: 0.4),
             ),
           ),
           const SizedBox(width: 12),

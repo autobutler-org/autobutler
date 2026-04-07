@@ -90,7 +90,9 @@ class _NewFileDialogState extends State<_NewFileDialog> {
               Text(
                 'File type',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AutobutlerColors.mutedForeground,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ),
               const SizedBox(height: 8),
@@ -111,7 +113,9 @@ class _NewFileDialogState extends State<_NewFileDialog> {
               Text(
                 'Name',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AutobutlerColors.mutedForeground,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ),
               const SizedBox(height: 8),
@@ -166,9 +170,9 @@ class _TypeCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? colorScheme.primaryContainer
-              : AutobutlerColors.input,
+              : colorScheme.surfaceContainerHighest,
           border: Border.all(
-            color: isSelected ? colorScheme.primary : AutobutlerColors.border,
+            color: isSelected ? colorScheme.primary : colorScheme.outline,
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(AutobutlerColors.radiusMd),
@@ -181,7 +185,7 @@ class _TypeCard extends StatelessWidget {
               size: 28,
               color: isSelected
                   ? colorScheme.primary
-                  : AutobutlerColors.mutedForeground,
+                  : colorScheme.onSurface.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 6),
             Text(
@@ -189,9 +193,7 @@ class _TypeCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: isSelected
-                    ? colorScheme.primary
-                    : AutobutlerColors.cardForeground,
+                color: isSelected ? colorScheme.primary : colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
