@@ -1,0 +1,134 @@
+# Page snapshot
+
+```yaml
+- main [ref=e2]:
+  - generic [ref=e6]:
+    - navigation [ref=e7]:
+      - generic [ref=e8]:
+        - link "AutoButler" [ref=e9]:
+          - /url: /
+          - img "AutoButler" [ref=e10]
+        - link "Files" [ref=e11]:
+          - /url: /files
+        - link "Calendar" [ref=e12]:
+          - /url: /calendar
+        - link "Photos" [ref=e13]:
+          - /url: /photos
+        - link "Books" [ref=e14]:
+          - /url: /books
+        - link "Health" [ref=e15]:
+          - /url: /health
+      - generic [ref=e16]:
+        - link "Settings" [ref=e17] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e18]
+        - button "vX.Y.Z ▾" [ref=e22] [cursor=pointer]:
+          - text: vX.Y.Z
+          - generic [ref=e23]: ▾
+        - link "Devices" [ref=e24] [cursor=pointer]:
+          - /url: /devices
+          - img [ref=e25]
+          - generic [ref=e27]: Devices
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - heading "Library" [level=3] [ref=e32]
+          - navigation [ref=e33]:
+            - link "All Photos 12,842" [ref=e34]:
+              - /url: /photos
+              - img [ref=e35]
+              - generic [ref=e37]: All Photos
+              - generic [ref=e38]: 12,842
+            - link "Albums 32" [ref=e39]:
+              - /url: "#"
+              - img [ref=e40]
+              - generic [ref=e42]: Albums
+              - generic [ref=e43]: "32"
+            - link "Favorites 418" [ref=e44]:
+              - /url: "#"
+              - img [ref=e45]
+              - generic [ref=e47]: Favorites
+              - generic [ref=e48]: "418"
+            - link "Recently Added 296" [ref=e49]:
+              - /url: "#"
+              - img [ref=e50]
+              - generic [ref=e52]: Recently Added
+              - generic [ref=e53]: "296"
+        - generic [ref=e54]:
+          - heading "Smart Albums" [level=3] [ref=e55]
+          - navigation [ref=e56]:
+            - link "Screenshots 1,204" [ref=e57]:
+              - /url: "#"
+              - img [ref=e58]
+              - generic [ref=e60]: Screenshots
+              - generic [ref=e61]: 1,204
+            - link "Videos 643" [ref=e62]:
+              - /url: "#"
+              - img [ref=e63]
+              - generic [ref=e65]: Videos
+              - generic [ref=e66]: "643"
+            - link "Selfies 312" [ref=e67]:
+              - /url: "#"
+              - img [ref=e68]
+              - generic [ref=e70]: Selfies
+              - generic [ref=e71]: "312"
+        - generic [ref=e73]:
+          - heading "Storage" [level=3] [ref=e74]
+          - generic [ref=e78]: 72% used • 0.17 TB of 0.23 TB
+      - generic [ref=e79]:
+        - generic [ref=e80]:
+          - heading "All Photos" [level=2] [ref=e81] [cursor=pointer]
+          - generic [ref=e82]: 120 photos
+        - generic [ref=e83]:
+          - img "0155879E-BF4D-4CCA-982A-9AE9C24B20E4_4_5005_c.jpeg" [ref=e85] [cursor=pointer]
+          - img "08B66A1B-6FCA-4602-9D23-C886753A2728_4_5005_c.jpeg" [ref=e87] [cursor=pointer]
+          - img "0D0A19F5-AA76-4DF4-9861-54CECB89EC6A_4_5005_c.jpeg" [ref=e89] [cursor=pointer]
+          - img "16415625-75D5-4359-80BC-9A7CD2F8BE6D_4_5005_c.jpeg" [ref=e91] [cursor=pointer]
+          - img "186118E2-D082-41BA-9ADC-B6E3C646A440_1_105_c.jpeg" [ref=e93] [cursor=pointer]
+          - img "19218F1F-5DDA-4251-988B-CD090C5DD598_4_5005_c.jpeg" [ref=e95] [cursor=pointer]
+          - img "1E2EDA2A-D339-4080-80DA-4D365247177D_1_105_c.jpeg" [ref=e97] [cursor=pointer]
+          - img "20251009-221749-GibbsHelmholtz-id6783403.jpeg" [ref=e99] [cursor=pointer]
+          - img "20251020_085447.jpeg" [ref=e101] [cursor=pointer]
+          - img "20251021-155241-froschler-id6794895.jpeg" [ref=e103] [cursor=pointer]
+          - img "20251104_151441.jpeg" [ref=e105] [cursor=pointer]
+          - img "20251108_214149.jpeg" [ref=e107] [cursor=pointer]
+          - img "20251113-070704-tommes-id6818082.jpeg" [ref=e109] [cursor=pointer]
+          - img "24B3EEA1-A7D6-48E8-81D7-8FB70CAA351D_4_5005_c.jpeg" [ref=e111] [cursor=pointer]
+          - img "2C26B2E2-1886-419D-8084-6AE61DC835F5_4_5005_c.jpeg" [ref=e113] [cursor=pointer]
+          - img "2CD70B39-2696-4A1E-9E1A-CE6BA8D84177_4_5005_c.jpeg" [ref=e115] [cursor=pointer]
+          - img "2EBBB71C-ED70-451A-909E-42669959B16E_1_105_c.jpeg" [ref=e117] [cursor=pointer]
+          - img "2EEA6357-0A00-41FF-B7DB-06F288900041_4_5005_c.jpeg" [ref=e119] [cursor=pointer]
+          - img "329885B7-A411-42B5-B7A1-B85F020128A1_4_5005_c.jpeg" [ref=e121] [cursor=pointer]
+          - img "3463781A-39DD-455F-B046-A1EE8A51550E_4_5005_c.jpeg" [ref=e123] [cursor=pointer]
+          - img "3D346CC3-6C21-4280-83E7-39880A3F6D64_1_105_c.jpeg" [ref=e125] [cursor=pointer]
+          - img "434A9ED2-349D-4BE6-BD5B-AE8B5719A0CF_4_5005_c.jpeg" [ref=e127] [cursor=pointer]
+          - img "4C5D86AE-6D24-4875-BACD-7029848980F4_4_5005_c.jpeg" [ref=e129] [cursor=pointer]
+          - img "55963046-6F15-4ACE-9D22-13EFAA37CB31_4_5005_c.jpeg" [ref=e131] [cursor=pointer]
+          - img "5EA8CCFC-3C0C-4113-95EB-B34D3CA432AE_1_105_c.jpeg" [ref=e133] [cursor=pointer]
+          - img "5b63e6e0-9b78-11f0-b155-917931231cdf.jpeg" [ref=e135] [cursor=pointer]
+          - img "64290118-5B39-4AE7-9435-9042E741C88F_1_105_c.jpeg" [ref=e137] [cursor=pointer]
+          - img "70A35425-22E6-4AAC-B22B-84012C0BA8FE_1_105_c.jpeg" [ref=e139] [cursor=pointer]
+          - img "796D88E8-11E3-45ED-90B6-08597D904D6E_4_5005_c.jpeg" [ref=e141] [cursor=pointer]
+          - img "82FFCEFD-BA22-464F-9713-C5F18335940B_4_5005_c.jpeg" [ref=e143] [cursor=pointer]
+          - img "8494D2C3-E30A-4425-807F-17C970CAD415_4_5005_c.jpeg" [ref=e145] [cursor=pointer]
+          - img "85AEBC4E-A50E-4D28-8AC1-E1D4B12E240E_4_5005_c.jpeg" [ref=e147] [cursor=pointer]
+          - img "89118ACE-DC8B-4572-8941-7F9D8A33F237_1_105_c.jpeg" [ref=e149] [cursor=pointer]
+          - img "8ADB0F7D-D3AE-4B51-BEAE-FBFC262A796A_1_105_c.jpeg" [ref=e151] [cursor=pointer]
+          - img "9094A12B-B4DE-42FD-882A-E982F2061AFA_1_105_c.jpeg" [ref=e153] [cursor=pointer]
+          - img "9657F154-23D7-460A-ACCB-2FC052F21F63_1_105_c.jpeg" [ref=e155] [cursor=pointer]
+          - img "9DFE8F53-81B8-457B-9930-40410C24EA4C_4_5005_c.jpeg" [ref=e157] [cursor=pointer]
+          - img "9E4BC700-2F44-4356-A5DC-725FC54FFC85_4_5005_c.jpeg" [ref=e159] [cursor=pointer]
+          - img "A616D33C-4B8E-467F-B869-48724E0DEE04_4_5005_c.jpeg" [ref=e161] [cursor=pointer]
+          - img "A793821E-9029-4293-B049-A2AEF0E970F9_1_105_c.jpeg" [ref=e163] [cursor=pointer]
+          - img "B44FDC1A-FE6C-4143-B38F-C1FDBF4C8C6F_1_105_c.jpeg" [ref=e165] [cursor=pointer]
+          - img "B7F0463F-84FA-4642-829A-EF43C0141450_1_105_c.jpeg" [ref=e167] [cursor=pointer]
+          - img "BB239A28-03B7-4261-9E8F-5EC2642BB27F_4_5005_c.jpeg" [ref=e169] [cursor=pointer]
+          - img "BDC9A15C-D7A4-497A-925A-75FC5D111D2C_4_5005_c.jpeg" [ref=e171] [cursor=pointer]
+          - img "BE4549BE-DE4E-45F8-BEA7-00F3AAEAB522_1_105_c.jpeg" [ref=e173] [cursor=pointer]
+          - img "C2DBAE7B-F8C5-47A5-9BC3-7BECBBBFFFB4_1_105_c.jpeg" [ref=e175] [cursor=pointer]
+          - img "C455DA4A-66DE-468E-9FB3-F488C472CDE7_4_5005_c.jpeg" [ref=e177] [cursor=pointer]
+          - img "CA3B2700-93D1-4C7F-98B4-17CADE0E7C8C_4_5005_c.jpeg" [ref=e179] [cursor=pointer]
+          - img "CD19CF9F-BDA5-4753-9040-7866889E55E3_4_5005_c.jpeg" [ref=e181] [cursor=pointer]
+          - img "DDB42ED7-DF68-48E6-8162-60196604FB6A_4_5005_c.jpeg" [ref=e183] [cursor=pointer]
+          - generic [ref=e185]: Loading more photos...
+```

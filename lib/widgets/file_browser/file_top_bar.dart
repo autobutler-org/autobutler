@@ -216,6 +216,7 @@ class FileTopBar extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(right: 6),
           child: _chip(
+            context: context,
             icon: isSelected
                 ? Icons.check_circle_outline_rounded
                 : Icons.circle_outlined,
@@ -322,28 +323,6 @@ class FileTopBar extends StatelessWidget {
       );
     }
     return widgets;
-  }
-
-  Widget _buildDeviceChips(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: devices!.map((device) {
-        final isSelected =
-            activeDevicePaths?.contains(device.devicePath) ?? true;
-        return Padding(
-          padding: const EdgeInsets.only(right: 4),
-          child: _chip(
-            context: context,
-            icon: Icons.devices_rounded,
-            label: device.deviceName ?? device.devicePath,
-            onTap: onDeviceToggled != null
-                ? () => onDeviceToggled!(device.devicePath)
-                : null,
-            active: isSelected,
-          ),
-        );
-      }).toList(),
-    );
   }
 
   Widget _buildActions(BuildContext context) {
