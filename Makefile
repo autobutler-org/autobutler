@@ -101,7 +101,7 @@ else
 	curl --fail -L \
 		"https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_$(FLUTTER_VERSION)-stable.tar.xz" | \
 			tar \
-				-xf \
+				-xJf - \
 				-C "${HOME}"
 endif
 else ifeq ($(UNAME_S),Darwin)
