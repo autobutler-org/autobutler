@@ -166,16 +166,19 @@ class FileTopBar extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildBreadcrumb(context),
+                if (devices != null && devices!.length > 1) ...[
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: _buildDeviceChips(context),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (devices != null && devices!.length > 1) ...[
-                        _buildDeviceChips(context),
-                        const SizedBox(width: 8),
-                      ],
                       _buildActions(context),
                       const SizedBox(width: 8),
                       _buildViewChips(context),
