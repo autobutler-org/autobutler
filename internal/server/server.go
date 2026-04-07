@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
+	"os/signal"
+	"syscall"
 
 	docs "github.com/autobutler-org/autobutler/docs/swagger"
 	"github.com/autobutler-org/autobutler/internal/server/middleware"
 	"github.com/autobutler-org/autobutler/pkg/botel"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/remoteutil"
+	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 	"github.com/autobutler-org/autobutler/pkg/util/workerutil"
@@ -66,24 +68,32 @@ func StartServer(deps deputil.Dependencies) error {
 		return fmt.Errorf("failed to setup services: %w", err)
 	}
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	portNum := serverutil.ServerPort()
+	port := fmt.Sprintf("%d", portNum)
 
 	if enabled, authKey := settingsutil.GetRemoteAccess(); enabled && authKey != "" {
 		if err := remoteutil.Start(authKey); err != nil {
 			log.Printf("[remote] failed to start: %v", err)
-		} else {
-			portNum, convErr := strconv.Atoi(port)
-			if convErr != nil {
-				portNum = 8080
-			}
-			if err := remoteutil.StartProxy(portNum); err != nil {
-				log.Printf("[remote] failed to start proxy: %v", err)
-			}
+		} else if err := remoteutil.StartProxy(portNum); err != nil {
+			log.Printf("[remote] failed to start proxy: %v", err)
 		}
 	}
+
+	// Graceful shutdown: stop tsnet and telemetry on SIGINT/SIGTERM.
+	go func() {
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		<-quit
+		log.Println("[server] shutting down...")
+		remoteutil.Stop()
+		if err := tp.Shutdown(context.Background()); err != nil {
+			log.Printf("Error shutting down tracer provider: %v", err)
+		}
+		if err := mp.Shutdown(context.Background()); err != nil {
+			log.Printf("Error shutting down meter provider: %v", err)
+		}
+		os.Exit(0)
+	}()
 
 	router := gin.Default()
 	// Disable automatic redirects so unmatched routes (e.g. /health, /photos)

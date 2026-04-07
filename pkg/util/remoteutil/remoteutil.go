@@ -11,7 +11,9 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
+	"time"
 
 	"tailscale.com/tsnet"
 )
@@ -28,16 +30,24 @@ var (
 )
 
 func controlURL() string {
-	if u := os.Getenv("AUTOBUTLER_HEADSCALE_URL"); u != "" {
-		return u
+	u := os.Getenv("AUTOBUTLER_HEADSCALE_URL")
+	if u == "" {
+		u = defaultControlURL
 	}
-	return defaultControlURL
+	if strings.HasPrefix(u, "http://") {
+		log.Printf("[remote] WARNING: Headscale control URL is using HTTP (%s). Auth keys will be sent in plaintext. Use HTTPS in production.", u)
+	}
+	return u
 }
 
+// stateDir returns the path where tsnet should persist its state. On Linux it
+// prefers the system service directory if the parent exists; otherwise it falls
+// back to the user's home config directory. Directory creation is left to the
+// caller (Start).
 func stateDir() string {
 	if runtime.GOOS == "linux" {
 		svcDir := "/var/lib/autobutler/tsnet"
-		if err := os.MkdirAll(svcDir, 0700); err == nil {
+		if _, err := os.Stat(filepath.Dir(svcDir)); err == nil {
 			return svcDir
 		}
 	}
@@ -55,6 +65,9 @@ func Start(authKey string) error {
 		return nil
 	}
 	dir := stateDir()
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return fmt.Errorf("failed to create tsnet state dir: %w", err)
+	}
 	srv = &tsnet.Server{
 		Hostname:   hostname,
 		AuthKey:    authKey,
@@ -92,17 +105,26 @@ func IsRunning() bool {
 	return running
 }
 
+// RemoteURL returns the Tailscale IP-based URL for the tsnet node, or "" if
+// not running. The mutex is held only long enough to snapshot the server
+// pointer; the network call to the local Tailscale daemon happens outside the
+// lock so that Stop() and IsRunning() are never blocked by I/O.
 func RemoteURL() string {
 	mu.Lock()
-	defer mu.Unlock()
 	if !running || srv == nil {
+		mu.Unlock()
 		return ""
 	}
-	lc, err := srv.LocalClient()
+	s := srv
+	mu.Unlock()
+
+	lc, err := s.LocalClient()
 	if err != nil {
 		return ""
 	}
-	st, err := lc.Status(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	st, err := lc.Status(ctx)
 	if err != nil {
 		return ""
 	}
@@ -113,6 +135,13 @@ func RemoteURL() string {
 	return fmt.Sprintf("http://%s:80", ip)
 }
 
+// StartProxy starts an HTTP reverse proxy on the tsnet listener at :80,
+// forwarding traffic to the local butler server at localPort. It is idempotent:
+// if the proxy listener is already open, it returns nil immediately.
+//
+// The proxy is intentionally unauthenticated at the tsnet layer — access
+// control is enforced by the proxied butler server's own auth middleware. Only
+// peers on the tailnet can reach this listener.
 // HasPersistedState returns true if tsnet has previously stored credentials
 // on disk and can reconnect without a new auth key.
 func HasPersistedState() bool {
@@ -132,6 +161,9 @@ func HasPersistedState() bool {
 func StartProxy(localPort int) error {
 	mu.Lock()
 	defer mu.Unlock()
+	if proxyLn != nil {
+		return nil // already started
+	}
 	if srv == nil {
 		return fmt.Errorf("tsnet not started")
 	}
@@ -140,10 +172,18 @@ func StartProxy(localPort int) error {
 		return fmt.Errorf("tsnet listen failed: %w", err)
 	}
 	proxyLn = ln
-	rp := httputil.NewSingleHostReverseProxy(&url.URL{
+	target := &url.URL{
 		Scheme: "http",
 		Host:   fmt.Sprintf("localhost:%d", localPort),
-	})
+	}
+	rp := httputil.NewSingleHostReverseProxy(target)
+	// Rewrite the Host header so the proxied server sees the local address
+	// rather than the Tailscale IP, which would confuse virtual-host routing.
+	originalDirector := rp.Director
+	rp.Director = func(req *http.Request) {
+		originalDirector(req)
+		req.Host = target.Host
+	}
 	go func() {
 		if err := http.Serve(ln, rp); err != nil {
 			log.Printf("[tsnet] proxy stopped: %v", err)
