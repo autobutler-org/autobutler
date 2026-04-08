@@ -95,6 +95,7 @@ flutter.zip
 ## Ralph loops
 .ralph/
 ## Skills
+.claude/skills
 .github/skills
 
 ## Sable's personal dev context (AI co-developer workspace)
