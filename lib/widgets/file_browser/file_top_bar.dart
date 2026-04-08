@@ -292,6 +292,7 @@ class _FileTopBarState extends State<FileTopBar> {
         context: context,
         icon: Icons.tune_rounded,
         label: 'Views',
+        iconOnly: true,
         onTap: () {
           if (_viewsMenuController.isOpen) {
             _viewsMenuController.close();
@@ -369,6 +370,7 @@ class _FileTopBarState extends State<FileTopBar> {
         context: context,
         icon: Icons.add_rounded,
         label: 'Create',
+        iconOnly: true,
         onTap: () {
           if (_createMenuController.isOpen) {
             _createMenuController.close();
@@ -813,52 +815,57 @@ class _FileTopBarState extends State<FileTopBar> {
     required String label,
     VoidCallback? onTap,
     bool active = false,
+    bool iconOnly = false,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final radius = BorderRadius.circular(AutobutlerColors.radiusLg);
+    final iconColor = active
+        ? colorScheme.primary
+        : colorScheme.onSurfaceVariant;
     return MouseRegion(
       cursor: onTap != null
           ? SystemMouseCursors.click
           : SystemMouseCursors.basic,
-      child: Material(
-        color: active
-            ? colorScheme.primary.withValues(alpha: 0.12)
-            : colorScheme.surfaceContainerHighest,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-            color: active
-                ? colorScheme.primary.withValues(alpha: 0.3)
-                : colorScheme.outline,
+      child: Tooltip(
+        message: iconOnly ? label : '',
+        child: Material(
+          color: active
+              ? colorScheme.primary.withValues(alpha: 0.12)
+              : colorScheme.surfaceContainerHighest,
+          shape: RoundedRectangleBorder(
+            side: BorderSide(
+              color: active
+                  ? colorScheme.primary.withValues(alpha: 0.3)
+                  : colorScheme.outline,
+            ),
+            borderRadius: radius,
           ),
-          borderRadius: radius,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: radius,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  icon,
-                  size: 14,
-                  color: active
-                      ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: active
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: radius,
+            child: Padding(
+              padding: iconOnly
+                  ? const EdgeInsets.all(8)
+                  : const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              child: iconOnly
+                  ? Icon(icon, size: 16, color: iconColor)
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(icon, size: 14, color: iconColor),
+                        const SizedBox(width: 6),
+                        Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: active
+                                ? colorScheme.primary
+                                : colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ),
         ),
