@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:autobutler/widgets/autobutler_brand_button.dart';
@@ -64,7 +66,6 @@ class FileTopBar extends StatefulWidget {
 
 class _FileTopBarState extends State<FileTopBar> {
   final _viewsMenuController = MenuController();
-  final _createMenuController = MenuController();
 
   @override
   Widget build(BuildContext context) {
@@ -169,18 +170,18 @@ class _FileTopBarState extends State<FileTopBar> {
           final isCompact = constraints.maxWidth < 860;
 
           if (isCompact) {
+            // Mobile: breadcrumb (with home icon + smart truncation) + Views icon.
+            // Create actions move to a FAB at the page level.
             return Row(
               children: [
-                Expanded(child: _buildCompactPath(context)),
+                Expanded(child: _buildBreadcrumb(context)),
                 const SizedBox(width: 8),
                 _buildViewsMenu(context),
-                const SizedBox(width: 6),
-                _buildCreateMenu(context),
               ],
             );
           }
 
-          // Wide layout — unchanged.
+          // Desktop: breadcrumb + optional device chips + create actions + view chips.
           return Row(
             children: [
               Expanded(child: _buildBreadcrumb(context)),
@@ -304,84 +305,6 @@ class _FileTopBarState extends State<FileTopBar> {
     );
   }
 
-  // ── Compact: "Create" popup menu ─────────────────────────────────────────
-
-  Widget _buildCreateMenu(BuildContext context) {
-    final uploadLabel = widget.isUploading
-        ? (widget.uploadTotal > 0
-              ? 'Uploading ${widget.uploadCompleted}/${widget.uploadTotal}…'
-              : 'Uploading…')
-        : 'Upload files';
-
-    return MenuAnchor(
-      controller: _createMenuController,
-      style: MenuStyle(
-        minimumSize: const WidgetStatePropertyAll(Size(200, 0)),
-        shape: WidgetStatePropertyAll(
-          RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
-          ),
-        ),
-        padding: const WidgetStatePropertyAll(
-          EdgeInsets.symmetric(vertical: 8),
-        ),
-      ),
-      menuChildren: [
-        ListTile(
-          dense: true,
-          visualDensity: VisualDensity.compact,
-          leading: widget.isUploading
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator.adaptive(strokeWidth: 2),
-                )
-              : const Icon(Icons.upload_rounded, size: 18),
-          title: Text(uploadLabel, style: const TextStyle(fontSize: 14)),
-          enabled: !widget.isUploading,
-          onTap: () {
-            _createMenuController.close();
-            widget.onUploadPressed();
-          },
-        ),
-        ListTile(
-          dense: true,
-          visualDensity: VisualDensity.compact,
-          leading: const Icon(Icons.create_new_folder_outlined, size: 18),
-          title: const Text('New folder', style: TextStyle(fontSize: 14)),
-          enabled: !widget.isCreatingFolder,
-          onTap: () {
-            _createMenuController.close();
-            widget.onCreateFolderPressed();
-          },
-        ),
-        ListTile(
-          dense: true,
-          visualDensity: VisualDensity.compact,
-          leading: const Icon(Icons.edit_document, size: 18),
-          title: const Text('New file', style: TextStyle(fontSize: 14)),
-          onTap: () {
-            _createMenuController.close();
-            widget.onNewFilePressed();
-          },
-        ),
-      ],
-      child: _chip(
-        context: context,
-        icon: Icons.add_rounded,
-        label: 'Create',
-        iconOnly: true,
-        onTap: () {
-          if (_createMenuController.isOpen) {
-            _createMenuController.close();
-          } else {
-            _createMenuController.open();
-          }
-        },
-      ),
-    );
-  }
-
   // ── Menu helpers ─────────────────────────────────────────────────────────
 
   Widget _menuSectionHeader(BuildContext context, String title) {
@@ -457,123 +380,141 @@ class _FileTopBarState extends State<FileTopBar> {
     );
   }
 
-  // ── Compact: current-directory display (< icon + name, no scroll) ─────────
+  // ── Smart breadcrumb (all viewports) ────────────────────────────────────
+  //
+  // Renders a pill container with the home icon pinned left and path segments
+  // to the right. Two truncation cases are handled:
+  //
+  //  Case 1 — Long segment name: the name is middle-truncated to fit within a
+  //            per-segment pixel cap (MyLong…Name), preserving both ends.
+  //
+  //  Case 2 — Too many segments: leading (ancestor) segments are dropped and a
+  //            "⋯" indicator is prepended until the remainder fits the available
+  //            width. The home icon is always visible.
 
-  Widget _buildCompactPath(BuildContext context) {
+  Widget _buildBreadcrumb(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final segments = widget.currentPath
-        .split('/')
-        .where((s) => s.isNotEmpty)
-        .toList();
-    final isAtRoot = segments.isEmpty;
-    final currentName = isAtRoot ? 'Home' : segments.last;
+
+    final trimmed = widget.currentPath.startsWith('/')
+        ? widget.currentPath.substring(1)
+        : widget.currentPath;
+    final segments = trimmed.isEmpty ? <String>[] : trimmed.split('/');
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
         border: Border.all(color: colorScheme.outline),
         borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
       ),
-      child: isAtRoot
-          ? Padding(
-              padding: const EdgeInsets.all(2),
-              child: Icon(
-                Icons.home_rounded,
-                size: 16,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            )
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                InkWell(
-                  onTap: widget.onGoUp,
+      // LayoutBuilder inside the Container so constraints.maxWidth already
+      // reflects the width after the Container's padding is subtracted.
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Home icon — always visible, never truncated.
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: InkWell(
+                  onTap: widget.onGoHome,
                   borderRadius: BorderRadius.circular(4),
                   child: Padding(
                     padding: const EdgeInsets.all(2),
                     child: Icon(
-                      Icons.chevron_left_rounded,
-                      size: 18,
+                      Icons.home_rounded,
+                      size: 16,
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    currentName,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ),
-                const SizedBox(width: 4),
+              ),
+              if (segments.isNotEmpty) ...[
+                const SizedBox(width: 2),
+                ..._buildSmartCrumbs(context, segments, constraints.maxWidth),
               ],
-            ),
-    );
-  }
-
-  Widget _buildBreadcrumb(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest,
-          border: Border.all(color: colorScheme.outline),
-          borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: InkWell(
-                onTap: widget.onGoHome,
-                borderRadius: BorderRadius.circular(4),
-                child: Padding(
-                  padding: const EdgeInsets.all(2),
-                  child: Icon(
-                    Icons.home_rounded,
-                    size: 16,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              '/',
-              style: TextStyle(
-                fontSize: 13,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            ..._buildCrumbs(context),
-          ],
-        ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  List<Widget> _buildCrumbs(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    if (widget.currentPath.isEmpty) return [];
-    final trimmed = widget.currentPath.startsWith('/')
-        ? widget.currentPath.substring(1)
-        : widget.currentPath;
-    if (trimmed.isEmpty) return [];
-    final segments = trimmed.split('/');
-    final widgets = <Widget>[];
+  /// Determines which segments to display given [availableWidth] (the inner
+  /// width of the breadcrumb container after its padding is removed).
+  ///
+  /// Works by accumulating segment slots from the rightmost (current directory)
+  /// towards the root. Stops as soon as adding the next segment would overflow,
+  /// prepending a "⋯" indicator for any hidden ancestors.
+  List<Widget> _buildSmartCrumbs(
+    BuildContext context,
+    List<String> segments,
+    double availableWidth,
+  ) {
+    if (segments.isEmpty) return [];
 
-    for (var i = 0; i < segments.length; i++) {
-      widgets.add(
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // Space occupied by the home icon + small gap before the first crumb.
+    const homeIconPx = 20.0; // Icon(16) + Padding(all(2)) = 16 + 4
+    const homeGapPx = 2.0;
+    // Each separator (chevron icon + horizontal padding).
+    const separatorPx = 22.0; // Icon(14) + Padding(horizontal(4)) = 14 + 8
+    // The "⋯" ellipsis prefix when ancestors are hidden (same visual budget).
+    const ellipsisPx = 22.0;
+    // Hard cap on a single segment's rendered text width.
+    const maxSegmentPx = 140.0;
+    // Text style used for segment labels.
+    const segStyle = TextStyle(fontSize: 13);
+
+    final budget = availableWidth - homeIconPx - homeGapPx;
+
+    // Measure each segment, capped at maxSegmentPx.
+    final segWidths = segments.map((s) {
+      return math.min(_measureText(s, segStyle), maxSegmentPx);
+    }).toList();
+
+    // Slot cost for a segment = separator + text + small horizontal padding.
+    List<double> slotCosts = segWidths.map((w) => separatorPx + w + 4).toList();
+
+    // Greedily add segments from right to left until the budget is exhausted.
+    double accumulated = 0;
+    int visibleFrom = segments.length; // exclusive index; will shrink left
+
+    for (int i = segments.length - 1; i >= 0; i--) {
+      // If there are still ancestors to the left of i, we may need to show "⋯".
+      final ellipsisNeeded = i > 0 ? ellipsisPx : 0.0;
+      if (accumulated + slotCosts[i] + ellipsisNeeded <= budget) {
+        accumulated += slotCosts[i];
+        visibleFrom = i;
+      } else {
+        break;
+      }
+    }
+
+    // Always show at least the current (last) directory even if it overflows.
+    if (visibleFrom == segments.length) visibleFrom = segments.length - 1;
+
+    final hasHidden = visibleFrom > 0;
+    final result = <Widget>[];
+
+    if (hasHidden) {
+      result.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Icon(
+            Icons.more_horiz_rounded,
+            size: 14,
+            color: colorScheme.onSurface.withValues(alpha: 0.45),
+          ),
+        ),
+      );
+    }
+
+    for (int i = visibleFrom; i < segments.length; i++) {
+      // Chevron separator before each segment.
+      result.add(
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Icon(
@@ -586,10 +527,14 @@ class _FileTopBarState extends State<FileTopBar> {
 
       final isLast = i == segments.length - 1;
       final targetPath = '/${segments.take(i + 1).join('/')}';
+      // Middle-truncate the label if it exceeds the per-segment pixel cap.
+      final label = _middleTruncate(segments[i], maxSegmentPx, segStyle);
 
-      widgets.add(
+      result.add(
         MouseRegion(
-          cursor: isLast ? SystemMouseCursors.basic : SystemMouseCursors.click,
+          cursor: (isLast || widget.onPathSelected == null)
+              ? SystemMouseCursors.basic
+              : SystemMouseCursors.click,
           child: InkWell(
             onTap: (isLast || widget.onPathSelected == null)
                 ? null
@@ -598,18 +543,61 @@ class _FileTopBarState extends State<FileTopBar> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
               child: Text(
-                segments[i],
+                label,
                 style: TextStyle(
                   fontSize: 13,
                   color: isLast ? colorScheme.onSurface : colorScheme.primary,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.clip,
               ),
             ),
           ),
         ),
       );
     }
-    return widgets;
+
+    return result;
+  }
+
+  /// Returns the pixel width of [text] rendered with [style].
+  static double _measureText(String text, TextStyle style) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout(maxWidth: double.infinity);
+    return painter.width;
+  }
+
+  /// Middle-truncates [text] so that its rendered width fits within [maxPx].
+  ///
+  /// Keeps [head] characters from the front and [tail] characters from the
+  /// back, joined by the Unicode ellipsis "…". Uses binary search to find
+  /// the maximum number of kept characters that still fits.
+  static String _middleTruncate(String text, double maxPx, TextStyle style) {
+    if (text.isEmpty || _measureText(text, style) <= maxPx) return text;
+
+    var lo = 2; // minimum: 1 head char + ellipsis + 1 tail char
+    var hi = text.length - 1;
+
+    while (lo < hi) {
+      final total = (lo + hi + 1) ~/ 2;
+      final head = (total + 1) ~/ 2;
+      final tail = total - head;
+      final candidate =
+          '${text.substring(0, head)}\u2026${text.substring(text.length - tail)}';
+      if (_measureText(candidate, style) <= maxPx) {
+        lo = total;
+      } else {
+        hi = total - 1;
+      }
+    }
+
+    final head = (lo + 1) ~/ 2;
+    final tail = lo - head;
+    if (tail <= 0) return '${text[0]}\u2026';
+    return '${text.substring(0, head)}\u2026${text.substring(text.length - tail)}';
   }
 
   Widget _buildActions(BuildContext context) {

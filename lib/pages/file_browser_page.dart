@@ -47,6 +47,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   final _dropRegionKey = GlobalKey();
   final _fileBrowserScrollController = ScrollController();
 
+  // FAB visibility — hidden when the user scrolls down, restored on scroll up.
+  bool _fabVisible = true;
+  double _lastScrollOffset = 0.0;
+
   Future<List<CirrusFileNode>> _filesFuture = Future.value(
     const <CirrusFileNode>[],
   );
@@ -95,6 +99,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
     super
         .initState(); // AutoRefreshMixin.initState handles timer + initial load
+    _fileBrowserScrollController.addListener(_onScroll);
     EventsService.instance.start();
     _eventSub = EventsService.instance.events.listen((evt) {
       // Any file mutation on the server triggers a refresh
@@ -921,10 +926,113 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  // ── Mobile FAB (Create actions) ──────────────────────────────────────────
+
+  void _onScroll() {
+    if (!_fileBrowserScrollController.hasClients) return;
+    final current = _fileBrowserScrollController.offset;
+    final delta = current - _lastScrollOffset;
+    _lastScrollOffset = current;
+
+    // Always restore FAB when the user is at the very top.
+    if (current <= 0) {
+      if (!_fabVisible) setState(() => _fabVisible = true);
+      return;
+    }
+
+    if (delta > 4 && _fabVisible) {
+      setState(() => _fabVisible = false);
+    } else if (delta < -4 && !_fabVisible) {
+      setState(() => _fabVisible = true);
+    }
+  }
+
+  /// Returns the floating action button for mobile viewports, or null on desktop.
+  Widget? _buildCreateFab(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width >= 860) return null;
+
+    return AnimatedOpacity(
+      opacity: _fabVisible ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeInOut,
+      child: IgnorePointer(
+        ignoring: !_fabVisible,
+        child: FloatingActionButton(
+          heroTag: 'create_fab',
+          onPressed: _showCreateBottomSheet,
+          tooltip: 'Create',
+          child: const Icon(Icons.add_rounded),
+        ),
+      ),
+    );
+  }
+
+  void _showCreateBottomSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: _isUploading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator.adaptive(
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(Icons.upload_rounded),
+                title: Text(
+                  _isUploading
+                      ? (_uploadTotal > 0
+                            ? 'Uploading $_uploadCompleted/$_uploadTotal…'
+                            : 'Uploading…')
+                      : 'Upload files',
+                ),
+                enabled: !_isUploading,
+                onTap: _isUploading
+                    ? null
+                    : () {
+                        Navigator.of(ctx).pop();
+                        _handleUploadPressed();
+                      },
+              ),
+              ListTile(
+                leading: const Icon(Icons.create_new_folder_outlined),
+                title: const Text('New folder'),
+                enabled: !_isCreatingFolder,
+                onTap: _isCreatingFolder
+                    ? null
+                    : () {
+                        Navigator.of(ctx).pop();
+                        _handleCreateFolderPressed();
+                      },
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit_document),
+                title: const Text('New file'),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _handleNewFilePressed();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   /// Builds the horizontal device filter chip row for issue #801.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: _buildCreateFab(context),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
       drawer: AutobutlerDrawer(
         activeSection: AutobutlerDrawerSection.cirrus,
         onTapCirrus: () {
