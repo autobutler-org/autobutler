@@ -170,12 +170,21 @@ class _FileTopBarState extends State<FileTopBar> {
         builder: (context, constraints) {
           final isCompact = constraints.maxWidth < 860;
 
+          // When at root the breadcrumb contains only the home icon.
+          // Wrap it in Expanded only when there are path segments so that
+          // the LayoutBuilder inside gets a bounded width for truncation.
+          // At root we use Spacer() instead, letting the pill shrink to its
+          // content and leaving the middle of the row open.
+          final atRoot = widget.currentPath.isEmpty;
+
           if (isCompact) {
-            // Mobile: breadcrumb (with home icon + smart truncation) + Views icon.
-            // Create actions move to a FAB at the page level.
             return Row(
               children: [
-                Expanded(child: _buildBreadcrumb(context)),
+                if (atRoot) ...[
+                  _buildBreadcrumb(context),
+                  const Spacer(),
+                ] else
+                  Expanded(child: _buildBreadcrumb(context)),
                 const SizedBox(width: 8),
                 _buildViewsMenu(context),
               ],
@@ -185,7 +194,11 @@ class _FileTopBarState extends State<FileTopBar> {
           // Desktop: breadcrumb + optional device chips + create actions + view chips.
           return Row(
             children: [
-              Expanded(child: _buildBreadcrumb(context)),
+              if (atRoot) ...[
+                _buildBreadcrumb(context),
+                const Spacer(),
+              ] else
+                Expanded(child: _buildBreadcrumb(context)),
               if (widget.devices != null && widget.devices!.length > 1) ...[
                 const SizedBox(width: 12),
                 _buildDeviceChips(context),
