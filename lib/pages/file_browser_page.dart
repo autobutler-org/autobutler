@@ -1038,7 +1038,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           if (!_isSearchMode && !_noHostSelected && _allDevices.length > 1)
             _buildDeviceFilterChips(),
 
-          if (!_isSearchMode && _currentPath.isEmpty && !_noHostSelected)
+          // Hide Recent Files on mobile — the horizontal chip bar doesn't
+          // work well at narrow widths (#959). Show only on tablet/desktop.
+          if (!_isSearchMode &&
+              _currentPath.isEmpty &&
+              !_noHostSelected &&
+              MediaQuery.sizeOf(context).width >= 600)
             RecentFilesSection(
               key: ValueKey(_recentFilesSectionKey),
               onOpenFile: _handleOpenNode,
