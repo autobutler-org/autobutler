@@ -473,39 +473,46 @@ class _FileTopBarState extends State<FileTopBar> {
         border: Border.all(color: colorScheme.outline),
         borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          InkWell(
-            onTap: isAtRoot ? null : widget.onGoUp,
-            borderRadius: BorderRadius.circular(4),
-            child: Padding(
+      child: isAtRoot
+          ? Padding(
               padding: const EdgeInsets.all(2),
               child: Icon(
-                Icons.chevron_left_rounded,
-                size: 18,
-                color: isAtRoot
-                    ? colorScheme.onSurface.withValues(alpha: 0.3)
-                    : colorScheme.onSurfaceVariant,
+                Icons.home_rounded,
+                size: 16,
+                color: colorScheme.onSurfaceVariant,
               ),
+            )
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                InkWell(
+                  onTap: widget.onGoUp,
+                  borderRadius: BorderRadius.circular(4),
+                  child: Padding(
+                    padding: const EdgeInsets.all(2),
+                    child: Icon(
+                      Icons.chevron_left_rounded,
+                      size: 18,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    currentName,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+                const SizedBox(width: 4),
+              ],
             ),
-          ),
-          const SizedBox(width: 4),
-          Flexible(
-            child: Text(
-              currentName,
-              style: TextStyle(
-                fontSize: 13,
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w500,
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
     );
   }
 
