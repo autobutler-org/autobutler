@@ -36,6 +36,7 @@ tmp_dir = "tmp"
     "docs",
     "internal/db",
     "os",
+    "packages",
     "scripts",
     "sql",
     "android",
