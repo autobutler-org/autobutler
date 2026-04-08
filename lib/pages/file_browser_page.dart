@@ -1032,7 +1032,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: _buildCreateFab(context),
-      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       drawer: AutobutlerDrawer(
         activeSection: AutobutlerDrawerSection.cirrus,
         onTapCirrus: () {

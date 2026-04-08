@@ -66,6 +66,7 @@ class FileTopBar extends StatefulWidget {
 
 class _FileTopBarState extends State<FileTopBar> {
   final _viewsMenuController = MenuController();
+  final _hiddenCrumbsController = MenuController();
 
   @override
   Widget build(BuildContext context) {
@@ -500,13 +501,65 @@ class _FileTopBarState extends State<FileTopBar> {
     final result = <Widget>[];
 
     if (hasHidden) {
+      // Build menu items for each hidden ancestor segment.
+      final hiddenSegments = segments.sublist(0, visibleFrom);
+      final menuItems = hiddenSegments.asMap().entries.map((entry) {
+        final idx = entry.key;
+        final name = entry.value;
+        final targetPath = '/${segments.take(idx + 1).join('/')}';
+        return ListTile(
+          dense: true,
+          visualDensity: VisualDensity.compact,
+          leading: Icon(
+            idx == 0 ? Icons.home_rounded : Icons.folder_rounded,
+            size: 18,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          title: Text(name, style: const TextStyle(fontSize: 14)),
+          onTap: widget.onPathSelected == null
+              ? null
+              : () {
+                  _hiddenCrumbsController.close();
+                  widget.onPathSelected!(targetPath);
+                },
+        );
+      }).toList();
+
       result.add(
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Icon(
-            Icons.more_horiz_rounded,
-            size: 14,
-            color: colorScheme.onSurface.withValues(alpha: 0.45),
+        MenuAnchor(
+          controller: _hiddenCrumbsController,
+          style: MenuStyle(
+            minimumSize: const WidgetStatePropertyAll(Size(200, 0)),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+              ),
+            ),
+            padding: const WidgetStatePropertyAll(
+              EdgeInsets.symmetric(vertical: 8),
+            ),
+          ),
+          menuChildren: menuItems,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: InkWell(
+              onTap: () {
+                if (_hiddenCrumbsController.isOpen) {
+                  _hiddenCrumbsController.close();
+                } else {
+                  _hiddenCrumbsController.open();
+                }
+              },
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Icon(
+                  Icons.more_horiz_rounded,
+                  size: 14,
+                  color: colorScheme.onSurface.withValues(alpha: 0.55),
+                ),
+              ),
+            ),
           ),
         ),
       );
