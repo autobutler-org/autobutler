@@ -947,11 +947,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
   }
 
-  /// Returns the floating action button for mobile viewports, or null on desktop.
-  Widget? _buildCreateFab(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    if (width >= 860) return null;
-
+  Widget _buildCreateFab(BuildContext context) {
     return AnimatedOpacity(
       opacity: _fabVisible ? 1.0 : 0.0,
       duration: const Duration(milliseconds: 220),
@@ -1031,8 +1027,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: _buildCreateFab(context),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       drawer: AutobutlerDrawer(
         activeSection: AutobutlerDrawerSection.cirrus,
         onTapCirrus: () {
@@ -1222,6 +1216,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                               alignment: Alignment.topCenter,
                               padding: const EdgeInsets.only(top: 10),
                             ),
+                          ),
+                        // Mobile create FAB — inside the file-list Stack so it
+                        // sits above the footer rather than over the whole page.
+                        if (MediaQuery.of(context).size.width < 860)
+                          Positioned(
+                            right: 16,
+                            bottom: 16,
+                            child: _buildCreateFab(context),
                           ),
                       ],
                     ),
