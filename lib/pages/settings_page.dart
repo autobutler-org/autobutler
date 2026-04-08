@@ -37,6 +37,8 @@ class _SettingsPageState extends State<SettingsPage> {
   String? _versionLoadError;
 
   bool _autoUpdate = false;
+  bool _autoUpdateLoadFailed = false;
+  bool _isLoadingAutoUpdate = false;
 
   // SBOM state
   GoSbom? _goSbom;
@@ -242,14 +244,24 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _loadSettings() async {
     if (AppSettings.instance.activeHost == null) return;
+    setState(() {
+      _isLoadingAutoUpdate = true;
+    });
     try {
       final autoUpdate = await SettingsService.getAutoUpdate();
       if (!mounted) return;
       setState(() {
         _autoUpdate = autoUpdate;
+        _autoUpdateLoadFailed = false;
+        _isLoadingAutoUpdate = false;
       });
     } catch (e) {
       debugPrint('[settings_page.dart] Error loading settings: $e');
+      if (!mounted) return;
+      setState(() {
+        _autoUpdateLoadFailed = true;
+        _isLoadingAutoUpdate = false;
+      });
     }
   }
 
@@ -580,33 +592,54 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 16),
           if (AppSettings.instance.activeHost != null)
             Card(
-              child: SwitchListTile(
-                title: const Text('Automatic updates'),
-                subtitle: const Text(
-                  'AutoButler will check for and install updates daily',
-                ),
-                value: _autoUpdate,
-                onChanged: (newValue) async {
-                  setState(() {
-                    _autoUpdate = newValue;
-                  });
-                  final messenger = ScaffoldMessenger.of(context);
-                  try {
-                    await SettingsService.setAutoUpdate(newValue);
-                  } catch (e) {
-                    debugPrint(
-                      '[settings_page.dart] Error saving auto-update: $e',
-                    );
-                    if (!mounted) return;
-                    setState(() {
-                      _autoUpdate = !newValue;
-                    });
-                    messenger.showSnackBar(
-                      SnackBar(content: Text('Failed to save setting: $e')),
-                    );
-                  }
-                },
-              ),
+              child: _isLoadingAutoUpdate
+                  ? const ListTile(
+                      title: Text('Automatic updates'),
+                      subtitle: Text(
+                        'AutoButler will check for and install updates daily',
+                      ),
+                      trailing: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : SwitchListTile(
+                      title: const Text('Automatic updates'),
+                      subtitle: _autoUpdateLoadFailed
+                          ? const Text(
+                              'Could not load setting — server may be unreachable',
+                              style: TextStyle(color: Colors.red),
+                            )
+                          : const Text(
+                              'AutoButler will check for and install updates daily',
+                            ),
+                      value: _autoUpdate,
+                      onChanged: _autoUpdateLoadFailed
+                          ? null
+                          : (newValue) async {
+                              setState(() {
+                                _autoUpdate = newValue;
+                              });
+                              final messenger = ScaffoldMessenger.of(context);
+                              try {
+                                await SettingsService.setAutoUpdate(newValue);
+                              } catch (e) {
+                                debugPrint(
+                                  '[settings_page.dart] Error saving auto-update: $e',
+                                );
+                                if (!mounted) return;
+                                setState(() {
+                                  _autoUpdate = !newValue;
+                                });
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text('Failed to save setting: $e'),
+                                  ),
+                                );
+                              }
+                            },
+                    ),
             ),
           const SizedBox(height: 24),
           const Text(
