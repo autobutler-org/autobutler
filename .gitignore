@@ -92,11 +92,19 @@ flutter.zip
 /linux/
 
 # AI slop
-## Ralph loops
+## Playwright / test artifacts
+app/
+playwright-report/
+test-results/
+
+# Ralph loops
 .ralph/
 ## Skills
 .claude/skills
 .github/skills
+
+## Claude Code workspace
+.claude/
 
 ## Sable's personal dev context (AI co-developer workspace)
 sable/

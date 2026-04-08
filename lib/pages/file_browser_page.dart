@@ -47,6 +47,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   final _dropRegionKey = GlobalKey();
   final _fileBrowserScrollController = ScrollController();
 
+  // FAB visibility — hidden when the user scrolls down, restored on scroll up.
+  bool _fabVisible = true;
+  double _lastScrollOffset = 0.0;
+
   Future<List<CirrusFileNode>> _filesFuture = Future.value(
     const <CirrusFileNode>[],
   );
@@ -95,6 +99,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
     super
         .initState(); // AutoRefreshMixin.initState handles timer + initial load
+    _fileBrowserScrollController.addListener(_onScroll);
     EventsService.instance.start();
     _eventSub = EventsService.instance.events.listen((evt) {
       // Any file mutation on the server triggers a refresh
@@ -921,44 +926,104 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  /// Builds the horizontal device filter chip row for issue #801.
-  Widget _buildDeviceFilterChips() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Row(
-        children: _allDevices.map((device) {
-          final isSelected = _activeDevicePaths.contains(device.devicePath);
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              label: Text(
-                device.name.isNotEmpty ? device.name : device.mountPoint,
-              ),
-              selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  if (selected) {
-                    _activeDevicePaths.add(device.devicePath);
-                  } else {
-                    _activeDevicePaths.remove(device.devicePath);
-                    // Snap back to all if none selected.
-                    if (_activeDevicePaths.isEmpty) {
-                      _activeDevicePaths = _allDevices
-                          .map((d) => d.devicePath)
-                          .toSet();
-                    }
-                  }
-                  _reloadFiles();
-                });
-              },
-            ),
-          );
-        }).toList(),
+  // ── Mobile FAB (Create actions) ──────────────────────────────────────────
+
+  void _onScroll() {
+    if (!_fileBrowserScrollController.hasClients) return;
+    final current = _fileBrowserScrollController.offset;
+    final delta = current - _lastScrollOffset;
+    _lastScrollOffset = current;
+
+    // Always restore FAB when the user is at the very top.
+    if (current <= 0) {
+      if (!_fabVisible) setState(() => _fabVisible = true);
+      return;
+    }
+
+    if (delta > 4 && _fabVisible) {
+      setState(() => _fabVisible = false);
+    } else if (delta < -4 && !_fabVisible) {
+      setState(() => _fabVisible = true);
+    }
+  }
+
+  Widget _buildCreateFab(BuildContext context) {
+    return AnimatedOpacity(
+      opacity: _fabVisible ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeInOut,
+      child: IgnorePointer(
+        ignoring: !_fabVisible,
+        child: FloatingActionButton(
+          heroTag: 'create_fab',
+          onPressed: _showCreateBottomSheet,
+          tooltip: 'Create',
+          child: const Icon(Icons.add_rounded),
+        ),
       ),
     );
   }
 
+  void _showCreateBottomSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: _isUploading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator.adaptive(
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(Icons.upload_rounded),
+                title: Text(
+                  _isUploading
+                      ? (_uploadTotal > 0
+                            ? 'Uploading $_uploadCompleted/$_uploadTotal…'
+                            : 'Uploading…')
+                      : 'Upload files',
+                ),
+                enabled: !_isUploading,
+                onTap: _isUploading
+                    ? null
+                    : () {
+                        Navigator.of(ctx).pop();
+                        _handleUploadPressed();
+                      },
+              ),
+              ListTile(
+                leading: const Icon(Icons.create_new_folder_outlined),
+                title: const Text('New folder'),
+                enabled: !_isCreatingFolder,
+                onTap: _isCreatingFolder
+                    ? null
+                    : () {
+                        Navigator.of(ctx).pop();
+                        _handleCreateFolderPressed();
+                      },
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit_document),
+                title: const Text('New file'),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _handleNewFilePressed();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// Builds the horizontal device filter chip row for issue #801.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1014,6 +1079,23 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                 uploadCompleted: _uploadCompleted,
                 onOpenDrawer: () => Scaffold.of(context).openDrawer(),
                 onOpenSettings: () => context.go(AppRoutes.settings),
+                devices: _allDevices.length > 1 ? _allDevices : null,
+                activeDevicePaths: _activeDevicePaths,
+                onDeviceToggled: (devicePath) {
+                  setState(() {
+                    if (_activeDevicePaths.contains(devicePath)) {
+                      _activeDevicePaths.remove(devicePath);
+                      if (_activeDevicePaths.isEmpty) {
+                        _activeDevicePaths = _allDevices
+                            .map((d) => d.devicePath)
+                            .toSet();
+                      }
+                    } else {
+                      _activeDevicePaths.add(devicePath);
+                    }
+                    _reloadFiles();
+                  });
+                },
               );
             },
           ),
@@ -1034,12 +1116,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             },
           ),
 
-          // Device filter chips (#801) — only shown when >1 device and not searching.
-          if (!_isSearchMode && !_noHostSelected && _allDevices.length > 1)
-            _buildDeviceFilterChips(),
-
-          // Hide Recent Files on mobile — the horizontal chip bar doesn't
-          // work well at narrow widths (#959). Show only on tablet/desktop.
+          // Hide Recent Files on mobile — show only on tablet/desktop (#959).
           if (!_isSearchMode &&
               _currentPath.isEmpty &&
               !_noHostSelected &&
@@ -1139,6 +1216,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                               alignment: Alignment.topCenter,
                               padding: const EdgeInsets.only(top: 10),
                             ),
+                          ),
+                        // Mobile create FAB — inside the file-list Stack so it
+                        // sits above the footer rather than over the whole page.
+                        if (MediaQuery.of(context).size.width < 860)
+                          Positioned(
+                            right: 16,
+                            bottom: 16,
+                            child: _buildCreateFab(context),
                           ),
                       ],
                     ),
