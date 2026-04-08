@@ -103,6 +103,9 @@ test-results/
 .claude/skills
 .github/skills
 
+## Claude Code workspace
+.claude/
+
 ## Sable's personal dev context (AI co-developer workspace)
 sable/
 ## ExoKomodo's personal dev context (AI co-developer workspace)
