@@ -4,6 +4,7 @@ import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
+import 'package:autobutler/pages/spreadsheet_editor_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
@@ -560,9 +561,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     if (fileName == null || !mounted) return;
 
     try {
-      // Create an empty .abdoc with an initial Quill delta.
-      final emptyDelta = '{"ops":[{"insert":"\\n"}]}';
-      final bytes = emptyDelta.codeUnits;
+      // Create empty content based on file type.
+      final String emptyContent;
+      if (fileName.endsWith('.absheet')) {
+        emptyContent = '{"tabs":[{"name":"Sheet 1","data":{"columns":[],"rows":[]}}]}';
+      } else {
+        emptyContent = '{"ops":[{"insert":"\\n"}]}';
+      }
+      final bytes = emptyContent.codeUnits;
 
       final file = http.MultipartFile.fromBytes(
         'files',
@@ -583,11 +589,19 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           ? fileName
           : '$_currentPath/$fileName';
 
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => DocumentEditorPage(filePath: filePath),
-        ),
-      );
+      if (fileName.endsWith('.absheet')) {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => SpreadsheetEditorPage(filePath: filePath),
+          ),
+        );
+      } else {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => DocumentEditorPage(filePath: filePath),
+          ),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       _showMessage('Failed to create file: $e');
@@ -707,6 +721,19 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => DocumentEditorPage(
+            filePath: node.apiPath,
+            deviceSerial: node.deviceSerial,
+          ),
+        ),
+      );
+      return;
+    }
+
+    // AutoButler native spreadsheet format.
+    if (lowerName.endsWith('.absheet')) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => SpreadsheetEditorPage(
             filePath: node.apiPath,
             deviceSerial: node.deviceSerial,
           ),
