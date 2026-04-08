@@ -3,12 +3,14 @@ package server
 import (
 	"embed"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	v1_auth "github.com/autobutler-org/autobutler/internal/server/api/v1/auth"
 	v1_books "github.com/autobutler-org/autobutler/internal/server/api/v1/books"
 	v1_files "github.com/autobutler-org/autobutler/internal/server/api/v1/cirrus"
 	v1_devices "github.com/autobutler-org/autobutler/internal/server/api/v1/devices"
+	v1_events "github.com/autobutler-org/autobutler/internal/server/api/v1/events"
 	v1_health "github.com/autobutler-org/autobutler/internal/server/api/v1/health"
 	v1_metrics "github.com/autobutler-org/autobutler/internal/server/api/v1/metrics"
 	v1_migration "github.com/autobutler-org/autobutler/internal/server/api/v1/migration"
@@ -18,8 +20,10 @@ import (
 	v1_storage "github.com/autobutler-org/autobutler/internal/server/api/v1/storage"
 	v1_thumbnails "github.com/autobutler-org/autobutler/internal/server/api/v1/thumbnails"
 	v1_version "github.com/autobutler-org/autobutler/internal/server/api/v1/version"
+	v1_webdav "github.com/autobutler-org/autobutler/internal/server/api/v1/webdav"
 	"github.com/autobutler-org/autobutler/pkg/botel/system"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
@@ -30,6 +34,7 @@ var public embed.FS
 
 func setupRoutes(engine *gin.Engine, systemCollector *system.Collector) {
 	setupRouters(engine, systemCollector)
+	setupWebDAV(engine)
 	setupStaticRoutes(engine)
 }
 
@@ -40,6 +45,7 @@ func setupRouters(engine *gin.Engine, systemCollector *system.Collector) {
 		v1_books.NewRouter(),
 		v1_files.NewRouter(),
 		v1_devices.NewRouter(),
+		v1_events.NewRouter(),
 		v1_health.NewRouter(systemCollector),
 		v1_metrics.NewRouter(),
 		v1_migration.NewRouter(),
@@ -52,6 +58,21 @@ func setupRouters(engine *gin.Engine, systemCollector *system.Collector) {
 	}
 	for _, r := range apiRouters {
 		serverutil.RegisterRouterWithGroup(group, r)
+	}
+}
+
+func setupWebDAV(engine *gin.Engine) {
+	cirrusDir, err := storageutil.GetCirrusDir()
+	if err != nil {
+		// Cirrus dir setup happens earlier in StartServer via setupServices,
+		// so this should not fail. Log and skip if it does.
+		slog.Error("webdav: failed to get cirrus dir, WebDAV disabled", "err", err)
+		return
+	}
+
+	handler := v1_webdav.NewHandler(cirrusDir)
+	for _, method := range v1_webdav.WebDAVMethods() {
+		engine.Handle(method, "/dav/*filepath", handler)
 	}
 }
 

@@ -138,6 +138,17 @@ class FileBrowserController {
     );
   }
 
+  /// Delete a single node. Caller is responsible for confirmation and
+  /// any optimistic UI updates.
+  Future<void> deleteNode({required CirrusFileNode node}) {
+    final rootDir = toRootDir(parentPath(node.apiPath));
+    return CirrusService.deleteFile(
+      rootDir,
+      trimTrailingSlashes(node.name),
+      deviceSerial: serialOrNull(node.deviceSerial),
+    );
+  }
+
   Future<FileMenuActionOutcome?> handleFileAction({
     required CirrusFileNode node,
     required FileMenuAction action,
@@ -233,6 +244,12 @@ class FileBrowserController {
           message: 'Deleted',
           shouldRefresh: true,
         );
+      case FileMenuAction.extractHere:
+        await extractNode(node: node);
+        return const FileMenuActionOutcome(
+          message: 'Extraction complete',
+          shouldRefresh: true,
+        );
       case FileMenuAction.navigateToFolder:
         // Handled via the onNavigateToFolder callback in FileBrowserView;
         // should never reach handleFileAction.
@@ -248,6 +265,8 @@ class FileBrowserController {
         return 'Move/Rename failed';
       case FileMenuAction.delete:
         return 'Delete failed';
+      case FileMenuAction.extractHere:
+        return 'Extraction failed';
       case FileMenuAction.navigateToFolder:
         return 'Navigation failed';
     }

@@ -2,12 +2,13 @@ import 'dart:async';
 
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
+import 'package:autobutler/pages/document_editor_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
-import 'package:autobutler/pages/settings_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
+import 'package:autobutler/services/events_service.dart';
 import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/auto_refresh_mixin.dart';
 import 'package:autobutler/utils/file_browser_dialog_utils.dart';
@@ -15,9 +16,9 @@ import 'package:autobutler/utils/file_browser_drag_config.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
-import 'package:autobutler/widgets/core/empty_state_widget.dart';
 import 'package:autobutler/widgets/device_upload_picker.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
+import 'package:autobutler/widgets/file_browser/new_file_dialog.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:autobutler/widgets/file_browser/file_storage_footer.dart';
 import 'package:autobutler/widgets/file_browser/file_top_bar.dart';
@@ -30,7 +31,11 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 
 class FileBrowserPage extends StatefulWidget {
-  const FileBrowserPage({super.key});
+  /// Optional path to navigate to on load, e.g. 'photos/2024'.
+  /// When non-null and non-empty, the browser opens at this path instead of root.
+  final String? initialPath;
+
+  const FileBrowserPage({super.key, this.initialPath});
 
   @override
   State<FileBrowserPage> createState() => _FileBrowserPageState();
@@ -70,10 +75,34 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   bool _noHostSelected = false;
   Timer? _folderDragExitTimer;
 
+  // WebSocket event subscription for real-time file updates
+  StreamSubscription<FileEvent>? _eventSub;
+
   // Search state
   bool _isSearchMode = false;
   Future<List<CirrusFileNode>>? _searchFuture;
   String? _searchQuery;
+
+  // Archive browser state — non-null when navigating inside an archive.
+  _ArchiveContext? _archiveContext;
+
+  @override
+  void initState() {
+    // Apply deep-link initial path before AutoRefreshMixin triggers the first load.
+    final initial = widget.initialPath;
+    if (initial != null && initial.isNotEmpty) {
+      _currentPath = normalizePath(initial);
+    }
+    super
+        .initState(); // AutoRefreshMixin.initState handles timer + initial load
+    EventsService.instance.start();
+    _eventSub = EventsService.instance.events.listen((evt) {
+      // Any file mutation on the server triggers a refresh
+      if ({'upload', 'delete', 'move', 'new_folder'}.contains(evt.kind)) {
+        manualRefresh();
+      }
+    });
+  }
 
   @override
   Future<void> refresh() async {
@@ -85,6 +114,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
     await _loadDevices();
+    if (!mounted) return;
     setState(() => _reloadFiles());
     await _filesFuture;
   }
@@ -131,6 +161,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   @override
   void dispose() {
+    _eventSub?.cancel();
     _folderDragExitTimer?.cancel();
     _fileBrowserScrollController.dispose();
     super.dispose();
@@ -145,17 +176,63 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     final generation = ++_generation;
     final serials = _serialsForActiveDevices();
-    _filesFuture = _controller
-        .fetchFiles(_currentPath, serials: serials.isEmpty ? null : serials)
-        .then((files) {
-          if (mounted && _generation == generation) {
-            setState(() => _cachedFiles = files);
-          }
-          return files;
-        });
+    final archive = _archiveContext;
+
+    Future<List<CirrusFileNode>> fetchFuture;
+    if (archive != null) {
+      fetchFuture = CirrusService.listArchiveEntries(
+        archive.archivePath,
+        subPath: archive.subPath,
+        serial: serials.isNotEmpty ? serials.first : null,
+      );
+    } else {
+      fetchFuture = _controller.fetchFiles(
+        _currentPath,
+        serials: serials.isEmpty ? null : serials,
+      );
+    }
+
+    _filesFuture = fetchFuture.then((files) {
+      if (mounted && _generation == generation) {
+        setState(() => _cachedFiles = files);
+      }
+      return files;
+    });
   }
 
   Future<void> _refreshFileState() => manualRefresh();
+
+  // ── Optimistic updates ───────────────────────────────────────────────────
+
+  /// Immediately remove a node from the displayed list.
+  /// If the server call fails, [_refreshFileState] will reconcile.
+  void _optimisticRemove(CirrusFileNode node) {
+    final current = _cachedFiles;
+    if (current == null) return;
+    setState(() {
+      _cachedFiles = current.where((n) => n.apiPath != node.apiPath).toList();
+    });
+  }
+
+  /// Immediately add a placeholder folder to the displayed list.
+  void _optimisticAddFolder(String folderName) {
+    final current = _cachedFiles;
+    if (current == null) return;
+    final placeholder = CirrusFileNode(
+      name: folderName,
+      size: 0,
+      isDir: true,
+      deviceName: current.isNotEmpty ? current.first.deviceName : '',
+      devicePath: current.isNotEmpty ? current.first.devicePath : '',
+      deviceSerial: current.isNotEmpty ? current.first.deviceSerial : '',
+      dirPath: _currentPath.isEmpty
+          ? '$folderName/'
+          : '$_currentPath/$folderName/',
+    );
+    setState(() {
+      _cachedFiles = [...current, placeholder];
+    });
+  }
 
   Future<void> _uploadSelectedFiles(
     List<http.MultipartFile> selectedFiles,
@@ -430,9 +507,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    final snapshot = _cachedFiles;
     setState(() {
       _isCreatingFolder = true;
     });
+
+    // Optimistically show the new folder immediately
+    _optimisticAddFolder(folderName);
 
     try {
       await _controller.createFolder(
@@ -444,14 +525,20 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         return;
       }
 
-      _refreshFileState();
-
       _showMessage('Created folder $folderName');
+      // Belt-and-suspenders: refresh after a short delay in case the WebSocket
+      // event is missed (dropped connection, buffering, etc.).
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) _refreshFileState();
+      });
     } catch (_) {
       debugPrint('[file_browser_page.dart] Error in catch block');
       if (!mounted) {
         return;
       }
+
+      // Roll back optimistic folder
+      if (snapshot != null) setState(() => _cachedFiles = snapshot);
 
       _showMessage('Failed to create folder');
     } finally {
@@ -463,11 +550,86 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
   }
 
+  Future<void> _handleNewFilePressed() async {
+    final fileName = await showNewFileDialog(context);
+    if (fileName == null || !mounted) return;
+
+    try {
+      // Create an empty .abdoc with an initial Quill delta.
+      final emptyDelta = '{"ops":[{"insert":"\\n"}]}';
+      final bytes = emptyDelta.codeUnits;
+
+      final file = http.MultipartFile.fromBytes(
+        'files',
+        bytes,
+        filename: fileName,
+      );
+
+      await CirrusService.uploadFilesFromFormData(_currentPath, [file]);
+
+      if (!mounted) return;
+
+      _showMessage('Created $fileName');
+
+      // Refresh file list then open the editor.
+      _refreshFileState();
+
+      final filePath = _currentPath.isEmpty
+          ? fileName
+          : '$_currentPath/$fileName';
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => DocumentEditorPage(filePath: filePath),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage('Failed to create file: $e');
+    }
+  }
+
   Future<void> _handleFileMenuAction(
     CirrusFileNode node,
     FileMenuAction action,
   ) async {
+    // When inside an archive, handle download specially via the archive endpoint.
+    if (_archiveContext != null && action == FileMenuAction.download) {
+      try {
+        final archive = _archiveContext!;
+        final entryPath = archive.subPath.isEmpty
+            ? node.name
+            : '${archive.subPath}/${node.name}';
+        final bytes = await CirrusService.downloadArchiveFileBytes(
+          archive.archivePath,
+          entryPath,
+        );
+        if (bytes != null && mounted) {
+          await CirrusService.saveBytesToFile(bytes, node.name);
+          _showMessage('Downloaded ${node.name}');
+        }
+      } catch (_) {
+        if (mounted) _showMessage('Download failed');
+      }
+      return;
+    }
+
+    // Snapshot the pre-mutation cache for rollback on failure
+    final snapshot = _cachedFiles;
     try {
+      // Delete: confirm → optimistic remove → network call
+      if (action == FileMenuAction.delete) {
+        final shouldDelete = await confirmDelete(
+          context,
+          node.name.replaceAll(RegExp(r'/+$'), ''),
+        );
+        if (!mounted || shouldDelete != true) return;
+        _optimisticRemove(node);
+        await _controller.deleteNode(node: node);
+        if (mounted) _showMessage('Deleted');
+        return;
+      }
+
       final outcome = await _controller.handleFileAction(
         node: node,
         action: action,
@@ -490,6 +652,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       debugPrint('[file_browser_page.dart] Error in catch block');
       if (!mounted) {
         return;
+      }
+
+      // Roll back the optimistic update on failure
+      if (snapshot != null) {
+        setState(() => _cachedFiles = snapshot);
       }
 
       if (action == FileMenuAction.moveRename) {
@@ -522,7 +689,27 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    // Navigate into archives as virtual directories.
+    if (node.fileType == 'archive') {
+      _openArchive(node);
+      return;
+    }
+
     final lowerName = node.name.toLowerCase();
+
+    // AutoButler native document format — open in the rich text editor.
+    if (lowerName.endsWith('.abdoc')) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => DocumentEditorPage(
+            filePath: node.apiPath,
+            deviceSerial: node.deviceSerial,
+          ),
+        ),
+      );
+      return;
+    }
+
     final viewable =
         lowerName.endsWith('.jpg') ||
         lowerName.endsWith('.jpeg') ||
@@ -599,12 +786,57 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    // If we're inside an archive, directory taps descend further into it.
+    if (_archiveContext != null) {
+      _descendIntoArchiveDir(node);
+      return;
+    }
+
     _setPath(
       _controller.nextPathForOpenDirectory(
         currentPath: _currentPath,
         node: node,
       ),
     );
+  }
+
+  /// Enter an archive file as a virtual directory.
+  void _openArchive(CirrusFileNode node) {
+    setState(() {
+      _archiveContext = _ArchiveContext(
+        archivePath: node.apiPath,
+        subPath: '',
+        archiveSerial: node.deviceSerial,
+      );
+      _isSearchMode = false;
+      _searchFuture = null;
+      _searchQuery = null;
+      _reloadFiles();
+    });
+  }
+
+  /// Descend into a subdirectory inside the current archive.
+  void _descendIntoArchiveDir(CirrusFileNode node) {
+    final ctx = _archiveContext!;
+    final newSubPath = ctx.subPath.isEmpty
+        ? node.name
+        : '${ctx.subPath}/${node.name}';
+    setState(() {
+      _archiveContext = _ArchiveContext(
+        archivePath: ctx.archivePath,
+        subPath: newSubPath,
+        archiveSerial: ctx.archiveSerial,
+      );
+      _reloadFiles();
+    });
+  }
+
+  /// Exit the current archive, returning to the real filesystem.
+  void _exitArchive() {
+    setState(() {
+      _archiveContext = null;
+      _reloadFiles();
+    });
   }
 
   Future<void> _handleSearchPressed() async {
@@ -632,6 +864,28 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   }
 
   void _goUpOneLevel() {
+    final archive = _archiveContext;
+    if (archive != null) {
+      if (archive.subPath.isEmpty) {
+        // At archive root — exit back to the real filesystem.
+        _exitArchive();
+      } else {
+        // Ascend one level inside the archive.
+        final parent = archive.subPath.contains('/')
+            ? archive.subPath.substring(0, archive.subPath.lastIndexOf('/'))
+            : '';
+        setState(() {
+          _archiveContext = _ArchiveContext(
+            archivePath: archive.archivePath,
+            subPath: parent,
+            archiveSerial: archive.archiveSerial,
+          );
+          _reloadFiles();
+        });
+      }
+      return;
+    }
+
     if (_currentPath.isEmpty) {
       return;
     }
@@ -651,6 +905,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       _activeDevicePaths = _allDevices.map((d) => d.devicePath).toSet();
       _reloadFiles();
     });
+
+    // Reflect the new path in the browser URL bar (web only) without
+    // triggering a go_router navigation — context.go() would re-create
+    // the widget and cause navigation loops with trailing slashes.
+    if (kIsWeb) {
+      final uri = Uri.parse(AppRoutes.cirrusPath(normalized));
+      SystemNavigator.routeInformationUpdated(uri: uri, replace: false);
+    }
   }
 
   void _showMessage(String message) {
@@ -721,29 +983,39 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       body: Column(
         children: [
           Builder(
-            builder: (context) => FileTopBar(
-              currentPath: _currentPath,
-              isGridView: _isGridView,
-              isSearchMode: _isSearchMode,
-              isUploading: _isUploading,
-              isCreatingFolder: _isCreatingFolder,
-              isRefreshing: isRefreshing,
-              onGoHome: () => _setPath(''),
-              onGoUp: _goUpOneLevel,
-              onPathSelected: _setPath,
-              isUnifiedView: _isUnifiedView,
-              onToggleView: () => setState(() => _isGridView = !_isGridView),
-              onToggleUnifiedView: () =>
-                  setState(() => _isUnifiedView = !_isUnifiedView),
-              onSearchPressed: _handleSearchPressed,
-              onRefresh: _refreshFileState,
-              onUploadPressed: _handleUploadPressed,
-              onCreateFolderPressed: _handleCreateFolderPressed,
-              uploadTotal: _uploadTotal,
-              uploadCompleted: _uploadCompleted,
-              onOpenDrawer: () => Scaffold.of(context).openDrawer(),
-              onOpenSettings: () => context.go(AppRoutes.settings),
-            ),
+            builder: (context) {
+              // When inside an archive, show the archive path as the breadcrumb.
+              final archive = _archiveContext;
+              final displayPath = archive != null
+                  ? (archive.subPath.isEmpty
+                        ? archive.archivePath
+                        : '${archive.archivePath}/${archive.subPath}')
+                  : _currentPath;
+              return FileTopBar(
+                currentPath: displayPath,
+                isGridView: _isGridView,
+                isSearchMode: _isSearchMode,
+                isUploading: _isUploading,
+                isCreatingFolder: _isCreatingFolder,
+                isRefreshing: isRefreshing,
+                onGoHome: archive != null ? _exitArchive : () => _setPath(''),
+                onGoUp: _goUpOneLevel,
+                onPathSelected: archive != null ? null : _setPath,
+                isUnifiedView: _isUnifiedView,
+                onToggleView: () => setState(() => _isGridView = !_isGridView),
+                onToggleUnifiedView: () =>
+                    setState(() => _isUnifiedView = !_isUnifiedView),
+                onSearchPressed: _handleSearchPressed,
+                onRefresh: _refreshFileState,
+                onUploadPressed: _handleUploadPressed,
+                onCreateFolderPressed: _handleCreateFolderPressed,
+                onNewFilePressed: _handleNewFilePressed,
+                uploadTotal: _uploadTotal,
+                uploadCompleted: _uploadCompleted,
+                onOpenDrawer: () => Scaffold.of(context).openDrawer(),
+                onOpenSettings: () => context.go(AppRoutes.settings),
+              );
+            },
           ),
           FileBrowserHeader(
             isGridView: _isGridView,
@@ -776,28 +1048,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
           Expanded(
             child: _noHostSelected
-                ? EmptyStateWidget(
-                    icon: Icons.storage_outlined,
-                    headline: 'Connect to your AutoButler',
-                    subtext:
-                        'Enter the address of your AutoButler device on your local network.',
-                    action: ElevatedButton(
-                      onPressed: () async {
-                        await Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const SettingsPage(),
-                          ),
-                        );
-                        setState(() {
-                          _noHostSelected =
-                              AppSettings.instance.activeHost == null;
-                          if (!_noHostSelected) {
-                            _reloadFiles();
-                          }
-                        });
-                      },
-                      child: const Text('Add target host'),
-                    ),
+                ? _FirstRunSetup(
+                    onConnected: () {
+                      setState(() {
+                        _noHostSelected =
+                            AppSettings.instance.activeHost == null;
+                        if (!_noHostSelected) _reloadFiles();
+                      });
+                    },
                   )
                 : DropTarget(
                     key: _dropRegionKey,
@@ -844,6 +1102,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                                     Future.value(const <CirrusFileNode>[]))
                               : _filesFuture,
                           initialData: _isSearchMode ? null : _cachedFiles,
+                          isInitialLoad: isInitialLoad,
                           onFileMenuAction: _handleFileMenuAction,
                           onOpenDirectory: _isSearchMode
                               ? (_) {}
@@ -857,6 +1116,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                           onFolderDragEnter: _handleFolderDragEnter,
                           onFolderDragExit: _handleFolderDragExit,
                           scrollController: _fileBrowserScrollController,
+                          inArchive: _archiveContext != null,
                         ),
                         if (_isWebDragging && !_isHoveringFolderDropTarget)
                           IgnorePointer(
@@ -884,4 +1144,141 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       ),
     );
   }
+}
+
+class _FirstRunSetup extends StatefulWidget {
+  const _FirstRunSetup({required this.onConnected});
+
+  final VoidCallback onConnected;
+
+  @override
+  State<_FirstRunSetup> createState() => _FirstRunSetupState();
+}
+
+class _FirstRunSetupState extends State<_FirstRunSetup> {
+  final _controller = TextEditingController();
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _connect() async {
+    final raw = _controller.text.trim();
+    if (raw.isEmpty) {
+      setState(() => _error = 'Please enter your AutoButler address.');
+      return;
+    }
+
+    var address = raw;
+    if (!address.startsWith('http://') && !address.startsWith('https://')) {
+      address = 'http://$address';
+    }
+
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+
+    try {
+      await AppSettings.instance.addHost(
+        HostEntry(name: 'My AutoButler', hostAddress: address),
+      );
+      if (mounted) widget.onConnected();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _error = 'Could not connect. Check the address and try again.';
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.storage_outlined, size: 56, color: Colors.grey),
+              const SizedBox(height: 16),
+              Text(
+                'Connect to your AutoButler',
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Enter the address of your AutoButler device on your home network.',
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: _controller,
+                autofocus: true,
+                keyboardType: TextInputType.url,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _connect(),
+                decoration: InputDecoration(
+                  labelText: 'AutoButler address',
+                  hintText: 'http://autobutler.home.local',
+                  helperText:
+                      'Usually http://autobutler.home.local or http://192.168.x.x',
+                  errorText: _error,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.link_rounded),
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: _saving ? null : _connect,
+                child: _saving
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Connect'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tracks the state when the user has navigated inside an archive file.
+class _ArchiveContext {
+  const _ArchiveContext({
+    required this.archivePath,
+    required this.subPath,
+    required this.archiveSerial,
+  });
+
+  /// Path to the archive file, relative to the device cirrus directory.
+  final String archivePath;
+
+  /// Current virtual subdirectory inside the archive. Empty string = root.
+  final String subPath;
+
+  /// Device serial of the device that holds the archive.
+  final String archiveSerial;
 }

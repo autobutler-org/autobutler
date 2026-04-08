@@ -55,7 +55,11 @@ class CirrusService with AuthenticatedService {
   /// Construct a URL for the thumbnail endpoint.
   /// The backend exposes thumbnails at /api/v1/thumbnails/*filePath where filePath is a
   /// path-like segment. Each path segment is percent-encoded to preserve slashes.
-  static Uri constructThumbnailUrl(String filePath, {String? serial}) {
+  static Uri constructThumbnailUrl(
+    String filePath, {
+    String? serial,
+    String? size,
+  }) {
     final trimmed = filePath.trim();
     final normalized = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
     final encodedPath = normalized
@@ -69,6 +73,7 @@ class CirrusService with AuthenticatedService {
     final params = <String, String>{};
     final serialValue = serial?.trim() ?? '';
     if (serialValue.isNotEmpty) params['serial'] = serialValue;
+    if (size != null && size.isNotEmpty) params['size'] = size;
     final token = AppSettings.instance.sessionToken;
     if (token != null && token.isNotEmpty) params['token'] = token;
 
@@ -213,6 +218,58 @@ class CirrusService with AuthenticatedService {
         .toList(growable: false);
   }
 
+  /// Lists the direct children of [subPath] inside the archive at [filePath].
+  /// Returns the entries as [CirrusFileNode]s with [isDir] set appropriately.
+  /// No data is extracted to disk — only archive headers are read.
+  static Future<List<CirrusFileNode>> listArchiveEntries(
+    String filePath, {
+    String subPath = '',
+    String? serial,
+  }) async {
+    final querySegments = <String>[
+      'filePath=${Uri.encodeQueryComponent(filePath)}',
+    ];
+    if (subPath.isNotEmpty) {
+      querySegments.add('subPath=${Uri.encodeQueryComponent(subPath)}');
+    }
+    final serialValue = serial?.trim() ?? '';
+    if (serialValue.isNotEmpty) {
+      querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
+    }
+    final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus/list-archive');
+    final uri = endpointUri.replace(query: querySegments.join('&'));
+    final response = await http.get(uri, headers: _authHeaders);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        'Failed to list archive entries (${response.statusCode})',
+      );
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! List) {
+      throw Exception('Unexpected archive listing response format');
+    }
+    return decoded
+        .whereType<Map<String, dynamic>>()
+        .map(CirrusFileNode.fromJson)
+        .toList(growable: false);
+  }
+
+  static Future<void> extractFile(String filePath, {String? serial}) async {
+    final querySegments = <String>[
+      'filePath=${Uri.encodeQueryComponent(filePath)}',
+    ];
+    final serialValue = serial?.trim() ?? '';
+    if (serialValue.isNotEmpty) {
+      querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
+    }
+    final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus/extract');
+    final uri = endpointUri.replace(query: querySegments.join('&'));
+    final response = await http.post(uri, headers: _authHeaders);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to extract file (${response.statusCode})');
+    }
+  }
+
   static Future<void> deleteFile(
     String rootDir,
     String fileName, {
@@ -292,14 +349,19 @@ class CirrusService with AuthenticatedService {
     String uploadPath,
     List<http.MultipartFile> formDataFiles, {
     String? serial,
+    bool overwrite = false,
   }) async {
     final uploadEndpointPath = _joinPaths('/api/v1/cirrus/upload', uploadPath);
     final endpointUri = _apiBaseUri.resolve(uploadEndpointPath);
 
     final serialValue = serial?.trim() ?? '';
-    final uri = serialValue.isEmpty
+    final queryParams = <String, String>{
+      if (serialValue.isNotEmpty) 'serial': serialValue,
+      if (overwrite) 'overwrite': 'true',
+    };
+    final uri = queryParams.isEmpty
         ? endpointUri
-        : endpointUri.replace(queryParameters: {'serial': serialValue});
+        : endpointUri.replace(queryParameters: queryParams);
 
     final request = http.MultipartRequest('POST', uri);
     request.files.addAll(formDataFiles);
@@ -339,6 +401,45 @@ class CirrusService with AuthenticatedService {
     final params = SaveFileDialogParams(data: bytes, fileName: resolvedName);
 
     return FlutterFileDialog.saveFile(params: params);
+  }
+
+  /// Saves raw bytes to disk (or browser download) using the same logic as [saveFile].
+  static Future<String?> saveBytesToFile(
+    Uint8List bytes,
+    String fileName,
+  ) async {
+    if (kIsWeb) {
+      return web_download.saveBytesForDownload(bytes, fileName);
+    }
+    final params = SaveFileDialogParams(data: bytes, fileName: fileName);
+    return FlutterFileDialog.saveFile(params: params);
+  }
+
+  /// Downloads a single file from inside an archive without extracting to disk.
+  static Future<Uint8List?> downloadArchiveFileBytes(
+    String archivePath,
+    String entryPath, {
+    String? serial,
+  }) async {
+    final querySegments = <String>[
+      'filePath=${Uri.encodeQueryComponent(archivePath)}',
+      'entryPath=${Uri.encodeQueryComponent(entryPath)}',
+    ];
+    final serialValue = serial?.trim() ?? '';
+    if (serialValue.isNotEmpty) {
+      querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
+    }
+    final endpointUri = _apiBaseUri.resolve(
+      '/api/v1/cirrus/download-archive-file',
+    );
+    final uri = endpointUri.replace(query: querySegments.join('&'));
+    final response = await http.get(uri, headers: _authHeaders);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        'Failed to download archive file (${response.statusCode})',
+      );
+    }
+    return response.bodyBytes;
   }
 
   static Future<Uint8List?> downloadFileBytes(

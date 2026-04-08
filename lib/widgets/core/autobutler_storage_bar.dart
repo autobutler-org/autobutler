@@ -19,13 +19,14 @@ class AutobutlerStorageBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final clamped = usedFraction.clamp(0.0, 1.0);
     final color = colorForFraction(clamped);
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: AutobutlerColors.input,
-        border: Border.all(color: AutobutlerColors.border),
+        color: colorScheme.surfaceContainerHighest,
+        border: Border.all(color: colorScheme.outline),
         borderRadius: BorderRadius.circular(AutobutlerColors.radiusMd),
       ),
       clipBehavior: Clip.antiAlias,

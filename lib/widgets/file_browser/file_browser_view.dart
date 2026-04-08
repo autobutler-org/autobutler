@@ -1,15 +1,22 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:autobutler/widgets/core/autobutler_file_icon.dart';
 import 'package:autobutler/widgets/core/empty_state_widget.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 
-enum FileMenuAction { download, moveRename, delete, navigateToFolder }
+enum FileMenuAction {
+  download,
+  moveRename,
+  delete,
+  navigateToFolder,
+  extractHere,
+}
 
 enum SortColumn { name, type, size, device }
 
@@ -31,6 +38,8 @@ class FileBrowserView extends StatefulWidget {
     this.showFileSizeAndMenu = true,
     this.isSearchMode = false,
     this.onNavigateToFolder,
+    this.inArchive = false,
+    this.isInitialLoad = false,
     super.key,
   });
 
@@ -53,6 +62,16 @@ class FileBrowserView extends StatefulWidget {
   final bool isSearchMode;
   final void Function(CirrusFileNode)? onNavigateToFolder;
 
+  /// When true, we are browsing inside an archive — only download is available
+  /// for files (no move/rename/delete).
+  final bool inArchive;
+
+  /// When true, show a spinner unconditionally — used during the initial page
+  /// load before any data has been fetched. Without this, the pre-resolved
+  /// empty default future would immediately show "No files yet" instead of
+  /// a spinner.
+  final bool isInitialLoad;
+
   @override
   State<FileBrowserView> createState() => _FileBrowserViewState();
 }
@@ -60,6 +79,7 @@ class FileBrowserView extends StatefulWidget {
 class _FileBrowserViewState extends State<FileBrowserView> {
   SortColumn _sortColumn = SortColumn.name;
   SortDirection _sortDirection = SortDirection.asc;
+  final Set<String> _extractingPaths = {};
 
   void _toggleSort(SortColumn column) {
     setState(() {
@@ -122,15 +142,26 @@ class _FileBrowserViewState extends State<FileBrowserView> {
   ) {
     Future<void>.delayed(Duration.zero, () async {
       if (!context.mounted) return;
-      await widget.onFileMenuAction(item, action);
+      if (action == FileMenuAction.extractHere) {
+        if (_extractingPaths.contains(item.apiPath)) return;
+        if (mounted) setState(() => _extractingPaths.add(item.apiPath));
+        try {
+          await widget.onFileMenuAction(item, action);
+        } finally {
+          if (mounted) setState(() => _extractingPaths.remove(item.apiPath));
+        }
+      } else {
+        await widget.onFileMenuAction(item, action);
+      }
     });
   }
 
   // ── Sort header ──────────────────────────────────────────────────────────
 
   Widget _buildSortHeader() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      color: AutobutlerColors.sidebar,
+      color: colorScheme.secondary,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
@@ -148,8 +179,9 @@ class _FileBrowserViewState extends State<FileBrowserView> {
   }
 
   Widget _buildGridSortHeader() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      color: AutobutlerColors.sidebar,
+      color: colorScheme.secondary,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
@@ -163,6 +195,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
   }
 
   Widget _headerCell(String label, SortColumn column, {int flex = 1}) {
+    final colorScheme = Theme.of(context).colorScheme;
     final isActive = _sortColumn == column;
     return Expanded(
       flex: flex,
@@ -179,8 +212,8 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                   color: isActive
-                      ? AutobutlerColors.foreground
-                      : AutobutlerColors.secondaryForeground,
+                      ? colorScheme.onSurface
+                      : colorScheme.onSurfaceVariant,
                 ),
               ),
               if (isActive) ...[
@@ -190,7 +223,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                       ? Icons.arrow_upward_rounded
                       : Icons.arrow_downward_rounded,
                   size: 12,
-                  color: AutobutlerColors.foreground,
+                  color: colorScheme.onSurface,
                 ),
               ],
             ],
@@ -208,7 +241,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
       color: Colors.transparent,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        leading: AutobutlerFileIcon(node: item),
+        leading: _buildListLeading(item),
         title: Row(
           children: [
             Expanded(
@@ -253,24 +286,51 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                     ),
                     child: const Text('Download'),
                   ),
-                  PopupMenuItem<FileMenuAction>(
-                    value: FileMenuAction.moveRename,
-                    onTap: () => _dispatchMenuAction(
-                      context,
-                      item,
-                      FileMenuAction.moveRename,
+                  if (!widget.inArchive)
+                    PopupMenuItem<FileMenuAction>(
+                      value: FileMenuAction.moveRename,
+                      onTap: () => _dispatchMenuAction(
+                        context,
+                        item,
+                        FileMenuAction.moveRename,
+                      ),
+                      child: const Text('Move/Rename'),
                     ),
-                    child: const Text('Move/Rename'),
-                  ),
-                  PopupMenuItem<FileMenuAction>(
-                    value: FileMenuAction.delete,
-                    onTap: () => _dispatchMenuAction(
-                      context,
-                      item,
-                      FileMenuAction.delete,
+                  if (!widget.inArchive)
+                    PopupMenuItem<FileMenuAction>(
+                      value: FileMenuAction.delete,
+                      onTap: () => _dispatchMenuAction(
+                        context,
+                        item,
+                        FileMenuAction.delete,
+                      ),
+                      child: const Text('Delete'),
                     ),
-                    child: const Text('Delete'),
-                  ),
+                  if (!widget.inArchive && _isArchive(item))
+                    PopupMenuItem<FileMenuAction>(
+                      value: FileMenuAction.extractHere,
+                      enabled: !_extractingPaths.contains(item.apiPath),
+                      onTap: () => _dispatchMenuAction(
+                        context,
+                        item,
+                        FileMenuAction.extractHere,
+                      ),
+                      child: _extractingPaths.contains(item.apiPath)
+                          ? const Row(
+                              children: [
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text('Extracting...'),
+                              ],
+                            )
+                          : const Text('Extract here'),
+                    ),
                   if (widget.isSearchMode && widget.onNavigateToFolder != null)
                     PopupMenuItem<FileMenuAction>(
                       value: FileMenuAction.navigateToFolder,
@@ -295,8 +355,9 @@ class _FileBrowserViewState extends State<FileBrowserView> {
       future: widget.filesFuture,
       initialData: widget.initialData,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            !snapshot.hasData) {
+        if (widget.isInitialLoad ||
+            (snapshot.connectionState == ConnectionState.waiting &&
+                !snapshot.hasData)) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -401,47 +462,41 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                (() {
-                                  final lower = item.name.toLowerCase();
-                                  final isImage =
-                                      lower.endsWith('.jpg') ||
-                                      lower.endsWith('.jpeg') ||
-                                      lower.endsWith('.png') ||
-                                      lower.endsWith('.gif') ||
-                                      lower.endsWith('.webp');
-                                  if (isImage) {
-                                    final url =
-                                        CirrusService.constructThumbnailUrl(
-                                          item.apiPath,
-                                          serial: item.deviceSerial,
-                                        );
-                                    return SizedBox(
-                                      height: 96,
-                                      width: double.infinity,
-                                      child: Image.network(
-                                        url.toString(),
-                                        fit: BoxFit.cover,
-                                        loadingBuilder:
-                                            (context, child, progress) {
-                                              if (progress == null) {
-                                                return child;
-                                              }
-                                              return Container(
-                                                color: Colors.grey[300],
-                                              );
-                                            },
-                                        errorBuilder: (context, error, stack) =>
-                                            Container(color: Colors.grey[300]),
-                                      ),
-                                    );
-                                  }
-                                  return Center(
+                                if (_isImageFile(item))
+                                  SizedBox(
+                                    height: 96,
+                                    width: double.infinity,
+                                    child: CachedNetworkImage(
+                                      imageUrl:
+                                          CirrusService.constructThumbnailUrl(
+                                            item.apiPath,
+                                            serial: item.deviceSerial,
+                                          ).toString(),
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) =>
+                                          Shimmer.fromColors(
+                                            baseColor: Colors.grey[800]!,
+                                            highlightColor: Colors.grey[700]!,
+                                            child: Container(
+                                              color: Colors.grey[800],
+                                            ),
+                                          ),
+                                      errorWidget: (context, url, error) =>
+                                          Center(
+                                            child: AutobutlerFileIcon(
+                                              node: item,
+                                              size: 48,
+                                            ),
+                                          ),
+                                    ),
+                                  )
+                                else
+                                  Center(
                                     child: AutobutlerFileIcon(
                                       node: item,
                                       size: 48,
                                     ),
-                                  );
-                                })(),
+                                  ),
                                 const SizedBox(height: 8),
                                 Flexible(
                                   child: Text(
@@ -476,24 +531,57 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                                             ),
                                             child: const Text('Download'),
                                           ),
-                                          PopupMenuItem<FileMenuAction>(
-                                            value: FileMenuAction.moveRename,
-                                            onTap: () => _dispatchMenuAction(
-                                              context,
-                                              item,
-                                              FileMenuAction.moveRename,
+                                          if (!widget.inArchive)
+                                            PopupMenuItem<FileMenuAction>(
+                                              value: FileMenuAction.moveRename,
+                                              onTap: () => _dispatchMenuAction(
+                                                context,
+                                                item,
+                                                FileMenuAction.moveRename,
+                                              ),
+                                              child: const Text('Move/Rename'),
                                             ),
-                                            child: const Text('Move/Rename'),
-                                          ),
-                                          PopupMenuItem<FileMenuAction>(
-                                            value: FileMenuAction.delete,
-                                            onTap: () => _dispatchMenuAction(
-                                              context,
-                                              item,
-                                              FileMenuAction.delete,
+                                          if (!widget.inArchive)
+                                            PopupMenuItem<FileMenuAction>(
+                                              value: FileMenuAction.delete,
+                                              onTap: () => _dispatchMenuAction(
+                                                context,
+                                                item,
+                                                FileMenuAction.delete,
+                                              ),
+                                              child: const Text('Delete'),
                                             ),
-                                            child: const Text('Delete'),
-                                          ),
+                                          if (!widget.inArchive &&
+                                              _isArchive(item))
+                                            PopupMenuItem<FileMenuAction>(
+                                              value: FileMenuAction.extractHere,
+                                              enabled: !_extractingPaths
+                                                  .contains(item.apiPath),
+                                              onTap: () => _dispatchMenuAction(
+                                                context,
+                                                item,
+                                                FileMenuAction.extractHere,
+                                              ),
+                                              child:
+                                                  _extractingPaths.contains(
+                                                    item.apiPath,
+                                                  )
+                                                  ? const Row(
+                                                      children: [
+                                                        SizedBox(
+                                                          width: 16,
+                                                          height: 16,
+                                                          child:
+                                                              CircularProgressIndicator(
+                                                                strokeWidth: 2,
+                                                              ),
+                                                        ),
+                                                        SizedBox(width: 8),
+                                                        Text('Extracting...'),
+                                                      ],
+                                                    )
+                                                  : const Text('Extract here'),
+                                            ),
                                           if (widget.isSearchMode &&
                                               widget.onNavigateToFolder != null)
                                             PopupMenuItem<FileMenuAction>(
@@ -549,6 +637,51 @@ class _FileBrowserViewState extends State<FileBrowserView> {
         );
       },
     );
+  }
+
+  static bool _isImageFile(CirrusFileNode node) {
+    if (node.isDir) return false;
+    final lower = node.name.toLowerCase();
+    return lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.gif') ||
+        lower.endsWith('.webp') ||
+        lower.endsWith('.heic') ||
+        lower.endsWith('.heif');
+  }
+
+  Widget _buildListLeading(CirrusFileNode item) {
+    if (!_isImageFile(item)) {
+      return AutobutlerFileIcon(node: item);
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: SizedBox(
+        width: 40,
+        height: 40,
+        child: CachedNetworkImage(
+          imageUrl: CirrusService.constructThumbnailUrl(
+            item.apiPath,
+            serial: item.deviceSerial,
+            size: 'sm',
+          ).toString(),
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Shimmer.fromColors(
+            baseColor: Colors.grey[800]!,
+            highlightColor: Colors.grey[700]!,
+            child: Container(color: Colors.grey[800]),
+          ),
+          errorWidget: (context, url, error) => AutobutlerFileIcon(node: item),
+        ),
+      ),
+    );
+  }
+
+  static bool _isArchive(CirrusFileNode node) {
+    if (node.isDir) return false;
+    return node.fileType == 'archive';
   }
 
   static String _fileType(CirrusFileNode node) {

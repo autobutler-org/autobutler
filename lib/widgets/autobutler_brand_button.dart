@@ -30,6 +30,7 @@ class AutobutlerBrandButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final radius = BorderRadius.circular(AutobutlerColors.radiusMd);
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -49,24 +50,20 @@ class AutobutlerBrandButton extends StatelessWidget {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: AutobutlerColors.primary,
+                    color: colorScheme.primary,
                     borderRadius: radius,
                   ),
                   child: Center(
-                    child: Icon(
-                      icon,
-                      size: 16,
-                      color: AutobutlerColors.primaryForeground,
-                    ),
+                    child: Icon(icon, size: 16, color: colorScheme.onPrimary),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: AutobutlerColors.cardForeground,
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ],

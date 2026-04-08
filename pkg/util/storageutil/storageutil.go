@@ -15,6 +15,7 @@ import (
 type FileType string
 
 const (
+	FileTypeAbdoc     FileType = "abdoc"
 	FileTypeDocx      FileType = "docx"
 	FileTypeEpub      FileType = "epub"
 	FileTypeFolder    FileType = "folder"
@@ -86,9 +87,11 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 		return FileTypeVideo
 	case ".epub":
 		return FileTypeEpub
+	case ".abdoc":
+		return FileTypeAbdoc
 	case ".docx":
 		return FileTypeDocx
-	case ".zip", ".rar", ".tar", ".gz", ".7z":
+	case ".zip", ".rar", ".tar", ".gz", ".tgz", ".7z":
 		return FileTypeArchive
 	default:
 		stat, err := os.Stat(filePath)

@@ -364,6 +364,48 @@ func TestRecover_WrongPhrase(t *testing.T) {
 	}
 }
 
+func TestValidateBasicAuth_Success(t *testing.T) {
+	queries := newTestDB(t)
+	_, _ = authutil.Setup(context.Background(), queries, authutil.SetupParams{
+		Username: "admin",
+		Password: "mypassword",
+	})
+
+	username, err := authutil.ValidateBasicAuth(context.Background(), queries, "admin", "mypassword")
+	if err != nil {
+		t.Fatalf("ValidateBasicAuth failed: %v", err)
+	}
+	if username != "admin" {
+		t.Errorf("Expected username 'admin', got %q", username)
+	}
+}
+
+func TestValidateBasicAuth_WrongPassword(t *testing.T) {
+	queries := newTestDB(t)
+	_, _ = authutil.Setup(context.Background(), queries, authutil.SetupParams{
+		Username: "admin",
+		Password: "mypassword",
+	})
+
+	_, err := authutil.ValidateBasicAuth(context.Background(), queries, "admin", "wrongpassword")
+	if err == nil {
+		t.Error("Expected error for wrong password")
+	}
+}
+
+func TestValidateBasicAuth_WrongUsername(t *testing.T) {
+	queries := newTestDB(t)
+	_, _ = authutil.Setup(context.Background(), queries, authutil.SetupParams{
+		Username: "admin",
+		Password: "mypassword",
+	})
+
+	_, err := authutil.ValidateBasicAuth(context.Background(), queries, "notadmin", "mypassword")
+	if err == nil {
+		t.Error("Expected error for wrong username")
+	}
+}
+
 func TestRecover_CaseInsensitive(t *testing.T) {
 	queries := newTestDB(t)
 	setupResult, _ := authutil.Setup(context.Background(), queries, authutil.SetupParams{

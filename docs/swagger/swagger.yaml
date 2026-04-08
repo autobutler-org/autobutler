@@ -71,6 +71,8 @@ definitions:
       dirPath:
         description: Directory path containing the file, for easier client-side handling
         type: string
+      fileType:
+        type: string
       fullPath:
         type: string
       isDir:
@@ -90,6 +92,8 @@ definitions:
         type: string
       dirPath:
         description: Directory path containing the file, for easier client-side handling
+        type: string
+      fileType:
         type: string
       fullPath:
         type: string
@@ -581,6 +585,79 @@ paths:
       summary: Download a file or folder
       tags:
       - cirrus
+  /cirrus/download-archive-file:
+    get:
+      description: Reads the specified entry from the archive and streams it to the
+        client. No data is extracted to disk.
+      parameters:
+      - description: Path to the archive file (relative to device cirrus directory)
+        in: query
+        name: filePath
+        required: true
+        type: string
+      - description: Path of the entry inside the archive
+        in: query
+        name: entryPath
+        required: true
+        type: string
+      - description: Device serial number
+        in: query
+        name: serial
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: File content
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Entry not found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Download a single file from inside an archive
+      tags:
+      - cirrus
+  /cirrus/extract:
+    post:
+      description: Extracts a zip file into a subdirectory named after the archive
+        (without its extension) in the same directory
+      parameters:
+      - description: Path to the zip file to extract
+        in: query
+        name: filePath
+        required: true
+        type: string
+      - description: Device serial number
+        in: query
+        name: serial
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Extract a zip archive in place
+      tags:
+      - cirrus
   /cirrus/folder/{folderDir}:
     post:
       consumes:
@@ -617,6 +694,45 @@ paths:
           schema:
             $ref: '#/definitions/serverutil.Response'
       summary: Create a new folder
+      tags:
+      - cirrus
+  /cirrus/list-archive:
+    get:
+      description: Opens the archive at filePath and returns the direct children of
+        subPath as FileNodeJSON entries. No data is extracted to disk — only archive
+        headers are read.
+      parameters:
+      - description: Path to the archive file (relative to device cirrus directory)
+        in: query
+        name: filePath
+        required: true
+        type: string
+      - description: Virtual subdirectory inside the archive to list (empty = root)
+        in: query
+        name: subPath
+        type: string
+      - description: Device serial number
+        in: query
+        name: serial
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1_files.FileNodeJSON'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: List contents of an archive file at a given virtual path
       tags:
       - cirrus
   /cirrus/recent:
@@ -744,6 +860,24 @@ paths:
       summary: Upload files to a nested directory
       tags:
       - cirrus
+  /events:
+    get:
+      description: Upgrades the connection to WebSocket and pushes JSON events for
+        file system mutations (upload, delete, move, new_folder)
+      produces:
+      - application/json
+      responses:
+        "101":
+          description: Switching Protocols
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Stream real-time file/device events
+      tags:
+      - events
   /health:
     get:
       description: 'Returns current hardware health: CPU, memory, disk usage and temperature.

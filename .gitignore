@@ -91,11 +91,14 @@ flutter.zip
 # Flutter Linux artifacts
 /linux/
 
-# Ralph loops
+# AI slop
+## Ralph loops
 .ralph/
+## Skills
+.github/skills
 
-# Sable's personal dev context (AI co-developer workspace)
+## Sable's personal dev context (AI co-developer workspace)
 sable/
-# ExoKomodo's personal dev context (AI co-developer workspace)
+## ExoKomodo's personal dev context (AI co-developer workspace)
 exokomodo/
 linux/flutter/ephemeral/

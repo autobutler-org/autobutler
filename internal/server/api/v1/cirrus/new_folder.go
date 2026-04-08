@@ -2,9 +2,11 @@ package v1_files
 
 import (
 	"errors"
+	"path"
 
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
@@ -48,6 +50,10 @@ func newFolder(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(err)
 	}
 
+	deps.EventBus().Publish(eventbus.Event{
+		Kind: eventbus.EventNewFolder,
+		Path: path.Join(folderDir, folderName),
+	})
 	return serverutil.Ok()
 }
 

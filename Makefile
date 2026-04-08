@@ -22,7 +22,7 @@ export GOOS ?= $(shell $(GO) env GOOS)
 export GOARCH ?= $(shell $(GO) env GOARCH)
 export GOPROXY ?= https://proxy.golang.org,direct
 
-MAIN := ./cmd/autobutler/main.go
+ENTRYPOINT := ./cmd/autobutler
 EXE := ./build/autobutler
 
 UNAME_S := $(shell uname -s)
@@ -101,7 +101,7 @@ else
 	curl --fail -L \
 		"https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_$(FLUTTER_VERSION)-stable.tar.xz" | \
 			tar \
-				-xf \
+				-xJf - \
 				-C "${HOME}"
 endif
 else ifeq ($(UNAME_S),Darwin)
@@ -162,7 +162,7 @@ build: ## Build web frontend and backend
 .PHONY: build/backend
 build/backend: internal/server/public/stub.txt generate/backend ## Build backend
 	mkdir -p ./build
-	$(GO) build -o $(EXE) $(MAIN)
+	$(GO) build -o $(EXE) $(ENTRYPOINT)
 
 internal/server/public/stub.txt: ## Ensure public directory exists for embedding
 	mkdir -p ./internal/server/public
@@ -243,9 +243,17 @@ generate/frontend/icons: ## Generate app icons
 generate/frontend/sbom: ## Generate Flutter SBOM asset from pubspec.lock
 	dart run scripts/generate_flutter_sbom.dart
 
+DEPLOY_HOST ?= autobutler
+DEPLOY_PATH ?= ~/autobutler
+
+.PHONY: remote-deploy
+remote-deploy: build ## Build and deploy to a remote host via scp, then run the binary
+	scp $(EXE) $(DEPLOY_HOST):$(DEPLOY_PATH)
+	ssh $(DEPLOY_HOST) "pkill -f '$(DEPLOY_PATH) serve' || true; nohup $(DEPLOY_PATH) serve > ~/autobutler.log 2>&1 &"
+
 .PHONY: serve/backend
 serve/backend: generate/backend ## Serve backend
-	$(GO) run $(MAIN) serve
+	$(GO) run $(ENTRYPOINT) serve
 
 .PHONY: serve/frontend
 serve/frontend: serve/frontend/web ## Serve frontend
@@ -426,7 +434,7 @@ release/yank: ## Yank a release: remove from Azure + mark GitHub release as pre-
 
 .PHONY: version
 version: ## Print version
-	$(GO) run $(MAIN) version
+	$(GO) run $(ENTRYPOINT) version
 
 .PHONY: help
 help: ## Displays help info

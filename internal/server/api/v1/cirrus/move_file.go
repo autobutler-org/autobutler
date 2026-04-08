@@ -3,6 +3,7 @@ package v1_files
 import (
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
@@ -46,6 +47,11 @@ func moveFile(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(err)
 	}
 
+	deps.EventBus().Publish(eventbus.Event{
+		Kind:    eventbus.EventMove,
+		Path:    req.OldFilePath,
+		NewPath: req.NewFilePath,
+	})
 	return serverutil.Ok()
 }
 
