@@ -1,0 +1,21 @@
+name: flutter_tanstack_table
+description: A minimal Flutter web wrapper for a TanStack-style vanilla table (JS glue).
+version: 0.0.1
+environment:
+  sdk: ">=2.18.0 <4.0.0"
+
+flutter:
+  plugin:
+    platforms:
+      web:
+        pluginClass: TanstackTableJs
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+# This package targets Flutter web only; it provides JS glue that must be included in index.html
