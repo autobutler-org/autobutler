@@ -4,7 +4,7 @@ import 'package:autobutler/widgets/autobutler_brand_button.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:flutter/material.dart';
 
-class FileTopBar extends StatelessWidget {
+class FileTopBar extends StatefulWidget {
   const FileTopBar({
     required this.currentPath,
     required this.isGridView,
@@ -59,6 +59,14 @@ class FileTopBar extends StatelessWidget {
   final ValueChanged<String>? onDeviceToggled;
 
   @override
+  State<FileTopBar> createState() => _FileTopBarState();
+}
+
+class _FileTopBarState extends State<FileTopBar> {
+  final _viewsMenuController = MenuController();
+  final _createMenuController = MenuController();
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
@@ -72,7 +80,7 @@ class FileTopBar extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildTopRow(context),
-            if (!isSearchMode) _buildPathRow(context),
+            if (!widget.isSearchMode) _buildPathRow(context),
           ],
         ),
       ),
@@ -98,7 +106,7 @@ class FileTopBar extends StatelessWidget {
   }
 
   Widget _buildBrand(BuildContext context) {
-    return AutobutlerBrandButton(label: 'Files', onTap: onOpenDrawer);
+    return AutobutlerBrandButton(label: 'Files', onTap: widget.onOpenDrawer);
   }
 
   Widget _buildNavButtons(BuildContext context) {
@@ -108,20 +116,20 @@ class FileTopBar extends StatelessWidget {
         _iconBtn(
           context: context,
           icon: Icons.arrow_back_rounded,
-          onTap: currentPath.isEmpty ? null : onGoUp,
+          onTap: widget.currentPath.isEmpty ? null : widget.onGoUp,
           tooltip: 'Back',
         ),
         const SizedBox(width: 4),
         _iconBtn(
           context: context,
           icon: Icons.arrow_upward_rounded,
-          onTap: currentPath.isEmpty ? null : onGoUp,
+          onTap: widget.currentPath.isEmpty ? null : widget.onGoUp,
           tooltip: 'Up one level',
         ),
         const SizedBox(width: 4),
         RefreshIconButton(
-          isRefreshing: isRefreshing,
-          onPressed: onRefresh,
+          isRefreshing: widget.isRefreshing,
+          onPressed: widget.onRefresh,
           tooltip: 'Refresh',
         ),
       ],
@@ -135,14 +143,14 @@ class FileTopBar extends StatelessWidget {
         _iconBtn(
           context: context,
           icon: Icons.search_rounded,
-          onTap: onSearchPressed,
+          onTap: widget.onSearchPressed,
           tooltip: 'Search',
         ),
         const SizedBox(width: 4),
         _iconBtn(
           context: context,
           icon: Icons.settings_outlined,
-          onTap: onOpenSettings,
+          onTap: widget.onOpenSettings,
           tooltip: 'Settings',
         ),
       ],
@@ -161,38 +169,22 @@ class FileTopBar extends StatelessWidget {
           final isCompact = constraints.maxWidth < 860;
 
           if (isCompact) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+            return Row(
               children: [
-                _buildBreadcrumb(context),
-                if (devices != null && devices!.length > 1) ...[
-                  const SizedBox(height: 8),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: _buildDeviceChips(context),
-                  ),
-                ],
-                const SizedBox(height: 8),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildActions(context),
-                      const SizedBox(width: 8),
-                      _buildViewChips(context),
-                    ],
-                  ),
-                ),
+                Expanded(child: _buildBreadcrumb(context)),
+                const SizedBox(width: 8),
+                _buildViewsMenu(context),
+                const SizedBox(width: 6),
+                _buildCreateMenu(context),
               ],
             );
           }
 
+          // Wide layout — unchanged.
           return Row(
             children: [
               Expanded(child: _buildBreadcrumb(context)),
-              if (devices != null && devices!.length > 1) ...[
+              if (widget.devices != null && widget.devices!.length > 1) ...[
                 const SizedBox(width: 12),
                 _buildDeviceChips(context),
               ],
@@ -207,12 +199,244 @@ class FileTopBar extends StatelessWidget {
     );
   }
 
+  // ── Compact: "Views" popup menu ──────────────────────────────────────────
+
+  Widget _buildViewsMenu(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final hasDeviceFilter =
+        widget.devices != null && widget.devices!.length > 1;
+
+    return MenuAnchor(
+      controller: _viewsMenuController,
+      style: MenuStyle(
+        minimumSize: const WidgetStatePropertyAll(Size(220, 0)),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+          ),
+        ),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(vertical: 8),
+        ),
+      ),
+      menuChildren: [
+        // ── Device filter section ──
+        if (hasDeviceFilter) ...[
+          _menuSectionHeader(context, 'Filter devices'),
+          ...widget.devices!.map((device) {
+            final isSelected =
+                widget.activeDevicePaths?.contains(device.devicePath) ?? true;
+            final label = device.name.isNotEmpty
+                ? device.name
+                : device.mountPoint;
+            return CheckboxListTile(
+              value: isSelected,
+              dense: true,
+              title: Text(label, style: const TextStyle(fontSize: 14)),
+              controlAffinity: ListTileControlAffinity.leading,
+              visualDensity: VisualDensity.compact,
+              onChanged: widget.onDeviceToggled != null
+                  ? (_) => widget.onDeviceToggled!(device.devicePath)
+                  : null,
+            );
+          }),
+          const Divider(height: 1, indent: 16, endIndent: 16),
+        ],
+
+        // ── Layout section ──
+        _menuSectionHeader(context, 'Layout'),
+        _menuRadioItem(
+          context: context,
+          icon: Icons.view_list_rounded,
+          label: 'List',
+          selected: !widget.isGridView,
+          onTap: () {
+            if (widget.isGridView) widget.onToggleView();
+          },
+        ),
+        _menuRadioItem(
+          context: context,
+          icon: Icons.grid_view_rounded,
+          label: 'Grid',
+          selected: widget.isGridView,
+          onTap: () {
+            if (!widget.isGridView) widget.onToggleView();
+          },
+        ),
+        const Divider(height: 1, indent: 16, endIndent: 16),
+
+        // ── Device grouping section ──
+        _menuSectionHeader(context, 'Grouping'),
+        ListTile(
+          dense: true,
+          visualDensity: VisualDensity.compact,
+          leading: Icon(
+            widget.isUnifiedView
+                ? Icons.folder_copy_outlined
+                : Icons.device_hub_outlined,
+            size: 18,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          title: Text(
+            widget.isUnifiedView ? 'Unified' : 'Per-device',
+            style: const TextStyle(fontSize: 14),
+          ),
+          trailing: Switch.adaptive(
+            value: widget.isUnifiedView,
+            onChanged: (_) => widget.onToggleUnifiedView(),
+          ),
+          onTap: widget.onToggleUnifiedView,
+        ),
+      ],
+      child: _chip(
+        context: context,
+        icon: Icons.tune_rounded,
+        label: 'Views',
+        onTap: () {
+          if (_viewsMenuController.isOpen) {
+            _viewsMenuController.close();
+          } else {
+            _viewsMenuController.open();
+          }
+        },
+      ),
+    );
+  }
+
+  // ── Compact: "Create" popup menu ─────────────────────────────────────────
+
+  Widget _buildCreateMenu(BuildContext context) {
+    final uploadLabel = widget.isUploading
+        ? (widget.uploadTotal > 0
+              ? 'Uploading ${widget.uploadCompleted}/${widget.uploadTotal}…'
+              : 'Uploading…')
+        : 'Upload files';
+
+    return MenuAnchor(
+      controller: _createMenuController,
+      style: MenuStyle(
+        minimumSize: const WidgetStatePropertyAll(Size(200, 0)),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+          ),
+        ),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(vertical: 8),
+        ),
+      ),
+      menuChildren: [
+        ListTile(
+          dense: true,
+          visualDensity: VisualDensity.compact,
+          leading: widget.isUploading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator.adaptive(strokeWidth: 2),
+                )
+              : const Icon(Icons.upload_rounded, size: 18),
+          title: Text(uploadLabel, style: const TextStyle(fontSize: 14)),
+          enabled: !widget.isUploading,
+          onTap: () {
+            _createMenuController.close();
+            widget.onUploadPressed();
+          },
+        ),
+        ListTile(
+          dense: true,
+          visualDensity: VisualDensity.compact,
+          leading: const Icon(Icons.create_new_folder_outlined, size: 18),
+          title: const Text('New folder', style: TextStyle(fontSize: 14)),
+          enabled: !widget.isCreatingFolder,
+          onTap: () {
+            _createMenuController.close();
+            widget.onCreateFolderPressed();
+          },
+        ),
+        ListTile(
+          dense: true,
+          visualDensity: VisualDensity.compact,
+          leading: const Icon(Icons.edit_document, size: 18),
+          title: const Text('New file', style: TextStyle(fontSize: 14)),
+          onTap: () {
+            _createMenuController.close();
+            widget.onNewFilePressed();
+          },
+        ),
+      ],
+      child: _chip(
+        context: context,
+        icon: Icons.add_rounded,
+        label: 'Create',
+        onTap: () {
+          if (_createMenuController.isOpen) {
+            _createMenuController.close();
+          } else {
+            _createMenuController.open();
+          }
+        },
+      ),
+    );
+  }
+
+  // ── Menu helpers ─────────────────────────────────────────────────────────
+
+  Widget _menuSectionHeader(BuildContext context, String title) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.8,
+          color: colorScheme.onSurface.withValues(alpha: 0.45),
+        ),
+      ),
+    );
+  }
+
+  Widget _menuRadioItem({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ListTile(
+      dense: true,
+      visualDensity: VisualDensity.compact,
+      leading: Icon(
+        icon,
+        size: 18,
+        color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontSize: 14,
+          color: selected ? colorScheme.primary : colorScheme.onSurface,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+        ),
+      ),
+      trailing: selected
+          ? Icon(Icons.check_rounded, size: 16, color: colorScheme.primary)
+          : const SizedBox(width: 16),
+      onTap: onTap,
+    );
+  }
+
+  // ── Wide layout helpers (unchanged) ──────────────────────────────────────
+
   Widget _buildDeviceChips(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: devices!.map((device) {
+      children: widget.devices!.map((device) {
         final isSelected =
-            activeDevicePaths?.contains(device.devicePath) ?? true;
+            widget.activeDevicePaths?.contains(device.devicePath) ?? true;
         return Padding(
           padding: const EdgeInsets.only(right: 6),
           child: _chip(
@@ -221,8 +445,8 @@ class FileTopBar extends StatelessWidget {
                 ? Icons.check_circle_outline_rounded
                 : Icons.circle_outlined,
             label: device.name.isNotEmpty ? device.name : device.mountPoint,
-            onTap: onDeviceToggled != null
-                ? () => onDeviceToggled!(device.devicePath)
+            onTap: widget.onDeviceToggled != null
+                ? () => widget.onDeviceToggled!(device.devicePath)
                 : null,
             active: isSelected,
           ),
@@ -248,7 +472,7 @@ class FileTopBar extends StatelessWidget {
             MouseRegion(
               cursor: SystemMouseCursors.click,
               child: InkWell(
-                onTap: onGoHome,
+                onTap: widget.onGoHome,
                 borderRadius: BorderRadius.circular(4),
                 child: Padding(
                   padding: const EdgeInsets.all(2),
@@ -277,10 +501,10 @@ class FileTopBar extends StatelessWidget {
 
   List<Widget> _buildCrumbs(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    if (currentPath.isEmpty) return [];
-    final trimmed = currentPath.startsWith('/')
-        ? currentPath.substring(1)
-        : currentPath;
+    if (widget.currentPath.isEmpty) return [];
+    final trimmed = widget.currentPath.startsWith('/')
+        ? widget.currentPath.substring(1)
+        : widget.currentPath;
     if (trimmed.isEmpty) return [];
     final segments = trimmed.split('/');
     final widgets = <Widget>[];
@@ -304,9 +528,9 @@ class FileTopBar extends StatelessWidget {
         MouseRegion(
           cursor: isLast ? SystemMouseCursors.basic : SystemMouseCursors.click,
           child: InkWell(
-            onTap: (isLast || onPathSelected == null)
+            onTap: (isLast || widget.onPathSelected == null)
                 ? null
-                : () => onPathSelected!(targetPath),
+                : () => widget.onPathSelected!(targetPath),
             borderRadius: BorderRadius.circular(4),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
@@ -332,26 +556,26 @@ class FileTopBar extends StatelessWidget {
         _chip(
           context: context,
           icon: Icons.upload_rounded,
-          label: isUploading
-              ? (uploadTotal > 0
-                    ? '$uploadCompleted/$uploadTotal'
+          label: widget.isUploading
+              ? (widget.uploadTotal > 0
+                    ? '${widget.uploadCompleted}/${widget.uploadTotal}'
                     : 'Uploading...')
               : 'Upload',
-          onTap: isUploading ? null : onUploadPressed,
+          onTap: widget.isUploading ? null : widget.onUploadPressed,
         ),
         const SizedBox(width: 6),
         _chip(
           context: context,
           icon: Icons.create_new_folder_outlined,
           label: 'New folder',
-          onTap: isCreatingFolder ? null : onCreateFolderPressed,
+          onTap: widget.isCreatingFolder ? null : widget.onCreateFolderPressed,
         ),
         const SizedBox(width: 6),
         _chip(
           context: context,
           icon: Icons.edit_document,
           label: 'New file',
-          onTap: onNewFilePressed,
+          onTap: widget.onNewFilePressed,
         ),
       ],
     );
@@ -367,23 +591,23 @@ class FileTopBar extends StatelessWidget {
             (icon: Icons.view_list_rounded, label: 'List'),
             (icon: Icons.grid_view_rounded, label: 'Grid'),
           ],
-          selectedIndex: isGridView ? 1 : 0,
+          selectedIndex: widget.isGridView ? 1 : 0,
           onSelected: (index) {
             final wantGrid = index == 1;
-            if (wantGrid != isGridView) {
-              onToggleView();
+            if (wantGrid != widget.isGridView) {
+              widget.onToggleView();
             }
           },
         ),
         const SizedBox(width: 4),
         _chip(
           context: context,
-          icon: isUnifiedView
+          icon: widget.isUnifiedView
               ? Icons.folder_copy_outlined
               : Icons.device_hub_outlined,
-          label: isUnifiedView ? 'Unified' : 'Per-device',
-          onTap: onToggleUnifiedView,
-          active: isUnifiedView,
+          label: widget.isUnifiedView ? 'Unified' : 'Per-device',
+          onTap: widget.onToggleUnifiedView,
+          active: widget.isUnifiedView,
         ),
       ],
     );
