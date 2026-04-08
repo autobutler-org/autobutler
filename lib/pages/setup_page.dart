@@ -1,11 +1,14 @@
+import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/auth_service.dart';
 import 'package:autobutler/widgets/core/copy_button.dart';
 import 'package:flutter/material.dart';
 
 /// First-boot setup screen — creates the owner account on the butler.
 ///
-/// Shows the recovery phrase exactly once after setup completes.
-/// The user must acknowledge they have saved it before proceeding.
+/// Three steps:
+///  1. Create account (username + password)
+///  2. Acknowledge recovery phrase
+///  3. Choose app theme (persisted immediately — live preview)
 class SetupPage extends StatefulWidget {
   final VoidCallback onSetupComplete;
 
@@ -29,9 +32,12 @@ class _SetupPageState extends State<SetupPage> {
   bool _obscureConfirm = true;
   String? _error;
 
-  // After setup: show the recovery phrase acknowledgement step
+  // Step 2: recovery phrase acknowledgement
   String? _recoveryPhrase;
   bool _phraseAcknowledged = false;
+
+  // Step 3: theme selection
+  bool _showThemeStep = false;
 
   @override
   void dispose() {
@@ -72,7 +78,7 @@ class _SetupPageState extends State<SetupPage> {
 
   void _confirmPhraseAndProceed() {
     if (_phraseAcknowledged) {
-      widget.onSetupComplete();
+      setState(() => _showThemeStep = true);
     }
   }
 
@@ -85,7 +91,9 @@ class _SetupPageState extends State<SetupPage> {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 440),
-              child: _recoveryPhrase != null
+              child: _showThemeStep
+                  ? _ThemeStep(onContinue: widget.onSetupComplete)
+                  : _recoveryPhrase != null
                   ? _RecoveryPhraseStep(
                       phrase: _recoveryPhrase!,
                       acknowledged: _phraseAcknowledged,
@@ -414,6 +422,181 @@ class _RecoveryPhraseStep extends StatelessWidget {
           child: const Text('Continue'),
         ),
       ],
+    );
+  }
+}
+
+/// Theme selection step — the user picks Light, Dark, or System.
+///
+/// Selecting an option immediately applies the theme (live preview) and
+/// persists the preference via [AppSettings]. The user can proceed with
+/// any selection; the default is whatever [AppSettings] loaded on startup
+/// (i.e. System on first boot).
+class _ThemeStep extends StatelessWidget {
+  final VoidCallback onContinue;
+
+  const _ThemeStep({required this.onContinue});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: AppSettings.instance.themeMode,
+      builder: (context, currentMode, _) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Icon(
+              Icons.palette_outlined,
+              size: 56,
+              color: theme.colorScheme.primary,
+              semanticLabel: 'Theme',
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Choose your theme',
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'You can change this at any time in Settings.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+
+            _ThemeOption(
+              icon: Icons.brightness_auto_rounded,
+              label: 'System',
+              description: 'Follows your device setting',
+              isSelected: currentMode == ThemeMode.system,
+              onTap: () => AppSettings.instance.setThemeMode(ThemeMode.system),
+            ),
+            const SizedBox(height: 12),
+            _ThemeOption(
+              icon: Icons.light_mode_rounded,
+              label: 'Light',
+              description: 'Always use light theme',
+              isSelected: currentMode == ThemeMode.light,
+              onTap: () => AppSettings.instance.setThemeMode(ThemeMode.light),
+            ),
+            const SizedBox(height: 12),
+            _ThemeOption(
+              icon: Icons.dark_mode_rounded,
+              label: 'Dark',
+              description: 'Always use dark theme',
+              isSelected: currentMode == ThemeMode.dark,
+              onTap: () => AppSettings.instance.setThemeMode(ThemeMode.dark),
+            ),
+
+            const SizedBox(height: 32),
+
+            FilledButton(
+              onPressed: onContinue,
+              child: const Text('Get started'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// A selectable card representing a single theme option.
+class _ThemeOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String description;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ThemeOption({
+    required this.icon,
+    required this.label,
+    required this.description,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: '$label theme${isSelected ? ', selected' : ''}',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? primaryColor.withValues(alpha: 0.08)
+                : theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected
+                  ? primaryColor
+                  : theme.colorScheme.outlineVariant,
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 28,
+                color: isSelected
+                    ? primaryColor
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: isSelected
+                            ? primaryColor
+                            : theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      description,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              AnimatedOpacity(
+                opacity: isSelected ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 150),
+                child: Icon(
+                  Icons.check_circle_rounded,
+                  color: primaryColor,
+                  size: 22,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
