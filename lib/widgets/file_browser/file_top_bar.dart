@@ -171,7 +171,7 @@ class _FileTopBarState extends State<FileTopBar> {
           if (isCompact) {
             return Row(
               children: [
-                Expanded(child: _buildBreadcrumb(context)),
+                Expanded(child: _buildCompactPath(context)),
                 const SizedBox(width: 8),
                 _buildViewsMenu(context),
                 const SizedBox(width: 6),
@@ -452,6 +452,60 @@ class _FileTopBarState extends State<FileTopBar> {
           ),
         );
       }).toList(),
+    );
+  }
+
+  // ── Compact: current-directory display (< icon + name, no scroll) ─────────
+
+  Widget _buildCompactPath(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final segments = widget.currentPath
+        .split('/')
+        .where((s) => s.isNotEmpty)
+        .toList();
+    final isAtRoot = segments.isEmpty;
+    final currentName = isAtRoot ? 'Home' : segments.last;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        border: Border.all(color: colorScheme.outline),
+        borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            onTap: isAtRoot ? null : widget.onGoUp,
+            borderRadius: BorderRadius.circular(4),
+            child: Padding(
+              padding: const EdgeInsets.all(2),
+              child: Icon(
+                Icons.chevron_left_rounded,
+                size: 18,
+                color: isAtRoot
+                    ? colorScheme.onSurface.withValues(alpha: 0.3)
+                    : colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              currentName,
+              style: TextStyle(
+                fontSize: 13,
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
     );
   }
 
