@@ -251,6 +251,40 @@ remote-deploy: build ## Build and deploy to a remote host via scp, then run the 
 	scp $(EXE) $(DEPLOY_HOST):$(DEPLOY_PATH)
 	ssh $(DEPLOY_HOST) "pkill -f '$(DEPLOY_PATH) serve' || true; nohup $(DEPLOY_PATH) serve > ~/autobutler.log 2>&1 &"
 
+.PHONY: drive
+drive: ## Create and mount a new MyDrive DMG (auto-numbered: MyDrive, MyDrive2, MyDrive3, …)
+	@if ! test -d /Volumes/MyDrive; then \
+		N=""; \
+	else \
+		i=2; \
+		while test -d /Volumes/MyDrive$$i; do i=$$((i+1)); done; \
+		N=$$i; \
+	fi; \
+	NAME="MyDrive$$N"; \
+	FILE="$$HOME/Desktop/mydrive$$N.dmg"; \
+	echo "Creating $$FILE (volume: $$NAME)..."; \
+	hdiutil create -size 100m -fs HFS+ -volname "$$NAME" "$$FILE"; \
+	hdiutil attach "$$FILE"
+
+.PHONY: unmount-drive
+unmount-drive: ## Detach the highest-numbered MyDrive volume currently mounted
+	@highest_num=-1; \
+	highest_name=""; \
+	for name in $$(ls /Volumes/ 2>/dev/null | grep -E '^MyDrive[0-9]*$$'); do \
+		num=$$(echo "$$name" | sed 's/MyDrive//'); \
+		if [ -z "$$num" ]; then num=0; fi; \
+		if [ "$$num" -gt "$$highest_num" ]; then \
+			highest_num=$$num; \
+			highest_name=$$name; \
+		fi; \
+	done; \
+	if [ -z "$$highest_name" ]; then \
+		echo "No MyDrive volumes mounted."; \
+		exit 1; \
+	fi; \
+	echo "Detaching /Volumes/$$highest_name..."; \
+	hdiutil detach "/Volumes/$$highest_name"
+
 .PHONY: serve/backend
 serve/backend: generate/backend ## Serve backend
 	$(GO) run $(ENTRYPOINT) serve
