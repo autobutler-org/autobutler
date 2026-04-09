@@ -169,6 +169,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "10.8.3"
+  data_table:
+    dependency: "direct main"
+    description:
+      path: "packages/data_table"
+      relative: true
+    source: path
+    version: "0.0.1"
   dbus:
     dependency: transitive
     description:
