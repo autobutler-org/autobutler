@@ -564,7 +564,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       // Create empty content based on file type.
       final String emptyContent;
       if (fileName.endsWith('.absheet')) {
-        emptyContent = '{"tabs":[{"name":"Sheet 1","data":{"columns":[],"rows":[]}}]}';
+        emptyContent =
+            '{"tabs":[{"name":"Sheet 1","data":{"columns":[],"rows":[]}}]}';
       } else {
         emptyContent = '{"ops":[{"insert":"\\n"}]}';
       }

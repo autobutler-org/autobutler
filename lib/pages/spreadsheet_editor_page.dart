@@ -13,14 +13,9 @@ class SpreadsheetEditorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(filePath.split('/').last),
-      ),
+      appBar: AppBar(title: Text(filePath.split('/').last)),
       body: const Center(
-        child: Text(
-          'Editor coming soon',
-          style: TextStyle(fontSize: 18),
-        ),
+        child: Text('Editor coming soon', style: TextStyle(fontSize: 18)),
       ),
     );
   }

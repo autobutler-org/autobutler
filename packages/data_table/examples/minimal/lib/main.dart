@@ -8,9 +8,7 @@ class ExampleApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: ExamplePage(),
-    );
+    return const MaterialApp(home: ExamplePage());
   }
 }
 
@@ -19,25 +17,11 @@ class ExamplePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var table = DataTable(
-      [
-        DataRow([
-          DataCell('Alice'),
-          DataCell('30'),
-          DataCell('New York'),
-        ]),
-        DataRow([
-          DataCell('Bob'),
-          DataCell('25'),
-          DataCell('Los Angeles'),
-        ]),
-        DataRow([
-          DataCell('Charlie'),
-          DataCell('35'),
-          DataCell('Chicago'),
-        ]),
-      ],
-    );
+    var table = DataTable([
+      DataRow([DataCell('Alice'), DataCell('30'), DataCell('New York')]),
+      DataRow([DataCell('Bob'), DataCell('25'), DataCell('Los Angeles')]),
+      DataRow([DataCell('Charlie'), DataCell('35'), DataCell('Chicago')]),
+    ]);
     return Scaffold(
       appBar: AppBar(title: const Text('data_table example')),
       body: Table(
