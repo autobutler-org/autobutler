@@ -1,5 +1,5 @@
-name: data_table_example_minimal
-description: Example app for data_table package
+name: data_table_example_spreadsheet
+description: Example spreadsheet for data_table package
 publish_to: "none"
 
 environment:
