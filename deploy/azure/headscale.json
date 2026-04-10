@@ -1,0 +1,284 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Deploys a lightweight Ubuntu VM to run the Headscale control server and AutoButler provisioning service."
+  },
+  "parameters": {
+    "vmName": {
+      "type": "string",
+      "defaultValue": "autobutler-headscale",
+      "metadata": { "description": "Name of the virtual machine." }
+    },
+    "adminUsername": {
+      "type": "string",
+      "defaultValue": "autobutler",
+      "metadata": { "description": "Admin username for the VM." }
+    },
+    "adminPublicKey": {
+      "type": "securestring",
+      "metadata": { "description": "SSH public key for the admin user." }
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_B1s",
+      "metadata": { "description": "VM size. Standard_B1s (1 vCPU, 1 GB RAM) is sufficient for Headscale + provisioning service." }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": { "description": "Azure region for all resources." }
+    },
+    "headscaleDomain": {
+      "type": "string",
+      "metadata": { "description": "Public domain for Headscale (e.g. ts.autobutler.org). Must have DNS A record pointing to this VM's public IP." }
+    },
+    "headscaleApiKey": {
+      "type": "securestring",
+      "metadata": { "description": "Initial Headscale API key used by the provisioning service. Generated post-boot; leave empty on first deploy." },
+      "defaultValue": ""
+    },
+    "allowedSSHCidr": {
+      "type": "string",
+      "defaultValue": "*",
+      "metadata": { "description": "CIDR range allowed to SSH into the VM. Restrict to your IP for production." }
+    }
+  },
+  "variables": {
+    "publicIpName": "[concat(parameters('vmName'), '-pip')]",
+    "nsgName": "[concat(parameters('vmName'), '-nsg')]",
+    "vnetName": "[concat(parameters('vmName'), '-vnet')]",
+    "subnetName": "default",
+    "nicName": "[concat(parameters('vmName'), '-nic')]",
+    "osDiskName": "[concat(parameters('vmName'), '-osdisk')]",
+    "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('subnetName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('publicIpName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[parameters('vmName')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('nsgName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowSSH",
+            "properties": {
+              "priority": 100,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "[parameters('allowedSSHCidr')]",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "22"
+            }
+          },
+          {
+            "name": "AllowHTTPS",
+            "properties": {
+              "priority": 110,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "443"
+            }
+          },
+          {
+            "name": "AllowHTTP",
+            "properties": {
+              "priority": 120,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "80"
+            }
+          },
+          {
+            "name": "AllowHeadscaleGRPC",
+            "properties": {
+              "priority": 130,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "50443"
+            }
+          },
+          {
+            "name": "AllowProvisioning",
+            "properties": {
+              "priority": 140,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "8081"
+            }
+          },
+          {
+            "name": "AllowHeadscaleSTUN",
+            "properties": {
+              "priority": 150,
+              "protocol": "Udp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "3478"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+      ],
+      "properties": {
+        "addressSpace": { "addressPrefixes": ["10.0.0.0/16"] },
+        "subnets": [
+          {
+            "name": "[variables('subnetName')]",
+            "properties": {
+              "addressPrefix": "10.0.0.0/24",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('nicName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "subnet": { "id": "[variables('subnetRef')]" },
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-07-01",
+      "name": "[parameters('vmName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": { "vmSize": "[parameters('vmSize')]" },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "ubuntu-24_04-lts",
+            "sku": "server",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "[variables('osDiskName')]",
+            "createOption": "FromImage",
+            "managedDisk": { "storageAccountType": "Standard_LRS" },
+            "diskSizeGB": 32
+          }
+        },
+        "osProfile": {
+          "computerName": "[parameters('vmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": true,
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('adminUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('adminPublicKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            { "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]" }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-07-01",
+      "name": "[concat(parameters('vmName'), '/cloud-init')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.1",
+        "autoUpgradeMinorVersion": true,
+        "protectedSettings": {
+          "script": "[base64(concat('#!/bin/bash\nset -euo pipefail\n\nDOMAIN=\"', parameters('headscaleDomain'), '\"\nAPI_KEY=\"', parameters('headscaleApiKey'), '\"\n\n# Install dependencies\napt-get update -q\napt-get install -y curl wget jq nginx certbot python3-certbot-nginx\n\n# Install Headscale\nHS_VERSION=$(curl -s https://api.github.com/repos/juanfont/headscale/releases/latest | jq -r .tag_name)\nwget -q -O /tmp/headscale.deb \"https://github.com/juanfont/headscale/releases/download/${HS_VERSION}/headscale_${HS_VERSION#v}_linux_amd64.deb\"\ndpkg -i /tmp/headscale.deb\n\n# Configure Headscale\nmkdir -p /etc/headscale /var/lib/headscale\ncat > /etc/headscale/config.yaml <<EOF\nserver_url: https://${DOMAIN}\nlisten_addr: 127.0.0.1:8080\ngrpc_listen_addr: 127.0.0.1:50443\nmetrics_listen_addr: 127.0.0.1:9090\nlog:\n  level: info\ndb_type: sqlite3\ndb_path: /var/lib/headscale/db.sqlite\nprivate_key_path: /var/lib/headscale/private.key\nnoise:\n  private_key_path: /var/lib/headscale/noise_private.key\nip_prefixes:\n  - 100.64.0.0/10\ndns_config:\n  override_local_dns: true\n  base_domain: autobutler.net\n  nameservers:\n    - 1.1.1.1\nderp:\n  server:\n    enabled: false\n  urls:\n    - https://controlplane.tailscale.com/derpmap/default\nEOF\n\nsystemctl enable headscale\nsystemctl start headscale\n\n# Nginx reverse proxy for Headscale\ncat > /etc/nginx/sites-available/headscale <<EOF\nserver {\n    listen 80;\n    server_name ${DOMAIN};\n    location / {\n        proxy_pass http://127.0.0.1:8080;\n        proxy_set_header Host \\$host;\n        proxy_set_header X-Real-IP \\$remote_addr;\n        proxy_set_header X-Forwarded-For \\$proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto \\$scheme;\n        proxy_http_version 1.1;\n        proxy_set_header Upgrade \\$http_upgrade;\n        proxy_set_header Connection \"upgrade\";\n    }\n}\nEOF\nln -sf /etc/nginx/sites-available/headscale /etc/nginx/sites-enabled/headscale\nrm -f /etc/nginx/sites-enabled/default\nnginx -t && systemctl reload nginx\n\n# TLS via certbot (requires DNS to be pointed at this IP first)\ncertbot --nginx -d ${DOMAIN} --non-interactive --agree-tos -m admin@autobutler.org || true\n\n# Install Go for provisioning service\nGO_VERSION=1.22.3\nwget -q -O /tmp/go.tar.gz \"https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz\"\ntar -C /usr/local -xzf /tmp/go.tar.gz\nexport PATH=$PATH:/usr/local/go/bin\n\n# Build & install provisioning service from latest release\nmkdir -p /opt/autobutler\ncd /opt/autobutler\ngit clone --depth=1 https://github.com/autobutler-org/autobutler.git .\n/usr/local/go/bin/go build -o /usr/local/bin/autobutler-provisioning ./cmd/provisioning/\n\n# Systemd service for provisioning\ncat > /etc/systemd/system/autobutler-provisioning.service <<EOF\n[Unit]\nDescription=AutoButler Provisioning Service\nAfter=network.target headscale.service\nRequires=headscale.service\n\n[Service]\nType=simple\nUser=headscale\nEnvironment=HEADSCALE_URL=http://127.0.0.1:8080\nEnvironment=HEADSCALE_API_KEY=${API_KEY}\nEnvironment=PORT=8081\nExecStart=/usr/local/bin/autobutler-provisioning\nRestart=on-failure\nRestartSec=5\n\n[Install]\nWantedBy=multi-user.target\nEOF\n\nsystemctl daemon-reload\nsystemctl enable autobutler-provisioning\n[ -n \"${API_KEY}\" ] && systemctl start autobutler-provisioning || echo \"Provisioning service not started: HEADSCALE_API_KEY not set. Set it and start manually.\"\n\necho \"Setup complete. Public IP: $(curl -s ifconfig.me)\"\n'))]"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "publicIPAddress": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))).ipAddress]"
+    },
+    "fqdn": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))).dnsSettings.fqdn]"
+    },
+    "sshCommand": {
+      "type": "string",
+      "value": "[concat('ssh ', parameters('adminUsername'), '@', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))).ipAddress)]"
+    }
+  }
+}
