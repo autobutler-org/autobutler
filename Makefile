@@ -484,3 +484,13 @@ env-%: ## Check for env var
 		echo "Error: Environment variable '$*' is not set."; \
 		exit 1; \
 	fi
+
+# ── Azure deployment ────────────────────────────────────────────────────────
+
+## render/headscale: Embed setup-headscale.sh into ARM parameters file.
+## Usage: make render/headscale HEADSCALE_DOMAIN=ts.autobutler.org
+## Output: deploy/azure/headscale.rendered.parameters.json (gitignored)
+render/headscale:
+	@HEADSCALE_DOMAIN="$(HEADSCALE_DOMAIN)" \
+	 ADMIN_EMAIL="$(ADMIN_EMAIL)" \
+	 bash deploy/azure/render.sh
