@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	v1_albums "github.com/autobutler-org/autobutler/internal/server/api/v1/albums"
 	v1_auth "github.com/autobutler-org/autobutler/internal/server/api/v1/auth"
 	v1_books "github.com/autobutler-org/autobutler/internal/server/api/v1/books"
 	v1_files "github.com/autobutler-org/autobutler/internal/server/api/v1/cirrus"
@@ -14,7 +15,6 @@ import (
 	v1_health "github.com/autobutler-org/autobutler/internal/server/api/v1/health"
 	v1_metrics "github.com/autobutler-org/autobutler/internal/server/api/v1/metrics"
 	v1_migration "github.com/autobutler-org/autobutler/internal/server/api/v1/migration"
-	v1_albums "github.com/autobutler-org/autobutler/internal/server/api/v1/albums"
 	v1_photos "github.com/autobutler-org/autobutler/internal/server/api/v1/photos"
 	v1_settings "github.com/autobutler-org/autobutler/internal/server/api/v1/settings"
 	v1_smb "github.com/autobutler-org/autobutler/internal/server/api/v1/smb"
