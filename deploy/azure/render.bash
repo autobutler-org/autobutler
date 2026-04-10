@@ -1,6 +1,6 @@
 #!/bin/bash
 # Renders headscale ARM parameters by:
-#   1. Substituting $HEADSCALE_DOMAIN and $ADMIN_EMAIL into setup-headscale.sh
+#   1. Substituting $HEADSCALE_DOMAIN and $ADMIN_EMAIL into setup-headscale.bash
 #   2. Base64-encoding the result
 #   3. Writing headscale.rendered.parameters.json for upload to Azure
 #
@@ -8,14 +8,13 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SETUP_SCRIPT="${SCRIPT_DIR}/setup-headscale.sh"
+SETUP_SCRIPT="${SCRIPT_DIR}/setup-headscale.bash"
 OUTPUT="${SCRIPT_DIR}/headscale.rendered.parameters.json"
 TEMPLATE="${SCRIPT_DIR}/headscale.json"
 
 : "${HEADSCALE_DOMAIN:?HEADSCALE_DOMAIN is required. Example: make render/headscale HEADSCALE_DOMAIN=ts.autobutler.org}"
-: "${ADMIN_EMAIL:=admin@autobutler.org}"
 
-echo "[render] Substituting variables into setup-headscale.sh..."
+echo "[render] Substituting variables into setup-headscale.bash..."
 RENDERED_SCRIPT=$(
   sed \
     -e "s|\${HEADSCALE_DOMAIN}|${HEADSCALE_DOMAIN}|g" \

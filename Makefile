@@ -487,10 +487,24 @@ env-%: ## Check for env var
 
 # ── Azure deployment ────────────────────────────────────────────────────────
 
-## render/headscale: Embed setup-headscale.sh into ARM parameters file.
-## Usage: make render/headscale HEADSCALE_DOMAIN=ts.autobutler.org
+## render/headscale: Embed setup-headscale.bash into ARM parameters file.
+## Usage: make render/headscale HEADSCALE_DOMAIN=network.autobutler.org ADMIN_EMAIL=admin.autobutler.org
 ## Output: deploy/azure/headscale.rendered.parameters.json (gitignored)
-render/headscale:
-	@HEADSCALE_DOMAIN="$(HEADSCALE_DOMAIN)" \
-	 ADMIN_EMAIL="$(ADMIN_EMAIL)" \
-	 bash deploy/azure/render.sh
+
+HEADSCALE_DOMAIN ?= network.autobutler.org
+ADMIN_EMAIL ?= admin@autobutler.org
+
+deploy/azure/headscale.rendered.parameters.json: env-HEADSCALE_DOMAIN env-ADMIN_EMAIL ## Render ARM parameters file for headscale deployment
+	bash deploy/azure/render.bash
+.PHONY: render/headscale
+render/headscale: deploy/azure/headscale.rendered.parameters.json ## Render ARM parameters file for headscale deployment (alias)
+
+SSH_KEY_PATH ?= ~/.ssh/id_autobutler-headscale.pub
+
+.PHONY: deploy/headscale
+deploy/headscale: deploy/azure/headscale.rendered.parameters.json
+	az deployment group create \
+	    --resource-group autobutler-headscale \
+	    --template-file ./deploy/azure/headscale.json \
+	    --parameters ./$@ \
+	    --parameters adminPublicKey="$(cat $(SSH_KEY_PATH))"

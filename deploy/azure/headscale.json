@@ -33,6 +33,7 @@
     },
     "headscaleDomain": {
       "type": "string",
+      "defaultValue": "network.autobutler.org",
       "metadata": {
         "description": "Public domain for Headscale (e.g. network.autobutler.org). Must have DNS A record pointing to this VM's public IP."
       }
