@@ -7,6 +7,7 @@ import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
+import 'package:autobutler/widgets/photos/album_sidebar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:autobutler/router.dart';
 import 'package:flutter/material.dart';
@@ -56,6 +57,8 @@ class _PhotosPageState extends State<PhotosPage>
   bool _categoriesExpanded = false;
   int _previewColumns = _defaultCrossAxisCount;
   PhotoCategory _selectedCategory = PhotoCategory.cirrus;
+
+  int? _selectedAlbumId;
 
   final ScrollController _scrollController = ScrollController();
 
@@ -436,6 +439,19 @@ class _PhotosPageState extends State<PhotosPage>
               categoryButton(PhotoCategory.mobile, 'Mobile', mobileCount),
             ],
           ],
+          const SizedBox(height: 16),
+          AlbumSidebar(
+            selectedAlbumId: _selectedAlbumId,
+            onAlbumSelected: (album) {
+              setState(() {
+                if (_selectedAlbumId == album?.id) {
+                  _selectedAlbumId = null;
+                } else {
+                  _selectedAlbumId = album?.id;
+                }
+              });
+            },
+          ),
         ],
       ),
     );
