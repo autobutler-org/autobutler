@@ -506,5 +506,5 @@ deploy/headscale: deploy/azure/headscale.rendered.parameters.json
 	az deployment group create \
 	    --resource-group autobutler-headscale \
 	    --template-file ./deploy/azure/headscale.json \
-	    --parameters ./$@ \
-	    --parameters adminPublicKey="$(cat $(SSH_KEY_PATH))"
+	    --parameters ./$< \
+	    --parameters adminPublicKey="$$(cat $(SSH_KEY_PATH))"
