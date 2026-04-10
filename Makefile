@@ -492,9 +492,8 @@ env-%: ## Check for env var
 ## Output: deploy/azure/headscale.rendered.parameters.json (gitignored)
 
 HEADSCALE_DOMAIN ?= network.autobutler.org
-ADMIN_EMAIL ?= admin@autobutler.org
 
-deploy/azure/headscale.rendered.parameters.json: env-HEADSCALE_DOMAIN env-ADMIN_EMAIL ## Render ARM parameters file for headscale deployment
+deploy/azure/headscale.rendered.parameters.json: env-HEADSCALE_DOMAIN ## Render ARM parameters file for headscale deployment
 	bash deploy/azure/render.bash
 .PHONY: render/headscale
 render/headscale: deploy/azure/headscale.rendered.parameters.json ## Render ARM parameters file for headscale deployment (alias)

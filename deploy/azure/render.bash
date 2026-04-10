@@ -18,7 +18,6 @@ echo "[render] Substituting variables into setup-headscale.bash..."
 RENDERED_SCRIPT=$(
   sed \
     -e "s|\${HEADSCALE_DOMAIN}|${HEADSCALE_DOMAIN}|g" \
-    -e "s|\${ADMIN_EMAIL:-admin@autobutler.org}|${ADMIN_EMAIL}|g" \
     "${SETUP_SCRIPT}"
 )
 
@@ -42,7 +41,6 @@ params = {
         "adminPublicKey":  {"value": "REPLACE_WITH_YOUR_SSH_PUBLIC_KEY"},
         "vmSize":          {"value": "Standard_B1s"},
         "headscaleDomain": {"value": "${HEADSCALE_DOMAIN}"},
-        "adminEmail":      {"value": "${ADMIN_EMAIL}"},
         "allowedSSHCidr":  {"value": "*"},
         "scriptBase64":    {"value": """${SCRIPT_B64}"""},
     }
@@ -58,5 +56,5 @@ print("  az deployment group create \\\\")
 print("    --resource-group <your-rg> \\\\")
 print("    --template-file ${TEMPLATE} \\\\")
 print("    --parameters ${OUTPUT} \\\\")
-print('    --parameters adminPublicKey="\$(cat ~/.ssh/id_ed25519.pub)"')
+print('    --parameters adminPublicKey="\$(cat ~/.ssh/id_some-key.pub)"')
 PYTHON

@@ -51,6 +51,12 @@
       "metadata": {
         "description": "CIDR range allowed to SSH into the VM. Restrict to your IP for production."
       }
+    },
+    "scriptBase64": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Base64-encoded cloud-init script to configure Headscale and provisioning service on first boot."
+      }
     }
   },
   "variables": {
@@ -273,7 +279,7 @@
         "typeHandlerVersion": "2.1",
         "autoUpgradeMinorVersion": true,
         "protectedSettings": {
-          "script": "[base64(concat('#!/bin/bash\nset -euo pipefail\n\nDOMAIN=\"', parameters('headscaleDomain'), '\"\nAPI_KEY=\"', parameters('headscaleApiKey'), '\"\n\n# Install dependencies\napt-get update -q\napt-get install -y curl wget jq nginx certbot python3-certbot-nginx\n\n# Install Headscale\nHS_VERSION=$(curl -s https://api.github.com/repos/juanfont/headscale/releases/latest | jq -r .tag_name)\nwget -q -O /tmp/headscale.deb \"https://github.com/juanfont/headscale/releases/download/${HS_VERSION}/headscale_${HS_VERSION#v}_linux_amd64.deb\"\ndpkg -i /tmp/headscale.deb\n\n# Configure Headscale\nmkdir -p /etc/headscale /var/lib/headscale\ncat > /etc/headscale/config.yaml <<EOF\nserver_url: https://${DOMAIN}\nlisten_addr: 127.0.0.1:8080\ngrpc_listen_addr: 127.0.0.1:50443\nmetrics_listen_addr: 127.0.0.1:9090\nlog:\n  level: info\ndb_type: sqlite3\ndb_path: /var/lib/headscale/db.sqlite\nprivate_key_path: /var/lib/headscale/private.key\nnoise:\n  private_key_path: /var/lib/headscale/noise_private.key\nip_prefixes:\n  - 100.64.0.0/10\ndns_config:\n  override_local_dns: true\n  base_domain: autobutler.net\n  nameservers:\n    - 1.1.1.1\nderp:\n  server:\n    enabled: false\n  urls:\n    - https://controlplane.tailscale.com/derpmap/default\nEOF\n\nsystemctl enable headscale\nsystemctl start headscale\n\n# Nginx reverse proxy for Headscale\ncat > /etc/nginx/sites-available/headscale <<EOF\nserver {\n    listen 80;\n    server_name ${DOMAIN};\n    location / {\n        proxy_pass http://127.0.0.1:8080;\n        proxy_set_header Host \\$host;\n        proxy_set_header X-Real-IP \\$remote_addr;\n        proxy_set_header X-Forwarded-For \\$proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto \\$scheme;\n        proxy_http_version 1.1;\n        proxy_set_header Upgrade \\$http_upgrade;\n        proxy_set_header Connection \"upgrade\";\n    }\n}\nEOF\nln -sf /etc/nginx/sites-available/headscale /etc/nginx/sites-enabled/headscale\nrm -f /etc/nginx/sites-enabled/default\nnginx -t && systemctl reload nginx\n\n# TLS via certbot (requires DNS to be pointed at this IP first)\ncertbot --nginx -d ${DOMAIN} --non-interactive --agree-tos -m admin@autobutler.org || true\n\n# Install Go for provisioning service\nGO_VERSION=1.22.3\nwget -q -O /tmp/go.tar.gz \"https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz\"\ntar -C /usr/local -xzf /tmp/go.tar.gz\nexport PATH=$PATH:/usr/local/go/bin\n\n# Build & install provisioning service from latest release\nmkdir -p /opt/autobutler\ncd /opt/autobutler\ngit clone --depth=1 https://github.com/autobutler-org/autobutler.git .\n/usr/local/go/bin/go build -o /usr/local/bin/autobutler-provisioning ./cmd/provisioning/\n\n# Systemd service for provisioning\ncat > /etc/systemd/system/autobutler-provisioning.service <<EOF\n[Unit]\nDescription=AutoButler Provisioning Service\nAfter=network.target headscale.service\nRequires=headscale.service\n\n[Service]\nType=simple\nUser=headscale\nEnvironment=HEADSCALE_URL=http://127.0.0.1:8080\nEnvironment=HEADSCALE_API_KEY=${API_KEY}\nEnvironment=PORT=8081\nExecStart=/usr/local/bin/autobutler-provisioning\nRestart=on-failure\nRestartSec=5\n\n[Install]\nWantedBy=multi-user.target\nEOF\n\nsystemctl daemon-reload\nsystemctl enable autobutler-provisioning\n[ -n \"${API_KEY}\" ] && systemctl start autobutler-provisioning || echo \"Provisioning service not started: HEADSCALE_API_KEY not set. Set it and start manually.\"\n\necho \"Setup complete. Public IP: $(curl -s ifconfig.me)\"\n'))]"
+          "script": "[parameters('scriptBase64')]"
         }
       }
     }

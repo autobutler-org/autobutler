@@ -6,7 +6,7 @@ set -euo pipefail
 
 # ── Variables substituted by `make render/headscale` ──────────────────────
 DOMAIN="${HEADSCALE_DOMAIN}"
-ADMIN_EMAIL="${ADMIN_EMAIL:-admin@autobutler.org}"
+ADMIN_EMAIL='admin@autobutler.org'
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 log() { echo "[setup] $*"; }
