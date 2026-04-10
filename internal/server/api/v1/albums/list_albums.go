@@ -6,6 +6,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/sqlutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -41,8 +42,8 @@ func listAlbums(c *gin.Context) *serverutil.Response {
 			ID:        a.ID,
 			Name:      a.Name,
 			ParentID:  parentID,
-			CreatedAt: formatTime(a.CreatedAt),
-			UpdatedAt: formatTime(a.UpdatedAt),
+			CreatedAt: sqlutil.FormatTime(a.CreatedAt),
+			UpdatedAt: sqlutil.FormatTime(a.UpdatedAt),
 			ItemCount: count,
 		})
 	}

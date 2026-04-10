@@ -9,6 +9,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/sqlutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -54,8 +55,8 @@ func getAlbum(c *gin.Context) *serverutil.Response {
 			ID:        ch.ID,
 			Name:      ch.Name,
 			ParentID:  chParentID,
-			CreatedAt: formatTime(ch.CreatedAt),
-			UpdatedAt: formatTime(ch.UpdatedAt),
+			CreatedAt: sqlutil.FormatTime(ch.CreatedAt),
+			UpdatedAt: sqlutil.FormatTime(ch.UpdatedAt),
 			ItemCount: chCount,
 		})
 	}
@@ -69,8 +70,8 @@ func getAlbum(c *gin.Context) *serverutil.Response {
 		ID:        album.ID,
 		Name:      album.Name,
 		ParentID:  parentID,
-		CreatedAt: formatTime(album.CreatedAt),
-		UpdatedAt: formatTime(album.UpdatedAt),
+		CreatedAt: sqlutil.FormatTime(album.CreatedAt),
+		UpdatedAt: sqlutil.FormatTime(album.UpdatedAt),
 		ItemCount: count,
 		Children:  childJSON,
 	})

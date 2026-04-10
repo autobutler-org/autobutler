@@ -9,6 +9,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/sqlutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -46,7 +47,7 @@ func listAlbumItems(c *gin.Context) *serverutil.Response {
 			AlbumID:      item.AlbumID,
 			DeviceSerial: item.DeviceSerial,
 			RelPath:      item.RelPath,
-			AddedAt:      formatTime(item.AddedAt),
+			AddedAt:      sqlutil.FormatTime(item.AddedAt),
 		})
 	}
 
@@ -104,7 +105,7 @@ func addPhotoToAlbum(c *gin.Context) *serverutil.Response {
 		AlbumID:      item.AlbumID,
 		DeviceSerial: item.DeviceSerial,
 		RelPath:      item.RelPath,
-		AddedAt:      formatTime(item.AddedAt),
+		AddedAt:      sqlutil.FormatTime(item.AddedAt),
 	})
 }
 
