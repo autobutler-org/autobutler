@@ -47,6 +47,69 @@ definitions:
       version:
         type: string
     type: object
+  v1_albums.AlbumItemJSON:
+    properties:
+      addedAt:
+        type: string
+      albumId:
+        type: integer
+      deviceSerial:
+        type: string
+      id:
+        type: integer
+      relPath:
+        type: string
+    type: object
+  v1_albums.AlbumJSON:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/v1_albums.AlbumJSON'
+        type: array
+      createdAt:
+        type: string
+      id:
+        type: integer
+      itemCount:
+        type: integer
+      name:
+        type: string
+      parentId:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  v1_albums.addPhotoRequest:
+    properties:
+      deviceSerial:
+        type: string
+      relPath:
+        type: string
+    required:
+    - deviceSerial
+    - relPath
+    type: object
+  v1_albums.createAlbumRequest:
+    properties:
+      name:
+        type: string
+      parentId:
+        type: integer
+    required:
+    - name
+    type: object
+  v1_albums.moveAlbumRequest:
+    properties:
+      parentId:
+        type: integer
+    type: object
+  v1_albums.renameAlbumRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
   v1_books.BookJSON:
     properties:
       fileName:
@@ -264,6 +327,333 @@ definitions:
 info:
   contact: {}
 paths:
+  /albums:
+    get:
+      description: Returns all photo albums as a flat list. Use ?tree=true to get
+        a nested tree.
+      parameters:
+      - description: Return as nested tree (default false)
+        in: query
+        name: tree
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1_albums.AlbumJSON'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: List all photo albums
+      tags:
+      - albums
+    post:
+      consumes:
+      - application/json
+      description: Creates a new photo album, optionally nested under a parent.
+      parameters:
+      - description: Album name and optional parent ID
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1_albums.createAlbumRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/v1_albums.AlbumJSON'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Create a photo album
+      tags:
+      - albums
+  /albums/{id}:
+    delete:
+      description: Deletes an album and all its children (cascades). Does not delete
+        photos from disk.
+      parameters:
+      - description: Album ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Delete a photo album
+      tags:
+      - albums
+    get:
+      description: Returns a single album with its item count and direct children.
+      parameters:
+      - description: Album ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_albums.AlbumJSON'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Get a photo album by ID
+      tags:
+      - albums
+  /albums/{id}/children:
+    post:
+      consumes:
+      - application/json
+      description: Shorthand for creating an album with a specific parent ID.
+      parameters:
+      - description: Parent album ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Album name
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1_albums.createAlbumRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/v1_albums.AlbumJSON'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Create a child album under a parent
+      tags:
+      - albums
+  /albums/{id}/items:
+    delete:
+      consumes:
+      - application/json
+      description: Removes the album membership pointer. Does not delete the photo
+        from disk.
+      parameters:
+      - description: Album ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Photo reference
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1_albums.addPhotoRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Remove a photo from an album
+      tags:
+      - albums
+    get:
+      description: Returns all photo items (pointers) in the given album.
+      parameters:
+      - description: Album ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1_albums.AlbumItemJSON'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: List photos in an album
+      tags:
+      - albums
+    post:
+      consumes:
+      - application/json
+      description: Adds a photo (by device serial + relative path) to an album. Idempotent.
+      parameters:
+      - description: Album ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Photo reference
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1_albums.addPhotoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/v1_albums.AlbumItemJSON'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Add a photo to an album
+      tags:
+      - albums
+  /albums/{id}/move:
+    patch:
+      consumes:
+      - application/json
+      description: Changes the parent of an album. Pass null parentId to move to root.
+      parameters:
+      - description: Album ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New parent ID (null for root)
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1_albums.moveAlbumRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_albums.AlbumJSON'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Move a photo album to a new parent
+      tags:
+      - albums
+  /albums/{id}/rename:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the name of an existing album.
+      parameters:
+      - description: Album ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New album name
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1_albums.renameAlbumRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_albums.AlbumJSON'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Rename a photo album
+      tags:
+      - albums
   /auth/google/authorize:
     get:
       description: Returns an authorization URL and state token for starting OAuth

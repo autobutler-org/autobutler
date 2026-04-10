@@ -5,6 +5,7 @@
 package db
 
 import (
+	"database/sql"
 	"time"
 )
 
@@ -21,6 +22,22 @@ type DeviceName struct {
 	DevicePath  string
 	DisplayName string
 	UpdatedAt   time.Time
+}
+
+type PhotoAlbum struct {
+	ID        int64
+	Name      string
+	ParentID  sql.NullInt64
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type PhotoAlbumItem struct {
+	ID           int64
+	AlbumID      int64
+	DeviceSerial string
+	RelPath      string
+	AddedAt      time.Time
 }
 
 type Session struct {
