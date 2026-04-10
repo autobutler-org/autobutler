@@ -2,7 +2,7 @@
 # AutoButler Headscale + Provisioning Service — VM Setup Script
 # Runs as root on first boot via Azure CustomScript extension.
 # Rendered into headscale.rendered.parameters.json by: make render/headscale
-set -euo pipefail
+set -euox pipefail
 
 # ── Variables substituted by `make render/headscale` ──────────────────────
 DOMAIN="${HEADSCALE_DOMAIN}"
@@ -42,7 +42,7 @@ go version
 
 # ── 3. Headscale ───────────────────────────────────────────────────────────
 log "Installing Headscale..."
-HS_VERSION=$(curl -fsSL https://api.github.com/repos/juanfont/headscale/releases/latest | jq -r .tag_name)
+HS_VERSION=v0.28.0
 HS_VER="${HS_VERSION#v}"
 retry wget -q -O /tmp/headscale.deb \
   "https://github.com/juanfont/headscale/releases/download/${HS_VERSION}/headscale_${HS_VER}_linux_amd64.deb"
@@ -113,53 +113,49 @@ certbot --nginx -d "${DOMAIN}" \
   && log "TLS certificate issued." \
   || log "WARNING: certbot failed. Once DNS points to this IP, run: sudo certbot --nginx -d ${DOMAIN} --non-interactive --agree-tos -m ${ADMIN_EMAIL} --redirect"
 
-# ── 6. AutoButler provisioning service ────────────────────────────────────
-log "Building AutoButler provisioning service..."
-git clone --depth=1 https://github.com/autobutler-org/autobutler.git /opt/autobutler-src
+# ── 6. AutoButler provisioning service ───÷butler-org/autobutler.git /opt/autobutler-src
 
-# cd /opt/autobutler-src
-# GOPATH=/root/go GOMODCACHE=/root/go/pkg/mod \
-#   /usr/local/go/bin/go build -o /usr/local/bin/autobutler-provisioning ./cmd/provisioning/
-# log "Provisioning binary installed at /usr/local/bin/autobutler-provisioning"
+cd /opt/autobutler-src
+GOPATH=/root/go GOMODCACHE=/root/go/pkg/mod \
+  /usr/local/go/bin/go build -o /usr/local/bin/autobutler-provisioning ./cmd/provisioning/
+log "Provisioning binary installed at /usr/local/bin/autobutler-provisioning"
 
-# # ── 7. Provisioning service systemd unit ──────────────────────────────────
-# cat > /etc/systemd/system/autobutler-provisioning.service <<'UNIT'
-# [Unit]
-# Description=AutoButler Provisioning Service
-# After=network.target headscale.service
-# Requires=headscale.service
+# ── 7. Provisioning service systemd unit ──────────────────────────────────
+cat > /etc/systemd/system/autobutler-provisioning.service <<'UNIT'
+[Unit]
+Description=AutoButler Provisioning Service
+After=network.target headscale.service
+Requires=headscale.service
 
-# [Service]
-# Type=simple
-# User=headscale
-# Environment=PORT=8081
-# Environment=HEADSCALE_URL=http://127.0.0.1:8080
-# # Set HEADSCALE_API_KEY post-boot:
-# #   sudo headscale apikeys create --expiration 9999d
-# #   echo "HEADSCALE_API_KEY=<key>" | sudo tee /etc/autobutler/provisioning.env
-# EnvironmentFile=-/etc/autobutler/provisioning.env
-# ExecStart=/usr/local/bin/autobutler-provisioning
-# Restart=on-failure
-# RestartSec=5
+[Service]
+Type=simple
+User=headscale
+Environment=PORT=8081
+Environment=HEADSCALE_URL=http://127.0.0.1:8080
+# Set HEADSCALE_API_KEY post-boot:
+#   sudo headscale apikeys create --expiration 9999d
+#   echo "HEADSCALE_API_KEY=<key>" | sudo tee /etc/autobutler/provisioning.env
+EnvironmentFile=-/etc/autobutler/provisioning.env
+ExecStart=/usr/local/bin/autobutler-provisioning
+Restart=on-failure
+RestartSec=5
 
-# [Install]
-# WantedBy=multi-user.target
-# UNIT
+[Install]
+WantedBy=multi-user.target
+UNIT
 
-# mkdir -p /etc/autobutler
-# touch /etc/autobutler/provisioning.env
-# chown headscale:headscale /etc/autobutler/provisioning.env
-# chmod 600 /etc/autobutler/provisioning.env
+mkdir -p /etc/autobutler
+touch /etc/autobutler/provisioning.env
+chown headscale:headscale /etc/autobutler/provisioning.env
+chmod 600 /etc/autobutler/provisioning.env
 
-# systemctl daemon-reload
-# systemctl enable autobutler-provisioning
-# # Not started yet — API key required first (see post-deploy steps in README)
+systemctl daemon-reload
+systemctl enable autobutler-provisioning
+# Not started yet — API key required first (see post-deploy steps in README)
 
-# log "Setup complete. Public IP: $(curl -s ifconfig.me)"
-# log ""
-# log "Post-deploy steps:"
-# log "  1. Point DNS A record for ${DOMAIN} to the public IP above"
-# log "  2. Issue TLS: sudo certbot --nginx -d ${DOMAIN} --non-interactive --agree-tos -m ${ADMIN_EMAIL} --redirect"
-# log "  3. Create API key: sudo headscale apikeys create --expiration 9999d"
-# log "  4. Store key: echo 'HEADSCALE_API_KEY=<key>' | sudo tee /etc/autobutler/provisioning.env"
-# log "  5. Start provisioning: sudo systemctl start autobutler-provisioning"
+log "Setup complete. Public IP: $(curl -s ifconfig.me)"
+log ""
+log "Post-deploy steps:"
+log "  1. Create API key: sudo headscale apikeys create --expiration 9999d"
+log "  2. Store key: echo 'HEADSCALE_API_KEY=<key>' | sudo tee /etc/autobutler/provisioning.env"
+log "  3. Start provisioning: sudo systemctl start autobutler-provisioning"
