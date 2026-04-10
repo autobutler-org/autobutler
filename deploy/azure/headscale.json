@@ -22,7 +22,9 @@
     "vmSize": {
       "type": "string",
       "defaultValue": "Standard_B1s",
-      "metadata": { "description": "VM size. Standard_B1s (1 vCPU, 1 GB RAM) is sufficient for Headscale + provisioning service." }
+      "metadata": {
+        "description": "VM size. Standard_B1s (1 vCPU, 1 GB RAM) is sufficient for Headscale + provisioning service."
+      }
     },
     "location": {
       "type": "string",
@@ -31,17 +33,23 @@
     },
     "headscaleDomain": {
       "type": "string",
-      "metadata": { "description": "Public domain for Headscale (e.g. ts.autobutler.org). Must have DNS A record pointing to this VM's public IP." }
+      "metadata": {
+        "description": "Public domain for Headscale (e.g. network.autobutler.org). Must have DNS A record pointing to this VM's public IP."
+      }
     },
     "headscaleApiKey": {
       "type": "securestring",
-      "metadata": { "description": "Initial Headscale API key used by the provisioning service. Generated post-boot; leave empty on first deploy." },
+      "metadata": {
+        "description": "Initial Headscale API key used by the provisioning service. Generated post-boot; leave empty on first deploy."
+      },
       "defaultValue": ""
     },
     "allowedSSHCidr": {
       "type": "string",
       "defaultValue": "*",
-      "metadata": { "description": "CIDR range allowed to SSH into the VM. Restrict to your IP for production." }
+      "metadata": {
+        "description": "CIDR range allowed to SSH into the VM. Restrict to your IP for production."
+      }
     }
   },
   "variables": {
@@ -243,7 +251,9 @@
         },
         "networkProfile": {
           "networkInterfaces": [
-            { "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]" }
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+            }
           ]
         }
       }
