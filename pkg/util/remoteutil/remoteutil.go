@@ -19,7 +19,7 @@ import (
 
 const hostname = "autobutler"
 
-const defaultControlURL = "http://165.227.215.101:8080"
+const defaultControlURL = "https://network.autobutler.org"
 
 var (
 	mu      sync.Mutex

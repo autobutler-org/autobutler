@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const defaultProvisioningURL = "http://165.227.215.101:8081"
+const defaultProvisioningURL = "https://network.autobutler.org:8081"
 
 type provisionRequest struct {
 	DeviceID string `json:"device_id"`
