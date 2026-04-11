@@ -32,6 +32,7 @@ tmp_dir = "tmp"
     "build",
     "cd",
     "datalinks",
+    "deploy",
     "docs",
     "internal/db",
     "os",
