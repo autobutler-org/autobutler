@@ -14,8 +14,8 @@ const settingsFileName = "settings.json"
 
 // Settings holds application-level user-configurable settings.
 type Settings struct {
-	AutoUpdate          bool   `json:"autoUpdate"`
-	RemoteAccessEnabled bool   `json:"remoteAccessEnabled"`
+	AutoUpdate          bool `json:"autoUpdate"`
+	RemoteAccessEnabled bool `json:"remoteAccessEnabled"`
 	// RemoteAccessAuthKey is the Tailscale/Headscale pre-auth key used for
 	// initial tsnet registration. It is stored at rest so the node can
 	// reconnect after a restart before tsnet has written its own persistent
