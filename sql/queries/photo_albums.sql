@@ -82,6 +82,12 @@ WHERE
     AND device_serial = ?
     AND rel_path = ?;
 
+-- name: DeletePhotoFromAllAlbums :exec
+DELETE FROM photo_album_items
+WHERE
+    device_serial = ?
+    AND rel_path = ?;
+
 -- name: ListAlbumItems :many
 SELECT
     *
