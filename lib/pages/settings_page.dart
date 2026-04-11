@@ -7,6 +7,7 @@ import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/services/connected_devices_service.dart';
 import 'package:autobutler/services/remote_access_service.dart';
 import 'package:autobutler/services/sbom_service.dart';
+import 'package:autobutler/services/settings_service.dart';
 import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:autobutler/widgets/core/copy_button.dart';
@@ -35,6 +36,10 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isLoadingVersionInfo = false;
   bool _isUpdatingVersion = false;
   String? _versionLoadError;
+
+  bool _autoUpdate = false;
+  bool _autoUpdateLoadFailed = false;
+  bool _isLoadingAutoUpdate = false;
 
   // SBOM state
   GoSbom? _goSbom;
@@ -72,6 +77,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _refreshIntervalSeconds = AppSettings.instance.refreshIntervalSeconds;
     setState(() {});
     _loadVersionInfo();
+    _loadSettings();
     _loadSbom();
     _loadDevices();
     _loadStorageDevices();
@@ -108,10 +114,10 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _enableRemoteAccess(String authKey) async {
+  Future<void> _enableRemoteAccess() async {
     setState(() => _isTogglingRemoteAccess = true);
     try {
-      final status = await RemoteAccessService.enable(authKey);
+      final status = await RemoteAccessService.enable();
       if (!mounted) return;
       setState(() {
         _remoteAccessStatus = status;
@@ -168,62 +174,6 @@ class _SettingsPageState extends State<SettingsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to disable remote access: $e')),
       );
-    }
-  }
-
-  Future<void> _showEnableRemoteAccessDialog() async {
-    final controller = TextEditingController();
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Enable remote access'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Enter a Tailscale auth key to connect this butler to your tailnet.',
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Get one from tailscale.com/admin/settings/keys',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Auth key',
-                hintText: 'tskey-auth-...',
-                border: OutlineInputBorder(),
-              ),
-              autofocus: true,
-              onSubmitted: (v) {
-                if (v.trim().isNotEmpty) Navigator.of(ctx).pop(v.trim());
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              final key = controller.text.trim();
-              if (key.isNotEmpty) Navigator.of(ctx).pop(key);
-            },
-            child: const Text('Enable'),
-          ),
-        ],
-      ),
-    );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.dispose();
-    });
-    if (result != null && result.isNotEmpty) {
-      await _enableRemoteAccess(result);
     }
   }
 
@@ -390,6 +340,29 @@ class _SettingsPageState extends State<SettingsPage> {
       _sbomError = errors.isEmpty ? null : errors.join('\n');
       _isLoadingSbom = false;
     });
+  }
+
+  Future<void> _loadSettings() async {
+    if (AppSettings.instance.activeHost == null) return;
+    setState(() {
+      _isLoadingAutoUpdate = true;
+    });
+    try {
+      final autoUpdate = await SettingsService.getAutoUpdate();
+      if (!mounted) return;
+      setState(() {
+        _autoUpdate = autoUpdate;
+        _autoUpdateLoadFailed = false;
+        _isLoadingAutoUpdate = false;
+      });
+    } catch (e) {
+      debugPrint('[settings_page.dart] Error loading settings: $e');
+      if (!mounted) return;
+      setState(() {
+        _autoUpdateLoadFailed = true;
+        _isLoadingAutoUpdate = false;
+      });
+    }
   }
 
   Future<void> _loadVersionInfo() async {
@@ -716,6 +689,58 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
           ),
+          const SizedBox(height: 16),
+          if (AppSettings.instance.activeHost != null)
+            Card(
+              child: _isLoadingAutoUpdate
+                  ? const ListTile(
+                      title: Text('Automatic updates'),
+                      subtitle: Text(
+                        'AutoButler will check for and install updates daily',
+                      ),
+                      trailing: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : SwitchListTile(
+                      title: const Text('Automatic updates'),
+                      subtitle: _autoUpdateLoadFailed
+                          ? const Text(
+                              'Could not load setting — server may be unreachable',
+                              style: TextStyle(color: Colors.red),
+                            )
+                          : const Text(
+                              'AutoButler will check for and install updates daily',
+                            ),
+                      value: _autoUpdate,
+                      onChanged: _autoUpdateLoadFailed
+                          ? null
+                          : (newValue) async {
+                              setState(() {
+                                _autoUpdate = newValue;
+                              });
+                              final messenger = ScaffoldMessenger.of(context);
+                              try {
+                                await SettingsService.setAutoUpdate(newValue);
+                              } catch (e) {
+                                debugPrint(
+                                  '[settings_page.dart] Error saving auto-update: $e',
+                                );
+                                if (!mounted) return;
+                                setState(() {
+                                  _autoUpdate = !newValue;
+                                });
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text('Failed to save setting: $e'),
+                                  ),
+                                );
+                              }
+                            },
+                    ),
+            ),
           const SizedBox(height: 24),
           const Text(
             'Auto-refresh interval',
@@ -835,7 +860,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           OutlinedButton.icon(
                             onPressed: _isTogglingRemoteAccess
                                 ? null
-                                : _showEnableRemoteAccessDialog,
+                                : _enableRemoteAccess,
                             icon: _isTogglingRemoteAccess
                                 ? const SizedBox(
                                     width: 14,
