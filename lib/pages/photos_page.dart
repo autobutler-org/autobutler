@@ -7,6 +7,7 @@ import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
+import 'package:autobutler/pages/album_page.dart';
 import 'package:autobutler/widgets/photos/album_sidebar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:autobutler/router.dart';
@@ -57,8 +58,6 @@ class _PhotosPageState extends State<PhotosPage>
   bool _categoriesExpanded = false;
   int _previewColumns = _defaultCrossAxisCount;
   PhotoCategory _selectedCategory = PhotoCategory.cirrus;
-
-  int? _selectedAlbumId;
 
   // Above-viewport nav: the hidden nav panel is measured once on first layout,
   // then the scroll controller's initial offset is set so the photo grid is
@@ -499,15 +498,12 @@ class _PhotosPageState extends State<PhotosPage>
           ],
           const SizedBox(height: 16),
           AlbumSidebar(
-            selectedAlbumId: _selectedAlbumId,
+            selectedAlbumId: null,
             onAlbumSelected: (album) {
-              setState(() {
-                if (_selectedAlbumId == album?.id) {
-                  _selectedAlbumId = null;
-                } else {
-                  _selectedAlbumId = album?.id;
-                }
-              });
+              if (album == null) return;
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => AlbumPage(album: album)),
+              );
             },
           ),
         ],
