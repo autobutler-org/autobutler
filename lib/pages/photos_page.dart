@@ -7,8 +7,11 @@ import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
+import 'package:autobutler/models/photo_album.dart';
 import 'package:autobutler/pages/album_page.dart';
+import 'package:autobutler/services/album_service.dart';
 import 'package:autobutler/widgets/photos/album_sidebar.dart';
+import 'package:autobutler/widgets/photos/photo_selection_bar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:autobutler/router.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +19,11 @@ import 'package:go_router/go_router.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 class PhotosPage extends StatefulWidget {
-  const PhotosPage({super.key});
+  const PhotosPage({this.addingToAlbum, super.key});
+
+  /// When set, the page opens in "adding to album" mode — selection mode is
+  /// immediately active and the header shows the album name.
+  final PhotoAlbum? addingToAlbum;
 
   @override
   State<PhotosPage> createState() => _PhotosPageState();
@@ -33,6 +40,14 @@ class PhotoItem {
 
   factory PhotoItem.fromCirrus(CirrusFileNode c) => PhotoItem._(cirrus: c);
   factory PhotoItem.fromAsset(AssetEntity a) => PhotoItem._(asset: a);
+
+  /// A stable key for this item suitable for use in a selection set.
+  String get selectionKey {
+    if (isCirrus) {
+      return '${cirrus!.deviceSerial}:${cirrus!.dirPath}';
+    }
+    return 'asset:${asset!.id}';
+  }
 }
 
 class _PhotosPageState extends State<PhotosPage>
@@ -74,6 +89,12 @@ class _PhotosPageState extends State<PhotosPage>
   bool _navScrollInitialized = false;
   bool _showScrollHint = true;
 
+  // Selection mode
+  bool _selectionMode = false;
+  final Set<String> _selectedKeys = {};
+  // When non-null, we're in "adding to album" mode (Flow 2)
+  PhotoAlbum? _addingToAlbum;
+
   ScrollController _scrollController = ScrollController();
 
   @override
@@ -81,6 +102,12 @@ class _PhotosPageState extends State<PhotosPage>
     super.initState();
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) => _measureAndJumpNav());
+    // If launched in adding-to-album mode, enter selection mode immediately
+    if (widget.addingToAlbum != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _enterSelectionMode(addingToAlbum: widget.addingToAlbum);
+      });
+    }
   }
 
   void _measureAndJumpNav() {
@@ -520,6 +547,65 @@ class _PhotosPageState extends State<PhotosPage>
     int crossAxisCount,
   ) {
     final p = photos[idx];
+    final isSelected = _selectedKeys.contains(p.selectionKey);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // In selection mode wrap everything with selection overlay
+    Widget wrapWithSelection(Widget child) {
+      return GestureDetector(
+        onTap: () => _toggleSelection(p),
+        onLongPress: () {
+          if (!_selectionMode) _enterSelectionMode();
+          _toggleSelection(p);
+        },
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            child,
+            // Dim overlay for unselected
+            if (_selectionMode && !isSelected)
+              Container(color: Colors.black.withValues(alpha: 0.3)),
+            // Teal border for selected
+            if (isSelected)
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(color: colorScheme.primary, width: 3),
+                ),
+              ),
+            // Checkbox in top-left
+            if (_selectionMode)
+              Positioned(
+                top: 6,
+                left: 6,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected
+                        ? colorScheme.primary
+                        : Colors.transparent,
+                    border: Border.all(
+                      color: isSelected
+                          ? colorScheme.primary
+                          : Colors.white.withValues(alpha: 0.8),
+                      width: 2,
+                    ),
+                  ),
+                  child: isSelected
+                      ? const Icon(Icons.check, size: 14, color: Colors.white)
+                      : null,
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+
+    if (!_selectionMode) {
+      // Normal mode — use original long-press to enter selection
+    }
 
     if (p.isCirrus) {
       final c = p.cirrus!;
@@ -527,9 +613,24 @@ class _PhotosPageState extends State<PhotosPage>
         c.apiPath,
         serial: c.deviceSerial,
       );
+      final thumbnail = Image.network(
+        url.toString(),
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return Container(color: Colors.grey[300]);
+        },
+        errorBuilder: (context, error, stack) =>
+            Container(color: Colors.grey[300]),
+      );
+      if (_selectionMode) return wrapWithSelection(thumbnail);
       return MouseRegion(
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
+          onLongPress: () {
+            _enterSelectionMode();
+            _toggleSelection(p);
+          },
           onTap: () async {
             final navigator = Navigator.of(context);
             final bytes = await CirrusService.downloadFileBytes(
@@ -570,25 +671,29 @@ class _PhotosPageState extends State<PhotosPage>
               ),
             );
           },
-          child: Image.network(
-            url.toString(),
-            fit: BoxFit.cover,
-            loadingBuilder: (context, child, progress) {
-              if (progress == null) return child;
-              return Container(color: Colors.grey[300]);
-            },
-            errorBuilder: (context, error, stack) =>
-                Container(color: Colors.grey[300]),
-          ),
+          child: thumbnail,
         ),
       );
     }
 
     // Mobile asset
     final a = p.asset!;
+    final assetThumb = FutureBuilder<Uint8List?>(
+      future: a.thumbnailDataWithSize(ThumbnailSize(200, 200)),
+      builder: (context, snap) {
+        final thumb = snap.data;
+        if (thumb == null) return Container(color: Colors.grey[300]);
+        return Image.memory(thumb, fit: BoxFit.cover);
+      },
+    );
+    if (_selectionMode) return wrapWithSelection(assetThumb);
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
+        onLongPress: () {
+          _enterSelectionMode();
+          _toggleSelection(p);
+        },
         onTap: () async {
           final navigator = Navigator.of(context);
           final bytes = await a.originBytes;
@@ -626,14 +731,7 @@ class _PhotosPageState extends State<PhotosPage>
             ),
           );
         },
-        child: FutureBuilder<Uint8List?>(
-          future: a.thumbnailDataWithSize(ThumbnailSize(200, 200)),
-          builder: (context, snap) {
-            final thumb = snap.data;
-            if (thumb == null) return Container(color: Colors.grey[300]);
-            return Image.memory(thumb, fit: BoxFit.cover);
-          },
-        ),
+        child: assetThumb,
       ),
     );
   }
@@ -679,20 +777,156 @@ class _PhotosPageState extends State<PhotosPage>
     );
   }
 
+  void _enterSelectionMode({PhotoAlbum? addingToAlbum}) {
+    setState(() {
+      _selectionMode = true;
+      _addingToAlbum = addingToAlbum;
+      _selectedKeys.clear();
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _selectionMode = false;
+      _addingToAlbum = null;
+      _selectedKeys.clear();
+    });
+  }
+
+  void _toggleSelection(PhotoItem item) {
+    setState(() {
+      final key = item.selectionKey;
+      if (_selectedKeys.contains(key)) {
+        _selectedKeys.remove(key);
+      } else {
+        _selectedKeys.add(key);
+      }
+    });
+  }
+
+  Future<void> _handleAddToAlbum(List<PhotoItem> allPhotos) async {
+    final album = await AlbumPickerSheet.show(
+      context,
+      selectedCount: _selectedKeys.length,
+    );
+    if (album == null || !mounted) return;
+    await _addSelectedToAlbum(album, allPhotos);
+  }
+
+  Future<void> _confirmAddToAlbum() async {
+    // Flow 2: user tapped Done while in adding-to-album mode
+    // We need the current photo list — pull from state
+    final photos = _selectedCategory == PhotoCategory.mobile
+        ? _mobilePhotos
+        : _cirrusPhotos;
+    await _addSelectedToAlbum(_addingToAlbum!, photos);
+  }
+
+  Future<void> _addSelectedToAlbum(
+    PhotoAlbum album,
+    List<PhotoItem> allPhotos,
+  ) async {
+    final selected = allPhotos
+        .where((p) => _selectedKeys.contains(p.selectionKey))
+        .toList();
+
+    int added = 0;
+    for (final item in selected) {
+      if (!item.isCirrus) continue;
+      final c = item.cirrus!;
+      try {
+        await AlbumService.addPhotoToAlbum(
+          album.id,
+          deviceSerial: c.deviceSerial,
+          relPath: c.dirPath,
+        );
+        added++;
+      } catch (_) {}
+    }
+
+    if (!mounted) return;
+
+    final wasAddingMode = _addingToAlbum != null;
+    _exitSelectionMode();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          added == 0
+              ? 'No photos added (only Cirrus photos can be added to albums)'
+              : '$added ${added == 1 ? 'photo' : 'photos'} added to "${album.name}"',
+        ),
+      ),
+    );
+
+    if (wasAddingMode) {
+      // Navigate back to the album page
+      Navigator.of(context).pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AutobutlerAppBar(
-        label: 'Photos',
-        icon: Icons.photo_library_outlined,
-        actions: [
-          RefreshIconButton(
-            isRefreshing: isRefreshing,
-            onPressed: manualRefresh,
-            tooltip: 'Reload photos',
-          ),
-        ],
-      ),
+      appBar: _selectionMode
+          ? AppBar(
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+              automaticallyImplyLeading: false,
+              title: _addingToAlbum != null
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Adding to ${_addingToAlbum!.name}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (_selectedKeys.isNotEmpty)
+                          Text(
+                            '${_selectedKeys.length} selected',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.5),
+                            ),
+                          ),
+                      ],
+                    )
+                  : Text('${_selectedKeys.length} selected'),
+              actions: [
+                if (_addingToAlbum != null)
+                  TextButton(
+                    onPressed: _selectedKeys.isNotEmpty
+                        ? _confirmAddToAlbum
+                        : null,
+                    child: Text('Done (${_selectedKeys.length})'),
+                  ),
+                TextButton(
+                  onPressed: _exitSelectionMode,
+                  child: const Text('Cancel'),
+                ),
+              ],
+            )
+          : AutobutlerAppBar(
+              label: 'Photos',
+              icon: Icons.photo_library_outlined,
+              actions: [
+                TextButton(
+                  onPressed: _enterSelectionMode,
+                  child: const Text('Select'),
+                ),
+                RefreshIconButton(
+                  isRefreshing: isRefreshing,
+                  onPressed: manualRefresh,
+                  tooltip: 'Reload photos',
+                ),
+              ],
+            ),
       drawer: AutobutlerDrawer(
         activeSection: AutobutlerDrawerSection.photos,
         onTapCirrus: () {
@@ -840,6 +1074,18 @@ class _PhotosPageState extends State<PhotosPage>
                       ],
                     ),
                   ),
+                  // Selection action bar — shown at bottom when in selection mode
+                  if (_selectionMode && _addingToAlbum == null)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: PhotoSelectionBar(
+                        selectedCount: _selectedKeys.length,
+                        onAddToAlbum: () => _handleAddToAlbum(photos),
+                        onCancel: _exitSelectionMode,
+                      ),
+                    ),
                   // Scroll-up hint — subtle chevron at top, fades when user scrolls
                   if (_showScrollHint)
                     Positioned(
