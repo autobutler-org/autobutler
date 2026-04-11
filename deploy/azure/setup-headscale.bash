@@ -113,8 +113,9 @@ certbot --nginx -d "${DOMAIN}" \
   && log "TLS certificate issued." \
   || log "WARNING: certbot failed. Once DNS points to this IP, run: sudo certbot --nginx -d ${DOMAIN} --non-interactive --agree-tos -m ${ADMIN_EMAIL} --redirect"
 
-# ── 6. AutoButler provisioning service ───÷butler-org/autobutler.git /opt/autobutler-src
+# ── 6. AutoButler provisioning service ───
 
+rm -rf /opt/autobutler-src
 git clone --depth 1 --branch main https://github.com/autobutler-org/autobutler.git /opt/autobutler-src
 
 cd /opt/autobutler-src
