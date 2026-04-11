@@ -115,6 +115,8 @@ certbot --nginx -d "${DOMAIN}" \
 
 # ── 6. AutoButler provisioning service ───÷butler-org/autobutler.git /opt/autobutler-src
 
+git clone --depth 1 --branch main https://github.com/autobutler-org/autobutler.git /opt/autobutler-src
+
 cd /opt/autobutler-src
 GOPATH=/root/go GOMODCACHE=/root/go/pkg/mod \
   /usr/local/go/bin/go build -o /usr/local/bin/autobutler-provisioning ./cmd/provisioning/
