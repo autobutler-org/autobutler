@@ -1,8 +1,10 @@
 package v1_files
 
 import (
+	"context"
 	"errors"
 
+	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
@@ -50,6 +52,12 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 			Kind: eventbus.EventDelete,
 			Path: p,
 		})
+		if serial != "" {
+			deps.Database().Queries.DeletePhotoFromAllAlbums(context.Background(), db.DeletePhotoFromAllAlbumsParams{
+				DeviceSerial: serial,
+				RelPath:      p,
+			})
+		}
 	}
 	return serverutil.Ok()
 }

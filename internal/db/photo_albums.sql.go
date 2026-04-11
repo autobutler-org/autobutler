@@ -91,6 +91,23 @@ func (q *Queries) DeleteAlbum(ctx context.Context, id int64) error {
 	return err
 }
 
+const deletePhotoFromAllAlbums = `-- name: DeletePhotoFromAllAlbums :exec
+DELETE FROM photo_album_items
+WHERE
+    device_serial = ?
+    AND rel_path = ?
+`
+
+type DeletePhotoFromAllAlbumsParams struct {
+	DeviceSerial string
+	RelPath      string
+}
+
+func (q *Queries) DeletePhotoFromAllAlbums(ctx context.Context, arg DeletePhotoFromAllAlbumsParams) error {
+	_, err := q.db.ExecContext(ctx, deletePhotoFromAllAlbums, arg.DeviceSerial, arg.RelPath)
+	return err
+}
+
 const getAlbum = `-- name: GetAlbum :one
 SELECT
     id, name, parent_id, created_at, updated_at
