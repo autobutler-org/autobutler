@@ -63,7 +63,15 @@ private_key_path: /var/lib/headscale/private.key
 noise:
   private_key_path: /var/lib/headscale/noise_private.key
 prefixes:
-  - 100.64.0.0/10
+  v4: 100.64.0.0/10
+  v6: fd7a:115c:a1e0::/48
+
+  # Strategy used for allocation of IPs to nodes, available options:
+  # - sequential (default): assigns the next free IP from the previous given
+  #   IP. A best-effort approach is used and Headscale might leave holes in the
+  #   IP range or fill up existing holes in the IP range.
+  # - random: assigns the next free IP from a pseudo-random IP generator (crypto/rand).
+  allocation: sequential
 dns:
   override_local_dns: true
   nameservers:
