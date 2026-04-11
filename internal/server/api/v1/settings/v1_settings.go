@@ -12,5 +12,8 @@ func (r *router) Routes() []*serverutil.Route {
 	return []*serverutil.Route{
 		getSettingsRoute,
 		postSettingsRoute,
+		getRemoteAccessRoute,
+		enableRemoteAccessRoute,
+		disableRemoteAccessRoute,
 	}
 }
