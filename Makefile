@@ -484,3 +484,26 @@ env-%: ## Check for env var
 		echo "Error: Environment variable '$*' is not set."; \
 		exit 1; \
 	fi
+
+# ── Azure deployment ────────────────────────────────────────────────────────
+
+## render/headscale: Embed setup-headscale.bash into ARM parameters file.
+## Usage: make render/headscale HEADSCALE_DOMAIN=network.autobutler.org ADMIN_EMAIL=admin.autobutler.org
+## Output: deploy/azure/headscale.rendered.parameters.json (gitignored)
+
+HEADSCALE_DOMAIN ?= network.autobutler.org
+
+deploy/azure/headscale.rendered.parameters.json: env-HEADSCALE_DOMAIN ## Render ARM parameters file for headscale deployment
+	bash deploy/azure/render.bash
+.PHONY: render/headscale
+render/headscale: deploy/azure/headscale.rendered.parameters.json ## Render ARM parameters file for headscale deployment (alias)
+
+SSH_KEY_PATH ?= ~/.ssh/id_autobutler-headscale.pub
+
+.PHONY: deploy/headscale
+deploy/headscale: deploy/azure/headscale.rendered.parameters.json
+	az deployment group create \
+	    --resource-group autobutler-headscale \
+	    --template-file ./deploy/azure/headscale.json \
+	    --parameters ./$< \
+	    --parameters adminPublicKey="$$(cat $(SSH_KEY_PATH))"
