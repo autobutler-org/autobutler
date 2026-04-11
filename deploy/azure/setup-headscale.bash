@@ -62,7 +62,7 @@ db_path: /var/lib/headscale/db.sqlite
 private_key_path: /var/lib/headscale/private.key
 noise:
   private_key_path: /var/lib/headscale/noise_private.key
-ip_prefixes:
+prefixes:
   - 100.64.0.0/10
 dns:
   override_local_dns: true
