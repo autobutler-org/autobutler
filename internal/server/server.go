@@ -5,11 +5,18 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
 
 	docs "github.com/autobutler-org/autobutler/docs/swagger"
 	"github.com/autobutler-org/autobutler/internal/server/middleware"
 	"github.com/autobutler-org/autobutler/pkg/botel"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/provisionutil"
+	"github.com/autobutler-org/autobutler/pkg/util/remoteutil"
+	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 	"github.com/autobutler-org/autobutler/pkg/util/workerutil"
 
@@ -64,6 +71,31 @@ func StartServer(deps deputil.Dependencies) error {
 	}
 	go startAutoUpdateChecker(context.Background())
 
+	portNum := serverutil.ServerPort()
+	port := strconv.Itoa(portNum)
+
+	if settingsutil.GetRemoteAccess() {
+		if err := startRemoteAccess(portNum); err != nil {
+			log.Printf("[remote] failed to start: %v", err)
+		}
+	}
+
+	// Graceful shutdown: stop tsnet and telemetry on SIGINT/SIGTERM.
+	go func() {
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		<-quit
+		log.Println("[server] shutting down...")
+		remoteutil.Stop()
+		if err := tp.Shutdown(context.Background()); err != nil {
+			log.Printf("Error shutting down tracer provider: %v", err)
+		}
+		if err := mp.Shutdown(context.Background()); err != nil {
+			log.Printf("Error shutting down meter provider: %v", err)
+		}
+		os.Exit(0)
+	}()
+
 	router := gin.Default()
 	// Disable automatic redirects so unmatched routes (e.g. /health, /photos)
 	// fall through to the NoRoute SPA handler instead of 301-redirecting to /.
@@ -73,11 +105,6 @@ func StartServer(deps deputil.Dependencies) error {
 	// IMPORTANT: middleware.Use MUST be called before setupRoutes
 	middleware.Use(router, deps)
 	setupRoutes(router, systemCollector)
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
 	setupSwagger(router)
 
 	if err := router.Run(fmt.Sprintf(":%s", port)); err != nil {
@@ -85,4 +112,16 @@ func StartServer(deps deputil.Dependencies) error {
 	}
 
 	return nil
+}
+
+func startRemoteAccess(localPort int) error {
+	return remoteutil.EnsureStarted(localPort, provisionForRemoteAccess)
+}
+
+func provisionForRemoteAccess() (string, error) {
+	deviceID, err := provisionutil.GetDeviceID()
+	if err != nil {
+		return "", fmt.Errorf("device id: %w", err)
+	}
+	return provisionutil.ProvisionAuthKey(deviceID)
 }

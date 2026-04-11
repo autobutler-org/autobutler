@@ -14,7 +14,11 @@ const settingsFileName = "settings.json"
 
 // Settings holds application-level user-configurable settings.
 type Settings struct {
-	AutoUpdate bool `json:"autoUpdate"`
+	AutoUpdate          bool   `json:"autoUpdate"`
+	RemoteAccessEnabled bool   `json:"remoteAccessEnabled"`
+	DevMode             bool   `json:"devMode"`
+	ActiveBranch        string `json:"activeBranch,omitempty"`
+	DeviceID            string `json:"deviceId,omitempty"`
 }
 
 var (
@@ -23,12 +27,8 @@ var (
 )
 
 func settingsPath() (string, error) {
-	dataDir, err := storageutil.GetCirrusDir()
-	if err != nil {
-		return "", fmt.Errorf("failed to get data directory: %w", err)
-	}
-	// Store settings.json alongside cirrus dir, in the parent data dir.
-	return filepath.Join(filepath.Dir(dataDir), settingsFileName), nil
+	dataDir := storageutil.GetDataDir()
+	return filepath.Join(dataDir, settingsFileName), nil
 }
 
 // Load reads settings from disk (or returns defaults if not present).
@@ -84,12 +84,12 @@ func Save(s *Settings) error {
 		return fmt.Errorf("failed to create settings directory: %w", err)
 	}
 
-	data, err := json.Marshal(s)
+	data, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal settings: %w", err)
 	}
 
-	if err := os.WriteFile(path, data, 0644); err != nil {
+	if err := os.WriteFile(path, data, 0600); err != nil {
 		return fmt.Errorf("failed to write settings file: %w", err)
 	}
 
@@ -98,8 +98,13 @@ func Save(s *Settings) error {
 	return nil
 }
 
+// invalidateCache clears the in-memory cache so the next Load() re-reads disk.
+// Must be called with mu held.
+func invalidateCache() {
+	cached = nil
+}
+
 // GetAutoUpdate returns whether automatic updates are enabled.
-// Defaults to false if settings cannot be loaded.
 func GetAutoUpdate() bool {
 	s, err := Load()
 	if err != nil {
@@ -110,10 +115,95 @@ func GetAutoUpdate() bool {
 
 // SetAutoUpdate sets the auto-update preference and persists it.
 func SetAutoUpdate(enabled bool) error {
-	s, err := Load()
-	if err != nil {
-		s = &Settings{}
+	mu.Lock()
+	s := cached
+	mu.Unlock()
+
+	if s == nil {
+		loaded, err := Load()
+		if err != nil {
+			loaded = &Settings{}
+		}
+		s = loaded
 	}
 	s.AutoUpdate = enabled
+	return Save(s)
+}
+
+// GetRemoteAccess returns whether remote access is enabled.
+func GetRemoteAccess() bool {
+	s, err := Load()
+	if err != nil {
+		return false
+	}
+	return s.RemoteAccessEnabled
+}
+
+// SetRemoteAccess sets the remote access enabled flag and persists it.
+func SetRemoteAccess(enabled bool) error {
+	mu.Lock()
+	s := cached
+	mu.Unlock()
+
+	if s == nil {
+		loaded, err := Load()
+		if err != nil {
+			loaded = &Settings{}
+		}
+		s = loaded
+	}
+	s.RemoteAccessEnabled = enabled
+	return Save(s)
+}
+
+// GetDeviceID returns the persisted device ID, or empty string if not set.
+func GetDeviceID() string {
+	s, err := Load()
+	if err != nil {
+		return ""
+	}
+	return s.DeviceID
+}
+
+// SetDeviceID persists the device ID.
+func SetDeviceID(id string) error {
+	mu.Lock()
+	s := cached
+	mu.Unlock()
+
+	if s == nil {
+		loaded, err := Load()
+		if err != nil {
+			loaded = &Settings{}
+		}
+		s = loaded
+	}
+	s.DeviceID = id
+	return Save(s)
+}
+
+// GetActiveBranch returns the active dev branch, or empty string if not set.
+func GetActiveBranch() string {
+	s, err := Load()
+	if err != nil {
+		return ""
+	}
+	return s.ActiveBranch
+}
+
+// SetActiveBranch persists the active dev branch.
+func SetActiveBranch(branch string) error {
+	mu.Lock()
+	s := cached
+	mu.Unlock()
+
+	if s == nil {
+		loaded, err := Load()
+		if err != nil {
+			loaded = &Settings{}
+		}
+		s = loaded
+	}
+	s.ActiveBranch = branch
 	return Save(s)
 }
