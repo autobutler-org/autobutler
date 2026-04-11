@@ -51,38 +51,41 @@ dpkg -i /tmp/headscale.deb
 mkdir -p /etc/headscale /var/lib/headscale
 
 cat > /etc/headscale/config.yaml <<EOF
-server_url: https://${DOMAIN}
+server_url: https://network.autobutler.org
 listen_addr: 127.0.0.1:8080
 grpc_listen_addr: 127.0.0.1:50443
 metrics_listen_addr: 127.0.0.1:9090
+
 log:
   level: info
-db_type: sqlite3
-db_path: /var/lib/headscale/db.sqlite
-private_key_path: /var/lib/headscale/private.key
+
 noise:
   private_key_path: /var/lib/headscale/noise_private.key
+
 prefixes:
   v4: 100.64.0.0/10
   v6: fd7a:115c:a1e0::/48
-
-  # Strategy used for allocation of IPs to nodes, available options:
-  # - sequential (default): assigns the next free IP from the previous given
-  #   IP. A best-effort approach is used and Headscale might leave holes in the
-  #   IP range or fill up existing holes in the IP range.
-  # - random: assigns the next free IP from a pseudo-random IP generator (crypto/rand).
   allocation: sequential
+
+database:
+  type: sqlite
+  sqlite:
+    path: /var/lib/headscale/db.sqlite
+
 dns:
   override_local_dns: true
   nameservers:
     global:
       - 1.1.1.1
   base_domain: headscale.autobutler.org
+
 derp:
   server:
     enabled: false
   urls:
     - https://controlplane.tailscale.com/derpmap/default
+  auto_update_enabled: true
+  update_frequency: 3h
 EOF
 
 systemctl enable headscale
