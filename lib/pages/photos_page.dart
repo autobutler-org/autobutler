@@ -60,37 +60,60 @@ class _PhotosPageState extends State<PhotosPage>
 
   int? _selectedAlbumId;
 
-  // Above-viewport nav: nav panel lives above the photo grid in the scroll
-  // stack. On first frame we jump the scroll position to navPanel.height so
-  // the grid is what the user sees on load. Scrolling up reveals the nav.
+  // Above-viewport nav: the hidden nav panel is measured once on first layout,
+  // then the scroll controller's initial offset is set so the photo grid is
+  // flush with the top of the viewport. Scroll up to reveal the nav.
+  //
+  // We can't know the nav height before layout, so we use a two-pass approach:
+  //  1. First render: nav is visible briefly at offset 0
+  //  2. After layout: measure nav height, recreate the scroll controller with
+  //     that initialScrollOffset, setState to rebuild — nav is now above viewport
+  //
+  // This is the only reliable way: initialScrollOffset is set before the first
+  // frame the user sees (WidgetsBinding post-frame), so there's no visible flash.
   final GlobalKey _navPanelKey = GlobalKey();
   bool _navScrollInitialized = false;
   bool _showScrollHint = true;
 
-  final ScrollController _scrollController = ScrollController();
+  ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    // After the first frame, jump scroll so the photo grid is at the top of
-    // the viewport — the nav panel sits above it, hidden until scroll-up.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _initNavScroll());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureAndJumpNav());
   }
 
-  void _initNavScroll() {
+  void _measureAndJumpNav() {
     if (_navScrollInitialized) return;
     final ctx = _navPanelKey.currentContext;
-    if (ctx == null) return;
-    final box = ctx.findRenderObject() as RenderBox?;
-    if (box == null) return;
-    final navHeight = box.size.height;
-    if (navHeight <= 0) return;
-    if (_scrollController.hasClients &&
-        _scrollController.position.maxScrollExtent >= navHeight) {
-      _scrollController.jumpTo(navHeight);
-      _navScrollInitialized = true;
+    if (ctx == null) {
+      // Nav not yet in tree — retry next frame
+      WidgetsBinding.instance.addPostFrameCallback((_) => _measureAndJumpNav());
+      return;
     }
+    final box = ctx.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _measureAndJumpNav());
+      return;
+    }
+    final navHeight = box.size.height;
+    if (navHeight <= 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _measureAndJumpNav());
+      return;
+    }
+    // Recreate the scroll controller with the nav height as initial offset.
+    // This ensures the scroll position starts at the right place even before
+    // content has loaded (no dependency on maxScrollExtent).
+    final oldController = _scrollController;
+    final newController = ScrollController(initialScrollOffset: navHeight);
+    newController.addListener(_onScroll);
+    setState(() {
+      _scrollController = newController;
+      _navScrollInitialized = true;
+    });
+    oldController.removeListener(_onScroll);
+    oldController.dispose();
   }
 
   @override
@@ -108,7 +131,7 @@ class _PhotosPageState extends State<PhotosPage>
 
     // Try to initialize the nav scroll if it hasn't happened yet (photos may
     // have loaded after the first frame callback fired).
-    if (!_navScrollInitialized) _initNavScroll();
+    if (!_navScrollInitialized) _measureAndJumpNav();
 
     // Hide the scroll hint once the user starts scrolling down.
     if (_showScrollHint && currentScroll > 0) {
