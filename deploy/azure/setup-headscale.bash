@@ -64,11 +64,12 @@ noise:
   private_key_path: /var/lib/headscale/noise_private.key
 ip_prefixes:
   - 100.64.0.0/10
-dns_config:
+dns:
   override_local_dns: true
-  base_domain: autobutler.net
   nameservers:
-    - 1.1.1.1
+    global:
+      - 1.1.1.1
+  base_domain: headscale.autobutler.org
 derp:
   server:
     enabled: false
