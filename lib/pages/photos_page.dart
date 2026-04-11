@@ -7,6 +7,8 @@ import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
+import 'package:autobutler/pages/album_page.dart';
+import 'package:autobutler/widgets/photos/album_sidebar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:autobutler/router.dart';
 import 'package:flutter/material.dart';
@@ -57,12 +59,60 @@ class _PhotosPageState extends State<PhotosPage>
   int _previewColumns = _defaultCrossAxisCount;
   PhotoCategory _selectedCategory = PhotoCategory.cirrus;
 
-  final ScrollController _scrollController = ScrollController();
+  // Above-viewport nav: the hidden nav panel is measured once on first layout,
+  // then the scroll controller's initial offset is set so the photo grid is
+  // flush with the top of the viewport. Scroll up to reveal the nav.
+  //
+  // We can't know the nav height before layout, so we use a two-pass approach:
+  //  1. First render: nav is visible briefly at offset 0
+  //  2. After layout: measure nav height, recreate the scroll controller with
+  //     that initialScrollOffset, setState to rebuild — nav is now above viewport
+  //
+  // This is the only reliable way: initialScrollOffset is set before the first
+  // frame the user sees (WidgetsBinding post-frame), so there's no visible flash.
+  final GlobalKey _navPanelKey = GlobalKey();
+  bool _navScrollInitialized = false;
+  bool _showScrollHint = true;
+
+  ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureAndJumpNav());
+  }
+
+  void _measureAndJumpNav() {
+    if (_navScrollInitialized) return;
+    final ctx = _navPanelKey.currentContext;
+    if (ctx == null) {
+      // Nav not yet in tree — retry next frame
+      WidgetsBinding.instance.addPostFrameCallback((_) => _measureAndJumpNav());
+      return;
+    }
+    final box = ctx.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _measureAndJumpNav());
+      return;
+    }
+    final navHeight = box.size.height;
+    if (navHeight <= 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _measureAndJumpNav());
+      return;
+    }
+    // Recreate the scroll controller with the nav height as initial offset.
+    // This ensures the scroll position starts at the right place even before
+    // content has loaded (no dependency on maxScrollExtent).
+    final oldController = _scrollController;
+    final newController = ScrollController(initialScrollOffset: navHeight);
+    newController.addListener(_onScroll);
+    setState(() {
+      _scrollController = newController;
+      _navScrollInitialized = true;
+    });
+    oldController.removeListener(_onScroll);
+    oldController.dispose();
   }
 
   @override
@@ -75,8 +125,18 @@ class _PhotosPageState extends State<PhotosPage>
   void _onScroll() {
     if (!_scrollController.hasClients) return;
 
-    final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.position.pixels;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+
+    // Try to initialize the nav scroll if it hasn't happened yet (photos may
+    // have loaded after the first frame callback fired).
+    if (!_navScrollInitialized) _measureAndJumpNav();
+
+    // Hide the scroll hint once the user starts scrolling down.
+    if (_showScrollHint && currentScroll > 0) {
+      setState(() => _showScrollHint = false);
+    }
+
     // Trigger fetch when scrolled past 80%
     if (currentScroll >= maxScroll * 0.8) {
       _loadMoreCirrusPhotos();
@@ -436,7 +496,144 @@ class _PhotosPageState extends State<PhotosPage>
               categoryButton(PhotoCategory.mobile, 'Mobile', mobileCount),
             ],
           ],
+          const SizedBox(height: 16),
+          AlbumSidebar(
+            selectedAlbumId: null,
+            onAlbumSelected: (album) {
+              if (album == null) return;
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => AlbumPage(album: album)),
+              );
+            },
+          ),
         ],
+      ),
+    );
+  }
+
+  // Builds a single photo tile. Extracted so both the desktop GridView and
+  // the mobile SliverGrid can share the same tile logic.
+  Widget _buildPhotoTile(
+    BuildContext context,
+    List<PhotoItem> photos,
+    int idx,
+    int crossAxisCount,
+  ) {
+    final p = photos[idx];
+
+    if (p.isCirrus) {
+      final c = p.cirrus!;
+      final url = CirrusService.constructThumbnailUrl(
+        c.apiPath,
+        serial: c.deviceSerial,
+      );
+      return MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () async {
+            final navigator = Navigator.of(context);
+            final bytes = await CirrusService.downloadFileBytes(
+              c.apiPath,
+              serial: c.deviceSerial,
+            );
+            if (bytes == null) return;
+            if (!mounted) return;
+            await navigator.push(
+              MaterialPageRoute(
+                builder: (_) => ImageViewerPage(
+                  bytes: bytes,
+                  name: c.name,
+                  initialIndex: idx,
+                  imageCount: photos.length,
+                  getImageCount: () async =>
+                      (await _photosForCategory(_selectedCategory)).length,
+                  onLoadImage: (newIdx) async {
+                    final live = await _photosForCategory(_selectedCategory);
+                    if (newIdx >= live.length) return (null, '');
+                    final item = live[newIdx];
+                    if (item.isCirrus) {
+                      final nc = item.cirrus!;
+                      var b = await CirrusService.downloadFileBytes(
+                        nc.apiPath,
+                        serial: nc.deviceSerial,
+                      );
+                      if (b == null) await manualRefresh();
+                      return (b, nc.name);
+                    } else {
+                      final na = item.asset!;
+                      final b = await na.originBytes;
+                      if (b == null) await manualRefresh();
+                      return (b, na.id);
+                    }
+                  },
+                ),
+              ),
+            );
+          },
+          child: Image.network(
+            url.toString(),
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, progress) {
+              if (progress == null) return child;
+              return Container(color: Colors.grey[300]);
+            },
+            errorBuilder: (context, error, stack) =>
+                Container(color: Colors.grey[300]),
+          ),
+        ),
+      );
+    }
+
+    // Mobile asset
+    final a = p.asset!;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () async {
+          final navigator = Navigator.of(context);
+          final bytes = await a.originBytes;
+          if (bytes == null) return;
+          if (!mounted) return;
+          await navigator.push(
+            MaterialPageRoute(
+              builder: (_) => ImageViewerPage(
+                bytes: bytes,
+                name: a.id,
+                initialIndex: idx,
+                imageCount: photos.length,
+                getImageCount: () async =>
+                    (await _photosForCategory(_selectedCategory)).length,
+                onLoadImage: (newIdx) async {
+                  final live = await _photosForCategory(_selectedCategory);
+                  if (newIdx >= live.length) return (null, '');
+                  final item = live[newIdx];
+                  if (item.isCirrus) {
+                    final nc = item.cirrus!;
+                    var b = await CirrusService.downloadFileBytes(
+                      nc.apiPath,
+                      serial: nc.deviceSerial,
+                    );
+                    if (b == null) await manualRefresh();
+                    return (b, nc.name);
+                  } else {
+                    final na = item.asset!;
+                    final b = await na.originBytes;
+                    if (b == null) await manualRefresh();
+                    return (b, na.id);
+                  }
+                },
+              ),
+            ),
+          );
+        },
+        child: FutureBuilder<Uint8List?>(
+          future: a.thumbnailDataWithSize(ThumbnailSize(200, 200)),
+          builder: (context, snap) {
+            final thumb = snap.data;
+            if (thumb == null) return Container(color: Colors.grey[300]);
+            return Image.memory(thumb, fit: BoxFit.cover);
+          },
+        ),
       ),
     );
   }
@@ -468,7 +665,6 @@ class _PhotosPageState extends State<PhotosPage>
               ),
               itemCount: itemCount,
               itemBuilder: (context, idx) {
-                // Loading indicator in the last slot
                 if (idx >= photos.length) {
                   return const Center(
                     child: Padding(
@@ -477,136 +673,7 @@ class _PhotosPageState extends State<PhotosPage>
                     ),
                   );
                 }
-
-                final p = photos[idx];
-
-                if (p.isCirrus) {
-                  final c = p.cirrus!;
-                  final url = CirrusService.constructThumbnailUrl(
-                    c.apiPath,
-                    serial: c.deviceSerial,
-                  );
-                  return MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      onTap: () async {
-                        final navigator = Navigator.of(context);
-                        final bytes = await CirrusService.downloadFileBytes(
-                          c.apiPath,
-                          serial: c.deviceSerial,
-                        );
-                        if (bytes == null) return;
-                        if (!mounted) return;
-                        await navigator.push(
-                          MaterialPageRoute(
-                            builder: (_) => ImageViewerPage(
-                              bytes: bytes,
-                              name: c.name,
-                              initialIndex: idx,
-                              imageCount: photos.length,
-                              getImageCount: () async =>
-                                  (await _photosForCategory(
-                                    _selectedCategory,
-                                  )).length,
-                              onLoadImage: (newIdx) async {
-                                final live = await _photosForCategory(
-                                  _selectedCategory,
-                                );
-                                if (newIdx >= live.length) return (null, '');
-                                final item = live[newIdx];
-                                if (item.isCirrus) {
-                                  final nc = item.cirrus!;
-                                  var b = await CirrusService.downloadFileBytes(
-                                    nc.apiPath,
-                                    serial: nc.deviceSerial,
-                                  );
-                                  if (b == null) {
-                                    await manualRefresh();
-                                  }
-                                  return (b, nc.name);
-                                } else {
-                                  final na = item.asset!;
-                                  final b = await na.originBytes;
-                                  if (b == null) await manualRefresh();
-                                  return (b, na.id);
-                                }
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                      child: Image.network(
-                        url.toString(),
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, progress) {
-                          if (progress == null) return child;
-                          return Container(color: Colors.grey[300]);
-                        },
-                        errorBuilder: (context, error, stack) =>
-                            Container(color: Colors.grey[300]),
-                      ),
-                    ),
-                  );
-                }
-
-                // Mobile asset
-                final a = p.asset!;
-                return MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: GestureDetector(
-                    onTap: () async {
-                      final navigator = Navigator.of(context);
-                      final bytes = await a.originBytes;
-                      if (bytes == null) return;
-                      if (!mounted) return;
-                      await navigator.push(
-                        MaterialPageRoute(
-                          builder: (_) => ImageViewerPage(
-                            bytes: bytes,
-                            name: a.id,
-                            initialIndex: idx,
-                            imageCount: photos.length,
-                            getImageCount: () async =>
-                                (await _photosForCategory(
-                                  _selectedCategory,
-                                )).length,
-                            onLoadImage: (newIdx) async {
-                              final live = await _photosForCategory(
-                                _selectedCategory,
-                              );
-                              if (newIdx >= live.length) return (null, '');
-                              final item = live[newIdx];
-                              if (item.isCirrus) {
-                                final nc = item.cirrus!;
-                                var b = await CirrusService.downloadFileBytes(
-                                  nc.apiPath,
-                                  serial: nc.deviceSerial,
-                                );
-                                if (b == null) await manualRefresh();
-                                return (b, nc.name);
-                              } else {
-                                final na = item.asset!;
-                                final b = await na.originBytes;
-                                if (b == null) await manualRefresh();
-                                return (b, na.id);
-                              }
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                    child: FutureBuilder<Uint8List?>(
-                      future: a.thumbnailDataWithSize(ThumbnailSize(200, 200)),
-                      builder: (context, snap) {
-                        final thumb = snap.data;
-                        if (thumb == null) {
-                          return Container(color: Colors.grey[300]);
-                        }
-                        return Image.memory(thumb, fit: BoxFit.cover);
-                      },
-                    ),
-                  ),
-                );
+                return _buildPhotoTile(context, photos, idx, crossAxisCount);
               },
             ),
     );
@@ -667,40 +734,147 @@ class _PhotosPageState extends State<PhotosPage>
                 compact: compact,
               );
 
-              Widget buildShell(Widget content) {
-                if (compact) {
-                  return Column(
-                    children: [
-                      sidebar,
-                      const Divider(height: 1),
-                      Expanded(child: content),
-                    ],
-                  );
-                }
-
-                return Row(
+              // Desktop: sidebar + grid side-by-side (unchanged behavior)
+              if (!compact) {
+                Widget buildDesktop(Widget content) => Row(
                   children: [
                     sidebar,
                     const VerticalDivider(width: 1),
                     Expanded(child: content),
                   ],
                 );
+                if (snapshot.connectionState == ConnectionState.waiting &&
+                    photos.isEmpty) {
+                  return buildDesktop(
+                    const Center(child: CircularProgressIndicator()),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return buildDesktop(
+                    const Center(child: Text('Failed to load photos')),
+                  );
+                }
+                return buildDesktop(_buildPhotoGrid(photos, crossAxisCount));
               }
 
+              // Mobile: nav panel lives *above* the photo grid in the scroll
+              // stack. On mount we jump to navHeight so only the grid is
+              // visible. Scroll up to reveal the nav.
               if (snapshot.connectionState == ConnectionState.waiting &&
                   photos.isEmpty) {
-                return buildShell(
-                  const Center(child: CircularProgressIndicator()),
-                );
+                return const Center(child: CircularProgressIndicator());
               }
-
               if (snapshot.hasError) {
-                return buildShell(
-                  const Center(child: Text('Failed to load photos')),
-                );
+                return const Center(child: Text('Failed to load photos'));
               }
 
-              return buildShell(_buildPhotoGrid(photos, crossAxisCount));
+              final showLoadingIndicator =
+                  _hasMoreCirrus &&
+                  (_selectedCategory == PhotoCategory.cirrus ||
+                      _selectedCategory == PhotoCategory.all);
+              final itemCount = photos.length + (showLoadingIndicator ? 1 : 0);
+
+              return Stack(
+                children: [
+                  RefreshIndicator(
+                    onRefresh: manualRefresh,
+                    child: CustomScrollView(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        // Nav panel — hidden above viewport on load
+                        SliverToBoxAdapter(
+                          child: Container(
+                            key: _navPanelKey,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                sidebar,
+                                Divider(
+                                  height: 1,
+                                  color: Theme.of(context).colorScheme.outline,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Photo grid
+                        photos.isEmpty
+                            ? const SliverFillRemaining(
+                                child: EmptyStateWidget(
+                                  icon: Icons.photo_library_outlined,
+                                  headline: 'No photos yet',
+                                  subtext:
+                                      'Photos you upload to AutoButler will appear here.',
+                                ),
+                              )
+                            : SliverGrid(
+                                delegate: SliverChildBuilderDelegate((
+                                  context,
+                                  idx,
+                                ) {
+                                  if (idx >= photos.length) {
+                                    return const Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(16),
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  return _buildPhotoTile(
+                                    context,
+                                    photos,
+                                    idx,
+                                    crossAxisCount,
+                                  );
+                                }, childCount: itemCount),
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: crossAxisCount,
+                                      crossAxisSpacing: 2,
+                                      mainAxisSpacing: 2,
+                                    ),
+                              ),
+                      ],
+                    ),
+                  ),
+                  // Scroll-up hint — subtle chevron at top, fades when user scrolls
+                  if (_showScrollHint)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: IgnorePointer(
+                        child: Container(
+                          height: 32,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Theme.of(
+                                  context,
+                                ).colorScheme.surface.withValues(alpha: 0.7),
+                                Colors.transparent,
+                              ],
+                            ),
+                          ),
+                          child: Center(
+                            child: Icon(
+                              Icons.keyboard_arrow_up_rounded,
+                              size: 20,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.4),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
             },
           );
         },

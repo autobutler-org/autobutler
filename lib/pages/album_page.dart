@@ -1,0 +1,262 @@
+import 'package:autobutler/models/photo_album.dart';
+import 'package:autobutler/pages/image_viewer_page.dart';
+import 'package:autobutler/services/album_service.dart';
+import 'package:autobutler/services/cirrus_service.dart';
+import 'package:autobutler/theme/autobutler_colors.dart';
+import 'package:autobutler/widgets/core/empty_state_widget.dart';
+import 'package:autobutler/widgets/photos/add_to_album_sheet.dart';
+import 'package:flutter/material.dart';
+
+class AlbumPage extends StatefulWidget {
+  const AlbumPage({required this.album, super.key});
+
+  final PhotoAlbum album;
+
+  @override
+  State<AlbumPage> createState() => _AlbumPageState();
+}
+
+class _AlbumPageState extends State<AlbumPage> {
+  List<PhotoAlbumItem> _items = [];
+  bool _loading = true;
+  String? _error;
+  int _crossAxisCount = 3;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final items = await AlbumService.listAlbumItems(widget.album.id);
+      if (!mounted) return;
+      setState(() {
+        _items = items;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _removeItem(PhotoAlbumItem item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove from album?'),
+        content: const Text(
+          'This removes the photo from this album. The file on disk is not affected.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await AlbumService.removePhotoFromAlbum(
+        widget.album.id,
+        deviceSerial: item.deviceSerial,
+        relPath: item.relPath,
+      );
+      await _load();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to remove photo from album')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.album.name),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
+            onPressed: _load,
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'grid-up') {
+                setState(
+                  () => _crossAxisCount = (_crossAxisCount - 1).clamp(1, 6),
+                );
+              } else if (value == 'grid-down') {
+                setState(
+                  () => _crossAxisCount = (_crossAxisCount + 1).clamp(1, 6),
+                );
+              }
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'grid-up',
+                child: ListTile(
+                  leading: Icon(Icons.crop_square_outlined),
+                  title: Text('Larger photos'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'grid-down',
+                child: ListTile(
+                  leading: Icon(Icons.grid_view_outlined),
+                  title: Text('Smaller photos'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+          ? Center(child: Text('Error: $_error'))
+          : _items.isEmpty
+          ? EmptyStateWidget(
+              icon: Icons.photo_album_outlined,
+              headline: 'No photos yet',
+              subtext:
+                  'Add photos to "${widget.album.name}" from the Photos view.',
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: GridView.builder(
+                padding: const EdgeInsets.all(2),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: _crossAxisCount,
+                  crossAxisSpacing: 2,
+                  mainAxisSpacing: 2,
+                ),
+                itemCount: _items.length,
+                itemBuilder: (context, idx) {
+                  final item = _items[idx];
+                  final url = CirrusService.constructThumbnailUrl(
+                    item.relPath,
+                    serial: item.deviceSerial,
+                  );
+                  return GestureDetector(
+                    onTap: () async {
+                      final navigator = Navigator.of(context);
+                      final bytes = await CirrusService.downloadFileBytes(
+                        item.relPath,
+                        serial: item.deviceSerial,
+                      );
+                      if (bytes == null || !mounted) return;
+                      await navigator.push(
+                        MaterialPageRoute(
+                          builder: (_) => ImageViewerPage(
+                            bytes: bytes,
+                            name: item.relPath.split('/').last,
+                            initialIndex: idx,
+                            imageCount: _items.length,
+                            getImageCount: () async => _items.length,
+                            onLoadImage: (newIdx) async {
+                              if (newIdx >= _items.length) return (null, '');
+                              final ni = _items[newIdx];
+                              final b = await CirrusService.downloadFileBytes(
+                                ni.relPath,
+                                serial: ni.deviceSerial,
+                              );
+                              return (b, ni.relPath.split('/').last);
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                    onLongPress: () => _showItemMenu(context, item),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.network(
+                          url.toString(),
+                          fit: BoxFit.cover,
+                          loadingBuilder: (_, child, progress) {
+                            if (progress == null) return child;
+                            return Container(
+                              color: colorScheme.surfaceContainerHighest,
+                            );
+                          },
+                          errorBuilder: (context, error, stack) => Container(
+                            color: colorScheme.surfaceContainerHighest,
+                            child: Icon(
+                              Icons.broken_image_outlined,
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.3,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+    );
+  }
+
+  void _showItemMenu(BuildContext context, PhotoAlbumItem item) {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_album_outlined),
+              title: const Text('Add to another album'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                AddToAlbumSheet.show(
+                  context,
+                  deviceSerial: item.deviceSerial,
+                  relPath: item.relPath,
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.remove_circle_outline,
+                color: Theme.of(ctx).colorScheme.error,
+              ),
+              title: Text(
+                'Remove from album',
+                style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+              ),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                _removeItem(item);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
