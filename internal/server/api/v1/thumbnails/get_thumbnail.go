@@ -35,10 +35,14 @@ func thumbnailCacheDir() (string, error) {
 	return cacheDir, nil
 }
 
+// thumbnailCacheVersion is bumped whenever the thumbnail generation algorithm
+// changes, so that stale cached thumbnails are automatically regenerated.
+const thumbnailCacheVersion = "v2"
+
 // cacheKey computes a SHA-256 hex digest of the given serial and file path,
 // used as the filename in the cache directory.
 func cacheKey(serial, filePath string) string {
-	h := sha256.Sum256([]byte(serial + "/" + filePath))
+	h := sha256.Sum256([]byte(thumbnailCacheVersion + ":" + serial + "/" + filePath))
 	return fmt.Sprintf("%x", h)
 }
 

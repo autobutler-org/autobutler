@@ -102,8 +102,40 @@ func TestImageToThumbnail(t *testing.T) {
 	}
 
 	bounds := thumbnail.Bounds()
-	if bounds.Dx() > 50 || bounds.Dy() > 50 {
-		t.Errorf("Thumbnail too large: %dx%d", bounds.Dx(), bounds.Dy())
+	if bounds.Dx() != 50 || bounds.Dy() != 50 {
+		t.Errorf("Expected 50x50 thumbnail, got %dx%d", bounds.Dx(), bounds.Dy())
+	}
+}
+
+func TestImageToThumbnail_NonSquareLandscape(t *testing.T) {
+	tmpDir := t.TempDir()
+	imagePath := filepath.Join(tmpDir, "landscape.png")
+	createTestImage(t, imagePath, 400, 200) // 2:1 landscape
+
+	thumbnail, _, err := ImageToThumbnail(imagePath, 50, 50)
+	if err != nil {
+		t.Fatalf("ImageToThumbnail failed: %v", err)
+	}
+
+	bounds := thumbnail.Bounds()
+	if bounds.Dx() != 50 || bounds.Dy() != 50 {
+		t.Errorf("Expected 50x50 thumbnail, got %dx%d (landscape input must be cropped, not squished)", bounds.Dx(), bounds.Dy())
+	}
+}
+
+func TestImageToThumbnail_NonSquarePortrait(t *testing.T) {
+	tmpDir := t.TempDir()
+	imagePath := filepath.Join(tmpDir, "portrait.png")
+	createTestImage(t, imagePath, 200, 400) // 1:2 portrait
+
+	thumbnail, _, err := ImageToThumbnail(imagePath, 50, 50)
+	if err != nil {
+		t.Fatalf("ImageToThumbnail failed: %v", err)
+	}
+
+	bounds := thumbnail.Bounds()
+	if bounds.Dx() != 50 || bounds.Dy() != 50 {
+		t.Errorf("Expected 50x50 thumbnail, got %dx%d (portrait input must be cropped, not squished)", bounds.Dx(), bounds.Dy())
 	}
 }
 
@@ -373,7 +405,7 @@ func TestImageToThumbnail_WithEXIF(t *testing.T) {
 	}
 
 	bounds := thumbnail.Bounds()
-	if bounds.Dx() > 100 || bounds.Dy() > 100 {
-		t.Errorf("Thumbnail too large: %dx%d", bounds.Dx(), bounds.Dy())
+	if bounds.Dx() != 100 || bounds.Dy() != 100 {
+		t.Errorf("Expected 100x100 thumbnail, got %dx%d", bounds.Dx(), bounds.Dy())
 	}
 }
