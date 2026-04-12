@@ -13,6 +13,7 @@ import 'package:autobutler/services/album_service.dart';
 import 'package:autobutler/widgets/photos/album_sidebar.dart';
 import 'package:autobutler/widgets/photos/photo_selection_bar.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:autobutler/router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -755,7 +756,7 @@ class _PhotosPageState extends State<PhotosPage>
             )
           : GridView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.all(2),
+              padding: EdgeInsets.fromLTRB(2, 2, 2, _selectionMode ? 84 : 2),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: 2,
@@ -878,7 +879,19 @@ class _PhotosPageState extends State<PhotosPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): () {
+          if (_selectionMode) {
+            final wasAdding = _addingToAlbum != null;
+            _exitSelectionMode();
+            if (wasAdding) Navigator.of(context).pop();
+          }
+        },
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
       appBar: _selectionMode
           ? AppBar(
               backgroundColor: Theme.of(context).colorScheme.secondary,
@@ -1139,6 +1152,7 @@ class _PhotosPageState extends State<PhotosPage>
             },
           );
         },
+      ),
       ),
     );
   }
