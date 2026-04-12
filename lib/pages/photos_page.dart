@@ -831,8 +831,13 @@ class _PhotosPageState extends State<PhotosPage>
         .toList();
 
     int added = 0;
+    int skipped = 0;
+    int failed = 0;
     for (final item in selected) {
-      if (!item.isCirrus) continue;
+      if (!item.isCirrus) {
+        skipped++;
+        continue;
+      }
       final c = item.cirrus!;
       try {
         await AlbumService.addPhotoToAlbum(
@@ -841,7 +846,9 @@ class _PhotosPageState extends State<PhotosPage>
           relPath: c.dirPath,
         );
         added++;
-      } catch (_) {}
+      } catch (_) {
+        failed++;
+      }
     }
 
     if (!mounted) return;
@@ -849,19 +856,25 @@ class _PhotosPageState extends State<PhotosPage>
     final wasAddingMode = _addingToAlbum != null;
     _exitSelectionMode();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          added == 0
-              ? 'No photos added (only Cirrus photos can be added to albums)'
-              : '$added ${added == 1 ? 'photo' : 'photos'} added to "${album.name}"',
-        ),
-      ),
-    );
+    String message;
+    if (added == 0 && skipped > 0) {
+      message = 'No photos added — device photos cannot be added to albums yet';
+    } else if (added > 0) {
+      message =
+          '$added ${added == 1 ? 'photo' : 'photos'} added to "${album.name}"';
+      if (failed > 0) message += ' ($failed failed)';
+    } else {
+      message = 'Failed to add photos to "${album.name}"';
+    }
 
-    if (wasAddingMode) {
-      // Navigate back to the album page
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+
+    if (wasAddingMode && added > 0) {
       Navigator.of(context).pop();
+    } else if (wasAddingMode && added == 0) {
+      // Stay in adding mode so user can try again or pick different photos
     }
   }
 
