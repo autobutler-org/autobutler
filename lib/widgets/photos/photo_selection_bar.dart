@@ -87,6 +87,7 @@ class AlbumPickerSheet extends StatefulWidget {
 class _AlbumPickerSheetState extends State<AlbumPickerSheet> {
   List<PhotoAlbum> _albums = [];
   bool _loading = true;
+  bool _error = false;
 
   @override
   void initState() {
@@ -95,6 +96,10 @@ class _AlbumPickerSheetState extends State<AlbumPickerSheet> {
   }
 
   Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = false;
+    });
     try {
       final albums = await AlbumService.listAlbums(tree: true);
       if (!mounted) return;
@@ -104,7 +109,10 @@ class _AlbumPickerSheetState extends State<AlbumPickerSheet> {
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _error = true;
+      });
     }
   }
 
@@ -135,6 +143,20 @@ class _AlbumPickerSheetState extends State<AlbumPickerSheet> {
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
+                : _error
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('Failed to load albums'),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: _load,
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  )
                 : _albums.isEmpty
                 ? const Center(
                     child: Text('No albums — create one in the Photos view'),

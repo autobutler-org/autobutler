@@ -81,6 +81,9 @@ func addPhotoToAlbum(c *gin.Context) *serverutil.Response {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return serverutil.BadRequest(errors.New("invalid request body"))
 	}
+	if req.DeviceSerial == "" {
+		return serverutil.BadRequest(errors.New("deviceSerial is required"))
+	}
 	if req.RelPath == "" {
 		return serverutil.BadRequest(errors.New("relPath is required"))
 	}
@@ -133,6 +136,9 @@ func removePhotoFromAlbum(c *gin.Context) *serverutil.Response {
 	var req addPhotoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return serverutil.BadRequest(errors.New("invalid request body"))
+	}
+	if req.DeviceSerial == "" {
+		return serverutil.BadRequest(errors.New("deviceSerial is required"))
 	}
 	if req.RelPath == "" {
 		return serverutil.BadRequest(errors.New("relPath is required"))

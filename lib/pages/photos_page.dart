@@ -814,12 +814,10 @@ class _PhotosPageState extends State<PhotosPage>
   }
 
   Future<void> _confirmAddToAlbum() async {
-    // Flow 2: user tapped Done while in adding-to-album mode
-    // We need the current photo list — pull from state
-    final photos = _selectedCategory == PhotoCategory.mobile
-        ? _mobilePhotos
-        : _cirrusPhotos;
-    await _addSelectedToAlbum(_addingToAlbum!, photos);
+    // Flow 2: user tapped Done while in adding-to-album mode.
+    // Only Cirrus photos can be added to albums, so search _cirrusPhotos
+    // regardless of which tab is currently active.
+    await _addSelectedToAlbum(_addingToAlbum!, _cirrusPhotos);
   }
 
   Future<void> _addSelectedToAlbum(
@@ -920,7 +918,11 @@ class _PhotosPageState extends State<PhotosPage>
                     child: Text('Done (${_selectedKeys.length})'),
                   ),
                 TextButton(
-                  onPressed: _exitSelectionMode,
+                  onPressed: () {
+                    final wasAdding = _addingToAlbum != null;
+                    _exitSelectionMode();
+                    if (wasAdding) Navigator.of(context).pop();
+                  },
                   child: const Text('Cancel'),
                 ),
               ],
