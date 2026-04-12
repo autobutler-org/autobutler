@@ -1154,6 +1154,7 @@ class _PhotosPageState extends State<PhotosPage>
         },
       ),
       ),
+      ),
     );
   }
 }
