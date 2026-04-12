@@ -55,8 +55,8 @@ func listAlbumItems(c *gin.Context) *serverutil.Response {
 }
 
 type addPhotoRequest struct {
-	DeviceSerial string `json:"deviceSerial" binding:"required"`
-	RelPath      string `json:"relPath" binding:"required"`
+	DeviceSerial string `json:"deviceSerial"`
+	RelPath      string `json:"relPath"`
 }
 
 // addPhotoToAlbum godoc
@@ -79,7 +79,10 @@ func addPhotoToAlbum(c *gin.Context) *serverutil.Response {
 
 	var req addPhotoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		return serverutil.BadRequest(errors.New("deviceSerial and relPath are required"))
+		return serverutil.BadRequest(errors.New("invalid request body"))
+	}
+	if req.RelPath == "" {
+		return serverutil.BadRequest(errors.New("relPath is required"))
 	}
 
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
@@ -129,7 +132,10 @@ func removePhotoFromAlbum(c *gin.Context) *serverutil.Response {
 
 	var req addPhotoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		return serverutil.BadRequest(errors.New("deviceSerial and relPath are required"))
+		return serverutil.BadRequest(errors.New("invalid request body"))
+	}
+	if req.RelPath == "" {
+		return serverutil.BadRequest(errors.New("relPath is required"))
 	}
 
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
