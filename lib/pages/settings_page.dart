@@ -1,18 +1,18 @@
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
-import 'package:autobutler/services/smb_service.dart';
 import 'package:autobutler/services/auth_service.dart';
-import 'package:autobutler/services/health_service.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/services/connected_devices_service.dart';
+import 'package:autobutler/services/health_service.dart';
 import 'package:autobutler/services/remote_access_service.dart';
 import 'package:autobutler/services/sbom_service.dart';
 import 'package:autobutler/services/settings_service.dart';
+import 'package:autobutler/services/smb_service.dart';
 import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
+import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/core/copy_button.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
-import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -791,7 +791,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Failed to load remote access status',
+                            'Failed to load remote access status: $_remoteAccessError',
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.error,
                             ),

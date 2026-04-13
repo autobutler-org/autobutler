@@ -1,20 +1,17 @@
 package v1_settings
 
 import (
-	"fmt"
-	"net/http"
-	"sync"
+	"errors"
 
-	"github.com/autobutler-org/autobutler/pkg/util/provisionutil"
 	"github.com/autobutler-org/autobutler/pkg/util/remoteutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
 	"github.com/gin-gonic/gin"
 )
 
-// enableMu guards against concurrent calls to enableRemoteAccess, which would
-// mint multiple Headscale keys. Only one enable is allowed at a time.
-var enableMu sync.Mutex
+type RemoteAccessRequest struct {
+	AuthKey string `json:"authKey"`
+}
 
 type RemoteAccessResponse struct {
 	Enabled   bool   `json:"enabled"`
@@ -39,49 +36,38 @@ var getRemoteAccessRoute = serverutil.ApiRoute(
 
 // enableRemoteAccess godoc
 // @Summary Enable remote access via Tailscale
-// @Description Auto-provisions a Headscale pre-auth key and starts a tsnet node proxying traffic to the local server
+// @Description Starts a Tailscale tsnet node with the provided auth key and proxies traffic to the local server
 // @Tags settings
 // @Accept json
 // @Produce json
+// @Param body body RemoteAccessRequest true "Tailscale auth key"
 // @Success 200 {object} RemoteAccessResponse
-// @Failure 409 {object} serverutil.Response "Already enabling"
+// @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /settings/remote-access [post]
 var enableRemoteAccessRoute = serverutil.ApiRoute(
 	"POST", "/settings/remote-access", func(c *gin.Context) *serverutil.Response {
-		// Guard against concurrent enable calls minting multiple auth keys.
-		if !enableMu.TryLock() {
-			return serverutil.NewResponse().
-				WithStatusCode(http.StatusConflict).
-				WithError(fmt.Errorf("remote access enable already in progress"))
-		}
-		defer enableMu.Unlock()
-
 		if remoteutil.IsRunning() {
 			return serverutil.Ok().WithData(RemoteAccessResponse{
 				Enabled:   true,
 				RemoteURL: remoteutil.RemoteURL(),
 			})
 		}
-
-		deviceID, err := provisionutil.GetDeviceID()
-		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("device id: %w", err))
+		var req RemoteAccessRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			return serverutil.BadRequest(err)
 		}
-
-		authKey, err := provisionutil.ProvisionAuthKey(deviceID)
-		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("provision: %w", err))
+		if req.AuthKey == "" {
+			return serverutil.BadRequest(errors.New("authKey is required"))
 		}
-
-		if err := remoteutil.Start(authKey); err != nil {
+		if err := remoteutil.Start(req.AuthKey); err != nil {
 			return serverutil.InternalServerError(err)
 		}
 		if err := remoteutil.StartProxy(serverutil.ServerPort()); err != nil {
 			remoteutil.Stop()
 			return serverutil.InternalServerError(err)
 		}
-		if err := settingsutil.SetRemoteAccess(true); err != nil {
+		if err := settingsutil.SetRemoteAccess(true, req.AuthKey); err != nil {
 			return serverutil.InternalServerError(err)
 		}
 		return serverutil.Ok().WithData(RemoteAccessResponse{
@@ -102,7 +88,7 @@ var enableRemoteAccessRoute = serverutil.ApiRoute(
 var disableRemoteAccessRoute = serverutil.ApiRoute(
 	"DELETE", "/settings/remote-access", func(c *gin.Context) *serverutil.Response {
 		remoteutil.Stop()
-		if err := settingsutil.SetRemoteAccess(false); err != nil {
+		if err := settingsutil.SetRemoteAccess(false, ""); err != nil {
 			return serverutil.InternalServerError(err)
 		}
 		return serverutil.Ok().WithData(RemoteAccessResponse{
