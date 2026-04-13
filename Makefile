@@ -1,5 +1,5 @@
-SHELL := /bin/bash
-.SHELLFLAGS = -e -c
+SHELL := /usr/bin/env
+.SHELLFLAGS = bash -e -c
 .DEFAULT_GOAL := help
 .ONESHELL:
 .SILENT:
