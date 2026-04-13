@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/models/paginated_photos_response.dart';
+import 'package:autobutler/models/photo_metadata.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/authenticated_service.dart';
 import 'package:autobutler/utils/web_download_stub.dart'
@@ -468,6 +469,25 @@ class CirrusService with AuthenticatedService {
       throw Exception('Failed to download thumbnail (${response.statusCode})');
     }
     return response.bodyBytes;
+  }
+
+  static Future<PhotoMetadata> getPhotoMetadata(
+    String relPath, {
+    String? serial,
+  }) async {
+    final params = <String, String>{'relPath': relPath};
+    final serialValue = serial?.trim() ?? '';
+    if (serialValue.isNotEmpty) params['serial'] = serialValue;
+    final uri = _apiBaseUri
+        .resolve('/api/v1/photos/metadata')
+        .replace(queryParameters: params);
+    final response = await http.get(uri, headers: _authHeaders);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to load photo metadata (${response.statusCode})');
+    }
+    return PhotoMetadata.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 
   static Uri _buildDownloadUri(String filePath, {String? serial}) {

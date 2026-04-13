@@ -1576,6 +1576,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/photos/metadata": {
+            "get": {
+                "description": "Returns EXIF, file info, and album membership for the specified photo.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "photos"
+                ],
+                "summary": "Get metadata for a single photo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device serial",
+                        "name": "serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Relative path to the photo file",
+                        "name": "relPath",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1_photos.PhotoMetadataJSON"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/sbom": {
             "get": {
                 "description": "Returns the Go version and all embedded dependency information from the compiled binary",
@@ -2446,6 +2499,52 @@ const docTemplate = `{
                 }
             }
         },
+        "v1_photos.AlbumRefJSON": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1_photos.ExifJSON": {
+            "type": "object",
+            "properties": {
+                "aperture": {
+                    "type": "number"
+                },
+                "dateTaken": {
+                    "type": "string"
+                },
+                "focalLength": {
+                    "type": "number"
+                },
+                "iso": {
+                    "type": "integer"
+                },
+                "latitude": {
+                    "type": "number"
+                },
+                "lens": {
+                    "type": "string"
+                },
+                "longitude": {
+                    "type": "number"
+                },
+                "make": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "shutterSpeed": {
+                    "type": "string"
+                }
+            }
+        },
         "v1_photos.PaginatedPhotosResponse": {
             "type": "object",
             "properties": {
@@ -2482,6 +2581,35 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "size": {
+                    "type": "integer"
+                }
+            }
+        },
+        "v1_photos.PhotoMetadataJSON": {
+            "type": "object",
+            "properties": {
+                "albums": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1_photos.AlbumRefJSON"
+                    }
+                },
+                "exif": {
+                    "$ref": "#/definitions/v1_photos.ExifJSON"
+                },
+                "fileName": {
+                    "type": "string"
+                },
+                "fileSize": {
+                    "type": "integer"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "mtime": {
+                    "type": "integer"
+                },
+                "width": {
                     "type": "integer"
                 }
             }

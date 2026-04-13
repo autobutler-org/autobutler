@@ -234,6 +234,36 @@ definitions:
             type: boolean
         type: object
     type: object
+  v1_photos.AlbumRefJSON:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  v1_photos.ExifJSON:
+    properties:
+      aperture:
+        type: number
+      dateTaken:
+        type: string
+      focalLength:
+        type: number
+      iso:
+        type: integer
+      latitude:
+        type: number
+      lens:
+        type: string
+      longitude:
+        type: number
+      make:
+        type: string
+      model:
+        type: string
+      shutterSpeed:
+        type: string
+    type: object
   v1_photos.PaginatedPhotosResponse:
     properties:
       limit:
@@ -258,6 +288,25 @@ definitions:
       serial:
         type: string
       size:
+        type: integer
+    type: object
+  v1_photos.PhotoMetadataJSON:
+    properties:
+      albums:
+        items:
+          $ref: '#/definitions/v1_photos.AlbumRefJSON'
+        type: array
+      exif:
+        $ref: '#/definitions/v1_photos.ExifJSON'
+      fileName:
+        type: string
+      fileSize:
+        type: integer
+      height:
+        type: integer
+      mtime:
+        type: integer
+      width:
         type: integer
     type: object
   v1_settings.SettingsJSON:
@@ -1370,6 +1419,42 @@ paths:
           schema:
             $ref: '#/definitions/serverutil.Response'
       summary: List photos
+      tags:
+      - photos
+  /photos/metadata:
+    get:
+      description: Returns EXIF, file info, and album membership for the specified
+        photo.
+      parameters:
+      - description: Device serial
+        in: query
+        name: serial
+        type: string
+      - description: Relative path to the photo file
+        in: query
+        name: relPath
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_photos.PhotoMetadataJSON'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Get metadata for a single photo
       tags:
       - photos
   /sbom:

@@ -188,6 +188,9 @@ class _AlbumPageState extends State<AlbumPage> {
                             name: item.relPath.split('/').last,
                             initialIndex: idx,
                             imageCount: _items.length,
+                            relPath: item.relPath,
+                            serial: item.deviceSerial,
+                            sourceAlbum: widget.album,
                             getImageCount: () async => _items.length,
                             onLoadImage: (newIdx) async {
                               if (newIdx >= _items.length) return (null, '');

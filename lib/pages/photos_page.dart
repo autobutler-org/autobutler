@@ -647,6 +647,8 @@ class _PhotosPageState extends State<PhotosPage>
                   name: c.name,
                   initialIndex: idx,
                   imageCount: photos.length,
+                  relPath: c.apiPath,
+                  serial: c.deviceSerial,
                   getImageCount: () async =>
                       (await _photosForCategory(_selectedCategory)).length,
                   onLoadImage: (newIdx) async {
