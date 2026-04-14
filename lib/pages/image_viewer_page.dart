@@ -12,8 +12,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const _kSidebarOpenKey = 'photo_viewer_sidebar_open';
 const _kFavoritesKey = 'photo_viewer_favorites';
-// Local-asset rotation only (Cirrus photos use the server DB via rotationQuarters).
-const _kRotationsKey = 'photo_viewer_rotations';
 const _kSidebarWidth = 288.0;
 
 /// A full-screen photo viewer with metadata sidebar (desktop) / bottom drawer
@@ -84,6 +82,10 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   bool _sidebarOpen = true;
   bool _isFavorite = false;
   int _rotationQuarters = 0; // 0/1/2/3 × 90°
+
+  // Set to true whenever the photo list in the caller may need a refresh
+  // (photo deleted, or album membership changed). Returned via pop().
+  bool _listChanged = false;
   late AnimationController _rotationAnim;
   late Animation<double> _rotationValue;
 
@@ -131,23 +133,11 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     final sidebarOpen = prefs.getBool(_kSidebarOpenKey) ?? true;
     final favs = prefs.getStringList(_kFavoritesKey) ?? [];
 
-    // For local assets (no relPath) load rotation from SharedPreferences now —
-    // there is no server call to apply it later. For Cirrus photos, rotation
-    // comes from the metadata response and will be applied in
-    // _loadMetadataForCurrent; leave it at 0 for now.
-    int initialQuarters = 0;
-    if (!_isCirrusPhoto) {
-      initialQuarters = _localRotationFor(_currentName);
-    }
-
+    // Rotation comes from the server metadata response for Cirrus photos;
+    // leave it at 0 here and let _loadMetadataForCurrent apply it.
     setState(() {
       _sidebarOpen = sidebarOpen;
       _isFavorite = favs.contains(_favKey(_currentRelPath, _currentSerial));
-      _rotationQuarters = initialQuarters;
-      _rotationValue = Tween<double>(
-        begin: initialQuarters * math.pi / 2,
-        end: initialQuarters * math.pi / 2,
-      ).animate(_rotationAnim);
     });
     _loadMetadata();
   }
@@ -157,33 +147,10 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   String _favKey(String? relPath, String? serial) =>
       '${serial ?? ''}:${relPath ?? ''}';
 
-  // Rotation is server-backed for Cirrus photos (relPath != null).
-  // For local-device assets we fall back to SharedPreferences, keyed by name
-  // so each photo has its own entry rather than all sharing ':'.
+  // Rotation is always server-backed. Only Cirrus photos (with a relPath)
+  // support rotation — local device assets have no server path to key on.
   bool get _isCirrusPhoto =>
       _currentRelPath != null && _currentRelPath!.isNotEmpty;
-
-  int _localRotationFor(String name) {
-    final list = _prefs?.getStringList(_kRotationsKey) ?? [];
-    for (final entry in list) {
-      final idx = entry.indexOf(':');
-      if (idx < 0) continue;
-      if (entry.substring(0, idx) == name) {
-        return int.tryParse(entry.substring(idx + 1)) ?? 0;
-      }
-    }
-    return 0;
-  }
-
-  void _saveLocalRotation(String name, int quarters) {
-    final list = List<String>.from(_prefs?.getStringList(_kRotationsKey) ?? []);
-    final updated = list.where((e) {
-      final idx = e.indexOf(':');
-      return idx < 0 || e.substring(0, idx) != name;
-    }).toList();
-    if (quarters != 0) updated.add('$name:$quarters');
-    _prefs?.setStringList(_kRotationsKey, updated);
-  }
 
   // --- Navigation ---
 
@@ -221,12 +188,8 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       final favs = _prefs?.getStringList(_kFavoritesKey) ?? [];
       final newFavKey = _favKey(relPath, serial);
 
-      // For local assets, load rotation from SharedPreferences immediately.
-      // For Cirrus photos, reset to 0 — _loadMetadataForCurrent will apply
-      // the server-persisted value once metadata arrives.
-      final isCirrus = relPath != null && relPath.isNotEmpty;
-      final newQuarters = isCirrus ? 0 : _localRotationFor(name);
-
+      // Reset rotation to 0; _loadMetadataForCurrent will apply the
+      // server-persisted value once metadata arrives.
       setState(() {
         _currentIndex = newIndex;
         _currentBytes = bytes;
@@ -237,11 +200,8 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         _loading = false;
         _metadata = null;
         _isFavorite = favs.contains(newFavKey);
-        _rotationQuarters = newQuarters;
-        _rotationValue = Tween<double>(
-          begin: newQuarters * math.pi / 2,
-          end: newQuarters * math.pi / 2,
-        ).animate(_rotationAnim);
+        _rotationQuarters = 0;
+        _rotationValue = Tween<double>(begin: 0, end: 0).animate(_rotationAnim);
       });
       _loadMetadataForCurrent();
     } catch (_) {
@@ -305,12 +265,24 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     _prefs?.setStringList(_kFavoritesKey, favs);
   }
 
-  void _rotate() {
-    final oldAngle = _rotationQuarters * math.pi / 2;
-    final newQuarters = (_rotationQuarters + 1) % 4;
+  Future<void> _rotate() async {
+    if (!_isCirrusPhoto) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Rotation is only supported for Cirrus photos'),
+        ),
+      );
+      return;
+    }
+
+    final oldQuarters = _rotationQuarters;
+    final oldAngle = oldQuarters * math.pi / 2;
+    final newQuarters = (oldQuarters + 1) % 4;
     final newAngle =
         newQuarters * math.pi / 2 +
         (newQuarters == 0 ? math.pi * 2 : 0); // always animate forward
+
+    // Optimistically apply the rotation in the UI.
     setState(() => _rotationQuarters = newQuarters);
     _rotationValue = Tween<double>(
       begin: oldAngle,
@@ -318,17 +290,33 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     ).animate(CurvedAnimation(parent: _rotationAnim, curve: Curves.easeOut));
     _rotationAnim.forward(from: 0);
 
-    // Persist rotation. Cirrus photos → server DB. Local assets → SharedPreferences.
-    if (_isCirrusPhoto) {
-      CirrusService.rotatePhoto(
+    try {
+      await CirrusService.rotatePhoto(
         _currentRelPath!,
         serial: _currentSerial,
         rotationQuarters: newQuarters,
-      ).catchError((_) {
-        // Server save failed — rotation shows in UI but won't survive a reload.
+      );
+      // Evict the cached thumbnail so the grid picks up the new orientation
+      // on next display rather than serving the stale pre-rotation tile.
+      PaintingBinding.instance.imageCache.evict(
+        CirrusService.constructThumbnailUrl(
+          _currentRelPath!,
+          serial: _currentSerial,
+        ).toString(),
+      );
+    } catch (e) {
+      // Roll back the visual rotation and inform the user.
+      if (!mounted) return;
+      setState(() {
+        _rotationQuarters = oldQuarters;
+        _rotationValue = Tween<double>(begin: newAngle, end: oldAngle).animate(
+          CurvedAnimation(parent: _rotationAnim, curve: Curves.easeOut),
+        );
       });
-    } else {
-      _saveLocalRotation(_currentName, newQuarters);
+      _rotationAnim.forward(from: 0);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Rotation failed: $e')));
     }
   }
 
@@ -362,10 +350,11 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         relPath: relPath,
       );
       if (!mounted) return;
+      _listChanged = true;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Added to ${album.name}')));
-      _loadMetadata(); // refresh album list
+      _loadMetadata(); // refresh album list in sidebar
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -385,6 +374,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         relPath: relPath,
       );
       if (!mounted) return;
+      _listChanged = true;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Removed from ${album.name}')));
@@ -399,15 +389,20 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   }
 
   Future<void> _navigateToAlbum(AlbumRef ref) async {
-    try {
-      final album = await AlbumService.getAlbum(ref.id);
-      if (!mounted) return;
-      await Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => AlbumPage(album: album)));
-    } catch (_) {
-      // Album may have been deleted; ignore.
-    }
+    // Construct a minimal PhotoAlbum from the AlbumRef already in hand —
+    // no extra fetch needed since AlbumPage only needs id + name.
+    final album = PhotoAlbum(
+      id: ref.id,
+      name: ref.name,
+      parentId: null,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      itemCount: 0,
+    );
+    if (!mounted) return;
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => AlbumPage(album: album)));
   }
 
   Future<void> _confirmDelete() async {
@@ -447,7 +442,8 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         deviceSerial: _currentSerial,
       );
       if (!mounted) return;
-      Navigator.of(context).pop();
+      _listChanged = true;
+      Navigator.of(context).pop(_listChanged);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -469,7 +465,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         _navigate(1);
         return KeyEventResult.handled;
       case LogicalKeyboardKey.escape:
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(_listChanged);
         return KeyEventResult.handled;
       case LogicalKeyboardKey.keyI:
         _toggleSidebar();
@@ -512,7 +508,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       leading: IconButton(
         icon: const Icon(Icons.arrow_back),
         tooltip: 'Back (Esc)',
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () => Navigator.of(context).pop(_listChanged),
       ),
       title: showNav
           ? Text(

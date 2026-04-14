@@ -181,7 +181,7 @@ class _AlbumPageState extends State<AlbumPage> {
                         serial: item.deviceSerial,
                       );
                       if (bytes == null || !mounted) return;
-                      await navigator.push(
+                      final changed = await navigator.push<bool>(
                         MaterialPageRoute(
                           builder: (_) => ImageViewerPage(
                             bytes: bytes,
@@ -211,6 +211,7 @@ class _AlbumPageState extends State<AlbumPage> {
                           ),
                         ),
                       );
+                      if (changed == true) await _load();
                     },
                     onLongPress: () => _showItemMenu(context, item),
                     child: Stack(

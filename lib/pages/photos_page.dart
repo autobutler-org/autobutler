@@ -640,7 +640,7 @@ class _PhotosPageState extends State<PhotosPage>
             );
             if (bytes == null) return;
             if (!mounted) return;
-            await navigator.push(
+            final changed = await navigator.push<bool>(
               MaterialPageRoute(
                 builder: (_) => ImageViewerPage(
                   bytes: bytes,
@@ -673,6 +673,7 @@ class _PhotosPageState extends State<PhotosPage>
                 ),
               ),
             );
+            if (changed == true) await manualRefresh();
           },
           child: thumbnail,
         ),
@@ -702,7 +703,7 @@ class _PhotosPageState extends State<PhotosPage>
           final bytes = await a.originBytes;
           if (bytes == null) return;
           if (!mounted) return;
-          await navigator.push(
+          final changed = await navigator.push<bool>(
             MaterialPageRoute(
               builder: (_) => ImageViewerPage(
                 bytes: bytes,
@@ -733,6 +734,7 @@ class _PhotosPageState extends State<PhotosPage>
               ),
             ),
           );
+          if (changed == true) await manualRefresh();
         },
         child: assetThumb,
       ),
