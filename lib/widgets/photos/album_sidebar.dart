@@ -15,10 +15,10 @@ class AlbumSidebar extends StatefulWidget {
   final void Function(PhotoAlbum? album) onAlbumSelected;
 
   @override
-  State<AlbumSidebar> createState() => _AlbumSidebarState();
+  State<AlbumSidebar> createState() => AlbumSidebarState();
 }
 
-class _AlbumSidebarState extends State<AlbumSidebar> {
+class AlbumSidebarState extends State<AlbumSidebar> {
   List<PhotoAlbum> _albums = [];
   bool _loading = true;
 
@@ -27,6 +27,10 @@ class _AlbumSidebarState extends State<AlbumSidebar> {
     super.initState();
     _load();
   }
+
+  /// Reload the album list from the server. Call this after external changes
+  /// (e.g. a photo was added to an album from the image viewer).
+  Future<void> reload() => _load();
 
   Future<void> _load() async {
     try {

@@ -87,6 +87,8 @@ class _PhotosPageState extends State<PhotosPage>
   // This is the only reliable way: initialScrollOffset is set before the first
   // frame the user sees (WidgetsBinding post-frame), so there's no visible flash.
   final GlobalKey _navPanelKey = GlobalKey();
+  final GlobalKey<AlbumSidebarState> _albumSidebarKey =
+      GlobalKey<AlbumSidebarState>();
   bool _navScrollInitialized = false;
   bool _showScrollHint = true;
 
@@ -526,6 +528,7 @@ class _PhotosPageState extends State<PhotosPage>
           ],
           const SizedBox(height: 16),
           AlbumSidebar(
+            key: _albumSidebarKey,
             selectedAlbumId: null,
             onAlbumSelected: (album) {
               if (album == null) return;
@@ -673,7 +676,10 @@ class _PhotosPageState extends State<PhotosPage>
                 ),
               ),
             );
-            if (changed == true) await manualRefresh();
+            if (changed == true) {
+              await manualRefresh();
+              _albumSidebarKey.currentState?.reload();
+            }
           },
           child: thumbnail,
         ),
