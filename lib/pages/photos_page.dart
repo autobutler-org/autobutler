@@ -8,6 +8,7 @@ import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:autobutler/pages/album_page.dart';
+import 'package:autobutler/services/favorites_service.dart';
 import 'package:autobutler/widgets/photos/album_sidebar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:autobutler/router.dart';
@@ -33,6 +34,12 @@ class PhotoItem {
 
   factory PhotoItem.fromCirrus(CirrusFileNode c) => PhotoItem._(cirrus: c);
   factory PhotoItem.fromAsset(AssetEntity a) => PhotoItem._(asset: a);
+
+  /// Stable key for use in sets (favorites, selection).
+  String get selectionKey {
+    if (isCirrus) return '${cirrus!.deviceSerial}:${cirrus!.dirPath}';
+    return 'asset:${asset!.id}';
+  }
 }
 
 class _PhotosPageState extends State<PhotosPage>
@@ -58,6 +65,10 @@ class _PhotosPageState extends State<PhotosPage>
   bool _categoriesExpanded = false;
   int _previewColumns = _defaultCrossAxisCount;
   PhotoCategory _selectedCategory = PhotoCategory.cirrus;
+
+  // Favorites: set of selectionKeys for photos that are favorited.
+  // Loaded lazily as photos scroll into view.
+  final Set<String> _favoriteKeys = {};
 
   // Above-viewport nav: the hidden nav panel is measured once on first layout,
   // then the scroll controller's initial offset is set so the photo grid is
@@ -513,6 +524,40 @@ class _PhotosPageState extends State<PhotosPage>
 
   // Builds a single photo tile. Extracted so both the desktop GridView and
   // the mobile SliverGrid can share the same tile logic.
+  Future<void> _toggleFavorite(PhotoItem item) async {
+    if (!item.isCirrus) return;
+    final c = item.cirrus!;
+    try {
+      final nowFav = await FavoritesService.toggle(
+        relPath: c.dirPath,
+        serial: c.deviceSerial.isNotEmpty ? c.deviceSerial : null,
+      );
+      if (!mounted) return;
+      setState(() {
+        if (nowFav) {
+          _favoriteKeys.add(item.selectionKey);
+        } else {
+          _favoriteKeys.remove(item.selectionKey);
+        }
+      });
+    } catch (_) {}
+  }
+
+  Widget _buildStarOverlay(BuildContext context, PhotoItem item) {
+    final isFav = _favoriteKeys.contains(item.selectionKey);
+    if (!isFav) return const SizedBox.shrink();
+    return Positioned(
+      bottom: 4,
+      right: 4,
+      child: Icon(
+        Icons.star_rounded,
+        size: 16,
+        color: Colors.amber,
+        shadows: const [Shadow(blurRadius: 4, color: Colors.black54)],
+      ),
+    );
+  }
+
   Widget _buildPhotoTile(
     BuildContext context,
     List<PhotoItem> photos,
@@ -570,15 +615,22 @@ class _PhotosPageState extends State<PhotosPage>
               ),
             );
           },
-          child: Image.network(
-            url.toString(),
-            fit: BoxFit.cover,
-            loadingBuilder: (context, child, progress) {
-              if (progress == null) return child;
-              return Container(color: Colors.grey[300]);
-            },
-            errorBuilder: (context, error, stack) =>
-                Container(color: Colors.grey[300]),
+          onLongPress: () => _toggleFavorite(p),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.network(
+                url.toString(),
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return Container(color: Colors.grey[300]);
+                },
+                errorBuilder: (context, error, stack) =>
+                    Container(color: Colors.grey[300]),
+              ),
+              _buildStarOverlay(context, p),
+            ],
           ),
         ),
       );

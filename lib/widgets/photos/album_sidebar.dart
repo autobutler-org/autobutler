@@ -158,20 +158,41 @@ class _AlbumSidebarState extends State<AlbumSidebar> {
               ),
             ),
           )
-        else
-          ..._albums.map(
-            (album) => GestureDetector(
-              onLongPress: () => _showAlbumContextMenu(context, album),
-              child: AlbumTreeTile(
-                album: album,
-                selectedAlbumId: widget.selectedAlbumId,
-                onSelected: widget.onAlbumSelected,
-              ),
-            ),
-          ),
+        else ...[
+          // System albums pinned at top (Favorites always first)
+          ..._albums
+              .where((a) => a.isSystemAlbum)
+              .map((album) => _buildAlbumTile(context, album)),
+          // User albums below
+          ..._albums
+              .where((a) => !a.isSystemAlbum)
+              .map((album) => _buildAlbumTile(context, album)),
+        ],
         const SizedBox(height: 8),
         Divider(height: 1, color: colorScheme.outline.withValues(alpha: 0.5)),
       ],
+    );
+  }
+
+  Widget _buildAlbumTile(BuildContext context, PhotoAlbum album) {
+    if (album.isSystemAlbum) {
+      // System albums: no long-press menu, distinct icon
+      return AlbumTreeTile(
+        album: album,
+        selectedAlbumId: widget.selectedAlbumId,
+        onSelected: widget.onAlbumSelected,
+        systemIcon: album.isFavorites
+            ? Icons.star_rounded
+            : Icons.pending_actions_outlined,
+      );
+    }
+    return GestureDetector(
+      onLongPress: () => _showAlbumContextMenu(context, album),
+      child: AlbumTreeTile(
+        album: album,
+        selectedAlbumId: widget.selectedAlbumId,
+        onSelected: widget.onAlbumSelected,
+      ),
     );
   }
 
