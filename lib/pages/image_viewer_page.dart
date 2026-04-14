@@ -296,14 +296,10 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         serial: _currentSerial,
         rotationQuarters: newQuarters,
       );
-      // Evict the cached thumbnail so the grid picks up the new orientation
-      // on next display rather than serving the stale pre-rotation tile.
-      PaintingBinding.instance.imageCache.evict(
-        CirrusService.constructThumbnailUrl(
-          _currentRelPath!,
-          serial: _currentSerial,
-        ).toString(),
-      );
+      // Signal the parent grid to refresh. Combined with Cache-Control: no-cache
+      // on the thumbnail endpoint, the browser revalidates and picks up the new
+      // ETag (which covers rotation state) immediately.
+      _listChanged = true;
     } catch (e) {
       // Roll back the visual rotation and inform the user.
       if (!mounted) return;

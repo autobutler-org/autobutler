@@ -186,7 +186,11 @@ var getThumbnailRoute = serverutil.ApiRoute(
 		// --- ETag / conditional response ---
 		etag := etagFromModTime(cachedInfo.ModTime())
 		c.Header("ETag", etag)
-		c.Header("Cache-Control", "public, max-age=86400")
+		// no-cache: the browser must revalidate every request via If-None-Match.
+		// The ETag covers rotation state (cache key includes rotationQuarters),
+		// so the browser gets fresh bytes immediately after a rotation without
+		// waiting for a max-age window to expire.
+		c.Header("Cache-Control", "no-cache")
 		c.Header("Content-Type", contentTypeForExt(ext))
 
 		if match := c.GetHeader("If-None-Match"); match == etag {
