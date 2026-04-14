@@ -23,7 +23,7 @@ class ExamplePage extends StatelessWidget {
       DataRow([DataCell('Charlie'), DataCell('35'), DataCell('Chicago')]),
     ]);
     return Scaffold(
-      appBar: AppBar(title: const Text('data_table example')),
+      appBar: AppBar(title: const Text('data_table minimal example')),
       body: Table(
         children: table.rows.map((row) {
           return TableRow(

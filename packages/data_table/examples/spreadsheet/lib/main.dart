@@ -27,7 +27,7 @@ class _SpreadsheetState extends State<Spreadsheet> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('data_table example')),
+        appBar: AppBar(title: const Text('data_table spreadsheet example')),
         body: Table(
           children: table.rows.map((row) {
             return TableRow(
