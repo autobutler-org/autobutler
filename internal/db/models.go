@@ -40,6 +40,14 @@ type PhotoAlbumItem struct {
 	AddedAt      time.Time
 }
 
+type PhotoRotation struct {
+	ID               int64
+	DeviceSerial     string
+	RelPath          string
+	RotationQuarters int64
+	UpdatedAt        time.Time
+}
+
 type Session struct {
 	Token     string
 	UserID    int64

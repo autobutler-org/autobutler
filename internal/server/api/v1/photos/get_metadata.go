@@ -43,13 +43,14 @@ type AlbumRefJSON struct {
 
 // PhotoMetadataJSON is the full metadata response for a single photo.
 type PhotoMetadataJSON struct {
-	FileName string         `json:"fileName"`
-	FileSize int64          `json:"fileSize"`
-	MTime    int64          `json:"mtime"`
-	Width    int            `json:"width"`
-	Height   int            `json:"height"`
-	Exif     *ExifJSON      `json:"exif,omitempty"`
-	Albums   []AlbumRefJSON `json:"albums"`
+	FileName         string         `json:"fileName"`
+	FileSize         int64          `json:"fileSize"`
+	MTime            int64          `json:"mtime"`
+	Width            int            `json:"width"`
+	Height           int            `json:"height"`
+	RotationQuarters int64          `json:"rotationQuarters"`
+	Exif             *ExifJSON      `json:"exif,omitempty"`
+	Albums           []AlbumRefJSON `json:"albums"`
 }
 
 // getPhotoMetadata godoc
@@ -101,7 +102,20 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(err)
 	}
 
+	// --- EXIF (decoded once, used for dimensions fallback + metadata) ---
+	var rawExif *exif.Exif
+	if f, err := os.Open(fullPath); err == nil {
+		if x, err := exif.Decode(f); err == nil {
+			rawExif = x
+		}
+		f.Close()
+	}
+
 	// --- Dimensions ---
+	// Try standard Go image decoders first (JPEG, PNG).
+	// For HEIC/HEIF and other formats the decoder returns an error; fall back
+	// to the EXIF PixelXDimension / PixelYDimension tags which are present in
+	// virtually all camera-produced HEIC files.
 	width, height := 0, 0
 	if f, err := os.Open(fullPath); err == nil {
 		if cfg, _, err := image.DecodeConfig(f); err == nil {
@@ -110,14 +124,31 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 		}
 		f.Close()
 	}
-
-	// --- EXIF ---
-	var exifData *ExifJSON
-	if f, err := os.Open(fullPath); err == nil {
-		if x, err := exif.Decode(f); err == nil {
-			exifData = extractExif(x)
+	if (width == 0 || height == 0) && rawExif != nil {
+		if tag, err := rawExif.Get(exif.PixelXDimension); err == nil {
+			if v, err := tag.Int(0); err == nil {
+				width = v
+			}
 		}
-		f.Close()
+		if tag, err := rawExif.Get(exif.PixelYDimension); err == nil {
+			if v, err := tag.Int(0); err == nil {
+				height = v
+			}
+		}
+	}
+
+	var exifData *ExifJSON
+	if rawExif != nil {
+		exifData = extractExif(rawExif)
+	}
+
+	// --- Server-side rotation ---
+	var rotationQuarters int64
+	if rq, err := deps.Database().Queries.GetPhotoRotation(
+		context.Background(),
+		db.GetPhotoRotationParams{DeviceSerial: serial, RelPath: relPath},
+	); err == nil {
+		rotationQuarters = rq
 	}
 
 	// --- Album membership ---
@@ -137,13 +168,14 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 	}
 
 	return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(PhotoMetadataJSON{
-		FileName: filepath.Base(relPath),
-		FileSize: stat.Size(),
-		MTime:    stat.ModTime().Unix(),
-		Width:    width,
-		Height:   height,
-		Exif:     exifData,
-		Albums:   albumRefs,
+		FileName:         filepath.Base(relPath),
+		FileSize:         stat.Size(),
+		MTime:            stat.ModTime().Unix(),
+		Width:            width,
+		Height:           height,
+		RotationQuarters: rotationQuarters,
+		Exif:             exifData,
+		Albums:           albumRefs,
 	})
 }
 

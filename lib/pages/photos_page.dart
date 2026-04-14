@@ -653,7 +653,7 @@ class _PhotosPageState extends State<PhotosPage>
                       (await _photosForCategory(_selectedCategory)).length,
                   onLoadImage: (newIdx) async {
                     final live = await _photosForCategory(_selectedCategory);
-                    if (newIdx >= live.length) return (null, '');
+                    if (newIdx >= live.length) return (null, '', null, null);
                     final item = live[newIdx];
                     if (item.isCirrus) {
                       final nc = item.cirrus!;
@@ -662,12 +662,12 @@ class _PhotosPageState extends State<PhotosPage>
                         serial: nc.deviceSerial,
                       );
                       if (b == null) await manualRefresh();
-                      return (b, nc.name);
+                      return (b, nc.name, nc.apiPath, nc.deviceSerial);
                     } else {
                       final na = item.asset!;
                       final b = await na.originBytes;
                       if (b == null) await manualRefresh();
-                      return (b, na.id);
+                      return (b, na.id, null, null);
                     }
                   },
                 ),
@@ -713,7 +713,7 @@ class _PhotosPageState extends State<PhotosPage>
                     (await _photosForCategory(_selectedCategory)).length,
                 onLoadImage: (newIdx) async {
                   final live = await _photosForCategory(_selectedCategory);
-                  if (newIdx >= live.length) return (null, '');
+                  if (newIdx >= live.length) return (null, '', null, null);
                   final item = live[newIdx];
                   if (item.isCirrus) {
                     final nc = item.cirrus!;
@@ -722,12 +722,12 @@ class _PhotosPageState extends State<PhotosPage>
                       serial: nc.deviceSerial,
                     );
                     if (b == null) await manualRefresh();
-                    return (b, nc.name);
+                    return (b, nc.name, nc.apiPath, nc.deviceSerial);
                   } else {
                     final na = item.asset!;
                     final b = await na.originBytes;
                     if (b == null) await manualRefresh();
-                    return (b, na.id);
+                    return (b, na.id, null, null);
                   }
                 },
               ),

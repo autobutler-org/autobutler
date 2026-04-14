@@ -66,6 +66,9 @@ class PhotoMetadata {
   final DateTime mtime;
   final int width;
   final int height;
+
+  /// Server-persisted rotation: 0/1/2/3 × 90° CW.
+  final int rotationQuarters;
   final PhotoExif? exif;
   final List<AlbumRef> albums;
 
@@ -75,6 +78,7 @@ class PhotoMetadata {
     required this.mtime,
     required this.width,
     required this.height,
+    this.rotationQuarters = 0,
     this.exif,
     required this.albums,
   });
@@ -85,6 +89,7 @@ class PhotoMetadata {
     mtime: DateTime.fromMillisecondsSinceEpoch((json['mtime'] as int) * 1000),
     width: json['width'] as int,
     height: json['height'] as int,
+    rotationQuarters: (json['rotationQuarters'] as int?) ?? 0,
     exif: json['exif'] != null
         ? PhotoExif.fromJson(json['exif'] as Map<String, dynamic>)
         : null,

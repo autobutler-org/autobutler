@@ -306,8 +306,22 @@ definitions:
         type: integer
       mtime:
         type: integer
+      rotationQuarters:
+        type: integer
       width:
         type: integer
+    type: object
+  v1_photos.rotatePhotoRequest:
+    properties:
+      relPath:
+        type: string
+      rotationQuarters:
+        description: 0–3; 0 deletes the record
+        type: integer
+      serial:
+        type: string
+    required:
+    - relPath
     type: object
   v1_settings.SettingsJSON:
     properties:
@@ -1455,6 +1469,36 @@ paths:
           schema:
             $ref: '#/definitions/serverutil.Response'
       summary: Get metadata for a single photo
+      tags:
+      - photos
+  /photos/rotate:
+    post:
+      consumes:
+      - application/json
+      description: Persists the viewer rotation (0/1/2/3 × 90° CW) for a photo server-side.
+      parameters:
+      - description: Rotation request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1_photos.rotatePhotoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Save the rotation for a photo
       tags:
       - photos
   /sbom:

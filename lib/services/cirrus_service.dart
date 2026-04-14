@@ -490,6 +490,29 @@ class CirrusService with AuthenticatedService {
     );
   }
 
+  /// Persists [rotationQuarters] (0–3) for a photo on the server.
+  /// A value of 0 removes the rotation record entirely.
+  static Future<void> rotatePhoto(
+    String relPath, {
+    String? serial,
+    required int rotationQuarters,
+  }) async {
+    final uri = _apiBaseUri.resolve('/api/v1/photos/rotate');
+    final body = jsonEncode({
+      'relPath': relPath,
+      'serial': serial?.trim() ?? '',
+      'rotationQuarters': rotationQuarters % 4,
+    });
+    final response = await http.post(
+      uri,
+      headers: {..._authHeaders, 'Content-Type': 'application/json'},
+      body: body,
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to save rotation (${response.statusCode})');
+    }
+  }
+
   static Uri _buildDownloadUri(String filePath, {String? serial}) {
     final querySegments = <String>[
       'filePath=${Uri.encodeQueryComponent(filePath)}',

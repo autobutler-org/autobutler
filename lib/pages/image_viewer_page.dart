@@ -12,7 +12,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const _kSidebarOpenKey = 'photo_viewer_sidebar_open';
 const _kFavoritesKey = 'photo_viewer_favorites';
-const _kRotationsKey = 'photo_viewer_rotations';
 const _kSidebarWidth = 288.0;
 
 /// A full-screen photo viewer with metadata sidebar (desktop) / bottom drawer
@@ -34,7 +33,11 @@ class ImageViewerPage extends StatefulWidget {
   final String name;
   final int initialIndex;
   final int imageCount;
-  final Future<(Uint8List?, String)> Function(int index)? onLoadImage;
+
+  /// Returns (bytes, name, relPath, serial). relPath and serial may be null
+  /// for local-device assets that have no Cirrus path.
+  final Future<(Uint8List?, String, String?, String?)> Function(int index)?
+  onLoadImage;
   final Future<int> Function()? getImageCount;
 
   /// Relative path on the Cirrus server (enables metadata & server actions).
@@ -125,17 +128,11 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     _prefs = prefs;
     final sidebarOpen = prefs.getBool(_kSidebarOpenKey) ?? true;
     final favs = prefs.getStringList(_kFavoritesKey) ?? [];
-    final rotations = prefs.getStringList(_kRotationsKey) ?? [];
-    final rotKey = _rotKey(_currentRelPath, _currentSerial);
-    final quarters = _parseRotation(rotations, rotKey);
     setState(() {
       _sidebarOpen = sidebarOpen;
       _isFavorite = favs.contains(_favKey(_currentRelPath, _currentSerial));
-      _rotationQuarters = quarters;
-      _rotationValue = Tween<double>(
-        begin: quarters * math.pi / 2,
-        end: quarters * math.pi / 2,
-      ).animate(_rotationAnim);
+      // Rotation is initialised to 0 here; _loadMetadata will apply the
+      // server-persisted value once metadata arrives.
     });
     _loadMetadata();
   }
@@ -144,29 +141,6 @@ class _ImageViewerPageState extends State<ImageViewerPage>
 
   String _favKey(String? relPath, String? serial) =>
       '${serial ?? ''}:${relPath ?? ''}';
-
-  String _rotKey(String? relPath, String? serial) =>
-      '${serial ?? ''}:${relPath ?? ''}';
-
-  int _parseRotation(List<String> list, String key) {
-    for (final entry in list) {
-      final idx = entry.indexOf(':');
-      if (idx < 0) continue;
-      if (entry.substring(0, idx) == key) {
-        return int.tryParse(entry.substring(idx + 1)) ?? 0;
-      }
-    }
-    return 0;
-  }
-
-  List<String> _setRotation(List<String> list, String key, int quarters) {
-    final updated = list.where((e) {
-      final idx = e.indexOf(':');
-      return idx < 0 || e.substring(0, idx) != key;
-    }).toList();
-    if (quarters != 0) updated.add('$key:$quarters');
-    return updated;
-  }
 
   // --- Navigation ---
 
@@ -181,7 +155,9 @@ class _ImageViewerPageState extends State<ImageViewerPage>
 
     setState(() => _loading = true);
     try {
-      final (bytes, name) = await widget.onLoadImage!(newIndex);
+      final (bytes, name, relPath, serial) = await widget.onLoadImage!(
+        newIndex,
+      );
       if (!mounted) return;
       if (bytes == null) {
         setState(() => _loading = false);
@@ -198,17 +174,23 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       }
       if (!mounted) return;
 
-      // Determine new relPath/serial from the new index if possible. We can't
-      // always know (the onLoadImage callback doesn't return them), so keep the
-      // current values and reload metadata separately if the caller provides
-      // them. Callers that subclass this for Cirrus navigation can override.
+      // Refresh favorite state for the new photo's key.
+      final favs = _prefs?.getStringList(_kFavoritesKey) ?? [];
+      final newFavKey = _favKey(relPath, serial);
+
       setState(() {
         _currentIndex = newIndex;
         _currentBytes = bytes;
         _currentName = name;
+        _currentRelPath = relPath;
+        _currentSerial = serial;
         _liveImageCount = updatedCount;
         _loading = false;
         _metadata = null;
+        _isFavorite = favs.contains(newFavKey);
+        // Reset rotation to 0 until metadata arrives with the server value.
+        _rotationQuarters = 0;
+        _rotationValue = Tween<double>(begin: 0, end: 0).animate(_rotationAnim);
       });
       _loadMetadataForCurrent();
     } catch (_) {
@@ -235,9 +217,16 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         serial: _currentSerial,
       );
       if (!mounted) return;
+      // Apply the server-persisted rotation for this photo.
+      final quarters = meta.rotationQuarters.clamp(0, 3);
       setState(() {
         _metadata = meta;
         _metadataLoading = false;
+        _rotationQuarters = quarters;
+        _rotationValue = Tween<double>(
+          begin: quarters * math.pi / 2,
+          end: quarters * math.pi / 2,
+        ).animate(_rotationAnim);
       });
     } catch (_) {
       if (mounted) setState(() => _metadataLoading = false);
@@ -278,14 +267,18 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     ).animate(CurvedAnimation(parent: _rotationAnim, curve: Curves.easeOut));
     _rotationAnim.forward(from: 0);
 
-    final rotKey = _rotKey(_currentRelPath, _currentSerial);
-    final rotations = List<String>.from(
-      _prefs?.getStringList(_kRotationsKey) ?? [],
-    );
-    _prefs?.setStringList(
-      _kRotationsKey,
-      _setRotation(rotations, rotKey, newQuarters),
-    );
+    // Persist to server (fire-and-forget; non-fatal on error).
+    final relPath = _currentRelPath;
+    if (relPath != null && relPath.isNotEmpty) {
+      CirrusService.rotatePhoto(
+        relPath,
+        serial: _currentSerial,
+        rotationQuarters: newQuarters,
+      ).catchError((_) {
+        // Server save failed — the UI still shows the rotation but it won't
+        // persist across sessions. A retry could be added here.
+      });
+    }
   }
 
   Future<void> _download() async {
@@ -436,6 +429,10 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       case LogicalKeyboardKey.keyR:
         _rotate();
         return KeyEventResult.handled;
+      case LogicalKeyboardKey.slash:
+        // '?' on US keyboards is Shift+Slash; check for that too.
+        _showShortcutsDialog(context);
+        return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
   }
@@ -464,7 +461,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       foregroundColor: Colors.white,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back),
-        tooltip: 'Back',
+        tooltip: 'Back (Esc)',
         onPressed: () => Navigator.of(context).pop(),
       ),
       title: showNav
@@ -566,13 +563,62 @@ class _ImageViewerPageState extends State<ImageViewerPage>
               ),
             ],
           ),
+        Tooltip(
+          message: 'Keyboard shortcuts (?)',
+          child: IconButton(
+            icon: const Icon(Icons.keyboard_outlined, size: 20),
+            onPressed: () => _showShortcutsDialog(context),
+          ),
+        ),
         const SizedBox(width: 4),
       ],
     );
   }
 
-  Widget _buildPhotoArea() {
+  void _showShortcutsDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text(
+          'Keyboard shortcuts',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _ShortcutRow(
+                shortcut: '← →',
+                description: 'Previous / Next photo',
+              ),
+              _ShortcutRow(shortcut: 'F', description: 'Toggle favorite'),
+              _ShortcutRow(shortcut: 'R', description: 'Rotate 90° clockwise'),
+              _ShortcutRow(shortcut: 'I', description: 'Toggle info panel'),
+              _ShortcutRow(shortcut: 'Esc', description: 'Close viewer'),
+              _ShortcutRow(shortcut: '?', description: 'Show this help'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close', style: TextStyle(color: Colors.white70)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhotoArea({bool isMobile = false}) {
     return GestureDetector(
+      onTap: isMobile && _sidebarOpen
+          ? () => _drawerController.animateTo(
+              0.08,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+            )
+          : null,
       onHorizontalDragEnd: (details) {
         if (details.primaryVelocity == null) return;
         if (details.primaryVelocity! < -200) _navigate(1);
@@ -627,7 +673,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   Widget _buildMobileBody() {
     return Stack(
       children: [
-        _buildPhotoArea(),
+        _buildPhotoArea(isMobile: true),
         if (_sidebarOpen)
           DraggableScrollableSheet(
             controller: _drawerController,
@@ -858,11 +904,15 @@ class _MetadataContent {
     // --- File info ---
     if (metadata != null) {
       final m = metadata;
+      final ext = m.fileName.contains('.')
+          ? m.fileName.split('.').last.toUpperCase()
+          : 'FILE';
       sections.add(
         _Section(
           title: 'File Info',
           children: [
             _InfoRow(icon: Icons.insert_drive_file_outlined, value: m.fileName),
+            _InfoRow(icon: Icons.image_outlined, value: ext),
             _InfoRow(
               icon: Icons.storage_outlined,
               value: _formatBytes(m.fileSize),
@@ -1023,6 +1073,41 @@ class _InfoRow extends StatelessWidget {
           ),
           if (tappable)
             const Icon(Icons.chevron_right, size: 16, color: Colors.white24),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShortcutRow extends StatelessWidget {
+  final String shortcut;
+  final String description;
+
+  const _ShortcutRow({required this.shortcut, required this.description});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: Colors.white12,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              shortcut,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(description, style: const TextStyle(color: Colors.white70)),
         ],
       ),
     );

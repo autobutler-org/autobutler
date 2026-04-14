@@ -193,13 +193,20 @@ class _AlbumPageState extends State<AlbumPage> {
                             sourceAlbum: widget.album,
                             getImageCount: () async => _items.length,
                             onLoadImage: (newIdx) async {
-                              if (newIdx >= _items.length) return (null, '');
+                              if (newIdx >= _items.length) {
+                                return (null, '', null, null);
+                              }
                               final ni = _items[newIdx];
                               final b = await CirrusService.downloadFileBytes(
                                 ni.relPath,
                                 serial: ni.deviceSerial,
                               );
-                              return (b, ni.relPath.split('/').last);
+                              return (
+                                b,
+                                ni.relPath.split('/').last,
+                                ni.relPath,
+                                ni.deviceSerial,
+                              );
                             },
                           ),
                         ),

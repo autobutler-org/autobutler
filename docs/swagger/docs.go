@@ -1629,6 +1629,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/photos/rotate": {
+            "post": {
+                "description": "Persists the viewer rotation (0/1/2/3 × 90° CW) for a photo server-side.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "photos"
+                ],
+                "summary": "Save the rotation for a photo",
+                "parameters": [
+                    {
+                        "description": "Rotation request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1_photos.rotatePhotoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/sbom": {
             "get": {
                 "description": "Returns the Go version and all embedded dependency information from the compiled binary",
@@ -2609,8 +2655,29 @@ const docTemplate = `{
                 "mtime": {
                     "type": "integer"
                 },
+                "rotationQuarters": {
+                    "type": "integer"
+                },
                 "width": {
                     "type": "integer"
+                }
+            }
+        },
+        "v1_photos.rotatePhotoRequest": {
+            "type": "object",
+            "required": [
+                "relPath"
+            ],
+            "properties": {
+                "relPath": {
+                    "type": "string"
+                },
+                "rotationQuarters": {
+                    "description": "0–3; 0 deletes the record",
+                    "type": "integer"
+                },
+                "serial": {
+                    "type": "string"
                 }
             }
         },
