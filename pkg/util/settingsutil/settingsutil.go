@@ -14,21 +14,31 @@ const settingsFileName = "settings.json"
 
 // Settings holds application-level user-configurable settings.
 type Settings struct {
-	AutoUpdate          bool   `json:"autoUpdate"`
-	RemoteAccessEnabled bool   `json:"remoteAccessEnabled"`
+	AutoUpdate          bool `json:"autoUpdate"`
+	RemoteAccessEnabled bool `json:"remoteAccessEnabled"`
+	// RemoteAccessAuthKey is the Tailscale/Headscale pre-auth key used for
+	// initial tsnet registration. It is stored at rest so the node can
+	// reconnect after a restart before tsnet has written its own persistent
+	// state. The file is created with mode 0600 (owner-read/write only),
+	// matching the security model of SSH private keys on the same host.
+	RemoteAccessAuthKey string `json:"remoteAccessAuthKey"`
 	DevMode             bool   `json:"devMode"`
 	ActiveBranch        string `json:"activeBranch,omitempty"`
 	DeviceID            string `json:"deviceId,omitempty"`
 }
 
 var (
-	mu     sync.Mutex
-	cached *Settings
+	mu           sync.Mutex
+	cached       *Settings
+	pathOverride string // set by ResetForTesting only
 )
 
-func settingsPath() (string, error) {
+func settingsPath() string {
+	if pathOverride != "" {
+		return pathOverride
+	}
 	dataDir := storageutil.GetDataDir()
-	return filepath.Join(dataDir, settingsFileName), nil
+	return filepath.Join(dataDir, settingsFileName)
 }
 
 // Load reads settings from disk (or returns defaults if not present).
@@ -44,10 +54,7 @@ func Load() (*Settings, error) {
 		return &copy, nil
 	}
 
-	path, err := settingsPath()
-	if err != nil {
-		return nil, err
-	}
+	path := settingsPath()
 
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
@@ -75,12 +82,9 @@ func Save(s *Settings) error {
 	mu.Lock()
 	defer mu.Unlock()
 
-	path, err := settingsPath()
-	if err != nil {
-		return err
-	}
+	path := settingsPath()
 
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 		return fmt.Errorf("failed to create settings directory: %w", err)
 	}
 
@@ -96,12 +100,6 @@ func Save(s *Settings) error {
 	snapshot := *s
 	cached = &snapshot
 	return nil
-}
-
-// invalidateCache clears the in-memory cache so the next Load() re-reads disk.
-// Must be called with mu held.
-func invalidateCache() {
-	cached = nil
 }
 
 // GetAutoUpdate returns whether automatic updates are enabled.
@@ -130,17 +128,17 @@ func SetAutoUpdate(enabled bool) error {
 	return Save(s)
 }
 
-// GetRemoteAccess returns whether remote access is enabled.
-func GetRemoteAccess() bool {
+// GetRemoteAccess returns whether remote access is enabled and the stored auth key.
+func GetRemoteAccess() (bool, string) {
 	s, err := Load()
 	if err != nil {
-		return false
+		return false, ""
 	}
-	return s.RemoteAccessEnabled
+	return s.RemoteAccessEnabled, s.RemoteAccessAuthKey
 }
 
-// SetRemoteAccess sets the remote access enabled flag and persists it.
-func SetRemoteAccess(enabled bool) error {
+// SetRemoteAccess sets the remote access enabled flag and auth key, and persists them.
+func SetRemoteAccess(enabled bool, authKey string) error {
 	mu.Lock()
 	s := cached
 	mu.Unlock()
@@ -153,6 +151,7 @@ func SetRemoteAccess(enabled bool) error {
 		s = loaded
 	}
 	s.RemoteAccessEnabled = enabled
+	s.RemoteAccessAuthKey = authKey
 	return Save(s)
 }
 
@@ -206,4 +205,13 @@ func SetActiveBranch(branch string) error {
 	}
 	s.ActiveBranch = branch
 	return Save(s)
+}
+
+// ResetForTesting resets in-memory state and redirects the settings file to
+// path. Call this at the start of each test that touches settingsutil.
+func ResetForTesting(path string) {
+	mu.Lock()
+	defer mu.Unlock()
+	cached = nil
+	pathOverride = path
 }

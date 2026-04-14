@@ -77,8 +77,44 @@ func ImageToThumbnail(filePath string, width, height uint) (image.Image, string,
 
 	img, _ = CorrectImageOrientation(img, file)
 
-	thumbnail := resize.Resize(width, height, img, resize.Lanczos3)
-	return thumbnail, format, nil
+	// Scale so the shorter side fills the target dimension, then center-crop.
+	// This preserves aspect ratio rather than squishing the image.
+	bounds := img.Bounds()
+	srcW := uint(bounds.Dx())
+	srcH := uint(bounds.Dy())
+
+	var scaledW, scaledH uint
+	if srcW*height > srcH*width {
+		// Image is wider than target: scale by height, crop width
+		scaledH = height
+		scaledW = srcW * height / srcH
+	} else {
+		// Image is taller than target: scale by width, crop height
+		scaledW = width
+		scaledH = srcH * width / srcW
+	}
+
+	scaled := resize.Resize(scaledW, scaledH, img, resize.Lanczos3)
+
+	scaledBounds := scaled.Bounds()
+	x0 := (scaledBounds.Dx() - int(width)) / 2
+	y0 := (scaledBounds.Dy() - int(height)) / 2
+
+	type subImager interface {
+		SubImage(r image.Rectangle) image.Image
+	}
+	if si, ok := scaled.(subImager); ok {
+		return si.SubImage(image.Rect(x0, y0, x0+int(width), y0+int(height))), format, nil
+	}
+
+	// Fallback: manual pixel copy (resize library always returns a subImager in practice)
+	cropped := image.NewRGBA(image.Rect(0, 0, int(width), int(height)))
+	for y := 0; y < int(height); y++ {
+		for x := 0; x < int(width); x++ {
+			cropped.Set(x, y, scaled.At(x0+x, y0+y))
+		}
+	}
+	return cropped, format, nil
 }
 
 // CorrectImageOrientation reads EXIF orientation data and rotates/flips the image accordingly.
