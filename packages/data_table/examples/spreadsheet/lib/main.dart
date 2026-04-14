@@ -40,7 +40,6 @@ class _SpreadsheetState extends State<Spreadsheet> {
                 focusNode: keyboardFocus,
                 onKeyEvent: (value) {
                   if (value is! KeyDownEvent) return;
-                  print(value);
                   switch (value.logicalKey.keyLabel) {
                     case 'Arrow Up':
                       if (highlightedRow > 0) {
