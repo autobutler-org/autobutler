@@ -42,48 +42,24 @@ class _SpreadsheetState extends State<Spreadsheet> {
                   if (value is! KeyDownEvent) return;
                   switch (value.logicalKey.keyLabel) {
                     case 'Arrow Up':
-                      if (highlightedRow > 0) {
-                        setState(() {
-                          highlightedRow--;
-                        });
-                      }
+                      _moveUp();
                       break;
                     case 'Arrow Down':
-                      if (highlightedRow < table.rows.length - 1) {
-                        setState(() {
-                          highlightedRow++;
-                        });
-                      }
+                      _moveDown();
                       break;
                     case 'Arrow Left':
-                      if (highlightedCol > 0) {
-                        setState(() {
-                          highlightedCol--;
-                        });
-                      }
+                      _moveLeft();
                       break;
                     case 'Tab':
                       final isShiftPressed =
                           HardwareKeyboard.instance.isShiftPressed;
                       if (isShiftPressed) {
-                        if (highlightedCol > 0) {
-                          setState(() {
-                            highlightedCol--;
-                          });
-                        }
+                        _moveLeft();
                       } else {
-                        if (highlightedCol < table.rows[0].cells.length - 1) {
-                          setState(() {
-                            highlightedCol++;
-                          });
-                        }
+                        _moveRight();
                       }
                     case 'Arrow Right':
-                      if (highlightedCol < table.rows[0].cells.length - 1) {
-                        setState(() {
-                          highlightedCol++;
-                        });
-                      }
+                      _moveRight();
                       break;
                     case 'Enter':
                       if (highlightedRow >= 0 && highlightedCol >= 0) {
@@ -242,5 +218,37 @@ class _SpreadsheetState extends State<Spreadsheet> {
       highlightedCol = -1;
       keyboardFocus.unfocus();
     });
+  }
+
+  void _moveUp() {
+    if (highlightedRow > 0) {
+      setState(() {
+        highlightedRow--;
+      });
+    }
+  }
+
+  void _moveDown() {
+    if (highlightedRow < table.rows.length - 1) {
+      setState(() {
+        highlightedRow++;
+      });
+    }
+  }
+
+  void _moveLeft() {
+    if (highlightedCol > 0) {
+      setState(() {
+        highlightedCol--;
+      });
+    }
+  }
+
+  void _moveRight() {
+    if (highlightedCol < table.rows[0].cells.length - 1) {
+      setState(() {
+        highlightedCol++;
+      });
+    }
   }
 }
