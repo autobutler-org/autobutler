@@ -177,6 +177,20 @@ func CorrectImageOrientation(img image.Image, r io.ReadSeeker) (image.Image, err
 	return img, nil // coverage: ignore - unreachable - all orientation values are covered
 }
 
+// ApplyRotation rotates img by quarters × 90° clockwise (0–3).
+func ApplyRotation(img image.Image, quarters int64) image.Image {
+	switch quarters % 4 {
+	case 1:
+		return rotate90(img)
+	case 2:
+		return rotate180(img)
+	case 3:
+		return rotate270(img)
+	default:
+		return img
+	}
+}
+
 func rotate90(img image.Image) image.Image {
 	bounds := img.Bounds()
 	newImg := image.NewRGBA(image.Rect(0, 0, bounds.Dy(), bounds.Dx()))
