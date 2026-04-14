@@ -58,6 +58,7 @@ class _SpreadsheetState extends State<Spreadsheet> {
                       } else {
                         _moveRight();
                       }
+                      break;
                     case 'Arrow Right':
                       _moveRight();
                       break;
