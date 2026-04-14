@@ -15,6 +15,8 @@ class _SpreadsheetState extends State<Spreadsheet> {
   final activeCellController = TextEditingController();
   var activeRow = -1;
   var activeCol = -1;
+  var highlightedRow = -1;
+  var highlightedCol = -1;
 
   @override
   void initState() {
@@ -47,6 +49,9 @@ class _SpreadsheetState extends State<Spreadsheet> {
                                   .map((c, cell) {
                                     final isActiveCell =
                                         (r == activeRow && c == activeCol);
+                                    final isHighlightedCell =
+                                        (r == highlightedRow &&
+                                            c == highlightedCol);
                                     const borderWidth = 1.0;
                                     final widget = MouseRegion(
                                         cursor: isActiveCell
@@ -56,14 +61,21 @@ class _SpreadsheetState extends State<Spreadsheet> {
                                             height:
                                                 40, // pinned height to avoid layout shifts
                                             decoration: BoxDecoration(
+                                              color: isActiveCell
+                                                  ? Colors.grey.shade300
+                                                  : null,
                                               border: Border.all(
-                                                color: isActiveCell
+                                                color: (isActiveCell ||
+                                                        isHighlightedCell)
                                                     ? Theme.of(context)
                                                         .colorScheme
                                                         .primary
                                                     : Colors.grey.shade400,
                                                 width: borderWidth *
-                                                    (isActiveCell ? 2 : 1),
+                                                    ((isActiveCell ||
+                                                            isHighlightedCell)
+                                                        ? 2
+                                                        : 1),
                                               ),
                                               borderRadius: BorderRadius.zero,
                                             ),
@@ -100,12 +112,25 @@ class _SpreadsheetState extends State<Spreadsheet> {
                                                   )
                                                 : GestureDetector(
                                                     onTap: () {
-                                                      setState(() {
-                                                        activeCellController
-                                                            .text = cell.data;
-                                                        activeRow = r;
-                                                        activeCol = c;
-                                                      });
+                                                      if (activeRow >= 0 &&
+                                                          activeCol >= 0) {
+                                                        _storeCellValue(
+                                                            activeCellController
+                                                                .text);
+                                                      } else {
+                                                        setState(() {
+                                                          if (highlightedRow ==
+                                                                  r &&
+                                                              highlightedCol ==
+                                                                  c) {
+                                                            _activateCell(
+                                                                cell, r, c);
+                                                          } else {
+                                                            highlightedRow = r;
+                                                            highlightedCol = c;
+                                                          }
+                                                        });
+                                                      }
                                                     },
                                                     child: Text(cell.data))));
                                     return MapEntry(c, widget);
@@ -132,6 +157,18 @@ class _SpreadsheetState extends State<Spreadsheet> {
       table.rows[activeRow].cells[activeCol] = DataCell(value);
       activeRow = -1;
       activeCol = -1;
+      highlightedRow = -1;
+      highlightedCol = -1;
+    });
+  }
+
+  void _activateCell(DataCell cell, int row, int col) {
+    setState(() {
+      activeCellController.text = cell.data;
+      activeRow = row;
+      activeCol = col;
+      highlightedRow = -1;
+      highlightedCol = -1;
     });
   }
 }
