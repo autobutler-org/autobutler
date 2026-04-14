@@ -296,9 +296,16 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         serial: _currentSerial,
         rotationQuarters: newQuarters,
       );
-      // Signal the parent grid to refresh. Combined with Cache-Control: no-cache
-      // on the thumbnail endpoint, the browser revalidates and picks up the new
-      // ETag (which covers rotation state) immediately.
+      // Evict the old decoded image from Flutter's Dart-level image cache so
+      // the next Image.network load actually hits the network rather than
+      // being served from memory. Combined with Cache-Control: no-cache on
+      // the server, the revalidation request picks up the new ETag
+      // (rotation-aware) and gets the updated thumbnail bytes.
+      final thumbUrl = CirrusService.constructThumbnailUrl(
+        _currentRelPath!,
+        serial: _currentSerial,
+      ).toString();
+      await NetworkImage(thumbUrl).evict();
       _listChanged = true;
     } catch (e) {
       // Roll back the visual rotation and inform the user.
