@@ -45,6 +45,7 @@ class _SpreadsheetState extends State<Spreadsheet> {
                                 padding: const EdgeInsets.all(8.0),
                                 child: (r == activeRow && c == activeCol)
                                     ? TextField(
+                                        autofocus: true,
                                         controller: activeCellController,
                                         decoration: const InputDecoration(
                                           // contentPadding: EdgeInsets.zero,
@@ -56,7 +57,6 @@ class _SpreadsheetState extends State<Spreadsheet> {
                                         textAlignVertical:
                                             TextAlignVertical.center,
                                         onSubmitted: _setCell,
-                                        autofocus: true,
                                         onEditingComplete: () {
                                           _setCell(activeCellController.text);
                                         },
@@ -66,13 +66,11 @@ class _SpreadsheetState extends State<Spreadsheet> {
                                       )
                                     : GestureDetector(
                                         onTap: () {
-                                          final tappedCellRow = r;
-                                          final tappedCellCol = c;
                                           setState(() {
                                             activeCellController.text =
                                                 cell.data;
-                                            activeRow = tappedCellRow;
-                                            activeCol = tappedCellCol;
+                                            activeRow = r;
+                                            activeCol = c;
                                           });
                                         },
                                         child: Text(cell.data)));
@@ -97,7 +95,6 @@ class _SpreadsheetState extends State<Spreadsheet> {
 
   void _setCell(String value) {
     setState(() {
-      print('Updating cell at ($activeRow, $activeCol) with value: $value');
       table.rows[activeRow].cells[activeCol] = DataCell(value);
       activeRow = -1;
       activeCol = -1;
