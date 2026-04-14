@@ -36,40 +36,66 @@ class _SpreadsheetState extends State<Spreadsheet> {
       home: Scaffold(
         appBar: AppBar(title: const Text('data_table spreadsheet example')),
         body: Center(
-            child: KeyboardListener(
+            child: Focus(
                 focusNode: keyboardFocus,
-                onKeyEvent: (value) {
-                  if (value is! KeyDownEvent) return;
-                  switch (value.logicalKey.keyLabel) {
-                    case 'Arrow Up':
+                onKeyEvent: (node, event) {
+                  if (event is! KeyDownEvent) return KeyEventResult.ignored;
+                  final key = event.logicalKey;
+                  switch (key) {
+                    case LogicalKeyboardKey.arrowUp:
                       _moveUp();
-                      break;
-                    case 'Arrow Down':
+                      return KeyEventResult.handled;
+                    case LogicalKeyboardKey.arrowDown:
                       _moveDown();
-                      break;
-                    case 'Arrow Left':
+                      return KeyEventResult.handled;
+                    case LogicalKeyboardKey.arrowLeft:
                       _moveLeft();
-                      break;
-                    case 'Tab':
+                      return KeyEventResult.handled;
+                    case LogicalKeyboardKey.arrowRight:
+                      _moveRight();
+                      return KeyEventResult.handled;
+                    case LogicalKeyboardKey.enter:
+                      if (highlightedRow >= 0 && highlightedCol >= 0) {
+                        _activateCell(
+                            table.rows[highlightedRow].cells[highlightedCol],
+                            highlightedRow,
+                            highlightedCol);
+                      } else if (activeRow >= 0 && activeCol >= 0) {
+                        final previousRow = activeRow;
+                        final previousCol = activeCol;
+                        _storeCellValue(activeCellController.text,
+                            highlightRow: previousRow,
+                            highlightCol: previousCol);
+                        keyboardFocus.requestFocus();
+                      }
+                      return KeyEventResult.handled;
+                    case LogicalKeyboardKey.tab:
                       final isShiftPressed =
                           HardwareKeyboard.instance.isShiftPressed;
+                      if (activeRow >= 0 && activeCol >= 0) {
+                        final previousRow = activeRow;
+                        final previousCol = activeCol;
+                        _storeCellValue(activeCellController.text,
+                            highlightRow: previousRow,
+                            highlightCol: previousCol);
+                        keyboardFocus.requestFocus();
+                      }
                       if (isShiftPressed) {
                         _moveLeft();
                       } else {
                         _moveRight();
                       }
-                      break;
-                    case 'Arrow Right':
-                      _moveRight();
-                      break;
-                    case 'Enter':
+                      return KeyEventResult
+                          .handled; // prevent browser default tabbing
+                    default:
+                      // If a cell is highlighted and the user starts typing, activate the cell and focus the text field
                       if (highlightedRow >= 0 && highlightedCol >= 0) {
                         _activateCell(
                             table.rows[highlightedRow].cells[highlightedCol],
                             highlightedRow,
                             highlightedCol);
                       }
-                      break;
+                      return KeyEventResult.ignored;
                   }
                 },
                 child: FractionallySizedBox(
@@ -200,13 +226,17 @@ class _SpreadsheetState extends State<Spreadsheet> {
     super.dispose();
   }
 
-  void _storeCellValue(String value) {
+  void _storeCellValue(
+    String value, {
+    int highlightRow = -1,
+    int highlightCol = -1,
+  }) {
     setState(() {
       table.rows[activeRow].cells[activeCol] = DataCell(value);
       activeRow = -1;
       activeCol = -1;
-      highlightedRow = -1;
-      highlightedCol = -1;
+      highlightedRow = highlightRow;
+      highlightedCol = highlightCol;
     });
   }
 
