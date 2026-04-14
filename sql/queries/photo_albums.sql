@@ -72,7 +72,9 @@ INSERT INTO
     photo_album_items (album_id, device_serial, rel_path)
 VALUES
     (?, ?, ?)
-ON CONFLICT (album_id, device_serial, rel_path) DO NOTHING
+ON CONFLICT (album_id, device_serial, rel_path) DO UPDATE
+SET
+    added_at = added_at -- no-op; keeps RETURNING from returning nothing
 RETURNING *;
 
 -- name: RemovePhotoFromAlbum :exec
