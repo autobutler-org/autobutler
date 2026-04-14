@@ -49,6 +49,10 @@ serve/%: ## Serve example
 	cd ./examples/$*
 	flutter run -d $(SERVE_PLATFORM)
 
+watch/%: ## Watch example on web
+	cd ./examples/$*
+	flutter run -d chrome
+
 .PHONY: tidy
 tidy: tidy/flutter ## Tidy dependencies
 

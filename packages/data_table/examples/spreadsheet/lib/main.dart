@@ -12,6 +12,9 @@ class Spreadsheet extends StatefulWidget {
 
 class _SpreadsheetState extends State<Spreadsheet> {
   late DataTable table;
+  final activeCellController = TextEditingController();
+  var activeRow = -1;
+  var activeCol = -1;
 
   @override
   void initState() {
@@ -29,18 +32,75 @@ class _SpreadsheetState extends State<Spreadsheet> {
       home: Scaffold(
         appBar: AppBar(title: const Text('data_table spreadsheet example')),
         body: Table(
-          children: table.rows.map((row) {
-            return TableRow(
-              children: row.cells.map((cell) {
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(cell.data),
-                );
-              }).toList(),
-            );
-          }).toList(),
+          children: table.rows
+              .asMap()
+              .map((r, row) {
+                return MapEntry(
+                    r,
+                    TableRow(
+                      children: row.cells
+                          .asMap()
+                          .map((c, cell) {
+                            final widget = Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: (r == activeRow && c == activeCol)
+                                    ? TextField(
+                                        controller: activeCellController,
+                                        decoration: const InputDecoration(
+                                          // contentPadding: EdgeInsets.zero,
+                                          contentPadding: EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 8),
+                                          isDense: true,
+                                          border: OutlineInputBorder(),
+                                        ),
+                                        textAlignVertical:
+                                            TextAlignVertical.center,
+                                        onSubmitted: _setCell,
+                                        autofocus: true,
+                                        onEditingComplete: () {
+                                          _setCell(activeCellController.text);
+                                        },
+                                        onTapOutside: (_) {
+                                          _setCell(activeCellController.text);
+                                        },
+                                      )
+                                    : GestureDetector(
+                                        onTap: () {
+                                          final tappedCellRow = r;
+                                          final tappedCellCol = c;
+                                          setState(() {
+                                            activeCellController.text =
+                                                cell.data;
+                                            activeRow = tappedCellRow;
+                                            activeCol = tappedCellCol;
+                                          });
+                                        },
+                                        child: Text(cell.data)));
+                            return MapEntry(c, widget);
+                          })
+                          .values
+                          .toList(),
+                    ));
+              })
+              .values
+              .toList(),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    activeCellController.dispose();
+    super.dispose();
+  }
+
+  void _setCell(String value) {
+    setState(() {
+      print('Updating cell at ($activeRow, $activeCol) with value: $value');
+      table.rows[activeRow].cells[activeCol] = DataCell(value);
+      activeRow = -1;
+      activeCol = -1;
+    });
   }
 }
