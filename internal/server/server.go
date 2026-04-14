@@ -6,14 +6,12 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 
 	docs "github.com/autobutler-org/autobutler/docs/swagger"
 	"github.com/autobutler-org/autobutler/internal/server/middleware"
 	"github.com/autobutler-org/autobutler/pkg/botel"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
-	"github.com/autobutler-org/autobutler/pkg/util/provisionutil"
 	"github.com/autobutler-org/autobutler/pkg/util/remoteutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
@@ -69,14 +67,15 @@ func StartServer(deps deputil.Dependencies) error {
 	if err := setupServices(deps); err != nil {
 		return fmt.Errorf("failed to setup services: %w", err)
 	}
-	go startAutoUpdateChecker(context.Background())
 
 	portNum := serverutil.ServerPort()
-	port := strconv.Itoa(portNum)
+	port := fmt.Sprintf("%d", portNum)
 
-	if settingsutil.GetRemoteAccess() {
-		if err := startRemoteAccess(portNum); err != nil {
+	if enabled, authKey := settingsutil.GetRemoteAccess(); enabled && authKey != "" {
+		if err := remoteutil.Start(authKey); err != nil {
 			log.Printf("[remote] failed to start: %v", err)
+		} else if err := remoteutil.StartProxy(portNum); err != nil {
+			log.Printf("[remote] failed to start proxy: %v", err)
 		}
 	}
 
@@ -112,16 +111,4 @@ func StartServer(deps deputil.Dependencies) error {
 	}
 
 	return nil
-}
-
-func startRemoteAccess(localPort int) error {
-	return remoteutil.EnsureStarted(localPort, provisionForRemoteAccess)
-}
-
-func provisionForRemoteAccess() (string, error) {
-	deviceID, err := provisionutil.GetDeviceID()
-	if err != nil {
-		return "", fmt.Errorf("device id: %w", err)
-	}
-	return provisionutil.ProvisionAuthKey(deviceID)
 }
