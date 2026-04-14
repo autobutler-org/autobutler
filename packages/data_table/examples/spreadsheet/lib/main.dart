@@ -56,12 +56,14 @@ class _SpreadsheetState extends State<Spreadsheet> {
                                         ),
                                         textAlignVertical:
                                             TextAlignVertical.center,
-                                        onSubmitted: _setCell,
+                                        onSubmitted: _storeCellValue,
                                         onEditingComplete: () {
-                                          _setCell(activeCellController.text);
+                                          _storeCellValue(
+                                              activeCellController.text);
                                         },
                                         onTapOutside: (_) {
-                                          _setCell(activeCellController.text);
+                                          _storeCellValue(
+                                              activeCellController.text);
                                         },
                                       )
                                     : GestureDetector(
@@ -93,7 +95,7 @@ class _SpreadsheetState extends State<Spreadsheet> {
     super.dispose();
   }
 
-  void _setCell(String value) {
+  void _storeCellValue(String value) {
     setState(() {
       table.rows[activeRow].cells[activeCol] = DataCell(value);
       activeRow = -1;
