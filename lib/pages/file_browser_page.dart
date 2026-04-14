@@ -753,7 +753,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         }
         await Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => ImageViewerPage(bytes: bytes, name: node.name),
+            builder: (_) => ImageViewerPage(
+              bytes: bytes,
+              name: node.name,
+              relPath: node.apiPath,
+              serial: serialOrNull(node.deviceSerial),
+            ),
           ),
         );
         return;
