@@ -12,6 +12,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const _kSidebarOpenKey = 'photo_viewer_sidebar_open';
 const _kFavoritesKey = 'photo_viewer_favorites';
+// Local-asset rotation only (Cirrus photos use the server DB via rotationQuarters).
+const _kRotationsKey = 'photo_viewer_rotations';
 const _kSidebarWidth = 288.0;
 
 /// A full-screen photo viewer with metadata sidebar (desktop) / bottom drawer
@@ -128,11 +130,24 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     _prefs = prefs;
     final sidebarOpen = prefs.getBool(_kSidebarOpenKey) ?? true;
     final favs = prefs.getStringList(_kFavoritesKey) ?? [];
+
+    // For local assets (no relPath) load rotation from SharedPreferences now —
+    // there is no server call to apply it later. For Cirrus photos, rotation
+    // comes from the metadata response and will be applied in
+    // _loadMetadataForCurrent; leave it at 0 for now.
+    int initialQuarters = 0;
+    if (!_isCirrusPhoto) {
+      initialQuarters = _localRotationFor(_currentName);
+    }
+
     setState(() {
       _sidebarOpen = sidebarOpen;
       _isFavorite = favs.contains(_favKey(_currentRelPath, _currentSerial));
-      // Rotation is initialised to 0 here; _loadMetadata will apply the
-      // server-persisted value once metadata arrives.
+      _rotationQuarters = initialQuarters;
+      _rotationValue = Tween<double>(
+        begin: initialQuarters * math.pi / 2,
+        end: initialQuarters * math.pi / 2,
+      ).animate(_rotationAnim);
     });
     _loadMetadata();
   }
@@ -141,6 +156,34 @@ class _ImageViewerPageState extends State<ImageViewerPage>
 
   String _favKey(String? relPath, String? serial) =>
       '${serial ?? ''}:${relPath ?? ''}';
+
+  // Rotation is server-backed for Cirrus photos (relPath != null).
+  // For local-device assets we fall back to SharedPreferences, keyed by name
+  // so each photo has its own entry rather than all sharing ':'.
+  bool get _isCirrusPhoto =>
+      _currentRelPath != null && _currentRelPath!.isNotEmpty;
+
+  int _localRotationFor(String name) {
+    final list = _prefs?.getStringList(_kRotationsKey) ?? [];
+    for (final entry in list) {
+      final idx = entry.indexOf(':');
+      if (idx < 0) continue;
+      if (entry.substring(0, idx) == name) {
+        return int.tryParse(entry.substring(idx + 1)) ?? 0;
+      }
+    }
+    return 0;
+  }
+
+  void _saveLocalRotation(String name, int quarters) {
+    final list = List<String>.from(_prefs?.getStringList(_kRotationsKey) ?? []);
+    final updated = list.where((e) {
+      final idx = e.indexOf(':');
+      return idx < 0 || e.substring(0, idx) != name;
+    }).toList();
+    if (quarters != 0) updated.add('$name:$quarters');
+    _prefs?.setStringList(_kRotationsKey, updated);
+  }
 
   // --- Navigation ---
 
@@ -178,6 +221,12 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       final favs = _prefs?.getStringList(_kFavoritesKey) ?? [];
       final newFavKey = _favKey(relPath, serial);
 
+      // For local assets, load rotation from SharedPreferences immediately.
+      // For Cirrus photos, reset to 0 — _loadMetadataForCurrent will apply
+      // the server-persisted value once metadata arrives.
+      final isCirrus = relPath != null && relPath.isNotEmpty;
+      final newQuarters = isCirrus ? 0 : _localRotationFor(name);
+
       setState(() {
         _currentIndex = newIndex;
         _currentBytes = bytes;
@@ -188,9 +237,11 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         _loading = false;
         _metadata = null;
         _isFavorite = favs.contains(newFavKey);
-        // Reset rotation to 0 until metadata arrives with the server value.
-        _rotationQuarters = 0;
-        _rotationValue = Tween<double>(begin: 0, end: 0).animate(_rotationAnim);
+        _rotationQuarters = newQuarters;
+        _rotationValue = Tween<double>(
+          begin: newQuarters * math.pi / 2,
+          end: newQuarters * math.pi / 2,
+        ).animate(_rotationAnim);
       });
       _loadMetadataForCurrent();
     } catch (_) {
@@ -267,17 +318,17 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     ).animate(CurvedAnimation(parent: _rotationAnim, curve: Curves.easeOut));
     _rotationAnim.forward(from: 0);
 
-    // Persist to server (fire-and-forget; non-fatal on error).
-    final relPath = _currentRelPath;
-    if (relPath != null && relPath.isNotEmpty) {
+    // Persist rotation. Cirrus photos → server DB. Local assets → SharedPreferences.
+    if (_isCirrusPhoto) {
       CirrusService.rotatePhoto(
-        relPath,
+        _currentRelPath!,
         serial: _currentSerial,
         rotationQuarters: newQuarters,
       ).catchError((_) {
-        // Server save failed — the UI still shows the rotation but it won't
-        // persist across sessions. A retry could be added here.
+        // Server save failed — rotation shows in UI but won't survive a reload.
       });
+    } else {
+      _saveLocalRotation(_currentName, newQuarters);
     }
   }
 
@@ -429,8 +480,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       case LogicalKeyboardKey.keyR:
         _rotate();
         return KeyEventResult.handled;
-      case LogicalKeyboardKey.slash:
-        // '?' on US keyboards is Shift+Slash; check for that too.
+      case LogicalKeyboardKey.question:
         _showShortcutsDialog(context);
         return KeyEventResult.handled;
     }

@@ -112,10 +112,11 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 	}
 
 	// --- Dimensions ---
-	// Try standard Go image decoders first (JPEG, PNG).
-	// For HEIC/HEIF and other formats the decoder returns an error; fall back
-	// to the EXIF PixelXDimension / PixelYDimension tags which are present in
-	// virtually all camera-produced HEIC files.
+	// image.DecodeConfig handles JPEG and PNG. HEIC/HEIF are not supported by
+	// the Go standard library and goexif only parses JPEG APP1 blocks, so HEIC
+	// files will produce 0×0 here until a HEIC decoder is added.
+	// The PixelXDimension / PixelYDimension fallback helps for other formats
+	// whose EXIF goexif can read (e.g. some TIFFs) but does NOT help for HEIC.
 	width, height := 0, 0
 	if f, err := os.Open(fullPath); err == nil {
 		if cfg, _, err := image.DecodeConfig(f); err == nil {
