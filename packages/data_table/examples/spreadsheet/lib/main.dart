@@ -48,60 +48,66 @@ class _SpreadsheetState extends State<Spreadsheet> {
                                     final isActiveCell =
                                         (r == activeRow && c == activeCol);
                                     const borderWidth = 1.0;
-                                    final widget = Container(
-                                        height:
-                                            40, // pinned height to avoid layout shifts
-                                        decoration: BoxDecoration(
-                                          border: Border.all(
-                                            color: isActiveCell
-                                                ? Theme.of(context)
-                                                    .colorScheme
-                                                    .primary
-                                                : Colors.grey.shade400,
-                                            width: borderWidth *
-                                                (isActiveCell ? 2 : 1),
-                                          ),
-                                          borderRadius: BorderRadius.zero,
-                                        ),
-                                        child: isActiveCell
-                                            ? TextField(
-                                                autofocus: true,
-                                                controller:
-                                                    activeCellController,
-                                                decoration:
-                                                    const InputDecoration(
-                                                  // contentPadding: EdgeInsets.zero,
-                                                  contentPadding:
-                                                      EdgeInsets.symmetric(
-                                                          horizontal: 8,
-                                                          vertical: 8),
-                                                  isDense: true,
-                                                  border: InputBorder.none,
-                                                ),
-                                                textAlignVertical:
-                                                    TextAlignVertical.center,
-                                                onSubmitted: _storeCellValue,
-                                                onEditingComplete: () {
-                                                  _storeCellValue(
-                                                      activeCellController
-                                                          .text);
-                                                },
-                                                onTapOutside: (_) {
-                                                  _storeCellValue(
-                                                      activeCellController
-                                                          .text);
-                                                },
-                                              )
-                                            : GestureDetector(
-                                                onTap: () {
-                                                  setState(() {
-                                                    activeCellController.text =
-                                                        cell.data;
-                                                    activeRow = r;
-                                                    activeCol = c;
-                                                  });
-                                                },
-                                                child: Text(cell.data)));
+                                    final widget = MouseRegion(
+                                        cursor: isActiveCell
+                                            ? SystemMouseCursors.text
+                                            : SystemMouseCursors.cell,
+                                        child: Container(
+                                            height:
+                                                40, // pinned height to avoid layout shifts
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                color: isActiveCell
+                                                    ? Theme.of(context)
+                                                        .colorScheme
+                                                        .primary
+                                                    : Colors.grey.shade400,
+                                                width: borderWidth *
+                                                    (isActiveCell ? 2 : 1),
+                                              ),
+                                              borderRadius: BorderRadius.zero,
+                                            ),
+                                            child: isActiveCell
+                                                ? TextField(
+                                                    autofocus: true,
+                                                    controller:
+                                                        activeCellController,
+                                                    decoration:
+                                                        const InputDecoration(
+                                                      // contentPadding: EdgeInsets.zero,
+                                                      contentPadding:
+                                                          EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 8),
+                                                      isDense: true,
+                                                      border: InputBorder.none,
+                                                    ),
+                                                    textAlignVertical:
+                                                        TextAlignVertical
+                                                            .center,
+                                                    onSubmitted:
+                                                        _storeCellValue,
+                                                    onEditingComplete: () {
+                                                      _storeCellValue(
+                                                          activeCellController
+                                                              .text);
+                                                    },
+                                                    onTapOutside: (_) {
+                                                      _storeCellValue(
+                                                          activeCellController
+                                                              .text);
+                                                    },
+                                                  )
+                                                : GestureDetector(
+                                                    onTap: () {
+                                                      setState(() {
+                                                        activeCellController
+                                                            .text = cell.data;
+                                                        activeRow = r;
+                                                        activeCol = c;
+                                                      });
+                                                    },
+                                                    child: Text(cell.data))));
                                     return MapEntry(c, widget);
                                   })
                                   .values
