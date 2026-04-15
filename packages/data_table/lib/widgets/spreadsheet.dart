@@ -4,14 +4,16 @@ import 'package:flutter/services.dart';
 import '../data_table.dart';
 
 class Spreadsheet extends StatefulWidget {
-  const Spreadsheet({super.key});
+  DataTable table;
+
+  Spreadsheet({super.key, required this.table});
+  Spreadsheet.unnamed({super.key}) : table = DataTable([]);
 
   @override
   State<Spreadsheet> createState() => _SpreadsheetState();
 }
 
 class _SpreadsheetState extends State<Spreadsheet> {
-  late DataTable table;
   final activeCellController = TextEditingController();
   final keyboardFocus = FocusNode();
   var activeRow = -1;
@@ -19,14 +21,11 @@ class _SpreadsheetState extends State<Spreadsheet> {
   var highlightedRow = -1;
   var highlightedCol = -1;
 
+  DataTable get table => widget.table;
+
   @override
   void initState() {
     super.initState();
-    table = DataTable([
-      DataRow([DataCell('Alice'), DataCell('30'), DataCell('New York')]),
-      DataRow([DataCell('Bob'), DataCell('25'), DataCell('Los Angeles')]),
-      DataRow([DataCell('Charlie'), DataCell('35'), DataCell('Chicago')]),
-    ]);
   }
 
   @override
