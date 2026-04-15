@@ -4,10 +4,27 @@ import 'package:flutter/services.dart';
 import '../data_table.dart';
 
 class Spreadsheet extends StatefulWidget {
-  DataTable table;
+  final DataTable table;
 
-  Spreadsheet({super.key, required this.table});
-  Spreadsheet.unnamed({super.key}) : table = DataTable([]);
+  /// Callback that is called before a cell value is changed.
+  /// If it returns false, the change is rejected and the cell
+  /// value remains unchanged.
+  final bool Function(String, int, int)? beforeCellValueChanged;
+
+  /// Callback that is called after a cell value is changed.
+  /// The boolean parameter indicates whether the change had been
+  /// accepted or rejected.
+  final Function(String, int, int, bool)? afterCellValueChanged;
+
+  const Spreadsheet(
+      {super.key,
+      required this.table,
+      this.beforeCellValueChanged,
+      this.afterCellValueChanged});
+  Spreadsheet.unnamed({super.key})
+      : table = DataTable([]),
+        beforeCellValueChanged = null,
+        afterCellValueChanged = null;
 
   @override
   State<Spreadsheet> createState() => _SpreadsheetState();
@@ -22,11 +39,10 @@ class _SpreadsheetState extends State<Spreadsheet> {
   var highlightedCol = -1;
 
   DataTable get table => widget.table;
-
-  @override
-  void initState() {
-    super.initState();
-  }
+  bool Function(String, int, int)? get beforeCellValueChanged =>
+      widget.beforeCellValueChanged;
+  Function(String, int, int, bool)? get afterCellValueChanged =>
+      widget.afterCellValueChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -229,13 +245,21 @@ class _SpreadsheetState extends State<Spreadsheet> {
     int highlightRow = -1,
     int highlightCol = -1,
   }) {
+    int changedRow = activeRow;
+    int changedCol = activeCol;
+    final isChangeAccepted =
+        beforeCellValueChanged?.call(value, changedRow, changedCol) ?? true;
     setState(() {
-      table.rows[activeRow].cells[activeCol] = DataCell(value);
+      if (isChangeAccepted) {
+        table.rows[activeRow].cells[activeCol] = DataCell(value);
+      }
       activeRow = -1;
       activeCol = -1;
       highlightedRow = highlightRow;
       highlightedCol = highlightCol;
     });
+    afterCellValueChanged?.call(
+        value, changedRow, changedCol, isChangeAccepted);
   }
 
   void _activateCell(DataCell cell, int row, int col) {

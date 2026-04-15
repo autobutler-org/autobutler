@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:data_table/data_table.dart';
 import 'package:data_table/widgets/spreadsheet.dart';
 import 'package:flutter/widgets.dart';
@@ -8,5 +10,24 @@ void main() {
     DataRow([DataCell('Bob'), DataCell('25'), DataCell('Los Angeles')]),
     DataRow([DataCell('Charlie'), DataCell('35'), DataCell('Chicago')]),
   ]);
-  runApp(Spreadsheet(table: table));
+  runApp(Spreadsheet(
+    table: table,
+    beforeCellValueChanged: (value, row, col) {
+      print('Cell at row $row, column $col changing to "$value"');
+      print('Table before:');
+      for (var r = 0; r < table.rows.length; r++) {
+        var rowData = table.rows[r].cells.map((cell) => cell.data).join(', ');
+        print('Row $r: $rowData');
+      }
+      return true;
+    },
+    afterCellValueChanged: (value, row, col, _) {
+      print('Cell at row $row, column $col changed to "$value"');
+      print('Table after:');
+      for (var r = 0; r < table.rows.length; r++) {
+        var rowData = table.rows[r].cells.map((cell) => cell.data).join(', ');
+        print('Row $r: $rowData');
+      }
+    },
+  ));
 }
