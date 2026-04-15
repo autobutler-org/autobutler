@@ -97,14 +97,20 @@ class _DataSheetViewState extends State<_DataSheetView> {
           columnFlex: widget.columnFlex);
       _ownsController = true;
     }
+    controller.addListener(_onControllerChanged);
   }
 
   @override
   void dispose() {
     activeCellController.dispose();
     keyboardFocus.dispose();
+    controller.removeListener(_onControllerChanged);
     if (_ownsController) controller.dispose();
     super.dispose();
+  }
+
+  void _onControllerChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
