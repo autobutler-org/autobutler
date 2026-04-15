@@ -393,10 +393,10 @@ watch/frontend: generate/frontend ## Watch frontend on web
 check: check/format check/lint ## Check code
 
 .PHONY: check/backend
-check/backend: check/format/go check/lint/go check/lint/sqlc ## Check backend code
+check/backend: generate/backend check/format/go check/lint/go check/lint/sqlc ## Check backend code
 
 .PHONY: check/frontend
-check/frontend: check/format/flutter check/lint/flutter ## Check frontend code
+check/frontend: generate/frontend check/format/flutter check/lint/flutter ## Check frontend code
 
 .PHONY: check/flutter
 check/flutter: check/format/flutter check/lint/flutter ## Check Flutter/Dart code
