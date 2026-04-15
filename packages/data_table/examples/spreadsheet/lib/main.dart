@@ -6,9 +6,21 @@ import 'package:flutter/widgets.dart';
 
 void main() {
   final table = DataTable([
-    DataRow([DataCell('Alice'), DataCell('30'), DataCell('New York')]),
-    DataRow([DataCell('Bob'), DataCell('25'), DataCell('Los Angeles')]),
-    DataRow([DataCell('Charlie'), DataCell('35'), DataCell('Chicago')]),
+    DataRow([
+      DataCell<String>('Alice'),
+      DataCell<String>('30'),
+      DataCell<String>('New York')
+    ]),
+    DataRow([
+      DataCell<String>('Bob'),
+      DataCell<String>('25'),
+      DataCell<String>('Los Angeles')
+    ]),
+    DataRow([
+      DataCell<String>('Charlie'),
+      DataCell<String>('35'),
+      DataCell<String>('Chicago')
+    ]),
   ]);
   runApp(DataSheet(
     table: table,
