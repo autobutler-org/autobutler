@@ -14,73 +14,73 @@ The entire key binding map is customizable — developers can supply their own
 
 ## Navigation
 
-| Keys | Action | Status |
-|------|--------|--------|
-| Arrow keys | Move highlight one cell | ✅ |
-| Tab | Move highlight right; wraps at row end | ✅ |
-| Shift+Tab | Move highlight left | ✅ |
-| Enter | Confirm edit / activate highlighted cell | ✅ |
-| Ctrl/Cmd+Home | Jump to first cell (row 0, col 0) | 🔜 |
-| Ctrl/Cmd+End | Jump to last cell | 🔜 |
-| Page Down | Move highlight down by visible-page height | 🔜 |
-| Page Up | Move highlight up by visible-page height | 🔜 |
-| Home | Move highlight to first column in current row | 🔜 |
-| End | Move highlight to last column in current row | 🔜 |
+| Keys          | Action                                        | Status |
+| ------------- | --------------------------------------------- | ------ |
+| Arrow keys    | Move highlight one cell                       | ✅     |
+| Tab           | Move highlight right; wraps at row end        | ✅     |
+| Shift+Tab     | Move highlight left                           | ✅     |
+| Enter         | Confirm edit / activate highlighted cell      | ✅     |
+| Ctrl/Cmd+Home | Jump to first cell (row 0, col 0)             | 🔜     |
+| Ctrl/Cmd+End  | Jump to last cell                             | 🔜     |
+| Page Down     | Move highlight down by visible-page height    | 🔜     |
+| Page Up       | Move highlight up by visible-page height      | 🔜     |
+| Home          | Move highlight to first column in current row | 🔜     |
+| End           | Move highlight to last column in current row  | 🔜     |
 
 ---
 
 ## Editing
 
-| Keys | Action | Status |
-|------|--------|--------|
-| Any printable key | Open cell for editing (start typing) | ✅ |
-| F2 | Enter edit mode for the highlighted cell | 🔜 |
-| Escape | Cancel active edit, restore previous value | 🔜 |
-| Delete / Backspace | Clear the highlighted cell's value | 🔜 |
-| Ctrl/Cmd+Z | Undo last action | 🔜 |
-| Ctrl/Cmd+Y or Ctrl/Cmd+Shift+Z | Redo | 🔜 |
+| Keys                           | Action                                     | Status |
+| ------------------------------ | ------------------------------------------ | ------ |
+| Any printable key              | Open cell for editing (start typing)       | ✅     |
+| F2                             | Enter edit mode for the highlighted cell   | 🔜     |
+| Escape                         | Cancel active edit, restore previous value | 🔜     |
+| Delete / Backspace             | Clear the highlighted cell's value         | 🔜     |
+| Ctrl/Cmd+Z                     | Undo last action                           | 🔜     |
+| Ctrl/Cmd+Y or Ctrl/Cmd+Shift+Z | Redo                                       | 🔜     |
 
 ---
 
 ## Clipboard
 
-| Keys | Action | Status |
-|------|--------|--------|
-| Ctrl/Cmd+C | Copy highlighted cell value to system clipboard | 🔜 |
-| Ctrl/Cmd+X | Cut — copy then clear highlighted cell | 🔜 |
-| Ctrl/Cmd+V | Paste clipboard text into highlighted cell | 🔜 |
+| Keys       | Action                                          | Status |
+| ---------- | ----------------------------------------------- | ------ |
+| Ctrl/Cmd+C | Copy highlighted cell value to system clipboard | 🔜     |
+| Ctrl/Cmd+X | Cut — copy then clear highlighted cell          | 🔜     |
+| Ctrl/Cmd+V | Paste clipboard text into highlighted cell      | 🔜     |
 
 ---
 
 ## Selection
 
-| Keys | Action | Status |
-|------|--------|--------|
-| Shift+Arrow | Extend selection by one cell in arrow direction | 🔜 |
-| Ctrl/Cmd+A | Select all cells | 🔜 |
-| Ctrl/Cmd+Shift+End | Extend selection to last used cell | 🔜 |
+| Keys               | Action                                          | Status |
+| ------------------ | ----------------------------------------------- | ------ |
+| Shift+Arrow        | Extend selection by one cell in arrow direction | 🔜     |
+| Ctrl/Cmd+A         | Select all cells                                | 🔜     |
+| Ctrl/Cmd+Shift+End | Extend selection to last used cell              | 🔜     |
 
 ---
 
 ## Data Operations
 
-| Keys | Action | Status |
-|------|--------|--------|
-| Ctrl/Cmd+D | Fill down — copy value of cell above into highlighted cell | 🔜 |
-| Ctrl/Cmd+R | Fill right — copy value of cell to the left into highlighted cell | 🔜 |
-| Ctrl/Cmd+F | Open Find & Replace dialog | 🔜 |
-| Ctrl/Cmd+G | Open Go To Cell dialog | 🔜 |
+| Keys       | Action                                                            | Status |
+| ---------- | ----------------------------------------------------------------- | ------ |
+| Ctrl/Cmd+D | Fill down — copy value of cell above into highlighted cell        | 🔜     |
+| Ctrl/Cmd+R | Fill right — copy value of cell to the left into highlighted cell | 🔜     |
+| Ctrl/Cmd+F | Open Find & Replace dialog                                        | 🔜     |
+| Ctrl/Cmd+G | Open Go To Cell dialog                                            | 🔜     |
 
 ---
 
 ## Row / Column Structural Operations
 
-| Keys | Action | Status |
-|------|--------|--------|
-| Ctrl/Cmd+Plus | Insert row above highlighted cell | 🔜 |
-| Ctrl/Cmd+Minus | Delete row of highlighted cell | 🔜 |
-| Ctrl/Cmd+Shift+Plus | Insert column before highlighted cell | 🔜 |
-| Ctrl/Cmd+Shift+Minus | Delete column of highlighted cell | 🔜 |
+| Keys                 | Action                                | Status |
+| -------------------- | ------------------------------------- | ------ |
+| Ctrl/Cmd+Plus        | Insert row above highlighted cell     | 🔜     |
+| Ctrl/Cmd+Minus       | Delete row of highlighted cell        | 🔜     |
+| Ctrl/Cmd+Shift+Plus  | Insert column before highlighted cell | 🔜     |
+| Ctrl/Cmd+Shift+Minus | Delete column of highlighted cell     | 🔜     |
 
 ---
 
@@ -90,7 +90,7 @@ The entire key binding map is customizable — developers can supply their own
   widget's `onKeyEvent` callback. The sheet must have keyboard focus (tap a cell
   first) for shortcuts to fire.
 - Use `HardwareKeyboard.instance.isControlPressed ||
-  HardwareKeyboard.instance.isMetaPressed` to handle both Windows/Linux
+HardwareKeyboard.instance.isMetaPressed` to handle both Windows/Linux
   (Ctrl) and macOS (Cmd) in a cross-platform way.
 - Clipboard integration requires the `flutter/services.dart`
   `Clipboard.getData` / `Clipboard.setData` API — no extra packages needed.
@@ -172,38 +172,38 @@ class KeyboardShortcut {
 Each field of `DataSheetControlScheme` maps to one of the actions in this
 document. The full set of action names (each takes `List<KeyboardShortcut>`):
 
-| Field | Default trigger |
-|-------|-----------------|
-| `moveUp` | Arrow Up |
-| `moveDown` | Arrow Down |
-| `moveLeft` | Arrow Left |
-| `moveRight` | Arrow Right |
-| `moveNextCell` | Tab |
-| `movePreviousCell` | Shift+Tab |
-| `confirmEdit` | Enter |
-| `enterEditMode` | F2 |
-| `cancelEdit` | Escape |
-| `clearCell` | Delete or Backspace |
-| `undo` | Ctrl+Z |
-| `redo` | Ctrl+Y / Ctrl+Shift+Z |
-| `copy` | Ctrl+C |
-| `cut` | Ctrl+X |
-| `paste` | Ctrl+V |
-| `selectAll` | Ctrl+A |
-| `fillDown` | Ctrl+D |
-| `fillRight` | Ctrl+R |
-| `findReplace` | Ctrl+F |
-| `goToCell` | Ctrl+G |
-| `jumpToFirst` | Ctrl+Home |
-| `jumpToLast` | Ctrl+End |
-| `jumpRowStart` | Home |
-| `jumpRowEnd` | End |
-| `pageUp` | Page Up |
-| `pageDown` | Page Down |
-| `insertRow` | Ctrl+Plus |
-| `deleteRow` | Ctrl+Minus |
-| `insertColumn` | Ctrl+Shift+Plus |
-| `deleteColumn` | Ctrl+Shift+Minus |
+| Field              | Default trigger       |
+| ------------------ | --------------------- |
+| `moveUp`           | Arrow Up              |
+| `moveDown`         | Arrow Down            |
+| `moveLeft`         | Arrow Left            |
+| `moveRight`        | Arrow Right           |
+| `moveNextCell`     | Tab                   |
+| `movePreviousCell` | Shift+Tab             |
+| `confirmEdit`      | Enter                 |
+| `enterEditMode`    | F2                    |
+| `cancelEdit`       | Escape                |
+| `clearCell`        | Delete or Backspace   |
+| `undo`             | Ctrl+Z                |
+| `redo`             | Ctrl+Y / Ctrl+Shift+Z |
+| `copy`             | Ctrl+C                |
+| `cut`              | Ctrl+X                |
+| `paste`            | Ctrl+V                |
+| `selectAll`        | Ctrl+A                |
+| `fillDown`         | Ctrl+D                |
+| `fillRight`        | Ctrl+R                |
+| `findReplace`      | Ctrl+F                |
+| `goToCell`         | Ctrl+G                |
+| `jumpToFirst`      | Ctrl+Home             |
+| `jumpToLast`       | Ctrl+End              |
+| `jumpRowStart`     | Home                  |
+| `jumpRowEnd`       | End                   |
+| `pageUp`           | Page Up               |
+| `pageDown`         | Page Down             |
+| `insertRow`        | Ctrl+Plus             |
+| `deleteRow`        | Ctrl+Minus            |
+| `insertColumn`     | Ctrl+Shift+Plus       |
+| `deleteColumn`     | Ctrl+Shift+Minus      |
 
 ### Saving and Loading Schemes
 
