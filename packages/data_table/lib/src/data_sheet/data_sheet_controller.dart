@@ -50,6 +50,35 @@ class DataSheetController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Add an empty row at the end of the table.
+  void addRow() {
+    final cols = colCount > 0 ? colCount : 1;
+    final newCells = List<DataCell>.generate(cols, (_) => DataCell(''));
+    final newRow = DataRow(newCells);
+    table.rows.add(newRow);
+    _rows.add(ValueNotifier<List<DataCell>>(List<DataCell>.from(newCells)));
+    notifyListeners();
+  }
+
+  /// Add an empty column to every row.
+  void addColumn() {
+    if (_rows.isEmpty) {
+      final newCell = DataCell('');
+      table.rows.add(DataRow([newCell]));
+      _rows.add(ValueNotifier<List<DataCell>>([newCell]));
+      notifyListeners();
+      return;
+    }
+    for (var i = 0; i < _rows.length; i++) {
+      table.rows[i].cells.add(DataCell(''));
+      final updated = List<DataCell>.from(_rows[i].value);
+      updated.add(DataCell(''));
+      _rows[i].value = updated;
+      _rows[i].notifyListeners();
+    }
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     for (final r in _rows) {

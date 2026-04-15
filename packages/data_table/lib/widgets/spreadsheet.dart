@@ -50,6 +50,42 @@ class SheetController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Add an empty row at the end of the table. If the table has no columns
+  /// yet, a single column will be created.
+  void addRow() {
+    final cols = colCount > 0 ? colCount : 1;
+    final newCells = List<DataCell>.generate(cols, (_) => DataCell(''));
+    final newRow = DataRow(newCells);
+    table.rows.add(newRow);
+    final notifier =
+        ValueNotifier<List<DataCell>>(List<DataCell>.from(newCells));
+    _rows.add(notifier);
+    notifyListeners();
+  }
+
+  /// Add an empty column to every row. If there are no rows, create a single
+  /// row with one cell.
+  void addColumn() {
+    if (_rows.isEmpty) {
+      // create one row with one empty cell
+      final newCell = DataCell('');
+      final newRow = DataRow([newCell]);
+      table.rows.add(newRow);
+      _rows.add(ValueNotifier<List<DataCell>>([newCell]));
+      notifyListeners();
+      return;
+    }
+
+    for (var i = 0; i < _rows.length; i++) {
+      table.rows[i].cells.add(DataCell(''));
+      final updated = List<DataCell>.from(_rows[i].value);
+      updated.add(DataCell(''));
+      _rows[i].value = updated;
+      _rows[i].notifyListeners();
+    }
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     for (final r in _rows) {
@@ -150,14 +186,21 @@ class _SpreadsheetViewState extends State<_SpreadsheetView> {
           columnFlex: widget.columnFlex);
       _ownsController = true;
     }
+    controller.addListener(_onControllerChanged);
   }
 
   @override
   void dispose() {
     activeCellController.dispose();
     keyboardFocus.dispose();
+    controller.removeListener(_onControllerChanged);
     if (_ownsController) controller.dispose();
     super.dispose();
+  }
+
+  void _onControllerChanged() {
+    // rebuild when the underlying rows/columns change
+    if (mounted) setState(() {});
   }
 
   @override
@@ -166,69 +209,79 @@ class _SpreadsheetViewState extends State<_SpreadsheetView> {
       home: Scaffold(
         appBar: AppBar(title: const Text('data_table spreadsheet example')),
         body: Center(
-            child: Focus(
-                focusNode: keyboardFocus,
-                onKeyEvent: (node, event) {
-                  if (event is! KeyDownEvent) return KeyEventResult.ignored;
-                  final key = event.logicalKey;
-                  switch (key) {
-                    case LogicalKeyboardKey.arrowUp:
-                      _moveUp();
-                      return KeyEventResult.handled;
-                    case LogicalKeyboardKey.arrowDown:
-                      _moveDown();
-                      return KeyEventResult.handled;
-                    case LogicalKeyboardKey.arrowLeft:
-                      _moveLeft();
-                      return KeyEventResult.handled;
-                    case LogicalKeyboardKey.arrowRight:
-                      _moveRight();
-                      return KeyEventResult.handled;
-                    case LogicalKeyboardKey.enter:
-                      if (highlightedRow >= 0 && highlightedCol >= 0) {
-                        _activateCell(
-                            controller.cellAt(highlightedRow, highlightedCol),
-                            highlightedRow,
-                            highlightedCol);
-                      } else if (activeRow >= 0 && activeCol >= 0) {
-                        final previousRow = activeRow;
-                        final previousCol = activeCol;
-                        _storeCellValue(activeCellController.text,
-                            highlightRow: previousRow,
-                            highlightCol: previousCol);
-                        keyboardFocus.requestFocus();
-                      }
-                      return KeyEventResult.handled;
-                    case LogicalKeyboardKey.tab:
-                      final isShiftPressed =
-                          HardwareKeyboard.instance.isShiftPressed;
-                      if (activeRow >= 0 && activeCol >= 0) {
-                        final previousRow = activeRow;
-                        final previousCol = activeCol;
-                        _storeCellValue(activeCellController.text,
-                            highlightRow: previousRow,
-                            highlightCol: previousCol);
-                        keyboardFocus.requestFocus();
-                      }
-                      if (isShiftPressed) {
-                        _moveLeft();
-                      } else {
-                        _moveRight();
-                      }
-                      return KeyEventResult.handled;
-                    default:
-                      if (highlightedRow >= 0 && highlightedCol >= 0) {
-                        _activateCell(
-                            controller.cellAt(highlightedRow, highlightedCol),
-                            highlightedRow,
-                            highlightedCol);
-                      }
-                      return KeyEventResult.ignored;
+          child: Focus(
+            focusNode: keyboardFocus,
+            onKeyEvent: (node, event) {
+              if (event is! KeyDownEvent) return KeyEventResult.ignored;
+              final key = event.logicalKey;
+              switch (key) {
+                case LogicalKeyboardKey.arrowUp:
+                  _moveUp();
+                  return KeyEventResult.handled;
+                case LogicalKeyboardKey.arrowDown:
+                  _moveDown();
+                  return KeyEventResult.handled;
+                case LogicalKeyboardKey.arrowLeft:
+                  _moveLeft();
+                  return KeyEventResult.handled;
+                case LogicalKeyboardKey.arrowRight:
+                  _moveRight();
+                  return KeyEventResult.handled;
+                case LogicalKeyboardKey.enter:
+                  if (highlightedRow >= 0 && highlightedCol >= 0) {
+                    _activateCell(
+                      controller.cellAt(highlightedRow, highlightedCol),
+                      highlightedRow,
+                      highlightedCol,
+                    );
+                  } else if (activeRow >= 0 && activeCol >= 0) {
+                    final previousRow = activeRow;
+                    final previousCol = activeCol;
+                    _storeCellValue(
+                      activeCellController.text,
+                      highlightRow: previousRow,
+                      highlightCol: previousCol,
+                    );
+                    keyboardFocus.requestFocus();
                   }
-                },
-                child: FractionallySizedBox(
-                    widthFactor: 0.90,
-                    heightFactor: 0.90,
+                  return KeyEventResult.handled;
+                case LogicalKeyboardKey.tab:
+                  final isShiftPressed =
+                      HardwareKeyboard.instance.isShiftPressed;
+                  if (activeRow >= 0 && activeCol >= 0) {
+                    final previousRow = activeRow;
+                    final previousCol = activeCol;
+                    _storeCellValue(
+                      activeCellController.text,
+                      highlightRow: previousRow,
+                      highlightCol: previousCol,
+                    );
+                    keyboardFocus.requestFocus();
+                  }
+                  if (isShiftPressed) {
+                    _moveLeft();
+                  } else {
+                    _moveRight();
+                  }
+                  return KeyEventResult.handled;
+                default:
+                  if (highlightedRow >= 0 && highlightedCol >= 0) {
+                    _activateCell(
+                      controller.cellAt(highlightedRow, highlightedCol),
+                      highlightedRow,
+                      highlightedCol,
+                    );
+                  }
+                  return KeyEventResult.ignored;
+              }
+            },
+            child: FractionallySizedBox(
+              widthFactor: 0.90,
+              heightFactor: 0.90,
+              child: Column(
+                children: [
+                  _buildControlBar(),
+                  Expanded(
                     child: ListView.builder(
                       itemCount: controller.rowCount,
                       itemBuilder: (context, r) {
@@ -300,7 +353,36 @@ class _SpreadsheetViewState extends State<_SpreadsheetView> {
                           },
                         );
                       },
-                    )))),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildControlBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          ElevatedButton.icon(
+            onPressed: () => controller.addRow(),
+            icon: const Icon(Icons.add),
+            label: const Text('Add row'),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            onPressed: () => controller.addColumn(),
+            icon: const Icon(Icons.view_column),
+            label: const Text('Add column'),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
     );
   }
