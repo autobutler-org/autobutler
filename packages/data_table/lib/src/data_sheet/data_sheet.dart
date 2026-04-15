@@ -109,147 +109,124 @@ class _DataSheetViewState extends State<_DataSheetView> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: const Text('data_sheet example')),
-        body: Center(
-            child: Focus(
-                focusNode: keyboardFocus,
-                onKeyEvent: (node, event) {
-                  if (event is! KeyDownEvent) return KeyEventResult.ignored;
-                  final key = event.logicalKey;
-                  switch (key) {
-                    case LogicalKeyboardKey.arrowUp:
-                      _moveUp();
-                      return KeyEventResult.handled;
-                    case LogicalKeyboardKey.arrowDown:
-                      _moveDown();
-                      return KeyEventResult.handled;
-                    case LogicalKeyboardKey.arrowLeft:
-                      _moveLeft();
-                      return KeyEventResult.handled;
-                    case LogicalKeyboardKey.arrowRight:
-                      _moveRight();
-                      return KeyEventResult.handled;
-                    case LogicalKeyboardKey.enter:
-                      if (highlightedRow >= 0 && highlightedCol >= 0) {
-                        _activateCell(
-                            controller.cellAt(highlightedRow, highlightedCol),
-                            highlightedRow,
-                            highlightedCol);
-                      } else if (activeRow >= 0 && activeCol >= 0) {
-                        final previousRow = activeRow;
-                        final previousCol = activeCol;
-                        _storeCellValue(activeCellController.text,
-                            highlightRow: previousRow,
-                            highlightCol: previousCol);
-                        keyboardFocus.requestFocus();
-                      }
-                      return KeyEventResult.handled;
-                    case LogicalKeyboardKey.tab:
-                      final isShiftPressed =
-                          HardwareKeyboard.instance.isShiftPressed;
-                      if (activeRow >= 0 && activeCol >= 0) {
-                        final previousRow = activeRow;
-                        final previousCol = activeCol;
-                        _storeCellValue(activeCellController.text,
-                            highlightRow: previousRow,
-                            highlightCol: previousCol);
-                        keyboardFocus.requestFocus();
-                      }
-                      if (isShiftPressed) {
-                        _moveLeft();
-                      } else {
-                        _moveRight();
-                      }
-                      return KeyEventResult.handled;
-                    default:
-                      if (highlightedRow >= 0 && highlightedCol >= 0) {
-                        _activateCell(
-                            controller.cellAt(highlightedRow, highlightedCol),
-                            highlightedRow,
-                            highlightedCol);
-                      }
-                      return KeyEventResult.ignored;
-                  }
-                },
-                child: FractionallySizedBox(
-                    widthFactor: 0.90,
-                    heightFactor: 0.90,
-                    child: ListView.builder(
-                      itemCount: controller.rowCount,
-                      itemBuilder: (context, r) {
-                        return ValueListenableBuilder<List<DataCell>>(
-                          valueListenable: controller.rowNotifier(r),
-                          builder: (context, rowCells, _) {
-                            return Row(
-                              children: List.generate(rowCells.length, (c) {
-                                final isActiveCell =
-                                    (r == activeRow && c == activeCol);
-                                final isHighlightedCell =
-                                    (r == highlightedRow &&
-                                        c == highlightedCol);
+    return Focus(
+        focusNode: keyboardFocus,
+        onKeyEvent: (node, event) {
+          if (event is! KeyDownEvent) return KeyEventResult.ignored;
+          final key = event.logicalKey;
+          switch (key) {
+            case LogicalKeyboardKey.arrowUp:
+              _moveUp();
+              return KeyEventResult.handled;
+            case LogicalKeyboardKey.arrowDown:
+              _moveDown();
+              return KeyEventResult.handled;
+            case LogicalKeyboardKey.arrowLeft:
+              _moveLeft();
+              return KeyEventResult.handled;
+            case LogicalKeyboardKey.arrowRight:
+              _moveRight();
+              return KeyEventResult.handled;
+            case LogicalKeyboardKey.enter:
+              if (highlightedRow >= 0 && highlightedCol >= 0) {
+                _activateCell(controller.cellAt(highlightedRow, highlightedCol),
+                    highlightedRow, highlightedCol);
+              } else if (activeRow >= 0 && activeCol >= 0) {
+                final previousRow = activeRow;
+                final previousCol = activeCol;
+                _storeCellValue(activeCellController.text,
+                    highlightRow: previousRow, highlightCol: previousCol);
+                keyboardFocus.requestFocus();
+              }
+              return KeyEventResult.handled;
+            case LogicalKeyboardKey.tab:
+              final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;
+              if (activeRow >= 0 && activeCol >= 0) {
+                final previousRow = activeRow;
+                final previousCol = activeCol;
+                _storeCellValue(activeCellController.text,
+                    highlightRow: previousRow, highlightCol: previousCol);
+                keyboardFocus.requestFocus();
+              }
+              if (isShiftPressed) {
+                _moveLeft();
+              } else {
+                _moveRight();
+              }
+              return KeyEventResult.handled;
+            default:
+              if (highlightedRow >= 0 && highlightedCol >= 0) {
+                _activateCell(controller.cellAt(highlightedRow, highlightedCol),
+                    highlightedRow, highlightedCol);
+              }
+              return KeyEventResult.ignored;
+          }
+        },
+        child: ListView.builder(
+          itemCount: controller.rowCount,
+          itemBuilder: (context, r) {
+            return ValueListenableBuilder<List<DataCell>>(
+              valueListenable: controller.rowNotifier(r),
+              builder: (context, rowCells, _) {
+                return Row(
+                  children: List.generate(rowCells.length, (c) {
+                    final isActiveCell = (r == activeRow && c == activeCol);
+                    final isHighlightedCell =
+                        (r == highlightedRow && c == highlightedCol);
 
-                                final child = isActiveCell
-                                    ? EditableCell(
-                                        key: ValueKey('r${r}c$c'),
-                                        controller: activeCellController,
-                                        onSubmitted: _storeCellValue,
-                                        onEditingComplete: () {
-                                          _storeCellValue(
-                                              activeCellController.text);
-                                        },
-                                        onTapOutside: (_) {
-                                          _storeCellValue(
-                                              activeCellController.text);
-                                        },
-                                      )
-                                    : GestureDetector(
-                                        onTap: () {
-                                          if (activeRow >= 0 &&
-                                              activeCol >= 0) {
-                                            _storeCellValue(
-                                                activeCellController.text);
-                                          } else {
-                                            setState(() {
-                                              if (highlightedRow == r &&
-                                                  highlightedCol == c) {
-                                                _activateCell(
-                                                    rowCells[c], r, c);
-                                              } else {
-                                                highlightedRow = r;
-                                                highlightedCol = c;
-                                                keyboardFocus.requestFocus();
-                                              }
-                                            });
-                                          }
-                                        },
-                                        child: Text(rowCells[c].value),
-                                      );
+                    final child = isActiveCell
+                        ? EditableCell(
+                            key: ValueKey('r${r}c$c'),
+                            controller: activeCellController,
+                            onSubmitted: _storeCellValue,
+                            onEditingComplete: () {
+                              _storeCellValue(activeCellController.text);
+                            },
+                            onTapOutside: (_) {
+                              _storeCellValue(activeCellController.text);
+                            },
+                          )
+                        : GestureDetector(
+                            onTap: () {
+                              if (activeRow >= 0 && activeCol >= 0) {
+                                _storeCellValue(activeCellController.text);
+                              } else {
+                                setState(() {
+                                  if (highlightedRow == r &&
+                                      highlightedCol == c) {
+                                    _activateCell(rowCells[c], r, c);
+                                  } else {
+                                    highlightedRow = r;
+                                    highlightedCol = c;
+                                    keyboardFocus.requestFocus();
+                                  }
+                                });
+                              }
+                            },
+                            child: Text(rowCells[c].value),
+                          );
 
-                                final flex = (c < controller.columnFlex.length)
-                                    ? controller.columnFlex[c]
-                                    : 1;
-                                return Expanded(
-                                  flex: flex,
-                                  child: Cell(
-                                    key: ValueKey('r${r}c$c'),
-                                    isActive: isActiveCell,
-                                    isHighlighted: isHighlightedCell,
-                                    cursor: isActiveCell
-                                        ? SystemMouseCursors.text
-                                        : SystemMouseCursors.cell,
-                                    child: child,
-                                  ),
-                                );
-                              }),
-                            );
-                          },
-                        );
-                      },
-                    )))),
-      ),
-    );
+                    final flex = (c < controller.columnFlex.length)
+                        ? controller.columnFlex[c]
+                        : 1;
+                    return Expanded(
+                      flex: flex,
+                      child: Cell(
+                        key: ValueKey('r${r}c$c'),
+                        isActive: isActiveCell,
+                        isHighlighted: isHighlightedCell,
+                        cursor: isActiveCell
+                            ? SystemMouseCursors.text
+                            : SystemMouseCursors.cell,
+                        child: child,
+                      ),
+                    );
+                  }),
+                );
+              },
+            );
+          },
+        ));
   }
 
   void _storeCellValue(
