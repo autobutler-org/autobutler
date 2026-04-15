@@ -1,7 +1,10 @@
 package v1_thumbnails
 
 import (
+	"context"
 	"crypto/sha256"
+	"database/sql"
+	"errors"
 	"fmt"
 	"image/jpeg"
 	"image/png"
@@ -11,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/photoutil"
@@ -39,10 +43,10 @@ func thumbnailCacheDir() (string, error) {
 // changes, so that stale cached thumbnails are automatically regenerated.
 const thumbnailCacheVersion = "v2"
 
-// cacheKey computes a SHA-256 hex digest of the given serial and file path,
-// used as the filename in the cache directory.
-func cacheKey(serial, filePath string) string {
-	h := sha256.Sum256([]byte(thumbnailCacheVersion + ":" + serial + "/" + filePath))
+// cacheKey computes a SHA-256 hex digest of the given serial, file path, and
+// rotation so that rotating a photo produces a distinct cache entry.
+func cacheKey(serial, filePath string, rotationQuarters int64) string {
+	h := sha256.Sum256([]byte(fmt.Sprintf("%s:%s/%s:r%d", thumbnailCacheVersion, serial, filePath, rotationQuarters)))
 	return fmt.Sprintf("%x", h)
 }
 
@@ -110,12 +114,26 @@ var getThumbnailRoute = serverutil.ApiRoute(
 
 		ext := strings.ToLower(filepath.Ext(filePath))
 
+		// --- Server-side rotation ---
+		// relPath strips the leading '/' that the wildcard param includes.
+		relPath := strings.TrimPrefix(filePath, "/")
+		var rotationQuarters int64
+		if rq, err := deps.Database().Queries.GetPhotoRotation(
+			context.Background(),
+			db.GetPhotoRotationParams{DeviceSerial: serial, RelPath: relPath},
+		); err == nil {
+			rotationQuarters = rq
+		} else if !errors.Is(err, sql.ErrNoRows) {
+			return serverutil.InternalServerError(fmt.Errorf("get photo rotation: %w", err))
+		}
+
 		// --- Disk cache lookup ---
+		// Rotation is included in the key so a rotated photo gets a new cache entry.
 		cacheDir, err := thumbnailCacheDir()
 		if err != nil {
 			return serverutil.InternalServerError(err)
 		}
-		key := cacheKey(serial, filePath)
+		key := cacheKey(serial, filePath, rotationQuarters)
 		cachedPath := filepath.Join(cacheDir, key)
 
 		cachedInfo, cacheErr := os.Stat(cachedPath)
@@ -130,6 +148,12 @@ var getThumbnailRoute = serverutil.ApiRoute(
 			})
 			if err != nil {
 				return serverutil.InternalServerError(err)
+			}
+
+			// Apply server-side rotation so the cached thumbnail matches the
+			// orientation the user has set.
+			if rotationQuarters != 0 {
+				result.Thumbnail = photoutil.ApplyRotation(result.Thumbnail, rotationQuarters)
 			}
 
 			// Write to cache file
@@ -166,7 +190,11 @@ var getThumbnailRoute = serverutil.ApiRoute(
 		// --- ETag / conditional response ---
 		etag := etagFromModTime(cachedInfo.ModTime())
 		c.Header("ETag", etag)
-		c.Header("Cache-Control", "public, max-age=86400")
+		// no-cache: the browser must revalidate every request via If-None-Match.
+		// The ETag covers rotation state (cache key includes rotationQuarters),
+		// so the browser gets fresh bytes immediately after a rotation without
+		// waiting for a max-age window to expire.
+		c.Header("Cache-Control", "no-cache")
 		c.Header("Content-Type", contentTypeForExt(ext))
 
 		if match := c.GetHeader("If-None-Match"); match == etag {
