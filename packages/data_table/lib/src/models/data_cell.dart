@@ -1,6 +1,6 @@
 class DataCell {
-  String data = "";
+  String value = "";
 
-  DataCell(this.data);
-  DataCell.unnamed(this.data);
+  DataCell(this.value);
+  DataCell.unnamed(this.value);
 }

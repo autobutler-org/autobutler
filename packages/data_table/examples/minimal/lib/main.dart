@@ -30,7 +30,7 @@ class ExamplePage extends StatelessWidget {
             children: row.cells.map((cell) {
               return Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text(cell.data),
+                child: Text(cell.value),
               );
             }).toList(),
           );

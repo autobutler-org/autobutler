@@ -2,11 +2,64 @@ import 'package:flutter/material.dart' hide DataTable, DataRow, DataCell;
 import 'package:flutter/services.dart';
 
 import '../../data_table.dart';
-import 'cell/cell.dart';
-import 'cell/editable_cell.dart';
-import 'data_sheet_controller.dart';
 
-class DataSheet extends StatelessWidget {
+class SheetController extends ChangeNotifier {
+  final DataTable table;
+  final List<ValueNotifier<List<DataCell>>> _rows;
+  List<int> columnFlex;
+
+  SheetController._(this.table, this._rows, this.columnFlex);
+
+  factory SheetController.fromTable(DataTable table, {List<int>? columnFlex}) {
+    final rows = table.rows
+        .map((r) => ValueNotifier<List<DataCell>>(List<DataCell>.from(r.cells)))
+        .toList();
+    final colCount = table.rows.isNotEmpty ? table.rows.first.cells.length : 0;
+    final flex = columnFlex ?? List<int>.filled(colCount, 1);
+    return SheetController._(table, rows, flex);
+  }
+
+  int get rowCount => _rows.length;
+
+  int get colCount => _rows.isNotEmpty ? _rows[0].value.length : 0;
+
+  ValueNotifier<List<DataCell>> rowNotifier(int row) => _rows[row];
+
+  DataCell cellAt(int row, int col) => _rows[row].value[col];
+
+  void updateCell(int row, int col, DataCell newCell) {
+    table.rows[row].cells[col] = newCell;
+    final updated = List<DataCell>.from(_rows[row].value);
+    updated[col] = newCell;
+    _rows[row].value = updated;
+    _rows[row].notifyListeners();
+    notifyListeners();
+  }
+
+  /// Replace the per-column flex factors and notify listeners so
+  /// layouts rebuild using the new values.
+  void setColumnFlex(List<int> flex) {
+    columnFlex = List<int>.from(flex);
+    notifyListeners();
+  }
+
+  /// Update a single column's flex factor.
+  void updateColumnFlexAt(int index, int flex) {
+    if (index < 0 || index >= columnFlex.length) return;
+    columnFlex[index] = flex;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    for (final r in _rows) {
+      r.dispose();
+    }
+    super.dispose();
+  }
+}
+
+class Spreadsheet extends StatelessWidget {
   final DataTable table;
 
   /// Callback that is called before a cell value is changed.
@@ -21,13 +74,13 @@ class DataSheet extends StatelessWidget {
 
   /// Optional external controller. If omitted, a controller is created
   /// from the provided `table` and owned by the internal view.
-  final DataSheetController? controller;
+  final SheetController? controller;
 
   /// Optional per-column flex factors. If provided and no external
   /// controller is supplied, these are forwarded to the internal controller.
   final List<int>? columnFlex;
 
-  const DataSheet(
+  const Spreadsheet(
       {super.key,
       required this.table,
       this.beforeCellValueChanged,
@@ -35,7 +88,7 @@ class DataSheet extends StatelessWidget {
       this.controller,
       this.columnFlex});
 
-  DataSheet.unnamed({super.key})
+  Spreadsheet.unnamed({super.key})
       : table = DataTable([]),
         beforeCellValueChanged = null,
         afterCellValueChanged = null,
@@ -44,7 +97,7 @@ class DataSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _DataSheetView(
+    return _SpreadsheetView(
       table: table,
       controller: controller,
       columnFlex: columnFlex,
@@ -54,14 +107,14 @@ class DataSheet extends StatelessWidget {
   }
 }
 
-class _DataSheetView extends StatefulWidget {
+class _SpreadsheetView extends StatefulWidget {
   final DataTable table;
-  final DataSheetController? controller;
+  final SheetController? controller;
   final List<int>? columnFlex;
   final bool Function(String, int, int)? beforeCellValueChanged;
   final Function(String, int, int, bool)? afterCellValueChanged;
 
-  const _DataSheetView({
+  const _SpreadsheetView({
     required this.table,
     this.controller,
     this.columnFlex,
@@ -70,13 +123,13 @@ class _DataSheetView extends StatefulWidget {
   });
 
   @override
-  State<_DataSheetView> createState() => _DataSheetViewState();
+  State<_SpreadsheetView> createState() => _SpreadsheetViewState();
 }
 
-class _DataSheetViewState extends State<_DataSheetView> {
+class _SpreadsheetViewState extends State<_SpreadsheetView> {
   late final TextEditingController activeCellController;
   late final FocusNode keyboardFocus;
-  late final DataSheetController controller;
+  late final SheetController controller;
   late final bool _ownsController;
 
   var activeRow = -1;
@@ -93,7 +146,7 @@ class _DataSheetViewState extends State<_DataSheetView> {
       controller = widget.controller!;
       _ownsController = false;
     } else {
-      controller = DataSheetController.fromTable(widget.table,
+      controller = SheetController.fromTable(widget.table,
           columnFlex: widget.columnFlex);
       _ownsController = true;
     }
@@ -111,7 +164,7 @@ class _DataSheetViewState extends State<_DataSheetView> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('data_sheet example')),
+        appBar: AppBar(title: const Text('data_table spreadsheet example')),
         body: Center(
             child: Focus(
                 focusNode: keyboardFocus,
@@ -191,7 +244,7 @@ class _DataSheetViewState extends State<_DataSheetView> {
                                         c == highlightedCol);
 
                                 final child = isActiveCell
-                                    ? EditableCell(
+                                    ? _SpreadsheetEditableCell(
                                         key: ValueKey('r${r}c$c'),
                                         controller: activeCellController,
                                         onSubmitted: _storeCellValue,
@@ -232,7 +285,7 @@ class _DataSheetViewState extends State<_DataSheetView> {
                                     : 1;
                                 return Expanded(
                                   flex: flex,
-                                  child: Cell(
+                                  child: _SpreadsheetCell(
                                     key: ValueKey('r${r}c$c'),
                                     isActive: isActiveCell,
                                     isHighlighted: isHighlightedCell,
@@ -316,5 +369,74 @@ class _DataSheetViewState extends State<_DataSheetView> {
         highlightedCol++;
       });
     }
+  }
+}
+
+class _SpreadsheetCell extends StatelessWidget {
+  final Widget child;
+  final bool isActive;
+  final bool isHighlighted;
+  final MouseCursor cursor;
+
+  const _SpreadsheetCell({
+    super.key,
+    required this.child,
+    required this.isActive,
+    required this.isHighlighted,
+    required this.cursor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const borderWidth = 1.0;
+    return MouseRegion(
+      cursor: cursor,
+      child: Container(
+        height: 40,
+        decoration: BoxDecoration(
+          color: isActive ? Colors.grey.shade300 : null,
+          border: Border.all(
+            color: (isActive || isHighlighted)
+                ? Theme.of(context).colorScheme.primary
+                : Colors.grey.shade400,
+            width: borderWidth * ((isActive || isHighlighted) ? 2 : 1),
+          ),
+          borderRadius: BorderRadius.zero,
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
+class _SpreadsheetEditableCell extends StatelessWidget {
+  final TextEditingController controller;
+  final void Function(String) onSubmitted;
+  final VoidCallback onEditingComplete;
+  final void Function(PointerDownEvent) onTapOutside;
+
+  const _SpreadsheetEditableCell({
+    super.key,
+    required this.controller,
+    required this.onSubmitted,
+    required this.onEditingComplete,
+    required this.onTapOutside,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      autofocus: true,
+      controller: controller,
+      decoration: const InputDecoration(
+        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        isDense: true,
+        border: InputBorder.none,
+      ),
+      textAlignVertical: TextAlignVertical.center,
+      onSubmitted: onSubmitted,
+      onEditingComplete: onEditingComplete,
+      onTapOutside: onTapOutside,
+    );
   }
 }

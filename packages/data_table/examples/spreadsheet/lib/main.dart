@@ -16,7 +16,7 @@ void main() {
       print('Cell at row $row, column $col changing to "$value"');
       print('Table before:');
       for (var r = 0; r < table.rows.length; r++) {
-        var rowData = table.rows[r].cells.map((cell) => cell.data).join(', ');
+        var rowData = table.rows[r].cells.map((cell) => cell.value).join(', ');
         print('Row $r: $rowData');
       }
       return true;
@@ -25,7 +25,7 @@ void main() {
       print('Cell at row $row, column $col changed to "$value"');
       print('Table after:');
       for (var r = 0; r < table.rows.length; r++) {
-        var rowData = table.rows[r].cells.map((cell) => cell.data).join(', ');
+        var rowData = table.rows[r].cells.map((cell) => cell.value).join(', ');
         print('Row $r: $rowData');
       }
     },
