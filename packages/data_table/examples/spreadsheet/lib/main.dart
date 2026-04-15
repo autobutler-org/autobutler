@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
 
+import 'package:data_table/data_sheet.dart';
 import 'package:data_table/data_table.dart';
-import 'package:data_table/widgets/spreadsheet.dart';
 import 'package:flutter/widgets.dart';
 
 void main() {
@@ -10,7 +10,7 @@ void main() {
     DataRow([DataCell('Bob'), DataCell('25'), DataCell('Los Angeles')]),
     DataRow([DataCell('Charlie'), DataCell('35'), DataCell('Chicago')]),
   ]);
-  runApp(Spreadsheet(
+  runApp(DataSheet(
     table: table,
     beforeCellValueChanged: (value, row, col) {
       print('Cell at row $row, column $col changing to "$value"');
