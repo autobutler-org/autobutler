@@ -97,20 +97,14 @@ class _DataSheetViewState extends State<_DataSheetView> {
           columnFlex: widget.columnFlex);
       _ownsController = true;
     }
-    controller.addListener(_onControllerChanged);
   }
 
   @override
   void dispose() {
     activeCellController.dispose();
     keyboardFocus.dispose();
-    controller.removeListener(_onControllerChanged);
     if (_ownsController) controller.dispose();
     super.dispose();
-  }
-
-  void _onControllerChanged() {
-    if (mounted) setState(() {});
   }
 
   @override
@@ -182,112 +176,78 @@ class _DataSheetViewState extends State<_DataSheetView> {
                 child: FractionallySizedBox(
                     widthFactor: 0.90,
                     heightFactor: 0.90,
-                    child: Column(
-                      children: [
-                        _buildControlBar(),
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: controller.rowCount,
-                            itemBuilder: (context, r) {
-                              return ValueListenableBuilder<List<DataCell>>(
-                                valueListenable: controller.rowNotifier(r),
-                                builder: (context, rowCells, _) {
-                                  return Row(
-                                    children:
-                                        List.generate(rowCells.length, (c) {
-                                      final isActiveCell =
-                                          (r == activeRow && c == activeCol);
-                                      final isHighlightedCell =
-                                          (r == highlightedRow &&
-                                              c == highlightedCol);
+                    child: ListView.builder(
+                      itemCount: controller.rowCount,
+                      itemBuilder: (context, r) {
+                        return ValueListenableBuilder<List<DataCell>>(
+                          valueListenable: controller.rowNotifier(r),
+                          builder: (context, rowCells, _) {
+                            return Row(
+                              children: List.generate(rowCells.length, (c) {
+                                final isActiveCell =
+                                    (r == activeRow && c == activeCol);
+                                final isHighlightedCell =
+                                    (r == highlightedRow &&
+                                        c == highlightedCol);
 
-                                      final child = isActiveCell
-                                          ? EditableCell(
-                                              key: ValueKey('r${r}c$c'),
-                                              controller: activeCellController,
-                                              onSubmitted: _storeCellValue,
-                                              onEditingComplete: () {
-                                                _storeCellValue(
-                                                    activeCellController.text);
-                                              },
-                                              onTapOutside: (_) {
-                                                _storeCellValue(
-                                                    activeCellController.text);
-                                              },
-                                            )
-                                          : GestureDetector(
-                                              onTap: () {
-                                                if (activeRow >= 0 &&
-                                                    activeCol >= 0) {
-                                                  _storeCellValue(
-                                                      activeCellController
-                                                          .text);
-                                                } else {
-                                                  setState(() {
-                                                    if (highlightedRow == r &&
-                                                        highlightedCol == c) {
-                                                      _activateCell(
-                                                          rowCells[c], r, c);
-                                                    } else {
-                                                      highlightedRow = r;
-                                                      highlightedCol = c;
-                                                      keyboardFocus
-                                                          .requestFocus();
-                                                    }
-                                                  });
-                                                }
-                                              },
-                                              child: Text(rowCells[c].value),
-                                            );
-
-                                      final flex =
-                                          (c < controller.columnFlex.length)
-                                              ? controller.columnFlex[c]
-                                              : 1;
-                                      return Expanded(
-                                        flex: flex,
-                                        child: Cell(
-                                          key: ValueKey('r${r}c$c'),
-                                          isActive: isActiveCell,
-                                          isHighlighted: isHighlightedCell,
-                                          cursor: isActiveCell
-                                              ? SystemMouseCursors.text
-                                              : SystemMouseCursors.cell,
-                                          child: child,
-                                        ),
+                                final child = isActiveCell
+                                    ? EditableCell(
+                                        key: ValueKey('r${r}c$c'),
+                                        controller: activeCellController,
+                                        onSubmitted: _storeCellValue,
+                                        onEditingComplete: () {
+                                          _storeCellValue(
+                                              activeCellController.text);
+                                        },
+                                        onTapOutside: (_) {
+                                          _storeCellValue(
+                                              activeCellController.text);
+                                        },
+                                      )
+                                    : GestureDetector(
+                                        onTap: () {
+                                          if (activeRow >= 0 &&
+                                              activeCol >= 0) {
+                                            _storeCellValue(
+                                                activeCellController.text);
+                                          } else {
+                                            setState(() {
+                                              if (highlightedRow == r &&
+                                                  highlightedCol == c) {
+                                                _activateCell(
+                                                    rowCells[c], r, c);
+                                              } else {
+                                                highlightedRow = r;
+                                                highlightedCol = c;
+                                                keyboardFocus.requestFocus();
+                                              }
+                                            });
+                                          }
+                                        },
+                                        child: Text(rowCells[c].value),
                                       );
-                                    }),
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    )))),
-      ),
-    );
-  }
 
-  Widget _buildControlBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          ElevatedButton.icon(
-            onPressed: () => controller.addRow(),
-            icon: const Icon(Icons.add),
-            label: const Text('Add row'),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton.icon(
-            onPressed: () => controller.addColumn(),
-            icon: const Icon(Icons.view_column),
-            label: const Text('Add column'),
-          ),
-          const SizedBox(width: 8),
-        ],
+                                final flex = (c < controller.columnFlex.length)
+                                    ? controller.columnFlex[c]
+                                    : 1;
+                                return Expanded(
+                                  flex: flex,
+                                  child: Cell(
+                                    key: ValueKey('r${r}c$c'),
+                                    isActive: isActiveCell,
+                                    isHighlighted: isHighlightedCell,
+                                    cursor: isActiveCell
+                                        ? SystemMouseCursors.text
+                                        : SystemMouseCursors.cell,
+                                    child: child,
+                                  ),
+                                );
+                              }),
+                            );
+                          },
+                        );
+                      },
+                    )))),
       ),
     );
   }
