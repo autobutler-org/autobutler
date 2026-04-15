@@ -6,12 +6,24 @@
 
 - Respect the linting and formatting conventions of the various linting and formatting configurations and tools being used.
 
+### Minimizing Database Usage
+
+- Add or modify DB tables only as a last resort.
+- Prefer native file edits or other non-database mechanisms whenever possible.
+- Only use the database for data that genuinely cannot be managed reliably on disk or in files.
+
 ### Backend development assumptions
 
 - Assume the developer is running the backend via `make watch` and that it will auto-reload on code changes.
 - Never run the `make generate` target. Just assume the code is generated automatically as a part of `make watch`.
 - Never attempt to start, stop, or restart the backend server yourself.
 - Focus on code changes only; the running server will pick them up automatically.
+
+### Use Makefile Targets
+
+- Agents should use existing Makefile targets to `run`, `test`, and `lint` the codebase rather than crafting their own shell commands.
+- Do **not** run ad hoc commands for these standard flows — use `make test`, `make lint`, etc.
+- If an action needs to be templatized for general usage, add a new Makefile target for it rather than running raw commands.
 
 ### API endpoint architecture
 
@@ -45,6 +57,12 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
 - This repository is a Flutter mobile app (Dart), with platform folders under `android/` and `ios/` and app code under `lib/`.
 - Prefer Dart/Flutter implementations for app logic. Do not introduce web-only patterns or frameworks unless explicitly
   requested.
+
+### Packages Directory
+
+- `packages/` contains fully independent Dart or Flutter libraries maintained alongside Autobutler.
+- These packages are kept generic and are **not** monolithic to the Autobutler codebase — they are intended for both internal use and eventual public publication.
+- Other Flutter developers can adopt these packages independently; keep them decoupled from app-specific logic to maximize reusability.
 
 ### Current app structure (follow this)
 
