@@ -2,78 +2,78 @@
 
 This file documents the intended capabilities for the `DataSheetControlBar` companion widget. The control bar is optional — apps may provide their own controls and call methods on `DataSheetController` directly.
 
-## Essential Controls
+Legend: ✅ implemented · 🔜 planned · ❌ out of scope for this package
 
-- Add Row: append an empty row via `DataSheetController.addRow()`.
-- Add Column: append an empty column to every row via `DataSheetController.addColumn()`.
-- Insert Row / Column: insert at a specified index (before/after).
-- Delete Row / Column: remove selected or indexed row/column.
+## Essential Controls
+- ✅ Add Row — `DataSheetController.addRow()`
+- ✅ Add Column — `DataSheetController.addColumn()`
+- ✅ Insert Row Before / After — `insertRowAt(index)`
+- ✅ Insert Column Before / After — `insertColumnAt(index)`
+- ✅ Delete Row — `deleteRowAt(index)`
+- ✅ Delete Column — `deleteColumnAt(index)`
 
 ## Editing & Bulk Operations
-
-- Duplicate Row/Column: clone an existing row/column.
-- Bulk Edit: apply a value or transformation to a selection or rectangular range.
-- Clear Cells: clear values (and optionally formatting) for a selection.
-- Undo / Redo: stepwise undo/redo for edits and structural changes.
-- Fill Down / Fill Right: copy a value/formula across a range.
+- ✅ Undo / Redo — snapshot-based, 100-step depth
+- ✅ Duplicate Row — `duplicateRow(index)`
+- ✅ Duplicate Column — `duplicateColumn(index)`
+- ✅ Clear Row — `clearRow(index)` (empties all values)
+- ✅ Clear Column — `clearColumn(index)`
+- ✅ Clear Cell — `clearCell(row, col)`
+- ✅ Fill Down — copies selected cell value to all rows below in the same column
+- ✅ Fill Right — copies selected cell value to all columns to the right in the same row
+- 🔜 Bulk Edit — apply a value to a rectangular range (needs multi-cell selection)
 
 ## Selection & Navigation
-
-- Select All / Clear Selection.
-- Find & Replace across the sheet.
-- Go To Cell by coordinates (row/col).
-- Toggle multi-select or rectangular selection mode.
+- ✅ Go To Cell — dialog, sets selection via `DataSheetSelectionModel.goTo(row, col)`
+- 🔜 Select All / Clear Selection — needs multi-cell selection model
+- 🔜 Multi-select / rectangular selection — future work
+- 🔜 Find (highlight results) — `findCells()` exists on controller; UI highlight not yet wired
 
 ## Sort, Filter & Transform
+- ✅ Sort by column — `sortByColumn(col, ascending)` with dialog
+- ✅ Remove Duplicate Rows — `removeDuplicateRows()`
+- 🔜 Filter by column value / predicate
+- 🔜 Apply column transformations (trim, case, parse)
 
-- Sort Column(s) ascending/descending (single or multi-column).
-- Filter Column with simple predicates or substring matching.
-- Remove Duplicates by column(s).
-- Apply Transformations (trim, case, parse number/date) to a column.
+## Find & Replace
+- ✅ Find — `findCells(query)` on controller
+- ✅ Replace All — `replaceCells(from, to)` with dialog, case-sensitive toggle
 
 ## Import / Export / Persistence
-
-- Export CSV / Excel for full table or current selection.
-- Import CSV / Paste from clipboard into current selection or new rows.
-- Save / Load templates or schema presets.
+- ✅ Export CSV — `exportCsv()` returns RFC-4180 string; shown in copy-able dialog
+- ✅ Import CSV — `loadFromCsv(csv)` replaces table; dialog accepts pasted text
+- 🔜 Export to Excel / spreadsheet format
+- 🔜 Save / Load named templates
 
 ## View & Layout
-
-- Resize columns (drag or presets).
-- Set column types/formats (text, number, date, currency, enum).
-- Adjust column flex factors (expose `controller.columnFlex` editing).
-- Freeze header rows / left columns.
-- Toggle gridlines and header visibility.
+- ✅ Column flex configuration — `setColumnFlex`, `updateColumnFlexAt`
+- 🔜 Freeze rows / columns (sticky header)
+- 🔜 Toggle gridlines visibility
+- 🔜 Drag-to-resize columns
+- 🔜 Column type / format metadata (text, number, date)
 
 ## Advanced Data Features
-
-- Formula entry / formula bar with evaluation and result display.
-- Validation rules with highlight and error messages.
-- Cell formatting (alignment, number formatting, font weight/italic).
-- Conditional formatting rules.
+- 🔜 Formula bar / expression evaluation
+- 🔜 Per-cell validation rules
+- 🔜 Cell formatting (font weight, alignment, number format)
+- 🔜 Conditional formatting rules
 
 ## UX / Accessibility
-
-- Keyboard shortcuts (add/delete, undo/redo, navigation).
-- Tooltips and accessible labels for controls.
-- Disabled / busy states for long-running operations.
-- Localization support and theme-awareness.
+- ✅ Tooltip labels on every toolbar button
+- ✅ Disabled states — buttons are null (disabled) when no row/column is selected
+- ✅ Context-sensitive enabling — row/column buttons require a cell to be highlighted
+- 🔜 Keyboard shortcuts for toolbar actions
+- 🔜 Localization / i18n
 
 ## Extensibility & Integration
+- ✅ Accepts `DataSheetController` (required)
+- ✅ Selection model (`DataSheetSelectionModel`) exposed on the controller so custom bars can read it
+- 🔜 `onAction` callback hooks for telemetry
+- 🔜 Custom builder slot for replacing individual button groups
 
-- Accepts a `DataSheetController` (required by default control bar).
-- Expose `onAction` callbacks for telemetry or hooks (optional).
-- Provide a slot or builder for developers to replace or extend UI.
-- Keep control bar logic thin — delegate heavy ops to the controller/service layer.
+## Architecture Notes
+- `DataSheetSelectionModel` is owned by `DataSheetController` and propagates its changes through the controller's `notifyListeners`, so any `ListenableBuilder(listenable: controller)` reacts to both data and selection changes.
+- The control bar uses `ListenableBuilder` internally; no external state management needed.
+- Library widgets do not embed `MaterialApp` or assume `Directionality` — the host app provides the material tree.
+- All mutating controller methods push an undo snapshot before making changes.
 
-## Minimal suggested initial subset
-
-For a compact, useful control bar v1 implement:
-
-- Add Row, Add Column, Delete Row, Delete Column, Undo, Redo, Export CSV.
-
-## Notes for implementers
-
-- Library widgets must not assume `MaterialApp` or `Directionality` — the control bar should render correctly inside whatever app theme is used.
-- Keep the control bar stateless where possible; rely on `DataSheetController` for state and `notifyListeners()` for updates.
-- Provide sensible defaults for button icons, labels, and spacing but allow overrides via constructor parameters.

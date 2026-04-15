@@ -79,10 +79,10 @@ class _DataSheetViewState extends State<_DataSheetView> {
   late final DataSheetController controller;
   late final bool _ownsController;
 
-  var activeRow = -1;
-  var activeCol = -1;
-  var highlightedRow = -1;
-  var highlightedCol = -1;
+  int get activeRow => controller.selection.activeRow;
+  int get activeCol => controller.selection.activeCol;
+  int get highlightedRow => controller.selection.highlightedRow;
+  int get highlightedCol => controller.selection.highlightedCol;
 
   @override
   void initState() {
@@ -197,16 +197,13 @@ class _DataSheetViewState extends State<_DataSheetView> {
                               if (activeRow >= 0 && activeCol >= 0) {
                                 _storeCellValue(activeCellController.text);
                               } else {
-                                setState(() {
-                                  if (highlightedRow == r &&
-                                      highlightedCol == c) {
-                                    _activateCell(rowCells[c], r, c);
-                                  } else {
-                                    highlightedRow = r;
-                                    highlightedCol = c;
-                                    keyboardFocus.requestFocus();
-                                  }
-                                });
+                                if (highlightedRow == r &&
+                                    highlightedCol == c) {
+                                  _activateCell(rowCells[c], r, c);
+                                } else {
+                                  controller.selection.setHighlighted(r, c);
+                                  keyboardFocus.requestFocus();
+                                }
                               }
                             },
                             child: Text(rowCells[c].value),
@@ -242,62 +239,50 @@ class _DataSheetViewState extends State<_DataSheetView> {
   }) {
     final changedRow = activeRow;
     final changedCol = activeCol;
+    if (changedRow < 0 || changedCol < 0) return;
     final isChangeAccepted =
         widget.beforeCellValueChanged?.call(value, changedRow, changedCol) ??
             true;
-    setState(() {
-      if (isChangeAccepted) {
-        controller.updateCell(activeRow, activeCol, DataCell(value));
-      }
-      activeRow = -1;
-      activeCol = -1;
-      highlightedRow = highlightRow;
-      highlightedCol = highlightCol;
-    });
+    if (isChangeAccepted) {
+      controller.updateCell(changedRow, changedCol, DataCell(value));
+    }
+    activeCellController.clear();
+    if (highlightRow >= 0) {
+      controller.selection.setHighlighted(highlightRow, highlightCol);
+    } else {
+      controller.selection.clear();
+    }
     widget.afterCellValueChanged
         ?.call(value, changedRow, changedCol, isChangeAccepted);
   }
 
   void _activateCell(DataCell cell, int row, int col) {
-    setState(() {
-      activeCellController.text = cell.value;
-      activeRow = row;
-      activeCol = col;
-      highlightedRow = -1;
-      highlightedCol = -1;
-      keyboardFocus.unfocus();
-    });
+    activeCellController.text = cell.value.toString();
+    keyboardFocus.unfocus();
+    controller.selection.setActive(row, col);
   }
 
   void _moveUp() {
     if (highlightedRow > 0) {
-      setState(() {
-        highlightedRow--;
-      });
+      controller.selection.setHighlighted(highlightedRow - 1, highlightedCol);
     }
   }
 
   void _moveDown() {
     if (highlightedRow < controller.rowCount - 1) {
-      setState(() {
-        highlightedRow++;
-      });
+      controller.selection.setHighlighted(highlightedRow + 1, highlightedCol);
     }
   }
 
   void _moveLeft() {
     if (highlightedCol > 0) {
-      setState(() {
-        highlightedCol--;
-      });
+      controller.selection.setHighlighted(highlightedRow, highlightedCol - 1);
     }
   }
 
   void _moveRight() {
     if (highlightedCol < controller.colCount - 1) {
-      setState(() {
-        highlightedCol++;
-      });
+      controller.selection.setHighlighted(highlightedRow, highlightedCol + 1);
     }
   }
 }
