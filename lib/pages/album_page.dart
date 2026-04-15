@@ -1,5 +1,6 @@
 import 'package:autobutler/models/photo_album.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
+import 'package:autobutler/pages/photos_page.dart';
 import 'package:autobutler/services/album_service.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/theme/autobutler_colors.dart';
@@ -49,6 +50,16 @@ class _AlbumPageState extends State<AlbumPage> {
     }
   }
 
+  Future<void> _openAddPhotosMode() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PhotosPage(addingToAlbum: widget.album),
+      ),
+    );
+    // Reload after returning in case photos were added
+    await _load();
+  }
+
   Future<void> _removeItem(PhotoAlbumItem item) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -92,6 +103,11 @@ class _AlbumPageState extends State<AlbumPage> {
       appBar: AppBar(
         title: Text(widget.album.name),
         actions: [
+          TextButton.icon(
+            onPressed: _openAddPhotosMode,
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Add Photos'),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Refresh',

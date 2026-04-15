@@ -2339,10 +2339,6 @@ const docTemplate = `{
         },
         "v1_albums.addPhotoRequest": {
             "type": "object",
-            "required": [
-                "deviceSerial",
-                "relPath"
-            ],
             "properties": {
                 "deviceSerial": {
                     "type": "string"

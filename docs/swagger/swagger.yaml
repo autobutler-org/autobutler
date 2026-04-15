@@ -87,9 +87,6 @@ definitions:
         type: string
       relPath:
         type: string
-    required:
-    - deviceSerial
-    - relPath
     type: object
   v1_albums.createAlbumRequest:
     properties:
