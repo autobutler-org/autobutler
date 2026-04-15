@@ -137,15 +137,28 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     // leave it at 0 here and let _loadMetadataForCurrent apply it.
     setState(() {
       _sidebarOpen = sidebarOpen;
-      _isFavorite = favs.contains(_favKey(_currentRelPath, _currentSerial));
+      _isFavorite = favs.contains(
+        _favKey(_currentRelPath, _currentSerial, fallback: _currentName),
+      );
     });
     _loadMetadata();
   }
 
   // --- Key helpers ---
 
-  String _favKey(String? relPath, String? serial) =>
-      '${serial ?? ''}:${relPath ?? ''}';
+  /// Stable key for storing/reading a favorite.
+  ///
+  /// Cirrus photos use `serial:relPath` (both may be empty strings but at
+  /// least one is set for any real Cirrus file).  Local device assets have
+  /// neither, so fall back to `asset:<name>` — not globally unique but
+  /// avoids the `":"` collision that would make every no-path photo share
+  /// the same favorite entry.
+  String _favKey(String? relPath, String? serial, {String fallback = ''}) {
+    if ((serial?.isNotEmpty ?? false) || (relPath?.isNotEmpty ?? false)) {
+      return '${serial ?? ''}:${relPath ?? ''}';
+    }
+    return 'asset:$fallback';
+  }
 
   // Rotation is always server-backed. Only Cirrus photos (with a relPath)
   // support rotation — local device assets have no server path to key on.
@@ -186,7 +199,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
 
       // Refresh favorite state for the new photo's key.
       final favs = _prefs?.getStringList(_kFavoritesKey) ?? [];
-      final newFavKey = _favKey(relPath, serial);
+      final newFavKey = _favKey(relPath, serial, fallback: name);
 
       // Reset rotation to 0; _loadMetadataForCurrent will apply the
       // server-persisted value once metadata arrives.
@@ -252,7 +265,11 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   }
 
   void _toggleFavorite() {
-    final key = _favKey(_currentRelPath, _currentSerial);
+    final key = _favKey(
+      _currentRelPath,
+      _currentSerial,
+      fallback: _currentName,
+    );
     final favs = List<String>.from(_prefs?.getStringList(_kFavoritesKey) ?? []);
     setState(() {
       _isFavorite = !_isFavorite;
