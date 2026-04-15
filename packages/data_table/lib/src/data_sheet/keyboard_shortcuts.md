@@ -20,12 +20,12 @@ The entire key binding map is customizable — developers can supply their own
 | Tab           | Move highlight right; wraps at row end        | ✅     |
 | Shift+Tab     | Move highlight left                           | ✅     |
 | Enter         | Confirm edit / activate highlighted cell      | ✅     |
-| Ctrl/Cmd+Home | Jump to first cell (row 0, col 0)             | 🔜     |
-| Ctrl/Cmd+End  | Jump to last cell                             | 🔜     |
+| Ctrl/Cmd+Home | Jump to first cell (row 0, col 0)             | ✅     |
+| Ctrl/Cmd+End  | Jump to last cell                             | ✅     |
 | Page Down     | Move highlight down by visible-page height    | 🔜     |
 | Page Up       | Move highlight up by visible-page height      | 🔜     |
-| Home          | Move highlight to first column in current row | 🔜     |
-| End           | Move highlight to last column in current row  | 🔜     |
+| Home          | Move highlight to first column in current row | ✅     |
+| End           | Move highlight to last column in current row  | ✅     |
 
 ---
 
@@ -34,11 +34,11 @@ The entire key binding map is customizable — developers can supply their own
 | Keys                           | Action                                     | Status |
 | ------------------------------ | ------------------------------------------ | ------ |
 | Any printable key              | Open cell for editing (start typing)       | ✅     |
-| F2                             | Enter edit mode for the highlighted cell   | 🔜     |
-| Escape                         | Cancel active edit, restore previous value | 🔜     |
-| Delete / Backspace             | Clear the highlighted cell's value         | 🔜     |
-| Ctrl/Cmd+Z                     | Undo last action                           | 🔜     |
-| Ctrl/Cmd+Y or Ctrl/Cmd+Shift+Z | Redo                                       | 🔜     |
+| F2                             | Enter edit mode for the highlighted cell   | ✅     |
+| Escape                         | Cancel active edit, restore previous value | ✅     |
+| Delete / Backspace             | Clear the highlighted cell's value         | ✅     |
+| Ctrl/Cmd+Z                     | Undo last action                           | ✅     |
+| Ctrl/Cmd+Y or Ctrl/Cmd+Shift+Z | Redo                                       | ✅     |
 
 ---
 
@@ -46,9 +46,9 @@ The entire key binding map is customizable — developers can supply their own
 
 | Keys       | Action                                          | Status |
 | ---------- | ----------------------------------------------- | ------ |
-| Ctrl/Cmd+C | Copy highlighted cell value to system clipboard | 🔜     |
-| Ctrl/Cmd+X | Cut — copy then clear highlighted cell          | 🔜     |
-| Ctrl/Cmd+V | Paste clipboard text into highlighted cell      | 🔜     |
+| Ctrl/Cmd+C | Copy highlighted cell value to system clipboard | ✅     |
+| Ctrl/Cmd+X | Cut — copy then clear highlighted cell          | ✅     |
+| Ctrl/Cmd+V | Paste clipboard text into highlighted cell      | ✅     |
 
 ---
 
@@ -66,8 +66,8 @@ The entire key binding map is customizable — developers can supply their own
 
 | Keys       | Action                                                            | Status |
 | ---------- | ----------------------------------------------------------------- | ------ |
-| Ctrl/Cmd+D | Fill down — copy value of cell above into highlighted cell        | 🔜     |
-| Ctrl/Cmd+R | Fill right — copy value of cell to the left into highlighted cell | 🔜     |
+| Ctrl/Cmd+D | Fill down — copy value of cell above into highlighted cell        | ✅     |
+| Ctrl/Cmd+R | Fill right — copy value of cell to the left into highlighted cell | ✅     |
 | Ctrl/Cmd+F | Open Find & Replace dialog                                        | 🔜     |
 | Ctrl/Cmd+G | Open Go To Cell dialog                                            | 🔜     |
 
@@ -77,29 +77,30 @@ The entire key binding map is customizable — developers can supply their own
 
 | Keys                 | Action                                | Status |
 | -------------------- | ------------------------------------- | ------ |
-| Ctrl/Cmd+Plus        | Insert row above highlighted cell     | 🔜     |
-| Ctrl/Cmd+Minus       | Delete row of highlighted cell        | 🔜     |
-| Ctrl/Cmd+Shift+Plus  | Insert column before highlighted cell | 🔜     |
-| Ctrl/Cmd+Shift+Minus | Delete column of highlighted cell     | 🔜     |
+| Ctrl/Cmd+Plus        | Insert row above highlighted cell     | ✅     |
+| Ctrl/Cmd+Minus       | Delete row of highlighted cell        | ✅     |
+| Ctrl/Cmd+Shift+Plus  | Insert column before highlighted cell | ✅     |
+| Ctrl/Cmd+Shift+Minus | Delete column of highlighted cell     | ✅     |
 
 ---
 
 ## Implementation Notes
 
-- All shortcuts are handled in `_DataSheetViewState.build` inside the `Focus`
-  widget's `onKeyEvent` callback. The sheet must have keyboard focus (tap a cell
-  first) for shortcuts to fire.
-- Use `HardwareKeyboard.instance.isControlPressed ||
-HardwareKeyboard.instance.isMetaPressed` to handle both Windows/Linux
-  (Ctrl) and macOS (Cmd) in a cross-platform way.
-- Clipboard integration requires the `flutter/services.dart`
-  `Clipboard.getData` / `Clipboard.setData` API — no extra packages needed.
-- Escape during editing should restore the cell's value to what it was before
-  editing began; store a `_priorCellValue` local variable in the state when
-  entering edit mode.
-- Structural shortcuts (insert/delete row/col) delegate to the same
-  `DataSheetController` methods used by the control bar, so undo/redo
-  captures them automatically.
+- All shortcuts are dispatched through `DataSheetControlScheme` — the active
+  scheme is resolved each key event via `widget.controlScheme ?? DataSheetControlScheme.defaults()`.
+- `KeyboardShortcut.matches` checks `HardwareKeyboard.instance.isControlPressed || isMetaPressed`
+  for the `ctrl` flag, so the same scheme works on Windows/Linux and macOS.
+- Clipboard operations use the `flutter/services.dart` `Clipboard` API — no
+  extra packages required. `_pasteCell` is async; the cell update is scheduled
+  after the future resolves and guarded by a `mounted` check.
+- `_priorCellValue` is captured in `_activateCell` so that pressing Escape can
+  restore the original value without touching undo history.
+- Structural shortcuts delegate to `DataSheetController` methods that push an
+  undo snapshot, so Ctrl+Z recovers inserted/deleted rows and columns.
+- Page Up / Page Down require access to the scroll position and visible row
+  count; they remain 🔜 until a `ScrollController` is wired into the view.
+- Ctrl+F and Ctrl+G open dialogs; those are owned by the control bar rather than
+  the sheet itself and remain 🔜 at the sheet level.
 
 ---
 
