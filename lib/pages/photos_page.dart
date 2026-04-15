@@ -45,7 +45,7 @@ class PhotoItem {
   /// A stable key for this item suitable for use in a selection set.
   String get selectionKey {
     if (isCirrus) {
-      return '${cirrus!.deviceSerial}:${cirrus!.dirPath}';
+      return '${cirrus!.deviceSerial}:${cirrus!.apiPath}';
     }
     return 'asset:${asset!.id}';
   }
@@ -826,9 +826,13 @@ class _PhotosPageState extends State<PhotosPage>
 
   Future<void> _confirmAddToAlbum() async {
     // Flow 2: user tapped Done while in adding-to-album mode.
-    // Only Cirrus photos can be added to albums, so search _cirrusPhotos
-    // regardless of which tab is currently active.
-    await _addSelectedToAlbum(_addingToAlbum!, _cirrusPhotos);
+    // Pass the full set of loaded photos so that any selected device assets
+    // are counted as skipped (and the user gets feedback) rather than silently
+    // ignored. _addSelectedToAlbum already rejects non-Cirrus items.
+    await _addSelectedToAlbum(_addingToAlbum!, [
+      ..._cirrusPhotos,
+      ..._mobilePhotos,
+    ]);
   }
 
   Future<void> _addSelectedToAlbum(
@@ -852,7 +856,7 @@ class _PhotosPageState extends State<PhotosPage>
         await AlbumService.addPhotoToAlbum(
           album.id,
           deviceSerial: c.deviceSerial,
-          relPath: c.dirPath,
+          relPath: c.apiPath,
         );
         added++;
       } catch (_) {

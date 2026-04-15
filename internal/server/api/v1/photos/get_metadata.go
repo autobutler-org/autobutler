@@ -2,6 +2,8 @@ package v1_photos
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"image"
 	_ "image/jpeg"
@@ -9,6 +11,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/autobutler-org/autobutler/internal/db"
@@ -93,7 +96,14 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 		}
 	}
 
-	fullPath := filepath.Join(filesDir, relPath)
+	// Guard against path traversal: reject absolute paths and ensure the
+	// cleaned join stays within filesDir.
+	cleanFilesDir := filepath.Clean(filesDir)
+	fullPath := filepath.Join(cleanFilesDir, relPath)
+	if !strings.HasPrefix(fullPath, cleanFilesDir+string(filepath.Separator)) {
+		return serverutil.BadRequest(fmt.Errorf("invalid relPath"))
+	}
+
 	stat, err := os.Stat(fullPath)
 	if os.IsNotExist(err) {
 		return serverutil.NotFound(fmt.Errorf("photo not found: %s", relPath))
@@ -150,6 +160,8 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 		db.GetPhotoRotationParams{DeviceSerial: serial, RelPath: relPath},
 	); err == nil {
 		rotationQuarters = rq
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return serverutil.InternalServerError(fmt.Errorf("get photo rotation: %w", err))
 	}
 
 	// --- Album membership ---
@@ -161,7 +173,8 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 		},
 	)
 	if err != nil {
-		albums = nil // non-fatal; return empty list
+		_ = c.Error(fmt.Errorf("list albums containing photo %q for device %q: %w", relPath, serial, err))
+		albums = nil // non-fatal; return partial metadata
 	}
 	albumRefs := make([]AlbumRefJSON, 0, len(albums))
 	for _, a := range albums {

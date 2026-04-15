@@ -3,6 +3,8 @@ package v1_thumbnails
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
+	"errors"
 	"fmt"
 	"image/jpeg"
 	"image/png"
@@ -121,6 +123,8 @@ var getThumbnailRoute = serverutil.ApiRoute(
 			db.GetPhotoRotationParams{DeviceSerial: serial, RelPath: relPath},
 		); err == nil {
 			rotationQuarters = rq
+		} else if !errors.Is(err, sql.ErrNoRows) {
+			return serverutil.InternalServerError(fmt.Errorf("get photo rotation: %w", err))
 		}
 
 		// --- Disk cache lookup ---

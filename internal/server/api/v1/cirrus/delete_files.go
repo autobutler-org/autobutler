@@ -3,6 +3,7 @@ package v1_files
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
@@ -55,14 +56,18 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 		// Clean up all DB records for the deleted photo regardless of whether a
 		// serial is present (empty serial is a valid key in both tables).
 		if database := deps.Database(); database != nil {
-			database.Queries.DeletePhotoFromAllAlbums(context.Background(), db.DeletePhotoFromAllAlbumsParams{
+			if err := database.Queries.DeletePhotoFromAllAlbums(context.Background(), db.DeletePhotoFromAllAlbumsParams{
 				DeviceSerial: serial,
 				RelPath:      p,
-			})
-			database.Queries.DeletePhotoRotation(context.Background(), db.DeletePhotoRotationParams{
+			}); err != nil {
+				log.Printf("autobutler: delete cleanup: remove album items for %q (serial=%q): %v", p, serial, err)
+			}
+			if err := database.Queries.DeletePhotoRotation(context.Background(), db.DeletePhotoRotationParams{
 				DeviceSerial: serial,
 				RelPath:      p,
-			})
+			}); err != nil {
+				log.Printf("autobutler: delete cleanup: remove rotation for %q (serial=%q): %v", p, serial, err)
+			}
 		}
 	}
 	return serverutil.Ok()
