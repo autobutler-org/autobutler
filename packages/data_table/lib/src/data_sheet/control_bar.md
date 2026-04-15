@@ -1,6 +1,7 @@
 # DataSheet Control Bar — Intended Features
 
-This file documents the intended capabilities for the `DataSheetControlBar` companion widget. The control bar is optional — apps may provide their own controls and call methods on `DataSheetController` directly.
+This file documents the intended capabilities for the `DataSheetControlBar` companion widget. The control bar is optional
+— apps may provide their own controls and call methods on `DataSheetController` directly.
 
 Legend: ✅ implemented · 🔜 planned · ❌ out of scope for this package
 
@@ -83,7 +84,8 @@ Legend: ✅ implemented · 🔜 planned · ❌ out of scope for this package
 
 ## Architecture Notes
 
-- `DataSheetSelectionModel` is owned by `DataSheetController` and propagates its changes through the controller's `notifyListeners`, so any `ListenableBuilder(listenable: controller)` reacts to both data and selection changes.
+- `DataSheetSelectionModel` is owned by `DataSheetController` and propagates its changes through the controller's `notifyListeners`,
+  so any `ListenableBuilder(listenable: controller)` reacts to both data and selection changes.
 - The control bar uses `ListenableBuilder` internally; no external state management needed.
 - Library widgets do not embed `MaterialApp` or assume `Directionality` — the host app provides the material tree.
 - All mutating controller methods push an undo snapshot before making changes.

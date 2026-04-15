@@ -21,7 +21,8 @@
 
 ### Use Makefile Targets
 
-- Agents should use existing Makefile targets to `run`, `test`, and `lint` the codebase rather than crafting their own shell commands.
+- Agents should use existing Makefile targets to `run`, `test`, and `lint` the codebase rather than crafting their own shell
+  commands.
 - Do **not** run ad hoc commands for these standard flows — use `make test`, `make lint`, etc.
 - If an action needs to be templatized for general usage, add a new Makefile target for it rather than running raw commands.
 
@@ -61,8 +62,10 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
 ### Packages Directory
 
 - `packages/` contains fully independent Dart or Flutter libraries maintained alongside Autobutler.
-- These packages are kept generic and are **not** monolithic to the Autobutler codebase — they are intended for both internal use and eventual public publication.
-- Other Flutter developers can adopt these packages independently; keep them decoupled from app-specific logic to maximize reusability.
+- These packages are kept generic and are **not** monolithic to the Autobutler codebase — they are intended for both internal
+  use and eventual public publication.
+- Other Flutter developers can adopt these packages independently; keep them decoupled from app-specific logic to maximize
+  reusability.
 
 ### Current app structure (follow this)
 
@@ -168,7 +171,7 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
   - `feat:` — new feature
   - `fix:` — bug fix
   - `chore:` — maintenance, tooling, config
-  - `refactor:` — code change with no behaviour change
+  - `refactor:` — code change with no behavior change
   - `docs:` — documentation only
   - `test:` — adding or fixing tests
   - `perf:` — performance improvement

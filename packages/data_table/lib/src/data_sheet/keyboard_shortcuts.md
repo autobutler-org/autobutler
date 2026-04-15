@@ -133,12 +133,14 @@ maps each logical **action** to one or more **key triggers**. Developers can:
 
 1. Use a built-in preset (`defaults`, `excel`, `googleSheets`, `vim`).
 2. Start from a preset and override individual bindings:
+
    ```dart
    final scheme = DataSheetControlScheme.excel().copyWith(
      undo: [KeyboardShortcut.ctrl(LogicalKeyboardKey.keyZ)],
      fillDown: [KeyboardShortcut.ctrl(LogicalKeyboardKey.keyD)],
    );
    ```
+
 3. Build one entirely from scratch via the default constructor.
 
 Swapping the scheme at runtime is supported — `DataSheet` reads it on each key
