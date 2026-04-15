@@ -7,16 +7,24 @@ import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
+import 'package:autobutler/models/photo_album.dart';
 import 'package:autobutler/pages/album_page.dart';
+import 'package:autobutler/services/album_service.dart';
 import 'package:autobutler/widgets/photos/album_sidebar.dart';
+import 'package:autobutler/widgets/photos/photo_selection_bar.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:autobutler/router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 class PhotosPage extends StatefulWidget {
-  const PhotosPage({super.key});
+  const PhotosPage({this.addingToAlbum, super.key});
+
+  /// When set, the page opens in "adding to album" mode — selection mode is
+  /// immediately active and the header shows the album name.
+  final PhotoAlbum? addingToAlbum;
 
   @override
   State<PhotosPage> createState() => _PhotosPageState();
@@ -33,6 +41,14 @@ class PhotoItem {
 
   factory PhotoItem.fromCirrus(CirrusFileNode c) => PhotoItem._(cirrus: c);
   factory PhotoItem.fromAsset(AssetEntity a) => PhotoItem._(asset: a);
+
+  /// A stable key for this item suitable for use in a selection set.
+  String get selectionKey {
+    if (isCirrus) {
+      return '${cirrus!.deviceSerial}:${cirrus!.dirPath}';
+    }
+    return 'asset:${asset!.id}';
+  }
 }
 
 class _PhotosPageState extends State<PhotosPage>
@@ -74,6 +90,12 @@ class _PhotosPageState extends State<PhotosPage>
   bool _navScrollInitialized = false;
   bool _showScrollHint = true;
 
+  // Selection mode
+  bool _selectionMode = false;
+  final Set<String> _selectedKeys = {};
+  // When non-null, we're in "adding to album" mode (Flow 2)
+  PhotoAlbum? _addingToAlbum;
+
   ScrollController _scrollController = ScrollController();
 
   @override
@@ -81,6 +103,12 @@ class _PhotosPageState extends State<PhotosPage>
     super.initState();
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) => _measureAndJumpNav());
+    // If launched in adding-to-album mode, enter selection mode immediately
+    if (widget.addingToAlbum != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _enterSelectionMode(addingToAlbum: widget.addingToAlbum);
+      });
+    }
   }
 
   void _measureAndJumpNav() {
@@ -520,6 +548,65 @@ class _PhotosPageState extends State<PhotosPage>
     int crossAxisCount,
   ) {
     final p = photos[idx];
+    final isSelected = _selectedKeys.contains(p.selectionKey);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // In selection mode wrap everything with selection overlay
+    Widget wrapWithSelection(Widget child) {
+      return GestureDetector(
+        onTap: () => _toggleSelection(p),
+        onLongPress: () {
+          if (!_selectionMode) _enterSelectionMode();
+          _toggleSelection(p);
+        },
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            child,
+            // Dim overlay for unselected
+            if (_selectionMode && !isSelected)
+              Container(color: Colors.black.withValues(alpha: 0.3)),
+            // Teal border for selected
+            if (isSelected)
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(color: colorScheme.primary, width: 3),
+                ),
+              ),
+            // Checkbox in top-left
+            if (_selectionMode)
+              Positioned(
+                top: 6,
+                left: 6,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected
+                        ? colorScheme.primary
+                        : Colors.transparent,
+                    border: Border.all(
+                      color: isSelected
+                          ? colorScheme.primary
+                          : Colors.white.withValues(alpha: 0.8),
+                      width: 2,
+                    ),
+                  ),
+                  child: isSelected
+                      ? const Icon(Icons.check, size: 14, color: Colors.white)
+                      : null,
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+
+    if (!_selectionMode) {
+      // Normal mode — use original long-press to enter selection
+    }
 
     if (p.isCirrus) {
       final c = p.cirrus!;
@@ -527,9 +614,24 @@ class _PhotosPageState extends State<PhotosPage>
         c.apiPath,
         serial: c.deviceSerial,
       );
+      final thumbnail = Image.network(
+        url.toString(),
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return Container(color: Colors.grey[300]);
+        },
+        errorBuilder: (context, error, stack) =>
+            Container(color: Colors.grey[300]),
+      );
+      if (_selectionMode) return wrapWithSelection(thumbnail);
       return MouseRegion(
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
+          onLongPress: () {
+            _enterSelectionMode();
+            _toggleSelection(p);
+          },
           onTap: () async {
             final navigator = Navigator.of(context);
             final bytes = await CirrusService.downloadFileBytes(
@@ -570,25 +672,29 @@ class _PhotosPageState extends State<PhotosPage>
               ),
             );
           },
-          child: Image.network(
-            url.toString(),
-            fit: BoxFit.cover,
-            loadingBuilder: (context, child, progress) {
-              if (progress == null) return child;
-              return Container(color: Colors.grey[300]);
-            },
-            errorBuilder: (context, error, stack) =>
-                Container(color: Colors.grey[300]),
-          ),
+          child: thumbnail,
         ),
       );
     }
 
     // Mobile asset
     final a = p.asset!;
+    final assetThumb = FutureBuilder<Uint8List?>(
+      future: a.thumbnailDataWithSize(ThumbnailSize(200, 200)),
+      builder: (context, snap) {
+        final thumb = snap.data;
+        if (thumb == null) return Container(color: Colors.grey[300]);
+        return Image.memory(thumb, fit: BoxFit.cover);
+      },
+    );
+    if (_selectionMode) return wrapWithSelection(assetThumb);
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
+        onLongPress: () {
+          _enterSelectionMode();
+          _toggleSelection(p);
+        },
         onTap: () async {
           final navigator = Navigator.of(context);
           final bytes = await a.originBytes;
@@ -626,14 +732,7 @@ class _PhotosPageState extends State<PhotosPage>
             ),
           );
         },
-        child: FutureBuilder<Uint8List?>(
-          future: a.thumbnailDataWithSize(ThumbnailSize(200, 200)),
-          builder: (context, snap) {
-            final thumb = snap.data;
-            if (thumb == null) return Container(color: Colors.grey[300]);
-            return Image.memory(thumb, fit: BoxFit.cover);
-          },
-        ),
+        child: assetThumb,
       ),
     );
   }
@@ -657,7 +756,7 @@ class _PhotosPageState extends State<PhotosPage>
             )
           : GridView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.all(2),
+              padding: EdgeInsets.fromLTRB(2, 2, 2, _selectionMode ? 84 : 2),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: 2,
@@ -679,205 +778,384 @@ class _PhotosPageState extends State<PhotosPage>
     );
   }
 
+  void _enterSelectionMode({PhotoAlbum? addingToAlbum}) {
+    setState(() {
+      _selectionMode = true;
+      _addingToAlbum = addingToAlbum;
+      _selectedKeys.clear();
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _selectionMode = false;
+      _addingToAlbum = null;
+      _selectedKeys.clear();
+    });
+  }
+
+  void _toggleSelection(PhotoItem item) {
+    setState(() {
+      final key = item.selectionKey;
+      if (_selectedKeys.contains(key)) {
+        _selectedKeys.remove(key);
+      } else {
+        _selectedKeys.add(key);
+      }
+    });
+  }
+
+  Future<void> _handleAddToAlbum(List<PhotoItem> allPhotos) async {
+    final album = await AlbumPickerSheet.show(
+      context,
+      selectedCount: _selectedKeys.length,
+    );
+    if (album == null || !mounted) return;
+    await _addSelectedToAlbum(album, allPhotos);
+  }
+
+  Future<void> _confirmAddToAlbum() async {
+    // Flow 2: user tapped Done while in adding-to-album mode.
+    // Only Cirrus photos can be added to albums, so search _cirrusPhotos
+    // regardless of which tab is currently active.
+    await _addSelectedToAlbum(_addingToAlbum!, _cirrusPhotos);
+  }
+
+  Future<void> _addSelectedToAlbum(
+    PhotoAlbum album,
+    List<PhotoItem> allPhotos,
+  ) async {
+    final selected = allPhotos
+        .where((p) => _selectedKeys.contains(p.selectionKey))
+        .toList();
+
+    int added = 0;
+    int skipped = 0;
+    int failed = 0;
+    for (final item in selected) {
+      if (!item.isCirrus) {
+        skipped++;
+        continue;
+      }
+      final c = item.cirrus!;
+      try {
+        await AlbumService.addPhotoToAlbum(
+          album.id,
+          deviceSerial: c.deviceSerial,
+          relPath: c.dirPath,
+        );
+        added++;
+      } catch (_) {
+        failed++;
+      }
+    }
+
+    if (!mounted) return;
+
+    final wasAddingMode = _addingToAlbum != null;
+    _exitSelectionMode();
+
+    String message;
+    if (added == 0 && skipped > 0) {
+      message = 'No photos added — device photos cannot be added to albums yet';
+    } else if (added > 0) {
+      message =
+          '$added ${added == 1 ? 'photo' : 'photos'} added to "${album.name}"';
+      if (failed > 0) message += ' ($failed failed)';
+    } else {
+      message = 'Failed to add photos to "${album.name}"';
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+
+    if (wasAddingMode && added > 0) {
+      Navigator.of(context).pop();
+    } else if (wasAddingMode && added == 0) {
+      // Stay in adding mode so user can try again or pick different photos
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AutobutlerAppBar(
-        label: 'Photos',
-        icon: Icons.photo_library_outlined,
-        actions: [
-          RefreshIconButton(
-            isRefreshing: isRefreshing,
-            onPressed: manualRefresh,
-            tooltip: 'Reload photos',
-          ),
-        ],
-      ),
-      drawer: AutobutlerDrawer(
-        activeSection: AutobutlerDrawerSection.photos,
-        onTapCirrus: () {
-          context.go(AppRoutes.cirrus);
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): () {
+          if (_selectionMode) {
+            final wasAdding = _addingToAlbum != null;
+            _exitSelectionMode();
+            if (wasAdding) Navigator.of(context).pop();
+          }
         },
-        onTapPhotos: () {
-          Navigator.of(context).pop();
-        },
-        onTapDevices: () {
-          context.go(AppRoutes.devices);
-        },
-        onTapHealth: () {
-          context.go(AppRoutes.health);
-        },
-        onTapSettings: () {
-          context.go(AppRoutes.settings);
-        },
-      ),
-      body: FutureBuilder<List<PhotoItem>>(
-        future: _photosFuture,
-        builder: (context, snapshot) {
-          final photos = snapshot.data ?? const <PhotoItem>[];
-
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final compact = constraints.maxWidth < 900;
-              final contentWidth = compact
-                  ? constraints.maxWidth
-                  : (constraints.maxWidth - 281)
-                        .clamp(1.0, double.infinity)
-                        .toDouble();
-              final crossAxisCount = _effectiveCrossAxisCount(contentWidth);
-
-              final sidebar = _buildSidebar(
-                context,
-                contentWidth,
-                _cirrusPhotos.length,
-                _mobilePhotos.length,
-                compact: compact,
-              );
-
-              // Desktop: sidebar + grid side-by-side (unchanged behavior)
-              if (!compact) {
-                Widget buildDesktop(Widget content) => Row(
-                  children: [
-                    sidebar,
-                    const VerticalDivider(width: 1),
-                    Expanded(child: content),
-                  ],
-                );
-                if (snapshot.connectionState == ConnectionState.waiting &&
-                    photos.isEmpty) {
-                  return buildDesktop(
-                    const Center(child: CircularProgressIndicator()),
-                  );
-                }
-                if (snapshot.hasError) {
-                  return buildDesktop(
-                    const Center(child: Text('Failed to load photos')),
-                  );
-                }
-                return buildDesktop(_buildPhotoGrid(photos, crossAxisCount));
-              }
-
-              // Mobile: nav panel lives *above* the photo grid in the scroll
-              // stack. On mount we jump to navHeight so only the grid is
-              // visible. Scroll up to reveal the nav.
-              if (snapshot.connectionState == ConnectionState.waiting &&
-                  photos.isEmpty) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                return const Center(child: Text('Failed to load photos'));
-              }
-
-              final showLoadingIndicator =
-                  _hasMoreCirrus &&
-                  (_selectedCategory == PhotoCategory.cirrus ||
-                      _selectedCategory == PhotoCategory.all);
-              final itemCount = photos.length + (showLoadingIndicator ? 1 : 0);
-
-              return Stack(
-                children: [
-                  RefreshIndicator(
-                    onRefresh: manualRefresh,
-                    child: CustomScrollView(
-                      controller: _scrollController,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      slivers: [
-                        // Nav panel — hidden above viewport on load
-                        SliverToBoxAdapter(
-                          child: Container(
-                            key: _navPanelKey,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                sidebar,
-                                Divider(
-                                  height: 1,
-                                  color: Theme.of(context).colorScheme.outline,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        // Photo grid
-                        photos.isEmpty
-                            ? const SliverFillRemaining(
-                                child: EmptyStateWidget(
-                                  icon: Icons.photo_library_outlined,
-                                  headline: 'No photos yet',
-                                  subtext:
-                                      'Photos you upload to AutoButler will appear here.',
-                                ),
-                              )
-                            : SliverGrid(
-                                delegate: SliverChildBuilderDelegate((
-                                  context,
-                                  idx,
-                                ) {
-                                  if (idx >= photos.length) {
-                                    return const Center(
-                                      child: Padding(
-                                        padding: EdgeInsets.all(16),
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                  return _buildPhotoTile(
-                                    context,
-                                    photos,
-                                    idx,
-                                    crossAxisCount,
-                                  );
-                                }, childCount: itemCount),
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: crossAxisCount,
-                                      crossAxisSpacing: 2,
-                                      mainAxisSpacing: 2,
-                                    ),
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          appBar: _selectionMode
+              ? AppBar(
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  automaticallyImplyLeading: false,
+                  title: _addingToAlbum != null
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Adding to ${_addingToAlbum!.name}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w600,
                               ),
-                      ],
+                            ),
+                            if (_selectedKeys.isNotEmpty)
+                              Text(
+                                '${_selectedKeys.length} selected',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.5),
+                                ),
+                              ),
+                          ],
+                        )
+                      : Text('${_selectedKeys.length} selected'),
+                  actions: [
+                    if (_addingToAlbum != null)
+                      TextButton(
+                        onPressed: _selectedKeys.isNotEmpty
+                            ? _confirmAddToAlbum
+                            : null,
+                        child: Text('Done (${_selectedKeys.length})'),
+                      ),
+                    TextButton(
+                      onPressed: () {
+                        final wasAdding = _addingToAlbum != null;
+                        _exitSelectionMode();
+                        if (wasAdding) Navigator.of(context).pop();
+                      },
+                      child: const Text('Cancel'),
                     ),
-                  ),
-                  // Scroll-up hint — subtle chevron at top, fades when user scrolls
-                  if (_showScrollHint)
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      child: IgnorePointer(
-                        child: Container(
-                          height: 32,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Theme.of(
-                                  context,
-                                ).colorScheme.surface.withValues(alpha: 0.7),
-                                Colors.transparent,
-                              ],
+                  ],
+                )
+              : AutobutlerAppBar(
+                  label: 'Photos',
+                  icon: Icons.photo_library_outlined,
+                  actions: [
+                    TextButton(
+                      onPressed: _enterSelectionMode,
+                      child: const Text('Select'),
+                    ),
+                    RefreshIconButton(
+                      isRefreshing: isRefreshing,
+                      onPressed: manualRefresh,
+                      tooltip: 'Reload photos',
+                    ),
+                  ],
+                ),
+          drawer: AutobutlerDrawer(
+            activeSection: AutobutlerDrawerSection.photos,
+            onTapCirrus: () {
+              context.go(AppRoutes.cirrus);
+            },
+            onTapPhotos: () {
+              Navigator.of(context).pop();
+            },
+            onTapDevices: () {
+              context.go(AppRoutes.devices);
+            },
+            onTapHealth: () {
+              context.go(AppRoutes.health);
+            },
+            onTapSettings: () {
+              context.go(AppRoutes.settings);
+            },
+          ),
+          body: FutureBuilder<List<PhotoItem>>(
+            future: _photosFuture,
+            builder: (context, snapshot) {
+              final photos = snapshot.data ?? const <PhotoItem>[];
+
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxWidth < 900;
+                  final contentWidth = compact
+                      ? constraints.maxWidth
+                      : (constraints.maxWidth - 281)
+                            .clamp(1.0, double.infinity)
+                            .toDouble();
+                  final crossAxisCount = _effectiveCrossAxisCount(contentWidth);
+
+                  final sidebar = _buildSidebar(
+                    context,
+                    contentWidth,
+                    _cirrusPhotos.length,
+                    _mobilePhotos.length,
+                    compact: compact,
+                  );
+
+                  // Desktop: sidebar + grid side-by-side (unchanged behavior)
+                  if (!compact) {
+                    Widget buildDesktop(Widget content) => Row(
+                      children: [
+                        sidebar,
+                        const VerticalDivider(width: 1),
+                        Expanded(child: content),
+                      ],
+                    );
+                    if (snapshot.connectionState == ConnectionState.waiting &&
+                        photos.isEmpty) {
+                      return buildDesktop(
+                        const Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                    if (snapshot.hasError) {
+                      return buildDesktop(
+                        const Center(child: Text('Failed to load photos')),
+                      );
+                    }
+                    return buildDesktop(
+                      _buildPhotoGrid(photos, crossAxisCount),
+                    );
+                  }
+
+                  // Mobile: nav panel lives *above* the photo grid in the scroll
+                  // stack. On mount we jump to navHeight so only the grid is
+                  // visible. Scroll up to reveal the nav.
+                  if (snapshot.connectionState == ConnectionState.waiting &&
+                      photos.isEmpty) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return const Center(child: Text('Failed to load photos'));
+                  }
+
+                  final showLoadingIndicator =
+                      _hasMoreCirrus &&
+                      (_selectedCategory == PhotoCategory.cirrus ||
+                          _selectedCategory == PhotoCategory.all);
+                  final itemCount =
+                      photos.length + (showLoadingIndicator ? 1 : 0);
+
+                  return Stack(
+                    children: [
+                      RefreshIndicator(
+                        onRefresh: manualRefresh,
+                        child: CustomScrollView(
+                          controller: _scrollController,
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          slivers: [
+                            // Nav panel — hidden above viewport on load
+                            SliverToBoxAdapter(
+                              child: Container(
+                                key: _navPanelKey,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    sidebar,
+                                    Divider(
+                                      height: 1,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.outline,
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
-                          child: Center(
-                            child: Icon(
-                              Icons.keyboard_arrow_up_rounded,
-                              size: 20,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.4),
-                            ),
-                          ),
+                            // Photo grid
+                            photos.isEmpty
+                                ? const SliverFillRemaining(
+                                    child: EmptyStateWidget(
+                                      icon: Icons.photo_library_outlined,
+                                      headline: 'No photos yet',
+                                      subtext:
+                                          'Photos you upload to AutoButler will appear here.',
+                                    ),
+                                  )
+                                : SliverGrid(
+                                    delegate: SliverChildBuilderDelegate((
+                                      context,
+                                      idx,
+                                    ) {
+                                      if (idx >= photos.length) {
+                                        return const Center(
+                                          child: Padding(
+                                            padding: EdgeInsets.all(16),
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                      return _buildPhotoTile(
+                                        context,
+                                        photos,
+                                        idx,
+                                        crossAxisCount,
+                                      );
+                                    }, childCount: itemCount),
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: crossAxisCount,
+                                          crossAxisSpacing: 2,
+                                          mainAxisSpacing: 2,
+                                        ),
+                                  ),
+                          ],
                         ),
                       ),
-                    ),
-                ],
+                      // Selection action bar — shown at bottom when in selection mode
+                      if (_selectionMode && _addingToAlbum == null)
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: PhotoSelectionBar(
+                            selectedCount: _selectedKeys.length,
+                            onAddToAlbum: () => _handleAddToAlbum(photos),
+                            onCancel: _exitSelectionMode,
+                          ),
+                        ),
+                      // Scroll-up hint — subtle chevron at top, fades when user scrolls
+                      if (_showScrollHint)
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: IgnorePointer(
+                            child: Container(
+                              height: 32,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Theme.of(context).colorScheme.surface
+                                        .withValues(alpha: 0.7),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  Icons.keyboard_arrow_up_rounded,
+                                  size: 20,
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.4),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               );
             },
-          );
-        },
+          ),
+        ),
       ),
     );
   }
