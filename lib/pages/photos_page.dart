@@ -45,7 +45,7 @@ class PhotoItem {
   /// A stable key for this item suitable for use in a selection set.
   String get selectionKey {
     if (isCirrus) {
-      return '${cirrus!.deviceSerial}:${cirrus!.dirPath}';
+      return '${cirrus!.deviceSerial}:${cirrus!.apiPath}';
     }
     return 'asset:${asset!.id}';
   }
@@ -87,6 +87,8 @@ class _PhotosPageState extends State<PhotosPage>
   // This is the only reliable way: initialScrollOffset is set before the first
   // frame the user sees (WidgetsBinding post-frame), so there's no visible flash.
   final GlobalKey _navPanelKey = GlobalKey();
+  final GlobalKey<AlbumSidebarState> _albumSidebarKey =
+      GlobalKey<AlbumSidebarState>();
   bool _navScrollInitialized = false;
   bool _showScrollHint = true;
 
@@ -526,6 +528,7 @@ class _PhotosPageState extends State<PhotosPage>
           ],
           const SizedBox(height: 16),
           AlbumSidebar(
+            key: _albumSidebarKey,
             selectedAlbumId: null,
             onAlbumSelected: (album) {
               if (album == null) return;
@@ -640,18 +643,20 @@ class _PhotosPageState extends State<PhotosPage>
             );
             if (bytes == null) return;
             if (!mounted) return;
-            await navigator.push(
+            final changed = await navigator.push<bool>(
               MaterialPageRoute(
                 builder: (_) => ImageViewerPage(
                   bytes: bytes,
                   name: c.name,
                   initialIndex: idx,
                   imageCount: photos.length,
+                  relPath: c.apiPath,
+                  serial: c.deviceSerial,
                   getImageCount: () async =>
                       (await _photosForCategory(_selectedCategory)).length,
                   onLoadImage: (newIdx) async {
                     final live = await _photosForCategory(_selectedCategory);
-                    if (newIdx >= live.length) return (null, '');
+                    if (newIdx >= live.length) return (null, '', null, null);
                     final item = live[newIdx];
                     if (item.isCirrus) {
                       final nc = item.cirrus!;
@@ -660,17 +665,21 @@ class _PhotosPageState extends State<PhotosPage>
                         serial: nc.deviceSerial,
                       );
                       if (b == null) await manualRefresh();
-                      return (b, nc.name);
+                      return (b, nc.name, nc.apiPath, nc.deviceSerial);
                     } else {
                       final na = item.asset!;
                       final b = await na.originBytes;
                       if (b == null) await manualRefresh();
-                      return (b, na.id);
+                      return (b, na.id, null, null);
                     }
                   },
                 ),
               ),
             );
+            if (changed == true) {
+              await manualRefresh();
+              _albumSidebarKey.currentState?.reload();
+            }
           },
           child: thumbnail,
         ),
@@ -700,7 +709,7 @@ class _PhotosPageState extends State<PhotosPage>
           final bytes = await a.originBytes;
           if (bytes == null) return;
           if (!mounted) return;
-          await navigator.push(
+          final changed = await navigator.push<bool>(
             MaterialPageRoute(
               builder: (_) => ImageViewerPage(
                 bytes: bytes,
@@ -711,7 +720,7 @@ class _PhotosPageState extends State<PhotosPage>
                     (await _photosForCategory(_selectedCategory)).length,
                 onLoadImage: (newIdx) async {
                   final live = await _photosForCategory(_selectedCategory);
-                  if (newIdx >= live.length) return (null, '');
+                  if (newIdx >= live.length) return (null, '', null, null);
                   final item = live[newIdx];
                   if (item.isCirrus) {
                     final nc = item.cirrus!;
@@ -720,17 +729,18 @@ class _PhotosPageState extends State<PhotosPage>
                       serial: nc.deviceSerial,
                     );
                     if (b == null) await manualRefresh();
-                    return (b, nc.name);
+                    return (b, nc.name, nc.apiPath, nc.deviceSerial);
                   } else {
                     final na = item.asset!;
                     final b = await na.originBytes;
                     if (b == null) await manualRefresh();
-                    return (b, na.id);
+                    return (b, na.id, null, null);
                   }
                 },
               ),
             ),
           );
+          if (changed == true) await manualRefresh();
         },
         child: assetThumb,
       ),
@@ -816,9 +826,13 @@ class _PhotosPageState extends State<PhotosPage>
 
   Future<void> _confirmAddToAlbum() async {
     // Flow 2: user tapped Done while in adding-to-album mode.
-    // Only Cirrus photos can be added to albums, so search _cirrusPhotos
-    // regardless of which tab is currently active.
-    await _addSelectedToAlbum(_addingToAlbum!, _cirrusPhotos);
+    // Pass the full set of loaded photos so that any selected device assets
+    // are counted as skipped (and the user gets feedback) rather than silently
+    // ignored. _addSelectedToAlbum already rejects non-Cirrus items.
+    await _addSelectedToAlbum(_addingToAlbum!, [
+      ..._cirrusPhotos,
+      ..._mobilePhotos,
+    ]);
   }
 
   Future<void> _addSelectedToAlbum(
@@ -842,7 +856,7 @@ class _PhotosPageState extends State<PhotosPage>
         await AlbumService.addPhotoToAlbum(
           album.id,
           deviceSerial: c.deviceSerial,
-          relPath: c.dirPath,
+          relPath: c.apiPath,
         );
         added++;
       } catch (_) {
