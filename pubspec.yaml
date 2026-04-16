@@ -58,6 +58,8 @@ dependencies:
   shimmer: ^3.0.0
   flutter_quill_to_pdf: ^2.3.9
   printing: ^5.14.3
+  data_table:
+    path: packages/data_table
 
 dev_dependencies:
   flutter_test:

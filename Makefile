@@ -1,5 +1,5 @@
-SHELL := /bin/bash
-.SHELLFLAGS = -e -c
+SHELL := /usr/bin/env
+.SHELLFLAGS = bash -e -c
 .DEFAULT_GOAL := help
 .ONESHELL:
 .SILENT:
@@ -335,7 +335,14 @@ test/unit/backend: internal/server/public/stub.txt ## Run unit tests for backend
 
 .PHONY: test/unit/frontend
 test/unit/frontend: ## Run unit tests for frontend
+	echo "Testing Autobutler frontend..."
 	flutter test
+	for pkg in packages/*/; do
+		if [ -f "$$pkg/pubspec.yaml" ] && [ -d "$$pkg/test" ]; then
+			echo "Testing $$pkg..."
+			$(MAKE) -C "$$pkg" test/unit || exit 1
+		fi
+	done
 
 .PHONY: test/integration
 test/integration: test/integration/backend ## Run integration tests
@@ -393,10 +400,10 @@ watch/frontend: generate/frontend ## Watch frontend on web
 check: check/format check/lint ## Check code
 
 .PHONY: check/backend
-check/backend: check/format/go check/lint/go check/lint/sqlc ## Check backend code
+check/backend: generate/backend check/format/go check/lint/go check/lint/sqlc ## Check backend code
 
 .PHONY: check/frontend
-check/frontend: check/format/flutter check/lint/flutter ## Check frontend code
+check/frontend: generate/frontend check/format/flutter check/lint/flutter ## Check frontend code
 
 .PHONY: check/flutter
 check/flutter: check/format/flutter check/lint/flutter ## Check Flutter/Dart code

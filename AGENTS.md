@@ -21,7 +21,8 @@
 
 ### Use Makefile Targets
 
-- Agents should use existing Makefile targets to `run`, `test`, and `lint` the codebase rather than crafting their own shell commands.
+- Agents should use existing Makefile targets to `run`, `test`, and `lint` the codebase rather than crafting their own shell
+  commands.
 - Do **not** run ad hoc commands for these standard flows — use `make test`, `make lint`, etc.
 - If an action needs to be templatized for general usage, add a new Makefile target for it rather than running raw commands.
 
@@ -61,8 +62,10 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
 ### Packages Directory
 
 - `packages/` contains fully independent Dart or Flutter libraries maintained alongside Autobutler.
-- These packages are kept generic and are **not** monolithic to the Autobutler codebase — they are intended for both internal use and eventual public publication.
-- Other Flutter developers can adopt these packages independently; keep them decoupled from app-specific logic to maximize reusability.
+- These packages are kept generic and are **not** monolithic to the Autobutler codebase — they are intended for both internal
+  use and eventual public publication.
+- Other Flutter developers can adopt these packages independently; keep them decoupled from app-specific logic to maximize
+  reusability.
 
 ### Current app structure (follow this)
 
@@ -95,6 +98,31 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
 - Keep top-level page navigation consistent: pages should use a hamburger menu in the app bar/drawer pattern by default
   (for example, Cirrus/Photos/Settings), not a back button, unless a page is explicitly a drill-down/detail flow.
 
+### Custom Widget Guidelines (spreadsheet editor)
+
+- Prefer small, focused sub-widgets: extract visibly independent parts (cells, rows, editors) into private widgets to keep
+  files readable and testable.
+- Keep business logic out of widgets: use `ChangeNotifier`/controller objects (for example `SheetController`) or services
+  for model updates and side effects.
+- Minimize rebuilds: for large, scrollable datasets prefer lazy vertical builders (`ListView.builder`) and limit rebuild
+  scope with `ValueListenableBuilder` or per-row `ValueNotifier`s rather than rebuilding the whole grid.
+- Single editing controller: share a single `TextEditingController` for inline editing to avoid lifecycle complexity and
+  state duplication; manage which cell is active in the view state.
+- Use stable keys: attach stable `Key`s (for example `ValueKey('r${r}c$c')`) to cells/rows so Flutter preserves state during
+  list changes.
+- Column sizing: use `Expanded`/`Flexible` with per-column `flex` (configurable via the controller) to keep column widths
+  aligned across rows and support runtime updates.
+- Performance guards: consider `RepaintBoundary`, `AutomaticKeepAliveClientMixin` / `KeepAlive` for focused editors or heavy
+  cells to avoid unnecessary repaints or losing focus, and avoid expensive work in `build()`.
+- Horizontal scale: for extremely wide sheets consider horizontal virtualization (lazy cell builders) or a custom two-dimensional
+  viewport rather than creating all cells eagerly.
+- File organization: when splitting large widgets, place each public class in its own file, update imports/exports, and
+  keep private helper widgets near the public API that uses them.
+- Constructor patterns: public widgets should accept a named `Key? key` (use `super.key`), prefer `super` parameter forwarding,
+  and avoid adding unused `key` parameters to private/internal widgets.
+- Validation: after refactor run the analyzer (`flutter analyze` / `make check`), update or add focused unit/widget tests,
+  and update example/demo imports and documentation.
+
 ### State and async behavior
 
 - Keep async operations cancellable or safely guarded against disposed widgets/controllers.
@@ -126,8 +154,10 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
   3. Use `context.go(AppRoutes.yourRoute)` for navigation (not `Navigator.pushReplacement`)
   4. Use `context.push(AppRoutes.yourRoute)` for drill-down/detail flows that should be back-stackable
 - Do NOT use `Navigator.pushReplacement` or `Navigator.of(context).push` for top-level page changes — use `context.go`.
-- `Navigator.push` / `Navigator.pop` is still acceptable for modal dialogs and overlays (image/video viewers, confirmation dialogs).
-- If a new page requires auth gating, add the path to the `publicRoutes` set in `_authRedirect` in `lib/router.dart` if it should be accessible without login, or do nothing if it should be protected.
+- `Navigator.push` / `Navigator.pop` is still acceptable for modal dialogs and overlays (image/video viewers, confirmation
+  dialogs).
+- If a new page requires auth gating, add the path to the `publicRoutes` set in `_authRedirect` in `lib/router.dart` if
+  it should be accessible without login, or do nothing if it should be protected.
 
 ### Testing and validation
 
@@ -141,7 +171,7 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
   - `feat:` — new feature
   - `fix:` — bug fix
   - `chore:` — maintenance, tooling, config
-  - `refactor:` — code change with no behaviour change
+  - `refactor:` — code change with no behavior change
   - `docs:` — documentation only
   - `test:` — adding or fixing tests
   - `perf:` — performance improvement
@@ -160,13 +190,16 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
 This project uses Relynce for reliability risk analysis. The following skills are available:
 
 ### Risk Detection
+
 - `/rely:detect-risks` — Scan code for reliability risks and submit findings
 - `/rely:risk-guidance` — Get detailed guidance for a specific risk
 
 ### Risk Remediation
+
 - `/rely:remediate-risks` — Auto-implement fixes for detected risks
 
 ### Quick Reference
+
 - Run `rely risk list` to see current risks
 - Run `rely risk show <code>` for risk details with mapped controls
 - Run `rely control show <code>` for control implementation guidance

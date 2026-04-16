@@ -22,6 +22,11 @@ const _kFileTypes = [
     extension: '.abdoc',
     icon: Icons.edit_document,
   ),
+  NewFileType(
+    label: 'Spreadsheet',
+    extension: '.absheet',
+    icon: Icons.table_chart,
+  ),
 ];
 
 /// Shows the new-file dialog and returns the chosen filename (with extension),

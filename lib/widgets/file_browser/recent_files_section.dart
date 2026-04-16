@@ -5,6 +5,7 @@ import 'package:autobutler/widgets/core/autobutler_file_icon.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:flutter/material.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
+import 'package:autobutler/pages/spreadsheet_editor_page.dart';
 
 /// A horizontally-scrolling strip showing recently uploaded files.
 /// Displayed at the root of the file browser (not in search mode).
@@ -126,6 +127,17 @@ class _RecentFilesSectionState extends State<RecentFilesSection> {
                           Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (_) => DocumentEditorPage(
+                                filePath: file.apiPath,
+                                deviceSerial: file.deviceSerial,
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        if (file.name.endsWith('.absheet')) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => SpreadsheetEditorPage(
                                 filePath: file.apiPath,
                                 deviceSerial: file.deviceSerial,
                               ),

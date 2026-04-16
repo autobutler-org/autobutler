@@ -16,6 +16,7 @@ type FileType string
 
 const (
 	FileTypeAbdoc     FileType = "abdoc"
+	FileTypeAbsheet   FileType = "absheet"
 	FileTypeDocx      FileType = "docx"
 	FileTypeEpub      FileType = "epub"
 	FileTypeFolder    FileType = "folder"
@@ -89,6 +90,8 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 		return FileTypeEpub
 	case ".abdoc":
 		return FileTypeAbdoc
+	case ".absheet":
+		return FileTypeAbsheet
 	case ".docx":
 		return FileTypeDocx
 	case ".zip", ".rar", ".tar", ".gz", ".tgz", ".7z":
