@@ -49,6 +49,12 @@ class CirrusService with AuthenticatedService {
     if (serialValue.isNotEmpty) {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
+    // Include token so the browser <video> element (which cannot send custom
+    // Authorization headers) can still authenticate against the download endpoint.
+    final token = AppSettings.instance.sessionToken;
+    if (token != null && token.isNotEmpty) {
+      querySegments.add('token=${Uri.encodeQueryComponent(token)}');
+    }
     final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus/download');
     return endpointUri.replace(query: querySegments.join('&'));
   }
