@@ -38,8 +38,8 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
         formatHint: _formatHintFromFileName(widget.name),
       );
       await networkController.initialize();
-    } catch (_) {
-      debugPrint('[video_viewer_page.dart] Error in catch block');
+    } catch (e) {
+      debugPrint('[video_viewer_page.dart] initialize error: $e');
       await networkController?.dispose();
       if (!mounted) {
         return;
@@ -48,7 +48,7 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
         _loading = false;
         _errorMessage =
             'Unable to play this media. The file may use an unsupported '
-            'codec/profile.';
+            'codec/profile. ($e)';
       });
       return;
     }

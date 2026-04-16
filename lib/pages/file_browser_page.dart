@@ -1065,13 +1065,26 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         }
 
       case 'video':
-        await _openEditorWithUrl(
-          filePath: filePath,
-          builder: () => VideoViewerPage(
-            url: CirrusService.constructMediaUrl(filePath),
-            name: name,
+        // Use plain Navigator.push rather than _openEditorWithUrl here.
+        // _openEditorWithUrl calls SystemNavigator.routeInformationUpdated
+        // *before* the push; on a direct deep-link the URL is already
+        // /cirrus/<file>, so that redundant update can cause go_router to
+        // rebuild the FileBrowserPage and invalidate the push context.
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => VideoViewerPage(
+              url: CirrusService.constructMediaUrl(filePath),
+              name: name,
+            ),
           ),
         );
+        // Restore the parent folder URL now that the viewer is dismissed.
+        if (kIsWeb && mounted) {
+          SystemNavigator.routeInformationUpdated(
+            uri: Uri.parse(AppRoutes.cirrusPath(_currentPath)),
+            replace: false,
+          );
+        }
 
       default:
         // Unhandled type — nothing to open.
