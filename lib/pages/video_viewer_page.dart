@@ -31,25 +31,16 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
       _errorMessage = null;
     });
 
+    VideoPlayerController? networkController;
     try {
-      final networkController = VideoPlayerController.networkUrl(
+      networkController = VideoPlayerController.networkUrl(
         widget.url,
         formatHint: _formatHintFromFileName(widget.name),
       );
       await networkController.initialize();
-      if (!mounted) {
-        await networkController.dispose();
-        return;
-      }
-
-      setState(() {
-        _controller = networkController;
-        _loading = false;
-      });
-      await networkController.play();
-    } catch (_) {
-      debugPrint('[video_viewer_page.dart] Error in catch block');
-      await _disposeController();
+    } catch (e) {
+      debugPrint('[video_viewer_page.dart] initialize error: $e');
+      await networkController?.dispose();
       if (!mounted) {
         return;
       }
@@ -57,8 +48,29 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
         _loading = false;
         _errorMessage =
             'Unable to play this media. The file may use an unsupported '
-            'codec/profile.';
+            'codec/profile. ($e)';
       });
+      return;
+    }
+
+    if (!mounted) {
+      await networkController.dispose();
+      return;
+    }
+
+    setState(() {
+      _controller = networkController;
+      _loading = false;
+    });
+
+    // Best-effort autoplay. On web, the browser may block play() if the page
+    // was opened without a prior user gesture (e.g. a direct deep-link URL).
+    // In that case the video shows in a paused state — the user can tap the
+    // play button to start playback.
+    try {
+      await networkController.play();
+    } catch (_) {
+      // Autoplay blocked or unsupported; stay paused.
     }
   }
 
@@ -74,14 +86,6 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
       return VideoFormat.ss;
     }
     return VideoFormat.other;
-  }
-
-  Future<void> _disposeController() async {
-    final controller = _controller;
-    _controller = null;
-    if (controller != null) {
-      await controller.dispose();
-    }
   }
 
   @override
