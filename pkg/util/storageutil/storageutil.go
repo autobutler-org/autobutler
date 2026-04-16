@@ -508,6 +508,12 @@ func readFileTrim(path string) string {
 	return strings.TrimSpace(string(data))
 }
 
+// SafeJoin joins base with the provided path segments and returns an error if
+// the resulting path would escape the base directory (path traversal guard).
+func SafeJoin(base string, parts ...string) (string, error) {
+	return safeJoin(base, parts...)
+}
+
 // safeJoin joins base with the provided path segments and returns an error if
 // the resulting path would escape the base directory (path traversal guard).
 func safeJoin(base string, parts ...string) (string, error) {
