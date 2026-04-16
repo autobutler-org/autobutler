@@ -429,7 +429,12 @@ func UploadFilesStreamedImpl(params UploadFilesStreamedParams, device *ManagedDe
 					i := 1
 					for {
 						newFileName := fmt.Sprintf("%s_(%d)%s", name, i, ext)
-						destPath = filepath.Join(destDir, newFileName)
+						newDestPath, joinErr := safeJoin(destDir, newFileName)
+						if joinErr != nil {
+							part.Close()
+							return fmt.Errorf("invalid candidate path: %w", joinErr)
+						}
+						destPath = newDestPath
 						if _, err := os.Stat(destPath); os.IsNotExist(err) {
 							break
 						}
@@ -478,7 +483,13 @@ func UploadFilesStreamedImpl(params UploadFilesStreamedParams, device *ManagedDe
 			candidate := fileName
 			i := 0
 			for {
-				destPath = filepath.Join(destDir, candidate)
+				var joinErr error
+				destPath, joinErr = safeJoin(destDir, candidate)
+				if joinErr != nil {
+					os.Remove(tmpPath)
+					part.Close()
+					return fmt.Errorf("invalid candidate path: %w", joinErr)
+				}
 
 				if params.Overwrite {
 					// Atomic replace: rename temp over existing file (works same-FS).
