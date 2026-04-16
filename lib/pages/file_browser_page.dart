@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/spreadsheet_editor_page.dart';
+import 'package:data_table/data_sheet.dart';
+import 'package:data_table/data_table.dart' as dt;
 import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
@@ -726,6 +729,106 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
   }
 
+  // ── CSV → .absheet conversion (#1019) ──────────────────────────────────
+
+  Future<void> _handleCsvOpen(CirrusFileNode node) async {
+    if (!mounted) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Convert to .absheet?'),
+        content: Text(
+          'Would you like to convert "${node.name}" to an AutoButler '
+          'spreadsheet (.absheet)?\n\nThe original CSV file will not be '
+          'modified or deleted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Convert'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    try {
+      // Download the CSV.
+      final bytes = await CirrusService.downloadFileBytes(
+        node.apiPath,
+        serial: serialOrNull(node.deviceSerial),
+        fileName: node.name,
+      );
+      if (!mounted) return;
+      if (bytes == null || bytes.isEmpty) {
+        _showMessage('Failed to read ${node.name}');
+        return;
+      }
+
+      // Parse CSV into a DataTable via DataSheetController.
+      final csvText = utf8.decode(bytes);
+      final table = dt.DataTable([]);
+      final controller = DataSheetController.fromTable(table);
+      controller.loadFromCsv(csvText);
+
+      // Serialise to .absheet JSON envelope.
+      final absheetJson = jsonEncode({
+        'tabs': [
+          {
+            'name': node.name.replaceAll(
+              RegExp(r'\.csv$', caseSensitive: false),
+              '',
+            ),
+            'data': table.toJson(),
+          },
+        ],
+      });
+      controller.dispose();
+
+      // Derive the new file name and upload it alongside the original.
+      final baseName = node.name.replaceAll(
+        RegExp(r'\.csv$', caseSensitive: false),
+        '',
+      );
+      final absheetName = '$baseName.absheet';
+      final folder = parentPath(node.apiPath);
+      final uploadFile = http.MultipartFile.fromBytes(
+        'files',
+        utf8.encode(absheetJson),
+        filename: absheetName,
+      );
+      await CirrusService.uploadFilesFromFormData(
+        folder,
+        [uploadFile],
+        serial: serialOrNull(node.deviceSerial),
+        overwrite: true,
+      );
+      if (!mounted) return;
+
+      // Refresh the file list so the new .absheet appears.
+      _refreshFileState();
+
+      // Open the new .absheet in the spreadsheet editor.
+      final absheetPath = folder.isEmpty ? absheetName : '$folder/$absheetName';
+      await _openEditorWithUrl(
+        filePath: absheetPath,
+        builder: () => SpreadsheetEditorPage(
+          filePath: absheetPath,
+          deviceSerial: node.deviceSerial,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage('Conversion failed: $e');
+    }
+  }
+
   Future<void> _handleOpenNode(CirrusFileNode node) async {
     if (node.isDir) {
       _openDirectory(node);
@@ -761,6 +864,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           deviceSerial: node.deviceSerial,
         ),
       );
+      return;
+    }
+
+    // CSV — offer to convert to .absheet (#1019).
+    if (lowerName.endsWith('.csv')) {
+      await _handleCsvOpen(node);
       return;
     }
 
