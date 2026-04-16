@@ -38,7 +38,7 @@ class Cell extends StatelessWidget {
             color: (isActive || isHighlighted)
                 ? cs.primary
                 : cs.onSurface.withValues(alpha: 0.2),
-            width: 2.0,
+            width: 1.0,
           ),
           borderRadius: BorderRadius.zero,
         ),
