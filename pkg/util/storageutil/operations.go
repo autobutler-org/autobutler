@@ -541,3 +541,60 @@ func UploadFilesStreamedImpl(params UploadFilesStreamedParams, device *ManagedDe
 	}
 	return nil
 }
+
+// StatFileParams contains parameters for statting a file or directory
+type StatFileParams struct {
+	FilePath     string
+	DeviceSerial string
+}
+
+// StatFileResult contains the result of a stat operation
+type StatFileResult struct {
+	FullPath string
+	IsDir    bool
+	FileType FileType
+	Name     string
+}
+
+// StatFile resolves a cirrus-relative path to its filesystem metadata.
+func (s *StorageService) StatFile(params StatFileParams) (*StatFileResult, error) {
+	device, err := s.FindManagedDeviceBySerial(params.DeviceSerial)
+	if err != nil {
+		return nil, err // coverage: ignore - requires device detection failure
+	}
+	defaultCirrusDir, err := GetCirrusDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+	}
+	return StatFileImpl(params, device, defaultCirrusDir)
+}
+
+// StatFileImpl resolves a path using pre-resolved device and cirrus directory.
+// Use this in tests to inject test devices without hitting the real filesystem detector.
+func StatFileImpl(params StatFileParams, device *ManagedDevice, defaultCirrusDir string) (*StatFileResult, error) {
+	cirrusDir := defaultCirrusDir
+	if device != nil {
+		cirrusDir = device.CirrusDir
+	}
+	fullPath := filepath.Join(cirrusDir, params.FilePath)
+	info, err := os.Stat(fullPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("path not found: %s", params.FilePath)
+		}
+		return nil, fmt.Errorf("failed to stat path: %w", err)
+	}
+	isDir := info.IsDir()
+	var fileType FileType
+	if isDir {
+		fileType = FileTypeFolder
+	} else {
+		fileType = DetermineFileTypeFromPath(fullPath)
+	}
+	return &StatFileResult{
+		FullPath: fullPath,
+		IsDir:    isDir,
+		FileType: fileType,
+		Name:     info.Name(),
+	}, nil
+}
