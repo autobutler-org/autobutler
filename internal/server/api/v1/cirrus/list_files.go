@@ -30,7 +30,10 @@ func listFilesImpl(rootDir string, devices []storageutil.ManagedDevice) ([]FileN
 	var allFiles []*storageutil.DeviceFileInfo
 	for _, device := range devices {
 		cirrusDir := device.CirrusDir
-		fullPathDir := filepath.Join(cirrusDir, rootDir)
+		fullPathDir, err := storageutil.SafeJoin(cirrusDir, rootDir)
+		if err != nil {
+			return nil, err
+		}
 		deviceSerial := DefaultDeviceSerial
 		if device.UsbInfo != nil {
 			deviceSerial = device.UsbInfo.GetSerial()
