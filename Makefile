@@ -335,7 +335,14 @@ test/unit/backend: internal/server/public/stub.txt ## Run unit tests for backend
 
 .PHONY: test/unit/frontend
 test/unit/frontend: ## Run unit tests for frontend
+	echo "Testing Autobutler frontend..."
 	flutter test
+	for pkg in packages/*/; do
+		if [ -f "$$pkg/pubspec.yaml" ] && [ -d "$$pkg/test" ]; then
+			echo "Testing $$pkg..."
+			$(MAKE) -C "$$pkg" test/unit || exit 1
+		fi
+	done
 
 .PHONY: test/integration
 test/integration: test/integration/backend ## Run integration tests
