@@ -14,6 +14,8 @@
   },
   "editor.formatOnSave": true,
   "workbench.iconTheme": "vscode-icons",
+  "dart.projectSearchDepth": 3,
+  "dart.runPubGetOnNestedProjects": "both",
   "cSpell.words": [
     "APFS",
     "Appstore",
