@@ -1065,12 +1065,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         }
 
       case 'video':
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => VideoViewerPage(
-              url: CirrusService.constructMediaUrl(filePath),
-              name: name,
-            ),
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: () => VideoViewerPage(
+            url: CirrusService.constructMediaUrl(filePath),
+            name: name,
           ),
         );
 
