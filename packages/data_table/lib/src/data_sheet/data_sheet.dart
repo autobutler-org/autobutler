@@ -363,7 +363,7 @@ class _DataSheetViewState extends State<_DataSheetView> {
                             final isHighlightedCell =
                                 (r == highlightedRow && c == highlightedCol);
 
-                            final child = isActiveCell
+                            final cellChild = isActiveCell
                                 ? EditableCell(
                                     key: ValueKey('r${r}c$c'),
                                     controller: activeCellController,
@@ -381,39 +381,43 @@ class _DataSheetViewState extends State<_DataSheetView> {
                                       keyboardFocus.requestFocus();
                                     },
                                   )
-                                : GestureDetector(
-                                    onTap: () {
-                                      if (activeRow >= 0 && activeCol >= 0) {
-                                        _storeCellValue(
-                                            activeCellController.text);
-                                      } else {
-                                        if (highlightedRow == r &&
-                                            highlightedCol == c) {
-                                          _activateCell(rowCells[c], r, c);
-                                        } else {
-                                          controller.selection
-                                              .setHighlighted(r, c);
-                                          keyboardFocus.requestFocus();
-                                        }
-                                      }
-                                    },
-                                    child: Text(rowCells[c].value),
-                                  );
+                                : Text(rowCells[c].value);
 
                             final flex = (c < controller.columnFlex.length)
                                 ? controller.columnFlex[c]
                                 : 1;
+                            final cell = Cell(
+                              key: ValueKey('r${r}c$c'),
+                              isActive: isActiveCell,
+                              isHighlighted: isHighlightedCell,
+                              cursor: isActiveCell
+                                  ? SystemMouseCursors.text
+                                  : SystemMouseCursors.cell,
+                              child: cellChild,
+                            );
                             return Expanded(
                               flex: flex,
-                              child: Cell(
-                                key: ValueKey('r${r}c$c'),
-                                isActive: isActiveCell,
-                                isHighlighted: isHighlightedCell,
-                                cursor: isActiveCell
-                                    ? SystemMouseCursors.text
-                                    : SystemMouseCursors.cell,
-                                child: child,
-                              ),
+                              child: isActiveCell
+                                  ? cell
+                                  : GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () {
+                                        if (activeRow >= 0 && activeCol >= 0) {
+                                          _storeCellValue(
+                                              activeCellController.text);
+                                        } else {
+                                          if (highlightedRow == r &&
+                                              highlightedCol == c) {
+                                            _activateCell(rowCells[c], r, c);
+                                          } else {
+                                            controller.selection
+                                                .setHighlighted(r, c);
+                                            keyboardFocus.requestFocus();
+                                          }
+                                        }
+                                      },
+                                      child: cell,
+                                    ),
                             );
                           }),
                         ],
