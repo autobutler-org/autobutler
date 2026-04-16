@@ -447,6 +447,13 @@ class DataSheetController extends ChangeNotifier {
   }
 
   /// Replace the entire table with rows parsed from [csv].
+  ///
+  /// Follows RFC-4180:
+  /// - Fields may be enclosed in double-quotes.
+  /// - A double-quote inside a quoted field is escaped as "".
+  /// - Quoted fields may span multiple lines.
+  /// - Both LF and CRLF are accepted as record separators.
+  /// - Completely empty or whitespace-only *unquoted* lines are skipped.
   void loadFromCsv(String csv) {
     _pushSnapshot();
     for (final r in _rows) {
@@ -454,9 +461,11 @@ class DataSheetController extends ChangeNotifier {
     }
     _rows.clear();
     table.rows.clear();
-    for (final line in csv.split('\n')) {
-      if (line.trim().isEmpty) continue;
-      final cells = _parseCsvLine(line).map((v) => DataCell(v)).toList();
+
+    final parsedRows = _parseCsv(csv);
+    for (final rowValues in parsedRows) {
+      if (rowValues.isEmpty) continue;
+      final cells = rowValues.map(DataCell.new).toList();
       table.rows.add(DataRow(List<DataCell>.from(cells)));
       _rows.add(ValueNotifier<List<DataCell>>(List<DataCell>.from(cells)));
     }
@@ -465,40 +474,107 @@ class DataSheetController extends ChangeNotifier {
     notifyListeners();
   }
 
-  static List<String> _parseCsvLine(String line) {
-    final fields = <String>[];
+  /// Full RFC-4180 CSV parser.
+  ///
+  /// Handles:
+  ///  - Quoted fields (may contain commas, newlines, escaped quotes)
+  ///  - Both LF and CRLF record separators
+  ///  - Trailing commas (empty last field)
+  ///  - Blank / whitespace-only lines are skipped
+  static List<List<String>> _parseCsv(String csv) {
+    final rows = <List<String>>[];
+    var fields = <String>[];
     var i = 0;
-    while (i < line.length) {
-      if (line[i] == '"') {
+    final n = csv.length;
+
+    while (i <= n) {
+      if (i == n) {
+        // End of input: flush the current row.
+        // If the last character was a comma, there is an implicit trailing
+        // empty field (e.g. "a,b," has three fields, the last being empty).
+        if (n > 0 && csv[n - 1] == ',') fields.add('');
+        // Skip only a truly empty row (no fields accumulated at all).
+        if (fields.isNotEmpty) rows.add(fields);
+        break;
+      }
+
+      final ch = csv[i];
+
+      if (ch == '"') {
+        // Quoted field — may contain commas and newlines.
         i++;
         final buf = StringBuffer();
-        while (i < line.length) {
-          if (line[i] == '"') {
-            if (i + 1 < line.length && line[i + 1] == '"') {
+        while (i < n) {
+          final c = csv[i];
+          if (c == '"') {
+            if (i + 1 < n && csv[i + 1] == '"') {
+              // Escaped double-quote.
               buf.write('"');
               i += 2;
             } else {
+              // Closing quote.
               i++;
               break;
             }
           } else {
-            buf.write(line[i++]);
+            buf.write(c);
+            i++;
           }
         }
         fields.add(buf.toString());
-        if (i < line.length && line[i] == ',') i++;
-      } else {
-        final end = line.indexOf(',', i);
-        if (end == -1) {
-          fields.add(line.substring(i));
-          break;
-        } else {
-          fields.add(line.substring(i, end));
-          i = end + 1;
+        // Consume comma or record separator after the closing quote.
+        if (i < n && csv[i] == ',') {
+          i++;
+        } else if (i < n && csv[i] == '\r' && i + 1 < n && csv[i + 1] == '\n') {
+          rows.add(fields);
+          fields = [];
+          i += 2;
+        } else if (i < n && csv[i] == '\n') {
+          rows.add(fields);
+          fields = [];
+          i++;
         }
+      } else if (ch == '\r' && i + 1 < n && csv[i + 1] == '\n') {
+        // CRLF record separator.
+        // Only add a trailing empty field if the last char before CRLF was a
+        // comma (i.e. the row ended with a delimiter, meaning a trailing empty
+        // field was intended).
+        if (i > 0 && csv[i - 1] == ',') fields.add('');
+        final row = fields;
+        fields = [];
+        // Skip completely blank lines: no fields, or a single field that is
+        // empty (a bare newline). Whitespace-only cells are kept.
+        final isBlankLine = row.isEmpty || (row.length == 1 && row[0].isEmpty);
+        if (!isBlankLine) rows.add(row);
+        i += 2;
+      } else if (ch == '\n') {
+        // LF record separator.
+        if (i > 0 && csv[i - 1] == ',') fields.add('');
+        final row = fields;
+        fields = [];
+        final isBlankLine = row.isEmpty || (row.length == 1 && row[0].isEmpty);
+        if (!isBlankLine) rows.add(row);
+        i++;
+      } else if (ch == ',') {
+        // Field separator — the current (unquoted) field ended.
+        fields.add('');
+        i++;
+      } else {
+        // Unquoted field: read up to the next comma, LF, CRLF, or EOF.
+        final buf = StringBuffer();
+        while (i < n &&
+            csv[i] != ',' &&
+            csv[i] != '\n' &&
+            !(csv[i] == '\r' && i + 1 < n && csv[i + 1] == '\n')) {
+          buf.write(csv[i++]);
+        }
+        fields.add(buf.toString());
+        // If we stopped at a comma, consume it and continue.
+        if (i < n && csv[i] == ',') i++;
       }
     }
-    return fields;
+
+    return rows;
   }
 
   // -------------------------------------------------------------------------
