@@ -5,6 +5,7 @@ import 'package:flutter/material.dart'
         MouseCursor,
         BuildContext,
         Border,
+        EdgeInsets,
         Theme,
         BorderRadius,
         BoxDecoration,
@@ -42,6 +43,7 @@ class Cell extends StatelessWidget {
           ),
           borderRadius: BorderRadius.zero,
         ),
+        padding: const EdgeInsets.all(1),
         child: child,
       ),
     );
