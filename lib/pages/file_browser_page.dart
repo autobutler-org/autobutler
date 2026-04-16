@@ -273,12 +273,18 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
-    // Resolve target device serial before starting upload
+    // Resolve target device serial before starting upload.
+    // Prefer the already-loaded _allDevices list to avoid a redundant network
+    // call; fall back to StorageService.listDevices() only if the list is
+    // empty for some reason (#1022).
     String? targetSerial;
     try {
-      final devices = (await StorageService.listDevices())
-          .where((d) => d.isEnabled)
-          .toList();
+      final devices =
+          (_allDevices.isNotEmpty
+                  ? _allDevices
+                  : await StorageService.listDevices())
+              .where((d) => d.isEnabled)
+              .toList();
       if (devices.length > 1) {
         if (!mounted) return;
         final picked = await showDeviceUploadPicker(context, devices);

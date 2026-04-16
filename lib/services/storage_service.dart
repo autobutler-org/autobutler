@@ -86,6 +86,22 @@ class StorageService with AuthenticatedService {
   static StorageService get instance => _instance;
   static Map<String, String> get _authHeaders => instance.authHeaders;
 
+  // ── Client-side device-list cache ─────────────────────────────────────────
+  // A 10-second TTL prevents hammering the expensive /storage/devices/status
+  // endpoint. Simultaneous callers share a single in-flight Future so only one
+  // HTTP request is ever in flight at a time (#1022).
+  static const _deviceCacheTtl = Duration(seconds: 10);
+  static List<StorageDevice>? _cachedDevices;
+  static DateTime? _cachedAt;
+  static Future<List<StorageDevice>>? _inFlight;
+
+  /// Invalidate the device cache immediately (e.g. after mount/rename).
+  static void invalidateDeviceCache() {
+    _cachedDevices = null;
+    _cachedAt = null;
+    _inFlight = null;
+  }
+
   static Uri get _apiBaseUri {
     final configured = AppSettings.instance.activeHost;
     final base =
@@ -106,7 +122,33 @@ class StorageService with AuthenticatedService {
   }
 
   /// Returns all storage devices with their current status and display names.
+  ///
+  /// Results are cached for [_deviceCacheTtl]. Simultaneous callers share a
+  /// single in-flight request so only one HTTP call is ever outstanding (#1022).
   static Future<List<StorageDevice>> listDevices() async {
+    final now = DateTime.now();
+    if (_cachedDevices != null &&
+        _cachedAt != null &&
+        now.difference(_cachedAt!) < _deviceCacheTtl) {
+      return _cachedDevices!;
+    }
+    // Coalesce concurrent callers onto the same Future.
+    _inFlight ??= _fetchDevices().then(
+      (result) {
+        _cachedDevices = result;
+        _cachedAt = DateTime.now();
+        _inFlight = null;
+        return result;
+      },
+      onError: (Object e) {
+        _inFlight = null;
+        throw e;
+      },
+    );
+    return _inFlight!;
+  }
+
+  static Future<List<StorageDevice>> _fetchDevices() async {
     final uri = _apiBaseUri.resolve('/api/v1/storage/devices/status');
     final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -133,6 +175,9 @@ class StorageService with AuthenticatedService {
           body?['error'] as String? ?? 'Mount failed (${response.statusCode})';
       throw Exception(msg);
     }
+    // Device state changed — invalidate the cache so the next listDevices()
+    // returns fresh data.
+    invalidateDeviceCache();
   }
 
   /// Sets a custom display name for a device identified by [devicePath].
@@ -152,5 +197,6 @@ class StorageService with AuthenticatedService {
         'Failed to rename device (${response.statusCode}): ${response.body}',
       );
     }
+    invalidateDeviceCache();
   }
 }

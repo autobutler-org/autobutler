@@ -1,14 +1,49 @@
 package storageutil
 
+import (
+	"sync"
+	"time"
+)
+
+// deviceStatusCache holds a short-lived cached copy of GetDeviceStatuses
+// results to avoid redundant disk probes when the endpoint is called in
+// rapid succession (see #1022).
+type deviceStatusCache struct {
+	mu       sync.Mutex
+	result   []*DeviceStatus
+	cachedAt time.Time
+	ttl      time.Duration
+}
+
+func (c *deviceStatusCache) get() ([]*DeviceStatus, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.result == nil || time.Since(c.cachedAt) > c.ttl {
+		return nil, false
+	}
+	return c.result, true
+}
+
+func (c *deviceStatusCache) set(result []*DeviceStatus) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.result = result
+	c.cachedAt = time.Now()
+}
+
 // StorageService wraps a Detector and exposes device-querying methods.
 // Construct with NewStorageService(d) and inject via deputil.Dependencies.
 type StorageService struct {
 	detector Detector
+	cache    deviceStatusCache
 }
 
 // NewStorageService returns a StorageService backed by the given Detector.
 func NewStorageService(d Detector) *StorageService {
-	return &StorageService{detector: d}
+	return &StorageService{
+		detector: d,
+		cache:    deviceStatusCache{ttl: 10 * time.Second},
+	}
 }
 
 // GetManagedDevices returns all devices that have an autobutler data directory.
@@ -53,7 +88,21 @@ func (s *StorageService) FindManagedDeviceBySerial(serial string) (*ManagedDevic
 }
 
 // GetDeviceStatuses returns all detected devices with their enable status.
+// Results are cached for up to 10 seconds to avoid repeated disk probes when
+// the endpoint is hit in rapid succession (#1022).
 func (s *StorageService) GetDeviceStatuses() ([]*DeviceStatus, error) {
+	if cached, ok := s.cache.get(); ok {
+		return cached, nil
+	}
+	statuses, err := s.getDeviceStatusesFresh()
+	if err != nil {
+		return nil, err
+	}
+	s.cache.set(statuses)
+	return statuses, nil
+}
+
+func (s *StorageService) getDeviceStatusesFresh() ([]*DeviceStatus, error) {
 	devices, err := s.detector.DetectDevices()
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
