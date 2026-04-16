@@ -4,7 +4,6 @@ import 'package:flutter/material.dart'
         Widget,
         MouseCursor,
         BuildContext,
-        Colors,
         Border,
         Theme,
         BorderRadius,
@@ -29,16 +28,17 @@ class Cell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const borderWidth = 1.0;
+    final cs = Theme.of(context).colorScheme;
     return MouseRegion(
       cursor: cursor,
       child: Container(
         height: 40,
         decoration: BoxDecoration(
-          color: isActive ? Colors.grey.shade300 : null,
+          color: isActive ? cs.primaryContainer : null,
           border: Border.all(
             color: (isActive || isHighlighted)
-                ? Theme.of(context).colorScheme.primary
-                : Colors.grey.shade400,
+                ? cs.primary
+                : cs.onSurface.withValues(alpha: 0.2),
             width: borderWidth * ((isActive || isHighlighted) ? 2 : 1),
           ),
           borderRadius: BorderRadius.zero,
