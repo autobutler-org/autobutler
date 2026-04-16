@@ -101,34 +101,16 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     final initial = widget.initialPath;
     if (initial != null && initial.isNotEmpty) {
       final normalizedInitial = normalizePath(initial);
-      // If the path looks like a file (known editor extensions) open the editor
-      // after mount instead of treating it as a folder path.
-      final lower = normalizedInitial.toLowerCase();
-      if (lower.endsWith('.abdoc') ||
-          lower.endsWith('.absheet') ||
-          lower.endsWith('.jpg') ||
-          lower.endsWith('.jpeg') ||
-          lower.endsWith('.png') ||
-          lower.endsWith('.gif') ||
-          lower.endsWith('.webp') ||
-          lower.endsWith('.mp4') ||
-          lower.endsWith('.mov') ||
-          lower.endsWith('.mkv') ||
-          lower.endsWith('.webm') ||
-          lower.endsWith('.avi') ||
-          lower.endsWith('.mp3') ||
-          lower.endsWith('.wav') ||
-          lower.endsWith('.m4a') ||
-          lower.endsWith('.aac')) {
-        // Navigate the browser to the parent folder, open the viewer on top.
-        final parentFolder = normalizedInitial.contains('/')
-            ? normalizedInitial.substring(0, normalizedInitial.lastIndexOf('/'))
-            : '';
-        _currentPath = parentFolder;
-        _pendingFileOpen = normalizedInitial;
-      } else {
-        _currentPath = normalizedInitial;
-      }
+      // Always treat the deep-link as a potential file: stat the backend to
+      // find out whether it is a file or a directory after mount. This avoids
+      // the false-positive of opening e.g. a folder named "things.abdoc" as a
+      // document editor. Pre-navigate to the parent folder so the background
+      // content is correct while the stat resolves.
+      final parentFolder = normalizedInitial.contains('/')
+          ? normalizedInitial.substring(0, normalizedInitial.lastIndexOf('/'))
+          : '';
+      _currentPath = parentFolder;
+      _pendingFileOpen = normalizedInitial;
     }
     super
         .initState(); // AutoRefreshMixin.initState handles timer + initial load
@@ -1022,72 +1004,81 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
   }
 
-  /// Opens a deep-linked file path in the appropriate viewer after mount.
-  /// Handles editors, image viewer, and video/audio viewer.
+  /// Opens a deep-linked path in the appropriate viewer after mount.
+  /// Asks the backend what the path actually is (file vs. directory, and file
+  /// type) so that e.g. a folder named "things.abdoc" is opened as a folder
+  /// rather than being launched in the document editor.
   Future<void> _openPendingFile(String filePath) async {
     if (!mounted) return;
-    final lower = filePath.toLowerCase();
+
+    // Stat the backend to resolve the real type. Fall back to navigating as a
+    // folder if the stat fails (path not found, network error, etc.).
+    late final bool isDir;
+    late final String fileType;
+    try {
+      final stat = await CirrusService.statFile(filePath);
+      isDir = stat.isDir;
+      fileType = stat.fileType;
+    } catch (_) {
+      // Could not resolve — treat as a folder navigation.
+      if (mounted) _setPath(filePath);
+      return;
+    }
+
+    if (!mounted) return;
+
+    if (isDir) {
+      _setPath(filePath);
+      return;
+    }
+
     final name = filePath.contains('/')
         ? filePath.substring(filePath.lastIndexOf('/') + 1)
         : filePath;
 
-    if (lower.endsWith('.abdoc')) {
-      await _openEditorWithUrl(
-        filePath: filePath,
-        builder: () => DocumentEditorPage(filePath: filePath),
-      );
-      return;
-    }
-
-    if (lower.endsWith('.absheet')) {
-      await _openEditorWithUrl(
-        filePath: filePath,
-        builder: () => SpreadsheetEditorPage(filePath: filePath),
-      );
-      return;
-    }
-
-    if (lower.endsWith('.jpg') ||
-        lower.endsWith('.jpeg') ||
-        lower.endsWith('.png') ||
-        lower.endsWith('.gif') ||
-        lower.endsWith('.webp')) {
-      try {
-        final bytes = await CirrusService.downloadFileBytes(
-          filePath,
-          fileName: name,
+    switch (fileType) {
+      case 'abdoc':
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: () => DocumentEditorPage(filePath: filePath),
         );
-        if (bytes == null || !mounted) return;
+
+      case 'absheet':
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: () => SpreadsheetEditorPage(filePath: filePath),
+        );
+
+      case 'image':
+        try {
+          final bytes = await CirrusService.downloadFileBytes(
+            filePath,
+            fileName: name,
+          );
+          if (bytes == null || !mounted) return;
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) =>
+                  ImageViewerPage(bytes: bytes, name: name, relPath: filePath),
+            ),
+          );
+        } catch (_) {
+          if (mounted) _showMessage('Unable to open image');
+        }
+
+      case 'video':
         await Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) =>
-                ImageViewerPage(bytes: bytes, name: name, relPath: filePath),
+            builder: (_) => VideoViewerPage(
+              url: CirrusService.constructMediaUrl(filePath),
+              name: name,
+            ),
           ),
         );
-      } catch (_) {
-        if (mounted) _showMessage('Unable to open image');
-      }
-      return;
-    }
 
-    if (lower.endsWith('.mp4') ||
-        lower.endsWith('.mov') ||
-        lower.endsWith('.mkv') ||
-        lower.endsWith('.webm') ||
-        lower.endsWith('.avi') ||
-        lower.endsWith('.mp3') ||
-        lower.endsWith('.wav') ||
-        lower.endsWith('.m4a') ||
-        lower.endsWith('.aac')) {
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => VideoViewerPage(
-            url: CirrusService.constructMediaUrl(filePath),
-            name: name,
-          ),
-        ),
-      );
-      return;
+      default:
+        // Unhandled type — nothing to open.
+        break;
     }
   }
 

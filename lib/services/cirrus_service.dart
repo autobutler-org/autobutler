@@ -271,6 +271,37 @@ class CirrusService with AuthenticatedService {
     }
   }
 
+  /// Returns filesystem metadata for [filePath]: whether it is a directory
+  /// and its resolved [fileType] string (e.g. "image", "abdoc", "folder").
+  /// Throws if the path does not exist or the request fails.
+  static Future<({bool isDir, String fileType, String name})> statFile(
+    String filePath, {
+    String? serial,
+  }) async {
+    final querySegments = <String>[
+      'filePath=${Uri.encodeQueryComponent(filePath)}',
+    ];
+    final serialValue = serial?.trim() ?? '';
+    if (serialValue.isNotEmpty) {
+      querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
+    }
+    final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus/stat');
+    final uri = endpointUri.replace(query: querySegments.join('&'));
+    final response = await http.get(uri, headers: _authHeaders);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to stat file (${response.statusCode})');
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw Exception('Unexpected stat response format');
+    }
+    return (
+      isDir: decoded['isDir'] as bool? ?? false,
+      fileType: decoded['fileType'] as String? ?? 'generic',
+      name: decoded['name'] as String? ?? '',
+    );
+  }
+
   static Future<void> deleteFile(
     String rootDir,
     String fileName, {
