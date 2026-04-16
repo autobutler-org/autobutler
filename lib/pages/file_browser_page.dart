@@ -774,11 +774,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         lowerName.endsWith('.mov') ||
         lowerName.endsWith('.mkv') ||
         lowerName.endsWith('.webm') ||
-        lowerName.endsWith('.avi') ||
-        lowerName.endsWith('.mp3') ||
-        lowerName.endsWith('.wav') ||
-        lowerName.endsWith('.m4a') ||
-        lowerName.endsWith('.aac');
+        lowerName.endsWith('.avi');
     if (!viewable) {
       return;
     }
@@ -815,11 +811,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           lower.endsWith('.mov') ||
           lower.endsWith('.mkv') ||
           lower.endsWith('.webm') ||
-          lower.endsWith('.avi') ||
-          lower.endsWith('.mp3') ||
-          lower.endsWith('.wav') ||
-          lower.endsWith('.m4a') ||
-          lower.endsWith('.aac')) {
+          lower.endsWith('.avi')) {
         await _openEditorWithUrl(
           filePath: filePath,
           builder: () => VideoViewerPage(
