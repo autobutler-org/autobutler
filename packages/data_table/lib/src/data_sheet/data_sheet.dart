@@ -331,7 +331,11 @@ class _DataSheetViewState extends State<_DataSheetView> {
                               _storeCellValue(activeCellController.text);
                             },
                             onTapOutside: (_) {
-                              _storeCellValue(activeCellController.text);
+                              _storeCellValue(
+                                activeCellController.text,
+                                highlightRow: activeRow,
+                                highlightCol: activeCol,
+                              );
                             },
                           )
                         : GestureDetector(
