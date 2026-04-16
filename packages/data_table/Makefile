@@ -53,6 +53,13 @@ watch/%: ## Watch example on web
 	cd ./examples/$*
 	flutter run -d chrome
 
+.PHONY: test
+test: test/unit ## Run tests
+
+.PHONY: test/unit
+test/unit: ## Run unit tests
+	flutter test
+
 .PHONY: tidy
 tidy: tidy/flutter ## Tidy dependencies
 
