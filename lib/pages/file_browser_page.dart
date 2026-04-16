@@ -19,10 +19,10 @@ import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/device_upload_picker.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
-import 'package:autobutler/widgets/file_browser/new_file_dialog.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:autobutler/widgets/file_browser/file_storage_footer.dart';
 import 'package:autobutler/widgets/file_browser/file_top_bar.dart';
+import 'package:autobutler/widgets/file_browser/new_file_dialog.dart';
 import 'package:autobutler/widgets/file_browser/recent_files_section.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
@@ -104,8 +104,23 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       // If the path looks like a file (known editor extensions) open the editor
       // after mount instead of treating it as a folder path.
       final lower = normalizedInitial.toLowerCase();
-      if (lower.endsWith('.abdoc') || lower.endsWith('.absheet')) {
-        // Navigate the browser to the parent folder, open the editor on top.
+      if (lower.endsWith('.abdoc') ||
+          lower.endsWith('.absheet') ||
+          lower.endsWith('.jpg') ||
+          lower.endsWith('.jpeg') ||
+          lower.endsWith('.png') ||
+          lower.endsWith('.gif') ||
+          lower.endsWith('.webp') ||
+          lower.endsWith('.mp4') ||
+          lower.endsWith('.mov') ||
+          lower.endsWith('.mkv') ||
+          lower.endsWith('.webm') ||
+          lower.endsWith('.avi') ||
+          lower.endsWith('.mp3') ||
+          lower.endsWith('.wav') ||
+          lower.endsWith('.m4a') ||
+          lower.endsWith('.aac')) {
+        // Navigate the browser to the parent folder, open the viewer on top.
         final parentFolder = normalizedInitial.contains('/')
             ? normalizedInitial.substring(0, normalizedInitial.lastIndexOf('/'))
             : '';
@@ -126,12 +141,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         final pending = _pendingFileOpen;
         _pendingFileOpen = null;
         if (pending != null && mounted) {
-          _openEditorWithUrl(
-            filePath: pending,
-            builder: () => pending.toLowerCase().endsWith('.absheet')
-                ? SpreadsheetEditorPage(filePath: pending)
-                : DocumentEditorPage(filePath: pending),
-          );
+          _openPendingFile(pending);
         }
       });
     }
@@ -1009,6 +1019,75 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         uri: Uri.parse(AppRoutes.cirrusPath(_currentPath)),
         replace: false,
       );
+    }
+  }
+
+  /// Opens a deep-linked file path in the appropriate viewer after mount.
+  /// Handles editors, image viewer, and video/audio viewer.
+  Future<void> _openPendingFile(String filePath) async {
+    if (!mounted) return;
+    final lower = filePath.toLowerCase();
+    final name = filePath.contains('/')
+        ? filePath.substring(filePath.lastIndexOf('/') + 1)
+        : filePath;
+
+    if (lower.endsWith('.abdoc')) {
+      await _openEditorWithUrl(
+        filePath: filePath,
+        builder: () => DocumentEditorPage(filePath: filePath),
+      );
+      return;
+    }
+
+    if (lower.endsWith('.absheet')) {
+      await _openEditorWithUrl(
+        filePath: filePath,
+        builder: () => SpreadsheetEditorPage(filePath: filePath),
+      );
+      return;
+    }
+
+    if (lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.gif') ||
+        lower.endsWith('.webp')) {
+      try {
+        final bytes = await CirrusService.downloadFileBytes(
+          filePath,
+          fileName: name,
+        );
+        if (bytes == null || !mounted) return;
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) =>
+                ImageViewerPage(bytes: bytes, name: name, relPath: filePath),
+          ),
+        );
+      } catch (_) {
+        if (mounted) _showMessage('Unable to open image');
+      }
+      return;
+    }
+
+    if (lower.endsWith('.mp4') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.mkv') ||
+        lower.endsWith('.webm') ||
+        lower.endsWith('.avi') ||
+        lower.endsWith('.mp3') ||
+        lower.endsWith('.wav') ||
+        lower.endsWith('.m4a') ||
+        lower.endsWith('.aac')) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => VideoViewerPage(
+            url: CirrusService.constructMediaUrl(filePath),
+            name: name,
+          ),
+        ),
+      );
+      return;
     }
   }
 
