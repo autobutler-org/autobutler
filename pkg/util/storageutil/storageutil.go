@@ -517,35 +517,10 @@ func SafeJoin(base string, parts ...string) (string, error) {
 // safeJoin joins base with the provided path segments and returns an error if
 // the resulting path would escape the base directory (path traversal guard).
 func safeJoin(base string, parts ...string) (string, error) {
-	joined := filepath.Clean(filepath.Join(append([]string{base}, parts...)...))
-
-	baseAbs, err := filepath.Abs(filepath.Clean(base))
-	if err != nil {
-		return "", fmt.Errorf("invalid base path: %w", err)
-	}
-	baseResolved, err := filepath.EvalSymlinks(baseAbs)
-	if err != nil {
-		return "", fmt.Errorf("invalid base path: %w", err)
-	}
-
-	targetAbs, err := filepath.Abs(joined)
-	if err != nil {
-		return "", fmt.Errorf("invalid path: %w", err)
-	}
-
-	// Resolve symlinks on the existing parent directory so the check is robust
-	// even when the final path component does not exist.
-	parent := filepath.Dir(targetAbs)
-	parentResolved, err := filepath.EvalSymlinks(parent)
-	if err != nil {
-		return "", fmt.Errorf("invalid path: %w", err)
-	}
-	resolvedTarget := filepath.Join(parentResolved, filepath.Base(targetAbs))
-	resolvedTarget = filepath.Clean(resolvedTarget)
-
-	if resolvedTarget != baseResolved && !strings.HasPrefix(resolvedTarget, baseResolved+string(filepath.Separator)) {
+	cleanBase := filepath.Clean(base)
+	joined := filepath.Clean(filepath.Join(append([]string{cleanBase}, parts...)...))
+	if joined != cleanBase && !strings.HasPrefix(joined, cleanBase+string(filepath.Separator)) {
 		return "", fmt.Errorf("invalid path: escapes base directory")
 	}
-
-	return resolvedTarget, nil
+	return joined, nil
 }
