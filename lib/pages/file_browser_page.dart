@@ -59,6 +59,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   _cachedFiles; // last successful result, shown during refresh
   int _generation = 0; // incremented on each reload to discard stale fetches
   String _currentPath = '';
+
+  /// If the deep-link URL pointed directly to a file, open its editor once
+  /// the page has mounted. Only consumed once.
+  String? _pendingFileOpen;
   bool _isGridView = false;
 
   /// When true, files from all devices are shown merged (unified).
@@ -96,12 +100,41 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     // Apply deep-link initial path before AutoRefreshMixin triggers the first load.
     final initial = widget.initialPath;
     if (initial != null && initial.isNotEmpty) {
-      _currentPath = normalizePath(initial);
+      final normalizedInitial = normalizePath(initial);
+      // If the path looks like a file (known editor extensions) open the editor
+      // after mount instead of treating it as a folder path.
+      final lower = normalizedInitial.toLowerCase();
+      if (lower.endsWith('.abdoc') || lower.endsWith('.absheet')) {
+        // Navigate the browser to the parent folder, open the editor on top.
+        final parentFolder = normalizedInitial.contains('/')
+            ? normalizedInitial.substring(0, normalizedInitial.lastIndexOf('/'))
+            : '';
+        _currentPath = parentFolder;
+        _pendingFileOpen = normalizedInitial;
+      } else {
+        _currentPath = normalizedInitial;
+      }
     }
     super
         .initState(); // AutoRefreshMixin.initState handles timer + initial load
     _fileBrowserScrollController.addListener(_onScroll);
     EventsService.instance.start();
+    // If the deep-link URL pointed at a file, open its editor after the first
+    // frame so the folder content is loaded beneath it.
+    if (_pendingFileOpen != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final pending = _pendingFileOpen;
+        _pendingFileOpen = null;
+        if (pending != null && mounted) {
+          _openEditorWithUrl(
+            filePath: pending,
+            builder: () => pending.toLowerCase().endsWith('.absheet')
+                ? SpreadsheetEditorPage(filePath: pending)
+                : DocumentEditorPage(filePath: pending),
+          );
+        }
+      });
+    }
     _eventSub = EventsService.instance.events.listen((evt) {
       // Any file mutation on the server triggers a refresh
       if ({'upload', 'delete', 'move', 'new_folder'}.contains(evt.kind)) {
@@ -591,16 +624,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           : '$_currentPath/$fileName';
 
       if (fileName.endsWith('.absheet')) {
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => SpreadsheetEditorPage(filePath: filePath),
-          ),
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: () => SpreadsheetEditorPage(filePath: filePath),
         );
       } else {
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => DocumentEditorPage(filePath: filePath),
-          ),
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: () => DocumentEditorPage(filePath: filePath),
         );
       }
     } catch (e) {
@@ -719,12 +750,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     // AutoButler native document format — open in the rich text editor.
     if (lowerName.endsWith('.abdoc')) {
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => DocumentEditorPage(
-            filePath: node.apiPath,
-            deviceSerial: node.deviceSerial,
-          ),
+      await _openEditorWithUrl(
+        filePath: node.apiPath,
+        builder: () => DocumentEditorPage(
+          filePath: node.apiPath,
+          deviceSerial: node.deviceSerial,
         ),
       );
       return;
@@ -732,12 +762,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     // AutoButler native spreadsheet format.
     if (lowerName.endsWith('.absheet')) {
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => SpreadsheetEditorPage(
-            filePath: node.apiPath,
-            deviceSerial: node.deviceSerial,
-          ),
+      await _openEditorWithUrl(
+        filePath: node.apiPath,
+        builder: () => SpreadsheetEditorPage(
+          filePath: node.apiPath,
+          deviceSerial: node.deviceSerial,
         ),
       );
       return;
@@ -957,6 +986,30 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// Update the browser URL bar to reflect an open file editor, then restore
+  /// it to the current folder path when the editor closes.
+  Future<void> _openEditorWithUrl({
+    required String filePath,
+    required Widget Function() builder,
+  }) async {
+    if (kIsWeb) {
+      SystemNavigator.routeInformationUpdated(
+        uri: Uri.parse(AppRoutes.cirrusPath(filePath)),
+        replace: false,
+      );
+    }
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => builder()));
+    // Restore the folder URL after the editor is dismissed.
+    if (kIsWeb && mounted) {
+      SystemNavigator.routeInformationUpdated(
+        uri: Uri.parse(AppRoutes.cirrusPath(_currentPath)),
+        replace: false,
+      );
+    }
   }
 
   // ── Mobile FAB (Create actions) ──────────────────────────────────────────
