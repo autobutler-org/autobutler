@@ -800,14 +800,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         if (bytes == null || !mounted) {
           return;
         }
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ImageViewerPage(
-              bytes: bytes,
-              name: node.name,
-              relPath: node.apiPath,
-              serial: serialOrNull(node.deviceSerial),
-            ),
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: () => ImageViewerPage(
+            bytes: bytes,
+            name: node.name,
+            relPath: node.apiPath,
+            serial: serialOrNull(node.deviceSerial),
           ),
         );
         return;
@@ -821,12 +820,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           lower.endsWith('.wav') ||
           lower.endsWith('.m4a') ||
           lower.endsWith('.aac')) {
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => VideoViewerPage(
-              url: CirrusService.constructMediaUrl(filePath),
-              name: node.name,
-            ),
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: () => VideoViewerPage(
+            url: CirrusService.constructMediaUrl(filePath),
+            name: node.name,
           ),
         );
         return;
