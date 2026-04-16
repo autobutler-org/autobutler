@@ -69,7 +69,9 @@ class DataSheetController extends ChangeNotifier {
         .map((r) => ValueNotifier<List<DataCell>>(List<DataCell>.from(r.cells)))
         .toList();
     final colCount = table.rows.isNotEmpty ? table.rows.first.cells.length : 0;
-    final flex = columnFlex ?? List<int>.filled(colCount, 1);
+    final flex = columnFlex != null
+        ? List<int>.from(columnFlex)
+        : List<int>.filled(colCount, 1, growable: true);
     return DataSheetController._(table, rows, flex);
   }
 
