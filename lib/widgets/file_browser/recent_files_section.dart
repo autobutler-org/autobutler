@@ -45,9 +45,15 @@ class _RecentFilesSectionState extends State<RecentFilesSection> {
     return path.substring(0, slash);
   }
 
-  static bool _isViewable(String name) {
+  /// Returns true for any file type that [FileBrowserPage._handleOpenNode]
+  /// can open in-app (editor, viewer, or conversion dialog) rather than
+  /// just downloading.
+  static bool _opensInApp(String name) {
     final lower = name.toLowerCase();
-    return lower.endsWith('.jpg') ||
+    return lower.endsWith('.abdoc') ||
+        lower.endsWith('.absheet') ||
+        lower.endsWith('.csv') ||
+        lower.endsWith('.jpg') ||
         lower.endsWith('.jpeg') ||
         lower.endsWith('.png') ||
         lower.endsWith('.gif') ||
@@ -64,7 +70,7 @@ class _RecentFilesSectionState extends State<RecentFilesSection> {
   }
 
   void _openOrDownload(CirrusFileNode file) {
-    if (_isViewable(file.name)) {
+    if (_opensInApp(file.name)) {
       widget.onOpenFile(file);
     } else {
       widget.onFileMenuAction(file, FileMenuAction.download);
