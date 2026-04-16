@@ -1,11 +1,10 @@
-class DataCell<T> {
-  T value;
+class DataCell {
+  String value;
 
   DataCell(this.value);
   DataCell.unnamed(this.value);
 
-  String toJson() => value.toString();
+  String toJson() => value;
 
-  static DataCell<String> fromJson(dynamic json) =>
-      DataCell<String>(json?.toString() ?? '');
+  static DataCell fromJson(dynamic json) => DataCell(json?.toString() ?? '');
 }
