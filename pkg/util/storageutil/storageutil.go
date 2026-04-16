@@ -507,3 +507,15 @@ func readFileTrim(path string) string {
 	}
 	return strings.TrimSpace(string(data))
 }
+
+// safeJoin joins base with the provided path segments and returns an error if
+// the resulting path would escape the base directory (path traversal guard).
+func safeJoin(base string, parts ...string) (string, error) {
+	joined := filepath.Join(append([]string{base}, parts...)...)
+	cleaned := filepath.Clean(joined)
+	cleanBase := filepath.Clean(base)
+	if cleaned != cleanBase && !strings.HasPrefix(cleaned, cleanBase+string(filepath.Separator)) {
+		return "", fmt.Errorf("invalid path: escapes base directory")
+	}
+	return cleaned, nil
+}
