@@ -27,7 +27,6 @@ class Cell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const borderWidth = 1.0;
     final cs = Theme.of(context).colorScheme;
     return MouseRegion(
       cursor: cursor,
@@ -39,7 +38,7 @@ class Cell extends StatelessWidget {
             color: (isActive || isHighlighted)
                 ? cs.primary
                 : cs.onSurface.withValues(alpha: 0.2),
-            width: borderWidth * ((isActive || isHighlighted) ? 2 : 1),
+            width: 2.0,
           ),
           borderRadius: BorderRadius.zero,
         ),
