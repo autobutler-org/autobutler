@@ -336,6 +336,7 @@ class _DataSheetViewState extends State<_DataSheetView> {
                                 highlightRow: activeRow,
                                 highlightCol: activeCol,
                               );
+                              keyboardFocus.requestFocus();
                             },
                           )
                         : GestureDetector(
@@ -394,7 +395,7 @@ class _DataSheetViewState extends State<_DataSheetView> {
     }
     activeCellController.clear();
     if (highlightRow >= 0) {
-      controller.selection.setHighlighted(highlightRow, highlightCol);
+      controller.selection.goTo(highlightRow, highlightCol);
     } else {
       controller.selection.clear();
     }
