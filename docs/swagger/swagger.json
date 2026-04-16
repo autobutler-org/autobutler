@@ -1285,6 +1285,53 @@
                 }
             }
         },
+        "/cirrus/stat": {
+            "get": {
+                "description": "Returns filesystem metadata for the given cirrus-relative path: whether it is a directory and its file type. Useful for deep-link resolution when the path extension alone is ambiguous (e.g. a folder named \"things.abdoc\").",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cirrus"
+                ],
+                "summary": "Stat a file or directory",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cirrus-relative path to stat",
+                        "name": "filePath",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device serial number",
+                        "name": "serial",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1_files.StatFileJSON"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/cirrus/upload": {
             "post": {
                 "description": "Upload one or more files via multipart/form-data",
@@ -2432,6 +2479,20 @@
                 },
                 "size": {
                     "type": "integer"
+                }
+            }
+        },
+        "v1_files.StatFileJSON": {
+            "type": "object",
+            "properties": {
+                "fileType": {
+                    "type": "string"
+                },
+                "isDir": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         },
