@@ -305,9 +305,8 @@ class DataSheetController extends ChangeNotifier {
         ..insert(index + 1, DataCell(_rows[i].value[index].value.toString()));
       _rows[i].value = updated;
     }
-    final srcWidth = index < columnWidths.length
-        ? columnWidths[index]
-        : kDefaultColumnWidth;
+    final srcWidth =
+        index < columnWidths.length ? columnWidths[index] : kDefaultColumnWidth;
     if (index < columnWidths.length) {
       columnWidths.insert(index + 1, srcWidth);
     } else {
@@ -374,10 +373,9 @@ class DataSheetController extends ChangeNotifier {
     for (var c = 0; c < colCount; c++) {
       final text = _rows[row].value[c].value.toString();
       if (text.isEmpty) continue;
-      final colW = (c < columnWidths.length
-              ? columnWidths[c]
-              : kDefaultColumnWidth) -
-          cellPadding * 2;
+      final colW =
+          (c < columnWidths.length ? columnWidths[c] : kDefaultColumnWidth) -
+              cellPadding * 2;
       final tp = TextPainter(
         text: TextSpan(text: text, style: TextStyle(fontSize: fontSize)),
         textDirection: ui.TextDirection.ltr,

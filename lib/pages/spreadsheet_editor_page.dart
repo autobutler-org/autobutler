@@ -26,11 +26,11 @@ class _SheetTab {
   void dispose() => controller.dispose();
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'data': table.toJson(),
-        'columnWidths': controller.columnWidths,
-        'rowHeights': controller.rowHeights,
-      };
+    'name': name,
+    'data': table.toJson(),
+    'columnWidths': controller.columnWidths,
+    'rowHeights': controller.rowHeights,
+  };
 }
 
 // ---------------------------------------------------------------------------

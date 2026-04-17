@@ -158,13 +158,22 @@ class _DataSheetViewState extends State<_DataSheetView> {
           bool m(List<KeyboardShortcut> triggers) =>
               triggers.any((t) => t.matches(event));
 
-          // While a cell is actively being edited, only intercept Escape (to
-          // cancel the edit). All other keys — including arrow keys, backspace,
-          // and delete — must reach the TextField so it can handle them.
+          // While a cell is actively being edited, only intercept Escape
+          // (cancel) and Enter (confirm). All other keys — including arrow
+          // keys, backspace, and delete — must reach the TextField so it can
+          // handle them normally.
           if (activeRow >= 0 && activeCol >= 0) {
             if (m(scheme.cancelEdit)) {
               _storeCellValue(_priorCellValue,
                   highlightRow: activeRow, highlightCol: activeCol);
+              keyboardFocus.requestFocus();
+              return KeyEventResult.handled;
+            }
+            if (m(scheme.confirmEdit)) {
+              final r = activeRow;
+              final c = activeCol;
+              _storeCellValue(activeCellController.text,
+                  highlightRow: r, highlightCol: c);
               keyboardFocus.requestFocus();
               return KeyEventResult.handled;
             }
@@ -347,8 +356,9 @@ class _DataSheetViewState extends State<_DataSheetView> {
               listenable: controller,
               builder: (context, _) {
                 final totalW = _totalContentWidth();
-                final scrollW =
-                    totalW < constraints.maxWidth ? constraints.maxWidth : totalW;
+                final scrollW = totalW < constraints.maxWidth
+                    ? constraints.maxWidth
+                    : totalW;
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: SizedBox(
@@ -386,8 +396,7 @@ class _DataSheetViewState extends State<_DataSheetView> {
 
   double _totalContentWidth() {
     final gutterW = widget.showHeadings ? kGutterWidth : 0.0;
-    return gutterW +
-        controller.columnWidths.fold(0.0, (acc, w) => acc + w);
+    return gutterW + controller.columnWidths.fold(0.0, (acc, w) => acc + w);
   }
 
   Widget _buildHeaderRow() {
@@ -438,7 +447,8 @@ class _DataSheetViewState extends State<_DataSheetView> {
           ),
         ...List.generate(rowCells.length, (c) {
           final isActiveCell = (r == activeRow && c == activeCol);
-          final isHighlightedCell = (r == highlightedRow && c == highlightedCol);
+          final isHighlightedCell =
+              (r == highlightedRow && c == highlightedCol);
           final colWidth = c < controller.columnWidths.length
               ? controller.columnWidths[c]
               : kDefaultColumnWidth;
@@ -466,8 +476,9 @@ class _DataSheetViewState extends State<_DataSheetView> {
             key: ValueKey('r${r}c$c'),
             isActive: isActiveCell,
             isHighlighted: isHighlightedCell,
-            cursor:
-                isActiveCell ? SystemMouseCursors.text : SystemMouseCursors.cell,
+            cursor: isActiveCell
+                ? SystemMouseCursors.text
+                : SystemMouseCursors.cell,
             height: rowHeight,
             child: cellChild,
           );
