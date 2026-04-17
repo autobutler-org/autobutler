@@ -25,7 +25,12 @@ class _SheetTab {
 
   void dispose() => controller.dispose();
 
-  Map<String, dynamic> toJson() => {'name': name, 'data': table.toJson()};
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'data': table.toJson(),
+        'columnWidths': controller.columnWidths,
+        'rowHeights': controller.rowHeights,
+      };
 }
 
 // ---------------------------------------------------------------------------
@@ -136,7 +141,17 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
       if (table.rows.isEmpty) {
         table.rows.add(DataRow([DataCell('')]));
       }
-      final controller = DataSheetController.fromTable(table);
+      final columnWidths = (tabMap['columnWidths'] as List<dynamic>?)
+          ?.map((v) => (v as num).toDouble())
+          .toList();
+      final rowHeights = (tabMap['rowHeights'] as List<dynamic>?)
+          ?.map((v) => (v as num).toDouble())
+          .toList();
+      final controller = DataSheetController.fromTable(
+        table,
+        columnWidths: columnWidths,
+        rowHeights: rowHeights,
+      );
       return _SheetTab(name: name, table: table, controller: controller);
     }).toList();
   }
