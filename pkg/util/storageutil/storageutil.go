@@ -16,6 +16,7 @@ type FileType string
 
 const (
 	FileTypeAbdoc     FileType = "abdoc"
+	FileTypeAbsheet   FileType = "absheet"
 	FileTypeDocx      FileType = "docx"
 	FileTypeEpub      FileType = "epub"
 	FileTypeFolder    FileType = "folder"
@@ -89,6 +90,8 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 		return FileTypeEpub
 	case ".abdoc":
 		return FileTypeAbdoc
+	case ".absheet":
+		return FileTypeAbsheet
 	case ".docx":
 		return FileTypeDocx
 	case ".zip", ".rar", ".tar", ".gz", ".tgz", ".7z":
@@ -503,4 +506,21 @@ func readFileTrim(path string) string {
 		return ""
 	}
 	return strings.TrimSpace(string(data))
+}
+
+// SafeJoin joins base with the provided path segments and returns an error if
+// the resulting path would escape the base directory (path traversal guard).
+func SafeJoin(base string, parts ...string) (string, error) {
+	return safeJoin(base, parts...)
+}
+
+// safeJoin joins base with the provided path segments and returns an error if
+// the resulting path would escape the base directory (path traversal guard).
+func safeJoin(base string, parts ...string) (string, error) {
+	cleanBase := filepath.Clean(base)
+	joined := filepath.Clean(filepath.Join(append([]string{cleanBase}, parts...)...))
+	if joined != cleanBase && !strings.HasPrefix(joined, cleanBase+string(filepath.Separator)) {
+		return "", fmt.Errorf("invalid path: escapes base directory")
+	}
+	return joined, nil
 }

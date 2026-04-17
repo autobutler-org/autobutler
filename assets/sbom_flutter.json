@@ -127,6 +127,11 @@
       "url": "https://pub.dev"
     },
     {
+      "name": "data_table",
+      "version": "0.0.1",
+      "source": "path"
+    },
+    {
       "name": "dbus",
       "version": "0.7.12",
       "source": "hosted",

@@ -20,6 +20,7 @@ func (r *router) Routes() []*serverutil.Route {
 		moveFileRoute,
 		newFolderRoute,
 		searchFilesRoute,
+		statFileRoute,
 		uploadFilesRoute,
 		uploadFilesNestedRoute,
 	}

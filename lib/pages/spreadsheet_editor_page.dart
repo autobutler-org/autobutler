@@ -1,0 +1,281 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:autobutler/services/cirrus_service.dart';
+import 'package:autobutler/utils/file_browser_path_utils.dart';
+import 'package:data_table/data_sheet.dart';
+import 'package:data_table/data_table.dart';
+import 'package:flutter/material.dart' hide DataTable, DataRow, DataCell;
+import 'package:http/http.dart' as http;
+
+// ---------------------------------------------------------------------------
+// Per-tab state
+// ---------------------------------------------------------------------------
+
+class _SheetTab {
+  String name;
+  final DataTable table;
+  final DataSheetController controller;
+
+  _SheetTab({
+    required this.name,
+    required this.table,
+    required this.controller,
+  });
+
+  void dispose() => controller.dispose();
+
+  Map<String, dynamic> toJson() => {'name': name, 'data': table.toJson()};
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
+
+class SpreadsheetEditorPage extends StatefulWidget {
+  final String filePath;
+  final String deviceSerial;
+
+  const SpreadsheetEditorPage({
+    required this.filePath,
+    this.deviceSerial = '',
+    super.key,
+  });
+
+  @override
+  State<SpreadsheetEditorPage> createState() => _SpreadsheetEditorPageState();
+}
+
+class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
+    with TickerProviderStateMixin {
+  bool _loading = true;
+  bool _saving = false;
+  bool _dirty = false;
+  String? _error;
+
+  late TabController _tabController;
+  List<_SheetTab> _tabs = [];
+
+  static const _autoSaveDelay = Duration(seconds: 2);
+  Timer? _autoSaveTimer;
+
+  String get _displayName {
+    final name = widget.filePath.split('/').last;
+    return name.endsWith('.absheet')
+        ? name.substring(0, name.length - 8)
+        : name;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 1, vsync: this);
+    _loadFile();
+  }
+
+  @override
+  void dispose() {
+    _autoSaveTimer?.cancel();
+    _tabController.dispose();
+    for (final tab in _tabs) {
+      tab.dispose();
+    }
+    super.dispose();
+  }
+
+  // ── Load ──────────────────────────────────────────────────────────────────
+
+  Future<void> _loadFile() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final bytes = await CirrusService.downloadFileBytes(
+        widget.filePath,
+        serial: serialOrNull(widget.deviceSerial),
+      );
+      if (!mounted) return;
+
+      final tabs = _parseTabs(bytes);
+
+      _tabController.dispose();
+      final tc = TabController(length: tabs.length, vsync: this);
+      for (final tab in tabs) {
+        tab.controller.addListener(_onSheetChanged);
+      }
+
+      setState(() {
+        _tabs = tabs;
+        _tabController = tc;
+        _loading = false;
+        _dirty = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = e.toString();
+      });
+    }
+  }
+
+  List<_SheetTab> _parseTabs(List<int>? bytes) {
+    if (bytes == null || bytes.isEmpty) return [_makeEmptyTab('Sheet 1')];
+
+    final jsonData =
+        jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>? ?? {};
+    final tabsJson = jsonData['tabs'] as List<dynamic>? ?? [];
+    if (tabsJson.isEmpty) return [_makeEmptyTab('Sheet 1')];
+
+    return tabsJson.map((t) {
+      final tabMap = t as Map<String, dynamic>;
+      final name = (tabMap['name'] as String?) ?? 'Sheet';
+      final dataMap = tabMap['data'] as Map<String, dynamic>? ?? {};
+      final table = DataTable.fromJson(dataMap);
+      if (table.rows.isEmpty) {
+        table.rows.add(DataRow([DataCell('')]));
+      }
+      final controller = DataSheetController.fromTable(table);
+      return _SheetTab(name: name, table: table, controller: controller);
+    }).toList();
+  }
+
+  _SheetTab _makeEmptyTab(String name) {
+    final table = DataTable([
+      DataRow([DataCell('')]),
+    ]);
+    final controller = DataSheetController.fromTable(table);
+    return _SheetTab(name: name, table: table, controller: controller);
+  }
+
+  // ── Save ──────────────────────────────────────────────────────────────────
+
+  void _onSheetChanged() {
+    if (!_dirty && mounted) setState(() => _dirty = true);
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = Timer(_autoSaveDelay, _doSave);
+  }
+
+  Future<void> _doSave() async {
+    if (_saving || !mounted) return;
+    setState(() => _saving = true);
+    try {
+      final jsonStr = jsonEncode({
+        'tabs': _tabs.map((t) => t.toJson()).toList(),
+      });
+      final bytes = utf8.encode(jsonStr);
+      final fileName = '$_displayName.absheet';
+      final parentDir = parentPath(widget.filePath);
+      final file = http.MultipartFile.fromBytes(
+        'files',
+        bytes,
+        filename: fileName,
+      );
+      await CirrusService.uploadFilesFromFormData(
+        parentDir,
+        [file],
+        serial: serialOrNull(widget.deviceSerial),
+        overwrite: true,
+      );
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _dirty = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
+    }
+  }
+
+  Future<void> _manualSave() async {
+    _autoSaveTimer?.cancel();
+    try {
+      await _doSave();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Saved')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
+    }
+  }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    final title = widget.filePath.split('/').last;
+
+    if (_loading) {
+      return Scaffold(
+        appBar: AppBar(title: Text(title)),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(title: Text(title)),
+        body: Center(child: Text('Error: $_error')),
+      );
+    }
+
+    final multiTab = _tabs.length > 1;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        actions: [
+          if (_saving)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            )
+          else
+            IconButton(
+              icon: Icon(_dirty ? Icons.save : Icons.save_outlined),
+              tooltip: 'Save',
+              onPressed: _manualSave,
+            ),
+        ],
+        bottom: multiTab
+            ? TabBar(
+                controller: _tabController,
+                tabs: _tabs.map((t) => Tab(text: t.name)).toList(),
+              )
+            : null,
+      ),
+      body: multiTab
+          ? TabBarView(
+              controller: _tabController,
+              children: _tabs.map(_buildSheetTab).toList(),
+            )
+          : _buildSheetTab(_tabs.first),
+    );
+  }
+
+  Widget _buildSheetTab(_SheetTab tab) {
+    return Column(
+      children: [
+        DataSheetControlBar(controller: tab.controller),
+        Expanded(
+          child: DataSheet(controller: tab.controller, table: tab.table),
+        ),
+      ],
+    );
+  }
+}

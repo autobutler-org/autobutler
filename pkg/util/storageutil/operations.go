@@ -143,7 +143,10 @@ func DeleteFilesImpl(params DeleteFilesParams, device *ManagedDevice, defaultCir
 		cirrusDir = device.CirrusDir
 	}
 	for _, filePath := range params.FilePaths {
-		fullPath := filepath.Join(cirrusDir, params.RootDir, filePath)
+		fullPath, err := safeJoin(cirrusDir, params.RootDir, filePath)
+		if err != nil {
+			return nil, fmt.Errorf("invalid file path: %w", err)
+		}
 		if err := os.RemoveAll(fullPath); err != nil { // coverage: ignore - requires filesystem permission errors
 			return nil, fmt.Errorf("failed to delete %s: %w", filePath, err)
 		}
@@ -201,8 +204,14 @@ func MoveFileImpl(params MoveFileParams, oldDevice *ManagedDevice, newDevice *Ma
 		newCirrusDir = newDevice.CirrusDir
 	}
 
-	oldFullPath := filepath.Join(oldCirrusDir, params.OldFilePath)
-	newFullPath := filepath.Join(newCirrusDir, params.NewFilePath)
+	oldFullPath, err := safeJoin(oldCirrusDir, params.OldFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("invalid old file path: %w", err)
+	}
+	newFullPath, err := safeJoin(newCirrusDir, params.NewFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("invalid new file path: %w", err)
+	}
 
 	newFullDir := filepath.Dir(newFullPath)
 	if err := os.MkdirAll(newFullDir, 0755); err != nil {
@@ -284,7 +293,10 @@ func CreateFolderImpl(params CreateFolderParams, device *ManagedDevice, defaultC
 	if device != nil {
 		rootDir = device.CirrusDir
 	}
-	fullPath := filepath.Join(rootDir, params.FolderDir, params.FolderName)
+	fullPath, err := safeJoin(rootDir, params.FolderDir, params.FolderName)
+	if err != nil {
+		return nil, fmt.Errorf("invalid folder path: %w", err)
+	}
 
 	if err := os.MkdirAll(fullPath, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create folder: %w", err) // coverage: ignore - requires filesystem permission errors
@@ -330,7 +342,10 @@ func DownloadFileImpl(params DownloadFileParams, device *ManagedDevice, defaultC
 	if device != nil {
 		cirrusDir = device.CirrusDir
 	}
-	fullPath := filepath.Join(cirrusDir, params.FilePath)
+	fullPath, err := safeJoin(cirrusDir, params.FilePath)
+	if err != nil {
+		return nil, fmt.Errorf("invalid file path: %w", err)
+	}
 	fileType := DetermineFileTypeFromPath(fullPath)
 
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
@@ -386,13 +401,23 @@ func UploadFilesStreamedImpl(params UploadFilesStreamedParams, device *ManagedDe
 
 		formName := part.FormName()
 		if formName == "files" && part.FileName() != "" {
-			fileName := part.FileName()
-			destDir := filepath.Join(cirrusDir, params.RootDir)
+			// Strip any directory components from the client-supplied filename to
+			// prevent path traversal via the filename itself.
+			fileName := filepath.Base(part.FileName())
+			destDir, err := safeJoin(cirrusDir, params.RootDir)
+			if err != nil {
+				part.Close()
+				return fmt.Errorf("invalid upload directory: %w", err)
+			}
 			if err := os.MkdirAll(destDir, 0755); err != nil {
 				part.Close()
 				return fmt.Errorf("failed to create directory: %w", err)
 			}
-			destPath := filepath.Join(destDir, fileName)
+			destPath, err := safeJoin(destDir, fileName)
+			if err != nil {
+				part.Close()
+				return fmt.Errorf("invalid file name: %w", err)
+			}
 
 			// Handle file name conflicts.
 			// When Overwrite is true, keep destPath as-is (the atomic rename below
@@ -404,7 +429,12 @@ func UploadFilesStreamedImpl(params UploadFilesStreamedParams, device *ManagedDe
 					i := 1
 					for {
 						newFileName := fmt.Sprintf("%s_(%d)%s", name, i, ext)
-						destPath = filepath.Join(destDir, newFileName)
+						newDestPath, joinErr := safeJoin(destDir, newFileName)
+						if joinErr != nil {
+							part.Close()
+							return fmt.Errorf("invalid candidate path: %w", joinErr)
+						}
+						destPath = newDestPath
 						if _, err := os.Stat(destPath); os.IsNotExist(err) {
 							break
 						}
@@ -453,7 +483,13 @@ func UploadFilesStreamedImpl(params UploadFilesStreamedParams, device *ManagedDe
 			candidate := fileName
 			i := 0
 			for {
-				destPath = filepath.Join(destDir, candidate)
+				var joinErr error
+				destPath, joinErr = safeJoin(destDir, candidate)
+				if joinErr != nil {
+					os.Remove(tmpPath)
+					part.Close()
+					return fmt.Errorf("invalid candidate path: %w", joinErr)
+				}
 
 				if params.Overwrite {
 					// Atomic replace: rename temp over existing file (works same-FS).
@@ -540,4 +576,64 @@ func UploadFilesStreamedImpl(params UploadFilesStreamedParams, device *ManagedDe
 		}
 	}
 	return nil
+}
+
+// StatFileParams contains parameters for statting a file or directory
+type StatFileParams struct {
+	FilePath     string
+	DeviceSerial string
+}
+
+// StatFileResult contains the result of a stat operation
+type StatFileResult struct {
+	FullPath string
+	IsDir    bool
+	FileType FileType
+	Name     string
+}
+
+// StatFile resolves a cirrus-relative path to its filesystem metadata.
+func (s *StorageService) StatFile(params StatFileParams) (*StatFileResult, error) {
+	device, err := s.FindManagedDeviceBySerial(params.DeviceSerial)
+	if err != nil {
+		return nil, err // coverage: ignore - requires device detection failure
+	}
+	defaultCirrusDir, err := GetCirrusDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+	}
+	return StatFileImpl(params, device, defaultCirrusDir)
+}
+
+// StatFileImpl resolves a path using pre-resolved device and cirrus directory.
+// Use this in tests to inject test devices without hitting the real filesystem detector.
+func StatFileImpl(params StatFileParams, device *ManagedDevice, defaultCirrusDir string) (*StatFileResult, error) {
+	cirrusDir := defaultCirrusDir
+	if device != nil {
+		cirrusDir = device.CirrusDir
+	}
+	fullPath, err := safeJoin(cirrusDir, params.FilePath)
+	if err != nil {
+		return nil, fmt.Errorf("invalid file path: %w", err)
+	}
+	info, err := os.Stat(fullPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("path not found: %s", params.FilePath)
+		}
+		return nil, fmt.Errorf("failed to stat path: %w", err)
+	}
+	isDir := info.IsDir()
+	var fileType FileType
+	if isDir {
+		fileType = FileTypeFolder
+	} else {
+		fileType = DetermineFileTypeFromPath(fullPath)
+	}
+	return &StatFileResult{
+		FullPath: fullPath,
+		IsDir:    isDir,
+		FileType: fileType,
+		Name:     info.Name(),
+	}, nil
 }

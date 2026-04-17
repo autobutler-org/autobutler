@@ -34,6 +34,7 @@ mixin AutoRefreshMixin<T extends StatefulWidget>
 
   Timer? _refreshTimer;
   bool _refreshInFlight = false;
+  DateTime? _lastRefreshStarted;
 
   // ── Overrides ──────────────────────────────────────────────────────────────
 
@@ -93,7 +94,17 @@ mixin AutoRefreshMixin<T extends StatefulWidget>
 
   Future<void> _triggerRefresh({bool initial = false}) async {
     if (_refreshInFlight) return;
+    // Debounce: suppress calls that arrive within 1s of a refresh that has
+    // already started (e.g. lifecycle resume + timer firing simultaneously).
+    // This prevents the duplicate /storage/devices/status calls seen in #1022.
+    final now = DateTime.now();
+    if (!initial &&
+        _lastRefreshStarted != null &&
+        now.difference(_lastRefreshStarted!) < const Duration(seconds: 1)) {
+      return;
+    }
     _refreshInFlight = true;
+    _lastRefreshStarted = now;
     if (mounted) {
       setState(() => isRefreshing = true);
     }

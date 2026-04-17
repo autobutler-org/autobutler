@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
+import 'package:autobutler/pages/spreadsheet_editor_page.dart';
+import 'package:data_table/data_sheet.dart';
+import 'package:data_table/data_table.dart' as dt;
 import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
@@ -18,10 +22,10 @@ import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/device_upload_picker.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
-import 'package:autobutler/widgets/file_browser/new_file_dialog.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:autobutler/widgets/file_browser/file_storage_footer.dart';
 import 'package:autobutler/widgets/file_browser/file_top_bar.dart';
+import 'package:autobutler/widgets/file_browser/new_file_dialog.dart';
 import 'package:autobutler/widgets/file_browser/recent_files_section.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
@@ -58,6 +62,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   _cachedFiles; // last successful result, shown during refresh
   int _generation = 0; // incremented on each reload to discard stale fetches
   String _currentPath = '';
+
+  /// If the deep-link URL pointed directly to a file, open its editor once
+  /// the page has mounted. Only consumed once.
+  String? _pendingFileOpen;
   bool _isGridView = false;
 
   /// When true, files from all devices are shown merged (unified).
@@ -95,12 +103,33 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     // Apply deep-link initial path before AutoRefreshMixin triggers the first load.
     final initial = widget.initialPath;
     if (initial != null && initial.isNotEmpty) {
-      _currentPath = normalizePath(initial);
+      final normalizedInitial = normalizePath(initial);
+      // Always treat the deep-link as a potential file: stat the backend to
+      // find out whether it is a file or a directory after mount. This avoids
+      // the false-positive of opening e.g. a folder named "things.abdoc" as a
+      // document editor. Pre-navigate to the parent folder so the background
+      // content is correct while the stat resolves.
+      final parentFolder = normalizedInitial.contains('/')
+          ? normalizedInitial.substring(0, normalizedInitial.lastIndexOf('/'))
+          : '';
+      _currentPath = parentFolder;
+      _pendingFileOpen = normalizedInitial;
     }
     super
         .initState(); // AutoRefreshMixin.initState handles timer + initial load
     _fileBrowserScrollController.addListener(_onScroll);
     EventsService.instance.start();
+    // If the deep-link URL pointed at a file, open its editor after the first
+    // frame so the folder content is loaded beneath it.
+    if (_pendingFileOpen != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final pending = _pendingFileOpen;
+        _pendingFileOpen = null;
+        if (pending != null && mounted) {
+          _openPendingFile(pending);
+        }
+      });
+    }
     _eventSub = EventsService.instance.events.listen((evt) {
       // Any file mutation on the server triggers a refresh
       if ({'upload', 'delete', 'move', 'new_folder'}.contains(evt.kind)) {
@@ -247,12 +276,18 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
-    // Resolve target device serial before starting upload
+    // Resolve target device serial before starting upload.
+    // Prefer the already-loaded _allDevices list to avoid a redundant network
+    // call; fall back to StorageService.listDevices() only if the list is
+    // empty for some reason (#1022).
     String? targetSerial;
     try {
-      final devices = (await StorageService.listDevices())
-          .where((d) => d.isEnabled)
-          .toList();
+      final devices =
+          (_allDevices.isNotEmpty
+                  ? _allDevices
+                  : await StorageService.listDevices())
+              .where((d) => d.isEnabled)
+              .toList();
       if (devices.length > 1) {
         if (!mounted) return;
         final picked = await showDeviceUploadPicker(context, devices);
@@ -560,9 +595,15 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     if (fileName == null || !mounted) return;
 
     try {
-      // Create an empty .abdoc with an initial Quill delta.
-      final emptyDelta = '{"ops":[{"insert":"\\n"}]}';
-      final bytes = emptyDelta.codeUnits;
+      // Create empty content based on file type.
+      final String emptyContent;
+      if (fileName.endsWith('.absheet')) {
+        emptyContent =
+            '{"tabs":[{"name":"Sheet 1","data":{"columns":[],"rows":[]}}]}';
+      } else {
+        emptyContent = '{"ops":[{"insert":"\\n"}]}';
+      }
+      final bytes = emptyContent.codeUnits;
 
       final file = http.MultipartFile.fromBytes(
         'files',
@@ -583,11 +624,17 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           ? fileName
           : '$_currentPath/$fileName';
 
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => DocumentEditorPage(filePath: filePath),
-        ),
-      );
+      if (fileName.endsWith('.absheet')) {
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: () => SpreadsheetEditorPage(filePath: filePath),
+        );
+      } else {
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: () => DocumentEditorPage(filePath: filePath),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       _showMessage('Failed to create file: $e');
@@ -688,6 +735,106 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
   }
 
+  // ── CSV → .absheet conversion (#1019) ──────────────────────────────────
+
+  Future<void> _handleCsvOpen(CirrusFileNode node) async {
+    if (!mounted) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Convert to .absheet?'),
+        content: Text(
+          'Would you like to convert "${node.name}" to an AutoButler '
+          'spreadsheet (.absheet)?\n\nThe original CSV file will not be '
+          'modified or deleted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Convert'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    try {
+      // Download the CSV.
+      final bytes = await CirrusService.downloadFileBytes(
+        node.apiPath,
+        serial: serialOrNull(node.deviceSerial),
+        fileName: node.name,
+      );
+      if (!mounted) return;
+      if (bytes == null || bytes.isEmpty) {
+        _showMessage('Failed to read ${node.name}');
+        return;
+      }
+
+      // Parse CSV into a DataTable via DataSheetController.
+      final csvText = utf8.decode(bytes);
+      final table = dt.DataTable([]);
+      final controller = DataSheetController.fromTable(table);
+      controller.loadFromCsv(csvText);
+
+      // Serialise to .absheet JSON envelope.
+      final absheetJson = jsonEncode({
+        'tabs': [
+          {
+            'name': node.name.replaceAll(
+              RegExp(r'\.csv$', caseSensitive: false),
+              '',
+            ),
+            'data': table.toJson(),
+          },
+        ],
+      });
+      controller.dispose();
+
+      // Derive the new file name and upload it alongside the original.
+      final baseName = node.name.replaceAll(
+        RegExp(r'\.csv$', caseSensitive: false),
+        '',
+      );
+      final absheetName = '$baseName.absheet';
+      final folder = parentPath(node.apiPath);
+      final uploadFile = http.MultipartFile.fromBytes(
+        'files',
+        utf8.encode(absheetJson),
+        filename: absheetName,
+      );
+      await CirrusService.uploadFilesFromFormData(
+        folder,
+        [uploadFile],
+        serial: serialOrNull(node.deviceSerial),
+        overwrite: true,
+      );
+      if (!mounted) return;
+
+      // Refresh the file list so the new .absheet appears.
+      _refreshFileState();
+
+      // Open the new .absheet in the spreadsheet editor.
+      final absheetPath = folder.isEmpty ? absheetName : '$folder/$absheetName';
+      await _openEditorWithUrl(
+        filePath: absheetPath,
+        builder: () => SpreadsheetEditorPage(
+          filePath: absheetPath,
+          deviceSerial: node.deviceSerial,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage('Conversion failed: $e');
+    }
+  }
+
   Future<void> _handleOpenNode(CirrusFileNode node) async {
     if (node.isDir) {
       _openDirectory(node);
@@ -704,14 +851,31 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     // AutoButler native document format — open in the rich text editor.
     if (lowerName.endsWith('.abdoc')) {
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => DocumentEditorPage(
-            filePath: node.apiPath,
-            deviceSerial: node.deviceSerial,
-          ),
+      await _openEditorWithUrl(
+        filePath: node.apiPath,
+        builder: () => DocumentEditorPage(
+          filePath: node.apiPath,
+          deviceSerial: node.deviceSerial,
         ),
       );
+      return;
+    }
+
+    // AutoButler native spreadsheet format.
+    if (lowerName.endsWith('.absheet')) {
+      await _openEditorWithUrl(
+        filePath: node.apiPath,
+        builder: () => SpreadsheetEditorPage(
+          filePath: node.apiPath,
+          deviceSerial: node.deviceSerial,
+        ),
+      );
+      return;
+    }
+
+    // CSV — offer to convert to .absheet (#1019).
+    if (lowerName.endsWith('.csv')) {
+      await _handleCsvOpen(node);
       return;
     }
 
@@ -725,11 +889,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         lowerName.endsWith('.mov') ||
         lowerName.endsWith('.mkv') ||
         lowerName.endsWith('.webm') ||
-        lowerName.endsWith('.avi') ||
-        lowerName.endsWith('.mp3') ||
-        lowerName.endsWith('.wav') ||
-        lowerName.endsWith('.m4a') ||
-        lowerName.endsWith('.aac');
+        lowerName.endsWith('.avi');
     if (!viewable) {
       return;
     }
@@ -751,14 +911,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         if (bytes == null || !mounted) {
           return;
         }
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ImageViewerPage(
-              bytes: bytes,
-              name: node.name,
-              relPath: node.apiPath,
-              serial: serialOrNull(node.deviceSerial),
-            ),
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: () => ImageViewerPage(
+            bytes: bytes,
+            name: node.name,
+            relPath: node.apiPath,
+            serial: serialOrNull(node.deviceSerial),
           ),
         );
         return;
@@ -767,17 +926,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           lower.endsWith('.mov') ||
           lower.endsWith('.mkv') ||
           lower.endsWith('.webm') ||
-          lower.endsWith('.avi') ||
-          lower.endsWith('.mp3') ||
-          lower.endsWith('.wav') ||
-          lower.endsWith('.m4a') ||
-          lower.endsWith('.aac')) {
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => VideoViewerPage(
-              url: CirrusService.constructMediaUrl(filePath),
-              name: node.name,
-            ),
+          lower.endsWith('.avi')) {
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: () => VideoViewerPage(
+            url: CirrusService.constructMediaUrl(filePath),
+            name: node.name,
           ),
         );
         return;
@@ -929,6 +1083,120 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// Update the browser URL bar to reflect an open file editor, then restore
+  /// it to the current folder path when the editor closes.
+  Future<void> _openEditorWithUrl({
+    required String filePath,
+    required Widget Function() builder,
+  }) async {
+    if (kIsWeb) {
+      SystemNavigator.routeInformationUpdated(
+        uri: Uri.parse(AppRoutes.cirrusPath(filePath)),
+        replace: false,
+      );
+    }
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => builder()));
+    // Restore the folder URL after the editor is dismissed.
+    if (kIsWeb && mounted) {
+      SystemNavigator.routeInformationUpdated(
+        uri: Uri.parse(AppRoutes.cirrusPath(_currentPath)),
+        replace: false,
+      );
+    }
+  }
+
+  /// Opens a deep-linked path in the appropriate viewer after mount.
+  /// Asks the backend what the path actually is (file vs. directory, and file
+  /// type) so that e.g. a folder named "things.abdoc" is opened as a folder
+  /// rather than being launched in the document editor.
+  Future<void> _openPendingFile(String filePath) async {
+    if (!mounted) return;
+
+    // Stat the backend to resolve the real type. Fall back to navigating as a
+    // folder if the stat fails (path not found, network error, etc.).
+    late final bool isDir;
+    late final String fileType;
+    try {
+      final stat = await CirrusService.statFile(filePath);
+      isDir = stat.isDir;
+      fileType = stat.fileType;
+    } catch (_) {
+      // Could not resolve — treat as a folder navigation.
+      if (mounted) _setPath(filePath);
+      return;
+    }
+
+    if (!mounted) return;
+
+    if (isDir) {
+      _setPath(filePath);
+      return;
+    }
+
+    final name = filePath.contains('/')
+        ? filePath.substring(filePath.lastIndexOf('/') + 1)
+        : filePath;
+
+    switch (fileType) {
+      case 'abdoc':
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: () => DocumentEditorPage(filePath: filePath),
+        );
+
+      case 'absheet':
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: () => SpreadsheetEditorPage(filePath: filePath),
+        );
+
+      case 'image':
+        try {
+          final bytes = await CirrusService.downloadFileBytes(
+            filePath,
+            fileName: name,
+          );
+          if (bytes == null || !mounted) return;
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) =>
+                  ImageViewerPage(bytes: bytes, name: name, relPath: filePath),
+            ),
+          );
+        } catch (_) {
+          if (mounted) _showMessage('Unable to open image');
+        }
+
+      case 'video':
+        // Use plain Navigator.push rather than _openEditorWithUrl here.
+        // _openEditorWithUrl calls SystemNavigator.routeInformationUpdated
+        // *before* the push; on a direct deep-link the URL is already
+        // /cirrus/<file>, so that redundant update can cause go_router to
+        // rebuild the FileBrowserPage and invalidate the push context.
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => VideoViewerPage(
+              url: CirrusService.constructMediaUrl(filePath),
+              name: name,
+            ),
+          ),
+        );
+        // Restore the parent folder URL now that the viewer is dismissed.
+        if (kIsWeb && mounted) {
+          SystemNavigator.routeInformationUpdated(
+            uri: Uri.parse(AppRoutes.cirrusPath(_currentPath)),
+            replace: false,
+          );
+        }
+
+      default:
+        // Unhandled type — nothing to open.
+        break;
+    }
   }
 
   // ── Mobile FAB (Create actions) ──────────────────────────────────────────
