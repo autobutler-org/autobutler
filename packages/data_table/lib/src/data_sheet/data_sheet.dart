@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/material.dart' hide DataTable, DataRow, DataCell;
 import 'package:flutter/services.dart';
 
@@ -113,6 +114,11 @@ class _DataSheetViewState extends State<_DataSheetView> {
   String _priorCellValue = '';
   String? _internalClipboard;
 
+  /// Horizontal scroll controller for the grid body.
+  /// Shared between the Listener (for trackpad/wheel interception) and the
+  /// SingleChildScrollView so we can drive horizontal scroll programmatically.
+  final ScrollController _hScrollController = ScrollController();
+
   int get activeRow => controller.selection.activeRow;
   int get activeCol => controller.selection.activeCol;
   int get highlightedRow => controller.selection.highlightedRow;
@@ -138,6 +144,7 @@ class _DataSheetViewState extends State<_DataSheetView> {
   void dispose() {
     activeCellController.dispose();
     keyboardFocus.dispose();
+    _hScrollController.dispose();
     controller.removeListener(_onControllerChanged);
     if (_ownsController) controller.dispose();
     super.dispose();
@@ -359,28 +366,48 @@ class _DataSheetViewState extends State<_DataSheetView> {
                 final scrollW = totalW < constraints.maxWidth
                     ? constraints.maxWidth
                     : totalW;
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(
-                    width: scrollW,
-                    child: Column(
-                      children: [
-                        // ── Column header row ───────────────────────────
-                        if (widget.showHeadings) _buildHeaderRow(),
-                        // ── Data rows ───────────────────────────────────
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: controller.rowCount,
-                            itemBuilder: (context, r) {
-                              return ValueListenableBuilder<List<DataCell>>(
-                                valueListenable: controller.rowNotifier(r),
-                                builder: (context, rowCells, _) =>
-                                    _buildDataRow(context, r, rowCells),
-                              );
-                            },
+                return Listener(
+                  // Intercept horizontal trackpad/wheel scroll events and
+                  // drive the horizontal ScrollController directly.
+                  // This prevents the browser (macOS in particular) from
+                  // interpreting horizontal swipes as back/forward navigation
+                  // while the grid is visible. (#1026)
+                  onPointerSignal: (event) {
+                    if (event is! PointerScrollEvent) return;
+                    final dx = event.scrollDelta.dx;
+                    final dy = event.scrollDelta.dy.abs();
+                    // Only intercept when horizontal movement is dominant.
+                    if (dx.abs() <= dy) return;
+                    final sc = _hScrollController;
+                    if (!sc.hasClients) return;
+                    final next = (sc.offset + dx)
+                        .clamp(0.0, sc.position.maxScrollExtent);
+                    sc.jumpTo(next);
+                  },
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    controller: _hScrollController,
+                    child: SizedBox(
+                      width: scrollW,
+                      child: Column(
+                        children: [
+                          // ── Column header row ───────────────────────────
+                          if (widget.showHeadings) _buildHeaderRow(),
+                          // ── Data rows ───────────────────────────────────
+                          Expanded(
+                            child: ListView.builder(
+                              itemCount: controller.rowCount,
+                              itemBuilder: (context, r) {
+                                return ValueListenableBuilder<List<DataCell>>(
+                                  valueListenable: controller.rowNotifier(r),
+                                  builder: (context, rowCells, _) =>
+                                      _buildDataRow(context, r, rowCells),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 );
