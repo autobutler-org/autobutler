@@ -331,18 +331,22 @@ class DataSheetController extends ChangeNotifier {
   }
 
   /// Auto-size column [col] to tightly fit the longest cell value.
-  void autoSizeColumn(int col,
-      {double fontSize = 13.0, double cellPadding = 8.0}) {
+  void autoSizeColumn(int col, {TextStyle? textStyle}) {
     if (col < 0 || col >= colCount) return;
+    // Horizontal overhead per side: 1px border + 1px container padding +
+    // 8px TextField contentPadding = 10px → 20px total.
+    // An extra 4px safety margin handles subpixel rendering variance.
+    const horizontalOverhead = 24.0;
+    final style = textStyle ?? const TextStyle(fontSize: 14.0);
     var maxW = kMinColumnWidth;
     for (var r = 0; r < rowCount; r++) {
       final text = _rows[r].value[col].value.toString();
       if (text.isEmpty) continue;
       final tp = TextPainter(
-        text: TextSpan(text: text, style: TextStyle(fontSize: fontSize)),
+        text: TextSpan(text: text, style: style),
         textDirection: ui.TextDirection.ltr,
       )..layout();
-      final w = tp.width + cellPadding * 2;
+      final w = tp.width + horizontalOverhead;
       if (w > maxW) maxW = w;
     }
     if (col < columnWidths.length) columnWidths[col] = maxW;
@@ -366,21 +370,27 @@ class DataSheetController extends ChangeNotifier {
 
   /// Auto-size row [row] to fit the tallest wrapped cell content given the
   /// current column widths.
-  void autoSizeRow(int row,
-      {double fontSize = 13.0, double cellPadding = 1.0}) {
+  void autoSizeRow(int row, {TextStyle? textStyle}) {
     if (row < 0 || row >= rowCount) return;
+    // Horizontal overhead: same as autoSizeColumn (20px) — used to constrain
+    // text wrapping to the actual available width inside the cell.
+    const horizontalOverhead = 20.0;
+    // Vertical overhead: 1px border + 1px container padding each side = 4px.
+    // An extra 2px safety margin handles subpixel rendering variance.
+    const verticalOverhead = 6.0;
+    final style = textStyle ?? const TextStyle(fontSize: 14.0);
     var maxH = kMinRowHeight;
     for (var c = 0; c < colCount; c++) {
       final text = _rows[row].value[c].value.toString();
       if (text.isEmpty) continue;
       final colW =
           (c < columnWidths.length ? columnWidths[c] : kDefaultColumnWidth) -
-              cellPadding * 2;
+              horizontalOverhead;
       final tp = TextPainter(
-        text: TextSpan(text: text, style: TextStyle(fontSize: fontSize)),
+        text: TextSpan(text: text, style: style),
         textDirection: ui.TextDirection.ltr,
       )..layout(maxWidth: colW.clamp(1.0, double.infinity));
-      final h = tp.height + cellPadding * 2;
+      final h = tp.height + verticalOverhead;
       if (h > maxH) maxH = h;
     }
     if (row < rowHeights.length) rowHeights[row] = maxH;

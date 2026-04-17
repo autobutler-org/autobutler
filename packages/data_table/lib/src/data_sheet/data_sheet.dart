@@ -418,7 +418,8 @@ class _DataSheetViewState extends State<_DataSheetView> {
                     : kDefaultColumnWidth;
                 controller.setColumnWidth(c, cur + delta);
               },
-              onAutoSize: () => controller.autoSizeColumn(c),
+              onAutoSize: () => controller.autoSizeColumn(c,
+                  textStyle: Theme.of(context).textTheme.bodyMedium),
             ),
           );
         }),
@@ -443,7 +444,8 @@ class _DataSheetViewState extends State<_DataSheetView> {
                   : kDefaultRowHeight;
               controller.setRowHeight(r, cur + delta);
             },
-            onAutoSize: () => controller.autoSizeRow(r),
+            onAutoSize: () => controller.autoSizeRow(r,
+                textStyle: Theme.of(context).textTheme.bodyMedium),
           ),
         ...List.generate(rowCells.length, (c) {
           final isActiveCell = (r == activeRow && c == activeCol);
