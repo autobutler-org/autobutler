@@ -1,6 +1,11 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/foundation.dart' show ChangeNotifier, ValueNotifier;
+import 'package:flutter/painting.dart' show TextPainter, TextSpan, TextStyle;
 
 import '../../data_table.dart';
+import 'cell/heading/heading_cells.dart'
+    show kDefaultColumnWidth, kDefaultRowHeight, kMinColumnWidth, kMinRowHeight;
 import 'data_sheet_selection.dart';
 
 // ---------------------------------------------------------------------------
@@ -9,9 +14,10 @@ import 'data_sheet_selection.dart';
 
 class _TableSnapshot {
   final List<List<String>> cells; // [row][col] as strings
-  final List<int> columnFlex;
+  final List<double> columnWidths;
+  final List<double> rowHeights;
 
-  _TableSnapshot(this.cells, this.columnFlex);
+  _TableSnapshot(this.cells, this.columnWidths, this.rowHeights);
 
   factory _TableSnapshot.capture(DataSheetController c) {
     return _TableSnapshot(
@@ -19,7 +25,8 @@ class _TableSnapshot {
         c._rows.length,
         (r) => c._rows[r].value.map((cell) => cell.value.toString()).toList(),
       ),
-      List<int>.from(c.columnFlex),
+      List<double>.from(c.columnWidths),
+      List<double>.from(c.rowHeights),
     );
   }
 
@@ -36,7 +43,8 @@ class _TableSnapshot {
       c.table.rows.add(DataRow(List<DataCell>.from(rowCells)));
       c._rows.add(ValueNotifier<List<DataCell>>(List<DataCell>.from(rowCells)));
     }
-    c.columnFlex = List<int>.from(columnFlex);
+    c.columnWidths = List<double>.from(columnWidths);
+    c.rowHeights = List<double>.from(rowHeights);
   }
 }
 
@@ -47,7 +55,12 @@ class _TableSnapshot {
 class DataSheetController extends ChangeNotifier {
   final DataTable table;
   final List<ValueNotifier<List<DataCell>>> _rows;
-  List<int> columnFlex;
+
+  /// Per-column pixel widths. Length equals [colCount].
+  List<double> columnWidths;
+
+  /// Per-row pixel heights. Length equals [rowCount].
+  List<double> rowHeights;
 
   /// Selection state shared between the sheet view and the control bar.
   final DataSheetSelectionModel selection = DataSheetSelectionModel();
@@ -57,22 +70,32 @@ class DataSheetController extends ChangeNotifier {
 
   static const int _maxUndoDepth = 100;
 
-  DataSheetController._(this.table, this._rows, this.columnFlex) {
+  DataSheetController._(
+      this.table, this._rows, this.columnWidths, this.rowHeights) {
     selection.addListener(_onSelectionChanged);
   }
 
   void _onSelectionChanged() => notifyListeners();
 
-  factory DataSheetController.fromTable(DataTable table,
-      {List<int>? columnFlex}) {
+  factory DataSheetController.fromTable(
+    DataTable table, {
+    List<double>? columnWidths,
+    List<double>? rowHeights,
+    // Deprecated: kept for call-site compatibility only.
+    List<int>? columnFlex,
+  }) {
     final rows = table.rows
         .map((r) => ValueNotifier<List<DataCell>>(List<DataCell>.from(r.cells)))
         .toList();
     final colCount = table.rows.isNotEmpty ? table.rows.first.cells.length : 0;
-    final flex = columnFlex != null
-        ? List<int>.from(columnFlex)
-        : List<int>.filled(colCount, 1, growable: true);
-    return DataSheetController._(table, rows, flex);
+    final rowCount = table.rows.length;
+    final widths = columnWidths != null
+        ? List<double>.from(columnWidths, growable: true)
+        : List<double>.filled(colCount, kDefaultColumnWidth, growable: true);
+    final heights = rowHeights != null
+        ? List<double>.from(rowHeights, growable: true)
+        : List<double>.filled(rowCount, kDefaultRowHeight, growable: true);
+    return DataSheetController._(table, rows, widths, heights);
   }
 
   // -------------------------------------------------------------------------
@@ -170,6 +193,7 @@ class DataSheetController extends ChangeNotifier {
     final cells = List<DataCell>.generate(cols, (_) => DataCell(''));
     table.rows.add(DataRow(List<DataCell>.from(cells)));
     _rows.add(ValueNotifier<List<DataCell>>(List<DataCell>.from(cells)));
+    rowHeights.add(kDefaultRowHeight);
     notifyListeners();
   }
 
@@ -183,6 +207,7 @@ class DataSheetController extends ChangeNotifier {
     table.rows.insert(clamped, DataRow(List<DataCell>.from(newCells)));
     _rows.insert(
         clamped, ValueNotifier<List<DataCell>>(List<DataCell>.from(newCells)));
+    rowHeights.insert(clamped, kDefaultRowHeight);
     notifyListeners();
   }
 
@@ -193,6 +218,7 @@ class DataSheetController extends ChangeNotifier {
     table.rows.removeAt(index);
     _rows[index].dispose();
     _rows.removeAt(index);
+    if (index < rowHeights.length) rowHeights.removeAt(index);
     notifyListeners();
   }
 
@@ -205,6 +231,9 @@ class DataSheetController extends ChangeNotifier {
     table.rows.insert(index + 1, DataRow(List<DataCell>.from(sourceCells)));
     _rows.insert(index + 1,
         ValueNotifier<List<DataCell>>(List<DataCell>.from(sourceCells)));
+    final srcH =
+        index < rowHeights.length ? rowHeights[index] : kDefaultRowHeight;
+    rowHeights.insert(index + 1, srcH);
     notifyListeners();
   }
 
@@ -218,6 +247,8 @@ class DataSheetController extends ChangeNotifier {
     if (_rows.isEmpty) {
       table.rows.add(DataRow([DataCell('')]));
       _rows.add(ValueNotifier<List<DataCell>>([DataCell('')]));
+      columnWidths.add(kDefaultColumnWidth);
+      rowHeights.add(kDefaultRowHeight);
       notifyListeners();
       return;
     }
@@ -226,7 +257,7 @@ class DataSheetController extends ChangeNotifier {
       final updated = List<DataCell>.from(_rows[i].value)..add(DataCell(''));
       _rows[i].value = updated;
     }
-    columnFlex.add(1);
+    columnWidths.add(kDefaultColumnWidth);
     notifyListeners();
   }
 
@@ -242,10 +273,10 @@ class DataSheetController extends ChangeNotifier {
         ..insert(clamped, DataCell(defaultValue));
       _rows[i].value = updated;
     }
-    if (clamped < columnFlex.length) {
-      columnFlex.insert(clamped, 1);
+    if (clamped < columnWidths.length) {
+      columnWidths.insert(clamped, kDefaultColumnWidth);
     } else {
-      columnFlex.add(1);
+      columnWidths.add(kDefaultColumnWidth);
     }
     notifyListeners();
   }
@@ -259,7 +290,7 @@ class DataSheetController extends ChangeNotifier {
       final updated = List<DataCell>.from(_rows[i].value)..removeAt(index);
       _rows[i].value = updated;
     }
-    if (index < columnFlex.length) columnFlex.removeAt(index);
+    if (index < columnWidths.length) columnWidths.removeAt(index);
     notifyListeners();
   }
 
@@ -274,27 +305,95 @@ class DataSheetController extends ChangeNotifier {
         ..insert(index + 1, DataCell(_rows[i].value[index].value.toString()));
       _rows[i].value = updated;
     }
-    final flex = index < columnFlex.length ? columnFlex[index] : 1;
-    if (index < columnFlex.length) {
-      columnFlex.insert(index + 1, flex);
+    final srcWidth =
+        index < columnWidths.length ? columnWidths[index] : kDefaultColumnWidth;
+    if (index < columnWidths.length) {
+      columnWidths.insert(index + 1, srcWidth);
     } else {
-      columnFlex.add(flex);
+      columnWidths.add(srcWidth);
     }
     notifyListeners();
   }
 
   // -------------------------------------------------------------------------
-  // Column flex configuration
+  // Column width configuration
   // -------------------------------------------------------------------------
 
-  void setColumnFlex(List<int> flex) {
-    columnFlex = List<int>.from(flex);
+  void setColumnWidths(List<double> widths) {
+    columnWidths = List<double>.from(widths, growable: true);
     notifyListeners();
   }
 
-  void updateColumnFlexAt(int index, int flex) {
-    if (index < 0 || index >= columnFlex.length) return;
-    columnFlex[index] = flex;
+  void setColumnWidth(int index, double width) {
+    if (index < 0 || index >= columnWidths.length) return;
+    columnWidths[index] = width.clamp(kMinColumnWidth, double.infinity);
+    notifyListeners();
+  }
+
+  /// Auto-size column [col] to tightly fit the longest cell value.
+  void autoSizeColumn(int col, {TextStyle? textStyle}) {
+    if (col < 0 || col >= colCount) return;
+    // Horizontal overhead per side: 1px border + 1px container padding +
+    // 8px TextField contentPadding = 10px → 20px total.
+    // An extra 4px safety margin handles subpixel rendering variance.
+    const horizontalOverhead = 24.0;
+    final style = textStyle ?? const TextStyle(fontSize: 14.0);
+    var maxW = kMinColumnWidth;
+    for (var r = 0; r < rowCount; r++) {
+      final text = _rows[r].value[col].value.toString();
+      if (text.isEmpty) continue;
+      final tp = TextPainter(
+        text: TextSpan(text: text, style: style),
+        textDirection: ui.TextDirection.ltr,
+      )..layout();
+      final w = tp.width + horizontalOverhead;
+      if (w > maxW) maxW = w;
+    }
+    if (col < columnWidths.length) columnWidths[col] = maxW;
+    notifyListeners();
+  }
+
+  // -------------------------------------------------------------------------
+  // Row height configuration
+  // -------------------------------------------------------------------------
+
+  void setRowHeights(List<double> heights) {
+    rowHeights = List<double>.from(heights, growable: true);
+    notifyListeners();
+  }
+
+  void setRowHeight(int index, double height) {
+    if (index < 0 || index >= rowHeights.length) return;
+    rowHeights[index] = height.clamp(kMinRowHeight, double.infinity);
+    notifyListeners();
+  }
+
+  /// Auto-size row [row] to fit the tallest wrapped cell content given the
+  /// current column widths.
+  void autoSizeRow(int row, {TextStyle? textStyle}) {
+    if (row < 0 || row >= rowCount) return;
+    // Horizontal overhead: same as autoSizeColumn (20px) — used to constrain
+    // text wrapping to the actual available width inside the cell.
+    const horizontalOverhead = 20.0;
+    // Vertical overhead: 1px border + 1px container padding each side = 4px.
+    // An extra 2px safety margin handles subpixel rendering variance.
+    const verticalOverhead = 6.0;
+    final style = textStyle ?? const TextStyle(fontSize: 14.0);
+    var maxH = kMinRowHeight;
+    for (var c = 0; c < colCount; c++) {
+      final text = _rows[row].value[c].value.toString();
+      if (text.isEmpty) continue;
+      final colW =
+          (c < columnWidths.length ? columnWidths[c] : kDefaultColumnWidth) -
+              horizontalOverhead;
+      final tp = TextPainter(
+        text: TextSpan(text: text, style: style),
+        textDirection: ui.TextDirection.ltr,
+      )..layout(maxWidth: colW.clamp(1.0, double.infinity));
+      final h = tp.height + verticalOverhead;
+      if (h > maxH) maxH = h;
+    }
+    if (row < rowHeights.length) rowHeights[row] = maxH;
     notifyListeners();
   }
 
@@ -347,18 +446,30 @@ class DataSheetController extends ChangeNotifier {
   void sortByColumn(int col, {bool ascending = true}) {
     if (col < 0 || col >= colCount || rowCount == 0) return;
     _pushSnapshot();
-    table.rows.sort((a, b) {
-      final av = a.cells[col].value.toString();
-      final bv = b.cells[col].value.toString();
+    // Build index list to keep rowHeights in sync with row reordering.
+    final indices = List<int>.generate(rowCount, (i) => i);
+    indices.sort((a, b) {
+      final av = table.rows[a].cells[col].value.toString();
+      final bv = table.rows[b].cells[col].value.toString();
       final n1 = num.tryParse(av);
       final n2 = num.tryParse(bv);
       final cmp =
           (n1 != null && n2 != null) ? n1.compareTo(n2) : av.compareTo(bv);
       return ascending ? cmp : -cmp;
     });
+    final sortedTableRows = indices.map((i) => table.rows[i]).toList();
+    final sortedHeights = indices
+        .map((i) => i < rowHeights.length ? rowHeights[i] : kDefaultRowHeight)
+        .toList();
+    table.rows
+      ..clear()
+      ..addAll(sortedTableRows);
     for (var i = 0; i < _rows.length; i++) {
       _rows[i].value = List<DataCell>.from(table.rows[i].cells);
     }
+    rowHeights
+      ..clear()
+      ..addAll(sortedHeights);
     notifyListeners();
   }
 
@@ -377,6 +488,7 @@ class DataSheetController extends ChangeNotifier {
       table.rows.removeAt(i);
       _rows[i].dispose();
       _rows.removeAt(i);
+      if (i < rowHeights.length) rowHeights.removeAt(i);
     }
     notifyListeners();
   }
@@ -470,7 +582,10 @@ class DataSheetController extends ChangeNotifier {
       _rows.add(ValueNotifier<List<DataCell>>(List<DataCell>.from(cells)));
     }
     final newColCount = _rows.isNotEmpty ? _rows[0].value.length : 0;
-    columnFlex = List<int>.filled(newColCount, 1);
+    columnWidths =
+        List<double>.filled(newColCount, kDefaultColumnWidth, growable: true);
+    rowHeights =
+        List<double>.filled(_rows.length, kDefaultRowHeight, growable: true);
     notifyListeners();
   }
 

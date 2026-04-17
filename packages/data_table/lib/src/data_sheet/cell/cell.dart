@@ -17,6 +17,7 @@ class Cell extends StatelessWidget {
   final bool isActive;
   final bool isHighlighted;
   final MouseCursor cursor;
+  final double height;
 
   const Cell({
     super.key,
@@ -24,6 +25,7 @@ class Cell extends StatelessWidget {
     required this.isActive,
     required this.isHighlighted,
     required this.cursor,
+    this.height = 40,
   });
 
   @override
@@ -32,7 +34,7 @@ class Cell extends StatelessWidget {
     return MouseRegion(
       cursor: cursor,
       child: Container(
-        height: 40,
+        height: height,
         decoration: BoxDecoration(
           color: isActive ? cs.primaryContainer : null,
           border: Border.all(
