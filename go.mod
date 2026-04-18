@@ -6,7 +6,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.6.4
 	github.com/KononK/resize v0.0.0-20200801203131-21c514740ed6
 	github.com/gin-contrib/cors v1.7.7
-	github.com/gin-contrib/static v1.1.5
+	github.com/gin-contrib/static v1.1.6
 	github.com/gin-gonic/gin v1.12.0
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
