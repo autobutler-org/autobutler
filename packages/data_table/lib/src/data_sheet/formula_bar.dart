@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' hide DataCell;
+import 'package:flutter/services.dart';
 
 import '../../data_table.dart';
 import 'cell/heading/heading_cells.dart' show kResizeHandleSize;
@@ -48,16 +49,34 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
   /// while the bar itself is pushing a change into that controller.
   bool _suppressActiveCellSync = false;
 
-  /// Prevents double-commit when [_commitFromBar] explicitly unfocuses.
-  bool _isCommitting = false;
-
   DataSheetController get _controller => widget.controller;
 
   @override
   void initState() {
     super.initState();
     _barCtrl = TextEditingController();
-    _focusNode = FocusNode();
+    _focusNode = FocusNode(
+      onKeyEvent: (node, event) {
+        // On desktop, Enter does not insert a newline by default (it submits).
+        // Intercept it here and insert the newline manually so the bar behaves
+        // like a multiline editor rather than committing on Enter.
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.enter) {
+          final sel = _barCtrl.selection;
+          final text = _barCtrl.text;
+          final before = text.substring(0, sel.start < 0 ? 0 : sel.start);
+          final after = text.substring(sel.end < 0 ? 0 : sel.end);
+          final newText = '$before\n$after';
+          _barCtrl.value = TextEditingValue(
+            text: newText,
+            selection: TextSelection.collapsed(offset: before.length + 1),
+          );
+          _onBarChanged(newText);
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+    );
     _controller.addListener(_onControllerChanged);
     _controller.activeCellEditingController
         .addListener(_onActiveCellTextChanged);
@@ -150,33 +169,14 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
             TextSelection.collapsed(offset: _barCtrl.text.length);
       }
     } else {
-      // Lost focus — commit any pending edit unless we triggered this unfocus
-      // ourselves inside [_commitFromBar].
-      if (!_isCommitting) {
-        _commitIfActive();
-      }
+      // Lost focus — commit any pending edit.
+      _commitIfActive();
     }
   }
 
   // ---------------------------------------------------------------------------
   // Commit logic
   // ---------------------------------------------------------------------------
-
-  /// Commit the bar's value to the active cell and return to highlighted state.
-  void _commitFromBar() {
-    _isCommitting = true;
-    final sel = _controller.selection;
-    final r = sel.activeRow;
-    final c = sel.activeCol;
-    // Unfocus first so _onFocusChanged does not double-commit.
-    _focusNode.unfocus();
-    if (r >= 0 && c >= 0) {
-      _controller.updateCell(r, c, DataCell(_barCtrl.text));
-      _controller.activeCellEditingController.clear();
-      _controller.selection.goTo(r, c);
-    }
-    _isCommitting = false;
-  }
 
   /// Commit when focus is lost naturally (e.g. user clicks a cell in the grid).
   void _commitIfActive() {
@@ -254,13 +254,11 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
                         child: Center(
                           child: Text(
                             label,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  fontFamily: 'monospace',
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      fontFamily: 'monospace',
+                                      fontWeight: FontWeight.w600,
+                                    ),
                           ),
                         ),
                       ),
@@ -291,6 +289,7 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
                           focusNode: _focusNode,
                           enabled: hasSelection,
                           maxLines: null,
+                          textInputAction: TextInputAction.newline,
                           decoration: const InputDecoration(
                             border: InputBorder.none,
                             isDense: true,
@@ -301,7 +300,6 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
                           ),
                           style: Theme.of(context).textTheme.bodyMedium,
                           onChanged: _onBarChanged,
-                          onSubmitted: (_) => _commitFromBar(),
                         ),
                       ),
                     ),
@@ -323,8 +321,8 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
                   behavior: HitTestBehavior.opaque,
                   onVerticalDragUpdate: (d) {
                     setState(() {
-                      _height =
-                          (_height + d.delta.dy).clamp(_minHeight, double.infinity);
+                      _height = (_height + d.delta.dy)
+                          .clamp(_minHeight, double.infinity);
                     });
                   },
                   child: Container(
