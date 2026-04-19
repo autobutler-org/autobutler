@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide DataCell;
 
 import '../../data_table.dart';
+import 'cell/heading/heading_cells.dart' show kResizeHandleSize;
 import 'cell/heading/util.dart';
 import 'data_sheet_controller.dart';
 
@@ -38,6 +39,10 @@ class DataSheetFormulaBar extends StatefulWidget {
 class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
   late final TextEditingController _barCtrl;
   late final FocusNode _focusNode;
+
+  static const double _minHeight = 32.0;
+  double _height = 32.0;
+  bool _handleHovered = false;
 
   /// Prevents the active-cell-controller listener from overwriting the bar
   /// while the bar itself is pushing a change into that controller.
@@ -226,78 +231,111 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
         final cs = Theme.of(context).colorScheme;
         final dividerColor = Theme.of(context).dividerColor;
 
-        return SizedBox(
-          height: 32,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border.all(color: dividerColor),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // ── Name box ────────────────────────────────────────────────
-                SizedBox(
-                  width: 80,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        right: BorderSide(color: dividerColor),
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        label,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontFamily: 'monospace',
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                    ),
-                  ),
+        return Stack(
+          children: [
+            SizedBox(
+              height: _height,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(color: dividerColor),
                 ),
-                // ── fx icon ─────────────────────────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Center(
-                    child: Text(
-                      'fx',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontStyle: FontStyle.italic,
-                            color: cs.primary,
-                          ),
-                    ),
-                  ),
-                ),
-                // ── Divider ──────────────────────────────────────────────────
-                VerticalDivider(width: 1, thickness: 1, color: dividerColor),
-                // ── Value field ──────────────────────────────────────────────
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextField(
-                        controller: _barCtrl,
-                        focusNode: _focusNode,
-                        enabled: hasSelection,
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 6,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // ── Name box ──────────────────────────────────────────
+                    SizedBox(
+                      width: 80,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            right: BorderSide(color: dividerColor),
                           ),
                         ),
-                        style: Theme.of(context).textTheme.bodyMedium,
-                        onChanged: _onBarChanged,
-                        onSubmitted: (_) => _commitFromBar(),
+                        child: Center(
+                          child: Text(
+                            label,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  fontFamily: 'monospace',
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ),
                       ),
                     ),
+                    // ── fx icon ───────────────────────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Center(
+                        child: Text(
+                          'fx',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontStyle: FontStyle.italic,
+                                    color: cs.primary,
+                                  ),
+                        ),
+                      ),
+                    ),
+                    // ── Divider ───────────────────────────────────────────
+                    VerticalDivider(
+                        width: 1, thickness: 1, color: dividerColor),
+                    // ── Value field ───────────────────────────────────────
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: TextField(
+                          controller: _barCtrl,
+                          focusNode: _focusNode,
+                          enabled: hasSelection,
+                          maxLines: null,
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 6,
+                            ),
+                          ),
+                          style: Theme.of(context).textTheme.bodyMedium,
+                          onChanged: _onBarChanged,
+                          onSubmitted: (_) => _commitFromBar(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // ── Bottom-edge resize handle ──────────────────────────────────
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: kResizeHandleSize,
+              child: MouseRegion(
+                cursor: SystemMouseCursors.resizeRow,
+                onEnter: (_) => setState(() => _handleHovered = true),
+                onExit: (_) => setState(() => _handleHovered = false),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onVerticalDragUpdate: (d) {
+                    setState(() {
+                      _height =
+                          (_height + d.delta.dy).clamp(_minHeight, double.infinity);
+                    });
+                  },
+                  child: Container(
+                    color: _handleHovered
+                        ? cs.primary.withValues(alpha: 0.4)
+                        : Colors.transparent,
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         );
       },
     );
