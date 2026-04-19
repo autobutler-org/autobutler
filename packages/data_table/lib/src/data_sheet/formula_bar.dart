@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart' hide DataCell;
 import 'package:flutter/services.dart';
 
@@ -44,6 +46,10 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
   static const double _minHeight = 32.0;
   double _height = 32.0;
   bool _handleHovered = false;
+
+  /// Key used to measure the available width of the text field area for
+  /// auto-sizing.
+  final GlobalKey _fieldKey = GlobalKey();
 
   /// Prevents the active-cell-controller listener from overwriting the bar
   /// while the bar itself is pushing a change into that controller.
@@ -175,6 +181,36 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
   }
 
   // ---------------------------------------------------------------------------
+  // Auto-size
+  // ---------------------------------------------------------------------------
+
+  /// Resize the bar height to tightly fit the current text content.
+  void _autoSize() {
+    final text = _barCtrl.text;
+    if (text.isEmpty) {
+      setState(() => _height = _minHeight);
+      return;
+    }
+    // Determine available width from the rendered text field container.
+    final box = _fieldKey.currentContext?.findRenderObject() as RenderBox?;
+    final fieldWidth = box?.size.width ?? 200.0;
+    // Overhead: 4px horizontal padding each side + 1px border = 10px per side.
+    const horizontalOverhead = 20.0;
+    const verticalOverhead = 12.0; // top+bottom padding inside the bar
+    final textStyle =
+        Theme.of(context).textTheme.bodyMedium ?? const TextStyle(fontSize: 14);
+    final tp = TextPainter(
+      text: TextSpan(text: text, style: textStyle),
+      textDirection: ui.TextDirection.ltr,
+    )..layout(
+        maxWidth:
+            (fieldWidth - horizontalOverhead).clamp(1.0, double.infinity));
+    final needed =
+        (tp.height + verticalOverhead).clamp(_minHeight, double.infinity);
+    setState(() => _height = needed);
+  }
+
+  // ---------------------------------------------------------------------------
   // Commit logic
   // ---------------------------------------------------------------------------
 
@@ -282,6 +318,7 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
                         width: 1, thickness: 1, color: dividerColor),
                     // ── Value field ───────────────────────────────────────
                     Expanded(
+                      key: _fieldKey,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: TextField(
@@ -325,6 +362,7 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
                           .clamp(_minHeight, double.infinity);
                     });
                   },
+                  onDoubleTap: _autoSize,
                   child: Container(
                     color: _handleHovered
                         ? cs.primary.withValues(alpha: 0.4)
