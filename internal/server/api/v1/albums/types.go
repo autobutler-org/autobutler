@@ -5,6 +5,7 @@ type AlbumJSON struct {
 	ID        int64       `json:"id"`
 	Name      string      `json:"name"`
 	ParentID  *int64      `json:"parentId"`
+	SmartType *string     `json:"smartType,omitempty"`
 	CreatedAt string      `json:"createdAt"`
 	UpdatedAt string      `json:"updatedAt"`
 	ItemCount int64       `json:"itemCount"`

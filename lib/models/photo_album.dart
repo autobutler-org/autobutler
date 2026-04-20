@@ -2,6 +2,7 @@ class PhotoAlbum {
   final int id;
   final String name;
   final int? parentId;
+  final String? smartType;
   final DateTime createdAt;
   final DateTime updatedAt;
   final int itemCount;
@@ -11,17 +12,23 @@ class PhotoAlbum {
     required this.id,
     required this.name,
     this.parentId,
+    this.smartType,
     required this.createdAt,
     required this.updatedAt,
     required this.itemCount,
     this.children = const [],
   });
 
+  bool get isFavorites => smartType == 'favorites';
+  bool get isInbox => smartType == 'inbox';
+  bool get isSystemAlbum => smartType != null;
+
   factory PhotoAlbum.fromJson(Map<String, dynamic> json) {
     return PhotoAlbum(
       id: json['id'] as int,
       name: json['name'] as String,
       parentId: json['parentId'] as int?,
+      smartType: json['smartType'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       itemCount: json['itemCount'] as int? ?? 0,
