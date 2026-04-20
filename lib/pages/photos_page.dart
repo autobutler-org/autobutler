@@ -1019,6 +1019,12 @@ class _PhotosPageState extends State<PhotosPage>
             onTapPhotos: () {
               Navigator.of(context).pop();
             },
+            onTapDocs: () {
+              context.go(AppRoutes.docs);
+            },
+            onTapSheets: () {
+              context.go(AppRoutes.sheets);
+            },
             onTapDevices: () {
               context.go(AppRoutes.devices);
             },
