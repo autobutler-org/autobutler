@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:autobutler/router.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
@@ -422,6 +423,25 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
 
   List<Widget> _buildAppBarActions(BuildContext context) {
     return [
+      // In-document search (TODO: wire to find-in-doc, see #1046)
+      IconButton(
+        icon: const Icon(Icons.search_rounded),
+        tooltip: 'Search in document',
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('In-document search coming soon'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        },
+      ),
+      // Settings shortcut
+      IconButton(
+        icon: const Icon(Icons.settings_outlined),
+        tooltip: 'Settings',
+        onPressed: () => context.go(AppRoutes.settings),
+      ),
       // Auto-save toggle
       IconButton(
         icon: Icon(
