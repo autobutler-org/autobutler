@@ -16,7 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// Load CSV into a fresh controller and return it.
 DataSheetController _load(String csv) {
   final table = DataTable([
-    DataRow([DataCell('')])
+    DataRow([DataCell('')]),
   ]);
   final c = DataSheetController.fromTable(table);
   c.loadFromCsv(csv);
@@ -128,13 +128,15 @@ void main() {
 
     // ── Whitespace handling ────────────────────────────────────────────────
 
-    test('leading and trailing whitespace in an unquoted field is preserved',
-        () {
-      // RFC-4180 does not strip whitespace from unquoted fields.
-      final c = _load('  hello  ');
-      expect(_cell(c, 0, 0), '  hello  ');
-      c.dispose();
-    });
+    test(
+      'leading and trailing whitespace in an unquoted field is preserved',
+      () {
+        // RFC-4180 does not strip whitespace from unquoted fields.
+        final c = _load('  hello  ');
+        expect(_cell(c, 0, 0), '  hello  ');
+        c.dispose();
+      },
+    );
 
     test('field that is only whitespace is preserved', () {
       final c = _load('   ');
@@ -144,14 +146,16 @@ void main() {
 
     // ── Value types (no coercion) ──────────────────────────────────────────
 
-    test('numeric strings are stored as strings — no implicit type coercion',
-        () {
-      final c = _load('42,3.14,-7');
-      expect(_cell(c, 0, 0), '42');
-      expect(_cell(c, 0, 1), '3.14');
-      expect(_cell(c, 0, 2), '-7');
-      c.dispose();
-    });
+    test(
+      'numeric strings are stored as strings — no implicit type coercion',
+      () {
+        final c = _load('42,3.14,-7');
+        expect(_cell(c, 0, 0), '42');
+        expect(_cell(c, 0, 1), '3.14');
+        expect(_cell(c, 0, 2), '-7');
+        c.dispose();
+      },
+    );
 
     test('boolean-looking values are stored as strings', () {
       final c = _load('true,false,TRUE,FALSE');

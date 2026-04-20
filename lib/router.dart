@@ -1,3 +1,4 @@
+import 'package:autobutler/pages/docs_page.dart';
 import 'package:autobutler/pages/file_browser_page.dart';
 import 'package:autobutler/pages/health_page.dart';
 import 'package:autobutler/pages/storage_devices_page.dart';
@@ -6,6 +7,7 @@ import 'package:autobutler/pages/photos_page.dart';
 import 'package:autobutler/pages/recover_page.dart';
 import 'package:autobutler/pages/settings_page.dart';
 import 'package:autobutler/pages/setup_page.dart';
+import 'package:autobutler/pages/sheets_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/auth_service.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +22,8 @@ class AppRoutes {
   static const cirrusDeep = '/cirrus/:path(.*)';
 
   static const photos = '/photos';
+  static const docs = '/docs';
+  static const sheets = '/sheets';
   static const devices = '/devices';
   static const health = '/health';
   static const settings = '/settings';
@@ -58,6 +62,14 @@ final router = GoRouter(
     GoRoute(
       path: AppRoutes.photos,
       builder: (context, state) => const PhotosPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.docs,
+      builder: (context, state) => const DocsPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.sheets,
+      builder: (context, state) => const SheetsPage(),
     ),
     GoRoute(
       path: AppRoutes.devices,

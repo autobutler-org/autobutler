@@ -81,6 +81,8 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
         activeSection: AutobutlerDrawerSection.devices,
         onTapCirrus: () => context.go(AppRoutes.cirrus),
         onTapPhotos: () => context.go(AppRoutes.photos),
+        onTapDocs: () => context.go(AppRoutes.docs),
+        onTapSheets: () => context.go(AppRoutes.sheets),
         onTapDevices: () => Navigator.of(context).pop(),
         onTapHealth: () => context.go(AppRoutes.health),
         onTapSettings: () => context.go(AppRoutes.settings),

@@ -76,6 +76,8 @@ definitions:
         type: string
       parentId:
         type: integer
+      smartType:
+        type: string
       updatedAt:
         type: string
     type: object
@@ -119,6 +121,27 @@ definitions:
         type: integer
       type:
         type: string
+    type: object
+  v1_favorites.favoriteItemJSON:
+    properties:
+      createdAt:
+        type: string
+      deviceSerial:
+        type: string
+      relPath:
+        type: string
+    type: object
+  v1_favorites.favoriteRequest:
+    properties:
+      deviceSerial:
+        type: string
+      relPath:
+        type: string
+    type: object
+  v1_favorites.favoriteResponse:
+    properties:
+      isFavorite:
+        type: boolean
     type: object
   v1_files.FileNodeJSON:
     properties:
@@ -1013,6 +1036,43 @@ paths:
       summary: Move or rename a file
       tags:
       - cirrus
+  /cirrus/by-type:
+    get:
+      description: Recursively walks all managed devices and returns files whose fileType
+        matches the given value, sorted newest-first.
+      parameters:
+      - description: File type to filter by (e.g. abdoc, absheet)
+        in: query
+        name: fileType
+        required: true
+        type: string
+      - collectionFormat: csv
+        description: Filter by device serial(s)
+        in: query
+        items:
+          type: string
+        name: serial
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1_files.FileNodeWithTimeJSON'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: List all files of a given type
+      tags:
+      - cirrus
   /cirrus/download:
     get:
       description: Downloads a single file or zips a folder and streams it back to
@@ -1477,6 +1537,86 @@ paths:
       summary: List photos
       tags:
       - photos
+  /photos/favorite:
+    get:
+      description: Returns whether the specified photo is in the user's favorites.
+      parameters:
+      - description: Device serial
+        in: query
+        name: serial
+        type: string
+      - description: Relative path to the photo
+        in: query
+        name: relPath
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_favorites.favoriteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Check if a photo is favorited
+      tags:
+      - favorites
+    post:
+      consumes:
+      - application/json
+      description: Adds the photo to favorites if not already favorited; removes it
+        otherwise.
+      parameters:
+      - description: Photo reference
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1_favorites.favoriteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_favorites.favoriteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Toggle a photo favorite
+      tags:
+      - favorites
+  /photos/favorites:
+    get:
+      description: Returns all photos the user has favorited, newest first.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1_favorites.favoriteItemJSON'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: List all favorited photos
+      tags:
+      - favorites
   /photos/metadata:
     get:
       description: Returns EXIF, file info, and album membership for the specified

@@ -17,3 +17,12 @@ func NullInt64(id *int64) sql.NullInt64 {
 func FormatTime(t time.Time) string {
 	return t.UTC().Format(time.RFC3339)
 }
+
+// NullStringPtr converts a sql.NullString to a *string for JSON responses.
+// Returns nil if the value is not valid (NULL in the DB).
+func NullStringPtr(s sql.NullString) *string {
+	if !s.Valid {
+		return nil
+	}
+	return &s.String
+}
