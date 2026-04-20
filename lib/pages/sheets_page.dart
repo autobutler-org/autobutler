@@ -96,6 +96,11 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
             tooltip: 'Reload',
             onPressed: _load,
           ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
+            onPressed: () => context.go('/settings'),
+          ),
         ],
       ),
       drawer: AutobutlerDrawer(

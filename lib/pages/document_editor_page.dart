@@ -1,116 +1,31 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:autobutler/router.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
+import 'package:autobutler/widgets/autobutler_drawer.dart';
+import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill_to_pdf/flutter_quill_to_pdf.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
-//
-// Colors are derived from the active theme brightness so the editor works in
-// both dark and light mode. Build an instance via [_EditorColors.of(context)].
-
-class _EditorColors {
-  _EditorColors._({
-    required this.gradientBase,
-    required this.gradientAccent,
-    required this.toolbarBg,
-    required this.pageBg,
-    required this.groupBg,
-    required this.border,
-    required this.pageBorder,
-    required this.foreground,
-    required this.muted,
-    required this.secondary,
-    required this.primary,
-    required this.primaryFg,
-    required this.ghostBg,
-    required this.ghostBorder,
-    required this.codeBg,
-    required this.codeColor,
-    required this.sheetBg,
-  });
-
-  factory _EditorColors.of(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final primary = Theme.of(context).colorScheme.primary;
-    return _EditorColors.fromBrightness(brightness, primary);
-  }
-
-  factory _EditorColors.fromBrightness(Brightness brightness, Color primary) {
-    if (brightness == Brightness.dark) {
-      return _EditorColors._(
-        gradientBase: const Color(0xFF0A0E1A),
-        gradientAccent: const Color(0x2E7854FF),
-        toolbarBg: const Color(0xFF080C18),
-        pageBg: const Color(0xFF08090E),
-        groupBg: const Color(0x0AFFFFFF),
-        border: const Color(0x0FFFFFFF),
-        pageBorder: const Color(0x0AFFFFFF),
-        foreground: const Color(0xFFE2E8F0),
-        muted: const Color(0xFF64748B),
-        secondary: const Color(0xFF94A3B8),
-        primary: primary,
-        primaryFg: const Color(0xFFFFFFFF),
-        ghostBg: const Color(0x08FFFFFF),
-        ghostBorder: const Color(0x14FFFFFF),
-        codeBg: const Color(0xFF111827),
-        codeColor: const Color(0xFFA78BFA),
-        sheetBg: const Color(0xFF0F1629),
-      );
-    } else {
-      return _EditorColors._(
-        gradientBase: const Color(0xFFF8FAFC),
-        gradientAccent: Colors.transparent,
-        toolbarBg: const Color(0xFFF1F5F9),
-        pageBg: const Color(0xFFFFFFFF),
-        groupBg: const Color(0x08000000),
-        border: const Color(0xFFE2E8F0),
-        pageBorder: const Color(0xFFE2E8F0),
-        foreground: const Color(0xFF0F172A),
-        muted: const Color(0xFF64748B),
-        secondary: const Color(0xFF475569),
-        primary: primary,
-        primaryFg: const Color(0xFFFFFFFF),
-        ghostBg: const Color(0x08000000),
-        ghostBorder: const Color(0x18000000),
-        codeBg: const Color(0xFFF1F5F9),
-        codeColor: const Color(0xFF7C3AED),
-        sheetBg: const Color(0xFFFFFFFF),
-      );
-    }
-  }
-
-  final Color gradientBase;
-  final Color gradientAccent;
-  final Color toolbarBg;
-  final Color pageBg;
-  final Color groupBg;
-  final Color border;
-  final Color pageBorder;
-  final Color foreground;
-  final Color muted;
-  final Color secondary;
-  final Color primary;
-  final Color primaryFg;
-  final Color ghostBg;
-  final Color ghostBorder;
-  final Color codeBg;
-  final Color codeColor;
-  final Color sheetBg;
-}
-
 // ── Quill styles ──────────────────────────────────────────────────────────────
 
-DefaultStyles _quillStyles(_EditorColors c) {
+DefaultStyles _quillStyles(ColorScheme cs) {
+  final fg = cs.onSurface;
+  final muted = cs.onSurface.withValues(alpha: 0.5);
+  final codeBg = cs.surfaceContainerHighest;
+  final codeColor = cs.secondary;
+  final outline = cs.outline;
+
   TextStyle base([double size = 14]) =>
-      TextStyle(color: c.foreground, fontSize: size, height: 1.7);
+      TextStyle(color: fg, fontSize: size, height: 1.7);
 
   return DefaultStyles(
     paragraph: DefaultTextBlockStyle(
@@ -121,64 +36,64 @@ DefaultStyles _quillStyles(_EditorColors c) {
       null,
     ),
     h1: DefaultTextBlockStyle(
-      base(26).copyWith(fontWeight: FontWeight.w600, color: c.foreground),
+      base(26).copyWith(fontWeight: FontWeight.w600, color: fg),
       HorizontalSpacing.zero,
       const VerticalSpacing(20, 6),
       VerticalSpacing.zero,
       null,
     ),
     h2: DefaultTextBlockStyle(
-      base(20).copyWith(fontWeight: FontWeight.w600, color: c.foreground),
+      base(20).copyWith(fontWeight: FontWeight.w600, color: fg),
       HorizontalSpacing.zero,
       const VerticalSpacing(16, 4),
       VerticalSpacing.zero,
       null,
     ),
     h3: DefaultTextBlockStyle(
-      base(16).copyWith(fontWeight: FontWeight.w600, color: c.foreground),
+      base(16).copyWith(fontWeight: FontWeight.w600, color: fg),
       HorizontalSpacing.zero,
       const VerticalSpacing(12, 4),
       VerticalSpacing.zero,
       null,
     ),
     placeHolder: DefaultTextBlockStyle(
-      base().copyWith(color: c.muted),
+      base().copyWith(color: muted),
       HorizontalSpacing.zero,
       VerticalSpacing.zero,
       VerticalSpacing.zero,
       null,
     ),
     quote: DefaultTextBlockStyle(
-      base().copyWith(color: c.muted, fontStyle: FontStyle.italic),
+      base().copyWith(color: muted, fontStyle: FontStyle.italic),
       const HorizontalSpacing(16, 0),
       const VerticalSpacing(6, 6),
       VerticalSpacing.zero,
       BoxDecoration(
-        border: Border(left: BorderSide(color: c.primary, width: 3)),
+        border: Border(left: BorderSide(color: cs.primary, width: 3)),
       ),
     ),
     inlineCode: InlineCodeStyle(
       style: TextStyle(
         fontFamily: 'monospace',
         fontSize: 13,
-        color: c.codeColor,
-        backgroundColor: c.codeBg,
+        color: codeColor,
+        backgroundColor: codeBg,
       ),
-      backgroundColor: c.codeBg,
+      backgroundColor: codeBg,
       radius: const Radius.circular(4),
     ),
     code: DefaultTextBlockStyle(
-      TextStyle(fontFamily: 'monospace', fontSize: 13, color: c.codeColor),
+      TextStyle(fontFamily: 'monospace', fontSize: 13, color: codeColor),
       const HorizontalSpacing(16, 16),
       const VerticalSpacing(8, 8),
       VerticalSpacing.zero,
       BoxDecoration(
-        color: c.codeBg,
+        color: codeBg,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: c.border),
+        border: Border.all(color: outline),
       ),
     ),
-    color: c.foreground,
+    color: fg,
   );
 }
 
@@ -478,7 +393,6 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = _EditorColors.of(context);
     return PopScope(
       canPop: !_dirty,
       onPopInvokedWithResult: (didPop, _) async {
@@ -487,131 +401,98 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         if (leave && context.mounted) Navigator.of(context).pop();
       },
       child: Scaffold(
-        backgroundColor: colors.gradientBase,
-        appBar: _buildAppBar(colors),
-        body: _buildBody(context, colors),
+        appBar: AutobutlerAppBar(
+          label: _dirty ? '$_displayName •' : _displayName,
+          icon: Icons.description_outlined,
+          actions: _buildAppBarActions(context),
+        ),
+        drawer: AutobutlerDrawer(
+          activeSection: AutobutlerDrawerSection.docs,
+          onTapCirrus: () => context.go('/cirrus'),
+          onTapPhotos: () => context.go('/photos'),
+          onTapDocs: () => context.go('/docs'),
+          onTapSheets: () => context.go('/sheets'),
+          onTapDevices: () => context.go('/devices'),
+          onTapHealth: () => context.go('/health'),
+          onTapSettings: () => context.go('/settings'),
+        ),
+        body: _buildBody(context),
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(_EditorColors colors) {
-    final saveLabel = _dirty ? '$_displayName •' : _displayName;
-    final savedLabel = _dirty ? 'Unsaved changes' : 'Auto-saved just now';
-
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(64),
-      child: Container(
-        decoration: BoxDecoration(
-          color: colors.toolbarBg,
-          border: Border(bottom: BorderSide(color: colors.border)),
-        ),
-        child: SafeArea(
-          bottom: false,
-          child: SizedBox(
-            height: 64,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children: [
-                  // Back
-                  IconButton(
-                    icon: Icon(
-                      Icons.arrow_back,
-                      color: colors.secondary,
-                      size: 20,
-                    ),
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    tooltip: 'Back',
-                  ),
-                  const SizedBox(width: 8),
-                  // Doc title + saved status
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          saveLabel,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: colors.foreground,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          savedLabel,
-                          style: TextStyle(fontSize: 12, color: colors.muted),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Auto-save toggle
-                  _GhostButton(
-                    icon: _autoSaveEnabled
-                        ? Icons.cloud_sync_outlined
-                        : Icons.cloud_off_outlined,
-                    tooltip: _autoSaveEnabled
-                        ? 'Auto-save on'
-                        : 'Auto-save off',
-                    onTap: () => _setAutoSaveEnabled(!_autoSaveEnabled),
-                    colors: colors,
-                  ),
-                  const SizedBox(width: 6),
-                  // Overflow menu
-                  if (_exporting)
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: colors.secondary,
-                      ),
-                    )
-                  else
-                    _GhostButton(
-                      icon: Icons.more_horiz,
-                      tooltip: 'More options',
-                      onTap: () => _showOverflowMenu(context, colors),
-                      colors: colors,
-                    ),
-                  const SizedBox(width: 6),
-                  // Save button
-                  if (_saving)
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: colors.secondary,
-                      ),
-                    )
-                  else
-                    _PrimaryButton(
-                      icon: Icons.save_outlined,
-                      label: 'Save',
-                      enabled: _dirty,
-                      onTap: _saveDocument,
-                      colors: colors,
-                    ),
-                ],
-              ),
+  List<Widget> _buildAppBarActions(BuildContext context) {
+    return [
+      // In-document search (TODO: wire to find-in-doc, see #1046)
+      IconButton(
+        icon: const Icon(Icons.search_rounded),
+        tooltip: 'Search in document',
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('In-document search coming soon'),
+              duration: Duration(seconds: 2),
             ),
+          );
+        },
+      ),
+      // Settings shortcut
+      IconButton(
+        icon: const Icon(Icons.settings_outlined),
+        tooltip: 'Settings',
+        onPressed: () => context.go(AppRoutes.settings),
+      ),
+      // Auto-save toggle
+      IconButton(
+        icon: Icon(
+          _autoSaveEnabled
+              ? Icons.cloud_sync_outlined
+              : Icons.cloud_off_outlined,
+        ),
+        tooltip: _autoSaveEnabled ? 'Auto-save on' : 'Auto-save off',
+        onPressed: () => _setAutoSaveEnabled(!_autoSaveEnabled),
+      ),
+      // Overflow menu
+      if (_exporting)
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12),
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        )
+      else
+        IconButton(
+          icon: const Icon(Icons.more_horiz),
+          tooltip: 'More options',
+          onPressed: () => _showOverflowMenu(context),
+        ),
+      // Save button
+      if (_saving)
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12),
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        )
+      else
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: FilledButton.icon(
+            onPressed: _dirty ? _saveDocument : null,
+            icon: const Icon(Icons.save_outlined, size: 16),
+            label: const Text('Save'),
           ),
         ),
-      ),
-    );
+    ];
   }
 
-  void _showOverflowMenu(BuildContext context, _EditorColors colors) {
+  void _showOverflowMenu(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: colors.sheetBg,
-      shape: RoundedRectangleBorder(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        side: BorderSide(color: colors.border),
-      ),
       builder: (_) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -620,28 +501,22 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: colors.border,
+              color: Theme.of(context).colorScheme.outline,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(height: 16),
           ListTile(
-            leading: Icon(
-              Icons.picture_as_pdf_outlined,
-              color: colors.secondary,
-            ),
-            title: Text(
-              'Export as PDF',
-              style: TextStyle(color: colors.foreground),
-            ),
+            leading: const Icon(Icons.picture_as_pdf_outlined),
+            title: const Text('Export as PDF'),
             onTap: () {
               Navigator.pop(context);
               _exportPdf();
             },
           ),
           ListTile(
-            leading: Icon(Icons.print_outlined, color: colors.secondary),
-            title: Text('Print', style: TextStyle(color: colors.foreground)),
+            leading: const Icon(Icons.print_outlined),
+            title: const Text('Print'),
             onTap: () {
               Navigator.pop(context);
               _printDocument();
@@ -653,9 +528,12 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     );
   }
 
-  Widget _buildBody(BuildContext context, _EditorColors colors) {
+  Widget _buildBody(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     if (_loading) {
-      return Center(child: CircularProgressIndicator(color: colors.secondary));
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_error != null) {
@@ -663,53 +541,28 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 48, color: colors.muted),
+            Icon(Icons.error_outline, size: 48, color: cs.error),
             const SizedBox(height: 12),
-            Text(
-              _error!,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: colors.foreground),
-            ),
+            Text(_error!, textAlign: TextAlign.center),
             const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: _loadDocument,
-              child: const Text('Retry'),
-            ),
+            FilledButton(onPressed: _loadDocument, child: const Text('Retry')),
           ],
         ),
       );
     }
 
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return Column(
       children: [
-        // ── Quill toolbar ──
-        _buildToolbar(theme, colors),
-        // ── Editor body ──
+        _buildToolbar(theme),
         Expanded(
-          child: Container(
-            decoration: BoxDecoration(
-              // In dark mode: purple-blue radial gradient. In light mode: flat.
-              gradient: isDark
-                  ? RadialGradient(
-                      center: const Alignment(-0.8, -0.8),
-                      radius: 1.5,
-                      colors: [colors.gradientAccent, colors.gradientBase],
-                    )
-                  : null,
-              color: isDark ? null : colors.gradientBase,
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 900),
-                child: Column(
-                  children: [
-                    Expanded(child: _buildPageFrame(colors)),
-                    _buildStatusBar(colors),
-                  ],
-                ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: Column(
+                children: [
+                  Expanded(child: _buildPageFrame(cs)),
+                  _buildStatusBar(cs),
+                ],
               ),
             ),
           ),
@@ -718,19 +571,19 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     );
   }
 
-  Widget _buildToolbar(ThemeData theme, _EditorColors colors) {
+  Widget _buildToolbar(ThemeData theme) {
+    final cs = theme.colorScheme;
     final toolbarTheme = theme.copyWith(
-      colorScheme: theme.colorScheme.copyWith(
-        onSurface: colors.secondary,
-        onSurfaceVariant: colors.muted,
-        surface: colors.toolbarBg,
-        surfaceContainerLow: colors.toolbarBg,
-        surfaceContainer: colors.toolbarBg,
+      colorScheme: cs.copyWith(
+        onSurface: cs.onSurface,
+        surface: cs.surfaceContainer,
+        surfaceContainerLow: cs.surfaceContainer,
+        surfaceContainer: cs.surfaceContainer,
       ),
-      iconTheme: IconThemeData(color: colors.secondary, size: 16),
+      iconTheme: IconThemeData(color: cs.onSurface, size: 16),
       textTheme: theme.textTheme.apply(
-        bodyColor: colors.secondary,
-        displayColor: colors.secondary,
+        bodyColor: cs.onSurface,
+        displayColor: cs.onSurface,
       ),
     );
 
@@ -738,8 +591,8 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       data: toolbarTheme,
       child: Container(
         decoration: BoxDecoration(
-          color: colors.toolbarBg,
-          border: Border(bottom: BorderSide(color: colors.border)),
+          color: cs.surfaceContainer,
+          border: Border(bottom: BorderSide(color: cs.outline)),
         ),
         child: QuillSimpleToolbar(
           controller: _controller,
@@ -749,9 +602,9 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
               base: QuillToolbarBaseButtonOptions(
                 iconTheme: QuillIconTheme(
                   iconButtonUnselectedData: IconButtonData(
-                    color: colors.secondary,
+                    color: cs.onSurface,
                     style: IconButton.styleFrom(
-                      backgroundColor: colors.groupBg,
+                      backgroundColor: cs.onSurface.withValues(alpha: 0.05),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(6),
                       ),
@@ -759,8 +612,8 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                   ),
                   iconButtonSelectedData: IconButtonData(
                     style: IconButton.styleFrom(
-                      foregroundColor: theme.colorScheme.onPrimary,
-                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: cs.onPrimary,
+                      backgroundColor: cs.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(6),
                       ),
@@ -770,7 +623,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
               ),
               selectHeaderStyleDropdownButton:
                   QuillToolbarSelectHeaderStyleDropdownButtonOptions(
-                    textStyle: TextStyle(color: colors.secondary, fontSize: 13),
+                    textStyle: TextStyle(color: cs.onSurface, fontSize: 13),
                   ),
             ),
             showFontFamily: false,
@@ -788,14 +641,14 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     );
   }
 
-  Widget _buildPageFrame(_EditorColors colors) {
+  Widget _buildPageFrame(ColorScheme cs) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
       child: Container(
         decoration: BoxDecoration(
-          color: colors.pageBg,
+          color: cs.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colors.pageBorder),
+          border: Border.all(color: cs.outline),
         ),
         padding: const EdgeInsets.fromLTRB(40, 24, 40, 24),
         child: QuillEditor.basic(
@@ -807,46 +660,65 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
             expands: false,
             padding: EdgeInsets.zero,
             placeholder: 'Start writing…',
-            customStyles: _quillStyles(colors),
+            customStyles: _quillStyles(cs),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildStatusBar(_EditorColors colors) {
-    return Container(
+  Widget _buildStatusBar(ColorScheme cs) {
+    final muted = cs.onSurface.withValues(alpha: 0.5);
+
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Row(
         children: [
-          _StatusItem(
+          _statusItem(
             icon: Icons.edit_note,
             label: '$_wordCount words',
-            colors: colors,
+            color: muted,
           ),
           const SizedBox(width: 16),
-          _StatusItem(
-            icon: Icons.lock_outline,
-            label: 'Private',
-            colors: colors,
-          ),
+          _statusItem(icon: Icons.lock_outline, label: 'Private', color: muted),
           const Spacer(),
           if (_dirty)
-            _StatusItem(
+            _statusItem(
               icon: Icons.circle,
               label: 'Unsaved',
-              iconColor: const Color(0xFFF59E0B),
-              colors: colors,
+              color: const Color(0xFFF59E0B),
             )
           else
-            _StatusItem(
+            _statusItem(
               icon: Icons.check_circle_outline,
               label: 'Saved',
-              iconColor: const Color(0xFF10B981),
-              colors: colors,
+              color: const Color(0xFF10B981),
             ),
         ],
       ),
+    );
+  }
+
+  Widget _statusItem({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.5),
+          ),
+        ),
+      ],
     );
   }
 
@@ -869,117 +741,5 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       ),
     );
     return result ?? false;
-  }
-}
-
-// ── Small reusable widgets ─────────────────────────────────────────────────────
-
-class _GhostButton extends StatelessWidget {
-  const _GhostButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-    required this.colors,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback onTap;
-  final _EditorColors colors;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: colors.ghostBg,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: colors.ghostBorder),
-          ),
-          child: Icon(icon, size: 18, color: colors.secondary),
-        ),
-      ),
-    );
-  }
-}
-
-class _PrimaryButton extends StatelessWidget {
-  const _PrimaryButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    required this.colors,
-    this.enabled = true,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final _EditorColors colors;
-  final bool enabled;
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: enabled ? 1.0 : 0.4,
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: colors.primary,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0x1AFFFFFF)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: colors.primaryFg),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: colors.primaryFg,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusItem extends StatelessWidget {
-  const _StatusItem({
-    required this.icon,
-    required this.label,
-    required this.colors,
-    this.iconColor,
-  });
-
-  final IconData icon;
-  final String label;
-  final _EditorColors colors;
-  final Color? iconColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: iconColor ?? colors.muted),
-        const SizedBox(width: 5),
-        Text(label, style: TextStyle(fontSize: 12, color: colors.muted)),
-      ],
-    );
   }
 }
