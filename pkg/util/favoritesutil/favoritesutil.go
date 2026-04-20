@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log"
 
 	"github.com/autobutler-org/autobutler/internal/db"
 )
@@ -44,11 +45,13 @@ func ToggleFavorite(ctx context.Context, q *db.Queries, deviceSerial, relPath st
 		// Remove from Favorites album
 		album, err := EnsureFavoritesAlbum(ctx, q)
 		if err == nil {
-			_ = q.RemovePhotoFromAlbum(ctx, db.RemovePhotoFromAlbumParams{
+			if removeErr := q.RemovePhotoFromAlbum(ctx, db.RemovePhotoFromAlbumParams{
 				AlbumID:      album.ID,
 				DeviceSerial: deviceSerial,
 				RelPath:      relPath,
-			})
+			}); removeErr != nil {
+				log.Printf("favoritesutil: failed to remove photo from Favorites album: %v", removeErr)
+			}
 		}
 		return false, nil
 	}
@@ -62,11 +65,13 @@ func ToggleFavorite(ctx context.Context, q *db.Queries, deviceSerial, relPath st
 	// Add to Favorites album
 	album, err := EnsureFavoritesAlbum(ctx, q)
 	if err == nil {
-		_, _ = q.AddPhotoToAlbum(ctx, db.AddPhotoToAlbumParams{
+		if _, addErr := q.AddPhotoToAlbum(ctx, db.AddPhotoToAlbumParams{
 			AlbumID:      album.ID,
 			DeviceSerial: deviceSerial,
 			RelPath:      relPath,
-		})
+		}); addErr != nil {
+			log.Printf("favoritesutil: failed to add photo to Favorites album: %v", addErr)
+		}
 	}
 	return true, nil
 }

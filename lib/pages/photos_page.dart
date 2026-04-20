@@ -348,7 +348,23 @@ class _PhotosPageState extends State<PhotosPage>
   @override
   Future<void> refresh() async {
     _noHostSelected = AppSettings.instance.activeHost == null;
-    await _primeSources();
+    final futures = <Future<void>>[_primeSources()];
+    if (!_noHostSelected) {
+      futures.add(
+        FavoritesService.listFavoriteKeys()
+            .then((keys) {
+              if (mounted) {
+                setState(() {
+                  _favoriteKeys
+                    ..clear()
+                    ..addAll(keys);
+                });
+              }
+            })
+            .catchError((_) {}),
+      );
+    }
+    await Future.wait(futures);
     setState(() {
       _photosFuture = _photosForCategory(_selectedCategory);
     });
@@ -554,7 +570,7 @@ class _PhotosPageState extends State<PhotosPage>
     final c = item.cirrus!;
     try {
       final nowFav = await FavoritesService.toggle(
-        relPath: c.dirPath,
+        relPath: c.apiPath,
         serial: c.deviceSerial.isNotEmpty ? c.deviceSerial : null,
       );
       if (!mounted) return;
@@ -565,7 +581,12 @@ class _PhotosPageState extends State<PhotosPage>
           _favoriteKeys.remove(item.selectionKey);
         }
       });
-    } catch (_) {}
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to update favorite: $e')));
+    }
   }
 
   Widget _buildStarOverlay(BuildContext context, PhotoItem item) {

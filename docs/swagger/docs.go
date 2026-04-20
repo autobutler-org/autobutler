@@ -940,6 +940,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/cirrus/by-type": {
+            "get": {
+                "description": "Recursively walks all managed devices and returns files whose fileType matches the given value, sorted newest-first.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cirrus"
+                ],
+                "summary": "List all files of a given type",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File type to filter by (e.g. abdoc, absheet)",
+                        "name": "fileType",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Filter by device serial(s)",
+                        "name": "serial",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1_files.FileNodeWithTimeJSON"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/cirrus/download": {
             "get": {
                 "description": "Downloads a single file or zips a folder and streams it back to the client",

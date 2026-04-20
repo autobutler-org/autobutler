@@ -55,6 +55,20 @@ class FavoritesService with AuthenticatedService {
     return d['isFavorite'] as bool? ?? false;
   }
 
+  /// Returns all favorited photo keys in the format "deviceSerial:relPath".
+  static Future<Set<String>> listFavoriteKeys() async {
+    final uri = _apiUri('/photos/favorites');
+    final response = await http.get(uri, headers: _authHeaders);
+    if (response.statusCode != 200) return {};
+    final list = json.decode(response.body) as List<dynamic>;
+    return list.map((item) {
+      final m = item as Map<String, dynamic>;
+      final serial = m['deviceSerial'] as String? ?? '';
+      final relPath = m['relPath'] as String? ?? '';
+      return '$serial:$relPath';
+    }).toSet();
+  }
+
   /// Returns whether a photo is favorited.
   static Future<bool> isFavorite({
     required String relPath,

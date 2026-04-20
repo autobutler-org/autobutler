@@ -164,8 +164,11 @@ class AlbumSidebarState extends State<AlbumSidebar> {
           )
         else ...[
           // System albums pinned at top (Favorites always first)
-          ..._albums
-              .where((a) => a.isSystemAlbum)
+          ...(_albums.where((a) => a.isSystemAlbum).toList()..sort((a, b) {
+                if (a.isFavorites) return -1;
+                if (b.isFavorites) return 1;
+                return 0;
+              }))
               .map((album) => _buildAlbumTile(context, album)),
           // User albums below
           ..._albums

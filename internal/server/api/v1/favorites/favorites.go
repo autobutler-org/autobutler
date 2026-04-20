@@ -1,7 +1,6 @@
 package v1_favorites
 
 import (
-	"context"
 	"errors"
 
 	"github.com/autobutler-org/autobutler/internal/db"
@@ -9,6 +8,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/favoritesutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/sqlutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -53,7 +53,7 @@ func toggleFavorite(c *gin.Context) *serverutil.Response {
 	}
 
 	isFav, err := favoritesutil.ToggleFavorite(
-		context.Background(),
+		c.Request.Context(),
 		deps.Database().Queries,
 		req.DeviceSerial,
 		req.RelPath,
@@ -90,7 +90,7 @@ func isFavorite(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(nil)
 	}
 
-	fav, err := deps.Database().Queries.IsFavorite(context.Background(), db.IsFavoriteParams{
+	fav, err := deps.Database().Queries.IsFavorite(c.Request.Context(), db.IsFavoriteParams{
 		DeviceSerial: serial,
 		RelPath:      relPath,
 	})
@@ -117,7 +117,7 @@ func listFavorites(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(nil)
 	}
 
-	items, err := deps.Database().Queries.ListFavorites(context.Background())
+	items, err := deps.Database().Queries.ListFavorites(c.Request.Context())
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
@@ -127,7 +127,7 @@ func listFavorites(c *gin.Context) *serverutil.Response {
 		result = append(result, favoriteItemJSON{
 			DeviceSerial: item.DeviceSerial,
 			RelPath:      item.RelPath,
-			CreatedAt:    item.CreatedAt.UTC().Format("2006-01-02T15:04:05Z"),
+			CreatedAt:    sqlutil.FormatTime(item.CreatedAt),
 		})
 	}
 

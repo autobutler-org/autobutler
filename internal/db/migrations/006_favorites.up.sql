@@ -16,3 +16,8 @@ ADD COLUMN smart_type TEXT;
 
 ALTER TABLE photo_albums
 ADD COLUMN retention_days INTEGER;
+
+-- Enforce at most one album per smart_type value (e.g. only one "favorites" album).
+CREATE UNIQUE INDEX IF NOT EXISTS idx_photo_albums_smart_type
+    ON photo_albums (smart_type)
+    WHERE smart_type IS NOT NULL;
