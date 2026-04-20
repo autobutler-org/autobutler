@@ -136,9 +136,9 @@ class DataSheetControlBar extends StatelessWidget {
                     'Fill down',
                     hasCell
                         ? () => controller.fillDown(
-                            sel.contextRow,
-                            sel.contextCol,
-                          )
+                              sel.contextRow,
+                              sel.contextCol,
+                            )
                         : null,
                   ),
                   _btn(
@@ -146,9 +146,9 @@ class DataSheetControlBar extends StatelessWidget {
                     'Fill right',
                     hasCell
                         ? () => controller.fillRight(
-                            sel.contextRow,
-                            sel.contextCol,
-                          )
+                              sel.contextRow,
+                              sel.contextCol,
+                            )
                         : null,
                   ),
                 ]),
@@ -160,10 +160,10 @@ class DataSheetControlBar extends StatelessWidget {
                     'Sort…',
                     hasData
                         ? () => _showSortDialog(
-                            context,
-                            controller,
-                            sel.contextCol >= 0 ? sel.contextCol : 0,
-                          )
+                              context,
+                              controller,
+                              sel.contextCol >= 0 ? sel.contextCol : 0,
+                            )
                         : null,
                   ),
                   _btn(

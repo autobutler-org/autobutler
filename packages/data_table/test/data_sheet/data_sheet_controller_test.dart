@@ -36,28 +36,29 @@ void main() {
         c.dispose();
       });
 
-      test('columnFlex defaults to all 1s', () {
+      test('columnWidths defaults to kDefaultColumnWidth for each column', () {
         final c = _makeController([
           ['a', 'b', 'c'],
         ]);
-        expect(c.columnFlex, [1, 1, 1]);
+        expect(c.columnWidths, [100.0, 100.0, 100.0]);
         c.dispose();
       });
 
-      test('columnFlex is growable (no fixed-length crash)', () {
+      test('columnWidths is growable (no fixed-length crash)', () {
         final c = _makeController([
           ['a', 'b'],
         ]);
-        expect(() => c.columnFlex.add(1), returnsNormally);
+        expect(() => c.columnWidths.add(100.0), returnsNormally);
         c.dispose();
       });
 
-      test('accepts custom columnFlex', () {
+      test('accepts custom columnWidths', () {
         final table = _makeTable([
           ['a', 'b'],
         ]);
-        final c = DataSheetController.fromTable(table, columnFlex: [2, 3]);
-        expect(c.columnFlex, [2, 3]);
+        final c =
+            DataSheetController.fromTable(table, columnWidths: [120.0, 80.0]);
+        expect(c.columnWidths, [120.0, 80.0]);
         c.dispose();
       });
     });
@@ -221,12 +222,12 @@ void main() {
         c.dispose();
       });
 
-      test('grows columnFlex', () {
+      test('grows columnWidths on addColumn', () {
         final c = _makeController([
           ['a'],
         ]);
         c.addColumn();
-        expect(c.columnFlex.length, 2);
+        expect(c.columnWidths.length, 2);
         c.dispose();
       });
     });
@@ -253,6 +254,151 @@ void main() {
         expect(c.colCount, 3);
         expect(c.cellAt(0, 1).value, 'x');
         expect(c.cellAt(0, 2).value, 'y');
+        c.dispose();
+      });
+    });
+
+    group('rowHeights', () {
+      test('rowHeights defaults to kDefaultRowHeight for each row', () {
+        final c = _makeController([
+          ['a'],
+          ['b'],
+          ['c'],
+        ]);
+        expect(c.rowHeights, [40.0, 40.0, 40.0]);
+        c.dispose();
+      });
+
+      test('addRow appends a new rowHeight', () {
+        final c = _makeController([
+          ['a']
+        ]);
+        c.addRow();
+        expect(c.rowHeights.length, 2);
+        c.dispose();
+      });
+
+      test('insertRowAt inserts a rowHeight at the correct index', () {
+        final c = _makeController([
+          ['a'],
+          ['b'],
+        ]);
+        c.setRowHeight(1, 60.0);
+        c.insertRowAt(1);
+        expect(c.rowHeights[1], 40.0); // new default
+        expect(c.rowHeights[2], 60.0); // previous row 1 shifted down
+        c.dispose();
+      });
+
+      test('deleteRowAt removes the corresponding rowHeight', () {
+        final c = _makeController([
+          ['a'],
+          ['b'],
+          ['c'],
+        ]);
+        c.setRowHeight(1, 80.0);
+        c.deleteRowAt(0);
+        expect(c.rowHeights.length, 2);
+        expect(c.rowHeights[0], 80.0);
+        c.dispose();
+      });
+
+      test('duplicateRow copies the source rowHeight', () {
+        final c = _makeController([
+          ['a'],
+          ['b'],
+        ]);
+        c.setRowHeight(0, 55.0);
+        c.duplicateRow(0);
+        expect(c.rowHeights[1], 55.0);
+        c.dispose();
+      });
+    });
+
+    group('setColumnWidth', () {
+      test('updates the width at the given index', () {
+        final c = _makeController([
+          ['a', 'b']
+        ]);
+        c.setColumnWidth(0, 150.0);
+        expect(c.columnWidths[0], 150.0);
+        c.dispose();
+      });
+
+      test('clamps to kMinColumnWidth', () {
+        final c = _makeController([
+          ['a']
+        ]);
+        c.setColumnWidth(0, 0.0);
+        expect(c.columnWidths[0], 24.0);
+        c.dispose();
+      });
+
+      test('does nothing for out-of-range index', () {
+        final c = _makeController([
+          ['a']
+        ]);
+        expect(() => c.setColumnWidth(5, 100.0), returnsNormally);
+        c.dispose();
+      });
+    });
+
+    group('setRowHeight', () {
+      test('updates the height at the given index', () {
+        final c = _makeController([
+          ['a'],
+          ['b']
+        ]);
+        c.setRowHeight(1, 60.0);
+        expect(c.rowHeights[1], 60.0);
+        c.dispose();
+      });
+
+      test('clamps to kMinRowHeight', () {
+        final c = _makeController([
+          ['a']
+        ]);
+        c.setRowHeight(0, 0.0);
+        expect(c.rowHeights[0], 24.0);
+        c.dispose();
+      });
+    });
+
+    group('autoSizeColumn', () {
+      test('sets width >= kMinColumnWidth for non-empty column', () {
+        final c = _makeController([
+          ['Hello World'],
+          ['Short'],
+        ]);
+        c.autoSizeColumn(0);
+        expect(c.columnWidths[0], greaterThanOrEqualTo(24.0));
+        c.dispose();
+      });
+
+      test('does nothing for out-of-range column', () {
+        final c = _makeController([
+          ['a']
+        ]);
+        expect(() => c.autoSizeColumn(5), returnsNormally);
+        c.dispose();
+      });
+    });
+
+    group('autoSizeRow', () {
+      test('sets height >= kMinRowHeight', () {
+        final c = _makeController([
+          ['Hello World']
+        ]);
+        c.autoSizeRow(0);
+        expect(c.rowHeights[0], greaterThanOrEqualTo(24.0));
+        c.dispose();
+      });
+
+      test('does nothing for out-of-range row', () {
+        final c = _makeController([
+          ['a']
+        ]);
+        expect(() => c.autoSizeRow(5), returnsNormally);
         c.dispose();
       });
     });
