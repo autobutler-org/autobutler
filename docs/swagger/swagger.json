@@ -929,6 +929,60 @@
                 }
             }
         },
+        "/cirrus/by-type": {
+            "get": {
+                "description": "Recursively walks all managed devices and returns files whose fileType matches the given value, sorted newest-first.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cirrus"
+                ],
+                "summary": "List all files of a given type",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File type to filter by (e.g. abdoc, absheet)",
+                        "name": "fileType",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Filter by device serial(s)",
+                        "name": "serial",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1_files.FileNodeWithTimeJSON"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/cirrus/download": {
             "get": {
                 "description": "Downloads a single file or zips a folder and streams it back to the client",
@@ -1601,6 +1655,126 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/v1_photos.PaginatedPhotosResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/photos/favorite": {
+            "get": {
+                "description": "Returns whether the specified photo is in the user's favorites.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "favorites"
+                ],
+                "summary": "Check if a photo is favorited",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device serial",
+                        "name": "serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Relative path to the photo",
+                        "name": "relPath",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1_favorites.favoriteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Adds the photo to favorites if not already favorited; removes it otherwise.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "favorites"
+                ],
+                "summary": "Toggle a photo favorite",
+                "parameters": [
+                    {
+                        "description": "Photo reference",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1_favorites.favoriteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1_favorites.favoriteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/photos/favorites": {
+            "get": {
+                "description": "Returns all photos the user has favorited, newest first.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "favorites"
+                ],
+                "summary": "List all favorited photos",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1_favorites.favoriteItemJSON"
+                            }
                         }
                     },
                     "500": {
@@ -2344,6 +2518,9 @@
                 "parentId": {
                     "type": "integer"
                 },
+                "smartType": {
+                    "type": "string"
+                },
                 "updatedAt": {
                     "type": "string"
                 }
@@ -2410,6 +2587,39 @@
                 },
                 "type": {
                     "type": "string"
+                }
+            }
+        },
+        "v1_favorites.favoriteItemJSON": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deviceSerial": {
+                    "type": "string"
+                },
+                "relPath": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1_favorites.favoriteRequest": {
+            "type": "object",
+            "properties": {
+                "deviceSerial": {
+                    "type": "string"
+                },
+                "relPath": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1_favorites.favoriteResponse": {
+            "type": "object",
+            "properties": {
+                "isFavorite": {
+                    "type": "boolean"
                 }
             }
         },

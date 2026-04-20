@@ -12,6 +12,7 @@ import (
 	"github.com/autobutler-org/autobutler/internal/server/middleware"
 	"github.com/autobutler-org/autobutler/pkg/botel"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/favoritesutil"
 	"github.com/autobutler-org/autobutler/pkg/util/remoteutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
@@ -29,6 +30,14 @@ func setupServices(deps deputil.Dependencies) error {
 	}
 	go deps.Worker().Process()
 	go deps.Worker().LogErrors()
+	// Ensure system smart albums exist on every startup so they are always
+	// present in the sidebar even when empty.
+	if _, err := favoritesutil.EnsureFavoritesAlbum(
+		context.Background(),
+		deps.Database().Queries,
+	); err != nil {
+		log.Printf("[server] warning: could not ensure Favorites album: %v", err)
+	}
 	return nil
 }
 

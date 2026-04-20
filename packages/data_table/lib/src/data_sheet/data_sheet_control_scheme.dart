@@ -198,16 +198,12 @@ class DataSheetControlScheme {
         moveRight: [KeyboardShortcut(LogicalKeyboardKey.arrowRight)],
         moveNextCell: [KeyboardShortcut(LogicalKeyboardKey.tab)],
         movePreviousCell: [
-          KeyboardShortcut(LogicalKeyboardKey.tab, shift: true),
+          KeyboardShortcut(LogicalKeyboardKey.tab, shift: true)
         ],
         jumpRowStart: [KeyboardShortcut(LogicalKeyboardKey.home)],
         jumpRowEnd: [KeyboardShortcut(LogicalKeyboardKey.end)],
-        jumpToFirst: [
-          KeyboardShortcut(LogicalKeyboardKey.home, ctrl: true),
-        ],
-        jumpToLast: [
-          KeyboardShortcut(LogicalKeyboardKey.end, ctrl: true),
-        ],
+        jumpToFirst: [KeyboardShortcut(LogicalKeyboardKey.home, ctrl: true)],
+        jumpToLast: [KeyboardShortcut(LogicalKeyboardKey.end, ctrl: true)],
         // Editing
         confirmEdit: [KeyboardShortcut(LogicalKeyboardKey.enter)],
         enterEditMode: [KeyboardShortcut(LogicalKeyboardKey.f2)],
@@ -216,9 +212,7 @@ class DataSheetControlScheme {
           KeyboardShortcut(LogicalKeyboardKey.delete),
           KeyboardShortcut(LogicalKeyboardKey.backspace),
         ],
-        undo: [
-          KeyboardShortcut(LogicalKeyboardKey.keyZ, ctrl: true),
-        ],
+        undo: [KeyboardShortcut(LogicalKeyboardKey.keyZ, ctrl: true)],
         redo: [
           KeyboardShortcut(LogicalKeyboardKey.keyY, ctrl: true),
           KeyboardShortcut(LogicalKeyboardKey.keyZ, ctrl: true, shift: true),
@@ -240,16 +234,9 @@ class DataSheetControlScheme {
           KeyboardShortcut(LogicalKeyboardKey.minus, ctrl: true),
         ],
         insertColumn: [
-          KeyboardShortcut(
-            LogicalKeyboardKey.numpadAdd,
-            ctrl: true,
-            shift: true,
-          ),
-          KeyboardShortcut(
-            LogicalKeyboardKey.equal,
-            ctrl: true,
-            shift: true,
-          ),
+          KeyboardShortcut(LogicalKeyboardKey.numpadAdd,
+              ctrl: true, shift: true),
+          KeyboardShortcut(LogicalKeyboardKey.equal, ctrl: true, shift: true),
         ],
         deleteColumn: [
           KeyboardShortcut(
@@ -257,11 +244,7 @@ class DataSheetControlScheme {
             ctrl: true,
             shift: true,
           ),
-          KeyboardShortcut(
-            LogicalKeyboardKey.minus,
-            ctrl: true,
-            shift: true,
-          ),
+          KeyboardShortcut(LogicalKeyboardKey.minus, ctrl: true, shift: true),
         ],
       );
 

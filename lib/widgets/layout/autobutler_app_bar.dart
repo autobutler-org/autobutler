@@ -19,12 +19,15 @@ class AutobutlerAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      leadingWidth: AutobutlerBrandButton.preferredWidth,
+      leadingWidth: AutobutlerBrandButton.preferredWidth + 8,
       leading: Builder(
-        builder: (ctx) => AutobutlerBrandButton(
-          label: label,
-          icon: icon,
-          onTap: () => Scaffold.of(ctx).openDrawer(),
+        builder: (ctx) => Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: AutobutlerBrandButton(
+            label: label,
+            icon: icon,
+            onTap: () => Scaffold.of(ctx).openDrawer(),
+          ),
         ),
       ),
       title: null,

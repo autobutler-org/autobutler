@@ -42,6 +42,7 @@ func listAlbums(c *gin.Context) *serverutil.Response {
 			ID:        a.ID,
 			Name:      a.Name,
 			ParentID:  parentID,
+			SmartType: sqlutil.NullStringPtr(a.SmartType),
 			CreatedAt: sqlutil.FormatTime(a.CreatedAt),
 			UpdatedAt: sqlutil.FormatTime(a.UpdatedAt),
 			ItemCount: count,
