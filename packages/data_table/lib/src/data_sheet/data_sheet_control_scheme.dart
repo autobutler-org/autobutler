@@ -43,11 +43,11 @@ class KeyboardShortcut {
   }
 
   Map<String, dynamic> toJson() => {
-        'keyId': key.keyId,
-        'ctrl': ctrl,
-        'shift': shift,
-        'alt': alt,
-      };
+    'keyId': key.keyId,
+    'ctrl': ctrl,
+    'shift': shift,
+    'alt': alt,
+  };
 
   factory KeyboardShortcut.fromJson(Map<String, dynamic> json) =>
       KeyboardShortcut(
@@ -191,79 +191,59 @@ class DataSheetControlScheme {
   /// actions are also bound to the regular `=` and `-` keys with the same
   /// modifiers.
   factory DataSheetControlScheme.defaults() => const DataSheetControlScheme(
-        // Navigation
-        moveUp: [KeyboardShortcut(LogicalKeyboardKey.arrowUp)],
-        moveDown: [KeyboardShortcut(LogicalKeyboardKey.arrowDown)],
-        moveLeft: [KeyboardShortcut(LogicalKeyboardKey.arrowLeft)],
-        moveRight: [KeyboardShortcut(LogicalKeyboardKey.arrowRight)],
-        moveNextCell: [KeyboardShortcut(LogicalKeyboardKey.tab)],
-        movePreviousCell: [
-          KeyboardShortcut(LogicalKeyboardKey.tab, shift: true),
-        ],
-        jumpRowStart: [KeyboardShortcut(LogicalKeyboardKey.home)],
-        jumpRowEnd: [KeyboardShortcut(LogicalKeyboardKey.end)],
-        jumpToFirst: [
-          KeyboardShortcut(LogicalKeyboardKey.home, ctrl: true),
-        ],
-        jumpToLast: [
-          KeyboardShortcut(LogicalKeyboardKey.end, ctrl: true),
-        ],
-        // Editing
-        confirmEdit: [KeyboardShortcut(LogicalKeyboardKey.enter)],
-        enterEditMode: [KeyboardShortcut(LogicalKeyboardKey.f2)],
-        cancelEdit: [KeyboardShortcut(LogicalKeyboardKey.escape)],
-        clearCell: [
-          KeyboardShortcut(LogicalKeyboardKey.delete),
-          KeyboardShortcut(LogicalKeyboardKey.backspace),
-        ],
-        undo: [
-          KeyboardShortcut(LogicalKeyboardKey.keyZ, ctrl: true),
-        ],
-        redo: [
-          KeyboardShortcut(LogicalKeyboardKey.keyY, ctrl: true),
-          KeyboardShortcut(LogicalKeyboardKey.keyZ, ctrl: true, shift: true),
-        ],
-        // Clipboard
-        copy: [KeyboardShortcut(LogicalKeyboardKey.keyC, ctrl: true)],
-        cut: [KeyboardShortcut(LogicalKeyboardKey.keyX, ctrl: true)],
-        paste: [KeyboardShortcut(LogicalKeyboardKey.keyV, ctrl: true)],
-        // Data operations
-        fillDown: [KeyboardShortcut(LogicalKeyboardKey.keyD, ctrl: true)],
-        fillRight: [KeyboardShortcut(LogicalKeyboardKey.keyR, ctrl: true)],
-        // Structural (numpad + regular keyboard fallbacks)
-        insertRow: [
-          KeyboardShortcut(LogicalKeyboardKey.numpadAdd, ctrl: true),
-          KeyboardShortcut(LogicalKeyboardKey.equal, ctrl: true),
-        ],
-        deleteRow: [
-          KeyboardShortcut(LogicalKeyboardKey.numpadSubtract, ctrl: true),
-          KeyboardShortcut(LogicalKeyboardKey.minus, ctrl: true),
-        ],
-        insertColumn: [
-          KeyboardShortcut(
-            LogicalKeyboardKey.numpadAdd,
-            ctrl: true,
-            shift: true,
-          ),
-          KeyboardShortcut(
-            LogicalKeyboardKey.equal,
-            ctrl: true,
-            shift: true,
-          ),
-        ],
-        deleteColumn: [
-          KeyboardShortcut(
-            LogicalKeyboardKey.numpadSubtract,
-            ctrl: true,
-            shift: true,
-          ),
-          KeyboardShortcut(
-            LogicalKeyboardKey.minus,
-            ctrl: true,
-            shift: true,
-          ),
-        ],
-      );
+    // Navigation
+    moveUp: [KeyboardShortcut(LogicalKeyboardKey.arrowUp)],
+    moveDown: [KeyboardShortcut(LogicalKeyboardKey.arrowDown)],
+    moveLeft: [KeyboardShortcut(LogicalKeyboardKey.arrowLeft)],
+    moveRight: [KeyboardShortcut(LogicalKeyboardKey.arrowRight)],
+    moveNextCell: [KeyboardShortcut(LogicalKeyboardKey.tab)],
+    movePreviousCell: [KeyboardShortcut(LogicalKeyboardKey.tab, shift: true)],
+    jumpRowStart: [KeyboardShortcut(LogicalKeyboardKey.home)],
+    jumpRowEnd: [KeyboardShortcut(LogicalKeyboardKey.end)],
+    jumpToFirst: [KeyboardShortcut(LogicalKeyboardKey.home, ctrl: true)],
+    jumpToLast: [KeyboardShortcut(LogicalKeyboardKey.end, ctrl: true)],
+    // Editing
+    confirmEdit: [KeyboardShortcut(LogicalKeyboardKey.enter)],
+    enterEditMode: [KeyboardShortcut(LogicalKeyboardKey.f2)],
+    cancelEdit: [KeyboardShortcut(LogicalKeyboardKey.escape)],
+    clearCell: [
+      KeyboardShortcut(LogicalKeyboardKey.delete),
+      KeyboardShortcut(LogicalKeyboardKey.backspace),
+    ],
+    undo: [KeyboardShortcut(LogicalKeyboardKey.keyZ, ctrl: true)],
+    redo: [
+      KeyboardShortcut(LogicalKeyboardKey.keyY, ctrl: true),
+      KeyboardShortcut(LogicalKeyboardKey.keyZ, ctrl: true, shift: true),
+    ],
+    // Clipboard
+    copy: [KeyboardShortcut(LogicalKeyboardKey.keyC, ctrl: true)],
+    cut: [KeyboardShortcut(LogicalKeyboardKey.keyX, ctrl: true)],
+    paste: [KeyboardShortcut(LogicalKeyboardKey.keyV, ctrl: true)],
+    // Data operations
+    fillDown: [KeyboardShortcut(LogicalKeyboardKey.keyD, ctrl: true)],
+    fillRight: [KeyboardShortcut(LogicalKeyboardKey.keyR, ctrl: true)],
+    // Structural (numpad + regular keyboard fallbacks)
+    insertRow: [
+      KeyboardShortcut(LogicalKeyboardKey.numpadAdd, ctrl: true),
+      KeyboardShortcut(LogicalKeyboardKey.equal, ctrl: true),
+    ],
+    deleteRow: [
+      KeyboardShortcut(LogicalKeyboardKey.numpadSubtract, ctrl: true),
+      KeyboardShortcut(LogicalKeyboardKey.minus, ctrl: true),
+    ],
+    insertColumn: [
+      KeyboardShortcut(LogicalKeyboardKey.numpadAdd, ctrl: true, shift: true),
+      KeyboardShortcut(LogicalKeyboardKey.equal, ctrl: true, shift: true),
+    ],
+    deleteColumn: [
+      KeyboardShortcut(
+        LogicalKeyboardKey.numpadSubtract,
+        ctrl: true,
+        shift: true,
+      ),
+      KeyboardShortcut(LogicalKeyboardKey.minus, ctrl: true, shift: true),
+    ],
+  );
 
   /// Returns a copy of this scheme with the specified actions replaced.
   DataSheetControlScheme copyWith({
@@ -292,34 +272,33 @@ class DataSheetControlScheme {
     List<KeyboardShortcut>? deleteRow,
     List<KeyboardShortcut>? insertColumn,
     List<KeyboardShortcut>? deleteColumn,
-  }) =>
-      DataSheetControlScheme(
-        moveUp: moveUp ?? this.moveUp,
-        moveDown: moveDown ?? this.moveDown,
-        moveLeft: moveLeft ?? this.moveLeft,
-        moveRight: moveRight ?? this.moveRight,
-        moveNextCell: moveNextCell ?? this.moveNextCell,
-        movePreviousCell: movePreviousCell ?? this.movePreviousCell,
-        jumpRowStart: jumpRowStart ?? this.jumpRowStart,
-        jumpRowEnd: jumpRowEnd ?? this.jumpRowEnd,
-        jumpToFirst: jumpToFirst ?? this.jumpToFirst,
-        jumpToLast: jumpToLast ?? this.jumpToLast,
-        confirmEdit: confirmEdit ?? this.confirmEdit,
-        enterEditMode: enterEditMode ?? this.enterEditMode,
-        cancelEdit: cancelEdit ?? this.cancelEdit,
-        clearCell: clearCell ?? this.clearCell,
-        undo: undo ?? this.undo,
-        redo: redo ?? this.redo,
-        copy: copy ?? this.copy,
-        cut: cut ?? this.cut,
-        paste: paste ?? this.paste,
-        fillDown: fillDown ?? this.fillDown,
-        fillRight: fillRight ?? this.fillRight,
-        insertRow: insertRow ?? this.insertRow,
-        deleteRow: deleteRow ?? this.deleteRow,
-        insertColumn: insertColumn ?? this.insertColumn,
-        deleteColumn: deleteColumn ?? this.deleteColumn,
-      );
+  }) => DataSheetControlScheme(
+    moveUp: moveUp ?? this.moveUp,
+    moveDown: moveDown ?? this.moveDown,
+    moveLeft: moveLeft ?? this.moveLeft,
+    moveRight: moveRight ?? this.moveRight,
+    moveNextCell: moveNextCell ?? this.moveNextCell,
+    movePreviousCell: movePreviousCell ?? this.movePreviousCell,
+    jumpRowStart: jumpRowStart ?? this.jumpRowStart,
+    jumpRowEnd: jumpRowEnd ?? this.jumpRowEnd,
+    jumpToFirst: jumpToFirst ?? this.jumpToFirst,
+    jumpToLast: jumpToLast ?? this.jumpToLast,
+    confirmEdit: confirmEdit ?? this.confirmEdit,
+    enterEditMode: enterEditMode ?? this.enterEditMode,
+    cancelEdit: cancelEdit ?? this.cancelEdit,
+    clearCell: clearCell ?? this.clearCell,
+    undo: undo ?? this.undo,
+    redo: redo ?? this.redo,
+    copy: copy ?? this.copy,
+    cut: cut ?? this.cut,
+    paste: paste ?? this.paste,
+    fillDown: fillDown ?? this.fillDown,
+    fillRight: fillRight ?? this.fillRight,
+    insertRow: insertRow ?? this.insertRow,
+    deleteRow: deleteRow ?? this.deleteRow,
+    insertColumn: insertColumn ?? this.insertColumn,
+    deleteColumn: deleteColumn ?? this.deleteColumn,
+  );
 
   Map<String, dynamic> toJson() {
     List<Map<String, dynamic>> encodeList(List<KeyboardShortcut> list) =>

@@ -63,8 +63,10 @@ class DataSheetController extends ChangeNotifier {
 
   void _onSelectionChanged() => notifyListeners();
 
-  factory DataSheetController.fromTable(DataTable table,
-      {List<int>? columnFlex}) {
+  factory DataSheetController.fromTable(
+    DataTable table, {
+    List<int>? columnFlex,
+  }) {
     final rows = table.rows
         .map((r) => ValueNotifier<List<DataCell>>(List<DataCell>.from(r.cells)))
         .toList();
@@ -182,7 +184,9 @@ class DataSheetController extends ChangeNotifier {
     final clamped = index.clamp(0, _rows.length);
     table.rows.insert(clamped, DataRow(List<DataCell>.from(newCells)));
     _rows.insert(
-        clamped, ValueNotifier<List<DataCell>>(List<DataCell>.from(newCells)));
+      clamped,
+      ValueNotifier<List<DataCell>>(List<DataCell>.from(newCells)),
+    );
     notifyListeners();
   }
 
@@ -200,11 +204,14 @@ class DataSheetController extends ChangeNotifier {
   void duplicateRow(int index) {
     if (index < 0 || index >= rowCount) return;
     _pushSnapshot();
-    final sourceCells =
-        _rows[index].value.map((c) => DataCell(c.value.toString())).toList();
+    final sourceCells = _rows[index].value
+        .map((c) => DataCell(c.value.toString()))
+        .toList();
     table.rows.insert(index + 1, DataRow(List<DataCell>.from(sourceCells)));
-    _rows.insert(index + 1,
-        ValueNotifier<List<DataCell>>(List<DataCell>.from(sourceCells)));
+    _rows.insert(
+      index + 1,
+      ValueNotifier<List<DataCell>>(List<DataCell>.from(sourceCells)),
+    );
     notifyListeners();
   }
 
@@ -352,8 +359,9 @@ class DataSheetController extends ChangeNotifier {
       final bv = b.cells[col].value.toString();
       final n1 = num.tryParse(av);
       final n2 = num.tryParse(bv);
-      final cmp =
-          (n1 != null && n2 != null) ? n1.compareTo(n2) : av.compareTo(bv);
+      final cmp = (n1 != null && n2 != null)
+          ? n1.compareTo(n2)
+          : av.compareTo(bv);
       return ascending ? cmp : -cmp;
     });
     for (var i = 0; i < _rows.length; i++) {
@@ -386,8 +394,10 @@ class DataSheetController extends ChangeNotifier {
   // -------------------------------------------------------------------------
 
   /// Return all `(row, col)` pairs whose cell value contains [query].
-  List<({int row, int col})> findCells(String query,
-      {bool caseSensitive = false}) {
+  List<({int row, int col})> findCells(
+    String query, {
+    bool caseSensitive = false,
+  }) {
     final results = <({int row, int col})>[];
     final q = caseSensitive ? query : query.toLowerCase();
     for (var r = 0; r < _rows.length; r++) {
@@ -415,7 +425,9 @@ class DataSheetController extends ChangeNotifier {
         final newV = caseSensitive
             ? v.replaceAll(from, to)
             : v.replaceAllMapped(
-                RegExp(RegExp.escape(from), caseSensitive: false), (_) => to);
+                RegExp(RegExp.escape(from), caseSensitive: false),
+                (_) => to,
+              );
         if (newV != v) {
           updated[c] = DataCell(newV);
           table.rows[r].cells[c] = DataCell(newV);
@@ -435,15 +447,19 @@ class DataSheetController extends ChangeNotifier {
 
   /// Return the table as a RFC-4180-compliant CSV string.
   String exportCsv() {
-    return _rows.map((row) {
-      return row.value.map((cell) {
-        final v = cell.value.toString();
-        if (v.contains(',') || v.contains('"') || v.contains('\n')) {
-          return '"${v.replaceAll('"', '""')}"';
-        }
-        return v;
-      }).join(',');
-    }).join('\n');
+    return _rows
+        .map((row) {
+          return row.value
+              .map((cell) {
+                final v = cell.value.toString();
+                if (v.contains(',') || v.contains('"') || v.contains('\n')) {
+                  return '"${v.replaceAll('"', '""')}"';
+                }
+                return v;
+              })
+              .join(',');
+        })
+        .join('\n');
   }
 
   /// Replace the entire table with rows parsed from [csv].

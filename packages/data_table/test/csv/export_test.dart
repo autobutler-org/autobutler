@@ -67,15 +67,17 @@ void main() {
       c.dispose();
     });
 
-    test('cell value containing a double-quote is quoted and the quote escaped',
-        () {
-      final c = _ctrl([
-        [r'say "hi"'],
-      ]);
-      // RFC-4180: enclose in quotes, escape inner " as ""
-      expect(c.exportCsv(), '"say ""hi"""');
-      c.dispose();
-    });
+    test(
+      'cell value containing a double-quote is quoted and the quote escaped',
+      () {
+        final c = _ctrl([
+          [r'say "hi"'],
+        ]);
+        // RFC-4180: enclose in quotes, escape inner " as ""
+        expect(c.exportCsv(), '"say ""hi"""');
+        c.dispose();
+      },
+    );
 
     test('cell value containing a newline is quoted', () {
       final c = _ctrl([
@@ -109,14 +111,16 @@ void main() {
       c.dispose();
     });
 
-    test('leading and trailing whitespace is preserved without extra quoting',
-        () {
-      final c = _ctrl([
-        ['  hello  '],
-      ]);
-      expect(c.exportCsv(), '  hello  ');
-      c.dispose();
-    });
+    test(
+      'leading and trailing whitespace is preserved without extra quoting',
+      () {
+        final c = _ctrl([
+          ['  hello  '],
+        ]);
+        expect(c.exportCsv(), '  hello  ');
+        c.dispose();
+      },
+    );
 
     test('numeric strings are not quoted', () {
       final c = _ctrl([

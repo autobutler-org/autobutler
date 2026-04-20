@@ -16,7 +16,7 @@ void main() {
 
     test('unnamed constructor stores rows', () {
       final rows = [
-        DataRow([DataCell('x')])
+        DataRow([DataCell('x')]),
       ];
       final table = DataTable.unnamed(rows);
       expect(table.rows, rows);
@@ -70,10 +70,10 @@ void main() {
         ]);
         final restored = DataTable.fromJson(original.toJson());
         expect(restored.rows.length, 1);
-        expect(
-          restored.rows[0].cells.map((c) => c.value).toList(),
-          ['hello', 'world'],
-        );
+        expect(restored.rows[0].cells.map((c) => c.value).toList(), [
+          'hello',
+          'world',
+        ]);
       });
     });
   });

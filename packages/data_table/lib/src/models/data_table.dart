@@ -7,8 +7,8 @@ class DataTable {
   DataTable.unnamed(this.rows);
 
   Map<String, dynamic> toJson() => {
-        'rows': rows.map((r) => r.toJson()).toList(),
-      };
+    'rows': rows.map((r) => r.toJson()).toList(),
+  };
 
   static DataTable fromJson(Map<String, dynamic> json) {
     final rowsJson = (json['rows'] as List<dynamic>? ?? []);

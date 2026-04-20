@@ -42,24 +42,25 @@ class DataSheet extends StatelessWidget {
   /// Defaults to `true`.
   final bool showHeadings;
 
-  const DataSheet(
-      {super.key,
-      required this.table,
-      this.beforeCellValueChanged,
-      this.afterCellValueChanged,
-      this.controller,
-      this.columnFlex,
-      this.controlScheme,
-      this.showHeadings = true});
+  const DataSheet({
+    super.key,
+    required this.table,
+    this.beforeCellValueChanged,
+    this.afterCellValueChanged,
+    this.controller,
+    this.columnFlex,
+    this.controlScheme,
+    this.showHeadings = true,
+  });
 
   DataSheet.unnamed({super.key})
-      : table = DataTable([]),
-        beforeCellValueChanged = null,
-        afterCellValueChanged = null,
-        controller = null,
-        columnFlex = null,
-        controlScheme = null,
-        showHeadings = true;
+    : table = DataTable([]),
+      beforeCellValueChanged = null,
+      afterCellValueChanged = null,
+      controller = null,
+      columnFlex = null,
+      controlScheme = null,
+      showHeadings = true;
 
   @override
   Widget build(BuildContext context) {
@@ -120,8 +121,10 @@ class _DataSheetViewState extends State<_DataSheetView> {
       controller = widget.controller!;
       _ownsController = false;
     } else {
-      controller = DataSheetController.fromTable(widget.table,
-          columnFlex: widget.columnFlex);
+      controller = DataSheetController.fromTable(
+        widget.table,
+        columnFlex: widget.columnFlex,
+      );
       _ownsController = true;
     }
     controller.addListener(_onControllerChanged);
@@ -143,292 +146,318 @@ class _DataSheetViewState extends State<_DataSheetView> {
   @override
   Widget build(BuildContext context) {
     return Focus(
-        focusNode: keyboardFocus,
-        onKeyEvent: (node, event) {
-          if (event is! KeyDownEvent) return KeyEventResult.ignored;
-          final scheme =
-              widget.controlScheme ?? DataSheetControlScheme.defaults();
-          bool m(List<KeyboardShortcut> triggers) =>
-              triggers.any((t) => t.matches(event));
+      focusNode: keyboardFocus,
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        final scheme =
+            widget.controlScheme ?? DataSheetControlScheme.defaults();
+        bool m(List<KeyboardShortcut> triggers) =>
+            triggers.any((t) => t.matches(event));
 
-          // Modifier shortcuts are checked first (most specific) to prevent
-          // them from falling through to plain-key handlers.
-          if (m(scheme.undo)) {
-            controller.undo();
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.redo)) {
-            controller.redo();
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.copy)) {
-            _copyCell();
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.cut)) {
-            _cutCell();
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.paste)) {
-            _pasteCell();
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.fillDown)) {
-            _fillDown();
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.fillRight)) {
-            _fillRight();
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.jumpToFirst)) {
-            _jumpToFirst();
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.jumpToLast)) {
-            _jumpToLast();
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.insertRow)) {
-            _insertRow();
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.deleteRow)) {
-            _deleteRow();
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.insertColumn)) {
-            _insertColumn();
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.deleteColumn)) {
-            _deleteColumn();
-            return KeyEventResult.handled;
-          }
+        // Modifier shortcuts are checked first (most specific) to prevent
+        // them from falling through to plain-key handlers.
+        if (m(scheme.undo)) {
+          controller.undo();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.redo)) {
+          controller.redo();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.copy)) {
+          _copyCell();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.cut)) {
+          _cutCell();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.paste)) {
+          _pasteCell();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.fillDown)) {
+          _fillDown();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.fillRight)) {
+          _fillRight();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.jumpToFirst)) {
+          _jumpToFirst();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.jumpToLast)) {
+          _jumpToLast();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.insertRow)) {
+          _insertRow();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.deleteRow)) {
+          _deleteRow();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.insertColumn)) {
+          _insertColumn();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.deleteColumn)) {
+          _deleteColumn();
+          return KeyEventResult.handled;
+        }
 
-          // Plain / shift shortcuts.
-          if (m(scheme.moveUp)) {
-            _moveUp();
-            return KeyEventResult.handled;
+        // Plain / shift shortcuts.
+        if (m(scheme.moveUp)) {
+          _moveUp();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.moveDown)) {
+          _moveDown();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.moveLeft)) {
+          _moveLeft();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.moveRight)) {
+          _moveRight();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.movePreviousCell)) {
+          if (activeRow >= 0 && activeCol >= 0) {
+            final r = activeRow;
+            final c = activeCol;
+            _storeCellValue(
+              activeCellController.text,
+              highlightRow: r,
+              highlightCol: c,
+            );
+            keyboardFocus.requestFocus();
           }
-          if (m(scheme.moveDown)) {
-            _moveDown();
-            return KeyEventResult.handled;
+          _moveLeft();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.moveNextCell)) {
+          if (activeRow >= 0 && activeCol >= 0) {
+            final r = activeRow;
+            final c = activeCol;
+            _storeCellValue(
+              activeCellController.text,
+              highlightRow: r,
+              highlightCol: c,
+            );
+            keyboardFocus.requestFocus();
           }
-          if (m(scheme.moveLeft)) {
-            _moveLeft();
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.moveRight)) {
-            _moveRight();
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.movePreviousCell)) {
-            if (activeRow >= 0 && activeCol >= 0) {
-              final r = activeRow;
-              final c = activeCol;
-              _storeCellValue(activeCellController.text,
-                  highlightRow: r, highlightCol: c);
-              keyboardFocus.requestFocus();
-            }
-            _moveLeft();
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.moveNextCell)) {
-            if (activeRow >= 0 && activeCol >= 0) {
-              final r = activeRow;
-              final c = activeCol;
-              _storeCellValue(activeCellController.text,
-                  highlightRow: r, highlightCol: c);
-              keyboardFocus.requestFocus();
-            }
-            _moveRight();
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.confirmEdit)) {
-            if (highlightedRow >= 0 && highlightedCol >= 0) {
-              _activateCell(controller.cellAt(highlightedRow, highlightedCol),
-                  highlightedRow, highlightedCol);
-            } else if (activeRow >= 0 && activeCol >= 0) {
-              final r = activeRow;
-              final c = activeCol;
-              _storeCellValue(activeCellController.text,
-                  highlightRow: r, highlightCol: c);
-              keyboardFocus.requestFocus();
-            }
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.enterEditMode)) {
-            if (highlightedRow >= 0 && highlightedCol >= 0) {
-              _activateCell(controller.cellAt(highlightedRow, highlightedCol),
-                  highlightedRow, highlightedCol);
-            }
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.cancelEdit)) {
-            if (activeRow >= 0 && activeCol >= 0) {
-              _storeCellValue(_priorCellValue,
-                  highlightRow: activeRow, highlightCol: activeCol);
-              keyboardFocus.requestFocus();
-            } else {
-              controller.selection.clear();
-            }
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.clearCell)) {
-            if (highlightedRow >= 0 && highlightedCol >= 0) {
-              controller.clearCell(highlightedRow, highlightedCol);
-            }
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.jumpRowStart)) {
-            if (highlightedRow >= 0) {
-              controller.selection.setHighlighted(highlightedRow, 0);
-            }
-            return KeyEventResult.handled;
-          }
-          if (m(scheme.jumpRowEnd)) {
-            if (highlightedRow >= 0) {
-              controller.selection
-                  .setHighlighted(highlightedRow, controller.colCount - 1);
-            }
-            return KeyEventResult.handled;
-          }
-
-          // Any other key while a cell is highlighted: start editing it.
-          // Skip modifier-only keypresses (Ctrl, Cmd, Shift, Alt) so that
-          // pressing a modifier alone does not inadvertently activate a cell.
-          final modifierKeys = {
-            LogicalKeyboardKey.control,
-            LogicalKeyboardKey.controlLeft,
-            LogicalKeyboardKey.controlRight,
-            LogicalKeyboardKey.meta,
-            LogicalKeyboardKey.metaLeft,
-            LogicalKeyboardKey.metaRight,
-            LogicalKeyboardKey.shift,
-            LogicalKeyboardKey.shiftLeft,
-            LogicalKeyboardKey.shiftRight,
-            LogicalKeyboardKey.alt,
-            LogicalKeyboardKey.altLeft,
-            LogicalKeyboardKey.altRight,
-          };
-          if (modifierKeys.contains(event.logicalKey)) {
-            return KeyEventResult.ignored;
-          }
+          _moveRight();
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.confirmEdit)) {
           if (highlightedRow >= 0 && highlightedCol >= 0) {
-            _activateCell(controller.cellAt(highlightedRow, highlightedCol),
-                highlightedRow, highlightedCol);
+            _activateCell(
+              controller.cellAt(highlightedRow, highlightedCol),
+              highlightedRow,
+              highlightedCol,
+            );
+          } else if (activeRow >= 0 && activeCol >= 0) {
+            final r = activeRow;
+            final c = activeCol;
+            _storeCellValue(
+              activeCellController.text,
+              highlightRow: r,
+              highlightCol: c,
+            );
+            keyboardFocus.requestFocus();
           }
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.enterEditMode)) {
+          if (highlightedRow >= 0 && highlightedCol >= 0) {
+            _activateCell(
+              controller.cellAt(highlightedRow, highlightedCol),
+              highlightedRow,
+              highlightedCol,
+            );
+          }
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.cancelEdit)) {
+          if (activeRow >= 0 && activeCol >= 0) {
+            _storeCellValue(
+              _priorCellValue,
+              highlightRow: activeRow,
+              highlightCol: activeCol,
+            );
+            keyboardFocus.requestFocus();
+          } else {
+            controller.selection.clear();
+          }
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.clearCell)) {
+          if (highlightedRow >= 0 && highlightedCol >= 0) {
+            controller.clearCell(highlightedRow, highlightedCol);
+          }
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.jumpRowStart)) {
+          if (highlightedRow >= 0) {
+            controller.selection.setHighlighted(highlightedRow, 0);
+          }
+          return KeyEventResult.handled;
+        }
+        if (m(scheme.jumpRowEnd)) {
+          if (highlightedRow >= 0) {
+            controller.selection.setHighlighted(
+              highlightedRow,
+              controller.colCount - 1,
+            );
+          }
+          return KeyEventResult.handled;
+        }
+
+        // Any other key while a cell is highlighted: start editing it.
+        // Skip modifier-only keypresses (Ctrl, Cmd, Shift, Alt) so that
+        // pressing a modifier alone does not inadvertently activate a cell.
+        final modifierKeys = {
+          LogicalKeyboardKey.control,
+          LogicalKeyboardKey.controlLeft,
+          LogicalKeyboardKey.controlRight,
+          LogicalKeyboardKey.meta,
+          LogicalKeyboardKey.metaLeft,
+          LogicalKeyboardKey.metaRight,
+          LogicalKeyboardKey.shift,
+          LogicalKeyboardKey.shiftLeft,
+          LogicalKeyboardKey.shiftRight,
+          LogicalKeyboardKey.alt,
+          LogicalKeyboardKey.altLeft,
+          LogicalKeyboardKey.altRight,
+        };
+        if (modifierKeys.contains(event.logicalKey)) {
           return KeyEventResult.ignored;
-        },
-        child: Column(
-          children: [
-            // ── Column header row ────────────────────────────────────────
-            if (widget.showHeadings)
-              ListenableBuilder(
-                listenable: controller,
-                builder: (context, _) {
-                  return Row(
-                    children: [
-                      // Corner cell above row-number gutter
-                      HeaderCornerCell(),
-                      ...List.generate(controller.colCount, (c) {
-                        final flex = (c < controller.columnFlex.length)
-                            ? controller.columnFlex[c]
-                            : 1;
-                        return Expanded(
-                          flex: flex,
-                          child: ColumnHeaderCell(label: columnLabel(c)),
-                        );
-                      }),
-                    ],
-                  );
-                },
-              ),
-            // ── Data rows ────────────────────────────────────────────────
-            Expanded(
-              child: ListView.builder(
-                itemCount: controller.rowCount,
-                itemBuilder: (context, r) {
-                  return ValueListenableBuilder<List<DataCell>>(
-                    valueListenable: controller.rowNotifier(r),
-                    builder: (context, rowCells, _) {
-                      return Row(
-                        children: [
-                          // Row number gutter
-                          if (widget.showHeadings) RowNumberCell(number: r + 1),
-                          ...List.generate(rowCells.length, (c) {
-                            final isActiveCell =
-                                (r == activeRow && c == activeCol);
-                            final isHighlightedCell =
-                                (r == highlightedRow && c == highlightedCol);
-
-                            final cellChild = isActiveCell
-                                ? EditableCell(
-                                    key: ValueKey('r${r}c$c'),
-                                    controller: activeCellController,
-                                    onSubmitted: _storeCellValue,
-                                    onEditingComplete: () {
-                                      _storeCellValue(
-                                          activeCellController.text);
-                                    },
-                                    onTapOutside: (_) {
-                                      _storeCellValue(
-                                        activeCellController.text,
-                                        highlightRow: activeRow,
-                                        highlightCol: activeCol,
-                                      );
-                                      keyboardFocus.requestFocus();
-                                    },
-                                  )
-                                : Text(rowCells[c].value);
-
-                            final flex = (c < controller.columnFlex.length)
-                                ? controller.columnFlex[c]
-                                : 1;
-                            final cell = Cell(
-                              key: ValueKey('r${r}c$c'),
-                              isActive: isActiveCell,
-                              isHighlighted: isHighlightedCell,
-                              cursor: isActiveCell
-                                  ? SystemMouseCursors.text
-                                  : SystemMouseCursors.cell,
-                              child: cellChild,
-                            );
-                            return Expanded(
-                              flex: flex,
-                              child: isActiveCell
-                                  ? cell
-                                  : GestureDetector(
-                                      behavior: HitTestBehavior.opaque,
-                                      onTap: () {
-                                        if (activeRow >= 0 && activeCol >= 0) {
-                                          _storeCellValue(
-                                              activeCellController.text);
-                                        } else {
-                                          if (highlightedRow == r &&
-                                              highlightedCol == c) {
-                                            _activateCell(rowCells[c], r, c);
-                                          } else {
-                                            controller.selection
-                                                .setHighlighted(r, c);
-                                            keyboardFocus.requestFocus();
-                                          }
-                                        }
-                                      },
-                                      child: cell,
-                                    ),
-                            );
-                          }),
-                        ],
+        }
+        if (highlightedRow >= 0 && highlightedCol >= 0) {
+          _activateCell(
+            controller.cellAt(highlightedRow, highlightedCol),
+            highlightedRow,
+            highlightedCol,
+          );
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Column(
+        children: [
+          // ── Column header row ────────────────────────────────────────
+          if (widget.showHeadings)
+            ListenableBuilder(
+              listenable: controller,
+              builder: (context, _) {
+                return Row(
+                  children: [
+                    // Corner cell above row-number gutter
+                    HeaderCornerCell(),
+                    ...List.generate(controller.colCount, (c) {
+                      final flex = (c < controller.columnFlex.length)
+                          ? controller.columnFlex[c]
+                          : 1;
+                      return Expanded(
+                        flex: flex,
+                        child: ColumnHeaderCell(label: columnLabel(c)),
                       );
-                    },
-                  );
-                },
-              ),
+                    }),
+                  ],
+                );
+              },
             ),
-          ],
-        ));
+          // ── Data rows ────────────────────────────────────────────────
+          Expanded(
+            child: ListView.builder(
+              itemCount: controller.rowCount,
+              itemBuilder: (context, r) {
+                return ValueListenableBuilder<List<DataCell>>(
+                  valueListenable: controller.rowNotifier(r),
+                  builder: (context, rowCells, _) {
+                    return Row(
+                      children: [
+                        // Row number gutter
+                        if (widget.showHeadings) RowNumberCell(number: r + 1),
+                        ...List.generate(rowCells.length, (c) {
+                          final isActiveCell =
+                              (r == activeRow && c == activeCol);
+                          final isHighlightedCell =
+                              (r == highlightedRow && c == highlightedCol);
+
+                          final cellChild = isActiveCell
+                              ? EditableCell(
+                                  key: ValueKey('r${r}c$c'),
+                                  controller: activeCellController,
+                                  onSubmitted: _storeCellValue,
+                                  onEditingComplete: () {
+                                    _storeCellValue(activeCellController.text);
+                                  },
+                                  onTapOutside: (_) {
+                                    _storeCellValue(
+                                      activeCellController.text,
+                                      highlightRow: activeRow,
+                                      highlightCol: activeCol,
+                                    );
+                                    keyboardFocus.requestFocus();
+                                  },
+                                )
+                              : Text(rowCells[c].value);
+
+                          final flex = (c < controller.columnFlex.length)
+                              ? controller.columnFlex[c]
+                              : 1;
+                          final cell = Cell(
+                            key: ValueKey('r${r}c$c'),
+                            isActive: isActiveCell,
+                            isHighlighted: isHighlightedCell,
+                            cursor: isActiveCell
+                                ? SystemMouseCursors.text
+                                : SystemMouseCursors.cell,
+                            child: cellChild,
+                          );
+                          return Expanded(
+                            flex: flex,
+                            child: isActiveCell
+                                ? cell
+                                : GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () {
+                                      if (activeRow >= 0 && activeCol >= 0) {
+                                        _storeCellValue(
+                                          activeCellController.text,
+                                        );
+                                      } else {
+                                        if (highlightedRow == r &&
+                                            highlightedCol == c) {
+                                          _activateCell(rowCells[c], r, c);
+                                        } else {
+                                          controller.selection.setHighlighted(
+                                            r,
+                                            c,
+                                          );
+                                          keyboardFocus.requestFocus();
+                                        }
+                                      }
+                                    },
+                                    child: cell,
+                                  ),
+                          );
+                        }),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _storeCellValue(
@@ -441,7 +470,7 @@ class _DataSheetViewState extends State<_DataSheetView> {
     if (changedRow < 0 || changedCol < 0) return;
     final isChangeAccepted =
         widget.beforeCellValueChanged?.call(value, changedRow, changedCol) ??
-            true;
+        true;
     if (isChangeAccepted) {
       controller.updateCell(changedRow, changedCol, DataCell(value));
     }
@@ -451,8 +480,12 @@ class _DataSheetViewState extends State<_DataSheetView> {
     } else {
       controller.selection.clear();
     }
-    widget.afterCellValueChanged
-        ?.call(value, changedRow, changedCol, isChangeAccepted);
+    widget.afterCellValueChanged?.call(
+      value,
+      changedRow,
+      changedCol,
+      isChangeAccepted,
+    );
   }
 
   void _activateCell(DataCell cell, int row, int col) {
