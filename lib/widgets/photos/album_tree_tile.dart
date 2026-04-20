@@ -10,6 +10,7 @@ class AlbumTreeTile extends StatefulWidget {
     required this.selectedAlbumId,
     required this.onSelected,
     this.depth = 0,
+    this.systemIcon,
     super.key,
   });
 
@@ -17,6 +18,9 @@ class AlbumTreeTile extends StatefulWidget {
   final int? selectedAlbumId;
   final AlbumSelectedCallback onSelected;
   final int depth;
+
+  /// Override icon for system albums (e.g. star for Favorites).
+  final IconData? systemIcon;
 
   @override
   State<AlbumTreeTile> createState() => _AlbumTreeTileState();
@@ -69,7 +73,7 @@ class _AlbumTreeTileState extends State<AlbumTreeTile> {
                   const SizedBox(width: 16),
                 const SizedBox(width: 4),
                 Icon(
-                  Icons.photo_album_outlined,
+                  widget.systemIcon ?? Icons.photo_album_outlined,
                   size: 16,
                   color: isSelected
                       ? colorScheme.primary

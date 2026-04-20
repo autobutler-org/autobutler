@@ -25,11 +25,13 @@ type DeviceName struct {
 }
 
 type PhotoAlbum struct {
-	ID        int64
-	Name      string
-	ParentID  sql.NullInt64
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID            int64
+	Name          string
+	ParentID      sql.NullInt64
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	SmartType     sql.NullString
+	RetentionDays sql.NullInt64
 }
 
 type PhotoAlbumItem struct {
@@ -38,6 +40,13 @@ type PhotoAlbumItem struct {
 	DeviceSerial string
 	RelPath      string
 	AddedAt      time.Time
+}
+
+type PhotoFavorite struct {
+	ID           int64
+	DeviceSerial string
+	RelPath      string
+	CreatedAt    time.Time
 }
 
 type PhotoRotation struct {

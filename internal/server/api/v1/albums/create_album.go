@@ -67,6 +67,7 @@ func createAlbum(c *gin.Context) *serverutil.Response {
 		ID:        album.ID,
 		Name:      album.Name,
 		ParentID:  respParentID,
+		SmartType: sqlutil.NullStringPtr(album.SmartType),
 		CreatedAt: sqlutil.FormatTime(album.CreatedAt),
 		UpdatedAt: sqlutil.FormatTime(album.UpdatedAt),
 		ItemCount: 0,

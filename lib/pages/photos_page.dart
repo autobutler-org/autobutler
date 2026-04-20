@@ -10,6 +10,7 @@ import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:autobutler/models/photo_album.dart';
 import 'package:autobutler/pages/album_page.dart';
 import 'package:autobutler/services/album_service.dart';
+import 'package:autobutler/services/favorites_service.dart';
 import 'package:autobutler/widgets/photos/album_sidebar.dart';
 import 'package:autobutler/widgets/photos/photo_selection_bar.dart';
 import 'package:flutter/foundation.dart';
@@ -42,7 +43,7 @@ class PhotoItem {
   factory PhotoItem.fromCirrus(CirrusFileNode c) => PhotoItem._(cirrus: c);
   factory PhotoItem.fromAsset(AssetEntity a) => PhotoItem._(asset: a);
 
-  /// A stable key for this item suitable for use in a selection set.
+  /// Stable key for use in sets (favorites, selection).
   String get selectionKey {
     if (isCirrus) {
       return '${cirrus!.deviceSerial}:${cirrus!.apiPath}';
@@ -74,6 +75,10 @@ class _PhotosPageState extends State<PhotosPage>
   bool _categoriesExpanded = false;
   int _previewColumns = _defaultCrossAxisCount;
   PhotoCategory _selectedCategory = PhotoCategory.cirrus;
+
+  // Favorites: set of selectionKeys for photos that are favorited.
+  // Loaded lazily as photos scroll into view.
+  final Set<String> _favoriteKeys = {};
 
   // Above-viewport nav: the hidden nav panel is measured once on first layout,
   // then the scroll controller's initial offset is set so the photo grid is
@@ -343,7 +348,23 @@ class _PhotosPageState extends State<PhotosPage>
   @override
   Future<void> refresh() async {
     _noHostSelected = AppSettings.instance.activeHost == null;
-    await _primeSources();
+    final futures = <Future<void>>[_primeSources()];
+    if (!_noHostSelected) {
+      futures.add(
+        FavoritesService.listFavoriteKeys()
+            .then((keys) {
+              if (mounted) {
+                setState(() {
+                  _favoriteKeys
+                    ..clear()
+                    ..addAll(keys);
+                });
+              }
+            })
+            .catchError((_) {}),
+      );
+    }
+    await Future.wait(futures);
     setState(() {
       _photosFuture = _photosForCategory(_selectedCategory);
     });
@@ -544,6 +565,45 @@ class _PhotosPageState extends State<PhotosPage>
 
   // Builds a single photo tile. Extracted so both the desktop GridView and
   // the mobile SliverGrid can share the same tile logic.
+  Future<void> _toggleFavorite(PhotoItem item) async {
+    if (!item.isCirrus) return;
+    final c = item.cirrus!;
+    try {
+      final nowFav = await FavoritesService.toggle(
+        relPath: c.apiPath,
+        serial: c.deviceSerial.isNotEmpty ? c.deviceSerial : null,
+      );
+      if (!mounted) return;
+      setState(() {
+        if (nowFav) {
+          _favoriteKeys.add(item.selectionKey);
+        } else {
+          _favoriteKeys.remove(item.selectionKey);
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to update favorite: $e')));
+    }
+  }
+
+  Widget _buildStarOverlay(BuildContext context, PhotoItem item) {
+    final isFav = _favoriteKeys.contains(item.selectionKey);
+    if (!isFav) return const SizedBox.shrink();
+    return Positioned(
+      bottom: 4,
+      right: 4,
+      child: Icon(
+        Icons.star_rounded,
+        size: 16,
+        color: Colors.amber,
+        shadows: const [Shadow(blurRadius: 4, color: Colors.black54)],
+      ),
+    );
+  }
+
   Widget _buildPhotoTile(
     BuildContext context,
     List<PhotoItem> photos,
@@ -635,6 +695,7 @@ class _PhotosPageState extends State<PhotosPage>
             _enterSelectionMode();
             _toggleSelection(p);
           },
+          onDoubleTap: () => _toggleFavorite(p),
           onTap: () async {
             final navigator = Navigator.of(context);
             final bytes = await CirrusService.downloadFileBytes(
@@ -681,7 +742,10 @@ class _PhotosPageState extends State<PhotosPage>
               _albumSidebarKey.currentState?.reload();
             }
           },
-          child: thumbnail,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [thumbnail, _buildStarOverlay(context, p)],
+          ),
         ),
       );
     }
@@ -975,6 +1039,12 @@ class _PhotosPageState extends State<PhotosPage>
             },
             onTapPhotos: () {
               Navigator.of(context).pop();
+            },
+            onTapDocs: () {
+              context.go(AppRoutes.docs);
+            },
+            onTapSheets: () {
+              context.go(AppRoutes.sheets);
             },
             onTapDevices: () {
               context.go(AppRoutes.devices);
