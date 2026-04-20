@@ -12,6 +12,7 @@ import (
 	v1_files "github.com/autobutler-org/autobutler/internal/server/api/v1/cirrus"
 	v1_devices "github.com/autobutler-org/autobutler/internal/server/api/v1/devices"
 	v1_events "github.com/autobutler-org/autobutler/internal/server/api/v1/events"
+	v1_favorites "github.com/autobutler-org/autobutler/internal/server/api/v1/favorites"
 	v1_health "github.com/autobutler-org/autobutler/internal/server/api/v1/health"
 	v1_metrics "github.com/autobutler-org/autobutler/internal/server/api/v1/metrics"
 	v1_migration "github.com/autobutler-org/autobutler/internal/server/api/v1/migration"
@@ -51,6 +52,7 @@ func setupRouters(engine *gin.Engine, systemCollector *system.Collector) {
 		v1_metrics.NewRouter(),
 		v1_migration.NewRouter(),
 		v1_albums.NewRouter(),
+		v1_favorites.NewRouter(),
 		v1_photos.NewRouter(),
 		v1_settings.NewRouter(),
 		v1_storage.NewRouter(),

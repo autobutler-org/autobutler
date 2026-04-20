@@ -161,6 +161,38 @@ class CirrusService with AuthenticatedService {
         .toList(growable: false);
   }
 
+  /// Returns all files of [fileType] across all devices, newest-modified first.
+  /// [fileType] should be one of the server-defined type strings: 'abdoc', 'absheet', etc.
+  static Future<List<CirrusFileNode>> getFilesByType(
+    String fileType, {
+    List<String>? serials,
+  }) async {
+    final querySegments = <String>[
+      'fileType=${Uri.encodeQueryComponent(fileType)}',
+    ];
+    for (final serial in serials ?? const <String>[]) {
+      if (serial.isNotEmpty) {
+        querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
+      }
+    }
+    final uri = _apiBaseUri
+        .resolve('/api/v1/cirrus/by-type')
+        .replace(query: querySegments.join('&'));
+
+    final response = await http.get(uri, headers: _authHeaders);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to load files by type (${response.statusCode})');
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! List) {
+      throw Exception('Unexpected response format for files by type');
+    }
+    return decoded
+        .whereType<Map<String, dynamic>>()
+        .map(CirrusFileNode.fromJson)
+        .toList(growable: false);
+  }
+
   /// Returns recently modified files across all devices, newest first.
   static Future<List<CirrusFileNode>> getRecentFiles({
     int limit = 20,

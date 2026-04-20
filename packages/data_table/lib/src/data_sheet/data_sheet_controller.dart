@@ -498,8 +498,10 @@ class DataSheetController extends ChangeNotifier {
   // -------------------------------------------------------------------------
 
   /// Return all `(row, col)` pairs whose cell value contains [query].
-  List<({int row, int col})> findCells(String query,
-      {bool caseSensitive = false}) {
+  List<({int row, int col})> findCells(
+    String query, {
+    bool caseSensitive = false,
+  }) {
     final results = <({int row, int col})>[];
     final q = caseSensitive ? query : query.toLowerCase();
     for (var r = 0; r < _rows.length; r++) {
@@ -527,7 +529,9 @@ class DataSheetController extends ChangeNotifier {
         final newV = caseSensitive
             ? v.replaceAll(from, to)
             : v.replaceAllMapped(
-                RegExp(RegExp.escape(from), caseSensitive: false), (_) => to);
+                RegExp(RegExp.escape(from), caseSensitive: false),
+                (_) => to,
+              );
         if (newV != v) {
           updated[c] = DataCell(newV);
           table.rows[r].cells[c] = DataCell(newV);

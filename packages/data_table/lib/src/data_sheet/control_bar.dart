@@ -109,10 +109,16 @@ class DataSheetControlBar extends StatelessWidget {
                 const _Divider(),
                 // ── Edit ───────────────────────────────────────────────────
                 _group([
-                  _btn(Icons.undo, 'Undo',
-                      controller.canUndo ? controller.undo : null),
-                  _btn(Icons.redo, 'Redo',
-                      controller.canRedo ? controller.redo : null),
+                  _btn(
+                    Icons.undo,
+                    'Undo',
+                    controller.canUndo ? controller.undo : null,
+                  ),
+                  _btn(
+                    Icons.redo,
+                    'Redo',
+                    controller.canRedo ? controller.redo : null,
+                  ),
                   _btn(
                     Icons.clear_all,
                     'Clear row',
@@ -129,16 +135,20 @@ class DataSheetControlBar extends StatelessWidget {
                     Icons.arrow_downward,
                     'Fill down',
                     hasCell
-                        ? () =>
-                            controller.fillDown(sel.contextRow, sel.contextCol)
+                        ? () => controller.fillDown(
+                              sel.contextRow,
+                              sel.contextCol,
+                            )
                         : null,
                   ),
                   _btn(
                     Icons.arrow_forward,
                     'Fill right',
                     hasCell
-                        ? () =>
-                            controller.fillRight(sel.contextRow, sel.contextCol)
+                        ? () => controller.fillRight(
+                              sel.contextRow,
+                              sel.contextCol,
+                            )
                         : null,
                   ),
                 ]),
@@ -149,8 +159,11 @@ class DataSheetControlBar extends StatelessWidget {
                     Icons.sort,
                     'Sort…',
                     hasData
-                        ? () => _showSortDialog(context, controller,
-                            sel.contextCol >= 0 ? sel.contextCol : 0)
+                        ? () => _showSortDialog(
+                              context,
+                              controller,
+                              sel.contextCol >= 0 ? sel.contextCol : 0,
+                            )
                         : null,
                   ),
                   _btn(
@@ -232,8 +245,11 @@ class _Divider extends StatelessWidget {
 // Dialog helpers
 // ---------------------------------------------------------------------------
 
-Future<void> _showSortDialog(BuildContext context,
-    DataSheetController controller, int defaultCol) async {
+Future<void> _showSortDialog(
+  BuildContext context,
+  DataSheetController controller,
+  int defaultCol,
+) async {
   if (controller.colCount == 0) return;
   var col = defaultCol.clamp(0, controller.colCount - 1);
   var ascending = true;
@@ -270,8 +286,9 @@ Future<void> _showSortDialog(BuildContext context,
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () {
               controller.sortByColumn(col, ascending: ascending);
@@ -286,7 +303,9 @@ Future<void> _showSortDialog(BuildContext context,
 }
 
 Future<void> _showFindReplaceDialog(
-    BuildContext context, DataSheetController controller) async {
+  BuildContext context,
+  DataSheetController controller,
+) async {
   final findCtrl = TextEditingController();
   final replaceCtrl = TextEditingController();
   var caseSensitive = false;
@@ -326,8 +345,9 @@ Future<void> _showFindReplaceDialog(
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close')),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
           FilledButton(
             onPressed: () {
               final count = controller.replaceCells(
@@ -349,7 +369,9 @@ Future<void> _showFindReplaceDialog(
 }
 
 Future<void> _showGoToCellDialog(
-    BuildContext context, DataSheetController controller) async {
+  BuildContext context,
+  DataSheetController controller,
+) async {
   final rowCtrl = TextEditingController();
   final colCtrl = TextEditingController();
   String? error;
@@ -367,8 +389,9 @@ Future<void> _showGoToCellDialog(
                 Expanded(
                   child: TextField(
                     controller: rowCtrl,
-                    decoration:
-                        const InputDecoration(labelText: 'Row (1-based)'),
+                    decoration: const InputDecoration(
+                      labelText: 'Row (1-based)',
+                    ),
                     keyboardType: TextInputType.number,
                     autofocus: true,
                   ),
@@ -377,8 +400,9 @@ Future<void> _showGoToCellDialog(
                 Expanded(
                   child: TextField(
                     controller: colCtrl,
-                    decoration:
-                        const InputDecoration(labelText: 'Column (1-based)'),
+                    decoration: const InputDecoration(
+                      labelText: 'Column (1-based)',
+                    ),
                     keyboardType: TextInputType.number,
                   ),
                 ),
@@ -393,8 +417,9 @@ Future<void> _showGoToCellDialog(
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () {
               final row = (int.tryParse(rowCtrl.text) ?? 0) - 1;
@@ -403,8 +428,10 @@ Future<void> _showGoToCellDialog(
                   row >= controller.rowCount ||
                   col < 0 ||
                   col >= controller.colCount) {
-                setState(() => error =
-                    'Row must be 1–${controller.rowCount}, column 1–${controller.colCount}.');
+                setState(
+                  () => error =
+                      'Row must be 1–${controller.rowCount}, column 1–${controller.colCount}.',
+                );
                 return;
               }
               controller.selection.goTo(row, col);
@@ -422,7 +449,9 @@ Future<void> _showGoToCellDialog(
 }
 
 void _showExportCsvDialog(
-    BuildContext context, DataSheetController controller) {
+  BuildContext context,
+  DataSheetController controller,
+) {
   final csv = controller.exportCsv();
   showDialog<void>(
     context: context,
@@ -434,15 +463,18 @@ void _showExportCsvDialog(
       ),
       actions: [
         TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close')),
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
       ],
     ),
   );
 }
 
 Future<void> _showImportCsvDialog(
-    BuildContext context, DataSheetController controller) async {
+  BuildContext context,
+  DataSheetController controller,
+) async {
   final pasteCtrl = TextEditingController();
 
   await showDialog<void>(
@@ -463,8 +495,9 @@ Future<void> _showImportCsvDialog(
       ),
       actions: [
         TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel')),
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         FilledButton(
           onPressed: () {
             if (pasteCtrl.text.isNotEmpty) {
