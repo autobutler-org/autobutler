@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:autobutler/controllers/file_browser_cache.dart';
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
@@ -66,6 +67,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// If the deep-link URL pointed directly to a file, open its editor once
   /// the page has mounted. Only consumed once.
   String? _pendingFileOpen;
+
+  /// True while [_openPendingFile] is running. Prevents [_setPath] from
+  /// calling context.go() during initial deep-link processing, which would
+  /// cause a navigation loop.
+  bool _handlingPendingFile = false;
+
   bool _isGridView = false;
 
   /// When true, files from all devices are shown merged (unified).
@@ -104,16 +111,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     final initial = widget.initialPath;
     if (initial != null && initial.isNotEmpty) {
       final normalizedInitial = normalizePath(initial);
-      // Always treat the deep-link as a potential file: stat the backend to
-      // find out whether it is a file or a directory after mount. This avoids
-      // the false-positive of opening e.g. a folder named "things.abdoc" as a
-      // document editor. Pre-navigate to the parent folder so the background
-      // content is correct while the stat resolves.
-      final parentFolder = normalizedInitial.contains('/')
-          ? normalizedInitial.substring(0, normalizedInitial.lastIndexOf('/'))
-          : '';
-      _currentPath = parentFolder;
+      // Optimistically treat the deep-link path as a directory so that
+      // _reloadFiles() fetches the right folder contents immediately (no root
+      // flash). _openPendingFile will stat the backend and correct course if
+      // the path turns out to be a file.
+      _currentPath = normalizedInitial;
       _pendingFileOpen = normalizedInitial;
+      // Show cached listing instantly while the fresh fetch is in flight.
+      _cachedFiles = FileBrowserCache.instance.get(normalizedInitial);
     }
     super
         .initState(); // AutoRefreshMixin.initState handles timer + initial load
@@ -229,6 +234,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     _filesFuture = fetchFuture.then((files) {
       if (mounted && _generation == generation) {
         setState(() => _cachedFiles = files);
+        // Cache the listing so rebuilt pages (from context.go navigation) can
+        // display it instantly while a fresh fetch is in flight.
+        if (archive == null) {
+          FileBrowserCache.instance.put(_currentPath, files);
+        }
       }
       return files;
     });
@@ -243,9 +253,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   void _optimisticRemove(CirrusFileNode node) {
     final current = _cachedFiles;
     if (current == null) return;
+    final updated = current.where((n) => n.apiPath != node.apiPath).toList();
     setState(() {
-      _cachedFiles = current.where((n) => n.apiPath != node.apiPath).toList();
+      _cachedFiles = updated;
     });
+    FileBrowserCache.instance.put(_currentPath, updated);
   }
 
   /// Immediately add a placeholder folder to the displayed list.
@@ -1070,12 +1082,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       _reloadFiles();
     });
 
-    // Reflect the new path in the browser URL bar (web only) without
-    // triggering a go_router navigation — context.go() would re-create
-    // the widget and cause navigation loops with trailing slashes.
-    if (kIsWeb) {
-      final uri = Uri.parse(AppRoutes.cirrusPath(normalized));
-      SystemNavigator.routeInformationUpdated(uri: uri, replace: false);
+    // Update the URL via go_router so browser back/forward work and the
+    // address bar always reflects the current folder. Skip during deep-link
+    // processing (_handlingPendingFile) to avoid a navigation loop where
+    // _openPendingFile calls _setPath which would recreate this widget mid-open.
+    if (!_handlingPendingFile) {
+      context.go(AppRoutes.cirrusPath(normalized));
     }
   }
 
@@ -1085,28 +1097,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  /// Update the browser URL bar to reflect an open file editor, then restore
-  /// it to the current folder path when the editor closes.
+  /// Push a file editor/viewer and await its dismissal.
   Future<void> _openEditorWithUrl({
     required String filePath,
     required Widget Function() builder,
   }) async {
-    if (kIsWeb) {
-      SystemNavigator.routeInformationUpdated(
-        uri: Uri.parse(AppRoutes.cirrusPath(filePath)),
-        replace: false,
-      );
-    }
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => builder()));
-    // Restore the folder URL after the editor is dismissed.
-    if (kIsWeb && mounted) {
-      SystemNavigator.routeInformationUpdated(
-        uri: Uri.parse(AppRoutes.cirrusPath(_currentPath)),
-        replace: false,
-      );
-    }
   }
 
   /// Opens a deep-linked path in the appropriate viewer after mount.
@@ -1114,6 +1112,16 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// type) so that e.g. a folder named "things.abdoc" is opened as a folder
   /// rather than being launched in the document editor.
   Future<void> _openPendingFile(String filePath) async {
+    if (!mounted) return;
+    _handlingPendingFile = true;
+    try {
+      await _openPendingFileInner(filePath);
+    } finally {
+      _handlingPendingFile = false;
+    }
+  }
+
+  Future<void> _openPendingFileInner(String filePath) async {
     if (!mounted) return;
 
     // Stat the backend to resolve the real type. Fall back to navigating as a
@@ -1172,11 +1180,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         }
 
       case 'video':
-        // Use plain Navigator.push rather than _openEditorWithUrl here.
-        // _openEditorWithUrl calls SystemNavigator.routeInformationUpdated
-        // *before* the push; on a direct deep-link the URL is already
-        // /cirrus/<file>, so that redundant update can cause go_router to
-        // rebuild the FileBrowserPage and invalidate the push context.
         await Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => VideoViewerPage(
@@ -1185,13 +1188,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             ),
           ),
         );
-        // Restore the parent folder URL now that the viewer is dismissed.
-        if (kIsWeb && mounted) {
-          SystemNavigator.routeInformationUpdated(
-            uri: Uri.parse(AppRoutes.cirrusPath(_currentPath)),
-            replace: false,
-          );
-        }
 
       default:
         // Unhandled type — nothing to open.
