@@ -1103,6 +1103,17 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   /// Push a file editor/viewer, update the URL to reflect the open file,
   /// and await dismissal.
+  ///
+  /// URL updates are done via [SystemNavigator.routeInformationUpdated] rather
+  /// than `context.go` so that the full [FileBrowserPage] widget tree is NOT
+  /// recreated on every open — preserving scroll position, device filters, and
+  /// cached listings. The trade-off is that go_router's history stack stays out
+  /// of sync with the real browser history.
+  ///
+  /// TODO(#1048): Replace with a [StatefulShellRoute] so that go_router owns
+  /// the URL and the shell state is preserved across navigations. This would
+  /// eliminate the need for [FileBrowserCache] and the mounted-guard gymnastics
+  /// in [_openPendingFileInner].
   Future<void> _openEditorWithUrl({
     required String filePath,
     required Widget Function() builder,
@@ -1117,7 +1128,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       MaterialPageRoute(builder: (_) => builder()),
     );
 
-    // Update the URL one frame later — editor is fully committed by then.
+    // Defer the URL update by one frame. By the time this callback fires the
+    // MaterialPageRoute animation has committed, so go_router's rebuild of the
+    // background FileBrowserPage is harmless — it hits the isFileOpen() guard
+    // in _openPendingFileInner and bails out immediately.
+    // NOTE: If the widget is disposed before this frame fires the URL update is
+    // silently skipped; that is intentional — there is no page left to reflect.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (kIsWeb && mounted) {
         SystemNavigator.routeInformationUpdated(
@@ -1196,12 +1212,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           filePath: filePath,
           builder: () => DocumentEditorPage(filePath: filePath),
         );
+        if (!mounted) return;
 
       case 'absheet':
         await _openEditorWithUrl(
           filePath: filePath,
           builder: () => SpreadsheetEditorPage(filePath: filePath),
         );
+        if (!mounted) return;
 
       case 'image':
         try {
@@ -1216,6 +1234,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                   ImageViewerPage(bytes: bytes, name: name, relPath: filePath),
             ),
           );
+          if (!mounted) return;
         } catch (_) {
           if (mounted) _showMessage('Unable to open image');
         }
@@ -1229,6 +1248,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             ),
           ),
         );
+        if (!mounted) return;
 
       default:
         // Unhandled type — nothing to open.
