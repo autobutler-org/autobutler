@@ -174,91 +174,87 @@ class _FileTopBarState extends State<FileTopBar> {
     );
   }
 
-  /// Inline search field (animated). When collapsed shows just the search icon
-  /// pinned to the right edge; when expanded the field fills available width.
+  /// Inline search field. When collapsed shows just the search icon pinned to
+  /// the right; when expanded the field fills all available width.
+  ///
+  /// This widget lives inside an [Expanded] in [_buildTopRow], so it always
+  /// has bounded horizontal constraints — no double.infinity needed.
   Widget _buildSearchArea(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return KeyboardListener(
-      focusNode: FocusNode(),
-      onKeyEvent: (event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.escape &&
-            _searchExpanded) {
-          _closeSearch();
-        }
-      },
-      child: Row(
-        children: [
-          // When collapsed, push the search icon to the right.
-          if (!_searchExpanded) const Spacer(),
+    if (_searchExpanded) {
+      // Fill all available space with the text field.
+      return _buildSearchField(colorScheme);
+    }
 
-          // The animated text field / search icon.
-          AnimatedSize(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
-            alignment: Alignment.centerRight,
-            child: _searchExpanded
-                ? _buildSearchField(colorScheme)
-                : const SizedBox.shrink(),
-          ),
-
-          if (!_searchExpanded) ...[
-            const SizedBox(width: 4),
-            _iconBtn(
-              context: context,
-              icon: Icons.search_rounded,
-              onTap: _openSearch,
-              tooltip: 'Search',
-            ),
-          ],
-        ],
-      ),
+    // Collapsed: push the search icon to the trailing edge.
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        _iconBtn(
+          context: context,
+          icon: Icons.search_rounded,
+          onTap: _openSearch,
+          tooltip: 'Search',
+        ),
+      ],
     );
   }
 
   Widget _buildSearchField(ColorScheme colorScheme) {
+    // Height is explicit so the field fits the 56-px navbar without clipping.
     return SizedBox(
-      width: double.infinity,
       height: 36,
-      child: TextField(
-        controller: _searchController,
-        focusNode: _searchFocusNode,
-        autofocus: false,
-        decoration: InputDecoration(
-          hintText: 'Search files…',
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(vertical: 8),
-          prefixIcon: Icon(
-            Icons.search_rounded,
-            size: 18,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          suffixIcon: IconButton(
-            icon: Icon(
-              Icons.close_rounded,
-              size: 16,
+      child: Focus(
+        // Handle ESC to close without needing a separate KeyboardListener
+        // (which requires a managed FocusNode that would outlive rebuilds).
+        onKeyEvent: (_, event) {
+          if (event is KeyDownEvent &&
+              event.logicalKey == LogicalKeyboardKey.escape) {
+            _closeSearch();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: TextField(
+          controller: _searchController,
+          focusNode: _searchFocusNode,
+          autofocus: false,
+          decoration: InputDecoration(
+            hintText: 'Search files…',
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(vertical: 8),
+            prefixIcon: Icon(
+              Icons.search_rounded,
+              size: 18,
               color: colorScheme.onSurfaceVariant,
             ),
-            tooltip: 'Close search',
-            onPressed: _closeSearch,
+            suffixIcon: IconButton(
+              icon: Icon(
+                Icons.close_rounded,
+                size: 16,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              tooltip: 'Close search',
+              onPressed: _closeSearch,
+            ),
+            filled: true,
+            fillColor: colorScheme.surfaceContainerHighest,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+              borderSide: BorderSide(color: colorScheme.outline),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+              borderSide: BorderSide(color: colorScheme.outline),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+              borderSide: BorderSide(color: colorScheme.primary),
+            ),
           ),
-          filled: true,
-          fillColor: colorScheme.surfaceContainerHighest,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
-            borderSide: BorderSide(color: colorScheme.outline),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
-            borderSide: BorderSide(color: colorScheme.outline),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
-            borderSide: BorderSide(color: colorScheme.primary),
-          ),
+          onChanged: _onSearchChanged,
         ),
-        onChanged: _onSearchChanged,
       ),
     );
   }
