@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart' show ChangeNotifier, ValueNotifier;
 import 'package:flutter/painting.dart' show TextPainter, TextSpan, TextStyle;
+import 'package:flutter/widgets.dart' show TextEditingController;
 
 import '../../data_table.dart';
 import 'cell/heading/heading_cells.dart'
@@ -64,6 +65,12 @@ class DataSheetController extends ChangeNotifier {
 
   /// Selection state shared between the sheet view and the control bar.
   final DataSheetSelectionModel selection = DataSheetSelectionModel();
+
+  /// Shared [TextEditingController] for the currently active (in-edit) cell.
+  /// Both the [DataSheet] cell editor and [DataSheetFormulaBar] use this
+  /// single controller so they remain in sync without extra bridging logic.
+  final TextEditingController activeCellEditingController =
+      TextEditingController();
 
   final List<_TableSnapshot> _undoStack = [];
   final List<_TableSnapshot> _redoStack = [];
@@ -704,6 +711,7 @@ class DataSheetController extends ChangeNotifier {
   void dispose() {
     selection.removeListener(_onSelectionChanged);
     selection.dispose();
+    activeCellEditingController.dispose();
     for (final r in _rows) {
       r.dispose();
     }
