@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:autobutler/services/storage_service.dart';
@@ -5,6 +6,7 @@ import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:autobutler/widgets/autobutler_brand_button.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class FileTopBar extends StatefulWidget {
   const FileTopBar({
@@ -22,7 +24,8 @@ class FileTopBar extends StatefulWidget {
     required this.onGoUp,
     this.onPathSelected,
     required this.onToggleView,
-    required this.onSearchPressed,
+    required this.onSearchChanged,
+    required this.onSearchClosed,
     required this.onRefresh,
     required this.onUploadPressed,
     required this.onCreateFolderPressed,
@@ -49,7 +52,8 @@ class FileTopBar extends StatefulWidget {
   final VoidCallback onGoUp;
   final ValueChanged<String>? onPathSelected;
   final VoidCallback onToggleView;
-  final VoidCallback onSearchPressed;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onSearchClosed;
   final VoidCallback onRefresh;
   final VoidCallback onUploadPressed;
   final VoidCallback onCreateFolderPressed;
@@ -67,6 +71,60 @@ class FileTopBar extends StatefulWidget {
 class _FileTopBarState extends State<FileTopBar> {
   final _viewsMenuController = MenuController();
   final _hiddenCrumbsController = MenuController();
+
+  // ── Inline search ─────────────────────────────────────────────────────────
+  bool _searchExpanded = false;
+  final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
+  Timer? _searchDebounce;
+
+  @override
+  void didUpdateWidget(FileTopBar old) {
+    super.didUpdateWidget(old);
+    // If the parent closed search externally (e.g. navigating to a folder),
+    // collapse the inline field and clear it.
+    if (!widget.isSearchMode && old.isSearchMode && _searchExpanded) {
+      setState(() => _searchExpanded = false);
+      _searchController.clear();
+      _searchDebounce?.cancel();
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    _searchDebounce?.cancel();
+    super.dispose();
+  }
+
+  void _openSearch() {
+    setState(() => _searchExpanded = true);
+    // Focus after the frame so AnimatedSize has time to expand first.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _searchFocusNode.requestFocus(),
+    );
+  }
+
+  void _closeSearch() {
+    setState(() => _searchExpanded = false);
+    _searchController.clear();
+    _searchDebounce?.cancel();
+    widget.onSearchClosed();
+  }
+
+  void _onSearchChanged(String query) {
+    _searchDebounce?.cancel();
+    if (query.trim().isEmpty) {
+      // Empty query — close search immediately.
+      widget.onSearchClosed();
+      return;
+    }
+    // Debounce 350 ms so we don't fire on every keystroke.
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      widget.onSearchChanged(query.trim());
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,10 +157,108 @@ class _FileTopBarState extends State<FileTopBar> {
             _buildBrand(context),
             const SizedBox(width: 16),
             _buildNavButtons(context),
-            const Spacer(),
-            _buildActionButtons(context),
+            const SizedBox(width: 8),
+            // Middle area: expands to hold the search field when active,
+            // otherwise invisible (Spacer equivalent).
+            Expanded(child: _buildSearchArea(context)),
+            const SizedBox(width: 4),
+            _iconBtn(
+              context: context,
+              icon: Icons.settings_outlined,
+              onTap: widget.onOpenSettings,
+              tooltip: 'Settings',
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Inline search field (animated). When collapsed shows just the search icon
+  /// pinned to the right edge; when expanded the field fills available width.
+  Widget _buildSearchArea(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return KeyboardListener(
+      focusNode: FocusNode(),
+      onKeyEvent: (event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape &&
+            _searchExpanded) {
+          _closeSearch();
+        }
+      },
+      child: Row(
+        children: [
+          // When collapsed, push the search icon to the right.
+          if (!_searchExpanded) const Spacer(),
+
+          // The animated text field / search icon.
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            alignment: Alignment.centerRight,
+            child: _searchExpanded
+                ? _buildSearchField(colorScheme)
+                : const SizedBox.shrink(),
+          ),
+
+          if (!_searchExpanded) ...[
+            const SizedBox(width: 4),
+            _iconBtn(
+              context: context,
+              icon: Icons.search_rounded,
+              onTap: _openSearch,
+              tooltip: 'Search',
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchField(ColorScheme colorScheme) {
+    return SizedBox(
+      width: double.infinity,
+      height: 36,
+      child: TextField(
+        controller: _searchController,
+        focusNode: _searchFocusNode,
+        autofocus: false,
+        decoration: InputDecoration(
+          hintText: 'Search files…',
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            size: 18,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          suffixIcon: IconButton(
+            icon: Icon(
+              Icons.close_rounded,
+              size: 16,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            tooltip: 'Close search',
+            onPressed: _closeSearch,
+          ),
+          filled: true,
+          fillColor: colorScheme.surfaceContainerHighest,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+            borderSide: BorderSide(color: colorScheme.outline),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+            borderSide: BorderSide(color: colorScheme.outline),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+            borderSide: BorderSide(color: colorScheme.primary),
+          ),
+        ),
+        onChanged: _onSearchChanged,
       ),
     );
   }
@@ -133,27 +289,6 @@ class _FileTopBarState extends State<FileTopBar> {
           isRefreshing: widget.isRefreshing,
           onPressed: widget.onRefresh,
           tooltip: 'Refresh',
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButtons(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _iconBtn(
-          context: context,
-          icon: Icons.search_rounded,
-          onTap: widget.onSearchPressed,
-          tooltip: 'Search',
-        ),
-        const SizedBox(width: 4),
-        _iconBtn(
-          context: context,
-          icon: Icons.settings_outlined,
-          onTap: widget.onOpenSettings,
-          tooltip: 'Settings',
         ),
       ],
     );

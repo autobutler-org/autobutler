@@ -1015,16 +1015,19 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     });
   }
 
-  Future<void> _handleSearchPressed() async {
-    final query = await promptForSearchQuery(context);
-    if (query == null) {
-      return;
-    }
-
+  void _handleSearchChanged(String query) {
     setState(() {
       _isSearchMode = true;
       _searchFuture = CirrusService.searchFiles(query);
       _searchQuery = query;
+    });
+  }
+
+  void _handleSearchClosed() {
+    setState(() {
+      _isSearchMode = false;
+      _searchFuture = null;
+      _searchQuery = null;
     });
   }
 
@@ -1406,7 +1409,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                 onToggleView: () => setState(() => _isGridView = !_isGridView),
                 onToggleUnifiedView: () =>
                     setState(() => _isUnifiedView = !_isUnifiedView),
-                onSearchPressed: _handleSearchPressed,
+                onSearchChanged: _handleSearchChanged,
+                onSearchClosed: _handleSearchClosed,
                 onRefresh: _refreshFileState,
                 onUploadPressed: _handleUploadPressed,
                 onCreateFolderPressed: _handleCreateFolderPressed,
