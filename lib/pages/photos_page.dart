@@ -612,7 +612,7 @@ class _PhotosPageState extends State<PhotosPage>
       child: Icon(
         Icons.star_rounded,
         size: 16,
-        color: Colors.amber,
+        color: Colors.white,
         shadows: const [Shadow(blurRadius: 4, color: Colors.black54)],
       ),
     );
