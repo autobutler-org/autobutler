@@ -2923,6 +2923,9 @@ const docTemplate = `{
                 "height": {
                     "type": "integer"
                 },
+                "isFavorite": {
+                    "type": "boolean"
+                },
                 "mtime": {
                     "type": "integer"
                 },
