@@ -254,8 +254,10 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         serial: serial?.isNotEmpty == true ? serial : null,
       );
       if (!mounted) return;
-      // Reconcile with server truth in case of any race.
+      // Reconcile with server truth in case of any race, and flag the list
+      // as changed so the caller refreshes (e.g. removes from Favorites tab).
       setState(() => _isFavorite = nowFav);
+      _listChanged = true;
     } catch (e) {
       if (!mounted) return;
       // Roll back and surface the error.
