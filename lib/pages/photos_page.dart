@@ -77,7 +77,7 @@ class _PhotosPageState extends State<PhotosPage>
   PhotoCategory _selectedCategory = PhotoCategory.cirrus;
 
   // Favorites: set of selectionKeys for photos that are favorited.
-  // Loaded lazily as photos scroll into view.
+  // Fetched eagerly from the server on every refresh via FavoritesService.listFavoriteKeys().
   final Set<String> _favoriteKeys = {};
 
   // Above-viewport nav: the hidden nav panel is measured once on first layout,

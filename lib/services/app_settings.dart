@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:autobutler/controllers/file_browser_cache.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 // flutter_secure_storage requires a secure context (HTTPS) on web.
@@ -148,6 +149,8 @@ class AppSettings {
   Future<void> setActiveIndex(int idx) async {
     if (idx >= 0 && idx < _hosts.length) {
       _activeIndex = idx;
+      // Clear cached file listings — they belong to the previous host.
+      FileBrowserCache.instance.clear();
       await _prefs?.setInt('activeHostIndex', _activeIndex);
     }
   }

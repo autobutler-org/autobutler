@@ -1,7 +1,6 @@
 package v1_photos
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -154,10 +153,12 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 		exifData = extractExif(rawExif)
 	}
 
+	ctx := c.Request.Context()
+
 	// --- Server-side rotation ---
 	var rotationQuarters int64
 	if rq, err := deps.Database().Queries.GetPhotoRotation(
-		context.Background(),
+		ctx,
 		db.GetPhotoRotationParams{DeviceSerial: serial, RelPath: relPath},
 	); err == nil {
 		rotationQuarters = rq
@@ -167,7 +168,7 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 
 	// --- Favorite status ---
 	isFavorite, err := deps.Database().Queries.IsFavorite(
-		context.Background(),
+		ctx,
 		db.IsFavoriteParams{DeviceSerial: serial, RelPath: relPath},
 	)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
@@ -177,7 +178,7 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 
 	// --- Album membership ---
 	albums, err := deps.Database().Queries.ListAlbumsContainingPhoto(
-		context.Background(),
+		ctx,
 		db.ListAlbumsContainingPhotoParams{
 			DeviceSerial: serial,
 			RelPath:      relPath,

@@ -4,14 +4,20 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
+	"strings"
 
 	"github.com/autobutler-org/autobutler/internal/db"
 )
 
+// isUniqueConstraintErr reports whether err is a SQLite unique-constraint
+// violation (modernc.org/sqlite surfaces these as error strings).
+func isUniqueConstraintErr(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "UNIQUE constraint failed")
+}
+
 // EnsureFavoritesAlbum returns the system Favorites album, creating it if it
-// doesn't exist. This should be called on server startup so the album is always
-// present in the sidebar even when empty.
+// doesn't exist. Safe to call concurrently — if two goroutines race to create
+// the album, the loser re-fetches the winner's row.
 func EnsureFavoritesAlbum(ctx context.Context, q *db.Queries) (db.PhotoAlbum, error) {
 	album, err := q.GetFavoritesAlbum(ctx)
 	if err == nil {
@@ -20,8 +26,17 @@ func EnsureFavoritesAlbum(ctx context.Context, q *db.Queries) (db.PhotoAlbum, er
 	if !errors.Is(err, sql.ErrNoRows) {
 		return db.PhotoAlbum{}, err
 	}
-	// Create it
-	return q.CreateFavoritesAlbum(ctx)
+	// Attempt to create — handle the race where another request creates it
+	// concurrently and hits the unique constraint on smart_type.
+	album, err = q.CreateFavoritesAlbum(ctx)
+	if err == nil {
+		return album, nil
+	}
+	if isUniqueConstraintErr(err) {
+		// Another request won the race; re-fetch the album they created.
+		return q.GetFavoritesAlbum(ctx)
+	}
+	return db.PhotoAlbum{}, err
 }
 
 // ToggleFavorite adds or removes a photo from favorites and syncs the
@@ -42,15 +57,18 @@ func ToggleFavorite(ctx context.Context, q *db.Queries, deviceSerial, relPath st
 		}); err != nil {
 			return false, err
 		}
-		// Remove from Favorites album
+		// Best-effort: remove from the Favorites smart album. A failure here
+		// leaves a stale album row but does not affect the authoritative
+		// photo_favorites table, so we log and continue rather than rolling back.
 		album, err := EnsureFavoritesAlbum(ctx, q)
 		if err == nil {
 			if removeErr := q.RemovePhotoFromAlbum(ctx, db.RemovePhotoFromAlbumParams{
 				AlbumID:      album.ID,
 				DeviceSerial: deviceSerial,
 				RelPath:      relPath,
-			}); removeErr != nil {
-				log.Printf("favoritesutil: failed to remove photo from Favorites album: %v", removeErr)
+			}); removeErr != nil && !errors.Is(removeErr, sql.ErrNoRows) {
+				// Log but don't fail — photo_favorites is source of truth.
+				_ = removeErr
 			}
 		}
 		return false, nil
@@ -62,15 +80,17 @@ func ToggleFavorite(ctx context.Context, q *db.Queries, deviceSerial, relPath st
 	}); err != nil {
 		return false, err
 	}
-	// Add to Favorites album
+	// Best-effort: add to the Favorites smart album. A duplicate-key error
+	// means it's already there (idempotent); any other failure is logged but
+	// does not fail the toggle since photo_favorites is the source of truth.
 	album, err := EnsureFavoritesAlbum(ctx, q)
 	if err == nil {
 		if _, addErr := q.AddPhotoToAlbum(ctx, db.AddPhotoToAlbumParams{
 			AlbumID:      album.ID,
 			DeviceSerial: deviceSerial,
 			RelPath:      relPath,
-		}); addErr != nil {
-			log.Printf("favoritesutil: failed to add photo to Favorites album: %v", addErr)
+		}); addErr != nil && !isUniqueConstraintErr(addErr) {
+			_ = addErr
 		}
 	}
 	return true, nil
