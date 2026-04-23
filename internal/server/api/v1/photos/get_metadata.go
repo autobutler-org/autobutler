@@ -52,6 +52,7 @@ type PhotoMetadataJSON struct {
 	Width            int            `json:"width"`
 	Height           int            `json:"height"`
 	RotationQuarters int64          `json:"rotationQuarters"`
+	IsFavorite       bool           `json:"isFavorite"`
 	Exif             *ExifJSON      `json:"exif,omitempty"`
 	Albums           []AlbumRefJSON `json:"albums"`
 }
@@ -164,6 +165,16 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(fmt.Errorf("get photo rotation: %w", err))
 	}
 
+	// --- Favorite status ---
+	isFavorite, err := deps.Database().Queries.IsFavorite(
+		context.Background(),
+		db.IsFavoriteParams{DeviceSerial: serial, RelPath: relPath},
+	)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		_ = c.Error(fmt.Errorf("check favorite for %q: %w", relPath, err))
+		// non-fatal: isFavorite stays false
+	}
+
 	// --- Album membership ---
 	albums, err := deps.Database().Queries.ListAlbumsContainingPhoto(
 		context.Background(),
@@ -188,6 +199,7 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 		Width:            width,
 		Height:           height,
 		RotationQuarters: rotationQuarters,
+		IsFavorite:       isFavorite,
 		Exif:             exifData,
 		Albums:           albumRefs,
 	})

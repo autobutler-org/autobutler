@@ -4,6 +4,7 @@ import 'package:autobutler/models/photo_album.dart';
 import 'package:autobutler/models/photo_metadata.dart';
 import 'package:autobutler/services/album_service.dart';
 import 'package:autobutler/services/cirrus_service.dart';
+import 'package:autobutler/services/favorites_service.dart';
 import 'package:autobutler/widgets/photos/photo_selection_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,7 +12,6 @@ import 'package:autobutler/pages/album_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _kSidebarOpenKey = 'photo_viewer_sidebar_open';
-const _kFavoritesKey = 'photo_viewer_favorites';
 const _kSidebarWidth = 288.0;
 
 /// A full-screen photo viewer with metadata sidebar (desktop) / bottom drawer
@@ -131,33 +131,12 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     if (!mounted) return;
     _prefs = prefs;
     final sidebarOpen = prefs.getBool(_kSidebarOpenKey) ?? true;
-    final favs = prefs.getStringList(_kFavoritesKey) ?? [];
 
-    // Rotation comes from the server metadata response for Cirrus photos;
-    // leave it at 0 here and let _loadMetadataForCurrent apply it.
-    setState(() {
-      _sidebarOpen = sidebarOpen;
-      _isFavorite = favs.contains(
-        _favKey(_currentRelPath, _currentSerial, fallback: _currentName),
-      );
-    });
+    // Rotation and favorite state come from the server metadata response for
+    // Cirrus photos; leave them at defaults here and let
+    // _loadMetadataForCurrent apply the server values.
+    setState(() => _sidebarOpen = sidebarOpen);
     _loadMetadata();
-  }
-
-  // --- Key helpers ---
-
-  /// Stable key for storing/reading a favorite.
-  ///
-  /// Cirrus photos use `serial:relPath` (both may be empty strings but at
-  /// least one is set for any real Cirrus file).  Local device assets have
-  /// neither, so fall back to `asset:<name>` — not globally unique but
-  /// avoids the `":"` collision that would make every no-path photo share
-  /// the same favorite entry.
-  String _favKey(String? relPath, String? serial, {String fallback = ''}) {
-    if ((serial?.isNotEmpty ?? false) || (relPath?.isNotEmpty ?? false)) {
-      return '${serial ?? ''}:${relPath ?? ''}';
-    }
-    return 'asset:$fallback';
   }
 
   // Rotation is always server-backed. Only Cirrus photos (with a relPath)
@@ -197,12 +176,8 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       }
       if (!mounted) return;
 
-      // Refresh favorite state for the new photo's key.
-      final favs = _prefs?.getStringList(_kFavoritesKey) ?? [];
-      final newFavKey = _favKey(relPath, serial, fallback: name);
-
-      // Reset rotation to 0; _loadMetadataForCurrent will apply the
-      // server-persisted value once metadata arrives.
+      // Reset rotation and favorite to defaults; _loadMetadataForCurrent
+      // will apply server-persisted values once metadata arrives.
       setState(() {
         _currentIndex = newIndex;
         _currentBytes = bytes;
@@ -212,7 +187,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         _liveImageCount = updatedCount;
         _loading = false;
         _metadata = null;
-        _isFavorite = favs.contains(newFavKey);
+        _isFavorite = false;
         _rotationQuarters = 0;
         _rotationValue = Tween<double>(begin: 0, end: 0).animate(_rotationAnim);
       });
@@ -241,11 +216,12 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         serial: _currentSerial,
       );
       if (!mounted) return;
-      // Apply the server-persisted rotation for this photo.
+      // Apply server-persisted rotation and favorite state for this photo.
       final quarters = meta.rotationQuarters.clamp(0, 3);
       setState(() {
         _metadata = meta;
         _metadataLoading = false;
+        _isFavorite = meta.isFavorite;
         _rotationQuarters = quarters;
         _rotationValue = Tween<double>(
           begin: quarters * math.pi / 2,
@@ -264,22 +240,30 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     _prefs?.setBool(_kSidebarOpenKey, _sidebarOpen);
   }
 
-  void _toggleFavorite() {
-    final key = _favKey(
-      _currentRelPath,
-      _currentSerial,
-      fallback: _currentName,
-    );
-    final favs = List<String>.from(_prefs?.getStringList(_kFavoritesKey) ?? []);
-    setState(() {
-      _isFavorite = !_isFavorite;
-      if (_isFavorite) {
-        favs.add(key);
-      } else {
-        favs.remove(key);
-      }
-    });
-    _prefs?.setStringList(_kFavoritesKey, favs);
+  Future<void> _toggleFavorite() async {
+    if (!_isCirrusPhoto) return;
+    final relPath = _currentRelPath!;
+    final serial = _currentSerial;
+
+    // Optimistic update.
+    setState(() => _isFavorite = !_isFavorite);
+
+    try {
+      final nowFav = await FavoritesService.toggle(
+        relPath: relPath,
+        serial: serial?.isNotEmpty == true ? serial : null,
+      );
+      if (!mounted) return;
+      // Reconcile with server truth in case of any race.
+      setState(() => _isFavorite = nowFav);
+    } catch (e) {
+      if (!mounted) return;
+      // Roll back and surface the error.
+      setState(() => _isFavorite = !_isFavorite);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to update favorite: $e')));
+    }
   }
 
   Future<void> _rotate() async {
