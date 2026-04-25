@@ -1,6 +1,6 @@
 import 'package:ab_formula/evaluation/lexer/helpers.dart';
 import 'package:ab_formula/evaluation/token.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('lexer helpers', () {
