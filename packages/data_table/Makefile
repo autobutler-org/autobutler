@@ -75,6 +75,14 @@ tidy: tidy/flutter ## Tidy dependencies
 .PHONY: tidy/flutter
 tidy/flutter: ## Tidy Flutter dependencies
 	flutter pub get
+	for example in examples/*/; do \
+		if [ -f "$$example/pubspec.yaml" ]; then \
+			echo "Running pub get in $$example..."; \
+			cd "$$example"; \
+			flutter pub get; \
+			cd ../..; \
+		fi; \
+	done
 
 .PHONY: upgrade
 upgrade: upgrade/flutter upgrade/go ## Upgrade dependencies
