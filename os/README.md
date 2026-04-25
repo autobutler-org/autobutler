@@ -7,7 +7,7 @@ This directory contains everything needed to create a plug-and-play Raspberry Pi
 | Path | Description |
 |------|-------------|
 | `cloud-init/` | Cloud-init config for installing AutoButler on a stock Ubuntu image |
-| `build-image.sh` | Script to build a custom image with AutoButler baked in |
+| `autobutler.pkr.hcl` | Packer template to build OS images (replaces build-image.sh). See `os/packer.md` for usage. |
 | `pi-imager-catalog.json` | Raspberry Pi Imager catalog entry for custom OS list |
 
 ## Quick Start: Flash the Pre-Built Image
@@ -41,28 +41,54 @@ If you prefer to start from a stock Ubuntu Server image, see [cloud-init/README.
 
 ### Requirements
 
+- Packer v1.8+ installed
+- `packer-plugin-arm-image` (see plugin installation below) or let `packer init` download required plugins
 - arm64 Linux host, **or** x86_64 with QEMU binfmt_misc (`qemu-user-static`)
 - Root privileges
 - Packages: `xz-utils`, `kpartx`, `curl`, `jq`
 - ~8GB free disk space per target
 
-### Build
+### Installing the arm-image Packer plugin
+
+The build uses the `packer-plugin-arm-image` plugin. Upstream repository: https://github.com/solo-io/packer-plugin-arm-image
+
+Option A — let Packer download plugins referenced in the HCL:
 
 ```bash
-# Install dependencies (Debian/Ubuntu)
-sudo apt-get install -y xz-utils kpartx curl jq qemu-user-static
-
-# Build for Pi 4
-sudo ./build-image.sh pi4
-
-# Build for Pi 5
-sudo ./build-image.sh pi5
-
-# Build both
-sudo ./build-image.sh all
+# Initializes modules and downloads any required plugins referenced in the HCL
+packer init os/autobutler.pkr.hcl
+# Verify the plugin is installed
+packer plugins installed
 ```
 
-Output images are written to this directory as `autobutler-pi4.img.xz` and `autobutler-pi5.img.xz`, with checksums in `checksums.sha256`.
+Option B — manual install (replace <VERSION>, <os>, <arch> as appropriate):
+
+```bash
+mkdir -p ~/.config/packer/plugins/github.com/solo-io/arm-image
+curl -L -o ~/.config/packer/plugins/github.com/solo-io/arm-image/packer-plugin-arm-image \
+  https://github.com/solo-io/packer-plugin-arm-image/releases/download/<VERSION>/packer-plugin-arm-image_<VERSION>_<os>_<arch>
+chmod +x ~/.config/packer/plugins/github.com/solo-io/arm-image/packer-plugin-arm-image
+# Verify
+packer plugins installed
+```
+
+### Build examples
+
+```bash
+# Build all targets
+packer build os/autobutler.pkr.hcl
+
+# Build only the arm image target for Raspberry Pi 4 (builder id example)
+packer build -only=arm-image.pi4 os/autobutler.pkr.hcl
+
+# Build only the arm image target for Raspberry Pi 5
+packer build -only=arm-image.pi5 os/autobutler.pkr.hcl
+
+# Build only the Odroid N2 target (see ODROID N2 notes below)
+packer build -only=arm-image.odroid-n2 os/autobutler.pkr.hcl
+```
+
+Output images are written to this directory as `autobutler-pi4.img.xz` and `autobutler-pi5.img.xz` (and `autobutler-odroid-n2.img.xz` when building ODROID), with checksums in `checksums.sha256`.
 
 ## First-Boot Experience
 
@@ -120,3 +146,14 @@ sudo ufw allow 22/tcp
 Both Pi 4 and Pi 5 use the same Ubuntu Server 24.04 LTS arm64 base image. The images are functionally identical — separate builds exist for clarity and to allow future hardware-specific tuning.
 
 The systemd service definition matches the one in `internal/install/system_service.go`.
+
+## ODROID N2
+
+- The ODROID N2 uses an ARM64-compatible base but requires different bootloader and device-tree handling compared to Raspberry Pi. The Packer template includes a target named `arm-image.odroid-n2` which produces an image tuned for ODROID N2 hardware.
+- To build an ODROID image:
+
+```bash
+packer build -only=arm-image.odroid-n2 os/autobutler.pkr.hcl
+```
+
+- Note: cloud-init remains available as an alternative provisioning path. See the `cloud-init/` directory for example `user-data` and provisioning steps that can be applied to stock Ubuntu images.
