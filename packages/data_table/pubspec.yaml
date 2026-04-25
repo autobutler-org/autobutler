@@ -4,9 +4,13 @@ version: 0.0.1
 environment:
   sdk: ">=3.0.0 <4.0.0"
 
+publish_to: none
+
 dependencies:
   flutter:
     sdk: flutter
+  ab_formula:
+    path: ../ab_formula
 
 dev_dependencies:
   flutter_test:
