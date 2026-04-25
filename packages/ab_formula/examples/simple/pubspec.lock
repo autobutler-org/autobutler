@@ -4,7 +4,7 @@ packages:
   ab_formula:
     dependency: "direct main"
     description:
-      path: "../ab_formula"
+      path: "../.."
       relative: true
     source: path
     version: "0.0.1"
@@ -25,7 +25,7 @@ packages:
     source: hosted
     version: "2.1.2"
   characters:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: characters
       sha256: faf38497bda5ead2a8c7615f4f7939df04333478bf32e4173fcb06d428b5716b
@@ -48,13 +48,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.19.1"
-  data_table_example_formulas:
-    dependency: "direct dev"
-    description:
-      path: "examples/formulas"
-      relative: true
-    source: path
-    version: "0.0.0"
   fake_async:
     dependency: transitive
     description:
