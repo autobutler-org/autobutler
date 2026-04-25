@@ -334,8 +334,10 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
     final c = sel.contextCol;
     if (r < 0 || c < 0) {
       if (_barCtrl.text.isNotEmpty) _barCtrl.clear();
-      _controller.clearActiveRefColors();
       _barCtrl.clearTokenColors();
+      // Defer the controller notify call so we don't call notifyListeners
+      // while already inside a notifyListeners dispatch.
+      _scheduleHighlightUpdate(null);
       return;
     }
     // If a cell is actively being edited in the grid, prefer the live text
@@ -346,20 +348,7 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
     if (_barCtrl.text != newText) {
       _barCtrl.text = newText;
     }
-    // Update reference highlights after the current listener dispatch
-    // completes. Calling setActiveRefColors (which calls notifyListeners)
-    // from inside an _onControllerChanged listener causes reentrancy in
-    // ChangeNotifier (crash on web/DDC). Use a microtask to defer it, but
-    // guard with _highlightUpdatePending so the notifyListeners emitted by
-    // setActiveRefColors doesn't schedule yet another microtask (infinite loop).
-    if (!_highlightUpdatePending) {
-      _highlightUpdatePending = true;
-      final textToHighlight = newText;
-      Future.microtask(() {
-        _highlightUpdatePending = false;
-        if (mounted) _updateRefHighlights(textToHighlight);
-      });
-    }
+    _scheduleHighlightUpdate(newText);
   }
 
   // ---------------------------------------------------------------------------
@@ -427,6 +416,27 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
 
   // ---------------------------------------------------------------------------
   // Reference highlighting
+
+  /// Schedule a ref-highlight update for [text] (or a clear when [text] is
+  /// null) to run after the current ChangeNotifier dispatch completes.
+  ///
+  /// All calls that could trigger [setActiveRefColors] / [clearActiveRefColors]
+  /// (both of which call [notifyListeners]) must go through here when they
+  /// originate from a listener callback, to avoid ChangeNotifier reentrancy.
+  void _scheduleHighlightUpdate(String? text) {
+    if (_highlightUpdatePending) return;
+    _highlightUpdatePending = true;
+    Future.microtask(() {
+      _highlightUpdatePending = false;
+      if (!mounted) return;
+      if (text == null) {
+        _controller.clearActiveRefColors();
+      } else {
+        _updateRefHighlights(text);
+      }
+    });
+  }
+
   // ---------------------------------------------------------------------------
 
   /// Parse [formula] and push color assignments for every referenced cell/range
