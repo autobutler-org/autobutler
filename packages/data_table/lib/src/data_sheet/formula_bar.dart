@@ -329,6 +329,8 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
     final c = sel.contextCol;
     if (r < 0 || c < 0) {
       if (_barCtrl.text.isNotEmpty) _barCtrl.clear();
+      _controller.clearActiveRefColors();
+      _barCtrl.clearTokenColors();
       return;
     }
     // If a cell is actively being edited in the grid, prefer the live text
@@ -339,6 +341,9 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
     if (_barCtrl.text != newText) {
       _barCtrl.text = newText;
     }
+    // Update reference highlights immediately whenever the selected cell
+    // changes — even if the user hasn't typed anything in the bar yet.
+    _updateRefHighlights(newText);
   }
 
   // ---------------------------------------------------------------------------
