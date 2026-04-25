@@ -76,6 +76,9 @@ jobs:
         uses: hashicorp/setup-packer@v3
         with:
           version: '1.15.2'
+      - name: Install packer plugins
+        run: |
+          make build/image/init
       - name: Check formatting
         run: |
           make check/format/packer
