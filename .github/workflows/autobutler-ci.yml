@@ -59,12 +59,12 @@ jobs:
       - name: Tidy
         run: |
           make tidy/flutter
+      - name: Run unit tests
+        run: |
+          make test/unit/frontend
       - name: Build [web]
         run: |
           make build/frontend/web
       - name: Build [android]
         run: |
           make build/frontend/android
-      - name: Run unit tests
-        run: |
-          make test/unit/frontend
