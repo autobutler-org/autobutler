@@ -47,6 +47,9 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
   double _height = 32.0;
   bool _handleHovered = false;
 
+  /// Raw cell value captured when the bar gains focus — used to restore on Escape.
+  String _priorValue = '';
+
   /// Key used to measure the available width of the text field area for
   /// auto-sizing.
   final GlobalKey _fieldKey = GlobalKey();
@@ -63,11 +66,10 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
     _barCtrl = TextEditingController();
     _focusNode = FocusNode(
       onKeyEvent: (node, event) {
-        // On desktop, Enter does not insert a newline by default (it submits).
-        // Intercept it here and insert the newline manually so the bar behaves
-        // like a multiline editor rather than committing on Enter.
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.enter) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        // Shift+Enter → insert a newline (same as Shift+Enter in the grid cell editor).
+        if (event.logicalKey == LogicalKeyboardKey.enter &&
+            HardwareKeyboard.instance.isShiftPressed) {
           final sel = _barCtrl.selection;
           final text = _barCtrl.text;
           final before = text.substring(0, sel.start < 0 ? 0 : sel.start);
@@ -78,6 +80,18 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
             selection: TextSelection.collapsed(offset: before.length + 1),
           );
           _onBarChanged(newText);
+          return KeyEventResult.handled;
+        }
+        // Enter → commit the cell (same as pressing Enter in the grid cell editor).
+        if (event.logicalKey == LogicalKeyboardKey.enter) {
+          _commitIfActive();
+          _focusNode.unfocus();
+          return KeyEventResult.handled;
+        }
+        // Escape → cancel, restore prior value.
+        if (event.logicalKey == LogicalKeyboardKey.escape) {
+          _cancelEdit();
+          _focusNode.unfocus();
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
@@ -166,6 +180,7 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
         final r = sel.highlightedRow;
         final c = sel.highlightedCol;
         final value = _controller.cellAt(r, c).value;
+        _priorValue = value;
         _suppressActiveCellSync = true;
         _controller.activeCellEditingController.text = value;
         _suppressActiveCellSync = false;
@@ -173,6 +188,11 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
         // Move cursor to end of text in the bar.
         _barCtrl.selection =
             TextSelection.collapsed(offset: _barCtrl.text.length);
+      } else if (sel.hasActiveCell) {
+        // Cell was already active — snapshot the current raw value for Escape.
+        final r = sel.activeRow;
+        final c = sel.activeCol;
+        _priorValue = _controller.cellAt(r, c).value;
       }
     } else {
       // Lost focus — commit any pending edit.
@@ -211,10 +231,11 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
   }
 
   // ---------------------------------------------------------------------------
-  // Commit logic
+  // Commit / cancel logic
   // ---------------------------------------------------------------------------
 
-  /// Commit when focus is lost naturally (e.g. user clicks a cell in the grid).
+  /// Commit the current bar text to the active cell (same semantics as
+  /// pressing Enter in the grid cell editor).
   void _commitIfActive() {
     final sel = _controller.selection;
     final r = sel.activeRow;
@@ -222,6 +243,22 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
     if (r < 0 || c < 0) return;
     _controller.updateCell(r, c, DataCell(_barCtrl.text));
     _controller.activeCellEditingController.clear();
+    _controller.selection.goTo(r, c);
+  }
+
+  /// Cancel the current edit — restore the prior raw value and leave the cell
+  /// highlighted but not active (same as pressing Escape in the grid editor).
+  void _cancelEdit() {
+    final sel = _controller.selection;
+    final r = sel.activeRow;
+    final c = sel.activeCol;
+    if (r < 0 || c < 0) return;
+    // Restore the value the cell had before editing began.
+    _barCtrl.text = _priorValue;
+    _suppressActiveCellSync = true;
+    _controller.activeCellEditingController.text = _priorValue;
+    _suppressActiveCellSync = false;
+    // Leave cell highlighted but not active.
     _controller.selection.goTo(r, c);
   }
 
@@ -326,7 +363,7 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
                           focusNode: _focusNode,
                           enabled: hasSelection,
                           maxLines: null,
-                          textInputAction: TextInputAction.newline,
+                          textInputAction: TextInputAction.done,
                           decoration: const InputDecoration(
                             border: InputBorder.none,
                             isDense: true,
