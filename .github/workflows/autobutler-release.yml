@@ -94,9 +94,9 @@ jobs:
           sudo apt-get install -y xz-utils kpartx curl jq qemu-user-static unzip
 
       - name: Setup Packer
-        uses: hashicorp/setup-packer@v2
+        uses: hashicorp/setup-packer@v3
         with:
-          packer_version: '1.9.5'
+          version: '1.15.2'
 
       - name: Verify Packer
         run: packer version
