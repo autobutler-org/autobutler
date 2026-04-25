@@ -32,5 +32,37 @@ void main() {
       expect(a == b, isFalse);
       expect(a == c, isFalse);
     });
+
+    test('JSON round-trip preserves Token', () {
+      final t = Token(kind: TokenKind.number, value: '123.45');
+      final json = t.toJson();
+      final t2 = Token.fromJson(json);
+      expect(t2, equals(t));
+    });
+
+    test('toString is stable and readable', () {
+      final t = Token(kind: TokenKind.ident, value: 'MyVar');
+      expect(t.toString(), equals("Token(kind: ident, value: 'MyVar')"));
+    });
+
+    test('fromJson handles missing kind (defaults to eof) and missing value',
+        () {
+      final jsonMissingKind = {'value': 'x'};
+      final t = Token.fromJson(jsonMissingKind);
+      expect(t.kind, equals(TokenKind.eof));
+      expect(t.value, equals('x'));
+
+      final jsonMissingValue = {'kind': 'string'};
+      final t2 = Token.fromJson(jsonMissingValue);
+      expect(t2.kind, equals(TokenKind.string));
+      expect(t2.value, equals(''));
+    });
+
+    test('fromJson ignores extra fields', () {
+      final json = {'kind': 'boolean', 'value': 'true', 'extra': 42};
+      final t = Token.fromJson(json);
+      expect(t.kind, equals(TokenKind.boolean));
+      expect(t.value, equals('true'));
+    });
   });
 }
