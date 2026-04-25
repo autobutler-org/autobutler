@@ -49,7 +49,7 @@ class Cell extends StatelessWidget {
                   ? cs.primaryContainer
                   : null,
           border: referenceColor != null
-              ? Border.all(color: referenceColor!, width: 2.0)
+              ? Border.all(color: referenceColor!, width: 1.0)
               : Border.all(
                   color: (isActive || isHighlighted)
                       ? cs.primary

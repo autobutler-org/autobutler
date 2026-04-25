@@ -106,8 +106,7 @@ class _FormulaTextEditingController extends TextEditingController {
                   text: formula.substring(cursor, refStart), style: style));
             }
             // Compute actual source end (account for '$' in original).
-            final srcEnd =
-                (refEnd <= formula.length) ? refEnd : formula.length;
+            final srcEnd = (refEnd <= formula.length) ? refEnd : formula.length;
             spans.add(TextSpan(
               text: formula.substring(refStart, srcEnd),
               style: (style ?? const TextStyle()).copyWith(
@@ -126,8 +125,8 @@ class _FormulaTextEditingController extends TextEditingController {
       final color = _tokenColors[refValue];
       if (color != null) {
         if (refStart > cursor) {
-          spans
-              .add(TextSpan(text: formula.substring(cursor, refStart), style: style));
+          spans.add(TextSpan(
+              text: formula.substring(cursor, refStart), style: style));
         }
         final srcEnd = (refEnd <= formula.length) ? refEnd : formula.length;
         spans.add(TextSpan(
