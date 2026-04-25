@@ -221,6 +221,11 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
   /// Debounce timer for live reference highlighting.
   Timer? _refHighlightTimer;
 
+  /// True while a ref-highlight update is in-flight (microtask scheduled or
+  /// running). Prevents the notifyListeners triggered by setActiveRefColors
+  /// from scheduling another microtask and looping forever.
+  bool _highlightUpdatePending = false;
+
   /// Key used to measure the available width of the text field area for
   /// auto-sizing.
   final GlobalKey _fieldKey = GlobalKey();
@@ -343,13 +348,18 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
     }
     // Update reference highlights after the current listener dispatch
     // completes. Calling setActiveRefColors (which calls notifyListeners)
-    // from inside an _onControllerChanged listener would cause reentrancy
-    // in ChangeNotifier and crash on web (DDC). Schedule it as a microtask
-    // so it runs outside the current notifyListeners call stack.
-    final textToHighlight = newText;
-    Future.microtask(() {
-      if (mounted) _updateRefHighlights(textToHighlight);
-    });
+    // from inside an _onControllerChanged listener causes reentrancy in
+    // ChangeNotifier (crash on web/DDC). Use a microtask to defer it, but
+    // guard with _highlightUpdatePending so the notifyListeners emitted by
+    // setActiveRefColors doesn't schedule yet another microtask (infinite loop).
+    if (!_highlightUpdatePending) {
+      _highlightUpdatePending = true;
+      final textToHighlight = newText;
+      Future.microtask(() {
+        _highlightUpdatePending = false;
+        if (mounted) _updateRefHighlights(textToHighlight);
+      });
+    }
   }
 
   // ---------------------------------------------------------------------------
