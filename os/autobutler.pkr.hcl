@@ -1,3 +1,4 @@
+// Autobutler Packer template (HCL)
 // Purpose: Declarative Packer template to build compressed images for
 //   - autobutler-pi4.img.xz
 //   - autobutler-pi5.img.xz
@@ -14,18 +15,28 @@
 // Plugin / Tools
 // - QEMU builder: included with Packer core (good for reproducible builds using qemu)
 // - Alternative ARM image plugin (example): https://github.com/arm-builder/packer-plugin-arm-image
-//   If using a community plugin, follow that repo's install instructions and run:
+//   If using a plugin, follow that repo's install instructions and run:
 //     packer init os/autobutler.pkr.hcl
 //   Or install a plugin by placing its binary in ~/.packer.d/plugins/
 //
 // How to build
 // - Build all targets:  packer build os/autobutler.pkr.hcl
-// - Build a single target: packer build -only=build:pi4 os/autobutler.pkr.hcl
+// - Build a single target: packer build -only=pi4 os/autobutler.pkr.hcl
 //   (replace pi4 with pi5 or odroid-n2)
 //
 // Verification note (manual): After a successful build each target must
 // produce a compressed image named e.g. autobutler-pi4.img.xz and a checksum
 // file autobutler-pi4.img.xz.sha256 in the current working directory.
+
+packer {
+  required_version = "~> 1.15.0"
+  required_plugins {
+    qemu = {
+      version = "~> 1.1.4"
+      source  = "github.com/hashicorp/qemu"
+    }
+  }
+}
 
 // -----------------------
 // Variables / locals
@@ -42,7 +53,7 @@ locals {
   name_odroid_n2 = "${var.image_prefix}-odroid-n2"
 
   // Path to the common provision script (relative to os/ directory where packer build is run)
-  provision_script = "./scripts/provision.sh"
+  provision_script = "${path.root}/scripts/provision.sh"
 }
 
 // -----------------------
@@ -60,6 +71,8 @@ source "qemu" "pi4" {
   output_directory = "output/pi4"
   disk_size        = 8192
   headless         = true
+  iso_url          = "https://cdimage.ubuntu.com/releases/24.04/release/ubuntu-24.04-preinstalled-server-arm64+raspi.img.xz"
+  iso_checksum     = "none"
   // Consider adding: qemu_binary, qemuargs, boot_command, etc.
 }
 
@@ -68,6 +81,8 @@ source "qemu" "pi5" {
   format           = "raw"
   output_directory = "output/pi5"
   disk_size        = 16384
+  iso_url          = "https://cdimage.ubuntu.com/releases/24.04/release/ubuntu-24.04-preinstalled-server-arm64+raspi.img.xz"
+  iso_checksum     = "none"
   headless         = true
 }
 
@@ -76,6 +91,8 @@ source "qemu" "odroid-n2" {
   format           = "raw"
   output_directory = "output/odroid-n2"
   disk_size        = 12288
+  iso_url          = "https://cdimage.ubuntu.com/releases/24.04/release/ubuntu-24.04-preinstalled-server-arm64+raspi.img.xz"
+  iso_checksum     = "none"
   headless         = true
 }
 
@@ -90,7 +107,7 @@ source "qemu" "odroid-n2" {
 // Build targets
 // -----------------------
 
-build "pi4" {
+build {
   name    = "pi4"
   sources = ["source.qemu.pi4"]
 
@@ -118,7 +135,7 @@ build "pi4" {
   }
 }
 
-build "pi5" {
+build {
   name    = "pi5"
   sources = ["source.qemu.pi5"]
 
@@ -129,7 +146,7 @@ build "pi5" {
   post-processor "shell-local" {
     inline = [
       "set -e",
-      "OUT_DIR=output/pi5; IMG=$(find \"${PWD}/$OUT_DIR\" -maxdepth 1 -type f -name '*.img' -o -name '*.raw' | head -n1)",
+      "OUT_DIR=output/pi5; IMG=$(find \"$${PWD}/$OUT_DIR\" -maxdepth 1 -type f -name '*.img' -o -name '*.raw' | head -n1)",
       "if [ -z \"$IMG\" ]; then echo 'ERROR: produced image not found in' $OUT_DIR; exit 1; fi",
       "DEST=\"${local.name_pi5}.img.xz\"",
       "xz -T0 -9 -c \"$IMG\" > \"$DEST\"",
@@ -139,7 +156,7 @@ build "pi5" {
   }
 }
 
-build "odroid-n2" {
+build {
   name    = "odroid-n2"
   sources = ["source.qemu.odroid-n2"]
 
@@ -150,7 +167,7 @@ build "odroid-n2" {
   post-processor "shell-local" {
     inline = [
       "set -e",
-      "OUT_DIR=output/odroid-n2; IMG=$(find \"${PWD}/$OUT_DIR\" -maxdepth 1 -type f -name '*.img' -o -name '*.raw' | head -n1)",
+      "OUT_DIR=output/odroid-n2; IMG=$(find \"$${PWD}/$OUT_DIR\" -maxdepth 1 -type f -name '*.img' -o -name '*.raw' | head -n1)",
       "if [ -z \"$IMG\" ]; then echo 'ERROR: produced image not found in' $OUT_DIR; exit 1; fi",
       "DEST=\"${local.name_odroid_n2}.img.xz\"",
       "xz -T0 -9 -c \"$IMG\" > \"$DEST\"",

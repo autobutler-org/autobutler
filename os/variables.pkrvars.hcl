@@ -31,7 +31,7 @@ boards = {
     # Example partition start sectors (sectors of 512 bytes). Example values only.
     # Typical RasPi images: boot at 8192 (4 MiB), rootfs at 532480 (~260 MiB).
     partition_offsets = [8192, 532480]
-    board_id = "raspberrypi4"
+    board_id          = "raspberrypi4"
   }
 
   pi5 = {
@@ -41,7 +41,7 @@ boards = {
     image_checksum = "sha256:REPLACE_WITH_ACTUAL_CHECKSUM"
     # Example offsets; verify for the specific image used.
     partition_offsets = [8192, 532480]
-    board_id = "raspberrypi5"
+    board_id          = "raspberrypi5"
   }
 
   odroid-n2 = {
@@ -52,7 +52,7 @@ boards = {
     # ODROID N2 images frequently use different partition layouts; example offsets:
     # eMMC/uSD boot may start at sector 2048 (1 MiB) and rootfs at 122880 (~60 MiB)
     partition_offsets = [2048, 122880]
-    board_id = "odroid-n2"
+    board_id          = "odroid-n2"
   }
 }
 

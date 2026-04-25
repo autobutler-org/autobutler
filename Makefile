@@ -237,7 +237,7 @@ build/image/all: build/image/init ## Build all OS images (pi4, pi5, odroid-n2)
 .PHONY: build/image/common
 build/image/common: build/image/init env-DEVICE
 	cd os
-	packer build -only=$(DEVICE) ./autobutler.pkr.hcl
+	packer build -only=$(DEVICE).qemu.$(DEVICE) ./autobutler.pkr.hcl
 
 .PHONY: build/image/pi4
 build/image/pi4: ## Build Raspberry Pi 4 OS image
@@ -470,7 +470,7 @@ check/go: check/format/go check/lint/go ## Check Go code
 check/sqlc: check/lint/sqlc ## Check sqlc
 
 .PHONY: check/format
-check/format: check/format/flutter check/format/go ## Check code formatting
+check/format: check/format/flutter check/format/go check/format/packer ## Check code formatting
 
 .PHONY: check/format/flutter
 check/format/flutter: ## Check Flutter/Dart code formatting
@@ -482,8 +482,12 @@ check/format/go: ## Check Go code formatting
 		exit 1
 	fi
 
+.PHONY: check/format/packer
+check/format/packer: ## Check Packer HCL formatting
+	packer fmt -check os/
+
 .PHONY: check/lint
-check/lint: check/lint/flutter check/lint/go check/lint/sqlc ## Check
+check/lint: check/lint/flutter check/lint/go check/lint/sqlc check/lint/packer ## Check code quality
 
 .PHONY: check/lint/flutter
 check/lint/flutter: ## Lint Flutter/Dart code
@@ -497,6 +501,10 @@ check/lint/go: internal/server/public/stub.txt ## Check Go code
 check/lint/sqlc: ## Check sqlc
 	sqlc vet
 
+.PHONY: check/lint/packer
+check/lint/packer: ## Validate Packer HCL
+	packer validate os/autobutler.pkr.hcl
+
 .PHONY: fix
 fix: fix/flutter fix/go ## Fix code issues
 
@@ -507,7 +515,7 @@ fix/flutter: format/flutter ## Fix Flutter code issues
 fix/go: tidy/go format/go ## Fix Go code issues
 
 .PHONY: format
-format: format/flutter format/go ## Format code
+format: format/flutter format/go format/packer ## Format code
 
 .PHONY: format/flutter
 format/flutter: ## Format Flutter/Dart code
@@ -516,6 +524,10 @@ format/flutter: ## Format Flutter/Dart code
 .PHONY: format/go
 format/go: ## Format Go code
 	gofmt -s -w .
+
+.PHONY: format/packer
+format/packer: ## Format Packer HCL
+	packer fmt os/
 
 ##@ Release
 
