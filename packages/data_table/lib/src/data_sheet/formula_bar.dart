@@ -427,13 +427,20 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
     if (_highlightUpdatePending) return;
     _highlightUpdatePending = true;
     Future.microtask(() {
-      _highlightUpdatePending = false;
-      if (!mounted) return;
+      if (!mounted) {
+        _highlightUpdatePending = false;
+        return;
+      }
+      // Keep _highlightUpdatePending = true while the call runs so that
+      // the synchronous notifyListeners fired by set/clearActiveRefColors
+      // doesn't re-enter and schedule another microtask. Reset only after
+      // the call tree completes.
       if (text == null) {
         _controller.clearActiveRefColors();
       } else {
         _updateRefHighlights(text);
       }
+      _highlightUpdatePending = false;
     });
   }
 
