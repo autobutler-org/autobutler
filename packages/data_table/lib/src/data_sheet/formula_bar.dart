@@ -81,13 +81,8 @@ class _FormulaTextEditingController extends TextEditingController {
 
       // Check if followed by colon + cellRef (range ref).
       String? rangeKey;
-      int refEnd = refStart + tok.value.length;
+      int refEnd = _tokenSrcEnd(formula, refStart);
 
-      // The lexer may have stripped '$' prefixes, so the token length in
-      // the source may differ from tok.value.length. Walk forward in the
-      // original text to find where this token ends (until the next
-      // non-ref character or colon).
-      // Use the next token's offset as the end boundary instead.
       if (i + 1 < tokens.length && tokens[i + 1].kind != TokenKind.eof) {
         // If this cellRef is immediately followed by a colon token then
         // another cellRef, it's a range reference.
@@ -96,7 +91,7 @@ class _FormulaTextEditingController extends TextEditingController {
             tokens[i + 2].kind == TokenKind.cellRef) {
           final endTok = tokens[i + 2];
           rangeKey = '${tok.value}:${endTok.value}';
-          refEnd = endTok.offset + endTok.value.length;
+          refEnd = _tokenSrcEnd(formula, endTok.offset);
           // Try to find the range color; fall back to first-cell color.
           final color = _tokenColors[rangeKey] ?? _tokenColors[tok.value];
           if (color != null) {
@@ -152,6 +147,27 @@ class _FormulaTextEditingController extends TextEditingController {
     }
 
     return TextSpan(children: spans);
+  }
+
+  /// Returns the index just past the end of a cell-ref lexeme starting at
+  /// [from] in [source]. The lexer normalises token values (strips `$`,
+  /// uppercases), so `tok.value.length` is unreliable for source offsets;
+  /// this walks the raw source instead.
+  static int _tokenSrcEnd(String source, int from) {
+    var j = from;
+    while (j < source.length) {
+      final c = source.codeUnitAt(j);
+      // Allow $, A–Z, a–z, 0–9
+      if (c == 36 ||
+          (c >= 65 && c <= 90) ||
+          (c >= 97 && c <= 122) ||
+          (c >= 48 && c <= 57)) {
+        j++;
+      } else {
+        break;
+      }
+    }
+    return j;
   }
 }
 
