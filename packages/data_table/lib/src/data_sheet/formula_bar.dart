@@ -65,6 +65,11 @@ class _FormulaTextEditingController extends TextEditingController {
           context: context, style: style, withComposing: withComposing);
     }
 
+    // The lexer strips the leading '=' before tokenizing, so all token
+    // offsets are relative to the formula-without-'='. Add 1 to each
+    // offset when mapping back into the full formula bar text.
+    final shift = formula.startsWith('=') ? 1 : 0;
+
     // Build a list of (start, end, color?) spans from the token stream.
     // Adjacent cellRef tokens separated only by a colon are treated as a
     // range ref and colored with the range's assigned color.
@@ -76,7 +81,7 @@ class _FormulaTextEditingController extends TextEditingController {
       if (tok.kind == TokenKind.eof) break;
       if (tok.kind != TokenKind.cellRef) continue;
 
-      final refStart = tok.offset;
+      final refStart = tok.offset + shift;
       final refValue = tok.value; // e.g. "A1" (already normalized)
 
       // Check if followed by colon + cellRef (range ref).
@@ -91,7 +96,7 @@ class _FormulaTextEditingController extends TextEditingController {
             tokens[i + 2].kind == TokenKind.cellRef) {
           final endTok = tokens[i + 2];
           rangeKey = '${tok.value}:${endTok.value}';
-          refEnd = _tokenSrcEnd(formula, endTok.offset);
+          refEnd = _tokenSrcEnd(formula, endTok.offset + shift);
           // Try to find the range color; fall back to first-cell color.
           final color = _tokenColors[rangeKey] ?? _tokenColors[tok.value];
           if (color != null) {
