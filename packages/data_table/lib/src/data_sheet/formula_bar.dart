@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:ab_formula/evaluation/evaluation.dart'
-    show lex, parseTokens, ParsedFormula;
+    show lex, parseTokens, ParsedFormula, Token, TokenKind;
 import 'package:flutter/material.dart' hide DataCell;
 import 'package:flutter/services.dart';
 
@@ -23,6 +23,137 @@ const _kRefPalette = [
   Color(0xFF1E88E5), // light blue
   Color(0xFF43A047), // light green
 ];
+
+/// A [TextEditingController] that renders cell/range reference tokens in the
+/// formula bar using the same palette colors assigned to the grid borders.
+///
+/// Call [setTokenColors] with a map of `{refString -> Color}` whenever the
+/// parse result changes; call [clearTokenColors] when editing ends.
+class _FormulaTextEditingController extends TextEditingController {
+  /// Maps a normalized reference string (e.g. "A1" or "A1:C3") to its color.
+  Map<String, Color> _tokenColors = {};
+
+  void setTokenColors(Map<String, Color> colors) {
+    _tokenColors = colors;
+    notifyListeners();
+  }
+
+  void clearTokenColors() {
+    if (_tokenColors.isEmpty) return;
+    _tokenColors = {};
+    notifyListeners();
+  }
+
+  @override
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    required bool withComposing,
+  }) {
+    final formula = text;
+    if (_tokenColors.isEmpty || !formula.startsWith('=')) {
+      return super.buildTextSpan(
+          context: context, style: style, withComposing: withComposing);
+    }
+
+    // Lex the formula to get token positions.
+    List<Token> tokens;
+    try {
+      tokens = lex(formula).toList();
+    } catch (_) {
+      return super.buildTextSpan(
+          context: context, style: style, withComposing: withComposing);
+    }
+
+    // Build a list of (start, end, color?) spans from the token stream.
+    // Adjacent cellRef tokens separated only by a colon are treated as a
+    // range ref and colored with the range's assigned color.
+    final spans = <TextSpan>[];
+    var cursor = 0;
+
+    for (var i = 0; i < tokens.length; i++) {
+      final tok = tokens[i];
+      if (tok.kind == TokenKind.eof) break;
+      if (tok.kind != TokenKind.cellRef) continue;
+
+      final refStart = tok.offset;
+      final refValue = tok.value; // e.g. "A1" (already normalized)
+
+      // Check if followed by colon + cellRef (range ref).
+      String? rangeKey;
+      int refEnd = refStart + tok.value.length;
+
+      // The lexer may have stripped '$' prefixes, so the token length in
+      // the source may differ from tok.value.length. Walk forward in the
+      // original text to find where this token ends (until the next
+      // non-ref character or colon).
+      // Use the next token's offset as the end boundary instead.
+      if (i + 1 < tokens.length && tokens[i + 1].kind != TokenKind.eof) {
+        // If this cellRef is immediately followed by a colon token then
+        // another cellRef, it's a range reference.
+        if (i + 2 < tokens.length &&
+            tokens[i + 1].kind == TokenKind.colon &&
+            tokens[i + 2].kind == TokenKind.cellRef) {
+          final endTok = tokens[i + 2];
+          rangeKey = '${tok.value}:${endTok.value}';
+          refEnd = endTok.offset + endTok.value.length;
+          // Try to find the range color; fall back to first-cell color.
+          final color = _tokenColors[rangeKey] ?? _tokenColors[tok.value];
+          if (color != null) {
+            // Emit unstyled text before this span.
+            if (refStart > cursor) {
+              spans.add(TextSpan(
+                  text: formula.substring(cursor, refStart), style: style));
+            }
+            // Compute actual source end (account for '$' in original).
+            final srcEnd =
+                (refEnd <= formula.length) ? refEnd : formula.length;
+            spans.add(TextSpan(
+              text: formula.substring(refStart, srcEnd),
+              style: (style ?? const TextStyle()).copyWith(
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
+            ));
+            cursor = srcEnd;
+          }
+          i += 2; // skip colon + end cellRef
+          continue;
+        }
+      }
+
+      // Single cell ref.
+      final color = _tokenColors[refValue];
+      if (color != null) {
+        if (refStart > cursor) {
+          spans
+              .add(TextSpan(text: formula.substring(cursor, refStart), style: style));
+        }
+        final srcEnd = (refEnd <= formula.length) ? refEnd : formula.length;
+        spans.add(TextSpan(
+          text: formula.substring(refStart, srcEnd),
+          style: (style ?? const TextStyle()).copyWith(
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
+        ));
+        cursor = srcEnd;
+      }
+    }
+
+    // Remaining text after last colored span.
+    if (cursor < formula.length) {
+      spans.add(TextSpan(text: formula.substring(cursor), style: style));
+    }
+
+    if (spans.isEmpty) {
+      return super.buildTextSpan(
+          context: context, style: style, withComposing: withComposing);
+    }
+
+    return TextSpan(children: spans);
+  }
+}
 
 /// A formula bar companion for [DataSheetController].
 ///
@@ -56,7 +187,7 @@ class DataSheetFormulaBar extends StatefulWidget {
 }
 
 class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
-  late final TextEditingController _barCtrl;
+  late final _FormulaTextEditingController _barCtrl;
   late final FocusNode _focusNode;
 
   static const double _minHeight = 32.0;
@@ -82,7 +213,7 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
   @override
   void initState() {
     super.initState();
-    _barCtrl = TextEditingController();
+    _barCtrl = _FormulaTextEditingController();
     _focusNode = FocusNode(
       onKeyEvent: (node, event) {
         if (event is! KeyDownEvent) return KeyEventResult.ignored;
@@ -140,6 +271,7 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
   void dispose() {
     _refHighlightTimer?.cancel();
     _controller.clearActiveRefColors();
+    _barCtrl.clearTokenColors();
     _controller.removeListener(_onControllerChanged);
     _controller.activeCellEditingController
         .removeListener(_onActiveCellTextChanged);
@@ -260,6 +392,7 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
   void _updateRefHighlights(String formula) {
     if (!formula.startsWith('=')) {
       _controller.clearActiveRefColors();
+      _barCtrl.clearTokenColors();
       return;
     }
     ParsedFormula? parsed;
@@ -268,6 +401,7 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
     } catch (_) {
       // Incomplete formula while typing — clear highlights silently.
       _controller.clearActiveRefColors();
+      _barCtrl.clearTokenColors();
       return;
     }
 
@@ -338,6 +472,9 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
     }
 
     _controller.setActiveRefColors(colors);
+    // Push the same ref→color map to the bar controller so it can
+    // color-code the reference tokens in the formula text.
+    _barCtrl.setTokenColors(tokenColors);
   }
 
   /// Parses a cell reference like "A1" into zero-based (row, col).
@@ -381,6 +518,7 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
   void _commitIfActive() {
     _refHighlightTimer?.cancel();
     _controller.clearActiveRefColors();
+    _barCtrl.clearTokenColors();
     final sel = _controller.selection;
     final r = sel.activeRow;
     final c = sel.activeCol;
@@ -395,6 +533,7 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
   void _cancelEdit() {
     _refHighlightTimer?.cancel();
     _controller.clearActiveRefColors();
+    _barCtrl.clearTokenColors();
     final sel = _controller.selection;
     final r = sel.activeRow;
     final c = sel.activeCol;
