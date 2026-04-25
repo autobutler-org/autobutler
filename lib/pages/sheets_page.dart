@@ -1,4 +1,4 @@
-import 'package:autobutler/pages/spreadsheet_editor_page.dart';
+import 'package:autobutler/router.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/utils/safe_set_state_mixin.dart';
@@ -71,13 +71,8 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
   }
 
   Future<void> _openSheet(CirrusFileNode node) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => SpreadsheetEditorPage(
-          filePath: node.apiPath,
-          deviceSerial: node.deviceSerial,
-        ),
-      ),
+    await context.push(
+      AppRoutes.sheetFile(node.apiPath, serial: node.deviceSerial),
     );
     _load();
   }
@@ -95,6 +90,11 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Reload',
             onPressed: _load,
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
+            onPressed: () => context.go('/settings'),
           ),
         ],
       ),

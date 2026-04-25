@@ -1,3 +1,4 @@
+import 'package:autobutler/pages/document_editor_page.dart';
 import 'package:autobutler/pages/docs_page.dart';
 import 'package:autobutler/pages/file_browser_page.dart';
 import 'package:autobutler/pages/health_page.dart';
@@ -8,6 +9,7 @@ import 'package:autobutler/pages/recover_page.dart';
 import 'package:autobutler/pages/settings_page.dart';
 import 'package:autobutler/pages/setup_page.dart';
 import 'package:autobutler/pages/sheets_page.dart';
+import 'package:autobutler/pages/spreadsheet_editor_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/auth_service.dart';
 import 'package:flutter/material.dart';
@@ -30,14 +32,33 @@ class AppRoutes {
   static const setup = '/setup';
   static const login = '/login';
   static const recover = '/recover';
-  // Note: image/video viewers are push-only overlays (take runtime data),
-  // not deep-linkable URL routes.
 
   /// Build a deep-link URL for a given cirrus path.
   /// e.g. cirrusPath('photos/2024') → '/cirrus/photos/2024'
   static String cirrusPath(String path) {
     final clean = path.replaceAll(RegExp(r'^/+'), '');
     return clean.isEmpty ? cirrus : '/cirrus/$clean';
+  }
+
+  /// Build a URL for a specific document file.
+  /// e.g. docFile('reports/q1.abdoc') → '/docs/reports/q1.abdoc'
+  /// Device serial is passed as a query param when non-empty.
+  static String docFile(String path, {String? serial}) {
+    final clean = path.replaceAll(RegExp(r'^/+'), '');
+    final base = '$docs/$clean';
+    return (serial != null && serial.isNotEmpty)
+        ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
+        : base;
+  }
+
+  /// Build a URL for a specific spreadsheet file.
+  /// e.g. sheetFile('data/budget.absheet') → '/sheets/data/budget.absheet'
+  static String sheetFile(String path, {String? serial}) {
+    final clean = path.replaceAll(RegExp(r'^/+'), '');
+    final base = '$sheets/$clean';
+    return (serial != null && serial.isNotEmpty)
+        ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
+        : base;
   }
 }
 
@@ -66,10 +87,37 @@ final router = GoRouter(
     GoRoute(
       path: AppRoutes.docs,
       builder: (context, state) => const DocsPage(),
+      routes: [
+        GoRoute(
+          // Matches /docs/<anything including slashes> — opens the doc editor.
+          path: ':path(.*)',
+          builder: (context, state) {
+            final raw = state.pathParameters['path'] ?? '';
+            final filePath = Uri.decodeComponent(raw);
+            final serial = state.uri.queryParameters['serial'] ?? '';
+            return DocumentEditorPage(filePath: filePath, deviceSerial: serial);
+          },
+        ),
+      ],
     ),
     GoRoute(
       path: AppRoutes.sheets,
       builder: (context, state) => const SheetsPage(),
+      routes: [
+        GoRoute(
+          // Matches /sheets/<anything including slashes> — opens the sheet editor.
+          path: ':path(.*)',
+          builder: (context, state) {
+            final raw = state.pathParameters['path'] ?? '';
+            final filePath = Uri.decodeComponent(raw);
+            final serial = state.uri.queryParameters['serial'] ?? '';
+            return SpreadsheetEditorPage(
+              filePath: filePath,
+              deviceSerial: serial,
+            );
+          },
+        ),
+      ],
     ),
     GoRoute(
       path: AppRoutes.devices,
