@@ -1,7 +1,6 @@
 package v1_photos
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -52,6 +51,7 @@ type PhotoMetadataJSON struct {
 	Width            int            `json:"width"`
 	Height           int            `json:"height"`
 	RotationQuarters int64          `json:"rotationQuarters"`
+	IsFavorite       bool           `json:"isFavorite"`
 	Exif             *ExifJSON      `json:"exif,omitempty"`
 	Albums           []AlbumRefJSON `json:"albums"`
 }
@@ -153,10 +153,12 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 		exifData = extractExif(rawExif)
 	}
 
+	ctx := c.Request.Context()
+
 	// --- Server-side rotation ---
 	var rotationQuarters int64
 	if rq, err := deps.Database().Queries.GetPhotoRotation(
-		context.Background(),
+		ctx,
 		db.GetPhotoRotationParams{DeviceSerial: serial, RelPath: relPath},
 	); err == nil {
 		rotationQuarters = rq
@@ -164,9 +166,19 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(fmt.Errorf("get photo rotation: %w", err))
 	}
 
+	// --- Favorite status ---
+	isFavorite, err := deps.Database().Queries.IsFavorite(
+		ctx,
+		db.IsFavoriteParams{DeviceSerial: serial, RelPath: relPath},
+	)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		_ = c.Error(fmt.Errorf("check favorite for %q: %w", relPath, err))
+		// non-fatal: isFavorite stays false
+	}
+
 	// --- Album membership ---
 	albums, err := deps.Database().Queries.ListAlbumsContainingPhoto(
-		context.Background(),
+		ctx,
 		db.ListAlbumsContainingPhotoParams{
 			DeviceSerial: serial,
 			RelPath:      relPath,
@@ -188,6 +200,7 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 		Width:            width,
 		Height:           height,
 		RotationQuarters: rotationQuarters,
+		IsFavorite:       isFavorite,
 		Exif:             exifData,
 		Albums:           albumRefs,
 	})

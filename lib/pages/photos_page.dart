@@ -31,7 +31,7 @@ class PhotosPage extends StatefulWidget {
   State<PhotosPage> createState() => _PhotosPageState();
 }
 
-enum PhotoCategory { cirrus, mobile, all }
+enum PhotoCategory { cirrus, mobile, all, favorites }
 
 class PhotoItem {
   final CirrusFileNode? cirrus;
@@ -77,7 +77,7 @@ class _PhotosPageState extends State<PhotosPage>
   PhotoCategory _selectedCategory = PhotoCategory.cirrus;
 
   // Favorites: set of selectionKeys for photos that are favorited.
-  // Loaded lazily as photos scroll into view.
+  // Fetched eagerly from the server on every refresh via FavoritesService.listFavoriteKeys().
   final Set<String> _favoriteKeys = {};
 
   // Above-viewport nav: the hidden nav panel is measured once on first layout,
@@ -307,6 +307,11 @@ class _PhotosPageState extends State<PhotosPage>
         return _mobilePhotos;
       case PhotoCategory.all:
         return [..._cirrusPhotos, ..._mobilePhotos];
+      case PhotoCategory.favorites:
+        return [
+          ..._cirrusPhotos,
+          ..._mobilePhotos,
+        ].where((p) => _favoriteKeys.contains(p.selectionKey)).toList();
     }
   }
 
@@ -435,14 +440,12 @@ class _PhotosPageState extends State<PhotosPage>
         visualDensity: VisualDensity.compact,
         contentPadding: EdgeInsets.zero,
         onTap: () => _selectCategory(cat),
-        leading: Icon(
-          cat == PhotoCategory.cirrus
-              ? Icons.cloud
-              : (cat == PhotoCategory.mobile
-                    ? Icons.smartphone
-                    : Icons.photo_library),
-          color: selected ? theme.colorScheme.primary : null,
-        ),
+        leading: Icon(switch (cat) {
+          PhotoCategory.cirrus => Icons.cloud,
+          PhotoCategory.mobile => Icons.smartphone,
+          PhotoCategory.all => Icons.photo_library,
+          PhotoCategory.favorites => Icons.star_rounded,
+        }, color: selected ? theme.colorScheme.primary : null),
         title: Text('$label: $count', style: theme.textTheme.titleMedium),
         trailing: selected ? const Icon(Icons.check, size: 16) : null,
       );
@@ -457,6 +460,7 @@ class _PhotosPageState extends State<PhotosPage>
       PhotoCategory.all => 'All',
       PhotoCategory.cirrus => 'Cirrus',
       PhotoCategory.mobile => 'Mobile',
+      PhotoCategory.favorites => 'Favorites',
     };
 
     return Container(
@@ -522,6 +526,7 @@ class _PhotosPageState extends State<PhotosPage>
                   PhotoCategory.all => cirrusDisplayCount + mobileCount,
                   PhotoCategory.cirrus => cirrusDisplayCount,
                   PhotoCategory.mobile => mobileCount,
+                  PhotoCategory.favorites => _favoriteKeys.length,
                 }}',
               ),
               trailing: Icon(
@@ -545,6 +550,11 @@ class _PhotosPageState extends State<PhotosPage>
                 cirrusDisplayCount,
               ),
               categoryButton(PhotoCategory.mobile, 'Mobile', mobileCount),
+              categoryButton(
+                PhotoCategory.favorites,
+                'Favorites',
+                _favoriteKeys.length,
+              ),
             ],
           ],
           const SizedBox(height: 16),
@@ -580,6 +590,10 @@ class _PhotosPageState extends State<PhotosPage>
         } else {
           _favoriteKeys.remove(item.selectionKey);
         }
+        // Refresh the grid immediately if the favorites tab is active.
+        if (_selectedCategory == PhotoCategory.favorites) {
+          _photosFuture = _photosForCategory(PhotoCategory.favorites);
+        }
       });
     } catch (e) {
       if (!mounted) return;
@@ -598,7 +612,7 @@ class _PhotosPageState extends State<PhotosPage>
       child: Icon(
         Icons.star_rounded,
         size: 16,
-        color: Colors.amber,
+        color: Colors.white,
         shadows: const [Shadow(blurRadius: 4, color: Colors.black54)],
       ),
     );
@@ -823,11 +837,18 @@ class _PhotosPageState extends State<PhotosPage>
     return RefreshIndicator(
       onRefresh: manualRefresh,
       child: photos.isEmpty && !_isLoadingMoreCirrus
-          ? const EmptyStateWidget(
-              icon: Icons.photo_library_outlined,
-              headline: 'No photos yet',
-              subtext: 'Photos you upload to AutoButler will appear here.',
-            )
+          ? (_selectedCategory == PhotoCategory.favorites
+                ? const EmptyStateWidget(
+                    icon: Icons.star_outline_rounded,
+                    headline: 'No favorites yet',
+                    subtext: 'Tap ★ on any photo to save it here.',
+                  )
+                : const EmptyStateWidget(
+                    icon: Icons.photo_library_outlined,
+                    headline: 'No photos yet',
+                    subtext:
+                        'Photos you upload to AutoButler will appear here.',
+                  ))
           : GridView.builder(
               controller: _scrollController,
               padding: EdgeInsets.fromLTRB(2, 2, 2, _selectionMode ? 84 : 2),
