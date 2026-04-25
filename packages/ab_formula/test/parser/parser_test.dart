@@ -1,7 +1,7 @@
 import 'package:ab_formula/evaluation/lexer/lexer.dart';
 import 'package:ab_formula/evaluation/parser/parser.dart';
 import 'package:ab_formula/evaluation/token.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('FormulaParser', () {

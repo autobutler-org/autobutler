@@ -1,5 +1,5 @@
 import 'package:ab_formula/evaluation/evaluation.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 DependencyGraph _graph(List<((int, int), (int, int))> edges) {
   final g = DependencyGraph();

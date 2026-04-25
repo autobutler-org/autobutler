@@ -12,5 +12,6 @@ dependencies:
   # add runtime deps here if needed
 
 dev_dependencies:
-  test: "^1.21.0"
+  flutter_test:
+    sdk: flutter
   flutter_lints: ^6.0.0
