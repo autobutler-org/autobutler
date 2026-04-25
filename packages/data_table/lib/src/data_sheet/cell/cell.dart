@@ -43,7 +43,11 @@ class Cell extends StatelessWidget {
       child: Container(
         height: height,
         decoration: BoxDecoration(
-          color: isActive ? cs.primaryContainer : null,
+          color: referenceColor != null
+              ? referenceColor!.withValues(alpha: 0.08)
+              : isActive
+                  ? cs.primaryContainer
+                  : null,
           border: referenceColor != null
               ? Border.all(color: referenceColor!, width: 2.0)
               : Border.all(
