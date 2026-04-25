@@ -1,6 +1,11 @@
 {
   "packages": [
     {
+      "name": "ab_formula",
+      "version": "0.0.1",
+      "source": "path"
+    },
+    {
       "name": "archive",
       "version": "4.0.9",
       "source": "hosted",
