@@ -67,6 +67,21 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
     _focusNode = FocusNode(
       onKeyEvent: (node, event) {
         if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        // Shift+Enter → insert a newline (same as Shift+Enter in the grid cell editor).
+        if (event.logicalKey == LogicalKeyboardKey.enter &&
+            HardwareKeyboard.instance.isShiftPressed) {
+          final sel = _barCtrl.selection;
+          final text = _barCtrl.text;
+          final before = text.substring(0, sel.start < 0 ? 0 : sel.start);
+          final after = text.substring(sel.end < 0 ? 0 : sel.end);
+          final newText = '$before\n$after';
+          _barCtrl.value = TextEditingValue(
+            text: newText,
+            selection: TextSelection.collapsed(offset: before.length + 1),
+          );
+          _onBarChanged(newText);
+          return KeyEventResult.handled;
+        }
         // Enter → commit the cell (same as pressing Enter in the grid cell editor).
         if (event.logicalKey == LogicalKeyboardKey.enter) {
           _commitIfActive();
