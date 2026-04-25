@@ -58,7 +58,16 @@ test: test/unit ## Run tests
 
 .PHONY: test/unit
 test/unit: ## Run unit tests
+	echo "Testing data table package..."
 	flutter test
+	for example in examples/*/; do
+		if [ -f "$$example/pubspec.yaml" ] && [ -d "$$example/test" ]; then
+			echo "Testing $$example..."
+			cd "$$example"
+			flutter test
+			cd ../..
+		fi
+	done
 
 .PHONY: tidy
 tidy: tidy/flutter ## Tidy dependencies

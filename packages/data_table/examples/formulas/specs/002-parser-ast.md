@@ -8,7 +8,7 @@ Create FormulaParser: a recursive-descent parser that consumes the lexer's token
 - Constructs AST node types: NumberNode, StringNode, BoolNode, CellRefNode, RangeNode, UnaryNode, BinaryNode, CallNode.
 - Validates range-ref usage: range-ref parsed only inside function argument context; bare range-ref outside calls is a parse error.
 - Populates ParsedFormula fields (cellRefs uppercased A1 format, rangeRefs in A1:C3 format, calledFunctions uppercased, hasRangeArgs boolean).
-- Emits FormulaParseError with offset/message on syntax errors.
+- Emits LexError with offset/message on syntax errors.
 - Unit tests asserting AST shapes, metadata, and error offsets.
 
 ## Out of Scope

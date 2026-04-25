@@ -26,8 +26,9 @@ enum TokenKind {
 class Token {
   final TokenKind kind;
   final String value;
+  final int offset;
 
-  Token({required this.kind, this.value = ""});
+  Token({required this.kind, this.value = "", this.offset = 0});
 
   double? asNumber() {
     if (kind != TokenKind.number) {
@@ -41,6 +42,7 @@ class Token {
     return {
       'kind': kind.toString().split('.').last,
       'value': value,
+      'offset': offset,
     };
   }
 
@@ -52,12 +54,18 @@ class Token {
       orElse: () => TokenKind.eof,
     );
     final value = json['value']?.toString() ?? '';
-    return Token(kind: kind, value: value);
+    final offset = switch (json['offset']) {
+      final int value => value,
+      final num value => value.toInt(),
+      final String value => int.tryParse(value) ?? 0,
+      _ => 0,
+    };
+    return Token(kind: kind, value: value, offset: offset);
   }
 
   @override
   String toString() =>
-      "Token(kind: ${kind.toString().split('.').last}, value: '$value')";
+      "Token(kind: ${kind.toString().split('.').last}, value: '$value', offset: $offset)";
 
   @override
   bool operator ==(Object other) =>
@@ -65,8 +73,9 @@ class Token {
       other is Token &&
           runtimeType == other.runtimeType &&
           kind == other.kind &&
-          value == other.value;
+          value == other.value &&
+          offset == other.offset;
 
   @override
-  int get hashCode => kind.hashCode ^ value.hashCode;
+  int get hashCode => Object.hash(kind, value, offset);
 }

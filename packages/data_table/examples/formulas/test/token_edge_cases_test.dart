@@ -1,5 +1,5 @@
+import 'package:data_table_example_formulas/evaluation/token.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:data_table_example_spreadsheet/evaluation/token.dart';
 
 void main() {
   group('Token edge cases', () {
@@ -10,6 +10,7 @@ void main() {
       final tNull = Token.fromJson(jsonNullKind);
       expect(tNull.kind, equals(TokenKind.eof));
       expect(tNull.value, equals('x'));
+      expect(tNull.offset, equals(0));
 
       final jsonNonStringKind = {'kind': 123, 'value': 'y'};
       // The implementation casts kind to String?; a non-string value will cause a TypeError.
@@ -22,6 +23,7 @@ void main() {
       final t = Token.fromJson(jsonUnknown);
       expect(t.kind, equals(TokenKind.eof));
       expect(t.value, equals('v'));
+      expect(t.offset, equals(0));
     });
 
     test('asNumber returns null for empty or invalid numeric strings', () {
@@ -59,15 +61,17 @@ void main() {
 
       final json = t1.toJson();
       expect((json['value'] as String).length, equals(longValue.length));
+      expect(json['offset'], equals(0));
     });
 
     test('toJson/fromJson round-trip works for boundary values', () {
       final hugeNum = '1.2345e308';
-      final t = Token(kind: TokenKind.number, value: hugeNum);
+      final t = Token(kind: TokenKind.number, value: hugeNum, offset: 12);
       final json = t.toJson();
       final t2 = Token.fromJson(json);
       expect(t2.kind, equals(TokenKind.number));
       expect(t2.value, equals(hugeNum));
+      expect(t2.offset, equals(12));
       expect(t2.asNumber(), isNotNull);
     });
   });

@@ -1,13 +1,14 @@
+import 'package:data_table_example_formulas/evaluation/token.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:data_table_example_spreadsheet/evaluation/token.dart';
 
 void main() {
   group('Token', () {
     test('construction and properties', () {
-      final t = Token(kind: TokenKind.number, value: '3.14');
+      final t = Token(kind: TokenKind.number, value: '3.14', offset: 2);
 
       expect(t.kind, TokenKind.number);
       expect(t.value, '3.14');
+      expect(t.offset, 2);
       expect(t.asNumber(), 3.14);
     });
 
@@ -34,15 +35,18 @@ void main() {
     });
 
     test('JSON round-trip preserves Token', () {
-      final t = Token(kind: TokenKind.number, value: '123.45');
+      final t = Token(kind: TokenKind.number, value: '123.45', offset: 7);
       final json = t.toJson();
       final t2 = Token.fromJson(json);
       expect(t2, equals(t));
     });
 
     test('toString is stable and readable', () {
-      final t = Token(kind: TokenKind.ident, value: 'MyVar');
-      expect(t.toString(), equals("Token(kind: ident, value: 'MyVar')"));
+      final t = Token(kind: TokenKind.ident, value: 'MyVar', offset: 4);
+      expect(
+        t.toString(),
+        equals("Token(kind: ident, value: 'MyVar', offset: 4)"),
+      );
     });
 
     test('fromJson handles missing kind (defaults to eof) and missing value',
@@ -51,18 +55,26 @@ void main() {
       final t = Token.fromJson(jsonMissingKind);
       expect(t.kind, equals(TokenKind.eof));
       expect(t.value, equals('x'));
+      expect(t.offset, equals(0));
 
-      final jsonMissingValue = {'kind': 'string'};
+      final jsonMissingValue = {'kind': 'string', 'offset': '9'};
       final t2 = Token.fromJson(jsonMissingValue);
       expect(t2.kind, equals(TokenKind.string));
       expect(t2.value, equals(''));
+      expect(t2.offset, equals(9));
     });
 
     test('fromJson ignores extra fields', () {
-      final json = {'kind': 'boolean', 'value': 'true', 'extra': 42};
+      final json = {
+        'kind': 'boolean',
+        'value': 'true',
+        'offset': 3,
+        'extra': 42,
+      };
       final t = Token.fromJson(json);
       expect(t.kind, equals(TokenKind.boolean));
       expect(t.value, equals('true'));
+      expect(t.offset, equals(3));
     });
   });
 }
