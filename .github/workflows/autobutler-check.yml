@@ -49,6 +49,9 @@ jobs:
         uses: actions/checkout@v6
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
+      - name: Tidy
+        run: |
+          make tidy/flutter
       - name: Generate code
         run: |
           make generate/frontend
@@ -58,9 +61,6 @@ jobs:
       - name: Lint
         run: |
           make check/lint/flutter
-      - name: Tidy
-        run: |
-          make tidy/flutter
       - name: Check for uncommitted changes
         run: |
           if ! git diff --exit-code; then

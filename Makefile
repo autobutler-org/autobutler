@@ -362,6 +362,12 @@ tidy: tidy/flutter tidy/go ## Tidy dependencies
 .PHONY: tidy/flutter
 tidy/flutter: ## Tidy Flutter dependencies
 	flutter pub get
+	for pkg in packages/*/; do
+		if [ -f "$$pkg/pubspec.yaml" ] && [ -d "$$pkg/test" ]; then
+			echo "Downloading packages for $$pkg..."
+			$(MAKE) -C "$$pkg" tidy || exit 1
+		fi
+	done
 
 .PHONY: tidy/go
 tidy/go: ## Tidy go mod
