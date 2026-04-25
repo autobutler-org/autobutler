@@ -69,6 +69,7 @@ jobs:
         run: |
           make build/frontend/android
   autobutler-ci-image:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
