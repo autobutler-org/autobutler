@@ -21,8 +21,6 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
-  data_table_example_formulas:
-    path: examples/formulas
 
 flutter:
   plugin:
