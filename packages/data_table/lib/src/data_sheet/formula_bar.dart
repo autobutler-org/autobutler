@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:ab_formula/evaluation/evaluation.dart'
+    show lex, parseTokens, ParsedFormula;
 import 'package:flutter/material.dart' hide DataCell;
 import 'package:flutter/services.dart';
 
@@ -7,6 +10,19 @@ import '../../data_table.dart';
 import 'cell/heading/heading_cells.dart' show kResizeHandleSize;
 import 'cell/heading/util.dart';
 import 'data_sheet_controller.dart';
+
+/// Palette of colors used to color-code cell references in formula editing.
+/// Mirrors the Google Sheets palette.
+const _kRefPalette = [
+  Color(0xFF4285F4), // blue
+  Color(0xFFE64A19), // red-orange
+  Color(0xFF0F9D58), // green
+  Color(0xFF9C27B0), // purple
+  Color(0xFF00897B), // teal
+  Color(0xFFF4511E), // deep orange
+  Color(0xFF1E88E5), // light blue
+  Color(0xFF43A047), // light green
+];
 
 /// A formula bar companion for [DataSheetController].
 ///
@@ -49,6 +65,9 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
 
   /// Raw cell value captured when the bar gains focus — used to restore on Escape.
   String _priorValue = '';
+
+  /// Debounce timer for live reference highlighting.
+  Timer? _refHighlightTimer;
 
   /// Key used to measure the available width of the text field area for
   /// auto-sizing.
@@ -119,6 +138,8 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
 
   @override
   void dispose() {
+    _refHighlightTimer?.cancel();
+    _controller.clearActiveRefColors();
     _controller.removeListener(_onControllerChanged);
     _controller.activeCellEditingController
         .removeListener(_onActiveCellTextChanged);
@@ -231,12 +252,135 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
   }
 
   // ---------------------------------------------------------------------------
+  // Reference highlighting
+  // ---------------------------------------------------------------------------
+
+  /// Parse [formula] and push color assignments for every referenced cell/range
+  /// into the controller so the grid can draw colored borders.
+  void _updateRefHighlights(String formula) {
+    if (!formula.startsWith('=')) {
+      _controller.clearActiveRefColors();
+      return;
+    }
+    ParsedFormula? parsed;
+    try {
+      parsed = parseTokens(lex(formula));
+    } catch (_) {
+      // Incomplete formula while typing — clear highlights silently.
+      _controller.clearActiveRefColors();
+      return;
+    }
+
+    final allRefs = <String>{};
+    allRefs.addAll(parsed.cellRefs);
+    // Expand range refs into individual cell strings for color assignment.
+    for (final range in parsed.rangeRefs) {
+      final colon = range.indexOf(':');
+      if (colon < 0) continue;
+      final start = _parseCellRef(range.substring(0, colon));
+      final end = _parseCellRef(range.substring(colon + 1));
+      if (start == null || end == null) continue;
+      final rMin = start.$1 < end.$1 ? start.$1 : end.$1;
+      final rMax = start.$1 > end.$1 ? start.$1 : end.$1;
+      final cMin = start.$2 < end.$2 ? start.$2 : end.$2;
+      final cMax = start.$2 > end.$2 ? start.$2 : end.$2;
+      for (var r = rMin; r <= rMax; r++) {
+        for (var c = cMin; c <= cMax; c++) {
+          // Re-encode as "A1" style so it matches cellRefs keys.
+          allRefs.add('${_colLabel(c)}${r + 1}');
+        }
+      }
+    }
+
+    // Assign a palette color per unique top-level reference token.
+    // (Cells within a range share the same color as the range token.)
+    final tokenColors = <String, Color>{};
+    var paletteIdx = 0;
+    // First pass: assign colors to top-level tokens (cellRefs + rangeRefs).
+    for (final ref in [...parsed.cellRefs, ...parsed.rangeRefs]) {
+      if (!tokenColors.containsKey(ref)) {
+        tokenColors[ref] = _kRefPalette[paletteIdx % _kRefPalette.length];
+        paletteIdx++;
+      }
+    }
+
+    // Build the (row, col) → Color map for the grid.
+    final colors = <(int, int), Color>{};
+    for (final ref in parsed.cellRefs) {
+      final pos = _parseCellRef(ref);
+      if (pos == null) continue;
+      if (pos.$1 < 0 ||
+          pos.$1 >= _controller.rowCount ||
+          pos.$2 < 0 ||
+          pos.$2 >= _controller.colCount) continue;
+      colors[pos] = tokenColors[ref]!;
+    }
+    for (final range in parsed.rangeRefs) {
+      final colon = range.indexOf(':');
+      if (colon < 0) continue;
+      final start = _parseCellRef(range.substring(0, colon));
+      final end = _parseCellRef(range.substring(colon + 1));
+      if (start == null || end == null) continue;
+      final color = tokenColors[range]!;
+      final rMin = start.$1 < end.$1 ? start.$1 : end.$1;
+      final rMax = start.$1 > end.$1 ? start.$1 : end.$1;
+      final cMin = start.$2 < end.$2 ? start.$2 : end.$2;
+      final cMax = start.$2 > end.$2 ? start.$2 : end.$2;
+      for (var r = rMin; r <= rMax; r++) {
+        for (var c = cMin; c <= cMax; c++) {
+          if (r < 0 ||
+              r >= _controller.rowCount ||
+              c < 0 ||
+              c >= _controller.colCount) continue;
+          colors[(r, c)] = color;
+        }
+      }
+    }
+
+    _controller.setActiveRefColors(colors);
+  }
+
+  /// Parses a cell reference like "A1" into zero-based (row, col).
+  (int, int)? _parseCellRef(String ref) {
+    var splitIdx = 0;
+    while (splitIdx < ref.length &&
+        (ref.codeUnitAt(splitIdx) >= 65 && ref.codeUnitAt(splitIdx) <= 90 ||
+            ref.codeUnitAt(splitIdx) >= 97 &&
+                ref.codeUnitAt(splitIdx) <= 122)) {
+      splitIdx++;
+    }
+    if (splitIdx == 0 || splitIdx == ref.length) return null;
+    final colText = ref.substring(0, splitIdx).toUpperCase();
+    final rowNum = int.tryParse(ref.substring(splitIdx));
+    if (rowNum == null || rowNum <= 0) return null;
+    var col = 0;
+    for (final ch in colText.runes) {
+      col = col * 26 + (ch - 64);
+    }
+    return (rowNum - 1, col - 1);
+  }
+
+  /// Encodes a zero-based column index as an Excel column label (A, B, … Z, AA…).
+  String _colLabel(int col) {
+    var result = '';
+    var c = col + 1;
+    while (c > 0) {
+      final rem = (c - 1) % 26;
+      result = String.fromCharCode(65 + rem) + result;
+      c = (c - 1) ~/ 26;
+    }
+    return result;
+  }
+
+  // ---------------------------------------------------------------------------
   // Commit / cancel logic
   // ---------------------------------------------------------------------------
 
   /// Commit the current bar text to the active cell (same semantics as
   /// pressing Enter in the grid cell editor).
   void _commitIfActive() {
+    _refHighlightTimer?.cancel();
+    _controller.clearActiveRefColors();
     final sel = _controller.selection;
     final r = sel.activeRow;
     final c = sel.activeCol;
@@ -249,6 +393,8 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
   /// Cancel the current edit — restore the prior raw value and leave the cell
   /// highlighted but not active (same as pressing Escape in the grid editor).
   void _cancelEdit() {
+    _refHighlightTimer?.cancel();
+    _controller.clearActiveRefColors();
     final sel = _controller.selection;
     final r = sel.activeRow;
     final c = sel.activeCol;
@@ -275,6 +421,11 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
     _suppressActiveCellSync = true;
     _controller.activeCellEditingController.text = value;
     _suppressActiveCellSync = false;
+    // Debounce reference highlighting — update ~150 ms after typing stops.
+    _refHighlightTimer?.cancel();
+    _refHighlightTimer = Timer(const Duration(milliseconds: 150), () {
+      _updateRefHighlights(value);
+    });
   }
 
   // ---------------------------------------------------------------------------

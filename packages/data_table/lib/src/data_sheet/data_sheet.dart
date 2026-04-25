@@ -514,6 +514,7 @@ class _DataSheetViewState extends State<_DataSheetView> {
                 ? SystemMouseCursors.text
                 : SystemMouseCursors.cell,
             height: rowHeight,
+            referenceColor: controller.activeRefColors[(r, c)],
             child: cellChild,
           );
 

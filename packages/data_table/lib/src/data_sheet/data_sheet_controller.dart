@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:ab_formula/evaluation/evaluation.dart';
 import 'package:flutter/foundation.dart' show ChangeNotifier, ValueNotifier;
+import 'package:flutter/material.dart' show Color;
 import 'package:flutter/painting.dart' show TextPainter, TextSpan, TextStyle;
 import 'package:flutter/widgets.dart' show TextEditingController;
 
@@ -71,6 +72,11 @@ class DataSheetController extends ChangeNotifier {
   /// Only formula cells appear here; literal cells are absent.
   Map<(int, int), FormulaValue> _computedValues = {};
 
+  /// Color assignments for cells referenced by the formula currently being
+  /// edited. Set by [DataSheetFormulaBar] while a formula is active;
+  /// cleared when editing commits or cancels.
+  Map<(int, int), Color> activeRefColors = {};
+
   /// Shared [TextEditingController] for the currently active (in-edit) cell.
   /// Both the [DataSheet] cell editor and [DataSheetFormulaBar] use this
   /// single controller so they remain in sync without extra bridging logic.
@@ -117,6 +123,20 @@ class DataSheetController extends ChangeNotifier {
   /// Returns true if the cell at [row],[col] evaluated to an error.
   bool isCellError(int row, int col) =>
       _computedValues[(row, col)] is ErrorValue;
+
+  /// Sets the active reference color map and notifies listeners so the grid
+  /// redraws the reference borders.
+  void setActiveRefColors(Map<(int, int), Color> colors) {
+    activeRefColors = colors;
+    notifyListeners();
+  }
+
+  /// Clears the active reference color map.
+  void clearActiveRefColors() {
+    if (activeRefColors.isEmpty) return;
+    activeRefColors = {};
+    notifyListeners();
+  }
 
   static String _formatFormulaValue(FormulaValue v) => switch (v) {
         NumberValue(:final value) => value == value.truncateToDouble()

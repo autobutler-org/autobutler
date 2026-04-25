@@ -5,6 +5,8 @@ import 'package:flutter/material.dart'
         MouseCursor,
         BuildContext,
         Border,
+        BorderSide,
+        Color,
         EdgeInsets,
         Theme,
         BorderRadius,
@@ -19,6 +21,10 @@ class Cell extends StatelessWidget {
   final MouseCursor cursor;
   final double height;
 
+  /// When non-null, this color is used as the cell border to indicate that
+  /// the cell is referenced by the formula currently being edited.
+  final Color? referenceColor;
+
   const Cell({
     super.key,
     required this.child,
@@ -26,6 +32,7 @@ class Cell extends StatelessWidget {
     required this.isHighlighted,
     required this.cursor,
     this.height = 40,
+    this.referenceColor,
   });
 
   @override
@@ -37,12 +44,14 @@ class Cell extends StatelessWidget {
         height: height,
         decoration: BoxDecoration(
           color: isActive ? cs.primaryContainer : null,
-          border: Border.all(
-            color: (isActive || isHighlighted)
-                ? cs.primary
-                : cs.onSurface.withValues(alpha: 0.2),
-            width: 1.0,
-          ),
+          border: referenceColor != null
+              ? Border.all(color: referenceColor!, width: 2.0)
+              : Border.all(
+                  color: (isActive || isHighlighted)
+                      ? cs.primary
+                      : cs.onSurface.withValues(alpha: 0.2),
+                  width: 1.0,
+                ),
           borderRadius: BorderRadius.zero,
         ),
         padding: const EdgeInsets.all(1),
