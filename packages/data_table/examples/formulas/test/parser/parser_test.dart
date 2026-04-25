@@ -91,5 +91,131 @@ void main() {
       expect(parsed.cellRefs, orderedEquals(['A1']));
       expect(parsed.hasRangeArgs, isTrue);
     });
+
+    test('parses literals and grouped expressions', () {
+      final stringParsed = parseTokens(lex('="hello"'));
+      expect(stringParsed.root, isA<StringNode>());
+      expect((stringParsed.root as StringNode).value, 'hello');
+
+      final boolParsed = parseTokens(lex('=TRUE'));
+      expect(boolParsed.root, isA<BoolNode>());
+      expect((boolParsed.root as BoolNode).value, isTrue);
+
+      final groupedParsed = parseTokens(lex('=(1 + 2) * 3'));
+      final root = groupedParsed.root as BinaryNode;
+      expect(root.operatorKind, TokenKind.star);
+      expect(root.left, isA<BinaryNode>());
+      expect(root.right, isA<NumberNode>());
+    });
+
+    test('parses cell references and deduplicates metadata in encounter order',
+        () {
+      final parsed = parseTokens(lex('=SUM(A1, A1, B2, A1, B2) + A1'));
+
+      expect(parsed.calledFunctions, orderedEquals(['SUM']));
+      expect(parsed.cellRefs, orderedEquals(['A1', 'B2']));
+      expect(parsed.rangeRefs, isEmpty);
+      expect(parsed.hasRangeArgs, isFalse);
+    });
+
+    test('parses nested function calls with range arguments', () {
+      final parsed = parseTokens(lex('=IF(A1>0, SUM(B1:B3), MAX(C1:C3))'));
+
+      expect(parsed.root, isA<CallNode>());
+      expect(parsed.calledFunctions, orderedEquals(['IF', 'SUM', 'MAX']));
+      expect(parsed.cellRefs, orderedEquals(['A1']));
+      expect(parsed.rangeRefs, orderedEquals(['B1:B3', 'C1:C3']));
+      expect(parsed.hasRangeArgs, isTrue);
+    });
+
+    test('makes power right associative across repeated operators', () {
+      final parsed = parseTokens(lex('=2 ^ 3 ^ 4'));
+      final root = parsed.root as BinaryNode;
+
+      expect(root.operatorKind, TokenKind.caret);
+      expect((root.left as NumberNode).value, 2);
+
+      final nested = root.right as BinaryNode;
+      expect(nested.operatorKind, TokenKind.caret);
+      expect((nested.left as NumberNode).value, 3);
+      expect((nested.right as NumberNode).value, 4);
+    });
+
+    test('makes comparison left associative', () {
+      final parsed = parseTokens(lex('=1 < 2 < 3'));
+      final root = parsed.root as BinaryNode;
+
+      expect(root.operatorKind, TokenKind.lt);
+      expect(root.left, isA<BinaryNode>());
+      expect((root.right as NumberNode).value, 3);
+
+      final left = root.left as BinaryNode;
+      expect(left.operatorKind, TokenKind.lt);
+      expect((left.left as NumberNode).value, 1);
+      expect((left.right as NumberNode).value, 2);
+    });
+
+    test('reports missing closing paren with precise offset', () {
+      expect(
+        () => parseTokens(lex('=SUM(A1, 2')),
+        throwsA(
+          isA<LexError>().having((error) => error.offset, 'offset', 9).having(
+                (error) => error.message,
+                'message',
+                contains('Expected ")" after function arguments'),
+              ),
+        ),
+      );
+    });
+
+    test('reports missing cell ref after range colon', () {
+      expect(
+        () => parseTokens(lex('=SUM(A1:, 2)')),
+        throwsA(
+          isA<LexError>().having((error) => error.offset, 'offset', 7).having(
+                (error) => error.message,
+                'message',
+                contains('Expected cell reference after'),
+              ),
+        ),
+      );
+    });
+
+    test('reports trailing comma in argument lists', () {
+      expect(
+        () => parseTokens(lex('=SUM(A1,)')),
+        throwsA(
+          isA<LexError>().having((error) => error.offset, 'offset', 7).having(
+                (error) => error.message,
+                'message',
+                contains('Expected expression'),
+              ),
+        ),
+      );
+    });
+
+    test('rejects empty token streams and leftover tokens', () {
+      expect(
+        () => parseTokens(lex('')),
+        throwsA(
+          isA<LexError>().having((error) => error.offset, 'offset', 0).having(
+                (error) => error.message,
+                'message',
+                contains('Expected expression'),
+              ),
+        ),
+      );
+
+      expect(
+        () => parseTokens(lex('=1 2')),
+        throwsA(
+          isA<LexError>().having((error) => error.offset, 'offset', 2).having(
+                (error) => error.message,
+                'message',
+                contains('Expected end of formula'),
+              ),
+        ),
+      );
+    });
   });
 }
