@@ -492,7 +492,19 @@ class _DataSheetViewState extends State<_DataSheetView> {
                     keyboardFocus.requestFocus();
                   },
                 )
-              : Text(rowCells[c].value);
+              : Builder(builder: (context) {
+                  final display = controller.displayValueAt(r, c);
+                  final isError = controller.isCellError(r, c);
+                  return Text(
+                    display,
+                    style: isError
+                        ? TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                            fontWeight: FontWeight.w500,
+                          )
+                        : null,
+                  );
+                });
 
           final cell = Cell(
             key: ValueKey('r${r}c$c'),
