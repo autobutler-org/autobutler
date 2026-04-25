@@ -35,4 +35,12 @@ class Token {
     }
     return double.tryParse(value);
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Token && runtimeType == other.runtimeType && kind == other.kind && value == other.value;
+
+  @override
+  int get hashCode => kind.hashCode ^ value.hashCode;
 }
