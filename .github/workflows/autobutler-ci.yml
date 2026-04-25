@@ -4,6 +4,8 @@ on:
     branches:
       - main
   workflow_dispatch:
+permissions:
+  contents: read
 defaults:
   run:
     shell: bash
@@ -68,3 +70,59 @@ jobs:
       - name: Build [android]
         run: |
           make build/frontend/android
+  autobutler-ci-image:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - odroid-n2
+          - pi4
+          - pi5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: arm64
+
+      - name: Cache Packer plugins
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ runner.home }}/.packer.d
+          key: packer-plugins-${{ runner.os }}-${{ hashFiles('os/autobutler.pkr.hcl') }}
+          restore-keys: |
+            packer-plugins-${{ runner.os }}-
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xz-utils kpartx curl jq qemu-user-static unzip
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@v3
+        with:
+          version: '1.15.2'
+
+      - name: Packer init (downloads plugins)
+        run: |
+          cd os
+          packer init ./autobutler.pkr.hcl
+
+      - name: Verify Packer configuration
+        run: |
+          cd os
+          packer validate -var "board=${{ matrix.target }}" ./autobutler.pkr.hcl
+
+      - name: Build image [${{ matrix.target }}]
+        run: |
+          cd os
+          packer build -only=${{ matrix.target }} ./autobutler.pkr.hcl
+
+      - name: Verify image artifacts [${{ matrix.target }}]
+        run: |
+          cd os
+          ls -lh autobutler-${{ matrix.target }}.img.xz* || exit 1
