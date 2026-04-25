@@ -484,6 +484,7 @@ check/format/go: ## Check Go code formatting
 
 .PHONY: check/format/packer
 check/format/packer: ## Check Packer HCL formatting
+	echo "Checking Packer HCL formatting..."
 	packer fmt -check os/
 
 .PHONY: check/lint

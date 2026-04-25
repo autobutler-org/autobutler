@@ -54,6 +54,10 @@ locals {
 
   // Path to the common provision script (relative to os/ directory where packer build is run)
   provision_script = "${path.root}/scripts/provision.sh"
+  iso = {
+    url      = "https://cdimage.ubuntu.com/releases/24.04/release/ubuntu-24.04.4-preinstalled-server-arm64+raspi.img.xz"
+    checksum = "sha256:790652faeb4f61ce7bb12f5cb61734595c61d3cd882915b8b5f9918106c80d37"
+  }
 }
 
 // -----------------------
@@ -71,8 +75,8 @@ source "qemu" "pi4" {
   output_directory = "output/pi4"
   disk_size        = 8192
   headless         = true
-  iso_url          = "https://cdimage.ubuntu.com/releases/24.04/release/ubuntu-24.04-preinstalled-server-arm64+raspi.img.xz"
-  iso_checksum     = "none"
+  iso_url          = local.iso.url
+  iso_checksum     = local.iso.checksum
   // Consider adding: qemu_binary, qemuargs, boot_command, etc.
 }
 
@@ -81,8 +85,8 @@ source "qemu" "pi5" {
   format           = "raw"
   output_directory = "output/pi5"
   disk_size        = 16384
-  iso_url          = "https://cdimage.ubuntu.com/releases/24.04/release/ubuntu-24.04-preinstalled-server-arm64+raspi.img.xz"
-  iso_checksum     = "none"
+  iso_url          = local.iso.url
+  iso_checksum     = local.iso.checksum
   headless         = true
 }
 
@@ -91,8 +95,8 @@ source "qemu" "odroid-n2" {
   format           = "raw"
   output_directory = "output/odroid-n2"
   disk_size        = 12288
-  iso_url          = "https://cdimage.ubuntu.com/releases/24.04/release/ubuntu-24.04-preinstalled-server-arm64+raspi.img.xz"
-  iso_checksum     = "none"
+  iso_url          = local.iso.url
+  iso_checksum     = local.iso.checksum
   headless         = true
 }
 
@@ -125,7 +129,7 @@ build {
     inline = [
       // locate the produced .img or .raw file, compress to .img.xz, and generate checksum
       "set -e",
-      "OUT_DIR=output/pi4; IMG=$(find \"${PWD}/$OUT_DIR\" -maxdepth 1 -type f -name '*.img' -o -name '*.raw' | head -n1)",
+      "OUT_DIR=output/pi4; IMG=$(find \"$${PWD}/$OUT_DIR\" -maxdepth 1 -type f -name '*.img' -o -name '*.raw' | head -n1)",
       "if [ -z \"$IMG\" ]; then echo 'ERROR: produced image not found in' $OUT_DIR; exit 1; fi",
       "DEST=\"${local.name_pi4}.img.xz\"",
       "xz -T0 -9 -c \"$IMG\" > \"$DEST\"",
