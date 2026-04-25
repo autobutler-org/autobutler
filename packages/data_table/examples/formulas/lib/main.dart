@@ -32,9 +32,18 @@ void main() {
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
                 children: const [
-                  Expanded(flex: 3, child: Text('Equation', style: TextStyle(fontWeight: FontWeight.bold))),
-                  Expanded(flex: 1, child: Text('Hardcoded', style: TextStyle(fontWeight: FontWeight.bold))),
-                  Expanded(flex: 2, child: Text('Answer', style: TextStyle(fontWeight: FontWeight.bold))),
+                  Expanded(
+                      flex: 3,
+                      child: Text('Equation',
+                          style: TextStyle(fontWeight: FontWeight.bold))),
+                  Expanded(
+                      flex: 1,
+                      child: Text('Hardcoded',
+                          style: TextStyle(fontWeight: FontWeight.bold))),
+                  Expanded(
+                      flex: 2,
+                      child: Text('Answer',
+                          style: TextStyle(fontWeight: FontWeight.bold))),
                 ],
               ),
             ),
@@ -51,8 +60,12 @@ void main() {
                     child: Row(
                       children: [
                         Expanded(flex: 3, child: Text(row[0])),
-                        Expanded(flex: 1, child: Text(row[1], textAlign: TextAlign.center)),
-                        Expanded(flex: 2, child: Text(row[2], textAlign: TextAlign.right)),
+                        Expanded(
+                            flex: 1,
+                            child: Text(row[1], textAlign: TextAlign.center)),
+                        Expanded(
+                            flex: 2,
+                            child: Text(row[2], textAlign: TextAlign.right)),
                       ],
                     ),
                   );
