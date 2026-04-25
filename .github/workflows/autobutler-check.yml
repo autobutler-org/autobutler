@@ -7,6 +7,8 @@ on:
 defaults:
   run:
     shell: bash
+permissions:
+  contents: read
 jobs:
   autobutler-check-backend:
     runs-on: ubuntu-latest
