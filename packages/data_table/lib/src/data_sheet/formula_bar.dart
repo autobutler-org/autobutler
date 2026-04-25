@@ -341,9 +341,15 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
     if (_barCtrl.text != newText) {
       _barCtrl.text = newText;
     }
-    // Update reference highlights immediately whenever the selected cell
-    // changes — even if the user hasn't typed anything in the bar yet.
-    _updateRefHighlights(newText);
+    // Update reference highlights after the current listener dispatch
+    // completes. Calling setActiveRefColors (which calls notifyListeners)
+    // from inside an _onControllerChanged listener would cause reentrancy
+    // in ChangeNotifier and crash on web (DDC). Schedule it as a microtask
+    // so it runs outside the current notifyListeners call stack.
+    final textToHighlight = newText;
+    Future.microtask(() {
+      if (mounted) _updateRefHighlights(textToHighlight);
+    });
   }
 
   // ---------------------------------------------------------------------------
