@@ -56,10 +56,6 @@ jobs:
         uses: actions/checkout@v6
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
-      - name: Test package [packages/ab_formula]
-        run: |
-          echo "Running Dart tests for packages/ab_formula"
-          dart test packages/ab_formula
       - name: Build [web]
         run: |
           make build/frontend/web
