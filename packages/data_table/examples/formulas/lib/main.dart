@@ -1,6 +1,16 @@
 // ignore_for_file: avoid_print
 
+import 'package:data_table_example_formulas/evaluation/evaluation.dart';
 import 'package:flutter/material.dart';
+
+String _formatValue(FormulaValue value) => switch (value) {
+      NumberValue(:final value) => value == value.truncateToDouble()
+          ? value.toInt().toString()
+          : value.toString(),
+      StringValue(:final value) => value,
+      BoolValue(:final value) => value ? 'TRUE' : 'FALSE',
+      ErrorValue(:final code) => code,
+    };
 
 void main() {
   final rows = <List<String>>[
@@ -17,8 +27,14 @@ void main() {
     ['Boolean TRUE', 'TRUE', '=TRUE'],
     ['SUM function', '6', '=SUM(1,2,3)'],
     ['lowercase function (case insensitivity)', '9', '=sum(4,5)'],
-    ['Division by zero (error handling)', 'Error', '=1/0'],
+    ['Division by zero (error handling)', '#DIV/0!', '=1/0'],
   ];
+
+  final computed = DataSheetInterpreter().interpretSheet(
+    rows.length,
+    rows[0].length,
+    (r, c) => rows[r][c],
+  );
 
   runApp(MaterialApp(
     home: Scaffold(
@@ -65,7 +81,12 @@ void main() {
                             child: Text(row[1], textAlign: TextAlign.center)),
                         Expanded(
                             flex: 2,
-                            child: Text(row[2], textAlign: TextAlign.right)),
+                            child: Text(
+                              _formatValue(
+                                computed[(index + 1, 2)] ?? blankValue,
+                              ),
+                              textAlign: TextAlign.right,
+                            )),
                       ],
                     ),
                   );
