@@ -5,7 +5,6 @@ import 'package:flutter/material.dart'
         MouseCursor,
         BuildContext,
         Border,
-        BorderSide,
         Color,
         EdgeInsets,
         Theme,

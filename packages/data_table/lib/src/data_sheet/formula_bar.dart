@@ -12,16 +12,44 @@ import 'cell/heading/util.dart';
 import 'data_sheet_controller.dart';
 
 /// Palette of colors used to color-code cell references in formula editing.
-/// Mirrors the Google Sheets palette.
+/// Ordered in repeating ROYGBIV-style cycles for better visual alternation.
 const _kRefPalette = [
-  Color(0xFF4285F4), // blue
-  Color(0xFFE64A19), // red-orange
-  Color(0xFF0F9D58), // green
-  Color(0xFF9C27B0), // purple
-  Color(0xFF00897B), // teal
-  Color(0xFFF4511E), // deep orange
-  Color(0xFF1E88E5), // light blue
-  Color(0xFF43A047), // light green
+  // Cycle 1: R O Y G B I V
+  Color(0xFFD00000), // red
+  Color(0xFFFF7B00), // vivid orange
+  Color(0xFFAACC00), // chartreuse
+  Color(0xFF2B9348), // green
+  Color(0xFF4361EE), // blue
+  Color(0xFF3A0CA3), // indigo
+  Color(0xFF7B2CBF), // violet
+  // Cycle 2: R O Y G B I V
+  Color(0xFFE63946), // vermillion
+  Color(0xFFBB3E03), // rust
+  Color(0xFFE9D8A6), // sand
+  Color(0xFF4C956C), // leaf green
+  Color(0xFF4895EF), // sky blue
+  Color(0xFF3F37C9), // royal blue
+  Color(0xFF5A189A), // purple
+  // Cycle 3: R O Y G B I V
+  Color(0xFFAE2012), // brick red
+  Color(0xFFCA6702), // burnt orange
+  Color(0xFFEE9B00), // amber
+  Color(0xFF55A630), // yellow green
+  Color(0xFF4CC9F0), // light cyan
+  Color(0xFF1D3557), // navy
+  Color(0xFFB5179E), // magenta
+  // Remaining colors in continued warm→cool passes.
+  Color(0xFF9B2226), // wine red
+  Color(0xFF80B918), // lime olive
+  Color(0xFF70E000), // bright lime
+  Color(0xFF118AB2), // cyan blue
+  Color(0xFF005F73), // deep cyan
+  Color(0xFF9EF01A), // neon lime
+  Color(0xFF457B9D), // slate blue
+  Color(0xFF006D77), // deep teal
+  Color(0xFF94D2BD), // seafoam
+  Color(0xFF0A9396), // cyan teal
+  Color(0xFF06D6A0), // mint
 ];
 
 /// A [TextEditingController] that renders cell/range reference tokens in the
@@ -500,19 +528,27 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
     final colors = <(int, int), Color>{};
     for (final ref in parsed.cellRefs) {
       final pos = _parseCellRef(ref);
-      if (pos == null) continue;
+      if (pos == null) {
+        continue;
+      }
       if (pos.$1 < 0 ||
           pos.$1 >= _controller.rowCount ||
           pos.$2 < 0 ||
-          pos.$2 >= _controller.colCount) continue;
+          pos.$2 >= _controller.colCount) {
+        continue;
+      }
       colors[pos] = tokenColors[ref]!;
     }
     for (final range in parsed.rangeRefs) {
       final colon = range.indexOf(':');
-      if (colon < 0) continue;
+      if (colon < 0) {
+        continue;
+      }
       final start = _parseCellRef(range.substring(0, colon));
       final end = _parseCellRef(range.substring(colon + 1));
-      if (start == null || end == null) continue;
+      if (start == null || end == null) {
+        continue;
+      }
       final color = tokenColors[range]!;
       final rMin = start.$1 < end.$1 ? start.$1 : end.$1;
       final rMax = start.$1 > end.$1 ? start.$1 : end.$1;
@@ -523,7 +559,9 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
           if (r < 0 ||
               r >= _controller.rowCount ||
               c < 0 ||
-              c >= _controller.colCount) continue;
+              c >= _controller.colCount) {
+            continue;
+          }
           colors[(r, c)] = color;
         }
       }
