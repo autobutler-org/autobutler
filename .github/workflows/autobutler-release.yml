@@ -4,6 +4,11 @@ on:
     tags:
       - 'v*.*.*'
   workflow_dispatch:
+    inputs:
+      target:
+        description: 'Single packer target to build (e.g. pi4, pi5). Empty builds all targets.'
+        required: false
+        default: ''
 defaults:
   run:
     shell: bash
@@ -60,6 +65,9 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+    strategy:
+      matrix:
+        target: [pi4, pi5, odroid-n2]
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -71,29 +79,77 @@ jobs:
         with:
           platforms: arm64
 
-      - name: Install dependencies
+      - name: Cache Packer plugins
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ runner.home }}/.packer.d
+          key: packer-plugins-${{ runner.os }}-${{ hashFiles('os/autobutler.pkr.hcl') }}
+          restore-keys: |
+            packer-plugins-${{ runner.os }}-
+
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xz-utils kpartx curl jq qemu-user-static
+          sudo apt-get install -y xz-utils kpartx curl jq qemu-user-static unzip
 
-      - name: Build Pi 4 image
-        run: sudo ./os/build-image.sh pi4
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@v3
+        with:
+          version: '1.15.2'
 
-      - name: Build Pi 5 image
-        run: sudo ./os/build-image.sh pi5
+      - name: Verify Packer
+        run: packer version
 
-      - name: Generate checksums
+      - name: Packer init (downloads plugins)
         run: |
           cd os
-          sha256sum autobutler-pi4.img.xz autobutler-pi5.img.xz > SHA256SUMS-pi.txt
-          cat SHA256SUMS-pi.txt
+          packer init ./autobutler.pkr.hcl
+
+      - name: Build image (per target)
+        if: ${{ github.event.inputs.target == '' || matrix.target == github.event.inputs.target }}
+        run: |
+          cd os
+          # Build only the selected target; force re-use and fail fast on error
+          packer build -force -only=${{ matrix.target }} ./autobutler.pkr.hcl
+
+      - name: List produced artifacts
+        if: ${{ github.event.inputs.target == '' || matrix.target == github.event.inputs.target }}
+        run: |
+          cd os
+          ls -lh *.img* || true
+
+      - name: Generate checksum (per target)
+        if: ${{ github.event.inputs.target == '' || matrix.target == github.event.inputs.target }}
+        run: |
+          cd os
+          # find produced xz for this target pattern and checksum it
+          IMG=$(ls *${{ matrix.target }}*.img.xz 2>/dev/null || true)
+          if [ -z "$IMG" ]; then
+            echo "No image found for target ${{ matrix.target }}"
+            exit 1
+          fi
+          sha256sum "$IMG" > "SHA256SUM-${{ matrix.target }}.txt"
+          cat "SHA256SUM-${{ matrix.target }}.txt"
+
+      - name: Upload image artifact
+        if: ${{ github.event.inputs.target == '' || matrix.target == github.event.inputs.target }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: image-${{ matrix.target }}
+          path: |
+            os/*${{ matrix.target }}*.img.xz
+            os/SHA256SUM-${{ matrix.target }}.txt
 
       - name: Attach images to release
+        if: ${{ github.event.inputs.target == '' || matrix.target == github.event.inputs.target }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload "${{ github.ref_name }}" \
-            os/autobutler-pi4.img.xz \
-            os/autobutler-pi5.img.xz \
-            os/SHA256SUMS-pi.txt \
-            --clobber
+          cd os
+          gh release upload "${{ github.ref_name }}" --clobber *${{ matrix.target }}*.img.xz SHA256SUM-${{ matrix.target }}.txt || true
+
+      - name: Notify skipped
+        if: ${{ github.event.inputs.target != '' && matrix.target != github.event.inputs.target }}
+        run: |
+          echo "Matrix target ${{ matrix.target }} skipped because workflow_dispatch target was set to ${{ github.event.inputs.target }}"

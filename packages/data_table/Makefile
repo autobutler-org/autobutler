@@ -58,7 +58,16 @@ test: test/unit ## Run tests
 
 .PHONY: test/unit
 test/unit: ## Run unit tests
+	echo "Testing data table package..."
 	flutter test
+	for example in examples/*/; do
+		if [ -f "$$example/pubspec.yaml" ] && [ -d "$$example/test" ]; then
+			echo "Testing $$example..."
+			cd "$$example"
+			flutter test
+			cd ../..
+		fi
+	done
 
 .PHONY: tidy
 tidy: tidy/flutter ## Tidy dependencies
@@ -66,6 +75,14 @@ tidy: tidy/flutter ## Tidy dependencies
 .PHONY: tidy/flutter
 tidy/flutter: ## Tidy Flutter dependencies
 	flutter pub get
+	for example in examples/*/; do
+		if [ -f "$$example/pubspec.yaml" ]; then
+			echo "Running pub get in $$example..."
+			cd "$$example"
+			flutter pub get
+			cd ../..
+		fi
+	done
 
 .PHONY: upgrade
 upgrade: upgrade/flutter upgrade/go ## Upgrade dependencies
@@ -122,7 +139,7 @@ help: ## Displays help info
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 env-%: ## Check for env var
-	if [ -z "$($*)" ]; then \
-		echo "Error: Environment variable '$*' is not set."; \
-		exit 1; \
+	if [ -z "$($*)" ]; then
+		echo "Error: Environment variable '$*' is not set."
+		exit 1
 	fi

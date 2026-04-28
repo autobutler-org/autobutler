@@ -20,6 +20,7 @@
     "vitest.explorer",
     "vscode-icons-team.vscode-icons",
     "anthropic.claude-code",
-    "github.copilot-chat"
+    "github.copilot-chat",
+    "hashicorp.hcl"
   ]
 }

@@ -107,7 +107,7 @@ Adjust the `sku` parameter in `azuredeploy.parameters.json` for different perfor
 ```bash
 # Build and push new image with tag
 VERSION=v1.0.1
-docker build -f cd/azure/Dockerfile.azure -t autobutleracr.azurecr.io/autobutler:$VERSION \
+docker build -f cd/azure/Dockerfile -t autobutleracr.azurecr.io/autobutler:$VERSION \
   --build-arg VERSION=$VERSION .
 docker push autobutleracr.azurecr.io/autobutler:$VERSION
 

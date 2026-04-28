@@ -87,18 +87,30 @@ Don't edit the generated files by hand — they'll be overwritten by `make gener
 cmd/autobutler/         Entry point
 internal/
   db/                   sqlc-generated database layer + migrations
-  server/api/v1/        API handlers (one file per route)
+  server/api/v1/        API handlers (one file per route group)
+    albums/             Photo album CRUD
+    cirrus/             File browser and file-type listing
+    favorites/          Favorites toggle, list, and check
+    photos/             Photo listing, metadata, rotation
+    thumbnails/         Thumbnail generation and cache
   server/middleware/    Gin middleware (auth, OTEL, etc.)
 pkg/util/               Shared utilities
   authutil/             Auth: hashing, session tokens, recovery phrases
+  favoritesutil/        Favorites toggle and smart-album sync logic
   serverutil/           HTTP helpers: Response type, WrapApiRoute, HttpError
+  sqlutil/              DB helpers: FormatTime, NullInt64, NullStringPtr
   storageutil/          File system and device utilities
   updateutil/           Version/update logic
 lib/                    Flutter frontend
-  pages/                UI pages
-  services/             API clients (CirrusService, AppSettings, etc.)
+  models/               Data models (CirrusFileNode, PhotoAlbum, etc.)
+  pages/                UI pages (photos, docs, sheets, file browser, etc.)
+  services/             API clients (CirrusService, FavoritesService, etc.)
+  utils/                Shared utilities (SafeSetStateMixin, path helpers)
   widgets/              Reusable components
+    layout/             AppBar, drawer, brand button
+    photos/             Album sidebar, album tree tile, photo grid
 docs/                   This documentation
+packages/data_table/    Pure-Dart headless spreadsheet engine (used by sheets editor)
 sql/queries/            sqlc SQL queries
 ```
 
@@ -109,12 +121,20 @@ Run `make help` to see everything. The most common ones:
 | Target | What it does |
 | ------ | ------------ |
 | `make watch/backend` | Backend with hot reload |
-| `make serve/frontend` | Flutter web |
+| `make serve/frontend` | Flutter web dev server |
+| `make serve/frontend/mobile` | Flutter mobile (after `make emulate`) |
+| `make emulate/android` | Launch Android emulator |
+| `make emulate/ios` | Launch iOS simulator |
 | `make build` | Build everything |
 | `make generate` | Regenerate sqlc + swagger |
-| `make check` | Lint |
-| `make test/unit/backend` | Go tests |
-| `make format` | Format code |
+| `make generate/backend/sqlc` | Regenerate DB layer only |
+| `make generate/backend/swagger` | Regenerate API docs only |
+| `make check` | Full lint + format check |
+| `make format` | Auto-format code |
+| `make test/unit/backend` | Go unit tests with coverage |
+| `make test/unit/frontend` | Flutter unit tests |
+| `make test/integration/backend` | Go integration tests |
+| `make tidy` | Tidy Go + Flutter dependencies |
 
 ## Notes
 

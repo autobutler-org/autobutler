@@ -38,7 +38,7 @@ class FavoritesService with AuthenticatedService {
     } else {
       resolved = uri;
     }
-    return resolved.replace(path: '/api/v1$path');
+    return resolved.resolve('/api/v1$path');
   }
 
   /// Toggles favorite state. Returns the new isFavorite value.

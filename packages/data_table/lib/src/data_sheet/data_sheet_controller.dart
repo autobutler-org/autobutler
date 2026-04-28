@@ -1,6 +1,8 @@
 import 'dart:ui' as ui;
 
+import 'package:ab_formula/evaluation/evaluation.dart';
 import 'package:flutter/foundation.dart' show ChangeNotifier, ValueNotifier;
+import 'package:flutter/material.dart' show Color;
 import 'package:flutter/painting.dart' show TextPainter, TextSpan, TextStyle;
 import 'package:flutter/widgets.dart' show TextEditingController;
 
@@ -66,6 +68,15 @@ class DataSheetController extends ChangeNotifier {
   /// Selection state shared between the sheet view and the control bar.
   final DataSheetSelectionModel selection = DataSheetSelectionModel();
 
+  /// Overlay of formula-evaluated values, keyed by (row, col).
+  /// Only formula cells appear here; literal cells are absent.
+  Map<(int, int), FormulaValue> _computedValues = {};
+
+  /// Color assignments for cells referenced by the formula currently being
+  /// edited. Set by [DataSheetFormulaBar] while a formula is active;
+  /// cleared when editing commits or cancels.
+  Map<(int, int), Color> activeRefColors = {};
+
   /// Shared [TextEditingController] for the currently active (in-edit) cell.
   /// Both the [DataSheet] cell editor and [DataSheetFormulaBar] use this
   /// single controller so they remain in sync without extra bridging logic.
@@ -80,9 +91,61 @@ class DataSheetController extends ChangeNotifier {
   DataSheetController._(
       this.table, this._rows, this.columnWidths, this.rowHeights) {
     selection.addListener(_onSelectionChanged);
+    _recompute();
   }
 
   void _onSelectionChanged() => notifyListeners();
+
+  // -------------------------------------------------------------------------
+  // Formula evaluation
+  // -------------------------------------------------------------------------
+
+  /// Re-evaluates all formula cells in the sheet and updates [_computedValues].
+  /// Called automatically after every mutation.
+  void _recompute() {
+    _computedValues = DataSheetInterpreter().interpretSheet(
+      rowCount,
+      colCount,
+      (r, c) => cellAt(r, c).value.toString(),
+    );
+  }
+
+  /// Returns the display value for a cell.
+  ///
+  /// For formula cells (raw value starts with `=`) this is the computed result
+  /// from [_computedValues]. For literal cells this is the raw string.
+  String displayValueAt(int row, int col) {
+    final computed = _computedValues[(row, col)];
+    if (computed != null) return _formatFormulaValue(computed);
+    return cellAt(row, col).value.toString();
+  }
+
+  /// Returns true if the cell at [row],[col] evaluated to an error.
+  bool isCellError(int row, int col) =>
+      _computedValues[(row, col)] is ErrorValue;
+
+  /// Sets the active reference color map and notifies listeners so the grid
+  /// redraws the reference borders.
+  void setActiveRefColors(Map<(int, int), Color> colors) {
+    activeRefColors = colors;
+    notifyListeners();
+  }
+
+  /// Clears the active reference color map.
+  void clearActiveRefColors() {
+    if (activeRefColors.isEmpty) return;
+    activeRefColors = {};
+    notifyListeners();
+  }
+
+  static String _formatFormulaValue(FormulaValue v) => switch (v) {
+        NumberValue(:final value) => value == value.truncateToDouble()
+            ? value.toInt().toString()
+            : value.toString(),
+        StringValue(:final value) => value,
+        BoolValue(:final value) => value ? 'TRUE' : 'FALSE',
+        ErrorValue(:final code) => code,
+      };
 
   factory DataSheetController.fromTable(
     DataTable table, {
@@ -134,6 +197,7 @@ class DataSheetController extends ChangeNotifier {
     if (_undoStack.isEmpty) return;
     _redoStack.add(_TableSnapshot.capture(this));
     _undoStack.removeLast().restore(this);
+    _recompute();
     notifyListeners();
   }
 
@@ -141,6 +205,7 @@ class DataSheetController extends ChangeNotifier {
     if (_redoStack.isEmpty) return;
     _undoStack.add(_TableSnapshot.capture(this));
     _redoStack.removeLast().restore(this);
+    _recompute();
     notifyListeners();
   }
 
@@ -154,6 +219,7 @@ class DataSheetController extends ChangeNotifier {
     updated[col] = newCell;
     _rows[row].value = updated;
     _rows[row].notifyListeners();
+    _recompute();
     notifyListeners();
   }
 
@@ -173,6 +239,7 @@ class DataSheetController extends ChangeNotifier {
       table.rows[rowIndex].cells[c] = empty[c];
     }
     _rows[rowIndex].value = empty;
+    _recompute();
     notifyListeners();
   }
 
@@ -186,6 +253,7 @@ class DataSheetController extends ChangeNotifier {
       updated[colIndex] = DataCell('');
       _rows[r].value = updated;
     }
+    _recompute();
     notifyListeners();
   }
 
@@ -201,6 +269,7 @@ class DataSheetController extends ChangeNotifier {
     table.rows.add(DataRow(List<DataCell>.from(cells)));
     _rows.add(ValueNotifier<List<DataCell>>(List<DataCell>.from(cells)));
     rowHeights.add(kDefaultRowHeight);
+    _recompute();
     notifyListeners();
   }
 
@@ -215,6 +284,7 @@ class DataSheetController extends ChangeNotifier {
     _rows.insert(
         clamped, ValueNotifier<List<DataCell>>(List<DataCell>.from(newCells)));
     rowHeights.insert(clamped, kDefaultRowHeight);
+    _recompute();
     notifyListeners();
   }
 
@@ -226,6 +296,7 @@ class DataSheetController extends ChangeNotifier {
     _rows[index].dispose();
     _rows.removeAt(index);
     if (index < rowHeights.length) rowHeights.removeAt(index);
+    _recompute();
     notifyListeners();
   }
 
@@ -241,6 +312,7 @@ class DataSheetController extends ChangeNotifier {
     final srcH =
         index < rowHeights.length ? rowHeights[index] : kDefaultRowHeight;
     rowHeights.insert(index + 1, srcH);
+    _recompute();
     notifyListeners();
   }
 
@@ -256,6 +328,7 @@ class DataSheetController extends ChangeNotifier {
       _rows.add(ValueNotifier<List<DataCell>>([DataCell('')]));
       columnWidths.add(kDefaultColumnWidth);
       rowHeights.add(kDefaultRowHeight);
+      _recompute();
       notifyListeners();
       return;
     }
@@ -265,6 +338,7 @@ class DataSheetController extends ChangeNotifier {
       _rows[i].value = updated;
     }
     columnWidths.add(kDefaultColumnWidth);
+    _recompute();
     notifyListeners();
   }
 
@@ -285,6 +359,7 @@ class DataSheetController extends ChangeNotifier {
     } else {
       columnWidths.add(kDefaultColumnWidth);
     }
+    _recompute();
     notifyListeners();
   }
 
@@ -298,6 +373,7 @@ class DataSheetController extends ChangeNotifier {
       _rows[i].value = updated;
     }
     if (index < columnWidths.length) columnWidths.removeAt(index);
+    _recompute();
     notifyListeners();
   }
 
@@ -319,6 +395,7 @@ class DataSheetController extends ChangeNotifier {
     } else {
       columnWidths.add(srcWidth);
     }
+    _recompute();
     notifyListeners();
   }
 
@@ -423,6 +500,7 @@ class DataSheetController extends ChangeNotifier {
       updated[col] = DataCell(sourceValue);
       _rows[r].value = updated;
     }
+    _recompute();
     notifyListeners();
   }
 
@@ -441,6 +519,7 @@ class DataSheetController extends ChangeNotifier {
       updated[c] = DataCell(sourceValue);
     }
     _rows[row].value = updated;
+    _recompute();
     notifyListeners();
   }
 
@@ -477,6 +556,7 @@ class DataSheetController extends ChangeNotifier {
     rowHeights
       ..clear()
       ..addAll(sortedHeights);
+    _recompute();
     notifyListeners();
   }
 
@@ -497,6 +577,7 @@ class DataSheetController extends ChangeNotifier {
       _rows.removeAt(i);
       if (i < rowHeights.length) rowHeights.removeAt(i);
     }
+    _recompute();
     notifyListeners();
   }
 
@@ -548,7 +629,10 @@ class DataSheetController extends ChangeNotifier {
       }
       if (rowChanged) _rows[r].value = updated;
     }
-    if (count > 0) notifyListeners();
+    if (count > 0) {
+      _recompute();
+      notifyListeners();
+    }
     return count;
   }
 
@@ -597,6 +681,7 @@ class DataSheetController extends ChangeNotifier {
         List<double>.filled(newColCount, kDefaultColumnWidth, growable: true);
     rowHeights =
         List<double>.filled(_rows.length, kDefaultRowHeight, growable: true);
+    _recompute();
     notifyListeners();
   }
 
