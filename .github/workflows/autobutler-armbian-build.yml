@@ -45,6 +45,7 @@ jobs:
       contents: write
     outputs:
       autobutler_tag: ${{ steps.resolve-tag.outputs.autobutler_tag }}
+      armbian_revision: ${{ steps.resolve-tag.outputs.armbian_revision }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -74,7 +75,16 @@ jobs:
             exit 1
           fi
 
+          REVISION_TAG="${TAG#v}"
+          REVISION_TAG="${REVISION_TAG#V}"
+
+          if [[ ! "${REVISION_TAG}" =~ ^[0-9] ]]; then
+            echo "Resolved Autobutler tag '${TAG}' is not valid for Armbian REVISION"
+            exit 1
+          fi
+
           echo "autobutler_tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "armbian_revision=${REVISION_TAG}" >> "$GITHUB_OUTPUT"
           echo "Resolved Autobutler tag: ${TAG}"
 
       - name: Build image with embedded Autobutler tag
@@ -84,7 +94,7 @@ jobs:
           armbian_target: build
           armbian_board: ${{ inputs.armbian_board }}
           armbian_release: ${{ inputs.armbian_release }}
-          armbian_version: ${{ steps.resolve-tag.outputs.autobutler_tag }}
+          armbian_version: ${{ steps.resolve-tag.outputs.armbian_revision }}
           armbian_version_mode: exact
           armbian_release_title: Autobutler Armbian image (${{ steps.resolve-tag.outputs.autobutler_tag }})
           armbian_release_body: |
