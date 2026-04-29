@@ -41,7 +41,7 @@ clean/flutter: ## Clean flutter project
 	flutter clean
 
 .PHONY: setup
-setup: setup/gotools setup/air setup/sqlc setup/swag setup/flutter setup/packer setup/hooks ## Setup development environment
+setup: setup/gotools setup/air setup/sqlc setup/swag setup/flutter setup/hooks ## Setup development environment
 
 .PHONY: setup/air
 setup/air: ## Install air tool
@@ -147,26 +147,6 @@ setup/sqlc: ## Install sqlc tool
 setup/swag: ## Install swag tool
 	$(GO) install github.com/swaggo/swag/cmd/swag@latest
 
-.PHONY: setup/packer
-setup/packer: ## Install Packer for OS image builds
-ifeq ($(UNAME_S),Darwin)
-	brew tap hashicorp/tap
-	brew install hashicorp/tap/packer
-else ifeq ($(UNAME_S),Linux)
-	if command -v apt-get &> /dev/null; then
-		curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-		echo "deb [arch=amd64] https://apt.releases.hashicorp.com $$(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-		sudo apt-get update
-		sudo apt-get install -y packer
-	else
-		echo "Error: Package manager not found. Install Packer from https://www.packer.io/downloads"
-		exit 1
-	fi
-else
-	$(error "Packer setup is not supported on this OS. Visit https://www.packer.io/downloads for manual installation")
-endif
-	packer version
-
 .PHONY: setup/hooks
 setup/hooks: ## Install git hooks
 	ln -sf "$(PWD)/git/hooks/pre-commit" .git/hooks/pre-commit
@@ -221,35 +201,6 @@ build/provisioning: ## Build provisioning service
 .PHONY: build/lsusb
 build/lsusb: ## Build lsusb utility
 	$(GO) build -o ./build/lsusb ./cmd/lsusb/main.go
-
-DEVICE ?= odroid-n2
-
-.PHONY: build/image/init
-build/image/init: ## Initialize Packer plugins
-	cd os
-	packer init ./autobutler.pkr.hcl
-
-.PHONY: build/image
-build/image/all: build/image/init ## Build all OS images (pi4, pi5, odroid-n2)
-	cd os
-	packer build ./autobutler.pkr.hcl
-
-.PHONY: build/image/common
-build/image/common: build/image/init env-DEVICE
-	cd os
-	packer build -only=$(DEVICE).qemu.$(DEVICE) ./autobutler.pkr.hcl
-
-.PHONY: build/image/pi4
-build/image/pi4: ## Build Raspberry Pi 4 OS image
-	$(MAKE) build/image/common DEVICE=pi4
-
-.PHONY: build/image/pi5
-build/image/pi5: ## Build Raspberry Pi 5 OS image
-	$(MAKE) build/image/common DEVICE=pi5
-
-.PHONY: build/image/odroid-n2
-build/image/odroid-n2: ## Build ODROID N2 OS image
-	$(MAKE) build/image/common DEVICE=odroid-n2
 
 .PHONY: emulate
 emulate: ## Emulate mobile device
@@ -470,7 +421,7 @@ check/go: check/format/go check/lint/go ## Check Go code
 check/sqlc: check/lint/sqlc ## Check sqlc
 
 .PHONY: check/format
-check/format: check/format/flutter check/format/go check/format/packer ## Check code formatting
+check/format: check/format/flutter check/format/go ## Check code formatting
 
 .PHONY: check/format/flutter
 check/format/flutter: ## Check Flutter/Dart code formatting
@@ -482,13 +433,8 @@ check/format/go: ## Check Go code formatting
 		exit 1
 	fi
 
-.PHONY: check/format/packer
-check/format/packer: ## Check Packer HCL formatting
-	echo "Checking Packer HCL formatting..."
-	packer fmt -check os/
-
 .PHONY: check/lint
-check/lint: check/lint/flutter check/lint/go check/lint/sqlc check/lint/packer ## Check code quality
+check/lint: check/lint/flutter check/lint/go check/lint/sqlc ## Check code quality
 
 .PHONY: check/lint/flutter
 check/lint/flutter: ## Lint Flutter/Dart code
@@ -502,10 +448,6 @@ check/lint/go: internal/server/public/stub.txt ## Check Go code
 check/lint/sqlc: ## Check sqlc
 	sqlc vet
 
-.PHONY: check/lint/packer
-check/lint/packer: ## Validate Packer HCL
-	packer validate os/autobutler.pkr.hcl
-
 .PHONY: fix
 fix: fix/flutter fix/go ## Fix code issues
 
@@ -516,7 +458,7 @@ fix/flutter: format/flutter ## Fix Flutter code issues
 fix/go: tidy/go format/go ## Fix Go code issues
 
 .PHONY: format
-format: format/flutter format/go format/packer ## Format code
+format: format/flutter format/go ## Format code
 
 .PHONY: format/flutter
 format/flutter: ## Format Flutter/Dart code
@@ -525,10 +467,6 @@ format/flutter: ## Format Flutter/Dart code
 .PHONY: format/go
 format/go: ## Format Go code
 	gofmt -s -w .
-
-.PHONY: format/packer
-format/packer: ## Format Packer HCL
-	packer fmt os/
 
 ##@ Release
 

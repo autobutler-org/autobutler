@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Autobutler image provisioner
-# Idempotent shell provisioner used by Packer and for local image population.
+# Idempotent shell provisioner for local image population.
 # Installs the Autobutler binary, creates/enables a systemd service, applies UFW rules,
 # and adds an Avahi service definition.
 #
@@ -12,7 +12,6 @@
 # Usage examples:
 #  - Run on a live system (as root): sudo /usr/local/bin/provision.sh
 #  - Run against a mounted image: sudo ./provision.sh --root /mnt/image
-#  - Packer should invoke this script from the image context; when run by Packer without --root it will act on the target image directly.
 #
 # Notes for mounted-image usage:
 #  - When --root is provided the script will not attempt to run systemctl or apt-get inside the target image; it will only write files and set ownership/permissions. After booting the image, run the script without --root or enable services manually on first boot.
