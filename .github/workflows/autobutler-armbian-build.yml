@@ -32,10 +32,11 @@ jobs:
     permissions:
       contents: write
     strategy:
+      fail-fast: false
       matrix:
         board:
           - rpi4b
-          - odroid-n2
+          - odroidn2
     outputs:
       autobutler_tag: ${{ steps.resolve-tag.outputs.autobutler_tag }}
     steps:
