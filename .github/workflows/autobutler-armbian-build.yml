@@ -10,13 +10,16 @@ on:
       armbian_board:
         description: "Armbian board (for example: rpi4b, rpi5b, uefi-x86)"
         required: false
-        type: string
-        default: "uefi-x86"
+        type: choice
+        default: rpi4b
+        options:
+          - rpi4b
+          - odroid-n2
       armbian_release:
         description: "Armbian userspace release"
         required: false
         type: string
-        default: "noble"
+        default: noble
   workflow_call:
     inputs:
       autobutler_tag:
@@ -25,11 +28,11 @@ on:
       armbian_board:
         required: false
         type: string
-        default: "uefi-x86"
+        default: rpi4b
       armbian_release:
         required: false
         type: string
-        default: "noble"
+        default: noble
     secrets:
       armbian_token:
         required: false
