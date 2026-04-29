@@ -21,16 +21,11 @@ on:
         required: false
         type: string
         default: noble
-    secrets:
-      armbian_token:
-        required: false
 
 jobs:
   armbian-build:
     name: Build Armbian image
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -74,14 +69,7 @@ jobs:
       - name: Build image with embedded Autobutler tag
         uses: ./armbian-build
         with:
-          armbian_token: ${{ secrets.armbian_token || github.token }}
           armbian_target: build
           armbian_board: ${{ matrix.board }}
           armbian_release: ${{ inputs.armbian_release }}
           armbian_image_version: ${{ steps.resolve-tag.outputs.autobutler_tag }}
-          armbian_release_title: Autobutler Armbian image (${{ steps.resolve-tag.outputs.autobutler_tag }})
-          armbian_release_body: |
-            Autobutler Armbian image build.
-
-            Embedded Autobutler tag: ${{ steps.resolve-tag.outputs.autobutler_tag }}
-          armbian_release_tag: armbian-${{ steps.resolve-tag.outputs.autobutler_tag }}
