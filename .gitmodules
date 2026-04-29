@@ -1,0 +1,4 @@
+[submodule "armbian-build"]
+	path = armbian-build
+	url = https://github.com/autobutler-org/armbian-build
+	branch = 922-armbian-autobutler-image
