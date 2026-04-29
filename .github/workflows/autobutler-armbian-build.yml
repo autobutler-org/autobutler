@@ -1,4 +1,4 @@
-name: Autobutler Armbian Build
+name: Armbian Build
 
 permissions:
   contents: read
