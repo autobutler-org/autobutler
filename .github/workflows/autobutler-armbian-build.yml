@@ -81,7 +81,7 @@ jobs:
         uses: ./armbian-build
         with:
           armbian_token: ${{ secrets.armbian_token || github.token }}
-          armbian_target: image
+          armbian_target: build
           armbian_board: ${{ inputs.armbian_board }}
           armbian_release: ${{ inputs.armbian_release }}
           armbian_version: ${{ steps.resolve-tag.outputs.autobutler_tag }}
