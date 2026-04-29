@@ -1,6 +1,7 @@
 name: Autobutler Armbian Build
 
 on:
+  push:
   workflow_dispatch:
     inputs:
       autobutler_tag:
