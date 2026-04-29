@@ -7,14 +7,6 @@ on:
         description: "Autobutler release tag to embed (for example: v1.2.3). Leave empty to use latest release"
         required: false
         type: string
-      armbian_board:
-        description: "Armbian board (for example: rpi4b, rpi5b, uefi-x86)"
-        required: false
-        type: choice
-        default: rpi4b
-        options:
-          - rpi4b
-          - odroid-n2
       armbian_release:
         description: "Armbian userspace release"
         required: false
@@ -25,10 +17,6 @@ on:
       autobutler_tag:
         required: false
         type: string
-      armbian_board:
-        required: false
-        type: string
-        default: rpi4b
       armbian_release:
         required: false
         type: string
@@ -43,9 +31,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    strategy:
+      matrix:
+        board:
+          - rpi4b
+          - odroid-n2
     outputs:
       autobutler_tag: ${{ steps.resolve-tag.outputs.autobutler_tag }}
-      armbian_revision: ${{ steps.resolve-tag.outputs.armbian_revision }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -75,16 +67,7 @@ jobs:
             exit 1
           fi
 
-          REVISION_TAG="${TAG#v}"
-          REVISION_TAG="${REVISION_TAG#V}"
-
-          if [[ ! "${REVISION_TAG}" =~ ^[0-9] ]]; then
-            echo "Resolved Autobutler tag '${TAG}' is not valid for Armbian REVISION"
-            exit 1
-          fi
-
           echo "autobutler_tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "armbian_revision=${REVISION_TAG}" >> "$GITHUB_OUTPUT"
           echo "Resolved Autobutler tag: ${TAG}"
 
       - name: Build image with embedded Autobutler tag
@@ -92,10 +75,9 @@ jobs:
         with:
           armbian_token: ${{ secrets.armbian_token || github.token }}
           armbian_target: build
-          armbian_board: ${{ inputs.armbian_board }}
+          armbian_board: ${{ matrix.board }}
           armbian_release: ${{ inputs.armbian_release }}
-          armbian_version: ${{ steps.resolve-tag.outputs.armbian_revision }}
-          armbian_version_mode: exact
+          armbian_image_version: ${{ steps.resolve-tag.outputs.autobutler_tag }}
           armbian_release_title: Autobutler Armbian image (${{ steps.resolve-tag.outputs.autobutler_tag }})
           armbian_release_body: |
             Autobutler Armbian image build.
