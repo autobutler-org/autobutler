@@ -1,0 +1,85 @@
+name: Autobutler Armbian Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      autobutler_tag:
+        description: "Autobutler release tag to embed (for example: v1.2.3). Leave empty to use latest release"
+        required: false
+        type: string
+      armbian_board:
+        description: "Armbian board (for example: rpi4b, rpi5b, uefi-x86)"
+        required: false
+        type: string
+        default: "uefi-x86"
+      armbian_release:
+        description: "Armbian userspace release"
+        required: false
+        type: string
+        default: "noble"
+  workflow_call:
+    inputs:
+      autobutler_tag:
+        required: false
+        type: string
+      armbian_board:
+        required: false
+        type: string
+        default: "uefi-x86"
+      armbian_release:
+        required: false
+        type: string
+        default: "noble"
+    secrets:
+      armbian_token:
+        required: false
+
+jobs:
+  armbian-build:
+    name: Build Armbian image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      autobutler_tag: ${{ steps.resolve-tag.outputs.autobutler_tag }}
+    steps:
+      - name: Resolve Autobutler tag
+        id: resolve-tag
+        env:
+          INPUT_TAG: ${{ inputs.autobutler_tag }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "${INPUT_TAG}" ]; then
+            TAG="${INPUT_TAG#refs/tags/}"
+          else
+            TAG="$(curl -fsSL \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              https://api.github.com/repos/autobutler-org/autobutler/releases/latest | jq -r '.tag_name')"
+          fi
+
+          if [ -z "${TAG}" ] || [ "${TAG}" = "null" ]; then
+            echo "Failed to resolve Autobutler tag"
+            exit 1
+          fi
+
+          echo "autobutler_tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Resolved Autobutler tag: ${TAG}"
+
+      - name: Build image with embedded Autobutler tag
+        uses: ./armbian-build
+        with:
+          armbian_token: ${{ secrets.armbian_token || github.token }}
+          armbian_target: image
+          armbian_board: ${{ inputs.armbian_board }}
+          armbian_release: ${{ inputs.armbian_release }}
+          armbian_version: ${{ steps.resolve-tag.outputs.autobutler_tag }}
+          armbian_version_mode: exact
+          armbian_release_title: Autobutler Armbian image (${{ steps.resolve-tag.outputs.autobutler_tag }})
+          armbian_release_body: |
+            Autobutler Armbian image build.
+
+            Embedded Autobutler tag: ${{ steps.resolve-tag.outputs.autobutler_tag }}
+          armbian_release_tag: armbian-${{ steps.resolve-tag.outputs.autobutler_tag }}
