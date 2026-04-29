@@ -46,6 +46,11 @@ jobs:
     outputs:
       autobutler_tag: ${{ steps.resolve-tag.outputs.autobutler_tag }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
       - name: Resolve Autobutler tag
         id: resolve-tag
         env:
