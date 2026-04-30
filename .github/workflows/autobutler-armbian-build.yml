@@ -78,6 +78,15 @@ jobs:
           armbian_release: ${{ inputs.armbian_release }}
           armbian_image_version: ${{ steps.resolve-tag.outputs.autobutler_tag }}
 
+      - name: Rename images
+        run: |
+          for ext in img.xz.sha img.xz img.txt; do
+            src=$(find build/output/images/ -maxdepth 1 -name "*.${ext}" | head -1)
+            if [ -n "${src}" ]; then
+              mv "${src}" "build/output/images/autobutler-armbian.${ext}"
+            fi
+          done
+
       - name: Upload images to Azure Blob Storage
         env:
           AZURE_STORAGE_SAS_TOKEN: ${{ secrets.AZURE_STORAGE_SAS_TOKEN }}
