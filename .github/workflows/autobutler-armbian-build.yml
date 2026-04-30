@@ -77,6 +77,7 @@ jobs:
           armbian_board: ${{ matrix.board }}
           armbian_release: ${{ inputs.armbian_release }}
           armbian_image_version: ${{ steps.resolve-tag.outputs.autobutler_tag }}
+          armbian_extensions: autobutler-image
 
       - name: Rename images
         run: |
