@@ -81,9 +81,6 @@ jobs:
       - name: Upload images to Azure Blob Storage
         run: |
           az storage blob upload-batch \
-            --account-name autobutlerimage \
-            --destination releases \
-            --destination-path "armbian/${{ matrix.board }}/${{ steps.resolve-tag.outputs.autobutler_tag }}" \
             --source build/output/images/ \
-            --sas-token "${{ secrets.AZURE_STORAGE_SAS_TOKEN_autobutlerimage }}" \
+            --destination "https://autobutlerimage.blob.core.windows.net/releases/armbian/${{ matrix.board }}/${{ steps.resolve-tag.outputs.autobutler_tag }}?${{ secrets.AZURE_STORAGE_SAS_TOKEN_autobutlerimage }}" \
             --overwrite
