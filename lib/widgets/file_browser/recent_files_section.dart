@@ -1,6 +1,7 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/theme/autobutler_colors.dart';
+import 'package:autobutler/utils/cirrus_route_path_utils.dart';
 import 'package:autobutler/widgets/core/autobutler_file_icon.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:flutter/material.dart';
@@ -43,28 +44,11 @@ class _RecentFilesSectionState extends State<RecentFilesSection> {
     return path.substring(0, slash);
   }
 
-  /// Returns true for any file type that [FileBrowserPage._handleOpenNode]
-  /// can open in-app (editor, viewer, or conversion dialog) rather than
-  /// just downloading.
+  /// Returns true for any file type that Cirrus can route into an editor or
+  /// conversion flow rather than downloading directly.
   static bool _opensInApp(String name) {
     final lower = name.toLowerCase();
-    return lower.endsWith('.abdoc') ||
-        lower.endsWith('.absheet') ||
-        lower.endsWith('.csv') ||
-        lower.endsWith('.jpg') ||
-        lower.endsWith('.jpeg') ||
-        lower.endsWith('.png') ||
-        lower.endsWith('.gif') ||
-        lower.endsWith('.webp') ||
-        lower.endsWith('.mp4') ||
-        lower.endsWith('.mov') ||
-        lower.endsWith('.mkv') ||
-        lower.endsWith('.webm') ||
-        lower.endsWith('.avi') ||
-        lower.endsWith('.mp3') ||
-        lower.endsWith('.wav') ||
-        lower.endsWith('.m4a') ||
-        lower.endsWith('.aac');
+    return hasSupportedCirrusEditorForPath(lower) || lower.endsWith('.csv');
   }
 
   void _openOrDownload(CirrusFileNode file) {

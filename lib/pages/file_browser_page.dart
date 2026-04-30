@@ -5,11 +5,9 @@ import 'package:autobutler/controllers/file_browser_cache.dart';
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
-import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/spreadsheet_editor_page.dart';
 import 'package:data_table/data_sheet.dart';
 import 'package:data_table/data_table.dart' as dt;
-import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
@@ -889,70 +887,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
-    final viewable =
-        lowerName.endsWith('.jpg') ||
-        lowerName.endsWith('.jpeg') ||
-        lowerName.endsWith('.png') ||
-        lowerName.endsWith('.gif') ||
-        lowerName.endsWith('.webp') ||
-        lowerName.endsWith('.mp4') ||
-        lowerName.endsWith('.mov') ||
-        lowerName.endsWith('.mkv') ||
-        lowerName.endsWith('.webm') ||
-        lowerName.endsWith('.avi');
-    if (!viewable) {
-      return;
-    }
-
-    try {
-      final filePath = node.apiPath;
-      // Open images in-app using ImageViewer; fallback to platform handlers for other types.
-      final lower = lowerName;
-      if (lower.endsWith('.jpg') ||
-          lower.endsWith('.jpeg') ||
-          lower.endsWith('.png') ||
-          lower.endsWith('.gif') ||
-          lower.endsWith('.webp')) {
-        final bytes = await CirrusService.downloadFileBytes(
-          filePath,
-          serial: serialOrNull(node.deviceSerial),
-          fileName: trimTrailingSlashes(node.name),
-        );
-        if (bytes == null || !mounted) {
-          return;
-        }
-        await _openEditorWithUrl(
-          filePath: filePath,
-          builder: () => ImageViewerPage(
-            bytes: bytes,
-            name: node.name,
-            relPath: node.apiPath,
-            serial: serialOrNull(node.deviceSerial),
-          ),
-        );
-        return;
-      }
-      if (lower.endsWith('.mp4') ||
-          lower.endsWith('.mov') ||
-          lower.endsWith('.mkv') ||
-          lower.endsWith('.webm') ||
-          lower.endsWith('.avi')) {
-        await _openEditorWithUrl(
-          filePath: filePath,
-          builder: () => VideoViewerPage(
-            url: CirrusService.constructMediaUrl(filePath),
-            name: node.name,
-          ),
-        );
-        return;
-      }
-    } catch (_) {
-      debugPrint('[file_browser_page.dart] Error in catch block');
-      if (!mounted) {
-        return;
-      }
-      _showMessage('Unable to open file');
-    }
+    _showMessage('No supported editor is available for ${node.name}');
   }
 
   void _openDirectory(CirrusFileNode node) {
@@ -1253,50 +1188,54 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     );
   }
 
-  /// Push a file editor/viewer, update the URL to reflect the open file,
-  /// and await dismissal.
-  ///
-  /// URL updates are done via [SystemNavigator.routeInformationUpdated] rather
-  /// than `context.go` so that the full [FileBrowserPage] widget tree is NOT
-  /// recreated on every open — preserving scroll position, device filters, and
-  /// cached listings. The trade-off is that go_router's history stack stays out
-  /// of sync with the real browser history.
-  ///
-  /// TODO(#1048): Replace with a [StatefulShellRoute] so that go_router owns
-  /// the URL and the shell state is preserved across navigations. This would
-  /// eliminate the need for [FileBrowserCache] and the mounted-guard gymnastics
-  /// in [_openPendingFileInner].
+  /// Push a file editor overlay, then update the route through go_router so
+  /// refresh/bookmark/history all reuse the same direct file deep-link flow.
   Future<void> _openEditorWithUrl({
     required String filePath,
     required Widget Function() builder,
   }) async {
     FileBrowserCache.instance.markFileOpen(filePath);
 
-    // Push the editor first so it is fully on top before the URL update fires.
-    // Calling SystemNavigator *before* the push caused go_router to rebuild
-    // this page mid-push and silently cancel the editor open.
     final navigator = Navigator.of(context);
+    final router = GoRouter.of(context);
+    final targetRoute = AppRoutes.cirrusPath(filePath);
+    var routeSyncFailed = false;
+
+    void closeIfRouteMoved() {
+      final currentRoute =
+          router.routeInformationProvider.value.uri?.toString() ?? '';
+      if (currentRoute != targetRoute && navigator.canPop()) {
+        navigator.pop();
+      }
+    }
+
+    router.routeInformationProvider.addListener(closeIfRouteMoved);
     final pushFuture = navigator.push(
       MaterialPageRoute(builder: (_) => builder()),
     );
 
-    // Defer the URL update by one frame. By the time this callback fires the
-    // MaterialPageRoute animation has committed, so go_router's rebuild of the
-    // background FileBrowserPage is harmless — it hits the isFileOpen() guard
-    // in _openPendingFileInner and bails out immediately.
-    // NOTE: If the widget is disposed before this frame fires the URL update is
-    // silently skipped; that is intentional — there is no page left to reflect.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (kIsWeb && mounted) {
-        SystemNavigator.routeInformationUpdated(
-          uri: Uri.parse(AppRoutes.cirrusPath(filePath)),
-          replace: false,
-        );
+      if (!mounted) {
+        return;
+      }
+      try {
+        context.go(targetRoute);
+      } catch (_) {
+        routeSyncFailed = true;
+        if (navigator.canPop()) {
+          navigator.pop();
+        }
+        _showMessage('Unable to update the file route');
       }
     });
 
     await pushFuture;
+    router.routeInformationProvider.removeListener(closeIfRouteMoved);
     FileBrowserCache.instance.markFileClosed();
+
+    if (routeSyncFailed && mounted) {
+      context.go(AppRoutes.cirrusPath(parentPath(filePath)));
+    }
   }
 
   /// Opens a deep-linked path in the appropriate viewer after mount.
@@ -1390,7 +1329,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           _routeFailure = _CirrusRouteFailure(
             requestedPath: filePath,
             isFileRoute: true,
-            isUnsupported: true,
+            isUnsupported: !hasSupportedCirrusEditorForType(fileType),
           );
         });
         break;

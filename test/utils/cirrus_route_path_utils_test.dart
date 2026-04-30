@@ -24,4 +24,22 @@ void main() {
       );
     });
   });
+
+  group('supported editor helpers', () {
+    test('recognize editor-backed file paths and types', () {
+      expect(
+        hasSupportedCirrusEditorForPath('/Documents/report.abdoc'),
+        isTrue,
+      );
+      expect(
+        hasSupportedCirrusEditorForPath('/Documents/budget.absheet'),
+        isTrue,
+      );
+      expect(hasSupportedCirrusEditorForPath('/Documents/photo.jpg'), isFalse);
+
+      expect(hasSupportedCirrusEditorForType('abdoc'), isTrue);
+      expect(hasSupportedCirrusEditorForType('absheet'), isTrue);
+      expect(hasSupportedCirrusEditorForType('image'), isFalse);
+    });
+  });
 }
