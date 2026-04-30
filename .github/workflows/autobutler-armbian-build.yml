@@ -72,6 +72,8 @@ jobs:
 
       - name: Build image with embedded Autobutler tag
         uses: ./armbian-build
+        env:
+          AUTOBUTLER_IMAGE_BINARY_URL: https://autobutlerrelease.blob.core.windows.net/releases/autobutler/${{ steps.resolve-tag.outputs.autobutler_tag }}/autobutler_Linux_arm64.tar.gz
         with:
           armbian_target: build
           armbian_board: ${{ matrix.board }}
