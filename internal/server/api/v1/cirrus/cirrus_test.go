@@ -164,13 +164,14 @@ func TestListFilesImpl_NoDevices(t *testing.T) {
 func TestListFilesImpl_NonExistentSubdir(t *testing.T) {
 	device := makeManagedDevice(t, "test-device")
 
-	// Listing a subdir that doesn't exist should return empty, not error
+	// Listing a subdir that doesn't exist should fail so the client can render
+	// an explicit invalid-folder state instead of an empty listing.
 	result, err := listFilesImpl("nonexistent", []storageutil.ManagedDevice{device})
-	if err != nil {
-		t.Fatalf("Expected no error for nonexistent subdir, got: %v", err)
+	if err == nil {
+		t.Fatal("expected an error for a nonexistent subdir")
 	}
-	if len(result) != 0 {
-		t.Errorf("Expected 0 results for nonexistent subdir, got %d", len(result))
+	if result != nil {
+		t.Errorf("expected no results for nonexistent subdir, got %d", len(result))
 	}
 }
 

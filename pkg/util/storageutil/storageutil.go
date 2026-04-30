@@ -1,6 +1,7 @@
 package storageutil
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -13,6 +14,8 @@ import (
 )
 
 type FileType string
+
+var ErrPathNotFound = errors.New("path not found")
 
 const (
 	FileTypeAbdoc     FileType = "abdoc"
@@ -160,6 +163,9 @@ func StatFilesInDir(dir string, deviceName string, devicePath string, deviceSeri
 	entries, err := os.ReadDir(dir)
 	files := make([]*DeviceFileInfo, 0, len(entries))
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("%w: %s", ErrPathNotFound, dir)
+		}
 		return nil, fmt.Errorf("error reading the directory %s: %w", dir, err) // coverage: ignore - requires filesystem permission errors
 	}
 	for _, entry := range entries {
