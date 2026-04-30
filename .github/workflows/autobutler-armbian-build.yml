@@ -79,8 +79,12 @@ jobs:
           armbian_image_version: ${{ steps.resolve-tag.outputs.autobutler_tag }}
 
       - name: Upload images to Azure Blob Storage
+        env:
+          AZURE_STORAGE_SAS_TOKEN: ${{ secrets.AZURE_STORAGE_SAS_TOKEN }}
         run: |
           az storage blob upload-batch \
             --source build/output/images/ \
-            --destination "https://autobutlerimage.blob.core.windows.net/releases/armbian/${{ matrix.board }}/${{ steps.resolve-tag.outputs.autobutler_tag }}?${{ secrets.AZURE_STORAGE_SAS_TOKEN_autobutlerimage }}" \
+            --destination "https://autobutlerrelease.blob.core.windows.net/releases" \
+            --destination-path "autobutler/${{ inputs.autobutler_tag }}/${{ matrix.board }}" \
+            --sas-token "${AZURE_STORAGE_SAS_TOKEN}" \
             --overwrite
