@@ -170,7 +170,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   }
 
   String _currentRoute() =>
-      router.routeInformationProvider.value.uri?.toString() ?? '';
+      router.routeInformationProvider.value.uri.toString();
 
   Future<void> _handleOverlayRouteChange() async {
     final targetRoute = widget.overlayTargetRoute;
