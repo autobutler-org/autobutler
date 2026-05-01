@@ -1106,9 +1106,44 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     _setPath('');
   }
 
+  Widget _buildFolderResolutionLoadingShell(BuildContext context) {
+    final routeLabel = AppRoutes.cirrusPath(_currentPath);
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.folder_open, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                'Opening folder',
+                style: Theme.of(context).textTheme.titleMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                routeLabel,
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              const LinearProgressIndicator(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildFolderRouteErrorState(BuildContext context, Object error) {
-    final isMissingFolder =
-        error is CirrusRequestException && error.statusCode == 404;
+    final requestError = error is CirrusRequestException ? error : null;
+    final isMissingFolder = requestError?.statusCode == 404;
+    final isUnauthorized =
+        requestError?.statusCode == 401 || requestError?.statusCode == 403;
     final normalizedPath = normalizePath(_currentPath);
     final routeLabel = normalizedPath.isEmpty
         ? AppRoutes.cirrus
@@ -1116,9 +1151,19 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     final parent = parentPath(normalizedPath);
 
     return EmptyStateWidget(
-      icon: isMissingFolder ? Icons.folder_off_outlined : Icons.error_outline,
-      headline: isMissingFolder ? 'Folder not found' : 'Unable to open folder',
-      subtext: isMissingFolder
+      icon: isUnauthorized
+          ? Icons.lock_outline
+          : isMissingFolder
+          ? Icons.folder_off_outlined
+          : Icons.error_outline,
+      headline: isUnauthorized
+          ? 'Access denied'
+          : isMissingFolder
+          ? 'Folder not found'
+          : 'Unable to open folder',
+      subtext: isUnauthorized
+          ? 'You do not have access to $routeLabel. Retry, move up a level, or return to /cirrus.'
+          : isMissingFolder
           ? 'The folder at $routeLabel is unavailable. Retry, move up a level, or return to /cirrus.'
           : 'Cirrus could not load $routeLabel. Retry, move up a level, or return to /cirrus.',
       action: Wrap(
@@ -1570,6 +1615,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                           onNavigateToFolder: _navigateToFolder,
                           currentPath: _currentPath,
                           errorBuilder: _buildFolderRouteErrorState,
+                          loadingBuilder: _currentPath.isNotEmpty
+                              ? _buildFolderResolutionLoadingShell
+                              : null,
                           onDropToFolder: _handleDropToFolder,
                           onFolderDragEnter: _handleFolderDragEnter,
                           onFolderDragExit: _handleFolderDragExit,
