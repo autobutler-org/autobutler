@@ -664,25 +664,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           ? fileName
           : '$_currentPath/$fileName';
 
-      if (fileName.endsWith('.absheet')) {
-        await _openEditorWithUrl(
-          filePath: filePath,
-          builder: (targetRoute, closeRoute) => SpreadsheetEditorPage(
-            filePath: filePath,
-            overlayTargetRoute: targetRoute,
-            overlayCloseRoute: closeRoute,
-          ),
-        );
-      } else {
-        await _openEditorWithUrl(
-          filePath: filePath,
-          builder: (targetRoute, closeRoute) => DocumentEditorPage(
-            filePath: filePath,
-            overlayTargetRoute: targetRoute,
-            overlayCloseRoute: closeRoute,
-          ),
-        );
-      }
+      _openFileViaRoute(filePath);
     } catch (e) {
       if (!mounted) return;
       _showMessage('Failed to create file: $e');
@@ -868,17 +850,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       // Refresh the file list so the new .absheet appears.
       _refreshFileState();
 
-      // Open the new .absheet in the spreadsheet editor.
+      // Open the new .absheet through the canonical Cirrus file route.
       final absheetPath = folder.isEmpty ? absheetName : '$folder/$absheetName';
-      await _openEditorWithUrl(
-        filePath: absheetPath,
-        builder: (targetRoute, closeRoute) => SpreadsheetEditorPage(
-          filePath: absheetPath,
-          deviceSerial: node.deviceSerial,
-          overlayTargetRoute: targetRoute,
-          overlayCloseRoute: closeRoute,
-        ),
-      );
+      _openFileViaRoute(absheetPath);
     } catch (e) {
       if (!mounted) return;
       _showMessage('Conversion failed: $e');
@@ -901,29 +875,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     // AutoButler native document format — open in the rich text editor.
     if (lowerName.endsWith('.abdoc')) {
-      await _openEditorWithUrl(
-        filePath: node.apiPath,
-        builder: (targetRoute, closeRoute) => DocumentEditorPage(
-          filePath: node.apiPath,
-          deviceSerial: node.deviceSerial,
-          overlayTargetRoute: targetRoute,
-          overlayCloseRoute: closeRoute,
-        ),
-      );
+      _openFileViaRoute(node.apiPath);
       return;
     }
 
     // AutoButler native spreadsheet format.
     if (lowerName.endsWith('.absheet')) {
-      await _openEditorWithUrl(
-        filePath: node.apiPath,
-        builder: (targetRoute, closeRoute) => SpreadsheetEditorPage(
-          filePath: node.apiPath,
-          deviceSerial: node.deviceSerial,
-          overlayTargetRoute: targetRoute,
-          overlayCloseRoute: closeRoute,
-        ),
-      );
+      _openFileViaRoute(node.apiPath);
       return;
     }
 
@@ -1236,6 +1194,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   /// Push a file editor overlay, then update the route through go_router so
   /// refresh/bookmark/history all reuse the same direct file deep-link flow.
+  void _openFileViaRoute(String filePath) {
+    if (!mounted) {
+      return;
+    }
+    context.go(AppRoutes.cirrusPath(filePath));
+  }
+
   Future<void> _openEditorWithUrl({
     required String filePath,
     required Widget Function(String targetRoute, String closeRoute) builder,
