@@ -635,12 +635,20 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       if (fileName.endsWith('.absheet')) {
         await _openEditorWithUrl(
           filePath: filePath,
-          builder: () => SpreadsheetEditorPage(filePath: filePath),
+          builder: (targetRoute, closeRoute) => SpreadsheetEditorPage(
+            filePath: filePath,
+            overlayTargetRoute: targetRoute,
+            overlayCloseRoute: closeRoute,
+          ),
         );
       } else {
         await _openEditorWithUrl(
           filePath: filePath,
-          builder: () => DocumentEditorPage(filePath: filePath),
+          builder: (targetRoute, closeRoute) => DocumentEditorPage(
+            filePath: filePath,
+            overlayTargetRoute: targetRoute,
+            overlayCloseRoute: closeRoute,
+          ),
         );
       }
     } catch (e) {
@@ -832,9 +840,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       final absheetPath = folder.isEmpty ? absheetName : '$folder/$absheetName';
       await _openEditorWithUrl(
         filePath: absheetPath,
-        builder: () => SpreadsheetEditorPage(
+        builder: (targetRoute, closeRoute) => SpreadsheetEditorPage(
           filePath: absheetPath,
           deviceSerial: node.deviceSerial,
+          overlayTargetRoute: targetRoute,
+          overlayCloseRoute: closeRoute,
         ),
       );
     } catch (e) {
@@ -861,9 +871,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     if (lowerName.endsWith('.abdoc')) {
       await _openEditorWithUrl(
         filePath: node.apiPath,
-        builder: () => DocumentEditorPage(
+        builder: (targetRoute, closeRoute) => DocumentEditorPage(
           filePath: node.apiPath,
           deviceSerial: node.deviceSerial,
+          overlayTargetRoute: targetRoute,
+          overlayCloseRoute: closeRoute,
         ),
       );
       return;
@@ -873,9 +885,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     if (lowerName.endsWith('.absheet')) {
       await _openEditorWithUrl(
         filePath: node.apiPath,
-        builder: () => SpreadsheetEditorPage(
+        builder: (targetRoute, closeRoute) => SpreadsheetEditorPage(
           filePath: node.apiPath,
           deviceSerial: node.deviceSerial,
+          overlayTargetRoute: targetRoute,
+          overlayCloseRoute: closeRoute,
         ),
       );
       return;
@@ -1192,15 +1206,15 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// refresh/bookmark/history all reuse the same direct file deep-link flow.
   Future<void> _openEditorWithUrl({
     required String filePath,
-    required Widget Function() builder,
+    required Widget Function(String targetRoute, String closeRoute) builder,
   }) async {
     FileBrowserCache.instance.markFileOpen(filePath);
 
     final navigator = Navigator.of(context);
-    final router = GoRouter.of(context);
     final targetRoute = AppRoutes.cirrusPath(filePath);
-    final routeBeforeOpen = router.routeInformationProvider.value.uri
-        ?.toString();
+    final routeBeforeOpen = GoRouter.of(
+      context,
+    ).routeInformationProvider.value.uri?.toString();
     final closeRoute =
         routeBeforeOpen == null ||
             routeBeforeOpen.isEmpty ||
@@ -1208,21 +1222,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         ? AppRoutes.cirrusPath(parentPath(filePath))
         : routeBeforeOpen;
     var routeSyncFailed = false;
-    var routeMovedWhileOpen = false;
-
-    void closeIfRouteMoved() {
-      final currentRoute =
-          router.routeInformationProvider.value.uri?.toString() ?? '';
-      if (currentRoute != targetRoute && navigator.canPop()) {
-        routeMovedWhileOpen = true;
-        navigator.pop();
-      }
-    }
-
-    router.routeInformationProvider.addListener(closeIfRouteMoved);
     try {
       final pushFuture = navigator.push(
-        MaterialPageRoute(builder: (_) => builder()),
+        MaterialPageRoute(builder: (_) => builder(targetRoute, closeRoute)),
       );
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1242,7 +1244,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
       await pushFuture;
     } finally {
-      router.routeInformationProvider.removeListener(closeIfRouteMoved);
       FileBrowserCache.instance.markFileClosed();
     }
 
@@ -1252,13 +1253,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     if (routeSyncFailed) {
       context.go(AppRoutes.cirrusPath(parentPath(filePath)));
-      return;
-    }
-
-    final currentRoute =
-        router.routeInformationProvider.value.uri?.toString() ?? '';
-    if (!routeMovedWhileOpen && currentRoute == targetRoute) {
-      context.go(closeRoute);
     }
   }
 
@@ -1338,7 +1332,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       case 'abdoc':
         await _openEditorWithUrl(
           filePath: filePath,
-          builder: () => DocumentEditorPage(filePath: filePath),
+          builder: (targetRoute, closeRoute) => DocumentEditorPage(
+            filePath: filePath,
+            overlayTargetRoute: targetRoute,
+            overlayCloseRoute: closeRoute,
+          ),
         );
         if (!mounted) return;
         return;
@@ -1346,7 +1344,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       case 'absheet':
         await _openEditorWithUrl(
           filePath: filePath,
-          builder: () => SpreadsheetEditorPage(filePath: filePath),
+          builder: (targetRoute, closeRoute) => SpreadsheetEditorPage(
+            filePath: filePath,
+            overlayTargetRoute: targetRoute,
+            overlayCloseRoute: closeRoute,
+          ),
         );
         if (!mounted) return;
         return;
