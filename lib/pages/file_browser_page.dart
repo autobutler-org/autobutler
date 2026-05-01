@@ -16,6 +16,7 @@ import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/services/events_service.dart';
 import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/utils/auto_refresh_mixin.dart';
+import 'package:autobutler/utils/cirrus_route_path_utils.dart';
 import 'package:autobutler/utils/file_browser_dialog_utils.dart';
 import 'package:autobutler/utils/file_browser_drag_config.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
@@ -69,6 +70,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// the page has mounted. Only consumed once.
   String? _pendingFileOpen;
 
+  _CirrusRouteFailure? _routeFailure;
   bool _isGridView = false;
 
   /// When true, files from all devices are shown merged (unified).
@@ -1106,8 +1108,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     _setPath('');
   }
 
-  Widget _buildFolderResolutionLoadingShell(BuildContext context) {
-    final routeLabel = AppRoutes.cirrusPath(_currentPath);
+  Widget _buildRouteResolutionLoadingShell(BuildContext context) {
+    final routeLabel = cirrusRouteDisplayPath(_currentPath);
+    final isFileRoute = isLikelyFilePath(_currentPath);
 
     return Center(
       child: ConstrainedBox(
@@ -1120,7 +1123,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
               const Icon(Icons.folder_open, size: 48),
               const SizedBox(height: 16),
               Text(
-                'Opening folder',
+                isFileRoute ? 'Opening file' : 'Opening folder',
                 style: Theme.of(context).textTheme.titleMedium,
                 textAlign: TextAlign.center,
               ),
@@ -1137,6 +1140,23 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         ),
       ),
     );
+  }
+
+  Future<void> _retryRouteFailure(_CirrusRouteFailure failure) async {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _routeFailure = null;
+    });
+
+    if (failure.isFileRoute) {
+      await _openPendingFile(failure.requestedPath);
+      return;
+    }
+
+    await _refreshFileState();
   }
 
   Widget _buildFolderRouteErrorState(BuildContext context, Object error) {
@@ -1179,6 +1199,50 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             OutlinedButton(
               onPressed: () => _setPath(parent),
               child: const Text('Go to parent'),
+            ),
+          OutlinedButton(
+            onPressed: _goHome,
+            child: const Text('Go to /cirrus'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFileRouteErrorState(
+    BuildContext context,
+    _CirrusRouteFailure failure,
+  ) {
+    final routeLabel = cirrusRouteDisplayPath(failure.requestedPath);
+    final parent = parentPath(failure.requestedPath);
+
+    return EmptyStateWidget(
+      icon: failure.isUnsupported
+          ? Icons.description_outlined
+          : Icons.error_outline,
+      headline: failure.isUnsupported
+          ? 'No supported editor'
+          : failure.isUnauthorized
+          ? 'File access denied'
+          : 'File not found',
+      subtext: failure.isUnsupported
+          ? 'No supported editor is available for $routeLabel. Retry, open the containing folder, or return to /cirrus.'
+          : failure.isUnauthorized
+          ? 'You do not have access to $routeLabel. Retry, open the containing folder, or return to /cirrus.'
+          : 'The file at $routeLabel is unavailable. Retry, open the containing folder, or return to /cirrus.',
+      action: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 12,
+        runSpacing: 12,
+        children: [
+          FilledButton(
+            onPressed: () => _retryRouteFailure(failure),
+            child: const Text('Retry'),
+          ),
+          if (parent.isNotEmpty)
+            OutlinedButton(
+              onPressed: () => _setPath(parent),
+              child: const Text('Open containing folder'),
             ),
           OutlinedButton(
             onPressed: _goHome,
@@ -1264,17 +1328,39 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
-    // Stat the backend to resolve the real type. Fall back to navigating as a
-    // folder if the stat fails (path not found, network error, etc.).
+    // Stat the backend to resolve the real type.
     late final bool isDir;
     late final String fileType;
     try {
       final stat = await CirrusService.statFile(filePath);
       isDir = stat.isDir;
       fileType = stat.fileType;
+    } on CirrusRequestException catch (error) {
+      if (!mounted) return;
+      if (isLikelyFilePath(filePath)) {
+        setState(() {
+          _routeFailure = _CirrusRouteFailure(
+            requestedPath: filePath,
+            isFileRoute: true,
+            isUnauthorized: error.statusCode == 401 || error.statusCode == 403,
+          );
+        });
+        return;
+      }
+      _setPath(filePath);
+      return;
     } catch (_) {
-      // Could not resolve — treat as a folder navigation.
-      if (mounted) _setPath(filePath);
+      if (!mounted) return;
+      if (isLikelyFilePath(filePath)) {
+        setState(() {
+          _routeFailure = _CirrusRouteFailure(
+            requestedPath: filePath,
+            isFileRoute: true,
+          );
+        });
+        return;
+      }
+      _setPath(filePath);
       return;
     }
 
@@ -1284,10 +1370,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       _setPath(filePath);
       return;
     }
-
-    final name = filePath.contains('/')
-        ? filePath.substring(filePath.lastIndexOf('/') + 1)
-        : filePath;
 
     switch (fileType) {
       case 'abdoc':
@@ -1303,38 +1385,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           builder: () => SpreadsheetEditorPage(filePath: filePath),
         );
         if (!mounted) return;
-
-      case 'image':
-        try {
-          final bytes = await CirrusService.downloadFileBytes(
-            filePath,
-            fileName: name,
-          );
-          if (bytes == null || !mounted) return;
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) =>
-                  ImageViewerPage(bytes: bytes, name: name, relPath: filePath),
-            ),
-          );
-          if (!mounted) return;
-        } catch (_) {
-          if (mounted) _showMessage('Unable to open image');
-        }
-
-      case 'video':
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => VideoViewerPage(
-              url: CirrusService.constructMediaUrl(filePath),
-              name: name,
-            ),
-          ),
-        );
-        if (!mounted) return;
-
       default:
-        // Unhandled type — nothing to open.
+        setState(() {
+          _routeFailure = _CirrusRouteFailure(
+            requestedPath: filePath,
+            isFileRoute: true,
+            isUnsupported: true,
+          );
+        });
         break;
     }
   }
@@ -1559,6 +1617,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                       });
                     },
                   )
+                : _routeFailure != null
+                ? _buildFileRouteErrorState(context, _routeFailure!)
                 : DropTarget(
                     key: _dropRegionKey,
                     enable: kIsWeb && !_isSearchMode && !_isUploading,
@@ -1616,7 +1676,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                           currentPath: _currentPath,
                           errorBuilder: _buildFolderRouteErrorState,
                           loadingBuilder: _currentPath.isNotEmpty
-                              ? _buildFolderResolutionLoadingShell
+                              ? _buildRouteResolutionLoadingShell
                               : null,
                           onDropToFolder: _handleDropToFolder,
                           onFolderDragEnter: _handleFolderDragEnter,
@@ -1667,6 +1727,20 @@ class _FirstRunSetup extends StatefulWidget {
 
   @override
   State<_FirstRunSetup> createState() => _FirstRunSetupState();
+}
+
+class _CirrusRouteFailure {
+  const _CirrusRouteFailure({
+    required this.requestedPath,
+    required this.isFileRoute,
+    this.isUnauthorized = false,
+    this.isUnsupported = false,
+  });
+
+  final String requestedPath;
+  final bool isFileRoute;
+  final bool isUnauthorized;
+  final bool isUnsupported;
 }
 
 class _FirstRunSetupState extends State<_FirstRunSetup> {
