@@ -68,6 +68,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// the page has mounted. Only consumed once.
   String? _pendingFileOpen;
 
+  bool _handlingPendingFile = false;
   _CirrusRouteFailure? _routeFailure;
   bool _isGridView = false;
 
@@ -1274,7 +1275,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// rather than being launched in the document editor.
   Future<void> _openPendingFile(String filePath) async {
     if (!mounted) return;
-    await _openPendingFileInner(filePath);
+    _handlingPendingFile = true;
+    try {
+      await _openPendingFileInner(filePath);
+    } finally {
+      _handlingPendingFile = false;
+    }
   }
 
   Future<void> _openPendingFileInner(String filePath) async {
