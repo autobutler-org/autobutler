@@ -21,6 +21,7 @@ import 'package:autobutler/utils/file_browser_drag_config.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
+import 'package:autobutler/widgets/core/empty_state_widget.dart';
 import 'package:autobutler/widgets/device_upload_picker.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
@@ -67,11 +68,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// If the deep-link URL pointed directly to a file, open its editor once
   /// the page has mounted. Only consumed once.
   String? _pendingFileOpen;
-
-  /// True while [_openPendingFile] is running. Prevents [_setPath] from
-  /// calling context.go() during initial deep-link processing, which would
-  /// cause a navigation loop.
-  bool _handlingPendingFile = false;
 
   bool _isGridView = false;
 
@@ -1077,31 +1073,75 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     if (normalized == _currentPath) {
       return;
     }
-
-    setState(() {
-      _currentPath = normalized;
-      // Show cached listing instantly while the fresh fetch is in flight.
-      _cachedFiles = FileBrowserCache.instance.get(normalized);
-      // Reset device filter to all devices on navigation.
-      _activeDevicePaths = _allDevices.map((d) => d.devicePath).toSet();
-      _reloadFiles();
-    });
-
-    // Reflect the new folder path in the browser URL bar. Skip during
-    // deep-link processing (_handlingPendingFile) to avoid triggering a
-    // go_router rebuild mid-open that would cancel the pending file open.
-    if (!_handlingPendingFile && kIsWeb) {
-      SystemNavigator.routeInformationUpdated(
-        uri: Uri.parse(AppRoutes.cirrusPath(normalized)),
-        replace: false,
-      );
-    }
+    context.go(AppRoutes.cirrusPath(normalized));
   }
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _goHome() {
+    if (_archiveContext != null) {
+      _exitArchive();
+      return;
+    }
+
+    if (_fileBrowserScrollController.hasClients) {
+      _fileBrowserScrollController.jumpTo(0);
+    }
+
+    if (_currentPath.isEmpty) {
+      setState(() {
+        _isSearchMode = false;
+        _searchFuture = null;
+        _searchQuery = null;
+        _activeDevicePaths = _allDevices.map((d) => d.devicePath).toSet();
+        _reloadFiles();
+      });
+      return;
+    }
+
+    _setPath('');
+  }
+
+  Widget _buildFolderRouteErrorState(BuildContext context, Object error) {
+    final isMissingFolder =
+        error is CirrusRequestException && error.statusCode == 404;
+    final normalizedPath = normalizePath(_currentPath);
+    final routeLabel = normalizedPath.isEmpty
+        ? AppRoutes.cirrus
+        : AppRoutes.cirrusPath(normalizedPath);
+    final parent = parentPath(normalizedPath);
+
+    return EmptyStateWidget(
+      icon: isMissingFolder ? Icons.folder_off_outlined : Icons.error_outline,
+      headline: isMissingFolder ? 'Folder not found' : 'Unable to open folder',
+      subtext: isMissingFolder
+          ? 'The folder at $routeLabel is unavailable. Retry, move up a level, or return to /cirrus.'
+          : 'Cirrus could not load $routeLabel. Retry, move up a level, or return to /cirrus.',
+      action: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 12,
+        runSpacing: 12,
+        children: [
+          FilledButton(
+            onPressed: _refreshFileState,
+            child: const Text('Retry'),
+          ),
+          if (parent.isNotEmpty)
+            OutlinedButton(
+              onPressed: () => _setPath(parent),
+              child: const Text('Go to parent'),
+            ),
+          OutlinedButton(
+            onPressed: _goHome,
+            child: const Text('Go to /cirrus'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Push a file editor/viewer, update the URL to reflect the open file,
@@ -1156,12 +1196,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// rather than being launched in the document editor.
   Future<void> _openPendingFile(String filePath) async {
     if (!mounted) return;
-    _handlingPendingFile = true;
-    try {
-      await _openPendingFileInner(filePath);
-    } finally {
-      _handlingPendingFile = false;
-    }
+    await _openPendingFileInner(filePath);
   }
 
   Future<void> _openPendingFileInner(String filePath) async {
@@ -1402,7 +1437,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                 isUploading: _isUploading,
                 isCreatingFolder: _isCreatingFolder,
                 isRefreshing: isRefreshing,
-                onGoHome: archive != null ? _exitArchive : () => _setPath(''),
+                onGoHome: archive != null ? _exitArchive : _goHome,
                 onGoUp: _goUpOneLevel,
                 onPathSelected: archive != null ? null : _setPath,
                 isUnifiedView: _isUnifiedView,
@@ -1534,6 +1569,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                           isSearchMode: _isSearchMode,
                           onNavigateToFolder: _navigateToFolder,
                           currentPath: _currentPath,
+                          errorBuilder: _buildFolderRouteErrorState,
                           onDropToFolder: _handleDropToFolder,
                           onFolderDragEnter: _handleFolderDragEnter,
                           onFolderDragExit: _handleFolderDragExit,

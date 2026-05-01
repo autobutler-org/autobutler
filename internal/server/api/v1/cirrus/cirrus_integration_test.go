@@ -208,6 +208,15 @@ func TestUploadToSubdirectory(t *testing.T) {
 	}
 }
 
+func TestListFiles_NonExistentSubdirectoryReturnsNotFound(t *testing.T) {
+	engine, _ := newTestEngine(t)
+
+	w := doRequest(engine, http.MethodGet, "/api/v1/cirrus?rootDir=ghosts", nil, "")
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
 func TestDownloadFile(t *testing.T) {
 	engine, cirrusDir := newTestEngine(t)
 
