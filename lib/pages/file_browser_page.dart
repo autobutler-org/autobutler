@@ -69,11 +69,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// the page has mounted. Only consumed once.
   String? _pendingFileOpen;
 
-  /// True while [_openPendingFile] is running. Prevents [_setPath] from
-  /// calling context.go() during initial deep-link processing, which would
-  /// cause a navigation loop.
-  bool _handlingPendingFile = false;
-
   bool _isGridView = false;
 
   /// When true, files from all devices are shown merged (unified).
@@ -1201,12 +1196,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// rather than being launched in the document editor.
   Future<void> _openPendingFile(String filePath) async {
     if (!mounted) return;
-    _handlingPendingFile = true;
-    try {
-      await _openPendingFileInner(filePath);
-    } finally {
-      _handlingPendingFile = false;
-    }
+    await _openPendingFileInner(filePath);
   }
 
   Future<void> _openPendingFileInner(String filePath) async {
