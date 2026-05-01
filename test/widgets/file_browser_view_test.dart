@@ -20,7 +20,7 @@ void main() {
             filesFuture: filesFuture,
             isInitialLoad: isInitialLoad,
             currentPath: '/Documents',
-            onFileMenuAction: (_, __) async {},
+            onFileMenuAction: (_, _) async {},
             onOpenDirectory: (_) {},
             isGridView: false,
             errorBuilder: errorBuilder,
