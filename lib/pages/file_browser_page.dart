@@ -101,21 +101,23 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   // Archive browser state — non-null when navigating inside an archive.
   _ArchiveContext? _archiveContext;
 
+  void _applyIncomingRoutePath(String? initialPath) {
+    final normalized = initialPath == null ? '' : normalizePath(initialPath);
+
+    _archiveContext = null;
+    _routeFailure = null;
+    _isSearchMode = false;
+    _searchFuture = null;
+    _searchQuery = null;
+    _currentPath = normalized;
+    _pendingFileOpen = normalized.isEmpty ? null : normalized;
+    _cachedFiles = FileBrowserCache.instance.get(normalized);
+  }
+
   @override
   void initState() {
     // Apply deep-link initial path before AutoRefreshMixin triggers the first load.
-    final initial = widget.initialPath;
-    if (initial != null && initial.isNotEmpty) {
-      final normalizedInitial = normalizePath(initial);
-      // Optimistically treat the deep-link path as a directory so that
-      // _reloadFiles() fetches the right folder contents immediately (no root
-      // flash). _openPendingFile will stat the backend and correct course if
-      // the path turns out to be a file.
-      _currentPath = normalizedInitial;
-      _pendingFileOpen = normalizedInitial;
-      // Show cached listing instantly while the fresh fetch is in flight.
-      _cachedFiles = FileBrowserCache.instance.get(normalizedInitial);
-    }
+    _applyIncomingRoutePath(widget.initialPath);
     super
         .initState(); // AutoRefreshMixin.initState handles timer + initial load
     _fileBrowserScrollController.addListener(_onScroll);
@@ -137,6 +139,32 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         manualRefresh();
       }
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant FileBrowserPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final oldPath = normalizePath(oldWidget.initialPath ?? '');
+    final newPath = normalizePath(widget.initialPath ?? '');
+    if (oldPath == newPath) {
+      return;
+    }
+
+    setState(() {
+      _applyIncomingRoutePath(widget.initialPath);
+      _reloadFiles();
+    });
+
+    if (_pendingFileOpen != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final pending = _pendingFileOpen;
+        _pendingFileOpen = null;
+        if (pending != null && mounted) {
+          _openPendingFile(pending);
+        }
+      });
+    }
   }
 
   @override
