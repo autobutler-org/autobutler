@@ -87,7 +87,12 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
     }
 
     _routeMovedExternally = true;
-    await Navigator.of(context).maybePop();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) {
+        return;
+      }
+      await Navigator.of(context).maybePop();
+    });
   }
 
   void _restoreOverlayCloseRoute() {
@@ -97,9 +102,11 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
       return;
     }
 
-    if (!_routeMovedExternally && _currentRoute() == targetRoute) {
-      router.go(closeRoute);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_routeMovedExternally && _currentRoute() == targetRoute) {
+        router.go(closeRoute);
+      }
+    });
   }
 
   @override

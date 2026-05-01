@@ -179,7 +179,12 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     }
 
     _routeMovedExternally = true;
-    await Navigator.of(context).maybePop();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) {
+        return;
+      }
+      await Navigator.of(context).maybePop();
+    });
   }
 
   void _restoreOverlayCloseRoute() {
@@ -189,9 +194,11 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       return;
     }
 
-    if (!_routeMovedExternally && _currentRoute() == targetRoute) {
-      router.go(closeRoute);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_routeMovedExternally && _currentRoute() == targetRoute) {
+        router.go(closeRoute);
+      }
+    });
   }
 
   Future<void> _loadPrefs() async {
