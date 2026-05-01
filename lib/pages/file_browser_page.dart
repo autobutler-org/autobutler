@@ -1254,25 +1254,43 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         ? AppRoutes.cirrusPath(parentPath(filePath))
         : routeBeforeOpen;
     var routeSyncFailed = false;
-    try {
-      final pushFuture = navigator.push(
-        MaterialPageRoute(builder: (_) => builder(targetRoute, closeRoute)),
-      );
+    var routeSynced = false;
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) {
-          return;
+    void syncRouteOnce() {
+      if (!mounted || routeSynced) {
+        return;
+      }
+      routeSynced = true;
+      try {
+        context.go(targetRoute);
+      } catch (_) {
+        routeSyncFailed = true;
+        if (navigator.canPop()) {
+          navigator.pop();
         }
-        try {
-          context.go(targetRoute);
-        } catch (_) {
-          routeSyncFailed = true;
-          if (navigator.canPop()) {
-            navigator.pop();
-          }
-          _showMessage('Unable to update the file route');
+        _showMessage('Unable to update the file route');
+      }
+    }
+
+    try {
+      final route = MaterialPageRoute(
+        builder: (_) => builder(targetRoute, closeRoute),
+      );
+      late final AnimationStatusListener statusListener;
+      statusListener = (status) {
+        if (status == AnimationStatus.completed) {
+          route.animation?.removeStatusListener(statusListener);
+          syncRouteOnce();
         }
-      });
+      };
+
+      final pushFuture = navigator.push(route);
+      final animation = route.animation;
+      if (animation != null) {
+        animation.addStatusListener(statusListener);
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) => syncRouteOnce());
+      }
 
       await pushFuture;
     } finally {
