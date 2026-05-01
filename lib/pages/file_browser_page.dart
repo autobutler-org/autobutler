@@ -1210,12 +1210,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     final targetRoute = AppRoutes.cirrusPath(filePath);
     final routeBeforeOpen = GoRouter.of(
       context,
-    ).routeInformationProvider.value.uri?.toString();
+    ).routeInformationProvider.value.uri.toString();
     final shouldSyncRoute = routeBeforeOpen != targetRoute;
-    final closeRoute =
-        routeBeforeOpen == null ||
-            routeBeforeOpen.isEmpty ||
-            routeBeforeOpen == targetRoute
+    final closeRoute = routeBeforeOpen.isEmpty || routeBeforeOpen == targetRoute
         ? AppRoutes.cirrusPath(parentPath(filePath))
         : routeBeforeOpen;
     var routeSyncFailed = false;
