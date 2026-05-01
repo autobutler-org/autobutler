@@ -17,6 +17,7 @@ class FileTopBar extends StatefulWidget {
     required this.isSearchMode,
     required this.isUploading,
     required this.isCreatingFolder,
+    this.disableNavigation = false,
     this.uploadTotal = 0,
     this.uploadCompleted = 0,
     required this.isRefreshing,
@@ -45,6 +46,7 @@ class FileTopBar extends StatefulWidget {
   final bool isSearchMode;
   final bool isUploading;
   final bool isCreatingFolder;
+  final bool disableNavigation;
   final int uploadTotal;
   final int uploadCompleted;
   final bool isRefreshing;
@@ -264,20 +266,25 @@ class _FileTopBarState extends State<FileTopBar> {
   }
 
   Widget _buildNavButtons(BuildContext context) {
+    final navEnabled = !widget.disableNavigation;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         _iconBtn(
           context: context,
           icon: Icons.arrow_back_rounded,
-          onTap: widget.currentPath.isEmpty ? null : widget.onGoUp,
+          onTap: !navEnabled || widget.currentPath.isEmpty
+              ? null
+              : widget.onGoUp,
           tooltip: 'Back',
         ),
         const SizedBox(width: 4),
         _iconBtn(
           context: context,
           icon: Icons.arrow_upward_rounded,
-          onTap: widget.currentPath.isEmpty ? null : widget.onGoUp,
+          onTap: !navEnabled || widget.currentPath.isEmpty
+              ? null
+              : widget.onGoUp,
           tooltip: 'Up one level',
         ),
         const SizedBox(width: 4),
@@ -539,6 +546,7 @@ class _FileTopBarState extends State<FileTopBar> {
 
   Widget _buildBreadcrumb(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final navEnabled = !widget.disableNavigation;
 
     final trimmed = widget.currentPath.startsWith('/')
         ? widget.currentPath.substring(1)
@@ -561,9 +569,11 @@ class _FileTopBarState extends State<FileTopBar> {
             children: [
               // Home icon — always visible, never truncated.
               MouseRegion(
-                cursor: SystemMouseCursors.click,
+                cursor: navEnabled
+                    ? SystemMouseCursors.click
+                    : SystemMouseCursors.basic,
                 child: InkWell(
-                  onTap: widget.onGoHome,
+                  onTap: navEnabled ? widget.onGoHome : null,
                   borderRadius: BorderRadius.circular(4),
                   child: Padding(
                     padding: const EdgeInsets.all(2),
@@ -600,6 +610,7 @@ class _FileTopBarState extends State<FileTopBar> {
     if (segments.isEmpty) return [];
 
     final colorScheme = Theme.of(context).colorScheme;
+    final navEnabled = !widget.disableNavigation;
 
     // Space occupied by the home icon + small gap before the first crumb.
     const homeIconPx = 20.0; // Icon(16) + Padding(all(2)) = 16 + 4
@@ -660,7 +671,7 @@ class _FileTopBarState extends State<FileTopBar> {
             color: colorScheme.onSurfaceVariant,
           ),
           title: Text(name, style: const TextStyle(fontSize: 14)),
-          onTap: widget.onPathSelected == null
+          onTap: !navEnabled || widget.onPathSelected == null
               ? null
               : () {
                   _hiddenCrumbsController.close();
@@ -685,15 +696,19 @@ class _FileTopBarState extends State<FileTopBar> {
           ),
           menuChildren: menuItems,
           child: MouseRegion(
-            cursor: SystemMouseCursors.click,
+            cursor: navEnabled
+                ? SystemMouseCursors.click
+                : SystemMouseCursors.basic,
             child: InkWell(
-              onTap: () {
-                if (_hiddenCrumbsController.isOpen) {
-                  _hiddenCrumbsController.close();
-                } else {
-                  _hiddenCrumbsController.open();
-                }
-              },
+              onTap: !navEnabled
+                  ? null
+                  : () {
+                      if (_hiddenCrumbsController.isOpen) {
+                        _hiddenCrumbsController.close();
+                      } else {
+                        _hiddenCrumbsController.open();
+                      }
+                    },
               borderRadius: BorderRadius.circular(4),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -729,11 +744,11 @@ class _FileTopBarState extends State<FileTopBar> {
 
       result.add(
         MouseRegion(
-          cursor: (isLast || widget.onPathSelected == null)
+          cursor: (isLast || widget.onPathSelected == null || !navEnabled)
               ? SystemMouseCursors.basic
               : SystemMouseCursors.click,
           child: InkWell(
-            onTap: (isLast || widget.onPathSelected == null)
+            onTap: (isLast || widget.onPathSelected == null || !navEnabled)
                 ? null
                 : () => widget.onPathSelected!(targetPath),
             borderRadius: BorderRadius.circular(4),

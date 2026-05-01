@@ -1550,12 +1550,15 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                         ? archive.archivePath
                         : '${archive.archivePath}/${archive.subPath}')
                   : _currentPath;
+              final disableNavigation =
+                  _handlingPendingFile && isLikelyFilePath(_currentPath);
               return FileTopBar(
                 currentPath: displayPath,
                 isGridView: _isGridView,
                 isSearchMode: _isSearchMode,
                 isUploading: _isUploading,
                 isCreatingFolder: _isCreatingFolder,
+                disableNavigation: disableNavigation,
                 isRefreshing: isRefreshing,
                 onGoHome: archive != null ? _exitArchive : _goHome,
                 onGoUp: _goUpOneLevel,
