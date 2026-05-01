@@ -1192,8 +1192,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     );
   }
 
-  /// Push a file editor overlay, then update the route through go_router so
-  /// refresh/bookmark/history all reuse the same direct file deep-link flow.
+  /// Push a file editor overlay and sync the canonical file route when needed.
   void _openFileViaRoute(String filePath) {
     if (!mounted) {
       return;
@@ -1212,6 +1211,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     final routeBeforeOpen = GoRouter.of(
       context,
     ).routeInformationProvider.value.uri?.toString();
+    final shouldSyncRoute = routeBeforeOpen != targetRoute;
     final closeRoute =
         routeBeforeOpen == null ||
             routeBeforeOpen.isEmpty ||
@@ -1222,7 +1222,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     var routeSynced = false;
 
     void syncRouteOnce() {
-      if (!mounted || routeSynced) {
+      if (!mounted || routeSynced || !shouldSyncRoute) {
         return;
       }
       routeSynced = true;
