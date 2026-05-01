@@ -582,6 +582,26 @@ class CirrusService with AuthenticatedService {
     }
   }
 
+  /// Duplicates a photo on the server. Returns the relative path of the new
+  /// file (e.g. "photos/IMG_001_copy.jpg").
+  static Future<String> copyPhoto(String relPath, {String? serial}) async {
+    final uri = _apiBaseUri.resolve('/api/v1/photos/copy');
+    final body = jsonEncode({
+      'relPath': relPath,
+      'serial': serial?.trim() ?? '',
+    });
+    final response = await http.post(
+      uri,
+      headers: {..._authHeaders, 'Content-Type': 'application/json'},
+      body: body,
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to copy photo (${response.statusCode})');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return data['relPath'] as String;
+  }
+
   static Uri _buildDownloadUri(String filePath, {String? serial}) {
     final querySegments = <String>[
       'filePath=${Uri.encodeQueryComponent(filePath)}',
