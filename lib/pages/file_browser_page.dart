@@ -1199,42 +1199,66 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     final navigator = Navigator.of(context);
     final router = GoRouter.of(context);
     final targetRoute = AppRoutes.cirrusPath(filePath);
+    final routeBeforeOpen = router.routeInformationProvider.value.uri
+        ?.toString();
+    final closeRoute =
+        routeBeforeOpen == null ||
+            routeBeforeOpen.isEmpty ||
+            routeBeforeOpen == targetRoute
+        ? AppRoutes.cirrusPath(parentPath(filePath))
+        : routeBeforeOpen;
     var routeSyncFailed = false;
+    var routeMovedWhileOpen = false;
 
     void closeIfRouteMoved() {
       final currentRoute =
           router.routeInformationProvider.value.uri?.toString() ?? '';
       if (currentRoute != targetRoute && navigator.canPop()) {
+        routeMovedWhileOpen = true;
         navigator.pop();
       }
     }
 
     router.routeInformationProvider.addListener(closeIfRouteMoved);
-    final pushFuture = navigator.push(
-      MaterialPageRoute(builder: (_) => builder()),
-    );
+    try {
+      final pushFuture = navigator.push(
+        MaterialPageRoute(builder: (_) => builder()),
+      );
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      try {
-        context.go(targetRoute);
-      } catch (_) {
-        routeSyncFailed = true;
-        if (navigator.canPop()) {
-          navigator.pop();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
         }
-        _showMessage('Unable to update the file route');
-      }
-    });
+        try {
+          context.go(targetRoute);
+        } catch (_) {
+          routeSyncFailed = true;
+          if (navigator.canPop()) {
+            navigator.pop();
+          }
+          _showMessage('Unable to update the file route');
+        }
+      });
 
-    await pushFuture;
-    router.routeInformationProvider.removeListener(closeIfRouteMoved);
-    FileBrowserCache.instance.markFileClosed();
+      await pushFuture;
+    } finally {
+      router.routeInformationProvider.removeListener(closeIfRouteMoved);
+      FileBrowserCache.instance.markFileClosed();
+    }
 
-    if (routeSyncFailed && mounted) {
+    if (!mounted) {
+      return;
+    }
+
+    if (routeSyncFailed) {
       context.go(AppRoutes.cirrusPath(parentPath(filePath)));
+      return;
+    }
+
+    final currentRoute =
+        router.routeInformationProvider.value.uri?.toString() ?? '';
+    if (!routeMovedWhileOpen && currentRoute == targetRoute) {
+      context.go(closeRoute);
     }
   }
 
@@ -1317,6 +1341,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           builder: () => DocumentEditorPage(filePath: filePath),
         );
         if (!mounted) return;
+        return;
 
       case 'absheet':
         await _openEditorWithUrl(
@@ -1324,6 +1349,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           builder: () => SpreadsheetEditorPage(filePath: filePath),
         );
         if (!mounted) return;
+        return;
       default:
         setState(() {
           _routeFailure = _CirrusRouteFailure(

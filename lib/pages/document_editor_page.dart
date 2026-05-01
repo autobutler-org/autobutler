@@ -4,8 +4,6 @@ import 'dart:convert';
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
-import 'package:autobutler/widgets/autobutler_drawer.dart';
-import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -401,20 +399,9 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         if (leave && context.mounted) Navigator.of(context).pop();
       },
       child: Scaffold(
-        appBar: AutobutlerAppBar(
-          label: _dirty ? '$_displayName •' : _displayName,
-          icon: Icons.description_outlined,
+        appBar: AppBar(
+          title: Text(_dirty ? '$_displayName •' : _displayName),
           actions: _buildAppBarActions(context),
-        ),
-        drawer: AutobutlerDrawer(
-          activeSection: AutobutlerDrawerSection.docs,
-          onTapCirrus: () => context.go('/cirrus'),
-          onTapPhotos: () => context.go('/photos'),
-          onTapDocs: () => context.go('/docs'),
-          onTapSheets: () => context.go('/sheets'),
-          onTapDevices: () => context.go('/devices'),
-          onTapHealth: () => context.go('/health'),
-          onTapSettings: () => context.go('/settings'),
         ),
         body: _buildBody(context),
       ),
