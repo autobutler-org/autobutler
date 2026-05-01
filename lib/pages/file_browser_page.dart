@@ -151,6 +151,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    if (newPath.isNotEmpty && FileBrowserCache.instance.isFileOpen(newPath)) {
+      return;
+    }
+
     setState(() {
       _applyIncomingRoutePath(widget.initialPath);
       _reloadFiles();
