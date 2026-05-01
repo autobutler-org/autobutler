@@ -22,3 +22,13 @@ bool isLikelyFilePath(String path) {
   final dotIndex = lastSegment.lastIndexOf('.');
   return dotIndex > 0 && dotIndex < lastSegment.length - 1;
 }
+
+bool hasSupportedCirrusEditorForPath(String path) {
+  final normalized = path.trim().toLowerCase();
+  return normalized.endsWith('.abdoc') || normalized.endsWith('.absheet');
+}
+
+bool hasSupportedCirrusEditorForType(String fileType) {
+  final normalized = fileType.trim().toLowerCase();
+  return normalized == 'abdoc' || normalized == 'absheet';
+}

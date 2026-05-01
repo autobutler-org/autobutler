@@ -5,11 +5,9 @@ import 'package:autobutler/controllers/file_browser_cache.dart';
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
-import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/spreadsheet_editor_page.dart';
 import 'package:data_table/data_sheet.dart';
 import 'package:data_table/data_table.dart' as dt;
-import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
@@ -70,6 +68,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// the page has mounted. Only consumed once.
   String? _pendingFileOpen;
 
+  bool _handlingPendingFile = false;
   _CirrusRouteFailure? _routeFailure;
   bool _isGridView = false;
 
@@ -103,21 +102,23 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   // Archive browser state — non-null when navigating inside an archive.
   _ArchiveContext? _archiveContext;
 
+  void _applyIncomingRoutePath(String? initialPath) {
+    final normalized = initialPath == null ? '' : normalizePath(initialPath);
+
+    _archiveContext = null;
+    _routeFailure = null;
+    _isSearchMode = false;
+    _searchFuture = null;
+    _searchQuery = null;
+    _currentPath = normalized;
+    _pendingFileOpen = normalized.isEmpty ? null : normalized;
+    _cachedFiles = FileBrowserCache.instance.get(normalized);
+  }
+
   @override
   void initState() {
     // Apply deep-link initial path before AutoRefreshMixin triggers the first load.
-    final initial = widget.initialPath;
-    if (initial != null && initial.isNotEmpty) {
-      final normalizedInitial = normalizePath(initial);
-      // Optimistically treat the deep-link path as a directory so that
-      // _reloadFiles() fetches the right folder contents immediately (no root
-      // flash). _openPendingFile will stat the backend and correct course if
-      // the path turns out to be a file.
-      _currentPath = normalizedInitial;
-      _pendingFileOpen = normalizedInitial;
-      // Show cached listing instantly while the fresh fetch is in flight.
-      _cachedFiles = FileBrowserCache.instance.get(normalizedInitial);
-    }
+    _applyIncomingRoutePath(widget.initialPath);
     super
         .initState(); // AutoRefreshMixin.initState handles timer + initial load
     _fileBrowserScrollController.addListener(_onScroll);
@@ -139,6 +140,36 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         manualRefresh();
       }
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant FileBrowserPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final oldPath = normalizePath(oldWidget.initialPath ?? '');
+    final newPath = normalizePath(widget.initialPath ?? '');
+    if (oldPath == newPath) {
+      return;
+    }
+
+    if (newPath.isNotEmpty && FileBrowserCache.instance.isFileOpen(newPath)) {
+      return;
+    }
+
+    setState(() {
+      _applyIncomingRoutePath(widget.initialPath);
+      _reloadFiles();
+    });
+
+    if (_pendingFileOpen != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final pending = _pendingFileOpen;
+        _pendingFileOpen = null;
+        if (pending != null && mounted) {
+          _openPendingFile(pending);
+        }
+      });
+    }
   }
 
   @override
@@ -634,17 +665,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           ? fileName
           : '$_currentPath/$fileName';
 
-      if (fileName.endsWith('.absheet')) {
-        await _openEditorWithUrl(
-          filePath: filePath,
-          builder: () => SpreadsheetEditorPage(filePath: filePath),
-        );
-      } else {
-        await _openEditorWithUrl(
-          filePath: filePath,
-          builder: () => DocumentEditorPage(filePath: filePath),
-        );
-      }
+      _openFileViaRoute(filePath);
     } catch (e) {
       if (!mounted) return;
       _showMessage('Failed to create file: $e');
@@ -830,15 +851,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       // Refresh the file list so the new .absheet appears.
       _refreshFileState();
 
-      // Open the new .absheet in the spreadsheet editor.
+      // Open the new .absheet through the canonical Cirrus file route.
       final absheetPath = folder.isEmpty ? absheetName : '$folder/$absheetName';
-      await _openEditorWithUrl(
-        filePath: absheetPath,
-        builder: () => SpreadsheetEditorPage(
-          filePath: absheetPath,
-          deviceSerial: node.deviceSerial,
-        ),
-      );
+      _openFileViaRoute(absheetPath);
     } catch (e) {
       if (!mounted) return;
       _showMessage('Conversion failed: $e');
@@ -861,25 +876,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     // AutoButler native document format — open in the rich text editor.
     if (lowerName.endsWith('.abdoc')) {
-      await _openEditorWithUrl(
-        filePath: node.apiPath,
-        builder: () => DocumentEditorPage(
-          filePath: node.apiPath,
-          deviceSerial: node.deviceSerial,
-        ),
-      );
+      _openFileViaRoute(node.apiPath);
       return;
     }
 
     // AutoButler native spreadsheet format.
     if (lowerName.endsWith('.absheet')) {
-      await _openEditorWithUrl(
-        filePath: node.apiPath,
-        builder: () => SpreadsheetEditorPage(
-          filePath: node.apiPath,
-          deviceSerial: node.deviceSerial,
-        ),
-      );
+      _openFileViaRoute(node.apiPath);
       return;
     }
 
@@ -889,70 +892,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
-    final viewable =
-        lowerName.endsWith('.jpg') ||
-        lowerName.endsWith('.jpeg') ||
-        lowerName.endsWith('.png') ||
-        lowerName.endsWith('.gif') ||
-        lowerName.endsWith('.webp') ||
-        lowerName.endsWith('.mp4') ||
-        lowerName.endsWith('.mov') ||
-        lowerName.endsWith('.mkv') ||
-        lowerName.endsWith('.webm') ||
-        lowerName.endsWith('.avi');
-    if (!viewable) {
-      return;
-    }
-
-    try {
-      final filePath = node.apiPath;
-      // Open images in-app using ImageViewer; fallback to platform handlers for other types.
-      final lower = lowerName;
-      if (lower.endsWith('.jpg') ||
-          lower.endsWith('.jpeg') ||
-          lower.endsWith('.png') ||
-          lower.endsWith('.gif') ||
-          lower.endsWith('.webp')) {
-        final bytes = await CirrusService.downloadFileBytes(
-          filePath,
-          serial: serialOrNull(node.deviceSerial),
-          fileName: trimTrailingSlashes(node.name),
-        );
-        if (bytes == null || !mounted) {
-          return;
-        }
-        await _openEditorWithUrl(
-          filePath: filePath,
-          builder: () => ImageViewerPage(
-            bytes: bytes,
-            name: node.name,
-            relPath: node.apiPath,
-            serial: serialOrNull(node.deviceSerial),
-          ),
-        );
-        return;
-      }
-      if (lower.endsWith('.mp4') ||
-          lower.endsWith('.mov') ||
-          lower.endsWith('.mkv') ||
-          lower.endsWith('.webm') ||
-          lower.endsWith('.avi')) {
-        await _openEditorWithUrl(
-          filePath: filePath,
-          builder: () => VideoViewerPage(
-            url: CirrusService.constructMediaUrl(filePath),
-            name: node.name,
-          ),
-        );
-        return;
-      }
-    } catch (_) {
-      debugPrint('[file_browser_page.dart] Error in catch block');
-      if (!mounted) {
-        return;
-      }
-      _showMessage('Unable to open file');
-    }
+    _showMessage('No supported editor is available for ${node.name}');
   }
 
   void _openDirectory(CirrusFileNode node) {
@@ -1253,50 +1193,80 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     );
   }
 
-  /// Push a file editor/viewer, update the URL to reflect the open file,
-  /// and await dismissal.
-  ///
-  /// URL updates are done via [SystemNavigator.routeInformationUpdated] rather
-  /// than `context.go` so that the full [FileBrowserPage] widget tree is NOT
-  /// recreated on every open — preserving scroll position, device filters, and
-  /// cached listings. The trade-off is that go_router's history stack stays out
-  /// of sync with the real browser history.
-  ///
-  /// TODO(#1048): Replace with a [StatefulShellRoute] so that go_router owns
-  /// the URL and the shell state is preserved across navigations. This would
-  /// eliminate the need for [FileBrowserCache] and the mounted-guard gymnastics
-  /// in [_openPendingFileInner].
+  /// Push a file editor overlay and sync the canonical file route when needed.
+  void _openFileViaRoute(String filePath) {
+    if (!mounted) {
+      return;
+    }
+    context.go(AppRoutes.cirrusPath(filePath));
+  }
+
   Future<void> _openEditorWithUrl({
     required String filePath,
-    required Widget Function() builder,
+    required Widget Function(String targetRoute, String closeRoute) builder,
   }) async {
     FileBrowserCache.instance.markFileOpen(filePath);
 
-    // Push the editor first so it is fully on top before the URL update fires.
-    // Calling SystemNavigator *before* the push caused go_router to rebuild
-    // this page mid-push and silently cancel the editor open.
     final navigator = Navigator.of(context);
-    final pushFuture = navigator.push(
-      MaterialPageRoute(builder: (_) => builder()),
-    );
+    final targetRoute = AppRoutes.cirrusPath(filePath);
+    final routeBeforeOpen = GoRouter.of(
+      context,
+    ).routeInformationProvider.value.uri.toString();
+    final shouldSyncRoute = routeBeforeOpen != targetRoute;
+    final closeRoute = routeBeforeOpen.isEmpty || routeBeforeOpen == targetRoute
+        ? AppRoutes.cirrusPath(parentPath(filePath))
+        : routeBeforeOpen;
+    var routeSyncFailed = false;
+    var routeSynced = false;
 
-    // Defer the URL update by one frame. By the time this callback fires the
-    // MaterialPageRoute animation has committed, so go_router's rebuild of the
-    // background FileBrowserPage is harmless — it hits the isFileOpen() guard
-    // in _openPendingFileInner and bails out immediately.
-    // NOTE: If the widget is disposed before this frame fires the URL update is
-    // silently skipped; that is intentional — there is no page left to reflect.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (kIsWeb && mounted) {
-        SystemNavigator.routeInformationUpdated(
-          uri: Uri.parse(AppRoutes.cirrusPath(filePath)),
-          replace: false,
-        );
+    void syncRouteOnce() {
+      if (!mounted || routeSynced || !shouldSyncRoute) {
+        return;
       }
-    });
+      routeSynced = true;
+      try {
+        context.go(targetRoute);
+      } catch (_) {
+        routeSyncFailed = true;
+        if (navigator.canPop()) {
+          navigator.pop();
+        }
+        _showMessage('Unable to update the file route');
+      }
+    }
 
-    await pushFuture;
-    FileBrowserCache.instance.markFileClosed();
+    try {
+      final route = MaterialPageRoute(
+        builder: (_) => builder(targetRoute, closeRoute),
+      );
+      late final AnimationStatusListener statusListener;
+      statusListener = (status) {
+        if (status == AnimationStatus.completed) {
+          route.animation?.removeStatusListener(statusListener);
+          syncRouteOnce();
+        }
+      };
+
+      final pushFuture = navigator.push(route);
+      final animation = route.animation;
+      if (animation != null) {
+        animation.addStatusListener(statusListener);
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) => syncRouteOnce());
+      }
+
+      await pushFuture;
+    } finally {
+      FileBrowserCache.instance.markFileClosed();
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    if (routeSyncFailed) {
+      context.go(AppRoutes.cirrusPath(parentPath(filePath)));
+    }
   }
 
   /// Opens a deep-linked path in the appropriate viewer after mount.
@@ -1305,7 +1275,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// rather than being launched in the document editor.
   Future<void> _openPendingFile(String filePath) async {
     if (!mounted) return;
-    await _openPendingFileInner(filePath);
+    _handlingPendingFile = true;
+    try {
+      await _openPendingFileInner(filePath);
+    } finally {
+      _handlingPendingFile = false;
+    }
   }
 
   Future<void> _openPendingFileInner(String filePath) async {
@@ -1375,22 +1350,32 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       case 'abdoc':
         await _openEditorWithUrl(
           filePath: filePath,
-          builder: () => DocumentEditorPage(filePath: filePath),
+          builder: (targetRoute, closeRoute) => DocumentEditorPage(
+            filePath: filePath,
+            overlayTargetRoute: targetRoute,
+            overlayCloseRoute: closeRoute,
+          ),
         );
         if (!mounted) return;
+        return;
 
       case 'absheet':
         await _openEditorWithUrl(
           filePath: filePath,
-          builder: () => SpreadsheetEditorPage(filePath: filePath),
+          builder: (targetRoute, closeRoute) => SpreadsheetEditorPage(
+            filePath: filePath,
+            overlayTargetRoute: targetRoute,
+            overlayCloseRoute: closeRoute,
+          ),
         );
         if (!mounted) return;
+        return;
       default:
         setState(() {
           _routeFailure = _CirrusRouteFailure(
             requestedPath: filePath,
             isFileRoute: true,
-            isUnsupported: true,
+            isUnsupported: !hasSupportedCirrusEditorForType(fileType),
           );
         });
         break;
@@ -1533,12 +1518,15 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                         ? archive.archivePath
                         : '${archive.archivePath}/${archive.subPath}')
                   : _currentPath;
+              final disableNavigation =
+                  _handlingPendingFile && isLikelyFilePath(_currentPath);
               return FileTopBar(
                 currentPath: displayPath,
                 isGridView: _isGridView,
                 isSearchMode: _isSearchMode,
                 isUploading: _isUploading,
                 isCreatingFolder: _isCreatingFolder,
+                disableNavigation: disableNavigation,
                 isRefreshing: isRefreshing,
                 onGoHome: archive != null ? _exitArchive : _goHome,
                 onGoUp: _goUpOneLevel,

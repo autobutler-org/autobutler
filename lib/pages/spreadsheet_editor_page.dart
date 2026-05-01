@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:autobutler/router.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:data_table/data_sheet.dart';
@@ -40,10 +41,14 @@ class _SheetTab {
 class SpreadsheetEditorPage extends StatefulWidget {
   final String filePath;
   final String deviceSerial;
+  final String? overlayTargetRoute;
+  final String? overlayCloseRoute;
 
   const SpreadsheetEditorPage({
     required this.filePath,
     this.deviceSerial = '',
+    this.overlayTargetRoute,
+    this.overlayCloseRoute,
     super.key,
   });
 
@@ -57,6 +62,7 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
   bool _saving = false;
   bool _dirty = false;
   String? _error;
+  bool _routeMovedExternally = false;
 
   late TabController _tabController;
   List<_SheetTab> _tabs = [];
@@ -71,9 +77,44 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
         : name;
   }
 
+  String _currentRoute() =>
+      router.routeInformationProvider.value.uri.toString();
+
+  Future<void> _handleOverlayRouteChange() async {
+    final targetRoute = widget.overlayTargetRoute;
+    if (targetRoute == null || !mounted || _currentRoute() == targetRoute) {
+      return;
+    }
+
+    _routeMovedExternally = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) {
+        return;
+      }
+      await Navigator.of(context).maybePop();
+    });
+  }
+
+  void _restoreOverlayCloseRoute() {
+    final targetRoute = widget.overlayTargetRoute;
+    final closeRoute = widget.overlayCloseRoute;
+    if (targetRoute == null || closeRoute == null) {
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_routeMovedExternally && _currentRoute() == targetRoute) {
+        router.go(closeRoute);
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+    if (widget.overlayTargetRoute != null) {
+      router.routeInformationProvider.addListener(_handleOverlayRouteChange);
+    }
     _tabController = TabController(length: 1, vsync: this);
     _loadFile();
   }
@@ -81,6 +122,9 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
   @override
   void dispose() {
     _autoSaveTimer?.cancel();
+    if (widget.overlayTargetRoute != null) {
+      router.routeInformationProvider.removeListener(_handleOverlayRouteChange);
+    }
     _tabController.dispose();
     for (final tab in _tabs) {
       tab.dispose();
@@ -245,41 +289,48 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
 
     final multiTab = _tabs.length > 1;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        actions: [
-          if (_saving)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) {
+          _restoreOverlayCloseRoute();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+          actions: [
+            if (_saving)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
                 ),
-              ),
-            )
-          else
-            IconButton(
-              icon: Icon(_dirty ? Icons.save : Icons.save_outlined),
-              tooltip: 'Save',
-              onPressed: _manualSave,
-            ),
-        ],
-        bottom: multiTab
-            ? TabBar(
-                controller: _tabController,
-                tabs: _tabs.map((t) => Tab(text: t.name)).toList(),
               )
-            : null,
+            else
+              IconButton(
+                icon: Icon(_dirty ? Icons.save : Icons.save_outlined),
+                tooltip: 'Save',
+                onPressed: _manualSave,
+              ),
+          ],
+          bottom: multiTab
+              ? TabBar(
+                  controller: _tabController,
+                  tabs: _tabs.map((t) => Tab(text: t.name)).toList(),
+                )
+              : null,
+        ),
+        body: multiTab
+            ? TabBarView(
+                controller: _tabController,
+                children: _tabs.map(_buildSheetTab).toList(),
+              )
+            : _buildSheetTab(_tabs.first),
       ),
-      body: multiTab
-          ? TabBarView(
-              controller: _tabController,
-              children: _tabs.map(_buildSheetTab).toList(),
-            )
-          : _buildSheetTab(_tabs.first),
     );
   }
 
