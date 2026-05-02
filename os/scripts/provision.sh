@@ -120,6 +120,16 @@ mkdir -p "$(rpath "$DEST_BIN_DIR")"
 mkdir -p "$(rpath "$SYSTEMD_DIR")"
 mkdir -p "$(rpath "$AVAHI_DIR")"
 
+# Ensure autobutler system user exists (idempotent)
+if [[ "$ROOT_DIR" == "/" ]]; then
+  if ! id -u autobutler >/dev/null 2>&1; then
+    info "Creating system user: autobutler"
+    useradd --system --no-create-home --shell /usr/sbin/nologin autobutler
+  else
+    info "System user autobutler already exists"
+  fi
+fi
+
 # Install binary (if provided)
 if [[ -n "$BINARY_PATH" ]]; then
   info "Installing binary to ${DEST_BIN_DIR}/${BINARY_NAME}"
@@ -136,15 +146,18 @@ info "Writing systemd unit to ${UNIT_PATH_REL}"
 cat > "$UNIT_PATH.tmp" <<'UNIT'
 [Unit]
 Description=Autobutler service
-After=network.target
+Wants=network-online.target
+After=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/autobutler
+User=autobutler
+Group=autobutler
+ExecStart=/usr/local/bin/autobutler serve
 Restart=on-failure
 RestartSec=5s
-User=root
-Group=root
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 
 [Install]
 WantedBy=multi-user.target

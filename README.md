@@ -27,7 +27,7 @@ You buy the hardware once. No subscriptions. No data mining. It's yours.
 **Prerequisites:** Go, Flutter, Make, [air](https://github.com/air-verse/air), sqlc, swag
 
 ```bash
-git clone https://github.com/autobutler-org/autobutler.git
+git clone https://github.com/autobutler-org/autobutler.git # Include --recursive if you want to do OS image builds
 cd autobutler
 make setup
 make generate
@@ -37,16 +37,19 @@ make build
 ### Run it locally
 
 Backend with hot reload:
+
 ```bash
 make watch/backend
 ```
 
 Frontend (web):
+
 ```bash
 make serve/frontend
 ```
 
 Frontend (mobile emulator):
+
 ```bash
 make emulate          # default platform
 make emulate/android  # or emulate/ios
