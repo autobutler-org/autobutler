@@ -12,6 +12,19 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:http/http.dart' as http;
 
+class CirrusRequestException implements Exception {
+  const CirrusRequestException({
+    required this.statusCode,
+    required this.message,
+  });
+
+  final int statusCode;
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 class CirrusService with AuthenticatedService {
   static final CirrusService _instance = CirrusService._();
   CirrusService._();
@@ -38,6 +51,24 @@ class CirrusService with AuthenticatedService {
     }
 
     return uri;
+  }
+
+  static String _responseMessage(
+    http.Response response, {
+    required String fallback,
+  }) {
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        final error = decoded['error'];
+        if (error is String && error.trim().isNotEmpty) {
+          return error;
+        }
+      }
+    } catch (_) {
+      // Fall back to the caller-provided message when the response is not JSON.
+    }
+    return fallback;
   }
 
   static Uri constructMediaUrl(String filePath, {String? serial}) {
@@ -147,7 +178,13 @@ class CirrusService with AuthenticatedService {
 
     final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to load cirrus files (${response.statusCode})');
+      throw CirrusRequestException(
+        statusCode: response.statusCode,
+        message: _responseMessage(
+          response,
+          fallback: 'Failed to load cirrus files (${response.statusCode})',
+        ),
+      );
     }
 
     final decoded = jsonDecode(response.body);
@@ -327,7 +364,13 @@ class CirrusService with AuthenticatedService {
     final uri = endpointUri.replace(query: querySegments.join('&'));
     final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to stat file (${response.statusCode})');
+      throw CirrusRequestException(
+        statusCode: response.statusCode,
+        message: _responseMessage(
+          response,
+          fallback: 'Failed to stat file (${response.statusCode})',
+        ),
+      );
     }
     final decoded = jsonDecode(response.body);
     if (decoded is! Map<String, dynamic>) {

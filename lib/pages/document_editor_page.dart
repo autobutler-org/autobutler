@@ -4,8 +4,6 @@ import 'dart:convert';
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
-import 'package:autobutler/widgets/autobutler_drawer.dart';
-import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -102,10 +100,14 @@ DefaultStyles _quillStyles(ColorScheme cs) {
 class DocumentEditorPage extends StatefulWidget {
   final String filePath;
   final String deviceSerial;
+  final String? overlayTargetRoute;
+  final String? overlayCloseRoute;
 
   const DocumentEditorPage({
     required this.filePath,
     this.deviceSerial = '',
+    this.overlayTargetRoute,
+    this.overlayCloseRoute,
     super.key,
   });
 
@@ -123,6 +125,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   bool _dirty = false;
   bool _exporting = false;
   String? _error;
+  bool _routeMovedExternally = false;
 
   // Auto-save
   static const _prefKeyAutoSave = 'document_editor_auto_save';
@@ -140,6 +143,9 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     super.initState();
     _displayName = _nameFromPath(widget.filePath);
     _controller = QuillController.basic();
+    if (widget.overlayTargetRoute != null) {
+      router.routeInformationProvider.addListener(_handleOverlayRouteChange);
+    }
     _loadPrefs();
     _loadDocument();
   }
@@ -147,6 +153,9 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   @override
   void dispose() {
     _autoSaveTimer?.cancel();
+    if (widget.overlayTargetRoute != null) {
+      router.routeInformationProvider.removeListener(_handleOverlayRouteChange);
+    }
     _controller.dispose();
     _editorFocus.dispose();
     _scrollController.dispose();
@@ -158,6 +167,38 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   String _nameFromPath(String path) {
     final name = path.split('/').last;
     return name.endsWith('.abdoc') ? name.substring(0, name.length - 6) : name;
+  }
+
+  String _currentRoute() =>
+      router.routeInformationProvider.value.uri.toString();
+
+  Future<void> _handleOverlayRouteChange() async {
+    final targetRoute = widget.overlayTargetRoute;
+    if (targetRoute == null || !mounted || _currentRoute() == targetRoute) {
+      return;
+    }
+
+    _routeMovedExternally = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) {
+        return;
+      }
+      await Navigator.of(context).maybePop();
+    });
+  }
+
+  void _restoreOverlayCloseRoute() {
+    final targetRoute = widget.overlayTargetRoute;
+    final closeRoute = widget.overlayCloseRoute;
+    if (targetRoute == null || closeRoute == null) {
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_routeMovedExternally && _currentRoute() == targetRoute) {
+        router.go(closeRoute);
+      }
+    });
   }
 
   Future<void> _loadPrefs() async {
@@ -396,25 +437,27 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     return PopScope(
       canPop: !_dirty,
       onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
+        if (didPop) {
+          _restoreOverlayCloseRoute();
+          return;
+        }
         final leave = await _confirmDiscard(context);
-        if (leave && context.mounted) Navigator.of(context).pop();
+        if (!context.mounted) {
+          return;
+        }
+        if (leave) {
+          Navigator.of(context).pop();
+          return;
+        }
+        if (_routeMovedExternally && widget.overlayTargetRoute != null) {
+          _routeMovedExternally = false;
+          router.go(widget.overlayTargetRoute!);
+        }
       },
       child: Scaffold(
-        appBar: AutobutlerAppBar(
-          label: _dirty ? '$_displayName •' : _displayName,
-          icon: Icons.description_outlined,
+        appBar: AppBar(
+          title: Text(_dirty ? '$_displayName •' : _displayName),
           actions: _buildAppBarActions(context),
-        ),
-        drawer: AutobutlerDrawer(
-          activeSection: AutobutlerDrawerSection.docs,
-          onTapCirrus: () => context.go('/cirrus'),
-          onTapPhotos: () => context.go('/photos'),
-          onTapDocs: () => context.go('/docs'),
-          onTapSheets: () => context.go('/sheets'),
-          onTapDevices: () => context.go('/devices'),
-          onTapHealth: () => context.go('/health'),
-          onTapSettings: () => context.go('/settings'),
         ),
         body: _buildBody(context),
       ),

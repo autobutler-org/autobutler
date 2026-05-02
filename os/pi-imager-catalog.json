@@ -27,6 +27,18 @@
       "release_date": "2026-03-31",
       "init_format": "cloudinit",
       "devices": ["pi5"]
+    },
+    {
+      "name": "AutoButler for ODROID N2",
+      "description": "Ubuntu Server 24.04 LTS with AutoButler pre-installed. Plug-and-play home cloud storage for ODROID N2.",
+      "icon": "https://autobutler.org/assets/images/casing.webp",
+      "url": "https://github.com/autobutler-org/autobutler/releases/latest/download/autobutler-odroid-n2.img.xz",
+      "extract_size": 4294967296,
+      "extract_sha256": "placeholder",
+      "image_download_sha256": "placeholder",
+      "release_date": "2026-03-31",
+      "init_format": "cloudinit",
+      "devices": ["odroid-n2"]
     }
   ]
 }

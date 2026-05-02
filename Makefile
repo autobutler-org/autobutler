@@ -150,7 +150,7 @@ setup/swag: ## Install swag tool
 .PHONY: setup/hooks
 setup/hooks: ## Install git hooks
 	ln -sf "$(PWD)/git/hooks/pre-commit" .git/hooks/pre-commit
-	@echo "✅ Git hooks installed"
+	echo "✅ Git hooks installed"
 
 ##@ Development
 
@@ -362,6 +362,12 @@ tidy: tidy/flutter tidy/go ## Tidy dependencies
 .PHONY: tidy/flutter
 tidy/flutter: ## Tidy Flutter dependencies
 	flutter pub get
+	for pkg in packages/*/; do
+		if [ -f "$$pkg/pubspec.yaml" ] && [ -d "$$pkg/test" ]; then
+			echo "Downloading packages for $$pkg..."
+			$(MAKE) -C "$$pkg" tidy || exit 1
+		fi
+	done
 
 .PHONY: tidy/go
 tidy/go: ## Tidy go mod
@@ -428,7 +434,7 @@ check/format/go: ## Check Go code formatting
 	fi
 
 .PHONY: check/lint
-check/lint: check/lint/flutter check/lint/go check/lint/sqlc ## Check
+check/lint: check/lint/flutter check/lint/go check/lint/sqlc ## Check code quality
 
 .PHONY: check/lint/flutter
 check/lint/flutter: ## Lint Flutter/Dart code
@@ -466,15 +472,15 @@ format/go: ## Format Go code
 
 .PHONY: release/yank
 release/yank: ## Yank a release: remove from Azure + mark GitHub release as pre-release (VERSION=v0.X.Y)
-	@if [ -z "$(VERSION)" ]; then echo "Error: VERSION is required. Usage: make release/yank VERSION=v0.X.Y"; exit 1; fi
-	@echo "Yanking $(VERSION) from Azure Blob Storage..."
+	if [ -z "$(VERSION)" ]; then echo "Error: VERSION is required. Usage: make release/yank VERSION=v0.X.Y"; exit 1; fi
+	echo "Yanking $(VERSION) from Azure Blob Storage..."
 	az storage blob delete-batch \
 		--account-name autobutlerrelease \
 		--source releases \
 		--pattern "autobutler/$(VERSION)/*"
-	@echo "Marking $(VERSION) as pre-release on GitHub..."
+	echo "Marking $(VERSION) as pre-release on GitHub..."
 	gh release edit $(VERSION) --prerelease --repo autobutler-org/autobutler
-	@echo "✅ $(VERSION) yanked. Ship a patch release ASAP."
+	echo "✅ $(VERSION) yanked. Ship a patch release ASAP."
 
 ##@ Helpers
 

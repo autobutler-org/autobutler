@@ -40,6 +40,8 @@ class FileBrowserView extends StatefulWidget {
     this.onNavigateToFolder,
     this.inArchive = false,
     this.isInitialLoad = false,
+    this.errorBuilder,
+    this.loadingBuilder,
     super.key,
   });
 
@@ -71,6 +73,8 @@ class FileBrowserView extends StatefulWidget {
   /// empty default future would immediately show "No files yet" instead of
   /// a spinner.
   final bool isInitialLoad;
+  final Widget Function(BuildContext context, Object error)? errorBuilder;
+  final WidgetBuilder? loadingBuilder;
 
   @override
   State<FileBrowserView> createState() => _FileBrowserViewState();
@@ -358,10 +362,17 @@ class _FileBrowserViewState extends State<FileBrowserView> {
         if (widget.isInitialLoad ||
             (snapshot.connectionState == ConnectionState.waiting &&
                 !snapshot.hasData)) {
+          if (widget.loadingBuilder != null) {
+            return widget.loadingBuilder!(context);
+          }
           return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
+          final error = snapshot.error!;
+          if (widget.errorBuilder != null) {
+            return widget.errorBuilder!(context, error);
+          }
           return Center(
             child: Text(
               'Unable to load files',

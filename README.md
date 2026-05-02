@@ -2,6 +2,9 @@
 
 Your own private cloud, running in your house. Photos, files, documents — all on hardware you own, off servers you don't trust.
 
+[![CI](https://github.com/autobutler-org/autobutler/actions/workflows/autobutler-ci.yml/badge.svg?branch=main)](https://github.com/autobutler-org/autobutler/actions/workflows/autobutler-ci.yml)
+[![Code Quality](https://github.com/autobutler-org/autobutler/actions/workflows/autobutler-check.yml/badge.svg?branch=main)](https://github.com/autobutler-org/autobutler/actions/workflows/autobutler-check.yml)
+[![CodeQL](https://github.com/autobutler-org/autobutler/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/autobutler-org/autobutler/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -24,7 +27,7 @@ You buy the hardware once. No subscriptions. No data mining. It's yours.
 **Prerequisites:** Go, Flutter, Make, [air](https://github.com/air-verse/air), sqlc, swag
 
 ```bash
-git clone https://github.com/autobutler-org/autobutler.git
+git clone https://github.com/autobutler-org/autobutler.git # Include --recursive if you want to do OS image builds
 cd autobutler
 make setup
 make generate
@@ -34,16 +37,19 @@ make build
 ### Run it locally
 
 Backend with hot reload:
+
 ```bash
 make watch/backend
 ```
 
 Frontend (web):
+
 ```bash
 make serve/frontend
 ```
 
 Frontend (mobile emulator):
+
 ```bash
 make emulate          # default platform
 make emulate/android  # or emulate/ios
@@ -64,9 +70,13 @@ make help     # all targets
 
 ## Docs
 
+- [Dev Onboarding](docs/dev-onboarding.md)
 - [Authentication](docs/auth.md)
-- [Contributing](CONTRIBUTING.md)
+- [Mobile Setup](docs/mobile-setup.md)
 - [Azure Deployment](docs/azure-deployment.md)
+- [Raspberry Pi Setup](os/README.md)
+- [Release Process](docs/release.md)
+- [Contributing](CONTRIBUTING.md)
 
 ## Contributing
 

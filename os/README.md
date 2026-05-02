@@ -4,11 +4,10 @@ This directory contains everything needed to create a plug-and-play Raspberry Pi
 
 ## What's Here
 
-| Path | Description |
-|------|-------------|
-| `cloud-init/` | Cloud-init config for installing AutoButler on a stock Ubuntu image |
-| `build-image.sh` | Script to build a custom image with AutoButler baked in |
-| `pi-imager-catalog.json` | Raspberry Pi Imager catalog entry for custom OS list |
+| Path                     | Description                                                         |
+| ------------------------ | ------------------------------------------------------------------- |
+| `cloud-init/`            | Cloud-init config for installing AutoButler on a stock Ubuntu image |
+| `pi-imager-catalog.json` | Raspberry Pi Imager catalog entry for custom OS list                |
 
 ## Quick Start: Flash the Pre-Built Image
 
@@ -35,34 +34,14 @@ You can also add AutoButler to Pi Imager's OS list:
 
 ## Alternative: Cloud-Init on Stock Ubuntu
 
-If you prefer to start from a stock Ubuntu Server image, see [cloud-init/README.md](cloud-init/README.md). This method requires an internet connection on first boot and takes 5–10 minutes for setup.
+If you prefer to start from a stock Ubuntu Server image,
+see [cloud-init/README.md](cloud-init/README.md). This method
+requires an internet connection on first boot and takes 5–10
+minutes for setup.
 
 ## Building Locally
 
-### Requirements
-
-- arm64 Linux host, **or** x86_64 with QEMU binfmt_misc (`qemu-user-static`)
-- Root privileges
-- Packages: `xz-utils`, `kpartx`, `curl`, `jq`
-- ~8GB free disk space per target
-
-### Build
-
-```bash
-# Install dependencies (Debian/Ubuntu)
-sudo apt-get install -y xz-utils kpartx curl jq qemu-user-static
-
-# Build for Pi 4
-sudo ./build-image.sh pi4
-
-# Build for Pi 5
-sudo ./build-image.sh pi5
-
-# Build both
-sudo ./build-image.sh all
-```
-
-Output images are written to this directory as `autobutler-pi4.img.xz` and `autobutler-pi5.img.xz`, with checksums in `checksums.sha256`.
+This repository no longer includes a local image build path.
 
 ## First-Boot Experience
 
@@ -117,6 +96,19 @@ sudo ufw allow 22/tcp
 
 ## Architecture
 
-Both Pi 4 and Pi 5 use the same Ubuntu Server 24.04 LTS arm64 base image. The images are functionally identical — separate builds exist for clarity and to allow future hardware-specific tuning.
+Both Pi 4 and Pi 5 use the same Ubuntu Server 24.04 LTS
+arm64 base image. The images are functionally identical -
+separate builds exist for clarity and to allow future
+hardware-specific tuning.
 
 The systemd service definition matches the one in `internal/install/system_service.go`.
+
+## ODROID N2
+
+- The ODROID N2 uses an ARM64-compatible base but requires
+   different bootloader and device-tree handling compared to
+   Raspberry Pi.
+- Cloud-init remains available as a provisioning path. See
+   the `cloud-init/` directory for example `user-data` and
+   provisioning steps that can be applied to stock Ubuntu
+   images.

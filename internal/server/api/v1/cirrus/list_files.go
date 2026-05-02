@@ -1,6 +1,8 @@
 package v1_files
 
 import (
+	"errors"
+	"net/http"
 	"path/filepath"
 
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
@@ -28,6 +30,8 @@ type FileNodeJSON struct {
 
 func listFilesImpl(rootDir string, devices []storageutil.ManagedDevice) ([]FileNodeJSON, error) {
 	var allFiles []*storageutil.DeviceFileInfo
+	sawListing := false
+	sawNotFound := false
 	for _, device := range devices {
 		cirrusDir := device.CirrusDir
 		fullPathDir, err := storageutil.SafeJoin(cirrusDir, rootDir)
@@ -40,9 +44,16 @@ func listFilesImpl(rootDir string, devices []storageutil.ManagedDevice) ([]FileN
 		}
 		files, err := storageutil.StatFilesInDir(fullPathDir, device.Name, device.DataDir, deviceSerial)
 		if err != nil {
+			if rootDir != "" && errors.Is(err, storageutil.ErrPathNotFound) {
+				sawNotFound = true
+			}
 			continue
 		}
+		sawListing = true
 		allFiles = append(allFiles, files...)
+	}
+	if rootDir != "" && sawNotFound && !sawListing {
+		return nil, serverutil.NewHttpErrorf(http.StatusNotFound, "folder not found: %s", rootDir)
 	}
 	// Only deduplicate folders (isDir), show all files across all devices
 	seenFolders := make(map[string]bool)
