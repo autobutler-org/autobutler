@@ -98,5 +98,6 @@ jobs:
             --source build/output/images/ \
             --destination "https://autobutlerrelease.blob.core.windows.net/releases" \
             --destination-path "autobutler/${{ steps.resolve-tag.outputs.autobutler_tag }}/${{ matrix.board }}" \
+            --tier Hot \
             --sas-token "${AZURE_STORAGE_SAS_TOKEN}" \
             --overwrite
