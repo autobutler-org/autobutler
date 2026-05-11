@@ -1,0 +1,116 @@
+name: Performance And Stress Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    - cron: "0 7 * * *"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  AUTOBUTLER_USERNAME: perf
+  AUTOBUTLER_PASSWORD: perf-password
+
+jobs:
+  autobutler-performance-bench:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Setup sqlc
+        uses: ./.github/actions/setup-sqlc
+
+      - name: Setup swag
+        uses: ./.github/actions/setup-swag
+
+      - name: Run benchmark suite
+        run: |
+          make bench | tee bench-results.txt
+
+      - name: Upload benchmark artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-results
+          path: bench-results.txt
+          if-no-files-found: error
+
+  autobutler-performance-loadtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Setup sqlc
+        uses: ./.github/actions/setup-sqlc
+
+      - name: Setup swag
+        uses: ./.github/actions/setup-swag
+
+      - name: Setup wrk
+        uses: ./.github/actions/setup-wrk
+
+      - name: Run load test profile
+        run: |
+          make test/perf/load
+
+      - name: Upload load test artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: loadtest-results
+          path: test-results/performance/
+          if-no-files-found: warn
+
+  autobutler-performance-stress:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Setup sqlc
+        uses: ./.github/actions/setup-sqlc
+
+      - name: Setup swag
+        uses: ./.github/actions/setup-swag
+
+      - name: Setup wrk
+        uses: ./.github/actions/setup-wrk
+
+      - name: Run stress profile
+        run: |
+          make test/perf/stress
+
+      - name: Upload stress test artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: stress-results
+          path: test-results/performance/
+          if-no-files-found: warn

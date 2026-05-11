@@ -43,6 +43,17 @@ clean/flutter: ## Clean flutter project
 .PHONY: setup
 setup: setup/gotools setup/air setup/sqlc setup/swag setup/flutter setup/hooks ## Setup development environment
 
+.PHONY: setup/wrk
+setup/wrk: ## Install wrk load-testing CLI
+ifeq ($(UNAME_S),Linux)
+	sudo apt-get update -y
+	sudo apt-get install -y wrk
+else ifeq ($(UNAME_S),Darwin)
+	brew install wrk
+else
+	$(error "Unsupported OS: $(UNAME_S)")
+endif
+
 .PHONY: setup/air
 setup/air: ## Install air tool
 	$(GO) install github.com/air-verse/air@latest
@@ -310,6 +321,51 @@ PRINT_COVERAGE ?= 0
 
 .PHONY: test
 test: test/unit
+
+PERF_PORT ?= 8080
+PERF_BASE_URL ?= http://127.0.0.1:$(PERF_PORT)
+
+.PHONY: test/perf/bench
+test/perf/bench: ## Run Go benchmark suite for backend hot paths
+	$(GO) test -run=^$$ -bench=. -benchmem ./...
+
+.PHONY: test/perf/common
+test/perf/common: ## Run wrk-based API load tests against a running backend
+	bash ./test/performance/loadtest.sh
+
+.PHONY: test/perf
+test/perf: build/backend ## Run benchmark suite + local load profile + local stress profile
+	$(MAKE) test/perf/bench
+	$(MAKE) test/perf/load
+	$(MAKE) test/perf/stress
+
+.PHONY: test/perf/load
+test/perf/load: build/backend ## Run local wrk load profile against a temporary local backend
+	mkdir -p test-results/performance
+	PORT=$(PERF_PORT) ./build/autobutler serve > test-results/performance/server-load.log 2>&1 &
+	SERVER_PID=$$!
+	trap 'kill $$SERVER_PID 2>/dev/null || true' EXIT
+	export AUTOBUTLER_BASE_URL=$(PERF_BASE_URL)
+	export LOADTEST_THREADS=2
+	export LOADTEST_CONCURRENCY=15
+	export LOADTEST_DURATION=10s
+	export UPLOAD_STRESS_CONCURRENCY=4
+	export UPLOAD_STRESS_COUNT=8
+	$(MAKE) loadtest
+
+.PHONY: test/perf/stress
+test/perf/stress: build/backend ## Run local wrk stress profile against a temporary local backend
+	mkdir -p test-results/performance
+	PORT=$(PERF_PORT) ./build/autobutler serve > test-results/performance/server-stress.log 2>&1 &
+	SERVER_PID=$$!
+	trap 'kill $$SERVER_PID 2>/dev/null || true' EXIT
+	export AUTOBUTLER_BASE_URL=$(PERF_BASE_URL)
+	export LOADTEST_THREADS=4
+	export LOADTEST_CONCURRENCY=50
+	export LOADTEST_DURATION=30s
+	export UPLOAD_STRESS_CONCURRENCY=10
+	export UPLOAD_STRESS_COUNT=20
+	$(MAKE) loadtest
 
 .PHONY: test/unit
 test/unit: test/unit/backend test/unit/frontend ## Run unit tests
