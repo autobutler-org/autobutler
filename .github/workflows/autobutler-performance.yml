@@ -1,4 +1,4 @@
-name: Performance And Stress Tests
+name: Performance Tests
 
 on:
   pull_request:
