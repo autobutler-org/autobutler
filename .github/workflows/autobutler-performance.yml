@@ -40,7 +40,7 @@ jobs:
 
       - name: Run benchmark suite
         run: |
-          make bench | tee bench-results.txt
+          make test/perf/bench | tee bench-results.txt
 
       - name: Upload benchmark artifacts
         uses: actions/upload-artifact@v7
