@@ -1681,8 +1681,8 @@ class _HelpSupportCard extends StatelessWidget {
   const _HelpSupportCard();
 
   static const _supportUrl = 'https://autobutler.org/support';
-  static const _issueUrl =
-      'https://github.com/autobutler-ai/autobutler.ai/issues/new/choose';
+  static const _bugUrl =
+      'https://github.com/autobutler-org/autobutler/issues/new?template=bug.yaml';
 
   @override
   Widget build(BuildContext context) {
@@ -1708,7 +1708,7 @@ class _HelpSupportCard extends StatelessWidget {
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: () => launchUrl(
-                Uri.parse(_issueUrl),
+                Uri.parse(_bugUrl),
                 mode: LaunchMode.externalApplication,
               ),
               icon: const Icon(Icons.bug_report_outlined, size: 16),
