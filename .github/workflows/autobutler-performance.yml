@@ -112,4 +112,5 @@ jobs:
 
       - name: Render performance summary
         run: |
+          tree test-results
           make test/perf/summary >> ${GITHUB_STEP_SUMMARY}
