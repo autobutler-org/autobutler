@@ -9,14 +9,8 @@ ifneq (,$(wildcard ./.env))
     export
 endif
 
-AS_ROOT ?= 0
-
 GO := $(shell which go)
 AIR := $(shell which air)
-ifeq ($(AS_ROOT), 1)
-	GO := sudo $(GO)
-	AIR := sudo $(AIR)
-endif
 export GOOS ?= $(shell $(GO) env GOOS)
 export GOARCH ?= $(shell $(GO) env GOARCH)
 export GOPROXY ?= https://proxy.golang.org,direct
@@ -448,11 +442,7 @@ upgrade/go: generate/backend ## Upgrade dependencies (go)
 
 .PHONY: watch/backend
 watch/backend: build/backend ## Watch backend for changes
-ifeq ($(AS_ROOT), 1)
-	$(AIR) --build.cmd "sudo $(MAKE) build/backend"
-else
 	$(AIR)
-endif
 
 .PHONY: watch/frontend
 watch/frontend: generate/frontend ## Watch frontend on web
