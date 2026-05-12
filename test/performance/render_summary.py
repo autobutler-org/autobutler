@@ -6,7 +6,6 @@ import argparse
 import re
 from pathlib import Path
 
-
 WRK_SCENARIOS = [
     "albums_list.txt",
     "cirrus_list.txt",
@@ -37,7 +36,9 @@ def parse_wrk_file(path: Path) -> dict[str, str]:
             stats["non2xx"] = line.split()[-1]
         elif line.startswith("Socket errors:"):
             errors = []
-            for kind, value in re.findall(r"(connect|read|write|timeout)\s+(\d+)", line):
+            for kind, value in re.findall(
+                r"(connect|read|write|timeout)\s+(\d+)", line
+            ):
                 if value != "0":
                     errors.append(f"{kind} {value}")
             if errors:
@@ -89,13 +90,19 @@ def render_wrk_section(results_dir: Path) -> list[str]:
     lines.append(f"### {section_name}")
     lines.append("")
 
-    available_files = [results_dir / filename for filename in WRK_SCENARIOS if (results_dir / filename).exists()]
+    available_files = [
+        results_dir / filename
+        for filename in WRK_SCENARIOS
+        if (results_dir / filename).exists()
+    ]
     if not available_files:
         lines.append("_No wrk outputs were found._")
         lines.append("")
         return lines
 
-    lines.append("| Scenario | Requests | Req/s | P50 | P90 | P99 | Transfer/sec | Notes |")
+    lines.append(
+        "| Scenario | Requests | Req/s | P50 | P90 | P99 | Transfer/sec | Notes |"
+    )
     lines.append("| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
 
     for file_path in available_files:
@@ -122,7 +129,11 @@ def render_wrk_section(results_dir: Path) -> list[str]:
 
     upload_status = results_dir / "upload_status_codes.txt"
     if upload_status.exists():
-        codes = [line.strip() for line in upload_status.read_text().splitlines() if line.strip()]
+        codes = [
+            line.strip()
+            for line in upload_status.read_text().splitlines()
+            if line.strip()
+        ]
         successful = sum(1 for code in codes if code == "200")
         failures = len(codes) - successful
         lines.append("")
@@ -167,7 +178,9 @@ def render_benchmark_section(bench_results: Path) -> list[str]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Render a Markdown performance summary.")
+    parser = argparse.ArgumentParser(
+        description="Render a Markdown performance summary."
+    )
     parser.add_argument(
         "--wrk-dir",
         action="append",
