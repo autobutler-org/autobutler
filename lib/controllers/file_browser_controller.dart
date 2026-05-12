@@ -43,7 +43,7 @@ class FileBrowserController {
   ///
   /// Returns an empty list if the user cancelled.
   Future<List<http.MultipartFile>> pickUploadFiles() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       withData: true,
       allowMultiple: true,
     );
