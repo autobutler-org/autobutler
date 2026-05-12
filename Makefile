@@ -200,7 +200,7 @@ build/frontend/ios: ## Build iOS app
 	flutter build ios --$(FLUTTER_BUILD_MODE) --no-codesign
 
 .PHONY: build/frontend/web
-build/frontend/web: internal/server/public/stub.txt ## Build web app
+build/frontend/web: internal/server/public/stub.txt generate/frontend/sbom ## Build web app
 	flutter build web --$(FLUTTER_BUILD_MODE)
 	cp -R ./build/web/. ./internal/server/public/
 
@@ -391,7 +391,7 @@ test/unit/backend: internal/server/public/stub.txt ## Run unit tests for backend
 	fi
 
 .PHONY: test/unit/frontend
-test/unit/frontend: ## Run unit tests for frontend
+test/unit/frontend: generate/frontend/sbom ## Run unit tests for frontend
 	echo "Testing Autobutler frontend..."
 	flutter test
 	for pkg in packages/*/; do

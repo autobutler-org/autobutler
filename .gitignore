@@ -114,3 +114,6 @@ exokomodo/
 linux/flutter/ephemeral/
 deploy/azure/headscale.rendered.parameters.json
 provisioning
+
+# SBOM generated at build time from pubspec.lock
+assets/sbom_flutter.json
