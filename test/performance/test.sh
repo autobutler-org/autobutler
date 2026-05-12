@@ -12,10 +12,10 @@ UPLOAD_CONCURRENCY="${TEST_UPLOAD_CONCURRENCY:-10}"
 UPLOAD_COUNT="${TEST_UPLOAD_COUNT:-20}"
 
 WORK_DIR="${WORK_DIR:-$PWD/test-results/performance}"
-DATA_DIR="${DATA_DIR:-$HOME/autobutler/data}"
+PERF_FIXTURE_TARGET_DIR="${PERF_FIXTURE_TARGET_DIR:-$HOME/autobutler/data/cirrus}"
 SCENARIO_DIR="$PWD/test/performance/wrk"
 
-mkdir -p "$WORK_DIR" "$DATA_DIR/cirrus/perf/nested" "$WORK_DIR/upload-fixtures"
+mkdir -p "$WORK_DIR" "$WORK_DIR/upload-fixtures"
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -104,26 +104,8 @@ auth_login_and_get_token() {
   fi
 }
 
-seed_files() {
-  local cirrus_dir="$DATA_DIR/cirrus"
-  mkdir -p "$cirrus_dir/perf/nested"
-
-  # 1x1 white JPEG (small deterministic fixture)
-  local jpeg_base64="/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxAQEBUQEBIVFRUVFRUVFRUVFRUVFRUWFxUVFRUYHSggGBolGxUVITEhJSkrLi4uFx8zODMtNygtLisBCgoKDg0OGhAQGi0fHyUtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLf/AABEIAAEAAQMBIgACEQEDEQH/xAAXAAEBAQEAAAAAAAAAAAAAAAAAAQID/8QAFhABAQEAAAAAAAAAAAAAAAAAAAER/9oADAMBAAIQAxAAAAG+AH//xAAVEAEBAAAAAAAAAAAAAAAAAAABEP/aAAgBAQABBQJf/8QAFhEBAQEAAAAAAAAAAAAAAAAAARAR/9oACAEDAQE/AUf/xAAVEQEBAAAAAAAAAAAAAAAAAAABEP/aAAgBAgEBPwFH/8QAFBABAAAAAAAAAAAAAAAAAAAAEP/aAAgBAQAGPwJf/8QAFBABAAAAAAAAAAAAAAAAAAAAEP/aAAgBAQABPyFf/9k="
-  if base64 --help 2>/dev/null | grep -q -- '--decode'; then
-    printf "%s" "$jpeg_base64" | base64 --decode > "$cirrus_dir/perf/sample-1.jpg"
-    printf "%s" "$jpeg_base64" | base64 --decode > "$cirrus_dir/perf/sample-2.jpg"
-    printf "%s" "$jpeg_base64" | base64 --decode > "$cirrus_dir/perf/nested/sample-3.jpg"
-  else
-    printf "%s" "$jpeg_base64" | base64 -d > "$cirrus_dir/perf/sample-1.jpg"
-    printf "%s" "$jpeg_base64" | base64 -d > "$cirrus_dir/perf/sample-2.jpg"
-    printf "%s" "$jpeg_base64" | base64 -d > "$cirrus_dir/perf/nested/sample-3.jpg"
-  fi
-
-  for i in $(seq 1 250); do
-    printf "file-%04d\n" "$i" > "$cirrus_dir/perf/nested/file-$i.txt"
-  done
-
+prepare_fixtures() {
+  make test/perf/generate-files PERF_FIXTURE_TARGET_DIR="$PERF_FIXTURE_TARGET_DIR"
   for i in $(seq 1 "$UPLOAD_COUNT"); do
     dd if=/dev/zero of="$WORK_DIR/upload-fixtures/upload-$i.bin" bs=1024 count=64 status=none
   done
@@ -179,7 +161,7 @@ main() {
   wait_for_server
   auth_setup_if_needed
   auth_login_and_get_token
-  seed_files
+  prepare_fixtures
   seed_albums
 
   run_wrk "cirrus_list" "$SCENARIO_DIR/cirrus_list.lua"

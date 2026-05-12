@@ -325,14 +325,21 @@ test: test/unit
 PERF_PORT ?= 8080
 PERF_BASE_URL ?= http://127.0.0.1:$(PERF_PORT)
 PERF_SUMMARY_WRK_DIRS ?= test-results/performance
+PERF_FIXTURE_TARGET_DIR ?= $(HOME)/autobutler/data/cirrus
+
+.PHONY: test/perf/generate-files
+test/perf/generate-files: ## Generate file fixtures under a target Cirrus directory for performance testing
+	bash ./test/performance/generate_files.sh "$(PERF_FIXTURE_TARGET_DIR)"
 
 .PHONY: test/perf/load
 test/perf/load: build/backend ## Run local wrk load profile against a temporary local backend
 	mkdir -p test-results/performance
+	$(MAKE) test/perf/generate-files PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
 	PORT=$(PERF_PORT) ./build/autobutler serve > test-results/performance/server-load.log 2>&1 &
 	SERVER_PID=$$!
 	trap 'kill $$SERVER_PID 2>/dev/null || true' EXIT
 	export AUTOBUTLER_BASE_URL=$(PERF_BASE_URL)
+	export PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
 	export TEST_DURATION_THREADS=2
 	export TEST_DURATION_CONCURRENCY=15
 	export TEST_DURATION_DURATION=10s
@@ -343,10 +350,12 @@ test/perf/load: build/backend ## Run local wrk load profile against a temporary 
 .PHONY: test/perf/stress
 test/perf/stress: build/backend ## Run local wrk stress profile against a temporary local backend
 	mkdir -p test-results/performance
+	$(MAKE) test/perf/generate-files PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
 	PORT=$(PERF_PORT) ./build/autobutler serve > test-results/performance/server-stress.log 2>&1 &
 	SERVER_PID=$$!
 	trap 'kill $$SERVER_PID 2>/dev/null || true' EXIT
 	export AUTOBUTLER_BASE_URL=$(PERF_BASE_URL)
+	export PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
 	export TEST_DURATION_THREADS=4
 	export TEST_DURATION_CONCURRENCY=50
 	export TEST_DURATION_DURATION=30s
