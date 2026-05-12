@@ -43,6 +43,17 @@ clean/flutter: ## Clean flutter project
 .PHONY: setup
 setup: setup/gotools setup/air setup/sqlc setup/swag setup/flutter setup/hooks ## Setup development environment
 
+.PHONY: setup/wrk
+setup/wrk: ## Install wrk load-testing CLI
+ifeq ($(UNAME_S),Linux)
+	sudo apt-get update -y
+	sudo apt-get install -y wrk
+else ifeq ($(UNAME_S),Darwin)
+	brew install wrk
+else
+	$(error "Unsupported OS: $(UNAME_S)")
+endif
+
 .PHONY: setup/air
 setup/air: ## Install air tool
 	$(GO) install github.com/air-verse/air@latest
@@ -310,6 +321,52 @@ PRINT_COVERAGE ?= 0
 
 .PHONY: test
 test: test/unit
+
+PERF_PORT ?= 8080
+PERF_BASE_URL ?= http://127.0.0.1:$(PERF_PORT)
+PERF_SUMMARY_WRK_DIRS ?= test-results/performance
+PERF_FIXTURE_TARGET_DIR ?= $(HOME)/autobutler/data/cirrus
+
+.PHONY: test/perf/generate-files
+test/perf/generate-files: ## Generate file fixtures under a target Cirrus directory for performance testing
+	bash ./test/performance/generate_files.sh "$(PERF_FIXTURE_TARGET_DIR)"
+
+.PHONY: test/perf/load
+test/perf/load: build/backend ## Run local wrk load profile against a temporary local backend
+	mkdir -p test-results/performance
+	$(MAKE) test/perf/generate-files PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
+	PORT=$(PERF_PORT) ./build/autobutler serve > test-results/performance/server-load.log 2>&1 &
+	SERVER_PID=$$!
+	trap 'kill $$SERVER_PID 2>/dev/null || true' EXIT
+	export AUTOBUTLER_BASE_URL=$(PERF_BASE_URL)
+	export PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
+	export TEST_DURATION_THREADS=2
+	export TEST_DURATION_CONCURRENCY=15
+	export TEST_DURATION_DURATION=10s
+	export TEST_UPLOAD_CONCURRENCY=4
+	export TEST_UPLOAD_COUNT=8
+	./test/performance/test.sh
+
+.PHONY: test/perf/stress
+test/perf/stress: build/backend ## Run local wrk stress profile against a temporary local backend
+	mkdir -p test-results/performance
+	$(MAKE) test/perf/generate-files PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
+	PORT=$(PERF_PORT) ./build/autobutler serve > test-results/performance/server-stress.log 2>&1 &
+	SERVER_PID=$$!
+	trap 'kill $$SERVER_PID 2>/dev/null || true' EXIT
+	export AUTOBUTLER_BASE_URL=$(PERF_BASE_URL)
+	export PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
+	export TEST_DURATION_THREADS=4
+	export TEST_DURATION_CONCURRENCY=50
+	export TEST_DURATION_DURATION=30s
+	export TEST_UPLOAD_CONCURRENCY=10
+	export TEST_UPLOAD_COUNT=20
+	./test/performance/test.sh
+
+.PHONY: test/perf/summary
+test/perf/summary: ## Render the Markdown performance summary
+	python3 ./test/performance/render_summary.py \
+		$(foreach dir,$(PERF_SUMMARY_WRK_DIRS),--wrk-dir $(dir))
 
 .PHONY: test/unit
 test/unit: test/unit/backend test/unit/frontend ## Run unit tests
