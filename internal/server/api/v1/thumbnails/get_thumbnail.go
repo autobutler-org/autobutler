@@ -24,10 +24,38 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// thumbnailSize represents the supported thumbnail size tiers.
+type thumbnailSize string
+
 const (
-	thumbnailWidth  = 400
-	thumbnailHeight = 400
+	thumbnailSizeSm thumbnailSize = "sm" // 96×96  – grid icons / file browser
+	thumbnailSizeMd thumbnailSize = "md" // 240×240 – card previews
+	thumbnailSizeLg thumbnailSize = "lg" // 400×400 – detail view (legacy default)
 )
+
+// thumbnailDimensions returns the pixel dimensions for a given size tier.
+func thumbnailDimensions(size thumbnailSize) (width, height uint) {
+	switch size {
+	case thumbnailSizeSm:
+		return 96, 96
+	case thumbnailSizeMd:
+		return 240, 240
+	default: // thumbnailSizeLg and any unknown value
+		return 400, 400
+	}
+}
+
+// parseThumbnailSize parses the ?size= query parameter, defaulting to lg.
+func parseThumbnailSize(raw string) thumbnailSize {
+	switch thumbnailSize(raw) {
+	case thumbnailSizeSm:
+		return thumbnailSizeSm
+	case thumbnailSizeMd:
+		return thumbnailSizeMd
+	default:
+		return thumbnailSizeLg
+	}
+}
 
 // thumbnailCacheDir returns the path to the thumbnail cache directory,
 // creating it if it doesn't exist.
@@ -43,10 +71,10 @@ func thumbnailCacheDir() (string, error) {
 // changes, so that stale cached thumbnails are automatically regenerated.
 const thumbnailCacheVersion = "v2"
 
-// cacheKey computes a SHA-256 hex digest of the given serial, file path, and
-// rotation so that rotating a photo produces a distinct cache entry.
-func cacheKey(serial, filePath string, rotationQuarters int64) string {
-	h := sha256.Sum256([]byte(fmt.Sprintf("%s:%s/%s:r%d", thumbnailCacheVersion, serial, filePath, rotationQuarters)))
+// cacheKey computes a SHA-256 hex digest of the given serial, file path,
+// rotation, and size so that each combination produces a distinct cache entry.
+func cacheKey(serial, filePath string, rotationQuarters int64, size thumbnailSize) string {
+	h := sha256.Sum256([]byte(fmt.Sprintf("%s:%s/%s:r%d:s%s", thumbnailCacheVersion, serial, filePath, rotationQuarters, size)))
 	return fmt.Sprintf("%x", h)
 }
 
@@ -73,6 +101,8 @@ func contentTypeForExt(ext string) string {
 // @Tags thumbnails
 // @Produce image/png image/jpeg
 // @Param filePath path string true "Path to the image file"
+// @Param serial query string false "Device serial number (for device-specific files)"
+// @Param size query string false "Thumbnail size tier: sm (96px), md (240px), lg (400px). Defaults to lg." Enums(sm, md, lg)
 // @Success 200 {file} file
 // @Failure 304 "Not Modified"
 // @Failure 404 {object} serverutil.Response "Not Found"
@@ -127,24 +157,29 @@ var getThumbnailRoute = serverutil.ApiRoute(
 			return serverutil.InternalServerError(fmt.Errorf("get photo rotation: %w", err))
 		}
 
+		// --- Size parameter ---
+		size := parseThumbnailSize(c.Query("size"))
+		width, height := thumbnailDimensions(size)
+
 		// --- Disk cache lookup ---
-		// Rotation is included in the key so a rotated photo gets a new cache entry.
+		// Rotation and size are included in the key so each combination gets
+		// its own cache entry.
 		cacheDir, err := thumbnailCacheDir()
 		if err != nil {
 			return serverutil.InternalServerError(err)
 		}
-		key := cacheKey(serial, filePath, rotationQuarters)
+		key := cacheKey(serial, filePath, rotationQuarters, size)
 		cachedPath := filepath.Join(cacheDir, key)
 
 		cachedInfo, cacheErr := os.Stat(cachedPath)
 		cacheHit := cacheErr == nil && cachedInfo.ModTime().After(srcInfo.ModTime())
 
 		if !cacheHit {
-			// Generate the thumbnail
+			// Generate the thumbnail at the requested size.
 			result, err := photoutil.GenerateThumbnail(photoutil.GenerateThumbnailParams{
 				FilePath: fullPath,
-				Width:    thumbnailWidth,
-				Height:   thumbnailHeight,
+				Width:    width,
+				Height:   height,
 			})
 			if err != nil {
 				return serverutil.InternalServerError(err)
