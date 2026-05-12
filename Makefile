@@ -361,16 +361,9 @@ test/perf/stress: build/backend ## Run local wrk stress profile against a tempor
 
 .PHONY: test/perf/summary
 test/perf/summary: ## Render the Markdown performance summary
-	if [[ -n "$$GITHUB_STEP_SUMMARY" ]]; then
-		python3 ./test/performance/render_summary.py
-			$(foreach dir,$(PERF_SUMMARY_WRK_DIRS),--wrk-dir $(dir))
-			--bench-results $(PERF_SUMMARY_BENCH_RESULTS)
-			>> "$$GITHUB_STEP_SUMMARY"
-	else
-		python3 ./test/performance/render_summary.py
-			$(foreach dir,$(PERF_SUMMARY_WRK_DIRS),--wrk-dir $(dir))
-			--bench-results $(PERF_SUMMARY_BENCH_RESULTS)
-	fi
+	python3 ./test/performance/render_summary.py
+		$(foreach dir,$(PERF_SUMMARY_WRK_DIRS),--wrk-dir $(dir))
+		--bench-results $(PERF_SUMMARY_BENCH_RESULTS)
 
 .PHONY: test/unit
 test/unit: test/unit/backend test/unit/frontend ## Run unit tests

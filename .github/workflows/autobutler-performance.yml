@@ -150,4 +150,4 @@ jobs:
 
       - name: Render performance summary
         run: |
-          make test/perf/summary
+          make test/perf/summary >> ${GITHUB_STEP_SUMMARY}
