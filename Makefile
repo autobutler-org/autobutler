@@ -341,7 +341,7 @@ test/perf/load: build/backend ## Run local wrk load profile against a temporary 
 	export TEST_DURATION_DURATION=10s
 	export TEST_UPLOAD_CONCURRENCY=4
 	export TEST_UPLOAD_COUNT=8
-	$(SHELL) $(SHELLFLAGS) ./test/performance/test.sh
+	./test/performance/test.sh
 
 .PHONY: test/perf/stress
 test/perf/stress: build/backend ## Run local wrk stress profile against a temporary local backend
@@ -355,7 +355,7 @@ test/perf/stress: build/backend ## Run local wrk stress profile against a tempor
 	export TEST_DURATION_DURATION=30s
 	export TEST_UPLOAD_CONCURRENCY=10
 	export TEST_UPLOAD_COUNT=20
-	$(SHELL) $(SHELLFLAGS) ./test/performance/test.sh
+	./test/performance/test.sh
 
 .PHONY: test/unit
 test/unit: test/unit/backend test/unit/frontend ## Run unit tests
