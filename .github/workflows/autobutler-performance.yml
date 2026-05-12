@@ -43,6 +43,7 @@ jobs:
           make test/perf/bench | tee bench-results.txt
 
       - name: Upload benchmark artifacts
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: benchmark-results
@@ -114,3 +115,43 @@ jobs:
           name: stress-results
           path: test-results/performance/
           if-no-files-found: warn
+
+  autobutler-performance-summary:
+    runs-on: ubuntu-latest
+    needs:
+      - autobutler-performance-bench
+      - autobutler-performance-loadtest
+      - autobutler-performance-stress
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Download benchmark results
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-results
+          path: test-results/performance-summary/bench
+
+      - name: Download load test results
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: loadtest-results
+          path: test-results/performance-summary/load
+
+      - name: Download stress test results
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: stress-results
+          path: test-results/performance-summary/stress
+
+      - name: Render performance summary
+        run: |
+          python3 ./test/performance/render_summary.py \
+            --wrk-dir test-results/performance-summary/load \
+            --wrk-dir test-results/performance-summary/stress \
+            --bench-results test-results/performance-summary/bench/bench-results.txt \
+            >> "$GITHUB_STEP_SUMMARY"
