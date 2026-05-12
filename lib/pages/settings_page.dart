@@ -1167,6 +1167,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
           const SizedBox(height: 24),
 
+          const _InfoSectionHeader(label: 'Help & Support'),
+          const SizedBox(height: 8),
+          const _HelpSupportCard(),
+          const SizedBox(height: 24),
+
           const _InfoSectionHeader(label: 'Software Bill of Materials'),
           const SizedBox(height: 8),
           if (_isLoadingSbom)
@@ -1669,6 +1674,50 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
     }
 
     return widgets;
+  }
+}
+
+class _HelpSupportCard extends StatelessWidget {
+  const _HelpSupportCard();
+
+  static const _supportUrl = 'https://autobutler.org/support';
+  static const _issueUrl =
+      'https://github.com/autobutler-ai/autobutler.ai/issues/new/choose';
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Need help or found a bug?',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => launchUrl(
+                Uri.parse(_supportUrl),
+                mode: LaunchMode.externalApplication,
+              ),
+              icon: const Icon(Icons.help_outline, size: 16),
+              label: const Text('Visit support page'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => launchUrl(
+                Uri.parse(_issueUrl),
+                mode: LaunchMode.externalApplication,
+              ),
+              icon: const Icon(Icons.bug_report_outlined, size: 16),
+              label: const Text('Report an issue'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
