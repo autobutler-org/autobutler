@@ -102,9 +102,6 @@ watch/%: ## Watch example on web
 .PHONY: check
 check: check/format check/lint ## Check code
 
-.PHONY: check/flutter
-check/flutter: check/format/flutter check/lint/flutter ## Check Flutter/Dart code
-
 .PHONY: check/format
 check/format: check/format/flutter ## Check code formatting
 
