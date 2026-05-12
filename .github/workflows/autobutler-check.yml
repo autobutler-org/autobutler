@@ -82,8 +82,7 @@ jobs:
             exit 1
           fi
 
-  autobutler-check-vuln:
-    name: Vulnerability scan
+  autobutler-security-backend:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -98,4 +97,4 @@ jobs:
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
       - name: Check for vulnerabilities
-        run: make check/vuln
+        run: make check/vuln/backend
