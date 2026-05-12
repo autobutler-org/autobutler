@@ -58,6 +58,15 @@ jobs:
         uses: actions/checkout@v6
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
+      - name: Restore Gradle caches
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/**/*.gradle.kts', 'pubspec.lock') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
       - name: Tidy
         run: |
           make tidy/flutter
