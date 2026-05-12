@@ -98,17 +98,17 @@ jobs:
 
       - name: Download load test results
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: loadtest-results
-          path: test-results/performance-summary/load
+          path: test-results/performance
 
       - name: Download stress test results
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: stress-results
-          path: test-results/performance-summary/stress
+          path: test-results/performance
 
       - name: Render performance summary
         run: |
