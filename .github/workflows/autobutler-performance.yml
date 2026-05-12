@@ -20,36 +20,6 @@ env:
   AUTOBUTLER_PASSWORD: perf-password
 
 jobs:
-  autobutler-performance-bench:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Setup go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-
-      - name: Setup sqlc
-        uses: ./.github/actions/setup-sqlc
-
-      - name: Setup swag
-        uses: ./.github/actions/setup-swag
-
-      - name: Run benchmark suite
-        run: |
-          make test/perf/bench | tee bench-results.txt
-
-      - name: Upload benchmark artifacts
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: benchmark-results
-          path: bench-results.txt
-          if-no-files-found: error
-
   autobutler-performance-loadtest:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -119,20 +89,12 @@ jobs:
   autobutler-performance-summary:
     runs-on: ubuntu-latest
     needs:
-      - autobutler-performance-bench
       - autobutler-performance-loadtest
       - autobutler-performance-stress
     if: always()
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-
-      - name: Download benchmark results
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          name: benchmark-results
-          path: test-results/performance-summary/bench
 
       - name: Download load test results
         continue-on-error: true

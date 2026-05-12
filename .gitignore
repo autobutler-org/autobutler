@@ -95,7 +95,8 @@ flutter.zip
 ## Playwright / test artifacts
 app/
 playwright-report/
-test-results/
+test-results/performance/*
+!test-results/performance/.gitkeep
 
 # Ralph loops
 .ralph/
