@@ -74,7 +74,6 @@ jobs:
             git commit -m "chore: update Flutter SBOM for Dependabot pub bump"
             git push origin HEAD:${{ github.head_ref }}
           fi
-
       - name: Check for uncommitted changes
         if: "!startsWith(github.head_ref, 'dependabot/pub/')"
         run: |
