@@ -138,6 +138,7 @@ setup/gotools: ## Install go tools
 	$(GO) install github.com/haya14busa/goplay/cmd/goplay@v1.0.0
 	$(GO) install github.com/go-delve/delve/cmd/dlv@latest
 	$(GO) install honnef.co/go/tools/cmd/staticcheck@latest
+	$(GO) install golang.org/x/vuln/cmd/govulncheck@latest
 
 .PHONY: setup/ios
 setup/ios: setup/cocoapods ## Setup iOS development environment
@@ -500,6 +501,13 @@ check/lint/flutter: ## Lint Flutter/Dart code
 .PHONY: check/lint/go
 check/lint/go: internal/server/public/stub.txt ## Check Go code
 	$(GO) vet ./...
+
+.PHONY: check/vuln
+check/vuln: check/vuln/backend ## Check for known CVEs
+
+.PHONY: check/vuln/backend
+check/vuln/backend: ## Check Go module for known CVEs (govulncheck)
+	govulncheck ./...
 
 .PHONY: check/lint/sqlc
 check/lint/sqlc: ## Check sqlc

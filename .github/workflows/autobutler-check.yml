@@ -81,3 +81,21 @@ jobs:
             echo "Error: Uncommitted changes found. Please commit the generated code."
             exit 1
           fi
+
+  autobutler-check-vuln:
+    name: Vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Check for vulnerabilities
+        run: make check/vuln
