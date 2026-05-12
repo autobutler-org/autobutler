@@ -324,6 +324,8 @@ test: test/unit
 
 PERF_PORT ?= 8080
 PERF_BASE_URL ?= http://127.0.0.1:$(PERF_PORT)
+PERF_SUMMARY_WRK_DIRS ?= test-results/performance-summary/load test-results/performance-summary/stress
+PERF_SUMMARY_BENCH_RESULTS ?= test-results/performance-summary/bench/bench-results.txt
 
 .PHONY: test/perf/bench
 test/perf/bench: ## Run Go benchmark suite for backend hot paths
@@ -356,6 +358,19 @@ test/perf/stress: build/backend ## Run local wrk stress profile against a tempor
 	export TEST_UPLOAD_CONCURRENCY=10
 	export TEST_UPLOAD_COUNT=20
 	./test/performance/test.sh
+
+.PHONY: test/perf/summary
+test/perf/summary: ## Render the Markdown performance summary
+	if [[ -n "$$GITHUB_STEP_SUMMARY" ]]; then
+		python3 ./test/performance/render_summary.py
+			$(foreach dir,$(PERF_SUMMARY_WRK_DIRS),--wrk-dir $(dir))
+			--bench-results $(PERF_SUMMARY_BENCH_RESULTS)
+			>> "$$GITHUB_STEP_SUMMARY"
+	else
+		python3 ./test/performance/render_summary.py
+			$(foreach dir,$(PERF_SUMMARY_WRK_DIRS),--wrk-dir $(dir))
+			--bench-results $(PERF_SUMMARY_BENCH_RESULTS)
+	fi
 
 .PHONY: test/unit
 test/unit: test/unit/backend test/unit/frontend ## Run unit tests

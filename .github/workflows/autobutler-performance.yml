@@ -150,8 +150,4 @@ jobs:
 
       - name: Render performance summary
         run: |
-          python3 ./test/performance/render_summary.py \
-            --wrk-dir test-results/performance-summary/load \
-            --wrk-dir test-results/performance-summary/stress \
-            --bench-results test-results/performance-summary/bench/bench-results.txt \
-            >> "$GITHUB_STEP_SUMMARY"
+          make test/perf/summary
