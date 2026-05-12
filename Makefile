@@ -9,7 +9,6 @@ ifneq (,$(wildcard ./.env))
     export
 endif
 
-export GOTOOLCHAIN=go1.25.0+auto
 AS_ROOT ?= 0
 
 GO := $(shell which go)
@@ -28,6 +27,8 @@ EXE := ./build/autobutler
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
 FLUTTER_VERSION=$(shell grep -Eo 'flutter: (.+)' pubspec.yaml | sed -E 's/^flutter: (.+)$$/\1/')
+GO_MOD_VERSION := $(shell awk '/^go /{print $$2; exit}' go.mod)
+export GOTOOLCHAIN=go$(GO_MOD_VERSION)
 
 .PHONY: clean
 clean: clean/go clean/flutter ## Clean all build and test artifacts
@@ -392,7 +393,7 @@ test/unit/backend: internal/server/public/stub.txt ## Run unit tests for backend
 	fi
 
 .PHONY: test/unit/frontend
-test/unit/frontend: generate/frontend/sbom ## Run unit tests for frontend
+test/unit/frontend: generate/frontend ## Run unit tests for frontend
 	echo "Testing Autobutler frontend..."
 	flutter test
 	for pkg in packages/*/; do
@@ -438,7 +439,7 @@ upgrade: upgrade/flutter upgrade/go ## Upgrade dependencies
 upgrade/flutter: ## Upgrade Flutter dependencies
 	flutter pub upgrade
 	$(MAKE) tidy/flutter
-	$(MAKE) generate/frontend/sbom
+	$(MAKE) generate/frontend
 
 .PHONY: upgrade/go
 upgrade/go: generate/backend ## Upgrade dependencies (go)
@@ -461,16 +462,13 @@ watch/frontend: generate/frontend ## Watch frontend on web
 ##@ Code quality
 
 .PHONY: check
-check: check/format check/lint ## Check code
+check: check/backend check/frontend ## Check code
 
 .PHONY: check/backend
 check/backend: generate/backend check/format/go check/lint/go check/lint/sqlc ## Check backend code
 
 .PHONY: check/frontend
-check/frontend: generate/frontend check/format/flutter check/lint/flutter ## Check frontend code
-
-.PHONY: check/flutter
-check/flutter: check/format/flutter check/lint/flutter ## Check Flutter/Dart code
+check/frontend: check/format/flutter check/lint/flutter ## Check frontend code
 
 .PHONY: check/go
 check/go: check/format/go check/lint/go ## Check Go code
@@ -495,7 +493,7 @@ check/format/go: ## Check Go code formatting
 check/lint: check/lint/flutter check/lint/go check/lint/sqlc ## Check code quality
 
 .PHONY: check/lint/flutter
-check/lint/flutter: ## Lint Flutter/Dart code
+check/lint/flutter: generate/frontend ## Lint Flutter/Dart code
 	flutter analyze
 
 .PHONY: check/lint/go
