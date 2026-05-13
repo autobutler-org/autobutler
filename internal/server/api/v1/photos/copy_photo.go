@@ -1,11 +1,8 @@
 package v1_photos
 
 import (
+	"errors"
 	"fmt"
-	"io"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
@@ -46,80 +43,20 @@ func copyPhoto(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(fmt.Errorf("invalid request: %w", err))
 	}
 
-	// Resolve base directory (same pattern as get_metadata.go).
-	filesDir, err := storageutil.GetCirrusDir()
+	result, err := deps.StorageService().CopyFile(storageutil.CopyFileParams{
+		RelPath:      req.RelPath,
+		DeviceSerial: req.Serial,
+	})
 	if err != nil {
-		return serverutil.InternalServerError(err)
-	}
-	if req.Serial != "" {
-		if devices, err := deps.StorageService().GetManagedDevices(); err == nil {
-			for _, d := range devices {
-				if d.UsbInfo != nil && d.UsbInfo.GetSerial() == req.Serial {
-					filesDir = d.CirrusDir
-					break
-				}
-			}
+		if errors.Is(err, storageutil.ErrPathNotFound) {
+			return serverutil.NotFound(fmt.Errorf("photo not found: %s", req.RelPath))
 		}
-	}
-
-	// Guard against path traversal.
-	cleanFilesDir := filepath.Clean(filesDir)
-	srcFull := filepath.Join(cleanFilesDir, req.RelPath)
-	if !strings.HasPrefix(srcFull, cleanFilesDir+string(filepath.Separator)) {
-		return serverutil.BadRequest(fmt.Errorf("invalid relPath"))
-	}
-
-	if _, err := os.Stat(srcFull); os.IsNotExist(err) {
-		return serverutil.NotFound(fmt.Errorf("photo not found: %s", req.RelPath))
-	} else if err != nil {
-		return serverutil.InternalServerError(err)
-	}
-
-	// Build the destination path: <name>_copy.<ext>, resolving collisions via
-	// GetNonConflictingPath (which appends _(n) for further conflicts).
-	ext := filepath.Ext(srcFull)
-	stem := srcFull[:len(srcFull)-len(ext)]
-	destFull := storageutil.GetNonConflictingPath(stem + "_copy" + ext)
-
-	if err := copyFile(srcFull, destFull); err != nil {
-		return serverutil.InternalServerError(fmt.Errorf("copy failed: %w", err))
-	}
-
-	// Return the relative path of the new file.
-	newRelPath, err := filepath.Rel(cleanFilesDir, destFull)
-	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
 
 	return serverutil.Ok().
 		WithContentType(serverutil.ContentTypeJSON).
-		WithData(copyPhotoResponse{RelPath: newRelPath})
-}
-
-// copyFile copies src to dst atomically enough for our purposes: write to dst
-// directly (same filesystem, so partial writes are the only risk, which is
-// acceptable for a user-initiated duplicate action).
-func copyFile(src, dst string) error {
-	in, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer in.Close()
-
-	out, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if cerr := out.Close(); cerr != nil && err == nil {
-			err = cerr
-		}
-	}()
-
-	if _, err = io.Copy(out, in); err != nil {
-		return err
-	}
-	return nil
+		WithData(copyPhotoResponse{RelPath: result.NewRelPath})
 }
 
 var copyPhotoRoute = serverutil.ApiRoute("POST", "/photos/copy", copyPhoto)
