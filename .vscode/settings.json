@@ -74,6 +74,7 @@
     "ldflags",
     "libglu",
     "linecap",
+    "loadtest",
     "lsusb",
     "modelines",
     "modernc",

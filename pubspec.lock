@@ -164,10 +164,10 @@ packages:
     dependency: "direct main"
     description:
       name: cupertino_icons
-      sha256: ba631d1c7f7bef6b729a622b7b752645a2d076dba9976925b8f25725a30e1ee6
+      sha256: "41e005c33bd814be4d3096aff55b1908d419fde52ca656c8c47719ec745873cd"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.8"
+    version: "1.0.9"
   dart_quill_delta:
     dependency: transitive
     description:
@@ -195,10 +195,10 @@ packages:
     dependency: "direct main"
     description:
       name: desktop_drop
-      sha256: e70b46b2d61f1af7a81a40d1f79b43c28a879e30a4ef31e87e9c27bea4d784e8
+      sha256: aa1e797255bfbc76f9eb5aa4f61e5b68dbf69962ab1be6495816d2f251bc0d1f
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.0"
+    version: "0.7.1"
   diff_match_patch:
     dependency: transitive
     description:
@@ -259,10 +259,10 @@ packages:
     dependency: "direct main"
     description:
       name: file_picker
-      sha256: "57d9a1dd5063f85fa3107fb42d1faffda52fdc948cefd5fe5ea85267a5fc7343"
+      sha256: f13a03000d942e476bc1ff0a736d2e9de711d2f89a95cd4c1d88f861c3348387
       url: "https://pub.dev"
     source: hosted
-    version: "10.3.10"
+    version: "11.0.2"
   file_selector_platform_interface:
     dependency: transitive
     description:
@@ -487,10 +487,10 @@ packages:
     dependency: "direct main"
     description:
       name: go_router
-      sha256: "7974313e217a7771557add6ff2238acb63f635317c35fa590d348fb238f00896"
+      sha256: "92d8cee7c57dff0a6c409c05597b460002434eccf7424a712283225b3962d03f"
       url: "https://pub.dev"
     source: hosted
-    version: "17.1.0"
+    version: "17.2.3"
   highlight:
     dependency: transitive
     description:
@@ -895,10 +895,10 @@ packages:
     dependency: "direct main"
     description:
       name: shared_preferences
-      sha256: "2939ae520c9024cb197fc20dee269cd8cdbf564c8b5746374ec6cacdc5169e64"
+      sha256: c3025c5534b01739267eb7d76959bbc25a6d10f6988e1c2a3036940133dd10bf
       url: "https://pub.dev"
     source: hosted
-    version: "2.5.4"
+    version: "2.5.5"
   shared_preferences_android:
     dependency: transitive
     description:
@@ -1258,4 +1258,4 @@ packages:
     version: "3.1.3"
 sdks:
   dart: ">=3.11.0 <4.0.0"
-  flutter: "3.41.6"
+  flutter: "3.41.9"

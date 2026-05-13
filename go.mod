@@ -1,6 +1,6 @@
 module github.com/autobutler-org/autobutler
 
-go 1.26.1
+go 1.26.3
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.6.4
@@ -24,16 +24,16 @@ require (
 	go.opentelemetry.io/otel/sdk v1.43.0
 	go.opentelemetry.io/otel/sdk/metric v1.43.0
 	go.opentelemetry.io/otel/trace v1.43.0
-	golang.org/x/crypto v0.50.0
-	golang.org/x/net v0.53.0
+	golang.org/x/crypto v0.51.0
+	golang.org/x/net v0.54.0
 	golang.org/x/oauth2 v0.36.0
-	golang.org/x/sys v0.43.0
+	golang.org/x/sys v0.44.0
 	golang.org/x/time v0.15.0
-	google.golang.org/api v0.277.0
+	google.golang.org/api v0.278.0
 	howett.net/plist v1.0.1
 	modernc.org/sqlite v1.50.0
 	nhooyr.io/websocket v1.8.17
-	tailscale.com v1.96.5
+	tailscale.com v1.98.1
 )
 
 require (
@@ -48,19 +48,6 @@ require (
 	github.com/akutz/memconn v0.1.0 // indirect
 	github.com/alexbrainman/sspi v0.0.0-20231016080023-1a75b4708caa // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
-	github.com/aws/aws-sdk-go-v2 v1.41.0 // indirect
-	github.com/aws/aws-sdk-go-v2/config v1.29.5 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.58 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.27 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.16 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.16 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.4 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.16 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.24.14 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.13 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.41.5 // indirect
-	github.com/aws/smithy-go v1.24.0 // indirect
 	github.com/bodgit/plumbing v1.3.0 // indirect
 	github.com/bodgit/sevenzip v1.5.2 // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
@@ -115,7 +102,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jsimonetti/rtnetlink v1.4.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.18.2 // indirect
+	github.com/klauspost/compress v1.18.5 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
@@ -132,19 +119,18 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.25 // indirect
 	github.com/pires/go-proxyproto v0.8.1 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
-	github.com/prometheus-community/pro-bing v0.4.0 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/quic-go/quic-go v0.59.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/safchain/ethtool v0.3.0 // indirect
 	github.com/sorairolake/lzip-go v0.3.5 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/tailscale/certstore v0.1.1-0.20231202035212-d3fa0460f47e // indirect
+	github.com/tailscale/certstore v0.1.1-0.20260409135935-3638fb84b77d // indirect
 	github.com/tailscale/go-winio v0.0.0-20231025203758-c4f33415bf55 // indirect
-	github.com/tailscale/hujson v0.0.0-20221223112325-20486734a56a // indirect
+	github.com/tailscale/hujson v0.0.0-20260302212456-ecc657c15afd // indirect
 	github.com/tailscale/peercred v0.0.0-20250107143737-35a0c7bd7edc // indirect
 	github.com/tailscale/web-client-prebuilt v0.0.0-20250124233751-d4cd19a26976 // indirect
-	github.com/tailscale/wireguard-go v0.0.0-20250716170648-1d0488a3d7da // indirect
+	github.com/tailscale/wireguard-go v0.0.0-20260427181203-e3ac4a0afb4e // indirect
 	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.16 // indirect
 	github.com/tklauser/numcpus v0.11.0 // indirect
@@ -162,11 +148,11 @@ require (
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	golang.org/x/arch v0.25.0 // indirect
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546 // indirect
-	golang.org/x/mod v0.34.0 // indirect
+	golang.org/x/mod v0.35.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/term v0.42.0 // indirect
-	golang.org/x/text v0.36.0 // indirect
-	golang.org/x/tools v0.43.0 // indirect
+	golang.org/x/term v0.43.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
+	golang.org/x/tools v0.44.0 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	golang.zx2c4.com/wireguard/windows v0.5.3 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260427160629-7cedc36a6bc4 // indirect

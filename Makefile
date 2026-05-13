@@ -9,15 +9,8 @@ ifneq (,$(wildcard ./.env))
     export
 endif
 
-export GOTOOLCHAIN=go1.25.0+auto
-AS_ROOT ?= 0
-
 GO := $(shell which go)
 AIR := $(shell which air)
-ifeq ($(AS_ROOT), 1)
-	GO := sudo $(GO)
-	AIR := sudo $(AIR)
-endif
 export GOOS ?= $(shell $(GO) env GOOS)
 export GOARCH ?= $(shell $(GO) env GOARCH)
 export GOPROXY ?= https://proxy.golang.org,direct
@@ -28,6 +21,8 @@ EXE := ./build/autobutler
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
 FLUTTER_VERSION=$(shell grep -Eo 'flutter: (.+)' pubspec.yaml | sed -E 's/^flutter: (.+)$$/\1/')
+GO_MOD_VERSION := $(shell awk '/^go /{print $$2; exit}' go.mod)
+export GOTOOLCHAIN=go$(GO_MOD_VERSION)
 
 .PHONY: clean
 clean: clean/go clean/flutter ## Clean all build and test artifacts
@@ -42,6 +37,17 @@ clean/flutter: ## Clean flutter project
 
 .PHONY: setup
 setup: setup/gotools setup/air setup/sqlc setup/swag setup/flutter setup/hooks ## Setup development environment
+
+.PHONY: setup/wrk
+setup/wrk: ## Install wrk load-testing CLI
+ifeq ($(UNAME_S),Linux)
+	sudo apt-get update -y
+	sudo apt-get install -y wrk
+else ifeq ($(UNAME_S),Darwin)
+	brew install wrk
+else
+	$(error "Unsupported OS: $(UNAME_S)")
+endif
 
 .PHONY: setup/air
 setup/air: ## Install air tool
@@ -127,6 +133,7 @@ setup/gotools: ## Install go tools
 	$(GO) install github.com/haya14busa/goplay/cmd/goplay@v1.0.0
 	$(GO) install github.com/go-delve/delve/cmd/dlv@latest
 	$(GO) install honnef.co/go/tools/cmd/staticcheck@latest
+	$(GO) install golang.org/x/vuln/cmd/govulncheck@latest
 
 .PHONY: setup/ios
 setup/ios: setup/cocoapods ## Setup iOS development environment
@@ -189,7 +196,7 @@ build/frontend/ios: ## Build iOS app
 	flutter build ios --$(FLUTTER_BUILD_MODE) --no-codesign
 
 .PHONY: build/frontend/web
-build/frontend/web: internal/server/public/stub.txt ## Build web app
+build/frontend/web: internal/server/public/stub.txt generate/frontend/sbom ## Build web app
 	flutter build web --$(FLUTTER_BUILD_MODE)
 	cp -R ./build/web/. ./internal/server/public/
 
@@ -311,6 +318,52 @@ PRINT_COVERAGE ?= 0
 .PHONY: test
 test: test/unit
 
+PERF_PORT ?= 8080
+PERF_BASE_URL ?= http://127.0.0.1:$(PERF_PORT)
+PERF_SUMMARY_WRK_DIRS ?= test-results/performance
+PERF_FIXTURE_TARGET_DIR ?= $(HOME)/autobutler/data/cirrus
+
+.PHONY: test/perf/generate-files
+test/perf/generate-files: ## Generate file fixtures under a target Cirrus directory for performance testing
+	bash ./test/performance/generate_files.sh "$(PERF_FIXTURE_TARGET_DIR)"
+
+.PHONY: test/perf/load
+test/perf/load: build/backend ## Run local wrk load profile against a temporary local backend
+	mkdir -p test-results/performance
+	$(MAKE) test/perf/generate-files PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
+	PORT=$(PERF_PORT) ./build/autobutler serve > test-results/performance/server-load.log 2>&1 &
+	SERVER_PID=$$!
+	trap 'kill $$SERVER_PID 2>/dev/null || true' EXIT
+	export AUTOBUTLER_BASE_URL=$(PERF_BASE_URL)
+	export PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
+	export TEST_DURATION_THREADS=2
+	export TEST_DURATION_CONCURRENCY=15
+	export TEST_DURATION_DURATION=10s
+	export TEST_UPLOAD_CONCURRENCY=4
+	export TEST_UPLOAD_COUNT=8
+	./test/performance/test.sh
+
+.PHONY: test/perf/stress
+test/perf/stress: build/backend ## Run local wrk stress profile against a temporary local backend
+	mkdir -p test-results/performance
+	$(MAKE) test/perf/generate-files PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
+	PORT=$(PERF_PORT) ./build/autobutler serve > test-results/performance/server-stress.log 2>&1 &
+	SERVER_PID=$$!
+	trap 'kill $$SERVER_PID 2>/dev/null || true' EXIT
+	export AUTOBUTLER_BASE_URL=$(PERF_BASE_URL)
+	export PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
+	export TEST_DURATION_THREADS=4
+	export TEST_DURATION_CONCURRENCY=50
+	export TEST_DURATION_DURATION=30s
+	export TEST_UPLOAD_CONCURRENCY=10
+	export TEST_UPLOAD_COUNT=20
+	./test/performance/test.sh
+
+.PHONY: test/perf/summary
+test/perf/summary: ## Render the Markdown performance summary
+	python3 ./test/performance/render_summary.py \
+		$(foreach dir,$(PERF_SUMMARY_WRK_DIRS),--wrk-dir $(dir))
+
 .PHONY: test/unit
 test/unit: test/unit/backend test/unit/frontend ## Run unit tests
 
@@ -334,7 +387,7 @@ test/unit/backend: internal/server/public/stub.txt ## Run unit tests for backend
 	fi
 
 .PHONY: test/unit/frontend
-test/unit/frontend: ## Run unit tests for frontend
+test/unit/frontend: generate/frontend ## Run unit tests for frontend
 	echo "Testing Autobutler frontend..."
 	flutter test
 	for pkg in packages/*/; do
@@ -380,7 +433,7 @@ upgrade: upgrade/flutter upgrade/go ## Upgrade dependencies
 upgrade/flutter: ## Upgrade Flutter dependencies
 	flutter pub upgrade
 	$(MAKE) tidy/flutter
-	$(MAKE) generate/frontend/sbom
+	$(MAKE) generate/frontend
 
 .PHONY: upgrade/go
 upgrade/go: generate/backend ## Upgrade dependencies (go)
@@ -389,11 +442,7 @@ upgrade/go: generate/backend ## Upgrade dependencies (go)
 
 .PHONY: watch/backend
 watch/backend: build/backend ## Watch backend for changes
-ifeq ($(AS_ROOT), 1)
-	$(AIR) --build.cmd "sudo $(MAKE) build/backend"
-else
 	$(AIR)
-endif
 
 .PHONY: watch/frontend
 watch/frontend: generate/frontend ## Watch frontend on web
@@ -403,16 +452,13 @@ watch/frontend: generate/frontend ## Watch frontend on web
 ##@ Code quality
 
 .PHONY: check
-check: check/format check/lint ## Check code
+check: check/backend check/frontend ## Check code
 
 .PHONY: check/backend
 check/backend: generate/backend check/format/go check/lint/go check/lint/sqlc ## Check backend code
 
 .PHONY: check/frontend
-check/frontend: generate/frontend check/format/flutter check/lint/flutter ## Check frontend code
-
-.PHONY: check/flutter
-check/flutter: check/format/flutter check/lint/flutter ## Check Flutter/Dart code
+check/frontend: check/format/flutter check/lint/flutter ## Check frontend code
 
 .PHONY: check/go
 check/go: check/format/go check/lint/go ## Check Go code
@@ -437,12 +483,19 @@ check/format/go: ## Check Go code formatting
 check/lint: check/lint/flutter check/lint/go check/lint/sqlc ## Check code quality
 
 .PHONY: check/lint/flutter
-check/lint/flutter: ## Lint Flutter/Dart code
+check/lint/flutter: generate/frontend ## Lint Flutter/Dart code
 	flutter analyze
 
 .PHONY: check/lint/go
 check/lint/go: internal/server/public/stub.txt ## Check Go code
 	$(GO) vet ./...
+
+.PHONY: check/vuln
+check/vuln: check/vuln/backend ## Check for known CVEs
+
+.PHONY: check/vuln/backend
+check/vuln/backend: ## Check Go module for known CVEs (govulncheck)
+	govulncheck ./...
 
 .PHONY: check/lint/sqlc
 check/lint/sqlc: ## Check sqlc
