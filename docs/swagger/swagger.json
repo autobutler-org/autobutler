@@ -1666,6 +1666,58 @@
                 }
             }
         },
+        "/photos/copy": {
+            "post": {
+                "description": "Creates a copy of the photo in the same directory with a non-conflicting name (e.g. photo_copy.jpg).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "photos"
+                ],
+                "summary": "Duplicate a photo file",
+                "parameters": [
+                    {
+                        "description": "Copy request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1_photos.copyPhotoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1_photos.copyPhotoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/photos/favorite": {
             "get": {
                 "description": "Returns whether the specified photo is in the user's favorites.",
@@ -2923,6 +2975,28 @@
                 },
                 "width": {
                     "type": "integer"
+                }
+            }
+        },
+        "v1_photos.copyPhotoRequest": {
+            "type": "object",
+            "required": [
+                "relPath"
+            ],
+            "properties": {
+                "relPath": {
+                    "type": "string"
+                },
+                "serial": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1_photos.copyPhotoResponse": {
+            "type": "object",
+            "properties": {
+                "relPath": {
+                    "type": "string"
                 }
             }
         },
