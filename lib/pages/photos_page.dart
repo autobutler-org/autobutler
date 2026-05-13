@@ -99,6 +99,7 @@ class _PhotosPageState extends State<PhotosPage>
 
   // Selection mode
   bool _selectionMode = false;
+  bool _isOpeningPhoto = false;
   final Set<String> _selectedKeys = {};
   // When non-null, we're in "adding to album" mode (Flow 2)
   PhotoAlbum? _addingToAlbum;
@@ -711,6 +712,9 @@ class _PhotosPageState extends State<PhotosPage>
           },
           onDoubleTap: () => _toggleFavorite(p),
           onTap: () async {
+            if (_isOpeningPhoto) return;
+            _isOpeningPhoto = true;
+            try {
             final navigator = Navigator.of(context);
             final bytes = await CirrusService.downloadFileBytes(
               c.apiPath,
@@ -755,6 +759,9 @@ class _PhotosPageState extends State<PhotosPage>
               await manualRefresh();
               _albumSidebarKey.currentState?.reload();
             }
+            } finally {
+              if (mounted) setState(() => _isOpeningPhoto = false);
+            }
           },
           child: Stack(
             fit: StackFit.expand,
@@ -783,6 +790,9 @@ class _PhotosPageState extends State<PhotosPage>
           _toggleSelection(p);
         },
         onTap: () async {
+          if (_isOpeningPhoto) return;
+          _isOpeningPhoto = true;
+          try {
           final navigator = Navigator.of(context);
           final bytes = await a.originBytes;
           if (bytes == null) return;
@@ -819,6 +829,9 @@ class _PhotosPageState extends State<PhotosPage>
             ),
           );
           if (changed == true) await manualRefresh();
+          } finally {
+            if (mounted) setState(() => _isOpeningPhoto = false);
+          }
         },
         child: assetThumb,
       ),

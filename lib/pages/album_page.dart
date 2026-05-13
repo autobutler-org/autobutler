@@ -20,6 +20,7 @@ class AlbumPage extends StatefulWidget {
 class _AlbumPageState extends State<AlbumPage> {
   List<PhotoAlbumItem> _items = [];
   bool _loading = true;
+  bool _isOpeningPhoto = false;
   String? _error;
   int _crossAxisCount = 3;
 
@@ -175,6 +176,9 @@ class _AlbumPageState extends State<AlbumPage> {
                   );
                   return GestureDetector(
                     onTap: () async {
+                      if (_isOpeningPhoto) return;
+                      _isOpeningPhoto = true;
+                      try {
                       final navigator = Navigator.of(context);
                       final bytes = await CirrusService.downloadFileBytes(
                         item.relPath,
@@ -212,6 +216,9 @@ class _AlbumPageState extends State<AlbumPage> {
                         ),
                       );
                       if (changed == true) await _load();
+                      } finally {
+                        if (mounted) setState(() => _isOpeningPhoto = false);
+                      }
                     },
                     onLongPress: () => _showItemMenu(context, item),
                     child: Stack(
