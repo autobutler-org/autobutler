@@ -20,6 +20,7 @@ class AlbumPage extends StatefulWidget {
 class _AlbumPageState extends State<AlbumPage> {
   List<PhotoAlbumItem> _items = [];
   bool _loading = true;
+  bool _isOpeningPhoto = false;
   String? _error;
   int _crossAxisCount = 3;
 
@@ -175,43 +176,49 @@ class _AlbumPageState extends State<AlbumPage> {
                   );
                   return GestureDetector(
                     onTap: () async {
-                      final navigator = Navigator.of(context);
-                      final bytes = await CirrusService.downloadFileBytes(
-                        item.relPath,
-                        serial: item.deviceSerial,
-                      );
-                      if (bytes == null || !mounted) return;
-                      final changed = await navigator.push<bool>(
-                        MaterialPageRoute(
-                          builder: (_) => ImageViewerPage(
-                            bytes: bytes,
-                            name: item.relPath.split('/').last,
-                            initialIndex: idx,
-                            imageCount: _items.length,
-                            relPath: item.relPath,
-                            serial: item.deviceSerial,
-                            sourceAlbum: widget.album,
-                            getImageCount: () async => _items.length,
-                            onLoadImage: (newIdx) async {
-                              if (newIdx >= _items.length) {
-                                return (null, '', null, null);
-                              }
-                              final ni = _items[newIdx];
-                              final b = await CirrusService.downloadFileBytes(
-                                ni.relPath,
-                                serial: ni.deviceSerial,
-                              );
-                              return (
-                                b,
-                                ni.relPath.split('/').last,
-                                ni.relPath,
-                                ni.deviceSerial,
-                              );
-                            },
+                      if (_isOpeningPhoto) return;
+                      _isOpeningPhoto = true;
+                      try {
+                        final navigator = Navigator.of(context);
+                        final bytes = await CirrusService.downloadFileBytes(
+                          item.relPath,
+                          serial: item.deviceSerial,
+                        );
+                        if (bytes == null || !mounted) return;
+                        final changed = await navigator.push<bool>(
+                          MaterialPageRoute(
+                            builder: (_) => ImageViewerPage(
+                              bytes: bytes,
+                              name: item.relPath.split('/').last,
+                              initialIndex: idx,
+                              imageCount: _items.length,
+                              relPath: item.relPath,
+                              serial: item.deviceSerial,
+                              sourceAlbum: widget.album,
+                              getImageCount: () async => _items.length,
+                              onLoadImage: (newIdx) async {
+                                if (newIdx >= _items.length) {
+                                  return (null, '', null, null);
+                                }
+                                final ni = _items[newIdx];
+                                final b = await CirrusService.downloadFileBytes(
+                                  ni.relPath,
+                                  serial: ni.deviceSerial,
+                                );
+                                return (
+                                  b,
+                                  ni.relPath.split('/').last,
+                                  ni.relPath,
+                                  ni.deviceSerial,
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                      );
-                      if (changed == true) await _load();
+                        );
+                        if (changed == true) await _load();
+                      } finally {
+                        if (mounted) setState(() => _isOpeningPhoto = false);
+                      }
                     },
                     onLongPress: () => _showItemMenu(context, item),
                     child: Stack(
