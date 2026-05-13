@@ -715,50 +715,50 @@ class _PhotosPageState extends State<PhotosPage>
             if (_isOpeningPhoto) return;
             _isOpeningPhoto = true;
             try {
-            final navigator = Navigator.of(context);
-            final bytes = await CirrusService.downloadFileBytes(
-              c.apiPath,
-              serial: c.deviceSerial,
-            );
-            if (bytes == null) return;
-            if (!mounted) return;
-            final changed = await navigator.push<bool>(
-              MaterialPageRoute(
-                builder: (_) => ImageViewerPage(
-                  bytes: bytes,
-                  name: c.name,
-                  initialIndex: idx,
-                  imageCount: photos.length,
-                  relPath: c.apiPath,
-                  serial: c.deviceSerial,
-                  getImageCount: () async =>
-                      (await _photosForCategory(_selectedCategory)).length,
-                  onLoadImage: (newIdx) async {
-                    final live = await _photosForCategory(_selectedCategory);
-                    if (newIdx >= live.length) return (null, '', null, null);
-                    final item = live[newIdx];
-                    if (item.isCirrus) {
-                      final nc = item.cirrus!;
-                      var b = await CirrusService.downloadFileBytes(
-                        nc.apiPath,
-                        serial: nc.deviceSerial,
-                      );
-                      if (b == null) await manualRefresh();
-                      return (b, nc.name, nc.apiPath, nc.deviceSerial);
-                    } else {
-                      final na = item.asset!;
-                      final b = await na.originBytes;
-                      if (b == null) await manualRefresh();
-                      return (b, na.id, null, null);
-                    }
-                  },
+              final navigator = Navigator.of(context);
+              final bytes = await CirrusService.downloadFileBytes(
+                c.apiPath,
+                serial: c.deviceSerial,
+              );
+              if (bytes == null) return;
+              if (!mounted) return;
+              final changed = await navigator.push<bool>(
+                MaterialPageRoute(
+                  builder: (_) => ImageViewerPage(
+                    bytes: bytes,
+                    name: c.name,
+                    initialIndex: idx,
+                    imageCount: photos.length,
+                    relPath: c.apiPath,
+                    serial: c.deviceSerial,
+                    getImageCount: () async =>
+                        (await _photosForCategory(_selectedCategory)).length,
+                    onLoadImage: (newIdx) async {
+                      final live = await _photosForCategory(_selectedCategory);
+                      if (newIdx >= live.length) return (null, '', null, null);
+                      final item = live[newIdx];
+                      if (item.isCirrus) {
+                        final nc = item.cirrus!;
+                        var b = await CirrusService.downloadFileBytes(
+                          nc.apiPath,
+                          serial: nc.deviceSerial,
+                        );
+                        if (b == null) await manualRefresh();
+                        return (b, nc.name, nc.apiPath, nc.deviceSerial);
+                      } else {
+                        final na = item.asset!;
+                        final b = await na.originBytes;
+                        if (b == null) await manualRefresh();
+                        return (b, na.id, null, null);
+                      }
+                    },
+                  ),
                 ),
-              ),
-            );
-            if (changed == true) {
-              await manualRefresh();
-              _albumSidebarKey.currentState?.reload();
-            }
+              );
+              if (changed == true) {
+                await manualRefresh();
+                _albumSidebarKey.currentState?.reload();
+              }
             } finally {
               if (mounted) setState(() => _isOpeningPhoto = false);
             }
@@ -793,42 +793,42 @@ class _PhotosPageState extends State<PhotosPage>
           if (_isOpeningPhoto) return;
           _isOpeningPhoto = true;
           try {
-          final navigator = Navigator.of(context);
-          final bytes = await a.originBytes;
-          if (bytes == null) return;
-          if (!mounted) return;
-          final changed = await navigator.push<bool>(
-            MaterialPageRoute(
-              builder: (_) => ImageViewerPage(
-                bytes: bytes,
-                name: a.id,
-                initialIndex: idx,
-                imageCount: photos.length,
-                getImageCount: () async =>
-                    (await _photosForCategory(_selectedCategory)).length,
-                onLoadImage: (newIdx) async {
-                  final live = await _photosForCategory(_selectedCategory);
-                  if (newIdx >= live.length) return (null, '', null, null);
-                  final item = live[newIdx];
-                  if (item.isCirrus) {
-                    final nc = item.cirrus!;
-                    var b = await CirrusService.downloadFileBytes(
-                      nc.apiPath,
-                      serial: nc.deviceSerial,
-                    );
-                    if (b == null) await manualRefresh();
-                    return (b, nc.name, nc.apiPath, nc.deviceSerial);
-                  } else {
-                    final na = item.asset!;
-                    final b = await na.originBytes;
-                    if (b == null) await manualRefresh();
-                    return (b, na.id, null, null);
-                  }
-                },
+            final navigator = Navigator.of(context);
+            final bytes = await a.originBytes;
+            if (bytes == null) return;
+            if (!mounted) return;
+            final changed = await navigator.push<bool>(
+              MaterialPageRoute(
+                builder: (_) => ImageViewerPage(
+                  bytes: bytes,
+                  name: a.id,
+                  initialIndex: idx,
+                  imageCount: photos.length,
+                  getImageCount: () async =>
+                      (await _photosForCategory(_selectedCategory)).length,
+                  onLoadImage: (newIdx) async {
+                    final live = await _photosForCategory(_selectedCategory);
+                    if (newIdx >= live.length) return (null, '', null, null);
+                    final item = live[newIdx];
+                    if (item.isCirrus) {
+                      final nc = item.cirrus!;
+                      var b = await CirrusService.downloadFileBytes(
+                        nc.apiPath,
+                        serial: nc.deviceSerial,
+                      );
+                      if (b == null) await manualRefresh();
+                      return (b, nc.name, nc.apiPath, nc.deviceSerial);
+                    } else {
+                      final na = item.asset!;
+                      final b = await na.originBytes;
+                      if (b == null) await manualRefresh();
+                      return (b, na.id, null, null);
+                    }
+                  },
+                ),
               ),
-            ),
-          );
-          if (changed == true) await manualRefresh();
+            );
+            if (changed == true) await manualRefresh();
           } finally {
             if (mounted) setState(() => _isOpeningPhoto = false);
           }
