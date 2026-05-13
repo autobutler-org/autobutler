@@ -345,6 +345,20 @@ definitions:
       width:
         type: integer
     type: object
+  v1_photos.copyPhotoRequest:
+    properties:
+      relPath:
+        type: string
+      serial:
+        type: string
+    required:
+    - relPath
+    type: object
+  v1_photos.copyPhotoResponse:
+    properties:
+      relPath:
+        type: string
+    type: object
   v1_photos.rotatePhotoRequest:
     properties:
       relPath:
@@ -1537,6 +1551,41 @@ paths:
           schema:
             $ref: '#/definitions/serverutil.Response'
       summary: List photos
+      tags:
+      - photos
+  /photos/copy:
+    post:
+      consumes:
+      - application/json
+      description: Creates a copy of the photo in the same directory with a non-conflicting
+        name (e.g. photo_copy.jpg).
+      parameters:
+      - description: Copy request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1_photos.copyPhotoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_photos.copyPhotoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Duplicate a photo file
       tags:
       - photos
   /photos/favorite:
