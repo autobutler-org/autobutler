@@ -637,3 +637,90 @@ func StatFileImpl(params StatFileParams, device *ManagedDevice, defaultCirrusDir
 		Name:     info.Name(),
 	}, nil
 }
+
+// CopyFileParams contains parameters for duplicating a file in-place.
+type CopyFileParams struct {
+	// RelPath is the cirrus-relative path of the source file.
+	RelPath      string
+	DeviceSerial string
+}
+
+// CopyFileResult contains the result of a file copy operation.
+type CopyFileResult struct {
+	// NewRelPath is the cirrus-relative path of the newly created copy.
+	NewRelPath string
+}
+
+// CopyFile duplicates a file within the same cirrus directory, producing a
+// non-conflicting name by appending "_copy" (and further numeric suffixes if
+// needed). It is the service-layer entry point and resolves the device by
+// serial before delegating to CopyFileImpl.
+func (s *StorageService) CopyFile(params CopyFileParams) (*CopyFileResult, error) {
+	device, err := s.FindManagedDeviceBySerial(params.DeviceSerial)
+	if err != nil {
+		return nil, err // coverage: ignore - requires device detection failure
+	}
+	defaultCirrusDir, err := GetCirrusDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+	}
+	return CopyFileImpl(params, device, defaultCirrusDir)
+}
+
+// CopyFileImpl duplicates a file using pre-resolved device and cirrus directory.
+// Use this in tests to inject test devices without hitting the real filesystem
+// detector.
+func CopyFileImpl(params CopyFileParams, device *ManagedDevice, defaultCirrusDir string) (*CopyFileResult, error) {
+	cirrusDir := defaultCirrusDir
+	if device != nil {
+		cirrusDir = device.CirrusDir
+	}
+
+	srcFull, err := safeJoin(cirrusDir, params.RelPath)
+	if err != nil {
+		return nil, fmt.Errorf("invalid relPath: %w", err)
+	}
+
+	if _, err := os.Stat(srcFull); os.IsNotExist(err) {
+		return nil, fmt.Errorf("%w: %s", ErrPathNotFound, params.RelPath)
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to stat source: %w", err)
+	}
+
+	ext := filepath.Ext(srcFull)
+	stem := srcFull[:len(srcFull)-len(ext)]
+	destFull := GetNonConflictingPath(stem + "_copy" + ext)
+
+	if err := copyFileContents(srcFull, destFull); err != nil {
+		return nil, fmt.Errorf("copy failed: %w", err)
+	}
+
+	newRelPath, err := filepath.Rel(cirrusDir, destFull)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compute relative path: %w", err)
+	}
+
+	return &CopyFileResult{NewRelPath: newRelPath}, nil
+}
+
+// copyFileContents writes the contents of src to dst.
+func copyFileContents(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if cerr := out.Close(); cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
+
+	_, err = io.Copy(out, in)
+	return err
+}

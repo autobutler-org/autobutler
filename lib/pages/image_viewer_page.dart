@@ -411,6 +411,30 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     ).push(MaterialPageRoute(builder: (_) => AlbumPage(album: album)));
   }
 
+  Future<void> _makeACopy() async {
+    final relPath = _currentRelPath;
+    if (relPath == null) return;
+    try {
+      final newRelPath = await CirrusService.copyPhoto(
+        relPath,
+        serial: _currentSerial,
+      );
+      if (!mounted) return;
+      final newName = newRelPath.contains('/')
+          ? newRelPath.substring(newRelPath.lastIndexOf('/') + 1)
+          : newRelPath;
+      _listChanged = true;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Copy saved as $newName')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Copy failed: $e')));
+    }
+  }
+
   Future<void> _confirmDelete() async {
     final relPath = _currentRelPath;
     if (relPath == null) return;
@@ -585,6 +609,8 @@ class _ImageViewerPageState extends State<ImageViewerPage>
                   _addToAlbum();
                 case _MoreAction.removeFromAlbum:
                   _removeFromAlbum(widget.sourceAlbum!);
+                case _MoreAction.makeACopy:
+                  _makeACopy();
                 case _MoreAction.delete:
                   _confirmDelete();
               }
@@ -606,6 +632,13 @@ class _ImageViewerPageState extends State<ImageViewerPage>
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
+              const PopupMenuItem(
+                value: _MoreAction.makeACopy,
+                child: Text(
+                  'Make a Copy',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
               PopupMenuItem(
                 value: _MoreAction.delete,
                 child: Text(
@@ -747,7 +780,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   }
 }
 
-enum _MoreAction { addToAlbum, removeFromAlbum, delete }
+enum _MoreAction { addToAlbum, removeFromAlbum, makeACopy, delete }
 
 // ---------------------------------------------------------------------------
 // Metadata sidebar (desktop)

@@ -16,5 +16,6 @@ func (r *router) Routes() []*serverutil.Route {
 		listPhotosRoute,
 		getPhotoMetadataRoute,
 		rotatePhotoRoute,
+		copyPhotoRoute,
 	}
 }
