@@ -34,6 +34,7 @@ class SettingsService with AuthenticatedService {
   static Future<bool> getAutoUpdate() async {
     final uri = _apiBaseUri.resolve('/api/v1/settings');
     final response = await http.get(uri, headers: _authHeaders);
+    instance.checkUnauthorized(response);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to fetch settings (${response.statusCode})');
     }
@@ -51,6 +52,7 @@ class SettingsService with AuthenticatedService {
     final headers = {..._authHeaders, 'Content-Type': 'application/json'};
     final body = jsonEncode({'autoUpdate': enabled});
     final response = await http.post(uri, headers: headers, body: body);
+    instance.checkUnauthorized(response);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to update settings (${response.statusCode})');
     }

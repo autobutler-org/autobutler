@@ -40,6 +40,7 @@ class AlbumService with AuthenticatedService {
       '/albums',
     ).replace(queryParameters: tree ? {'tree': 'true'} : null);
     final response = await http.get(uri, headers: _authHeaders);
+    instance.checkUnauthorized(response);
     if (response.statusCode != 200) {
       throw Exception('Failed to load albums: ${response.statusCode}');
     }
@@ -54,6 +55,7 @@ class AlbumService with AuthenticatedService {
       _apiUri('/albums/$id'),
       headers: _authHeaders,
     );
+    instance.checkUnauthorized(response);
     if (response.statusCode != 200) {
       throw Exception('Album not found');
     }
@@ -70,6 +72,7 @@ class AlbumService with AuthenticatedService {
       headers: {..._authHeaders, 'Content-Type': 'application/json'},
       body: json.encode(body),
     );
+    instance.checkUnauthorized(response);
     if (response.statusCode != 201) {
       throw Exception('Failed to create album: ${response.statusCode}');
     }
@@ -84,6 +87,7 @@ class AlbumService with AuthenticatedService {
       headers: {..._authHeaders, 'Content-Type': 'application/json'},
       body: json.encode({'name': name}),
     );
+    instance.checkUnauthorized(response);
     if (response.statusCode != 200) {
       throw Exception('Failed to rename album');
     }
@@ -98,6 +102,7 @@ class AlbumService with AuthenticatedService {
       headers: {..._authHeaders, 'Content-Type': 'application/json'},
       body: json.encode({'parentId': parentId}),
     );
+    instance.checkUnauthorized(response);
     if (response.statusCode != 200) {
       throw Exception('Failed to move album');
     }
@@ -111,6 +116,7 @@ class AlbumService with AuthenticatedService {
       _apiUri('/albums/$id'),
       headers: _authHeaders,
     );
+    instance.checkUnauthorized(response);
     if (response.statusCode != 204) {
       throw Exception('Failed to delete album');
     }
@@ -121,6 +127,7 @@ class AlbumService with AuthenticatedService {
       _apiUri('/albums/$albumId/items'),
       headers: _authHeaders,
     );
+    instance.checkUnauthorized(response);
     if (response.statusCode != 200) {
       throw Exception('Failed to load album items');
     }
@@ -140,6 +147,7 @@ class AlbumService with AuthenticatedService {
       headers: {..._authHeaders, 'Content-Type': 'application/json'},
       body: json.encode({'deviceSerial': deviceSerial, 'relPath': relPath}),
     );
+    instance.checkUnauthorized(response);
     if (response.statusCode != 201) {
       throw Exception('Failed to add photo to album');
     }
@@ -158,6 +166,7 @@ class AlbumService with AuthenticatedService {
       headers: {..._authHeaders, 'Content-Type': 'application/json'},
       body: json.encode({'deviceSerial': deviceSerial, 'relPath': relPath}),
     );
+    instance.checkUnauthorized(response);
     if (response.statusCode != 204) {
       throw Exception('Failed to remove photo from album');
     }

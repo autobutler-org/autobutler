@@ -65,6 +65,9 @@ class AppRoutes {
 final router = GoRouter(
   initialLocation: AppRoutes.cirrus,
   redirect: _authRedirect,
+  // Refresh the router whenever the session token changes so a 401-triggered
+  // token clear immediately redirects to the login page.
+  refreshListenable: AppSettings.instance.sessionTokenNotifier,
   routes: [
     GoRoute(
       path: AppRoutes.cirrus,

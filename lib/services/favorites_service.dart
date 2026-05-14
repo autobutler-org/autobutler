@@ -48,6 +48,7 @@ class FavoritesService with AuthenticatedService {
       headers: {..._authHeaders, 'Content-Type': 'application/json'},
       body: json.encode({'relPath': relPath, 'deviceSerial': serial ?? ''}),
     );
+    instance.checkUnauthorized(response);
     if (response.statusCode != 200) {
       throw Exception('Failed to toggle favorite: ${response.statusCode}');
     }
@@ -59,6 +60,7 @@ class FavoritesService with AuthenticatedService {
   static Future<Set<String>> listFavoriteKeys() async {
     final uri = _apiUri('/photos/favorites');
     final response = await http.get(uri, headers: _authHeaders);
+    instance.checkUnauthorized(response);
     if (response.statusCode != 200) return {};
     final list = json.decode(response.body) as List<dynamic>;
     return list.map((item) {
@@ -81,6 +83,7 @@ class FavoritesService with AuthenticatedService {
       },
     );
     final response = await http.get(uri, headers: _authHeaders);
+    instance.checkUnauthorized(response);
     if (response.statusCode != 200) return false;
     final d = json.decode(response.body) as Map<String, dynamic>;
     return d['isFavorite'] as bool? ?? false;
