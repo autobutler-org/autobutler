@@ -95,6 +95,7 @@ final class ParsedFormula {
     required this.hasRangeArgs,
   })  : cellRefs = List.unmodifiable(LinkedHashSet<String>.from(cellRefs)),
         rangeRefs = List.unmodifiable(LinkedHashSet<String>.from(rangeRefs)),
-        calledFunctions =
-            List.unmodifiable(LinkedHashSet<String>.from(calledFunctions));
+        calledFunctions = List.unmodifiable(
+          LinkedHashSet<String>.from(calledFunctions),
+        );
 }

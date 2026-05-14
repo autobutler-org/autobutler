@@ -20,7 +20,7 @@ enum TokenKind {
   lparen,
   rparen,
   comma,
-  eof
+  eof,
 }
 
 class Token {

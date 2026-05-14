@@ -20,10 +20,7 @@ void main() {
 
   group('DataSheetInterpreter – topological evaluation', () {
     test('evaluates independent formula cells', () {
-      final results = interpret(1, 2, {
-        (0, 0): '3',
-        (0, 1): '=A1 * 2',
-      });
+      final results = interpret(1, 2, {(0, 0): '3', (0, 1): '=A1 * 2'});
 
       expect(results[(0, 1)], const NumberValue(6));
     });
@@ -64,9 +61,7 @@ void main() {
     });
 
     test('formula referencing an empty cell treats it as blank', () {
-      final results = interpret(1, 2, {
-        (0, 1): '=A1',
-      });
+      final results = interpret(1, 2, {(0, 1): '=A1'});
 
       expect(results[(0, 1)], blankValue);
     });
@@ -77,18 +72,12 @@ void main() {
       // A1 = =A1
       final results = interpret(1, 1, {(0, 0): '=A1'});
 
-      expect(
-        results[(0, 0)],
-        const ErrorValue('#REF!', 'Circular reference'),
-      );
+      expect(results[(0, 0)], const ErrorValue('#REF!', 'Circular reference'));
     });
 
     test('two-cell mutual reference marks both cells as circular', () {
       // A1==B1, B1==A1
-      final results = interpret(1, 2, {
-        (0, 0): '=B1',
-        (0, 1): '=A1',
-      });
+      final results = interpret(1, 2, {(0, 0): '=B1', (0, 1): '=A1'});
 
       expect(results[(0, 0)], const ErrorValue('#REF!', 'Circular reference'));
       expect(results[(0, 1)], const ErrorValue('#REF!', 'Circular reference'));
@@ -107,19 +96,21 @@ void main() {
       expect(results[(0, 2)], const ErrorValue('#REF!', 'Circular reference'));
     });
 
-    test('cell outside the cycle that depends on a cycle member gets error',
-        () {
-      // A1==A1 (cycle), B1==A1 (depends on cycle)
-      final results = interpret(1, 2, {
-        (0, 0): '=A1',
-        (0, 1): '=A1 + 1',
-      });
+    test(
+      'cell outside the cycle that depends on a cycle member gets error',
+      () {
+        // A1==A1 (cycle), B1==A1 (depends on cycle)
+        final results = interpret(1, 2, {(0, 0): '=A1', (0, 1): '=A1 + 1'});
 
-      expect(results[(0, 0)], const ErrorValue('#REF!', 'Circular reference'));
-      // B1's result is an ErrorValue because the accessor returns the
-      // pre-assigned circular error for A1.
-      expect(results[(0, 1)], isA<ErrorValue>());
-    });
+        expect(
+          results[(0, 0)],
+          const ErrorValue('#REF!', 'Circular reference'),
+        );
+        // B1's result is an ErrorValue because the accessor returns the
+        // pre-assigned circular error for A1.
+        expect(results[(0, 1)], isA<ErrorValue>());
+      },
+    );
 
     test('acyclic cells coexist with a separate cycle in the same sheet', () {
       // A1==A1 (cycle), B1=2, C1==B1*3 (acyclic chain)

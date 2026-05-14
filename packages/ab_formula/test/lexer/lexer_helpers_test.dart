@@ -73,13 +73,7 @@ void main() {
     test('scanner helpers throw parse errors for invalid input', () {
       expect(
         () => scanFormulaNumber('1e+', 0),
-        throwsA(
-          isA<LexError>().having(
-            (error) => error.offset,
-            'offset',
-            1,
-          ),
-        ),
+        throwsA(isA<LexError>().having((error) => error.offset, 'offset', 1)),
       );
 
       expect(
@@ -87,10 +81,7 @@ void main() {
         throwsA(isA<LexError>()),
       );
 
-      expect(
-        () => scanFormulaWord(r'$foo', 0),
-        throwsA(isA<LexError>()),
-      );
+      expect(() => scanFormulaWord(r'$foo', 0), throwsA(isA<LexError>()));
     });
   });
 }

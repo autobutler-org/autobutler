@@ -169,7 +169,8 @@ FormulaValue _power(List<ResolvedArgument> arguments) {
     return rightResult.error!;
   }
   return NumberValue(
-      math.pow(leftResult.value!, rightResult.value!).toDouble());
+    math.pow(leftResult.value!, rightResult.value!).toDouble(),
+  );
 }
 
 FormulaValue _sqrt(List<ResolvedArgument> arguments) {
@@ -277,10 +278,7 @@ FormulaValue _mid(List<ResolvedArgument> arguments) {
   final text = textResult.value!;
   final startIndex = math.max(0, startResult.value!.toInt() - 1);
   final endIndex = math
-      .min(
-        text.length,
-        startIndex + math.max(0, countResult.value!.toInt()),
-      )
+      .min(text.length, startIndex + math.max(0, countResult.value!.toInt()))
       .toInt();
   if (startIndex >= text.length) {
     return const StringValue('');
@@ -293,8 +291,12 @@ FormulaValue _find(List<ResolvedArgument> arguments) {
   if (needleResult.error != null) {
     return needleResult.error!;
   }
-  final haystackResult =
-      _expectStringArg(arguments, 1, minCount: 2, maxCount: 3);
+  final haystackResult = _expectStringArg(
+    arguments,
+    1,
+    minCount: 2,
+    maxCount: 3,
+  );
   if (haystackResult.error != null) {
     return haystackResult.error!;
   }
@@ -319,13 +321,21 @@ FormulaValue _substitute(List<ResolvedArgument> arguments) {
   if (textResult.error != null) {
     return textResult.error!;
   }
-  final oldTextResult =
-      _expectStringArg(arguments, 1, minCount: 3, maxCount: 4);
+  final oldTextResult = _expectStringArg(
+    arguments,
+    1,
+    minCount: 3,
+    maxCount: 4,
+  );
   if (oldTextResult.error != null) {
     return oldTextResult.error!;
   }
-  final newTextResult =
-      _expectStringArg(arguments, 2, minCount: 3, maxCount: 4);
+  final newTextResult = _expectStringArg(
+    arguments,
+    2,
+    minCount: 3,
+    maxCount: 4,
+  );
   if (newTextResult.error != null) {
     return newTextResult.error!;
   }
@@ -335,8 +345,12 @@ FormulaValue _substitute(List<ResolvedArgument> arguments) {
   if (arguments.length == 3) {
     return StringValue(text.replaceAll(oldText, newText));
   }
-  final instanceResult =
-      _expectNumberArg(arguments, 3, minCount: 3, maxCount: 4);
+  final instanceResult = _expectNumberArg(
+    arguments,
+    3,
+    minCount: 3,
+    maxCount: 4,
+  );
   if (instanceResult.error != null) {
     return instanceResult.error!;
   }

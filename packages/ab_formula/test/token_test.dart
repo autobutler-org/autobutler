@@ -49,20 +49,22 @@ void main() {
       );
     });
 
-    test('fromJson handles missing kind (defaults to eof) and missing value',
-        () {
-      final jsonMissingKind = {'value': 'x'};
-      final t = Token.fromJson(jsonMissingKind);
-      expect(t.kind, equals(TokenKind.eof));
-      expect(t.value, equals('x'));
-      expect(t.offset, equals(0));
+    test(
+      'fromJson handles missing kind (defaults to eof) and missing value',
+      () {
+        final jsonMissingKind = {'value': 'x'};
+        final t = Token.fromJson(jsonMissingKind);
+        expect(t.kind, equals(TokenKind.eof));
+        expect(t.value, equals('x'));
+        expect(t.offset, equals(0));
 
-      final jsonMissingValue = {'kind': 'string', 'offset': '9'};
-      final t2 = Token.fromJson(jsonMissingValue);
-      expect(t2.kind, equals(TokenKind.string));
-      expect(t2.value, equals(''));
-      expect(t2.offset, equals(9));
-    });
+        final jsonMissingValue = {'kind': 'string', 'offset': '9'};
+        final t2 = Token.fromJson(jsonMissingValue);
+        expect(t2.kind, equals(TokenKind.string));
+        expect(t2.value, equals(''));
+        expect(t2.offset, equals(9));
+      },
+    );
 
     test('fromJson ignores extra fields', () {
       final json = {

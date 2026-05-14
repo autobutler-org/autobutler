@@ -39,11 +39,7 @@ void main() {
     });
 
     test('three-node cycle is fully detected', () {
-      final g = _graph([
-        ((0, 0), (0, 1)),
-        ((0, 1), (0, 2)),
-        ((0, 2), (0, 0)),
-      ]);
+      final g = _graph([((0, 0), (0, 1)), ((0, 1), (0, 2)), ((0, 2), (0, 0))]);
       expect(findCycleMembers(g), {(0, 0), (0, 1), (0, 2)});
     });
 
