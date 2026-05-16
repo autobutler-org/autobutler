@@ -93,6 +93,9 @@ var generatePasswordRoute = serverutil.ApiRoute(
 )
 
 func secureRandomString(charset string, length int) (string, error) {
+	if length < 1 || length > 128 {
+		return "", fmt.Errorf("length must be between 1 and 128")
+	}
 	max := big.NewInt(int64(len(charset)))
 	result := make([]byte, length)
 	for i := range result {
