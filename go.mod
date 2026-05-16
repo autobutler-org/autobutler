@@ -33,7 +33,7 @@ require (
 	howett.net/plist v1.0.1
 	modernc.org/sqlite v1.50.0
 	nhooyr.io/websocket v1.8.17
-	tailscale.com v1.98.1
+	tailscale.com v1.98.2
 )
 
 require (
