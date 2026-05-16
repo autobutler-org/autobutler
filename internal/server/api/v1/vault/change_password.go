@@ -66,8 +66,17 @@ var changePasswordRoute = serverutil.ApiRoute(
 		newKey := vaultcrypto.DeriveKey(req.NewPassword, newSalt, currentParams)
 		defer vaultcrypto.ZeroKey(newKey)
 
-		// Re-encrypt all entries.
-		entries, err := deps.Database().Queries.ListAllVaultEntriesForReEncrypt(ctx)
+		// Re-encrypt all entries inside a transaction so a partial failure
+		// doesn't leave some entries on the old key and some on the new.
+		tx, err := deps.Database().Db.BeginTx(ctx, nil)
+		if err != nil {
+			return serverutil.InternalServerError(fmt.Errorf("begin tx: %w", err))
+		}
+		defer tx.Rollback()
+
+		qtx := deps.Database().Queries.WithTx(tx)
+
+		entries, err := qtx.ListAllVaultEntriesForReEncrypt(ctx)
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("list entries for re-encrypt: %w", err))
 		}
@@ -78,7 +87,6 @@ var changePasswordRoute = serverutil.ApiRoute(
 				return serverutil.InternalServerError(fmt.Errorf("decrypt entry %d: %w", entry.ID, err))
 			}
 
-			// Validate it's still valid JSON.
 			var check json.RawMessage
 			if err := json.Unmarshal(plaintext, &check); err != nil {
 				return serverutil.InternalServerError(fmt.Errorf("corrupt entry %d: %w", entry.ID, err))
@@ -89,7 +97,7 @@ var changePasswordRoute = serverutil.ApiRoute(
 				return serverutil.InternalServerError(fmt.Errorf("re-encrypt entry %d: %w", entry.ID, err))
 			}
 
-			if err := deps.Database().Queries.UpdateVaultEntryCiphertext(ctx, db.UpdateVaultEntryCiphertextParams{
+			if err := qtx.UpdateVaultEntryCiphertext(ctx, db.UpdateVaultEntryCiphertextParams{
 				Ciphertext: newCiphertext,
 				Nonce:      newNonce,
 				ID:         entry.ID,
@@ -98,18 +106,21 @@ var changePasswordRoute = serverutil.ApiRoute(
 			}
 		}
 
-		// Update vault config with new salt and verification blob.
 		newVerBlob, newVerNonce, err := vaultcrypto.MakeVerificationBlob(newKey)
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("create verification blob: %w", err))
 		}
 
-		if err := deps.Database().Queries.UpdateVaultConfigPassword(ctx, db.UpdateVaultConfigPasswordParams{
+		if err := qtx.UpdateVaultConfigPassword(ctx, db.UpdateVaultConfigPasswordParams{
 			Salt:              newSalt,
 			VerificationBlob:  newVerBlob,
 			VerificationNonce: newVerNonce,
 		}); err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("update vault config: %w", err))
+		}
+
+		if err := tx.Commit(); err != nil {
+			return serverutil.InternalServerError(fmt.Errorf("commit tx: %w", err))
 		}
 
 		// Re-unlock with the new key.

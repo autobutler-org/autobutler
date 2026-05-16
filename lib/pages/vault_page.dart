@@ -24,10 +24,26 @@ class _VaultPageState extends State<VaultPage> {
   int? _selectedFolderId;
   String _searchQuery = '';
 
+  final _setupPasswordCtrl = TextEditingController();
+  final _setupConfirmCtrl = TextEditingController();
+  String? _setupError;
+
+  final _unlockPasswordCtrl = TextEditingController();
+  String? _unlockError;
+  bool _unlocking = false;
+
   @override
   void initState() {
     super.initState();
     _loadStatus();
+  }
+
+  @override
+  void dispose() {
+    _setupPasswordCtrl.dispose();
+    _setupConfirmCtrl.dispose();
+    _unlockPasswordCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _loadStatus() async {
@@ -153,187 +169,154 @@ class _VaultPageState extends State<VaultPage> {
   }
 
   Widget _buildSetupView() {
-    final passwordCtrl = TextEditingController();
-    final confirmCtrl = TextEditingController();
-    String? error;
-
-    return StatefulBuilder(
-      builder: (context, setLocalState) {
-        return Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.shield_outlined, size: 64),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Set up your vault',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Choose a master password to encrypt your credentials. '
-                    'This cannot be recovered if forgotten.',
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  TextField(
-                    controller: passwordCtrl,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Master password',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: confirmCtrl,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Confirm password',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  if (error != null) ...[
-                    const SizedBox(height: 12),
-                    Text(error!, style: const TextStyle(color: Colors.red)),
-                  ],
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () async {
-                        if (passwordCtrl.text.length < 8) {
-                          setLocalState(
-                            () => error =
-                                'Password must be at least 8 characters',
-                          );
-                          return;
-                        }
-                        if (passwordCtrl.text != confirmCtrl.text) {
-                          setLocalState(() => error = 'Passwords do not match');
-                          return;
-                        }
-                        try {
-                          await VaultService.setup(passwordCtrl.text);
-                          _loadStatus();
-                        } catch (e) {
-                          setLocalState(() => error = e.toString());
-                        }
-                      },
-                      child: const Text('Create Vault'),
-                    ),
-                  ),
-                ],
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.shield_outlined, size: 64),
+              const SizedBox(height: 16),
+              Text(
+                'Set up your vault',
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
-            ),
+              const SizedBox(height: 8),
+              const Text(
+                'Choose a master password to encrypt your credentials. '
+                'This cannot be recovered if forgotten.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: _setupPasswordCtrl,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Master password',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _setupConfirmCtrl,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm password',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              if (_setupError != null) ...[
+                const SizedBox(height: 12),
+                Text(_setupError!, style: const TextStyle(color: Colors.red)),
+              ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () async {
+                    if (_setupPasswordCtrl.text.length < 8) {
+                      setState(
+                        () => _setupError =
+                            'Password must be at least 8 characters',
+                      );
+                      return;
+                    }
+                    if (_setupPasswordCtrl.text != _setupConfirmCtrl.text) {
+                      setState(() => _setupError = 'Passwords do not match');
+                      return;
+                    }
+                    try {
+                      await VaultService.setup(_setupPasswordCtrl.text);
+                      _setupPasswordCtrl.clear();
+                      _setupConfirmCtrl.clear();
+                      _loadStatus();
+                    } catch (e) {
+                      setState(() => _setupError = e.toString());
+                    }
+                  },
+                  child: const Text('Create Vault'),
+                ),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
   Widget _buildUnlockView() {
-    final passwordCtrl = TextEditingController();
-    String? error;
-    bool unlocking = false;
-
-    return StatefulBuilder(
-      builder: (context, setLocalState) {
-        return Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.lock_outline, size: 64),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Vault is locked',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 24),
-                  TextField(
-                    controller: passwordCtrl,
-                    obscureText: true,
-                    autofocus: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Master password',
-                      border: OutlineInputBorder(),
-                    ),
-                    onSubmitted: (_) => _doUnlock(
-                      passwordCtrl,
-                      setLocalState,
-                      (v) => error = v,
-                      (v) => unlocking = v,
-                      error,
-                    ),
-                  ),
-                  if (error != null) ...[
-                    const SizedBox(height: 12),
-                    Text(error!, style: const TextStyle(color: Colors.red)),
-                  ],
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: unlocking
-                          ? null
-                          : () => _doUnlock(
-                              passwordCtrl,
-                              setLocalState,
-                              (v) => error = v,
-                              (v) => unlocking = v,
-                              error,
-                            ),
-                      child: unlocking
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Unlock'),
-                    ),
-                  ),
-                ],
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.lock_outline, size: 64),
+              const SizedBox(height: 16),
+              Text(
+                'Vault is locked',
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
-            ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: _unlockPasswordCtrl,
+                obscureText: true,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: 'Master password',
+                  border: OutlineInputBorder(),
+                ),
+                onSubmitted: (_) => _doUnlock(),
+              ),
+              if (_unlockError != null) ...[
+                const SizedBox(height: 12),
+                Text(_unlockError!, style: const TextStyle(color: Colors.red)),
+              ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _unlocking ? null : _doUnlock,
+                  child: _unlocking
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Unlock'),
+                ),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Future<void> _doUnlock(
-    TextEditingController ctrl,
-    StateSetter setLocalState,
-    void Function(String?) setError,
-    void Function(bool) setUnlocking,
-    String? currentError,
-  ) async {
-    setLocalState(() {
-      setError(null);
-      setUnlocking(true);
+  Future<void> _doUnlock() async {
+    setState(() {
+      _unlockError = null;
+      _unlocking = true;
     });
     try {
-      final ok = await VaultService.unlock(ctrl.text);
+      final ok = await VaultService.unlock(_unlockPasswordCtrl.text);
       if (!ok) {
-        setLocalState(() {
-          setError('Incorrect password');
-          setUnlocking(false);
+        setState(() {
+          _unlockError = 'Incorrect password';
+          _unlocking = false;
         });
         return;
       }
+      _unlockPasswordCtrl.clear();
       _loadStatus();
     } catch (e) {
-      setLocalState(() {
-        setError(e.toString());
-        setUnlocking(false);
+      setState(() {
+        _unlockError = e.toString();
+        _unlocking = false;
       });
     }
   }

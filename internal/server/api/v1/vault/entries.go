@@ -264,10 +264,11 @@ var updateEntryRoute = serverutil.ApiRoute(
 
 var deleteEntryRoute = serverutil.ApiRoute(
 	"DELETE", "/vault/entries/:id", func(c *gin.Context) *serverutil.Response {
-		deps, errResp := getDeps(c)
+		deps, key, errResp := requireUnlockedVault(c)
 		if errResp != nil {
 			return errResp
 		}
+		defer vaultcrypto.ZeroKey(key)
 
 		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 		if err != nil {

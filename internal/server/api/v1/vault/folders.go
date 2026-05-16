@@ -8,6 +8,7 @@ import (
 
 	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/vaultcrypto"
 	"github.com/gin-gonic/gin"
 )
 
@@ -127,10 +128,11 @@ var updateFolderRoute = serverutil.ApiRoute(
 
 var deleteFolderRoute = serverutil.ApiRoute(
 	"DELETE", "/vault/folders/:id", func(c *gin.Context) *serverutil.Response {
-		deps, errResp := getDeps(c)
+		deps, key, errResp := requireUnlockedVault(c)
 		if errResp != nil {
 			return errResp
 		}
+		defer vaultcrypto.ZeroKey(key)
 
 		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 		if err != nil {
