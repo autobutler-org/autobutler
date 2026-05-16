@@ -179,13 +179,11 @@ func StartProxy(localPort int) error {
 		Scheme: "http",
 		Host:   fmt.Sprintf("localhost:%d", localPort),
 	}
-	rp := httputil.NewSingleHostReverseProxy(target)
-	// Rewrite the Host header so the proxied server sees the local address
-	// rather than the Tailscale IP, which would confuse virtual-host routing.
-	originalDirector := rp.Director
-	rp.Director = func(req *http.Request) {
-		originalDirector(req)
-		req.Host = target.Host
+	rp := &httputil.ReverseProxy{
+		Rewrite: func(r *httputil.ProxyRequest) {
+			r.SetURL(target)
+			r.Out.Host = target.Host
+		},
 	}
 	go func() {
 		if err := http.Serve(ln, rp); err != nil {

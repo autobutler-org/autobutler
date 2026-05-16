@@ -149,9 +149,8 @@ func ListPossibleUpdates(source *UpdateSource, allVersions bool) (*ListPossibleU
 		)
 
 		for pager.More() {
-			resp, err := pager.NextPage(context.TODO())
+			resp, err := pager.NextPage(context.Background())
 			if err != nil {
-				fmt.Printf("Failed to list blobs: %v", err)
 				return nil, fmt.Errorf("failed to list blobs: %w", err)
 			}
 
