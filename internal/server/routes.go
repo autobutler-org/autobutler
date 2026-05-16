@@ -21,6 +21,7 @@ import (
 	v1_smb "github.com/autobutler-org/autobutler/internal/server/api/v1/smb"
 	v1_storage "github.com/autobutler-org/autobutler/internal/server/api/v1/storage"
 	v1_thumbnails "github.com/autobutler-org/autobutler/internal/server/api/v1/thumbnails"
+	v1_vault "github.com/autobutler-org/autobutler/internal/server/api/v1/vault"
 	v1_version "github.com/autobutler-org/autobutler/internal/server/api/v1/version"
 	v1_webdav "github.com/autobutler-org/autobutler/internal/server/api/v1/webdav"
 	"github.com/autobutler-org/autobutler/pkg/botel/system"
@@ -58,6 +59,7 @@ func setupRouters(engine *gin.Engine, systemCollector *system.Collector) {
 		v1_storage.NewRouter(),
 		v1_thumbnails.NewRouter(),
 		v1_smb.NewRouter(),
+		v1_vault.NewRouter(),
 		v1_version.NewRouter(),
 	}
 	for _, r := range apiRouters {
