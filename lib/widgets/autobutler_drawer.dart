@@ -9,6 +9,7 @@ enum AutobutlerDrawerSection {
   sheets,
   devices,
   health,
+  vault,
   settings,
 }
 
@@ -22,6 +23,7 @@ class AutobutlerDrawer extends StatelessWidget {
     this.onTapSheets,
     this.onTapDevices,
     this.onTapHealth,
+    this.onTapVault,
     this.onTapSettings,
   });
 
@@ -32,6 +34,7 @@ class AutobutlerDrawer extends StatelessWidget {
   final FutureOr<void> Function()? onTapSheets;
   final FutureOr<void> Function()? onTapDevices;
   final FutureOr<void> Function()? onTapHealth;
+  final FutureOr<void> Function()? onTapVault;
   final FutureOr<void> Function()? onTapSettings;
 
   @override
@@ -86,6 +89,12 @@ class AutobutlerDrawer extends StatelessWidget {
             title: const Text('Health'),
             selected: activeSection == AutobutlerDrawerSection.health,
             onTap: () => onTapHealth?.call(),
+          ),
+          ListTile(
+            leading: const Icon(Icons.lock_outline),
+            title: const Text('Vault'),
+            selected: activeSection == AutobutlerDrawerSection.vault,
+            onTap: () => onTapVault?.call(),
           ),
           ListTile(
             leading: const Icon(Icons.settings_outlined),

@@ -107,6 +107,7 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
         onTapSheets: () => context.go('/sheets'),
         onTapDevices: () => context.go('/devices'),
         onTapHealth: () => context.go('/health'),
+        onTapVault: () => context.go(AppRoutes.vault),
         onTapSettings: () => context.go('/settings'),
       ),
       body: Column(
