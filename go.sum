@@ -774,5 +774,5 @@ rsc.io/quote/v3 v3.1.0/go.mod h1:yEA65RcK8LyAZtP9Kv3t0HmxON59tX3rD+tICJqUlj0=
 rsc.io/sampler v1.3.0/go.mod h1:T1hPZKmBbMNahiBKFy5HrXp6adAjACjK9JXDnKaTXpA=
 software.sslmate.com/src/go-pkcs12 v0.4.0 h1:H2g08FrTvSFKUj+D309j1DPfk5APnIdAQAB8aEykJ5k=
 software.sslmate.com/src/go-pkcs12 v0.4.0/go.mod h1:Qiz0EyvDRJjjxGyUQa2cCNZn/wMyzrRJ/qcDXOQazLI=
-tailscale.com v1.98.1 h1:dEiQ3OqCzzcjTsP4m+CQTwz7ZdtdhxPbccY7AjUWno0=
-tailscale.com v1.98.1/go.mod h1:6WwM2RnFW9gOQjdonp4c4QINm9odc1NlBQykKBncK/Q=
+tailscale.com v1.98.2 h1:HP5gt0qyLKtJoDV7PMUvPpiXjMFk4nzXMbm7JdjttMY=
+tailscale.com v1.98.2/go.mod h1:U23ZwbZlKJMNU7CScy+lCVVlece/S5n09q0nyudncBI=
