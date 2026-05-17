@@ -126,6 +126,7 @@ var changePasswordRoute = serverutil.ApiRoute(
 		// Re-unlock with the new key.
 		sessionKey := vaultcrypto.DeriveKey(req.NewPassword, newSalt, currentParams)
 		deps.VaultSession().Unlock(sessionKey, time.Duration(config.AutoLockSeconds)*time.Second)
+		vaultcrypto.ZeroKey(sessionKey)
 
 		return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(gin.H{
 			"changed":     true,
