@@ -7,6 +7,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/botel/exporters/botelsqlite"
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/autobutler/pkg/util/vaultcrypto"
 	"github.com/autobutler-org/autobutler/pkg/util/workerutil"
 )
 
@@ -16,12 +17,14 @@ type Dependencies interface {
 	HealthDatabase() *db.DatabaseRaw
 	MetricsExporter() *botelsqlite.TraceExporter
 	StorageService() *storageutil.StorageService
+	VaultSession() *vaultcrypto.VaultSession
 	Worker() workerutil.Worker
 	WithDatabase(database *db.DatabaseSqlc) Dependencies
 	WithEventBus(b *eventbus.Bus) Dependencies
 	WithHealthDatabase(healthDatabase *db.DatabaseRaw) Dependencies
 	WithMetricsExporter(exporter *botelsqlite.TraceExporter) Dependencies
 	WithStorageService(s *storageutil.StorageService) Dependencies
+	WithVaultSession(session *vaultcrypto.VaultSession) Dependencies
 	WithWorker(worker workerutil.Worker) Dependencies
 }
 
@@ -31,6 +34,7 @@ type dependencies struct {
 	healthDatabase  *db.DatabaseRaw
 	metricsExporter *botelsqlite.TraceExporter
 	storageService  *storageutil.StorageService
+	vaultSession    *vaultcrypto.VaultSession
 	worker          workerutil.Worker
 }
 
@@ -52,6 +56,7 @@ func DefaultDependencies() (Dependencies, error) {
 	}
 	deps.WithStorageService(storageutil.NewStorageService(storageutil.NewDetector())) // coverage: ignore
 	deps.WithEventBus(eventbus.New())                                                 // coverage: ignore
+	deps.WithVaultSession(vaultcrypto.NewVaultSession())                              // coverage: ignore
 	return deps, nil                                                                  // coverage: ignore - requires database connection
 }
 
@@ -103,6 +108,15 @@ func (d *dependencies) MetricsExporter() *botelsqlite.TraceExporter {
 
 func (d *dependencies) StorageService() *storageutil.StorageService {
 	return d.storageService
+}
+
+func (d *dependencies) VaultSession() *vaultcrypto.VaultSession {
+	return d.vaultSession
+}
+
+func (d *dependencies) WithVaultSession(session *vaultcrypto.VaultSession) Dependencies {
+	d.vaultSession = session
+	return d
 }
 
 func (d *dependencies) Worker() workerutil.Worker {

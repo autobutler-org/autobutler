@@ -106,6 +106,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
         onTapSheets: () => Navigator.of(context).pop(),
         onTapDevices: () => context.go('/devices'),
         onTapHealth: () => context.go('/health'),
+        onTapVault: () => context.go(AppRoutes.vault),
         onTapSettings: () => context.go('/settings'),
       ),
       body: Column(

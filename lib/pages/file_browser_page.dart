@@ -1503,6 +1503,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         onTapHealth: () {
           context.go(AppRoutes.health);
         },
+        onTapVault: () {
+          context.go(AppRoutes.vault);
+        },
         onTapSettings: () {
           context.go(AppRoutes.settings);
         },
