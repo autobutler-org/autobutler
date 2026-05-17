@@ -62,14 +62,14 @@ var setupVaultRoute = serverutil.ApiRoute(
 			Argon2Parallelism: int64(params.Parallelism),
 			VerificationBlob:  verBlob,
 			VerificationNonce: verNonce,
-			AutoLockSeconds:   900,
+			AutoLockSeconds:   300,
 		}); err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("save vault config: %w", err))
 		}
 
 		// Auto-unlock after setup.
 		unlockKey := vaultcrypto.DeriveKey(req.MasterPassword, salt, params)
-		deps.VaultSession().Unlock(unlockKey, 900*time.Second)
+		deps.VaultSession().Unlock(unlockKey, 300*time.Second)
 
 		return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(gin.H{
 			"initialized": true,

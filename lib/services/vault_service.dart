@@ -201,7 +201,7 @@ class VaultService with AuthenticatedService {
     final resp = await http.post(
       _apiUri('/vault/setup'),
       headers: _jsonHeaders,
-      body: json.encode({'password': password}),
+      body: json.encode({'masterPassword': password}),
     );
     if (resp.statusCode != 200) {
       final body = json.decode(resp.body) as Map<String, dynamic>;
@@ -213,7 +213,7 @@ class VaultService with AuthenticatedService {
     final resp = await http.post(
       _apiUri('/vault/unlock'),
       headers: _jsonHeaders,
-      body: json.encode({'password': password}),
+      body: json.encode({'masterPassword': password}),
     );
     if (resp.statusCode == 401) return false;
     if (resp.statusCode != 200) {
