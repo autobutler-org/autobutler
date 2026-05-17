@@ -574,6 +574,9 @@ class _SettingsPageState extends State<SettingsPage> {
         onTapHealth: () {
           context.go(AppRoutes.health);
         },
+        onTapVault: () {
+          context.go(AppRoutes.vault);
+        },
         onTapSettings: () {
           Navigator.of(context).pop();
         },
