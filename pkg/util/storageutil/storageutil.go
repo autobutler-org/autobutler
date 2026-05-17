@@ -87,7 +87,7 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 		return FileTypeSlideshow
 	case ".png", ".jpg", ".jpeg", ".gif", ".svg", ".heic", ".heif", ".webp", ".bmp", ".tiff", ".tif", ".avif":
 		return FileTypeImage
-	case ".mp4", ".m4v", ".webm", ".ogg", ".avi", ".mov":
+	case ".mp4", ".m4v", ".webm", ".ogg", ".ogv", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".3gp", ".3g2", ".mpeg", ".mpg", ".ts":
 		return FileTypeVideo
 	case ".epub":
 		return FileTypeEpub

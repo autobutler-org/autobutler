@@ -30,5 +30,8 @@ bool hasSupportedCirrusEditorForPath(String path) {
 
 bool hasSupportedCirrusEditorForType(String fileType) {
   final normalized = fileType.trim().toLowerCase();
-  return normalized == 'abdoc' || normalized == 'absheet';
+  return normalized == 'abdoc' ||
+      normalized == 'absheet' ||
+      normalized == 'video' ||
+      normalized == 'image';
 }
