@@ -6,6 +6,7 @@ import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
 import 'package:autobutler/pages/spreadsheet_editor_page.dart';
+import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:data_table/data_sheet.dart';
 import 'package:data_table/data_table.dart' as dt;
 import 'package:autobutler/router.dart';
@@ -892,7 +893,64 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    // Video files — open in the video player.
+    if (node.fileType == 'video') {
+      _openVideoViewer(node);
+      return;
+    }
+
+    // Image files — open in the photo detail viewer.
+    if (node.fileType == 'image') {
+      _openImageViewer(node);
+      return;
+    }
+
     _showMessage('No supported editor is available for ${node.name}');
+  }
+
+  void _openVideoViewer(CirrusFileNode node) {
+    final url = CirrusService.constructMediaUrl(
+      node.apiPath,
+      serial: node.deviceSerial,
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => VideoViewerPage(url: url, name: node.name),
+      ),
+    );
+  }
+
+  void _openImageViewer(CirrusFileNode node) {
+    final url = CirrusService.constructMediaUrl(
+      node.apiPath,
+      serial: node.deviceSerial,
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(title: Text(node.name)),
+          body: InteractiveViewer(
+            child: Center(child: Image.network(url.toString())),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openImageViewerByPath(String filePath) {
+    final url = CirrusService.constructMediaUrl(filePath);
+    final name = filePath.split('/').last;
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(title: Text(name)),
+          body: InteractiveViewer(
+            child: Center(child: Image.network(url.toString())),
+          ),
+        ),
+      ),
+    );
   }
 
   void _openDirectory(CirrusFileNode node) {
@@ -1370,6 +1428,22 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         );
         if (!mounted) return;
         return;
+
+      case 'video':
+        final url = CirrusService.constructMediaUrl(filePath);
+        final name = filePath.split('/').last;
+        if (!mounted) return;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => VideoViewerPage(url: url, name: name),
+          ),
+        );
+        return;
+
+      case 'image':
+        _openImageViewerByPath(filePath);
+        return;
+
       default:
         setState(() {
           _routeFailure = _CirrusRouteFailure(
