@@ -1,4 +1,5 @@
 import 'package:autobutler/pages/document_editor_page.dart';
+import 'package:autobutler/pages/file_viewer_page.dart';
 import 'package:autobutler/pages/docs_page.dart';
 import 'package:autobutler/pages/file_browser_page.dart';
 import 'package:autobutler/pages/health_page.dart';
@@ -20,6 +21,10 @@ import 'package:go_router/go_router.dart';
 class AppRoutes {
   static const cirrus = '/cirrus';
 
+  /// Deep-link pattern for opening a specific file in the correct viewer.
+  /// e.g. /view/photos/2024/beach.jpg resolves the type and opens the viewer.
+  static const viewFile = '/view';
+
   /// Deep-link pattern for a specific path inside the file browser.
   /// e.g. /cirrus/photos/2024 navigates directly to photos/2024.
   static const cirrusDeep = '/cirrus/:path(.*)';
@@ -34,6 +39,17 @@ class AppRoutes {
   static const setup = '/setup';
   static const login = '/login';
   static const recover = '/recover';
+
+  /// Build a deep-link URL that opens [path] in the correct viewer.
+  /// e.g. viewFile('photos/beach.jpg') → '/view/photos/beach.jpg'
+  /// Device serial is passed as a query param when non-empty.
+  static String viewFilePath(String path, {String? serial}) {
+    final clean = path.replaceAll(RegExp(r'^/+'), '');
+    final base = '$viewFile/$clean';
+    return (serial != null && serial.isNotEmpty)
+        ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
+        : base;
+  }
 
   /// Build a deep-link URL for a given cirrus path.
   /// e.g. cirrusPath('photos/2024') → '/cirrus/photos/2024'
@@ -78,6 +94,23 @@ final router = GoRouter(
           builder: (context, state) {
             final raw = state.pathParameters['path'] ?? '';
             return FileBrowserPage(initialPath: Uri.decodeComponent(raw));
+          },
+        ),
+      ],
+    ),
+    GoRoute(
+      path: AppRoutes.viewFile,
+      builder: (context, state) => const FileViewerPage(filePath: ''),
+      routes: [
+        GoRoute(
+          // Matches /view/<anything including slashes> — resolves file type and
+          // opens the appropriate viewer (image, video, doc, sheet, etc.).
+          path: ':path(.*)',
+          builder: (context, state) {
+            final raw = state.pathParameters['path'] ?? '';
+            final filePath = Uri.decodeComponent(raw);
+            final serial = state.uri.queryParameters['serial'] ?? '';
+            return FileViewerPage(filePath: filePath, deviceSerial: serial);
           },
         ),
       ],
