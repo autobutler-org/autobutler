@@ -25,5 +25,6 @@ func (r *router) Routes() []*serverutil.Route {
 		deleteFolderRoute,
 		generatePasswordRoute,
 		changePasswordRoute,
+		importBackupRoute,
 	}
 }
