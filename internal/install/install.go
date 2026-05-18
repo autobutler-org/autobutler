@@ -72,7 +72,7 @@ func createServiceDataDir() error {
 }
 
 func installSudoersRule() error {
-	mountsDir := filepath.Join(serviceDataDir, "data", "mounts")
+	mountsDir := filepath.Join(serviceDataDir, "mounts")
 	content := fmt.Sprintf(
 		"%s ALL=(root) NOPASSWD: /bin/mount * %s/*, /bin/umount %s/*\n",
 		serviceUserName, mountsDir, mountsDir,
