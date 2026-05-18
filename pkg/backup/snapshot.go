@@ -10,15 +10,23 @@ import (
 	"strings"
 	"time"
 
+	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 )
+
+type VaultExportParams struct {
+	Queries          *db.Queries
+	LiveKey          []byte
+	RecoveryPassword string
+}
 
 type SnapshotBackupParams struct {
 	TargetDeviceSerial string
 	Job                *BackupJob
 	Store              BackupJobStore
 	EventBus           *eventbus.Bus
+	Vault              *VaultExportParams
 }
 
 func SnapshotBackup(
@@ -148,7 +156,14 @@ func SnapshotBackup(
 		}
 	}
 
-	// Phase 3: complete.
+	// Phase 3: vault export (if requested).
+	if params.Vault != nil {
+		if _, err := ExportVault(ctx, params.Vault.Queries, params.Vault.LiveKey, params.Vault.RecoveryPassword, target.CirrusDir); err != nil {
+			return failJob(ctx, params, fmt.Errorf("vault export: %w", err))
+		}
+	}
+
+	// Phase 4: complete.
 	completedAt := time.Now()
 	job.Status = BackupStatusCompleted
 	job.Progress = 1.0

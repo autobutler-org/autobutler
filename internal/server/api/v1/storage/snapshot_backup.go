@@ -2,13 +2,17 @@ package v1_storage
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 
 	"github.com/autobutler-org/autobutler/pkg/backup"
+	"github.com/autobutler-org/autobutler/pkg/util/authutil"
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/vaultcrypto"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -35,6 +39,9 @@ func startSnapshotBackup(c *gin.Context) *serverutil.Response {
 
 	var req struct {
 		TargetDeviceSerial string `json:"targetDeviceSerial" binding:"required"`
+		Username           string `json:"username"`
+		Password           string `json:"password"`
+		RecoveryPassword   string `json:"recoveryPassword"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return serverutil.BadRequest(fmt.Errorf("invalid request body: %w", err))
@@ -72,6 +79,47 @@ func startSnapshotBackup(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(fmt.Errorf("failed to gather sources: %w", err))
 	}
 
+	// If a recovery password is provided, validate credentials and prepare vault export.
+	var vaultParams *backup.VaultExportParams
+	if req.RecoveryPassword != "" {
+		if req.Username == "" || req.Password == "" {
+			return serverutil.BadRequest(fmt.Errorf("username and password required for vault backup"))
+		}
+		if len(req.RecoveryPassword) < 8 {
+			return serverutil.BadRequest(fmt.Errorf("recovery password must be at least 8 characters"))
+		}
+
+		if _, err := authutil.ValidateBasicAuth(ctx, deps.Database().Queries, req.Username, req.Password); err != nil {
+			return serverutil.Unauthorized(fmt.Errorf("invalid credentials"))
+		}
+
+		config, err := deps.Database().Queries.GetVaultConfig(ctx)
+		if errors.Is(err, sql.ErrNoRows) {
+			return serverutil.BadRequest(fmt.Errorf("vault is not initialized"))
+		}
+		if err != nil {
+			return serverutil.InternalServerError(fmt.Errorf("get vault config: %w", err))
+		}
+
+		params := vaultcrypto.Argon2Params{
+			Memory:      uint32(config.Argon2Memory),
+			Iterations:  uint32(config.Argon2Iterations),
+			Parallelism: uint8(config.Argon2Parallelism),
+		}
+		liveKey := vaultcrypto.DeriveKey(req.Password, config.Salt, params)
+
+		if !vaultcrypto.CheckVerificationBlob(liveKey, config.VerificationBlob, config.VerificationNonce) {
+			vaultcrypto.ZeroKey(liveKey)
+			return serverutil.Unauthorized(fmt.Errorf("master password does not match vault"))
+		}
+
+		vaultParams = &backup.VaultExportParams{
+			Queries:          deps.Database().Queries,
+			LiveKey:          liveKey,
+			RecoveryPassword: req.RecoveryPassword,
+		}
+	}
+
 	job := &backup.BackupJob{
 		ID:                 uuid.New().String(),
 		Status:             backup.BackupStatusPending,
@@ -82,11 +130,15 @@ func startSnapshotBackup(c *gin.Context) *serverutil.Response {
 	}
 
 	go func() {
+		if vaultParams != nil {
+			defer vaultcrypto.ZeroKey(vaultParams.LiveKey)
+		}
 		if err := backup.SnapshotBackup(context.Background(), backup.SnapshotBackupParams{
 			TargetDeviceSerial: req.TargetDeviceSerial,
 			Job:                job,
 			Store:              snapshotStore,
 			EventBus:           deps.EventBus(),
+			Vault:              vaultParams,
 		}, sources, targetDev); err != nil {
 			log.Printf("snapshot backup failed: %v", err)
 		}
