@@ -10,6 +10,7 @@ import (
 
 	docs "github.com/autobutler-org/autobutler/docs/swagger"
 	"github.com/autobutler-org/autobutler/internal/server/middleware"
+	"github.com/autobutler-org/autobutler/pkg/backup"
 	"github.com/autobutler-org/autobutler/pkg/botel"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/favoritesutil"
@@ -24,21 +25,27 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func setupServices(deps deputil.Dependencies) error {
+func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 	if err := storageutil.SetupCirrusDir(); err != nil {
-		return fmt.Errorf("failed to setup cirrus directory: %w", err)
+		return nil, fmt.Errorf("failed to setup cirrus directory: %w", err)
 	}
 	go deps.Worker().Process()
 	go deps.Worker().LogErrors()
-	// Ensure system smart albums exist on every startup so they are always
-	// present in the sidebar even when empty.
 	if _, err := favoritesutil.EnsureFavoritesAlbum(
 		context.Background(),
 		deps.Database().Queries,
 	); err != nil {
 		log.Printf("[server] warning: could not ensure Favorites album: %v", err)
 	}
-	return nil
+
+	syncWorker := backup.NewSyncWorker(backup.SyncWorkerParams{
+		Bus:     deps.EventBus(),
+		Storage: deps.StorageService(),
+		Queries: deps.Database().Queries,
+	})
+	syncWorker.Start()
+
+	return syncWorker, nil
 }
 
 func setupSwagger(router *gin.Engine) {
@@ -73,7 +80,8 @@ func StartServer(deps deputil.Dependencies) error {
 	}()
 
 	deps.WithWorker(workerutil.NewWorker(deps.StorageService()))
-	if err := setupServices(deps); err != nil {
+	syncWorker, err := setupServices(deps)
+	if err != nil {
 		return fmt.Errorf("failed to setup services: %w", err)
 	}
 
@@ -94,6 +102,7 @@ func StartServer(deps deputil.Dependencies) error {
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		<-quit
 		log.Println("[server] shutting down...")
+		syncWorker.Stop()
 		remoteutil.Stop()
 		if err := tp.Shutdown(context.Background()); err != nil {
 			log.Printf("Error shutting down tracer provider: %v", err)
