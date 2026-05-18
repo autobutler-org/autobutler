@@ -90,21 +90,8 @@ final router = GoRouter(
       routes: [
         GoRoute(
           // Matches /cirrus/<anything>, including slashes.
-          path: ':path(.*)',
-          builder: (context, state) {
-            final raw = state.pathParameters['path'] ?? '';
-            return FileBrowserPage(initialPath: Uri.decodeComponent(raw));
-          },
-        ),
-      ],
-    ),
-    GoRoute(
-      path: AppRoutes.viewFile,
-      builder: (context, state) => const FileViewerPage(filePath: ''),
-      routes: [
-        GoRoute(
-          // Matches /view/<anything including slashes> — resolves file type and
-          // opens the appropriate viewer (image, video, doc, sheet, etc.).
+          // Resolves to FileViewerPage which stats the path and opens the
+          // correct viewer for files, or FileBrowserPage for directories.
           path: ':path(.*)',
           builder: (context, state) {
             final raw = state.pathParameters['path'] ?? '';
@@ -114,6 +101,18 @@ final router = GoRouter(
           },
         ),
       ],
+    ),
+    GoRoute(
+      // /view/:path redirects to /cirrus/:path for backward compatibility.
+      path: '${AppRoutes.viewFile}/:path(.*)',
+      redirect: (context, state) {
+        final raw = state.pathParameters['path'] ?? '';
+        final serial = state.uri.queryParameters['serial'];
+        final base = AppRoutes.cirrusPath(Uri.decodeComponent(raw));
+        return serial != null && serial.isNotEmpty
+            ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
+            : base;
+      },
     ),
     GoRoute(
       path: AppRoutes.photos,
