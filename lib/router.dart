@@ -1,6 +1,7 @@
 import 'package:autobutler/pages/document_editor_page.dart';
-import 'package:autobutler/pages/terms_page.dart';
+import 'package:autobutler/pages/file_viewer_page.dart';
 import 'package:autobutler/pages/plaintext_editor_page.dart';
+import 'package:autobutler/pages/terms_page.dart';
 import 'package:autobutler/pages/docs_page.dart';
 import 'package:autobutler/pages/file_browser_page.dart';
 import 'package:autobutler/pages/health_page.dart';
@@ -49,6 +50,17 @@ class AppRoutes {
   static String plaintextEditorPath(String path, {String? serial}) {
     final clean = path.replaceAll(RegExp(r'^/+'), '');
     final base = '$plaintextEditor/$clean';
+    return (serial != null && serial.isNotEmpty)
+        ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
+        : base;
+  }
+
+  /// Build a deep-link URL that opens [path] in the correct viewer.
+  /// e.g. viewFile('photos/beach.jpg') → '/view/photos/beach.jpg'
+  /// Device serial is passed as a query param when non-empty.
+  static String viewFilePath(String path, {String? serial}) {
+    final clean = path.replaceAll(RegExp(r'^/+'), '');
+    final base = '$viewFile/$clean';
     return (serial != null && serial.isNotEmpty)
         ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
         : base;
@@ -124,16 +136,21 @@ final router = GoRouter(
       ],
     ),
     GoRoute(
-      // /view/:path redirects to /cirrus/:path for backward compatibility.
-      path: '${AppRoutes.viewFile}/:path(.*)',
-      redirect: (context, state) {
-        final raw = state.pathParameters['path'] ?? '';
-        final serial = state.uri.queryParameters['serial'];
-        final base = AppRoutes.cirrusPath(Uri.decodeComponent(raw));
-        return serial != null && serial.isNotEmpty
-            ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
-            : base;
-      },
+      path: AppRoutes.viewFile,
+      builder: (context, state) => const FileViewerPage(filePath: ''),
+      routes: [
+        GoRoute(
+          // Matches /view/<anything including slashes> — resolves file type and
+          // opens the appropriate viewer (image, video, doc, sheet, etc.).
+          path: ':path(.*)',
+          builder: (context, state) {
+            final raw = state.pathParameters['path'] ?? '';
+            final filePath = Uri.decodeComponent(raw);
+            final serial = state.uri.queryParameters['serial'] ?? '';
+            return FileViewerPage(filePath: filePath, deviceSerial: serial);
+          },
+        ),
+      ],
     ),
     GoRoute(
       path: AppRoutes.photos,
