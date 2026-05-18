@@ -27,9 +27,10 @@ var authRateLimiter = ratelimitutil.New()
 
 // authRateLimitedPaths are the API paths that require rate limiting.
 var authRateLimitedPaths = map[string]bool{
-	"/api/v1/auth/login":   true,
-	"/api/v1/auth/setup":   true,
-	"/api/v1/auth/recover": true,
+	"/api/v1/auth/login":           true,
+	"/api/v1/auth/setup":           true,
+	"/api/v1/auth/recover":         true,
+	"/api/v1/storage/devices/role": true,
 }
 
 // rateLimit is a middleware that enforces per-IP rate limiting on auth endpoints.

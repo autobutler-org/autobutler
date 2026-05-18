@@ -19,9 +19,15 @@ type ConnectedDevice struct {
 }
 
 type DeviceName struct {
-	DevicePath  string
-	DisplayName string
-	UpdatedAt   time.Time
+	DeviceSerial string
+	DisplayName  string
+	UpdatedAt    time.Time
+}
+
+type DeviceRole struct {
+	DeviceSerial string
+	Role         string
+	UpdatedAt    time.Time
 }
 
 type PhotoAlbum struct {
