@@ -192,10 +192,52 @@ func gatherSourceDevices(ctx context.Context, deps deputil.Dependencies, targetS
 	return sources, nil
 }
 
+// verifySnapshotBackup godoc
+// @Summary Verify integrity of a snapshot backup
+// @Description Walks all files on the backup device and checks against the manifest
+// @Tags storage
+// @Accept json
+// @Produce json
+// @Param body body object true "{deviceSerial: string, full: bool}"
+// @Success 200 {object} object
+// @Failure 400 {object} serverutil.Response
+// @Failure 500 {object} serverutil.Response
+// @Router /storage/devices/snapshot-backup/verify [post]
+func verifySnapshotBackup(c *gin.Context) *serverutil.Response {
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		return serverutil.InternalServerError(nil)
+	}
+
+	var req struct {
+		DeviceSerial string `json:"deviceSerial" binding:"required"`
+		Full         bool   `json:"full"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		return serverutil.BadRequest(fmt.Errorf("invalid request: %w", err))
+	}
+
+	dev, err := deps.StorageService().FindManagedDeviceBySerial(req.DeviceSerial)
+	if err != nil || dev == nil {
+		return serverutil.BadRequest(fmt.Errorf("device not found"))
+	}
+
+	result, err := backup.VerifyBackup(dev.CirrusDir, req.Full)
+	if err != nil {
+		return serverutil.BadRequest(fmt.Errorf("verify failed: %w", err))
+	}
+
+	return serverutil.Ok().WithData(result)
+}
+
 var startSnapshotBackupRoute = serverutil.ApiRoute(
 	"POST", "/storage/devices/snapshot-backup", startSnapshotBackup,
 )
 
 var getSnapshotBackupStatusRoute = serverutil.ApiRoute(
 	"GET", "/storage/devices/snapshot-backup/status/:jobId", getSnapshotBackupStatus,
+)
+
+var verifySnapshotBackupRoute = serverutil.ApiRoute(
+	"POST", "/storage/devices/snapshot-backup/verify", verifySnapshotBackup,
 )

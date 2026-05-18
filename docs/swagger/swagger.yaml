@@ -1955,6 +1955,36 @@ paths:
       summary: Get snapshot backup job status
       tags:
       - storage
+  /storage/devices/snapshot-backup/verify:
+    post:
+      consumes:
+      - application/json
+      description: Walks all files on the backup device and checks against the manifest
+      parameters:
+      - description: '{deviceSerial: string, full: bool}'
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Verify integrity of a snapshot backup
+      tags:
+      - storage
   /storage/devices/status:
     get:
       description: Returns statuses for all known storage devices

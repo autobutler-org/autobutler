@@ -2279,6 +2279,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/storage/devices/snapshot-backup/verify": {
+            "post": {
+                "description": "Walks all files on the backup device and checks against the manifest",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "storage"
+                ],
+                "summary": "Verify integrity of a snapshot backup",
+                "parameters": [
+                    {
+                        "description": "{deviceSerial: string, full: bool}",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/storage/devices/status": {
             "get": {
                 "description": "Returns statuses for all known storage devices",

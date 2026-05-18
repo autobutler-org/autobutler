@@ -163,7 +163,16 @@ func SnapshotBackup(
 		}
 	}
 
-	// Phase 4: complete.
+	// Phase 4: generate integrity manifest.
+	manifest, err := GenerateManifest(target.CirrusDir)
+	if err != nil {
+		return failJob(ctx, params, fmt.Errorf("generate manifest: %w", err))
+	}
+	if err := WriteManifest(manifest, target.CirrusDir); err != nil {
+		return failJob(ctx, params, fmt.Errorf("write manifest: %w", err))
+	}
+
+	// Phase 5: complete.
 	completedAt := time.Now()
 	job.Status = BackupStatusCompleted
 	job.Progress = 1.0
