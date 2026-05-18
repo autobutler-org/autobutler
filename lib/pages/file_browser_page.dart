@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:autobutler/controllers/file_browser_cache.dart';
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
+import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/spreadsheet_editor_page.dart';
+import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:data_table/data_sheet.dart';
 import 'package:data_table/data_table.dart' as dt;
 import 'package:autobutler/router.dart';
@@ -19,6 +22,9 @@ import 'package:autobutler/utils/file_browser_dialog_utils.dart';
 import 'package:autobutler/utils/file_browser_drag_config.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/utils/safe_set_state_mixin.dart';
+import 'package:autobutler/utils/temp_file_stub.dart'
+    if (dart.library.io) 'package:autobutler/utils/temp_file_io.dart'
+    as temp_file;
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/core/empty_state_widget.dart';
 import 'package:autobutler/widgets/device_upload_picker.dart';
@@ -30,6 +36,7 @@ import 'package:autobutler/widgets/file_browser/new_file_dialog.dart';
 import 'package:autobutler/widgets/file_browser/recent_files_section.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -892,7 +899,110 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
-    _showMessage('No supported editor is available for ${node.name}');
+    // ── Video files (#1181) ─────────────────────────────────────────────────
+    if (node.fileType == 'video') {
+      final url = CirrusService.constructMediaUrl(
+        node.apiPath,
+        serial: node.deviceSerial.isEmpty ? null : node.deviceSerial,
+      );
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => VideoViewerPage(url: url, name: node.name),
+        ),
+      );
+      return;
+    }
+
+    // ── Image files (#1183) ─────────────────────────────────────────────────
+    if (node.fileType == 'image') {
+      Uint8List? bytes;
+      try {
+        bytes = await CirrusService.downloadFileBytes(
+          node.apiPath,
+          serial: node.deviceSerial.isEmpty ? null : node.deviceSerial,
+        );
+      } catch (e) {
+        if (!mounted) return;
+        _showMessage('Failed to load image: $e');
+        return;
+      }
+      if (bytes == null || !mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ImageViewerPage(
+            bytes: bytes!,
+            name: node.name,
+            relPath: node.apiPath,
+            serial: node.deviceSerial.isEmpty ? null : node.deviceSerial,
+          ),
+        ),
+      );
+      return;
+    }
+
+    // ── PDF / document files (#1184) ────────────────────────────────────────
+    if (node.fileType == 'pdf' || node.fileType == 'document' ||
+        node.fileType == 'docx' || node.fileType == 'epub' ||
+        node.fileType == 'slideshow') {
+      await _openWithSystemApp(node);
+      return;
+    }
+
+    // ── Audio files (#1185) ─────────────────────────────────────────────────
+    if (node.fileType == 'audio') {
+      // Audio can be streamed via VideoViewerPage (video_player handles audio).
+      final url = CirrusService.constructMediaUrl(
+        node.apiPath,
+        serial: node.deviceSerial.isEmpty ? null : node.deviceSerial,
+      );
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => VideoViewerPage(url: url, name: node.name),
+        ),
+      );
+      return;
+    }
+
+    // ── Generic fallback (#1186, #1187, #1188) — open with system app ───────
+    await _openWithSystemApp(node);
+  }
+
+  /// Download [node] to a temp file and hand it off to the OS via open_filex.
+  Future<void> _openWithSystemApp(CirrusFileNode node) async {
+    if (kIsWeb) {
+      _showMessage('Cannot open ${node.name} in browser context');
+      return;
+    }
+    Uint8List? bytes;
+    try {
+      bytes = await CirrusService.downloadFileBytes(
+        node.apiPath,
+        serial: node.deviceSerial.isEmpty ? null : node.deviceSerial,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage('Failed to download ${node.name}: $e');
+      return;
+    }
+    if (bytes == null || !mounted) return;
+
+    // Write to a temp file so open_filex can open it.
+    try {
+      final tmpPath = await temp_file.writeTempFile(bytes, node.name);
+      if (tmpPath == null) {
+        if (mounted) _showMessage('Cannot open ${node.name} on this platform');
+        return;
+      }
+      final result = await OpenFilex.open(tmpPath);
+      if (result.type != ResultType.done && mounted) {
+        _showMessage('Could not open ${node.name}: ${result.message}');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage('Failed to open ${node.name}: $e');
+    }
   }
 
   void _openDirectory(CirrusFileNode node) {
