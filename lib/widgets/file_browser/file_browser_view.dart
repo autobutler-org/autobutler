@@ -473,32 +473,46 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                if (_isImageFile(item))
+                                if (_hasThumbnail(item))
                                   SizedBox(
                                     height: 96,
                                     width: double.infinity,
-                                    child: CachedNetworkImage(
-                                      imageUrl:
-                                          CirrusService.constructThumbnailUrl(
-                                            item.apiPath,
-                                            serial: item.deviceSerial,
-                                          ).toString(),
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) =>
-                                          Shimmer.fromColors(
-                                            baseColor: Colors.grey[800]!,
-                                            highlightColor: Colors.grey[700]!,
-                                            child: Container(
-                                              color: Colors.grey[800],
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        CachedNetworkImage(
+                                          imageUrl:
+                                              CirrusService.constructThumbnailUrl(
+                                                item.apiPath,
+                                                serial: item.deviceSerial,
+                                              ).toString(),
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) =>
+                                              Shimmer.fromColors(
+                                                baseColor: Colors.grey[800]!,
+                                                highlightColor:
+                                                    Colors.grey[700]!,
+                                                child: Container(
+                                                  color: Colors.grey[800],
+                                                ),
+                                              ),
+                                          errorWidget: (context, url, error) =>
+                                              Center(
+                                                child: AutobutlerFileIcon(
+                                                  node: item,
+                                                  size: 48,
+                                                ),
+                                              ),
+                                        ),
+                                        if (_isVideoFile(item))
+                                          const Center(
+                                            child: Icon(
+                                              Icons.play_circle_outline,
+                                              color: Colors.white,
+                                              size: 36,
                                             ),
                                           ),
-                                      errorWidget: (context, url, error) =>
-                                          Center(
-                                            child: AutobutlerFileIcon(
-                                              node: item,
-                                              size: 48,
-                                            ),
-                                          ),
+                                      ],
                                     ),
                                   )
                                 else
@@ -662,8 +676,32 @@ class _FileBrowserViewState extends State<FileBrowserView> {
         lower.endsWith('.heif');
   }
 
+  static bool _hasThumbnail(CirrusFileNode node) {
+    return _isImageFile(node) || _isVideoFile(node);
+  }
+
+  static bool _isVideoFile(CirrusFileNode node) {
+    if (node.isDir) return false;
+    final lower = node.name.toLowerCase();
+    return lower.endsWith('.mp4') ||
+        lower.endsWith('.m4v') ||
+        lower.endsWith('.webm') ||
+        lower.endsWith('.ogg') ||
+        lower.endsWith('.ogv') ||
+        lower.endsWith('.avi') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.mkv') ||
+        lower.endsWith('.wmv') ||
+        lower.endsWith('.flv') ||
+        lower.endsWith('.3gp') ||
+        lower.endsWith('.3g2') ||
+        lower.endsWith('.mpeg') ||
+        lower.endsWith('.mpg') ||
+        lower.endsWith('.ts');
+  }
+
   Widget _buildListLeading(CirrusFileNode item) {
-    if (!_isImageFile(item)) {
+    if (!_hasThumbnail(item)) {
       return AutobutlerFileIcon(node: item);
     }
 
@@ -672,19 +710,33 @@ class _FileBrowserViewState extends State<FileBrowserView> {
       child: SizedBox(
         width: 40,
         height: 40,
-        child: CachedNetworkImage(
-          imageUrl: CirrusService.constructThumbnailUrl(
-            item.apiPath,
-            serial: item.deviceSerial,
-            size: 'sm',
-          ).toString(),
-          fit: BoxFit.cover,
-          placeholder: (context, url) => Shimmer.fromColors(
-            baseColor: Colors.grey[800]!,
-            highlightColor: Colors.grey[700]!,
-            child: Container(color: Colors.grey[800]),
-          ),
-          errorWidget: (context, url, error) => AutobutlerFileIcon(node: item),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            CachedNetworkImage(
+              imageUrl: CirrusService.constructThumbnailUrl(
+                item.apiPath,
+                serial: item.deviceSerial,
+                size: 'sm',
+              ).toString(),
+              fit: BoxFit.cover,
+              placeholder: (context, url) => Shimmer.fromColors(
+                baseColor: Colors.grey[800]!,
+                highlightColor: Colors.grey[700]!,
+                child: Container(color: Colors.grey[800]),
+              ),
+              errorWidget: (context, url, error) =>
+                  AutobutlerFileIcon(node: item),
+            ),
+            if (_isVideoFile(item))
+              const Center(
+                child: Icon(
+                  Icons.play_circle_outline,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+          ],
         ),
       ),
     );
