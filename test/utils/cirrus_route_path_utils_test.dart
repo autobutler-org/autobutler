@@ -35,11 +35,15 @@ void main() {
         hasSupportedCirrusEditorForPath('/Documents/budget.absheet'),
         isTrue,
       );
-      expect(hasSupportedCirrusEditorForPath('/Documents/photo.jpg'), isFalse);
+      expect(hasSupportedCirrusEditorForPath('/Documents/photo.jpg'), isTrue);
+      expect(hasSupportedCirrusEditorForPath('/Documents/clip.mp4'), isTrue);
+      expect(hasSupportedCirrusEditorForPath('/Documents/notes.txt'), isFalse);
 
       expect(hasSupportedCirrusEditorForType('abdoc'), isTrue);
       expect(hasSupportedCirrusEditorForType('absheet'), isTrue);
-      expect(hasSupportedCirrusEditorForType('image'), isFalse);
+      expect(hasSupportedCirrusEditorForType('image'), isTrue);
+      expect(hasSupportedCirrusEditorForType('video'), isTrue);
+      expect(hasSupportedCirrusEditorForType('generic'), isFalse);
     });
   });
 }
