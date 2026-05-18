@@ -16,5 +16,8 @@ func (r *router) Routes() []*serverutil.Route {
 		backupToDeviceRoute,
 		listDeviceStatusesRoute,
 		renameDeviceRoute,
+		setDeviceRoleRoute,
+		startSnapshotBackupRoute,
+		getSnapshotBackupStatusRoute,
 	}
 }
