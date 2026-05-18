@@ -25,7 +25,39 @@ bool isLikelyFilePath(String path) {
 
 bool hasSupportedCirrusEditorForPath(String path) {
   final normalized = path.trim().toLowerCase();
-  return normalized.endsWith('.abdoc') || normalized.endsWith('.absheet');
+  if (normalized.endsWith('.abdoc') || normalized.endsWith('.absheet')) {
+    return true;
+  }
+  const imageExts = [
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.gif',
+    '.webp',
+    '.heic',
+    '.heif',
+  ];
+  const videoExts = [
+    '.mp4',
+    '.m4v',
+    '.webm',
+    '.ogg',
+    '.ogv',
+    '.avi',
+    '.mov',
+    '.mkv',
+    '.wmv',
+    '.flv',
+    '.3gp',
+    '.3g2',
+    '.mpeg',
+    '.mpg',
+    '.ts',
+  ];
+  for (final ext in [...imageExts, ...videoExts]) {
+    if (normalized.endsWith(ext)) return true;
+  }
+  return false;
 }
 
 bool hasSupportedCirrusEditorForType(String fileType) {
