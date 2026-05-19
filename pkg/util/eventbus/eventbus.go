@@ -14,6 +14,10 @@ const (
 	EventBackupProgress  EventKind = "backup_progress"
 	EventBackupCompleted EventKind = "backup_completed"
 	EventBackupFailed    EventKind = "backup_failed"
+
+	EventVaultDeviceDisconnected EventKind = "vault_device_disconnected"
+	EventVaultDeviceReconnected  EventKind = "vault_device_reconnected"
+	EventVaultStorageChanged     EventKind = "vault_storage_changed"
 )
 
 type Event struct {

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/storage_service.dart';
+import 'package:autobutler/services/vault_service.dart';
 import 'package:autobutler/utils/auto_refresh_mixin.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
@@ -27,6 +28,7 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
   String? _activeBackupJobId;
   BackupJobStatus? _backupStatus;
   Timer? _pollTimer;
+  String _vaultDeviceSerial = '';
 
   @override
   Future<void> refresh() async {
@@ -38,10 +40,16 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
       return;
     }
     try {
-      final devices = await StorageService.listDevices();
+      final results = await Future.wait([
+        StorageService.listDevices(),
+        VaultService.getStorageLocation()
+            .then((loc) => loc.deviceSerial)
+            .catchError((_) => ''),
+      ]);
       if (!mounted) return;
       setState(() {
-        _devices = devices;
+        _devices = results[0] as List<StorageDevice>;
+        _vaultDeviceSerial = results[1] as String;
         _error = null;
       });
     } catch (e) {
@@ -361,10 +369,15 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
     }
 
     for (final device in _devices!) {
+      final isVaultDevice =
+          (_vaultDeviceSerial.isEmpty && device.isInternal) ||
+          (_vaultDeviceSerial.isNotEmpty &&
+              device.serial == _vaultDeviceSerial);
       widgets.add(
         _DeviceCard(
           device: device,
           isMounting: _mounting.contains(device.serial),
+          isVaultDevice: isVaultDevice,
           onMount: device.serial.isNotEmpty ? () => _mountDevice(device) : null,
           onSetRole: device.serial.isNotEmpty
               ? () => _showRoleDialog(device)
@@ -396,6 +409,7 @@ class _DeviceCard extends StatelessWidget {
   const _DeviceCard({
     required this.device,
     required this.isMounting,
+    this.isVaultDevice = false,
     this.onMount,
     this.onSetRole,
     this.onBackup,
@@ -405,6 +419,7 @@ class _DeviceCard extends StatelessWidget {
 
   final StorageDevice device;
   final bool isMounting;
+  final bool isVaultDevice;
   final VoidCallback? onMount;
   final VoidCallback? onSetRole;
   final VoidCallback? onBackup;
@@ -450,6 +465,7 @@ class _DeviceCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                if (isVaultDevice) _vaultBadge(),
                 if (device.role != 'unassigned') _roleBadge(device.role),
                 if (device.role == 'unassigned' && device.isEnabled)
                   Container(
@@ -585,6 +601,25 @@ class _DeviceCard extends StatelessWidget {
 
   static String _capitalize(String s) =>
       s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+
+  static Widget _vaultBadge() {
+    return Container(
+      margin: const EdgeInsets.only(right: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.purple.shade100,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        'Vault',
+        style: TextStyle(
+          fontSize: 12,
+          color: Colors.purple.shade800,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
 
   static Widget _roleBadge(String role) {
     final Color bg;

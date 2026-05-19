@@ -12,6 +12,7 @@ type VaultSession struct {
 	key        []byte
 	unlockedAt time.Time
 	timeout    time.Duration
+	lockReason string
 }
 
 // NewVaultSession creates a new locked vault session.
@@ -44,6 +45,26 @@ func (s *VaultSession) Lock() {
 		ZeroKey(s.key)
 		s.key = nil
 	}
+	s.lockReason = ""
+}
+
+// LockWithReason zeroes the key and records why the vault was locked.
+func (s *VaultSession) LockWithReason(reason string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.key != nil {
+		ZeroKey(s.key)
+		s.key = nil
+	}
+	s.lockReason = reason
+}
+
+// LockReason returns the reason the vault was locked, or "" if none.
+func (s *VaultSession) LockReason() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.lockReason
 }
 
 // Key returns a copy of the encryption key if the vault is unlocked and has not timed out.

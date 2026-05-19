@@ -6,13 +6,17 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
+	"time"
 
 	docs "github.com/autobutler-org/autobutler/docs/swagger"
+	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/internal/server/middleware"
 	"github.com/autobutler-org/autobutler/pkg/backup"
 	"github.com/autobutler-org/autobutler/pkg/botel"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/favoritesutil"
 	"github.com/autobutler-org/autobutler/pkg/util/remoteutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
@@ -45,7 +49,72 @@ func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 	})
 	syncWorker.Start()
 
+	initExternalVault(deps)
+	go vaultDeviceMonitor(deps)
+
 	return syncWorker, nil
+}
+
+func initExternalVault(deps deputil.Dependencies) {
+	serial, err := deps.Database().Queries.GetVaultLocation(context.Background())
+	if err != nil || serial == "" {
+		return
+	}
+	device, err := deps.StorageService().FindManagedDeviceBySerial(serial)
+	if err != nil || device == nil {
+		log.Printf("[vault] external vault device %s not found at startup — vault unavailable until reconnected", serial)
+		return
+	}
+	dbPath := filepath.Join(device.DataDir, "vault.db")
+	vaultDB, err := db.ConnectToVaultDatabase(dbPath)
+	if err != nil {
+		log.Printf("[vault] failed to open external vault db: %v", err)
+		return
+	}
+	deps.SetVaultDB(vaultDB)
+	log.Printf("[vault] external vault loaded from device %s", serial)
+}
+
+func vaultDeviceMonitor(deps deputil.Dependencies) {
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	wasConnected := true
+
+	for range ticker.C {
+		serial, err := deps.Database().Queries.GetVaultLocation(context.Background())
+		if err != nil || serial == "" {
+			continue
+		}
+
+		device, err := deps.StorageService().FindManagedDeviceBySerial(serial)
+		connected := err == nil && device != nil
+
+		if wasConnected && !connected {
+			log.Printf("[vault] external device %s disconnected — locking vault", serial)
+			deps.VaultSession().LockWithReason("storage device disconnected")
+			deps.ClearVaultDB()
+			deps.EventBus().Publish(eventbus.Event{
+				Kind: eventbus.EventVaultDeviceDisconnected,
+				Data: map[string]string{"serial": serial},
+			})
+			wasConnected = false
+		} else if !wasConnected && connected {
+			log.Printf("[vault] external device %s reconnected — vault available to unlock", serial)
+			dbPath := filepath.Join(device.DataDir, "vault.db")
+			vaultDB, err := db.ConnectToVaultDatabase(dbPath)
+			if err != nil {
+				log.Printf("[vault] failed to reopen vault db: %v", err)
+				continue
+			}
+			deps.SetVaultDB(vaultDB)
+			deps.EventBus().Publish(eventbus.Event{
+				Kind: eventbus.EventVaultDeviceReconnected,
+				Data: map[string]string{"serial": serial},
+			})
+			wasConnected = true
+		}
+	}
 }
 
 func setupSwagger(router *gin.Engine) {

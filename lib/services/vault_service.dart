@@ -10,18 +10,51 @@ class VaultStatus {
   final bool initialized;
   final bool locked;
   final int autoLockSeconds;
+  final String storageDevice;
+  final bool deviceConnected;
+  final String lockReason;
 
   const VaultStatus({
     required this.initialized,
     required this.locked,
     required this.autoLockSeconds,
+    this.storageDevice = 'internal',
+    this.deviceConnected = true,
+    this.lockReason = '',
   });
+
+  bool get isExternal => storageDevice != 'internal';
 
   factory VaultStatus.fromJson(Map<String, dynamic> json) => VaultStatus(
     initialized: json['initialized'] as bool? ?? false,
     locked: json['locked'] as bool? ?? true,
     autoLockSeconds: json['autoLockSeconds'] as int? ?? 300,
+    storageDevice: json['storageDevice'] as String? ?? 'internal',
+    deviceConnected: json['deviceConnected'] as bool? ?? true,
+    lockReason: json['lockReason'] as String? ?? '',
   );
+}
+
+class VaultStorageLocation {
+  final String deviceSerial;
+  final bool isExternal;
+  final bool deviceConnected;
+  final String deviceName;
+
+  const VaultStorageLocation({
+    required this.deviceSerial,
+    required this.isExternal,
+    required this.deviceConnected,
+    required this.deviceName,
+  });
+
+  factory VaultStorageLocation.fromJson(Map<String, dynamic> json) =>
+      VaultStorageLocation(
+        deviceSerial: json['deviceSerial'] as String? ?? '',
+        isExternal: json['isExternal'] as bool? ?? false,
+        deviceConnected: json['deviceConnected'] as bool? ?? true,
+        deviceName: json['deviceName'] as String? ?? 'Internal Storage',
+      );
 }
 
 class VaultEntryItem {
@@ -401,6 +434,45 @@ class VaultService with AuthenticatedService {
     }
     final body = json.decode(resp.body) as Map<String, dynamic>;
     return body['password'] as String;
+  }
+
+  static Future<VaultStorageLocation> getStorageLocation() async {
+    final resp = await http.get(
+      _apiUri('/vault/storage-location'),
+      headers: _authHeaders,
+    );
+    if (resp.statusCode != 200) {
+      throw Exception('Failed to get storage location: ${resp.statusCode}');
+    }
+    return VaultStorageLocation.fromJson(
+      json.decode(resp.body) as Map<String, dynamic>,
+    );
+  }
+
+  static Future<void> setStorageLocation({
+    required String targetDeviceSerial,
+    required String username,
+    required String password,
+  }) async {
+    final resp = await http.put(
+      _apiUri('/vault/storage-location'),
+      headers: _jsonHeaders,
+      body: json.encode({
+        'targetDeviceSerial': targetDeviceSerial,
+        'username': username,
+        'password': password,
+      }),
+    );
+    if (resp.statusCode == 423) throw VaultLockedException();
+    if (resp.statusCode == 401) {
+      throw Exception('Invalid credentials');
+    }
+    if (resp.statusCode != 200) {
+      final body = json.decode(resp.body) as Map<String, dynamic>;
+      throw Exception(
+        body['error'] ?? 'Failed to change storage: ${resp.statusCode}',
+      );
+    }
   }
 
   static Future<void> changePassword({

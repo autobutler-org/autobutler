@@ -28,5 +28,7 @@ func (r *router) Routes() []*serverutil.Route {
 		importBackupRoute,
 		importVaultRoute,
 		exportVaultRoute,
+		getStorageLocationRoute,
+		setStorageLocationRoute,
 	}
 }

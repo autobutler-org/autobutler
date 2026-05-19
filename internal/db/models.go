@@ -108,3 +108,9 @@ type VaultFolder struct {
 	SortOrder int64
 	CreatedAt time.Time
 }
+
+type VaultLocation struct {
+	ID           int64
+	DeviceSerial string
+	UpdatedAt    time.Time
+}

@@ -26,7 +26,7 @@ var setupVaultRoute = serverutil.ApiRoute(
 		ctx := c.Request.Context()
 
 		// Check if vault is already initialized.
-		if _, err := deps.Database().Queries.GetVaultConfig(ctx); err == nil {
+		if _, err := deps.VaultDB().Queries.GetVaultConfig(ctx); err == nil {
 			return serverutil.BadRequest(fmt.Errorf("vault is already initialized"))
 		} else if !errors.Is(err, sql.ErrNoRows) {
 			return serverutil.InternalServerError(fmt.Errorf("check vault config: %w", err))
@@ -55,7 +55,7 @@ var setupVaultRoute = serverutil.ApiRoute(
 			return serverutil.InternalServerError(fmt.Errorf("create verification blob: %w", err))
 		}
 
-		if err := deps.Database().Queries.CreateVaultConfig(ctx, db.CreateVaultConfigParams{
+		if err := deps.VaultDB().Queries.CreateVaultConfig(ctx, db.CreateVaultConfigParams{
 			Salt:              salt,
 			Argon2Memory:      int64(params.Memory),
 			Argon2Iterations:  int64(params.Iterations),

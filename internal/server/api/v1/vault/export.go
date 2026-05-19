@@ -39,7 +39,7 @@ var exportVaultRoute = serverutil.ApiRoute(
 		ctx := c.Request.Context()
 		format := c.DefaultQuery("format", "json")
 
-		folders, err := deps.Database().Queries.ListVaultFolders(ctx)
+		folders, err := deps.VaultDB().Queries.ListVaultFolders(ctx)
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("list folders: %w", err))
 		}
@@ -50,14 +50,14 @@ var exportVaultRoute = serverutil.ApiRoute(
 			folderNames = append(folderNames, f.Name)
 		}
 
-		entries, err := deps.Database().Queries.ListAllVaultEntriesForReEncrypt(ctx)
+		entries, err := deps.VaultDB().Queries.ListAllVaultEntriesForReEncrypt(ctx)
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("list entries: %w", err))
 		}
 
 		var exported []exportEntry
 		for _, e := range entries {
-			full, err := deps.Database().Queries.GetVaultEntry(ctx, e.ID)
+			full, err := deps.VaultDB().Queries.GetVaultEntry(ctx, e.ID)
 			if err != nil {
 				return serverutil.InternalServerError(fmt.Errorf("get entry %d: %w", e.ID, err))
 			}

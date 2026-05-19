@@ -37,6 +37,33 @@ func ConnectToDatabase() (*DatabaseSqlc, error) {
 	return &database, nil
 }
 
+func ConnectToVaultDatabase(dbPath string) (*DatabaseSqlc, error) {
+	if err := os.MkdirAll(filepath.Dir(dbPath), 0755); err != nil {
+		return nil, fmt.Errorf("failed to create vault db directory: %v", err)
+	}
+
+	var database DatabaseSqlc
+	var err error
+	database.Db, err = sql.Open("sqlite", dbPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open vault database: %v", err)
+	}
+
+	if err := InitVaultSchema(database.Db); err != nil {
+		database.Db.Close()
+		return nil, fmt.Errorf("failed to init vault schema: %v", err)
+	}
+
+	sqlConn, err := database.Db.Conn(context.Background())
+	if err != nil {
+		database.Db.Close()
+		return nil, fmt.Errorf("failed to get vault db connection: %v", err)
+	}
+	database.Queries = New(sqlConn)
+
+	return &database, nil
+}
+
 func ConnectToHealthDatabase() (*DatabaseRaw, error) {
 	var database DatabaseRaw
 	dataDir := storageutil.GetDataDir()

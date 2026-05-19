@@ -61,13 +61,13 @@ var importVaultRoute = serverutil.ApiRoute(
 
 		ctx := c.Request.Context()
 
-		tx, err := deps.Database().Db.BeginTx(ctx, nil)
+		tx, err := deps.VaultDB().Db.BeginTx(ctx, nil)
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("begin tx: %w", err))
 		}
 		defer tx.Rollback()
 
-		qtx := deps.Database().Queries.WithTx(tx)
+		qtx := deps.VaultDB().Queries.WithTx(tx)
 
 		existingEntries, err := qtx.ListVaultEntries(ctx)
 		if err != nil {
