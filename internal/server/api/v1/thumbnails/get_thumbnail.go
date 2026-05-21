@@ -143,6 +143,8 @@ var getThumbnailRoute = serverutil.ApiRoute(
 		}
 
 		ext := strings.ToLower(filepath.Ext(filePath))
+		fileType := storageutil.DetermineFileTypeFromPath("file" + ext)
+		isVideo := fileType == storageutil.FileTypeVideo
 
 		// --- Server-side rotation ---
 		// relPath strips the leading '/' that the wildcard param includes.
@@ -198,10 +200,9 @@ var getThumbnailRoute = serverutil.ApiRoute(
 				return serverutil.InternalServerError(fmt.Errorf("failed to create cache file: %w", err))
 			}
 
-			switch ext {
-			case ".png":
+			if !isVideo && ext == ".png" {
 				err = png.Encode(f, result.Thumbnail)
-			default:
+			} else {
 				err = jpeg.Encode(f, result.Thumbnail, &jpeg.Options{Quality: 85})
 			}
 			f.Close()
@@ -230,7 +231,11 @@ var getThumbnailRoute = serverutil.ApiRoute(
 		// so the browser gets fresh bytes immediately after a rotation without
 		// waiting for a max-age window to expire.
 		c.Header("Cache-Control", "no-cache")
-		c.Header("Content-Type", contentTypeForExt(ext))
+		thumbContentType := contentTypeForExt(ext)
+		if isVideo {
+			thumbContentType = "image/jpeg"
+		}
+		c.Header("Content-Type", thumbContentType)
 
 		if match := c.GetHeader("If-None-Match"); match == etag {
 			c.Status(http.StatusNotModified)
@@ -242,7 +247,7 @@ var getThumbnailRoute = serverutil.ApiRoute(
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("failed to read cached thumbnail: %w", err))
 		}
-		c.Data(http.StatusOK, contentTypeForExt(ext), data)
+		c.Data(http.StatusOK, thumbContentType, data)
 		return nil
 	},
 )
