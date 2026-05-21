@@ -35,7 +35,7 @@ var changePasswordRoute = serverutil.ApiRoute(
 
 		ctx := c.Request.Context()
 
-		config, err := deps.Database().Queries.GetVaultConfig(ctx)
+		config, err := deps.VaultDB().Queries.GetVaultConfig(ctx)
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("get vault config: %w", err))
 		}
@@ -68,13 +68,13 @@ var changePasswordRoute = serverutil.ApiRoute(
 
 		// Re-encrypt all entries inside a transaction so a partial failure
 		// doesn't leave some entries on the old key and some on the new.
-		tx, err := deps.Database().Db.BeginTx(ctx, nil)
+		tx, err := deps.VaultDB().Db.BeginTx(ctx, nil)
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("begin tx: %w", err))
 		}
 		defer tx.Rollback()
 
-		qtx := deps.Database().Queries.WithTx(tx)
+		qtx := deps.VaultDB().Queries.WithTx(tx)
 
 		entries, err := qtx.ListAllVaultEntriesForReEncrypt(ctx)
 		if err != nil {

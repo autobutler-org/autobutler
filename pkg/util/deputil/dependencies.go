@@ -2,6 +2,7 @@ package deputil
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/pkg/botel/exporters/botelsqlite"
@@ -17,6 +18,7 @@ type Dependencies interface {
 	HealthDatabase() *db.DatabaseRaw
 	MetricsExporter() *botelsqlite.TraceExporter
 	StorageService() *storageutil.StorageService
+	VaultDB() *db.DatabaseSqlc
 	VaultSession() *vaultcrypto.VaultSession
 	Worker() workerutil.Worker
 	WithDatabase(database *db.DatabaseSqlc) Dependencies
@@ -24,6 +26,8 @@ type Dependencies interface {
 	WithHealthDatabase(healthDatabase *db.DatabaseRaw) Dependencies
 	WithMetricsExporter(exporter *botelsqlite.TraceExporter) Dependencies
 	WithStorageService(s *storageutil.StorageService) Dependencies
+	SetVaultDB(database *db.DatabaseSqlc)
+	ClearVaultDB()
 	WithVaultSession(session *vaultcrypto.VaultSession) Dependencies
 	WithWorker(worker workerutil.Worker) Dependencies
 }
@@ -34,6 +38,8 @@ type dependencies struct {
 	healthDatabase  *db.DatabaseRaw
 	metricsExporter *botelsqlite.TraceExporter
 	storageService  *storageutil.StorageService
+	vaultDB         *db.DatabaseSqlc
+	vaultDBMu       sync.RWMutex
 	vaultSession    *vaultcrypto.VaultSession
 	worker          workerutil.Worker
 }
@@ -108,6 +114,30 @@ func (d *dependencies) MetricsExporter() *botelsqlite.TraceExporter {
 
 func (d *dependencies) StorageService() *storageutil.StorageService {
 	return d.storageService
+}
+
+func (d *dependencies) VaultDB() *db.DatabaseSqlc {
+	d.vaultDBMu.RLock()
+	defer d.vaultDBMu.RUnlock()
+	if d.vaultDB != nil {
+		return d.vaultDB
+	}
+	return d.database
+}
+
+func (d *dependencies) SetVaultDB(database *db.DatabaseSqlc) {
+	d.vaultDBMu.Lock()
+	defer d.vaultDBMu.Unlock()
+	d.vaultDB = database
+}
+
+func (d *dependencies) ClearVaultDB() {
+	d.vaultDBMu.Lock()
+	defer d.vaultDBMu.Unlock()
+	if d.vaultDB != nil {
+		d.vaultDB.Db.Close()
+		d.vaultDB = nil
+	}
 }
 
 func (d *dependencies) VaultSession() *vaultcrypto.VaultSession {

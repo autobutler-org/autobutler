@@ -10,39 +10,71 @@ import (
 )
 
 const deleteDeviceName = `-- name: DeleteDeviceName :exec
-DELETE FROM device_names WHERE device_path = ?
+DELETE FROM device_names WHERE device_serial = ?
 `
 
-func (q *Queries) DeleteDeviceName(ctx context.Context, devicePath string) error {
-	_, err := q.db.ExecContext(ctx, deleteDeviceName, devicePath)
+func (q *Queries) DeleteDeviceName(ctx context.Context, deviceSerial string) error {
+	_, err := q.db.ExecContext(ctx, deleteDeviceName, deviceSerial)
 	return err
 }
 
-const getDeviceName = `-- name: GetDeviceName :one
-SELECT display_name FROM device_names WHERE device_path = ? LIMIT 1
+const getAllDeviceNames = `-- name: GetAllDeviceNames :many
+SELECT device_serial, display_name FROM device_names
 `
 
-func (q *Queries) GetDeviceName(ctx context.Context, devicePath string) (string, error) {
-	row := q.db.QueryRowContext(ctx, getDeviceName, devicePath)
+type GetAllDeviceNamesRow struct {
+	DeviceSerial string
+	DisplayName  string
+}
+
+func (q *Queries) GetAllDeviceNames(ctx context.Context) ([]GetAllDeviceNamesRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAllDeviceNames)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllDeviceNamesRow
+	for rows.Next() {
+		var i GetAllDeviceNamesRow
+		if err := rows.Scan(&i.DeviceSerial, &i.DisplayName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getDeviceName = `-- name: GetDeviceName :one
+SELECT display_name FROM device_names WHERE device_serial = ? LIMIT 1
+`
+
+func (q *Queries) GetDeviceName(ctx context.Context, deviceSerial string) (string, error) {
+	row := q.db.QueryRowContext(ctx, getDeviceName, deviceSerial)
 	var display_name string
 	err := row.Scan(&display_name)
 	return display_name, err
 }
 
 const upsertDeviceName = `-- name: UpsertDeviceName :exec
-INSERT INTO device_names (device_path, display_name, updated_at)
+INSERT INTO device_names (device_serial, display_name, updated_at)
 VALUES (?, ?, datetime('now'))
-ON CONFLICT(device_path) DO UPDATE SET
+ON CONFLICT(device_serial) DO UPDATE SET
     display_name = excluded.display_name,
-    updated_at = excluded.updated_at
+    updated_at = datetime('now')
 `
 
 type UpsertDeviceNameParams struct {
-	DevicePath  string
-	DisplayName string
+	DeviceSerial string
+	DisplayName  string
 }
 
 func (q *Queries) UpsertDeviceName(ctx context.Context, arg UpsertDeviceNameParams) error {
-	_, err := q.db.ExecContext(ctx, upsertDeviceName, arg.DevicePath, arg.DisplayName)
+	_, err := q.db.ExecContext(ctx, upsertDeviceName, arg.DeviceSerial, arg.DisplayName)
 	return err
 }
