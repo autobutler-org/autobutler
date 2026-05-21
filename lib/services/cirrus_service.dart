@@ -29,6 +29,7 @@ class CirrusService with AuthenticatedService {
   static final CirrusService _instance = CirrusService._();
   CirrusService._();
   static CirrusService get instance => _instance;
+  static Map<String, String> get _authHeaders => instance.authHeaders;
 
   static Uri get _apiBaseUri {
     final configured = AppSettings.instance.activeHost;
