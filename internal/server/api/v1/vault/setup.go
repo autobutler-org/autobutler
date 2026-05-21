@@ -70,6 +70,7 @@ var setupVaultRoute = serverutil.ApiRoute(
 		// Auto-unlock after setup.
 		unlockKey := vaultcrypto.DeriveKey(req.MasterPassword, salt, params)
 		deps.VaultSession().Unlock(unlockKey, 300*time.Second)
+		vaultcrypto.ZeroKey(unlockKey)
 
 		return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(gin.H{
 			"initialized": true,

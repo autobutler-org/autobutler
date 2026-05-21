@@ -29,6 +29,10 @@ class AppSettings {
   int _activeIndex = -1;
   String? _sessionToken;
   SharedPreferences? _prefs;
+
+  /// Notifies listeners whenever the session token changes.
+  /// The router listens to this to redirect to login when a 401 clears the token.
+  final ValueNotifier<String?> sessionTokenNotifier = ValueNotifier(null);
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   static const _sessionTokenKey = 'session_token';
@@ -63,6 +67,7 @@ class AppSettings {
     } else {
       _sessionToken = await _secureStorage.read(key: _sessionTokenKey);
     }
+    sessionTokenNotifier.value = _sessionToken;
 
     // If no hosts configured and running in debug (local development), add a local loopback
     // host appropriate for the running platform so developers can quickly connect.
@@ -94,6 +99,7 @@ class AppSettings {
 
   Future<void> setSessionToken(String? token) async {
     _sessionToken = token;
+    sessionTokenNotifier.value = token;
     if (kIsWeb) {
       // Use shared_preferences (localStorage) on web — flutter_secure_storage
       // requires HTTPS and fails over plain HTTP in development.

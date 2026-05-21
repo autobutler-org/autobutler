@@ -2,7 +2,6 @@ package server
 
 import (
 	"embed"
-	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -93,7 +92,7 @@ func setupStaticRoutes(engine *gin.Engine) error {
 	// to a plain 404 so the server still starts.
 	indexHTML, readErr := public.ReadFile("public/index.html")
 	if readErr != nil {
-		fmt.Println("[warn] No embedded index.html — SPA fallback disabled (dev mode?)")
+		slog.Warn("No embedded index.html — SPA fallback disabled (dev mode?)")
 	}
 	engine.NoRoute(
 		func(c *gin.Context) {

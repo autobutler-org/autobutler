@@ -29,7 +29,6 @@ class CirrusService with AuthenticatedService {
   static final CirrusService _instance = CirrusService._();
   CirrusService._();
   static CirrusService get instance => _instance;
-
   static Map<String, String> get _authHeaders => instance.authHeaders;
 
   static Uri get _apiBaseUri {
@@ -136,7 +135,7 @@ class CirrusService with AuthenticatedService {
     final endpointUri = _apiBaseUri.resolve('/api/v1/photos');
     final uri = endpointUri.replace(query: querySegments.join('&'));
 
-    final response = await http.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to load photos (${response.statusCode})');
     }
@@ -176,7 +175,7 @@ class CirrusService with AuthenticatedService {
         ? endpointUri
         : endpointUri.replace(query: querySegments.join('&'));
 
-    final response = await http.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw CirrusRequestException(
         statusCode: response.statusCode,
@@ -216,7 +215,7 @@ class CirrusService with AuthenticatedService {
         .resolve('/api/v1/cirrus/by-type')
         .replace(query: querySegments.join('&'));
 
-    final response = await http.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to load files by type (${response.statusCode})');
     }
@@ -245,7 +244,7 @@ class CirrusService with AuthenticatedService {
         .resolve('/api/v1/cirrus/recent')
         .replace(query: querySegments.join('&'));
 
-    final response = await http.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to load recent files (${response.statusCode})');
     }
@@ -278,7 +277,7 @@ class CirrusService with AuthenticatedService {
     final uri = querySegments.isEmpty
         ? endpointUri
         : endpointUri.replace(query: querySegments.join('&'));
-    final response = await http.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to load cirrus files (${response.statusCode})');
     }
@@ -314,7 +313,7 @@ class CirrusService with AuthenticatedService {
     }
     final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus/list-archive');
     final uri = endpointUri.replace(query: querySegments.join('&'));
-    final response = await http.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
         'Failed to list archive entries (${response.statusCode})',
@@ -340,7 +339,7 @@ class CirrusService with AuthenticatedService {
     }
     final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus/extract');
     final uri = endpointUri.replace(query: querySegments.join('&'));
-    final response = await http.post(uri, headers: _authHeaders);
+    final response = await instance.authenticatedPost(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to extract file (${response.statusCode})');
     }
@@ -362,7 +361,7 @@ class CirrusService with AuthenticatedService {
     }
     final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus/stat');
     final uri = endpointUri.replace(query: querySegments.join('&'));
-    final response = await http.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw CirrusRequestException(
         statusCode: response.statusCode,
@@ -400,7 +399,7 @@ class CirrusService with AuthenticatedService {
     final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus');
     final uri = endpointUri.replace(queryParameters: queryParams);
 
-    final response = await http.delete(uri, headers: _authHeaders);
+    final response = await instance.authenticatedDelete(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to delete file (${response.statusCode})');
     }
@@ -430,9 +429,9 @@ class CirrusService with AuthenticatedService {
 
     final body = jsonEncode(requestBody);
 
-    final response = await http.put(
+    final response = await instance.authenticatedPut(
       endpointUri,
-      headers: {'Content-Type': 'application/json', ..._authHeaders},
+      headers: {'Content-Type': 'application/json'},
       body: body,
     );
 
@@ -494,7 +493,7 @@ class CirrusService with AuthenticatedService {
     String? fileName,
   }) async {
     final uri = _buildDownloadUri(filePath, serial: serial);
-    final response = await http.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to download file (${response.statusCode})');
     }
@@ -546,7 +545,7 @@ class CirrusService with AuthenticatedService {
       '/api/v1/cirrus/download-archive-file',
     );
     final uri = endpointUri.replace(query: querySegments.join('&'));
-    final response = await http.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
         'Failed to download archive file (${response.statusCode})',
@@ -561,7 +560,7 @@ class CirrusService with AuthenticatedService {
     String? fileName,
   }) async {
     final uri = _buildDownloadUri(filePath, serial: serial);
-    final response = await http.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to download file (${response.statusCode})');
     }
@@ -576,7 +575,7 @@ class CirrusService with AuthenticatedService {
     String? serial,
   }) async {
     final uri = constructThumbnailUrl(filePath, serial: serial);
-    final response = await http.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to download thumbnail (${response.statusCode})');
     }
@@ -593,7 +592,7 @@ class CirrusService with AuthenticatedService {
     final uri = _apiBaseUri
         .resolve('/api/v1/photos/metadata')
         .replace(queryParameters: params);
-    final response = await http.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to load photo metadata (${response.statusCode})');
     }
@@ -615,9 +614,9 @@ class CirrusService with AuthenticatedService {
       'serial': serial?.trim() ?? '',
       'rotationQuarters': rotationQuarters % 4,
     });
-    final response = await http.post(
+    final response = await instance.authenticatedPost(
       uri,
-      headers: {..._authHeaders, 'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: body,
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -633,9 +632,9 @@ class CirrusService with AuthenticatedService {
       'relPath': relPath,
       'serial': serial?.trim() ?? '',
     });
-    final response = await http.post(
+    final response = await instance.authenticatedPost(
       uri,
-      headers: {..._authHeaders, 'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: body,
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -757,7 +756,7 @@ class CirrusService with AuthenticatedService {
 
   static Future<Map<String, dynamic>> getInstalledVersion() async {
     final endpointUri = _apiBaseUri.resolve('/api/v1/version');
-    final response = await http.get(endpointUri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(endpointUri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
         'Failed to get installed version (${response.statusCode})',
@@ -775,7 +774,7 @@ class CirrusService with AuthenticatedService {
   }) async {
     final endpointUri = _apiBaseUri.resolve('/api/v1/version/available');
     final uri = all ? endpointUri.replace(query: 'all=true') : endpointUri;
-    final response = await http.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
         'Failed to list available versions (${response.statusCode})',
@@ -794,9 +793,9 @@ class CirrusService with AuthenticatedService {
   static Future<void> updateToVersion(String version) async {
     final endpointUri = _apiBaseUri.resolve('/api/v1/version/update');
     final body = jsonEncode({'version': version});
-    final response = await http.post(
+    final response = await instance.authenticatedPost(
       endpointUri,
-      headers: {'Content-Type': 'application/json', ..._authHeaders},
+      headers: {'Content-Type': 'application/json'},
       body: body,
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
