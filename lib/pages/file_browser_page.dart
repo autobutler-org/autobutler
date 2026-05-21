@@ -6,8 +6,6 @@ import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
 import 'package:autobutler/pages/spreadsheet_editor_page.dart';
-import 'package:data_table/data_sheet.dart';
-import 'package:data_table/data_table.dart' as dt;
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
@@ -28,6 +26,8 @@ import 'package:autobutler/widgets/file_browser/file_storage_footer.dart';
 import 'package:autobutler/widgets/file_browser/file_top_bar.dart';
 import 'package:autobutler/widgets/file_browser/new_file_dialog.dart';
 import 'package:autobutler/widgets/file_browser/recent_files_section.dart';
+import 'package:data_table/data_sheet.dart';
+import 'package:data_table/data_table.dart' as dt;
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -892,7 +892,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
-    _showMessage('No supported editor is available for ${node.name}');
+    // All other file types — navigate to /cirrus/<path> which resolves the
+    // file type via FileViewerPage and opens the correct viewer. This updates
+    // the URL bar so the link is always shareable.
+    _openFileViaRoute(node.apiPath);
   }
 
   void _openDirectory(CirrusFileNode node) {
