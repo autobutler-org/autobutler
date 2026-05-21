@@ -13,9 +13,9 @@ import 'package:go_router/go_router.dart';
 /// |-------------------|------------------------------|
 /// | `image`           | [ImageViewerPage]            |
 /// | `video` / `audio` | [VideoViewerPage]            |
-/// | `abdoc`           | /docs/<path>                 |
-/// | `absheet`         | /sheets/<path>               |
-/// | directory / other | /cirrus/<path> (FileBrowser) |
+/// | `abdoc`           | /docs/&ltpath&gt                 |
+/// | `absheet`         | /sheets/&ltpath&gt               |
+/// | directory / other | /cirrus/&ltpath&gt (FileBrowser) |
 ///
 /// Navigate to the route built with [AppRoutes.viewFile] to trigger this.
 class FileViewerPage extends StatefulWidget {

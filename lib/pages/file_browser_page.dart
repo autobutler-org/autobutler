@@ -1,14 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:autobutler/controllers/file_browser_cache.dart';
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
 import 'package:autobutler/pages/spreadsheet_editor_page.dart';
-import 'package:data_table/data_sheet.dart';
-import 'package:data_table/data_table.dart' as dt;
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
@@ -29,6 +26,8 @@ import 'package:autobutler/widgets/file_browser/file_storage_footer.dart';
 import 'package:autobutler/widgets/file_browser/file_top_bar.dart';
 import 'package:autobutler/widgets/file_browser/new_file_dialog.dart';
 import 'package:autobutler/widgets/file_browser/recent_files_section.dart';
+import 'package:data_table/data_sheet.dart';
+import 'package:data_table/data_table.dart' as dt;
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
