@@ -6,6 +6,9 @@ on:
       - opened
       - reopened
 
+permissions:
+  pull-requests: write
+
 jobs:
   auto-assign-author:
     runs-on: ubuntu-latest
