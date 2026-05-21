@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -28,8 +29,8 @@ func init() {
 	redirectURL := os.Getenv("GOOGLE_REDIRECT_URL")
 
 	if clientID == "" || clientSecret == "" || redirectURL == "" {
-		fmt.Println("WARNING: Google OAuth environment variables not set")
-		fmt.Println("Required: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URL")
+		log.Println("[oauth] WARNING: Google OAuth environment variables not set")
+		log.Println("[oauth] Required: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URL")
 	}
 
 	googleOAuthConfig = &oauth2.Config{
@@ -45,7 +46,7 @@ func init() {
 		Endpoint: google.Endpoint,
 	}
 
-	fmt.Printf("Google OAuth configured with redirect URL: %s\n", redirectURL)
+	log.Printf("[oauth] Google OAuth configured with redirect URL: %s", redirectURL)
 }
 
 // googleAuthorize godoc

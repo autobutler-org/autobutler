@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log"
 	"strings"
 
 	"github.com/autobutler-org/autobutler/internal/db"
@@ -67,8 +68,7 @@ func ToggleFavorite(ctx context.Context, q *db.Queries, deviceSerial, relPath st
 				DeviceSerial: deviceSerial,
 				RelPath:      relPath,
 			}); removeErr != nil && !errors.Is(removeErr, sql.ErrNoRows) {
-				// Log but don't fail — photo_favorites is source of truth.
-				_ = removeErr
+				log.Printf("[favorites] best-effort album remove failed for %q: %v", relPath, removeErr)
 			}
 		}
 		return false, nil
@@ -90,7 +90,7 @@ func ToggleFavorite(ctx context.Context, q *db.Queries, deviceSerial, relPath st
 			DeviceSerial: deviceSerial,
 			RelPath:      relPath,
 		}); addErr != nil && !isUniqueConstraintErr(addErr) {
-			_ = addErr
+			log.Printf("[favorites] best-effort album add failed for %q: %v", relPath, addErr)
 		}
 	}
 	return true, nil
