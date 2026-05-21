@@ -3,7 +3,7 @@ module github.com/autobutler-org/autobutler
 go 1.26.3
 
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.6.4
+	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.7.0
 	github.com/KononK/resize v0.0.0-20200801203131-21c514740ed6
 	github.com/gin-contrib/cors v1.7.7
 	github.com/gin-contrib/static v1.1.6
@@ -29,11 +29,11 @@ require (
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sys v0.44.0
 	golang.org/x/time v0.15.0
-	google.golang.org/api v0.278.0
+	google.golang.org/api v0.279.0
 	howett.net/plist v1.0.1
-	modernc.org/sqlite v1.50.0
+	modernc.org/sqlite v1.50.1
 	nhooyr.io/websocket v1.8.17
-	tailscale.com v1.98.1
+	tailscale.com v1.98.2
 )
 
 require (
@@ -41,8 +41,8 @@ require (
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.21.0 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/internal v1.11.2 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.21.1 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/internal v1.12.0 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/STARRY-S/zip v0.1.0 // indirect
 	github.com/akutz/memconn v0.1.0 // indirect
@@ -159,7 +159,7 @@ require (
 	google.golang.org/grpc v1.80.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gvisor.dev/gvisor v0.0.0-20260224225140-573d5e7127a8 // indirect
-	modernc.org/libc v1.72.0 // indirect
+	modernc.org/libc v1.72.3 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )
