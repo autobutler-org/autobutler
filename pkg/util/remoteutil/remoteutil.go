@@ -82,9 +82,6 @@ func Start(authKey string) error {
 		return fmt.Errorf("failed to start tsnet: %w", err)
 	}
 	running = true
-
-	go verifyControlPlanePQ(controlURL())
-
 	return nil
 }
 
