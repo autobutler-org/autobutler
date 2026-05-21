@@ -9,12 +9,22 @@ const (
 	EventDelete    EventKind = "delete"
 	EventMove      EventKind = "move"
 	EventNewFolder EventKind = "new_folder"
+
+	EventBackupStarted   EventKind = "backup_started"
+	EventBackupProgress  EventKind = "backup_progress"
+	EventBackupCompleted EventKind = "backup_completed"
+	EventBackupFailed    EventKind = "backup_failed"
+
+	EventVaultDeviceDisconnected EventKind = "vault_device_disconnected"
+	EventVaultDeviceReconnected  EventKind = "vault_device_reconnected"
+	EventVaultStorageChanged     EventKind = "vault_storage_changed"
 )
 
 type Event struct {
-	Kind    EventKind `json:"kind"`
-	Path    string    `json:"path"`              // affected path
-	NewPath string    `json:"newPath,omitempty"` // for move
+	Kind    EventKind   `json:"kind"`
+	Path    string      `json:"path,omitempty"`
+	NewPath string      `json:"newPath,omitempty"`
+	Data    interface{} `json:"data,omitempty"`
 }
 
 type Bus struct {

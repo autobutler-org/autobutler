@@ -2089,7 +2089,7 @@ const docTemplate = `{
         },
         "/storage/devices/rename": {
             "patch": {
-                "description": "Sets a custom display name for a storage device identified by its device path",
+                "description": "Sets a custom display name for a storage device identified by its serial number",
                 "consumes": [
                     "application/json"
                 ],
@@ -2103,13 +2103,198 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Device path (e.g. /dev/disk3s5 — leading slash included in wildcard)",
-                        "name": "devicePath",
-                        "in": "path",
+                        "description": "Device serial (empty string for internal device)",
+                        "name": "serial",
+                        "in": "query",
                         "required": true
                     },
                     {
                         "description": "{name: string}",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/storage/devices/role": {
+            "put": {
+                "description": "Assigns a role (default-storage, snapshot-backup, unassigned) to a device. Requires master password re-entry.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "storage"
+                ],
+                "summary": "Set the role of a storage device",
+                "parameters": [
+                    {
+                        "description": "{serial: string, role: string, username: string, password: string}",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/storage/devices/snapshot-backup": {
+            "post": {
+                "description": "Aggregates all files from all managed devices onto the target snapshot-backup device",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "storage"
+                ],
+                "summary": "Start a snapshot backup to a device",
+                "parameters": [
+                    {
+                        "description": "{targetDeviceSerial: string}",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/storage/devices/snapshot-backup/status/{jobId}": {
+            "get": {
+                "description": "Returns the current status of a snapshot backup job",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "storage"
+                ],
+                "summary": "Get snapshot backup job status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job ID",
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/storage/devices/snapshot-backup/verify": {
+            "post": {
+                "description": "Walks all files on the backup device and checks against the manifest",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "storage"
+                ],
+                "summary": "Verify integrity of a snapshot backup",
+                "parameters": [
+                    {
+                        "description": "{deviceSerial: string, full: bool}",
                         "name": "body",
                         "in": "body",
                         "required": true,

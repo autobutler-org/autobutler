@@ -164,6 +164,7 @@ class _VaultPageState extends State<VaultPage> {
     if (status == null) return const SizedBox.shrink();
 
     if (!status.initialized) return _buildSetupView();
+    if (!status.deviceConnected) return _buildDeviceDisconnectedView();
     if (status.locked) return _buildUnlockView();
     return _buildEntryList();
   }
@@ -246,7 +247,46 @@ class _VaultPageState extends State<VaultPage> {
     );
   }
 
+  Widget _buildDeviceDisconnectedView() {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.usb_off,
+                size: 64,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Vault device disconnected',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'The external storage device containing your vault is not connected. '
+                'Please reconnect the device to access your vault.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: _loadStatus,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Check again'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildUnlockView() {
+    final lockReason = _status?.lockReason ?? '';
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 400),
@@ -261,6 +301,15 @@ class _VaultPageState extends State<VaultPage> {
                 'Vault is locked',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
+              if (lockReason.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  lockReason,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               TextField(
                 controller: _unlockPasswordCtrl,

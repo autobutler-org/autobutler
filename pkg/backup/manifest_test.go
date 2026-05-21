@@ -1,0 +1,184 @@
+package backup
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func makeBackupDir(t *testing.T, files map[string]string) string {
+	t.Helper()
+	dir := t.TempDir()
+	for path, content := range files {
+		full := filepath.Join(dir, path)
+		os.MkdirAll(filepath.Dir(full), 0755)
+		os.WriteFile(full, []byte(content), 0644)
+	}
+	return dir
+}
+
+func TestGenerateManifest(t *testing.T) {
+	dir := makeBackupDir(t, map[string]string{
+		"photos/a.jpg": "photo-a",
+		"docs/b.txt":   "doc-b",
+	})
+
+	m, err := GenerateManifest(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if m.TotalFiles != 2 {
+		t.Errorf("expected 2 files, got %d", m.TotalFiles)
+	}
+	if _, ok := m.Files["photos/a.jpg"]; !ok {
+		t.Error("missing photos/a.jpg in manifest")
+	}
+	if _, ok := m.Files["docs/b.txt"]; !ok {
+		t.Error("missing docs/b.txt in manifest")
+	}
+	if m.Files["photos/a.jpg"].SHA256 == "" {
+		t.Error("SHA256 should not be empty")
+	}
+	if m.Files["photos/a.jpg"].Size != 7 {
+		t.Errorf("expected size 7 for 'photo-a', got %d", m.Files["photos/a.jpg"].Size)
+	}
+}
+
+func TestManifest_ExcludesItself(t *testing.T) {
+	dir := makeBackupDir(t, map[string]string{
+		"file.txt": "data",
+	})
+
+	m, _ := GenerateManifest(dir)
+	WriteManifest(m, dir)
+
+	m2, _ := GenerateManifest(dir)
+	if _, ok := m2.Files[manifestFilename]; ok {
+		t.Error("manifest should exclude itself")
+	}
+	if m2.TotalFiles != 1 {
+		t.Errorf("expected 1 file, got %d", m2.TotalFiles)
+	}
+}
+
+func TestWriteAndReadManifest(t *testing.T) {
+	dir := makeBackupDir(t, map[string]string{"a.txt": "hello"})
+
+	m, _ := GenerateManifest(dir)
+	if err := WriteManifest(m, dir); err != nil {
+		t.Fatal(err)
+	}
+
+	read, err := ReadManifest(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if read.TotalFiles != 1 {
+		t.Errorf("expected 1 file, got %d", read.TotalFiles)
+	}
+	if read.Files["a.txt"].SHA256 != m.Files["a.txt"].SHA256 {
+		t.Error("hash mismatch after read")
+	}
+}
+
+func TestVerifyBackup_AllOK(t *testing.T) {
+	dir := makeBackupDir(t, map[string]string{
+		"a.txt": "aaa",
+		"b.txt": "bbb",
+	})
+	m, _ := GenerateManifest(dir)
+	WriteManifest(m, dir)
+
+	result, err := VerifyBackup(dir, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.OK != 2 {
+		t.Errorf("expected 2 OK, got %d", result.OK)
+	}
+	if len(result.Missing) != 0 || len(result.Corrupted) != 0 || len(result.Added) != 0 {
+		t.Errorf("expected clean verify, got missing=%d corrupted=%d added=%d",
+			len(result.Missing), len(result.Corrupted), len(result.Added))
+	}
+}
+
+func TestVerifyBackup_MissingFile(t *testing.T) {
+	dir := makeBackupDir(t, map[string]string{
+		"a.txt": "aaa",
+		"b.txt": "bbb",
+	})
+	m, _ := GenerateManifest(dir)
+	WriteManifest(m, dir)
+
+	os.Remove(filepath.Join(dir, "b.txt"))
+
+	result, _ := VerifyBackup(dir, true)
+	if len(result.Missing) != 1 || result.Missing[0] != "b.txt" {
+		t.Errorf("expected b.txt missing, got %v", result.Missing)
+	}
+	if result.OK != 1 {
+		t.Errorf("expected 1 OK, got %d", result.OK)
+	}
+}
+
+func TestVerifyBackup_CorruptedFile(t *testing.T) {
+	dir := makeBackupDir(t, map[string]string{
+		"a.txt": "original",
+	})
+	m, _ := GenerateManifest(dir)
+	WriteManifest(m, dir)
+
+	os.WriteFile(filepath.Join(dir, "a.txt"), []byte("tampered"), 0644)
+
+	result, _ := VerifyBackup(dir, true)
+	if len(result.Corrupted) != 1 || result.Corrupted[0] != "a.txt" {
+		t.Errorf("expected a.txt corrupted, got %v", result.Corrupted)
+	}
+}
+
+func TestVerifyBackup_AddedFile(t *testing.T) {
+	dir := makeBackupDir(t, map[string]string{
+		"a.txt": "aaa",
+	})
+	m, _ := GenerateManifest(dir)
+	WriteManifest(m, dir)
+
+	os.WriteFile(filepath.Join(dir, "new.txt"), []byte("new"), 0644)
+
+	result, _ := VerifyBackup(dir, true)
+	if len(result.Added) != 1 || result.Added[0] != "new.txt" {
+		t.Errorf("expected new.txt added, got %v", result.Added)
+	}
+}
+
+func TestVerifyBackup_QuickMode(t *testing.T) {
+	dir := makeBackupDir(t, map[string]string{
+		"a.txt": "aaa",
+	})
+	m, _ := GenerateManifest(dir)
+	WriteManifest(m, dir)
+
+	// Same size but different content — quick mode uses size only, should pass.
+	os.WriteFile(filepath.Join(dir, "a.txt"), []byte("bbb"), 0644)
+
+	result, _ := VerifyBackup(dir, false)
+	if result.OK != 1 {
+		t.Errorf("quick mode should pass on same-size file, got OK=%d corrupted=%v", result.OK, result.Corrupted)
+	}
+
+	// Different size — quick mode should catch.
+	os.WriteFile(filepath.Join(dir, "a.txt"), []byte("longer content"), 0644)
+	result, _ = VerifyBackup(dir, false)
+	if len(result.Corrupted) != 1 {
+		t.Errorf("quick mode should catch size mismatch, got corrupted=%v", result.Corrupted)
+	}
+}
+
+func TestVerifyBackup_NoManifest(t *testing.T) {
+	dir := t.TempDir()
+	_, err := VerifyBackup(dir, true)
+	if err == nil {
+		t.Error("expected error when manifest is missing")
+	}
+}

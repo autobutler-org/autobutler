@@ -26,11 +26,36 @@ func listDeviceStatuses(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(err)
 	}
 
-	// Overlay custom display names when available.
-	if db := deps.Database(); db != nil {
+	// Overlay display names and roles from DB, keyed by device serial.
+	if database := deps.Database(); database != nil {
+		ctx := c.Request.Context()
+
+		nameMap := make(map[string]string)
+		if names, err := database.Queries.GetAllDeviceNames(ctx); err == nil {
+			for _, n := range names {
+				nameMap[n.DeviceSerial] = n.DisplayName
+			}
+		}
+
+		roleMap := make(map[string]string)
+		if roles, err := database.Queries.GetAllDeviceRoles(ctx); err == nil {
+			for _, r := range roles {
+				roleMap[r.DeviceSerial] = r.Role
+			}
+		}
+
 		for i := range statuses {
-			if name, err := db.Queries.GetDeviceName(c.Request.Context(), statuses[i].DevicePath); err == nil && name != "" {
+			serial := ""
+			if statuses[i].UsbInfo != nil {
+				serial = statuses[i].UsbInfo.GetSerial()
+			}
+			if name, ok := nameMap[serial]; ok {
 				statuses[i].Name = name
+			}
+			if role, ok := roleMap[serial]; ok {
+				statuses[i].Role = role
+			} else {
+				statuses[i].Role = "unassigned"
 			}
 		}
 	}

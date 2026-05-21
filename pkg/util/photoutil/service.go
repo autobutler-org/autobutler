@@ -3,6 +3,10 @@ package photoutil
 import (
 	"fmt"
 	"image"
+	"path/filepath"
+	"strings"
+
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 )
 
 // GenerateThumbnailParams contains parameters for generating a thumbnail
@@ -18,8 +22,26 @@ type GenerateThumbnailResult struct {
 	Format    string
 }
 
-// GenerateThumbnail creates a thumbnail image from a source file
+// GenerateThumbnail creates a thumbnail image from a source file.
+// Supports both image and video files (video requires ffmpeg).
 func GenerateThumbnail(params GenerateThumbnailParams) (*GenerateThumbnailResult, error) {
+	ext := strings.ToLower(filepath.Ext(params.FilePath))
+	fileType := storageutil.DetermineFileTypeFromPath("file" + ext)
+
+	if fileType == storageutil.FileTypeVideo {
+		if !IsFFmpegAvailable() {
+			return nil, fmt.Errorf("ffmpeg is required for video thumbnails but was not found on PATH")
+		}
+		thumbnail, err := VideoToThumbnail(params.FilePath, params.Width, params.Height)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate video thumbnail: %w", err)
+		}
+		return &GenerateThumbnailResult{
+			Thumbnail: thumbnail,
+			Format:    "jpeg",
+		}, nil
+	}
+
 	thumbnail, format, err := ImageToThumbnail(params.FilePath, params.Width, params.Height)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate thumbnail: %w", err)

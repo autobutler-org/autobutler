@@ -33,7 +33,7 @@ var listFoldersRoute = serverutil.ApiRoute(
 			return errResp
 		}
 
-		rows, err := deps.Database().Queries.ListVaultFolders(c.Request.Context())
+		rows, err := deps.VaultDB().Queries.ListVaultFolders(c.Request.Context())
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("list folders: %w", err))
 		}
@@ -67,7 +67,7 @@ var createFolderRoute = serverutil.ApiRoute(
 			return serverutil.BadRequest(fmt.Errorf("invalid request: %w", err))
 		}
 
-		folder, err := deps.Database().Queries.CreateVaultFolder(c.Request.Context(), db.CreateVaultFolderParams{
+		folder, err := deps.VaultDB().Queries.CreateVaultFolder(c.Request.Context(), db.CreateVaultFolderParams{
 			Name:      req.Name,
 			ParentID:  nullableInt64(req.ParentID),
 			SortOrder: req.SortOrder,
@@ -100,7 +100,7 @@ var updateFolderRoute = serverutil.ApiRoute(
 
 		ctx := c.Request.Context()
 
-		if _, err := deps.Database().Queries.GetVaultFolder(ctx, id); errors.Is(err, sql.ErrNoRows) {
+		if _, err := deps.VaultDB().Queries.GetVaultFolder(ctx, id); errors.Is(err, sql.ErrNoRows) {
 			return serverutil.NotFound(fmt.Errorf("folder not found"))
 		} else if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("get folder: %w", err))
@@ -111,7 +111,7 @@ var updateFolderRoute = serverutil.ApiRoute(
 			return serverutil.BadRequest(fmt.Errorf("invalid request: %w", err))
 		}
 
-		if err := deps.Database().Queries.UpdateVaultFolder(ctx, db.UpdateVaultFolderParams{
+		if err := deps.VaultDB().Queries.UpdateVaultFolder(ctx, db.UpdateVaultFolderParams{
 			Name:      req.Name,
 			ParentID:  nullableInt64(req.ParentID),
 			SortOrder: req.SortOrder,
@@ -139,7 +139,7 @@ var deleteFolderRoute = serverutil.ApiRoute(
 			return serverutil.BadRequest(fmt.Errorf("invalid id"))
 		}
 
-		if err := deps.Database().Queries.DeleteVaultFolder(c.Request.Context(), id); err != nil {
+		if err := deps.VaultDB().Queries.DeleteVaultFolder(c.Request.Context(), id); err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("delete folder: %w", err))
 		}
 
