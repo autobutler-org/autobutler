@@ -10,6 +10,7 @@ import 'package:autobutler/pages/settings_page.dart';
 import 'package:autobutler/pages/setup_page.dart';
 import 'package:autobutler/pages/sheets_page.dart';
 import 'package:autobutler/pages/spreadsheet_editor_page.dart';
+import 'package:autobutler/pages/vault_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/auth_service.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +29,7 @@ class AppRoutes {
   static const sheets = '/sheets';
   static const devices = '/devices';
   static const health = '/health';
+  static const vault = '/vault';
   static const settings = '/settings';
   static const setup = '/setup';
   static const login = '/login';
@@ -126,6 +128,10 @@ final router = GoRouter(
     GoRoute(
       path: AppRoutes.health,
       builder: (context, state) => const HealthPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.vault,
+      builder: (context, state) => const VaultPage(),
     ),
     GoRoute(
       path: AppRoutes.settings,

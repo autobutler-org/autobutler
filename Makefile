@@ -18,6 +18,15 @@ export GOPROXY ?= https://proxy.golang.org,direct
 ENTRYPOINT := ./cmd/autobutler
 EXE := ./build/autobutler
 
+# Auto-detect Chromium-based browser for Flutter web if CHROME_EXECUTABLE
+# is not already set.  Brave is checked first because users who removed
+# Chrome in favour of Brave still need a Chromium engine for Flutter.
+ifndef CHROME_EXECUTABLE
+  ifneq (,$(shell test -f '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser' && echo found))
+    export CHROME_EXECUTABLE := /Applications/Brave Browser.app/Contents/MacOS/Brave Browser
+  endif
+endif
+
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
 FLUTTER_VERSION=$(shell grep -Eo 'flutter: (.+)' pubspec.yaml | sed -E 's/^flutter: (.+)$$/\1/')

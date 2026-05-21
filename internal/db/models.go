@@ -71,3 +71,34 @@ type User struct {
 	RecoveryPhraseHash string
 	CreatedAt          time.Time
 }
+
+type VaultConfig struct {
+	ID                int64
+	Salt              []byte
+	Argon2Memory      int64
+	Argon2Iterations  int64
+	Argon2Parallelism int64
+	VerificationBlob  []byte
+	VerificationNonce []byte
+	AutoLockSeconds   int64
+	CreatedAt         time.Time
+}
+
+type VaultEntry struct {
+	ID         int64
+	Name       string
+	UrlHost    string
+	FolderID   sql.NullInt64
+	Ciphertext []byte
+	Nonce      []byte
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
+type VaultFolder struct {
+	ID        int64
+	Name      string
+	ParentID  sql.NullInt64
+	SortOrder int64
+	CreatedAt time.Time
+}
