@@ -3,14 +3,11 @@ import 'dart:convert';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/authenticated_service.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
 class SettingsService with AuthenticatedService {
   static final SettingsService _instance = SettingsService._();
   SettingsService._();
   static SettingsService get instance => _instance;
-
-  static Map<String, String> get _authHeaders => instance.authHeaders;
 
   static Uri get _apiBaseUri {
     final configured = AppSettings.instance.activeHost;
@@ -33,8 +30,7 @@ class SettingsService with AuthenticatedService {
 
   static Future<bool> getAutoUpdate() async {
     final uri = _apiBaseUri.resolve('/api/v1/settings');
-    final response = await http.get(uri, headers: _authHeaders);
-    instance.checkUnauthorized(response);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to fetch settings (${response.statusCode})');
     }
@@ -49,10 +45,12 @@ class SettingsService with AuthenticatedService {
 
   static Future<void> setAutoUpdate(bool enabled) async {
     final uri = _apiBaseUri.resolve('/api/v1/settings');
-    final headers = {..._authHeaders, 'Content-Type': 'application/json'};
     final body = jsonEncode({'autoUpdate': enabled});
-    final response = await http.post(uri, headers: headers, body: body);
-    instance.checkUnauthorized(response);
+    final response = await instance.authenticatedPost(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: body,
+    );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to update settings (${response.statusCode})');
     }

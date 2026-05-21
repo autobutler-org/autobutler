@@ -4,14 +4,11 @@ import 'package:autobutler/models/photo_album.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/authenticated_service.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
 class AlbumService with AuthenticatedService {
   static final AlbumService _instance = AlbumService._();
   AlbumService._();
   static AlbumService get instance => _instance;
-
-  static Map<String, String> get _authHeaders => instance.authHeaders;
 
   static Uri _apiUri(String path) {
     final configured = AppSettings.instance.activeHost;
@@ -39,8 +36,7 @@ class AlbumService with AuthenticatedService {
     final uri = _apiUri(
       '/albums',
     ).replace(queryParameters: tree ? {'tree': 'true'} : null);
-    final response = await http.get(uri, headers: _authHeaders);
-    instance.checkUnauthorized(response);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode != 200) {
       throw Exception('Failed to load albums: ${response.statusCode}');
     }
@@ -51,11 +47,7 @@ class AlbumService with AuthenticatedService {
   }
 
   static Future<PhotoAlbum> getAlbum(int id) async {
-    final response = await http.get(
-      _apiUri('/albums/$id'),
-      headers: _authHeaders,
-    );
-    instance.checkUnauthorized(response);
+    final response = await instance.authenticatedGet(_apiUri('/albums/$id'));
     if (response.statusCode != 200) {
       throw Exception('Album not found');
     }
@@ -67,12 +59,11 @@ class AlbumService with AuthenticatedService {
   static Future<PhotoAlbum> createAlbum(String name, {int? parentId}) async {
     final body = <String, dynamic>{'name': name};
     if (parentId != null) body['parentId'] = parentId;
-    final response = await http.post(
+    final response = await instance.authenticatedPost(
       _apiUri('/albums'),
-      headers: {..._authHeaders, 'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: json.encode(body),
     );
-    instance.checkUnauthorized(response);
     if (response.statusCode != 201) {
       throw Exception('Failed to create album: ${response.statusCode}');
     }
@@ -82,12 +73,11 @@ class AlbumService with AuthenticatedService {
   }
 
   static Future<PhotoAlbum> renameAlbum(int id, String name) async {
-    final response = await http.patch(
+    final response = await instance.authenticatedPatch(
       _apiUri('/albums/$id/rename'),
-      headers: {..._authHeaders, 'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: json.encode({'name': name}),
     );
-    instance.checkUnauthorized(response);
     if (response.statusCode != 200) {
       throw Exception('Failed to rename album');
     }
@@ -97,12 +87,11 @@ class AlbumService with AuthenticatedService {
   }
 
   static Future<PhotoAlbum> moveAlbum(int id, {int? parentId}) async {
-    final response = await http.patch(
+    final response = await instance.authenticatedPatch(
       _apiUri('/albums/$id/move'),
-      headers: {..._authHeaders, 'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: json.encode({'parentId': parentId}),
     );
-    instance.checkUnauthorized(response);
     if (response.statusCode != 200) {
       throw Exception('Failed to move album');
     }
@@ -112,22 +101,16 @@ class AlbumService with AuthenticatedService {
   }
 
   static Future<void> deleteAlbum(int id) async {
-    final response = await http.delete(
-      _apiUri('/albums/$id'),
-      headers: _authHeaders,
-    );
-    instance.checkUnauthorized(response);
+    final response = await instance.authenticatedDelete(_apiUri('/albums/$id'));
     if (response.statusCode != 204) {
       throw Exception('Failed to delete album');
     }
   }
 
   static Future<List<PhotoAlbumItem>> listAlbumItems(int albumId) async {
-    final response = await http.get(
+    final response = await instance.authenticatedGet(
       _apiUri('/albums/$albumId/items'),
-      headers: _authHeaders,
     );
-    instance.checkUnauthorized(response);
     if (response.statusCode != 200) {
       throw Exception('Failed to load album items');
     }
@@ -142,12 +125,11 @@ class AlbumService with AuthenticatedService {
     required String deviceSerial,
     required String relPath,
   }) async {
-    final response = await http.post(
+    final response = await instance.authenticatedPost(
       _apiUri('/albums/$albumId/items'),
-      headers: {..._authHeaders, 'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: json.encode({'deviceSerial': deviceSerial, 'relPath': relPath}),
     );
-    instance.checkUnauthorized(response);
     if (response.statusCode != 201) {
       throw Exception('Failed to add photo to album');
     }
@@ -161,12 +143,11 @@ class AlbumService with AuthenticatedService {
     required String deviceSerial,
     required String relPath,
   }) async {
-    final response = await http.delete(
+    final response = await instance.authenticatedDelete(
       _apiUri('/albums/$albumId/items'),
-      headers: {..._authHeaders, 'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: json.encode({'deviceSerial': deviceSerial, 'relPath': relPath}),
     );
-    instance.checkUnauthorized(response);
     if (response.statusCode != 204) {
       throw Exception('Failed to remove photo from album');
     }

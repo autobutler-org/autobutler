@@ -38,4 +38,77 @@ mixin AuthenticatedService {
       throw const UnauthorizedException();
     }
   }
+
+  /// Authenticated GET — injects auth headers and checks for 401 automatically.
+  Future<http.Response> authenticatedGet(
+    Uri uri, {
+    Map<String, String>? headers,
+  }) async {
+    final response = await http.get(
+      uri,
+      headers: {...authHeaders, ...?headers},
+    );
+    checkUnauthorized(response);
+    return response;
+  }
+
+  /// Authenticated POST — injects auth headers and checks for 401 automatically.
+  Future<http.Response> authenticatedPost(
+    Uri uri, {
+    Map<String, String>? headers,
+    Object? body,
+  }) async {
+    final response = await http.post(
+      uri,
+      headers: {...authHeaders, ...?headers},
+      body: body,
+    );
+    checkUnauthorized(response);
+    return response;
+  }
+
+  /// Authenticated PATCH — injects auth headers and checks for 401 automatically.
+  Future<http.Response> authenticatedPatch(
+    Uri uri, {
+    Map<String, String>? headers,
+    Object? body,
+  }) async {
+    final response = await http.patch(
+      uri,
+      headers: {...authHeaders, ...?headers},
+      body: body,
+    );
+    checkUnauthorized(response);
+    return response;
+  }
+
+  /// Authenticated DELETE — injects auth headers and checks for 401 automatically.
+  Future<http.Response> authenticatedDelete(
+    Uri uri, {
+    Map<String, String>? headers,
+    Object? body,
+  }) async {
+    final response = await http.delete(
+      uri,
+      headers: {...authHeaders, ...?headers},
+      body: body,
+    );
+    checkUnauthorized(response);
+    return response;
+  }
+
+  /// Authenticated PUT — injects auth headers and checks for 401 automatically.
+  Future<http.Response> authenticatedPut(
+    Uri uri, {
+    Map<String, String>? headers,
+    Object? body,
+  }) async {
+    final response = await http.put(
+      uri,
+      headers: {...authHeaders, ...?headers},
+      body: body,
+    );
+    checkUnauthorized(response);
+    return response;
+  }
 }

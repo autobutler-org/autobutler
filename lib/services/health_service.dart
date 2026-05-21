@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/authenticated_service.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
 class HealthStatus {
   const HealthStatus({
@@ -68,8 +67,6 @@ class HealthService with AuthenticatedService {
   HealthService._();
   static HealthService get instance => _instance;
 
-  static Map<String, String> get _authHeaders => instance.authHeaders;
-
   static Uri get _apiBaseUri {
     final configured = AppSettings.instance.activeHost;
     final base =
@@ -91,8 +88,7 @@ class HealthService with AuthenticatedService {
 
   static Future<HealthStatus> getHealth() async {
     final uri = _apiBaseUri.resolve('/api/v1/health');
-    final response = await http.get(uri, headers: _authHeaders);
-    instance.checkUnauthorized(response);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to fetch health (${response.statusCode})');
     }

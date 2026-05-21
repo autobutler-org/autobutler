@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/authenticated_service.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
 class FavoriteStatus {
   final bool isFavorite;
@@ -16,8 +15,6 @@ class FavoritesService with AuthenticatedService {
   static final FavoritesService _instance = FavoritesService._();
   FavoritesService._();
   static FavoritesService get instance => _instance;
-
-  static Map<String, String> get _authHeaders => instance.authHeaders;
 
   static Uri _apiUri(String path) {
     final configured = AppSettings.instance.activeHost;
@@ -43,12 +40,11 @@ class FavoritesService with AuthenticatedService {
 
   /// Toggles favorite state. Returns the new isFavorite value.
   static Future<bool> toggle({required String relPath, String? serial}) async {
-    final response = await http.post(
+    final response = await instance.authenticatedPost(
       _apiUri('/photos/favorite'),
-      headers: {..._authHeaders, 'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: json.encode({'relPath': relPath, 'deviceSerial': serial ?? ''}),
     );
-    instance.checkUnauthorized(response);
     if (response.statusCode != 200) {
       throw Exception('Failed to toggle favorite: ${response.statusCode}');
     }
@@ -59,8 +55,7 @@ class FavoritesService with AuthenticatedService {
   /// Returns all favorited photo keys in the format "deviceSerial:relPath".
   static Future<Set<String>> listFavoriteKeys() async {
     final uri = _apiUri('/photos/favorites');
-    final response = await http.get(uri, headers: _authHeaders);
-    instance.checkUnauthorized(response);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode != 200) return {};
     final list = json.decode(response.body) as List<dynamic>;
     return list.map((item) {
@@ -82,8 +77,7 @@ class FavoritesService with AuthenticatedService {
         if (serial != null && serial.isNotEmpty) 'serial': serial,
       },
     );
-    final response = await http.get(uri, headers: _authHeaders);
-    instance.checkUnauthorized(response);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode != 200) return false;
     final d = json.decode(response.body) as Map<String, dynamic>;
     return d['isFavorite'] as bool? ?? false;
