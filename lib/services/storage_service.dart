@@ -18,6 +18,7 @@ class StorageDevice {
     required this.isEnabled,
     this.model = '',
     this.serial = '',
+    this.role = 'unassigned',
     this.categories = const {},
   });
 
@@ -43,6 +44,7 @@ class StorageDevice {
       isEnabled: json['isEnabled'] as bool? ?? false,
       model: json['model'] as String? ?? '',
       serial: serial,
+      role: json['role'] as String? ?? 'unassigned',
       categories: categories,
     );
   }
@@ -60,6 +62,9 @@ class StorageDevice {
 
   /// USB serial number; empty string for internal devices.
   final String serial;
+
+  /// Device role: 'default-storage', 'snapshot-backup', or 'unassigned'.
+  final String role;
 
   /// File category breakdown in bytes, e.g. {'documents': 1024, 'media': 2048}.
   final Map<String, int> categories;
@@ -199,4 +204,159 @@ class StorageService with AuthenticatedService {
     }
     invalidateDeviceCache();
   }
+
+  static Future<void> setDeviceRole({
+    required String serial,
+    required String role,
+    required String username,
+    required String password,
+  }) async {
+    final uri = _apiBaseUri.resolve('/api/v1/storage/devices/role');
+    final response = await http.put(
+      uri,
+      headers: {'Content-Type': 'application/json', ..._authHeaders},
+      body: jsonEncode({
+        'serial': serial,
+        'role': role,
+        'username': username,
+        'password': password,
+      }),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>?;
+      throw Exception(
+        body?['error'] ?? 'Failed to set role (${response.statusCode})',
+      );
+    }
+    invalidateDeviceCache();
+  }
+
+  static Future<String> startSnapshotBackup({
+    required String targetDeviceSerial,
+    String? username,
+    String? password,
+    String? recoveryPassword,
+  }) async {
+    final uri = _apiBaseUri.resolve('/api/v1/storage/devices/snapshot-backup');
+    final body = <String, dynamic>{'targetDeviceSerial': targetDeviceSerial};
+    if (username != null) body['username'] = username;
+    if (password != null) body['password'] = password;
+    if (recoveryPassword != null) body['recoveryPassword'] = recoveryPassword;
+
+    final response = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json', ..._authHeaders},
+      body: jsonEncode(body),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>?;
+      throw Exception(
+        data?['error'] ?? 'Failed to start backup (${response.statusCode})',
+      );
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return (data['data'] as Map<String, dynamic>)['jobId'] as String;
+  }
+
+  static Future<BackupJobStatus> getSnapshotBackupStatus(String jobId) async {
+    final uri = _apiBaseUri.resolve(
+      '/api/v1/storage/devices/snapshot-backup/status/$jobId',
+    );
+    final response = await http.get(uri, headers: _authHeaders);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to get backup status (${response.statusCode})');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return BackupJobStatus.fromJson(data['data'] as Map<String, dynamic>);
+  }
+
+  static Future<VerifyResult> verifySnapshotBackup({
+    required String deviceSerial,
+    bool full = false,
+  }) async {
+    final uri = _apiBaseUri.resolve(
+      '/api/v1/storage/devices/snapshot-backup/verify',
+    );
+    final response = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json', ..._authHeaders},
+      body: jsonEncode({'deviceSerial': deviceSerial, 'full': full}),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>?;
+      throw Exception(
+        data?['error'] ?? 'Verify failed (${response.statusCode})',
+      );
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return VerifyResult.fromJson(data['data'] as Map<String, dynamic>);
+  }
+}
+
+class BackupJobStatus {
+  final String id;
+  final String status;
+  final double progress;
+  final int totalFiles;
+  final int filesCopied;
+  final int filesSkipped;
+  final int totalBytes;
+  final int bytesCopied;
+  final String? errorMsg;
+
+  const BackupJobStatus({
+    required this.id,
+    required this.status,
+    required this.progress,
+    required this.totalFiles,
+    required this.filesCopied,
+    required this.filesSkipped,
+    required this.totalBytes,
+    required this.bytesCopied,
+    this.errorMsg,
+  });
+
+  factory BackupJobStatus.fromJson(Map<String, dynamic> json) {
+    return BackupJobStatus(
+      id: json['id'] as String? ?? '',
+      status: json['status'] as String? ?? '',
+      progress: (json['progress'] as num?)?.toDouble() ?? 0,
+      totalFiles: (json['totalFiles'] as num?)?.toInt() ?? 0,
+      filesCopied: (json['filesCopied'] as num?)?.toInt() ?? 0,
+      filesSkipped: (json['filesSkipped'] as num?)?.toInt() ?? 0,
+      totalBytes: (json['totalBytes'] as num?)?.toInt() ?? 0,
+      bytesCopied: (json['bytesCopied'] as num?)?.toInt() ?? 0,
+      errorMsg: json['errorMsg'] as String?,
+    );
+  }
+
+  bool get isRunning =>
+      status == 'PENDING' || status == 'SCANNING' || status == 'COPYING';
+  bool get isComplete => status == 'COMPLETED';
+  bool get isFailed => status == 'FAILED';
+}
+
+class VerifyResult {
+  final int ok;
+  final List<String> missing;
+  final List<String> corrupted;
+  final List<String> added;
+
+  const VerifyResult({
+    required this.ok,
+    this.missing = const [],
+    this.corrupted = const [],
+    this.added = const [],
+  });
+
+  factory VerifyResult.fromJson(Map<String, dynamic> json) {
+    return VerifyResult(
+      ok: (json['ok'] as num?)?.toInt() ?? 0,
+      missing: (json['missing'] as List<dynamic>?)?.cast<String>() ?? [],
+      corrupted: (json['corrupted'] as List<dynamic>?)?.cast<String>() ?? [],
+      added: (json['added'] as List<dynamic>?)?.cast<String>() ?? [],
+    );
+  }
+
+  bool get isHealthy => missing.isEmpty && corrupted.isEmpty;
 }

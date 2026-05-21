@@ -7,4 +7,5 @@ type DeviceStatus struct {
 	IsEnabled bool   `json:"isEnabled"`
 	DataDir   string `json:"dataDir,omitempty"`
 	CirrusDir string `json:"cirrusDir,omitempty"`
+	Role      string `json:"role"`
 }

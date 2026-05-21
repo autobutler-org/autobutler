@@ -16,11 +16,11 @@ const maxDeviceNameLength = 64
 
 // renameDevice godoc
 // @Summary Rename a storage device
-// @Description Sets a custom display name for a storage device identified by its device path
+// @Description Sets a custom display name for a storage device identified by its serial number
 // @Tags storage
 // @Accept json
 // @Produce json
-// @Param devicePath path string true "Device path (e.g. /dev/disk3s5 — leading slash included in wildcard)"
+// @Param serial query string true "Device serial (empty string for internal device)"
 // @Param body body object true "{name: string}"
 // @Success 200 {object} object
 // @Failure 400 {object} serverutil.Response
@@ -32,12 +32,7 @@ func renameDevice(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(nil)
 	}
 
-	// Device paths contain slashes (e.g. /dev/disk3s5) which can't be
-	// embedded in a URL path segment without ambiguity. Accept via query param.
-	devicePath := c.Query("devicePath")
-	if devicePath == "" {
-		return serverutil.BadRequest(nil)
-	}
+	serial := c.Query("serial")
 
 	var req struct {
 		Name string `json:"name" binding:"required"`
@@ -60,13 +55,13 @@ func renameDevice(c *gin.Context) *serverutil.Response {
 	}
 
 	if err := deps.Database().Queries.UpsertDeviceName(c.Request.Context(), db.UpsertDeviceNameParams{
-		DevicePath:  devicePath,
-		DisplayName: name,
+		DeviceSerial: serial,
+		DisplayName:  name,
 	}); err != nil {
 		return serverutil.InternalServerError(err)
 	}
 
-	return serverutil.Ok().WithData(gin.H{"devicePath": devicePath, "name": name})
+	return serverutil.Ok().WithData(gin.H{"serial": serial, "name": name})
 }
 
 var renameDeviceRoute = serverutil.ApiRoute(

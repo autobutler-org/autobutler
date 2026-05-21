@@ -19,9 +19,15 @@ type ConnectedDevice struct {
 }
 
 type DeviceName struct {
-	DevicePath  string
-	DisplayName string
-	UpdatedAt   time.Time
+	DeviceSerial string
+	DisplayName  string
+	UpdatedAt    time.Time
+}
+
+type DeviceRole struct {
+	DeviceSerial string
+	Role         string
+	UpdatedAt    time.Time
 }
 
 type PhotoAlbum struct {
@@ -101,4 +107,10 @@ type VaultFolder struct {
 	ParentID  sql.NullInt64
 	SortOrder int64
 	CreatedAt time.Time
+}
+
+type VaultLocation struct {
+	ID           int64
+	DeviceSerial string
+	UpdatedAt    time.Time
 }

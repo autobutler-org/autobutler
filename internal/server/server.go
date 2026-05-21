@@ -6,12 +6,17 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
+	"time"
 
 	docs "github.com/autobutler-org/autobutler/docs/swagger"
+	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/internal/server/middleware"
+	"github.com/autobutler-org/autobutler/pkg/backup"
 	"github.com/autobutler-org/autobutler/pkg/botel"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/favoritesutil"
 	"github.com/autobutler-org/autobutler/pkg/util/remoteutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
@@ -24,21 +29,92 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func setupServices(deps deputil.Dependencies) error {
+func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 	if err := storageutil.SetupCirrusDir(); err != nil {
-		return fmt.Errorf("failed to setup cirrus directory: %w", err)
+		return nil, fmt.Errorf("failed to setup cirrus directory: %w", err)
 	}
 	go deps.Worker().Process()
 	go deps.Worker().LogErrors()
-	// Ensure system smart albums exist on every startup so they are always
-	// present in the sidebar even when empty.
 	if _, err := favoritesutil.EnsureFavoritesAlbum(
 		context.Background(),
 		deps.Database().Queries,
 	); err != nil {
 		log.Printf("[server] warning: could not ensure Favorites album: %v", err)
 	}
-	return nil
+
+	syncWorker := backup.NewSyncWorker(backup.SyncWorkerParams{
+		Bus:     deps.EventBus(),
+		Storage: deps.StorageService(),
+		Queries: deps.Database().Queries,
+	})
+	syncWorker.Start()
+
+	initExternalVault(deps)
+	go vaultDeviceMonitor(deps)
+
+	return syncWorker, nil
+}
+
+func initExternalVault(deps deputil.Dependencies) {
+	serial, err := deps.Database().Queries.GetVaultLocation(context.Background())
+	if err != nil || serial == "" {
+		return
+	}
+	device, err := deps.StorageService().FindManagedDeviceBySerial(serial)
+	if err != nil || device == nil {
+		log.Printf("[vault] external vault device %s not found at startup — vault unavailable until reconnected", serial)
+		return
+	}
+	dbPath := filepath.Join(device.DataDir, "vault.db")
+	vaultDB, err := db.ConnectToVaultDatabase(dbPath)
+	if err != nil {
+		log.Printf("[vault] failed to open external vault db: %v", err)
+		return
+	}
+	deps.SetVaultDB(vaultDB)
+	log.Printf("[vault] external vault loaded from device %s", serial)
+}
+
+func vaultDeviceMonitor(deps deputil.Dependencies) {
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	wasConnected := true
+
+	for range ticker.C {
+		serial, err := deps.Database().Queries.GetVaultLocation(context.Background())
+		if err != nil || serial == "" {
+			continue
+		}
+
+		device, err := deps.StorageService().FindManagedDeviceBySerial(serial)
+		connected := err == nil && device != nil
+
+		if wasConnected && !connected {
+			log.Printf("[vault] external device %s disconnected — locking vault", serial)
+			deps.VaultSession().LockWithReason("storage device disconnected")
+			deps.ClearVaultDB()
+			deps.EventBus().Publish(eventbus.Event{
+				Kind: eventbus.EventVaultDeviceDisconnected,
+				Data: map[string]string{"serial": serial},
+			})
+			wasConnected = false
+		} else if !wasConnected && connected {
+			log.Printf("[vault] external device %s reconnected — vault available to unlock", serial)
+			dbPath := filepath.Join(device.DataDir, "vault.db")
+			vaultDB, err := db.ConnectToVaultDatabase(dbPath)
+			if err != nil {
+				log.Printf("[vault] failed to reopen vault db: %v", err)
+				continue
+			}
+			deps.SetVaultDB(vaultDB)
+			deps.EventBus().Publish(eventbus.Event{
+				Kind: eventbus.EventVaultDeviceReconnected,
+				Data: map[string]string{"serial": serial},
+			})
+			wasConnected = true
+		}
+	}
 }
 
 func setupSwagger(router *gin.Engine) {
@@ -73,7 +149,8 @@ func StartServer(deps deputil.Dependencies) error {
 	}()
 
 	deps.WithWorker(workerutil.NewWorker(deps.StorageService()))
-	if err := setupServices(deps); err != nil {
+	syncWorker, err := setupServices(deps)
+	if err != nil {
 		return fmt.Errorf("failed to setup services: %w", err)
 	}
 
@@ -94,6 +171,7 @@ func StartServer(deps deputil.Dependencies) error {
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		<-quit
 		log.Println("[server] shutting down...")
+		syncWorker.Stop()
 		remoteutil.Stop()
 		if err := tp.Shutdown(context.Background()); err != nil {
 			log.Printf("Error shutting down tracer provider: %v", err)

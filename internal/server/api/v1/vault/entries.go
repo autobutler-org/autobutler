@@ -69,7 +69,7 @@ var listEntriesRoute = serverutil.ApiRoute(
 			return errResp
 		}
 
-		rows, err := deps.Database().Queries.ListVaultEntries(c.Request.Context())
+		rows, err := deps.VaultDB().Queries.ListVaultEntries(c.Request.Context())
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("list entries: %w", err))
 		}
@@ -105,7 +105,7 @@ var getEntryRoute = serverutil.ApiRoute(
 			return serverutil.BadRequest(fmt.Errorf("invalid id"))
 		}
 
-		entry, err := deps.Database().Queries.GetVaultEntry(c.Request.Context(), id)
+		entry, err := deps.VaultDB().Queries.GetVaultEntry(c.Request.Context(), id)
 		if errors.Is(err, sql.ErrNoRows) {
 			return serverutil.NotFound(fmt.Errorf("entry not found"))
 		}
@@ -172,7 +172,7 @@ var createEntryRoute = serverutil.ApiRoute(
 			return serverutil.InternalServerError(fmt.Errorf("encrypt entry: %w", err))
 		}
 
-		entry, err := deps.Database().Queries.CreateVaultEntry(c.Request.Context(), db.CreateVaultEntryParams{
+		entry, err := deps.VaultDB().Queries.CreateVaultEntry(c.Request.Context(), db.CreateVaultEntryParams{
 			Name:       req.Name,
 			UrlHost:    extractURLHost(req.URL),
 			FolderID:   nullableInt64(req.FolderID),
@@ -215,7 +215,7 @@ var updateEntryRoute = serverutil.ApiRoute(
 
 		ctx := c.Request.Context()
 
-		if _, err := deps.Database().Queries.GetVaultEntry(ctx, id); errors.Is(err, sql.ErrNoRows) {
+		if _, err := deps.VaultDB().Queries.GetVaultEntry(ctx, id); errors.Is(err, sql.ErrNoRows) {
 			return serverutil.NotFound(fmt.Errorf("entry not found"))
 		} else if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("get entry: %w", err))
@@ -245,7 +245,7 @@ var updateEntryRoute = serverutil.ApiRoute(
 			return serverutil.InternalServerError(fmt.Errorf("encrypt entry: %w", err))
 		}
 
-		if err := deps.Database().Queries.UpdateVaultEntry(ctx, db.UpdateVaultEntryParams{
+		if err := deps.VaultDB().Queries.UpdateVaultEntry(ctx, db.UpdateVaultEntryParams{
 			Name:       req.Name,
 			UrlHost:    extractURLHost(req.URL),
 			FolderID:   nullableInt64(req.FolderID),
@@ -275,7 +275,7 @@ var deleteEntryRoute = serverutil.ApiRoute(
 			return serverutil.BadRequest(fmt.Errorf("invalid id"))
 		}
 
-		if err := deps.Database().Queries.DeleteVaultEntry(c.Request.Context(), id); err != nil {
+		if err := deps.VaultDB().Queries.DeleteVaultEntry(c.Request.Context(), id); err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("delete entry: %w", err))
 		}
 

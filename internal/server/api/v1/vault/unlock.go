@@ -24,7 +24,7 @@ var unlockVaultRoute = serverutil.ApiRoute(
 
 		ctx := c.Request.Context()
 
-		config, err := deps.Database().Queries.GetVaultConfig(ctx)
+		config, err := deps.VaultDB().Queries.GetVaultConfig(ctx)
 		if errors.Is(err, sql.ErrNoRows) {
 			return serverutil.BadRequest(fmt.Errorf("vault is not initialized — call POST /vault/setup first"))
 		}
