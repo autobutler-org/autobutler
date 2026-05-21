@@ -62,8 +62,9 @@ class _FileViewerPageState extends State<FileViewerPage> {
 
   Future<void> _resolveAndNavigate() async {
     try {
-      final serial =
-          widget.deviceSerial.trim().isEmpty ? null : widget.deviceSerial;
+      final serial = widget.deviceSerial.trim().isEmpty
+          ? null
+          : widget.deviceSerial;
       final stat = await CirrusService.statFile(
         widget.filePath,
         serial: serial,
@@ -75,7 +76,9 @@ class _FileViewerPageState extends State<FileViewerPage> {
           ? widget.filePath.split('/').last
           : stat.name;
 
-      if (stat.isDir || stat.fileType == 'archive' || stat.fileType == 'generic') {
+      if (stat.isDir ||
+          stat.fileType == 'archive' ||
+          stat.fileType == 'generic') {
         // Directory or unhandled type — hand off to the file browser.
         context.go(_cirrusPath(widget.filePath));
         return;
@@ -146,10 +149,7 @@ class _FileViewerPageState extends State<FileViewerPage> {
               children: [
                 const Icon(Icons.error_outline, size: 48, color: Colors.red),
                 const SizedBox(height: 16),
-                Text(
-                  _errorMessage!,
-                  textAlign: TextAlign.center,
-                ),
+                Text(_errorMessage!, textAlign: TextAlign.center),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
                   onPressed: () {
@@ -169,8 +169,6 @@ class _FileViewerPageState extends State<FileViewerPage> {
       );
     }
 
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
