@@ -1,7 +1,11 @@
 import 'package:autobutler/services/vault_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
+import 'package:autobutler/utils/web_download_stub.dart'
+    if (dart.library.html) 'package:autobutler/utils/web_download_web.dart'
+    as web_download;
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -118,6 +122,48 @@ class _VaultPageState extends State<VaultPage> {
               icon: const Icon(Icons.refresh),
               tooltip: 'Refresh',
               onPressed: _loadEntries,
+            ),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) {
+                switch (value) {
+                  case 'import':
+                    _showImportDialog(context);
+                  case 'export_json':
+                    _doExport('json');
+                  case 'export_csv':
+                    _doExport('csv');
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: 'import',
+                  child: ListTile(
+                    leading: Icon(Icons.file_upload_outlined),
+                    title: Text('Import'),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'export_json',
+                  child: ListTile(
+                    leading: Icon(Icons.file_download_outlined),
+                    title: Text('Export as JSON'),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'export_csv',
+                  child: ListTile(
+                    leading: Icon(Icons.file_download_outlined),
+                    title: Text('Export as CSV'),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
             ),
           ],
         ],
@@ -465,6 +511,99 @@ class _VaultPageState extends State<VaultPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _showImportDialog(BuildContext context) async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['csv', 'json'],
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+
+    final file = result.files.first;
+    if (file.bytes == null) return;
+
+    if (!mounted) return;
+    final format = await AutobutlerWidget.showDialog<String>(
+      context, // ignore: use_build_context_synchronously
+      builder: (ctx) => AutobutlerWidget.alertDialog(
+        title: const Text('Import format'),
+        content: Text('Importing "${file.name}". Choose the format:'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'auto'),
+            child: const Text('Auto-detect'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'bitwarden'),
+            child: const Text('Bitwarden CSV'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+    if (format == null || !mounted) return;
+
+    try {
+      final resp = await VaultService.importEntries(
+        fileBytes: file.bytes!,
+        fileName: file.name,
+        format: format,
+      );
+      _loadEntries();
+      if (!mounted) return;
+      final imported = resp['imported'] ?? 0;
+      final skipped = resp['skipped'] ?? 0;
+      final errors = (resp['errors'] as List?)?.length ?? 0;
+      ScaffoldMessenger.of(
+        context, // ignore: use_build_context_synchronously
+      ).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Imported $imported entries'
+            '${skipped > 0 ? ', $skipped skipped (duplicates)' : ''}'
+            '${errors > 0 ? ', $errors errors' : ''}',
+          ),
+        ),
+      );
+    } on VaultLockedException {
+      _loadStatus();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context, // ignore: use_build_context_synchronously
+        ).showSnackBar(SnackBar(content: Text('Import failed: $e')));
+      }
+    }
+  }
+
+  Future<void> _doExport(String format) async {
+    try {
+      final bytes = await VaultService.exportEntries(format: format);
+      final fileName = format == 'csv'
+          ? 'autobutler_vault.csv'
+          : 'autobutler_vault.json';
+      await web_download.saveBytesForDownload(
+        Uint8List.fromList(bytes),
+        fileName,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Exported as $fileName')));
+    } on VaultLockedException {
+      _loadStatus();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Export failed: $e')));
+      }
+    }
   }
 
   Future<void> _showEntryDetail(BuildContext context, int entryId) async {

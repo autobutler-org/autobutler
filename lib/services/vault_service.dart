@@ -475,6 +475,38 @@ class VaultService with AuthenticatedService {
     }
   }
 
+  static Future<Map<String, dynamic>> importEntries({
+    required List<int> fileBytes,
+    required String fileName,
+    String format = 'auto',
+  }) async {
+    final request = http.MultipartRequest('POST', _apiUri('/vault/import'));
+    _authHeaders.forEach((k, v) => request.headers[k] = v);
+    request.fields['format'] = format;
+    request.files.add(
+      http.MultipartFile.fromBytes('file', fileBytes, filename: fileName),
+    );
+    final streamed = await request.send();
+    final body = await streamed.stream.bytesToString();
+    if (streamed.statusCode == 423) throw VaultLockedException();
+    if (streamed.statusCode != 200) {
+      throw Exception('Import failed: ${streamed.statusCode}');
+    }
+    return json.decode(body) as Map<String, dynamic>;
+  }
+
+  static Future<List<int>> exportEntries({String format = 'json'}) async {
+    final resp = await http.get(
+      _apiUri('/vault/export?format=$format'),
+      headers: _authHeaders,
+    );
+    if (resp.statusCode == 423) throw VaultLockedException();
+    if (resp.statusCode != 200) {
+      throw Exception('Export failed: ${resp.statusCode}');
+    }
+    return resp.bodyBytes;
+  }
+
   static Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
