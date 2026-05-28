@@ -6,6 +6,7 @@ import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 
 class SheetsPage extends StatefulWidget {
   const SheetsPage({super.key});
@@ -77,6 +78,58 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
     _load();
   }
 
+  Future<void> _createNewSheet() async {
+    final nameController = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('New Spreadsheet'),
+        content: TextField(
+          controller: nameController,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Spreadsheet name',
+            border: OutlineInputBorder(),
+          ),
+          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, nameController.text.trim()),
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+    if (name == null || name.isEmpty || !mounted) return;
+
+    try {
+      final fileName = name.endsWith('.absheet') ? name : '$name.absheet';
+      final bytes =
+          '{"tabs":[{"name":"Sheet 1","data":{"columns":[],"rows":[]}}]}'
+              .codeUnits;
+      final file = http.MultipartFile.fromBytes(
+        'files',
+        bytes,
+        filename: fileName,
+      );
+      await CirrusService.uploadFilesFromFormData('', [file]);
+      if (!mounted) return;
+      context.push(AppRoutes.sheetFile(fileName));
+      _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to create sheet: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -86,6 +139,11 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
         label: 'Sheets',
         icon: Icons.table_chart_outlined,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'New spreadsheet',
+            onPressed: _createNewSheet,
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Reload',
@@ -184,12 +242,20 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
             Text(
               _searchController.text.isNotEmpty
                   ? 'No sheets match your search.'
-                  : 'No sheets yet.\nCreate a .absheet file in the Files browser.',
+                  : 'No sheets yet.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
+            if (_searchController.text.isEmpty) ...[
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: _createNewSheet,
+                icon: const Icon(Icons.add),
+                label: const Text('Create new sheet'),
+              ),
+            ],
           ],
         ),
       );
