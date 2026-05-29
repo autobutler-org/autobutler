@@ -6,6 +6,7 @@ import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 
 class DocsPage extends StatefulWidget {
   const DocsPage({super.key});
@@ -78,6 +79,56 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
     _load();
   }
 
+  Future<void> _createNewDoc() async {
+    final nameController = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('New Document'),
+        content: TextField(
+          controller: nameController,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Document name',
+            border: OutlineInputBorder(),
+          ),
+          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, nameController.text.trim()),
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+    if (name == null || name.isEmpty || !mounted) return;
+
+    try {
+      final fileName = name.endsWith('.abdoc') ? name : '$name.abdoc';
+      final bytes = '{"ops":[{"insert":"\\n"}]}'.codeUnits;
+      final file = http.MultipartFile.fromBytes(
+        'files',
+        bytes,
+        filename: fileName,
+      );
+      await CirrusService.uploadFilesFromFormData('', [file]);
+      if (!mounted) return;
+      context.push(AppRoutes.docFile(fileName));
+      _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to create doc: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -87,6 +138,11 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
         label: 'Docs',
         icon: Icons.description_outlined,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'New document',
+            onPressed: _createNewDoc,
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Reload',
@@ -185,12 +241,20 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
             Text(
               _searchController.text.isNotEmpty
                   ? 'No docs match your search.'
-                  : 'No docs yet.\nCreate a .abdoc file in the Files browser.',
+                  : 'No docs yet.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
+            if (_searchController.text.isEmpty) ...[
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: _createNewDoc,
+                icon: const Icon(Icons.add),
+                label: const Text('Create new doc'),
+              ),
+            ],
           ],
         ),
       );
