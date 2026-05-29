@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"strings"
 
@@ -17,7 +18,55 @@ type partition struct {
 	path string
 }
 
+// nonUnixFilesystems is the set of filesystem types that don't support
+// Unix ownership natively. These need uid/gid mount options so that the
+// autobutler service user can write to the drive.
+var nonUnixFilesystems = map[string]bool{
+	"exfat":   true,
+	"vfat":    true,
+	"fat":     true,
+	"fat32":   true,
+	"ntfs":    true,
+	"ntfs3":   true,
+	"ntfs-3g": true,
+	"msdos":   true,
+}
+
+// detectFsType uses blkid to identify the filesystem type of a block device.
+// Returns an empty string if detection fails — callers should treat this as
+// "unknown" and fall back to a plain mount.
+func detectFsType(devicePath string) string {
+	out, err := exec.Command("blkid", "-o", "value", "-s", "TYPE", devicePath).Output()
+	if err != nil {
+		return ""
+	}
+	return strings.ToLower(strings.TrimSpace(string(out)))
+}
+
+// mountServiceUID returns the uid and gid of the autobutler service user,
+// falling back to the current process user if lookup fails.
+func mountServiceUID() (uid, gid string) {
+	if u, err := user.Lookup("autobutler"); err == nil {
+		return u.Uid, u.Gid
+	}
+	if u, err := user.Current(); err == nil {
+		return u.Uid, u.Gid
+	}
+	return "0", "0"
+}
+
 func (p *partition) MountCommand(mountTargetPath string) *exec.Cmd {
+	fsType := detectFsType(p.path)
+	if nonUnixFilesystems[fsType] {
+		// Filesystems without native Unix permissions (exFAT, NTFS, FAT32)
+		// need uid/gid mount options so the autobutler service user can write.
+		uid, gid := mountServiceUID()
+		return exec.Command(
+			"sudo", "mount",
+			"-o", fmt.Sprintf("uid=%s,gid=%s", uid, gid),
+			p.path, mountTargetPath,
+		)
+	}
 	return exec.Command("sudo", "mount", p.path, mountTargetPath)
 }
 
