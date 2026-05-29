@@ -163,12 +163,13 @@ class FileBrowserController {
         return FileMenuActionOutcome(message: downloadedMessage(node));
       case FileMenuAction.moveRename:
         final startPath = parentPath(node.apiPath);
-        // Fetch devices for cross-device move support
-        List<StorageDevice> enabledDevices = [];
+        // Fetch devices for cross-device move support.
+        // Use ALL devices (not just isEnabled) so the picker shows even
+        // when mount state is stale — the user can still select a drive
+        // that they know is mounted.
+        List<StorageDevice> allDevices = [];
         try {
-          enabledDevices = (await StorageService.listDevices())
-              .where((d) => d.isEnabled)
-              .toList();
+          allDevices = await StorageService.listDevices();
         } catch (_) {
           // Fall through with empty list — dialog will skip device picker
         }
@@ -177,7 +178,7 @@ class FileBrowserController {
           context,
           startPath: startPath,
           initialName: node.name,
-          devices: enabledDevices,
+          devices: allDevices,
         );
         if (!context.mounted) {
           return null;
