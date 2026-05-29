@@ -31,6 +31,13 @@ func (c *deviceStatusCache) set(result []*DeviceStatus) {
 	c.cachedAt = time.Now()
 }
 
+// invalidate clears the cache so the next GetDeviceStatuses call re-probes disk.
+func (c *deviceStatusCache) invalidate() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.result = nil
+}
+
 // StorageService wraps a Detector and exposes device-querying methods.
 // Construct with NewStorageService(d) and inject via deputil.Dependencies.
 type StorageService struct {
@@ -136,6 +143,13 @@ func (s *StorageService) getDeviceStatusesFresh() ([]*DeviceStatus, error) {
 		})
 	}
 	return statuses, nil
+}
+
+// InvalidateDeviceCache clears the device status cache so the next call
+// to GetDeviceStatuses re-probes all devices from disk. Call this after
+// any mount/unmount operation to prevent stale UI state.
+func (s *StorageService) InvalidateDeviceCache() {
+	s.cache.invalidate()
 }
 
 // FindUsbDeviceBySerial finds a USB device by serial number.

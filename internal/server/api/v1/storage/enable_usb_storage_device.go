@@ -76,6 +76,10 @@ func enableUsbStorageDevice(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(fmt.Errorf("failed to execute mount command: %w", err))
 	}
 
+	// Invalidate the device status cache so the next poll reflects the new
+	// mount state immediately rather than returning stale data for up to 10s.
+	deps.StorageService().InvalidateDeviceCache()
+
 	cirrusDir, err := storageutil.GetCirrusDirForDevice(mountTargetPath)
 	if err != nil {
 		return serverutil.InternalServerError(fmt.Errorf("failed to initialize data directory on mounted device: %w", err))

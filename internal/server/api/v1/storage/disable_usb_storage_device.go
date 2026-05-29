@@ -53,6 +53,9 @@ func disableUsbStorageDevice(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(fmt.Errorf("failed to execute unmount command: %w", err))
 	}
 
+	// Invalidate the device status cache so the UI reflects the unmount immediately.
+	deps.StorageService().InvalidateDeviceCache()
+
 	return serverutil.Ok().WithData(gin.H{
 		"message": "USB storage device unmounted successfully",
 	})
