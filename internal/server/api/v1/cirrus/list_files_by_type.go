@@ -62,7 +62,9 @@ func listFilesByType(c *gin.Context) *serverutil.Response {
 		}
 	}
 
-	var allFiles []FileNodeWithTimeJSON
+	// Use make() instead of var to ensure JSON serialization produces []
+	// instead of null when there are no files (nil slice encodes as null).
+	allFiles := make([]FileNodeWithTimeJSON, 0)
 	for _, device := range selectedDevices {
 		cirrusDir := device.CirrusDir
 		deviceSerial := DefaultDeviceSerial
