@@ -217,6 +217,7 @@ func UpdateFromDefaultSources(version string) error {
 		err := Update(source, version)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("failed to update from source %v: %w", source, err))
+			continue
 		}
 		return nil
 	}
