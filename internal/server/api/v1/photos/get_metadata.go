@@ -198,6 +198,7 @@ func findLivePhotoVideo(fullPath, relPath string) string {
 }
 
 
+
 func exifDataToJSON(data *photoutil.ExifData) *ExifJSON {
 	e := &ExifJSON{}
 	empty := true
