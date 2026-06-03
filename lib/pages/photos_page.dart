@@ -59,13 +59,6 @@ class PhotoItem {
   }
 }
 
-String? _heicFormatParam(String fileName) {
-  if (!kIsWeb) return null;
-  final lower = fileName.toLowerCase();
-  if (lower.endsWith('.heic') || lower.endsWith('.heif')) return 'jpeg';
-  return null;
-}
-
 class _PhotosPageState extends State<PhotosPage>
     with WidgetsBindingObserver, AutoRefreshMixin {
   static const int _defaultCrossAxisCount = 4;
@@ -745,7 +738,6 @@ class _PhotosPageState extends State<PhotosPage>
               final bytes = await CirrusService.downloadFileBytes(
                 c.apiPath,
                 serial: c.deviceSerial,
-                format: _heicFormatParam(c.name),
               );
               if (bytes == null) return;
               if (!mounted) return;
@@ -769,7 +761,6 @@ class _PhotosPageState extends State<PhotosPage>
                         var b = await CirrusService.downloadFileBytes(
                           nc.apiPath,
                           serial: nc.deviceSerial,
-                          format: _heicFormatParam(nc.name),
                         );
                         if (b == null) await manualRefresh();
                         return (b, nc.name, nc.apiPath, nc.deviceSerial);
@@ -843,7 +834,6 @@ class _PhotosPageState extends State<PhotosPage>
                       var b = await CirrusService.downloadFileBytes(
                         nc.apiPath,
                         serial: nc.deviceSerial,
-                        format: _heicFormatParam(nc.name),
                       );
                       if (b == null) await manualRefresh();
                       return (b, nc.name, nc.apiPath, nc.deviceSerial);

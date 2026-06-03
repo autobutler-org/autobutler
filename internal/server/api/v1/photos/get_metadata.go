@@ -109,6 +109,7 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 
 	// --- EXIF + dimensions (works for JPEG, HEIC, PNG, WebP, TIFF, RAW) ---
 
+
 	var exifData *ExifJSON
 	width, height := 0, 0
 
@@ -195,6 +196,7 @@ func findLivePhotoVideo(fullPath, relPath string) string {
 	}
 	return ""
 }
+
 
 func exifDataToJSON(data *photoutil.ExifData) *ExifJSON {
 	e := &ExifJSON{}

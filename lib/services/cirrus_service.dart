@@ -558,7 +558,6 @@ class CirrusService with AuthenticatedService {
     String filePath, {
     String? serial,
     String? fileName,
-    String? format,
   }) async {
     var uri = _buildDownloadUri(filePath, serial: serial);
     final effectiveFormat =
