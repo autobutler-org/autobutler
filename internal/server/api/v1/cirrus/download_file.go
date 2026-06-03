@@ -18,6 +18,9 @@ import (
 
 	_ "github.com/gen2brain/heic"
 	"github.com/gin-gonic/gin"
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/tiff"
+	_ "golang.org/x/image/webp"
 )
 
 // downloadCirrusFile godoc
@@ -70,13 +73,12 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 	defer f.Close()
 
 	ext := strings.ToLower(filepath.Ext(result.FullPath))
-	isHEIC := ext == ".heic" || ext == ".heif"
 	wantsJPEG := c.Query("format") == "jpeg"
 
-	if isHEIC && wantsJPEG {
+	if wantsJPEG && result.FileType == storageutil.FileTypeImage {
 		img, _, err := image.Decode(f)
 		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("failed to decode HEIC: %w", err))
+			return serverutil.InternalServerError(fmt.Errorf("failed to decode image: %w", err))
 		}
 
 		var buf bytes.Buffer
@@ -96,7 +98,7 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 	if result.FileType == storageutil.FileTypePDF {
 		contentType = "application/pdf"
 	} else if result.FileType == storageutil.FileTypeImage {
-		contentType = "image/*"
+		contentType = storageutil.ImageMIMETypeFromExtension(filepath.Ext(result.FullPath))
 	} else if result.FileType == storageutil.FileTypeVideo {
 		contentType = storageutil.VideoMIMETypeFromExtension(filepath.Ext(result.FullPath))
 	}

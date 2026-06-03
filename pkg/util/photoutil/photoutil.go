@@ -3,6 +3,7 @@ package photoutil
 import (
 	"fmt"
 	"image"
+	_ "image/gif"
 	"io"
 	"io/fs"
 	"os"
@@ -13,6 +14,9 @@ import (
 
 	"github.com/KononK/resize"
 	_ "github.com/gen2brain/heic"
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/tiff"
+	_ "golang.org/x/image/webp"
 )
 
 // FilterPhotoFiles filters a list of files to only include photo files
