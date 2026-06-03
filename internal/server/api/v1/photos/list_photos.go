@@ -1,11 +1,8 @@
 package v1_photos
 
 import (
-	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
@@ -111,14 +108,13 @@ func listPhotos(c *gin.Context) *serverutil.Response {
 		}
 		for _, photo := range photos {
 			info := photo.FileInfo
-			fullPath := filepath.Join(device.CirrusDir, photo.RelPath)
 			allPhotos = append(allPhotos, PhotoJSON{
 				RelPath:      photo.RelPath,
 				FileName:     info.Name(),
 				Size:         info.Size(),
 				MTime:        info.ModTime().Unix(),
 				Serial:       deviceSerial,
-				HasLiveVideo: hasCompanionVideo(fullPath),
+				HasLiveVideo: photo.HasLiveVideo,
 			})
 		}
 	}
@@ -151,22 +147,6 @@ func listPhotos(c *gin.Context) *serverutil.Response {
 		Offset: offset,
 		Limit:  limit,
 	})
-}
-
-// hasCompanionVideo checks if a companion video file exists alongside an image,
-// indicating an iPhone Live Photo (e.g. IMG_1234.HEIC + IMG_1234.MOV).
-func hasCompanionVideo(fullPath string) bool {
-	ext := strings.ToLower(filepath.Ext(fullPath))
-	if ext != ".heic" && ext != ".heif" && ext != ".jpg" && ext != ".jpeg" {
-		return false
-	}
-	base := strings.TrimSuffix(fullPath, filepath.Ext(fullPath))
-	for _, vidExt := range []string{".MOV", ".mov", ".MP4", ".mp4"} {
-		if _, err := os.Stat(base + vidExt); err == nil {
-			return true
-		}
-	}
-	return false
 }
 
 var listPhotosRoute = serverutil.ApiRoute(

@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
@@ -29,9 +30,12 @@ func FilterPhotoFiles(files []fs.FileInfo) []fs.FileInfo {
 	return photoFiles
 }
 
-// FindAllPhotosRecursively finds all photo files in a directory and its subdirectories
+// FindAllPhotosRecursively finds all photo files in a directory and its subdirectories.
+// Also detects Live Photo companions (e.g. IMG_1234.HEIC + IMG_1234.MOV) by collecting
+// video basenames during the same walk — no extra disk I/O.
 func FindAllPhotosRecursively(rootDir string) ([]PhotoInfo, error) {
-	photos := make([]PhotoInfo, 0)
+	var photos []PhotoInfo
+	videoBasenames := make(map[string]bool)
 
 	err := filepath.Walk(rootDir, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
@@ -42,8 +46,8 @@ func FindAllPhotosRecursively(rootDir string) ([]PhotoInfo, error) {
 		}
 
 		fileType := storageutil.DetermineFileTypeFromPath(info.Name())
-		if fileType == storageutil.FileTypeImage {
-			// Get relative path from rootDir
+		switch fileType {
+		case storageutil.FileTypeImage:
 			relPath, err := filepath.Rel(rootDir, path)
 			if err != nil {
 				return err // coverage: ignore - filepath.Rel only fails on cross-volume paths (different drives on Windows)
@@ -52,12 +56,24 @@ func FindAllPhotosRecursively(rootDir string) ([]PhotoInfo, error) {
 				FileInfo: info,
 				RelPath:  relPath,
 			})
+		case storageutil.FileTypeVideo:
+			ext := filepath.Ext(path)
+			videoBasenames[strings.TrimSuffix(path, ext)] = true
 		}
 		return nil
 	})
 
 	if err != nil {
 		return nil, fmt.Errorf("error walking directory %s: %w", rootDir, err)
+	}
+
+	for i := range photos {
+		ext := filepath.Ext(photos[i].RelPath)
+		lower := strings.ToLower(ext)
+		if lower == ".heic" || lower == ".heif" || lower == ".jpg" || lower == ".jpeg" {
+			fullBase := strings.TrimSuffix(filepath.Join(rootDir, photos[i].RelPath), ext)
+			photos[i].HasLiveVideo = videoBasenames[fullBase]
+		}
 	}
 
 	return photos, nil
