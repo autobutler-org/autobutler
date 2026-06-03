@@ -1,10 +1,12 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/utils/auto_refresh_mixin.dart';
 import 'package:autobutler/widgets/core/empty_state_widget.dart';
+import 'package:autobutler/widgets/device_upload_picker.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
+import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:autobutler/models/photo_album.dart';
@@ -13,11 +15,13 @@ import 'package:autobutler/services/album_service.dart';
 import 'package:autobutler/services/favorites_service.dart';
 import 'package:autobutler/widgets/photos/album_sidebar.dart';
 import 'package:autobutler/widgets/photos/photo_selection_bar.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:autobutler/router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 import 'package:photo_manager/photo_manager.dart';
 
 class PhotosPage extends StatefulWidget {
@@ -73,6 +77,7 @@ class _PhotosPageState extends State<PhotosPage>
 
   bool _noHostSelected = false;
   bool _categoriesExpanded = false;
+  bool _isUploading = false;
   int _previewColumns = _defaultCrossAxisCount;
   PhotoCategory _selectedCategory = PhotoCategory.cirrus;
 
@@ -989,6 +994,91 @@ class _PhotosPageState extends State<PhotosPage>
     }
   }
 
+  Future<void> _handleUploadPhotos() async {
+    if (_isUploading) return;
+
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.image,
+        allowMultiple: true,
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty || !mounted) return;
+
+      final multipartFiles = <http.MultipartFile>[];
+      for (final f in result.files) {
+        if (kIsWeb) {
+          if (f.bytes == null) continue;
+          multipartFiles.add(
+            http.MultipartFile.fromBytes('files', f.bytes!, filename: f.name),
+          );
+        } else if (f.path != null && f.path!.isNotEmpty) {
+          multipartFiles.add(
+            await http.MultipartFile.fromPath(
+              'files',
+              f.path!,
+              filename: f.name,
+            ),
+          );
+        } else if (f.bytes != null) {
+          multipartFiles.add(
+            http.MultipartFile.fromBytes('files', f.bytes!, filename: f.name),
+          );
+        }
+      }
+      if (multipartFiles.isEmpty || !mounted) return;
+
+      String? targetSerial;
+      try {
+        final devices = (await StorageService.listDevices())
+            .where((d) => d.isEnabled)
+            .toList();
+        if (devices.length > 1) {
+          if (!mounted) return;
+          final picked = await showDeviceUploadPicker(context, devices);
+          if (picked == null) return;
+          targetSerial = picked.serial.isNotEmpty ? picked.serial : null;
+        } else if (devices.length == 1) {
+          targetSerial = devices.first.serial.isNotEmpty
+              ? devices.first.serial
+              : null;
+        }
+      } catch (_) {}
+
+      setState(() => _isUploading = true);
+
+      try {
+        await CirrusService.uploadFilesFromFormData(
+          '',
+          multipartFiles,
+          serial: targetSerial,
+        );
+        if (!mounted) return;
+        final label = multipartFiles.length == 1
+            ? multipartFiles.first.filename ?? 'photo'
+            : '${multipartFiles.length} photos';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Uploaded $label')));
+        await manualRefresh();
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+      } finally {
+        if (mounted) setState(() => _isUploading = false);
+      }
+    } on MissingPluginException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('File picker not available. Fully restart the app.'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return CallbackShortcuts(
@@ -1055,6 +1145,17 @@ class _PhotosPageState extends State<PhotosPage>
                   label: 'Photos',
                   icon: Icons.photo_library_outlined,
                   actions: [
+                    IconButton(
+                      icon: _isUploading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.upload_rounded),
+                      tooltip: 'Upload photos',
+                      onPressed: _isUploading ? null : _handleUploadPhotos,
+                    ),
                     TextButton(
                       onPressed: _enterSelectionMode,
                       child: const Text('Select'),
