@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:autobutler/pages/album_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:video_player/video_player.dart';
 
 const _kSidebarOpenKey = 'photo_viewer_sidebar_open';
 const _kSidebarWidth = 288.0;
@@ -93,6 +94,11 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   PhotoMetadata? _metadata;
   bool _metadataLoading = false;
 
+  // Live Photo playback
+  VideoPlayerController? _liveVideoController;
+  bool _liveVideoPlaying = false;
+  bool _liveVideoReady = false;
+
   SharedPreferences? _prefs;
   final _focusNode = FocusNode();
 
@@ -120,6 +126,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
 
   @override
   void dispose() {
+    _liveVideoController?.dispose();
     _rotationAnim.dispose();
     _focusNode.dispose();
     _drawerController.dispose();
@@ -176,6 +183,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       }
       if (!mounted) return;
 
+      _disposeLiveVideo();
       // Reset rotation and favorite to defaults; _loadMetadataForCurrent
       // will apply server-persisted values once metadata arrives.
       setState(() {
@@ -228,9 +236,52 @@ class _ImageViewerPageState extends State<ImageViewerPage>
           end: quarters * math.pi / 2,
         ).animate(_rotationAnim);
       });
+      if (meta.isLivePhoto) _prepareLiveVideo();
     } catch (_) {
       if (mounted) setState(() => _metadataLoading = false);
     }
+  }
+
+  // --- Live Photo ---
+
+  void _prepareLiveVideo() {
+    _disposeLiveVideo();
+    final videoPath = _metadata?.livePhotoVideoPath;
+    if (videoPath == null) return;
+
+    final url = CirrusService.constructMediaUrl(
+      videoPath,
+      serial: _currentSerial,
+    );
+    final controller = VideoPlayerController.networkUrl(url);
+    _liveVideoController = controller;
+    controller.setLooping(true);
+    controller
+        .initialize()
+        .then((_) {
+          if (!mounted || _liveVideoController != controller) return;
+          setState(() => _liveVideoReady = true);
+        })
+        .catchError((_) {});
+  }
+
+  void _disposeLiveVideo() {
+    _liveVideoController?.dispose();
+    _liveVideoController = null;
+    _liveVideoReady = false;
+    _liveVideoPlaying = false;
+  }
+
+  void _startLivePlayback() {
+    if (!_liveVideoReady || _liveVideoController == null) return;
+    _liveVideoController!.seekTo(Duration.zero);
+    _liveVideoController!.play();
+    setState(() => _liveVideoPlaying = true);
+  }
+
+  void _stopLivePlayback() {
+    _liveVideoController?.pause();
+    if (mounted) setState(() => _liveVideoPlaying = false);
   }
 
   // --- Actions ---
@@ -696,6 +747,8 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   }
 
   Widget _buildPhotoArea({bool isMobile = false}) {
+    final isLive = _metadata?.isLivePhoto ?? false;
+
     return GestureDetector(
       onTap: isMobile && _sidebarOpen
           ? () => _drawerController.animateTo(
@@ -704,30 +757,56 @@ class _ImageViewerPageState extends State<ImageViewerPage>
               curve: Curves.easeOut,
             )
           : null,
+      onLongPressStart: isLive && _liveVideoReady
+          ? (_) => _startLivePlayback()
+          : null,
+      onLongPressEnd: isLive && _liveVideoPlaying
+          ? (_) => _stopLivePlayback()
+          : null,
       onHorizontalDragEnd: (details) {
         if (details.primaryVelocity == null) return;
         if (details.primaryVelocity! < -200) _navigate(1);
         if (details.primaryVelocity! > 200) _navigate(-1);
       },
-      child: Center(
-        child: _loading
-            ? const CircularProgressIndicator(color: Colors.white)
-            : AnimatedBuilder(
-                animation: _rotationValue,
-                builder: (_, child) =>
-                    Transform.rotate(angle: _rotationValue.value, child: child),
-                child: InteractiveViewer(
-                  child: Image.memory(
-                    _currentBytes,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stack) => const Icon(
-                      Icons.broken_image,
-                      size: 64,
-                      color: Colors.white54,
+      child: Stack(
+        children: [
+          Center(
+            child: _loading
+                ? const CircularProgressIndicator(color: Colors.white)
+                : _liveVideoPlaying && _liveVideoController != null
+                ? AspectRatio(
+                    aspectRatio: _liveVideoController!.value.aspectRatio.clamp(
+                      0.1,
+                      10.0,
+                    ),
+                    child: VideoPlayer(_liveVideoController!),
+                  )
+                : AnimatedBuilder(
+                    animation: _rotationValue,
+                    builder: (_, child) => Transform.rotate(
+                      angle: _rotationValue.value,
+                      child: child,
+                    ),
+                    child: InteractiveViewer(
+                      child: Image.memory(
+                        _currentBytes,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stack) => const Icon(
+                          Icons.broken_image,
+                          size: 64,
+                          color: Colors.white54,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
+          ),
+          if (isLive && !_loading)
+            Positioned(
+              top: 12,
+              left: 12,
+              child: _LiveBadge(ready: _liveVideoReady),
+            ),
+        ],
       ),
     );
   }
@@ -1193,6 +1272,44 @@ class _ShortcutRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Text(description, style: const TextStyle(color: Colors.white70)),
+        ],
+      ),
+    );
+  }
+}
+
+class _LiveBadge extends StatelessWidget {
+  final bool ready;
+
+  const _LiveBadge({required this.ready});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black54,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.white24),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.circle,
+            size: 8,
+            color: ready ? Colors.yellowAccent : Colors.white38,
+          ),
+          const SizedBox(width: 5),
+          Text(
+            'LIVE',
+            style: TextStyle(
+              color: ready ? Colors.white : Colors.white54,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
         ],
       ),
     );

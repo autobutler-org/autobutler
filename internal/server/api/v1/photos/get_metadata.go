@@ -42,15 +42,16 @@ type AlbumRefJSON struct {
 
 // PhotoMetadataJSON is the full metadata response for a single photo.
 type PhotoMetadataJSON struct {
-	FileName         string         `json:"fileName"`
-	FileSize         int64          `json:"fileSize"`
-	MTime            int64          `json:"mtime"`
-	Width            int            `json:"width"`
-	Height           int            `json:"height"`
-	RotationQuarters int64          `json:"rotationQuarters"`
-	IsFavorite       bool           `json:"isFavorite"`
-	Exif             *ExifJSON      `json:"exif,omitempty"`
-	Albums           []AlbumRefJSON `json:"albums"`
+	FileName           string         `json:"fileName"`
+	FileSize           int64          `json:"fileSize"`
+	MTime              int64          `json:"mtime"`
+	Width              int            `json:"width"`
+	Height             int            `json:"height"`
+	RotationQuarters   int64          `json:"rotationQuarters"`
+	IsFavorite         bool           `json:"isFavorite"`
+	Exif               *ExifJSON      `json:"exif,omitempty"`
+	Albums             []AlbumRefJSON `json:"albums"`
+	LivePhotoVideoPath string         `json:"livePhotoVideoPath,omitempty"`
 }
 
 // getPhotoMetadata godoc
@@ -158,17 +159,40 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 		albumRefs = append(albumRefs, AlbumRefJSON{ID: a.ID, Name: a.Name})
 	}
 
+	liveVideoPath := findLivePhotoVideo(fullPath, relPath)
+
 	return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(PhotoMetadataJSON{
-		FileName:         filepath.Base(relPath),
-		FileSize:         stat.Size(),
-		MTime:            stat.ModTime().Unix(),
-		Width:            width,
-		Height:           height,
-		RotationQuarters: rotationQuarters,
-		IsFavorite:       isFavorite,
-		Exif:             exifData,
-		Albums:           albumRefs,
+		FileName:           filepath.Base(relPath),
+		FileSize:           stat.Size(),
+		MTime:              stat.ModTime().Unix(),
+		Width:              width,
+		Height:             height,
+		RotationQuarters:   rotationQuarters,
+		IsFavorite:         isFavorite,
+		Exif:               exifData,
+		Albums:             albumRefs,
+		LivePhotoVideoPath: liveVideoPath,
 	})
+}
+
+// findLivePhotoVideo checks if a companion .MOV file exists for an image,
+// which indicates an iPhone Live Photo. Returns the relative path to the
+// video, or "" if none found.
+func findLivePhotoVideo(fullPath, relPath string) string {
+	ext := strings.ToLower(filepath.Ext(fullPath))
+	if ext != ".heic" && ext != ".heif" && ext != ".jpg" && ext != ".jpeg" {
+		return ""
+	}
+
+	base := strings.TrimSuffix(fullPath, filepath.Ext(fullPath))
+	for _, vidExt := range []string{".MOV", ".mov", ".Mp4", ".mp4"} {
+		candidate := base + vidExt
+		if _, err := os.Stat(candidate); err == nil {
+			relBase := strings.TrimSuffix(relPath, filepath.Ext(relPath))
+			return relBase + vidExt
+		}
+	}
+	return ""
 }
 
 func exifDataToJSON(data *photoutil.ExifData) *ExifJSON {

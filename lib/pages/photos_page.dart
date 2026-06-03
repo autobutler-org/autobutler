@@ -37,10 +37,13 @@ class PhotoItem {
   final CirrusFileNode? cirrus;
   final AssetEntity? asset;
   final bool isCirrus;
+  final bool hasLiveVideo;
 
-  PhotoItem._({this.cirrus, this.asset}) : isCirrus = cirrus != null;
+  PhotoItem._({this.cirrus, this.asset, this.hasLiveVideo = false})
+    : isCirrus = cirrus != null;
 
-  factory PhotoItem.fromCirrus(CirrusFileNode c) => PhotoItem._(cirrus: c);
+  factory PhotoItem.fromCirrus(CirrusFileNode c, {bool hasLiveVideo = false}) =>
+      PhotoItem._(cirrus: c, hasLiveVideo: hasLiveVideo);
   factory PhotoItem.fromAsset(AssetEntity a) => PhotoItem._(asset: a);
 
   /// Stable key for use in sets (favorites, selection).
@@ -206,6 +209,7 @@ class _PhotosPageState extends State<PhotosPage>
                 deviceSerial: p.serial,
                 dirPath: p.relPath,
               ),
+              hasLiveVideo: p.hasLiveVideo,
             ),
           )
           .toList(growable: false);
@@ -255,6 +259,7 @@ class _PhotosPageState extends State<PhotosPage>
                 deviceSerial: p.serial,
                 dirPath: p.relPath,
               ),
+              hasLiveVideo: p.hasLiveVideo,
             ),
           )
           .toList(growable: false);
@@ -692,7 +697,7 @@ class _PhotosPageState extends State<PhotosPage>
         c.apiPath,
         serial: c.deviceSerial,
       );
-      final thumbnail = Image.network(
+      Widget thumbnail = Image.network(
         url.toString(),
         fit: BoxFit.cover,
         loadingBuilder: (context, child, progress) {
@@ -702,6 +707,15 @@ class _PhotosPageState extends State<PhotosPage>
         errorBuilder: (context, error, stack) =>
             Container(color: Colors.grey[300]),
       );
+      if (p.hasLiveVideo) {
+        thumbnail = Stack(
+          fit: StackFit.expand,
+          children: [
+            thumbnail,
+            const Positioned(top: 4, left: 4, child: _ThumbnailLiveBadge()),
+          ],
+        );
+      }
       if (_selectionMode) return wrapWithSelection(thumbnail);
       return MouseRegion(
         cursor: SystemMouseCursors.click,
@@ -1276,6 +1290,30 @@ class _PhotosPageState extends State<PhotosPage>
               );
             },
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThumbnailLiveBadge extends StatelessWidget {
+  const _ThumbnailLiveBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.black54,
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: const Text(
+        'LIVE',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 9,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.3,
         ),
       ),
     );

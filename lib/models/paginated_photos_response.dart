@@ -35,6 +35,7 @@ class PhotoItem {
   final int size;
   final int mtime;
   final String serial;
+  final bool hasLiveVideo;
 
   const PhotoItem({
     required this.relPath,
@@ -42,6 +43,7 @@ class PhotoItem {
     required this.size,
     required this.mtime,
     required this.serial,
+    this.hasLiveVideo = false,
   });
 
   factory PhotoItem.fromJson(Map<String, dynamic> json) {
@@ -51,6 +53,7 @@ class PhotoItem {
       size: json['size'] as int? ?? 0,
       mtime: json['mtime'] as int? ?? 0,
       serial: json['serial'] as String? ?? '',
+      hasLiveVideo: json['hasLiveVideo'] as bool? ?? false,
     );
   }
 }
