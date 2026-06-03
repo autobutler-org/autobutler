@@ -313,6 +313,8 @@ definitions:
     properties:
       fileName:
         type: string
+      hasLiveVideo:
+        type: boolean
       mtime:
         type: integer
       relPath:
@@ -338,6 +340,8 @@ definitions:
         type: integer
       isFavorite:
         type: boolean
+      livePhotoVideoPath:
+        type: string
       mtime:
         type: integer
       rotationQuarters:

@@ -3131,6 +3131,9 @@ const docTemplate = `{
                 "fileName": {
                     "type": "string"
                 },
+                "hasLiveVideo": {
+                    "type": "boolean"
+                },
                 "mtime": {
                     "type": "integer"
                 },
@@ -3168,6 +3171,9 @@ const docTemplate = `{
                 },
                 "isFavorite": {
                     "type": "boolean"
+                },
+                "livePhotoVideoPath": {
+                    "type": "string"
                 },
                 "mtime": {
                     "type": "integer"

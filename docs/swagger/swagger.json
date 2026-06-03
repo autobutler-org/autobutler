@@ -3120,6 +3120,9 @@
                 "fileName": {
                     "type": "string"
                 },
+                "hasLiveVideo": {
+                    "type": "boolean"
+                },
                 "mtime": {
                     "type": "integer"
                 },
@@ -3157,6 +3160,9 @@
                 },
                 "isFavorite": {
                     "type": "boolean"
+                },
+                "livePhotoVideoPath": {
+                    "type": "string"
                 },
                 "mtime": {
                     "type": "integer"
