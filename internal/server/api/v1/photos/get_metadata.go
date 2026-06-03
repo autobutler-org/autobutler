@@ -7,6 +7,8 @@ import (
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
+
+	_ "github.com/gen2brain/heic"
 	"math"
 	"os"
 	"path/filepath"
@@ -122,11 +124,6 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 	}
 
 	// --- Dimensions ---
-	// image.DecodeConfig handles JPEG and PNG. HEIC/HEIF are not supported by
-	// the Go standard library and goexif only parses JPEG APP1 blocks, so HEIC
-	// files will produce 0×0 here until a HEIC decoder is added.
-	// The PixelXDimension / PixelYDimension fallback helps for other formats
-	// whose EXIF goexif can read (e.g. some TIFFs) but does NOT help for HEIC.
 	width, height := 0, 0
 	if f, err := os.Open(fullPath); err == nil {
 		if cfg, _, err := image.DecodeConfig(f); err == nil {

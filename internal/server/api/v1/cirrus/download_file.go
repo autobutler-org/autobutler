@@ -2,15 +2,21 @@ package v1_files
 
 import (
 	"archive/zip"
+	"bytes"
 	"fmt"
+	"image"
+	"image/jpeg"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
+	_ "github.com/gen2brain/heic"
 	"github.com/gin-gonic/gin"
 )
 
@@ -55,6 +61,33 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 
 	if _, err := os.Stat(result.FullPath); os.IsNotExist(err) {
 		return serverutil.NotFound(fmt.Errorf("file not found: %s", filePath))
+	}
+
+	ext := strings.ToLower(filepath.Ext(result.FullPath))
+	isHEIC := ext == ".heic" || ext == ".heif"
+	wantsJPEG := c.Query("format") == "jpeg"
+
+	if isHEIC && wantsJPEG {
+		f, err := os.Open(result.FullPath)
+		if err != nil {
+			return serverutil.InternalServerError(fmt.Errorf("failed to open file: %w", err))
+		}
+		defer f.Close()
+
+		img, _, err := image.Decode(f)
+		if err != nil {
+			return serverutil.InternalServerError(fmt.Errorf("failed to decode HEIC: %w", err))
+		}
+
+		var buf bytes.Buffer
+		if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 92}); err != nil {
+			return serverutil.InternalServerError(fmt.Errorf("failed to encode JPEG: %w", err))
+		}
+
+		baseName := strings.TrimSuffix(filepath.Base(result.FullPath), ext) + ".jpg"
+		c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", baseName))
+		c.Data(http.StatusOK, "image/jpeg", buf.Bytes())
+		return nil
 	}
 
 	disposition := "inline"

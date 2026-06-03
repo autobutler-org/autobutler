@@ -558,8 +558,14 @@ class CirrusService with AuthenticatedService {
     String filePath, {
     String? serial,
     String? fileName,
+    String? format,
   }) async {
-    final uri = _buildDownloadUri(filePath, serial: serial);
+    var uri = _buildDownloadUri(filePath, serial: serial);
+    if (format != null && format.isNotEmpty) {
+      final params = Map<String, String>.from(uri.queryParameters);
+      params['format'] = format;
+      uri = uri.replace(queryParameters: params);
+    }
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to download file (${response.statusCode})');
