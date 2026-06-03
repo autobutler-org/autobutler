@@ -68,6 +68,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
 	github.com/gaissmai/bart v0.26.1 // indirect
+	github.com/gen2brain/heic v0.4.9 // indirect
 	github.com/gin-contrib/sse v1.1.1 // indirect
 	github.com/go-json-experiment/json v0.0.0-20250813024750-ebf49471dced // indirect
 	github.com/go-logr/logr v1.4.3 // indirect

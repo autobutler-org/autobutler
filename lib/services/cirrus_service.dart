@@ -558,11 +558,14 @@ class CirrusService with AuthenticatedService {
     String filePath, {
     String? serial,
     String? fileName,
+    String? format,
   }) async {
     var uri = _buildDownloadUri(filePath, serial: serial);
-    if (kIsWeb && _needsServerConversion(filePath)) {
+    final effectiveFormat =
+        format ?? (kIsWeb && _needsServerConversion(filePath) ? 'jpeg' : null);
+    if (effectiveFormat != null && effectiveFormat.isNotEmpty) {
       final params = Map<String, String>.from(uri.queryParameters);
-      params['format'] = 'jpeg';
+      params['format'] = effectiveFormat;
       uri = uri.replace(queryParameters: params);
     }
     final response = await instance.authenticatedGet(uri);
