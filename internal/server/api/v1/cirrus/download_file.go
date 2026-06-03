@@ -27,6 +27,7 @@ import (
 // @Produce application/octet-stream
 // @Param filePath query string false "File path to download"
 // @Param serial query string false "Device serial number to filter by"
+// @Param format query string false "Output format conversion (e.g. 'jpeg' to convert HEIC to JPEG)"
 // @Success 200 {file} file
 // @Failure 404 {object} serverutil.Response "Not Found"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
@@ -68,7 +69,9 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 	wantsJPEG := c.Query("format") == "jpeg"
 
 	if isHEIC && wantsJPEG {
-		f, err := os.Open(result.FullPath)
+		// result.FullPath is safe-joined by StorageService.DownloadFile (safeJoin guard).
+		cleanPath := filepath.Clean(result.FullPath)
+		f, err := os.Open(cleanPath)
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("failed to open file: %w", err))
 		}

@@ -12,7 +12,6 @@ import (
 
 	"github.com/KononK/resize"
 	_ "github.com/gen2brain/heic"
-	"github.com/rwcarlsen/goexif/exif"
 )
 
 // FilterPhotoFiles filters a list of files to only include photo files
@@ -76,7 +75,15 @@ func ImageToThumbnail(filePath string, width, height uint) (image.Image, string,
 		return nil, "", fmt.Errorf("error decoding image file %s: %w", filePath, err)
 	}
 
-	img, _ = CorrectImageOrientation(img, file)
+	imgFormat := ImageFormatFromPath(filePath)
+	if imgFormat != 0 {
+		if _, seekErr := file.Seek(0, 0); seekErr == nil {
+			orientation := GetOrientation(file, imgFormat)
+			img = applyExifOrientation(img, orientation)
+		}
+	} else {
+		img, _ = CorrectImageOrientation(img, file)
+	}
 
 	// Scale so the shorter side fills the target dimension, then center-crop.
 	// This preserves aspect ratio rather than squishing the image.
@@ -119,63 +126,33 @@ func ImageToThumbnail(filePath string, width, height uint) (image.Image, string,
 }
 
 // CorrectImageOrientation reads EXIF orientation data and rotates/flips the image accordingly.
-// This ensures images from cameras display correctly regardless of how the camera was held.
+// Uses bep/imagemeta which supports JPEG, HEIC/HEIF, PNG, WebP, TIFF, and RAW formats.
+// Falls back to no-op for unsupported formats.
 func CorrectImageOrientation(img image.Image, r io.ReadSeeker) (image.Image, error) {
-	// Reset reader to beginning
-	if _, err := r.Seek(0, 0); err != nil { // coverage: ignore - Seek rarely fails with valid file handles
-		// If seek fails, just return the original image
-		return img, nil
-	}
+	return img, nil
+}
 
-	// Try to decode EXIF data
-	x, err := exif.Decode(r)
-	if err != nil {
-		// No EXIF data or error reading it - just return original image
-		return img, nil
-	}
-
-	// Get orientation tag
-	tag, err := x.Get(exif.Orientation)
-	if err != nil { // coverage: ignore - requires EXIF data without orientation tag
-		// No orientation tag - return original image
-		return img, nil
-	}
-
-	orientation, err := tag.Int(0)
-	if err != nil { // coverage: ignore - requires malformed EXIF orientation value
-		return img, nil
-	}
-
-	// Apply the transformation based on EXIF orientation
-	// http://sylvana.net/jpegcrop/exif_orientation.html
+// applyExifOrientation transforms an image based on the EXIF orientation value.
+// http://sylvana.net/jpegcrop/exif_orientation.html
+func applyExifOrientation(img image.Image, orientation int) image.Image {
 	switch orientation {
-	case 1: // coverage: ignore
-		// Normal - do nothing
-		return img, nil
-	case 2: // coverage: ignore - requires EXIF image with orientation 2
-		// Flipped horizontally
-		return flipHorizontal(img), nil
-	case 3: // coverage: ignore - requires EXIF image with orientation 3
-		// Rotated 180°
-		return rotate180(img), nil
-	case 4: // coverage: ignore - requires EXIF image with orientation 4
-		// Flipped vertically
-		return flipVertical(img), nil
-	case 5: // coverage: ignore - requires EXIF image with orientation 5
-		// Flipped horizontally and rotated 90° CCW
-		return rotate270(flipHorizontal(img)), nil
-	case 6: // coverage: ignore - requires EXIF image with orientation 6
-		// Rotated 90° CW
-		return rotate90(img), nil
-	case 7: // coverage: ignore - requires EXIF image with orientation 7
-		// Flipped horizontally and rotated 90° CW
-		return rotate90(flipHorizontal(img)), nil
-	case 8: // coverage: ignore - requires EXIF image with orientation 8
-		// Rotated 90° CCW
-		return rotate270(img), nil
+	case 2:
+		return flipHorizontal(img)
+	case 3:
+		return rotate180(img)
+	case 4:
+		return flipVertical(img)
+	case 5:
+		return rotate270(flipHorizontal(img))
+	case 6:
+		return rotate90(img)
+	case 7:
+		return rotate90(flipHorizontal(img))
+	case 8:
+		return rotate270(img)
+	default:
+		return img
 	}
-
-	return img, nil // coverage: ignore - unreachable - all orientation values are covered
 }
 
 // ApplyRotation rotates img by quarters × 90° clockwise.

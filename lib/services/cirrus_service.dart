@@ -558,12 +558,11 @@ class CirrusService with AuthenticatedService {
     String filePath, {
     String? serial,
     String? fileName,
-    String? format,
   }) async {
     var uri = _buildDownloadUri(filePath, serial: serial);
-    if (format != null && format.isNotEmpty) {
+    if (kIsWeb && _isHeic(filePath)) {
       final params = Map<String, String>.from(uri.queryParameters);
-      params['format'] = format;
+      params['format'] = 'jpeg';
       uri = uri.replace(queryParameters: params);
     }
     final response = await instance.authenticatedGet(uri);
@@ -572,6 +571,11 @@ class CirrusService with AuthenticatedService {
     }
 
     return response.bodyBytes;
+  }
+
+  static bool _isHeic(String path) {
+    final lower = path.toLowerCase();
+    return lower.endsWith('.heic') || lower.endsWith('.heif');
   }
 
   /// Download thumbnail bytes for the specified filePath using the thumbnails endpoint.
