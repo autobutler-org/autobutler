@@ -211,14 +211,17 @@ func ListPossibleUpdates(source *UpdateSource, allVersions bool) (*ListPossibleU
 
 // UpdateFromDefaultSources tries to update from all default sources until one succeeds
 func UpdateFromDefaultSources(version string) error {
+	errs := []error{}
 	for _, source := range DefaultUpdateSources {
+		fmt.Printf("Attempting to update from source: %v, with URL %s\n", source, source.UpdateUrl())
 		err := Update(source, version)
 		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to update from source %v: %w", source, err))
 			continue
 		}
 		return nil
 	}
-	return fmt.Errorf("failed to update from all default sources")
+	return fmt.Errorf("failed to update from all default sources: %v", errs)
 }
 
 // Update downloads and installs a new version of the application
