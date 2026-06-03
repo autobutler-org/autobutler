@@ -1102,6 +1102,10 @@ paths:
         in: query
         name: serial
         type: string
+      - description: Output format conversion (e.g. 'jpeg' to convert HEIC to JPEG)
+        in: query
+        name: format
+        type: string
       produces:
       - application/octet-stream
       responses:
