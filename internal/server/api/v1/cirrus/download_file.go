@@ -60,23 +60,20 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 		return nil // response written directly to writer
 	}
 
-	if _, err := os.Stat(result.FullPath); os.IsNotExist(err) {
-		return serverutil.NotFound(fmt.Errorf("file not found: %s", filePath))
+	f, err := os.Open(result.FullPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return serverutil.NotFound(fmt.Errorf("file not found: %s", filePath))
+		}
+		return serverutil.InternalServerError(fmt.Errorf("failed to open file: %w", err))
 	}
+	defer f.Close()
 
 	ext := strings.ToLower(filepath.Ext(result.FullPath))
 	isHEIC := ext == ".heic" || ext == ".heif"
 	wantsJPEG := c.Query("format") == "jpeg"
 
 	if isHEIC && wantsJPEG {
-		// result.FullPath is safe-joined by StorageService.DownloadFile (safeJoin guard).
-		cleanPath := filepath.Clean(result.FullPath)
-		f, err := os.Open(cleanPath)
-		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("failed to open file: %w", err))
-		}
-		defer f.Close()
-
 		img, _, err := image.Decode(f)
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("failed to decode HEIC: %w", err))
@@ -93,6 +90,7 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 		return nil
 	}
 
+	f.Close() // close before c.File re-opens it
 	disposition := "inline"
 	contentType := "application/octet-stream"
 	if result.FileType == storageutil.FileTypePDF {
