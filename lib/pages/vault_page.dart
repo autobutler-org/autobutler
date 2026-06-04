@@ -114,6 +114,11 @@ class _VaultPageState extends State<VaultPage> {
         actions: [
           if (_status?.initialized == true && !(_status?.locked ?? true)) ...[
             IconButton(
+              icon: const Icon(Icons.add),
+              tooltip: 'New entry',
+              onPressed: () => _showEntryEditor(context),
+            ),
+            IconButton(
               icon: const Icon(Icons.lock_open),
               tooltip: 'Lock vault',
               onPressed: _lockVault,
@@ -181,7 +186,9 @@ class _VaultPageState extends State<VaultPage> {
       ),
       body: _buildBody(),
       floatingActionButton:
-          (_status?.initialized == true && !(_status?.locked ?? true))
+          (_status?.initialized == true &&
+              !(_status?.locked ?? true) &&
+              MediaQuery.of(context).size.width < 860)
           ? FloatingActionButton(
               onPressed: () => _showEntryEditor(context),
               child: const Icon(Icons.add),

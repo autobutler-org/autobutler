@@ -247,14 +247,6 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
                 color: colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
-            if (_searchController.text.isEmpty) ...[
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: _createNewDoc,
-                icon: const Icon(Icons.add),
-                label: const Text('Create new doc'),
-              ),
-            ],
           ],
         ),
       );
