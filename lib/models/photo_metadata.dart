@@ -76,6 +76,9 @@ class PhotoMetadata {
   final PhotoExif? exif;
   final List<AlbumRef> albums;
 
+  /// Relative path to a companion video (Live Photo). Null if not a Live Photo.
+  final String? livePhotoVideoPath;
+
   const PhotoMetadata({
     required this.fileName,
     required this.fileSize,
@@ -86,7 +89,10 @@ class PhotoMetadata {
     this.isFavorite = false,
     this.exif,
     required this.albums,
+    this.livePhotoVideoPath,
   });
+
+  bool get isLivePhoto => livePhotoVideoPath != null;
 
   factory PhotoMetadata.fromJson(Map<String, dynamic> json) => PhotoMetadata(
     fileName: json['fileName'] as String,
@@ -102,5 +108,6 @@ class PhotoMetadata {
     albums: (json['albums'] as List<dynamic>)
         .map((e) => AlbumRef.fromJson(e as Map<String, dynamic>))
         .toList(),
+    livePhotoVideoPath: json['livePhotoVideoPath'] as String?,
   );
 }

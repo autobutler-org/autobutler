@@ -2,16 +2,25 @@ package v1_files
 
 import (
 	"archive/zip"
+	"bytes"
 	"fmt"
+	"image"
+	"image/jpeg"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
+	_ "github.com/gen2brain/heic"
 	"github.com/gin-gonic/gin"
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/tiff"
+	_ "golang.org/x/image/webp"
 )
 
 // downloadCirrusFile godoc
@@ -21,6 +30,7 @@ import (
 // @Produce application/octet-stream
 // @Param filePath query string false "File path to download"
 // @Param serial query string false "Device serial number to filter by"
+// @Param format query string false "Output format conversion (e.g. 'jpeg' to convert HEIC to JPEG)"
 // @Success 200 {file} file
 // @Failure 404 {object} serverutil.Response "Not Found"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
@@ -53,16 +63,42 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 		return nil // response written directly to writer
 	}
 
-	if _, err := os.Stat(result.FullPath); os.IsNotExist(err) {
-		return serverutil.NotFound(fmt.Errorf("file not found: %s", filePath))
+	f, err := os.Open(result.FullPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return serverutil.NotFound(fmt.Errorf("file not found: %s", filePath))
+		}
+		return serverutil.InternalServerError(fmt.Errorf("failed to open file: %w", err))
+	}
+	defer f.Close()
+
+	ext := strings.ToLower(filepath.Ext(result.FullPath))
+	wantsJPEG := c.Query("format") == "jpeg"
+
+	if wantsJPEG && result.FileType == storageutil.FileTypeImage {
+		img, _, err := image.Decode(f)
+		if err != nil {
+			return serverutil.InternalServerError(fmt.Errorf("failed to decode image: %w", err))
+		}
+
+		var buf bytes.Buffer
+		if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 92}); err != nil {
+			return serverutil.InternalServerError(fmt.Errorf("failed to encode JPEG: %w", err))
+		}
+
+		baseName := strings.TrimSuffix(filepath.Base(result.FullPath), ext) + ".jpg"
+		c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", baseName))
+		c.Data(http.StatusOK, "image/jpeg", buf.Bytes())
+		return nil
 	}
 
+	f.Close() // close before c.File re-opens it
 	disposition := "inline"
 	contentType := "application/octet-stream"
 	if result.FileType == storageutil.FileTypePDF {
 		contentType = "application/pdf"
 	} else if result.FileType == storageutil.FileTypeImage {
-		contentType = "image/*"
+		contentType = storageutil.ImageMIMETypeFromExtension(filepath.Ext(result.FullPath))
 	} else if result.FileType == storageutil.FileTypeVideo {
 		contentType = storageutil.VideoMIMETypeFromExtension(filepath.Ext(result.FullPath))
 	}

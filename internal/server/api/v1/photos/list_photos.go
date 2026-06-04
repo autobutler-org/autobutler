@@ -18,11 +18,12 @@ const maxLimit = 200
 
 // PhotoJSON is a JSON-serializable representation of a photo file.
 type PhotoJSON struct {
-	RelPath  string `json:"relPath"`
-	FileName string `json:"fileName"`
-	Size     int64  `json:"size"`
-	MTime    int64  `json:"mtime"`
-	Serial   string `json:"serial"`
+	RelPath      string `json:"relPath"`
+	FileName     string `json:"fileName"`
+	Size         int64  `json:"size"`
+	MTime        int64  `json:"mtime"`
+	Serial       string `json:"serial"`
+	HasLiveVideo bool   `json:"hasLiveVideo,omitempty"`
 }
 
 // PaginatedPhotosResponse wraps a page of photos with pagination metadata.
@@ -108,11 +109,12 @@ func listPhotos(c *gin.Context) *serverutil.Response {
 		for _, photo := range photos {
 			info := photo.FileInfo
 			allPhotos = append(allPhotos, PhotoJSON{
-				RelPath:  photo.RelPath,
-				FileName: info.Name(),
-				Size:     info.Size(),
-				MTime:    info.ModTime().Unix(),
-				Serial:   deviceSerial,
+				RelPath:      photo.RelPath,
+				FileName:     info.Name(),
+				Size:         info.Size(),
+				MTime:        info.ModTime().Unix(),
+				Serial:       deviceSerial,
+				HasLiveVideo: photo.HasLiveVideo,
 			})
 		}
 	}

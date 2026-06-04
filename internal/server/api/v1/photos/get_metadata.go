@@ -4,9 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"image"
-	_ "image/jpeg"
-	_ "image/png"
 	"math"
 	"os"
 	"path/filepath"
@@ -16,10 +13,10 @@ import (
 	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/photoutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 	"github.com/gin-gonic/gin"
-	"github.com/rwcarlsen/goexif/exif"
 )
 
 // ExifJSON holds the EXIF fields we expose. All fields are pointers so that
@@ -45,15 +42,16 @@ type AlbumRefJSON struct {
 
 // PhotoMetadataJSON is the full metadata response for a single photo.
 type PhotoMetadataJSON struct {
-	FileName         string         `json:"fileName"`
-	FileSize         int64          `json:"fileSize"`
-	MTime            int64          `json:"mtime"`
-	Width            int            `json:"width"`
-	Height           int            `json:"height"`
-	RotationQuarters int64          `json:"rotationQuarters"`
-	IsFavorite       bool           `json:"isFavorite"`
-	Exif             *ExifJSON      `json:"exif,omitempty"`
-	Albums           []AlbumRefJSON `json:"albums"`
+	FileName           string         `json:"fileName"`
+	FileSize           int64          `json:"fileSize"`
+	MTime              int64          `json:"mtime"`
+	Width              int            `json:"width"`
+	Height             int            `json:"height"`
+	RotationQuarters   int64          `json:"rotationQuarters"`
+	IsFavorite         bool           `json:"isFavorite"`
+	Exif               *ExifJSON      `json:"exif,omitempty"`
+	Albums             []AlbumRefJSON `json:"albums"`
+	LivePhotoVideoPath string         `json:"livePhotoVideoPath,omitempty"`
 }
 
 // getPhotoMetadata godoc
@@ -80,7 +78,6 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 	}
 	serial := c.Query("serial")
 
-	// Resolve the base directory, same logic as the thumbnails endpoint.
 	filesDir, err := storageutil.GetCirrusDir()
 	if err != nil {
 		return serverutil.InternalServerError(err)
@@ -96,8 +93,6 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 		}
 	}
 
-	// Guard against path traversal: reject absolute paths and ensure the
-	// cleaned join stays within filesDir.
 	cleanFilesDir := filepath.Clean(filesDir)
 	fullPath := filepath.Join(cleanFilesDir, relPath)
 	if !strings.HasPrefix(fullPath, cleanFilesDir+string(filepath.Separator)) {
@@ -112,50 +107,24 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(err)
 	}
 
-	// --- EXIF (decoded once, used for dimensions fallback + metadata) ---
-	var rawExif *exif.Exif
-	if f, err := os.Open(fullPath); err == nil {
-		if x, err := exif.Decode(f); err == nil {
-			rawExif = x
-		}
-		f.Close()
-	}
-
-	// --- Dimensions ---
-	// image.DecodeConfig handles JPEG and PNG. HEIC/HEIF are not supported by
-	// the Go standard library and goexif only parses JPEG APP1 blocks, so HEIC
-	// files will produce 0×0 here until a HEIC decoder is added.
-	// The PixelXDimension / PixelYDimension fallback helps for other formats
-	// whose EXIF goexif can read (e.g. some TIFFs) but does NOT help for HEIC.
-	width, height := 0, 0
-	if f, err := os.Open(fullPath); err == nil {
-		if cfg, _, err := image.DecodeConfig(f); err == nil {
-			width = cfg.Width
-			height = cfg.Height
-		}
-		f.Close()
-	}
-	if (width == 0 || height == 0) && rawExif != nil {
-		if tag, err := rawExif.Get(exif.PixelXDimension); err == nil {
-			if v, err := tag.Int(0); err == nil {
-				width = v
-			}
-		}
-		if tag, err := rawExif.Get(exif.PixelYDimension); err == nil {
-			if v, err := tag.Int(0); err == nil {
-				height = v
-			}
-		}
-	}
-
+	// --- EXIF + dimensions (works for JPEG, HEIC, PNG, WebP, TIFF, RAW) ---
 	var exifData *ExifJSON
-	if rawExif != nil {
-		exifData = extractExif(rawExif)
+	width, height := 0, 0
+
+	imgFormat := photoutil.ImageFormatFromPath(fullPath)
+	if imgFormat != 0 {
+		if f, err := os.Open(fullPath); err == nil {
+			if data, err := photoutil.DecodeExif(f, imgFormat); err == nil && data != nil {
+				exifData = exifDataToJSON(data)
+				width = data.Width
+				height = data.Height
+			}
+			f.Close()
+		}
 	}
 
 	ctx := c.Request.Context()
 
-	// --- Server-side rotation ---
 	var rotationQuarters int64
 	if rq, err := deps.Database().Queries.GetPhotoRotation(
 		ctx,
@@ -166,17 +135,14 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(fmt.Errorf("get photo rotation: %w", err))
 	}
 
-	// --- Favorite status ---
 	isFavorite, err := deps.Database().Queries.IsFavorite(
 		ctx,
 		db.IsFavoriteParams{DeviceSerial: serial, RelPath: relPath},
 	)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		_ = c.Error(fmt.Errorf("check favorite for %q: %w", relPath, err))
-		// non-fatal: isFavorite stays false
 	}
 
-	// --- Album membership ---
 	albums, err := deps.Database().Queries.ListAlbumsContainingPhoto(
 		ctx,
 		db.ListAlbumsContainingPhotoParams{
@@ -186,87 +152,102 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 	)
 	if err != nil {
 		_ = c.Error(fmt.Errorf("list albums containing photo %q for device %q: %w", relPath, serial, err))
-		albums = nil // non-fatal; return partial metadata
+		albums = nil
 	}
 	albumRefs := make([]AlbumRefJSON, 0, len(albums))
 	for _, a := range albums {
 		albumRefs = append(albumRefs, AlbumRefJSON{ID: a.ID, Name: a.Name})
 	}
 
+	liveVideoPath := findLivePhotoVideo(fullPath, relPath)
+
 	return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(PhotoMetadataJSON{
-		FileName:         filepath.Base(relPath),
-		FileSize:         stat.Size(),
-		MTime:            stat.ModTime().Unix(),
-		Width:            width,
-		Height:           height,
-		RotationQuarters: rotationQuarters,
-		IsFavorite:       isFavorite,
-		Exif:             exifData,
-		Albums:           albumRefs,
+		FileName:           filepath.Base(relPath),
+		FileSize:           stat.Size(),
+		MTime:              stat.ModTime().Unix(),
+		Width:              width,
+		Height:             height,
+		RotationQuarters:   rotationQuarters,
+		IsFavorite:         isFavorite,
+		Exif:               exifData,
+		Albums:             albumRefs,
+		LivePhotoVideoPath: liveVideoPath,
 	})
 }
 
-// extractExif pulls the fields we care about out of a decoded EXIF block.
-func extractExif(x *exif.Exif) *ExifJSON {
+// findLivePhotoVideo checks if a companion .MOV file exists for an image,
+// which indicates an iPhone Live Photo. Returns the relative path to the
+// video, or "" if none found.
+func findLivePhotoVideo(fullPath, relPath string) string {
+	ext := strings.ToLower(filepath.Ext(fullPath))
+	if ext != ".heic" && ext != ".heif" && ext != ".jpg" && ext != ".jpeg" {
+		return ""
+	}
+
+	base := strings.TrimSuffix(fullPath, filepath.Ext(fullPath))
+	for _, vidExt := range []string{".MOV", ".mov", ".Mp4", ".mp4"} {
+		candidate := base + vidExt
+		if _, err := os.Stat(candidate); err == nil {
+			relBase := strings.TrimSuffix(relPath, filepath.Ext(relPath))
+			return relBase + vidExt
+		}
+	}
+	return ""
+}
+
+func exifDataToJSON(data *photoutil.ExifData) *ExifJSON {
 	e := &ExifJSON{}
 	empty := true
 
-	if t, err := x.DateTime(); err == nil {
-		s := t.UTC().Format(time.RFC3339)
+	if data.DateTaken != nil {
+		s := data.DateTaken.Format(time.RFC3339)
 		e.DateTaken = &s
 		empty = false
 	}
-	if s, err := stringTag(x, exif.Make); err == nil {
-		e.Make = &s
+	if data.Make != "" {
+		e.Make = &data.Make
 		empty = false
 	}
-	if s, err := stringTag(x, exif.Model); err == nil {
-		e.Model = &s
+	if data.Model != "" {
+		e.Model = &data.Model
 		empty = false
 	}
-	if s, err := stringTag(x, exif.LensModel); err == nil {
-		e.Lens = &s
+	if data.LensModel != "" {
+		e.Lens = &data.LensModel
 		empty = false
 	}
-	if rat, err := x.Get(exif.FNumber); err == nil {
-		if n, d, err := rat.Rat2(0); err == nil && d != 0 {
-			v := roundTo(float64(n)/float64(d), 2)
-			e.Aperture = &v
-			empty = false
-		}
+	if data.Aperture != 0 {
+		v := roundTo(data.Aperture, 2)
+		e.Aperture = &v
+		empty = false
 	}
-	if rat, err := x.Get(exif.ExposureTime); err == nil {
-		if n, d, err := rat.Rat2(0); err == nil {
-			var s string
-			if n == 0 {
-				s = "0"
-			} else if d%n == 0 {
-				s = fmt.Sprintf("1/%d", d/n)
-			} else {
-				s = fmt.Sprintf("%d/%d", n, d)
-			}
-			e.ShutterSpeed = &s
-			empty = false
+	if data.ShutterSpeed[1] != 0 {
+		n, d := data.ShutterSpeed[0], data.ShutterSpeed[1]
+		var s string
+		if n == 0 {
+			s = "0"
+		} else if d%n == 0 {
+			s = fmt.Sprintf("1/%d", d/n)
+		} else {
+			s = fmt.Sprintf("%d/%d", n, d)
 		}
+		e.ShutterSpeed = &s
+		empty = false
 	}
-	if tag, err := x.Get(exif.ISOSpeedRatings); err == nil {
-		if v, err := tag.Int(0); err == nil {
-			e.ISO = &v
-			empty = false
-		}
+	if data.ISO != 0 {
+		e.ISO = &data.ISO
+		empty = false
 	}
-	if rat, err := x.Get(exif.FocalLength); err == nil {
-		if n, d, err := rat.Rat2(0); err == nil && d != 0 {
-			v := roundTo(float64(n)/float64(d), 2)
-			e.FocalLength = &v
-			empty = false
-		}
+	if data.FocalLength != 0 {
+		v := roundTo(data.FocalLength, 2)
+		e.FocalLength = &v
+		empty = false
 	}
-	if lat, lon, err := x.LatLong(); err == nil {
-		rlat := roundTo(lat, 6)
-		rlon := roundTo(lon, 6)
-		e.Latitude = &rlat
-		e.Longitude = &rlon
+	if data.HasGPS {
+		lat := roundTo(data.Latitude, 6)
+		lon := roundTo(data.Longitude, 6)
+		e.Latitude = &lat
+		e.Longitude = &lon
 		empty = false
 	}
 
@@ -274,18 +255,6 @@ func extractExif(x *exif.Exif) *ExifJSON {
 		return nil
 	}
 	return e
-}
-
-func stringTag(x *exif.Exif, field exif.FieldName) (string, error) {
-	tag, err := x.Get(field)
-	if err != nil {
-		return "", err
-	}
-	s, err := tag.StringVal()
-	if err != nil {
-		return "", err
-	}
-	return s, nil
 }
 
 func roundTo(v float64, decimals int) float64 {

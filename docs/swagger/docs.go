@@ -1016,6 +1016,12 @@ const docTemplate = `{
                         "description": "Device serial number to filter by",
                         "name": "serial",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Output format conversion (e.g. 'jpeg' to convert HEIC to JPEG)",
+                        "name": "format",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3125,6 +3131,9 @@ const docTemplate = `{
                 "fileName": {
                     "type": "string"
                 },
+                "hasLiveVideo": {
+                    "type": "boolean"
+                },
                 "mtime": {
                     "type": "integer"
                 },
@@ -3162,6 +3171,9 @@ const docTemplate = `{
                 },
                 "isFavorite": {
                     "type": "boolean"
+                },
+                "livePhotoVideoPath": {
+                    "type": "string"
                 },
                 "mtime": {
                     "type": "integer"

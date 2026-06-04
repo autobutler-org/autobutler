@@ -32,6 +32,39 @@ const (
 	FileTypeArchive   FileType = "archive"
 )
 
+func ImageMIMETypeFromExtension(extension string) string {
+	normalizedExt := strings.TrimSpace(strings.ToLower(extension))
+	if normalizedExt == "" {
+		return "application/octet-stream"
+	}
+	if !strings.HasPrefix(normalizedExt, ".") {
+		normalizedExt = "." + normalizedExt
+	}
+
+	switch normalizedExt {
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".png":
+		return "image/png"
+	case ".gif":
+		return "image/gif"
+	case ".webp":
+		return "image/webp"
+	case ".svg":
+		return "image/svg+xml"
+	case ".bmp":
+		return "image/bmp"
+	case ".tiff", ".tif":
+		return "image/tiff"
+	case ".heic", ".heif":
+		return "image/heic"
+	case ".avif":
+		return "image/avif"
+	default:
+		return "application/octet-stream"
+	}
+}
+
 func VideoMIMETypeFromExtension(extension string) string {
 	normalizedExt := strings.TrimSpace(strings.ToLower(extension))
 	if normalizedExt == "" {
