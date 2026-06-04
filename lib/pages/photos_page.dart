@@ -1152,7 +1152,7 @@ class _PhotosPageState extends State<PhotosPage>
                               height: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.upload_rounded),
+                          : const Icon(Icons.add),
                       tooltip: 'Upload photos',
                       onPressed: _isUploading ? null : _handleUploadPhotos,
                     ),
