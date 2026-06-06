@@ -19,6 +19,8 @@ Group=autobutler
 ExecStart=/usr/local/bin/autobutler serve
 Environment="PORT=80"
 Environment="GIN_MODE=release"
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 Restart=always
 StandardOutput=append:/var/log/autobutler.app
 StandardError=append:/var/log/autobutler.err
