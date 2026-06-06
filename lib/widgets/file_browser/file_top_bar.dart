@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:autobutler/widgets/autobutler_brand_button.dart';
+import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -170,6 +171,7 @@ class _FileTopBarState extends State<FileTopBar> {
               onTap: widget.onOpenSettings,
               tooltip: 'Settings',
             ),
+            const ThemeToggleButton(),
           ],
         ),
       ),

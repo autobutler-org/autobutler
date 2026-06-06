@@ -9,6 +9,7 @@ import 'package:autobutler/widgets/photos/photo_selection_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:autobutler/pages/album_page.dart';
+import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 
@@ -707,6 +708,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
           ),
         ),
         const SizedBox(width: 4),
+        const ThemeToggleButton(),
       ],
     );
   }

@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:autobutler/router.dart';
+import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 
 class VaultPage extends StatefulWidget {
   const VaultPage({super.key});
@@ -750,6 +751,7 @@ class _EntryDetailPageState extends State<_EntryDetailPage> {
             ),
           if (_editing)
             TextButton(onPressed: _saveEntry, child: const Text('Save')),
+          const ThemeToggleButton(),
         ],
       ),
       body: SingleChildScrollView(
@@ -1028,6 +1030,7 @@ class _EntryEditorPageState extends State<_EntryEditorPage> {
             onPressed: _saving ? null : _save,
             child: const Text('Save'),
           ),
+          const ThemeToggleButton(),
         ],
       ),
       body: SingleChildScrollView(

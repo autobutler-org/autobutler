@@ -5,6 +5,7 @@ import 'package:autobutler/services/album_service.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:autobutler/widgets/core/empty_state_widget.dart';
+import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:autobutler/widgets/photos/add_to_album_sheet.dart';
 import 'package:flutter/material.dart';
 
@@ -145,6 +146,7 @@ class _AlbumPageState extends State<AlbumPage> {
               ),
             ],
           ),
+          const ThemeToggleButton(),
         ],
       ),
       body: _loading

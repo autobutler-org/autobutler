@@ -7,6 +7,7 @@ import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:data_table/data_sheet.dart';
 import 'package:data_table/data_table.dart';
 import 'package:flutter/material.dart' hide DataTable, DataRow, DataCell;
+import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:http/http.dart' as http;
 
 // ---------------------------------------------------------------------------
@@ -275,14 +276,20 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
 
     if (_loading) {
       return Scaffold(
-        appBar: AppBar(title: Text(title)),
+        appBar: AppBar(
+          title: Text(title),
+          actions: const [ThemeToggleButton()],
+        ),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(title: Text(title)),
+        appBar: AppBar(
+          title: Text(title),
+          actions: const [ThemeToggleButton()],
+        ),
         body: Center(child: Text('Error: $_error')),
       );
     }
@@ -316,6 +323,7 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
                 tooltip: 'Save',
                 onPressed: _manualSave,
               ),
+            const ThemeToggleButton(),
           ],
           bottom: multiTab
               ? TabBar(
