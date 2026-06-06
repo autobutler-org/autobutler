@@ -118,10 +118,20 @@ class AlbumSidebarState extends State<AlbumSidebar> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    final systemAlbums =
+        (_albums.where((a) => a.isSystemAlbum).toList()..sort((a, b) {
+              if (a.isFavorites) return -1;
+              if (b.isFavorites) return 1;
+              return 0;
+            }))
+            .toList();
+    final userAlbums = _albums.where((a) => !a.isSystemAlbum).toList();
+    final allAlbums = [...systemAlbums, ...userAlbums];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
       children: [
+        // ── Header ──────────────────────────────────────────────────────────
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           child: Row(
@@ -146,6 +156,7 @@ class AlbumSidebarState extends State<AlbumSidebar> {
             ],
           ),
         ),
+        // ── Album list (scrollable) ──────────────────────────────────────────
         if (_loading)
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 12),
@@ -162,19 +173,16 @@ class AlbumSidebarState extends State<AlbumSidebar> {
               ),
             ),
           )
-        else ...[
-          // System albums pinned at top (Favorites always first)
-          ...(_albums.where((a) => a.isSystemAlbum).toList()..sort((a, b) {
-                if (a.isFavorites) return -1;
-                if (b.isFavorites) return 1;
-                return 0;
-              }))
-              .map((album) => _buildAlbumTile(context, album)),
-          // User albums below
-          ..._albums
-              .where((a) => !a.isSystemAlbum)
-              .map((album) => _buildAlbumTile(context, album)),
-        ],
+        else
+          Expanded(
+            child: ListView.builder(
+              padding: EdgeInsets.zero,
+              itemCount: allAlbums.length,
+              itemBuilder: (context, index) =>
+                  _buildAlbumTile(context, allAlbums[index]),
+            ),
+          ),
+        // ── Footer divider ───────────────────────────────────────────────────
         const SizedBox(height: 8),
         Divider(height: 1, color: colorScheme.outline.withValues(alpha: 0.5)),
       ],
