@@ -450,8 +450,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       if (!mounted) return;
       if (bytes == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const
- SnackBar(content: Text('Failed to generate PDF for printing')),
+          const SnackBar(content: Text('Failed to generate PDF for printing')),
         );
         return;
       }
