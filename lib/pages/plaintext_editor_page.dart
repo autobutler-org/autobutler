@@ -1,11 +1,9 @@
 import 'dart:convert';
 
-import 'package:autobutler/router.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 
 /// A simple plaintext editor for text-like files (txt, md, json, yaml, etc.)
@@ -127,13 +125,6 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
-        leading: Navigator.canPop(context)
-            ? null // let Flutter show the default back button
-            : IconButton(
-                icon: const Icon(Icons.arrow_back),
-                tooltip: 'Back',
-                onPressed: () => context.go(AppRoutes.fileBrowser),
-              ),
         actions: [
           if (_saving)
             const Padding(
