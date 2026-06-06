@@ -78,9 +78,9 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
         _isUnsupportedFormat = nonWebNative;
         _errorMessage = nonWebNative
             ? 'This video format (${_extensionOf(widget.name)}) isn\'t supported '
-                'for in-browser playback. Download the file to watch it locally.'
+                  'for in-browser playback. Download the file to watch it locally.'
             : 'Unable to play this media. The file may use an unsupported '
-                'codec/profile. ($e)';
+                  'codec/profile. ($e)';
       });
       return;
     }
@@ -171,9 +171,9 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
       await web_download.saveBytesForDownload(bytes, widget.name);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Download failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Download failed: $e')));
     } finally {
       if (mounted) setState(() => _downloading = false);
     }
