@@ -134,7 +134,7 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
             if (context.canPop()) {
               context.pop();
             } else {
-              context.go(AppRoutes.fileBrowser);
+              context.go(AppRoutes.cirrus);
             }
           },
         ),
