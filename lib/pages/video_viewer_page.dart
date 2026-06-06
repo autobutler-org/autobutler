@@ -1,5 +1,8 @@
 import 'dart:async';
-
+import 'package:autobutler/services/cirrus_service.dart';
+import 'package:autobutler/utils/web_download_stub.dart'
+    if (dart.library.html) 'package:autobutler/utils/web_download_web.dart'
+    as web_download;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
@@ -18,6 +21,28 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
   VideoPlayerController? _controller;
   bool _loading = true;
   String? _errorMessage;
+  bool _isUnsupportedFormat = false;
+  bool _downloading = false;
+
+  static const _nonWebNativeExtensions = {
+    '.mov',
+    '.avi',
+    '.mkv',
+    '.wmv',
+    '.flv',
+    '.3gp',
+  };
+
+  bool _isNonWebNativeFormat(String name) {
+    final lower = name.toLowerCase();
+    return _nonWebNativeExtensions.any((ext) => lower.endsWith(ext));
+  }
+
+  String _extensionOf(String name) {
+    final idx = name.lastIndexOf('.');
+    if (idx < 0) return '';
+    return name.substring(idx).toUpperCase();
+  }
 
   @override
   void initState() {
@@ -29,6 +54,7 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
     setState(() {
       _loading = true;
       _errorMessage = null;
+      _isUnsupportedFormat = false;
     });
 
     VideoPlayerController? networkController;
@@ -44,11 +70,15 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
       if (!mounted) {
         return;
       }
+      final nonWebNative = _isNonWebNativeFormat(widget.name);
       setState(() {
         _loading = false;
-        _errorMessage =
-            'Unable to play this media. The file may use an unsupported '
-            'codec/profile. ($e)';
+        _isUnsupportedFormat = nonWebNative;
+        _errorMessage = nonWebNative
+            ? 'This video format (${_extensionOf(widget.name)}) isn\'t supported '
+                  'for in-browser playback. Download the file to watch it locally.'
+            : 'Unable to play this media. The file may use an unsupported '
+                  'codec/profile. ($e)';
       });
       return;
     }
@@ -112,6 +142,41 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
     }
   }
 
+  List<Widget> _buildDownloadSection() {
+    return [
+      const SizedBox(height: 16),
+      FilledButton.icon(
+        onPressed: _downloading ? null : _downloadVideo,
+        icon: _downloading
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.download_rounded, size: 16),
+        label: Text(_downloading ? 'Downloading…' : 'Download'),
+      ),
+    ];
+  }
+
+  Future<void> _downloadVideo() async {
+    setState(() => _downloading = true);
+    try {
+      final Uint8List? bytes = await CirrusService.downloadFileBytes(
+        widget.url.path,
+      );
+      if (bytes == null) throw Exception('Empty response from server');
+      await web_download.saveBytesForDownload(bytes, widget.name);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Download failed: $e')));
+    } finally {
+      if (mounted) setState(() => _downloading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
@@ -127,9 +192,15 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.error_outline, size: 36),
+                    Icon(
+                      _isUnsupportedFormat
+                          ? Icons.video_file_outlined
+                          : Icons.error_outline,
+                      size: 36,
+                    ),
                     const SizedBox(height: 12),
                     Text(_errorMessage!, textAlign: TextAlign.center),
+                    if (_isUnsupportedFormat) ..._buildDownloadSection(),
                   ],
                 ),
               )
