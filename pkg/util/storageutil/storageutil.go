@@ -30,6 +30,7 @@ const (
 	FileTypeVideo     FileType = "video"
 	FileTypeSpacer    FileType = "spacer"
 	FileTypeArchive   FileType = "archive"
+	FileTypeText      FileType = "text"
 )
 
 func ImageMIMETypeFromExtension(extension string) string {
@@ -132,6 +133,9 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 		return FileTypeDocx
 	case ".zip", ".rar", ".tar", ".gz", ".tgz", ".7z":
 		return FileTypeArchive
+	case ".txt", ".md", ".json", ".yaml", ".yml", ".xml", ".html", ".css",
+		".js", ".go", ".py", ".sh", ".env", ".toml", ".ini", ".cfg", ".conf", ".log":
+		return FileTypeText
 	default:
 		stat, err := os.Stat(filePath)
 		if err == nil && stat != nil {

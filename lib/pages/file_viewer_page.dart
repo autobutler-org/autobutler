@@ -126,6 +126,9 @@ class _FileViewerPageState extends State<FileViewerPage> {
         case 'absheet':
           context.go(_buildRoute('/sheets', widget.filePath, serial: serial));
 
+        case 'text':
+          context.push(_buildRoute('/edit', widget.filePath, serial: serial));
+
         default:
           // Unknown type — fall back to the file browser.
           context.go(_cirrusPath(widget.filePath));

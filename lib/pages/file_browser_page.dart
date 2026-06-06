@@ -631,6 +631,28 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
   }
 
+  /// Text-like extensions that the plaintext editor can handle.
+  static const _kTextExtensions = {
+    '.txt',
+    '.md',
+    '.json',
+    '.yaml',
+    '.yml',
+    '.xml',
+    '.html',
+    '.css',
+    '.js',
+    '.go',
+    '.py',
+    '.sh',
+    '.env',
+    '.toml',
+    '.ini',
+    '.cfg',
+    '.conf',
+    '.log',
+  };
+
   Future<void> _handleNewFilePressed() async {
     final fileName = await showNewFileDialog(context);
     if (fileName == null || !mounted) return;
@@ -641,10 +663,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       if (fileName.endsWith('.absheet')) {
         emptyContent =
             '{"tabs":[{"name":"Sheet 1","data":{"columns":[],"rows":[]}}]}';
-      } else {
+      } else if (fileName.endsWith('.abdoc')) {
         emptyContent = '{"ops":[{"insert":"\\n"}]}';
+      } else {
+        emptyContent = '';
       }
-      final bytes = emptyContent.codeUnits;
+      final bytes = utf8.encode(emptyContent);
 
       final file = http.MultipartFile.fromBytes(
         'files',
@@ -658,14 +682,28 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
       _showMessage('Created $fileName');
 
-      // Refresh file list then open the editor.
-      _refreshFileState();
-
       final filePath = _currentPath.isEmpty
           ? fileName
           : '$_currentPath/$fileName';
 
-      _openFileViaRoute(filePath);
+      // For generic files, only open the plaintext editor for text-like
+      // extensions; otherwise just refresh the listing.
+      final isKnownType =
+          fileName.endsWith('.abdoc') || fileName.endsWith('.absheet');
+      if (isKnownType) {
+        _refreshFileState();
+        _openFileViaRoute(filePath);
+      } else {
+        final ext = filePath.contains('.')
+            ? '.${filePath.split('.').last.toLowerCase()}'
+            : '';
+        if (_kTextExtensions.contains(ext)) {
+          _refreshFileState();
+          context.push(AppRoutes.plaintextEditorPath(filePath));
+        } else {
+          _refreshFileState();
+        }
+      }
     } catch (e) {
       if (!mounted) return;
       _showMessage('Failed to create file: $e');
@@ -889,6 +927,15 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     // CSV — offer to convert to .absheet (#1019).
     if (lowerName.endsWith('.csv')) {
       await _handleCsvOpen(node);
+      return;
+    }
+
+    // Text files — open in the plaintext editor via push so back works.
+    final ext = node.name.contains('.')
+        ? '.${node.name.split('.').last.toLowerCase()}'
+        : '';
+    if (_kTextExtensions.contains(ext)) {
+      context.push(AppRoutes.plaintextEditorPath(node.apiPath));
       return;
     }
 

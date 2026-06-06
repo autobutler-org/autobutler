@@ -27,6 +27,11 @@ const _kFileTypes = [
     extension: '.absheet',
     icon: Icons.table_chart,
   ),
+  NewFileType(
+    label: 'Generic File',
+    extension: '',
+    icon: Icons.insert_drive_file_outlined,
+  ),
 ];
 
 /// Shows the new-file dialog and returns the chosen filename (with extension),
@@ -75,6 +80,7 @@ class _NewFileDialogState extends State<_NewFileDialog> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     final name = _nameController.text.trim();
+    // For generic files the extension is empty — return name as-is.
     Navigator.of(context).pop('$name${_selected.extension}');
   }
 
@@ -128,8 +134,12 @@ class _NewFileDialogState extends State<_NewFileDialog> {
                 controller: _nameController,
                 autofocus: true,
                 decoration: InputDecoration(
-                  hintText: 'Untitled document',
-                  suffixText: _selected.extension,
+                  hintText: _selected.extension.isEmpty
+                      ? 'filename.txt'
+                      : 'Untitled document',
+                  suffixText: _selected.extension.isEmpty
+                      ? null
+                      : _selected.extension,
                   border: const OutlineInputBorder(),
                 ),
                 textInputAction: TextInputAction.done,

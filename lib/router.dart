@@ -1,5 +1,6 @@
 import 'package:autobutler/pages/document_editor_page.dart';
 import 'package:autobutler/pages/file_viewer_page.dart';
+import 'package:autobutler/pages/plaintext_editor_page.dart';
 import 'package:autobutler/pages/docs_page.dart';
 import 'package:autobutler/pages/file_browser_page.dart';
 import 'package:autobutler/pages/health_page.dart';
@@ -39,6 +40,18 @@ class AppRoutes {
   static const setup = '/setup';
   static const login = '/login';
   static const recover = '/recover';
+  static const plaintextEditor = '/edit';
+
+  /// Build a URL for a specific plaintext file.
+  /// e.g. plaintextEditorPath('notes/readme.txt') → '/edit/notes/readme.txt'
+  /// Device serial is passed as a query param when non-empty.
+  static String plaintextEditorPath(String path, {String? serial}) {
+    final clean = path.replaceAll(RegExp(r'^/+'), '');
+    final base = '$plaintextEditor/$clean';
+    return (serial != null && serial.isNotEmpty)
+        ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
+        : base;
+  }
 
   /// Build a deep-link URL that opens [path] in the correct viewer.
   /// e.g. viewFile('photos/beach.jpg') → '/view/photos/beach.jpg'
@@ -185,6 +198,16 @@ final router = GoRouter(
     GoRoute(
       path: AppRoutes.recover,
       builder: (context, state) => const RecoverPage(),
+    ),
+    GoRoute(
+      // Matches /edit/<anything including slashes> — opens the plaintext editor.
+      path: '${AppRoutes.plaintextEditor}/:path(.*)',
+      builder: (context, state) {
+        final raw = state.pathParameters['path'] ?? '';
+        final filePath = Uri.decodeComponent(raw);
+        final serial = state.uri.queryParameters['serial'] ?? '';
+        return PlaintextEditorPage(filePath: filePath, deviceSerial: serial);
+      },
     ),
   ],
   errorBuilder: (context, state) =>
