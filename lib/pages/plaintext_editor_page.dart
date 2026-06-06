@@ -1,9 +1,11 @@
 import 'dart:convert';
 
+import 'package:autobutler/router.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 
 /// A simple plaintext editor for text-like files (txt, md, json, yaml, etc.)
