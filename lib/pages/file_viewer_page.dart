@@ -1,6 +1,7 @@
 import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/services/cirrus_service.dart';
+import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -143,7 +144,10 @@ class _FileViewerPageState extends State<FileViewerPage> {
   Widget build(BuildContext context) {
     if (_errorMessage != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Open File')),
+        appBar: AppBar(
+          title: const Text('Open File'),
+          actions: const [ThemeToggleButton()],
+        ),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),

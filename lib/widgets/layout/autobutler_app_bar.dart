@@ -1,4 +1,5 @@
 import 'package:autobutler/widgets/autobutler_brand_button.dart';
+import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:flutter/material.dart';
 
 class AutobutlerAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -31,7 +32,7 @@ class AutobutlerAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       title: null,
-      actions: actions,
+      actions: [...actions, const ThemeToggleButton()],
     );
   }
 }
