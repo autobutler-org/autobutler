@@ -1,4 +1,5 @@
 import 'package:autobutler/pages/document_editor_page.dart';
+import 'package:autobutler/pages/terms_page.dart';
 import 'package:autobutler/pages/file_viewer_page.dart';
 import 'package:autobutler/pages/plaintext_editor_page.dart';
 import 'package:autobutler/pages/docs_page.dart';
@@ -40,6 +41,7 @@ class AppRoutes {
   static const setup = '/setup';
   static const login = '/login';
   static const recover = '/recover';
+  static const terms = '/terms';
   static const plaintextEditor = '/edit';
 
   /// Build a URL for a specific plaintext file.
@@ -98,7 +100,10 @@ final router = GoRouter(
   redirect: _authRedirect,
   // Refresh the router whenever the session token changes so a 401-triggered
   // token clear immediately redirects to the login page.
-  refreshListenable: AppSettings.instance.sessionTokenNotifier,
+  refreshListenable: Listenable.merge([
+    AppSettings.instance.sessionTokenNotifier,
+    AppSettings.instance.hasAcceptedTerms,
+  ]),
   routes: [
     GoRoute(
       path: AppRoutes.cirrus,
@@ -199,6 +204,7 @@ final router = GoRouter(
       path: AppRoutes.recover,
       builder: (context, state) => const RecoverPage(),
     ),
+    GoRoute(path: AppRoutes.terms, builder: (_, __) => const TermsPage()),
     GoRoute(
       // Matches /edit/<anything including slashes> — opens the plaintext editor.
       path: '${AppRoutes.plaintextEditor}/:path(.*)',
@@ -216,13 +222,21 @@ final router = GoRouter(
 
 /// Top-level redirect — handles auth gating.
 Future<String?> _authRedirect(BuildContext context, GoRouterState state) async {
-  final publicRoutes = {AppRoutes.setup, AppRoutes.login, AppRoutes.recover};
+  final publicRoutes = {
+    AppRoutes.setup,
+    AppRoutes.login,
+    AppRoutes.recover,
+    AppRoutes.terms,
+  };
 
   // Public routes are always accessible.
   if (publicRoutes.contains(state.matchedLocation)) return null;
 
   // No host configured — let the main app handle the "add host" prompt.
   if (AppSettings.instance.activeHost == null) return null;
+
+  // Terms must be accepted before accessing the app.
+  if (!AppSettings.instance.hasAcceptedTerms.value) return AppRoutes.terms;
 
   // Already authenticated.
   if (AppSettings.instance.sessionToken != null) return null;

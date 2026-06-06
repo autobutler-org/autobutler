@@ -33,6 +33,10 @@ class AppSettings {
   /// Notifies listeners whenever the session token changes.
   /// The router listens to this to redirect to login when a 401 clears the token.
   final ValueNotifier<String?> sessionTokenNotifier = ValueNotifier(null);
+
+  /// Notifies listeners whenever the terms acceptance state changes.
+  /// The router listens to this to redirect to the terms page when not yet accepted.
+  final ValueNotifier<bool> hasAcceptedTerms = ValueNotifier(false);
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   static const _sessionTokenKey = 'session_token';
@@ -68,6 +72,8 @@ class AppSettings {
       _sessionToken = await _secureStorage.read(key: _sessionTokenKey);
     }
     sessionTokenNotifier.value = _sessionToken;
+
+    hasAcceptedTerms.value = _prefs!.getBool('hasAcceptedTerms') ?? false;
 
     // If no hosts configured and running in debug (local development), add a local loopback
     // host appropriate for the running platform so developers can quickly connect.
@@ -169,6 +175,12 @@ class AppSettings {
         ? 'dark'
         : 'system';
     await _prefs?.setString('themeMode', key);
+  }
+
+  /// Marks the Terms and Conditions as accepted and persists the decision.
+  Future<void> acceptTerms() async {
+    hasAcceptedTerms.value = true;
+    await _prefs?.setBool('hasAcceptedTerms', true);
   }
 
   /// Auto-refresh interval in seconds. 0 = disabled.
