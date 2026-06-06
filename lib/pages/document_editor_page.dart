@@ -149,7 +149,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   void initState() {
     super.initState();
     _displayName = _nameFromPath(widget.filePath);
-    _controller = QuillController.basic();
+    _controller = QuillController.basic()..readOnly = _isReadOnly;
     if (widget.overlayTargetRoute != null) {
       router.routeInformationProvider.addListener(_handleOverlayRouteChange);
     }
@@ -229,11 +229,13 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   // ── Read-only / edit toggle (#939) ────────────────────────────────────────
 
   void _enterEditMode() {
+    _controller.readOnly = false;
     setState(() => _isReadOnly = false);
     _focusEditor();
   }
 
   Future<void> _exitEditMode() async {
+    _controller.readOnly = true;
     setState(() => _isReadOnly = true);
     _editorFocus.unfocus();
     if (_dirty) {
@@ -293,6 +295,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         document: doc,
         selection: const TextSelection.collapsed(offset: 0),
       );
+      controller.readOnly = _isReadOnly;
       setState(() {
         _controller = controller;
         _loading = false;
@@ -776,8 +779,6 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
               padding: EdgeInsets.zero,
               placeholder: 'Start writing…',
               customStyles: _quillStyles(cs),
-              readOnly: _isReadOnly,
-              enableInteractiveSelection: !_isReadOnly,
             ),
           ),
         ),
