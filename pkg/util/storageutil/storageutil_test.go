@@ -450,8 +450,9 @@ func TestDetermineFileTypeFromPath(t *testing.T) {
 		{"document.docx", FileTypeDocx},
 		{"notes.abdoc", FileTypeAbdoc},
 		{"archive.zip", FileTypeArchive},
-		{"file.txt", FileTypeGeneric},
-		{"IMAGE.PNG", FileTypeImage}, // Test case insensitivity
+		{"file.txt", FileTypeText},
+		{"IMAGE.PNG", FileTypeImage},     // Test case insensitivity
+		{"generic.bin", FileTypeGeneric}, // Unknown/generic type
 	}
 
 	for _, tt := range tests {
