@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
+import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -140,6 +141,7 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
               tooltip: 'Save',
               onPressed: _dirty ? _saveFile : null,
             ),
+          const ThemeToggleButton(),
         ],
       ),
       body: _buildBody(context),
@@ -170,17 +172,17 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
       );
     }
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: TextField(
         controller: _textController,
         maxLines: null,
-        expands: true,
         keyboardType: TextInputType.multiline,
         style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
         decoration: const InputDecoration(
           border: InputBorder.none,
           hintText: 'Empty file',
+          isCollapsed: true,
         ),
       ),
     );
