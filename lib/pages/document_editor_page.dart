@@ -127,6 +127,13 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   String? _error;
   bool _routeMovedExternally = false;
 
+  // Read-only / edit mode (#939)
+  bool _isReadOnly = true;
+
+  // Edit button glow hint (#940)
+  bool _hintEditButton = false;
+  Timer? _hintTimer;
+
   // Auto-save
   static const _prefKeyAutoSave = 'document_editor_auto_save';
   static const _autoSaveDelay = Duration(seconds: 2);
@@ -142,7 +149,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   void initState() {
     super.initState();
     _displayName = _nameFromPath(widget.filePath);
-    _controller = QuillController.basic();
+    _controller = QuillController.basic()..readOnly = _isReadOnly;
     if (widget.overlayTargetRoute != null) {
       router.routeInformationProvider.addListener(_handleOverlayRouteChange);
     }
@@ -153,6 +160,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   @override
   void dispose() {
     _autoSaveTimer?.cancel();
+    _hintTimer?.cancel();
     if (widget.overlayTargetRoute != null) {
       router.routeInformationProvider.removeListener(_handleOverlayRouteChange);
     }
@@ -218,6 +226,35 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     }
   }
 
+  // ── Read-only / edit toggle (#939) ────────────────────────────────────────
+
+  void _enterEditMode() {
+    _controller.readOnly = false;
+    setState(() => _isReadOnly = false);
+    _focusEditor();
+  }
+
+  Future<void> _exitEditMode() async {
+    _controller.readOnly = true;
+    setState(() => _isReadOnly = true);
+    _editorFocus.unfocus();
+    if (_dirty) {
+      _autoSaveTimer?.cancel();
+      await _autoSaveSilently();
+    }
+  }
+
+  // ── Edit button glow hint (#940) ──────────────────────────────────────────
+
+  void _onEditorTappedInReadOnly() {
+    if (!_isReadOnly) return;
+    _hintTimer?.cancel();
+    setState(() => _hintEditButton = true);
+    _hintTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (mounted) setState(() => _hintEditButton = false);
+    });
+  }
+
   // ── Document ───────────────────────────────────────────────────────────────
 
   Future<void> _loadDocument() async {
@@ -240,7 +277,6 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
           _dirty = false;
         });
         _controller.addListener(_onDocumentChanged);
-        _focusEditor();
         return;
       }
 
@@ -259,6 +295,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         document: doc,
         selection: const TextSelection.collapsed(offset: 0),
       );
+      controller.readOnly = _isReadOnly;
       setState(() {
         _controller = controller;
         _loading = false;
@@ -266,7 +303,6 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         _wordCount = _countWords(doc.toPlainText());
       });
       _controller.addListener(_onDocumentChanged);
-      _focusEditor();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -294,6 +330,8 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
 
   void _onDocumentChanged() {
     if (!mounted) return;
+    // Do not mark dirty or schedule auto-save in read-only mode
+    if (_isReadOnly) return;
     final wc = _countWords(_controller.document.toPlainText());
     if (!_dirty || wc != _wordCount) {
       setState(() {
@@ -485,16 +523,17 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         tooltip: 'Settings',
         onPressed: () => context.go(AppRoutes.settings),
       ),
-      // Auto-save toggle
-      IconButton(
-        icon: Icon(
-          _autoSaveEnabled
-              ? Icons.cloud_sync_outlined
-              : Icons.cloud_off_outlined,
+      // Auto-save toggle (only relevant in edit mode)
+      if (!_isReadOnly)
+        IconButton(
+          icon: Icon(
+            _autoSaveEnabled
+                ? Icons.cloud_sync_outlined
+                : Icons.cloud_off_outlined,
+          ),
+          tooltip: _autoSaveEnabled ? 'Auto-save on' : 'Auto-save off',
+          onPressed: () => _setAutoSaveEnabled(!_autoSaveEnabled),
         ),
-        tooltip: _autoSaveEnabled ? 'Auto-save on' : 'Auto-save off',
-        onPressed: () => _setAutoSaveEnabled(!_autoSaveEnabled),
-      ),
       // Overflow menu
       if (_exporting)
         const Padding(
@@ -511,25 +550,58 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
           tooltip: 'More options',
           onPressed: () => _showOverflowMenu(context),
         ),
-      // Save button
-      if (_saving)
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12),
-          child: SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
+      // Save button (only in edit mode)
+      if (!_isReadOnly)
+        if (_saving)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12),
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: FilledButton.icon(
+              onPressed: _dirty ? _saveDocument : null,
+              icon: const Icon(Icons.save_outlined, size: 16),
+              label: const Text('Save'),
+            ),
           ),
-        )
-      else
-        Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: FilledButton.icon(
-            onPressed: _dirty ? _saveDocument : null,
-            icon: const Icon(Icons.save_outlined, size: 16),
-            label: const Text('Save'),
-          ),
+      // Edit / Done toggle button (#939) with glow hint (#940)
+      Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: _hintEditButton
+              ? BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.6),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                )
+              : null,
+          child: _isReadOnly
+              ? FilledButton.icon(
+                  onPressed: _enterEditMode,
+                  icon: const Icon(Icons.edit_outlined, size: 16),
+                  label: const Text('Edit'),
+                )
+              : OutlinedButton.icon(
+                  onPressed: _exitEditMode,
+                  icon: const Icon(Icons.check, size: 16),
+                  label: const Text('Done'),
+                ),
         ),
+      ),
     ];
   }
 
@@ -596,7 +668,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
 
     return Column(
       children: [
-        _buildToolbar(theme),
+        if (!_isReadOnly) _buildToolbar(theme),
         Expanded(
           child: Center(
             child: ConstrainedBox(
@@ -694,16 +766,20 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
           border: Border.all(color: cs.outline),
         ),
         padding: const EdgeInsets.fromLTRB(40, 24, 40, 24),
-        child: QuillEditor.basic(
-          controller: _controller,
-          focusNode: _editorFocus,
-          scrollController: _scrollController,
-          config: QuillEditorConfig(
-            autoFocus: true,
-            expands: false,
-            padding: EdgeInsets.zero,
-            placeholder: 'Start writing…',
-            customStyles: _quillStyles(cs),
+        child: GestureDetector(
+          onTap: _onEditorTappedInReadOnly,
+          behavior: HitTestBehavior.translucent,
+          child: QuillEditor.basic(
+            controller: _controller,
+            focusNode: _editorFocus,
+            scrollController: _scrollController,
+            config: QuillEditorConfig(
+              autoFocus: false,
+              expands: false,
+              padding: EdgeInsets.zero,
+              placeholder: 'Start writing…',
+              customStyles: _quillStyles(cs),
+            ),
           ),
         ),
       ),
@@ -725,7 +801,13 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
           const SizedBox(width: 16),
           _statusItem(icon: Icons.lock_outline, label: 'Private', color: muted),
           const Spacer(),
-          if (_dirty)
+          if (_isReadOnly)
+            _statusItem(
+              icon: Icons.visibility_outlined,
+              label: 'Read-only',
+              color: muted,
+            )
+          else if (_dirty)
             _statusItem(
               icon: Icons.circle,
               label: 'Unsaved',
