@@ -753,11 +753,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
 
     return GestureDetector(
       onTap: isMobile && _sidebarOpen
-          ? () => _drawerController.animateTo(
-              0.08,
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOut,
-            )
+          ? () => setState(() => _sidebarOpen = false)
           : null,
       onLongPressStart: isLive && _liveVideoReady
           ? (_) => _startLivePlayback()
