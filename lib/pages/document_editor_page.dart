@@ -127,6 +127,10 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   String? _error;
   bool _routeMovedExternally = false;
 
+  // Editor surface dark mode (#938)
+  bool _editorDarkPage = false;
+  static const _prefKeyDarkPage = 'doc_editor_dark_page';
+
   // Read-only / edit mode (#939)
   bool _isReadOnly = true;
 
@@ -212,7 +216,17 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
-    setState(() => _autoSaveEnabled = prefs.getBool(_prefKeyAutoSave) ?? true);
+    setState(() {
+      _autoSaveEnabled = prefs.getBool(_prefKeyAutoSave) ?? true;
+      _editorDarkPage = prefs.getBool(_prefKeyDarkPage) ?? false;
+    });
+  }
+
+  Future<void> _toggleEditorDarkPage() async {
+    final next = !_editorDarkPage;
+    setState(() => _editorDarkPage = next);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefKeyDarkPage, next);
   }
 
   Future<void> _setAutoSaveEnabled(bool value) async {
@@ -504,6 +518,16 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
 
   List<Widget> _buildAppBarActions(BuildContext context) {
     return [
+      // Editor dark page toggle (#938)
+      IconButton(
+        icon: Icon(
+          _editorDarkPage
+              ? Icons.light_mode_outlined
+              : Icons.dark_mode_outlined,
+        ),
+        tooltip: _editorDarkPage ? 'Light page' : 'Dark page',
+        onPressed: _toggleEditorDarkPage,
+      ),
       // In-document search (TODO: wire to find-in-doc, see #1046)
       IconButton(
         icon: const Icon(Icons.search_rounded),
@@ -757,30 +781,40 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   }
 
   Widget _buildPageFrame(ColorScheme cs) {
+    final pageColor = _editorDarkPage ? const Color(0xFF1A1A1A) : cs.surface;
+    final borderColor = _editorDarkPage ? Colors.grey.shade800 : cs.outline;
+
+    final editor = QuillEditor.basic(
+      controller: _controller,
+      focusNode: _editorFocus,
+      scrollController: _scrollController,
+      config: QuillEditorConfig(
+        autoFocus: false,
+        expands: false,
+        padding: EdgeInsets.zero,
+        placeholder: 'Start writing…',
+        customStyles: _quillStyles(cs),
+      ),
+    );
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
       child: Container(
         decoration: BoxDecoration(
-          color: cs.surface,
+          color: pageColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cs.outline),
+          border: Border.all(color: borderColor),
         ),
         padding: const EdgeInsets.fromLTRB(40, 24, 40, 24),
         child: GestureDetector(
           onTap: _onEditorTappedInReadOnly,
           behavior: HitTestBehavior.translucent,
-          child: QuillEditor.basic(
-            controller: _controller,
-            focusNode: _editorFocus,
-            scrollController: _scrollController,
-            config: QuillEditorConfig(
-              autoFocus: false,
-              expands: false,
-              padding: EdgeInsets.zero,
-              placeholder: 'Start writing…',
-              customStyles: _quillStyles(cs),
-            ),
-          ),
+          child: _editorDarkPage
+              ? DefaultTextStyle(
+                  style: const TextStyle(color: Colors.white),
+                  child: editor,
+                )
+              : editor,
         ),
       ),
     );
