@@ -9,6 +9,7 @@ import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/services/storage_service.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
+import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:autobutler/models/photo_album.dart';
 import 'package:autobutler/pages/album_page.dart';
 import 'package:autobutler/services/album_service.dart';
@@ -1153,6 +1154,7 @@ class _PhotosPageState extends State<PhotosPage>
                       },
                       child: const Text('Cancel'),
                     ),
+                    const ThemeToggleButton(),
                   ],
                 )
               : AutobutlerAppBar(

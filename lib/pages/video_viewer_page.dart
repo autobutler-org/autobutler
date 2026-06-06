@@ -5,6 +5,7 @@ import 'package:autobutler/utils/web_download_stub.dart'
     as web_download;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoViewerPage extends StatefulWidget {
@@ -182,7 +183,10 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
     final controller = _controller;
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.name)),
+      appBar: AppBar(
+        title: Text(widget.name),
+        actions: const [ThemeToggleButton()],
+      ),
       body: Center(
         child: _loading
             ? const CircularProgressIndicator()

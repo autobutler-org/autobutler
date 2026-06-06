@@ -1,5 +1,6 @@
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/auth_service.dart';
+import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -67,6 +68,7 @@ class _RecoverPageState extends State<RecoverPage> {
         title: const Text('Recover account'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: const [ThemeToggleButton()],
       ),
       body: SafeArea(
         child: Center(

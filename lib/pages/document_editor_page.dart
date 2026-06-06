@@ -11,6 +11,7 @@ import 'package:flutter_quill_to_pdf/flutter_quill_to_pdf.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:printing/printing.dart';
+import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // ── Quill styles ──────────────────────────────────────────────────────────────
@@ -523,6 +524,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         tooltip: 'Settings',
         onPressed: () => context.go(AppRoutes.settings),
       ),
+      const ThemeToggleButton(),
       // Auto-save toggle (only relevant in edit mode)
       if (!_isReadOnly)
         IconButton(
