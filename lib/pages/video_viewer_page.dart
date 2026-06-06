@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
-
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/web_download_stub.dart'
     if (dart.library.html) 'package:autobutler/utils/web_download_web.dart'
@@ -573,7 +571,7 @@ class _PlayerControls extends StatelessWidget {
                       icon: const Icon(Icons.forward_10, color: Colors.white),
                     ),
                     Text(
-                      '\${_formatTime(position)} / \${_formatTime(duration)}',
+                      '${_formatTime(position)} / ${_formatTime(duration)}',
                       style: const TextStyle(color: Colors.white),
                     ),
                     IconButton(
@@ -604,7 +602,7 @@ class _PlayerControls extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: Text(
-                          '\${value.playbackSpeed.toStringAsFixed(2)}x',
+                          '${value.playbackSpeed.toStringAsFixed(2)}x',
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),
