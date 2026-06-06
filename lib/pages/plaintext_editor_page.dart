@@ -125,6 +125,17 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(AppRoutes.fileBrowser);
+            }
+          },
+        ),
         actions: [
           if (_saving)
             const Padding(

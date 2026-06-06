@@ -699,7 +699,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             : '';
         if (_kTextExtensions.contains(ext)) {
           _refreshFileState();
-          context.go(AppRoutes.plaintextEditorPath(filePath));
+          context.push(AppRoutes.plaintextEditorPath(filePath));
         } else {
           _refreshFileState();
         }
@@ -927,6 +927,15 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     // CSV — offer to convert to .absheet (#1019).
     if (lowerName.endsWith('.csv')) {
       await _handleCsvOpen(node);
+      return;
+    }
+
+    // Text files — open in the plaintext editor via push so back works.
+    final ext = node.name.contains('.')
+        ? '.${node.name.split('.').last.toLowerCase()}'
+        : '';
+    if (_kTextExtensions.contains(ext)) {
+      context.push(AppRoutes.plaintextEditorPath(node.apiPath));
       return;
     }
 
