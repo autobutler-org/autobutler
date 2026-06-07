@@ -570,15 +570,17 @@ class _PhotosPageState extends State<PhotosPage>
             ],
           ],
           const SizedBox(height: 16),
-          AlbumSidebar(
-            key: _albumSidebarKey,
-            selectedAlbumId: null,
-            onAlbumSelected: (album) {
-              if (album == null) return;
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => AlbumPage(album: album)),
-              );
-            },
+          Expanded(
+            child: AlbumSidebar(
+              key: _albumSidebarKey,
+              selectedAlbumId: null,
+              onAlbumSelected: (album) {
+                if (album == null) return;
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => AlbumPage(album: album)),
+                );
+              },
+            ),
           ),
         ],
       ),
