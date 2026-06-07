@@ -28,6 +28,7 @@ type SyncWorker struct {
 	// Overridable for testing.
 	resolveTarget      func(ctx context.Context) (string, error)
 	resolveInternalDir func() (string, error)
+	getManagedDevices  func() ([]storageutil.ManagedDevice, error)
 }
 
 type SyncWorkerParams struct {
@@ -45,6 +46,7 @@ func NewSyncWorker(params SyncWorkerParams) *SyncWorker {
 	}
 	w.resolveTarget = w.defaultResolveTarget
 	w.resolveInternalDir = w.defaultResolveInternalDir
+	w.getManagedDevices = w.defaultGetManagedDevices
 	return w
 }
 
@@ -101,7 +103,7 @@ func (w *SyncWorker) handleEvent(ctx context.Context, evt eventbus.Event) {
 	case eventbus.EventUpload, eventbus.EventNewFolder:
 		w.syncPath(ctx, evt.Path)
 	case eventbus.EventDelete:
-		w.deletePath(ctx, evt.Path)
+		w.deletePath(ctx, evt.Path, evt.DeviceSerial)
 	case eventbus.EventMove:
 		w.movePath(ctx, evt.Path, evt.NewPath)
 	}
@@ -130,6 +132,13 @@ func (w *SyncWorker) defaultResolveTarget(ctx context.Context) (string, error) {
 
 func (w *SyncWorker) defaultResolveInternalDir() (string, error) {
 	return storageutil.GetCirrusDir()
+}
+
+func (w *SyncWorker) defaultGetManagedDevices() ([]storageutil.ManagedDevice, error) {
+	if w.storage == nil {
+		return nil, nil
+	}
+	return w.storage.GetManagedDevices()
 }
 
 func (w *SyncWorker) syncPath(ctx context.Context, relPath string) {
@@ -169,14 +178,35 @@ func (w *SyncWorker) syncPath(ctx context.Context, relPath string) {
 	}
 }
 
-func (w *SyncWorker) deletePath(ctx context.Context, relPath string) {
-	targetDir, err := w.resolveTarget(ctx)
-	if err != nil || targetDir == "" {
-		return
+func (w *SyncWorker) deletePath(ctx context.Context, relPath string, sourceSerial string) {
+	// 1. Delete from internal Cirrus (if source was a USB device, not internal).
+	if sourceSerial != "" {
+		internalDir, err := w.resolveInternalDir()
+		if err == nil && internalDir != "" {
+			os.RemoveAll(filepath.Join(internalDir, relPath))
+		}
 	}
 
-	dstPath := filepath.Join(targetDir, relPath)
-	os.RemoveAll(dstPath)
+	// 2. Delete from all managed USB devices except the source device.
+	managed, err := w.getManagedDevices()
+	if err != nil {
+		return
+	}
+	for _, dev := range managed {
+		// Skip internal devices — already handled above (or is the source).
+		if dev.IsInternal {
+			continue
+		}
+		var devSerial string
+		if dev.UsbInfo != nil {
+			devSerial = dev.UsbInfo.GetSerial()
+		}
+		// Skip the source device (only relevant when source is a USB device).
+		if sourceSerial != "" && devSerial == sourceSerial {
+			continue
+		}
+		os.RemoveAll(filepath.Join(dev.CirrusDir, relPath))
+	}
 }
 
 func (w *SyncWorker) movePath(ctx context.Context, oldPath, newPath string) {

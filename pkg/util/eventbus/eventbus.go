@@ -21,10 +21,11 @@ const (
 )
 
 type Event struct {
-	Kind    EventKind   `json:"kind"`
-	Path    string      `json:"path,omitempty"`
-	NewPath string      `json:"newPath,omitempty"`
-	Data    interface{} `json:"data,omitempty"`
+	Kind         EventKind   `json:"kind"`
+	Path         string      `json:"path,omitempty"`
+	NewPath      string      `json:"newPath,omitempty"`
+	Data         interface{} `json:"data,omitempty"`
+	DeviceSerial string      `json:"deviceSerial,omitempty"` // serial of the device this event originated from; empty = internal
 }
 
 type Bus struct {
