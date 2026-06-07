@@ -141,6 +141,17 @@ func DecodeExif(r io.ReadSeeker, format imagemeta.ImageFormat) (*ExifData, error
 
 	data.Width = result.ImageConfig.Width
 	data.Height = result.ImageConfig.Height
+	// For HEIC/HEIF and some other formats, imagemeta may not populate
+	// ImageConfig dimensions. Fall back to EXIF PixelXDimension /
+	// PixelYDimension tags which cameras always embed.
+	if data.Width == 0 && data.Height == 0 {
+		if v, ok := exifInt(exif, "PixelXDimension"); ok && v > 0 {
+			data.Width = int(v)
+		}
+		if v, ok := exifInt(exif, "PixelYDimension"); ok && v > 0 {
+			data.Height = int(v)
+		}
+	}
 	if data.Width > 0 || data.Height > 0 {
 		empty = false
 	}
