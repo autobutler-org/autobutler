@@ -103,7 +103,7 @@ func TestSyncWorker_DeletePath_Directory(t *testing.T) {
 // from a USB device (non-empty DeviceSerial) propagates to internal Cirrus AND
 // all other USB devices, but NOT to the source device.
 func TestSyncWorker_DeletePath_CrossDevice(t *testing.T) {
-	srcDir := t.TempDir() // internal Cirrus dir
+	srcDir := t.TempDir()     // internal Cirrus dir
 	deviceADir := t.TempDir() // source USB device (device-A)
 	deviceBDir := t.TempDir() // another USB device (device-B)
 	bus := eventbus.New()
@@ -150,7 +150,7 @@ func TestSyncWorker_DeletePath_CrossDevice(t *testing.T) {
 // internal Cirrus (empty DeviceSerial) propagates to all USB devices but does
 // NOT attempt to re-delete from internal Cirrus.
 func TestSyncWorker_DeletePath_InternalSource(t *testing.T) {
-	srcDir := t.TempDir()  // internal Cirrus dir
+	srcDir := t.TempDir()     // internal Cirrus dir
 	deviceADir := t.TempDir() // USB device (device-A)
 	bus := eventbus.New()
 
@@ -192,15 +192,15 @@ func newMockUsbDevice(serial string) storageutil.UsbDevice {
 	return &mockUsbDevice{serial: serial}
 }
 
-func (m *mockUsbDevice) GetSerial() string      { return m.serial }
-func (m *mockUsbDevice) GetPath() string        { return "" }
-func (m *mockUsbDevice) GetVendorID() string    { return "" }
-func (m *mockUsbDevice) GetProductID() string   { return "" }
-func (m *mockUsbDevice) GetManufacturer() string { return "" }
-func (m *mockUsbDevice) GetProduct() string     { return "" }
-func (m *mockUsbDevice) GetMountPath() string   { return "" }
-func (m *mockUsbDevice) BlockDevicePath() (string, bool) { return "", false }
-func (m *mockUsbDevice) IsStorageDevice() bool  { return true }
+func (m *mockUsbDevice) GetSerial() string                            { return m.serial }
+func (m *mockUsbDevice) GetPath() string                              { return "" }
+func (m *mockUsbDevice) GetVendorID() string                          { return "" }
+func (m *mockUsbDevice) GetProductID() string                         { return "" }
+func (m *mockUsbDevice) GetManufacturer() string                      { return "" }
+func (m *mockUsbDevice) GetProduct() string                           { return "" }
+func (m *mockUsbDevice) GetMountPath() string                         { return "" }
+func (m *mockUsbDevice) BlockDevicePath() (string, bool)              { return "", false }
+func (m *mockUsbDevice) IsStorageDevice() bool                        { return true }
 func (m *mockUsbDevice) Partitions() ([]storageutil.Partition, error) { return nil, nil }
 
 func TestSyncWorker_MovePath(t *testing.T) {
