@@ -11,6 +11,7 @@ import 'package:flutter_quill_to_pdf/flutter_quill_to_pdf.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:printing/printing.dart';
+import 'package:autobutler/theme/autobutler_theme.dart';
 import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -780,17 +781,14 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   }
 
   Widget _buildPageFrame(ColorScheme cs) {
-    // When dark page mode is active, override the surface/text colors so
-    // Quill renders white text on a near-black background, independent of
-    // the app-wide theme. We build a minimal ColorScheme override rather than
-    // wrapping in DefaultTextStyle (which Quill ignores for its own styles).
+    // When dark page mode is active, use the app's dark theme ColorScheme;
+    // when light, use the app's light theme ColorScheme. This keeps the
+    // editor page consistent with the rest of the app's design language
+    // while allowing the user to choose page brightness independently of
+    // the global theme toggle.
     final pageCs = _editorDarkPage
-        ? cs.copyWith(
-            surface: const Color(0xFF1A1A1A),
-            onSurface: Colors.white,
-            outline: const Color(0xFF444444),
-          )
-        : cs;
+        ? AutobutlerTheme.dark().colorScheme
+        : AutobutlerTheme.light().colorScheme;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
