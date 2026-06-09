@@ -1,3 +1,4 @@
+import 'package:autobutler/pages/file_browser_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/services/cirrus_service.dart';
@@ -77,10 +78,20 @@ class _FileViewerPageState extends State<FileViewerPage> {
           ? widget.filePath.split('/').last
           : stat.name;
 
-      if (stat.isDir ||
-          stat.fileType == 'archive' ||
-          stat.fileType == 'generic') {
-        // Directory or unhandled type — hand off to the file browser.
+      if (stat.isDir) {
+        // Navigate into a directory by pushing FileBrowserPage directly.
+        // Using context.go(_cirrusPath(...)) would re-route back to
+        // FileViewerPage and create an infinite stat loop.
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(
+            builder: (_) => FileBrowserPage(initialPath: widget.filePath),
+          ),
+        );
+        return;
+      }
+
+      if (stat.fileType == 'archive' || stat.fileType == 'generic') {
+        // Archive/generic — hand off to the file browser via route.
         context.go(_cirrusPath(widget.filePath));
         return;
       }
@@ -130,8 +141,15 @@ class _FileViewerPageState extends State<FileViewerPage> {
           context.push(_buildRoute('/edit', widget.filePath, serial: serial));
 
         default:
-          // Unknown type — fall back to the file browser.
-          context.go(_cirrusPath(widget.filePath));
+          // Unknown type — fall back to the parent folder in the file browser.
+          final parentPath = widget.filePath.contains('/')
+              ? widget.filePath.substring(0, widget.filePath.lastIndexOf('/'))
+              : '';
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute<void>(
+              builder: (_) => FileBrowserPage(initialPath: parentPath),
+            ),
+          );
       }
     } catch (e) {
       if (mounted) {
