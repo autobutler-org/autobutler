@@ -1,7 +1,6 @@
 package v1_files
 
 import (
-	"path/filepath"
 	"strings"
 
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
@@ -44,13 +43,13 @@ func searchFiles(c *gin.Context) *serverutil.Response {
 	matches := idx.Search(query, serialSet)
 	allFiles := make([]FileNodeJSON, 0, len(matches))
 	for _, f := range matches {
-		dir := filepath.ToSlash(filepath.Dir(f.RelPath))
-		if dir == "." {
-			dir = ""
-		}
+		// DirPath must be the full relative path (e.g. "docs/notes.txt"), not
+		// just the parent dir. The Flutter CirrusFileNode.apiPath getter uses
+		// DirPath as the full API path, consistent with how list_files.go
+		// populates it (filepath.Join(rootDir, file.Name())).
 		allFiles = append(allFiles, FileNodeJSON{
 			Name:         f.Name,
-			DirPath:      dir,
+			DirPath:      f.RelPath,
 			IsDir:        false,
 			DeviceSerial: f.DeviceSerial,
 		})
