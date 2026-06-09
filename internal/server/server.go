@@ -49,6 +49,57 @@ func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 	})
 	syncWorker.Start()
 
+	// Build the file index from current filesystem state
+	idx := storageutil.NewFileIndex()
+	if devices, err := deps.StorageService().GetManagedDevices(); err == nil {
+		idx.Build(devices)
+	}
+	deps.WithFileIndex(idx)
+
+	// Subscribe to events to keep index current
+	go func() {
+		events, unsub := deps.EventBus().Subscribe("file-index")
+		defer unsub()
+		for evt := range events {
+			devices, err := deps.StorageService().GetManagedDevices()
+			if err != nil {
+				continue
+			}
+			var cirrusDir, serial string
+			for _, d := range devices {
+				s := ""
+				if d.UsbInfo != nil {
+					s = d.UsbInfo.GetSerial()
+				}
+				if s == evt.DeviceSerial {
+					cirrusDir = d.CirrusDir
+					serial = s
+					break
+				}
+			}
+			if cirrusDir == "" {
+				for _, d := range devices {
+					if d.UsbInfo == nil {
+						cirrusDir = d.CirrusDir
+						serial = ""
+						break
+					}
+				}
+			}
+			if cirrusDir == "" {
+				continue
+			}
+			switch evt.Kind {
+			case eventbus.EventUpload, eventbus.EventNewFolder:
+				idx.HandleAdd(cirrusDir, evt.Path, serial)
+			case eventbus.EventDelete:
+				idx.HandleDelete(cirrusDir, evt.Path)
+			case eventbus.EventMove:
+				idx.HandleMove(cirrusDir, evt.Path, evt.NewPath, serial)
+			}
+		}
+	}()
+
 	initExternalVault(deps)
 	go vaultDeviceMonitor(deps)
 
