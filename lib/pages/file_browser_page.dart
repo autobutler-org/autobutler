@@ -1707,9 +1707,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                           initialData: _isSearchMode ? null : _cachedFiles,
                           isInitialLoad: isInitialLoad,
                           onFileMenuAction: _handleFileMenuAction,
-                          onOpenDirectory: _isSearchMode
-                              ? (_) {}
-                              : _handleOpenNode,
+                          onOpenDirectory: _handleOpenNode,
                           isGridView: _isGridView,
                           isUnifiedView: _isUnifiedView,
                           isSearchMode: _isSearchMode,
