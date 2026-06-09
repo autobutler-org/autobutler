@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 )
 
 // IndexedFile is a lightweight record stored in the FileIndex.
@@ -113,4 +115,65 @@ func (idx *FileIndex) HandleMove(cirrusDir, oldRelPath, newRelPath, serial strin
 		CirrusDir:    cirrusDir,
 		DeviceSerial: serial,
 	}
+}
+
+// GetManagedDevicesFunc is the signature of StorageService.GetManagedDevices,
+// accepted by Watch so the index doesn't depend on StorageService directly.
+type GetManagedDevicesFunc func() ([]ManagedDevice, error)
+
+// BuildAndWatch builds the index from the current filesystem state, then
+// starts a background goroutine that subscribes to the event bus and keeps
+// the index current on upload/delete/move/new_folder events.
+//
+// Call this once at startup. The goroutine runs until the event bus channel
+// is closed (i.e. when the bus is shut down).
+func (idx *FileIndex) BuildAndWatch(bus *eventbus.Bus, getDevices GetManagedDevicesFunc) {
+	if devices, err := getDevices(); err == nil {
+		idx.Build(devices)
+	}
+
+	go func() {
+		events, unsub := bus.Subscribe("file-index")
+		defer unsub()
+		for evt := range events {
+			devices, err := getDevices()
+			if err != nil {
+				continue
+			}
+			cirrusDir, serial := resolveDevice(devices, evt.DeviceSerial)
+			if cirrusDir == "" {
+				continue
+			}
+			switch evt.Kind {
+			case eventbus.EventUpload, eventbus.EventNewFolder:
+				idx.HandleAdd(cirrusDir, evt.Path, serial)
+			case eventbus.EventDelete:
+				idx.HandleDelete(cirrusDir, evt.Path)
+			case eventbus.EventMove:
+				idx.HandleMove(cirrusDir, evt.Path, evt.NewPath, serial)
+			}
+		}
+	}()
+}
+
+// resolveDevice finds the CirrusDir and serial for the given sourceSerial.
+// If sourceSerial is empty or no USB device matches, falls back to the
+// internal (non-USB) device.
+func resolveDevice(devices []ManagedDevice, sourceSerial string) (cirrusDir, serial string) {
+	for _, d := range devices {
+		s := ""
+		if d.UsbInfo != nil {
+			s = d.UsbInfo.GetSerial()
+		}
+		if s == sourceSerial && sourceSerial != "" {
+			return d.CirrusDir, s
+		}
+	}
+	// Fall back to internal device
+	for _, d := range devices {
+		if d.UsbInfo == nil {
+			return d.CirrusDir, ""
+		}
+	}
+	return "", ""
 }
