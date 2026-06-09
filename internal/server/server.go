@@ -49,6 +49,12 @@ func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 	})
 	syncWorker.Start()
 
+	// Build the file index and start watching for changes.
+	// All event-dispatch logic lives in FileIndex.BuildAndWatch.
+	idx := storageutil.NewFileIndex()
+	idx.BuildAndWatch(deps.EventBus(), deps.StorageService().GetManagedDevices)
+	deps.WithFileIndex(idx)
+
 	initExternalVault(deps)
 	go vaultDeviceMonitor(deps)
 
