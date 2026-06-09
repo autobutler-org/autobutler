@@ -135,6 +135,10 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   bool _hintEditButton = false;
   Timer? _hintTimer;
 
+  // Dark page mode (#938)
+  static const _prefKeyDarkPage = 'document_editor_dark_page';
+  bool _editorDarkPage = false;
+
   // Auto-save
   static const _prefKeyAutoSave = 'document_editor_auto_save';
   static const _autoSaveDelay = Duration(seconds: 2);
@@ -213,7 +217,10 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
-    setState(() => _autoSaveEnabled = prefs.getBool(_prefKeyAutoSave) ?? true);
+    setState(() {
+      _autoSaveEnabled = prefs.getBool(_prefKeyAutoSave) ?? true;
+      _editorDarkPage = prefs.getBool(_prefKeyDarkPage) ?? false;
+    });
   }
 
   Future<void> _setAutoSaveEnabled(bool value) async {
@@ -524,6 +531,20 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         tooltip: 'Settings',
         onPressed: () => context.go(AppRoutes.settings),
       ),
+      // Page brightness toggle (#938)
+      IconButton(
+        icon: Icon(
+          _editorDarkPage
+              ? Icons.light_mode_outlined
+              : Icons.dark_mode_outlined,
+        ),
+        tooltip: _editorDarkPage ? 'Light page' : 'Dark page',
+        onPressed: () async {
+          final prefs = await SharedPreferences.getInstance();
+          setState(() => _editorDarkPage = !_editorDarkPage);
+          await prefs.setBool(_prefKeyDarkPage, _editorDarkPage);
+        },
+      ),
       const ThemeToggleButton(),
       // Auto-save toggle (only relevant in edit mode)
       if (!_isReadOnly)
@@ -759,13 +780,25 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   }
 
   Widget _buildPageFrame(ColorScheme cs) {
+    // When dark page mode is active, override the surface/text colors so
+    // Quill renders white text on a near-black background, independent of
+    // the app-wide theme. We build a minimal ColorScheme override rather than
+    // wrapping in DefaultTextStyle (which Quill ignores for its own styles).
+    final pageCs = _editorDarkPage
+        ? cs.copyWith(
+            surface: const Color(0xFF1A1A1A),
+            onSurface: Colors.white,
+            outline: const Color(0xFF444444),
+          )
+        : cs;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
       child: Container(
         decoration: BoxDecoration(
-          color: cs.surface,
+          color: pageCs.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cs.outline),
+          border: Border.all(color: pageCs.outline),
         ),
         padding: const EdgeInsets.fromLTRB(40, 24, 40, 24),
         child: GestureDetector(
@@ -780,7 +813,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
               expands: false,
               padding: EdgeInsets.zero,
               placeholder: 'Start writing…',
-              customStyles: _quillStyles(cs),
+              customStyles: _quillStyles(pageCs),
             ),
           ),
         ),
