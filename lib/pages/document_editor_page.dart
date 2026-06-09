@@ -532,20 +532,6 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         tooltip: 'Settings',
         onPressed: () => context.go(AppRoutes.settings),
       ),
-      // Page brightness toggle (#938)
-      IconButton(
-        icon: Icon(
-          _editorDarkPage
-              ? Icons.light_mode_outlined
-              : Icons.dark_mode_outlined,
-        ),
-        tooltip: _editorDarkPage ? 'Light page' : 'Dark page',
-        onPressed: () async {
-          final prefs = await SharedPreferences.getInstance();
-          setState(() => _editorDarkPage = !_editorDarkPage);
-          await prefs.setBool(_prefKeyDarkPage, _editorDarkPage);
-        },
-      ),
       const ThemeToggleButton(),
       // Auto-save toggle (only relevant in edit mode)
       if (!_isReadOnly)
@@ -826,6 +812,30 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Row(
         children: [
+          // Page brightness toggle (#938) — bottom-left, near the page
+          IconButton(
+            icon: Icon(
+              _editorDarkPage
+                  ? Icons.light_mode_outlined
+                  : Icons.dark_mode_outlined,
+              size: 14,
+            ),
+            tooltip: _editorDarkPage
+                ? 'Switch to light page'
+                : 'Switch to dark page',
+            style: IconButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: const Size(24, 24),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            color: muted,
+            onPressed: () async {
+              final prefs = await SharedPreferences.getInstance();
+              setState(() => _editorDarkPage = !_editorDarkPage);
+              await prefs.setBool(_prefKeyDarkPage, _editorDarkPage);
+            },
+          ),
+          const SizedBox(width: 8),
           _statusItem(
             icon: Icons.edit_note,
             label: '$_wordCount words',
