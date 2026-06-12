@@ -21,7 +21,8 @@ http.Client buildLocalTrustHttpClient() {
   if (kIsWeb) return http.Client();
 
   final host = _extractHost(AppSettings.instance.activeHost);
-  final isLocal = host == 'localhost' ||
+  final isLocal =
+      host == 'localhost' ||
       host == '127.0.0.1' ||
       host == '::1' ||
       host == '10.0.2.2' || // Android emulator loopback

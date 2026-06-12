@@ -60,26 +60,6 @@ class AppSettings {
       debugPrint('[app_settings.dart] Error in catch block');
       _hosts = [];
     }
-    // Migrate any saved http:// hosts to https:// now that TLS is the default.
-    // Plain http:// addresses will fail with a TLS handshake error against the
-    // new server. This migration runs once per host and is persisted back.
-    var migrated = false;
-    for (var i = 0; i < _hosts.length; i++) {
-      final addr = _hosts[i].hostAddress;
-      if (addr.startsWith('http://')) {
-        _hosts[i] = HostEntry(
-          name: _hosts[i].name,
-          hostAddress: 'https://${addr.substring('http://'.length)}',
-        );
-        migrated = true;
-      }
-    }
-    if (migrated) {
-      await _prefs!.setString(
-        'hosts',
-        jsonEncode(_hosts.map((h) => h.toJson()).toList()),
-      );
-    }
 
     _activeIndex =
         _prefs!.getInt('activeHostIndex') ?? (_hosts.isEmpty ? -1 : 0);
@@ -102,9 +82,9 @@ class AppSettings {
         // Use https:// so the Flutter client exercises the TLS path even in
         // debug mode. The self-signed cert is trusted via badCertificateCallback
         // in AuthenticatedService for local/LAN addresses.
-        var loopback = 'https://localhost:8080';
+        var loopback = 'http://localhost:8080';
         if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-          loopback = 'https://10.0.2.2:8080';
+          loopback = 'http://10.0.2.2:8080';
         }
         _hosts = [HostEntry(name: 'Local', hostAddress: loopback)];
         _activeIndex = 0;

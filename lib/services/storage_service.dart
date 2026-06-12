@@ -111,7 +111,7 @@ class StorageService with AuthenticatedService {
     final configured = AppSettings.instance.activeHost;
     final base =
         configured ??
-        const String.fromEnvironment(
+        String.fromEnvironment(
           'API_BASE_URL',
           defaultValue: 'http://localhost:8080',
         );
