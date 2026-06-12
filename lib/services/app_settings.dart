@@ -60,6 +60,26 @@ class AppSettings {
       debugPrint('[app_settings.dart] Error in catch block');
       _hosts = [];
     }
+    // Migrate any saved http:// hosts to https:// now that TLS is the default.
+    // Plain http:// addresses will fail with a TLS handshake error against the
+    // new server. This migration runs once per host and is persisted back.
+    var migrated = false;
+    for (var i = 0; i < _hosts.length; i++) {
+      final addr = _hosts[i].hostAddress;
+      if (addr.startsWith('http://')) {
+        _hosts[i] = HostEntry(
+          name: _hosts[i].name,
+          hostAddress: 'https://${addr.substring('http://'.length)}',
+        );
+        migrated = true;
+      }
+    }
+    if (migrated) {
+      await _prefs!.setString(
+        'hosts',
+        jsonEncode(_hosts.map((h) => h.toJson()).toList()),
+      );
+    }
 
     _activeIndex =
         _prefs!.getInt('activeHostIndex') ?? (_hosts.isEmpty ? -1 : 0);
@@ -139,16 +159,30 @@ class AppSettings {
   }
 
   Future<void> addHost(HostEntry h) async {
-    _hosts.add(h);
+    _hosts.add(_normalizeHost(h));
     _activeIndex = _hosts.length - 1;
     await _saveHosts();
   }
 
   Future<void> updateHost(int idx, HostEntry h) async {
     if (idx >= 0 && idx < _hosts.length) {
-      _hosts[idx] = h;
+      _hosts[idx] = _normalizeHost(h);
       await _saveHosts();
     }
+  }
+
+  /// Ensures the host address uses https:// — upgrades bare hostnames and
+  /// http:// addresses since the server now requires TLS by default.
+  HostEntry _normalizeHost(HostEntry h) {
+    final addr = h.hostAddress.trim();
+    if (addr.startsWith('https://') || addr.startsWith('http://')) {
+      final upgraded = addr.startsWith('http://')
+          ? 'https://${addr.substring('http://'.length)}'
+          : addr;
+      return HostEntry(name: h.name, hostAddress: upgraded);
+    }
+    // No scheme — prepend https://
+    return HostEntry(name: h.name, hostAddress: 'https://$addr');
   }
 
   Future<void> removeHost(int idx) async {
