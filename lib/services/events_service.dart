@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:autobutler/services/app_settings.dart';
 import 'package:flutter/foundation.dart';
+import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 /// A single file-system mutation event from the server.
@@ -79,7 +81,23 @@ class EventsService {
         scheme: httpUri.scheme == 'https' ? 'wss' : 'ws',
         queryParameters: token != null ? {'token': token} : null,
       );
-      _channel = WebSocketChannel.connect(wsUri);
+      // On native platforms, use IOWebSocketChannel with a custom HttpClient
+      // that accepts self-signed certs from local hosts (localhost / LAN IPs).
+      // Web uses the default channel since the browser handles cert trust.
+      if (!kIsWeb) {
+        final httpClient = HttpClient()
+          ..badCertificateCallback = (cert, host, port) {
+            return host == 'localhost' ||
+                host == '127.0.0.1' ||
+                host == '::1' ||
+                RegExp(
+                  r'^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)',
+                ).hasMatch(host);
+          };
+        _channel = IOWebSocketChannel.connect(wsUri, customClient: httpClient);
+      } else {
+        _channel = WebSocketChannel.connect(wsUri);
+      }
 
       _sub = _channel!.stream.listen(
         (data) {
