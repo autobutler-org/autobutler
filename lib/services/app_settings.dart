@@ -79,9 +79,12 @@ class AppSettings {
     // host appropriate for the running platform so developers can quickly connect.
     if (_hosts.isEmpty) {
       if (kDebugMode) {
-        var loopback = 'http://localhost:8080';
+        // Use https:// so the Flutter client exercises the TLS path even in
+        // debug mode. The self-signed cert is trusted via badCertificateCallback
+        // in AuthenticatedService for local/LAN addresses.
+        var loopback = 'https://localhost:8080';
         if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-          loopback = 'http://10.0.2.2:8080';
+          loopback = 'https://10.0.2.2:8080';
         }
         _hosts = [HostEntry(name: 'Local', hostAddress: loopback)];
         _activeIndex = 0;

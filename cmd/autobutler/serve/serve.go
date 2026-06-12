@@ -10,6 +10,8 @@ import (
 )
 
 func Cmd() *cobra.Command {
+	var insecure bool
+
 	cmd := &cobra.Command{
 		Use:   "serve",
 		Short: "Start the Autobutler server",
@@ -20,12 +22,14 @@ func Cmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("failed to initialize dependencies: %w", err)
 			}
-			if err := server.StartServer(deps); err != nil {
+			if err := server.StartServer(deps, server.StartOptions{Insecure: insecure}); err != nil {
 				return fmt.Errorf("failed to start server: %w", err)
 			}
 			return nil
 		},
 	}
+
+	cmd.Flags().BoolVar(&insecure, "insecure", false, "Disable TLS and serve over plain HTTP (for local development only)")
 
 	return cmd
 }

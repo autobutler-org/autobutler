@@ -37,7 +37,7 @@ class CirrusService with AuthenticatedService {
         configured ??
         String.fromEnvironment(
           'API_BASE_URL',
-          defaultValue: 'http://localhost:8080',
+          defaultValue: 'https://localhost:8080',
         );
     final uri = Uri.parse(base);
     final isLoopbackHost =
