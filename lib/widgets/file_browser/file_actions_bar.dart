@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 
 class FileActionsBar extends StatelessWidget {
   const FileActionsBar({
@@ -51,13 +52,13 @@ class FileActionsBar extends StatelessWidget {
                           : null,
                     ),
                   )
-                : const Icon(Icons.upload_rounded),
+                : const Icon(AutobutlerIcons.upload_rounded),
             label: Text(_uploadLabel),
           ),
           const SizedBox(width: 8),
           OutlinedButton.icon(
             onPressed: isCreatingFolder ? null : onCreateFolderPressed,
-            icon: const Icon(Icons.create_new_folder_outlined),
+            icon: const Icon(AutobutlerIcons.create_new_folder_outlined),
             label: Text(isCreatingFolder ? 'Creating...' : 'New Folder'),
           ),
         ],

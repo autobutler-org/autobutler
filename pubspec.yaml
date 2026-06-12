@@ -60,6 +60,8 @@ dependencies:
   printing: ^5.14.3
   data_table:
     path: packages/data_table
+  autobutler_icons:
+    path: packages/autobutler_icons
 
 dev_dependencies:
   flutter_test:

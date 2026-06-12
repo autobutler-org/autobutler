@@ -1,3 +1,4 @@
+import 'package:autobutler/router.dart';
 import 'package:autobutler/services/vault_service.dart';
 import 'package:autobutler/utils/autobutler_widget.dart';
 import 'package:autobutler/utils/web_download_stub.dart'
@@ -5,12 +6,12 @@ import 'package:autobutler/utils/web_download_stub.dart'
     as web_download;
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
+import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:autobutler/router.dart';
-import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 
 class VaultPage extends StatefulWidget {
   const VaultPage({super.key});
@@ -111,7 +112,7 @@ class _VaultPageState extends State<VaultPage> {
     return Scaffold(
       appBar: AutobutlerAppBar(
         label: 'Vault',
-        icon: Icons.lock_outline,
+        icon: AutobutlerIcons.lock_outline,
         actions: [
           if (_status?.initialized == true && !(_status?.locked ?? true)) ...[
             IconButton(
@@ -120,12 +121,12 @@ class _VaultPageState extends State<VaultPage> {
               onPressed: () => _showEntryEditor(context),
             ),
             IconButton(
-              icon: const Icon(Icons.lock_open),
+              icon: const Icon(AutobutlerIcons.lock_open),
               tooltip: 'Lock vault',
               onPressed: _lockVault,
             ),
             IconButton(
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(AutobutlerIcons.refresh),
               tooltip: 'Refresh',
               onPressed: _loadEntries,
             ),
@@ -192,7 +193,7 @@ class _VaultPageState extends State<VaultPage> {
               MediaQuery.of(context).size.width < 860)
           ? FloatingActionButton(
               onPressed: () => _showEntryEditor(context),
-              child: const Icon(Icons.add),
+              child: const Icon(AutobutlerIcons.add),
             )
           : null,
     );
@@ -232,7 +233,7 @@ class _VaultPageState extends State<VaultPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.shield_outlined, size: 64),
+              const Icon(AutobutlerIcons.shield_outlined, size: 64),
               const SizedBox(height: 16),
               Text(
                 'Set up your vault',
@@ -311,7 +312,7 @@ class _VaultPageState extends State<VaultPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.usb_off,
+                AutobutlerIcons.usb_off,
                 size: 64,
                 color: Theme.of(context).colorScheme.error,
               ),
@@ -329,7 +330,7 @@ class _VaultPageState extends State<VaultPage> {
               const SizedBox(height: 24),
               FilledButton.icon(
                 onPressed: _loadStatus,
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(AutobutlerIcons.refresh),
                 label: const Text('Check again'),
               ),
             ],
@@ -349,7 +350,7 @@ class _VaultPageState extends State<VaultPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.lock_outline, size: 64),
+              const Icon(AutobutlerIcons.lock_outline, size: 64),
               const SizedBox(height: 16),
               Text(
                 'Vault is locked',
@@ -450,7 +451,7 @@ class _VaultPageState extends State<VaultPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        Icons.key_off_outlined,
+                        AutobutlerIcons.key_off_outlined,
                         size: 64,
                         color: Theme.of(context).colorScheme.outline,
                       ),
@@ -492,7 +493,7 @@ class _VaultPageState extends State<VaultPage> {
             child: TextField(
               decoration: const InputDecoration(
                 hintText: 'Search vault...',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: Icon(AutobutlerIcons.search),
                 border: OutlineInputBorder(),
                 isDense: true,
                 contentPadding: EdgeInsets.symmetric(
@@ -506,7 +507,7 @@ class _VaultPageState extends State<VaultPage> {
           const SizedBox(width: 8),
           if (_folders.isNotEmpty)
             PopupMenuButton<int?>(
-              icon: const Icon(Icons.folder_outlined),
+              icon: const Icon(AutobutlerIcons.folder_outlined),
               tooltip: 'Filter by folder',
               onSelected: (v) => setState(() => _selectedFolderId = v),
               itemBuilder: (_) => [
@@ -679,7 +680,7 @@ class _EntryTile extends StatelessWidget {
       ),
       title: Text(entry.name),
       subtitle: entry.urlHost.isNotEmpty ? Text(entry.urlHost) : null,
-      trailing: const Icon(Icons.chevron_right),
+      trailing: const Icon(AutobutlerIcons.chevron_right),
       onTap: onTap,
     );
   }
@@ -741,12 +742,12 @@ class _EntryDetailPageState extends State<_EntryDetailPage> {
         actions: [
           if (!_editing)
             IconButton(
-              icon: const Icon(Icons.edit),
+              icon: const Icon(AutobutlerIcons.edit),
               onPressed: () => setState(() => _editing = true),
             ),
           if (!_editing)
             IconButton(
-              icon: const Icon(Icons.delete_outline),
+              icon: const Icon(AutobutlerIcons.delete_outline),
               onPressed: _confirmDelete,
             ),
           if (_editing)
@@ -776,7 +777,11 @@ class _EntryDetailPageState extends State<_EntryDetailPage> {
           copiable: true,
           copyValue: widget.entry.password,
           trailing: IconButton(
-            icon: Icon(_showPassword ? Icons.visibility_off : Icons.visibility),
+            icon: Icon(
+              _showPassword
+                  ? AutobutlerIcons.visibility_off
+                  : AutobutlerIcons.visibility,
+            ),
             onPressed: () => setState(() => _showPassword = !_showPassword),
           ),
         ),
@@ -828,13 +833,15 @@ class _EntryDetailPageState extends State<_EntryDetailPage> {
               children: [
                 IconButton(
                   icon: Icon(
-                    _showPassword ? Icons.visibility_off : Icons.visibility,
+                    _showPassword
+                        ? AutobutlerIcons.visibility_off
+                        : AutobutlerIcons.visibility,
                   ),
                   onPressed: () =>
                       setState(() => _showPassword = !_showPassword),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.casino),
+                  icon: const Icon(AutobutlerIcons.casino),
                   tooltip: 'Generate password',
                   onPressed: _generatePassword,
                 ),
@@ -971,7 +978,7 @@ class _DetailRow extends StatelessWidget {
               Expanded(child: SelectableText(value)),
               if (copiable)
                 IconButton(
-                  icon: const Icon(Icons.copy, size: 18),
+                  icon: const Icon(AutobutlerIcons.copy, size: 18),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: copyValue ?? value));
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -1073,13 +1080,15 @@ class _EntryEditorPageState extends State<_EntryEditorPage> {
                   children: [
                     IconButton(
                       icon: Icon(
-                        _showPassword ? Icons.visibility_off : Icons.visibility,
+                        _showPassword
+                            ? AutobutlerIcons.visibility_off
+                            : AutobutlerIcons.visibility,
                       ),
                       onPressed: () =>
                           setState(() => _showPassword = !_showPassword),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.casino),
+                      icon: const Icon(AutobutlerIcons.casino),
                       tooltip: 'Generate password',
                       onPressed: _generatePassword,
                     ),

@@ -8,6 +8,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:shimmer/shimmer.dart';
 
 enum FileMenuAction {
@@ -224,8 +225,8 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                 const SizedBox(width: 4),
                 Icon(
                   _sortDirection == SortDirection.asc
-                      ? Icons.arrow_upward_rounded
-                      : Icons.arrow_downward_rounded,
+                      ? AutobutlerIcons.arrow_upward_rounded
+                      : AutobutlerIcons.arrow_downward_rounded,
                   size: 12,
                   color: colorScheme.onSurface,
                 ),
@@ -283,7 +284,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
         ),
         trailing: widget.showFileSizeAndMenu
             ? PopupMenuButton<FileMenuAction>(
-                icon: const Icon(Icons.more_vert),
+                icon: const Icon(AutobutlerIcons.more_vert),
                 itemBuilder: (context) => [
                   PopupMenuItem<FileMenuAction>(
                     value: FileMenuAction.download,
@@ -388,7 +389,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
         final raw = snapshot.data ?? const <CirrusFileNode>[];
         if (raw.isEmpty) {
           return const EmptyStateWidget(
-            icon: Icons.folder_open_outlined,
+            icon: AutobutlerIcons.folder_open_outlined,
             headline: 'No files yet',
             subtext:
                 'Upload files using the button above, or drag and drop here.',
@@ -416,7 +417,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                     for (final entry in groups.entries)
                       ExpansionTile(
                         initiallyExpanded: true,
-                        leading: const Icon(Icons.storage_rounded),
+                        leading: const Icon(AutobutlerIcons.storage_rounded),
                         title: Text(entry.key),
                         subtitle: Text(
                           '${entry.value.length} '
@@ -539,7 +540,9 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                                       ),
                                     if (widget.showFileSizeAndMenu)
                                       PopupMenuButton<FileMenuAction>(
-                                        icon: const Icon(Icons.more_vert),
+                                        icon: const Icon(
+                                          AutobutlerIcons.more_vert,
+                                        ),
                                         itemBuilder: (context) => [
                                           PopupMenuItem<FileMenuAction>(
                                             value: FileMenuAction.download,

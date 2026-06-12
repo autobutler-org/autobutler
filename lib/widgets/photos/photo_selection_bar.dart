@@ -2,6 +2,7 @@ import 'package:autobutler/models/photo_album.dart';
 import 'package:autobutler/services/album_service.dart';
 import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 
 /// Sticky bottom bar shown during photo selection mode.
 /// Shows count + "Add to Album" button.
@@ -49,7 +50,7 @@ class PhotoSelectionBar extends StatelessWidget {
             const Spacer(),
             FilledButton.icon(
               onPressed: selectedCount > 0 ? onAddToAlbum : null,
-              icon: const Icon(Icons.photo_album_outlined, size: 16),
+              icon: const Icon(AutobutlerIcons.photo_album_outlined, size: 16),
               label: const Text('Add to Album'),
             ),
           ],
@@ -178,7 +179,7 @@ class _AlbumPickerSheetState extends State<AlbumPickerSheet> {
       widgets.add(
         ListTile(
           contentPadding: EdgeInsets.only(left: 16.0 + depth * 16.0, right: 16),
-          leading: const Icon(Icons.photo_album_outlined),
+          leading: const Icon(AutobutlerIcons.photo_album_outlined),
           title: Text(album.name),
           subtitle: Text('${album.itemCount} photos'),
           onTap: () => Navigator.of(context).pop(album),

@@ -1,5 +1,6 @@
 import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 
 /// Styled brand button used in the top bar across all main pages.
 /// Shows the AutoButler storage icon + a page title label and opens
@@ -11,7 +12,7 @@ class AutobutlerBrandButton extends StatelessWidget {
   const AutobutlerBrandButton({
     required this.label,
     required this.onTap,
-    this.icon = Icons.storage_rounded,
+    this.icon = AutobutlerIcons.storage_rounded,
     super.key,
   });
 
@@ -24,7 +25,7 @@ class AutobutlerBrandButton extends StatelessWidget {
   /// Called when the button is tapped — typically opens the drawer.
   final VoidCallback onTap;
 
-  /// Icon shown inside the brand badge. Defaults to [Icons.storage_rounded]
+  /// Icon shown inside the brand badge. Defaults to [AutobutlerIcons.storage_rounded]
   /// (used for the Files/Cirrus page). Pass a page-appropriate icon for other pages.
   final IconData icon;
 

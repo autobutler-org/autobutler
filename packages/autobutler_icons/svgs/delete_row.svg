@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;">
+    <g id="Stack---Row" serif:id="Stack - Row">
+        <path d="M15.002,7.004L3.002,6.996C2.45,6.995 2.002,6.547 2.003,5.995L2.004,4.995C2.004,4.443 2.452,3.995 3.004,3.996L15.004,4.004C15.556,4.005 16.004,4.453 16.004,5.005L16.003,6.005C16.002,6.557 15.554,7.005 15.002,7.004Z" style="fill:none;stroke:black;stroke-width:1.75px;"/>
+        <path d="M14.999,11.504L2.999,11.496C2.447,11.495 1.999,11.047 2,10.495L2,9.495C2.001,8.943 2.449,8.495 3.001,8.496L15.001,8.504C15.553,8.505 16.001,8.953 16,9.505L16,10.505C15.999,11.057 15.551,11.505 14.999,11.504Z" style="fill:none;stroke:black;stroke-width:1.75px;"/>
+        <path d="M14.996,16.004L2.996,15.996C2.444,15.995 1.996,15.547 1.996,14.995L1.997,13.995C1.998,13.443 2.446,12.995 2.998,12.996L14.998,13.004C15.55,13.005 15.998,13.453 15.997,14.005L15.996,15.005C15.996,15.557 15.548,16.005 14.996,16.004Z" style="fill:none;stroke:black;stroke-width:1.75px;"/>
+    </g>
+    <g id="Trash-Can" serif:id="Trash Can">
+        <rect x="17" y="17" width="4" height="1"/>
+        <rect x="18.25" y="16" width="1.5" height="0.7"/>
+        <rect x="17.5" y="18" width="3" height="3"/>
+    </g>
+</svg>

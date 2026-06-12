@@ -3,6 +3,7 @@ import 'package:autobutler/services/album_service.dart';
 import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:autobutler/widgets/photos/album_tree_tile.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 
 class AlbumSidebar extends StatefulWidget {
   const AlbumSidebar({
@@ -147,7 +148,7 @@ class AlbumSidebarState extends State<AlbumSidebar> {
               ),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.add_rounded, size: 16),
+                icon: const Icon(AutobutlerIcons.add_rounded, size: 16),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
                 tooltip: 'New album',
@@ -197,8 +198,8 @@ class AlbumSidebarState extends State<AlbumSidebar> {
         selectedAlbumId: widget.selectedAlbumId,
         onSelected: widget.onAlbumSelected,
         systemIcon: album.isFavorites
-            ? Icons.star_rounded
-            : Icons.pending_actions_outlined,
+            ? AutobutlerIcons.star_rounded
+            : AutobutlerIcons.pending_actions_outlined,
       );
     }
     return GestureDetector(
@@ -222,7 +223,7 @@ class AlbumSidebarState extends State<AlbumSidebar> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.edit_outlined),
+              leading: const Icon(AutobutlerIcons.edit_outlined),
               title: const Text('Rename'),
               onTap: () {
                 Navigator.of(ctx).pop();
@@ -230,7 +231,7 @@ class AlbumSidebarState extends State<AlbumSidebar> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.create_new_folder_outlined),
+              leading: const Icon(AutobutlerIcons.create_new_folder_outlined),
               title: const Text('New sub-album'),
               onTap: () {
                 Navigator.of(ctx).pop();
@@ -239,7 +240,7 @@ class AlbumSidebarState extends State<AlbumSidebar> {
             ),
             ListTile(
               leading: Icon(
-                Icons.delete_outline,
+                AutobutlerIcons.delete_outline,
                 color: Theme.of(ctx).colorScheme.error,
               ),
               title: Text(

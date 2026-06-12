@@ -8,6 +8,7 @@ import 'package:autobutler/widgets/core/empty_state_widget.dart';
 import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:autobutler/widgets/photos/add_to_album_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 
 class AlbumPage extends StatefulWidget {
   const AlbumPage({required this.album, super.key});
@@ -107,11 +108,11 @@ class _AlbumPageState extends State<AlbumPage> {
         actions: [
           TextButton.icon(
             onPressed: _openAddPhotosMode,
-            icon: const Icon(Icons.add_rounded, size: 18),
+            icon: const Icon(AutobutlerIcons.add_rounded, size: 18),
             label: const Text('Add Photos'),
           ),
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(AutobutlerIcons.refresh_rounded),
             tooltip: 'Refresh',
             onPressed: _load,
           ),
@@ -131,7 +132,7 @@ class _AlbumPageState extends State<AlbumPage> {
               const PopupMenuItem(
                 value: 'grid-up',
                 child: ListTile(
-                  leading: Icon(Icons.crop_square_outlined),
+                  leading: Icon(AutobutlerIcons.crop_square_outlined),
                   title: Text('Larger photos'),
                   contentPadding: EdgeInsets.zero,
                 ),
@@ -139,7 +140,7 @@ class _AlbumPageState extends State<AlbumPage> {
               const PopupMenuItem(
                 value: 'grid-down',
                 child: ListTile(
-                  leading: Icon(Icons.grid_view_outlined),
+                  leading: Icon(AutobutlerIcons.grid_view_outlined),
                   title: Text('Smaller photos'),
                   contentPadding: EdgeInsets.zero,
                 ),
@@ -155,7 +156,7 @@ class _AlbumPageState extends State<AlbumPage> {
           ? Center(child: Text('Error: $_error'))
           : _items.isEmpty
           ? EmptyStateWidget(
-              icon: Icons.photo_album_outlined,
+              icon: AutobutlerIcons.photo_album_outlined,
               headline: 'No photos yet',
               subtext:
                   'Add photos to "${widget.album.name}" from the Photos view.',
@@ -238,7 +239,7 @@ class _AlbumPageState extends State<AlbumPage> {
                           errorBuilder: (context, error, stack) => Container(
                             color: colorScheme.surfaceContainerHighest,
                             child: Icon(
-                              Icons.broken_image_outlined,
+                              AutobutlerIcons.broken_image_outlined,
                               color: colorScheme.onSurface.withValues(
                                 alpha: 0.3,
                               ),
@@ -265,7 +266,7 @@ class _AlbumPageState extends State<AlbumPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.photo_album_outlined),
+              leading: const Icon(AutobutlerIcons.photo_album_outlined),
               title: const Text('Add to another album'),
               onTap: () {
                 Navigator.of(ctx).pop();
@@ -278,7 +279,7 @@ class _AlbumPageState extends State<AlbumPage> {
             ),
             ListTile(
               leading: Icon(
-                Icons.remove_circle_outline,
+                AutobutlerIcons.remove_circle_outline,
                 color: Theme.of(ctx).colorScheme.error,
               ),
               title: Text(

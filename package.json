@@ -1,0 +1,8 @@
+{
+  "name": "autobutler",
+  "private": true,
+  "description": "Node.js tooling for AutoButler development (npx convenience tools).",
+  "devDependencies": {
+    "fantasticon": "^4.1.0"
+  }
+}

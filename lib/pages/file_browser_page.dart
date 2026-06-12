@@ -34,6 +34,7 @@ import 'package:data_table/data_table.dart' as dt;
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
@@ -1184,7 +1185,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.folder_open, size: 48),
+              const Icon(AutobutlerIcons.folder_open, size: 48),
               const SizedBox(height: 16),
               Text(
                 isFileRoute ? 'Opening file' : 'Opening folder',
@@ -1236,10 +1237,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     return EmptyStateWidget(
       icon: isUnauthorized
-          ? Icons.lock_outline
+          ? AutobutlerIcons.lock_outline
           : isMissingFolder
-          ? Icons.folder_off_outlined
-          : Icons.error_outline,
+          ? AutobutlerIcons.folder_off_outlined
+          : AutobutlerIcons.error_outline,
       headline: isUnauthorized
           ? 'Access denied'
           : isMissingFolder
@@ -1282,8 +1283,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     return EmptyStateWidget(
       icon: failure.isUnsupported
-          ? Icons.description_outlined
-          : Icons.error_outline,
+          ? AutobutlerIcons.description_outlined
+          : AutobutlerIcons.error_outline,
       headline: failure.isUnsupported
           ? 'No supported editor'
           : failure.isUnauthorized
@@ -1607,7 +1608,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           heroTag: 'create_fab',
           onPressed: _showCreateBottomSheet,
           tooltip: 'Create',
-          child: const Icon(Icons.add_rounded),
+          child: const Icon(AutobutlerIcons.add_rounded),
         ),
       ),
     );
@@ -1630,7 +1631,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                           strokeWidth: 2,
                         ),
                       )
-                    : const Icon(Icons.upload_rounded),
+                    : const Icon(AutobutlerIcons.upload_rounded),
                 title: Text(
                   _isUploading
                       ? (_uploadTotal > 0
@@ -1647,7 +1648,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                       },
               ),
               ListTile(
-                leading: const Icon(Icons.create_new_folder_outlined),
+                leading: const Icon(AutobutlerIcons.create_new_folder_outlined),
                 title: const Text('New folder'),
                 enabled: !_isCreatingFolder,
                 onTap: _isCreatingFolder
@@ -1658,7 +1659,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                       },
               ),
               ListTile(
-                leading: const Icon(Icons.edit_document),
+                leading: const Icon(AutobutlerIcons.edit_document),
                 title: const Text('New file'),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -1979,7 +1980,11 @@ class _FirstRunSetupState extends State<_FirstRunSetup> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.storage_outlined, size: 56, color: Colors.grey),
+              const Icon(
+                AutobutlerIcons.storage_outlined,
+                size: 56,
+                color: Colors.grey,
+              ),
               const SizedBox(height: 16),
               Text(
                 'Connect to your AutoButler',
@@ -2010,7 +2015,7 @@ class _FirstRunSetupState extends State<_FirstRunSetup> {
                       'Usually http://autobutler.home.local or http://192.168.x.x',
                   errorText: _error,
                   border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.link_rounded),
+                  prefixIcon: const Icon(AutobutlerIcons.link_rounded),
                 ),
               ),
               const SizedBox(height: 16),

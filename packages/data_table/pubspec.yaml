@@ -11,6 +11,8 @@ dependencies:
     sdk: flutter
   ab_formula:
     path: ../ab_formula
+  autobutler_icons:
+    path: ../autobutler_icons
 
 dev_dependencies:
   flutter_test:

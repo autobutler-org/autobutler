@@ -10,6 +10,7 @@ import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/core/autobutler_storage_bar.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -318,7 +319,7 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
     return Scaffold(
       appBar: AutobutlerAppBar(
         label: 'Devices',
-        icon: Icons.device_hub_outlined,
+        icon: AutobutlerIcons.device_hub_outlined,
         actions: [
           RefreshIconButton(
             isRefreshing: isRefreshing,
@@ -450,8 +451,8 @@ class _DeviceCard extends StatelessWidget {
               children: [
                 Icon(
                   device.isInternal
-                      ? Icons.computer_outlined
-                      : Icons.usb_outlined,
+                      ? AutobutlerIcons.computer_outlined
+                      : AutobutlerIcons.usb_outlined,
                   size: 20,
                   color: theme.colorScheme.primary,
                 ),
@@ -560,7 +561,7 @@ class _DeviceCard extends StatelessWidget {
                         height: 14,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.link_outlined, size: 16),
+                    : const Icon(AutobutlerIcons.link_outlined, size: 16),
                 label: Text(isMounting ? 'Mounting…' : 'Mount'),
               ),
             ],
@@ -575,19 +576,25 @@ class _DeviceCard extends StatelessWidget {
                   if (onSetRole != null)
                     OutlinedButton.icon(
                       onPressed: onSetRole,
-                      icon: const Icon(Icons.label_outline, size: 16),
+                      icon: const Icon(AutobutlerIcons.label_outline, size: 16),
                       label: const Text('Set Role'),
                     ),
                   if (onBackup != null)
                     FilledButton.icon(
                       onPressed: isBackupRunning ? null : onBackup,
-                      icon: const Icon(Icons.backup_outlined, size: 16),
+                      icon: const Icon(
+                        AutobutlerIcons.backup_outlined,
+                        size: 16,
+                      ),
                       label: const Text('Back Up'),
                     ),
                   if (onVerify != null)
                     OutlinedButton.icon(
                       onPressed: isBackupRunning ? null : onVerify,
-                      icon: const Icon(Icons.verified_outlined, size: 16),
+                      icon: const Icon(
+                        AutobutlerIcons.verified_outlined,
+                        size: 16,
+                      ),
                       label: const Text('Verify'),
                     ),
                 ],
@@ -686,7 +693,9 @@ class _RoleDialog extends StatelessWidget {
     final selected = value == currentRole;
     return ListTile(
       leading: Icon(
-        selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+        selected
+            ? AutobutlerIcons.radio_button_checked
+            : AutobutlerIcons.radio_button_unchecked,
       ),
       title: Text(title),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
@@ -733,10 +742,10 @@ class _BackupProgressCard extends StatelessWidget {
               children: [
                 Icon(
                   status.isRunning
-                      ? Icons.backup_outlined
+                      ? AutobutlerIcons.backup_outlined
                       : status.isComplete
-                      ? Icons.check_circle_outline
-                      : Icons.error_outline,
+                      ? AutobutlerIcons.check_circle_outline
+                      : AutobutlerIcons.error_outline,
                   size: 20,
                 ),
                 const SizedBox(width: 8),

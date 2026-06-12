@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 
 class FileBrowserHeader extends StatelessWidget {
@@ -50,7 +51,7 @@ class FileBrowserHeader extends StatelessWidget {
                 ),
                 IconButton(
                   onPressed: onClose,
-                  icon: const Icon(Icons.close),
+                  icon: const Icon(AutobutlerIcons.close),
                   tooltip: 'Close search',
                 ),
               ],

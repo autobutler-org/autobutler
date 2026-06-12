@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 
 enum AutobutlerDrawerSection {
   cirrus,
@@ -55,49 +56,49 @@ class AutobutlerDrawer extends StatelessWidget {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.storage_rounded),
+            leading: const Icon(AutobutlerIcons.storage_rounded),
             title: const Text('Files'),
             selected: activeSection == AutobutlerDrawerSection.cirrus,
             onTap: () => onTapCirrus?.call(),
           ),
           ListTile(
-            leading: const Icon(Icons.photo_library_outlined),
+            leading: const Icon(AutobutlerIcons.photo_library_outlined),
             title: const Text('Photos'),
             selected: activeSection == AutobutlerDrawerSection.photos,
             onTap: () => onTapPhotos?.call(),
           ),
           ListTile(
-            leading: const Icon(Icons.description_outlined),
+            leading: const Icon(AutobutlerIcons.description_outlined),
             title: const Text('Docs'),
             selected: activeSection == AutobutlerDrawerSection.docs,
             onTap: () => onTapDocs?.call(),
           ),
           ListTile(
-            leading: const Icon(Icons.table_chart_outlined),
+            leading: const Icon(AutobutlerIcons.table_chart_outlined),
             title: const Text('Sheets'),
             selected: activeSection == AutobutlerDrawerSection.sheets,
             onTap: () => onTapSheets?.call(),
           ),
           ListTile(
-            leading: const Icon(Icons.device_hub_outlined),
+            leading: const Icon(AutobutlerIcons.device_hub_outlined),
             title: const Text('Devices'),
             selected: activeSection == AutobutlerDrawerSection.devices,
             onTap: () => onTapDevices?.call(),
           ),
           ListTile(
-            leading: const Icon(Icons.monitor_heart_outlined),
+            leading: const Icon(AutobutlerIcons.monitor_heart_outlined),
             title: const Text('Health'),
             selected: activeSection == AutobutlerDrawerSection.health,
             onTap: () => onTapHealth?.call(),
           ),
           ListTile(
-            leading: const Icon(Icons.lock_outline),
+            leading: const Icon(AutobutlerIcons.lock_outline),
             title: const Text('Vault'),
             selected: activeSection == AutobutlerDrawerSection.vault,
             onTap: () => onTapVault?.call(),
           ),
           ListTile(
-            leading: const Icon(Icons.settings_outlined),
+            leading: const Icon(AutobutlerIcons.settings_outlined),
             title: const Text('Settings'),
             selected: activeSection == AutobutlerDrawerSection.settings,
             onTap: () => onTapSettings?.call(),

@@ -7,6 +7,7 @@ import 'package:autobutler/widgets/autobutler_brand_button.dart';
 import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:flutter/services.dart';
 
 class FileTopBar extends StatefulWidget {
@@ -167,7 +168,7 @@ class _FileTopBarState extends State<FileTopBar> {
             const SizedBox(width: 4),
             _iconBtn(
               context: context,
-              icon: Icons.settings_outlined,
+              icon: AutobutlerIcons.settings_outlined,
               onTap: widget.onOpenSettings,
               tooltip: 'Settings',
             ),
@@ -197,7 +198,7 @@ class _FileTopBarState extends State<FileTopBar> {
       children: [
         _iconBtn(
           context: context,
-          icon: Icons.search_rounded,
+          icon: AutobutlerIcons.search_rounded,
           onTap: _openSearch,
           tooltip: 'Search',
         ),
@@ -229,13 +230,13 @@ class _FileTopBarState extends State<FileTopBar> {
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(vertical: 8),
             prefixIcon: Icon(
-              Icons.search_rounded,
+              AutobutlerIcons.search_rounded,
               size: 18,
               color: colorScheme.onSurfaceVariant,
             ),
             suffixIcon: IconButton(
               icon: Icon(
-                Icons.close_rounded,
+                AutobutlerIcons.close_rounded,
                 size: 16,
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -274,7 +275,7 @@ class _FileTopBarState extends State<FileTopBar> {
       children: [
         _iconBtn(
           context: context,
-          icon: Icons.arrow_back_rounded,
+          icon: AutobutlerIcons.arrow_back_rounded,
           onTap: !navEnabled || widget.currentPath.isEmpty
               ? null
               : widget.onGoUp,
@@ -283,7 +284,7 @@ class _FileTopBarState extends State<FileTopBar> {
         const SizedBox(width: 4),
         _iconBtn(
           context: context,
-          icon: Icons.arrow_upward_rounded,
+          icon: AutobutlerIcons.arrow_upward_rounded,
           onTap: !navEnabled || widget.currentPath.isEmpty
               ? null
               : widget.onGoUp,
@@ -402,7 +403,7 @@ class _FileTopBarState extends State<FileTopBar> {
         _menuSectionHeader(context, 'Layout'),
         _menuRadioItem(
           context: context,
-          icon: Icons.view_list_rounded,
+          icon: AutobutlerIcons.view_list_rounded,
           label: 'List',
           selected: !widget.isGridView,
           onTap: () {
@@ -411,7 +412,7 @@ class _FileTopBarState extends State<FileTopBar> {
         ),
         _menuRadioItem(
           context: context,
-          icon: Icons.grid_view_rounded,
+          icon: AutobutlerIcons.grid_view_rounded,
           label: 'Grid',
           selected: widget.isGridView,
           onTap: () {
@@ -427,8 +428,8 @@ class _FileTopBarState extends State<FileTopBar> {
           visualDensity: VisualDensity.compact,
           leading: Icon(
             widget.isUnifiedView
-                ? Icons.folder_copy_outlined
-                : Icons.device_hub_outlined,
+                ? AutobutlerIcons.folder_copy_outlined
+                : AutobutlerIcons.device_hub_outlined,
             size: 18,
             color: colorScheme.onSurfaceVariant,
           ),
@@ -445,7 +446,7 @@ class _FileTopBarState extends State<FileTopBar> {
       ],
       child: _chip(
         context: context,
-        icon: Icons.tune_rounded,
+        icon: AutobutlerIcons.tune_rounded,
         label: 'Views',
         iconOnly: true,
         onTap: () {
@@ -502,7 +503,11 @@ class _FileTopBarState extends State<FileTopBar> {
         ),
       ),
       trailing: selected
-          ? Icon(Icons.check_rounded, size: 16, color: colorScheme.primary)
+          ? Icon(
+              AutobutlerIcons.check_rounded,
+              size: 16,
+              color: colorScheme.primary,
+            )
           : const SizedBox(width: 16),
       onTap: onTap,
     );
@@ -521,8 +526,8 @@ class _FileTopBarState extends State<FileTopBar> {
           child: _chip(
             context: context,
             icon: isSelected
-                ? Icons.check_circle_outline_rounded
-                : Icons.circle_outlined,
+                ? AutobutlerIcons.check_circle_outline_rounded
+                : AutobutlerIcons.circle_outlined,
             label: device.name.isNotEmpty ? device.name : device.mountPoint,
             onTap: widget.onDeviceToggled != null
                 ? () => widget.onDeviceToggled!(device.devicePath)
@@ -580,7 +585,7 @@ class _FileTopBarState extends State<FileTopBar> {
                   child: Padding(
                     padding: const EdgeInsets.all(2),
                     child: Icon(
-                      Icons.home_rounded,
+                      AutobutlerIcons.home_rounded,
                       size: 16,
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -668,7 +673,9 @@ class _FileTopBarState extends State<FileTopBar> {
           dense: true,
           visualDensity: VisualDensity.compact,
           leading: Icon(
-            idx == 0 ? Icons.home_rounded : Icons.folder_rounded,
+            idx == 0
+                ? AutobutlerIcons.home_rounded
+                : AutobutlerIcons.folder_rounded,
             size: 18,
             color: colorScheme.onSurfaceVariant,
           ),
@@ -715,7 +722,7 @@ class _FileTopBarState extends State<FileTopBar> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 child: Icon(
-                  Icons.more_horiz_rounded,
+                  AutobutlerIcons.more_horiz_rounded,
                   size: 14,
                   color: colorScheme.onSurface.withValues(alpha: 0.55),
                 ),
@@ -732,7 +739,7 @@ class _FileTopBarState extends State<FileTopBar> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Icon(
-            Icons.chevron_right_rounded,
+            AutobutlerIcons.chevron_right_rounded,
             size: 14,
             color: colorScheme.onSurface.withValues(alpha: 0.4),
           ),
@@ -820,7 +827,7 @@ class _FileTopBarState extends State<FileTopBar> {
       children: [
         _chip(
           context: context,
-          icon: Icons.upload_rounded,
+          icon: AutobutlerIcons.upload_rounded,
           label: widget.isUploading
               ? (widget.uploadTotal > 0
                     ? '${widget.uploadCompleted}/${widget.uploadTotal}'
@@ -831,14 +838,14 @@ class _FileTopBarState extends State<FileTopBar> {
         const SizedBox(width: 6),
         _chip(
           context: context,
-          icon: Icons.create_new_folder_outlined,
+          icon: AutobutlerIcons.create_new_folder_outlined,
           label: 'New folder',
           onTap: widget.isCreatingFolder ? null : widget.onCreateFolderPressed,
         ),
         const SizedBox(width: 6),
         _chip(
           context: context,
-          icon: Icons.edit_document,
+          icon: AutobutlerIcons.edit_document,
           label: 'New file',
           onTap: widget.onNewFilePressed,
         ),
@@ -853,8 +860,8 @@ class _FileTopBarState extends State<FileTopBar> {
         _segmentedToggle(
           context: context,
           segments: const [
-            (icon: Icons.view_list_rounded, label: 'List'),
-            (icon: Icons.grid_view_rounded, label: 'Grid'),
+            (icon: AutobutlerIcons.view_list_rounded, label: 'List'),
+            (icon: AutobutlerIcons.grid_view_rounded, label: 'Grid'),
           ],
           selectedIndex: widget.isGridView ? 1 : 0,
           onSelected: (index) {
@@ -868,8 +875,8 @@ class _FileTopBarState extends State<FileTopBar> {
         _chip(
           context: context,
           icon: widget.isUnifiedView
-              ? Icons.folder_copy_outlined
-              : Icons.device_hub_outlined,
+              ? AutobutlerIcons.folder_copy_outlined
+              : AutobutlerIcons.device_hub_outlined,
           label: widget.isUnifiedView ? 'Unified' : 'Per-device',
           onTap: widget.onToggleUnifiedView,
           active: widget.isUnifiedView,

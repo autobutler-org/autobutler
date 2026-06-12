@@ -2,6 +2,7 @@ import 'package:autobutler/router.dart';
 import 'package:go_router/go_router.dart';
 import 'package:autobutler/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 
 /// Login screen shown when the butler has been set up but no session exists.
 class LoginPage extends StatefulWidget {
@@ -79,7 +80,7 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     // Logo / title
                     Icon(
-                      Icons.home_filled,
+                      AutobutlerIcons.home_filled,
                       size: 56,
                       color: theme.colorScheme.primary,
                       semanticLabel: 'AutoButler',
@@ -117,7 +118,7 @@ class _LoginPageState extends State<LoginPage> {
                       decoration: const InputDecoration(
                         labelText: 'Username',
                         border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.person_outline),
+                        prefixIcon: Icon(AutobutlerIcons.person_outline),
                       ),
                       textInputAction: TextInputAction.next,
                       autofillHints: const [AutofillHints.username],
@@ -139,12 +140,12 @@ class _LoginPageState extends State<LoginPage> {
                       decoration: InputDecoration(
                         labelText: 'Password',
                         border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Icons.lock_outline),
+                        prefixIcon: const Icon(AutobutlerIcons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
+                                ? AutobutlerIcons.visibility_outlined
+                                : AutobutlerIcons.visibility_off_outlined,
                           ),
                           tooltip: _obscurePassword
                               ? 'Show password'
@@ -214,7 +215,7 @@ class _ErrorBanner extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              Icons.error_outline,
+              AutobutlerIcons.error_outline,
               color: theme.colorScheme.onErrorContainer,
               size: 20,
             ),

@@ -1,6 +1,7 @@
 import 'package:autobutler/models/photo_album.dart';
 import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 
 typedef AlbumSelectedCallback = void Function(PhotoAlbum? album);
 
@@ -63,8 +64,8 @@ class _AlbumTreeTileState extends State<AlbumTreeTile> {
                     onTap: () => setState(() => _expanded = !_expanded),
                     child: Icon(
                       _expanded
-                          ? Icons.expand_more_rounded
-                          : Icons.chevron_right_rounded,
+                          ? AutobutlerIcons.expand_more_rounded
+                          : AutobutlerIcons.chevron_right_rounded,
                       size: 16,
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -73,7 +74,7 @@ class _AlbumTreeTileState extends State<AlbumTreeTile> {
                   const SizedBox(width: 16),
                 const SizedBox(width: 4),
                 Icon(
-                  widget.systemIcon ?? Icons.photo_album_outlined,
+                  widget.systemIcon ?? AutobutlerIcons.photo_album_outlined,
                   size: 16,
                   color: isSelected
                       ? colorScheme.primary

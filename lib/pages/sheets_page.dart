@@ -5,6 +5,7 @@ import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 
@@ -137,7 +138,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
     return Scaffold(
       appBar: AutobutlerAppBar(
         label: 'Sheets',
-        icon: Icons.table_chart_outlined,
+        icon: AutobutlerIcons.table_chart_outlined,
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -145,12 +146,12 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
             onPressed: _createNewSheet,
           ),
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(AutobutlerIcons.refresh_rounded),
             tooltip: 'Reload',
             onPressed: _load,
           ),
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
+            icon: const Icon(AutobutlerIcons.settings_outlined),
             tooltip: 'Settings',
             onPressed: () => context.go('/settings'),
           ),
@@ -187,10 +188,10 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
         controller: _searchController,
         decoration: InputDecoration(
           hintText: 'Search sheets…',
-          prefixIcon: const Icon(Icons.search_rounded, size: 20),
+          prefixIcon: const Icon(AutobutlerIcons.search_rounded, size: 20),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.clear_rounded, size: 18),
+                  icon: const Icon(AutobutlerIcons.clear_rounded, size: 18),
                   onPressed: () => _searchController.clear(),
                 )
               : null,
@@ -219,7 +220,11 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 40, color: colorScheme.error),
+            Icon(
+              AutobutlerIcons.error_outline,
+              size: 40,
+              color: colorScheme.error,
+            ),
             const SizedBox(height: 12),
             Text(_error!, textAlign: TextAlign.center),
             const SizedBox(height: 12),
@@ -234,7 +239,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.table_chart_outlined,
+              AutobutlerIcons.table_chart_outlined,
               size: 48,
               color: colorScheme.onSurface.withValues(alpha: 0.3),
             ),
@@ -277,7 +282,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
           borderRadius: BorderRadius.circular(6),
         ),
         child: Icon(
-          Icons.table_chart_outlined,
+          AutobutlerIcons.table_chart_outlined,
           size: 18,
           color: Colors.green.shade600,
         ),

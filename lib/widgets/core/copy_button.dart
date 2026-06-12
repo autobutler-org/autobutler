@@ -1,5 +1,6 @@
 import 'package:autobutler/utils/clipboard_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:flutter/services.dart';
 
 /// A reusable copy-to-clipboard button that handles insecure context detection.
@@ -12,7 +13,7 @@ import 'package:flutter/services.dart';
 class CopyButton extends StatelessWidget {
   const CopyButton({
     required this.text,
-    this.icon = Icons.content_copy,
+    this.icon = AutobutlerIcons.content_copy,
     this.iconSize = 16,
     this.label,
     this.successMessage = 'Copied to clipboard',
@@ -23,7 +24,7 @@ class CopyButton extends StatelessWidget {
   /// The text to copy to the clipboard.
   final String text;
 
-  /// Icon to display. Defaults to [Icons.content_copy].
+  /// Icon to display. Defaults to [AutobutlerIcons.content_copy].
   final IconData icon;
 
   /// Icon size. Defaults to 16.
