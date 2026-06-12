@@ -1,6 +1,5 @@
 import 'package:autobutler/pages/document_editor_page.dart';
 import 'package:autobutler/pages/terms_page.dart';
-import 'package:autobutler/pages/file_viewer_page.dart';
 import 'package:autobutler/pages/plaintext_editor_page.dart';
 import 'package:autobutler/pages/docs_page.dart';
 import 'package:autobutler/pages/file_browser_page.dart';
@@ -111,14 +110,15 @@ final router = GoRouter(
       routes: [
         GoRoute(
           // Matches /cirrus/<anything>, including slashes.
-          // Resolves to FileViewerPage which stats the path and opens the
-          // correct viewer for files, or FileBrowserPage for directories.
+          // Always renders FileBrowserPage so go_router owns the page and
+          // URL changes (back, go-up, breadcrumb) correctly trigger
+          // didUpdateWidget. FileBrowserPage._openPendingFile stats the path
+          // and launches the right viewer for files.
           path: ':path(.*)',
           builder: (context, state) {
             final raw = state.pathParameters['path'] ?? '';
             final filePath = Uri.decodeComponent(raw);
-            final serial = state.uri.queryParameters['serial'] ?? '';
-            return FileViewerPage(filePath: filePath, deviceSerial: serial);
+            return FileBrowserPage(initialPath: filePath);
           },
         ),
       ],

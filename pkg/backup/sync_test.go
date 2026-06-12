@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 )
 
 func newTestSyncWorker(t *testing.T) (*SyncWorker, string, string) {
@@ -19,6 +20,13 @@ func newTestSyncWorker(t *testing.T) (*SyncWorker, string, string) {
 	w := NewSyncWorker(SyncWorkerParams{Bus: bus})
 	w.resolveTarget = func(ctx context.Context) (string, error) { return dstDir, nil }
 	w.resolveInternalDir = func() (string, error) { return srcDir, nil }
+	// By default, expose dstDir as a single managed USB device with no serial
+	// (serial "") so that internal-source deletes propagate to it.
+	w.getManagedDevices = func() ([]storageutil.ManagedDevice, error) {
+		return []storageutil.ManagedDevice{
+			{Device: storageutil.Device{IsInternal: false}, CirrusDir: dstDir},
+		}, nil
+	}
 
 	return w, srcDir, dstDir
 }
@@ -72,7 +80,7 @@ func TestSyncWorker_DeletePath(t *testing.T) {
 	w, _, dstDir := newTestSyncWorker(t)
 	writeTestFile(t, dstDir, "photos/a.jpg", "photo-data")
 
-	w.deletePath(context.Background(), "photos/a.jpg")
+	w.deletePath(context.Background(), "photos/a.jpg", "")
 
 	if _, err := os.Stat(filepath.Join(dstDir, "photos/a.jpg")); !os.IsNotExist(err) {
 		t.Error("file should have been deleted")
@@ -84,12 +92,116 @@ func TestSyncWorker_DeletePath_Directory(t *testing.T) {
 	writeTestFile(t, dstDir, "photos/a.jpg", "data")
 	writeTestFile(t, dstDir, "photos/b.jpg", "data")
 
-	w.deletePath(context.Background(), "photos")
+	w.deletePath(context.Background(), "photos", "")
 
 	if _, err := os.Stat(filepath.Join(dstDir, "photos")); !os.IsNotExist(err) {
 		t.Error("directory should have been deleted")
 	}
 }
+
+// TestSyncWorker_DeletePath_CrossDevice verifies that a delete event originating
+// from a USB device (non-empty DeviceSerial) propagates to internal Cirrus AND
+// all other USB devices, but NOT to the source device.
+func TestSyncWorker_DeletePath_CrossDevice(t *testing.T) {
+	srcDir := t.TempDir()     // internal Cirrus dir
+	deviceADir := t.TempDir() // source USB device (device-A)
+	deviceBDir := t.TempDir() // another USB device (device-B)
+	bus := eventbus.New()
+
+	w := NewSyncWorker(SyncWorkerParams{Bus: bus})
+	w.resolveInternalDir = func() (string, error) { return srcDir, nil }
+	w.resolveTarget = func(ctx context.Context) (string, error) { return deviceADir, nil } // unused for delete
+	w.getManagedDevices = func() ([]storageutil.ManagedDevice, error) {
+		return []storageutil.ManagedDevice{
+			{
+				Device:    storageutil.Device{IsInternal: false, UsbInfo: newMockUsbDevice("device-A")},
+				CirrusDir: deviceADir,
+			},
+			{
+				Device:    storageutil.Device{IsInternal: false, UsbInfo: newMockUsbDevice("device-B")},
+				CirrusDir: deviceBDir,
+			},
+		}, nil
+	}
+
+	const relPath = "photos/test.jpg"
+	writeTestFile(t, srcDir, relPath, "internal-data")
+	writeTestFile(t, deviceADir, relPath, "device-a-data")
+	writeTestFile(t, deviceBDir, relPath, "device-b-data")
+
+	// Delete originates from device-A
+	w.deletePath(context.Background(), relPath, "device-A")
+
+	// Internal Cirrus should be deleted (source was a USB device)
+	if _, err := os.Stat(filepath.Join(srcDir, relPath)); !os.IsNotExist(err) {
+		t.Error("file should have been deleted from internal Cirrus")
+	}
+	// device-B should be deleted
+	if _, err := os.Stat(filepath.Join(deviceBDir, relPath)); !os.IsNotExist(err) {
+		t.Error("file should have been deleted from device-B")
+	}
+	// device-A (source) should NOT be deleted
+	if _, err := os.Stat(filepath.Join(deviceADir, relPath)); os.IsNotExist(err) {
+		t.Error("file should NOT have been deleted from source device-A")
+	}
+}
+
+// TestSyncWorker_DeletePath_InternalSource verifies that a delete event from
+// internal Cirrus (empty DeviceSerial) propagates to all USB devices but does
+// NOT attempt to re-delete from internal Cirrus.
+func TestSyncWorker_DeletePath_InternalSource(t *testing.T) {
+	srcDir := t.TempDir()     // internal Cirrus dir
+	deviceADir := t.TempDir() // USB device (device-A)
+	bus := eventbus.New()
+
+	w := NewSyncWorker(SyncWorkerParams{Bus: bus})
+	w.resolveInternalDir = func() (string, error) { return srcDir, nil }
+	w.resolveTarget = func(ctx context.Context) (string, error) { return deviceADir, nil }
+	w.getManagedDevices = func() ([]storageutil.ManagedDevice, error) {
+		return []storageutil.ManagedDevice{
+			{
+				Device:    storageutil.Device{IsInternal: false, UsbInfo: newMockUsbDevice("device-A")},
+				CirrusDir: deviceADir,
+			},
+		}, nil
+	}
+
+	const relPath = "docs/report.pdf"
+	writeTestFile(t, srcDir, relPath, "internal-data")
+	writeTestFile(t, deviceADir, relPath, "device-a-data")
+
+	// Delete originates from internal (empty serial)
+	w.deletePath(context.Background(), relPath, "")
+
+	// device-A should be deleted
+	if _, err := os.Stat(filepath.Join(deviceADir, relPath)); !os.IsNotExist(err) {
+		t.Error("file should have been deleted from device-A")
+	}
+	// Internal Cirrus should NOT be touched (source was internal)
+	if _, err := os.Stat(filepath.Join(srcDir, relPath)); os.IsNotExist(err) {
+		t.Error("file should NOT have been deleted from internal Cirrus (it was the source)")
+	}
+}
+
+// mockUsbDevice is a minimal UsbDevice implementation for testing.
+type mockUsbDevice struct {
+	serial string
+}
+
+func newMockUsbDevice(serial string) storageutil.UsbDevice {
+	return &mockUsbDevice{serial: serial}
+}
+
+func (m *mockUsbDevice) GetSerial() string                            { return m.serial }
+func (m *mockUsbDevice) GetPath() string                              { return "" }
+func (m *mockUsbDevice) GetVendorID() string                          { return "" }
+func (m *mockUsbDevice) GetProductID() string                         { return "" }
+func (m *mockUsbDevice) GetManufacturer() string                      { return "" }
+func (m *mockUsbDevice) GetProduct() string                           { return "" }
+func (m *mockUsbDevice) GetMountPath() string                         { return "" }
+func (m *mockUsbDevice) BlockDevicePath() (string, bool)              { return "", false }
+func (m *mockUsbDevice) IsStorageDevice() bool                        { return true }
+func (m *mockUsbDevice) Partitions() ([]storageutil.Partition, error) { return nil, nil }
 
 func TestSyncWorker_MovePath(t *testing.T) {
 	w, _, dstDir := newTestSyncWorker(t)

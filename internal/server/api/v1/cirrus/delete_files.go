@@ -50,8 +50,9 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 
 	for _, p := range filePaths {
 		deps.EventBus().Publish(eventbus.Event{
-			Kind: eventbus.EventDelete,
-			Path: p,
+			Kind:         eventbus.EventDelete,
+			Path:         p,
+			DeviceSerial: serial,
 		})
 		// Clean up all DB records for the deleted photo regardless of whether a
 		// serial is present (empty serial is a valid key in both tables).

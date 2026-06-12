@@ -15,6 +15,7 @@ import (
 type Dependencies interface {
 	Database() *db.DatabaseSqlc
 	EventBus() *eventbus.Bus
+	FileIndex() *storageutil.FileIndex
 	HealthDatabase() *db.DatabaseRaw
 	MetricsExporter() *botelsqlite.TraceExporter
 	StorageService() *storageutil.StorageService
@@ -23,6 +24,7 @@ type Dependencies interface {
 	Worker() workerutil.Worker
 	WithDatabase(database *db.DatabaseSqlc) Dependencies
 	WithEventBus(b *eventbus.Bus) Dependencies
+	WithFileIndex(idx *storageutil.FileIndex) Dependencies
 	WithHealthDatabase(healthDatabase *db.DatabaseRaw) Dependencies
 	WithMetricsExporter(exporter *botelsqlite.TraceExporter) Dependencies
 	WithStorageService(s *storageutil.StorageService) Dependencies
@@ -35,6 +37,7 @@ type Dependencies interface {
 type dependencies struct {
 	database        *db.DatabaseSqlc
 	eventBus        *eventbus.Bus
+	fileIndex       *storageutil.FileIndex
 	healthDatabase  *db.DatabaseRaw
 	metricsExporter *botelsqlite.TraceExporter
 	storageService  *storageutil.StorageService
@@ -76,6 +79,11 @@ func (d *dependencies) WithEventBus(b *eventbus.Bus) Dependencies {
 	return d
 }
 
+func (d *dependencies) WithFileIndex(idx *storageutil.FileIndex) Dependencies {
+	d.fileIndex = idx
+	return d
+}
+
 func (d *dependencies) WithHealthDatabase(database *db.DatabaseRaw) Dependencies {
 	d.healthDatabase = database
 	return d
@@ -102,6 +110,10 @@ func (d *dependencies) Database() *db.DatabaseSqlc {
 
 func (d *dependencies) EventBus() *eventbus.Bus {
 	return d.eventBus
+}
+
+func (d *dependencies) FileIndex() *storageutil.FileIndex {
+	return d.fileIndex
 }
 
 func (d *dependencies) HealthDatabase() *db.DatabaseRaw {

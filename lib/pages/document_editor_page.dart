@@ -11,6 +11,7 @@ import 'package:flutter_quill_to_pdf/flutter_quill_to_pdf.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:printing/printing.dart';
+import 'package:autobutler/theme/autobutler_theme.dart';
 import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -135,6 +136,10 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   bool _hintEditButton = false;
   Timer? _hintTimer;
 
+  // Dark page mode (#938)
+  static const _prefKeyDarkPage = 'document_editor_dark_page';
+  bool _editorDarkPage = false;
+
   // Auto-save
   static const _prefKeyAutoSave = 'document_editor_auto_save';
   static const _autoSaveDelay = Duration(seconds: 2);
@@ -213,7 +218,10 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
-    setState(() => _autoSaveEnabled = prefs.getBool(_prefKeyAutoSave) ?? true);
+    setState(() {
+      _autoSaveEnabled = prefs.getBool(_prefKeyAutoSave) ?? true;
+      _editorDarkPage = prefs.getBool(_prefKeyDarkPage) ?? false;
+    });
   }
 
   Future<void> _setAutoSaveEnabled(bool value) async {
@@ -759,13 +767,22 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   }
 
   Widget _buildPageFrame(ColorScheme cs) {
+    // When dark page mode is active, use the app's dark theme ColorScheme;
+    // when light, use the app's light theme ColorScheme. This keeps the
+    // editor page consistent with the rest of the app's design language
+    // while allowing the user to choose page brightness independently of
+    // the global theme toggle.
+    final pageCs = _editorDarkPage
+        ? AutobutlerTheme.dark().colorScheme
+        : AutobutlerTheme.light().colorScheme;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
       child: Container(
         decoration: BoxDecoration(
-          color: cs.surface,
+          color: pageCs.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cs.outline),
+          border: Border.all(color: pageCs.outline),
         ),
         padding: const EdgeInsets.fromLTRB(40, 24, 40, 24),
         child: GestureDetector(
@@ -780,7 +797,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
               expands: false,
               padding: EdgeInsets.zero,
               placeholder: 'Start writing…',
-              customStyles: _quillStyles(cs),
+              customStyles: _quillStyles(pageCs),
             ),
           ),
         ),
@@ -795,6 +812,30 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Row(
         children: [
+          // Page brightness toggle (#938) — bottom-left, near the page
+          IconButton(
+            icon: Icon(
+              _editorDarkPage
+                  ? Icons.light_mode_outlined
+                  : Icons.dark_mode_outlined,
+              size: 14,
+            ),
+            tooltip: _editorDarkPage
+                ? 'Switch to light page'
+                : 'Switch to dark page',
+            style: IconButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: const Size(24, 24),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            color: muted,
+            onPressed: () async {
+              final prefs = await SharedPreferences.getInstance();
+              setState(() => _editorDarkPage = !_editorDarkPage);
+              await prefs.setBool(_prefKeyDarkPage, _editorDarkPage);
+            },
+          ),
+          const SizedBox(width: 8),
           _statusItem(
             icon: Icons.edit_note,
             label: '$_wordCount words',
