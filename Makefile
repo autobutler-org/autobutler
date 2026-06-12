@@ -310,6 +310,10 @@ unmount-drive: ## Detach the highest-numbered MyDrive volume currently mounted
 serve/backend: generate/backend ## Serve backend
 	$(GO) run $(ENTRYPOINT) serve
 
+.PHONY: serve/backend/insecure
+serve/backend/insecure: generate/backend ## Serve backend without TLS (local dev only)
+	AUTOBUTLER_INSECURE=true $(GO) run $(ENTRYPOINT) serve
+
 .PHONY: serve/frontend
 serve/frontend: serve/frontend/web ## Serve frontend
 
