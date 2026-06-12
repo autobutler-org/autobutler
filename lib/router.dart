@@ -204,7 +204,7 @@ final router = GoRouter(
       path: AppRoutes.recover,
       builder: (context, state) => const RecoverPage(),
     ),
-    GoRoute(path: AppRoutes.terms, builder: (_, __) => const TermsPage()),
+    GoRoute(path: AppRoutes.terms, builder: (context, _) => const TermsPage()),
     GoRoute(
       // Matches /edit/<anything including slashes> — opens the plaintext editor.
       path: '${AppRoutes.plaintextEditor}/:path(.*)',
