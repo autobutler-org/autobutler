@@ -124,11 +124,15 @@ func vaultDeviceMonitor(deps deputil.Dependencies) {
 	}
 }
 
+// usbDeviceMonitor polls for newly connected USB storage devices and
+// auto-mounts them via storageutil.AutoMountDevice so they are immediately
+// operational without manual user intervention.
 func usbDeviceMonitor(deps deputil.Dependencies) {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
-	mountedSerials := make(map[string]bool)
+	// Track serials we've already handled so we don't reattempt on every tick.
+	handled := make(map[string]bool)
 
 	for range ticker.C {
 		devices, err := storageutil.ListUsbDevices(true)
@@ -139,51 +143,30 @@ func usbDeviceMonitor(deps deputil.Dependencies) {
 
 		for _, device := range devices {
 			serial := device.GetSerial()
-			if serial == "" || mountedSerials[serial] {
+			if serial == "" || handled[serial] {
 				continue
 			}
 			if device.GetMountPath() != "" {
-				// Already mounted — track so we don't attempt again
-				mountedSerials[serial] = true
+				handled[serial] = true // already mounted — no action needed
 				continue
 			}
 
-			partitions, err := device.Partitions()
-			if err != nil || len(partitions) == 0 {
-				log.Printf("[storage] usbDeviceMonitor: no partitions for device %s: %v", serial, err)
-				continue
-			}
-
-			mountsDir, err := storageutil.GetMountsDir()
+			result, err := storageutil.AutoMountDevice(device)
 			if err != nil {
-				log.Printf("[storage] usbDeviceMonitor: failed to get mounts dir: %v", err)
-				continue
-			}
-			mountTargetPath := filepath.Join(mountsDir, serial)
-			if err := os.MkdirAll(mountTargetPath, os.ModeDir|os.ModePerm); err != nil {
-				log.Printf("[storage] usbDeviceMonitor: failed to create mount target %s: %v", mountTargetPath, err)
-				continue
+				log.Printf("[storage] usbDeviceMonitor: failed to auto-mount %s: %v", serial, err)
+				if result == nil {
+					continue // mount itself failed — retry next tick
+				}
+				// Mount succeeded but data-dir init failed — still mark handled.
 			}
 
-			partition := partitions[0]
-			if err := partition.MountCommand(mountTargetPath).Run(); err != nil {
-				log.Printf("[storage] usbDeviceMonitor: failed to mount device %s: %v", serial, err)
-				continue
-			}
-
-			if err := storageutil.InitializeDeviceDataDir(mountTargetPath); err != nil {
-				log.Printf("[storage] usbDeviceMonitor: failed to initialize data dir for %s: %v", serial, err)
-			}
-
-			mountedSerials[serial] = true
+			handled[serial] = true
 			deps.StorageService().InvalidateDeviceCache()
-
 			deps.EventBus().Publish(eventbus.Event{
 				Kind: eventbus.EventVaultStorageChanged,
 				Data: map[string]string{"serial": serial},
 			})
-
-			log.Printf("[storage] auto-mounted new device %s at %s", serial, mountTargetPath)
+			log.Printf("[storage] auto-mounted new device %s at %s", serial, result.MountTargetPath)
 		}
 	}
 }
