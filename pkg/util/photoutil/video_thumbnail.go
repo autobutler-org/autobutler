@@ -1,15 +1,20 @@
 package photoutil
 
 import (
+	"context"
 	"fmt"
 	"image"
 	"image/jpeg"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"time"
+
+	"github.com/autobutler-org/autobutler/pkg/util/ffmpegutil"
 
 	"github.com/KononK/resize"
 )
+
+var defaultProcessor ffmpegutil.VideoProcessor = ffmpegutil.NewCLIProcessor()
 
 // VideoToThumbnail extracts a frame from a video file and returns a thumbnail.
 // Requires ffmpeg to be installed on the system.
@@ -22,25 +27,12 @@ func VideoToThumbnail(filePath string, width, height uint) (image.Image, error) 
 
 	framePath := filepath.Join(tmpDir, "frame.jpg")
 
-	cmd := exec.Command("ffmpeg",
-		"-i", filePath,
-		"-ss", "1",
-		"-vframes", "1",
-		"-q:v", "2",
-		"-y",
-		framePath,
-	)
-	if out, err := cmd.CombinedOutput(); err != nil {
+	ctx := context.Background()
+	err = defaultProcessor.ExtractThumbnail(ctx, filePath, framePath, 1*time.Second)
+	if err != nil {
 		// Retry at 0s in case the video is shorter than 1 second.
-		cmd2 := exec.Command("ffmpeg",
-			"-i", filePath,
-			"-vframes", "1",
-			"-q:v", "2",
-			"-y",
-			framePath,
-		)
-		if out2, err2 := cmd2.CombinedOutput(); err2 != nil {
-			return nil, fmt.Errorf("ffmpeg frame extraction failed: %s: %w", string(append(out, out2...)), err2)
+		if err2 := defaultProcessor.ExtractThumbnail(ctx, filePath, framePath, 0); err2 != nil {
+			return nil, fmt.Errorf("ffmpeg frame extraction failed: %w", err2)
 		}
 	}
 
@@ -65,8 +57,7 @@ func VideoToThumbnail(filePath string, width, height uint) (image.Image, error) 
 
 // IsFFmpegAvailable checks whether ffmpeg is on the PATH.
 func IsFFmpegAvailable() bool {
-	_, err := exec.LookPath("ffmpeg")
-	return err == nil
+	return defaultProcessor.Available()
 }
 
 // cropToFit scales and center-crops an image to the target dimensions.
