@@ -57,6 +57,7 @@ func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 
 	initExternalVault(deps)
 	go vaultDeviceMonitor(deps)
+	go usbDeviceMonitor(deps)
 
 	return syncWorker, nil
 }
@@ -119,6 +120,70 @@ func vaultDeviceMonitor(deps deputil.Dependencies) {
 				Data: map[string]string{"serial": serial},
 			})
 			wasConnected = true
+		}
+	}
+}
+
+func usbDeviceMonitor(deps deputil.Dependencies) {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	mountedSerials := make(map[string]bool)
+
+	for range ticker.C {
+		devices, err := storageutil.ListUsbDevices(true)
+		if err != nil {
+			log.Printf("[storage] usbDeviceMonitor: failed to list USB devices: %v", err)
+			continue
+		}
+
+		for _, device := range devices {
+			serial := device.GetSerial()
+			if serial == "" || mountedSerials[serial] {
+				continue
+			}
+			if device.GetMountPath() != "" {
+				// Already mounted — track so we don't attempt again
+				mountedSerials[serial] = true
+				continue
+			}
+
+			partitions, err := device.Partitions()
+			if err != nil || len(partitions) == 0 {
+				log.Printf("[storage] usbDeviceMonitor: no partitions for device %s: %v", serial, err)
+				continue
+			}
+
+			mountsDir, err := storageutil.GetMountsDir()
+			if err != nil {
+				log.Printf("[storage] usbDeviceMonitor: failed to get mounts dir: %v", err)
+				continue
+			}
+			mountTargetPath := filepath.Join(mountsDir, serial)
+			if err := os.MkdirAll(mountTargetPath, os.ModeDir|os.ModePerm); err != nil {
+				log.Printf("[storage] usbDeviceMonitor: failed to create mount target %s: %v", mountTargetPath, err)
+				continue
+			}
+
+			partition := partitions[0]
+			if err := partition.MountCommand(mountTargetPath).Run(); err != nil {
+				log.Printf("[storage] usbDeviceMonitor: failed to mount device %s: %v", serial, err)
+				continue
+			}
+
+			if err := storageutil.InitializeDeviceDataDir(mountTargetPath); err != nil {
+				log.Printf("[storage] usbDeviceMonitor: failed to initialize data dir for %s: %v", serial, err)
+			}
+
+			mountedSerials[serial] = true
+			deps.StorageService().InvalidateDeviceCache()
+
+			deps.EventBus().Publish(eventbus.Event{
+				Kind: eventbus.EventVaultStorageChanged,
+				Data: map[string]string{"serial": serial},
+			})
+
+			log.Printf("[storage] auto-mounted new device %s at %s", serial, mountTargetPath)
 		}
 	}
 }
