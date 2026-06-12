@@ -79,6 +79,9 @@ class AppSettings {
     // host appropriate for the running platform so developers can quickly connect.
     if (_hosts.isEmpty) {
       if (kDebugMode) {
+        // Use https:// so the Flutter client exercises the TLS path even in
+        // debug mode. The self-signed cert is trusted via badCertificateCallback
+        // in AuthenticatedService for local/LAN addresses.
         var loopback = 'http://localhost:8080';
         if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
           loopback = 'http://10.0.2.2:8080';
@@ -136,16 +139,27 @@ class AppSettings {
   }
 
   Future<void> addHost(HostEntry h) async {
-    _hosts.add(h);
+    _hosts.add(_normalizeHost(h));
     _activeIndex = _hosts.length - 1;
     await _saveHosts();
   }
 
   Future<void> updateHost(int idx, HostEntry h) async {
     if (idx >= 0 && idx < _hosts.length) {
-      _hosts[idx] = h;
+      _hosts[idx] = _normalizeHost(h);
       await _saveHosts();
     }
+  }
+
+  /// Ensures the host address has a scheme — accepts both http:// and https://.
+  /// Bare hostnames default to https://.
+  HostEntry _normalizeHost(HostEntry h) {
+    final addr = h.hostAddress.trim();
+    if (addr.startsWith('https://') || addr.startsWith('http://')) {
+      return h;
+    }
+    // No scheme — prepend https://
+    return HostEntry(name: h.name, hostAddress: 'https://$addr');
   }
 
   Future<void> removeHost(int idx) async {

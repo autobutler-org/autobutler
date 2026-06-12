@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -22,6 +24,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/autobutler/pkg/util/tlsutil"
 	"github.com/autobutler-org/autobutler/pkg/util/workerutil"
 
 	"github.com/gin-gonic/gin"
@@ -182,7 +185,14 @@ func setupSwagger(router *gin.Engine) {
 	router.GET("/swagger/:any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 }
 
-func StartServer(deps deputil.Dependencies) error {
+// StartOptions controls optional server startup behaviour.
+type StartOptions struct {
+	// Insecure disables TLS and serves over plain HTTP.
+	// Use only for local development.
+	Insecure bool
+}
+
+func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 	tp, err := botel.InitTracer(deps)
 	if err != nil {
 		return fmt.Errorf("failed to initialize otel trace: %w", err)
@@ -247,8 +257,42 @@ func StartServer(deps deputil.Dependencies) error {
 	setupRoutes(router, systemCollector)
 	setupSwagger(router)
 
-	if err := router.Run(fmt.Sprintf(":%s", port)); err != nil {
-		return err
+	if opts.Insecure {
+		log.Println("[server] WARNING: TLS disabled — running in insecure HTTP mode")
+		if err := router.Run(fmt.Sprintf(":%s", port)); err != nil {
+			return err
+		}
+	} else {
+		dataDir := storageutil.GetDataDir()
+		certFile, keyFile, err := tlsutil.EnsureSelfSignedCert(dataDir)
+		if err != nil {
+			return fmt.Errorf("failed to provision TLS cert: %w", err)
+		}
+
+		// Load the cert/key pair and build a TLS config that enforces TLS 1.3
+		// as the minimum version. Go 1.22+ automatically negotiates
+		// X25519MLKEM768 hybrid PQC key exchange in TLS 1.3 sessions, so no
+		// extra configuration is needed for post-quantum hybrid key exchange.
+		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+		if err != nil {
+			return fmt.Errorf("failed to load TLS key pair: %w", err)
+		}
+		tlsCfg := &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			MinVersion:   tls.VersionTLS13,
+		}
+
+		addr := fmt.Sprintf(":%s", port)
+		ln, err := net.Listen("tcp", addr)
+		if err != nil {
+			return fmt.Errorf("failed to bind TLS listener on %s: %w", addr, err)
+		}
+		tlsLn := tls.NewListener(ln, tlsCfg)
+
+		log.Printf("[server] TLS 1.3+ enabled — cert: %s", certFile)
+		if err := router.RunListener(tlsLn); err != nil {
+			return err
+		}
 	}
 
 	return nil

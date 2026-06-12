@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:autobutler/services/app_settings.dart';
+import 'package:autobutler/services/ws_connect_stub.dart'
+    if (dart.library.io) 'package:autobutler/services/ws_connect_io.dart';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -79,7 +81,10 @@ class EventsService {
         scheme: httpUri.scheme == 'https' ? 'wss' : 'ws',
         queryParameters: token != null ? {'token': token} : null,
       );
-      _channel = WebSocketChannel.connect(wsUri);
+      // connectLocalTrustWs is resolved at compile time:
+      //   - dart.library.io  → ws_connect_io.dart  (native: trusts local self-signed certs)
+      //   - otherwise        → ws_connect_stub.dart (web: browser handles cert trust)
+      _channel = connectLocalTrustWs(wsUri);
 
       _sub = _channel!.stream.listen(
         (data) {

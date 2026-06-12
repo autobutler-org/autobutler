@@ -308,6 +308,10 @@ unmount-drive: ## Detach the highest-numbered MyDrive volume currently mounted
 
 .PHONY: serve/backend
 serve/backend: generate/backend ## Serve backend
+	AUTOBUTLER_INSECURE=true $(GO) run $(ENTRYPOINT) serve
+
+.PHONY: serve/backend/secure
+serve/backend/secure: generate/backend ## Serve backend without TLS (local dev only)
 	$(GO) run $(ENTRYPOINT) serve
 
 .PHONY: serve/frontend
@@ -340,7 +344,7 @@ test/perf/generate-files: ## Generate file fixtures under a target Cirrus direct
 test/perf/load: build/backend ## Run local wrk load profile against a temporary local backend
 	mkdir -p test-results/performance
 	$(MAKE) test/perf/generate-files PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
-	PORT=$(PERF_PORT) ./build/autobutler serve > test-results/performance/server-load.log 2>&1 &
+	PORT=$(PERF_PORT) AUTOBUTLER_INSECURE=true ./build/autobutler serve > test-results/performance/server-load.log 2>&1 &
 	SERVER_PID=$$!
 	trap 'kill $$SERVER_PID 2>/dev/null || true' EXIT
 	export AUTOBUTLER_BASE_URL=$(PERF_BASE_URL)
@@ -356,7 +360,7 @@ test/perf/load: build/backend ## Run local wrk load profile against a temporary 
 test/perf/stress: build/backend ## Run local wrk stress profile against a temporary local backend
 	mkdir -p test-results/performance
 	$(MAKE) test/perf/generate-files PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
-	PORT=$(PERF_PORT) ./build/autobutler serve > test-results/performance/server-stress.log 2>&1 &
+	PORT=$(PERF_PORT) AUTOBUTLER_INSECURE=true ./build/autobutler serve > test-results/performance/server-stress.log 2>&1 &
 	SERVER_PID=$$!
 	trap 'kill $$SERVER_PID 2>/dev/null || true' EXIT
 	export AUTOBUTLER_BASE_URL=$(PERF_BASE_URL)
