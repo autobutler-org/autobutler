@@ -1173,6 +1173,15 @@ class _SettingsPageState extends State<SettingsPage> {
           const _InfoSectionHeader(label: 'Help & Support'),
           const SizedBox(height: 8),
           const _HelpSupportCard(),
+          const SizedBox(height: 16),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.gavel_outlined),
+              title: const Text('Terms of Service'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(AppRoutes.terms),
+            ),
+          ),
           const SizedBox(height: 24),
 
           const _InfoSectionHeader(label: 'Software Bill of Materials'),
