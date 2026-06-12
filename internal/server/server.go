@@ -57,6 +57,7 @@ func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 
 	initExternalVault(deps)
 	go vaultDeviceMonitor(deps)
+	go usbDeviceMonitor(deps)
 
 	return syncWorker, nil
 }
@@ -119,6 +120,53 @@ func vaultDeviceMonitor(deps deputil.Dependencies) {
 				Data: map[string]string{"serial": serial},
 			})
 			wasConnected = true
+		}
+	}
+}
+
+// usbDeviceMonitor polls for newly connected USB storage devices and
+// auto-mounts them via storageutil.AutoMountDevice so they are immediately
+// operational without manual user intervention.
+func usbDeviceMonitor(deps deputil.Dependencies) {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	// Track serials we've already handled so we don't reattempt on every tick.
+	handled := make(map[string]bool)
+
+	for range ticker.C {
+		devices, err := storageutil.ListUsbDevices(true)
+		if err != nil {
+			log.Printf("[storage] usbDeviceMonitor: failed to list USB devices: %v", err)
+			continue
+		}
+
+		for _, device := range devices {
+			serial := device.GetSerial()
+			if serial == "" || handled[serial] {
+				continue
+			}
+			if device.GetMountPath() != "" {
+				handled[serial] = true // already mounted — no action needed
+				continue
+			}
+
+			result, err := storageutil.AutoMountDevice(device)
+			if err != nil {
+				log.Printf("[storage] usbDeviceMonitor: failed to auto-mount %s: %v", serial, err)
+				if result == nil {
+					continue // mount itself failed — retry next tick
+				}
+				// Mount succeeded but data-dir init failed — still mark handled.
+			}
+
+			handled[serial] = true
+			deps.StorageService().InvalidateDeviceCache()
+			deps.EventBus().Publish(eventbus.Event{
+				Kind: eventbus.EventVaultStorageChanged,
+				Data: map[string]string{"serial": serial},
+			})
+			log.Printf("[storage] auto-mounted new device %s at %s", serial, result.MountTargetPath)
 		}
 	}
 }
