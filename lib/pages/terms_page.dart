@@ -64,8 +64,12 @@ class TermsPage extends StatelessWidget {
                         'You agree not to use Autobutler for any unlawful '
                         'purpose, to attempt to gain unauthorised access to '
                         'other systems, or to interfere with the operation of '
-                        'the software for other users. Violation of these '
-                        'terms may result in termination of your access.',
+                        'the software for other users. Because Autobutler '
+                        'runs entirely on your own hardware and we have no '
+                        'access to your data or device, these terms are '
+                        'legally binding but not technically enforceable by '
+                        'us. You are solely responsible for your own '
+                        'compliance with applicable laws.',
                   ),
                   _TermsSection(
                     title: '5. Limitation of Liability',
