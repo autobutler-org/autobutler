@@ -151,15 +151,12 @@ class AppSettings {
     }
   }
 
-  /// Ensures the host address uses https:// — upgrades bare hostnames and
-  /// http:// addresses since the server now requires TLS by default.
+  /// Ensures the host address has a scheme — accepts both http:// and https://.
+  /// Bare hostnames default to https://.
   HostEntry _normalizeHost(HostEntry h) {
     final addr = h.hostAddress.trim();
     if (addr.startsWith('https://') || addr.startsWith('http://')) {
-      final upgraded = addr.startsWith('http://')
-          ? 'https://${addr.substring('http://'.length)}'
-          : addr;
-      return HostEntry(name: h.name, hostAddress: upgraded);
+      return h;
     }
     // No scheme — prepend https://
     return HostEntry(name: h.name, hostAddress: 'https://$addr');
