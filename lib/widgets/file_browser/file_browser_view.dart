@@ -269,7 +269,11 @@ class _FileBrowserViewState extends State<FileBrowserView> {
               Expanded(
                 flex: 2,
                 child: Text(
-                  _formatSize(item.size, item.isDir),
+                  _formatSize(
+                    item.size,
+                    item.isDir,
+                    compressedSize: item.compressedSize,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: colors.onSurfaceVariant),
@@ -524,7 +528,11 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                                     if (widget.showFileSizeAndMenu)
                                       Flexible(
                                         child: Text(
-                                          _formatSize(item.size, item.isDir),
+                                          _formatSize(
+                                            item.size,
+                                            item.isDir,
+                                            compressedSize: item.compressedSize,
+                                          ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -702,8 +710,16 @@ class _FileBrowserViewState extends State<FileBrowserView> {
     return node.name.substring(dot + 1).toLowerCase();
   }
 
-  static String _formatSize(int bytes, bool isDir) {
+  static String _formatSize(int bytes, bool isDir, {int compressedSize = 0}) {
     if (isDir) return '--';
+    final sizeStr = _formatBytes(bytes);
+    if (compressedSize > 0 && compressedSize != bytes) {
+      return '${_formatBytes(compressedSize)} → $sizeStr';
+    }
+    return sizeStr;
+  }
+
+  static String _formatBytes(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
     if (bytes < 1024 * 1024 * 1024) {
