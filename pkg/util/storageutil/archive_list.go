@@ -9,15 +9,17 @@ import (
 	"strings"
 	"time"
 
+	kzip "github.com/klauspost/compress/zip"
 	"github.com/mholt/archiver/v4"
 )
 
 // ArchiveEntry represents a single entry visible at a given level inside an archive.
 type ArchiveEntry struct {
-	Name    string
-	Size    int64
-	IsDir   bool
-	ModTime time.Time
+	Name           string
+	Size           int64
+	CompressedSize int64
+	IsDir          bool
+	ModTime        time.Time
 }
 
 // ListArchiveParams contains parameters for listing archive contents.
@@ -145,6 +147,9 @@ func listArchiveEntries(fullPath, subPath string) ([]ArchiveEntry, error) {
 			}
 			if slash < 0 {
 				entry.Size = af.Size()
+				if zh, ok := af.Header.(kzip.FileHeader); ok {
+					entry.CompressedSize = int64(zh.CompressedSize64)
+				}
 			}
 			seen[childName] = entry
 		}
