@@ -26,7 +26,15 @@ class AutobutlerFileIcon extends StatelessWidget {
         lower.endsWith('.heif') ||
         lower.endsWith('.bmp') ||
         lower.endsWith('.tiff') ||
-        lower.endsWith('.tif')) {
+        lower.endsWith('.tif') ||
+        lower.endsWith('.raw') ||
+        lower.endsWith('.cr2') ||
+        lower.endsWith('.cr3') ||
+        lower.endsWith('.nef') ||
+        lower.endsWith('.arw') ||
+        lower.endsWith('.dng') ||
+        lower.endsWith('.orf') ||
+        lower.endsWith('.rw2')) {
       return Icons.image_outlined;
     }
 

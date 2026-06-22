@@ -42,6 +42,20 @@ func GenerateThumbnail(params GenerateThumbnailParams) (*GenerateThumbnailResult
 		}, nil
 	}
 
+	// RAW camera files can't be decoded by Go's image package — convert
+	// via an external tool first, then thumbnail the resulting JPEG.
+	if IsRawFile(params.FilePath) {
+		img, err := RawToJPEG(params.FilePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert RAW file: %w", err)
+		}
+		cropped, _, cropErr := cropToFit(img, params.Width, params.Height)
+		if cropErr != nil {
+			return nil, fmt.Errorf("crop RAW thumbnail: %w", cropErr)
+		}
+		return &GenerateThumbnailResult{Thumbnail: cropped, Format: "jpeg"}, nil
+	}
+
 	thumbnail, format, err := ImageToThumbnail(params.FilePath, params.Width, params.Height)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate thumbnail: %w", err)

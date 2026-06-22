@@ -579,7 +579,15 @@ class CirrusService with AuthenticatedService {
         lower.endsWith('.heif') ||
         lower.endsWith('.tiff') ||
         lower.endsWith('.tif') ||
-        lower.endsWith('.bmp');
+        lower.endsWith('.bmp') ||
+        lower.endsWith('.raw') ||
+        lower.endsWith('.cr2') ||
+        lower.endsWith('.cr3') ||
+        lower.endsWith('.nef') ||
+        lower.endsWith('.arw') ||
+        lower.endsWith('.dng') ||
+        lower.endsWith('.orf') ||
+        lower.endsWith('.rw2');
   }
 
   /// Download thumbnail bytes for the specified filePath using the thumbnails endpoint.

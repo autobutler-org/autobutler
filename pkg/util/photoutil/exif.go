@@ -54,6 +54,10 @@ func ImageFormatFromPath(filePath string) imagemeta.ImageFormat {
 		return imagemeta.NEF
 	case ".arw":
 		return imagemeta.ARW
+	case ".orf":
+		return imagemeta.TIFF
+	case ".rw2":
+		return imagemeta.TIFF
 	default:
 		return 0
 	}

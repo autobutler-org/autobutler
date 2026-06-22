@@ -13,6 +13,7 @@ import (
 
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/photoutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
@@ -76,6 +77,18 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 	wantsJPEG := c.Query("format") == "jpeg"
 
 	if wantsJPEG && result.FileType == storageutil.FileTypeImage {
+		baseName := strings.TrimSuffix(filepath.Base(result.FullPath), ext) + ".jpg"
+
+		if photoutil.IsRawFile(result.FullPath) {
+			jpegBytes, err := photoutil.RawToJPEGBytes(result.FullPath, 92)
+			if err != nil {
+				return serverutil.InternalServerError(fmt.Errorf("failed to convert RAW to JPEG: %w", err))
+			}
+			c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", baseName))
+			c.Data(http.StatusOK, "image/jpeg", jpegBytes)
+			return nil
+		}
+
 		img, _, err := image.Decode(f)
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("failed to decode image: %w", err))
@@ -86,7 +99,6 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 			return serverutil.InternalServerError(fmt.Errorf("failed to encode JPEG: %w", err))
 		}
 
-		baseName := strings.TrimSuffix(filepath.Base(result.FullPath), ext) + ".jpg"
 		c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", baseName))
 		c.Data(http.StatusOK, "image/jpeg", buf.Bytes())
 		return nil

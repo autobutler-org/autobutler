@@ -61,8 +61,33 @@ func ImageMIMETypeFromExtension(extension string) string {
 		return "image/heic"
 	case ".avif":
 		return "image/avif"
+	case ".cr2":
+		return "image/x-canon-cr2"
+	case ".cr3":
+		return "image/x-canon-cr3"
+	case ".nef":
+		return "image/x-nikon-nef"
+	case ".arw":
+		return "image/x-sony-arw"
+	case ".dng":
+		return "image/x-adobe-dng"
+	case ".orf":
+		return "image/x-olympus-orf"
+	case ".rw2":
+		return "image/x-panasonic-rw2"
+	case ".raw":
+		return "image/x-raw"
 	default:
 		return "application/octet-stream"
+	}
+}
+
+func IsRawImageExtension(extension string) bool {
+	switch strings.TrimSpace(strings.ToLower(extension)) {
+	case ".raw", ".cr2", ".cr3", ".nef", ".arw", ".dng", ".orf", ".rw2":
+		return true
+	default:
+		return false
 	}
 }
 
@@ -119,7 +144,8 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 		return FileTypePDF
 	case ".pptx", ".ppt":
 		return FileTypeSlideshow
-	case ".png", ".jpg", ".jpeg", ".gif", ".svg", ".heic", ".heif", ".webp", ".bmp", ".tiff", ".tif", ".avif":
+	case ".png", ".jpg", ".jpeg", ".gif", ".svg", ".heic", ".heif", ".webp", ".bmp", ".tiff", ".tif", ".avif",
+		".raw", ".cr2", ".cr3", ".nef", ".arw", ".dng", ".orf", ".rw2":
 		return FileTypeImage
 	case ".mp4", ".m4v", ".webm", ".ogg", ".ogv", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".3gp", ".3g2", ".mpeg", ".mpg", ".ts":
 		return FileTypeVideo
