@@ -47,6 +47,7 @@ class AutobutlerFileIcon extends StatelessWidget {
         lower.endsWith('.aac') ||
         lower.endsWith('.ogg') ||
         lower.endsWith('.m4a') ||
+        lower.endsWith('.wma') ||
         lower.endsWith('.opus')) {
       return Icons.audio_file_outlined;
     }

@@ -20,6 +20,7 @@ var ErrPathNotFound = errors.New("path not found")
 const (
 	FileTypeAbdoc     FileType = "abdoc"
 	FileTypeAbsheet   FileType = "absheet"
+	FileTypeAudio     FileType = "audio"
 	FileTypeDocx      FileType = "docx"
 	FileTypeEpub      FileType = "epub"
 	FileTypeFolder    FileType = "folder"
@@ -82,7 +83,7 @@ func VideoMIMETypeFromExtension(extension string) string {
 		return "video/x-m4v"
 	case ".webm":
 		return "video/webm"
-	case ".ogg", ".ogv":
+	case ".ogv":
 		return "video/ogg"
 	case ".avi":
 		return "video/x-msvideo"
@@ -107,6 +108,37 @@ func VideoMIMETypeFromExtension(extension string) string {
 	}
 }
 
+func AudioMIMETypeFromExtension(extension string) string {
+	normalizedExt := strings.TrimSpace(strings.ToLower(extension))
+	if normalizedExt == "" {
+		return "application/octet-stream"
+	}
+	if !strings.HasPrefix(normalizedExt, ".") {
+		normalizedExt = "." + normalizedExt
+	}
+
+	switch normalizedExt {
+	case ".mp3":
+		return "audio/mpeg"
+	case ".wav":
+		return "audio/wav"
+	case ".flac":
+		return "audio/flac"
+	case ".aac":
+		return "audio/aac"
+	case ".ogg":
+		return "audio/ogg"
+	case ".m4a":
+		return "audio/mp4"
+	case ".wma":
+		return "audio/x-ms-wma"
+	case ".opus":
+		return "audio/opus"
+	default:
+		return "application/octet-stream"
+	}
+}
+
 func DetermineFileTypeFromPath(filePath string) FileType {
 	// Empty string or "/" represents a folder
 	if filePath == "" || filePath == "/" {
@@ -121,7 +153,9 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 		return FileTypeSlideshow
 	case ".png", ".jpg", ".jpeg", ".gif", ".svg", ".heic", ".heif", ".webp", ".bmp", ".tiff", ".tif", ".avif":
 		return FileTypeImage
-	case ".mp4", ".m4v", ".webm", ".ogg", ".ogv", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".3gp", ".3g2", ".mpeg", ".mpg", ".ts":
+	case ".mp3", ".wav", ".flac", ".aac", ".ogg", ".m4a", ".wma", ".opus":
+		return FileTypeAudio
+	case ".mp4", ".m4v", ".webm", ".ogv", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".3gp", ".3g2", ".mpeg", ".mpg", ".ts":
 		return FileTypeVideo
 	case ".epub":
 		return FileTypeEpub

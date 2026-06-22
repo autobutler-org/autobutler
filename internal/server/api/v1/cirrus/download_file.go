@@ -101,6 +101,8 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 		contentType = storageutil.ImageMIMETypeFromExtension(filepath.Ext(result.FullPath))
 	} else if result.FileType == storageutil.FileTypeVideo {
 		contentType = storageutil.VideoMIMETypeFromExtension(filepath.Ext(result.FullPath))
+	} else if result.FileType == storageutil.FileTypeAudio {
+		contentType = storageutil.AudioMIMETypeFromExtension(filepath.Ext(result.FullPath))
 	}
 	c.Header("Content-Disposition", fmt.Sprintf("%s; filename=%s", disposition, filepath.Base(result.FullPath)))
 	c.Header("Content-Type", contentType)
