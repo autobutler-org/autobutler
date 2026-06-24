@@ -5,6 +5,7 @@ import 'package:autobutler/controllers/file_browser_cache.dart';
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
+import 'package:autobutler/pages/generic_file_viewer_page.dart';
 import 'package:autobutler/pages/spreadsheet_editor_page.dart';
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
@@ -939,6 +940,17 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    // Generic / unsupported file types — show a detail view with download and
+    // "Open with" actions instead of silently failing.
+    if (node.fileType == 'generic' || node.fileType.isEmpty) {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => GenericFileViewerPage(node: node),
+        ),
+      );
+      return;
+    }
+
     // All other file types — navigate to /cirrus/<path> which resolves the
     // file type via FileViewerPage and opens the correct viewer. This updates
     // the URL bar so the link is always shareable.
@@ -1419,6 +1431,25 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           ),
         );
         if (!mounted) return;
+        return;
+      case 'generic':
+        final name = filePath.split('/').last;
+        final node = CirrusFileNode(
+          name: name,
+          size: 0,
+          isDir: false,
+          deviceName: '',
+          devicePath: '',
+          deviceSerial: '',
+          dirPath: filePath,
+          fileType: fileType,
+        );
+        FileBrowserCache.instance.markFileOpen(filePath);
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => GenericFileViewerPage(node: node),
+          ),
+        );
         return;
       default:
         setState(() {
