@@ -144,6 +144,9 @@ var getThumbnailRoute = serverutil.ApiRoute(
 
 		ext := strings.ToLower(filepath.Ext(filePath))
 		fileType := storageutil.DetermineFileTypeFromPath("file" + ext)
+		if fileType != storageutil.FileTypeImage && fileType != storageutil.FileTypeVideo {
+			return serverutil.NotFound(fmt.Errorf("no thumbnail for file type %q: %s", fileType, filePath))
+		}
 		isVideo := fileType == storageutil.FileTypeVideo
 
 		// --- Server-side rotation ---

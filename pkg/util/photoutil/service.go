@@ -28,6 +28,10 @@ func GenerateThumbnail(params GenerateThumbnailParams) (*GenerateThumbnailResult
 	ext := strings.ToLower(filepath.Ext(params.FilePath))
 	fileType := storageutil.DetermineFileTypeFromPath("file" + ext)
 
+	if fileType != storageutil.FileTypeImage && fileType != storageutil.FileTypeVideo {
+		return nil, fmt.Errorf("unsupported file type for thumbnail: %s", ext)
+	}
+
 	if fileType == storageutil.FileTypeVideo {
 		if !IsFFmpegAvailable() {
 			return nil, fmt.Errorf("ffmpeg is required for video thumbnails but was not found on PATH")

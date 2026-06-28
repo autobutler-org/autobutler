@@ -255,6 +255,24 @@ func TestGenerateThumbnail_Error(t *testing.T) {
 	}
 }
 
+func TestGenerateThumbnail_UnsupportedFileType(t *testing.T) {
+	tmpDir := t.TempDir()
+	unsupported := filepath.Join(tmpDir, "document.psd")
+	os.WriteFile(unsupported, []byte("fake psd content"), 0644)
+
+	result, err := GenerateThumbnail(GenerateThumbnailParams{
+		FilePath: unsupported,
+		Width:    50,
+		Height:   50,
+	})
+	if err == nil {
+		t.Fatal("Expected error for unsupported file type")
+	}
+	if result != nil {
+		t.Error("Expected nil result for unsupported file type")
+	}
+}
+
 func TestCorrectImageOrientation_NoEXIF(t *testing.T) {
 	img := image.NewRGBA(image.Rect(0, 0, 10, 10))
 
