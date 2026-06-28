@@ -906,6 +906,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    // When inside an archive, preview files inline where possible.
+    if (_archiveContext != null) {
+      await _openArchiveFile(node);
+      return;
+    }
+
     // Navigate into archives as virtual directories.
     if (node.fileType == 'archive') {
       _openArchive(node);
@@ -945,6 +951,60 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     // file type via FileViewerPage and opens the correct viewer. This updates
     // the URL bar so the link is always shareable.
     _openFileViaRoute(node.apiPath);
+  }
+
+  static const _kImageExtensions = {
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.gif',
+    '.bmp',
+    '.webp',
+    '.tiff',
+    '.tif',
+  };
+
+  Future<void> _openArchiveFile(CirrusFileNode node) async {
+    final archive = _archiveContext!;
+    final entryPath = archive.subPath.isEmpty
+        ? node.name
+        : '${archive.subPath}/${node.name}';
+    final ext = node.name.contains('.')
+        ? '.${node.name.split('.').last.toLowerCase()}'
+        : '';
+
+    try {
+      final bytes = await CirrusService.downloadArchiveFileBytes(
+        archive.archivePath,
+        entryPath,
+      );
+      if (bytes == null || !mounted) return;
+
+      if (_kImageExtensions.contains(ext)) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ImageViewerPage(bytes: bytes, name: node.name),
+          ),
+        );
+        return;
+      }
+
+      if (_kTextExtensions.contains(ext)) {
+        final text = utf8.decode(bytes, allowMalformed: true);
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => _ArchiveTextPreview(name: node.name, text: text),
+          ),
+        );
+        return;
+      }
+
+      // Fallback: download the file.
+      await CirrusService.saveBytesToFile(bytes, node.name);
+      if (mounted) _showMessage('Downloaded ${node.name}');
+    } catch (e) {
+      if (mounted) _showMessage('Failed to open file: $e');
+    }
   }
 
   void _openDirectory(CirrusFileNode node) {
@@ -1962,4 +2022,24 @@ class _ArchiveContext {
 
   /// Device serial of the device that holds the archive.
   final String archiveSerial;
+}
+
+class _ArchiveTextPreview extends StatelessWidget {
+  const _ArchiveTextPreview({required this.name, required this.text});
+  final String name;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(name)),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: SelectableText(
+          text,
+          style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+        ),
+      ),
+    );
+  }
 }
