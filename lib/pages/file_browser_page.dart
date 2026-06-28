@@ -5,6 +5,7 @@ import 'package:autobutler/controllers/file_browser_cache.dart';
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
+import 'package:autobutler/pages/generic_file_viewer_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/spreadsheet_editor_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
@@ -947,6 +948,17 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    // Generic / unsupported file types — show a detail view with download and
+    // "Open with" actions instead of silently failing.
+    if (node.fileType == 'generic' || node.fileType.isEmpty) {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => GenericFileViewerPage(node: node),
+        ),
+      );
+      return;
+    }
+
     // All other file types — navigate to /cirrus/<path> which resolves the
     // file type via FileViewerPage and opens the correct viewer. This updates
     // the URL bar so the link is always shareable.
@@ -1485,6 +1497,26 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         if (!mounted) return;
         return;
 
+      case 'generic':
+        final name = filePath.split('/').last;
+        final node = CirrusFileNode(
+          name: name,
+          size: 0,
+          isDir: false,
+          deviceName: '',
+          devicePath: '',
+          deviceSerial: '',
+          dirPath: filePath,
+          fileType: fileType,
+        );
+        FileBrowserCache.instance.markFileOpen(filePath);
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => GenericFileViewerPage(node: node),
+          ),
+        );
+        return;
+
       case 'image':
         final serials = _serialsForActiveDevices();
         final serial = serials.isNotEmpty ? serials.first : null;
@@ -1511,9 +1543,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             serial: serial,
           ),
         );
-        // Navigate back to the folder — ImageViewerPage closes via Navigator.pop
-        // and does not reset the URL, so go_router would re-evaluate the file
-        // path as a directory and show an empty listing otherwise.
         if (!mounted) return;
         context.go(AppRoutes.cirrusPath(parentPath(filePath)));
         return;
