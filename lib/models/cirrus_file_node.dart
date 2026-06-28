@@ -8,10 +8,12 @@ class CirrusFileNode {
     required this.deviceSerial,
     required this.dirPath,
     this.fileType = '',
+    this.compressedSize = 0,
   });
 
   final String name;
   final int size;
+  final int compressedSize;
   final bool isDir;
   final String deviceName;
   final String devicePath;
@@ -56,6 +58,9 @@ class CirrusFileNode {
     return CirrusFileNode(
       name: parseString(json['name']),
       size: parseSize(json['size']),
+      compressedSize: parseSize(
+        json['compressedSize'] ?? json['compressed_size'],
+      ),
       isDir: parseBool(json['isDir'] ?? json['is_dir']),
       deviceName: parseString(json['deviceName'] ?? json['device_name']),
       devicePath: parseString(json['devicePath'] ?? json['device_path']),

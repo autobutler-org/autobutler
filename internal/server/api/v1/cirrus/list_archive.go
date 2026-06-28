@@ -68,15 +68,16 @@ func listArchive(c *gin.Context) *serverutil.Response {
 		displayName := nameParts[len(nameParts)-1]
 
 		result[i] = FileNodeJSON{
-			Name:         displayName,
-			Size:         e.Size,
-			IsDir:        e.IsDir,
-			DeviceName:   "",
-			DevicePath:   "",
-			DirPath:      dirPath,
-			FullPath:     dirPath,
-			DeviceSerial: serial,
-			FileType:     fileType,
+			Name:           displayName,
+			Size:           e.Size,
+			CompressedSize: e.CompressedSize,
+			IsDir:          e.IsDir,
+			DeviceName:     "",
+			DevicePath:     "",
+			DirPath:        dirPath,
+			FullPath:       dirPath,
+			DeviceSerial:   serial,
+			FileType:       fileType,
 		}
 	}
 

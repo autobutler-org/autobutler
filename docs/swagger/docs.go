@@ -2880,6 +2880,9 @@ const docTemplate = `{
         "v1_files.FileNodeJSON": {
             "type": "object",
             "properties": {
+                "compressedSize": {
+                    "type": "integer"
+                },
                 "deviceName": {
                     "type": "string"
                 },
@@ -2913,6 +2916,9 @@ const docTemplate = `{
         "v1_files.FileNodeWithTimeJSON": {
             "type": "object",
             "properties": {
+                "compressedSize": {
+                    "type": "integer"
+                },
                 "deviceName": {
                     "type": "string"
                 },

@@ -208,6 +208,48 @@ func TestListArchiveEntriesImpl_InvalidSubPath(t *testing.T) {
 	}
 }
 
+func TestListArchiveEntriesImpl_ZipCompressedSize(t *testing.T) {
+	device := makeListDevice(t)
+
+	// Build a zip with deflate compression so compressed != uncompressed.
+	var buf bytes.Buffer
+	w := zip.NewWriter(&buf)
+	content := bytes.Repeat([]byte("abcdefghij"), 100) // 1000 bytes, highly compressible
+	fw, err := w.CreateHeader(&zip.FileHeader{
+		Name:   "compressible.txt",
+		Method: zip.Deflate,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fw.Write(content); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	writeArchive(t, device.CirrusDir, "compressed.zip", buf.Bytes())
+
+	entries, err := ListArchiveEntriesImpl(ListArchiveParams{FilePath: "compressed.zip"}, device, "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 entry, got %d", len(entries))
+	}
+	e := entries[0]
+	if e.Size != 1000 {
+		t.Errorf("expected uncompressed size 1000, got %d", e.Size)
+	}
+	if e.CompressedSize <= 0 {
+		t.Errorf("expected positive compressed size, got %d", e.CompressedSize)
+	}
+	if e.CompressedSize >= e.Size {
+		t.Errorf("expected compressed size (%d) < uncompressed size (%d)", e.CompressedSize, e.Size)
+	}
+}
+
 func TestNormalizeSubPath(t *testing.T) {
 	cases := []struct {
 		input string
