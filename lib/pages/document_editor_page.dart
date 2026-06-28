@@ -750,6 +750,9 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                   QuillToolbarSelectHeaderStyleDropdownButtonOptions(
                     textStyle: TextStyle(color: cs.onSurface, fontSize: 13),
                   ),
+              backgroundColor: QuillToolbarColorButtonOptions(
+                customOnPressedCallback: _pickBackgroundColor,
+              ),
             ),
             showFontFamily: false,
             showFontSize: false,
@@ -890,6 +893,34 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     );
   }
 
+  Future<void> _pickBackgroundColor(
+    QuillController controller,
+    bool isBackground,
+  ) async {
+    if (!mounted) return;
+    // Save selection before the dialog steals focus (web loses it otherwise).
+    final saved = controller.selection;
+
+    final picked = await showDialog<Color?>(
+      context: context,
+      builder: (_) => const _HighlightPickerDialog(),
+    );
+
+    if (!mounted) return;
+    if (picked == null) return; // cancelled
+
+    // Restore selection in case web dropped it while the dialog was open.
+    if (saved.isValid) {
+      controller.updateSelection(saved, ChangeSource.local);
+    }
+
+    // Always clear first so we never visually stack two background colors.
+    controller.formatSelection(const BackgroundAttribute(null));
+    if (picked != Colors.transparent) {
+      controller.formatSelection(BackgroundAttribute(_colorToHex(picked)));
+    }
+  }
+
   Future<bool> _confirmDiscard(BuildContext context) async {
     final result = await showDialog<bool>(
       context: context,
@@ -909,5 +940,66 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       ),
     );
     return result ?? false;
+  }
+}
+
+// Produces "#AARRGGBB" matching flutter_quill's BackgroundAttribute storage format.
+String _colorToHex(Color color) {
+  int ch(double v) => (v * 255).round() & 0xFF;
+  return '#'
+          '${ch(color.a).toRadixString(16).padLeft(2, '0')}'
+          '${ch(color.r).toRadixString(16).padLeft(2, '0')}'
+          '${ch(color.g).toRadixString(16).padLeft(2, '0')}'
+          '${ch(color.b).toRadixString(16).padLeft(2, '0')}'
+      .toUpperCase();
+}
+
+class _HighlightPickerDialog extends StatelessWidget {
+  const _HighlightPickerDialog();
+
+  static const _colors = <Color>[
+    Color(0xFFFFEB3B), // Yellow
+    Color(0xFF8BC34A), // Green
+    Color(0xFF4FC3F7), // Blue
+    Color(0xFFF48FB1), // Pink
+    Color(0xFFCE93D8), // Lavender
+    Color(0xFFFFCC80), // Orange
+    Color(0xFFEF9A9A), // Red
+    Color(0xFF80DEEA), // Cyan
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Highlight color'),
+      content: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: _colors.map((c) {
+          return GestureDetector(
+            onTap: () => Navigator.of(context).pop(c),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: c,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.black26, width: 1.5),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(Colors.transparent),
+          child: const Text('Clear'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+      ],
+    );
   }
 }
