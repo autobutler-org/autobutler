@@ -145,6 +145,8 @@ definitions:
     type: object
   v1_files.FileNodeJSON:
     properties:
+      compressedSize:
+        type: integer
       deviceName:
         type: string
       devicePath:
@@ -167,6 +169,8 @@ definitions:
     type: object
   v1_files.FileNodeWithTimeJSON:
     properties:
+      compressedSize:
+        type: integer
       deviceName:
         type: string
       devicePath:

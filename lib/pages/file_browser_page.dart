@@ -5,6 +5,7 @@ import 'package:autobutler/controllers/file_browser_cache.dart';
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
+import 'package:autobutler/pages/generic_file_viewer_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/spreadsheet_editor_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
@@ -906,6 +907,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    // When inside an archive, preview files inline where possible.
+    if (_archiveContext != null) {
+      await _openArchiveFile(node);
+      return;
+    }
+
     // Navigate into archives as virtual directories.
     if (node.fileType == 'archive') {
       _openArchive(node);
@@ -941,10 +948,75 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    // Generic / unsupported file types — show a detail view with download and
+    // "Open with" actions instead of silently failing.
+    if (node.fileType == 'generic' || node.fileType.isEmpty) {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => GenericFileViewerPage(node: node),
+        ),
+      );
+      return;
+    }
+
     // All other file types — navigate to /cirrus/<path> which resolves the
     // file type via FileViewerPage and opens the correct viewer. This updates
     // the URL bar so the link is always shareable.
     _openFileViaRoute(node.apiPath);
+  }
+
+  static const _kImageExtensions = {
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.gif',
+    '.bmp',
+    '.webp',
+    '.tiff',
+    '.tif',
+  };
+
+  Future<void> _openArchiveFile(CirrusFileNode node) async {
+    final archive = _archiveContext!;
+    final entryPath = archive.subPath.isEmpty
+        ? node.name
+        : '${archive.subPath}/${node.name}';
+    final ext = node.name.contains('.')
+        ? '.${node.name.split('.').last.toLowerCase()}'
+        : '';
+
+    try {
+      final bytes = await CirrusService.downloadArchiveFileBytes(
+        archive.archivePath,
+        entryPath,
+      );
+      if (bytes == null || !mounted) return;
+
+      if (_kImageExtensions.contains(ext)) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ImageViewerPage(bytes: bytes, name: node.name),
+          ),
+        );
+        return;
+      }
+
+      if (_kTextExtensions.contains(ext)) {
+        final text = utf8.decode(bytes, allowMalformed: true);
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => _ArchiveTextPreview(name: node.name, text: text),
+          ),
+        );
+        return;
+      }
+
+      // Fallback: download the file.
+      await CirrusService.saveBytesToFile(bytes, node.name);
+      if (mounted) _showMessage('Downloaded ${node.name}');
+    } catch (e) {
+      if (mounted) _showMessage('Failed to open file: $e');
+    }
   }
 
   void _openDirectory(CirrusFileNode node) {
@@ -1425,6 +1497,26 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         if (!mounted) return;
         return;
 
+      case 'generic':
+        final name = filePath.split('/').last;
+        final node = CirrusFileNode(
+          name: name,
+          size: 0,
+          isDir: false,
+          deviceName: '',
+          devicePath: '',
+          deviceSerial: '',
+          dirPath: filePath,
+          fileType: fileType,
+        );
+        FileBrowserCache.instance.markFileOpen(filePath);
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => GenericFileViewerPage(node: node),
+          ),
+        );
+        return;
+
       case 'image':
         final serials = _serialsForActiveDevices();
         final serial = serials.isNotEmpty ? serials.first : null;
@@ -1451,9 +1543,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             serial: serial,
           ),
         );
-        // Navigate back to the folder — ImageViewerPage closes via Navigator.pop
-        // and does not reset the URL, so go_router would re-evaluate the file
-        // path as a directory and show an empty listing otherwise.
         if (!mounted) return;
         context.go(AppRoutes.cirrusPath(parentPath(filePath)));
         return;
@@ -1962,4 +2051,24 @@ class _ArchiveContext {
 
   /// Device serial of the device that holds the archive.
   final String archiveSerial;
+}
+
+class _ArchiveTextPreview extends StatelessWidget {
+  const _ArchiveTextPreview({required this.name, required this.text});
+  final String name;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(name)),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: SelectableText(
+          text,
+          style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+        ),
+      ),
+    );
+  }
 }

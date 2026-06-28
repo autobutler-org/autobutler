@@ -17,15 +17,16 @@ const DefaultDeviceSerial = ""
 
 // FileNodeJSON is a JSON-serializable representation of a file node
 type FileNodeJSON struct {
-	Name         string `json:"name"`
-	Size         int64  `json:"size"`
-	IsDir        bool   `json:"isDir"`
-	DeviceName   string `json:"deviceName"`
-	DevicePath   string `json:"devicePath"`
-	DirPath      string `json:"dirPath"` // Directory path containing the file, for easier client-side handling
-	FullPath     string `json:"fullPath"`
-	DeviceSerial string `json:"deviceSerial"`
-	FileType     string `json:"fileType"`
+	Name           string `json:"name"`
+	Size           int64  `json:"size"`
+	CompressedSize int64  `json:"compressedSize,omitempty"`
+	IsDir          bool   `json:"isDir"`
+	DeviceName     string `json:"deviceName"`
+	DevicePath     string `json:"devicePath"`
+	DirPath        string `json:"dirPath"` // Directory path containing the file, for easier client-side handling
+	FullPath       string `json:"fullPath"`
+	DeviceSerial   string `json:"deviceSerial"`
+	FileType       string `json:"fileType"`
 }
 
 func listFilesImpl(rootDir string, devices []storageutil.ManagedDevice) ([]FileNodeJSON, error) {

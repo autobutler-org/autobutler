@@ -459,6 +459,12 @@ func TestDetermineFileTypeFromPath(t *testing.T) {
 		{"photo.orf", FileTypeImage},
 		{"photo.rw2", FileTypeImage},
 		{"photo.raw", FileTypeImage},
+		{"song.mp3", FileTypeAudio},
+		{"track.wav", FileTypeAudio},
+		{"music.flac", FileTypeAudio},
+		{"clip.aac", FileTypeAudio},
+		{"sound.ogg", FileTypeAudio},
+		{"voice.m4a", FileTypeAudio},
 		{"IMAGE.PNG", FileTypeImage},     // Test case insensitivity
 		{"PHOTO.CR2", FileTypeImage},     // RAW case insensitivity
 		{"generic.bin", FileTypeGeneric}, // Unknown/generic type
@@ -519,7 +525,7 @@ func TestVideoMIMETypeFromExtension(t *testing.T) {
 		{extension: ".mp4", expected: "video/mp4"},
 		{extension: ".m4v", expected: "video/x-m4v"},
 		{extension: ".webm", expected: "video/webm"},
-		{extension: ".ogg", expected: "video/ogg"},
+		{extension: ".ogv", expected: "video/ogg"},
 		{extension: ".avi", expected: "video/x-msvideo"},
 		{extension: ".mov", expected: "video/quicktime"},
 		{extension: "mp4", expected: "video/mp4"},
@@ -535,6 +541,36 @@ func TestVideoMIMETypeFromExtension(t *testing.T) {
 			result := VideoMIMETypeFromExtension(tt.extension)
 			if result != tt.expected {
 				t.Errorf("VideoMIMETypeFromExtension(%q) = %q; want %q", tt.extension, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestAudioMIMETypeFromExtension(t *testing.T) {
+	tests := []struct {
+		extension string
+		expected  string
+	}{
+		{extension: ".mp3", expected: "audio/mpeg"},
+		{extension: ".wav", expected: "audio/wav"},
+		{extension: ".flac", expected: "audio/flac"},
+		{extension: ".aac", expected: "audio/aac"},
+		{extension: ".ogg", expected: "audio/ogg"},
+		{extension: ".m4a", expected: "audio/mp4"},
+		{extension: ".wma", expected: "audio/x-ms-wma"},
+		{extension: ".opus", expected: "audio/opus"},
+		{extension: "mp3", expected: "audio/mpeg"},
+		{extension: ".MP3", expected: "audio/mpeg"},
+		{extension: " .wav ", expected: "audio/wav"},
+		{extension: ".unknown", expected: "application/octet-stream"},
+		{extension: "", expected: "application/octet-stream"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.extension, func(t *testing.T) {
+			result := AudioMIMETypeFromExtension(tt.extension)
+			if result != tt.expected {
+				t.Errorf("AudioMIMETypeFromExtension(%q) = %q; want %q", tt.extension, result, tt.expected)
 			}
 		})
 	}
