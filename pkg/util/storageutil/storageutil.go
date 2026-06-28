@@ -119,7 +119,10 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 		return FileTypePDF
 	case ".pptx", ".ppt":
 		return FileTypeSlideshow
-	case ".png", ".jpg", ".jpeg", ".gif", ".svg", ".heic", ".heif", ".webp", ".bmp", ".tiff", ".tif", ".avif":
+	case ".png", ".jpg", ".jpeg", ".gif", ".svg", ".heic", ".heif", ".webp", ".bmp", ".tiff", ".tif", ".avif",
+		// Raw camera formats
+		".cr2", ".cr3", ".nef", ".nrw", ".arw", ".srf", ".sr2",
+		".orf", ".rw2", ".pef", ".dng", ".raf", ".rwl", ".x3f":
 		return FileTypeImage
 	case ".mp4", ".m4v", ".webm", ".ogg", ".ogv", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".3gp", ".3g2", ".mpeg", ".mpg", ".ts":
 		return FileTypeVideo
