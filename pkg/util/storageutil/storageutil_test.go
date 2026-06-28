@@ -451,6 +451,14 @@ func TestDetermineFileTypeFromPath(t *testing.T) {
 		{"notes.abdoc", FileTypeAbdoc},
 		{"archive.zip", FileTypeArchive},
 		{"file.txt", FileTypeText},
+		{"photo.cr2", FileTypeImage},
+		{"photo.cr3", FileTypeImage},
+		{"photo.nef", FileTypeImage},
+		{"photo.arw", FileTypeImage},
+		{"photo.dng", FileTypeImage},
+		{"photo.orf", FileTypeImage},
+		{"photo.rw2", FileTypeImage},
+		{"photo.raw", FileTypeImage},
 		{"song.mp3", FileTypeAudio},
 		{"track.wav", FileTypeAudio},
 		{"music.flac", FileTypeAudio},
@@ -458,6 +466,7 @@ func TestDetermineFileTypeFromPath(t *testing.T) {
 		{"sound.ogg", FileTypeAudio},
 		{"voice.m4a", FileTypeAudio},
 		{"IMAGE.PNG", FileTypeImage},     // Test case insensitivity
+		{"PHOTO.CR2", FileTypeImage},     // RAW case insensitivity
 		{"generic.bin", FileTypeGeneric}, // Unknown/generic type
 	}
 
@@ -468,6 +477,43 @@ func TestDetermineFileTypeFromPath(t *testing.T) {
 				t.Errorf("DetermineFileTypeFromPath(%s) = %s; want %s", tt.path, result, tt.expected)
 			}
 		})
+	}
+}
+
+func TestIsRawImageExtension(t *testing.T) {
+	rawExts := []string{".raw", ".cr2", ".cr3", ".nef", ".arw", ".dng", ".orf", ".rw2"}
+	for _, ext := range rawExts {
+		if !IsRawImageExtension(ext) {
+			t.Errorf("IsRawImageExtension(%q) = false; want true", ext)
+		}
+	}
+	notRaw := []string{".jpg", ".png", ".heic", ".mp4", ".pdf", ""}
+	for _, ext := range notRaw {
+		if IsRawImageExtension(ext) {
+			t.Errorf("IsRawImageExtension(%q) = true; want false", ext)
+		}
+	}
+}
+
+func TestImageMIMEType_RawFormats(t *testing.T) {
+	tests := []struct {
+		ext  string
+		want string
+	}{
+		{".cr2", "image/x-canon-cr2"},
+		{".cr3", "image/x-canon-cr3"},
+		{".nef", "image/x-nikon-nef"},
+		{".arw", "image/x-sony-arw"},
+		{".dng", "image/x-adobe-dng"},
+		{".orf", "image/x-olympus-orf"},
+		{".rw2", "image/x-panasonic-rw2"},
+		{".raw", "image/x-raw"},
+	}
+	for _, tt := range tests {
+		got := ImageMIMETypeFromExtension(tt.ext)
+		if got != tt.want {
+			t.Errorf("ImageMIMETypeFromExtension(%q) = %q; want %q", tt.ext, got, tt.want)
+		}
 	}
 }
 
