@@ -1,3 +1,4 @@
+import 'package:autobutler/pages/audio_player_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/services/cirrus_service.dart';
@@ -108,15 +109,26 @@ class _FileViewerPageState extends State<FileViewerPage> {
           );
 
         case 'video':
-        case 'audio':
-          final url = CirrusService.constructMediaUrl(
+          final videoUrl = CirrusService.constructMediaUrl(
             widget.filePath,
             serial: serial,
           );
           if (!mounted) return;
           Navigator.of(context).pushReplacement(
             MaterialPageRoute<void>(
-              builder: (_) => VideoViewerPage(url: url, name: name),
+              builder: (_) => VideoViewerPage(url: videoUrl, name: name),
+            ),
+          );
+
+        case 'audio':
+          final audioUrl = CirrusService.constructMediaUrl(
+            widget.filePath,
+            serial: serial,
+          );
+          if (!mounted) return;
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute<void>(
+              builder: (_) => AudioPlayerPage(url: audioUrl, name: name),
             ),
           );
 

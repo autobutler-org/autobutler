@@ -31,7 +31,7 @@ func (d *Device) ApplySimpleCategorization() {
 		".pdf": {}, ".doc": {}, ".docx": {}, ".abdoc": {}, ".txt": {}, ".md": {}, ".xls": {}, ".xlsx": {}, ".ppt": {}, ".pptx": {}, ".csv": {},
 	}
 	mediaExts := map[string]struct{}{
-		".jpg": {}, ".jpeg": {}, ".png": {}, ".gif": {}, ".bmp": {}, ".mp4": {}, ".mov": {}, ".avi": {}, ".mkv": {}, ".mp3": {}, ".wav": {}, ".flac": {},
+		".jpg": {}, ".jpeg": {}, ".png": {}, ".gif": {}, ".bmp": {}, ".mp4": {}, ".mov": {}, ".avi": {}, ".mkv": {}, ".mp3": {}, ".wav": {}, ".flac": {}, ".aac": {}, ".ogg": {}, ".m4a": {},
 	}
 	backupExts := map[string]struct{}{
 		".bak": {}, ".backup": {}, ".zip": {}, ".tar": {}, ".gz": {}, ".rar": {},
