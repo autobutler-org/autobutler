@@ -1451,7 +1451,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             serial: serial,
           ),
         );
+        // Navigate back to the folder — ImageViewerPage closes via Navigator.pop
+        // and does not reset the URL, so go_router would re-evaluate the file
+        // path as a directory and show an empty listing otherwise.
         if (!mounted) return;
+        context.go(AppRoutes.cirrusPath(parentPath(filePath)));
         return;
 
       case 'video':
@@ -1467,6 +1471,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           builder: (_, _) => VideoViewerPage(url: url, name: fileName),
         );
         if (!mounted) return;
+        context.go(AppRoutes.cirrusPath(parentPath(filePath)));
         return;
 
       default:
