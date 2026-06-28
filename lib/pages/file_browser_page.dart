@@ -5,7 +5,10 @@ import 'package:autobutler/controllers/file_browser_cache.dart';
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
+import 'package:autobutler/pages/generic_file_viewer_page.dart';
+import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/spreadsheet_editor_page.dart';
+import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
@@ -904,6 +907,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    // When inside an archive, preview files inline where possible.
+    if (_archiveContext != null) {
+      await _openArchiveFile(node);
+      return;
+    }
+
     // Navigate into archives as virtual directories.
     if (node.fileType == 'archive') {
       _openArchive(node);
@@ -939,10 +948,75 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    // Generic / unsupported file types — show a detail view with download and
+    // "Open with" actions instead of silently failing.
+    if (node.fileType == 'generic' || node.fileType.isEmpty) {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => GenericFileViewerPage(node: node),
+        ),
+      );
+      return;
+    }
+
     // All other file types — navigate to /cirrus/<path> which resolves the
     // file type via FileViewerPage and opens the correct viewer. This updates
     // the URL bar so the link is always shareable.
     _openFileViaRoute(node.apiPath);
+  }
+
+  static const _kImageExtensions = {
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.gif',
+    '.bmp',
+    '.webp',
+    '.tiff',
+    '.tif',
+  };
+
+  Future<void> _openArchiveFile(CirrusFileNode node) async {
+    final archive = _archiveContext!;
+    final entryPath = archive.subPath.isEmpty
+        ? node.name
+        : '${archive.subPath}/${node.name}';
+    final ext = node.name.contains('.')
+        ? '.${node.name.split('.').last.toLowerCase()}'
+        : '';
+
+    try {
+      final bytes = await CirrusService.downloadArchiveFileBytes(
+        archive.archivePath,
+        entryPath,
+      );
+      if (bytes == null || !mounted) return;
+
+      if (_kImageExtensions.contains(ext)) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ImageViewerPage(bytes: bytes, name: node.name),
+          ),
+        );
+        return;
+      }
+
+      if (_kTextExtensions.contains(ext)) {
+        final text = utf8.decode(bytes, allowMalformed: true);
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => _ArchiveTextPreview(name: node.name, text: text),
+          ),
+        );
+        return;
+      }
+
+      // Fallback: download the file.
+      await CirrusService.saveBytesToFile(bytes, node.name);
+      if (mounted) _showMessage('Downloaded ${node.name}');
+    } catch (e) {
+      if (mounted) _showMessage('Failed to open file: $e');
+    }
   }
 
   void _openDirectory(CirrusFileNode node) {
@@ -1356,10 +1430,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     // Stat the backend to resolve the real type.
     late final bool isDir;
     late final String fileType;
+    late final String fileName;
     try {
       final stat = await CirrusService.statFile(filePath);
       isDir = stat.isDir;
       fileType = stat.fileType;
+      fileName = stat.name.isEmpty ? filePath.split('/').last : stat.name;
     } on CirrusRequestException catch (error) {
       if (!mounted) return;
       if (isLikelyFilePath(filePath)) {
@@ -1420,6 +1496,73 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         );
         if (!mounted) return;
         return;
+
+      case 'generic':
+        final name = filePath.split('/').last;
+        final node = CirrusFileNode(
+          name: name,
+          size: 0,
+          isDir: false,
+          deviceName: '',
+          devicePath: '',
+          deviceSerial: '',
+          dirPath: filePath,
+          fileType: fileType,
+        );
+        FileBrowserCache.instance.markFileOpen(filePath);
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => GenericFileViewerPage(node: node),
+          ),
+        );
+        return;
+
+      case 'image':
+        final serials = _serialsForActiveDevices();
+        final serial = serials.isNotEmpty ? serials.first : null;
+        final bytes = await CirrusService.downloadFileBytes(
+          filePath,
+          serial: serial,
+        );
+        if (!mounted) return;
+        if (bytes == null) {
+          setState(() {
+            _routeFailure = _CirrusRouteFailure(
+              requestedPath: filePath,
+              isFileRoute: true,
+            );
+          });
+          return;
+        }
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: (_, _) => ImageViewerPage(
+            bytes: bytes,
+            name: fileName,
+            relPath: filePath,
+            serial: serial,
+          ),
+        );
+        if (!mounted) return;
+        context.go(AppRoutes.cirrusPath(parentPath(filePath)));
+        return;
+
+      case 'video':
+      case 'audio':
+        final videoSerials = _serialsForActiveDevices();
+        final videoSerial = videoSerials.isNotEmpty ? videoSerials.first : null;
+        final url = CirrusService.constructMediaUrl(
+          filePath,
+          serial: videoSerial,
+        );
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: (_, _) => VideoViewerPage(url: url, name: fileName),
+        );
+        if (!mounted) return;
+        context.go(AppRoutes.cirrusPath(parentPath(filePath)));
+        return;
+
       default:
         setState(() {
           _routeFailure = _CirrusRouteFailure(
@@ -1908,4 +2051,24 @@ class _ArchiveContext {
 
   /// Device serial of the device that holds the archive.
   final String archiveSerial;
+}
+
+class _ArchiveTextPreview extends StatelessWidget {
+  const _ArchiveTextPreview({required this.name, required this.text});
+  final String name;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(name)),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: SelectableText(
+          text,
+          style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+        ),
+      ),
+    );
+  }
 }
