@@ -68,14 +68,14 @@ class DataSheet extends StatelessWidget {
   });
 
   DataSheet.unnamed({super.key})
-    : table = DataTable([]),
-      beforeCellValueChanged = null,
-      afterCellValueChanged = null,
-      controller = null,
-      columnWidths = null,
-      controlScheme = null,
-      showHeadings = true,
-      showFormulaBar = true;
+      : table = DataTable([]),
+        beforeCellValueChanged = null,
+        afterCellValueChanged = null,
+        controller = null,
+        columnWidths = null,
+        controlScheme = null,
+        showHeadings = true,
+        showFormulaBar = true;
 
   @override
   Widget build(BuildContext context) {
@@ -398,9 +398,8 @@ class _DataSheetViewState extends State<_DataSheetView> {
             listenable: controller,
             builder: (context, _) {
               final totalW = _totalContentWidth();
-              final scrollW = totalW < constraints.maxWidth
-                  ? constraints.maxWidth
-                  : totalW;
+              final scrollW =
+                  totalW < constraints.maxWidth ? constraints.maxWidth : totalW;
               return Column(
                 children: [
                   // ── Formula bar ─────────────────────────────────────
@@ -418,19 +417,17 @@ class _DataSheetViewState extends State<_DataSheetView> {
                             event.scrollDelta.dx != 0) {
                           GestureBinding.instance.pointerSignalResolver
                               .register(event, (PointerSignalEvent e) {
-                                final dx =
-                                    (e as PointerScrollEvent).scrollDelta.dx;
-                                if (!_horizontalScrollController.hasClients) {
-                                  return;
-                                }
-                                final pos =
-                                    _horizontalScrollController.position;
-                                final next = (pos.pixels + dx).clamp(
-                                  0.0,
-                                  pos.maxScrollExtent,
-                                );
-                                _horizontalScrollController.jumpTo(next);
-                              });
+                            final dx = (e as PointerScrollEvent).scrollDelta.dx;
+                            if (!_horizontalScrollController.hasClients) {
+                              return;
+                            }
+                            final pos = _horizontalScrollController.position;
+                            final next = (pos.pixels + dx).clamp(
+                              0.0,
+                              pos.maxScrollExtent,
+                            );
+                            _horizontalScrollController.jumpTo(next);
+                          });
                         }
                       },
                       child: SingleChildScrollView(
@@ -448,8 +445,7 @@ class _DataSheetViewState extends State<_DataSheetView> {
                                   itemCount: controller.rowCount,
                                   itemBuilder: (context, r) {
                                     return ValueListenableBuilder<
-                                      List<DataCell>
-                                    >(
+                                        List<DataCell>>(
                                       valueListenable: controller.rowNotifier(
                                         r,
                                       ),
@@ -628,7 +624,7 @@ class _DataSheetViewState extends State<_DataSheetView> {
     if (changedRow < 0 || changedCol < 0) return;
     final isChangeAccepted =
         widget.beforeCellValueChanged?.call(value, changedRow, changedCol) ??
-        true;
+            true;
     if (isChangeAccepted) {
       controller.updateCell(changedRow, changedCol, DataCell(value));
     }
