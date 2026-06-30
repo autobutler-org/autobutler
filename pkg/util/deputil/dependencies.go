@@ -7,6 +7,7 @@ import (
 	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/pkg/botel/exporters/botelsqlite"
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
+	"github.com/autobutler-org/autobutler/pkg/util/iosemutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 	"github.com/autobutler-org/autobutler/pkg/util/vaultcrypto"
 	"github.com/autobutler-org/autobutler/pkg/util/workerutil"
@@ -17,6 +18,7 @@ type Dependencies interface {
 	EventBus() *eventbus.Bus
 	FileIndex() *storageutil.FileIndex
 	HealthDatabase() *db.DatabaseRaw
+	IOSemaphore() *iosemutil.Semaphore
 	MetricsExporter() *botelsqlite.TraceExporter
 	StorageService() *storageutil.StorageService
 	VaultDB() *db.DatabaseSqlc
@@ -26,6 +28,7 @@ type Dependencies interface {
 	WithEventBus(b *eventbus.Bus) Dependencies
 	WithFileIndex(idx *storageutil.FileIndex) Dependencies
 	WithHealthDatabase(healthDatabase *db.DatabaseRaw) Dependencies
+	WithIOSemaphore(sem *iosemutil.Semaphore) Dependencies
 	WithMetricsExporter(exporter *botelsqlite.TraceExporter) Dependencies
 	WithStorageService(s *storageutil.StorageService) Dependencies
 	SetVaultDB(database *db.DatabaseSqlc)
@@ -39,6 +42,7 @@ type dependencies struct {
 	eventBus        *eventbus.Bus
 	fileIndex       *storageutil.FileIndex
 	healthDatabase  *db.DatabaseRaw
+	ioSemaphore     *iosemutil.Semaphore
 	metricsExporter *botelsqlite.TraceExporter
 	storageService  *storageutil.StorageService
 	vaultDB         *db.DatabaseSqlc
@@ -66,6 +70,7 @@ func DefaultDependencies() (Dependencies, error) {
 	deps.WithStorageService(storageutil.NewStorageService(storageutil.NewDetector())) // coverage: ignore
 	deps.WithEventBus(eventbus.New())                                                 // coverage: ignore
 	deps.WithVaultSession(vaultcrypto.NewVaultSession())                              // coverage: ignore
+	deps.WithIOSemaphore(iosemutil.New())                                             // coverage: ignore
 	return deps, nil                                                                  // coverage: ignore - requires database connection
 }
 
@@ -118,6 +123,15 @@ func (d *dependencies) FileIndex() *storageutil.FileIndex {
 
 func (d *dependencies) HealthDatabase() *db.DatabaseRaw {
 	return d.healthDatabase
+}
+
+func (d *dependencies) IOSemaphore() *iosemutil.Semaphore {
+	return d.ioSemaphore
+}
+
+func (d *dependencies) WithIOSemaphore(sem *iosemutil.Semaphore) Dependencies {
+	d.ioSemaphore = sem
+	return d
 }
 
 func (d *dependencies) MetricsExporter() *botelsqlite.TraceExporter {

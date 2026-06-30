@@ -2,10 +2,10 @@ package v1_files
 
 import (
 	"archive/zip"
-	"bytes"
 	"fmt"
 	"image"
 	"image/jpeg"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -77,6 +77,24 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 	wantsJPEG := c.Query("format") == "jpeg"
 
 	if wantsJPEG && result.FileType == storageutil.FileTypeImage {
+		// Acquire IO semaphore: JPEG conversion is the most memory-intensive IO
+		// path (full uncompressed image.Image decode + re-encode). Limit
+		// concurrency to prevent RAM spikes and disk thrashing under concurrent
+		// load — especially on spinning HDDs.
+		if sem := deps.IOSemaphore(); sem != nil {
+			if !sem.AcquireDefault(c.Request.Context()) {
+				slog.Warn("download: IO semaphore timed out for JPEG conversion",
+					"path", result.FullPath,
+					"available", sem.Available(),
+					"cap", sem.Cap(),
+				)
+				c.Header("Retry-After", "5")
+				c.JSON(http.StatusServiceUnavailable, gin.H{"error": "server busy, please retry"})
+				return nil
+			}
+			defer sem.Release()
+		}
+
 		baseName := strings.TrimSuffix(filepath.Base(result.FullPath), ext) + ".jpg"
 
 		if photoutil.IsRawFile(result.FullPath) {
@@ -94,13 +112,15 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 			return serverutil.InternalServerError(fmt.Errorf("failed to decode image: %w", err))
 		}
 
-		var buf bytes.Buffer
-		if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 92}); err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("failed to encode JPEG: %w", err))
-		}
-
+		// Stream directly to the response writer — avoids a full bytes.Buffer
+		// allocation on top of the already-large decoded image.Image.
 		c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", baseName))
-		c.Data(http.StatusOK, "image/jpeg", buf.Bytes())
+		c.Header("Content-Type", "image/jpeg")
+		c.Status(http.StatusOK)
+		if err := jpeg.Encode(c.Writer, img, &jpeg.Options{Quality: 92}); err != nil {
+			// Headers already committed; log only.
+			slog.Error("download: JPEG stream encode failed", "path", result.FullPath, "err", err)
+		}
 		return nil
 	}
 
