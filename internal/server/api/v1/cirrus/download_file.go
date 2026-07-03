@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/jpeg"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -77,6 +77,24 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 	wantsJPEG := c.Query("format") == "jpeg"
 
 	if wantsJPEG && result.FileType == storageutil.FileTypeImage {
+		// Acquire IO semaphore: JPEG conversion is the most memory-intensive IO
+		// path (full uncompressed image.Image decode + re-encode). Limit
+		// concurrency to prevent RAM spikes and disk thrashing under concurrent
+		// load — especially on spinning HDDs.
+		if sem := deps.IOSemaphore(); sem != nil {
+			if !sem.AcquireDefault(c.Request.Context()) {
+				slog.Warn("download: IO semaphore timed out for JPEG conversion",
+					"path", result.FullPath,
+					"available", sem.Available(),
+					"cap", sem.Cap(),
+				)
+				c.Header("Retry-After", "5")
+				c.JSON(http.StatusServiceUnavailable, gin.H{"error": "server busy, please retry"})
+				return nil
+			}
+			defer sem.Release()
+		}
+
 		baseName := strings.TrimSuffix(filepath.Base(result.FullPath), ext) + ".jpg"
 
 		if photoutil.IsRawFile(result.FullPath) {
@@ -98,8 +116,8 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 		c.Header("Content-Type", "image/jpeg")
 		c.Status(http.StatusOK)
 		if err := jpeg.Encode(c.Writer, img, &jpeg.Options{Quality: 92}); err != nil {
-			// Headers already written; log but cannot change status
-			log.Printf("autobutler: jpeg encode to writer: %v", err)
+			// Headers already committed; log only.
+			slog.Error("download: JPEG stream encode failed", "path", result.FullPath, "err", err)
 		}
 		return nil
 	}

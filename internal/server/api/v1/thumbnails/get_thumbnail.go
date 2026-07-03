@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"image/jpeg"
 	"image/png"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -180,6 +181,21 @@ var getThumbnailRoute = serverutil.ApiRoute(
 		cacheHit := cacheErr == nil && cachedInfo.ModTime().After(srcInfo.ModTime())
 
 		if !cacheHit {
+			// Acquire IO semaphore before disk-bound thumbnail generation.
+			if sem := deps.IOSemaphore(); sem != nil {
+				if !sem.AcquireDefault(c.Request.Context()) {
+					slog.Warn("thumbnail: IO semaphore timed out",
+						"path", filePath,
+						"available", sem.Available(),
+						"cap", sem.Cap(),
+					)
+					c.Header("Retry-After", "5")
+					c.JSON(http.StatusServiceUnavailable, gin.H{"error": "server busy, please retry"})
+					return nil
+				}
+				defer sem.Release()
+			}
+
 			// Generate the thumbnail at the requested size.
 			result, err := photoutil.GenerateThumbnail(photoutil.GenerateThumbnailParams{
 				FilePath: fullPath,
