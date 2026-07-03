@@ -2,10 +2,10 @@ package v1_files
 
 import (
 	"archive/zip"
-	"bytes"
 	"fmt"
 	"image"
 	"image/jpeg"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -94,13 +94,13 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 			return serverutil.InternalServerError(fmt.Errorf("failed to decode image: %w", err))
 		}
 
-		var buf bytes.Buffer
-		if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 92}); err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("failed to encode JPEG: %w", err))
-		}
-
 		c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", baseName))
-		c.Data(http.StatusOK, "image/jpeg", buf.Bytes())
+		c.Header("Content-Type", "image/jpeg")
+		c.Status(http.StatusOK)
+		if err := jpeg.Encode(c.Writer, img, &jpeg.Options{Quality: 92}); err != nil {
+			// Headers already written; log but cannot change status
+			log.Printf("autobutler: jpeg encode to writer: %v", err)
+		}
 		return nil
 	}
 
