@@ -27,8 +27,9 @@ var authRateLimiter = ratelimitutil.New()
 
 // vaultRateLimiter protects /vault/unlock from master-password brute-force.
 // Tighter than the general auth limiter: 1 req/2s per IP, burst 5.
-// Combined with Argon2id (~300 ms/attempt), this limits guessing to
-// ≈ 2.5 attempts per second before the limiter engages.
+// After exhausting the burst, the steady-state cap is 0.5 req/s (one every 2s).
+// Combined with Argon2id (~300 ms/attempt), sustained guessing is limited to
+// ≈ 30 attempts/minute per IP — well below what any offline attack would need.
 var vaultRateLimiter = ratelimitutil.NewWithRate(0.5, 5)
 
 // authRateLimitedPaths are the API paths that require rate limiting.
