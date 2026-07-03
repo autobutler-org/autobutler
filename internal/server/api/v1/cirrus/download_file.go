@@ -112,8 +112,6 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 			return serverutil.InternalServerError(fmt.Errorf("failed to decode image: %w", err))
 		}
 
-		// Stream directly to the response writer — avoids a full bytes.Buffer
-		// allocation on top of the already-large decoded image.Image.
 		c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", baseName))
 		c.Header("Content-Type", "image/jpeg")
 		c.Status(http.StatusOK)
