@@ -311,7 +311,7 @@ serve/backend: generate/backend ## Serve backend
 	AUTOBUTLER_INSECURE=true $(GO) run $(ENTRYPOINT) serve
 
 .PHONY: serve/backend/secure
-serve/backend/secure: generate/backend ## Serve backend without TLS (local dev only)
+serve/backend/secure: generate/backend ## Serve backend with TLS enabled
 	$(GO) run $(ENTRYPOINT) serve
 
 .PHONY: serve/frontend
