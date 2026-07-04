@@ -7,9 +7,7 @@ import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
 import 'package:autobutler/pages/generic_file_viewer_page.dart';
-import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/spreadsheet_editor_page.dart';
-import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/cirrus_service.dart';
@@ -1050,69 +1048,23 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
-    // ── Video files (#1181) ─────────────────────────────────────────────────
-    if (node.fileType == 'video') {
-      final url = CirrusService.constructMediaUrl(
-        node.apiPath,
-        serial: node.deviceSerial.isEmpty ? null : node.deviceSerial,
-      );
-      if (!mounted) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => VideoViewerPage(url: url, name: node.name),
-        ),
-      );
-      return;
-    }
-
-    // ── Image files (#1183) ─────────────────────────────────────────────────
-    if (node.fileType == 'image') {
-      Uint8List? bytes;
-      try {
-        bytes = await CirrusService.downloadFileBytes(
-          node.apiPath,
-          serial: node.deviceSerial.isEmpty ? null : node.deviceSerial,
-        );
-      } catch (e) {
-        if (!mounted) return;
-        _showMessage('Failed to load image: $e');
-        return;
-      }
-      if (bytes == null || !mounted) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => ImageViewerPage(
-            bytes: bytes!,
-            name: node.name,
-            relPath: node.apiPath,
-            serial: node.deviceSerial.isEmpty ? null : node.deviceSerial,
-          ),
-        ),
-      );
+    // ── Media files: video (#1181), image (#1183), audio (#1185) ───────────
+    // Delegate to FileViewerPage via the canonical /cirrus/<path> route.
+    // FileViewerPage resolves the file type and opens the right viewer.
+    if (node.fileType == 'video' ||
+        node.fileType == 'image' ||
+        node.fileType == 'audio') {
+      _openFileViaRoute(node.apiPath);
       return;
     }
 
     // ── PDF / document files (#1184) ────────────────────────────────────────
-    if (node.fileType == 'pdf' || node.fileType == 'document' ||
-        node.fileType == 'docx' || node.fileType == 'epub' ||
+    if (node.fileType == 'pdf' ||
+        node.fileType == 'document' ||
+        node.fileType == 'docx' ||
+        node.fileType == 'epub' ||
         node.fileType == 'slideshow') {
       await _openWithSystemApp(node);
-      return;
-    }
-
-    // ── Audio files (#1185) ─────────────────────────────────────────────────
-    if (node.fileType == 'audio') {
-      // Audio can be streamed via VideoViewerPage (video_player handles audio).
-      final url = CirrusService.constructMediaUrl(
-        node.apiPath,
-        serial: node.deviceSerial.isEmpty ? null : node.deviceSerial,
-      );
-      if (!mounted) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => VideoViewerPage(url: url, name: node.name),
-        ),
-      );
       return;
     }
 

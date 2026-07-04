@@ -122,32 +122,32 @@ final router = GoRouter(
       routes: [
         GoRoute(
           // Matches /cirrus/<anything>, including slashes.
-          // Always renders FileBrowserPage so go_router owns the page and
-          // URL changes (back, go-up, breadcrumb) correctly trigger
-          // didUpdateWidget. FileBrowserPage._openPendingFile stats the path
-          // and launches the right viewer for files.
-          path: ':path(.*)',
-          builder: (context, state) {
-            final raw = state.pathParameters['path'] ?? '';
-            final filePath = Uri.decodeComponent(raw);
-            return FileBrowserPage(initialPath: filePath);
-          },
-        ),
-      ],
-    ),
-    GoRoute(
-      path: AppRoutes.viewFile,
-      builder: (context, state) => const FileViewerPage(filePath: ''),
-      routes: [
-        GoRoute(
-          // Matches /view/<anything including slashes> — resolves file type and
-          // opens the appropriate viewer (image, video, doc, sheet, etc.).
+          // FileViewerPage resolves the file type and navigates to the right viewer.
           path: ':path(.*)',
           builder: (context, state) {
             final raw = state.pathParameters['path'] ?? '';
             final filePath = Uri.decodeComponent(raw);
             final serial = state.uri.queryParameters['serial'] ?? '';
             return FileViewerPage(filePath: filePath, deviceSerial: serial);
+          },
+        ),
+      ],
+    ),
+    // /view is kept for backward compatibility — redirects to /cirrus/:path.
+    GoRoute(
+      path: AppRoutes.viewFile,
+      redirect: (context, state) => AppRoutes.cirrus,
+      routes: [
+        GoRoute(
+          path: ':path(.*)',
+          redirect: (context, state) {
+            // path already contains decoded slashes from the .* wildcard.
+            final raw = state.pathParameters['path'] ?? '';
+            final serial = state.uri.queryParameters['serial'];
+            final base = '${AppRoutes.cirrus}/$raw';
+            return (serial != null && serial.isNotEmpty)
+                ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
+                : base;
           },
         ),
       ],
