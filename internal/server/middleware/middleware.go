@@ -25,6 +25,13 @@ import (
 // brute-force attacks. Shared across all requests — 5 req/s per IP, burst 10.
 var authRateLimiter = ratelimitutil.New()
 
+// vaultRateLimiter protects /vault/unlock from master-password brute-force.
+// Tighter than the general auth limiter: 1 req/2s per IP, burst 5.
+// After exhausting the burst, the steady-state cap is 0.5 req/s (one every 2s).
+// Combined with Argon2id (~300 ms/attempt), sustained guessing is limited to
+// ≈ 30 attempts/minute per IP — well below what any offline attack would need.
+var vaultRateLimiter = ratelimitutil.NewWithRate(0.5, 5)
+
 // authRateLimitedPaths are the API paths that require rate limiting.
 var authRateLimitedPaths = map[string]bool{
 	"/api/v1/auth/login":           true,
@@ -33,14 +40,29 @@ var authRateLimitedPaths = map[string]bool{
 	"/api/v1/storage/devices/role": true,
 }
 
+// vaultRateLimitedPaths are the API paths that use the stricter vault limiter.
+var vaultRateLimitedPaths = map[string]bool{
+	"/api/v1/vault/unlock": true,
+}
+
 // rateLimit is a middleware that enforces per-IP rate limiting on auth endpoints.
 func rateLimit() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if !authRateLimitedPaths[c.Request.URL.Path] {
+		ip := ratelimitutil.ExtractIP(c.ClientIP())
+		path := c.Request.URL.Path
+		if vaultRateLimitedPaths[path] {
+			if !vaultRateLimiter.Allow(ip) {
+				c.JSON(http.StatusTooManyRequests, gin.H{"error": "too many requests, please slow down"})
+				c.Abort()
+				return
+			}
 			c.Next()
 			return
 		}
-		ip := ratelimitutil.ExtractIP(c.ClientIP())
+		if !authRateLimitedPaths[path] {
+			c.Next()
+			return
+		}
 		if !authRateLimiter.Allow(ip) {
 			c.JSON(http.StatusTooManyRequests, gin.H{"error": "too many requests, please slow down"})
 			c.Abort()
