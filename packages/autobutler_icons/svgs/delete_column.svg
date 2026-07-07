@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="100%" height="100%" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;">
+<svg width="100%" height="100%" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
     <g id="Stack---Column" serif:id="Stack - Column">
-        <path d="M6,4L6,16C6,16.552 5.552,17 5,17L4,17C3.448,17 3,16.552 3,16L3,4C3,3.448 3.448,3 4,3L5,3C5.552,3 6,3.448 6,4Z" style="fill:none;stroke:black;stroke-width:1.75px;"/>
-        <path d="M10.5,4L10.5,16C10.5,16.552 10.052,17 9.5,17L8.5,17C7.948,17 7.5,16.552 7.5,16L7.5,4C7.5,3.448 7.948,3 8.5,3L9.5,3C10.052,3 10.5,3.448 10.5,4Z" style="fill:none;stroke:black;stroke-width:1.75px;"/>
-        <path d="M15,4L15,16C15,16.552 14.552,17 14,17L13,17C12.448,17 12,16.552 12,16L12,4C12,3.448 12.448,3 13,3L14,3C14.552,3 15,3.448 15,4Z" style="fill:none;stroke:black;stroke-width:1.75px;"/>
+        <path d="M6.875,4L6.875,16C6.875,17.035 6.035,17.875 5,17.875L4,17.875C2.965,17.875 2.125,17.035 2.125,16L2.125,4C2.125,2.965 2.965,2.125 4,2.125L5,2.125C6.035,2.125 6.875,2.965 6.875,4ZM5.125,4C5.125,3.931 5.069,3.875 5,3.875L4,3.875C3.931,3.875 3.875,3.931 3.875,4L3.875,16C3.875,16.069 3.931,16.125 4,16.125L5,16.125C5.069,16.125 5.125,16.069 5.125,16L5.125,4Z"/>
+        <path d="M11.375,4L11.375,16C11.375,17.035 10.535,17.875 9.5,17.875L8.5,17.875C7.465,17.875 6.625,17.035 6.625,16L6.625,4C6.625,2.965 7.465,2.125 8.5,2.125L9.5,2.125C10.535,2.125 11.375,2.965 11.375,4ZM9.625,4C9.625,3.931 9.569,3.875 9.5,3.875L8.5,3.875C8.431,3.875 8.375,3.931 8.375,4L8.375,16C8.375,16.069 8.431,16.125 8.5,16.125L9.5,16.125C9.569,16.125 9.625,16.069 9.625,16L9.625,4Z"/>
+        <path d="M15.875,4L15.875,16C15.875,17.035 15.035,17.875 14,17.875L13,17.875C11.965,17.875 11.125,17.035 11.125,16L11.125,4C11.125,2.965 11.965,2.125 13,2.125L14,2.125C15.035,2.125 15.875,2.965 15.875,4ZM14.125,4C14.125,3.931 14.069,3.875 14,3.875L13,3.875C12.931,3.875 12.875,3.931 12.875,4L12.875,16C12.875,16.069 12.931,16.125 13,16.125L14,16.125C14.069,16.125 14.125,16.069 14.125,16L14.125,4Z"/>
     </g>
     <g id="Trash-Can" serif:id="Trash Can">
         <rect x="17" y="17" width="4" height="1"/>
