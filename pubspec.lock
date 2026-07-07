@@ -32,6 +32,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.13.0"
+  autobutler_icons:
+    dependency: "direct main"
+    description:
+      path: "packages/autobutler_icons"
+      relative: true
+    source: path
+    version: "0.1.0"
   barcode:
     dependency: transitive
     description:

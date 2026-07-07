@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
+import 'package:flutter/material.dart' hide Icons;
 
 import 'data_sheet_controller.dart';
 
@@ -47,59 +48,65 @@ class DataSheetControlBar extends StatelessWidget {
               children: [
                 // ── Structure ──────────────────────────────────────────────
                 _group([
-                  _btn(Icons.add, 'Add row', controller.addRow),
-                  _btn(Icons.view_column, 'Add column', controller.addColumn),
+                  // Append row / column
+                  _btn(AutobutlerIcons.add_row, 'Add row', controller.addRow),
+                  _btn(AutobutlerIcons.add_column, 'Add column',
+                      controller.addColumn),
+                  // Insert row before/after selected row
                   _btn(
-                    Icons.playlist_add,
+                    AutobutlerIcons.insert_row_above,
                     'Insert row before',
                     hasRow
                         ? () => controller.insertRowAt(sel.contextRow)
                         : null,
                   ),
                   _btn(
-                    Icons.post_add,
+                    AutobutlerIcons.insert_row_below,
                     'Insert row after',
                     hasRow
                         ? () => controller.insertRowAt(sel.contextRow + 1)
                         : null,
                   ),
+                  // Insert column before/after selected column
                   _btn(
-                    Icons.table_rows_outlined,
+                    AutobutlerIcons.insert_column_left,
                     'Insert column before',
                     hasCol
                         ? () => controller.insertColumnAt(sel.contextCol)
                         : null,
                   ),
                   _btn(
-                    Icons.view_week_outlined,
+                    AutobutlerIcons.insert_column_right,
                     'Insert column after',
                     hasCol
                         ? () => controller.insertColumnAt(sel.contextCol + 1)
                         : null,
                   ),
+                  // Delete row / column
                   _btn(
-                    Icons.delete_sweep,
+                    AutobutlerIcons.delete_row,
                     'Delete row',
                     hasRow
                         ? () => controller.deleteRowAt(sel.contextRow)
                         : null,
                   ),
                   _btn(
-                    Icons.delete_outline,
+                    AutobutlerIcons.delete_column,
                     'Delete column',
                     hasCol
                         ? () => controller.deleteColumnAt(sel.contextCol)
                         : null,
                   ),
+                  // Duplicate row / column
                   _btn(
-                    Icons.content_copy,
+                    AutobutlerIcons.duplicate_row,
                     'Duplicate row',
                     hasRow
                         ? () => controller.duplicateRow(sel.contextRow)
                         : null,
                   ),
                   _btn(
-                    Icons.copy_all,
+                    AutobutlerIcons.duplicate_column,
                     'Duplicate column',
                     hasCol
                         ? () => controller.duplicateColumn(sel.contextCol)
@@ -110,29 +117,29 @@ class DataSheetControlBar extends StatelessWidget {
                 // ── Edit ───────────────────────────────────────────────────
                 _group([
                   _btn(
-                    Icons.undo,
+                    AutobutlerIcons.undo,
                     'Undo',
                     controller.canUndo ? controller.undo : null,
                   ),
                   _btn(
-                    Icons.redo,
+                    AutobutlerIcons.redo,
                     'Redo',
                     controller.canRedo ? controller.redo : null,
                   ),
                   _btn(
-                    Icons.clear_all,
+                    AutobutlerIcons.clear_row,
                     'Clear row',
                     hasRow ? () => controller.clearRow(sel.contextRow) : null,
                   ),
                   _btn(
-                    Icons.border_clear,
+                    AutobutlerIcons.clear_column,
                     'Clear column',
                     hasCol
                         ? () => controller.clearColumn(sel.contextCol)
                         : null,
                   ),
                   _btn(
-                    Icons.arrow_downward,
+                    AutobutlerIcons.fill_down,
                     'Fill down',
                     hasCell
                         ? () => controller.fillDown(
@@ -142,7 +149,7 @@ class DataSheetControlBar extends StatelessWidget {
                         : null,
                   ),
                   _btn(
-                    Icons.arrow_forward,
+                    AutobutlerIcons.fill_right,
                     'Fill right',
                     hasCell
                         ? () => controller.fillRight(
@@ -156,7 +163,7 @@ class DataSheetControlBar extends StatelessWidget {
                 // ── Data ───────────────────────────────────────────────────
                 _group([
                   _btn(
-                    Icons.sort,
+                    AutobutlerIcons.sort,
                     'Sort…',
                     hasData
                         ? () => _showSortDialog(
@@ -167,17 +174,17 @@ class DataSheetControlBar extends StatelessWidget {
                         : null,
                   ),
                   _btn(
-                    Icons.filter_list_off,
+                    AutobutlerIcons.remove_duplicates,
                     'Remove duplicate rows',
                     hasData ? controller.removeDuplicateRows : null,
                   ),
                   _btn(
-                    Icons.find_replace,
+                    AutobutlerIcons.find_replace,
                     'Find & replace…',
                     () => _showFindReplaceDialog(context, controller),
                   ),
                   _btn(
-                    Icons.my_location,
+                    AutobutlerIcons.go_to_cell,
                     'Go to cell…',
                     hasData
                         ? () => _showGoToCellDialog(context, controller)
@@ -188,14 +195,14 @@ class DataSheetControlBar extends StatelessWidget {
                 // ── Import / Export ────────────────────────────────────────
                 _group([
                   _btn(
-                    Icons.download,
+                    AutobutlerIcons.export_csv,
                     'Export CSV',
                     hasData
                         ? () => _showExportCsvDialog(context, controller)
                         : null,
                   ),
                   _btn(
-                    Icons.upload,
+                    AutobutlerIcons.import_csv,
                     'Import CSV…',
                     () => _showImportCsvDialog(context, controller),
                   ),

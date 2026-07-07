@@ -5,6 +5,7 @@ import 'package:autobutler/utils/cirrus_route_path_utils.dart';
 import 'package:autobutler/widgets/core/autobutler_file_icon.dart';
 import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 
 /// A horizontally-scrolling strip showing recently uploaded files.
 /// Displayed at the root of the file browser (not in search mode).
@@ -84,7 +85,7 @@ class _RecentFilesSectionState extends State<RecentFilesSection> {
               Row(
                 children: [
                   Icon(
-                    Icons.schedule_rounded,
+                    AutobutlerIcons.schedule_rounded,
                     size: 14,
                     color: colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
@@ -201,7 +202,7 @@ class _RecentFileChip extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.all(4),
                         child: Icon(
-                          Icons.folder_open_rounded,
+                          AutobutlerIcons.folder_open_rounded,
                           size: 14,
                           color: colorScheme.onSurface.withValues(alpha: 0.4),
                         ),

@@ -168,6 +168,14 @@ setup/hooks: ## Install git hooks
 	ln -sf "$(PWD)/git/hooks/pre-commit" .git/hooks/pre-commit
 	echo "✅ Git hooks installed"
 
+.PHONY: setup/node
+setup/node: ## Install and use the Node.js version from .nvmrc via nvm
+	if [ ! -s "$$HOME/.nvm/nvm.sh" ]; then
+		echo "nvm is not installed. See https://github.com/nvm-sh/nvm#installing-and-updating"
+		exit 1
+	fi
+	. "$$HOME/.nvm/nvm.sh" && nvm install && nvm use
+
 ##@ Development
 
 .PHONY: build
@@ -254,11 +262,20 @@ generate/backend/swagger: ## Generate Swagger docs
 	swag init -g ./cmd/autobutler/main.go -o ./docs/swagger --parseInternal
 
 .PHONY: generate/frontend
-generate/frontend: generate/frontend/icons generate/frontend/sbom ## Generate frontend files
+generate/frontend: generate/frontend/icons generate/frontend/autobutler-icons generate/frontend/sbom ## Generate frontend files
 
 .PHONY: generate/frontend/icons
 generate/frontend/icons: ## Generate app icons
 	dart run flutter_launcher_icons
+
+.PHONY: generate/frontend/autobutler-icons
+generate/frontend/autobutler-icons: ## Regenerate AutobutlerIcons.ttf from SVGs using fantasticon
+	npx fantasticon packages/autobutler_icons/svgs \
+		--output packages/autobutler_icons/fonts \
+		--font-types ttf \
+		--name AutobutlerIcons \
+		--config packages/autobutler_icons/.fantasticonrc.json \
+		--normalize
 
 .PHONY: generate/frontend/sbom
 generate/frontend/sbom: ## Generate Flutter SBOM asset from pubspec.lock
@@ -496,7 +513,7 @@ check/format/go: ## Check Go code formatting
 check/lint: check/lint/flutter check/lint/go check/lint/sqlc ## Check code quality
 
 .PHONY: check/lint/flutter
-check/lint/flutter: generate/frontend ## Lint Flutter/Dart code
+check/lint/flutter: generate/frontend/icons generate/frontend/sbom ## Lint Flutter/Dart code
 	flutter analyze
 
 .PHONY: check/lint/go

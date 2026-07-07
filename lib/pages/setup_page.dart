@@ -2,6 +2,7 @@ import 'package:autobutler/services/app_settings.dart';
 import 'package:autobutler/services/auth_service.dart';
 import 'package:autobutler/widgets/core/copy_button.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 
 /// First-boot setup screen — creates the owner account on the butler.
 ///
@@ -194,7 +195,7 @@ class _SetupFormState extends State<_SetupForm> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Icon(
-            Icons.home_filled,
+            AutobutlerIcons.home_filled,
             size: 56,
             color: theme.colorScheme.primary,
             semanticLabel: 'AutoButler',
@@ -228,7 +229,7 @@ class _SetupFormState extends State<_SetupForm> {
             decoration: const InputDecoration(
               labelText: 'Username',
               border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.person_outline),
+              prefixIcon: Icon(AutobutlerIcons.person_outline),
             ),
             textInputAction: TextInputAction.next,
             autofillHints: const [AutofillHints.newUsername],
@@ -249,12 +250,12 @@ class _SetupFormState extends State<_SetupForm> {
               labelText: 'Password',
               helperText: 'At least 8 characters',
               border: const OutlineInputBorder(),
-              prefixIcon: const Icon(Icons.lock_outline),
+              prefixIcon: const Icon(AutobutlerIcons.lock_outline),
               suffixIcon: IconButton(
                 icon: Icon(
                   widget.obscurePassword
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
+                      ? AutobutlerIcons.visibility_outlined
+                      : AutobutlerIcons.visibility_off_outlined,
                 ),
                 tooltip: widget.obscurePassword
                     ? 'Show password'
@@ -282,12 +283,12 @@ class _SetupFormState extends State<_SetupForm> {
             decoration: InputDecoration(
               labelText: 'Confirm password',
               border: const OutlineInputBorder(),
-              prefixIcon: const Icon(Icons.lock_outline),
+              prefixIcon: const Icon(AutobutlerIcons.lock_outline),
               suffixIcon: IconButton(
                 icon: Icon(
                   widget.obscureConfirm
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
+                      ? AutobutlerIcons.visibility_outlined
+                      : AutobutlerIcons.visibility_off_outlined,
                 ),
                 tooltip: widget.obscureConfirm
                     ? 'Show password'
@@ -346,7 +347,7 @@ class _RecoveryPhraseStep extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Icon(
-          Icons.key_rounded,
+          AutobutlerIcons.key_rounded,
           size: 56,
           color: theme.colorScheme.primary,
           semanticLabel: 'Recovery phrase',
@@ -395,7 +396,7 @@ class _RecoveryPhraseStep extends StatelessWidget {
                 const SizedBox(height: 12),
                 CopyButton(
                   text: phrase,
-                  icon: Icons.copy_outlined,
+                  icon: AutobutlerIcons.copy_outlined,
                   variant: CopyButtonVariant.outlined,
                   successMessage: 'Recovery phrase copied to clipboard',
                 ),
@@ -448,7 +449,7 @@ class _ThemeStep extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Icon(
-              Icons.palette_outlined,
+              AutobutlerIcons.palette_outlined,
               size: 56,
               color: theme.colorScheme.primary,
               semanticLabel: 'Theme',
@@ -472,7 +473,7 @@ class _ThemeStep extends StatelessWidget {
             const SizedBox(height: 32),
 
             _ThemeOption(
-              icon: Icons.brightness_auto_rounded,
+              icon: AutobutlerIcons.brightness_auto_rounded,
               label: 'System',
               description: 'Follows your device setting',
               isSelected: currentMode == ThemeMode.system,
@@ -480,7 +481,7 @@ class _ThemeStep extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _ThemeOption(
-              icon: Icons.light_mode_rounded,
+              icon: AutobutlerIcons.light_mode_rounded,
               label: 'Light',
               description: 'Always use light theme',
               isSelected: currentMode == ThemeMode.light,
@@ -488,7 +489,7 @@ class _ThemeStep extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _ThemeOption(
-              icon: Icons.dark_mode_rounded,
+              icon: AutobutlerIcons.dark_mode_rounded,
               label: 'Dark',
               description: 'Always use dark theme',
               isSelected: currentMode == ThemeMode.dark,
@@ -588,7 +589,7 @@ class _ThemeOption extends StatelessWidget {
                 opacity: isSelected ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 150),
                 child: Icon(
-                  Icons.check_circle_rounded,
+                  AutobutlerIcons.check_circle_rounded,
                   color: primaryColor,
                   size: 22,
                 ),
@@ -619,7 +620,7 @@ class _ErrorBanner extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              Icons.error_outline,
+              AutobutlerIcons.error_outline,
               color: theme.colorScheme.onErrorContainer,
               size: 20,
             ),

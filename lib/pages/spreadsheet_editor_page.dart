@@ -8,6 +8,7 @@ import 'package:data_table/data_sheet.dart';
 import 'package:data_table/data_table.dart';
 import 'package:flutter/material.dart' hide DataTable, DataRow, DataCell;
 import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:http/http.dart' as http;
 
 // ---------------------------------------------------------------------------
@@ -319,7 +320,9 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
               )
             else
               IconButton(
-                icon: Icon(_dirty ? Icons.save : Icons.save_outlined),
+                icon: Icon(
+                  _dirty ? AutobutlerIcons.save : AutobutlerIcons.save_outlined,
+                ),
                 tooltip: 'Save',
                 onPressed: _manualSave,
               ),

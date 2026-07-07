@@ -4,6 +4,7 @@ import 'package:autobutler/utils/web_download_stub.dart'
     if (dart.library.html) 'package:autobutler/utils/web_download_web.dart'
     as web_download;
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:video_player/video_player.dart';
@@ -198,8 +199,8 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
                   children: [
                     Icon(
                       _isUnsupportedFormat
-                          ? Icons.video_file_outlined
-                          : Icons.error_outline,
+                          ? AutobutlerIcons.video_file_outlined
+                          : AutobutlerIcons.error_outline,
                       size: 36,
                     ),
                     const SizedBox(height: 12),
@@ -295,7 +296,7 @@ class _FullscreenVideoPageState extends State<_FullscreenVideoPage> {
           child: Align(
             alignment: Alignment.topLeft,
             child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: const Icon(AutobutlerIcons.arrow_back, color: Colors.white),
               onPressed: () => Navigator.of(context).pop(),
             ),
           ),
@@ -556,7 +557,9 @@ class _PlayerControls extends StatelessWidget {
                             : controller.play();
                       },
                       icon: Icon(
-                        value.isPlaying ? Icons.pause : Icons.play_arrow,
+                        value.isPlaying
+                            ? AutobutlerIcons.pause
+                            : AutobutlerIcons.play_arrow,
                         color: Colors.white,
                       ),
                     ),
@@ -565,14 +568,20 @@ class _PlayerControls extends StatelessWidget {
                         onInteraction();
                         _seekBy(const Duration(seconds: -10));
                       },
-                      icon: const Icon(Icons.replay_10, color: Colors.white),
+                      icon: const Icon(
+                        AutobutlerIcons.replay_10,
+                        color: Colors.white,
+                      ),
                     ),
                     IconButton(
                       onPressed: () {
                         onInteraction();
                         _seekBy(const Duration(seconds: 10));
                       },
-                      icon: const Icon(Icons.forward_10, color: Colors.white),
+                      icon: const Icon(
+                        AutobutlerIcons.forward_10,
+                        color: Colors.white,
+                      ),
                     ),
                     Text(
                       '${_formatTime(position)} / ${_formatTime(duration)}',
@@ -584,7 +593,9 @@ class _PlayerControls extends StatelessWidget {
                         controller.setVolume(isMuted ? 1 : 0);
                       },
                       icon: Icon(
-                        isMuted ? Icons.volume_off : Icons.volume_up,
+                        isMuted
+                            ? AutobutlerIcons.volume_off
+                            : AutobutlerIcons.volume_up,
                         color: Colors.white,
                       ),
                     ),
@@ -617,7 +628,9 @@ class _PlayerControls extends StatelessWidget {
                         onToggleFullscreen();
                       },
                       icon: Icon(
-                        isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                        isFullscreen
+                            ? AutobutlerIcons.fullscreen_exit
+                            : AutobutlerIcons.fullscreen,
                         color: Colors.white,
                       ),
                     ),

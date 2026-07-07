@@ -1,6 +1,7 @@
 import 'package:autobutler/services/health_service.dart';
 import 'package:autobutler/widgets/core/autobutler_storage_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 
 class FileStorageFooter extends StatefulWidget {
   const FileStorageFooter({super.key});
@@ -62,7 +63,7 @@ class _FileStorageFooterState extends State<FileStorageFooter> {
       child: Row(
         children: [
           Icon(
-            Icons.storage_rounded,
+            AutobutlerIcons.storage_rounded,
             size: 14,
             color: colorScheme.onSurface.withValues(alpha: 0.4),
           ),

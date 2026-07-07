@@ -1,5 +1,6 @@
 import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 
 /// Describes a creatable file type shown in the new-file dialog.
 class NewFileType {
@@ -20,12 +21,12 @@ const _kFileTypes = [
   NewFileType(
     label: 'Document',
     extension: '.abdoc',
-    icon: Icons.edit_document,
+    icon: AutobutlerIcons.edit_document,
   ),
   NewFileType(
     label: 'Spreadsheet',
     extension: '.absheet',
-    icon: Icons.table_chart,
+    icon: AutobutlerIcons.table_chart,
   ),
   NewFileType(
     label: 'Generic File',

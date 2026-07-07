@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 
 class FileBreadcrumbBar extends StatelessWidget {
   const FileBreadcrumbBar({
@@ -27,7 +28,7 @@ class FileBreadcrumbBar extends StatelessWidget {
         children: [
           IconButton(
             onPressed: currentPath.isEmpty ? null : onGoUp,
-            icon: const Icon(Icons.chevron_left_rounded),
+            icon: const Icon(AutobutlerIcons.chevron_left_rounded),
             tooltip: 'Up one level',
           ),
           Expanded(
@@ -40,7 +41,7 @@ class FileBreadcrumbBar extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: Icon(
-                        Icons.home_rounded,
+                        AutobutlerIcons.home_rounded,
                         size: 20,
                         color: Theme.of(context).colorScheme.primary,
                       ),

@@ -6,6 +6,7 @@ import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill_to_pdf/flutter_quill_to_pdf.dart';
 import 'package:go_router/go_router.dart';
@@ -515,7 +516,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     return [
       // In-document search (TODO: wire to find-in-doc, see #1046)
       IconButton(
-        icon: const Icon(Icons.search_rounded),
+        icon: const Icon(AutobutlerIcons.search_rounded),
         tooltip: 'Search in document',
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -528,7 +529,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       ),
       // Settings shortcut
       IconButton(
-        icon: const Icon(Icons.settings_outlined),
+        icon: const Icon(AutobutlerIcons.settings_outlined),
         tooltip: 'Settings',
         onPressed: () => context.go(AppRoutes.settings),
       ),
@@ -538,8 +539,8 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         IconButton(
           icon: Icon(
             _autoSaveEnabled
-                ? Icons.cloud_sync_outlined
-                : Icons.cloud_off_outlined,
+                ? AutobutlerIcons.cloud_sync_outlined
+                : AutobutlerIcons.cloud_off_outlined,
           ),
           tooltip: _autoSaveEnabled ? 'Auto-save on' : 'Auto-save off',
           onPressed: () => _setAutoSaveEnabled(!_autoSaveEnabled),
@@ -556,7 +557,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         )
       else
         IconButton(
-          icon: const Icon(Icons.more_horiz),
+          icon: const Icon(AutobutlerIcons.more_horiz),
           tooltip: 'More options',
           onPressed: () => _showOverflowMenu(context),
         ),
@@ -576,7 +577,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
             padding: const EdgeInsets.only(right: 4),
             child: FilledButton.icon(
               onPressed: _dirty ? _saveDocument : null,
-              icon: const Icon(Icons.save_outlined, size: 16),
+              icon: const Icon(AutobutlerIcons.save_outlined, size: 16),
               label: const Text('Save'),
             ),
           ),
@@ -602,12 +603,12 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
           child: _isReadOnly
               ? FilledButton.icon(
                   onPressed: _enterEditMode,
-                  icon: const Icon(Icons.edit_outlined, size: 16),
+                  icon: const Icon(AutobutlerIcons.edit_outlined, size: 16),
                   label: const Text('Edit'),
                 )
               : OutlinedButton.icon(
                   onPressed: _exitEditMode,
-                  icon: const Icon(Icons.check, size: 16),
+                  icon: const Icon(AutobutlerIcons.check, size: 16),
                   label: const Text('Done'),
                 ),
         ),
@@ -632,7 +633,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
           ),
           const SizedBox(height: 16),
           ListTile(
-            leading: const Icon(Icons.picture_as_pdf_outlined),
+            leading: const Icon(AutobutlerIcons.picture_as_pdf_outlined),
             title: const Text('Export as PDF'),
             onTap: () {
               Navigator.pop(context);
@@ -640,7 +641,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.print_outlined),
+            leading: const Icon(AutobutlerIcons.print_outlined),
             title: const Text('Print'),
             onTap: () {
               Navigator.pop(context);
@@ -666,7 +667,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 48, color: cs.error),
+            Icon(AutobutlerIcons.error_outline, size: 48, color: cs.error),
             const SizedBox(height: 12),
             Text(_error!, textAlign: TextAlign.center),
             const SizedBox(height: 12),
@@ -819,8 +820,8 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
           IconButton(
             icon: Icon(
               _editorDarkPage
-                  ? Icons.light_mode_outlined
-                  : Icons.dark_mode_outlined,
+                  ? AutobutlerIcons.light_mode_outlined
+                  : AutobutlerIcons.dark_mode_outlined,
               size: 14,
             ),
             tooltip: _editorDarkPage
@@ -840,28 +841,32 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
           ),
           const SizedBox(width: 8),
           _statusItem(
-            icon: Icons.edit_note,
+            icon: AutobutlerIcons.edit_note,
             label: '$_wordCount words',
             color: muted,
           ),
           const SizedBox(width: 16),
-          _statusItem(icon: Icons.lock_outline, label: 'Private', color: muted),
+          _statusItem(
+            icon: AutobutlerIcons.lock_outline,
+            label: 'Private',
+            color: muted,
+          ),
           const Spacer(),
           if (_isReadOnly)
             _statusItem(
-              icon: Icons.visibility_outlined,
+              icon: AutobutlerIcons.visibility_outlined,
               label: 'Read-only',
               color: muted,
             )
           else if (_dirty)
             _statusItem(
-              icon: Icons.circle,
+              icon: AutobutlerIcons.circle,
               label: 'Unsaved',
               color: const Color(0xFFF59E0B),
             )
           else
             _statusItem(
-              icon: Icons.check_circle_outline,
+              icon: AutobutlerIcons.check_circle_outline,
               label: 'Saved',
               color: const Color(0xFF10B981),
             ),

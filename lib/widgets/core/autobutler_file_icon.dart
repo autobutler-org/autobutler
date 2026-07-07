@@ -1,5 +1,6 @@
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 
 class AutobutlerFileIcon extends StatelessWidget {
   const AutobutlerFileIcon({
@@ -14,7 +15,7 @@ class AutobutlerFileIcon extends StatelessWidget {
   final Color? color;
 
   static IconData iconForNode(CirrusFileNode node) {
-    if (node.isDir) return Icons.folder_outlined;
+    if (node.isDir) return AutobutlerIcons.folder_outlined;
     final lower = node.name.toLowerCase();
 
     if (lower.endsWith('.jpg') ||
@@ -35,7 +36,7 @@ class AutobutlerFileIcon extends StatelessWidget {
         lower.endsWith('.dng') ||
         lower.endsWith('.orf') ||
         lower.endsWith('.rw2')) {
-      return Icons.image_outlined;
+      return AutobutlerIcons.image_outlined;
     }
 
     if (lower.endsWith('.mp4') ||
@@ -46,7 +47,7 @@ class AutobutlerFileIcon extends StatelessWidget {
         lower.endsWith('.m4v') ||
         lower.endsWith('.wmv') ||
         lower.endsWith('.flv')) {
-      return Icons.video_file_outlined;
+      return AutobutlerIcons.video_file_outlined;
     }
 
     if (lower.endsWith('.mp3') ||
@@ -57,10 +58,10 @@ class AutobutlerFileIcon extends StatelessWidget {
         lower.endsWith('.m4a') ||
         lower.endsWith('.wma') ||
         lower.endsWith('.opus')) {
-      return Icons.audio_file_outlined;
+      return AutobutlerIcons.audio_file_outlined;
     }
 
-    if (lower.endsWith('.pdf')) return Icons.picture_as_pdf_outlined;
+    if (lower.endsWith('.pdf')) return AutobutlerIcons.picture_as_pdf_outlined;
 
     if (lower.endsWith('.zip') ||
         lower.endsWith('.tar') ||
@@ -70,34 +71,34 @@ class AutobutlerFileIcon extends StatelessWidget {
         lower.endsWith('.7z') ||
         lower.endsWith('.rar') ||
         lower.endsWith('.zst')) {
-      return Icons.archive_outlined;
+      return AutobutlerIcons.archive_outlined;
     }
 
     // AutoButler native formats
-    if (lower.endsWith('.abdoc')) return Icons.edit_document;
-    if (lower.endsWith('.absheet')) return Icons.table_chart;
+    if (lower.endsWith('.abdoc')) return AutobutlerIcons.edit_document;
+    if (lower.endsWith('.absheet')) return AutobutlerIcons.table_chart;
 
     if (lower.endsWith('.doc') ||
         lower.endsWith('.docx') ||
         lower.endsWith('.odt') ||
         lower.endsWith('.rtf')) {
-      return Icons.description_outlined;
+      return AutobutlerIcons.description_outlined;
     }
 
     if (lower.endsWith('.xls') ||
         lower.endsWith('.xlsx') ||
         lower.endsWith('.ods') ||
         lower.endsWith('.csv')) {
-      return Icons.table_chart_outlined;
+      return AutobutlerIcons.table_chart_outlined;
     }
 
     if (lower.endsWith('.ppt') ||
         lower.endsWith('.pptx') ||
         lower.endsWith('.odp')) {
-      return Icons.slideshow_outlined;
+      return AutobutlerIcons.slideshow_outlined;
     }
 
-    return Icons.insert_drive_file_outlined;
+    return AutobutlerIcons.insert_drive_file_outlined;
   }
 
   @override

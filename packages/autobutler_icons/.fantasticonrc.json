@@ -1,0 +1,15 @@
+{
+  "assetTypes": [],
+  "codepoints": {
+    "clear_column": 57344,
+    "clear_row": 57345,
+    "delete_column": 57346,
+    "delete_row": 57347,
+    "duplicate_column": 57348,
+    "duplicate_row": 57349,
+    "insert_column_left": 57350,
+    "insert_column_right": 57351,
+    "insert_row_above": 57352,
+    "insert_row_below": 57353
+  }
+}

@@ -6,6 +6,7 @@ import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:autobutler/router.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:go_router/go_router.dart';
 
 class HealthPage extends StatefulWidget {
@@ -51,7 +52,7 @@ class _HealthPageState extends State<HealthPage>
     return Scaffold(
       appBar: AutobutlerAppBar(
         label: 'Health',
-        icon: Icons.monitor_heart_outlined,
+        icon: AutobutlerIcons.monitor_heart_outlined,
         actions: [
           RefreshIconButton(
             isRefreshing: isRefreshing,
@@ -115,7 +116,7 @@ class _HealthPageState extends State<HealthPage>
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.error_outline,
+                AutobutlerIcons.error_outline,
                 size: 48,
                 color: Theme.of(context).colorScheme.error,
               ),
@@ -133,7 +134,7 @@ class _HealthPageState extends State<HealthPage>
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: manualRefresh,
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(AutobutlerIcons.refresh),
                 label: const Text('Retry'),
               ),
             ],
@@ -157,7 +158,7 @@ class _HealthPageState extends State<HealthPage>
         const SizedBox(height: 8),
         _MetricCard(
           label: 'CPU',
-          icon: Icons.memory,
+          icon: AutobutlerIcons.memory,
           value: status.cpuPercent,
           unit: '%',
           criticalThreshold: 90,
@@ -171,7 +172,7 @@ class _HealthPageState extends State<HealthPage>
         const SizedBox(height: 8),
         _MetricCard(
           label: 'Memory',
-          icon: Icons.storage,
+          icon: AutobutlerIcons.storage,
           value: status.memPercent,
           unit: '%',
           criticalThreshold: 95,
@@ -181,7 +182,7 @@ class _HealthPageState extends State<HealthPage>
         const SizedBox(height: 8),
         _MetricCard(
           label: 'Disk',
-          icon: Icons.disc_full,
+          icon: AutobutlerIcons.disc_full,
           value: status.diskPercent,
           unit: '%',
           criticalThreshold: 90,
@@ -192,7 +193,7 @@ class _HealthPageState extends State<HealthPage>
           const SizedBox(height: 8),
           _MetricCard(
             label: 'Temperature',
-            icon: Icons.thermostat,
+            icon: AutobutlerIcons.thermostat,
             value: status.temperatureCelsius,
             unit: '°C',
             criticalThreshold: 80,
@@ -218,7 +219,9 @@ class _StatusBanner extends StatelessWidget {
     final onColor = healthy
         ? Theme.of(context).colorScheme.onPrimaryContainer
         : Theme.of(context).colorScheme.onErrorContainer;
-    final icon = healthy ? Icons.check_circle_outline : Icons.warning_amber;
+    final icon = healthy
+        ? AutobutlerIcons.check_circle_outline
+        : AutobutlerIcons.warning_amber;
     final label = healthy ? 'All systems healthy' : 'Issues detected';
 
     return Card(

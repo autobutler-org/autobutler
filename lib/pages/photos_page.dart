@@ -21,6 +21,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:autobutler/router.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:photo_manager/photo_manager.dart';
@@ -453,13 +454,13 @@ class _PhotosPageState extends State<PhotosPage>
         contentPadding: EdgeInsets.zero,
         onTap: () => _selectCategory(cat),
         leading: Icon(switch (cat) {
-          PhotoCategory.cirrus => Icons.cloud,
-          PhotoCategory.mobile => Icons.smartphone,
-          PhotoCategory.all => Icons.photo_library,
-          PhotoCategory.favorites => Icons.star_rounded,
+          PhotoCategory.cirrus => AutobutlerIcons.cloud,
+          PhotoCategory.mobile => AutobutlerIcons.smartphone,
+          PhotoCategory.all => AutobutlerIcons.photo_library,
+          PhotoCategory.favorites => AutobutlerIcons.star_rounded,
         }, color: selected ? theme.colorScheme.primary : null),
         title: Text('$label: $count', style: theme.textTheme.titleMedium),
-        trailing: selected ? const Icon(Icons.check, size: 16) : null,
+        trailing: selected ? const Icon(AutobutlerIcons.check, size: 16) : null,
       );
     }
 
@@ -495,7 +496,7 @@ class _PhotosPageState extends State<PhotosPage>
                         });
                       }
                     : null,
-                icon: const Icon(Icons.crop_square_outlined),
+                icon: const Icon(AutobutlerIcons.crop_square_outlined),
                 tooltip: 'Larger photos',
               ),
               Expanded(
@@ -522,7 +523,7 @@ class _PhotosPageState extends State<PhotosPage>
                         });
                       }
                     : null,
-                icon: const Icon(Icons.grid_view_outlined),
+                icon: const Icon(AutobutlerIcons.grid_view_outlined),
                 tooltip: 'Smaller photos',
               ),
             ],
@@ -542,7 +543,9 @@ class _PhotosPageState extends State<PhotosPage>
                 }}',
               ),
               trailing: Icon(
-                _categoriesExpanded ? Icons.expand_less : Icons.expand_more,
+                _categoriesExpanded
+                    ? AutobutlerIcons.expand_less
+                    : AutobutlerIcons.expand_more,
               ),
               onTap: () {
                 setState(() {
@@ -624,7 +627,7 @@ class _PhotosPageState extends State<PhotosPage>
       bottom: 4,
       right: 4,
       child: Icon(
-        Icons.star_rounded,
+        AutobutlerIcons.star_rounded,
         size: 16,
         color: Colors.white,
         shadows: const [Shadow(blurRadius: 4, color: Colors.black54)],
@@ -686,7 +689,11 @@ class _PhotosPageState extends State<PhotosPage>
                     ),
                   ),
                   child: isSelected
-                      ? const Icon(Icons.check, size: 14, color: Colors.white)
+                      ? const Icon(
+                          AutobutlerIcons.check,
+                          size: 14,
+                          color: Colors.white,
+                        )
                       : null,
                 ),
               ),
@@ -874,12 +881,12 @@ class _PhotosPageState extends State<PhotosPage>
       child: photos.isEmpty && !_isLoadingMoreCirrus
           ? (_selectedCategory == PhotoCategory.favorites
                 ? const EmptyStateWidget(
-                    icon: Icons.star_outline_rounded,
+                    icon: AutobutlerIcons.star_outline_rounded,
                     headline: 'No favorites yet',
                     subtext: 'Tap ★ on any photo to save it here.',
                   )
                 : const EmptyStateWidget(
-                    icon: Icons.photo_library_outlined,
+                    icon: AutobutlerIcons.photo_library_outlined,
                     headline: 'No photos yet',
                     subtext:
                         'Photos you upload to AutoButler will appear here.',
@@ -1161,7 +1168,7 @@ class _PhotosPageState extends State<PhotosPage>
                 )
               : AutobutlerAppBar(
                   label: 'Photos',
-                  icon: Icons.photo_library_outlined,
+                  icon: AutobutlerIcons.photo_library_outlined,
                   actions: [
                     IconButton(
                       icon: _isUploading
@@ -1308,7 +1315,8 @@ class _PhotosPageState extends State<PhotosPage>
                             photos.isEmpty
                                 ? const SliverFillRemaining(
                                     child: EmptyStateWidget(
-                                      icon: Icons.photo_library_outlined,
+                                      icon: AutobutlerIcons
+                                          .photo_library_outlined,
                                       headline: 'No photos yet',
                                       subtext:
                                           'Photos you upload to AutoButler will appear here.',
@@ -1380,7 +1388,7 @@ class _PhotosPageState extends State<PhotosPage>
                               ),
                               child: Center(
                                 child: Icon(
-                                  Icons.keyboard_arrow_up_rounded,
+                                  AutobutlerIcons.keyboard_arrow_up_rounded,
                                   size: 20,
                                   color: Theme.of(context).colorScheme.onSurface
                                       .withValues(alpha: 0.4),

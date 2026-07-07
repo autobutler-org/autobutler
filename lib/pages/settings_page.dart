@@ -16,6 +16,7 @@ import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -552,7 +553,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       appBar: const AutobutlerAppBar(
         label: 'Settings',
-        icon: Icons.settings_outlined,
+        icon: AutobutlerIcons.settings_outlined,
       ),
       drawer: AutobutlerDrawer(
         activeSection: AutobutlerDrawerSection.settings,
@@ -598,7 +599,7 @@ class _SettingsPageState extends State<SettingsPage> {
             const SizedBox(height: 8),
             Card(
               child: ListTile(
-                leading: const Icon(Icons.logout),
+                leading: const Icon(AutobutlerIcons.logout),
                 title: const Text('Sign out'),
                 onTap: _signOut,
               ),
@@ -687,7 +688,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Icon(Icons.update),
+                            : const Icon(AutobutlerIcons.update),
                         label: Text(
                           _isUpdatingVersion ? 'Updating...' : 'Start update',
                         ),
@@ -808,7 +809,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           const SizedBox(height: 8),
                           OutlinedButton.icon(
                             onPressed: _loadRemoteAccess,
-                            icon: const Icon(Icons.refresh, size: 16),
+                            icon: const Icon(AutobutlerIcons.refresh, size: 16),
                             label: const Text('Retry'),
                           ),
                         ],
@@ -820,7 +821,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           Row(
                             children: [
                               const Icon(
-                                Icons.cloud_done_outlined,
+                                AutobutlerIcons.cloud_done_outlined,
                                 size: 16,
                                 color: Colors.green,
                               ),
@@ -849,7 +850,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Icon(Icons.link_off, size: 16),
+                                : const Icon(
+                                    AutobutlerIcons.link_off,
+                                    size: 16,
+                                  ),
                             label: const Text('Disable'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Theme.of(
@@ -878,7 +882,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Icon(Icons.vpn_key_outlined, size: 16),
+                                : const Icon(
+                                    AutobutlerIcons.vpn_key_outlined,
+                                    size: 16,
+                                  ),
                             label: const Text('Enable remote access'),
                           ),
                         ],
@@ -965,7 +972,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   else if (_storageError != null)
                     ListTile(
                       leading: Icon(
-                        Icons.error_outline,
+                        AutobutlerIcons.error_outline,
                         color: Theme.of(context).colorScheme.error,
                       ),
                       title: const Text('Failed to load storage devices'),
@@ -978,10 +985,10 @@ class _SettingsPageState extends State<SettingsPage> {
                       return ListTile(
                         leading: Icon(
                           device.isInternal
-                              ? Icons.storage_rounded
+                              ? AutobutlerIcons.storage_rounded
                               : device.isUnmounted
-                              ? Icons.usb_off_rounded
-                              : Icons.usb_rounded,
+                              ? AutobutlerIcons.usb_off_rounded
+                              : AutobutlerIcons.usb_rounded,
                         ),
                         title: Text(
                           device.name.isNotEmpty
@@ -1002,14 +1009,16 @@ class _SettingsPageState extends State<SettingsPage> {
                               ),
                         trailing: device.isUnmounted
                             ? FilledButton.tonalIcon(
-                                icon: const Icon(Icons.play_arrow_rounded),
+                                icon: const Icon(
+                                  AutobutlerIcons.play_arrow_rounded,
+                                ),
                                 label: const Text('Mount'),
                                 onPressed: device.serial.isNotEmpty
                                     ? () => _mountDevice(device)
                                     : null,
                               )
                             : IconButton(
-                                icon: const Icon(Icons.edit_outlined),
+                                icon: const Icon(AutobutlerIcons.edit_outlined),
                                 tooltip: 'Rename',
                                 onPressed: () => _renameStorageDevice(device),
                               ),
@@ -1069,7 +1078,7 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 8),
           ElevatedButton.icon(
             onPressed: () => _addOrEditHost(),
-            icon: const Icon(Icons.add),
+            icon: const Icon(AutobutlerIcons.add),
             label: const Text('Add AutoButler'),
           ),
           const SizedBox(height: 24),
@@ -1122,7 +1131,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   else if (_devicesError != null)
                     ListTile(
                       leading: Icon(
-                        Icons.error_outline,
+                        AutobutlerIcons.error_outline,
                         color: Theme.of(context).colorScheme.error,
                       ),
                       title: const Text('Failed to load devices'),
@@ -1133,7 +1142,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   else
                     ..._connectedDevices.map((device) {
                       return ListTile(
-                        leading: const Icon(Icons.devices),
+                        leading: const Icon(AutobutlerIcons.devices),
                         title: Text(device.ipAddress),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1153,7 +1162,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         isThreeLine: device.userAgent.isNotEmpty,
                         trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline),
+                          icon: const Icon(AutobutlerIcons.delete_outline),
                           tooltip: 'Remove',
                           onPressed: () => _deleteDevice(device.id),
                         ),
@@ -1325,7 +1334,7 @@ class _InfoSectionHeader extends StatelessWidget {
     final color = Theme.of(context).colorScheme.onSurfaceVariant;
     return Row(
       children: [
-        Icon(Icons.info_outline, size: 16, color: color),
+        Icon(AutobutlerIcons.info_outline, size: 16, color: color),
         const SizedBox(width: 6),
         Text(
           label,
@@ -1555,8 +1564,8 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
                     children: [
                       Icon(
                         _smbStatus!.running
-                            ? Icons.check_circle_outline
-                            : Icons.warning_amber,
+                            ? AutobutlerIcons.check_circle_outline
+                            : AutobutlerIcons.warning_amber,
                         size: 16,
                         color: _smbStatus!.running
                             ? Colors.green
@@ -1580,13 +1589,13 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
                             : () async {
                                 await _showSmbSetupDialog(refresh: true);
                               },
-                        icon: const Icon(Icons.refresh, size: 16),
+                        icon: const Icon(AutobutlerIcons.refresh, size: 16),
                         label: const Text('Refresh config'),
                       ),
                       const SizedBox(width: 8),
                       OutlinedButton.icon(
                         onPressed: _smbBusy ? null : _teardownSmb,
-                        icon: const Icon(Icons.link_off, size: 16),
+                        icon: const Icon(AutobutlerIcons.link_off, size: 16),
                         label: const Text('Disable'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Theme.of(context).colorScheme.error,
@@ -1605,7 +1614,7 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
                             height: 14,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.add_link, size: 16),
+                        : const Icon(AutobutlerIcons.add_link, size: 16),
                     label: const Text('Set up network drive'),
                   ),
                 ],
@@ -1642,7 +1651,7 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
             const SizedBox(height: 8),
             FilledButton.icon(
               onPressed: () => launchUrl(Uri.parse('smb://$hostname.local')),
-              icon: const Icon(Icons.folder_open_outlined, size: 16),
+              icon: const Icon(AutobutlerIcons.folder_open_outlined, size: 16),
               label: const Text('Open in Finder'),
             ),
           ]);
@@ -1660,7 +1669,7 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
                 Uri.parse('file://$hostname.local/'),
                 mode: LaunchMode.externalApplication,
               ),
-              icon: const Icon(Icons.folder_open_outlined, size: 16),
+              icon: const Icon(AutobutlerIcons.folder_open_outlined, size: 16),
               label: const Text('Open in File Explorer'),
             ),
           ]);
@@ -1672,7 +1681,7 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
             const SizedBox(height: 8),
             FilledButton.icon(
               onPressed: () => launchUrl(Uri.parse('smb://$hostname.local')),
-              icon: const Icon(Icons.folder_open_outlined, size: 16),
+              icon: const Icon(AutobutlerIcons.folder_open_outlined, size: 16),
               label: const Text('Open in Files'),
             ),
           ]);
@@ -1714,7 +1723,7 @@ class _HelpSupportCard extends StatelessWidget {
                 Uri.parse(_supportUrl),
                 mode: LaunchMode.externalApplication,
               ),
-              icon: const Icon(Icons.help_outline, size: 16),
+              icon: const Icon(AutobutlerIcons.help_outline, size: 16),
               label: const Text('Visit support page'),
             ),
             const SizedBox(height: 8),
@@ -1723,7 +1732,7 @@ class _HelpSupportCard extends StatelessWidget {
                 Uri.parse(_bugUrl),
                 mode: LaunchMode.externalApplication,
               ),
-              icon: const Icon(Icons.bug_report_outlined, size: 16),
+              icon: const Icon(AutobutlerIcons.bug_report_outlined, size: 16),
               label: const Text('Report an issue'),
             ),
           ],
