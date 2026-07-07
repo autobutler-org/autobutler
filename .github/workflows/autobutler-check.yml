@@ -51,6 +51,10 @@ jobs:
         uses: actions/checkout@v7
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
       - name: Tidy
         run: |
           make tidy/flutter

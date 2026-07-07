@@ -32,6 +32,10 @@ jobs:
           fetch-tags: true
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
       - name: Build frontend [web]
         env:
           FLUTTER_BUILD_MODE: release
