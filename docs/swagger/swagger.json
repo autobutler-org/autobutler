@@ -1943,6 +1943,112 @@
                 }
             }
         },
+        "/public/shares/{token}": {
+            "get": {
+                "description": "Streams the shared file (folders are zipped). Always served as an attachment with sniffing disabled so shared content can never execute in the app's origin.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "shares"
+                ],
+                "summary": "Download a shared file or folder (public)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Share token",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Share password",
+                        "name": "password",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "401": {
+                        "description": "Password required",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Wrong password",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "410": {
+                        "description": "Gone (expired)",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/public/shares/{token}/info": {
+            "get": {
+                "description": "Returns metadata about a share link. For password-protected shares the target name and size are withheld until the correct password is supplied via X-Share-Password or ?password=.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shares"
+                ],
+                "summary": "Get share link metadata (public)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Share token",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Share password",
+                        "name": "password",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1_shares.shareInfoJSON"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "410": {
+                        "description": "Gone (expired)",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/sbom": {
             "get": {
                 "description": "Returns the Go version and all embedded dependency information from the compiled binary",
@@ -2026,6 +2132,117 @@
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/shares": {
+            "get": {
+                "description": "Returns all share links, newest first, including expired ones.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shares"
+                ],
+                "summary": "List share links",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1_shares.shareJSON"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a tokenized public link for a file or folder, optionally password-protected and/or expiring.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shares"
+                ],
+                "summary": "Create a public share link",
+                "parameters": [
+                    {
+                        "description": "Share definition",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1_shares.createShareRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1_shares.shareJSON"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/shares/{id}": {
+            "delete": {
+                "description": "Deletes a share link by ID. The public URL stops working immediately.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shares"
+                ],
+                "summary": "Revoke a share link",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -3226,6 +3443,81 @@
             "properties": {
                 "autoUpdate": {
                     "type": "boolean"
+                }
+            }
+        },
+        "v1_shares.createShareRequest": {
+            "type": "object",
+            "properties": {
+                "deviceSerial": {
+                    "type": "string"
+                },
+                "expiresInHours": {
+                    "description": "ExpiresInHours, when \u003e 0, sets the link expiry relative to now.\n0 means the link never expires.",
+                    "type": "integer"
+                },
+                "filePath": {
+                    "type": "string"
+                },
+                "password": {
+                    "description": "Password, when non-empty, protects the link.",
+                    "type": "string"
+                }
+            }
+        },
+        "v1_shares.shareInfoJSON": {
+            "type": "object",
+            "properties": {
+                "expiresAt": {
+                    "type": "string"
+                },
+                "isFolder": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "Name and IsFolder are omitted until the password (if any) is supplied,\nso a protected link leaks nothing about its target.",
+                    "type": "string"
+                },
+                "passwordProtected": {
+                    "type": "boolean"
+                },
+                "sizeBytes": {
+                    "type": "integer"
+                }
+            }
+        },
+        "v1_shares.shareJSON": {
+            "type": "object",
+            "properties": {
+                "accessCount": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "deviceSerial": {
+                    "type": "string"
+                },
+                "expired": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "filePath": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastAccessAt": {
+                    "type": "string"
+                },
+                "passwordProtected": {
+                    "type": "boolean"
+                },
+                "urlPath": {
+                    "type": "string"
                 }
             }
         },

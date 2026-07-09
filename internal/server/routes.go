@@ -17,6 +17,7 @@ import (
 	v1_migration "github.com/autobutler-org/autobutler/internal/server/api/v1/migration"
 	v1_photos "github.com/autobutler-org/autobutler/internal/server/api/v1/photos"
 	v1_settings "github.com/autobutler-org/autobutler/internal/server/api/v1/settings"
+	v1_shares "github.com/autobutler-org/autobutler/internal/server/api/v1/shares"
 	v1_smb "github.com/autobutler-org/autobutler/internal/server/api/v1/smb"
 	v1_storage "github.com/autobutler-org/autobutler/internal/server/api/v1/storage"
 	v1_thumbnails "github.com/autobutler-org/autobutler/internal/server/api/v1/thumbnails"
@@ -55,6 +56,7 @@ func setupRouters(engine *gin.Engine, systemCollector *system.Collector) {
 		v1_favorites.NewRouter(),
 		v1_photos.NewRouter(),
 		v1_settings.NewRouter(),
+		v1_shares.NewRouter(),
 		v1_storage.NewRouter(),
 		v1_thumbnails.NewRouter(),
 		v1_smb.NewRouter(),

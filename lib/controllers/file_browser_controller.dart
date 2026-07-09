@@ -251,6 +251,10 @@ class FileBrowserController {
           message: 'Extraction complete',
           shouldRefresh: true,
         );
+      case FileMenuAction.share:
+        // Handled in FileBrowserPage before reaching the controller (opens
+        // the share-link dialog); should never reach handleFileAction.
+        return null;
       case FileMenuAction.navigateToFolder:
         // Handled via the onNavigateToFolder callback in FileBrowserView;
         // should never reach handleFileAction.
@@ -264,6 +268,8 @@ class FileBrowserController {
         return 'Download failed';
       case FileMenuAction.moveRename:
         return 'Move/Rename failed';
+      case FileMenuAction.share:
+        return 'Share failed';
       case FileMenuAction.delete:
         return 'Delete failed';
       case FileMenuAction.extractHere:

@@ -14,6 +14,7 @@ import 'package:autobutler/widgets/autobutler_drawer.dart';
 import 'package:autobutler/widgets/core/copy_button.dart';
 import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:autobutler/widgets/refresh_icon_button.dart';
+import 'package:autobutler/widgets/share_links_card.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:autobutler_icons/autobutler_icons.dart';
@@ -1171,6 +1172,12 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
               ),
             ),
+          const SizedBox(height: 24),
+
+          const _InfoSectionHeader(label: 'Share Links'),
+          const SizedBox(height: 8),
+          const ShareLinksCard(),
+
           const SizedBox(height: 24),
 
           const _InfoSectionHeader(label: 'Network Drive'),

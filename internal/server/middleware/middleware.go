@@ -59,7 +59,10 @@ func rateLimit() gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		if !authRateLimitedPaths[path] {
+		// Public share endpoints are unauthenticated, so they get the same
+		// per-IP limiter as the auth endpoints (also throttles guessing at
+		// share passwords, on top of bcrypt's per-attempt cost).
+		if !authRateLimitedPaths[path] && !strings.HasPrefix(path, publicSharePrefix) {
 			c.Next()
 			return
 		}
@@ -79,6 +82,11 @@ var authExemptPaths = map[string]bool{
 	"/api/v1/auth/recover": true,
 	"/api/v1/auth/status":  true,
 }
+
+// publicSharePrefix is the public share-link namespace. Requests under it are
+// authenticated by the share token itself (validated in the shares handlers),
+// not by a session — recipients of a share link have no account.
+const publicSharePrefix = "/api/v1/public/shares/"
 
 func inject(deps deputil.Dependencies) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -137,7 +145,7 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 			return
 		}
 
-		if authExemptPaths[path] {
+		if authExemptPaths[path] || strings.HasPrefix(path, publicSharePrefix) {
 			c.Next()
 			return
 		}

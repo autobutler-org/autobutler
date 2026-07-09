@@ -29,6 +29,7 @@ import 'package:autobutler/widgets/file_browser/file_storage_footer.dart';
 import 'package:autobutler/widgets/file_browser/file_top_bar.dart';
 import 'package:autobutler/widgets/file_browser/new_file_dialog.dart';
 import 'package:autobutler/widgets/file_browser/recent_files_section.dart';
+import 'package:autobutler/widgets/share_link_dialog.dart';
 import 'package:data_table/data_sheet.dart';
 import 'package:data_table/data_table.dart' as dt;
 import 'package:desktop_drop/desktop_drop.dart';
@@ -736,6 +737,17 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       } catch (_) {
         if (mounted) _showMessage('Download failed');
       }
+      return;
+    }
+
+    // Share: open the link dialog — no cache mutation involved.
+    if (action == FileMenuAction.share) {
+      await showShareLinkDialog(
+        context,
+        filePath: node.apiPath,
+        displayName: trimTrailingSlashes(node.name),
+        serial: serialOrNull(node.deviceSerial),
+      );
       return;
     }
 

@@ -384,6 +384,60 @@ definitions:
       autoUpdate:
         type: boolean
     type: object
+  v1_shares.createShareRequest:
+    properties:
+      deviceSerial:
+        type: string
+      expiresInHours:
+        description: |-
+          ExpiresInHours, when > 0, sets the link expiry relative to now.
+          0 means the link never expires.
+        type: integer
+      filePath:
+        type: string
+      password:
+        description: Password, when non-empty, protects the link.
+        type: string
+    type: object
+  v1_shares.shareInfoJSON:
+    properties:
+      expiresAt:
+        type: string
+      isFolder:
+        type: boolean
+      name:
+        description: |-
+          Name and IsFolder are omitted until the password (if any) is supplied,
+          so a protected link leaks nothing about its target.
+        type: string
+      passwordProtected:
+        type: boolean
+      sizeBytes:
+        type: integer
+    type: object
+  v1_shares.shareJSON:
+    properties:
+      accessCount:
+        type: integer
+      createdAt:
+        type: string
+      deviceSerial:
+        type: string
+      expired:
+        type: boolean
+      expiresAt:
+        type: string
+      filePath:
+        type: string
+      id:
+        type: string
+      lastAccessAt:
+        type: string
+      passwordProtected:
+        type: boolean
+      urlPath:
+        type: string
+    type: object
   v1_version.SbomDependencyJSON:
     properties:
       path:
@@ -1746,6 +1800,80 @@ paths:
       summary: Save the rotation for a photo
       tags:
       - photos
+  /public/shares/{token}:
+    get:
+      description: Streams the shared file (folders are zipped). Always served as
+        an attachment with sniffing disabled so shared content can never execute in
+        the app's origin.
+      parameters:
+      - description: Share token
+        in: path
+        name: token
+        required: true
+        type: string
+      - description: Share password
+        in: query
+        name: password
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "401":
+          description: Password required
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "403":
+          description: Wrong password
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "410":
+          description: Gone (expired)
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Download a shared file or folder (public)
+      tags:
+      - shares
+  /public/shares/{token}/info:
+    get:
+      description: Returns metadata about a share link. For password-protected shares
+        the target name and size are withheld until the correct password is supplied
+        via X-Share-Password or ?password=.
+      parameters:
+      - description: Share token
+        in: path
+        name: token
+        required: true
+        type: string
+      - description: Share password
+        in: query
+        name: password
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_shares.shareInfoJSON'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "410":
+          description: Gone (expired)
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Get share link metadata (public)
+      tags:
+      - shares
   /sbom:
     get:
       description: Returns the Go version and all embedded dependency information
@@ -1810,6 +1938,80 @@ paths:
       summary: Update settings
       tags:
       - settings
+  /shares:
+    get:
+      description: Returns all share links, newest first, including expired ones.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1_shares.shareJSON'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: List share links
+      tags:
+      - shares
+    post:
+      consumes:
+      - application/json
+      description: Creates a tokenized public link for a file or folder, optionally
+        password-protected and/or expiring.
+      parameters:
+      - description: Share definition
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1_shares.createShareRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1_shares.shareJSON'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Create a public share link
+      tags:
+      - shares
+  /shares/{id}:
+    delete:
+      description: Deletes a share link by ID. The public URL stops working immediately.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Revoke a share link
+      tags:
+      - shares
   /storage/devices/backup:
     post:
       description: Begin a backup to a device

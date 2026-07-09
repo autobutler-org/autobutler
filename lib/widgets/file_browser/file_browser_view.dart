@@ -13,6 +13,7 @@ import 'package:shimmer/shimmer.dart';
 
 enum FileMenuAction {
   download,
+  share,
   moveRename,
   delete,
   navigateToFolder,
@@ -297,6 +298,16 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                   ),
                   if (!widget.inArchive)
                     PopupMenuItem<FileMenuAction>(
+                      value: FileMenuAction.share,
+                      onTap: () => _dispatchMenuAction(
+                        context,
+                        item,
+                        FileMenuAction.share,
+                      ),
+                      child: const Text('Share link'),
+                    ),
+                  if (!widget.inArchive)
+                    PopupMenuItem<FileMenuAction>(
                       value: FileMenuAction.moveRename,
                       onTap: () => _dispatchMenuAction(
                         context,
@@ -553,6 +564,16 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                                             ),
                                             child: const Text('Download'),
                                           ),
+                                          if (!widget.inArchive)
+                                            PopupMenuItem<FileMenuAction>(
+                                              value: FileMenuAction.share,
+                                              onTap: () => _dispatchMenuAction(
+                                                context,
+                                                item,
+                                                FileMenuAction.share,
+                                              ),
+                                              child: const Text('Share link'),
+                                            ),
                                           if (!widget.inArchive)
                                             PopupMenuItem<FileMenuAction>(
                                               value: FileMenuAction.moveRename,
