@@ -3,6 +3,8 @@ package v1_shares
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
@@ -77,6 +79,12 @@ func createShare(c *gin.Context) *serverutil.Response {
 	}
 	if req.FilePath == "" {
 		return serverutil.BadRequest(errors.New("filePath is required"))
+	}
+	// Mirror the re-validation on the public endpoints: paths containing ".."
+	// or absolute paths are rejected there, so refuse to create shares that
+	// could never be downloaded. (safeJoin below guards actual traversal.)
+	if strings.Contains(req.FilePath, "..") || filepath.IsAbs(req.FilePath) {
+		return serverutil.BadRequest(errors.New("filePath must be a relative path without '..'"))
 	}
 	if req.ExpiresInHours < 0 {
 		return serverutil.BadRequest(errors.New("expiresInHours must not be negative"))

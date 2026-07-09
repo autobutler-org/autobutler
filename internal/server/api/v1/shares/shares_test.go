@@ -279,7 +279,8 @@ func TestCreateShare_Validation(t *testing.T) {
 		{"missing filePath", map[string]any{}, http.StatusBadRequest},
 		{"negative expiry", map[string]any{"filePath": "real.txt", "expiresInHours": -1}, http.StatusBadRequest},
 		{"nonexistent file", map[string]any{"filePath": "ghost.txt"}, http.StatusNotFound},
-		{"traversal", map[string]any{"filePath": "../../etc/passwd"}, http.StatusNotFound},
+		{"traversal", map[string]any{"filePath": "../../etc/passwd"}, http.StatusBadRequest},
+		{"absolute path", map[string]any{"filePath": "/etc/passwd"}, http.StatusBadRequest},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -297,5 +298,24 @@ func TestPublicShare_UnknownToken(t *testing.T) {
 	w := doRequest(engine, http.MethodGet, "/api/v1/public/shares/doesnotexist", nil)
 	if w.Code != http.StatusNotFound {
 		t.Errorf("expected 404, got %d", w.Code)
+	}
+}
+
+func TestPublicShare_RejectsTamperedStorePath(t *testing.T) {
+	engine, _ := newTestEngine(t)
+
+	// Simulate a hand-edited shares.json containing a traversal path — the
+	// public endpoints must reject it before touching the filesystem.
+	res, err := shareutil.Create(shareutil.CreateShareParams{FilePath: "../../etc/passwd"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := doRequest(engine, http.MethodGet, "/api/v1/public/shares/"+res.Share.Token, nil)
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404 for tampered path on download, got %d", w.Code)
+	}
+	w = doRequest(engine, http.MethodGet, "/api/v1/public/shares/"+res.Share.Token+"/info", nil)
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404 for tampered path on info, got %d", w.Code)
 	}
 }

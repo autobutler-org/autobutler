@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/autobutler-org/autobutler/pkg/util/authutil"
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
@@ -84,6 +85,12 @@ func publicShareInfo(c *gin.Context) *serverutil.Response {
 	if err != nil {
 		return shareErrorResponse(err)
 	}
+	// Re-validate the stored path at the trust boundary: creation checks it
+	// and safeJoin guards resolution, but this route is unauthenticated and
+	// shares.json could in principle be edited by hand.
+	if strings.Contains(share.FilePath, "..") || filepath.IsAbs(share.FilePath) {
+		return serverutil.NotFound(errors.New("share not found"))
+	}
 
 	info := shareInfoJSON{PasswordProtected: share.PasswordProtected()}
 	if share.ExpiresAt != nil {
@@ -134,6 +141,10 @@ func publicShareDownload(c *gin.Context) *serverutil.Response {
 	share, err := shareutil.Resolve(c.Param("token"), suppliedPassword(c))
 	if err != nil {
 		return shareErrorResponse(err)
+	}
+	// Re-validate the stored path at the trust boundary (see publicShareInfo).
+	if strings.Contains(share.FilePath, "..") || filepath.IsAbs(share.FilePath) {
+		return serverutil.NotFound(errors.New("share not found"))
 	}
 
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
