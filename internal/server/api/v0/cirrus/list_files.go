@@ -1,7 +1,6 @@
 package v0_files
 
 import (
-	"errors"
 	"net/http"
 	"path/filepath"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/autobutler/pkg/vfs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,6 +29,34 @@ type FileNodeJSON struct {
 	FileType       string `json:"fileType"`
 }
 
+// listFilesVFS lists files via the VFS registry (single-device / no-serial path).
+func listFilesVFS(registry interface{ Get(string) (vfs.VFS, bool) }, rootDir string) ([]FileNodeJSON, error) {
+	fsys, ok := registry.Get("files")
+	if !ok {
+		return nil, serverutil.NewHttpErrorf(http.StatusInternalServerError, "files namespace not registered")
+	}
+	infos, err := fsys.List(nil, rootDir, &vfs.ListFilter{Recursive: false}) //nolint:staticcheck
+	if err != nil {
+		if err == vfs.ErrNotFound {
+			return nil, serverutil.NewHttpErrorf(http.StatusNotFound, "folder not found: %s", rootDir)
+		}
+		return nil, err
+	}
+	result := make([]FileNodeJSON, len(infos))
+	for i, fi := range infos {
+		result[i] = FileNodeJSON{
+			Name:     fi.Name,
+			Size:     fi.Size,
+			IsDir:    fi.IsDir,
+			DirPath:  fi.Path,
+			FullPath: fi.Path,
+			FileType: string(storageutil.DetermineFileTypeFromPath(fi.Path)),
+		}
+	}
+	return result, nil
+}
+
+// listFilesImpl lists files across the given devices (serial-scoped fallback).
 func listFilesImpl(rootDir string, devices []storageutil.ManagedDevice) ([]FileNodeJSON, error) {
 	var allFiles []*storageutil.DeviceFileInfo
 	sawListing := false
@@ -45,7 +73,7 @@ func listFilesImpl(rootDir string, devices []storageutil.ManagedDevice) ([]FileN
 		}
 		files, err := storageutil.StatFilesInDir(fullPathDir, device.Name, device.DataDir, deviceSerial)
 		if err != nil {
-			if rootDir != "" && errors.Is(err, storageutil.ErrPathNotFound) {
+			if rootDir != "" {
 				sawNotFound = true
 			}
 			continue
@@ -105,6 +133,17 @@ func listFiles(c *gin.Context) *serverutil.Response {
 	}
 	rootDir := c.Query("rootDir")
 	serials := c.QueryArray("serial")
+
+	// No serial filter: use VFS (no device-specific semantics needed).
+	if len(serials) == 0 {
+		if reg := deps.VFSRegistry(); reg != nil {
+			jsonData, err := listFilesVFS(reg, rootDir)
+			if err != nil {
+				return serverutil.InternalServerError(err)
+			}
+			return serverutil.Ok().WithData(jsonData)
+		}
+	}
 
 	devices, err := deps.StorageService().GetManagedDevices()
 	if err != nil {
