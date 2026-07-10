@@ -15,8 +15,8 @@ import (
 
 // memEntry holds the data and metadata for a MemVFS entry.
 type memEntry struct {
-	data    []byte
-	info    FileInfo
+	data []byte
+	info FileInfo
 }
 
 // MemVFS is an in-memory VFS implementation for testing.
