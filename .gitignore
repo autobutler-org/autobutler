@@ -117,3 +117,7 @@ provisioning
 
 # SBOM generated at build time from pubspec.lock
 assets/sbom_flutter.json
+.beads/
+.codex/
+CLAUDE.md
+.agents/

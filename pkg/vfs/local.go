@@ -33,11 +33,13 @@ func NewLocalVFS(root string, namespaceID string) (*LocalVFS, error) {
 // abs converts a VFS-relative path to an absolute host path, guarding against
 // path traversal attacks. Returns ErrPermissionDenied if the result would
 // escape the root.
+//
+// filepath.Join calls filepath.Clean internally, but we call it explicitly so
+// that static analysers (CodeQL go/path-injection) recognise this function as
+// a sanitiser rather than treating the joined result as tainted user data.
 func (v *LocalVFS) abs(path string) (string, error) {
-	// Clean the path to remove any .. or . components
-	clean := filepath.Join(v.root, filepath.FromSlash(path))
-	// Ensure the result is still within root
-	if !strings.HasPrefix(clean, v.root+string(os.PathSeparator)) && clean != v.root {
+	clean := filepath.Clean(filepath.Join(v.root, filepath.FromSlash(path)))
+	if clean != v.root && !strings.HasPrefix(clean, v.root+string(os.PathSeparator)) {
 		return "", ErrPermissionDenied
 	}
 	return clean, nil
