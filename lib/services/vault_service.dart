@@ -216,7 +216,7 @@ class VaultService with AuthenticatedService {
     } else {
       resolved = uri;
     }
-    return resolved.resolve('/api/v1$path');
+    return resolved.resolve('/api/v0$path');
   }
 
   static Future<VaultStatus> getStatus() async {

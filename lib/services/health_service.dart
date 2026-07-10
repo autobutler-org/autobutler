@@ -87,7 +87,7 @@ class HealthService with AuthenticatedService {
   }
 
   static Future<HealthStatus> getHealth() async {
-    final uri = _apiBaseUri.resolve('/api/v1/health');
+    final uri = _apiBaseUri.resolve('/api/v0/health');
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to fetch health (${response.statusCode})');

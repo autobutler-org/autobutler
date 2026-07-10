@@ -154,7 +154,7 @@ class StorageService with AuthenticatedService {
   }
 
   static Future<List<StorageDevice>> _fetchDevices() async {
-    final uri = _apiBaseUri.resolve('/api/v1/storage/devices/status');
+    final uri = _apiBaseUri.resolve('/api/v0/storage/devices/status');
     final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
@@ -172,7 +172,7 @@ class StorageService with AuthenticatedService {
 
   /// Mounts a USB device by serial. Requires the butler to be running as root.
   static Future<void> mountDevice(String serial) async {
-    final uri = _apiBaseUri.resolve('/api/v1/storage/devices/usb/$serial');
+    final uri = _apiBaseUri.resolve('/api/v0/storage/devices/usb/$serial');
     final response = await http.post(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
@@ -190,7 +190,7 @@ class StorageService with AuthenticatedService {
     // Device paths contain slashes (e.g. /dev/disk3s5) — pass as a query
     // param so they don't get misinterpreted as URL path segments.
     final uri = _apiBaseUri
-        .resolve('/api/v1/storage/devices/rename')
+        .resolve('/api/v0/storage/devices/rename')
         .replace(queryParameters: {'devicePath': devicePath});
     final response = await http.patch(
       uri,
@@ -211,7 +211,7 @@ class StorageService with AuthenticatedService {
     required String username,
     required String password,
   }) async {
-    final uri = _apiBaseUri.resolve('/api/v1/storage/devices/role');
+    final uri = _apiBaseUri.resolve('/api/v0/storage/devices/role');
     final response = await http.put(
       uri,
       headers: {'Content-Type': 'application/json', ..._authHeaders},
@@ -237,7 +237,7 @@ class StorageService with AuthenticatedService {
     String? password,
     String? recoveryPassword,
   }) async {
-    final uri = _apiBaseUri.resolve('/api/v1/storage/devices/snapshot-backup');
+    final uri = _apiBaseUri.resolve('/api/v0/storage/devices/snapshot-backup');
     final body = <String, dynamic>{'targetDeviceSerial': targetDeviceSerial};
     if (username != null) body['username'] = username;
     if (password != null) body['password'] = password;
@@ -260,7 +260,7 @@ class StorageService with AuthenticatedService {
 
   static Future<BackupJobStatus> getSnapshotBackupStatus(String jobId) async {
     final uri = _apiBaseUri.resolve(
-      '/api/v1/storage/devices/snapshot-backup/status/$jobId',
+      '/api/v0/storage/devices/snapshot-backup/status/$jobId',
     );
     final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -275,7 +275,7 @@ class StorageService with AuthenticatedService {
     bool full = false,
   }) async {
     final uri = _apiBaseUri.resolve(
-      '/api/v1/storage/devices/snapshot-backup/verify',
+      '/api/v0/storage/devices/snapshot-backup/verify',
     );
     final response = await http.post(
       uri,

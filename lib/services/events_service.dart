@@ -22,7 +22,7 @@ class FileEvent {
   );
 }
 
-/// Maintains a WebSocket connection to `GET /api/v1/events` and broadcasts
+/// Maintains a WebSocket connection to `GET /api/v0/events` and broadcasts
 /// incoming [FileEvent]s to listeners.
 ///
 /// Usage:
@@ -75,7 +75,7 @@ class EventsService {
     }
 
     try {
-      final httpUri = Uri.parse(host).resolve('/api/v1/events');
+      final httpUri = Uri.parse(host).resolve('/api/v0/events');
       final token = AppSettings.instance.sessionToken;
       final wsUri = httpUri.replace(
         scheme: httpUri.scheme == 'https' ? 'wss' : 'ws',

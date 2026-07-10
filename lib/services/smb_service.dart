@@ -57,7 +57,7 @@ class SmbService with AuthenticatedService {
   static Map<String, String> get _authHeaders => instance.authHeaders;
 
   static Future<SmbStatus> getStatus() async {
-    final uri = _apiBaseUri.resolve('/api/v1/smb/status');
+    final uri = _apiBaseUri.resolve('/api/v0/smb/status');
     final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to get SMB status (${response.statusCode})');
@@ -67,7 +67,7 @@ class SmbService with AuthenticatedService {
   }
 
   static Future<SmbStatus> setup(String user, String password) async {
-    final uri = _apiBaseUri.resolve('/api/v1/smb/setup');
+    final uri = _apiBaseUri.resolve('/api/v0/smb/setup');
     final response = await http.post(
       uri,
       headers: {'Content-Type': 'application/json', ..._authHeaders},
@@ -84,7 +84,7 @@ class SmbService with AuthenticatedService {
   }
 
   static Future<SmbStatus> teardown() async {
-    final uri = _apiBaseUri.resolve('/api/v1/smb');
+    final uri = _apiBaseUri.resolve('/api/v0/smb');
     final response = await http.delete(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;

@@ -43,7 +43,7 @@ class AuthService {
 
   /// Checks whether initial setup has been completed on the butler.
   static Future<AuthStatus> checkStatus() async {
-    final uri = _baseUri.resolve('/api/v1/auth/status');
+    final uri = _baseUri.resolve('/api/v0/auth/status');
     final response = await http.get(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to check auth status (${response.statusCode})');
@@ -59,7 +59,7 @@ class AuthService {
     required String username,
     required String password,
   }) async {
-    final uri = _baseUri.resolve('/api/v1/auth/setup');
+    final uri = _baseUri.resolve('/api/v0/auth/setup');
     final response = await http.post(
       uri,
       headers: {'Content-Type': 'application/json'},
@@ -81,7 +81,7 @@ class AuthService {
     required String username,
     required String password,
   }) async {
-    final uri = _baseUri.resolve('/api/v1/auth/login');
+    final uri = _baseUri.resolve('/api/v0/auth/login');
     final response = await http.post(
       uri,
       headers: {'Content-Type': 'application/json'},
@@ -105,7 +105,7 @@ class AuthService {
     required String recoveryPhrase,
     required String newPassword,
   }) async {
-    final uri = _baseUri.resolve('/api/v1/auth/recover');
+    final uri = _baseUri.resolve('/api/v0/auth/recover');
     final response = await http.post(
       uri,
       headers: {'Content-Type': 'application/json'},
@@ -130,7 +130,7 @@ class AuthService {
     await AppSettings.instance.setSessionToken(null);
     if (token == null) return;
     try {
-      final uri = _baseUri.resolve('/api/v1/auth/logout');
+      final uri = _baseUri.resolve('/api/v0/auth/logout');
       await http.post(uri, headers: {'Authorization': 'Bearer $token'});
     } catch (_) {
       // Best-effort — token is already cleared locally.

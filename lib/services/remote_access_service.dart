@@ -44,7 +44,7 @@ class RemoteAccessService with AuthenticatedService {
   static Map<String, String> get _authHeaders => instance.authHeaders;
 
   static Future<RemoteAccessStatus> getStatus() async {
-    final uri = _apiBaseUri.resolve('/api/v1/settings/remote-access');
+    final uri = _apiBaseUri.resolve('/api/v0/settings/remote-access');
     final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
@@ -56,7 +56,7 @@ class RemoteAccessService with AuthenticatedService {
   }
 
   static Future<RemoteAccessStatus> enable() async {
-    final uri = _apiBaseUri.resolve('/api/v1/settings/remote-access');
+    final uri = _apiBaseUri.resolve('/api/v0/settings/remote-access');
     final response = await http.post(
       uri,
       headers: {'Content-Type': 'application/json', ..._authHeaders},
@@ -74,7 +74,7 @@ class RemoteAccessService with AuthenticatedService {
   }
 
   static Future<RemoteAccessStatus> disable() async {
-    final uri = _apiBaseUri.resolve('/api/v1/settings/remote-access');
+    final uri = _apiBaseUri.resolve('/api/v0/settings/remote-access');
     final response = await http.delete(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;

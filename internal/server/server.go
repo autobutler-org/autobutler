@@ -175,7 +175,7 @@ func usbDeviceMonitor(deps deputil.Dependencies) {
 }
 
 func setupSwagger(router *gin.Engine) {
-	docs.SwaggerInfo.BasePath = "/api/v1"
+	docs.SwaggerInfo.BasePath = "/api/v0"
 	router.GET("/swagger", func(c *gin.Context) {
 		c.Redirect(302, "/swagger/index.html")
 	})

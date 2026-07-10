@@ -1,4 +1,4 @@
-/// Represents a paginated response from the /api/v1/photos endpoint.
+/// Represents a paginated response from the /api/v0/photos endpoint.
 class PaginatedPhotosResponse {
   final List<PhotoItem> photos;
   final int total;
