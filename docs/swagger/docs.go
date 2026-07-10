@@ -39,7 +39,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1_albums.AlbumJSON"
+                                "$ref": "#/definitions/v0_albums.AlbumJSON"
                             }
                         }
                     },
@@ -70,7 +70,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1_albums.createAlbumRequest"
+                            "$ref": "#/definitions/v0_albums.createAlbumRequest"
                         }
                     }
                 ],
@@ -78,7 +78,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/v1_albums.AlbumJSON"
+                            "$ref": "#/definitions/v0_albums.AlbumJSON"
                         }
                     },
                     "400": {
@@ -119,7 +119,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1_albums.AlbumJSON"
+                            "$ref": "#/definitions/v0_albums.AlbumJSON"
                         }
                     },
                     "400": {
@@ -209,7 +209,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1_albums.createAlbumRequest"
+                            "$ref": "#/definitions/v0_albums.createAlbumRequest"
                         }
                     }
                 ],
@@ -217,7 +217,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/v1_albums.AlbumJSON"
+                            "$ref": "#/definitions/v0_albums.AlbumJSON"
                         }
                     },
                     "400": {
@@ -266,7 +266,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1_albums.AlbumItemJSON"
+                                "$ref": "#/definitions/v0_albums.AlbumItemJSON"
                             }
                         }
                     },
@@ -310,7 +310,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1_albums.addPhotoRequest"
+                            "$ref": "#/definitions/v0_albums.addPhotoRequest"
                         }
                     }
                 ],
@@ -318,7 +318,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/v1_albums.AlbumItemJSON"
+                            "$ref": "#/definitions/v0_albums.AlbumItemJSON"
                         }
                     },
                     "400": {
@@ -361,7 +361,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1_albums.addPhotoRequest"
+                            "$ref": "#/definitions/v0_albums.addPhotoRequest"
                         }
                     }
                 ],
@@ -414,7 +414,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1_albums.moveAlbumRequest"
+                            "$ref": "#/definitions/v0_albums.moveAlbumRequest"
                         }
                     }
                 ],
@@ -422,7 +422,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1_albums.AlbumJSON"
+                            "$ref": "#/definitions/v0_albums.AlbumJSON"
                         }
                     },
                     "400": {
@@ -473,7 +473,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1_albums.renameAlbumRequest"
+                            "$ref": "#/definitions/v0_albums.renameAlbumRequest"
                         }
                     }
                 ],
@@ -481,7 +481,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1_albums.AlbumJSON"
+                            "$ref": "#/definitions/v0_albums.AlbumJSON"
                         }
                     },
                     "400": {
@@ -785,7 +785,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1_books.BookJSON"
+                                "$ref": "#/definitions/v0_books.BookJSON"
                             }
                         }
                     },
@@ -828,7 +828,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1_files.FileNodeJSON"
+                                "$ref": "#/definitions/v0_files.FileNodeJSON"
                             }
                         }
                     },
@@ -859,7 +859,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1_files.moveFileRequest"
+                            "$ref": "#/definitions/v0_files.moveFileRequest"
                         }
                     }
                 ],
@@ -975,7 +975,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1_files.FileNodeWithTimeJSON"
+                                "$ref": "#/definitions/v0_files.FileNodeWithTimeJSON"
                             }
                         }
                     },
@@ -1247,7 +1247,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1_files.FileNodeJSON"
+                                "$ref": "#/definitions/v0_files.FileNodeJSON"
                             }
                         }
                     },
@@ -1300,7 +1300,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1_files.FileNodeWithTimeJSON"
+                                "$ref": "#/definitions/v0_files.FileNodeWithTimeJSON"
                             }
                         }
                     },
@@ -1343,7 +1343,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1_files.FileNodeJSON"
+                                "$ref": "#/definitions/v0_files.FileNodeJSON"
                             }
                         }
                     },
@@ -1385,7 +1385,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1_files.StatFileJSON"
+                            "$ref": "#/definitions/v0_files.StatFileJSON"
                         }
                     },
                     "404": {
@@ -1538,7 +1538,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1_health.HealthJSON"
+                            "$ref": "#/definitions/v0_health.HealthJSON"
                         }
                     }
                 }
@@ -1564,7 +1564,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1_migration.StartImportRequest"
+                            "$ref": "#/definitions/v0_migration.StartImportRequest"
                         }
                     }
                 ],
@@ -1671,7 +1671,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1_photos.PaginatedPhotosResponse"
+                            "$ref": "#/definitions/v0_photos.PaginatedPhotosResponse"
                         }
                     },
                     "500": {
@@ -1703,7 +1703,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1_photos.copyPhotoRequest"
+                            "$ref": "#/definitions/v0_photos.copyPhotoRequest"
                         }
                     }
                 ],
@@ -1711,7 +1711,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1_photos.copyPhotoResponse"
+                            "$ref": "#/definitions/v0_photos.copyPhotoResponse"
                         }
                     },
                     "400": {
@@ -1764,7 +1764,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1_favorites.favoriteResponse"
+                            "$ref": "#/definitions/v0_favorites.favoriteResponse"
                         }
                     },
                     "400": {
@@ -1800,7 +1800,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1_favorites.favoriteRequest"
+                            "$ref": "#/definitions/v0_favorites.favoriteRequest"
                         }
                     }
                 ],
@@ -1808,7 +1808,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1_favorites.favoriteResponse"
+                            "$ref": "#/definitions/v0_favorites.favoriteResponse"
                         }
                     },
                     "400": {
@@ -1842,7 +1842,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1_favorites.favoriteItemJSON"
+                                "$ref": "#/definitions/v0_favorites.favoriteItemJSON"
                             }
                         }
                     },
@@ -1884,7 +1884,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1_photos.PhotoMetadataJSON"
+                            "$ref": "#/definitions/v0_photos.PhotoMetadataJSON"
                         }
                     },
                     "400": {
@@ -1928,7 +1928,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1_photos.rotatePhotoRequest"
+                            "$ref": "#/definitions/v0_photos.rotatePhotoRequest"
                         }
                     }
                 ],
@@ -1968,7 +1968,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1_version.SbomJSON"
+                            "$ref": "#/definitions/v0_version.SbomJSON"
                         }
                     },
                     "500": {
@@ -1994,7 +1994,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1_settings.SettingsJSON"
+                            "$ref": "#/definitions/v0_settings.SettingsJSON"
                         }
                     },
                     "500": {
@@ -2024,7 +2024,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1_settings.SettingsJSON"
+                            "$ref": "#/definitions/v0_settings.SettingsJSON"
                         }
                     }
                 ],
@@ -2032,7 +2032,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1_settings.SettingsJSON"
+                            "$ref": "#/definitions/v0_settings.SettingsJSON"
                         }
                     },
                     "400": {
@@ -2510,7 +2510,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1_version.VersionJSON"
+                            "$ref": "#/definitions/v0_version.VersionJSON"
                         }
                     },
                     "500": {
@@ -2597,7 +2597,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1_version.UpdateRequest"
+                            "$ref": "#/definitions/v0_version.UpdateRequest"
                         }
                     },
                     "500": {
@@ -2629,7 +2629,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1_version.UpdateParams"
+                            "$ref": "#/definitions/v0_version.UpdateParams"
                         }
                     }
                 ],
@@ -2637,7 +2637,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1_version.UpdateRequest"
+                            "$ref": "#/definitions/v0_version.UpdateRequest"
                         }
                     },
                     "400": {
@@ -2728,7 +2728,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_albums.AlbumItemJSON": {
+        "v0_albums.AlbumItemJSON": {
             "type": "object",
             "properties": {
                 "addedAt": {
@@ -2748,13 +2748,13 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_albums.AlbumJSON": {
+        "v0_albums.AlbumJSON": {
             "type": "object",
             "properties": {
                 "children": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v1_albums.AlbumJSON"
+                        "$ref": "#/definitions/v0_albums.AlbumJSON"
                     }
                 },
                 "createdAt": {
@@ -2780,7 +2780,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_albums.addPhotoRequest": {
+        "v0_albums.addPhotoRequest": {
             "type": "object",
             "properties": {
                 "deviceSerial": {
@@ -2791,7 +2791,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_albums.createAlbumRequest": {
+        "v0_albums.createAlbumRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -2805,7 +2805,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_albums.moveAlbumRequest": {
+        "v0_albums.moveAlbumRequest": {
             "type": "object",
             "properties": {
                 "parentId": {
@@ -2813,7 +2813,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_albums.renameAlbumRequest": {
+        "v0_albums.renameAlbumRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -2824,7 +2824,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_books.BookJSON": {
+        "v0_books.BookJSON": {
             "type": "object",
             "properties": {
                 "fileName": {
@@ -2844,7 +2844,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_favorites.favoriteItemJSON": {
+        "v0_favorites.favoriteItemJSON": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -2858,7 +2858,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_favorites.favoriteRequest": {
+        "v0_favorites.favoriteRequest": {
             "type": "object",
             "properties": {
                 "deviceSerial": {
@@ -2869,7 +2869,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_favorites.favoriteResponse": {
+        "v0_favorites.favoriteResponse": {
             "type": "object",
             "properties": {
                 "isFavorite": {
@@ -2877,7 +2877,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_files.FileNodeJSON": {
+        "v0_files.FileNodeJSON": {
             "type": "object",
             "properties": {
                 "compressedSize": {
@@ -2913,7 +2913,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_files.FileNodeWithTimeJSON": {
+        "v0_files.FileNodeWithTimeJSON": {
             "type": "object",
             "properties": {
                 "compressedSize": {
@@ -2952,7 +2952,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_files.StatFileJSON": {
+        "v0_files.StatFileJSON": {
             "type": "object",
             "properties": {
                 "fileType": {
@@ -2966,7 +2966,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_files.moveFileRequest": {
+        "v0_files.moveFileRequest": {
             "type": "object",
             "properties": {
                 "newDeviceSerial": {
@@ -2983,7 +2983,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_health.HealthJSON": {
+        "v0_health.HealthJSON": {
             "type": "object",
             "properties": {
                 "alerts": {
@@ -3034,7 +3034,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_migration.StartImportRequest": {
+        "v0_migration.StartImportRequest": {
             "type": "object",
             "properties": {
                 "deviceSerial": {
@@ -3065,7 +3065,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_photos.AlbumRefJSON": {
+        "v0_photos.AlbumRefJSON": {
             "type": "object",
             "properties": {
                 "id": {
@@ -3076,7 +3076,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_photos.ExifJSON": {
+        "v0_photos.ExifJSON": {
             "type": "object",
             "properties": {
                 "aperture": {
@@ -3111,7 +3111,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_photos.PaginatedPhotosResponse": {
+        "v0_photos.PaginatedPhotosResponse": {
             "type": "object",
             "properties": {
                 "limit": {
@@ -3123,7 +3123,7 @@ const docTemplate = `{
                 "photos": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v1_photos.PhotoJSON"
+                        "$ref": "#/definitions/v0_photos.PhotoJSON"
                     }
                 },
                 "total": {
@@ -3131,7 +3131,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_photos.PhotoJSON": {
+        "v0_photos.PhotoJSON": {
             "type": "object",
             "properties": {
                 "fileName": {
@@ -3154,17 +3154,17 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_photos.PhotoMetadataJSON": {
+        "v0_photos.PhotoMetadataJSON": {
             "type": "object",
             "properties": {
                 "albums": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v1_photos.AlbumRefJSON"
+                        "$ref": "#/definitions/v0_photos.AlbumRefJSON"
                     }
                 },
                 "exif": {
-                    "$ref": "#/definitions/v1_photos.ExifJSON"
+                    "$ref": "#/definitions/v0_photos.ExifJSON"
                 },
                 "fileName": {
                     "type": "string"
@@ -3192,7 +3192,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_photos.copyPhotoRequest": {
+        "v0_photos.copyPhotoRequest": {
             "type": "object",
             "required": [
                 "relPath"
@@ -3206,7 +3206,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_photos.copyPhotoResponse": {
+        "v0_photos.copyPhotoResponse": {
             "type": "object",
             "properties": {
                 "relPath": {
@@ -3214,7 +3214,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_photos.rotatePhotoRequest": {
+        "v0_photos.rotatePhotoRequest": {
             "type": "object",
             "required": [
                 "relPath"
@@ -3232,7 +3232,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_settings.SettingsJSON": {
+        "v0_settings.SettingsJSON": {
             "type": "object",
             "properties": {
                 "autoUpdate": {
@@ -3240,14 +3240,14 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_version.SbomDependencyJSON": {
+        "v0_version.SbomDependencyJSON": {
             "type": "object",
             "properties": {
                 "path": {
                     "type": "string"
                 },
                 "replace": {
-                    "$ref": "#/definitions/v1_version.SbomDependencyJSON"
+                    "$ref": "#/definitions/v0_version.SbomDependencyJSON"
                 },
                 "sum": {
                     "type": "string"
@@ -3257,24 +3257,24 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_version.SbomJSON": {
+        "v0_version.SbomJSON": {
             "type": "object",
             "properties": {
                 "dependencies": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v1_version.SbomDependencyJSON"
+                        "$ref": "#/definitions/v0_version.SbomDependencyJSON"
                     }
                 },
                 "goVersion": {
                     "type": "string"
                 },
                 "main": {
-                    "$ref": "#/definitions/v1_version.SbomModuleJSON"
+                    "$ref": "#/definitions/v0_version.SbomModuleJSON"
                 }
             }
         },
-        "v1_version.SbomModuleJSON": {
+        "v0_version.SbomModuleJSON": {
             "type": "object",
             "properties": {
                 "path": {
@@ -3288,7 +3288,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_version.UpdateParams": {
+        "v0_version.UpdateParams": {
             "type": "object",
             "properties": {
                 "force": {
@@ -3302,7 +3302,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_version.UpdateRequest": {
+        "v0_version.UpdateRequest": {
             "type": "object",
             "properties": {
                 "version": {
@@ -3310,7 +3310,7 @@ const docTemplate = `{
                 }
             }
         },
-        "v1_version.VersionJSON": {
+        "v0_version.VersionJSON": {
             "type": "object",
             "properties": {
                 "buildDate": {

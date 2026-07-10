@@ -47,7 +47,7 @@ definitions:
       version:
         type: string
     type: object
-  v1_albums.AlbumItemJSON:
+  v0_albums.AlbumItemJSON:
     properties:
       addedAt:
         type: string
@@ -60,11 +60,11 @@ definitions:
       relPath:
         type: string
     type: object
-  v1_albums.AlbumJSON:
+  v0_albums.AlbumJSON:
     properties:
       children:
         items:
-          $ref: '#/definitions/v1_albums.AlbumJSON'
+          $ref: '#/definitions/v0_albums.AlbumJSON'
         type: array
       createdAt:
         type: string
@@ -81,14 +81,14 @@ definitions:
       updatedAt:
         type: string
     type: object
-  v1_albums.addPhotoRequest:
+  v0_albums.addPhotoRequest:
     properties:
       deviceSerial:
         type: string
       relPath:
         type: string
     type: object
-  v1_albums.createAlbumRequest:
+  v0_albums.createAlbumRequest:
     properties:
       name:
         type: string
@@ -97,19 +97,19 @@ definitions:
     required:
     - name
     type: object
-  v1_albums.moveAlbumRequest:
+  v0_albums.moveAlbumRequest:
     properties:
       parentId:
         type: integer
     type: object
-  v1_albums.renameAlbumRequest:
+  v0_albums.renameAlbumRequest:
     properties:
       name:
         type: string
     required:
     - name
     type: object
-  v1_books.BookJSON:
+  v0_books.BookJSON:
     properties:
       fileName:
         type: string
@@ -122,7 +122,7 @@ definitions:
       type:
         type: string
     type: object
-  v1_favorites.favoriteItemJSON:
+  v0_favorites.favoriteItemJSON:
     properties:
       createdAt:
         type: string
@@ -131,19 +131,19 @@ definitions:
       relPath:
         type: string
     type: object
-  v1_favorites.favoriteRequest:
+  v0_favorites.favoriteRequest:
     properties:
       deviceSerial:
         type: string
       relPath:
         type: string
     type: object
-  v1_favorites.favoriteResponse:
+  v0_favorites.favoriteResponse:
     properties:
       isFavorite:
         type: boolean
     type: object
-  v1_files.FileNodeJSON:
+  v0_files.FileNodeJSON:
     properties:
       compressedSize:
         type: integer
@@ -167,7 +167,7 @@ definitions:
       size:
         type: integer
     type: object
-  v1_files.FileNodeWithTimeJSON:
+  v0_files.FileNodeWithTimeJSON:
     properties:
       compressedSize:
         type: integer
@@ -193,7 +193,7 @@ definitions:
       size:
         type: integer
     type: object
-  v1_files.StatFileJSON:
+  v0_files.StatFileJSON:
     properties:
       fileType:
         type: string
@@ -202,7 +202,7 @@ definitions:
       name:
         type: string
     type: object
-  v1_files.moveFileRequest:
+  v0_files.moveFileRequest:
     properties:
       newDeviceSerial:
         type: string
@@ -213,7 +213,7 @@ definitions:
       oldFilePath:
         type: string
     type: object
-  v1_health.HealthJSON:
+  v0_health.HealthJSON:
     properties:
       alerts:
         items:
@@ -249,7 +249,7 @@ definitions:
       temperatureCelsius:
         type: number
     type: object
-  v1_migration.StartImportRequest:
+  v0_migration.StartImportRequest:
     properties:
       deviceSerial:
         description: 'Optional: empty string for internal drive'
@@ -270,14 +270,14 @@ definitions:
             type: boolean
         type: object
     type: object
-  v1_photos.AlbumRefJSON:
+  v0_photos.AlbumRefJSON:
     properties:
       id:
         type: integer
       name:
         type: string
     type: object
-  v1_photos.ExifJSON:
+  v0_photos.ExifJSON:
     properties:
       aperture:
         type: number
@@ -300,7 +300,7 @@ definitions:
       shutterSpeed:
         type: string
     type: object
-  v1_photos.PaginatedPhotosResponse:
+  v0_photos.PaginatedPhotosResponse:
     properties:
       limit:
         type: integer
@@ -308,12 +308,12 @@ definitions:
         type: integer
       photos:
         items:
-          $ref: '#/definitions/v1_photos.PhotoJSON'
+          $ref: '#/definitions/v0_photos.PhotoJSON'
         type: array
       total:
         type: integer
     type: object
-  v1_photos.PhotoJSON:
+  v0_photos.PhotoJSON:
     properties:
       fileName:
         type: string
@@ -328,14 +328,14 @@ definitions:
       size:
         type: integer
     type: object
-  v1_photos.PhotoMetadataJSON:
+  v0_photos.PhotoMetadataJSON:
     properties:
       albums:
         items:
-          $ref: '#/definitions/v1_photos.AlbumRefJSON'
+          $ref: '#/definitions/v0_photos.AlbumRefJSON'
         type: array
       exif:
-        $ref: '#/definitions/v1_photos.ExifJSON'
+        $ref: '#/definitions/v0_photos.ExifJSON'
       fileName:
         type: string
       fileSize:
@@ -353,7 +353,7 @@ definitions:
       width:
         type: integer
     type: object
-  v1_photos.copyPhotoRequest:
+  v0_photos.copyPhotoRequest:
     properties:
       relPath:
         type: string
@@ -362,12 +362,12 @@ definitions:
     required:
     - relPath
     type: object
-  v1_photos.copyPhotoResponse:
+  v0_photos.copyPhotoResponse:
     properties:
       relPath:
         type: string
     type: object
-  v1_photos.rotatePhotoRequest:
+  v0_photos.rotatePhotoRequest:
     properties:
       relPath:
         type: string
@@ -379,34 +379,34 @@ definitions:
     required:
     - relPath
     type: object
-  v1_settings.SettingsJSON:
+  v0_settings.SettingsJSON:
     properties:
       autoUpdate:
         type: boolean
     type: object
-  v1_version.SbomDependencyJSON:
+  v0_version.SbomDependencyJSON:
     properties:
       path:
         type: string
       replace:
-        $ref: '#/definitions/v1_version.SbomDependencyJSON'
+        $ref: '#/definitions/v0_version.SbomDependencyJSON'
       sum:
         type: string
       version:
         type: string
     type: object
-  v1_version.SbomJSON:
+  v0_version.SbomJSON:
     properties:
       dependencies:
         items:
-          $ref: '#/definitions/v1_version.SbomDependencyJSON'
+          $ref: '#/definitions/v0_version.SbomDependencyJSON'
         type: array
       goVersion:
         type: string
       main:
-        $ref: '#/definitions/v1_version.SbomModuleJSON'
+        $ref: '#/definitions/v0_version.SbomModuleJSON'
     type: object
-  v1_version.SbomModuleJSON:
+  v0_version.SbomModuleJSON:
     properties:
       path:
         type: string
@@ -415,7 +415,7 @@ definitions:
       version:
         type: string
     type: object
-  v1_version.UpdateParams:
+  v0_version.UpdateParams:
     properties:
       force:
         type: boolean
@@ -424,12 +424,12 @@ definitions:
       version:
         type: string
     type: object
-  v1_version.UpdateRequest:
+  v0_version.UpdateRequest:
     properties:
       version:
         type: string
     type: object
-  v1_version.VersionJSON:
+  v0_version.VersionJSON:
     properties:
       buildDate:
         type: string
@@ -459,7 +459,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1_albums.AlbumJSON'
+              $ref: '#/definitions/v0_albums.AlbumJSON'
             type: array
         "500":
           description: Internal Server Error
@@ -478,14 +478,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/v1_albums.createAlbumRequest'
+          $ref: '#/definitions/v0_albums.createAlbumRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/v1_albums.AlbumJSON'
+            $ref: '#/definitions/v0_albums.AlbumJSON'
         "400":
           description: Bad Request
           schema:
@@ -539,7 +539,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1_albums.AlbumJSON'
+            $ref: '#/definitions/v0_albums.AlbumJSON'
         "400":
           description: Bad Request
           schema:
@@ -571,14 +571,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/v1_albums.createAlbumRequest'
+          $ref: '#/definitions/v0_albums.createAlbumRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/v1_albums.AlbumJSON'
+            $ref: '#/definitions/v0_albums.AlbumJSON'
         "400":
           description: Bad Request
           schema:
@@ -611,7 +611,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/v1_albums.addPhotoRequest'
+          $ref: '#/definitions/v0_albums.addPhotoRequest'
       produces:
       - application/json
       responses:
@@ -645,7 +645,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1_albums.AlbumItemJSON'
+              $ref: '#/definitions/v0_albums.AlbumItemJSON'
             type: array
         "400":
           description: Bad Request
@@ -673,14 +673,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/v1_albums.addPhotoRequest'
+          $ref: '#/definitions/v0_albums.addPhotoRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/v1_albums.AlbumItemJSON'
+            $ref: '#/definitions/v0_albums.AlbumItemJSON'
         "400":
           description: Bad Request
           schema:
@@ -708,14 +708,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/v1_albums.moveAlbumRequest'
+          $ref: '#/definitions/v0_albums.moveAlbumRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1_albums.AlbumJSON'
+            $ref: '#/definitions/v0_albums.AlbumJSON'
         "400":
           description: Bad Request
           schema:
@@ -747,14 +747,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/v1_albums.renameAlbumRequest'
+          $ref: '#/definitions/v0_albums.renameAlbumRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1_albums.AlbumJSON'
+            $ref: '#/definitions/v0_albums.AlbumJSON'
         "400":
           description: Bad Request
           schema:
@@ -955,7 +955,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1_books.BookJSON'
+              $ref: '#/definitions/v0_books.BookJSON'
             type: array
         "500":
           description: Internal Server Error
@@ -1022,7 +1022,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1_files.FileNodeJSON'
+              $ref: '#/definitions/v0_files.FileNodeJSON'
             type: array
         "500":
           description: Internal Server Error
@@ -1041,7 +1041,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/v1_files.moveFileRequest'
+          $ref: '#/definitions/v0_files.moveFileRequest'
       produces:
       - application/json
       responses:
@@ -1084,7 +1084,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1_files.FileNodeWithTimeJSON'
+              $ref: '#/definitions/v0_files.FileNodeWithTimeJSON'
             type: array
         "400":
           description: Bad Request
@@ -1269,7 +1269,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1_files.FileNodeJSON'
+              $ref: '#/definitions/v0_files.FileNodeJSON'
             type: array
         "400":
           description: Bad Request
@@ -1305,7 +1305,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1_files.FileNodeWithTimeJSON'
+              $ref: '#/definitions/v0_files.FileNodeWithTimeJSON'
             type: array
         "500":
           description: Internal Server Error
@@ -1335,7 +1335,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1_files.FileNodeJSON'
+              $ref: '#/definitions/v0_files.FileNodeJSON'
             type: array
         "500":
           description: Internal Server Error
@@ -1365,7 +1365,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1_files.StatFileJSON'
+            $ref: '#/definitions/v0_files.StatFileJSON'
         "404":
           description: Not Found
           schema:
@@ -1469,7 +1469,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1_health.HealthJSON'
+            $ref: '#/definitions/v0_health.HealthJSON'
       summary: Get system health status
       tags:
       - health
@@ -1485,7 +1485,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/v1_migration.StartImportRequest'
+          $ref: '#/definitions/v0_migration.StartImportRequest'
       produces:
       - application/json
       responses:
@@ -1557,7 +1557,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1_photos.PaginatedPhotosResponse'
+            $ref: '#/definitions/v0_photos.PaginatedPhotosResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -1577,14 +1577,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/v1_photos.copyPhotoRequest'
+          $ref: '#/definitions/v0_photos.copyPhotoRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1_photos.copyPhotoResponse'
+            $ref: '#/definitions/v0_photos.copyPhotoResponse'
         "400":
           description: Bad Request
           schema:
@@ -1619,7 +1619,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1_favorites.favoriteResponse'
+            $ref: '#/definitions/v0_favorites.favoriteResponse'
         "400":
           description: Bad Request
           schema:
@@ -1642,14 +1642,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/v1_favorites.favoriteRequest'
+          $ref: '#/definitions/v0_favorites.favoriteRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1_favorites.favoriteResponse'
+            $ref: '#/definitions/v0_favorites.favoriteResponse'
         "400":
           description: Bad Request
           schema:
@@ -1671,7 +1671,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1_favorites.favoriteItemJSON'
+              $ref: '#/definitions/v0_favorites.favoriteItemJSON'
             type: array
         "500":
           description: Internal Server Error
@@ -1700,7 +1700,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1_photos.PhotoMetadataJSON'
+            $ref: '#/definitions/v0_photos.PhotoMetadataJSON'
         "400":
           description: Bad Request
           schema:
@@ -1727,7 +1727,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/v1_photos.rotatePhotoRequest'
+          $ref: '#/definitions/v0_photos.rotatePhotoRequest'
       produces:
       - application/json
       responses:
@@ -1756,7 +1756,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1_version.SbomJSON'
+            $ref: '#/definitions/v0_version.SbomJSON'
         "500":
           description: Internal Server Error
           schema:
@@ -1773,7 +1773,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1_settings.SettingsJSON'
+            $ref: '#/definitions/v0_settings.SettingsJSON'
         "500":
           description: Internal Server Error
           schema:
@@ -1791,14 +1791,14 @@ paths:
         name: settings
         required: true
         schema:
-          $ref: '#/definitions/v1_settings.SettingsJSON'
+          $ref: '#/definitions/v0_settings.SettingsJSON'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1_settings.SettingsJSON'
+            $ref: '#/definitions/v0_settings.SettingsJSON'
         "400":
           description: Bad Request
           schema:
@@ -2116,7 +2116,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1_version.VersionJSON'
+            $ref: '#/definitions/v0_version.VersionJSON'
         "500":
           description: Internal Server Error
           schema:
@@ -2173,7 +2173,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1_version.UpdateRequest'
+            $ref: '#/definitions/v0_version.UpdateRequest'
         "500":
           description: Internal Server Error
           schema:
@@ -2192,14 +2192,14 @@ paths:
         name: update
         required: true
         schema:
-          $ref: '#/definitions/v1_version.UpdateParams'
+          $ref: '#/definitions/v0_version.UpdateParams'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1_version.UpdateRequest'
+            $ref: '#/definitions/v0_version.UpdateRequest'
         "400":
           description: Bad Request
           schema:
