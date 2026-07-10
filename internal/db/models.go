@@ -114,3 +114,24 @@ type VaultLocation struct {
 	DeviceSerial string
 	UpdatedAt    time.Time
 }
+
+type VfsDbEntry struct {
+	ID        int64
+	Namespace string
+	Path      string
+	IsDir     bool
+	Size      int64
+	MimeType  string
+	Content   []byte
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type VfsMetadatum struct {
+	ID        int64
+	Namespace string
+	Path      string
+	Key       string
+	Value     string
+	UpdatedAt time.Time
+}
