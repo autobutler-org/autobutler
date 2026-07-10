@@ -400,7 +400,7 @@ test/unit: test/unit/backend test/unit/frontend ## Run unit tests
 .PHONY: test/unit/backend
 test/unit/backend: internal/server/public/stub.txt ## Run unit tests for backend
 	# Generate coverage report for unit tests (excludes integration test packages)
-	$(GO) test -v $(shell $(GO) list ./... | grep -v '/internal/server/api/v1/') \
+	$(GO) test -v $(shell $(GO) list ./... | grep -v '/internal/server/api/v0/') \
 		-coverprofile=coverage.out \
 		-covermode=atomic
 	# Apply coverage ignore directives
@@ -432,7 +432,7 @@ test/integration: test/integration/backend ## Run integration tests
 
 .PHONY: test/integration/backend
 test/integration/backend: internal/server/public/stub.txt ## Run backend integration tests (requires real filesystem, spins up gin engine)
-	$(GO) test -v ./internal/server/api/v1/...
+	$(GO) test -v ./internal/server/api/v0/...
 
 .PHONY: coverage
 coverage: test/unit/backend ## Run backend tests and print coverage percentage
