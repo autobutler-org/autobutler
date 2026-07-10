@@ -11,6 +11,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 	"github.com/autobutler-org/autobutler/pkg/util/vaultcrypto"
 	"github.com/autobutler-org/autobutler/pkg/util/workerutil"
+	"github.com/autobutler-org/autobutler/pkg/vfs"
 )
 
 type Dependencies interface {
@@ -30,7 +31,9 @@ type Dependencies interface {
 	WithHealthDatabase(healthDatabase *db.DatabaseRaw) Dependencies
 	WithIOSemaphore(sem *iosemutil.Semaphore) Dependencies
 	WithMetricsExporter(exporter *botelsqlite.TraceExporter) Dependencies
+	VFSRegistry() vfs.Registry
 	WithStorageService(s *storageutil.StorageService) Dependencies
+	WithVFSRegistry(r vfs.Registry) Dependencies
 	SetVaultDB(database *db.DatabaseSqlc)
 	ClearVaultDB()
 	WithVaultSession(session *vaultcrypto.VaultSession) Dependencies
@@ -48,6 +51,7 @@ type dependencies struct {
 	vaultDB         *db.DatabaseSqlc
 	vaultDBMu       sync.RWMutex
 	vaultSession    *vaultcrypto.VaultSession
+	vfsRegistry     vfs.Registry
 	worker          workerutil.Worker
 }
 
@@ -67,11 +71,18 @@ func DefaultDependencies() (Dependencies, error) {
 	} else { // coverage: ignore - requires health database connection failure
 		return nil, fmt.Errorf("failed to connect to health database: %w", err)
 	}
-	deps.WithStorageService(storageutil.NewStorageService(storageutil.NewDetector())) // coverage: ignore
-	deps.WithEventBus(eventbus.New())                                                 // coverage: ignore
-	deps.WithVaultSession(vaultcrypto.NewVaultSession())                              // coverage: ignore
-	deps.WithIOSemaphore(iosemutil.New())                                             // coverage: ignore
-	return deps, nil                                                                  // coverage: ignore - requires database connection
+	svc := storageutil.NewStorageService(storageutil.NewDetector()) // coverage: ignore
+	deps.WithStorageService(svc)                                    // coverage: ignore
+	registry := vfs.NewRegistry()                                   // coverage: ignore
+	_ = registry.Register(vfs.Namespace{                            // coverage: ignore
+		ID:          "files",                             // coverage: ignore
+		Description: "Primary vault file store (cirrus)", // coverage: ignore
+	}, vfs.NewStorageServiceVFS(svc, "files")) // coverage: ignore
+	deps.WithVFSRegistry(registry)                       // coverage: ignore
+	deps.WithEventBus(eventbus.New())                    // coverage: ignore
+	deps.WithVaultSession(vaultcrypto.NewVaultSession()) // coverage: ignore
+	deps.WithIOSemaphore(iosemutil.New())                // coverage: ignore
+	return deps, nil                                     // coverage: ignore - requires database connection
 }
 
 func (d *dependencies) WithDatabase(database *db.DatabaseSqlc) Dependencies {
@@ -172,6 +183,15 @@ func (d *dependencies) VaultSession() *vaultcrypto.VaultSession {
 
 func (d *dependencies) WithVaultSession(session *vaultcrypto.VaultSession) Dependencies {
 	d.vaultSession = session
+	return d
+}
+
+func (d *dependencies) VFSRegistry() vfs.Registry {
+	return d.vfsRegistry
+}
+
+func (d *dependencies) WithVFSRegistry(r vfs.Registry) Dependencies {
+	d.vfsRegistry = r
 	return d
 }
 

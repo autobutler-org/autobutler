@@ -5,6 +5,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/autobutler/pkg/vfs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,6 +36,27 @@ func statFile(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(nil)
 	}
 
+	// Use VFS for unscoped stat (no serial).
+	if serial == "" {
+		if reg := deps.VFSRegistry(); reg != nil {
+			if fsys, ok := reg.Get("files"); ok {
+				fi, err := fsys.Stat(c.Request.Context(), filePath)
+				if err != nil {
+					if err == vfs.ErrNotFound {
+						return serverutil.NotFound(err)
+					}
+					return serverutil.InternalServerError(err)
+				}
+				return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(StatFileJSON{
+					IsDir:    fi.IsDir,
+					FileType: string(storageutil.DetermineFileTypeFromPath(fi.Path)),
+					Name:     fi.Name,
+				})
+			}
+		}
+	}
+
+	// Serial-scoped fallback: use StorageService directly.
 	result, err := deps.StorageService().StatFile(storageutil.StatFileParams{
 		FilePath:     filePath,
 		DeviceSerial: serial,
