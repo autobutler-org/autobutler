@@ -107,7 +107,18 @@ func (v *StorageServiceVFS) Open(_ context.Context, path string) (io.ReadCloser,
 	if result.IsFolder {
 		return nil, ErrNotFound
 	}
-	return os.Open(result.FullPath)
+	// DownloadFile validates the path via safeJoin internally, but we re-derive
+	// a clean path here so static analysers (CodeQL go/path-injection) can
+	// follow the traversal guard rather than seeing tainted data reach os.Open.
+	cirrusDir, err := storageutil.GetCirrusDir()
+	if err != nil {
+		return nil, err
+	}
+	safePath, err := storageutil.SafeJoin(cirrusDir, filepath.Clean(path))
+	if err != nil {
+		return nil, ErrPermissionDenied
+	}
+	return os.Open(safePath)
 }
 
 // Write uploads a file to the vault via the StorageService.
