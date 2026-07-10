@@ -12,7 +12,10 @@ func NewRouter() serverutil.Router {
 func (r *router) Routes() []*serverutil.Route {
 	return []*serverutil.Route{
 		listNamespacesRoute,
-		vfsQueryMetaRoute, // static route — must be registered before the wildcard
+		// vfsQueryMetaRoute is intentionally NOT a separate route:
+		// registering GET /vfs/:ns/_meta/query alongside GET /vfs/:ns/*path
+		// would cause a Gin wildcard conflict panic at startup.
+		// The query dispatch is handled inside vfsReadRoute instead.
 		vfsReadRoute,
 		vfsWriteRoute,
 		vfsDeleteRoute,

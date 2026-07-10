@@ -45,7 +45,14 @@ func vfsRead(c *gin.Context) *serverutil.Response {
 		path = "/"
 	}
 
-	// _meta suffix: delegate to metadata handler.
+	// /_meta/query: namespace-level metadata query (no file path).
+	// This is handled here instead of a separate route to avoid a Gin
+	// wildcard conflict panic (/vfs/:ns/*path vs /vfs/:ns/_meta/query).
+	if path == "/_meta/query" || path == "/_meta/query/" {
+		return queryMeta(c)
+	}
+
+	// _meta suffix: delegate to per-path metadata handler.
 	if realPath, ok := isMetaPath(path); ok {
 		return handleGetMeta(c, deps, ns, realPath)
 	}

@@ -122,4 +122,7 @@ func queryMeta(c *gin.Context) *serverutil.Response {
 	return serverutil.Ok().WithData(entries)
 }
 
-var vfsQueryMetaRoute = serverutil.ApiRoute("GET", "/vfs/:ns/_meta/query", queryMeta)
+// vfsQueryMetaRoute is intentionally unexported and unused as a route var:
+// the handler is dispatched from vfsRead to avoid a Gin wildcard conflict.
+// See v1_vfs.go for details.
+var _ = queryMeta // ensure queryMeta is not reported as unused
