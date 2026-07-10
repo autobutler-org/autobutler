@@ -29,7 +29,7 @@ require_cmd wrk
 
 wait_for_server() {
   local retries=60
-  local status_url="$BASE_URL/api/v1/auth/status"
+  local status_url="$BASE_URL/api/v0/auth/status"
   for _ in $(seq 1 "$retries"); do
     if curl -sS -f "$status_url" >/dev/null 2>&1; then
       return 0
@@ -51,7 +51,7 @@ auth_setup_if_needed() {
   local setup_resp
   local setup_status
   local cookie_file="$WORK_DIR/auth_cookie_setup.txt"
-  setup_resp="$(curl -sS "$BASE_URL/api/v1/auth/status")"
+  setup_resp="$(curl -sS "$BASE_URL/api/v0/auth/status")"
 
   if echo "$setup_resp" | grep -q '"setup":true'; then
     return 0
@@ -59,12 +59,12 @@ auth_setup_if_needed() {
 
   setup_status="$(curl -sS -o /dev/null -w "%{http_code}" \
     -c "$cookie_file" \
-    -X POST "$BASE_URL/api/v1/auth/setup" \
+    -X POST "$BASE_URL/api/v0/auth/setup" \
     -H "Content-Type: application/json" \
     -d "{\"username\":\"$AUTH_USER\",\"password\":\"$AUTH_PASS\"}")"
 
   if [[ "$setup_status" != "200" ]]; then
-    echo "failed to initialize auth via /api/v1/auth/setup (status=$setup_status)." >&2
+    echo "failed to initialize auth via /api/v0/auth/setup (status=$setup_status)." >&2
     return 1
   fi
 
@@ -87,7 +87,7 @@ auth_login_and_get_token() {
   local cookie_file="$WORK_DIR/auth_cookie_login.txt"
   login_status="$(curl -sS -o /dev/null -w "%{http_code}" \
     -c "$cookie_file" \
-    -X POST "$BASE_URL/api/v1/auth/login" \
+    -X POST "$BASE_URL/api/v0/auth/login" \
     -H "Content-Type: application/json" \
     -d "{\"username\":\"$AUTH_USER\",\"password\":\"$AUTH_PASS\"}")"
 
@@ -112,13 +112,13 @@ prepare_fixtures() {
 }
 
 seed_albums() {
-  curl -sS -X POST "$BASE_URL/api/v1/albums" \
+  curl -sS -X POST "$BASE_URL/api/v0/albums" \
     -H "Authorization: Bearer $ACCESS_TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"name":"perf-root"}' >/dev/null || true
 
   for i in $(seq 1 25); do
-    curl -sS -X POST "$BASE_URL/api/v1/albums" \
+    curl -sS -X POST "$BASE_URL/api/v0/albums" \
       -H "Authorization: Bearer $ACCESS_TOKEN" \
       -H "Content-Type: application/json" \
       -d "{\"name\":\"perf-album-$i\"}" >/dev/null || true
@@ -145,7 +145,7 @@ run_upload_stress() {
   ls "$WORK_DIR/upload-fixtures"/*.bin | \
     xargs -I{} -P "$UPLOAD_CONCURRENCY" \
       curl -sS -o /dev/null -w "%{http_code}\n" \
-        -X POST "$BASE_URL/api/v1/cirrus/upload" \
+        -X POST "$BASE_URL/api/v0/cirrus/upload" \
         -H "Authorization: Bearer $ACCESS_TOKEN" \
         -F "file=@{}" > "$WORK_DIR/upload_status_codes.txt"
 

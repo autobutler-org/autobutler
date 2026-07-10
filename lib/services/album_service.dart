@@ -29,7 +29,7 @@ class AlbumService with AuthenticatedService {
     } else {
       resolved = uri;
     }
-    return resolved.replace(path: '/api/v1$path');
+    return resolved.replace(path: '/api/v0$path');
   }
 
   static Future<List<PhotoAlbum>> listAlbums({bool tree = false}) async {

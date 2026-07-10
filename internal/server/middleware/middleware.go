@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/autobutler-org/autobutler/internal/db"
-	v1_webdav "github.com/autobutler-org/autobutler/internal/server/api/v1/webdav"
+	v0_webdav "github.com/autobutler-org/autobutler/internal/server/api/v0/webdav"
 	"github.com/autobutler-org/autobutler/pkg/util/authutil"
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
@@ -34,15 +34,15 @@ var vaultRateLimiter = ratelimitutil.NewWithRate(0.5, 5)
 
 // authRateLimitedPaths are the API paths that require rate limiting.
 var authRateLimitedPaths = map[string]bool{
-	"/api/v1/auth/login":           true,
-	"/api/v1/auth/setup":           true,
-	"/api/v1/auth/recover":         true,
-	"/api/v1/storage/devices/role": true,
+	"/api/v0/auth/login":           true,
+	"/api/v0/auth/setup":           true,
+	"/api/v0/auth/recover":         true,
+	"/api/v0/storage/devices/role": true,
 }
 
 // vaultRateLimitedPaths are the API paths that use the stricter vault limiter.
 var vaultRateLimitedPaths = map[string]bool{
-	"/api/v1/vault/unlock": true,
+	"/api/v0/vault/unlock": true,
 }
 
 // rateLimit is a middleware that enforces per-IP rate limiting on auth endpoints.
@@ -74,10 +74,10 @@ func rateLimit() gin.HandlerFunc {
 
 // authExemptPaths are API paths that don't require a valid session.
 var authExemptPaths = map[string]bool{
-	"/api/v1/auth/setup":   true,
-	"/api/v1/auth/login":   true,
-	"/api/v1/auth/recover": true,
-	"/api/v1/auth/status":  true,
+	"/api/v0/auth/setup":   true,
+	"/api/v0/auth/login":   true,
+	"/api/v0/auth/recover": true,
+	"/api/v0/auth/status":  true,
 }
 
 func inject(deps deputil.Dependencies) gin.HandlerFunc {
@@ -132,7 +132,7 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 
 		// Static assets and the Flutter web app don't need auth — the client-side
 		// AuthGate handles the login flow. Only /api/ and /dav/ routes require a session.
-		if !strings.HasPrefix(path, "/api/") && !v1_webdav.IsWebDAVPath(path) {
+		if !strings.HasPrefix(path, "/api/") && !v0_webdav.IsWebDAVPath(path) {
 			c.Next()
 			return
 		}
@@ -195,7 +195,7 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 
 		// All methods exhausted.
 		// WebDAV clients need the WWW-Authenticate header to prompt for credentials.
-		if v1_webdav.IsWebDAVPath(path) {
+		if v0_webdav.IsWebDAVPath(path) {
 			c.Header("WWW-Authenticate", `Basic realm="AutoButler"`)
 		}
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})

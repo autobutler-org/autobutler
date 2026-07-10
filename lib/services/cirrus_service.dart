@@ -85,12 +85,12 @@ class CirrusService with AuthenticatedService {
     if (token != null && token.isNotEmpty) {
       querySegments.add('token=${Uri.encodeQueryComponent(token)}');
     }
-    final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus/download');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus/download');
     return endpointUri.replace(query: querySegments.join('&'));
   }
 
   /// Construct a URL for the thumbnail endpoint.
-  /// The backend exposes thumbnails at /api/v1/thumbnails/*filePath where filePath is a
+  /// The backend exposes thumbnails at /api/v0/thumbnails/*filePath where filePath is a
   /// path-like segment. Each path segment is percent-encoded to preserve slashes.
   static Uri constructThumbnailUrl(
     String filePath, {
@@ -103,7 +103,7 @@ class CirrusService with AuthenticatedService {
         .split('/')
         .map((s) => Uri.encodeComponent(s))
         .join('/');
-    final endpointUri = _apiBaseUri.resolve('/api/v1/thumbnails/$encodedPath');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/thumbnails/$encodedPath');
 
     // Build query params — include token when set so Image.network() (which
     // cannot set custom headers) can still authenticate.
@@ -132,7 +132,7 @@ class CirrusService with AuthenticatedService {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
 
-    final endpointUri = _apiBaseUri.resolve('/api/v1/photos');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/photos');
     final uri = endpointUri.replace(query: querySegments.join('&'));
 
     final response = await instance.authenticatedGet(uri);
@@ -170,7 +170,7 @@ class CirrusService with AuthenticatedService {
       querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
     }
 
-    final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus');
     final uri = querySegments.isEmpty
         ? endpointUri
         : endpointUri.replace(query: querySegments.join('&'));
@@ -212,7 +212,7 @@ class CirrusService with AuthenticatedService {
       }
     }
     final uri = _apiBaseUri
-        .resolve('/api/v1/cirrus/by-type')
+        .resolve('/api/v0/cirrus/by-type')
         .replace(query: querySegments.join('&'));
 
     final response = await instance.authenticatedGet(uri);
@@ -241,7 +241,7 @@ class CirrusService with AuthenticatedService {
       }
     }
     final uri = _apiBaseUri
-        .resolve('/api/v1/cirrus/recent')
+        .resolve('/api/v0/cirrus/recent')
         .replace(query: querySegments.join('&'));
 
     final response = await instance.authenticatedGet(uri);
@@ -273,7 +273,7 @@ class CirrusService with AuthenticatedService {
     for (final serial in serialValues) {
       querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
     }
-    final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus/search');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus/search');
     final uri = querySegments.isEmpty
         ? endpointUri
         : endpointUri.replace(query: querySegments.join('&'));
@@ -311,7 +311,7 @@ class CirrusService with AuthenticatedService {
     if (serialValue.isNotEmpty) {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
-    final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus/list-archive');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus/list-archive');
     final uri = endpointUri.replace(query: querySegments.join('&'));
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -337,7 +337,7 @@ class CirrusService with AuthenticatedService {
     if (serialValue.isNotEmpty) {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
-    final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus/extract');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus/extract');
     final uri = endpointUri.replace(query: querySegments.join('&'));
     final response = await instance.authenticatedPost(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -359,7 +359,7 @@ class CirrusService with AuthenticatedService {
     if (serialValue.isNotEmpty) {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
-    final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus/stat');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus/stat');
     final uri = endpointUri.replace(query: querySegments.join('&'));
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -396,7 +396,7 @@ class CirrusService with AuthenticatedService {
       queryParams['serial'] = serial;
     }
 
-    final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus');
     final uri = endpointUri.replace(queryParameters: queryParams);
 
     final response = await instance.authenticatedDelete(uri);
@@ -411,7 +411,7 @@ class CirrusService with AuthenticatedService {
     String? oldDeviceSerial,
     String? newDeviceSerial,
   }) async {
-    final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus');
     final requestBody = <String, String>{
       'oldFilePath': oldPath,
       'newFilePath': newPath,
@@ -443,8 +443,8 @@ class CirrusService with AuthenticatedService {
   static Future<void> createFolder(String folderPath, String folderName) async {
     final trimmedFolderPath = folderPath.trim();
     final endpointPath = trimmedFolderPath.isEmpty
-        ? '/api/v1/cirrus/folder/'
-        : _joinPaths('/api/v1/cirrus/folder', trimmedFolderPath);
+        ? '/api/v0/cirrus/folder/'
+        : _joinPaths('/api/v0/cirrus/folder', trimmedFolderPath);
     final endpointUri = _apiBaseUri.resolve(endpointPath);
 
     final request = http.MultipartRequest('POST', endpointUri);
@@ -463,7 +463,7 @@ class CirrusService with AuthenticatedService {
     String? serial,
     bool overwrite = false,
   }) async {
-    final uploadEndpointPath = _joinPaths('/api/v1/cirrus/upload', uploadPath);
+    final uploadEndpointPath = _joinPaths('/api/v0/cirrus/upload', uploadPath);
     final endpointUri = _apiBaseUri.resolve(uploadEndpointPath);
 
     final serialValue = serial?.trim() ?? '';
@@ -542,7 +542,7 @@ class CirrusService with AuthenticatedService {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
     final endpointUri = _apiBaseUri.resolve(
-      '/api/v1/cirrus/download-archive-file',
+      '/api/v0/cirrus/download-archive-file',
     );
     final uri = endpointUri.replace(query: querySegments.join('&'));
     final response = await instance.authenticatedGet(uri);
@@ -612,7 +612,7 @@ class CirrusService with AuthenticatedService {
     final serialValue = serial?.trim() ?? '';
     if (serialValue.isNotEmpty) params['serial'] = serialValue;
     final uri = _apiBaseUri
-        .resolve('/api/v1/photos/metadata')
+        .resolve('/api/v0/photos/metadata')
         .replace(queryParameters: params);
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -630,7 +630,7 @@ class CirrusService with AuthenticatedService {
     String? serial,
     required int rotationQuarters,
   }) async {
-    final uri = _apiBaseUri.resolve('/api/v1/photos/rotate');
+    final uri = _apiBaseUri.resolve('/api/v0/photos/rotate');
     final body = jsonEncode({
       'relPath': relPath,
       'serial': serial?.trim() ?? '',
@@ -649,7 +649,7 @@ class CirrusService with AuthenticatedService {
   /// Duplicates a photo on the server. Returns the relative path of the new
   /// file (e.g. "photos/IMG_001_copy.jpg").
   static Future<String> copyPhoto(String relPath, {String? serial}) async {
-    final uri = _apiBaseUri.resolve('/api/v1/photos/copy');
+    final uri = _apiBaseUri.resolve('/api/v0/photos/copy');
     final body = jsonEncode({
       'relPath': relPath,
       'serial': serial?.trim() ?? '',
@@ -676,7 +676,7 @@ class CirrusService with AuthenticatedService {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
 
-    final endpointUri = _apiBaseUri.resolve('/api/v1/cirrus/download');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus/download');
     return endpointUri.replace(query: querySegments.join('&'));
   }
 
@@ -777,7 +777,7 @@ class CirrusService with AuthenticatedService {
   }
 
   static Future<Map<String, dynamic>> getInstalledVersion() async {
-    final endpointUri = _apiBaseUri.resolve('/api/v1/version');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/version');
     final response = await instance.authenticatedGet(endpointUri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
@@ -794,7 +794,7 @@ class CirrusService with AuthenticatedService {
   static Future<List<Map<String, dynamic>>> listAvailableVersions({
     bool all = false,
   }) async {
-    final endpointUri = _apiBaseUri.resolve('/api/v1/version/available');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/version/available');
     final uri = all ? endpointUri.replace(query: 'all=true') : endpointUri;
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -813,7 +813,7 @@ class CirrusService with AuthenticatedService {
   }
 
   static Future<void> updateToVersion(String version) async {
-    final endpointUri = _apiBaseUri.resolve('/api/v1/version/update');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/version/update');
     final body = jsonEncode({'version': version});
     final response = await instance.authenticatedPost(
       endpointUri,

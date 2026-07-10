@@ -5,24 +5,24 @@ import (
 	"log/slog"
 	"net/http"
 
-	v1_albums "github.com/autobutler-org/autobutler/internal/server/api/v1/albums"
-	v1_auth "github.com/autobutler-org/autobutler/internal/server/api/v1/auth"
-	v1_books "github.com/autobutler-org/autobutler/internal/server/api/v1/books"
-	v1_files "github.com/autobutler-org/autobutler/internal/server/api/v1/cirrus"
-	v1_devices "github.com/autobutler-org/autobutler/internal/server/api/v1/devices"
-	v1_events "github.com/autobutler-org/autobutler/internal/server/api/v1/events"
-	v1_favorites "github.com/autobutler-org/autobutler/internal/server/api/v1/favorites"
-	v1_health "github.com/autobutler-org/autobutler/internal/server/api/v1/health"
-	v1_metrics "github.com/autobutler-org/autobutler/internal/server/api/v1/metrics"
-	v1_migration "github.com/autobutler-org/autobutler/internal/server/api/v1/migration"
-	v1_photos "github.com/autobutler-org/autobutler/internal/server/api/v1/photos"
-	v1_settings "github.com/autobutler-org/autobutler/internal/server/api/v1/settings"
-	v1_smb "github.com/autobutler-org/autobutler/internal/server/api/v1/smb"
-	v1_storage "github.com/autobutler-org/autobutler/internal/server/api/v1/storage"
-	v1_thumbnails "github.com/autobutler-org/autobutler/internal/server/api/v1/thumbnails"
-	v1_vault "github.com/autobutler-org/autobutler/internal/server/api/v1/vault"
-	v1_version "github.com/autobutler-org/autobutler/internal/server/api/v1/version"
-	v1_webdav "github.com/autobutler-org/autobutler/internal/server/api/v1/webdav"
+	v0_albums "github.com/autobutler-org/autobutler/internal/server/api/v0/albums"
+	v0_auth "github.com/autobutler-org/autobutler/internal/server/api/v0/auth"
+	v0_books "github.com/autobutler-org/autobutler/internal/server/api/v0/books"
+	v0_files "github.com/autobutler-org/autobutler/internal/server/api/v0/cirrus"
+	v0_devices "github.com/autobutler-org/autobutler/internal/server/api/v0/devices"
+	v0_events "github.com/autobutler-org/autobutler/internal/server/api/v0/events"
+	v0_favorites "github.com/autobutler-org/autobutler/internal/server/api/v0/favorites"
+	v0_health "github.com/autobutler-org/autobutler/internal/server/api/v0/health"
+	v0_metrics "github.com/autobutler-org/autobutler/internal/server/api/v0/metrics"
+	v0_migration "github.com/autobutler-org/autobutler/internal/server/api/v0/migration"
+	v0_photos "github.com/autobutler-org/autobutler/internal/server/api/v0/photos"
+	v0_settings "github.com/autobutler-org/autobutler/internal/server/api/v0/settings"
+	v0_smb "github.com/autobutler-org/autobutler/internal/server/api/v0/smb"
+	v0_storage "github.com/autobutler-org/autobutler/internal/server/api/v0/storage"
+	v0_thumbnails "github.com/autobutler-org/autobutler/internal/server/api/v0/thumbnails"
+	v0_vault "github.com/autobutler-org/autobutler/internal/server/api/v0/vault"
+	v0_version "github.com/autobutler-org/autobutler/internal/server/api/v0/version"
+	v0_webdav "github.com/autobutler-org/autobutler/internal/server/api/v0/webdav"
 	"github.com/autobutler-org/autobutler/pkg/botel/system"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
@@ -41,25 +41,25 @@ func setupRoutes(engine *gin.Engine, systemCollector *system.Collector) {
 }
 
 func setupRouters(engine *gin.Engine, systemCollector *system.Collector) {
-	group := engine.Group("/api/v1")
+	group := engine.Group("/api/v0")
 	apiRouters := []serverutil.Router{
-		v1_auth.NewRouter(),
-		v1_books.NewRouter(),
-		v1_files.NewRouter(),
-		v1_devices.NewRouter(),
-		v1_events.NewRouter(),
-		v1_health.NewRouter(systemCollector),
-		v1_metrics.NewRouter(),
-		v1_migration.NewRouter(),
-		v1_albums.NewRouter(),
-		v1_favorites.NewRouter(),
-		v1_photos.NewRouter(),
-		v1_settings.NewRouter(),
-		v1_storage.NewRouter(),
-		v1_thumbnails.NewRouter(),
-		v1_smb.NewRouter(),
-		v1_vault.NewRouter(),
-		v1_version.NewRouter(),
+		v0_auth.NewRouter(),
+		v0_books.NewRouter(),
+		v0_files.NewRouter(),
+		v0_devices.NewRouter(),
+		v0_events.NewRouter(),
+		v0_health.NewRouter(systemCollector),
+		v0_metrics.NewRouter(),
+		v0_migration.NewRouter(),
+		v0_albums.NewRouter(),
+		v0_favorites.NewRouter(),
+		v0_photos.NewRouter(),
+		v0_settings.NewRouter(),
+		v0_storage.NewRouter(),
+		v0_thumbnails.NewRouter(),
+		v0_smb.NewRouter(),
+		v0_vault.NewRouter(),
+		v0_version.NewRouter(),
 	}
 	for _, r := range apiRouters {
 		serverutil.RegisterRouterWithGroup(group, r)
@@ -75,8 +75,8 @@ func setupWebDAV(engine *gin.Engine) {
 		return
 	}
 
-	handler := v1_webdav.NewHandler(cirrusDir)
-	for _, method := range v1_webdav.WebDAVMethods() {
+	handler := v0_webdav.NewHandler(cirrusDir)
+	for _, method := range v0_webdav.WebDAVMethods() {
 		engine.Handle(method, "/dav/*filepath", handler)
 	}
 }

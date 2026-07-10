@@ -110,7 +110,7 @@ class SbomService with AuthenticatedService {
 
   /// Fetch Go SBOM from the backend.
   static Future<GoSbom> getGoSbom() async {
-    final uri = _apiBaseUri.resolve('/api/v1/sbom');
+    final uri = _apiBaseUri.resolve('/api/v0/sbom');
     final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode != 200) {
       throw Exception('Failed to load Go SBOM: ${response.statusCode}');
