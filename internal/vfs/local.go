@@ -1,0 +1,304 @@
+package vfs
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"io"
+	"mime"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+// LocalVFS is a VFS backed by a directory on the host filesystem.
+type LocalVFS struct {
+	root        string
+	namespaceID string
+}
+
+// NewLocalVFS creates a LocalVFS rooted at the given directory.
+// The root directory is created if it does not exist.
+func NewLocalVFS(root string, namespaceID string) (*LocalVFS, error) {
+	abs, err := filepath.Abs(root)
+	if err != nil {
+		return nil, err
+	}
+	if err := os.MkdirAll(abs, 0o755); err != nil {
+		return nil, err
+	}
+	return &LocalVFS{root: abs, namespaceID: namespaceID}, nil
+}
+
+// abs converts a VFS-relative path to an absolute host path, guarding against
+// path traversal attacks. Returns ErrPermissionDenied if the result would
+// escape the root.
+func (v *LocalVFS) abs(path string) (string, error) {
+	// Clean the path to remove any .. or . components
+	clean := filepath.Join(v.root, filepath.FromSlash(path))
+	// Ensure the result is still within root
+	if !strings.HasPrefix(clean, v.root+string(os.PathSeparator)) && clean != v.root {
+		return "", ErrPermissionDenied
+	}
+	return clean, nil
+}
+
+// hashFile computes the sha256 hex digest of the file at the given absolute path.
+func hashFile(absPath string) (string, error) {
+	f, err := os.Open(absPath)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+func mimeForPath(path string) string {
+	t := mime.TypeByExtension(filepath.Ext(path))
+	return t
+}
+
+func (v *LocalVFS) infoFromStat(relPath string, absPath string, fi os.FileInfo) (FileInfo, error) {
+	info := FileInfo{
+		Name:      fi.Name(),
+		Path:      relPath,
+		Size:      fi.Size(),
+		IsDir:     fi.IsDir(),
+		MimeType:  mimeForPath(absPath),
+		ModTime:   fi.ModTime(),
+		Namespace: v.namespaceID,
+	}
+	if !fi.IsDir() {
+		hash, err := hashFile(absPath)
+		if err != nil {
+			return FileInfo{}, err
+		}
+		info.ContentHash = hash
+	}
+	return info, nil
+}
+
+// List returns a list of files in the given directory.
+func (v *LocalVFS) List(ctx context.Context, path string, filter *ListFilter) ([]FileInfo, error) {
+	absPath, err := v.abs(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []FileInfo
+	var collect func(dir string, relDir string) error
+
+	collect = func(dir string, relDir string) error {
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return ErrNotFound
+			}
+			return err
+		}
+		for _, entry := range entries {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+
+			absEntry := filepath.Join(dir, entry.Name())
+			var relEntry string
+			if relDir == "" {
+				relEntry = entry.Name()
+			} else {
+				relEntry = relDir + "/" + entry.Name()
+			}
+
+			// Apply AfterPath cursor (skip entries up to and including AfterPath)
+			if filter != nil && filter.AfterPath != "" && relEntry <= filter.AfterPath {
+				// Still recurse into dirs to find entries after cursor
+				if entry.IsDir() && filter != nil && filter.Recursive {
+					if err := collect(absEntry, relEntry); err != nil {
+						return err
+					}
+				}
+				continue
+			}
+
+			fi, err := entry.Info()
+			if err != nil {
+				return err
+			}
+
+			info, err := v.infoFromStat(relEntry, absEntry, fi)
+			if err != nil {
+				return err
+			}
+
+			// Apply MimePrefix filter (dirs always pass)
+			if filter != nil && filter.MimePrefix != "" && !info.IsDir {
+				if !strings.HasPrefix(info.MimeType, filter.MimePrefix) {
+					if entry.IsDir() && filter.Recursive {
+						if err := collect(absEntry, relEntry); err != nil {
+							return err
+						}
+					}
+					continue
+				}
+			}
+
+			results = append(results, info)
+
+			// Apply MaxResults
+			if filter != nil && filter.MaxResults > 0 && len(results) >= filter.MaxResults {
+				return nil
+			}
+
+			// Recurse into directories
+			if entry.IsDir() && filter != nil && filter.Recursive {
+				if err := collect(absEntry, relEntry); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+
+	if err := collect(absPath, ""); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+// Stat returns file metadata for the given path.
+func (v *LocalVFS) Stat(ctx context.Context, path string) (FileInfo, error) {
+	absPath, err := v.abs(path)
+	if err != nil {
+		return FileInfo{}, err
+	}
+	fi, err := os.Stat(absPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return FileInfo{}, ErrNotFound
+		}
+		return FileInfo{}, err
+	}
+	return v.infoFromStat(path, absPath, fi)
+}
+
+// Open opens the file at the given path for reading.
+func (v *LocalVFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
+	absPath, err := v.abs(path)
+	if err != nil {
+		return nil, err
+	}
+	f, err := os.Open(absPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return f, nil
+}
+
+// Write writes the content of r to the given path.
+// It uses an atomic write (temp file + rename) to avoid partial writes.
+func (v *LocalVFS) Write(ctx context.Context, path string, r io.Reader, opts WriteOptions) error {
+	absPath, err := v.abs(path)
+	if err != nil {
+		return err
+	}
+
+	// Honor IfNoneMatch: "*" — fail if file already exists
+	if opts.IfNoneMatch == "*" {
+		if _, err := os.Stat(absPath); err == nil {
+			return ErrConflict
+		}
+	}
+
+	// Ensure parent directory exists
+	dir := filepath.Dir(absPath)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+
+	// Write to a temp file in the same directory for atomic rename
+	tmp, err := os.CreateTemp(dir, ".vfs-write-*")
+	if err != nil {
+		return err
+	}
+	tmpName := tmp.Name()
+	defer func() {
+		// Clean up temp file on error
+		os.Remove(tmpName)
+	}()
+
+	if _, err := io.Copy(tmp, r); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+
+	// Atomic rename
+	if err := os.Rename(tmpName, absPath); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Delete removes the file or directory at the given path.
+func (v *LocalVFS) Delete(ctx context.Context, path string, opts DeleteOptions) error {
+	absPath, err := v.abs(path)
+	if err != nil {
+		return err
+	}
+
+	fi, err := os.Stat(absPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return ErrNotFound
+		}
+		return err
+	}
+
+	if fi.IsDir() {
+		if opts.Recursive {
+			return os.RemoveAll(absPath)
+		}
+		// Check if directory is empty
+		entries, err := os.ReadDir(absPath)
+		if err != nil {
+			return err
+		}
+		if len(entries) > 0 {
+			return ErrNotEmpty
+		}
+		return os.Remove(absPath)
+	}
+
+	if err := os.Remove(absPath); err != nil {
+		if os.IsNotExist(err) {
+			return ErrNotFound
+		}
+		return err
+	}
+	return nil
+}
+
+// MkdirAll creates the directory at the given path, including all parents.
+func (v *LocalVFS) MkdirAll(ctx context.Context, path string) error {
+	absPath, err := v.abs(path)
+	if err != nil {
+		return err
+	}
+	return os.MkdirAll(absPath, 0o755)
+}
+
+// Watch is not supported by LocalVFS and always returns ErrWatchNotSupported.
+func (v *LocalVFS) Watch(ctx context.Context, path string) (<-chan WatchEvent, error) {
+	return nil, ErrWatchNotSupported
+}

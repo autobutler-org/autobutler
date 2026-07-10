@@ -1,0 +1,340 @@
+package vfs
+
+import (
+	"bytes"
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"io"
+	"mime"
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
+)
+
+// memEntry holds the data and metadata for a MemVFS entry.
+type memEntry struct {
+	data    []byte
+	info    FileInfo
+}
+
+// MemVFS is an in-memory VFS implementation for testing.
+type MemVFS struct {
+	mu          sync.RWMutex
+	files       map[string]memEntry // path -> entry (files only)
+	dirs        map[string]bool     // path -> true (directories)
+	namespaceID string
+}
+
+// NewMemVFS creates a new MemVFS with the given namespace ID.
+func NewMemVFS(namespaceID string) *MemVFS {
+	m := &MemVFS{
+		files:       make(map[string]memEntry),
+		dirs:        make(map[string]bool),
+		namespaceID: namespaceID,
+	}
+	// Root directory always exists
+	m.dirs[""] = true
+	return m
+}
+
+func cleanPath(path string) string {
+	// Normalize path: remove leading slashes, clean
+	p := filepath.ToSlash(filepath.Clean("/" + path))
+	p = strings.TrimPrefix(p, "/")
+	return p
+}
+
+func (m *MemVFS) mimeForPath(path string) string {
+	return mime.TypeByExtension(filepath.Ext(path))
+}
+
+func hashBytes(data []byte) string {
+	h := sha256.Sum256(data)
+	return hex.EncodeToString(h[:])
+}
+
+// List returns entries in the given directory.
+func (m *MemVFS) List(ctx context.Context, path string, filter *ListFilter) ([]FileInfo, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	dir := cleanPath(path)
+
+	// Check directory exists
+	if dir != "" && !m.dirs[dir] {
+		return nil, ErrNotFound
+	}
+
+	seen := make(map[string]bool)
+	var results []FileInfo
+
+	// Collect matching files
+	prefix := dir
+	if prefix != "" {
+		prefix += "/"
+	}
+
+	for p, entry := range m.files {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
+		if !strings.HasPrefix(p, prefix) {
+			continue
+		}
+
+		rel := strings.TrimPrefix(p, prefix)
+		if rel == "" {
+			continue
+		}
+
+		if !filter.GetRecursive() {
+			// Non-recursive: only direct children
+			if strings.Contains(rel, "/") {
+				continue
+			}
+		}
+
+		// Apply AfterPath cursor
+		if filter != nil && filter.AfterPath != "" && p <= filter.AfterPath {
+			continue
+		}
+
+		// Apply MimePrefix filter
+		if filter != nil && filter.MimePrefix != "" {
+			if !strings.HasPrefix(entry.info.MimeType, filter.MimePrefix) {
+				continue
+			}
+		}
+
+		if seen[p] {
+			continue
+		}
+		seen[p] = true
+		results = append(results, entry.info)
+
+		if filter != nil && filter.MaxResults > 0 && len(results) >= filter.MaxResults {
+			return results, nil
+		}
+	}
+
+	// Collect matching directories
+	for d := range m.dirs {
+		if d == "" {
+			continue
+		}
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
+		if !strings.HasPrefix(d, prefix) {
+			continue
+		}
+
+		rel := strings.TrimPrefix(d, prefix)
+		if rel == "" {
+			continue
+		}
+
+		if !filter.GetRecursive() {
+			// Non-recursive: only direct child dirs
+			if strings.Contains(rel, "/") {
+				continue
+			}
+		}
+
+		// Apply AfterPath cursor
+		if filter != nil && filter.AfterPath != "" && d <= filter.AfterPath {
+			continue
+		}
+
+		if seen[d] {
+			continue
+		}
+		seen[d] = true
+
+		parts := strings.Split(d, "/")
+		name := parts[len(parts)-1]
+		info := FileInfo{
+			Name:      name,
+			Path:      d,
+			IsDir:     true,
+			ModTime:   time.Time{},
+			Namespace: m.namespaceID,
+		}
+		results = append(results, info)
+
+		if filter != nil && filter.MaxResults > 0 && len(results) >= filter.MaxResults {
+			return results, nil
+		}
+	}
+
+	return results, nil
+}
+
+// GetRecursive is a helper for nil-safe filter access.
+func (f *ListFilter) GetRecursive() bool {
+	if f == nil {
+		return false
+	}
+	return f.Recursive
+}
+
+// Stat returns file metadata for the given path.
+func (m *MemVFS) Stat(ctx context.Context, path string) (FileInfo, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	p := cleanPath(path)
+
+	if entry, ok := m.files[p]; ok {
+		return entry.info, nil
+	}
+	if m.dirs[p] {
+		parts := strings.Split(p, "/")
+		name := parts[len(parts)-1]
+		if p == "" {
+			name = ""
+		}
+		return FileInfo{
+			Name:      name,
+			Path:      p,
+			IsDir:     true,
+			Namespace: m.namespaceID,
+		}, nil
+	}
+	return FileInfo{}, ErrNotFound
+}
+
+// Open opens the file at the given path for reading.
+func (m *MemVFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	p := cleanPath(path)
+	entry, ok := m.files[p]
+	if !ok {
+		return nil, ErrNotFound
+	}
+	return io.NopCloser(bytes.NewReader(entry.data)), nil
+}
+
+// Write writes the content of r to the given path.
+func (m *MemVFS) Write(ctx context.Context, path string, r io.Reader, opts WriteOptions) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	p := cleanPath(path)
+
+	// Honor IfNoneMatch: "*"
+	if opts.IfNoneMatch == "*" {
+		if _, ok := m.files[p]; ok {
+			return ErrConflict
+		}
+	}
+
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return err
+	}
+
+	// Ensure all parent directories exist
+	parts := strings.Split(p, "/")
+	for i := 1; i < len(parts); i++ {
+		parentPath := strings.Join(parts[:i], "/")
+		m.dirs[parentPath] = true
+	}
+
+	mimeType := opts.ContentType
+	if mimeType == "" {
+		mimeType = mime.TypeByExtension(filepath.Ext(p))
+	}
+
+	name := parts[len(parts)-1]
+	info := FileInfo{
+		Name:        name,
+		Path:        p,
+		Size:        int64(len(data)),
+		IsDir:       false,
+		MimeType:    mimeType,
+		ModTime:     time.Now(),
+		ContentHash: hashBytes(data),
+		Namespace:   m.namespaceID,
+	}
+
+	m.files[p] = memEntry{data: data, info: info}
+	return nil
+}
+
+// Delete removes the file or directory at the given path.
+func (m *MemVFS) Delete(ctx context.Context, path string, opts DeleteOptions) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	p := cleanPath(path)
+
+	// Check if it's a file
+	if _, ok := m.files[p]; ok {
+		delete(m.files, p)
+		return nil
+	}
+
+	// Check if it's a directory
+	if !m.dirs[p] {
+		return ErrNotFound
+	}
+
+	prefix := p + "/"
+
+	if opts.Recursive {
+		// Remove all children
+		for fp := range m.files {
+			if strings.HasPrefix(fp, prefix) {
+				delete(m.files, fp)
+			}
+		}
+		for dp := range m.dirs {
+			if strings.HasPrefix(dp, prefix) {
+				delete(m.dirs, dp)
+			}
+		}
+		delete(m.dirs, p)
+		return nil
+	}
+
+	// Check if directory is empty
+	for fp := range m.files {
+		if strings.HasPrefix(fp, prefix) {
+			return ErrNotEmpty
+		}
+	}
+	for dp := range m.dirs {
+		if strings.HasPrefix(dp, prefix) {
+			return ErrNotEmpty
+		}
+	}
+
+	delete(m.dirs, p)
+	return nil
+}
+
+// MkdirAll creates the directory at the given path, including all parents.
+func (m *MemVFS) MkdirAll(ctx context.Context, path string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	p := cleanPath(path)
+	parts := strings.Split(p, "/")
+	for i := 1; i <= len(parts); i++ {
+		dirPath := strings.Join(parts[:i], "/")
+		m.dirs[dirPath] = true
+	}
+	return nil
+}
+
+// Watch is not supported by MemVFS and always returns ErrWatchNotSupported.
+func (m *MemVFS) Watch(ctx context.Context, path string) (<-chan WatchEvent, error) {
+	return nil, ErrWatchNotSupported
+}
