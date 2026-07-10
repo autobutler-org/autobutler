@@ -2,7 +2,6 @@ package v1_vfs
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
@@ -38,8 +37,8 @@ func vfsDelete(c *gin.Context) *serverutil.Response {
 	ns := c.Param("ns")
 	path := c.Param("path")
 
-	if strings.HasSuffix(strings.TrimRight(path, "/"), "/_meta") {
-		return serverutil.NotFound(fmt.Errorf("use the meta endpoint for /_meta paths"))
+	if realPath, ok := isMetaPath(path); ok {
+		return handleDeleteMeta(c, deps, ns, realPath)
 	}
 
 	fsys, ok := reg.Get(ns)

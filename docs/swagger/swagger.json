@@ -2673,6 +2673,63 @@
                 }
             }
         },
+        "/vfs/{ns}/_meta/query": {
+            "get": {
+                "description": "Returns all (namespace, path) entries where the given key exists (and optionally matches a specific value).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vfs"
+                ],
+                "summary": "Query metadata entries by key/value across a namespace",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "ns",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Metadata key to match",
+                        "name": "key",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Exact JSON-encoded value to match (optional; omit to match any entry with the key)",
+                        "name": "value",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of MetaEntry objects (namespace, path, meta map)",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/vfs/{ns}/{path}": {
             "get": {
                 "description": "If the path ends with '/' or the ?stat=true query is absent and the entry is a directory, returns a JSON array of FileInfoJSON. If the path is a file, streams the raw bytes. If ?stat=true is set, returns a single FileInfoJSON regardless.",

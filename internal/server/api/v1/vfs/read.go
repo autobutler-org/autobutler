@@ -45,9 +45,9 @@ func vfsRead(c *gin.Context) *serverutil.Response {
 		path = "/"
 	}
 
-	// _meta suffix is handled by the meta handler (Phase 2b).
-	if strings.HasSuffix(strings.TrimRight(path, "/"), "/_meta") {
-		return serverutil.NotFound(fmt.Errorf("use the meta endpoint for /_meta paths"))
+	// _meta suffix: delegate to metadata handler.
+	if realPath, ok := isMetaPath(path); ok {
+		return handleGetMeta(c, deps, ns, realPath)
 	}
 
 	fsys, ok := reg.Get(ns)

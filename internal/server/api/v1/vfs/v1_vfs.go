@@ -12,6 +12,7 @@ func NewRouter() serverutil.Router {
 func (r *router) Routes() []*serverutil.Route {
 	return []*serverutil.Route{
 		listNamespacesRoute,
+		vfsQueryMetaRoute, // static route — must be registered before the wildcard
 		vfsReadRoute,
 		vfsWriteRoute,
 		vfsDeleteRoute,
