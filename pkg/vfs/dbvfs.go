@@ -280,5 +280,3 @@ func dbCleanPath(p string) string {
 	}
 	return path.Clean("/" + strings.TrimPrefix(p, "/"))
 }
-
-

@@ -8,7 +8,7 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"github.com/autobutler-org/autobutler/internal/vfs"
+	"github.com/autobutler-org/autobutler/pkg/vfs"
 )
 
 const testSchema = `
