@@ -45,9 +45,16 @@ func vfsRead(c *gin.Context) *serverutil.Response {
 		path = "/"
 	}
 
-	// _meta suffix is handled by the meta handler (Phase 2b).
-	if strings.HasSuffix(strings.TrimRight(path, "/"), "/_meta") {
-		return serverutil.NotFound(fmt.Errorf("use the meta endpoint for /_meta paths"))
+	// /_meta/query: namespace-level metadata query (no file path).
+	// This is handled here instead of a separate route to avoid a Gin
+	// wildcard conflict panic (/vfs/:ns/*path vs /vfs/:ns/_meta/query).
+	if path == "/_meta/query" || path == "/_meta/query/" {
+		return queryMeta(c)
+	}
+
+	// _meta suffix: delegate to per-path metadata handler.
+	if realPath, ok := isMetaPath(path); ok {
+		return handleGetMeta(c, deps, ns, realPath)
 	}
 
 	fsys, ok := reg.Get(ns)
