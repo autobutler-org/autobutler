@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:autobutler/controllers/file_browser_cache.dart';
 import 'package:autobutler/controllers/file_browser_controller.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
 import 'package:autobutler/pages/generic_file_viewer_page.dart';
+import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/spreadsheet_editor_page.dart';
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/app_settings.dart';
@@ -1573,12 +1573,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     // Stat the backend to resolve the real type.
     late final bool isDir;
     late final String fileType;
-    late final String fileName;
     try {
       final stat = await CirrusService.statFile(filePath);
       isDir = stat.isDir;
       fileType = stat.fileType;
-      fileName = stat.name.isEmpty ? filePath.split('/').last : stat.name;
     } on CirrusRequestException catch (error) {
       if (!mounted) return;
       if (isLikelyFilePath(filePath)) {
@@ -1661,49 +1659,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         return;
 
       case 'image':
-        final serials = _serialsForActiveDevices();
-        final serial = serials.isNotEmpty ? serials.first : null;
-        final bytes = await CirrusService.downloadFileBytes(
-          filePath,
-          serial: serial,
-        );
-        if (!mounted) return;
-        if (bytes == null) {
-          setState(() {
-            _routeFailure = _CirrusRouteFailure(
-              requestedPath: filePath,
-              isFileRoute: true,
-            );
-          });
-          return;
-        }
-        await _openEditorWithUrl(
-          filePath: filePath,
-          builder: (_, _) => ImageViewerPage(
-            bytes: bytes,
-            name: fileName,
-            relPath: filePath,
-            serial: serial,
-          ),
-        );
-        if (!mounted) return;
-        context.go(AppRoutes.cirrusPath(parentPath(filePath)));
-        return;
-
       case 'video':
       case 'audio':
-        final videoSerials = _serialsForActiveDevices();
-        final videoSerial = videoSerials.isNotEmpty ? videoSerials.first : null;
-        final url = CirrusService.constructMediaUrl(
-          filePath,
-          serial: videoSerial,
-        );
-        await _openEditorWithUrl(
-          filePath: filePath,
-          builder: (_, _) => VideoViewerPage(url: url, name: fileName),
-        );
-        if (!mounted) return;
-        context.go(AppRoutes.cirrusPath(parentPath(filePath)));
+        // FileViewerPage handles image/video/audio at the router level.
+        _openFileViaRoute(filePath);
         return;
 
       default:

@@ -66,17 +66,6 @@ class AppRoutes {
         : base;
   }
 
-  /// Build a deep-link URL that opens [path] in the correct viewer.
-  /// e.g. viewFile('photos/beach.jpg') → '/view/photos/beach.jpg'
-  /// Device serial is passed as a query param when non-empty.
-  static String viewFilePath(String path, {String? serial}) {
-    final clean = path.replaceAll(RegExp(r'^/+'), '');
-    final base = '$viewFile/$clean';
-    return (serial != null && serial.isNotEmpty)
-        ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
-        : base;
-  }
-
   /// Build a deep-link URL for a given cirrus path.
   /// e.g. cirrusPath('photos/2024') → '/cirrus/photos/2024'
   static String cirrusPath(String path) {
