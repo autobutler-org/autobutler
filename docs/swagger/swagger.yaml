@@ -2256,6 +2256,46 @@ paths:
       summary: List VFS namespaces
       tags:
       - vfs
+  /vfs/{ns}/_meta/query:
+    get:
+      description: Returns all (namespace, path) entries where the given key exists
+        (and optionally matches a specific value).
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: ns
+        required: true
+        type: string
+      - description: Metadata key to match
+        in: query
+        name: key
+        required: true
+        type: string
+      - description: Exact JSON-encoded value to match (optional; omit to match any
+          entry with the key)
+        in: query
+        name: value
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Array of MetaEntry objects (namespace, path, meta map)
+          schema:
+            items:
+              type: object
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Query metadata entries by key/value across a namespace
+      tags:
+      - vfs
   /vfs/{ns}/{path}:
     delete:
       description: Deletes the entry at the given path. For non-empty directories,

@@ -31,7 +31,9 @@ type Dependencies interface {
 	WithHealthDatabase(healthDatabase *db.DatabaseRaw) Dependencies
 	WithIOSemaphore(sem *iosemutil.Semaphore) Dependencies
 	WithMetricsExporter(exporter *botelsqlite.TraceExporter) Dependencies
+	MetadataStore() vfs.MetadataStore
 	VFSRegistry() vfs.Registry
+	WithMetadataStore(s vfs.MetadataStore) Dependencies
 	WithStorageService(s *storageutil.StorageService) Dependencies
 	WithVFSRegistry(r vfs.Registry) Dependencies
 	SetVaultDB(database *db.DatabaseSqlc)
@@ -52,6 +54,7 @@ type dependencies struct {
 	vaultDBMu       sync.RWMutex
 	vaultSession    *vaultcrypto.VaultSession
 	vfsRegistry     vfs.Registry
+	metadataStore   vfs.MetadataStore
 	worker          workerutil.Worker
 }
 
@@ -78,11 +81,12 @@ func DefaultDependencies() (Dependencies, error) {
 		ID:          "files",                             // coverage: ignore
 		Description: "Primary vault file store (cirrus)", // coverage: ignore
 	}, vfs.NewStorageServiceVFS(svc, "files")) // coverage: ignore
-	deps.WithVFSRegistry(registry)                       // coverage: ignore
-	deps.WithEventBus(eventbus.New())                    // coverage: ignore
-	deps.WithVaultSession(vaultcrypto.NewVaultSession()) // coverage: ignore
-	deps.WithIOSemaphore(iosemutil.New())                // coverage: ignore
-	return deps, nil                                     // coverage: ignore - requires database connection
+	deps.WithVFSRegistry(registry)                                         // coverage: ignore
+	deps.WithMetadataStore(vfs.NewSQLiteMetadataStore(deps.Database().Db)) // coverage: ignore
+	deps.WithEventBus(eventbus.New())                                      // coverage: ignore
+	deps.WithVaultSession(vaultcrypto.NewVaultSession())                   // coverage: ignore
+	deps.WithIOSemaphore(iosemutil.New())                                  // coverage: ignore
+	return deps, nil                                                       // coverage: ignore - requires database connection
 }
 
 func (d *dependencies) WithDatabase(database *db.DatabaseSqlc) Dependencies {
@@ -183,6 +187,15 @@ func (d *dependencies) VaultSession() *vaultcrypto.VaultSession {
 
 func (d *dependencies) WithVaultSession(session *vaultcrypto.VaultSession) Dependencies {
 	d.vaultSession = session
+	return d
+}
+
+func (d *dependencies) MetadataStore() vfs.MetadataStore {
+	return d.metadataStore
+}
+
+func (d *dependencies) WithMetadataStore(s vfs.MetadataStore) Dependencies {
+	d.metadataStore = s
 	return d
 }
 
