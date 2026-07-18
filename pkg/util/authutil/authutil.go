@@ -2,6 +2,7 @@ package authutil
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"strings"
@@ -67,4 +68,11 @@ func GenerateRecoveryPhrase() (string, error) {
 // NormalizeRecoveryPhrase lowercases and trims a recovery phrase for comparison.
 func NormalizeRecoveryPhrase(phrase string) string {
 	return strings.ToLower(strings.TrimSpace(phrase))
+}
+
+// HashSessionToken returns the hex-encoded SHA-256 digest of a raw session token.
+// Tokens are stored as their digest so that a DB leak does not expose bearer values.
+func HashSessionToken(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
 }

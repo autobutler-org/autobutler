@@ -15,14 +15,16 @@ import (
 const sessionCookieName = "session"
 const sessionCookieMaxAge = int(30 * 24 * time.Hour / time.Second)
 
-func setSessionCookie(c *gin.Context, token string) {
+// setSessionCookie writes the session cookie. The Secure flag is set when TLS
+// is active (i.e. insecure == false) so the cookie is only ever sent over HTTPS.
+func (r *router) setSessionCookie(c *gin.Context, token string) {
 	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie(sessionCookieName, token, sessionCookieMaxAge, "/", "", false, true)
+	c.SetCookie(sessionCookieName, token, sessionCookieMaxAge, "/", "", !r.insecure, true)
 }
 
-func clearSessionCookie(c *gin.Context) {
+func (r *router) clearSessionCookie(c *gin.Context) {
 	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie(sessionCookieName, "", -1, "/", "", false, true)
+	c.SetCookie(sessionCookieName, "", -1, "/", "", !r.insecure, true)
 }
 
 func getQueries(c *gin.Context) (*deputil.Dependencies, bool) {
@@ -50,7 +52,6 @@ func authStatus(c *gin.Context) *serverutil.Response {
 	return serverutil.Ok().WithData(gin.H{"setup": complete})
 }
 
-var authStatusRoute = serverutil.ApiRoute("GET", "/auth/status", authStatus)
 
 // authSetup godoc
 // @Summary First-boot user setup
@@ -62,7 +63,7 @@ var authStatusRoute = serverutil.ApiRoute("GET", "/auth/status", authStatus)
 // @Success 200 {object} object
 // @Failure 400 {object} serverutil.Response
 // @Router /auth/setup [post]
-func authSetup(c *gin.Context) *serverutil.Response {
+func (r *router) authSetup(c *gin.Context) *serverutil.Response {
 	deps, ok := getQueries(c)
 	if !ok || (*deps).Database() == nil {
 		return serverutil.InternalServerError(nil)
@@ -84,15 +85,13 @@ func authSetup(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(err)
 	}
 
-	setSessionCookie(c, result.SessionToken)
+	r.setSessionCookie(c, result.SessionToken)
 	return serverutil.Ok().WithData(gin.H{
 		"token":          result.SessionToken,
 		"recoveryPhrase": result.RecoveryPhrase,
 		"message":        "Setup complete. Store your recovery phrase somewhere safe — it will not be shown again.",
 	})
 }
-
-var authSetupRoute = serverutil.ApiRoute("POST", "/auth/setup", authSetup)
 
 // authLogin godoc
 // @Summary Login
@@ -104,7 +103,7 @@ var authSetupRoute = serverutil.ApiRoute("POST", "/auth/setup", authSetup)
 // @Success 200 {object} object
 // @Failure 401 {object} serverutil.Response
 // @Router /auth/login [post]
-func authLogin(c *gin.Context) *serverutil.Response {
+func (r *router) authLogin(c *gin.Context) *serverutil.Response {
 	deps, ok := getQueries(c)
 	if !ok || (*deps).Database() == nil {
 		return serverutil.InternalServerError(nil)
@@ -126,11 +125,9 @@ func authLogin(c *gin.Context) *serverutil.Response {
 		return serverutil.NewResponse().WithStatusCode(http.StatusUnauthorized).WithError(err)
 	}
 
-	setSessionCookie(c, result.SessionToken)
+	r.setSessionCookie(c, result.SessionToken)
 	return serverutil.Ok().WithData(gin.H{"token": result.SessionToken})
 }
-
-var authLoginRoute = serverutil.ApiRoute("POST", "/auth/login", authLogin)
 
 // authLogout godoc
 // @Summary Logout
@@ -139,7 +136,7 @@ var authLoginRoute = serverutil.ApiRoute("POST", "/auth/login", authLogin)
 // @Produce json
 // @Success 200 {object} object
 // @Router /auth/logout [post]
-func authLogout(c *gin.Context) *serverutil.Response {
+func (r *router) authLogout(c *gin.Context) *serverutil.Response {
 	deps, ok := getQueries(c)
 	if !ok || (*deps).Database() == nil {
 		return serverutil.Ok()
@@ -156,11 +153,9 @@ func authLogout(c *gin.Context) *serverutil.Response {
 		_ = authutil.Logout(c.Request.Context(), (*deps).Database().Queries, token)
 	}
 
-	clearSessionCookie(c)
+	r.clearSessionCookie(c)
 	return serverutil.Ok().WithData(gin.H{"message": "logged out"})
 }
-
-var authLogoutRoute = serverutil.ApiRoute("POST", "/auth/logout", authLogout)
 
 // authRecover godoc
 // @Summary Recover account
@@ -172,7 +167,7 @@ var authLogoutRoute = serverutil.ApiRoute("POST", "/auth/logout", authLogout)
 // @Success 200 {object} object
 // @Failure 400 {object} serverutil.Response
 // @Router /auth/recover [post]
-func authRecover(c *gin.Context) *serverutil.Response {
+func (r *router) authRecover(c *gin.Context) *serverutil.Response {
 	deps, ok := getQueries(c)
 	if !ok || (*deps).Database() == nil {
 		return serverutil.InternalServerError(nil)
@@ -194,8 +189,6 @@ func authRecover(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(err)
 	}
 
-	setSessionCookie(c, result.SessionToken)
+	r.setSessionCookie(c, result.SessionToken)
 	return serverutil.Ok().WithData(gin.H{"token": result.SessionToken})
 }
-
-var authRecoverRoute = serverutil.ApiRoute("POST", "/auth/recover", authRecover)

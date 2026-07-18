@@ -122,8 +122,10 @@ func Login(ctx context.Context, queries *db.Queries, params LoginParams) (*Login
 }
 
 // ValidateSession checks a session token and returns the username if valid.
+// The raw token is hashed with SHA-256 before the DB lookup so plaintext bearer
+// values are never stored at rest.
 func ValidateSession(ctx context.Context, queries *db.Queries, token string) (string, error) {
-	session, err := queries.GetSession(ctx, token)
+	session, err := queries.GetSession(ctx, HashSessionToken(token))
 	if err != nil {
 		return "", fmt.Errorf("invalid or expired session")
 	}
@@ -145,8 +147,9 @@ func ValidateBasicAuth(ctx context.Context, queries *db.Queries, username, passw
 }
 
 // Logout deletes a session token.
+// The raw token is hashed before lookup to match the digest stored at rest.
 func Logout(ctx context.Context, queries *db.Queries, token string) error {
-	return queries.DeleteSession(ctx, token)
+	return queries.DeleteSession(ctx, HashSessionToken(token))
 }
 
 // Recover resets a user's password using their recovery phrase.
@@ -205,8 +208,10 @@ func newSession(ctx context.Context, queries *db.Queries, userID int64) (string,
 		return "", err
 	}
 
+	// Store the SHA-256 digest, not the raw bearer value, so a DB leak cannot
+	// be replayed directly. The caller returns the raw token to the client.
 	_, err = queries.CreateSession(ctx, db.CreateSessionParams{
-		Token:     token,
+		Token:     HashSessionToken(token),
 		UserID:    userID,
 		ExpiresAt: time.Now().Add(sessionDuration),
 	})

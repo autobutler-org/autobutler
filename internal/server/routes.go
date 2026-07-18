@@ -35,13 +35,13 @@ import (
 //go:embed public
 var public embed.FS
 
-func setupRoutes(engine *gin.Engine, systemCollector *system.Collector) error {
-	setupRouters(engine, systemCollector)
+func setupRoutes(engine *gin.Engine, systemCollector *system.Collector, insecure bool) error {
+	setupRouters(engine, systemCollector, insecure)
 	setupWebDAV(engine)
 	return setupStaticRoutes(engine)
 }
 
-func setupRouters(engine *gin.Engine, systemCollector *system.Collector) {
+func setupRouters(engine *gin.Engine, systemCollector *system.Collector, insecure bool) {
 	v1group := engine.Group("/api/v1")
 	v1Routers := []serverutil.Router{
 		v1_vfs.NewRouter(),
@@ -52,7 +52,7 @@ func setupRouters(engine *gin.Engine, systemCollector *system.Collector) {
 
 	group := engine.Group("/api/v0")
 	apiRouters := []serverutil.Router{
-		v0_auth.NewRouter(),
+		v0_auth.NewRouter(insecure),
 		v0_books.NewRouter(),
 		v0_files.NewRouter(),
 		v0_devices.NewRouter(),
