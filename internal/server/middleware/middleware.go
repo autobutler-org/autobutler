@@ -80,6 +80,15 @@ var authExemptPaths = map[string]bool{
 	"/api/v0/auth/status":  true,
 }
 
+// queryTokenAllowedPaths lists the API paths that may authenticate via the
+// ?token= query parameter. Restrict this to WebSocket/streaming endpoints where
+// setting an Authorization header is not practical for the client (e.g. browser
+// WebSocket API). Accepting tokens in query parameters on general REST endpoints
+// risks token leakage through server logs, browser history, and Referer headers.
+var queryTokenAllowedPaths = map[string]bool{
+	"/api/v0/events": true,
+}
+
 func inject(deps deputil.Dependencies) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c = ctxutil.With(c, "deps", deps)
@@ -170,8 +179,13 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 		if cookie, err := c.Cookie("session"); err == nil && cookie != "" {
 			tokens = append(tokens, cookie)
 		}
-		if q := c.Query("token"); q != "" {
-			tokens = append(tokens, q)
+		// ?token= is only accepted on WebSocket/streaming endpoints where
+		// setting an Authorization header is impractical for the client.
+		// See queryTokenAllowedPaths.
+		if queryTokenAllowedPaths[path] {
+			if q := c.Query("token"); q != "" {
+				tokens = append(tokens, q)
+			}
 		}
 
 		for _, t := range tokens {
