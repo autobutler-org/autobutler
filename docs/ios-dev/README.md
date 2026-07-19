@@ -86,7 +86,7 @@ You may get a pop-up saying you do not have Developer Mode enabled on your iPhon
 
 ![Developer Mode Disabled](./developer-mode-disabled.png)
 
-### "Installation on this device is prohibited by ManagedConfiguration"
+### Installation on this device is prohibited by ManagedConfiguration
 
 If the app compiles and gets all the way to installing, then fails with:
 
