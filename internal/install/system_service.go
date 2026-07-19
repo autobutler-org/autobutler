@@ -18,6 +18,7 @@ User=autobutler
 Group=autobutler
 ExecStart=/usr/local/bin/autobutler serve
 Environment="PORT=80"
+Environment="HTTPS_PORT=443"
 Environment="GIN_MODE=release"
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 CapabilityBoundingSet=CAP_NET_BIND_SERVICE
@@ -44,6 +45,8 @@ WantedBy=multi-user.target`
     <dict>
         <key>PORT</key>
         <string>80</string>
+        <key>HTTPS_PORT</key>
+        <string>443</string>
         <key>GIN_MODE</key>
         <string>release</string>
     </dict>
