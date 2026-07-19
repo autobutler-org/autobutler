@@ -451,6 +451,9 @@ tidy/flutter: ## Tidy Flutter dependencies
 			$(MAKE) -C "$$pkg" tidy || exit 1
 		fi
 	done
+ifeq ($(UNAME_S),Darwin)
+	cd ios && pod install
+endif
 
 .PHONY: tidy/go
 tidy/go: ## Tidy go mod
