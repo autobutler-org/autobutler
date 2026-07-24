@@ -218,7 +218,16 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 		return fmt.Errorf("failed to setup services: %w", err)
 	}
 
-	portNum := serverutil.ServerPort()
+	// In TLS mode the server binds to HTTPS_PORT (default 443); in insecure
+	// mode it binds to PORT (default 8080). The two env vars are intentionally
+	// separate so that in-place upgrades on existing installations do not
+	// require a service-file edit.
+	var portNum int
+	if opts.Insecure {
+		portNum = serverutil.ServerPort()
+	} else {
+		portNum = serverutil.ServerHttpsPort()
+	}
 	port := fmt.Sprintf("%d", portNum)
 
 	if enabled, authKey := settingsutil.GetRemoteAccess(); enabled && authKey != "" {
