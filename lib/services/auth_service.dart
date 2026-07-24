@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:autobutler/services/app_settings.dart';
+import 'package:autobutler/services/authenticated_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -44,7 +45,13 @@ class AuthService {
   /// Checks whether initial setup has been completed on the butler.
   static Future<AuthStatus> checkStatus() async {
     final uri = _baseUri.resolve('/api/v0/auth/status');
-    final response = await http.get(uri);
+    final client = buildLocalTrustHttpClient();
+    final http.Response response;
+    try {
+      response = await client.get(uri);
+    } finally {
+      client.close();
+    }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to check auth status (${response.statusCode})');
     }
@@ -60,11 +67,17 @@ class AuthService {
     required String password,
   }) async {
     final uri = _baseUri.resolve('/api/v0/auth/setup');
-    final response = await http.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'username': username, 'password': password}),
-    );
+    final client = buildLocalTrustHttpClient();
+    final http.Response response;
+    try {
+      response = await client.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'username': username, 'password': password}),
+      );
+    } finally {
+      client.close();
+    }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = _tryDecodeError(response.body);
       throw Exception(body ?? 'Setup failed (${response.statusCode})');
@@ -82,11 +95,17 @@ class AuthService {
     required String password,
   }) async {
     final uri = _baseUri.resolve('/api/v0/auth/login');
-    final response = await http.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'username': username, 'password': password}),
-    );
+    final client = buildLocalTrustHttpClient();
+    final http.Response response;
+    try {
+      response = await client.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'username': username, 'password': password}),
+      );
+    } finally {
+      client.close();
+    }
     if (response.statusCode == 401) {
       throw Exception('Invalid username or password.');
     }
@@ -106,14 +125,20 @@ class AuthService {
     required String newPassword,
   }) async {
     final uri = _baseUri.resolve('/api/v0/auth/recover');
-    final response = await http.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'recoveryPhrase': recoveryPhrase,
-        'newPassword': newPassword,
-      }),
-    );
+    final client = buildLocalTrustHttpClient();
+    final http.Response response;
+    try {
+      response = await client.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'recoveryPhrase': recoveryPhrase,
+          'newPassword': newPassword,
+        }),
+      );
+    } finally {
+      client.close();
+    }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = _tryDecodeError(response.body);
       throw Exception(body ?? 'Recovery failed (${response.statusCode})');
@@ -131,7 +156,12 @@ class AuthService {
     if (token == null) return;
     try {
       final uri = _baseUri.resolve('/api/v0/auth/logout');
-      await http.post(uri, headers: {'Authorization': 'Bearer $token'});
+      final client = buildLocalTrustHttpClient();
+      try {
+        await client.post(uri, headers: {'Authorization': 'Bearer $token'});
+      } finally {
+        client.close();
+      }
     } catch (_) {
       // Best-effort — token is already cleared locally.
     }
