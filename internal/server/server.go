@@ -217,7 +217,8 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to setup services: %w", err)
 	}
-	go startSessionCleaner(context.Background(), deps)
+	cleanerCtx, cancelCleaner := context.WithCancel(context.Background())
+	go startSessionCleaner(cleanerCtx, deps)
 
 	// In TLS mode the server binds to HTTPS_PORT (default 443); in insecure
 	// mode it binds to PORT (default 8080). The two env vars are intentionally
@@ -245,6 +246,7 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		<-quit
 		log.Println("[server] shutting down...")
+		cancelCleaner()
 		syncWorker.Stop()
 		remoteutil.Stop()
 		if err := tp.Shutdown(context.Background()); err != nil {
