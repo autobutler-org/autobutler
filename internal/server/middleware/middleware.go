@@ -204,12 +204,29 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 }
 
 func Use(router *gin.Engine, deps deputil.Dependencies) {
+	// CORS: the Flutter web UI is embedded and served from the same origin, so
+	// cross-origin access is only needed for native clients (iOS/Android, curl,
+	// desktop apps) and the Tailscale WebDAV mount. Those clients authenticate
+	// via Authorization: Bearer or Basic — neither requires AllowCredentials.
+	//
+	// Combining AllowAllOrigins with AllowCredentials is rejected by browsers
+	// anyway, and is a defence-in-depth problem: it signals that any origin may
+	// send credentialed requests. Dropping AllowCredentials means the browser
+	// will not forward session cookies cross-origin (also enforced by the
+	// SameSite=Strict flag on the session cookie itself).
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
 	config.AllowMethods = []string{"POST", "GET", "PUT", "PATCH", "DELETE", "OPTIONS"}
-	config.AllowHeaders = []string{"*"}
+	config.AllowHeaders = []string{
+		"Authorization",
+		"Content-Type",
+		"Origin",
+		"Accept",
+		"X-Requested-With",
+		"Depth", // WebDAV
+	}
 	config.ExposeHeaders = []string{"Content-Length"}
-	config.AllowCredentials = true
+	config.AllowCredentials = false // see comment above
 	config.MaxAge = 12 * time.Hour
 	router.Use(otelgin.Middleware("autobutler-server"))
 	router.Use(cors.New(config))
