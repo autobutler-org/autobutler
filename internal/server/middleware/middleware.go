@@ -144,7 +144,10 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 
 		db := deps.Database()
 		if db == nil {
-			c.Next()
+			// Database not yet initialised — fail closed rather than allowing
+			// unauthenticated access to API/DAV routes.
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable,
+				gin.H{"error": "service unavailable"})
 			return
 		}
 
@@ -152,7 +155,15 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 		// don't query the DB on every subsequent request.
 		if !setupDone.Load() {
 			complete, err := authutil.IsSetupComplete(c.Request.Context(), db.Queries)
-			if err != nil || !complete {
+			if err != nil {
+				// Transient DB failure — fail closed, do not allow unauthenticated
+				// access (e.g. SQLite lock or disk hiccup).
+				c.AbortWithStatusJSON(http.StatusServiceUnavailable,
+					gin.H{"error": "service unavailable"})
+				return
+			}
+			if !complete {
+				// Genuine pre-setup state — let the setup wizard through.
 				c.Next()
 				return
 			}
