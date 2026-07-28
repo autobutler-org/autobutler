@@ -1,6 +1,7 @@
 package storageutil
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/user"
@@ -34,7 +35,7 @@ func GetCirrusDir() (string, error) {
 
 func GetCirrusDirForDevice(mountPoint string) (string, error) {
 	if mountPoint == "" {
-		return "", fmt.Errorf("mount point is empty")
+		return "", errors.New("mount point is empty")
 	}
 
 	mountInfo, err := os.Stat(mountPoint)
@@ -42,7 +43,7 @@ func GetCirrusDirForDevice(mountPoint string) (string, error) {
 		return "", err
 	}
 	if !mountInfo.IsDir() {
-		return "", fmt.Errorf("mount point is not a directory")
+		return "", errors.New("mount point is not a directory")
 	}
 
 	dataDir := GetDataDirForDevice(mountPoint)

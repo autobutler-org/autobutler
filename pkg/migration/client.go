@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"errors"
 	"context"
 	"fmt"
 	"io"
@@ -49,7 +50,7 @@ func (c *ManualTakeoutClient) GetExportStatus(ctx context.Context, exportID stri
 // DownloadArchive downloads an archive file
 // For manual uploads, this reads from where the user uploaded
 func (c *ManualTakeoutClient) DownloadArchive(ctx context.Context, exportID string, archiveIndex int) (io.ReadCloser, error) {
-	return nil, fmt.Errorf("manual download not implemented - archives should be uploaded by user")
+	return nil, errors.New("manual download not implemented - archives should be uploaded by user")
 }
 
 // ListArchives lists available archive files
@@ -116,7 +117,7 @@ func (c *UploadBasedClient) GetExportStatus(ctx context.Context, exportID string
 func (c *UploadBasedClient) DownloadArchive(ctx context.Context, exportID string, archiveIndex int) (io.ReadCloser, error) {
 	archives, exists := c.uploadedArchives[exportID]
 	if !exists || archiveIndex >= len(archives) {
-		return nil, fmt.Errorf("archive not found")
+		return nil, errors.New("archive not found")
 	}
 
 	// In production, open the actual file

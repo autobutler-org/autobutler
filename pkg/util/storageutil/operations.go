@@ -1,6 +1,7 @@
 package storageutil
 
 import (
+	"errors"
 	"archive/zip"
 	"fmt"
 	"io"
@@ -44,14 +45,14 @@ func (s *StorageService) BackupToDevice(params BackupToDeviceParams) (*BackupToD
 // Use this in tests to inject test devices without hitting the real filesystem detector.
 func BackupToDeviceWithDevices(params BackupToDeviceParams, sourceDevice *ManagedDevice, targetDevice *ManagedDevice) (*BackupToDeviceResult, error) {
 	if sourceDevice == nil {
-		return nil, fmt.Errorf("source device not found")
+		return nil, errors.New("source device not found")
 	}
 	if targetDevice == nil {
-		return nil, fmt.Errorf("target device not found")
+		return nil, errors.New("target device not found")
 	}
 
 	if params.SourceDeviceSerial == params.TargetDeviceSerial {
-		return nil, fmt.Errorf("source and target devices cannot be the same")
+		return nil, errors.New("source and target devices cannot be the same")
 	}
 
 	sourceDirFs := os.DirFS(sourceDevice.CirrusDir)

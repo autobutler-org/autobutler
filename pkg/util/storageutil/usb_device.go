@@ -1,6 +1,7 @@
 package storageutil
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -103,7 +104,7 @@ func (u *usbDevice) IsStorageDevice() bool {
 func (u *usbDevice) Partitions() ([]Partition, error) {
 	blockDev, exists := u.BlockDevicePath()
 	if !exists {
-		return nil, fmt.Errorf("block device not found")
+		return nil, errors.New("block device not found")
 	}
 	pattern := blockDev + "*"
 	matches, err := filepath.Glob(pattern)

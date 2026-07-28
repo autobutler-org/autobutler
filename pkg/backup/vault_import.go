@@ -1,6 +1,7 @@
 package backup
 
 import (
+	"errors"
 	"context"
 	"database/sql"
 	"fmt"
@@ -51,7 +52,7 @@ func ImportVault(ctx context.Context, liveTx *db.Queries, liveKey []byte, recove
 	defer vaultcrypto.ZeroKey(recoveryKey)
 
 	if !vaultcrypto.CheckVerificationBlob(recoveryKey, vBlob, vNonce) {
-		return nil, fmt.Errorf("incorrect recovery password")
+		return nil, errors.New("incorrect recovery password")
 	}
 
 	result := &VaultImportResult{}

@@ -1,6 +1,7 @@
 package backup
 
 import (
+	"errors"
 	"context"
 	"crypto/sha256"
 	"database/sql"
@@ -23,7 +24,7 @@ func ExportVault(ctx context.Context, queries *db.Queries, liveKey []byte, recov
 	}
 
 	if !vaultcrypto.CheckVerificationBlob(liveKey, config.VerificationBlob, config.VerificationNonce) {
-		return "", fmt.Errorf("live vault key verification failed")
+		return "", errors.New("live vault key verification failed")
 	}
 
 	newSalt, err := vaultcrypto.GenerateSalt()

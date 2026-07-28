@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"errors"
 	"archive/zip"
 	"context"
 	"fmt"
@@ -52,7 +53,7 @@ func (c *GoogleAPIClient) GetExportStatus(ctx context.Context, exportID string) 
 
 // DownloadArchive is not used by the API client
 func (c *GoogleAPIClient) DownloadArchive(ctx context.Context, exportID string, archiveIndex int) (io.ReadCloser, error) {
-	return nil, fmt.Errorf("not implemented for API client")
+	return nil, errors.New("not implemented for API client")
 }
 
 // ListArchives is not used by the API client

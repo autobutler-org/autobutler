@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"errors"
 	"context"
 	"fmt"
 	"time"
@@ -32,7 +33,7 @@ func NewService(
 // StartImport initiates a Google Takeout import
 func (s *Service) StartImport(ctx context.Context, services []string) (*ImportJob, error) {
 	if len(services) == 0 {
-		return nil, fmt.Errorf("no services specified")
+		return nil, errors.New("no services specified")
 	}
 
 	// Request export from Google Takeout client

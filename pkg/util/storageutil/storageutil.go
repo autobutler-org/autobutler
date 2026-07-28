@@ -556,7 +556,7 @@ func safeJoin(base string, parts ...string) (string, error) {
 	cleanBase := filepath.Clean(base)
 	joined := filepath.Clean(filepath.Join(append([]string{cleanBase}, parts...)...))
 	if joined != cleanBase && !strings.HasPrefix(joined, cleanBase+string(filepath.Separator)) {
-		return "", fmt.Errorf("invalid path: escapes base directory")
+		return "", errors.New("invalid path: escapes base directory")
 	}
 	return joined, nil
 }
