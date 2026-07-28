@@ -9,6 +9,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/photoutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/autobutler/pkg/vfs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -74,50 +75,81 @@ func listPhotos(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(nil)
 	}
 
-	devices, err := deps.StorageService().GetManagedDevices()
-	if err != nil {
-		return serverutil.InternalServerError(err)
-	}
-
-	// Filter devices by serial if specified
-	if serial != "" {
-		filtered := make([]storageutil.ManagedDevice, 0, 1)
-		for _, d := range devices {
-			deviceSerial := ""
-			if d.UsbInfo != nil {
-				deviceSerial = d.UsbInfo.GetSerial()
-			}
-			if deviceSerial == serial {
-				filtered = append(filtered, d)
-			}
-		}
-		devices = filtered
-	}
-
 	var allPhotos []PhotoJSON
-	for _, device := range devices {
-		deviceSerial := ""
-		if device.UsbInfo != nil {
-			deviceSerial = device.UsbInfo.GetSerial()
-		}
 
-		photos, err := photoutil.FindAllPhotosRecursively(device.CirrusDir)
-		if err != nil {
-			// Skip devices that fail — don't block the whole response
-			continue
-		}
-		for _, photo := range photos {
-			info := photo.FileInfo
-			allPhotos = append(allPhotos, PhotoJSON{
-				RelPath:      photo.RelPath,
-				FileName:     info.Name(),
-				Size:         info.Size(),
-				MTime:        info.ModTime().Unix(),
-				Serial:       deviceSerial,
-				HasLiveVideo: photo.HasLiveVideo,
+	// VFS path: use recursive image listing when registry is available.
+	if reg := deps.VFSRegistry(); reg != nil {
+		if fsys, ok := reg.Get("files"); ok {
+			serialFilter := []string{}
+			if serial != "" {
+				serialFilter = []string{serial}
+			}
+			infos, listErr := fsys.List(c.Request.Context(), "", &vfs.ListFilter{
+				Recursive:    true,
+				MimePrefix:   "image/",
+				SerialFilter: serialFilter,
 			})
+			if listErr != nil {
+				return serverutil.InternalServerError(listErr)
+			}
+			for _, fi := range infos {
+				if fi.IsDir {
+					continue
+				}
+				allPhotos = append(allPhotos, PhotoJSON{
+					RelPath:  fi.Path,
+					FileName: fi.Name,
+					Size:     fi.Size,
+					MTime:    fi.ModTime.Unix(),
+				})
+			}
+			goto paginate
 		}
 	}
+
+	// Fallback: walk devices via photoutil.
+	{
+		devices, err := deps.StorageService().GetManagedDevices()
+		if err != nil {
+			return serverutil.InternalServerError(err)
+		}
+		if serial != "" {
+			filtered := make([]storageutil.ManagedDevice, 0, 1)
+			for _, d := range devices {
+				deviceSerial := ""
+				if d.UsbInfo != nil {
+					deviceSerial = d.UsbInfo.GetSerial()
+				}
+				if deviceSerial == serial {
+					filtered = append(filtered, d)
+				}
+			}
+			devices = filtered
+		}
+		for _, device := range devices {
+			deviceSerial := ""
+			if device.UsbInfo != nil {
+				deviceSerial = device.UsbInfo.GetSerial()
+			}
+			photos, err := photoutil.FindAllPhotosRecursively(device.CirrusDir)
+			if err != nil {
+				continue
+			}
+			for _, photo := range photos {
+				info := photo.FileInfo
+				allPhotos = append(allPhotos, PhotoJSON{
+					RelPath:      photo.RelPath,
+					FileName:     info.Name(),
+					Size:         info.Size(),
+					MTime:        info.ModTime().Unix(),
+					Serial:       deviceSerial,
+					HasLiveVideo: photo.HasLiveVideo,
+				})
+			}
+		}
+	}
+
+paginate:
 
 	// Sort by modification time descending (newest first)
 	sort.Slice(allPhotos, func(i, j int) bool {

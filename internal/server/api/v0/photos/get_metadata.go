@@ -1,9 +1,11 @@
 package v0_photos
 
 import (
+	"bytes"
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"path/filepath"
@@ -16,6 +18,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/photoutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/autobutler/pkg/vfs"
 	"github.com/gin-gonic/gin"
 )
 
@@ -78,50 +81,91 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 	}
 	serial := c.Query("serial")
 
-	filesDir, err := storageutil.GetCirrusDir()
-	if err != nil {
-		return serverutil.InternalServerError(err)
-	}
-	if serial != "" {
-		if devices, err := deps.StorageService().GetManagedDevices(); err == nil {
-			for _, d := range devices {
-				if d.UsbInfo != nil && d.UsbInfo.GetSerial() == serial {
-					filesDir = d.CirrusDir
-					break
-				}
-			}
-		}
-	}
-
-	cleanFilesDir := filepath.Clean(filesDir)
-	fullPath := filepath.Join(cleanFilesDir, relPath)
-	if !strings.HasPrefix(fullPath, cleanFilesDir+string(filepath.Separator)) {
-		return serverutil.BadRequest(fmt.Errorf("invalid relPath"))
-	}
-
-	stat, err := os.Stat(fullPath)
-	if os.IsNotExist(err) {
-		return serverutil.NotFound(fmt.Errorf("photo not found: %s", relPath))
-	}
-	if err != nil {
-		return serverutil.InternalServerError(err)
-	}
-
-	// --- EXIF + dimensions (works for JPEG, HEIC, PNG, WebP, TIFF, RAW) ---
+	// Stat and EXIF: use VFS when available, fall back to direct disk access.
+	var statSize int64
+	var statMTime int64
 	var exifData *ExifJSON
 	width, height := 0, 0
 
-	imgFormat := photoutil.ImageFormatFromPath(fullPath)
-	if imgFormat != 0 {
-		if f, err := os.Open(fullPath); err == nil {
-			if data, err := photoutil.DecodeExif(f, imgFormat); err == nil && data != nil {
-				exifData = exifDataToJSON(data)
-				width = data.Width
-				height = data.Height
+	if reg := deps.VFSRegistry(); reg != nil {
+		if fsys, ok := reg.Get("files"); ok {
+			fi, statErr := fsys.Stat(c.Request.Context(), relPath)
+			if statErr != nil {
+				if errors.Is(statErr, vfs.ErrNotFound) {
+					return serverutil.NotFound(fmt.Errorf("photo not found: %s", relPath))
+				}
+				return serverutil.InternalServerError(statErr)
 			}
-			f.Close()
+			statSize = fi.Size
+			statMTime = fi.ModTime.Unix()
+
+			imgFormat := photoutil.ImageFormatFromPath(relPath)
+			if imgFormat != 0 {
+				if rc, openErr := fsys.Open(c.Request.Context(), relPath); openErr == nil {
+					var rs io.ReadSeeker
+					if seekable, ok := rc.(io.ReadSeeker); ok {
+						rs = seekable
+					} else {
+						raw, _ := io.ReadAll(rc)
+						rs = bytes.NewReader(raw)
+					}
+					if data, exifErr := photoutil.DecodeExif(rs, imgFormat); exifErr == nil && data != nil {
+						exifData = exifDataToJSON(data)
+						width = data.Width
+						height = data.Height
+					}
+					rc.Close()
+				}
+			}
+			goto rotations
 		}
 	}
+
+	// Fallback: direct disk access.
+	{
+		filesDir, err := storageutil.GetCirrusDir()
+		if err != nil {
+			return serverutil.InternalServerError(err)
+		}
+		if serial != "" {
+			if devices, err := deps.StorageService().GetManagedDevices(); err == nil {
+				for _, d := range devices {
+					if d.UsbInfo != nil && d.UsbInfo.GetSerial() == serial {
+						filesDir = d.CirrusDir
+						break
+					}
+				}
+			}
+		}
+		cleanFilesDir := filepath.Clean(filesDir)
+		fullPath := filepath.Join(cleanFilesDir, relPath)
+		if !strings.HasPrefix(fullPath, cleanFilesDir+string(filepath.Separator)) {
+			return serverutil.BadRequest(fmt.Errorf("invalid relPath"))
+		}
+		stat, err := os.Stat(fullPath)
+		if os.IsNotExist(err) {
+			return serverutil.NotFound(fmt.Errorf("photo not found: %s", relPath))
+		}
+		if err != nil {
+			return serverutil.InternalServerError(err)
+		}
+		statSize = stat.Size()
+		statMTime = stat.ModTime().Unix()
+
+		imgFormat := photoutil.ImageFormatFromPath(fullPath)
+		if imgFormat != 0 {
+			if f, err := os.Open(fullPath); err == nil {
+				if data, exifErr := photoutil.DecodeExif(f, imgFormat); exifErr == nil && data != nil {
+					exifData = exifDataToJSON(data)
+					width = data.Width
+					height = data.Height
+				}
+				f.Close()
+			}
+		}
+	}
+
+rotations:
 
 	ctx := c.Request.Context()
 
@@ -159,12 +203,28 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 		albumRefs = append(albumRefs, AlbumRefJSON{ID: a.ID, Name: a.Name})
 	}
 
-	liveVideoPath := findLivePhotoVideo(fullPath, relPath)
+	// Live-video companion: resolve via disk only (VFS doesn't expose sidecar detection).
+	liveVideoPath := ""
+	if filesDir, err := storageutil.GetCirrusDir(); err == nil {
+		searchDir := filesDir
+		if serial != "" {
+			if devices, dErr := deps.StorageService().GetManagedDevices(); dErr == nil {
+				for _, d := range devices {
+					if d.UsbInfo != nil && d.UsbInfo.GetSerial() == serial {
+						searchDir = d.CirrusDir
+						break
+					}
+				}
+			}
+		}
+		fullPath := filepath.Join(filepath.Clean(searchDir), relPath)
+		liveVideoPath = findLivePhotoVideo(fullPath, relPath)
+	}
 
 	return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(PhotoMetadataJSON{
 		FileName:           filepath.Base(relPath),
-		FileSize:           stat.Size(),
-		MTime:              stat.ModTime().Unix(),
+		FileSize:           statSize,
+		MTime:              statMTime,
 		Width:              width,
 		Height:             height,
 		RotationQuarters:   rotationQuarters,
