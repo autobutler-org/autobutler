@@ -15,6 +15,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -25,7 +26,8 @@ const (
 
 // EnsureSelfSignedCert checks if certFile/keyFile exist and are valid (not expiring soon).
 // If absent or expiring within 30 days, it generates a new ECDSA P-256 self-signed cert
-// valid for 365 days with SANs for localhost, 127.0.0.1, ::1, and any local network IPs.
+// valid for 365 days with SANs for localhost, the machine's own hostname and its
+// .local mDNS name, 127.0.0.1, ::1, and any local network IPs.
 // Cert and key are stored at dataDir/certs/server.crt and server.key.
 // Returns the paths to the cert and key files.
 func EnsureSelfSignedCert(dataDir string) (certFile, keyFile string, err error) {
@@ -80,7 +82,7 @@ func generate(certFile, keyFile string) error {
 	}
 
 	// Collect SANs.
-	dnsNames := []string{"localhost"}
+	dnsNames := append([]string{"localhost"}, localDNSNames()...)
 	ipAddrs := []net.IP{
 		net.ParseIP("127.0.0.1"),
 		net.ParseIP("::1"),
@@ -139,6 +141,29 @@ func generate(certFile, keyFile string) error {
 	}
 
 	return nil
+}
+
+// localDNSNames returns the machine's own hostname plus its mDNS/Bonjour name
+// ("openclaw" and "openclaw.local"), so clients reaching the butler by the name
+// it advertises on the LAN get a certificate that actually matches the URL.
+// Without these, only IP-based URLs match the cert.
+func localDNSNames() []string {
+	hostname, err := os.Hostname()
+	if err != nil || hostname == "" || hostname == "localhost" {
+		return nil
+	}
+
+	// Some systems already report the fully-qualified mDNS name.
+	if strings.HasSuffix(hostname, ".local") {
+		short := strings.TrimSuffix(hostname, ".local")
+		return []string{short, hostname}
+	}
+	// Don't derive an mDNS name from a hostname that is already qualified with
+	// some other domain — the .local form wouldn't resolve.
+	if strings.Contains(hostname, ".") {
+		return []string{hostname}
+	}
+	return []string{hostname, hostname + ".local"}
 }
 
 // localInterfaceIPs returns all non-loopback unicast IP addresses from the

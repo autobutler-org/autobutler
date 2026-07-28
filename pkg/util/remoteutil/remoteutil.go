@@ -2,6 +2,7 @@ package remoteutil
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net"
@@ -158,7 +159,12 @@ func HasPersistedState() bool {
 	return false
 }
 
-func StartProxy(localPort int) error {
+// StartProxy forwards tailnet traffic to the local butler on [localPort].
+// [localTLS] must match how the butler is actually serving that port — see
+// serverutil.ServingTLS. Proxying plain HTTP at the TLS listener shows up as
+// "TLS handshake error from 127.0.0.1" in the server log and fails every
+// request.
+func StartProxy(localPort int, localTLS bool) error {
 	mu.Lock()
 	defer mu.Unlock()
 	if proxyLn != nil {
@@ -172,8 +178,12 @@ func StartProxy(localPort int) error {
 		return fmt.Errorf("tsnet listen failed: %w", err)
 	}
 	proxyLn = ln
+	scheme := "http"
+	if localTLS {
+		scheme = "https"
+	}
 	target := &url.URL{
-		Scheme: "http",
+		Scheme: scheme,
 		Host:   fmt.Sprintf("localhost:%d", localPort),
 	}
 	rp := &httputil.ReverseProxy{
@@ -181,6 +191,14 @@ func StartProxy(localPort int) error {
 			r.SetURL(target)
 			r.Out.Host = target.Host
 		},
+	}
+	if localTLS {
+		// The butler presents its own self-signed cert, and this hop is a
+		// loopback connection to that same process — there is no third party to
+		// authenticate, and no CA that could vouch for the cert.
+		rp.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
 	}
 	go func() {
 		if err := http.Serve(ln, rp); err != nil {

@@ -9,6 +9,8 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -61,6 +63,41 @@ func TestEnsureSelfSignedCert_CreatesFiles(t *testing.T) {
 	}
 	if _, err := x509.ParseECPrivateKey(keyBlock.Bytes); err != nil {
 		t.Fatalf("parse EC key: %v", err)
+	}
+}
+
+// The app reaches the butler by its mDNS name (e.g. https://openclaw.local), so
+// that name must be a SAN or the cert never matches the URL being used.
+func TestEnsureSelfSignedCert_IncludesMDNSHostname(t *testing.T) {
+	hostname, err := os.Hostname()
+	if err != nil || hostname == "" || hostname == "localhost" {
+		t.Skip("no usable hostname on this machine")
+	}
+
+	dir := t.TempDir()
+	certFile, _, err := tlsutil.EnsureSelfSignedCert(dir)
+	if err != nil {
+		t.Fatalf("EnsureSelfSignedCert error: %v", err)
+	}
+
+	certPEM, err := os.ReadFile(certFile)
+	if err != nil {
+		t.Fatalf("read cert: %v", err)
+	}
+	block, _ := pem.Decode(certPEM)
+	if block == nil {
+		t.Fatal("cert PEM block is nil")
+	}
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		t.Fatalf("parse cert: %v", err)
+	}
+
+	short := strings.TrimSuffix(hostname, ".local")
+	for _, want := range []string{"localhost", short, short + ".local"} {
+		if !slices.Contains(cert.DNSNames, want) {
+			t.Errorf("cert DNSNames %v missing %q", cert.DNSNames, want)
+		}
 	}
 }
 
