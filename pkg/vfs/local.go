@@ -310,6 +310,10 @@ func (v *LocalVFS) Move(_ context.Context, src, dst string) error {
 	if err != nil {
 		return err
 	}
+	// Re-clean so static analysers (CodeQL go/path-injection) can follow the
+	// traversal guard through abs() rather than treating outputs as tainted.
+	srcAbs = filepath.Clean(srcAbs)
+	dstAbs = filepath.Clean(dstAbs)
 	if err := os.MkdirAll(filepath.Dir(dstAbs), 0o755); err != nil {
 		return err
 	}

@@ -146,10 +146,13 @@ func (v *StorageServiceVFS) Write(_ context.Context, path string, r io.Reader, o
 	if err != nil {
 		return err
 	}
-	safePath, err := storageutil.SafeJoin(cirrusDir, path)
+	// filepath.Clean before SafeJoin so static analysers (CodeQL go/path-injection)
+	// can follow the traversal guard rather than seeing tainted data reach os.Create.
+	safePath, err := storageutil.SafeJoin(cirrusDir, filepath.Clean(path))
 	if err != nil {
 		return ErrPermissionDenied
 	}
+	safePath = filepath.Clean(safePath)
 	if opts.IfNoneMatch == "*" {
 		if _, statErr := os.Stat(safePath); statErr == nil {
 			return ErrConflict
@@ -158,7 +161,7 @@ func (v *StorageServiceVFS) Write(_ context.Context, path string, r io.Reader, o
 	if err := os.MkdirAll(filepath.Dir(safePath), 0o755); err != nil {
 		return err
 	}
-	f, err := os.Create(safePath) //nolint:gosec // path already validated by SafeJoin
+	f, err := os.Create(safePath) //nolint:gosec // path already validated by SafeJoin + filepath.Clean
 	if err != nil {
 		return err
 	}
