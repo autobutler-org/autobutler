@@ -334,6 +334,51 @@ func (m *MemVFS) MkdirAll(ctx context.Context, path string) error {
 	return nil
 }
 
+// Move relocates src to dst within the MemVFS.
+func (m *MemVFS) Move(_ context.Context, src, dst string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	s := cleanPath(src)
+	d := cleanPath(dst)
+
+	// Move a single file.
+	if entry, ok := m.files[s]; ok {
+		entry.info.Path = d
+		entry.info.Name = filepath.Base(d)
+		m.files[d] = entry
+		delete(m.files, s)
+		return nil
+	}
+
+	// Move a directory and all its descendants.
+	if !m.dirs[s] {
+		return ErrNotFound
+	}
+
+	prefix := s + "/"
+	for fp, entry := range m.files {
+		if strings.HasPrefix(fp, prefix) {
+			rel := strings.TrimPrefix(fp, prefix)
+			newPath := d + "/" + rel
+			entry.info.Path = newPath
+			entry.info.Name = filepath.Base(newPath)
+			m.files[newPath] = entry
+			delete(m.files, fp)
+		}
+	}
+	for dp := range m.dirs {
+		if strings.HasPrefix(dp, prefix) {
+			rel := strings.TrimPrefix(dp, prefix)
+			m.dirs[d+"/"+rel] = true
+			delete(m.dirs, dp)
+		}
+	}
+	delete(m.dirs, s)
+	m.dirs[d] = true
+	return nil
+}
+
 // Watch is not supported by MemVFS and always returns ErrWatchNotSupported.
 func (m *MemVFS) Watch(ctx context.Context, path string) (<-chan WatchEvent, error) {
 	return nil, ErrWatchNotSupported

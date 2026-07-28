@@ -300,6 +300,22 @@ func (v *LocalVFS) MkdirAll(ctx context.Context, path string) error {
 	return os.MkdirAll(absPath, 0o755)
 }
 
+// Move renames src to dst within the VFS root.
+func (v *LocalVFS) Move(_ context.Context, src, dst string) error {
+	srcAbs, err := v.abs(src)
+	if err != nil {
+		return err
+	}
+	dstAbs, err := v.abs(dst)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(dstAbs), 0o755); err != nil {
+		return err
+	}
+	return os.Rename(srcAbs, dstAbs)
+}
+
 // Watch is not supported by LocalVFS and always returns ErrWatchNotSupported.
 func (v *LocalVFS) Watch(ctx context.Context, path string) (<-chan WatchEvent, error) {
 	return nil, ErrWatchNotSupported

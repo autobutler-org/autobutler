@@ -266,6 +266,24 @@ func (v *DBVFS) MkdirAll(ctx context.Context, p string) error {
 	return nil
 }
 
+// Move renames src to dst, updating all descendant paths atomically.
+func (v *DBVFS) Move(ctx context.Context, src, dst string) error {
+	src = dbCleanPath(src)
+	dst = dbCleanPath(dst)
+
+	prefix := strings.TrimSuffix(src, "/") + "/"
+	_, err := v.db.ExecContext(ctx,
+		`UPDATE vfs_db_entries
+		 SET path = ? || SUBSTR(path, LENGTH(?)+1)
+		 WHERE namespace=? AND (path=? OR path LIKE ?)`,
+		dst, src, v.namespaceID, src, prefix+"%",
+	)
+	if err != nil {
+		return fmt.Errorf("dbvfs move: %w", err)
+	}
+	return nil
+}
+
 // Watch is not supported by DBVFS. Always returns ErrWatchNotSupported.
 func (v *DBVFS) Watch(_ context.Context, _ string) (<-chan WatchEvent, error) {
 	return nil, ErrWatchNotSupported

@@ -418,6 +418,66 @@ func TestRegistryRegisterGetUnregister(t *testing.T) {
 	}
 }
 
+func TestMoveFile(t *testing.T) {
+	for _, f := range factories {
+		f := f
+		t.Run(f.name, func(t *testing.T) {
+			ctx := context.Background()
+			v := f.make(t, "test-ns")
+			if err := v.Write(ctx, "src.txt", strings.NewReader("move me"), vfs.WriteOptions{}); err != nil {
+				t.Fatalf("Write: %v", err)
+			}
+			if err := v.Move(ctx, "src.txt", "dst.txt"); err != nil {
+				t.Fatalf("Move: %v", err)
+			}
+			// dst should exist
+			rc, err := v.Open(ctx, "dst.txt")
+			if err != nil {
+				t.Fatalf("Open dst: %v", err)
+			}
+			got, _ := io.ReadAll(rc)
+			rc.Close()
+			if string(got) != "move me" {
+				t.Errorf("dst content = %q, want \"move me\"", got)
+			}
+			// src should be gone
+			_, err = v.Stat(ctx, "src.txt")
+			if !errors.Is(err, vfs.ErrNotFound) {
+				t.Errorf("expected ErrNotFound for src after Move, got %v", err)
+			}
+		})
+	}
+}
+
+func TestMoveDir(t *testing.T) {
+	for _, f := range factories {
+		f := f
+		t.Run(f.name, func(t *testing.T) {
+			ctx := context.Background()
+			v := f.make(t, "test-ns")
+			if err := v.MkdirAll(ctx, "old/sub"); err != nil {
+				t.Fatalf("MkdirAll: %v", err)
+			}
+			if err := v.Write(ctx, "old/sub/file.txt", strings.NewReader("x"), vfs.WriteOptions{}); err != nil {
+				t.Fatalf("Write: %v", err)
+			}
+			if err := v.Move(ctx, "old", "new"); err != nil {
+				t.Fatalf("Move dir: %v", err)
+			}
+			// File should now be under new/
+			_, err := v.Stat(ctx, "new/sub/file.txt")
+			if err != nil {
+				t.Errorf("expected new/sub/file.txt to exist after dir move: %v", err)
+			}
+			// Old path should be gone
+			_, err = v.Stat(ctx, "old")
+			if !errors.Is(err, vfs.ErrNotFound) {
+				t.Errorf("expected old dir to be gone after Move, got %v", err)
+			}
+		})
+	}
+}
+
 func TestRegistryNamespaceConflict(t *testing.T) {
 	reg := vfs.NewRegistry()
 	ns := vfs.Namespace{ID: "ns1"}

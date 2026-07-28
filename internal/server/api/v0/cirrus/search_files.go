@@ -7,6 +7,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/autobutler/pkg/vfs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,6 +33,10 @@ func searchFiles(c *gin.Context) *serverutil.Response {
 
 	idx := deps.FileIndex()
 	if idx == nil {
+		// VFS fallback: recursive list then name-match (avoids disk-walk when VFS is registered).
+		if reg := deps.VFSRegistry(); reg != nil {
+			return searchFilesVFS(c, reg, query, serials)
+		}
 		return searchFilesDiskWalk(c, deps, query, serials)
 	}
 
@@ -55,6 +60,33 @@ func searchFiles(c *gin.Context) *serverutil.Response {
 		})
 	}
 	return serverutil.Ok().WithData(allFiles)
+}
+
+// searchFilesVFS uses VFS.List(Recursive: true) as the fallback when no file index is available.
+func searchFilesVFS(c *gin.Context, registry interface{ Get(string) (vfs.VFS, bool) }, query string, serials []string) *serverutil.Response {
+	fsys, ok := registry.Get("files")
+	if !ok {
+		return serverutil.InternalServerError(nil)
+	}
+	all, err := fsys.List(c.Request.Context(), "", &vfs.ListFilter{Recursive: true, SerialFilter: serials})
+	if err != nil {
+		return serverutil.InternalServerError(err)
+	}
+	result := make([]FileNodeJSON, 0, len(all))
+	for _, fi := range all {
+		if fi.IsDir {
+			continue
+		}
+		if query != "" && !strings.Contains(strings.ToLower(fi.Name), strings.ToLower(query)) {
+			continue
+		}
+		result = append(result, FileNodeJSON{
+			Name:    fi.Name,
+			DirPath: fi.Path,
+			IsDir:   false,
+		})
+	}
+	return serverutil.Ok().WithData(result)
 }
 
 // searchFilesDiskWalk is the original BFS implementation used as fallback when the
