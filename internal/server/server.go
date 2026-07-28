@@ -229,11 +229,15 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 		portNum = serverutil.ServerHttpsPort()
 	}
 	port := fmt.Sprintf("%d", portNum)
+	// Record the real bound address so the remote-access proxy (which can also
+	// be started later, from the settings API) targets the right port and
+	// protocol instead of guessing.
+	serverutil.SetServingAddr(portNum, !opts.Insecure)
 
 	if enabled, authKey := settingsutil.GetRemoteAccess(); enabled && authKey != "" {
 		if err := remoteutil.Start(authKey); err != nil {
 			log.Printf("[remote] failed to start: %v", err)
-		} else if err := remoteutil.StartProxy(portNum); err != nil {
+		} else if err := remoteutil.StartProxy(portNum, !opts.Insecure); err != nil {
 			log.Printf("[remote] failed to start proxy: %v", err)
 		}
 	}
@@ -263,7 +267,9 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 
 	// IMPORTANT: middleware.Use MUST be called before setupRoutes
 	middleware.Use(router, deps)
-	setupRoutes(router, systemCollector)
+	if err := setupRoutes(router, systemCollector); err != nil {
+		return fmt.Errorf("failed to set up routes: %w", err)
+	}
 	setupSwagger(router)
 
 	if opts.Insecure {

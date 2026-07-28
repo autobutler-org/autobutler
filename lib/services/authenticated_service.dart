@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:autobutler/services/app_settings.dart';
+import 'package:autobutler/services/local_trust.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
@@ -13,7 +14,7 @@ class UnauthorizedException implements Exception {
 }
 
 /// Returns an [http.Client] that trusts self-signed certificates when the
-/// active host is a local/LAN address (localhost, 127.0.0.1, or RFC-1918 IPs).
+/// active host is a local/LAN address (see [isLocalTrustHost]).
 ///
 /// On web, the browser manages TLS trust natively, so the default client is
 /// returned unchanged.
@@ -21,14 +22,8 @@ http.Client buildLocalTrustHttpClient() {
   if (kIsWeb) return http.Client();
 
   final host = _extractHost(AppSettings.instance.activeHost);
-  final isLocal =
-      host == 'localhost' ||
-      host == '127.0.0.1' ||
-      host == '::1' ||
-      host == '10.0.2.2' || // Android emulator loopback
-      RegExp(r'^(192\.168|10\.|172\.(1[6-9]|2[0-9]|3[01]))\.').hasMatch(host);
 
-  if (isLocal) {
+  if (isLocalTrustHost(host)) {
     final inner = HttpClient()
       ..badCertificateCallback = (cert, host, port) => true;
     return IOClient(inner);

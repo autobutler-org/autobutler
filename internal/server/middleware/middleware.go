@@ -144,7 +144,10 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 
 		db := deps.Database()
 		if db == nil {
-			c.Next()
+			// Database not yet initialised — fail closed rather than allowing
+			// unauthenticated access to API/DAV routes.
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable,
+				gin.H{"error": "service unavailable"})
 			return
 		}
 
@@ -152,7 +155,15 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 		// don't query the DB on every subsequent request.
 		if !setupDone.Load() {
 			complete, err := authutil.IsSetupComplete(c.Request.Context(), db.Queries)
-			if err != nil || !complete {
+			if err != nil {
+				// Transient DB failure — fail closed, do not allow unauthenticated
+				// access (e.g. SQLite lock or disk hiccup).
+				c.AbortWithStatusJSON(http.StatusServiceUnavailable,
+					gin.H{"error": "service unavailable"})
+				return
+			}
+			if !complete {
+				// Genuine pre-setup state — let the setup wizard through.
 				c.Next()
 				return
 			}
@@ -204,12 +215,29 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 }
 
 func Use(router *gin.Engine, deps deputil.Dependencies) {
+	// CORS: the Flutter web UI is embedded and served from the same origin, so
+	// cross-origin access is only needed for native clients (iOS/Android, curl,
+	// desktop apps) and the Tailscale WebDAV mount. Those clients authenticate
+	// via Authorization: Bearer or Basic — neither requires AllowCredentials.
+	//
+	// Combining AllowAllOrigins with AllowCredentials is rejected by browsers
+	// anyway, and is a defence-in-depth problem: it signals that any origin may
+	// send credentialed requests. Dropping AllowCredentials means the browser
+	// will not forward session cookies cross-origin (also enforced by the
+	// SameSite=Strict flag on the session cookie itself).
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
 	config.AllowMethods = []string{"POST", "GET", "PUT", "PATCH", "DELETE", "OPTIONS"}
-	config.AllowHeaders = []string{"*"}
+	config.AllowHeaders = []string{
+		"Authorization",
+		"Content-Type",
+		"Origin",
+		"Accept",
+		"X-Requested-With",
+		"Depth", // WebDAV
+	}
 	config.ExposeHeaders = []string{"Content-Length"}
-	config.AllowCredentials = true
+	config.AllowCredentials = false // see comment above
 	config.MaxAge = 12 * time.Hour
 	router.Use(otelgin.Middleware("autobutler-server"))
 	router.Use(cors.New(config))
