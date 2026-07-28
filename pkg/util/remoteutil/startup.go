@@ -7,9 +7,10 @@ import (
 
 // EnsureStarted starts the tsnet node, re-provisioning if local state has been
 // wiped. provisionFn is called only when no persisted state exists; it should
-// return a fresh Headscale pre-auth key. startProxy is called with the local
-// port after tsnet starts successfully.
-func EnsureStarted(localPort int, provisionFn func() (string, error)) error {
+// return a fresh Headscale pre-auth key. The proxy is started against
+// localPort after tsnet starts successfully; localTLS must match how the
+// server is serving that port.
+func EnsureStarted(localPort int, localTLS bool, provisionFn func() (string, error)) error {
 	if IsRunning() {
 		return nil
 	}
@@ -28,7 +29,7 @@ func EnsureStarted(localPort int, provisionFn func() (string, error)) error {
 		return fmt.Errorf("start tsnet: %w", err)
 	}
 
-	if err := StartProxy(localPort); err != nil {
+	if err := StartProxy(localPort, localTLS); err != nil {
 		Stop()
 		return fmt.Errorf("start proxy: %w", err)
 	}
