@@ -35,10 +35,10 @@ import (
 //go:embed public
 var public embed.FS
 
-func setupRoutes(engine *gin.Engine, systemCollector *system.Collector) {
+func setupRoutes(engine *gin.Engine, systemCollector *system.Collector) error {
 	setupRouters(engine, systemCollector)
 	setupWebDAV(engine)
-	setupStaticRoutes(engine)
+	return setupStaticRoutes(engine)
 }
 
 func setupRouters(engine *gin.Engine, systemCollector *system.Collector) {
