@@ -1,9 +1,9 @@
 package migration
 
 import (
-	"errors"
 	"archive/zip"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"

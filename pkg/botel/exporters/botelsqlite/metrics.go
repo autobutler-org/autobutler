@@ -1,9 +1,9 @@
 package botelsqlite
 
 import (
-	"errors"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strconv"
 

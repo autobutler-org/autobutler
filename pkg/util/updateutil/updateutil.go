@@ -1,10 +1,10 @@
 package updateutil
 
 import (
-	"errors"
 	"archive/tar"
 	"compress/gzip"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"

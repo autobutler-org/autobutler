@@ -1,8 +1,8 @@
 package storageutil
 
 import (
-	"errors"
 	"archive/zip"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
