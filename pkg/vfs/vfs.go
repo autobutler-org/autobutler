@@ -15,6 +15,7 @@ type VFS interface {
 	Write(ctx context.Context, path string, r io.Reader, opts WriteOptions) error
 	Delete(ctx context.Context, path string, opts DeleteOptions) error
 	MkdirAll(ctx context.Context, path string) error
+	Move(ctx context.Context, src, dst string) error
 	Watch(ctx context.Context, path string) (<-chan WatchEvent, error)
 }
 
@@ -37,10 +38,11 @@ type Namespace struct {
 }
 
 type ListFilter struct {
-	MimePrefix string
-	Recursive  bool
-	MaxResults int
-	AfterPath  string
+	MimePrefix   string
+	Recursive    bool
+	MaxResults   int
+	AfterPath    string
+	SerialFilter []string // if non-empty, restrict to devices with these serials
 }
 
 type WriteOptions struct {

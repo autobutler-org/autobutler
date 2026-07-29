@@ -1,6 +1,7 @@
 package v0_files
 
 import (
+	"context"
 	"net/http"
 	"path/filepath"
 
@@ -29,13 +30,13 @@ type FileNodeJSON struct {
 	FileType       string `json:"fileType"`
 }
 
-// listFilesVFS lists files via the VFS registry (single-device / no-serial path).
-func listFilesVFS(registry interface{ Get(string) (vfs.VFS, bool) }, rootDir string) ([]FileNodeJSON, error) {
+// listFilesVFS lists files via the VFS registry, optionally scoped to specific device serials.
+func listFilesVFS(ctx context.Context, registry interface{ Get(string) (vfs.VFS, bool) }, rootDir string, serials []string) ([]FileNodeJSON, error) {
 	fsys, ok := registry.Get("files")
 	if !ok {
 		return nil, serverutil.NewHttpErrorf(http.StatusInternalServerError, "files namespace not registered")
 	}
-	infos, err := fsys.List(nil, rootDir, &vfs.ListFilter{Recursive: false}) //nolint:staticcheck
+	infos, err := fsys.List(ctx, rootDir, &vfs.ListFilter{Recursive: false, SerialFilter: serials})
 	if err != nil {
 		if err == vfs.ErrNotFound {
 			return nil, serverutil.NewHttpErrorf(http.StatusNotFound, "folder not found: %s", rootDir)
@@ -134,15 +135,13 @@ func listFiles(c *gin.Context) *serverutil.Response {
 	rootDir := c.Query("rootDir")
 	serials := c.QueryArray("serial")
 
-	// No serial filter: use VFS (no device-specific semantics needed).
-	if len(serials) == 0 {
-		if reg := deps.VFSRegistry(); reg != nil {
-			jsonData, err := listFilesVFS(reg, rootDir)
-			if err != nil {
-				return serverutil.InternalServerError(err)
-			}
-			return serverutil.Ok().WithData(jsonData)
+	// Use VFS when available — passes SerialFilter so the adapter handles device scoping.
+	if reg := deps.VFSRegistry(); reg != nil {
+		jsonData, err := listFilesVFS(c.Request.Context(), reg, rootDir, serials)
+		if err != nil {
+			return serverutil.InternalServerError(err)
 		}
+		return serverutil.Ok().WithData(jsonData)
 	}
 
 	devices, err := deps.StorageService().GetManagedDevices()

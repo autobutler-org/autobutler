@@ -8,6 +8,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/autobutler/pkg/vfs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -65,6 +66,40 @@ func listFilesByType(c *gin.Context) *serverutil.Response {
 	// Use make() instead of var to ensure JSON serialization produces []
 	// instead of null when there are no files (nil slice encodes as null).
 	allFiles := make([]FileNodeWithTimeJSON, 0)
+
+	// VFS path: recursive list + type filter.
+	if reg := deps.VFSRegistry(); reg != nil {
+		if fsys, ok := reg.Get("files"); ok {
+			infos, err := fsys.List(c.Request.Context(), "", &vfs.ListFilter{Recursive: true, SerialFilter: serials})
+			if err != nil {
+				return serverutil.InternalServerError(err)
+			}
+			for _, fi := range infos {
+				if fi.IsDir {
+					continue
+				}
+				if storageutil.DetermineFileTypeFromPath(fi.Path) != targetType {
+					continue
+				}
+				allFiles = append(allFiles, FileNodeWithTimeJSON{
+					FileNodeJSON: FileNodeJSON{
+						Name:     fi.Name,
+						Size:     fi.Size,
+						IsDir:    false,
+						DirPath:  fi.Path,
+						FullPath: fi.Path,
+						FileType: fileTypeParam,
+					},
+					ModifiedAt: fi.ModTime,
+				})
+			}
+			sort.Slice(allFiles, func(i, j int) bool {
+				return allFiles[i].ModifiedAt.After(allFiles[j].ModifiedAt)
+			})
+			return serverutil.Ok().WithData(allFiles)
+		}
+	}
+
 	for _, device := range selectedDevices {
 		cirrusDir := device.CirrusDir
 		deviceSerial := DefaultDeviceSerial

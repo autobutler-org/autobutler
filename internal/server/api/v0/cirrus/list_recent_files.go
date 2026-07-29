@@ -10,6 +10,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/autobutler/pkg/vfs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -48,12 +49,49 @@ func listRecentFiles(c *gin.Context) *serverutil.Response {
 		limit = maxRecentLimit
 	}
 
+	serials := c.QueryArray("serial")
+
+	var allFiles []FileNodeWithTimeJSON
+
+	// VFS path: use recursive list when registry is available.
+	if reg := deps.VFSRegistry(); reg != nil {
+		if fsys, ok := reg.Get("files"); ok {
+			infos, err := fsys.List(c.Request.Context(), "", &vfs.ListFilter{Recursive: true, SerialFilter: serials})
+			if err != nil {
+				return serverutil.InternalServerError(err)
+			}
+			for _, fi := range infos {
+				if fi.IsDir {
+					continue
+				}
+				allFiles = append(allFiles, FileNodeWithTimeJSON{
+					FileNodeJSON: FileNodeJSON{
+						Name:     fi.Name,
+						Size:     fi.Size,
+						IsDir:    false,
+						DirPath:  fi.Path,
+						FullPath: fi.Path,
+						FileType: string(storageutil.DetermineFileTypeFromPath(fi.Path)),
+					},
+					ModifiedAt: fi.ModTime,
+				})
+			}
+			sort.Slice(allFiles, func(i, j int) bool {
+				return allFiles[i].ModifiedAt.After(allFiles[j].ModifiedAt)
+			})
+			if limit < len(allFiles) {
+				allFiles = allFiles[:limit]
+			}
+			return serverutil.Ok().WithData(allFiles)
+		}
+	}
+
+	// Fallback: walk devices via StorageService.
 	devices, err := deps.StorageService().GetManagedDevices()
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
 
-	serials := c.QueryArray("serial")
 	var selectedDevices []storageutil.ManagedDevice
 	if len(serials) == 0 {
 		selectedDevices = devices
@@ -75,7 +113,6 @@ func listRecentFiles(c *gin.Context) *serverutil.Response {
 		}
 	}
 
-	var allFiles []FileNodeWithTimeJSON
 	for _, device := range selectedDevices {
 		cirrusDir := device.CirrusDir
 		deviceSerial := DefaultDeviceSerial

@@ -42,6 +42,21 @@ func newFolder(c *gin.Context) *serverutil.Response {
 	if !ok {
 		return serverutil.InternalServerError(nil)
 	}
+	// Use VFS.MkdirAll for no-serial folder creation; fall back for device-scoped ops.
+	if serial == "" {
+		if reg := deps.VFSRegistry(); reg != nil {
+			if fsys, ok := reg.Get("files"); ok {
+				if err := fsys.MkdirAll(c.Request.Context(), path.Join(folderDir, folderName)); err != nil {
+					return serverutil.InternalServerError(err)
+				}
+				deps.EventBus().Publish(eventbus.Event{
+					Kind: eventbus.EventNewFolder,
+					Path: path.Join(folderDir, folderName),
+				})
+				return serverutil.Ok()
+			}
+		}
+	}
 	if _, err := deps.StorageService().CreateFolder(storageutil.CreateFolderParams{
 		FolderDir:    folderDir,
 		FolderName:   folderName,

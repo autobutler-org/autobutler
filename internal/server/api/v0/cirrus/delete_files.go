@@ -11,6 +11,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/autobutler/pkg/vfs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,12 +41,28 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 	if !ok {
 		return serverutil.InternalServerError(nil)
 	}
-	if _, err := deps.StorageService().DeleteFiles(storageutil.DeleteFilesParams{
-		RootDir:      rootDir,
-		FilePaths:    filePaths,
-		DeviceSerial: serial,
-	}); err != nil {
-		return serverutil.InternalServerError(err)
+	// Use VFS.Delete when no serial and VFS is available (routes through StorageServiceVFS).
+	usedVFS := false
+	if serial == "" {
+		if reg := deps.VFSRegistry(); reg != nil {
+			if fsys, ok := reg.Get("files"); ok {
+				for _, p := range filePaths {
+					if err := fsys.Delete(c.Request.Context(), p, vfs.DeleteOptions{Recursive: true}); err != nil && err != vfs.ErrNotFound {
+						return serverutil.InternalServerError(err)
+					}
+				}
+				usedVFS = true
+			}
+		}
+	}
+	if !usedVFS {
+		if _, err := deps.StorageService().DeleteFiles(storageutil.DeleteFilesParams{
+			RootDir:      rootDir,
+			FilePaths:    filePaths,
+			DeviceSerial: serial,
+		}); err != nil {
+			return serverutil.InternalServerError(err)
+		}
 	}
 
 	for _, p := range filePaths {

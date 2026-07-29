@@ -38,6 +38,22 @@ func moveFile(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(err)
 	}
 
+	// Use VFS.Move for same-device renames (no serials); fall through to StorageService for cross-device ops.
+	if req.OldDeviceSerial == "" && req.NewDeviceSerial == "" {
+		if reg := deps.VFSRegistry(); reg != nil {
+			if fsys, ok := reg.Get("files"); ok {
+				if err := fsys.Move(c.Request.Context(), req.OldFilePath, req.NewFilePath); err != nil {
+					return serverutil.InternalServerError(err)
+				}
+				deps.EventBus().Publish(eventbus.Event{
+					Kind:    eventbus.EventMove,
+					Path:    req.OldFilePath,
+					NewPath: req.NewFilePath,
+				})
+				return serverutil.Ok()
+			}
+		}
+	}
 	if _, err := deps.StorageService().MoveFile(storageutil.MoveFileParams{
 		OldFilePath:     req.OldFilePath,
 		NewFilePath:     req.NewFilePath,

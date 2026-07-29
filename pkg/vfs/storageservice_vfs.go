@@ -24,6 +24,15 @@ func NewStorageServiceVFS(svc *storageutil.StorageService, namespaceID string) *
 	return &StorageServiceVFS{svc: svc, namespaceID: namespaceID}
 }
 
+// serialSet builds a set from a slice for O(1) lookup.
+func serialSet(serials []string) map[string]bool {
+	set := make(map[string]bool, len(serials))
+	for _, s := range serials {
+		set[s] = true
+	}
+	return set
+}
+
 // List returns the contents of the given directory path across all managed devices,
 // deduplicating folders (same logic as the existing cirrus listFilesImpl).
 func (v *StorageServiceVFS) List(_ context.Context, path string, filter *ListFilter) ([]FileInfo, error) {
@@ -32,18 +41,28 @@ func (v *StorageServiceVFS) List(_ context.Context, path string, filter *ListFil
 		return nil, err
 	}
 
+	// Build serial filter set once (empty map = no filter).
+	var allowedSerials map[string]bool
+	if filter != nil && len(filter.SerialFilter) > 0 {
+		allowedSerials = serialSet(filter.SerialFilter)
+	}
+
 	var allFiles []*storageutil.DeviceFileInfo
 	sawListing := false
 	sawNotFound := false
 
 	for _, device := range devices {
-		fullDir, err := storageutil.SafeJoin(device.CirrusDir, path)
-		if err != nil {
-			continue
-		}
 		serial := ""
 		if device.UsbInfo != nil {
 			serial = device.UsbInfo.GetSerial()
+		}
+		// Apply serial filter.
+		if allowedSerials != nil && !allowedSerials[serial] {
+			continue
+		}
+		fullDir, err := storageutil.SafeJoin(device.CirrusDir, path)
+		if err != nil {
+			continue
 		}
 		files, err := storageutil.StatFilesInDir(fullDir, device.Name, device.DataDir, serial)
 		if err != nil {
@@ -121,15 +140,34 @@ func (v *StorageServiceVFS) Open(_ context.Context, path string) (io.ReadCloser,
 	return os.Open(safePath)
 }
 
-// Write uploads a file to the vault via the StorageService.
+// Write writes a file directly into the cirrus directory.
 func (v *StorageServiceVFS) Write(_ context.Context, path string, r io.Reader, opts WriteOptions) error {
-	// Wrap reader in a minimal multipart-compatible form; StorageService.UploadFilesStreamed
-	// expects a multipart reader. For Phase 1 the write path is not migrated through VFS
-	// callers — this method exists to satisfy the interface.
-	_ = path
-	_ = r
-	_ = opts
-	return ErrWatchNotSupported // placeholder; real upload stays via StorageService directly
+	cirrusDir, err := storageutil.GetCirrusDir()
+	if err != nil {
+		return err
+	}
+	// filepath.Clean before SafeJoin so static analysers (CodeQL go/path-injection)
+	// can follow the traversal guard rather than seeing tainted data reach os.Create.
+	safePath, err := storageutil.SafeJoin(cirrusDir, filepath.Clean(path))
+	if err != nil {
+		return ErrPermissionDenied
+	}
+	safePath = filepath.Clean(safePath)
+	if opts.IfNoneMatch == "*" {
+		if _, statErr := os.Stat(safePath); statErr == nil {
+			return ErrConflict
+		}
+	}
+	if err := os.MkdirAll(filepath.Dir(safePath), 0o755); err != nil {
+		return err
+	}
+	f, err := os.Create(safePath) //nolint:gosec // path already validated by SafeJoin + filepath.Clean
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = io.Copy(f, r)
+	return err
 }
 
 // Delete removes one or more files via the StorageService.
@@ -146,6 +184,15 @@ func (v *StorageServiceVFS) MkdirAll(_ context.Context, path string) error {
 	_, err := v.svc.CreateFolder(storageutil.CreateFolderParams{
 		FolderDir:  dir,
 		FolderName: name,
+	})
+	return err
+}
+
+// Move renames src to dst via the StorageService.
+func (v *StorageServiceVFS) Move(_ context.Context, src, dst string) error {
+	_, err := v.svc.MoveFile(storageutil.MoveFileParams{
+		OldFilePath: src,
+		NewFilePath: dst,
 	})
 	return err
 }
