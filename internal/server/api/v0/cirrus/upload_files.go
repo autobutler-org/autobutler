@@ -1,11 +1,16 @@
 package v0_files
 
 import (
+	"errors"
+	"path"
+	"path/filepath"
+
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/autobutler/pkg/vfs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -48,6 +53,58 @@ func uploadFilesNested(c *gin.Context, rootDir string) *serverutil.Response {
 	if err != nil {
 		return serverutil.BadRequest(err)
 	}
+
+	// VFS path: only when no serial is provided (VFS handles the local namespace).
+	if serial == "" {
+		if reg := deps.VFSRegistry(); reg != nil {
+			if fsys, ok := reg.Get("files"); ok {
+				ctx := c.Request.Context()
+
+				// Ensure the destination directory exists.
+				if rootDir != "" {
+					if err := fsys.MkdirAll(ctx, rootDir); err != nil {
+						return serverutil.InternalServerError(err)
+					}
+				}
+
+				for {
+					part, err := reader.NextPart()
+					if err != nil {
+						break // io.EOF or end of parts
+					}
+
+					fileName := part.FileName()
+					if part.FormName() != "files" || fileName == "" {
+						part.Close()
+						continue
+					}
+
+					destPath := path.Join(rootDir, filepath.Base(fileName))
+					opts := vfs.WriteOptions{}
+					if !overwrite {
+						opts.IfNoneMatch = "*"
+					}
+
+					if err := fsys.Write(ctx, destPath, part, opts); err != nil {
+						part.Close()
+						if errors.Is(err, vfs.ErrConflict) {
+							return serverutil.BadRequest(err)
+						}
+						return serverutil.InternalServerError(err)
+					}
+					part.Close()
+				}
+
+				deps.EventBus().Publish(eventbus.Event{
+					Kind: eventbus.EventUpload,
+					Path: rootDir,
+				})
+				return serverutil.Ok()
+			}
+		}
+	}
+
+	// StorageService fallback (serial routing, etc.)
 	err = deps.StorageService().UploadFilesStreamed(storageutil.UploadFilesStreamedParams{
 		Reader:       reader,
 		RootDir:      rootDir,

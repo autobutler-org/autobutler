@@ -1,10 +1,15 @@
 package v0_files
 
 import (
+	"archive/zip"
+	"bytes"
 	"errors"
+	"fmt"
+	"io"
 	"log"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
@@ -41,6 +46,57 @@ func downloadArchiveFile(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(nil)
 	}
 
+	// VFS path: only when no serial is provided.
+	if serial == "" {
+		if reg := deps.VFSRegistry(); reg != nil {
+			if fsys, ok := reg.Get("files"); ok {
+				ctx := c.Request.Context()
+
+				r, err := fsys.Open(ctx, archivePath)
+				if err != nil {
+					return serverutil.NotFound(err)
+				}
+				defer r.Close()
+
+				data, err := io.ReadAll(r)
+				if err != nil {
+					return serverutil.InternalServerError(err)
+				}
+
+				zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+				if err != nil {
+					return serverutil.InternalServerError(err)
+				}
+
+				// Normalize the requested entry path (forward slashes, no leading slash).
+				normalizedEntry := strings.Trim(filepath.ToSlash(entryPath), "/")
+
+				for _, f := range zr.File {
+					name := strings.Trim(filepath.ToSlash(f.Name), "/")
+					if name != normalizedEntry {
+						continue
+					}
+
+					rc, err := f.Open()
+					if err != nil {
+						return serverutil.InternalServerError(fmt.Errorf("failed to open archive entry: %w", err))
+					}
+					defer rc.Close()
+
+					filename := filepath.Base(entryPath)
+					size := int64(f.UncompressedSize64)
+					c.Header("Content-Disposition", "attachment; filename=\""+filename+"\"")
+					c.Header("Content-Length", strconv.FormatInt(size, 10))
+					c.DataFromReader(200, size, "application/octet-stream", rc, nil)
+					return nil
+				}
+
+				return serverutil.NotFound(fmt.Errorf("entry %q not found in archive", entryPath))
+			}
+		}
+	}
+
+	// StorageService fallback.
 	reader, size, err := deps.StorageService().ReadArchiveEntry(storageutil.ReadArchiveEntryParams{
 		ArchivePath:  archivePath,
 		EntryPath:    entryPath,
