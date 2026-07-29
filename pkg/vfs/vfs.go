@@ -79,16 +79,4 @@ var (
 	ErrConflict          = errors.New("vfs: conflict")
 )
 
-// Seeker is an optional interface that VFS implementations may satisfy when
-// the underlying storage supports random access. Implementing Seeker enables
-// HTTP range requests (RFC 7233) for seekable files — critical for smooth
-// video playback, especially over slow disks where re-reads are expensive.
-//
-// Handlers check for this interface with a type assertion before falling back
-// to the sequential io.ReadCloser path.
-type Seeker interface {
-	// OpenSeeker opens the file at path and returns an io.ReadSeekCloser.
-	// Callers must close the returned value. Returns vfs.ErrNotFound when
-	// the file does not exist.
-	OpenSeeker(ctx context.Context, path string) (io.ReadSeekCloser, error)
-}
+

@@ -9,10 +9,10 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/vfs"
 )
 
-// TestLocalVFS_OpenSeeker verifies that LocalVFS implements the optional
-// vfs.Seeker interface and that the returned ReadSeekCloser can seek and read
-// correctly — a prerequisite for HTTP range request support.
-func TestLocalVFS_OpenSeeker(t *testing.T) {
+// TestLocalVFS_Open_IsReadSeeker verifies that LocalVFS.Open returns an
+// io.ReadSeeker (it wraps *os.File), enabling HTTP range request support in
+// the download handler via a simple type assertion.
+func TestLocalVFS_Open_IsReadSeeker(t *testing.T) {
 	ctx := context.Background()
 	v := makeLocalVFS(t, "test")
 
@@ -21,16 +21,16 @@ func TestLocalVFS_OpenSeeker(t *testing.T) {
 		t.Fatalf("Write: %v", err)
 	}
 
-	seeker, ok := v.(vfs.Seeker)
-	if !ok {
-		t.Skip("LocalVFS does not implement vfs.Seeker (unexpected)")
-	}
-
-	rs, err := seeker.OpenSeeker(ctx, "file.txt")
+	rc, err := v.Open(ctx, "file.txt")
 	if err != nil {
-		t.Fatalf("OpenSeeker: %v", err)
+		t.Fatalf("Open: %v", err)
 	}
-	defer rs.Close()
+	defer rc.Close()
+
+	rs, ok := rc.(io.ReadSeeker)
+	if !ok {
+		t.Fatal("LocalVFS.Open did not return an io.ReadSeeker; range requests will not work")
+	}
 
 	// Read the whole file.
 	all, err := io.ReadAll(rs)
@@ -41,7 +41,7 @@ func TestLocalVFS_OpenSeeker(t *testing.T) {
 		t.Errorf("full read: got %q, want %q", all, content)
 	}
 
-	// Seek back to start and re-read.
+	// Seek back to start and re-read first 5 bytes.
 	if _, err := rs.Seek(0, io.SeekStart); err != nil {
 		t.Fatalf("Seek(0, Start): %v", err)
 	}
@@ -64,25 +64,4 @@ func TestLocalVFS_OpenSeeker(t *testing.T) {
 	if string(mid) != "seekable" {
 		t.Errorf("mid seek+read: got %q, want %q", mid, "seekable")
 	}
-}
-
-// TestLocalVFS_OpenSeeker_NotFound verifies that OpenSeeker returns
-// vfs.ErrNotFound for missing files.
-func TestLocalVFS_OpenSeeker_NotFound(t *testing.T) {
-	v := makeLocalVFS(t, "test")
-	seeker, ok := v.(vfs.Seeker)
-	if !ok {
-		t.Skip("LocalVFS does not implement vfs.Seeker")
-	}
-	_, err := seeker.OpenSeeker(context.Background(), "no-such-file.txt")
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
-}
-
-// TestSeekerInterface_Satisfaction is a compile-time guard ensuring LocalVFS
-// satisfies vfs.Seeker. This will fail to compile if the interface changes.
-func TestSeekerInterface_Satisfaction(t *testing.T) {
-	v := makeLocalVFS(t, "test")
-	var _ vfs.Seeker = v.(vfs.Seeker)
 }
