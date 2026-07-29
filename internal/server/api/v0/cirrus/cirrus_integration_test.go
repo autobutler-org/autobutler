@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -128,12 +129,7 @@ func fileNames(files []map[string]any) []string {
 }
 
 func contains(names []string, target string) bool {
-	for _, n := range names {
-		if n == target {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(names, target)
 }
 
 // --- Tests ---
