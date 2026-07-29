@@ -1,8 +1,10 @@
 package photoutil
 
 import (
+	"bytes"
 	"fmt"
 	"image"
+	"io"
 	"path/filepath"
 	"strings"
 
@@ -20,6 +22,43 @@ type GenerateThumbnailParams struct {
 type GenerateThumbnailResult struct {
 	Thumbnail image.Image
 	Format    string
+}
+
+// GenerateThumbnailFromReader creates a thumbnail from an io.Reader.
+// ext is the lowercase file extension (e.g. ".jpg") used for format detection.
+// RAW and video files are not supported — callers must use GenerateThumbnail for those.
+func GenerateThumbnailFromReader(r io.Reader, ext string, width, height uint) (*GenerateThumbnailResult, error) {
+	fileType := storageutil.DetermineFileTypeFromPath("file" + ext)
+	if fileType != storageutil.FileTypeImage {
+		return nil, fmt.Errorf("GenerateThumbnailFromReader: unsupported file type for extension %q", ext)
+	}
+
+	// Buffer the reader so we can seek back for EXIF after image decode.
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("GenerateThumbnailFromReader: read: %w", err)
+	}
+	rs := bytes.NewReader(data)
+
+	img, format, err := image.Decode(rs)
+	if err != nil {
+		return nil, fmt.Errorf("GenerateThumbnailFromReader: decode: %w", err)
+	}
+
+	// Seek back and apply EXIF orientation.
+	if _, seekErr := rs.Seek(0, 0); seekErr == nil {
+		imgFormat := ImageFormatFromPath("file" + ext)
+		if imgFormat != 0 {
+			orientation := GetOrientation(rs, imgFormat)
+			img = applyExifOrientation(img, orientation)
+		}
+	}
+
+	cropped, _, err := cropToFit(img, width, height)
+	if err != nil {
+		return nil, fmt.Errorf("GenerateThumbnailFromReader: crop: %w", err)
+	}
+	return &GenerateThumbnailResult{Thumbnail: cropped, Format: format}, nil
 }
 
 // GenerateThumbnail creates a thumbnail image from a source file.
