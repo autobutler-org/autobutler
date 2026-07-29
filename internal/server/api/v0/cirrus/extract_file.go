@@ -108,6 +108,9 @@ func extractFileVFS(c *gin.Context, fsys vfs.VFS, filePath string) error {
 		return fmt.Errorf("failed to create destination directory: %w", err)
 	}
 
+	// Canonical Zip Slip anchor: every resolved path must begin with this prefix.
+	cleanDestDir := path.Clean(destDir) + "/"
+
 	var entryCount int
 	for _, f := range zr.File {
 		entryCount++
@@ -115,14 +118,19 @@ func extractFileVFS(c *gin.Context, fsys vfs.VFS, filePath string) error {
 			return fmt.Errorf("archive exceeds maximum of %d entries", storageutil.MaxArchiveEntries)
 		}
 
-		// Sanitize the entry name (forward slashes, no traversal).
-		entryName := filepath.ToSlash(filepath.Clean(f.Name))
-		entryName = strings.TrimPrefix(entryName, "/")
-		if strings.HasPrefix(entryName, "..") || entryName == "" {
-			continue // skip dangerous paths
+		// Normalize to forward-slash, clean, and strip any leading slash.
+		entryName := strings.TrimPrefix(path.Clean("/"+filepath.ToSlash(f.Name)), "/")
+		if entryName == "" || entryName == "." {
+			continue
 		}
 
 		destPath := path.Join(destDir, entryName)
+
+		// Zip Slip guard: the resolved destination must stay within destDir.
+		// This is the canonical check CodeQL and other scanners understand.
+		if !strings.HasPrefix(path.Clean(destPath)+"/", cleanDestDir) {
+			continue // path traversal attempt — discard silently
+		}
 
 		if f.FileInfo().IsDir() {
 			if err := fsys.MkdirAll(ctx, destPath); err != nil {
