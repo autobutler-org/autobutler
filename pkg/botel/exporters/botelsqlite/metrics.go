@@ -3,6 +3,7 @@ package botelsqlite
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -19,7 +20,7 @@ type MetricsExporter struct {
 // NewMetricsExporter creates a new SQLite metrics exporter
 func NewMetricsExporter(db *sql.DB) (*MetricsExporter, error) {
 	if db == nil {
-		return nil, fmt.Errorf("database cannot be nil")
+		return nil, errors.New("database cannot be nil")
 	}
 
 	exporter := &MetricsExporter{

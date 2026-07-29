@@ -1,6 +1,7 @@
 package storageutil
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -25,7 +26,7 @@ func AutoMountDevice(device UsbDevice) (*AutoMountResult, error) {
 
 	serial := device.GetSerial()
 	if serial == "" {
-		return nil, fmt.Errorf("device has no serial number")
+		return nil, errors.New("device has no serial number")
 	}
 
 	partitions, err := device.Partitions()
@@ -33,7 +34,7 @@ func AutoMountDevice(device UsbDevice) (*AutoMountResult, error) {
 		return nil, fmt.Errorf("failed to list partitions: %w", err)
 	}
 	if len(partitions) == 0 {
-		return nil, fmt.Errorf("no partitions found on device")
+		return nil, errors.New("no partitions found on device")
 	}
 
 	mountsDir, err := GetMountsDir()

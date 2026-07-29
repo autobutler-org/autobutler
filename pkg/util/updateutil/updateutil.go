@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -42,7 +43,7 @@ func GetLatestVersionFromDefaultSources() (string, error) {
 		}
 		return version, nil
 	}
-	return "", fmt.Errorf("failed to get latest version from all default sources")
+	return "", errors.New("failed to get latest version from all default sources")
 }
 
 func GetLatestVersion(source *UpdateSource) (string, error) {
@@ -59,7 +60,7 @@ func GetLatestVersion(source *UpdateSource) (string, error) {
 
 		url := getAssetURLFromRelease(release)
 		if url == "" {
-			return "", fmt.Errorf("no suitable asset found in latest release")
+			return "", errors.New("no suitable asset found in latest release")
 		}
 
 		return release.TagName, nil
@@ -69,7 +70,7 @@ func GetLatestVersion(source *UpdateSource) (string, error) {
 			return "", fmt.Errorf("failed to list releases: %w", err)
 		}
 		if len(releases.Versions) == 0 {
-			return "", fmt.Errorf("no releases found in Azure source")
+			return "", errors.New("no releases found in Azure source")
 		}
 		// Sort by semver and return the highest. Lexicographic order is not
 		// reliable for semver (e.g. "v0.9.0" > "v0.16.0" lexicographically).
@@ -112,7 +113,7 @@ func ListPossibleUpdatesFromDefaultSources(allVersions bool) (*ListPossibleUpdat
 		}
 		return result, nil
 	}
-	return nil, fmt.Errorf("failed to list updates from all default sources")
+	return nil, errors.New("failed to list updates from all default sources")
 }
 
 // ListPossibleUpdates retrieves all available releases that are newer than the current version
@@ -231,7 +232,7 @@ func Update(source *UpdateSource, version string) error {
 	}
 
 	if version == "" {
-		return fmt.Errorf("version cannot be empty")
+		return errors.New("version cannot be empty")
 	}
 
 	_, err := backupSelf()
@@ -349,7 +350,7 @@ func replaceSelf(body io.Reader) error {
 		}
 	}
 	if binFile == nil {
-		return fmt.Errorf("binary not found in archive")
+		return errors.New("binary not found in archive")
 	}
 	defer os.Remove(binFile.Name())
 	defer binFile.Close()

@@ -3,6 +3,7 @@ package migration
 import (
 	"archive/zip"
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -35,11 +36,11 @@ func NewGoogleAPIService(
 // StartImport initiates a Google data download
 func (s *GoogleAPIService) StartImport(ctx context.Context, services []string, email string, token *oauth2.Token) (*ImportJob, error) {
 	if len(services) == 0 {
-		return nil, fmt.Errorf("no services specified")
+		return nil, errors.New("no services specified")
 	}
 
 	if token == nil {
-		return nil, fmt.Errorf("no OAuth token provided")
+		return nil, errors.New("no OAuth token provided")
 	}
 
 	// Create import job

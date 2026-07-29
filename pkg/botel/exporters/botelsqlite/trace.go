@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -22,7 +23,7 @@ type TraceExporter struct {
 // NewTraceExporter creates a new SQLite trace exporter
 func NewTraceExporter(db *sql.DB) (*TraceExporter, error) {
 	if db == nil {
-		return nil, fmt.Errorf("database cannot be nil")
+		return nil, errors.New("database cannot be nil")
 	}
 
 	exporter := &TraceExporter{

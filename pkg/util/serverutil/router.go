@@ -61,8 +61,7 @@ func WrapApiRoute(handler func(c *gin.Context) *Response) gin.HandlerFunc {
 		// can signal HTTP semantics with fmt.Errorf("...: %w", httpErr) and the
 		// HTTP layer will pick it up automatically.
 		if resp.Error != nil {
-			var httpErr *HttpError
-			if errors.As(resp.Error, &httpErr) {
+			if httpErr, ok := errors.AsType[*HttpError](resp.Error); ok {
 				resp.StatusCode = httpErr.StatusCode
 			}
 		}
