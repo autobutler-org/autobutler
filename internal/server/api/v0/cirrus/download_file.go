@@ -245,6 +245,21 @@ func downloadFileVFS(c *gin.Context, deps deputil.Dependencies, fsys vfs.VFS, fi
 		return nil
 	}
 
+	// Use http.ServeContent when the VFS supports seeking — this enables HTTP
+	// range requests (RFC 7233) for video/audio files, allowing seeking and
+	// resumable downloads. Falls back to sequential DataFromReader otherwise.
+	if seeker, ok := fsys.(vfs.Seeker); ok {
+		rs, err := seeker.OpenSeeker(ctx, filePath)
+		if err != nil {
+			return serverutil.NotFound(err)
+		}
+		defer rs.Close()
+		c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", fi.Name))
+		c.Header("Content-Type", mimeType)
+		http.ServeContent(c.Writer, c.Request, fi.Name, fi.ModTime, rs)
+		return nil
+	}
+
 	r, err := fsys.Open(ctx, filePath)
 	if err != nil {
 		return serverutil.NotFound(err)

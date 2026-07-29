@@ -324,3 +324,22 @@ func (v *LocalVFS) Move(_ context.Context, src, dst string) error {
 func (v *LocalVFS) Watch(ctx context.Context, path string) (<-chan WatchEvent, error) {
 	return nil, ErrWatchNotSupported
 }
+
+// OpenSeeker opens the file at path for reading and seeking. LocalVFS files
+// are backed by the local filesystem, so *os.File satisfies io.ReadSeekCloser.
+// This implements the optional vfs.Seeker interface and enables HTTP range
+// requests in the download handler.
+func (v *LocalVFS) OpenSeeker(ctx context.Context, path string) (io.ReadSeekCloser, error) {
+	absPath, err := v.abs(path)
+	if err != nil {
+		return nil, err
+	}
+	f, err := os.Open(absPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return f, nil
+}

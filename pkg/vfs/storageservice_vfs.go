@@ -215,3 +215,33 @@ func deviceFileInfoToVFS(f *storageutil.DeviceFileInfo, nsID, dirPath string) Fi
 		Namespace: nsID,
 	}
 }
+
+// OpenSeeker opens the file at path for reading and seeking. StorageServiceVFS
+// files are backed by the local filesystem (*os.File satisfies io.ReadSeekCloser).
+// This implements the optional vfs.Seeker interface and enables HTTP range
+// requests in the download handler.
+func (v *StorageServiceVFS) OpenSeeker(_ context.Context, path string) (io.ReadSeekCloser, error) {
+	result, err := v.svc.DownloadFile(storageutil.DownloadFileParams{FilePath: path})
+	if err != nil {
+		return nil, ErrNotFound
+	}
+	if result.IsFolder {
+		return nil, ErrNotFound
+	}
+	cirrusDir, err := storageutil.GetCirrusDir()
+	if err != nil {
+		return nil, err
+	}
+	safePath, err := storageutil.SafeJoin(cirrusDir, filepath.Clean(path))
+	if err != nil {
+		return nil, ErrPermissionDenied
+	}
+	f, err := os.Open(safePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return f, nil
+}
