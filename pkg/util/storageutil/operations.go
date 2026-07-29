@@ -2,6 +2,7 @@ package storageutil
 
 import (
 	"archive/zip"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -9,12 +10,15 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+
+	"github.com/autobutler-org/autobutler/pkg/util/iosemutil"
 )
 
 // BackupToDeviceParams contains parameters for backing up a device
 type BackupToDeviceParams struct {
-	SourceDeviceSerial string `json:"sourceDeviceSerial"`
-	TargetDeviceSerial string `json:"targetDeviceSerial"`
+	SourceDeviceSerial string               `json:"sourceDeviceSerial"`
+	TargetDeviceSerial string               `json:"targetDeviceSerial"`
+	IOSemaphore        *iosemutil.Semaphore `json:"-"` // not JSON-serialised; set by handler to throttle file copies
 }
 
 // BackupToDeviceResult contains the data of a backup operation
@@ -67,6 +71,14 @@ func BackupToDeviceWithDevices(params BackupToDeviceParams, sourceDevice *Manage
 		// Backup directory
 		if d.IsDir() {
 			return os.MkdirAll(targetPath, 0755)
+		}
+
+		// Acquire IO semaphore before copying to yield to interactive requests.
+		if params.IOSemaphore != nil {
+			if !params.IOSemaphore.AcquireDefault(context.Background()) {
+				return fmt.Errorf("backup: IO semaphore timeout copying %s", path)
+			}
+			defer params.IOSemaphore.Release()
 		}
 
 		// Backup file

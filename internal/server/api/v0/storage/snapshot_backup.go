@@ -139,6 +139,7 @@ func startSnapshotBackup(c *gin.Context) *serverutil.Response {
 			Store:              snapshotStore,
 			EventBus:           deps.EventBus(),
 			Vault:              vaultParams,
+			IOSemaphore:        deps.IOSemaphore(),
 		}, sources, targetDev); err != nil {
 			log.Printf("snapshot backup failed: %v", err)
 		}

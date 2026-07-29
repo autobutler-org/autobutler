@@ -46,9 +46,10 @@ func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 	}
 
 	syncWorker := backup.NewSyncWorker(backup.SyncWorkerParams{
-		Bus:     deps.EventBus(),
-		Storage: deps.StorageService(),
-		Queries: deps.Database().Queries,
+		Bus:         deps.EventBus(),
+		Storage:     deps.StorageService(),
+		Queries:     deps.Database().Queries,
+		IOSemaphore: deps.IOSemaphore(),
 	})
 	syncWorker.Start()
 

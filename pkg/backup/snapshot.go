@@ -12,6 +12,7 @@ import (
 
 	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
+	"github.com/autobutler-org/autobutler/pkg/util/iosemutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 )
 
@@ -27,6 +28,7 @@ type SnapshotBackupParams struct {
 	Store              BackupJobStore
 	EventBus           *eventbus.Bus
 	Vault              *VaultExportParams
+	IOSemaphore        *iosemutil.Semaphore // throttles file copies to yield to interactive requests
 }
 
 func SnapshotBackup(
@@ -113,6 +115,14 @@ func SnapshotBackup(
 					job.SourceDevices[i].FilesSkipped++
 					return nil
 				}
+			}
+
+			// Acquire IO semaphore before copying to yield to interactive requests.
+			if params.IOSemaphore != nil {
+				if !params.IOSemaphore.AcquireDefault(ctx) {
+					return fmt.Errorf("snapshot: IO semaphore timeout copying %s", relPath)
+				}
+				defer params.IOSemaphore.Release()
 			}
 
 			// Atomic copy: write to temp file then rename.
