@@ -11,6 +11,7 @@ import (
 
 	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
+	"github.com/autobutler-org/autobutler/pkg/util/iosemutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 )
 
@@ -24,6 +25,7 @@ type SyncWorker struct {
 	running  bool
 	pending  []eventbus.Event
 	maxQueue int
+	ioSem    *iosemutil.Semaphore // throttles file copies to yield to interactive requests
 
 	// Overridable for testing.
 	resolveTarget      func(ctx context.Context) (string, error)
@@ -32,9 +34,10 @@ type SyncWorker struct {
 }
 
 type SyncWorkerParams struct {
-	Bus     *eventbus.Bus
-	Storage *storageutil.StorageService
-	Queries *db.Queries
+	Bus         *eventbus.Bus
+	Storage     *storageutil.StorageService
+	Queries     *db.Queries
+	IOSemaphore *iosemutil.Semaphore // optional; throttles background file copies
 }
 
 func NewSyncWorker(params SyncWorkerParams) *SyncWorker {
@@ -43,6 +46,7 @@ func NewSyncWorker(params SyncWorkerParams) *SyncWorker {
 		storage:  params.Storage,
 		queries:  params.Queries,
 		maxQueue: 10000,
+		ioSem:    params.IOSemaphore,
 	}
 	w.resolveTarget = w.defaultResolveTarget
 	w.resolveInternalDir = w.defaultResolveInternalDir
@@ -172,7 +176,7 @@ func (w *SyncWorker) syncPath(ctx context.Context, relPath string) {
 		return
 	}
 
-	if err := copyFile(srcPath, dstPath); err != nil {
+	if err := copyFile(ctx, srcPath, dstPath, w.ioSem); err != nil {
 		log.Printf("sync: copy %s: %v", relPath, err)
 		w.queueRetry(eventbus.Event{Kind: eventbus.EventUpload, Path: relPath})
 	}
@@ -246,7 +250,15 @@ func (w *SyncWorker) DrainPending(ctx context.Context) int {
 	return synced
 }
 
-func copyFile(src, dst string) error {
+func copyFile(ctx context.Context, src, dst string, sem *iosemutil.Semaphore) error {
+	// Acquire IO semaphore before reading/writing to yield to interactive requests.
+	if sem != nil {
+		if !sem.AcquireDefault(ctx) {
+			return fmt.Errorf("sync: IO semaphore timeout for %s", src)
+		}
+		defer sem.Release()
+	}
+
 	in, err := os.Open(src)
 	if err != nil {
 		return fmt.Errorf("open source: %w", err)

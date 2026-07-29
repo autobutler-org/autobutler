@@ -35,6 +35,8 @@ func backupToDevice(c *gin.Context) *serverutil.Response {
 	if !ok {
 		return serverutil.InternalServerError(fmt.Errorf("dependencies not found in context"))
 	}
+	// Thread the IO semaphore so background file copies yield to interactive requests.
+	params.IOSemaphore = deps.IOSemaphore()
 	channel := deps.Worker().GetBackupToDeviceChannel()
 	channel <- params
 	return serverutil.Ok()

@@ -405,7 +405,7 @@ func TestCopyFile(t *testing.T) {
 
 	os.WriteFile(src, []byte("binary-content"), 0644)
 
-	if err := copyFile(src, dst); err != nil {
+	if err := copyFile(t.Context(), src, dst, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -417,7 +417,7 @@ func TestCopyFile(t *testing.T) {
 
 func TestCopyFile_MissingSource(t *testing.T) {
 	dir := t.TempDir()
-	err := copyFile(filepath.Join(dir, "nope"), filepath.Join(dir, "dst"))
+	err := copyFile(t.Context(), filepath.Join(dir, "nope"), filepath.Join(dir, "dst"), nil)
 	if err == nil {
 		t.Error("expected error for missing source")
 	}
