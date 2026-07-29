@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
@@ -19,8 +20,12 @@ import (
 
 var (
 	googleOAuthConfig *oauth2.Config
-	oauthStateStore   = make(map[string]time.Time)     // state -> timestamp
-	tokenStore        = make(map[string]*oauth2.Token) // email -> token
+
+	oauthStateMu    sync.RWMutex
+	oauthStateStore = make(map[string]time.Time) // state -> timestamp; guarded by oauthStateMu
+
+	tokenMu    sync.RWMutex
+	tokenStore = make(map[string]*oauth2.Token) // email -> token; guarded by tokenMu
 )
 
 func init() {
@@ -70,7 +75,9 @@ func googleAuthorize(c *gin.Context) *serverutil.Response {
 	}
 
 	// Store state token with timestamp for validation (expires in 10 minutes)
+	oauthStateMu.Lock()
 	oauthStateStore[state] = time.Now().Add(10 * time.Minute)
+	oauthStateMu.Unlock()
 
 	// Clean up expired states
 	cleanExpiredStates()
@@ -106,14 +113,16 @@ func googleCallback(c *gin.Context) *serverutil.Response {
 	state := c.Query("state")
 	code := c.Query("code")
 
-	// Validate state token
+	// Validate and consume state token
+	oauthStateMu.Lock()
 	expiry, exists := oauthStateStore[state]
+	if exists {
+		delete(oauthStateStore, state)
+	}
+	oauthStateMu.Unlock()
 	if !exists || time.Now().After(expiry) {
 		return serverutil.BadRequest(fmt.Errorf("invalid or expired state token"))
 	}
-
-	// Remove used state token
-	delete(oauthStateStore, state)
 
 	// Exchange code for token
 	token, err := googleOAuthConfig.Exchange(context.Background(), code)
@@ -138,7 +147,9 @@ func googleCallback(c *gin.Context) *serverutil.Response {
 	}
 
 	// Store token for later use (in production, save to database)
+	tokenMu.Lock()
 	tokenStore[userInfo.Email] = token
+	tokenMu.Unlock()
 
 	// Store token (in production, save to database associated with user)
 	// For now, we'll return a simple HTML page that posts message to opener
@@ -230,6 +241,7 @@ func googleDisconnect(c *gin.Context) *serverutil.Response {
 	var req struct {
 		Email string `json:"email"`
 	}
+	tokenMu.Lock()
 	if err := c.ShouldBindJSON(&req); err != nil || req.Email == "" {
 		// If no email provided, clear all tokens (for simplicity)
 		tokenStore = make(map[string]*oauth2.Token)
@@ -237,6 +249,7 @@ func googleDisconnect(c *gin.Context) *serverutil.Response {
 		// Remove specific user's token
 		delete(tokenStore, req.Email)
 	}
+	tokenMu.Unlock()
 
 	return serverutil.Ok().WithData(gin.H{
 		"message": "Disconnected successfully",
@@ -249,6 +262,8 @@ var googleDisconnectRoute = serverutil.ApiRoute(
 
 // GetGoogleToken retrieves a stored OAuth token by email
 func GetGoogleToken(email string) (*oauth2.Token, bool) {
+	tokenMu.RLock()
+	defer tokenMu.RUnlock()
 	token, exists := tokenStore[email]
 	return token, exists
 }
@@ -268,6 +283,8 @@ func generateStateToken() (string, error) {
 
 func cleanExpiredStates() {
 	now := time.Now()
+	oauthStateMu.Lock()
+	defer oauthStateMu.Unlock()
 	for state, expiry := range oauthStateStore {
 		if now.After(expiry) {
 			delete(oauthStateStore, state)
