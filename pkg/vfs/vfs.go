@@ -78,5 +78,3 @@ var (
 	ErrNamespaceConflict = errors.New("vfs: namespace already registered")
 	ErrConflict          = errors.New("vfs: conflict")
 )
-
-

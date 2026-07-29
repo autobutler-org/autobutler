@@ -324,5 +324,3 @@ func (v *LocalVFS) Move(_ context.Context, src, dst string) error {
 func (v *LocalVFS) Watch(ctx context.Context, path string) (<-chan WatchEvent, error) {
 	return nil, ErrWatchNotSupported
 }
-
-

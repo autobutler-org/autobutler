@@ -215,5 +215,3 @@ func deviceFileInfoToVFS(f *storageutil.DeviceFileInfo, nsID, dirPath string) Fi
 		Namespace: nsID,
 	}
 }
-
-
