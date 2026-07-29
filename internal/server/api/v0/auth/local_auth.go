@@ -52,7 +52,6 @@ func authStatus(c *gin.Context) *serverutil.Response {
 	return serverutil.Ok().WithData(gin.H{"setup": complete})
 }
 
-
 // authSetup godoc
 // @Summary First-boot user setup
 // @Description Creates the owner account. Can only be called once.
