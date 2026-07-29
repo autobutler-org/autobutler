@@ -329,11 +329,16 @@ func (v *LocalVFS) Watch(ctx context.Context, path string) (<-chan WatchEvent, e
 // are backed by the local filesystem, so *os.File satisfies io.ReadSeekCloser.
 // This implements the optional vfs.Seeker interface and enables HTTP range
 // requests in the download handler.
-func (v *LocalVFS) OpenSeeker(ctx context.Context, path string) (io.ReadSeekCloser, error) {
+func (v *LocalVFS) OpenSeeker(_ context.Context, path string) (io.ReadSeekCloser, error) {
+	// v.abs validates the path against the root directory (traversal guard) and
+	// returns an absolute, cleaned path. filepath.Clean is called once more so
+	// static analysers (CodeQL go/path-injection) can follow the guard through
+	// the same explicit sanitisation chain as the other Open methods.
 	absPath, err := v.abs(path)
 	if err != nil {
 		return nil, err
 	}
+	absPath = filepath.Clean(absPath)
 	f, err := os.Open(absPath)
 	if err != nil {
 		if os.IsNotExist(err) {

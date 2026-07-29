@@ -221,13 +221,10 @@ func deviceFileInfoToVFS(f *storageutil.DeviceFileInfo, nsID, dirPath string) Fi
 // This implements the optional vfs.Seeker interface and enables HTTP range
 // requests in the download handler.
 func (v *StorageServiceVFS) OpenSeeker(_ context.Context, path string) (io.ReadSeekCloser, error) {
-	result, err := v.svc.DownloadFile(storageutil.DownloadFileParams{FilePath: path})
-	if err != nil {
-		return nil, ErrNotFound
-	}
-	if result.IsFolder {
-		return nil, ErrNotFound
-	}
+	// filepath.Clean then SafeJoin so static analysers (CodeQL go/path-injection)
+	// can follow the traversal guard rather than seeing tainted data reach os.Open.
+	// Same pattern as Open — the guard is explicit and not routed through
+	// DownloadFile (which would re-introduce a tainted data flow).
 	cirrusDir, err := storageutil.GetCirrusDir()
 	if err != nil {
 		return nil, err
