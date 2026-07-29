@@ -177,6 +177,41 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 	return i, err
 }
 
+const listActiveSessionsForUser = `-- name: ListActiveSessionsForUser :many
+SELECT token, user_id, expires_at, created_at
+FROM sessions
+WHERE user_id = ? AND expires_at > datetime('now')
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListActiveSessionsForUser(ctx context.Context, userID int64) ([]Session, error) {
+	rows, err := q.db.QueryContext(ctx, listActiveSessionsForUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Session
+	for rows.Next() {
+		var i Session
+		if err := rows.Scan(
+			&i.Token,
+			&i.UserID,
+			&i.ExpiresAt,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateUserPassword = `-- name: UpdateUserPassword :exec
 UPDATE users
 SET password_hash = ?
