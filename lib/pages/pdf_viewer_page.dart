@@ -20,12 +20,6 @@ class PdfViewerPage extends StatefulWidget {
 
 class _PdfViewerPageState extends State<PdfViewerPage> {
   late final PdfViewerController _controller;
-  final _params = const PdfViewerParams(
-    // Show page numbers in the scrollbar.
-    scrollbarWidget: null,
-    pageAnchor: PdfPageAnchor.top,
-  );
-
   int _currentPage = 1;
   int _totalPages = 0;
   bool _loading = true;
@@ -40,15 +34,11 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
     _controller = PdfViewerController();
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  String get _downloadUrl => CirrusService.constructMediaUrl(
-    widget.filePath,
-    serial: widget.deviceSerial,
+  Uri get _downloadUri => Uri.parse(
+    CirrusService.constructMediaUrl(
+      widget.filePath,
+      serial: widget.deviceSerial,
+    ),
   );
 
   @override
@@ -128,30 +118,35 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
     return Stack(
       children: [
         PdfViewer.uri(
-          Uri.parse(_downloadUrl),
+          _downloadUri,
           controller: _controller,
-          params: _params,
-          onDocumentLoaded: (doc) {
-            if (mounted) {
-              setState(() {
-                _totalPages = doc.pages.length;
-                _loading = false;
+          params: PdfViewerParams(
+            pageAnchor: PdfPageAnchor.top,
+            onDocumentLoadFinished: (doc) {
+              if (mounted) {
+                setState(() {
+                  _totalPages = doc.pages.length;
+                  _loading = false;
+                });
+              }
+            },
+            errorBannerBuilder: (context, error, stackTrace, documentRef) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  setState(() {
+                    _error = 'Failed to load PDF: $error';
+                    _loading = false;
+                  });
+                }
               });
-            }
-          },
-          onDocumentLoadFailed: (e) {
-            if (mounted) {
-              setState(() {
-                _error = 'Failed to load PDF: $e';
-                _loading = false;
-              });
-            }
-          },
-          onPageChanged: (page) {
-            if (mounted) {
-              setState(() => _currentPage = page ?? 1);
-            }
-          },
+              return const SizedBox.shrink();
+            },
+            onPageChanged: (page) {
+              if (mounted) {
+                setState(() => _currentPage = page ?? 1);
+              }
+            },
+          ),
         ),
         if (_loading) const Center(child: CircularProgressIndicator()),
       ],
