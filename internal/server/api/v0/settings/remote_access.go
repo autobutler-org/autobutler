@@ -16,6 +16,27 @@ type RemoteAccessRequest struct {
 type RemoteAccessResponse struct {
 	Enabled   bool   `json:"enabled"`
 	RemoteURL string `json:"remoteUrl,omitempty"`
+	// TailscaleDomain is the *.ts.net hostname for which a valid TLS cert is
+	// provisioned via Tailscale's Let's Encrypt integration. Non-empty only when
+	// MagicDNS and HTTPS are enabled in the tailnet admin console.
+	TailscaleDomain string `json:"tailscaleDomain,omitempty"`
+	// TailscaleHTTPSURL is the full https:// URL for browser/app access with a
+	// trusted cert. Non-empty only when TailscaleDomain is set.
+	TailscaleHTTPSURL string `json:"tailscaleHttpsUrl,omitempty"`
+}
+
+// remoteAccessStatus builds the current RemoteAccessResponse.
+func remoteAccessStatus() RemoteAccessResponse {
+	domain := remoteutil.TailscaleDomain()
+	resp := RemoteAccessResponse{
+		Enabled:         remoteutil.IsRunning(),
+		RemoteURL:       remoteutil.RemoteURL(),
+		TailscaleDomain: domain,
+	}
+	if domain != "" {
+		resp.TailscaleHTTPSURL = "https://" + domain
+	}
+	return resp
 }
 
 // getRemoteAccess godoc
@@ -27,10 +48,7 @@ type RemoteAccessResponse struct {
 // @Router /settings/remote-access [get]
 var getRemoteAccessRoute = serverutil.ApiRoute(
 	"GET", "/settings/remote-access", func(c *gin.Context) *serverutil.Response {
-		return serverutil.Ok().WithData(RemoteAccessResponse{
-			Enabled:   remoteutil.IsRunning(),
-			RemoteURL: remoteutil.RemoteURL(),
-		})
+		return serverutil.Ok().WithData(remoteAccessStatus())
 	},
 )
 
@@ -48,10 +66,7 @@ var getRemoteAccessRoute = serverutil.ApiRoute(
 var enableRemoteAccessRoute = serverutil.ApiRoute(
 	"POST", "/settings/remote-access", func(c *gin.Context) *serverutil.Response {
 		if remoteutil.IsRunning() {
-			return serverutil.Ok().WithData(RemoteAccessResponse{
-				Enabled:   true,
-				RemoteURL: remoteutil.RemoteURL(),
-			})
+			return serverutil.Ok().WithData(remoteAccessStatus())
 		}
 		var req RemoteAccessRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -73,10 +88,7 @@ var enableRemoteAccessRoute = serverutil.ApiRoute(
 		if err := settingsutil.SetRemoteAccess(true, req.AuthKey); err != nil {
 			return serverutil.InternalServerError(err)
 		}
-		return serverutil.Ok().WithData(RemoteAccessResponse{
-			Enabled:   true,
-			RemoteURL: remoteutil.RemoteURL(),
-		})
+		return serverutil.Ok().WithData(remoteAccessStatus())
 	},
 )
 

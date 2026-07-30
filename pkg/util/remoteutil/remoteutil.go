@@ -24,10 +24,11 @@ const hostname = "autobutler"
 const defaultControlURL = "https://network.autobutler.org"
 
 var (
-	mu      sync.Mutex
-	srv     *tsnet.Server
-	proxyLn net.Listener
-	running bool
+	mu         sync.Mutex
+	srv        *tsnet.Server
+	proxyLn    net.Listener // :80 plain HTTP proxy
+	proxyTLSLn net.Listener // :443 HTTPS proxy (Tailscale cert)
+	running    bool
 )
 
 func controlURL() string {
@@ -92,6 +93,10 @@ func Stop() {
 	if proxyLn != nil {
 		proxyLn.Close()
 		proxyLn = nil
+	}
+	if proxyTLSLn != nil {
+		proxyTLSLn.Close()
+		proxyTLSLn = nil
 	}
 	if srv != nil {
 		srv.Close()
@@ -160,10 +165,16 @@ func HasPersistedState() bool {
 }
 
 // StartProxy forwards tailnet traffic to the local butler on [localPort].
-// [localTLS] must match how the butler is actually serving that port — see
-// serverutil.ServingTLS. Proxying plain HTTP at the TLS listener shows up as
-// "TLS handshake error from 127.0.0.1" in the server log and fails every
-// request.
+// [localTLS] must match how the butler is actually serving that port.
+//
+// This starts two listeners on the tailnet:
+//   - :80  plain HTTP proxy (always started)
+//   - :443 HTTPS proxy using Tailscale-provisioned Let's Encrypt certs
+//     (started only when MagicDNS + HTTPS are enabled in the tailnet admin console)
+//
+// The :443 listener removes the "your connection is not private" browser
+// warning for family members accessing via Tailscale. The :80 listener stays
+// as a fallback and for redirect purposes.
 func StartProxy(localPort int, localTLS bool) error {
 	mu.Lock()
 	defer mu.Unlock()
@@ -173,11 +184,43 @@ func StartProxy(localPort int, localTLS bool) error {
 	if srv == nil {
 		return fmt.Errorf("tsnet not started")
 	}
+
+	rp := buildReverseProxy(localPort, localTLS)
+
+	// :80 — plain HTTP; always works regardless of MagicDNS/cert settings.
 	ln, err := srv.Listen("tcp", ":80")
 	if err != nil {
-		return fmt.Errorf("tsnet listen failed: %w", err)
+		return fmt.Errorf("tsnet listen :80 failed: %w", err)
 	}
 	proxyLn = ln
+	go func() {
+		if err := http.Serve(ln, rp); err != nil {
+			log.Printf("[tsnet] :80 proxy stopped: %v", err)
+		}
+	}()
+
+	// :443 — HTTPS via Tailscale-provisioned Let's Encrypt cert.
+	// Best-effort: if MagicDNS or HTTPS is not enabled, log and skip.
+	tlsLn, err := srv.ListenTLS("tcp", ":443")
+	if err != nil {
+		log.Printf("[tsnet] HTTPS proxy not started (MagicDNS/HTTPS may not be enabled): %v", err)
+	} else {
+		proxyTLSLn = tlsLn
+		go func() {
+			if err := http.Serve(tlsLn, rp); err != nil {
+				log.Printf("[tsnet] :443 proxy stopped: %v", err)
+			}
+		}()
+		log.Printf("[tsnet] HTTPS proxy started on tailnet :443 (Tailscale cert)")
+	}
+
+	return nil
+}
+
+// buildReverseProxy creates an httputil.ReverseProxy targeting the local
+// butler at localhost:[localPort]. If localTLS is true, TLS server verification
+// is skipped — the loopback cert is self-signed by the butler itself.
+func buildReverseProxy(localPort int, localTLS bool) *httputil.ReverseProxy {
 	scheme := "http"
 	if localTLS {
 		scheme = "https"
@@ -193,17 +236,34 @@ func StartProxy(localPort int, localTLS bool) error {
 		},
 	}
 	if localTLS {
-		// The butler presents its own self-signed cert, and this hop is a
-		// loopback connection to that same process — there is no third party to
-		// authenticate, and no CA that could vouch for the cert.
 		rp.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
 	}
-	go func() {
-		if err := http.Serve(ln, rp); err != nil {
-			log.Printf("[tsnet] proxy stopped: %v", err)
-		}
-	}()
-	return nil
+	return rp
+}
+
+// TailscaleDomain returns the *.ts.net (or tailnet DNS) hostname for the tsnet
+// node if HTTPS certs are available, or "" otherwise. Callers can surface this
+// in the UI so users know which hostname to use for valid-cert access.
+func TailscaleDomain() string {
+	mu.Lock()
+	if !running || srv == nil {
+		mu.Unlock()
+		return ""
+	}
+	s := srv
+	mu.Unlock()
+
+	lc, err := s.LocalClient()
+	if err != nil {
+		return ""
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	st, err := lc.Status(ctx)
+	if err != nil || len(st.CertDomains) == 0 {
+		return ""
+	}
+	return st.CertDomains[0]
 }
