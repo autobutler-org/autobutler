@@ -13,6 +13,7 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:printing/printing.dart';
 import 'package:autobutler/theme/autobutler_theme.dart';
+import 'package:autobutler/widgets/editor/editor_toolbar_mode.dart';
 import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -141,6 +142,9 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   static const _prefKeyDarkPage = 'document_editor_dark_page';
   bool _editorDarkPage = false;
 
+  // Toolbar mode (#1327)
+  EditorToolbarMode _toolbarMode = EditorToolbarMode.top;
+
   // Auto-save
   static const _prefKeyAutoSave = 'document_editor_auto_save';
   static const _autoSaveDelay = Duration(seconds: 2);
@@ -219,10 +223,21 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
+    final toolbarMode = await loadToolbarMode(kPrefKeyDocumentToolbarMode);
     setState(() {
       _autoSaveEnabled = prefs.getBool(_prefKeyAutoSave) ?? true;
       _editorDarkPage = prefs.getBool(_prefKeyDarkPage) ?? false;
+      _toolbarMode = toolbarMode;
     });
+  }
+
+  Future<void> _toggleToolbarMode() async {
+    final next = _toolbarMode == EditorToolbarMode.top
+        ? EditorToolbarMode.sidebar
+        : EditorToolbarMode.top;
+    await saveToolbarMode(kPrefKeyDocumentToolbarMode, next);
+    if (!mounted) return;
+    setState(() => _toolbarMode = next);
   }
 
   Future<void> _setAutoSaveEnabled(bool value) async {
@@ -545,6 +560,19 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
           tooltip: _autoSaveEnabled ? 'Auto-save on' : 'Auto-save off',
           onPressed: () => _setAutoSaveEnabled(!_autoSaveEnabled),
         ),
+      // Toolbar mode toggle (#1327)
+      if (!_isReadOnly)
+        IconButton(
+          icon: Icon(
+            _toolbarMode == EditorToolbarMode.sidebar
+                ? Icons.view_sidebar
+                : Icons.view_sidebar_outlined,
+          ),
+          tooltip: _toolbarMode == EditorToolbarMode.sidebar
+              ? 'Switch to top toolbar'
+              : 'Switch to sidebar toolbar',
+          onPressed: _toggleToolbarMode,
+        ),
       // Overflow menu
       if (_exporting)
         const Padding(
@@ -677,23 +705,35 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       );
     }
 
-    return Column(
-      children: [
-        if (!_isReadOnly) _buildToolbar(theme),
-        Expanded(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 900),
-              child: Column(
-                children: [
-                  Expanded(child: _buildPageFrame(cs)),
-                  _buildStatusBar(cs),
-                ],
-              ),
-            ),
+    // Editor content (page frame + status bar), constrained to a max width.
+    final editorContent = Expanded(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 900),
+          child: Column(
+            children: [
+              Expanded(child: _buildPageFrame(cs)),
+              _buildStatusBar(cs),
+            ],
           ),
         ),
-      ],
+      ),
+    );
+
+    if (!_isReadOnly && _toolbarMode == EditorToolbarMode.sidebar) {
+      // Sidebar mode: toolbar on the left, editor fills the remaining width.
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildSidebarToolbar(theme),
+          VerticalDivider(width: 1, color: cs.outline),
+          editorContent,
+        ],
+      );
+    }
+
+    return Column(
+      children: [if (!_isReadOnly) _buildToolbar(theme), editorContent],
     );
   }
 
@@ -764,6 +804,83 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
             showSearchButton: false,
             showSubscript: false,
             showSuperscript: false,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Sidebar variant of the toolbar: same Quill buttons in a narrow vertical
+  /// panel. Constraining the width forces the Wrap to wrap buttons into
+  /// multiple rows, creating a natural grid layout without any extra code.
+  Widget _buildSidebarToolbar(ThemeData theme) {
+    final cs = theme.colorScheme;
+    final toolbarTheme = theme.copyWith(
+      colorScheme: cs.copyWith(
+        surface: cs.surfaceContainer,
+        surfaceContainerLow: cs.surfaceContainer,
+        surfaceContainer: cs.surfaceContainer,
+      ),
+      iconTheme: IconThemeData(color: cs.onSurface, size: 16),
+      textTheme: theme.textTheme.apply(
+        bodyColor: cs.onSurface,
+        displayColor: cs.onSurface,
+      ),
+    );
+
+    return SizedBox(
+      width: 176,
+      child: Theme(
+        data: toolbarTheme,
+        child: Container(
+          color: cs.surfaceContainer,
+          child: SingleChildScrollView(
+            child: QuillSimpleToolbar(
+              controller: _controller,
+              config: QuillSimpleToolbarConfig(
+                toolbarIconAlignment: WrapAlignment.start,
+                buttonOptions: QuillSimpleToolbarButtonOptions(
+                  base: QuillToolbarBaseButtonOptions(
+                    iconTheme: QuillIconTheme(
+                      iconButtonUnselectedData: IconButtonData(
+                        color: cs.onSurface,
+                        style: IconButton.styleFrom(
+                          backgroundColor: cs.onSurface.withValues(alpha: 0.05),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                      ),
+                      iconButtonSelectedData: IconButtonData(
+                        style: IconButton.styleFrom(
+                          foregroundColor: cs.onPrimary,
+                          backgroundColor: cs.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  selectHeaderStyleDropdownButton:
+                      QuillToolbarSelectHeaderStyleDropdownButtonOptions(
+                        textStyle: TextStyle(color: cs.onSurface, fontSize: 13),
+                      ),
+                  backgroundColor: QuillToolbarColorButtonOptions(
+                    customOnPressedCallback: _pickBackgroundColor,
+                  ),
+                ),
+                showFontFamily: false,
+                showFontSize: false,
+                showInlineCode: true,
+                showCodeBlock: true,
+                showQuote: true,
+                showLink: false,
+                showSearchButton: false,
+                showSubscript: false,
+                showSuperscript: false,
+              ),
+            ),
           ),
         ),
       ),

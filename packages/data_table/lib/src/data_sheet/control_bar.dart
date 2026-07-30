@@ -27,7 +27,15 @@ import 'data_sheet_controller.dart';
 class DataSheetControlBar extends StatelessWidget {
   final DataSheetController controller;
 
-  const DataSheetControlBar({super.key, required this.controller});
+  /// When [axis] is [Axis.vertical], the toolbar renders as a sidebar panel
+  /// suitable for use in [Row] beside the sheet. Defaults to [Axis.horizontal].
+  final Axis axis;
+
+  const DataSheetControlBar({
+    super.key,
+    required this.controller,
+    this.axis = Axis.horizontal,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -40,11 +48,16 @@ class DataSheetControlBar extends StatelessWidget {
         final hasCol = sel.contextCol >= 0;
         final hasData = controller.rowCount > 0;
 
+        final isVertical = axis == Axis.vertical;
+
         return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
+          scrollDirection: axis,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-            child: Row(
+            child: Flex(
+              direction: isVertical ? Axis.vertical : Axis.horizontal,
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ── Structure ──────────────────────────────────────────────
                 _group([

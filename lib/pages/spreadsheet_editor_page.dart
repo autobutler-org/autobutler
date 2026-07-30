@@ -4,12 +4,14 @@ import 'dart:convert';
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
+import 'package:autobutler/widgets/editor/editor_toolbar_mode.dart';
 import 'package:data_table/data_sheet.dart';
 import 'package:data_table/data_table.dart';
 import 'package:flutter/material.dart' hide DataTable, DataRow, DataCell;
 import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ---------------------------------------------------------------------------
 // Per-tab state
@@ -64,6 +66,9 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
   bool _saving = false;
   bool _dirty = false;
   String? _error;
+
+  // Toolbar mode (#1327)
+  EditorToolbarMode _toolbarMode = EditorToolbarMode.top;
   bool _routeMovedExternally = false;
 
   late TabController _tabController;
@@ -119,6 +124,22 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
     }
     _tabController = TabController(length: 1, vsync: this);
     _loadFile();
+    _loadToolbarModePreference();
+  }
+
+  Future<void> _loadToolbarModePreference() async {
+    final mode = await loadToolbarMode(kPrefKeySpreadsheetToolbarMode);
+    if (!mounted) return;
+    setState(() => _toolbarMode = mode);
+  }
+
+  Future<void> _toggleToolbarMode() async {
+    final next = _toolbarMode == EditorToolbarMode.sidebar
+        ? EditorToolbarMode.top
+        : EditorToolbarMode.sidebar;
+    await saveToolbarMode(kPrefKeySpreadsheetToolbarMode, next);
+    if (!mounted) return;
+    setState(() => _toolbarMode = next);
   }
 
   @override
@@ -327,6 +348,18 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
                 onPressed: _manualSave,
               ),
             const ThemeToggleButton(),
+            // Toolbar mode toggle (#1327)
+            IconButton(
+              icon: Icon(
+                _toolbarMode == EditorToolbarMode.sidebar
+                    ? Icons.view_sidebar
+                    : Icons.view_sidebar_outlined,
+              ),
+              tooltip: _toolbarMode == EditorToolbarMode.sidebar
+                  ? 'Switch to top toolbar'
+                  : 'Switch to sidebar toolbar',
+              onPressed: _toggleToolbarMode,
+            ),
           ],
           bottom: multiTab
               ? TabBar(
@@ -346,6 +379,24 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
   }
 
   Widget _buildSheetTab(_SheetTab tab) {
+    if (_toolbarMode == EditorToolbarMode.sidebar) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 60,
+            child: DataSheetControlBar(
+              controller: tab.controller,
+              axis: Axis.vertical,
+            ),
+          ),
+          const VerticalDivider(width: 1),
+          Expanded(
+            child: DataSheet(controller: tab.controller, table: tab.table),
+          ),
+        ],
+      );
+    }
     return Column(
       children: [
         DataSheetControlBar(controller: tab.controller),
