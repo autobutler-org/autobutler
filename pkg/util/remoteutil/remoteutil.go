@@ -159,6 +159,34 @@ func HasPersistedState() bool {
 	return false
 }
 
+// GetCertificateFunc returns a tls.Config-compatible GetCertificate function
+// that delegates to the tsnet LocalClient when remote access is running.
+//
+// This allows the butler's TLS listener to serve a publicly-trusted
+// Let's Encrypt cert for the node's *.ts.net hostname when accessed over
+// Tailscale, while falling back to the self-signed cert for LAN access.
+//
+// Callers should set the returned function on tls.Config.GetCertificate
+// alongside a static Certificates fallback — the static cert is used when
+// GetCertificate returns nil/error (e.g. no tailnet, SNI mismatch, pre-auth).
+//
+// Returns nil if tsnet is not running.
+func GetCertificateFunc() func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+	mu.Lock()
+	if !running || srv == nil {
+		mu.Unlock()
+		return nil
+	}
+	s := srv
+	mu.Unlock()
+
+	lc, err := s.LocalClient()
+	if err != nil {
+		return nil
+	}
+	return lc.GetCertificate
+}
+
 // StartProxy forwards tailnet traffic to the local butler on [localPort].
 // [localTLS] must match how the butler is actually serving that port — see
 // serverutil.ServingTLS. Proxying plain HTTP at the TLS listener shows up as

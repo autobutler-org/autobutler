@@ -294,8 +294,32 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 			return fmt.Errorf("failed to load TLS key pair: %w", err)
 		}
 		tlsCfg := &tls.Config{
+			// Static fallback: the self-signed cert is used for plain-LAN access
+			// and as a fallback when Tailscale cert provisioning is unavailable.
 			Certificates: []tls.Certificate{cert},
 			MinVersion:   tls.VersionTLS13,
+		}
+
+		// When remote access via Tailscale is active, hook the tsnet LocalClient's
+		// GetCertificate into the TLS config. This causes the server to serve a
+		// publicly-trusted Let's Encrypt cert for the node's *.ts.net hostname when
+		// accessed over Tailscale, eliminating "connection is not private" warnings
+		// on family members' devices. LAN access continues to use the self-signed cert.
+		//
+		// GetCertificate is only called when the ClientHello includes an SNI; for
+		// raw-IP connections the TLS stack falls back to Certificates[0] (self-signed).
+		if getCert := remoteutil.GetCertificateFunc(); getCert != nil {
+			tlsCfg.GetCertificate = func(hi *tls.ClientHelloInfo) (*tls.Certificate, error) {
+				// Delegate to the Tailscale LocalClient for *.ts.net hostnames.
+				// If it returns an error (e.g. pre-auth, wrong hostname, network
+				// hiccup), fall through to the static self-signed cert.
+				if tlsCert, err := getCert(hi); err == nil && tlsCert != nil {
+					return tlsCert, nil
+				}
+				// Static cert fallback.
+				return &cert, nil
+			}
+			log.Printf("[server] Tailscale cert provisioning active — ts.net hostname will use Let's Encrypt cert")
 		}
 
 		addr := fmt.Sprintf(":%s", port)
