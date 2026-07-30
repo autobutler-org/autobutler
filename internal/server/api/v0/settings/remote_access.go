@@ -14,8 +14,9 @@ type RemoteAccessRequest struct {
 }
 
 type RemoteAccessResponse struct {
-	Enabled   bool   `json:"enabled"`
-	RemoteURL string `json:"remoteUrl,omitempty"`
+	Enabled      bool   `json:"enabled"`
+	RemoteURL    string `json:"remoteUrl,omitempty"`
+	TailscaleTLS bool   `json:"tailscaleTls"`
 }
 
 // getRemoteAccess godoc
@@ -49,8 +50,9 @@ var enableRemoteAccessRoute = serverutil.ApiRoute(
 	"POST", "/settings/remote-access", func(c *gin.Context) *serverutil.Response {
 		if remoteutil.IsRunning() {
 			return serverutil.Ok().WithData(RemoteAccessResponse{
-				Enabled:   true,
-				RemoteURL: remoteutil.RemoteURL(),
+				Enabled:      true,
+				RemoteURL:    remoteutil.RemoteURL(),
+				TailscaleTLS: remoteutil.IsTLSActive(),
 			})
 		}
 		var req RemoteAccessRequest
@@ -74,8 +76,9 @@ var enableRemoteAccessRoute = serverutil.ApiRoute(
 			return serverutil.InternalServerError(err)
 		}
 		return serverutil.Ok().WithData(RemoteAccessResponse{
-			Enabled:   true,
-			RemoteURL: remoteutil.RemoteURL(),
+			Enabled:      true,
+			RemoteURL:    remoteutil.RemoteURL(),
+			TailscaleTLS: remoteutil.IsTLSActive(),
 		})
 	},
 )

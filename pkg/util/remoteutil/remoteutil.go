@@ -24,10 +24,11 @@ const hostname = "autobutler"
 const defaultControlURL = "https://network.autobutler.org"
 
 var (
-	mu      sync.Mutex
-	srv     *tsnet.Server
-	proxyLn net.Listener
-	running bool
+	mu              sync.Mutex
+	srv             *tsnet.Server
+	proxyLn         net.Listener
+	running         bool
+	tlsProxyRunning bool // true when the :443 TLS proxy is active
 )
 
 func controlURL() string {
@@ -106,10 +107,22 @@ func IsRunning() bool {
 	return running
 }
 
-// RemoteURL returns the Tailscale IP-based URL for the tsnet node, or "" if
-// not running. The mutex is held only long enough to snapshot the server
-// pointer; the network call to the local Tailscale daemon happens outside the
-// lock so that Stop() and IsRunning() are never blocked by I/O.
+// IsTLSActive returns true when the tailnet proxy is using a Tailscale-issued
+// TLS certificate (HTTPS on :443), false when falling back to HTTP on :80.
+func IsTLSActive() bool {
+	mu.Lock()
+	defer mu.Unlock()
+	return tlsProxyRunning
+}
+
+// RemoteURL returns the URL for reaching this node over the tailnet.
+//
+// If HTTPS (Tailscale-issued cert) is available, it returns the MagicDNS
+// hostname with https:// — no browser warnings. Otherwise it falls back to
+// the Tailscale IP with http://.
+//
+// The mutex is held only long enough to snapshot the server pointer; the
+// network calls to the local Tailscale daemon happen outside the lock.
 func RemoteURL() string {
 	mu.Lock()
 	if !running || srv == nil {
@@ -117,6 +130,7 @@ func RemoteURL() string {
 		return ""
 	}
 	s := srv
+	tlsEnabled := tlsProxyRunning
 	mu.Unlock()
 
 	lc, err := s.LocalClient()
@@ -129,10 +143,25 @@ func RemoteURL() string {
 	if err != nil {
 		return ""
 	}
+
+	// Prefer MagicDNS HTTPS URL when TLS is active.
+	if tlsEnabled && st.CurrentTailnet != nil && st.CurrentTailnet.MagicDNSSuffix != "" {
+		// DNSName from Self already contains the FQDN (e.g. "autobutler.example.ts.net.");
+		// strip the trailing dot if present.
+		if st.Self != nil && st.Self.DNSName != "" {
+			host := strings.TrimSuffix(st.Self.DNSName, ".")
+			return fmt.Sprintf("https://%s", host)
+		}
+	}
+
+	// Fall back to IP-based URL.
 	if st.Self == nil || len(st.Self.TailscaleIPs) == 0 {
 		return ""
 	}
 	ip := st.Self.TailscaleIPs[0].String()
+	if tlsEnabled {
+		return fmt.Sprintf("https://%s", ip)
+	}
 	return fmt.Sprintf("http://%s:80", ip)
 }
 
@@ -160,10 +189,15 @@ func HasPersistedState() bool {
 }
 
 // StartProxy forwards tailnet traffic to the local butler on [localPort].
+//
+// It first attempts to start an HTTPS proxy on :443 using a Tailscale-issued
+// Let's Encrypt certificate (requires MagicDNS + HTTPS enabled in the
+// Tailscale/Headscale admin panel). If that is not available (MagicDNS
+// disabled, HTTPS not enabled, or the control server does not support ACME),
+// it falls back to a plain HTTP proxy on :80.
+//
 // [localTLS] must match how the butler is actually serving that port — see
-// serverutil.ServingTLS. Proxying plain HTTP at the TLS listener shows up as
-// "TLS handshake error from 127.0.0.1" in the server log and fails every
-// request.
+// serverutil.ServingTLS.
 func StartProxy(localPort int, localTLS bool) error {
 	mu.Lock()
 	defer mu.Unlock()
@@ -173,11 +207,8 @@ func StartProxy(localPort int, localTLS bool) error {
 	if srv == nil {
 		return fmt.Errorf("tsnet not started")
 	}
-	ln, err := srv.Listen("tcp", ":80")
-	if err != nil {
-		return fmt.Errorf("tsnet listen failed: %w", err)
-	}
-	proxyLn = ln
+
+	// Build the reverse proxy target (points at the local butler).
 	scheme := "http"
 	if localTLS {
 		scheme = "https"
@@ -193,16 +224,40 @@ func StartProxy(localPort int, localTLS bool) error {
 		},
 	}
 	if localTLS {
-		// The butler presents its own self-signed cert, and this hop is a
-		// loopback connection to that same process — there is no third party to
-		// authenticate, and no CA that could vouch for the cert.
+		// The butler presents its own self-signed cert on loopback — skip
+		// verification for this private hop.
 		rp.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec
 		}
 	}
+
+	// Attempt TLS proxy on :443 first (Tailscale-issued cert).
+	if ln, err := srv.ListenTLS("tcp", ":443"); err == nil {
+		proxyLn = ln
+		tlsProxyRunning = true
+		log.Printf("[tsnet] HTTPS proxy active on :443 (Tailscale cert)")
+		go func() {
+			if err := http.Serve(ln, rp); err != nil {
+				log.Printf("[tsnet] HTTPS proxy stopped: %v", err)
+				mu.Lock()
+				tlsProxyRunning = false
+				mu.Unlock()
+			}
+		}()
+		return nil
+	} else {
+		log.Printf("[tsnet] Tailscale cert not available (%v); falling back to HTTP on :80", err)
+	}
+
+	// Fall back: plain HTTP on :80.
+	ln, err := srv.Listen("tcp", ":80")
+	if err != nil {
+		return fmt.Errorf("tsnet listen failed: %w", err)
+	}
+	proxyLn = ln
 	go func() {
 		if err := http.Serve(ln, rp); err != nil {
-			log.Printf("[tsnet] proxy stopped: %v", err)
+			log.Printf("[tsnet] HTTP proxy stopped: %v", err)
 		}
 	}()
 	return nil
