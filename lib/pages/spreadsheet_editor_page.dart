@@ -11,8 +11,6 @@ import 'package:flutter/material.dart' hide DataTable, DataRow, DataCell;
 import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-
 // ---------------------------------------------------------------------------
 // Per-tab state
 // ---------------------------------------------------------------------------
