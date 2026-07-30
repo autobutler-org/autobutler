@@ -1735,6 +1735,48 @@ const docTemplate = `{
                 }
             }
         },
+        "/photos/duplicates": {
+            "get": {
+                "description": "Returns groups of exact duplicates (same SHA-256 content hash) and near-duplicates (perceptual dHash Hamming distance within threshold). Requires photo hashes to have been computed via the thumbnail or hash-index endpoints.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "photos"
+                ],
+                "summary": "List duplicate photos",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Hamming distance threshold for near-duplicates (default 10, max 20)",
+                        "name": "threshold",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "groups": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/v0_photos.DuplicateGroupJSON"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/photos/favorite": {
             "get": {
                 "description": "Returns whether the specified photo is in the user's favorites.",
@@ -3378,6 +3420,33 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "v0_photos.DuplicateGroupJSON": {
+            "type": "object",
+            "properties": {
+                "kind": {
+                    "description": "Kind is \"exact\" (identical content hash) or \"near\" (perceptual hash\nHamming distance within the configured threshold).",
+                    "type": "string"
+                },
+                "photos": {
+                    "description": "Photos is the list of photos in this duplicate group.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v0_photos.DuplicatePhotoJSON"
+                    }
+                }
+            }
+        },
+        "v0_photos.DuplicatePhotoJSON": {
+            "type": "object",
+            "properties": {
+                "deviceSerial": {
+                    "type": "string"
+                },
+                "relPath": {
                     "type": "string"
                 }
             }

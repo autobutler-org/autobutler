@@ -277,6 +277,26 @@ definitions:
       name:
         type: string
     type: object
+  v0_photos.DuplicateGroupJSON:
+    properties:
+      kind:
+        description: |-
+          Kind is "exact" (identical content hash) or "near" (perceptual hash
+          Hamming distance within the configured threshold).
+        type: string
+      photos:
+        description: Photos is the list of photos in this duplicate group.
+        items:
+          $ref: '#/definitions/v0_photos.DuplicatePhotoJSON'
+        type: array
+    type: object
+  v0_photos.DuplicatePhotoJSON:
+    properties:
+      deviceSerial:
+        type: string
+      relPath:
+        type: string
+    type: object
   v0_photos.ExifJSON:
     properties:
       aperture:
@@ -1624,6 +1644,37 @@ paths:
           schema:
             $ref: '#/definitions/serverutil.Response'
       summary: Duplicate a photo file
+      tags:
+      - photos
+  /photos/duplicates:
+    get:
+      description: Returns groups of exact duplicates (same SHA-256 content hash)
+        and near-duplicates (perceptual dHash Hamming distance within threshold).
+        Requires photo hashes to have been computed via the thumbnail or hash-index
+        endpoints.
+      parameters:
+      - description: Hamming distance threshold for near-duplicates (default 10, max
+          20)
+        in: query
+        name: threshold
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              groups:
+                items:
+                  $ref: '#/definitions/v0_photos.DuplicateGroupJSON'
+                type: array
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: List duplicate photos
       tags:
       - photos
   /photos/favorite:
