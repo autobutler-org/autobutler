@@ -40,10 +40,10 @@ type DiskProbeResult struct {
 
 const (
 	probeSizeBytes   = 4 * 1024 * 1024 // 4 MB sequential read file
-	randReadSize     = 4 * 1024         // 4 KB per random read
-	randReadCount    = 10               // number of random read samples
-	slowThresholdMBs = 20.0             // < 20 MB/s → slow
-	fastThresholdMBs = 200.0            // > 200 MB/s → fast
+	randReadSize     = 4 * 1024        // 4 KB per random read
+	randReadCount    = 10              // number of random read samples
+	slowThresholdMBs = 20.0            // < 20 MB/s → slow
+	fastThresholdMBs = 200.0           // > 200 MB/s → fast
 )
 
 // ProbeDisk measures the sequential read speed and random read latency of the
