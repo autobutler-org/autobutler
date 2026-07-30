@@ -118,6 +118,9 @@ OS_FILE_ALLOWED=(
     "pkg/util/storageutil/"
     # Mounting and unmounting USB drives.
     "pkg/util/deviceutil/"
+    # The plugin registry (plugins.json) and hashing the plugin binaries it names
+    # before they are spawned.
+    "pkg/util/pluginutil/"
     # System configuration: settings, the hostname helper, remote access, updates,
     # ssh keys, repair, provisioning, TLS certificates, apt holds and memory tuning.
     "pkg/util/settingsutil/"
