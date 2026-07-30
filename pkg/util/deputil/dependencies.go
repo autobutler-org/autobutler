@@ -149,7 +149,6 @@ func (d *dependencies) FileIndex() *storageutil.FileIndex {
 	return d.fileIndex
 }
 
-
 func (d *dependencies) HealthDatabase() *db.DatabaseRaw {
 	return d.healthDatabase
 }
