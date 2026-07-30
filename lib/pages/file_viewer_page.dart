@@ -2,6 +2,7 @@ import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/audio_player_page.dart';
 import 'package:autobutler/pages/generic_file_viewer_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
+import 'package:autobutler/pages/pdf_viewer_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
@@ -145,6 +146,18 @@ class _FileViewerPageState extends State<FileViewerPage> {
           context.push(_buildRoute('/edit', widget.filePath, serial: serial));
 
         case 'pdf':
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute<void>(
+              builder: (_) => PdfViewerPage(
+                filePath: widget.filePath,
+                deviceSerial: serial,
+              ),
+            ),
+          );
+
+        // Still no dedicated viewer for these — they fall through to the
+        // generic download/"Open with" page below, which is what #1437 wired
+        // up. Only 'pdf' graduates to a real viewer here.
         case 'docx':
         case 'epub':
         case 'slideshow':
