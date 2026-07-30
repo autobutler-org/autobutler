@@ -21,6 +21,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/favoritesutil"
 	"github.com/autobutler-org/autobutler/pkg/util/healthutil"
+	"github.com/autobutler-org/autobutler/pkg/util/mdnsutil"
 	"github.com/autobutler-org/autobutler/pkg/util/remoteutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
@@ -260,6 +261,12 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 		}
 	}
 
+	// Advertise on the LAN via mDNS so devices can reach this butler at
+	// autobutler.local without needing to know its IP address.
+	if err := mdnsutil.Advertise(mdnsutil.AdvertiseOptions{Port: portNum}); err != nil {
+		log.Printf("[mdns] failed to start advertisement: %v", err)
+	}
+
 	// Graceful shutdown: stop tsnet and telemetry on SIGINT/SIGTERM.
 	go func() {
 		quit := make(chan os.Signal, 1)
@@ -267,6 +274,7 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 		<-quit
 		log.Println("[server] shutting down...")
 		syncWorker.Stop()
+		mdnsutil.Stop()
 		remoteutil.Stop()
 		os.Exit(0)
 	}()
