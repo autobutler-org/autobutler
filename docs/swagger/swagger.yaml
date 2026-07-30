@@ -143,6 +143,17 @@ definitions:
       isFavorite:
         type: boolean
     type: object
+  v0_files.ContentResultJSON:
+    properties:
+      path:
+        description: Path is the relative file path within the Cirrus data directory.
+        type: string
+      snippet:
+        description: |-
+          Snippet is a short context extract around the matching terms, with HTML
+          <mark> tags wrapping matches. May be empty when the match is in metadata.
+        type: string
+    type: object
   v0_files.FileNodeJSON:
     properties:
       compressedSize:
@@ -1368,6 +1379,44 @@ paths:
           schema:
             $ref: '#/definitions/serverutil.Response'
       summary: Searches for files
+      tags:
+      - cirrus
+  /cirrus/search/content:
+    get:
+      description: 'Searches the full-text index for documents whose contents match
+        the given query. Uses SQLite FTS5 syntax: phrase="hello world", prefix=term*,
+        boolean=AND/OR/NOT. Returns 503 when the FTS index is not initialised.'
+      parameters:
+      - description: FTS5 query string
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: Maximum number of results (default 50)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              results:
+                items:
+                  $ref: '#/definitions/v0_files.ContentResultJSON'
+                type: array
+            type: object
+        "400":
+          description: Missing or empty query
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "503":
+          description: FTS index not available
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Search file contents (full-text)
       tags:
       - cirrus
   /cirrus/stat:

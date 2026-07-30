@@ -1345,6 +1345,61 @@
                 }
             }
         },
+        "/cirrus/search/content": {
+            "get": {
+                "description": "Searches the full-text index for documents whose contents match the given query. Uses SQLite FTS5 syntax: phrase=\"hello world\", prefix=term*, boolean=AND/OR/NOT. Returns 503 when the FTS index is not initialised.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cirrus"
+                ],
+                "summary": "Search file contents (full-text)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "FTS5 query string",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Maximum number of results (default 50)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "results": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/v0_files.ContentResultJSON"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Missing or empty query",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "503": {
+                        "description": "FTS index not available",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/cirrus/stat": {
             "get": {
                 "description": "Returns filesystem metadata for the given cirrus-relative path: whether it is a directory and its file type. Useful for deep-link resolution when the path extension alone is ambiguous (e.g. a folder named \"things.abdoc\").",
@@ -3169,6 +3224,19 @@
             "properties": {
                 "isFavorite": {
                     "type": "boolean"
+                }
+            }
+        },
+        "v0_files.ContentResultJSON": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "description": "Path is the relative file path within the Cirrus data directory.",
+                    "type": "string"
+                },
+                "snippet": {
+                    "description": "Snippet is a short context extract around the matching terms, with HTML\n\u003cmark\u003e tags wrapping matches. May be empty when the match is in metadata.",
+                    "type": "string"
                 }
             }
         },
