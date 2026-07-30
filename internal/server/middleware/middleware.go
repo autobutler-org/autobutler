@@ -100,10 +100,12 @@ func queryTokenAllowed(path string) bool {
 
 // authExemptPaths are API paths that don't require a valid session.
 var authExemptPaths = map[string]bool{
-	"/api/v0/auth/setup":   true,
-	"/api/v0/auth/login":   true,
-	"/api/v0/auth/recover": true,
-	"/api/v0/auth/status":  true,
+	"/api/v0/auth/setup":       true,
+	"/api/v0/auth/login":       true,
+	"/api/v0/auth/recover":     true,
+	"/api/v0/auth/status":      true,
+	"/api/v0/devices/register": true, // unapproved devices must be able to register
+	"/api/v0/devices/access":   true, // poll approval status without a session
 }
 
 func inject(deps deputil.Dependencies) gin.HandlerFunc {

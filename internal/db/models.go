@@ -84,6 +84,22 @@ type PhotoRotation struct {
 	UpdatedAt        time.Time
 }
 
+type RegisteredDevice struct {
+	ID             int64
+	Name           string
+	DeviceType     string
+	IdentityType   string
+	IpAddress      string
+	MacAddress     sql.NullString
+	TailscaleKey   sql.NullString
+	UserAgent      string
+	ApprovalStatus string
+	ApprovedBy     sql.NullString
+	ApprovedAt     sql.NullTime
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
 type Session struct {
 	Token     string
 	UserID    int64
