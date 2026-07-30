@@ -20,6 +20,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/favoritesutil"
+	"github.com/autobutler-org/autobutler/pkg/util/ftsutil"
 	"github.com/autobutler-org/autobutler/pkg/util/remoteutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
@@ -58,6 +59,17 @@ func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 	idx := storageutil.NewFileIndex()
 	idx.BuildAndWatch(deps.EventBus(), deps.StorageService().GetManagedDevices)
 	deps.WithFileIndex(idx)
+
+	// Open the FTS full-text search index and wire it to the event bus so new
+	// and updated files are indexed incrementally. Non-fatal if it fails (falls
+	// back to filename-only search).
+	ftsPath := filepath.Join(storageutil.GetDataDir(), "search.db")
+	if ftsIdx, ftsErr := ftsutil.Open(ftsPath); ftsErr == nil {
+		deps.WithFTSIndex(ftsIdx)
+		go startFTSWorker(ftsIdx, deps.EventBus(), deps.StorageService())
+	} else {
+		log.Printf("[server] FTS index unavailable: %v", ftsErr)
+	}
 
 	initExternalVault(deps)
 	go vaultDeviceMonitor(deps)
@@ -312,4 +324,35 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 	}
 
 	return nil
+}
+
+// startFTSWorker subscribes to the event bus and keeps the FTS index in sync
+// with file create/update/delete events. Runs as a background goroutine.
+func startFTSWorker(idx *ftsutil.Index, bus *eventbus.Bus, svc *storageutil.StorageService) {
+	ch, unsub := bus.Subscribe("fts-worker")
+	defer unsub()
+
+	for evt := range ch {
+		devices, err := svc.GetManagedDevices()
+		if err != nil || len(devices) == 0 {
+			continue
+		}
+
+		switch evt.Kind {
+		case eventbus.EventUpload:
+			for _, dev := range devices {
+				absPath := filepath.Join(dev.CirrusDir, evt.Path)
+				if _, statErr := os.Stat(absPath); statErr == nil {
+					if indexErr := idx.IndexFile(absPath, evt.Path); indexErr != nil {
+						log.Printf("[fts] index %s: %v", evt.Path, indexErr)
+					}
+					break
+				}
+			}
+		case eventbus.EventDelete:
+			if deleteErr := idx.Delete(evt.Path); deleteErr != nil {
+				log.Printf("[fts] delete %s: %v", evt.Path, deleteErr)
+			}
+		}
+	}
 }

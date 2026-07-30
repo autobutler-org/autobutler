@@ -7,6 +7,7 @@ import (
 	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/pkg/botel/exporters/botelsqlite"
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
+	"github.com/autobutler-org/autobutler/pkg/util/ftsutil"
 	"github.com/autobutler-org/autobutler/pkg/util/iosemutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 	"github.com/autobutler-org/autobutler/pkg/util/vaultcrypto"
@@ -18,6 +19,7 @@ type Dependencies interface {
 	Database() *db.DatabaseSqlc
 	EventBus() *eventbus.Bus
 	FileIndex() *storageutil.FileIndex
+	FTSIndex() *ftsutil.Index
 	HealthDatabase() *db.DatabaseRaw
 	IOSemaphore() *iosemutil.Semaphore
 	MetricsExporter() *botelsqlite.TraceExporter
@@ -28,6 +30,7 @@ type Dependencies interface {
 	WithDatabase(database *db.DatabaseSqlc) Dependencies
 	WithEventBus(b *eventbus.Bus) Dependencies
 	WithFileIndex(idx *storageutil.FileIndex) Dependencies
+	WithFTSIndex(idx *ftsutil.Index) Dependencies
 	WithHealthDatabase(healthDatabase *db.DatabaseRaw) Dependencies
 	WithIOSemaphore(sem *iosemutil.Semaphore) Dependencies
 	WithMetricsExporter(exporter *botelsqlite.TraceExporter) Dependencies
@@ -46,6 +49,7 @@ type dependencies struct {
 	database        *db.DatabaseSqlc
 	eventBus        *eventbus.Bus
 	fileIndex       *storageutil.FileIndex
+	ftsIndex        *ftsutil.Index
 	healthDatabase  *db.DatabaseRaw
 	ioSemaphore     *iosemutil.Semaphore
 	metricsExporter *botelsqlite.TraceExporter
@@ -104,6 +108,15 @@ func (d *dependencies) WithFileIndex(idx *storageutil.FileIndex) Dependencies {
 	return d
 }
 
+func (d *dependencies) WithFTSIndex(idx *ftsutil.Index) Dependencies {
+	d.ftsIndex = idx
+	return d
+}
+
+func (d *dependencies) FTSIndex() *ftsutil.Index {
+	return d.ftsIndex
+}
+
 func (d *dependencies) WithHealthDatabase(database *db.DatabaseRaw) Dependencies {
 	d.healthDatabase = database
 	return d
@@ -135,6 +148,7 @@ func (d *dependencies) EventBus() *eventbus.Bus {
 func (d *dependencies) FileIndex() *storageutil.FileIndex {
 	return d.fileIndex
 }
+
 
 func (d *dependencies) HealthDatabase() *db.DatabaseRaw {
 	return d.healthDatabase
