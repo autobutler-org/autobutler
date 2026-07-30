@@ -55,6 +55,15 @@ type PhotoFavorite struct {
 	CreatedAt    time.Time
 }
 
+type PhotoHash struct {
+	ID           int64
+	DeviceSerial string
+	RelPath      string
+	Dhash        sql.NullString
+	ContentHash  sql.NullString
+	ComputedAt   time.Time
+}
+
 type PhotoRotation struct {
 	ID               int64
 	DeviceSerial     string
