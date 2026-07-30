@@ -233,12 +233,12 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 	// Record the real bound address so the remote-access proxy (which can also
 	// be started later, from the settings API) targets the right port and
 	// protocol instead of guessing.
-	serverutil.SetServingAddr(portNum, !opts.Insecure)
+	serverutil.SetServingAddr(portNum, !opts.Insecure, "")
 
 	if enabled, authKey := settingsutil.GetRemoteAccess(); enabled && authKey != "" {
 		if err := remoteutil.Start(authKey); err != nil {
 			log.Printf("[remote] failed to start: %v", err)
-		} else if err := remoteutil.StartProxy(portNum, !opts.Insecure); err != nil {
+		} else if err := remoteutil.StartProxy(portNum, !opts.Insecure, serverutil.ServingCertFile()); err != nil {
 			log.Printf("[remote] failed to start proxy: %v", err)
 		}
 	}
@@ -305,6 +305,9 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 		}
 		tlsLn := tls.NewListener(ln, tlsCfg)
 
+		// Update the serving address record with the cert file so the
+		// remote-access proxy can build a trusted CA pool for the loopback hop.
+		serverutil.SetServingAddr(portNum, true, certFile)
 		log.Printf("[server] TLS 1.3+ enabled — cert: %s", certFile)
 		if err := router.RunListener(tlsLn); err != nil {
 			return err

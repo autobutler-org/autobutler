@@ -3,6 +3,7 @@ package remoteutil
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"log"
 	"net"
@@ -197,8 +198,11 @@ func HasPersistedState() bool {
 // it falls back to a plain HTTP proxy on :80.
 //
 // [localTLS] must match how the butler is actually serving that port — see
-// serverutil.ServingTLS.
-func StartProxy(localPort int, localTLS bool) error {
+// serverutil.ServingTLS. [localCertFile] is the path to the butler's
+// self-signed certificate; when non-empty and localTLS is true it is loaded
+// into a dedicated CA pool so the loopback TLS connection can be verified
+// without disabling certificate checking entirely.
+func StartProxy(localPort int, localTLS bool, localCertFile string) error {
 	mu.Lock()
 	defer mu.Unlock()
 	if proxyLn != nil {
@@ -224,11 +228,11 @@ func StartProxy(localPort int, localTLS bool) error {
 		},
 	}
 	if localTLS {
-		// The butler presents its own self-signed cert on loopback — skip
-		// verification for this private hop.
-		rp.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec
+		tlsCfg, err := loopbackTLSConfig(localCertFile)
+		if err != nil {
+			return fmt.Errorf("build loopback TLS config: %w", err)
 		}
+		rp.Transport = &http.Transport{TLSClientConfig: tlsCfg}
 	}
 
 	// Attempt TLS proxy on :443 first (Tailscale-issued cert).
@@ -261,4 +265,32 @@ func StartProxy(localPort int, localTLS bool) error {
 		}
 	}()
 	return nil
+}
+
+// loopbackTLSConfig builds a *tls.Config that trusts only the butler's own
+// self-signed certificate for the loopback connection from the tsnet proxy to
+// the local server. This avoids InsecureSkipVerify while still accepting the
+// self-signed cert on 127.0.0.1/localhost.
+//
+// If certFile is empty or cannot be read, it falls back to the system root
+// pool (which will likely reject the self-signed cert and cause errors — the
+// caller should always provide the cert path when localTLS is true).
+func loopbackTLSConfig(certFile string) (*tls.Config, error) {
+	pool, err := x509.SystemCertPool()
+	if err != nil {
+		pool = x509.NewCertPool()
+	}
+	if certFile != "" {
+		pem, err := os.ReadFile(certFile)
+		if err != nil {
+			return nil, fmt.Errorf("read butler cert: %w", err)
+		}
+		if !pool.AppendCertsFromPEM(pem) {
+			return nil, fmt.Errorf("failed to parse butler cert from %s", certFile)
+		}
+	}
+	return &tls.Config{
+		RootCAs:    pool,
+		ServerName: "localhost",
+	}, nil
 }

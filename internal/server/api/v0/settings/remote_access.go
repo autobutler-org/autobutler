@@ -68,6 +68,7 @@ var enableRemoteAccessRoute = serverutil.ApiRoute(
 		if err := remoteutil.StartProxy(
 			serverutil.ServingPort(),
 			serverutil.ServingTLS(),
+			serverutil.ServingCertFile(),
 		); err != nil {
 			remoteutil.Stop()
 			return serverutil.InternalServerError(err)

@@ -9,8 +9,9 @@ import (
 // wiped. provisionFn is called only when no persisted state exists; it should
 // return a fresh Headscale pre-auth key. The proxy is started against
 // localPort after tsnet starts successfully; localTLS must match how the
-// server is serving that port.
-func EnsureStarted(localPort int, localTLS bool, provisionFn func() (string, error)) error {
+// server is serving that port. localCertFile is the path to the server's
+// TLS certificate (used to build a trusted CA pool for the loopback connection).
+func EnsureStarted(localPort int, localTLS bool, localCertFile string, provisionFn func() (string, error)) error {
 	if IsRunning() {
 		return nil
 	}
@@ -29,7 +30,7 @@ func EnsureStarted(localPort int, localTLS bool, provisionFn func() (string, err
 		return fmt.Errorf("start tsnet: %w", err)
 	}
 
-	if err := StartProxy(localPort, localTLS); err != nil {
+	if err := StartProxy(localPort, localTLS, localCertFile); err != nil {
 		Stop()
 		return fmt.Errorf("start proxy: %w", err)
 	}
