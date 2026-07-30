@@ -92,20 +92,32 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
     );
     if (result == null || result == device.role || !mounted) return;
 
+    // When setting a device as primary (default-storage) and the vault is
+    // not already on it, offer to migrate the vault there too.
+    bool moveVault = false;
+    if (result == 'default-storage' &&
+        _vaultDeviceSerial != device.serial &&
+        device.serial.isNotEmpty) {
+      moveVault = await _askMoveVault(device) ?? false;
+      if (!mounted) return;
+    }
+
     final creds = await _promptCredentials();
     if (creds == null || !mounted) return;
 
     try {
-      await StorageService.setDeviceRole(
+      final vaultMigrated = await StorageService.setDeviceRole(
         serial: device.serial,
         role: result,
         username: creds['username']!,
         password: creds['password']!,
+        moveVault: moveVault,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Role set to ${_roleLabel(result)}')),
-      );
+      final msg = vaultMigrated
+          ? 'Role set to ${_roleLabel(result)} — vault moved to this device'
+          : 'Role set to ${_roleLabel(result)}';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       await refresh();
     } catch (e) {
       if (!mounted) return;
@@ -113,6 +125,31 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
         context,
       ).showSnackBar(SnackBar(content: Text('Failed: $e')));
     }
+  }
+
+  /// Asks the user whether to move the vault to [device] when setting it as
+  /// primary storage. Returns true if they confirm, false/null to skip.
+  Future<bool?> _askMoveVault(StorageDevice device) {
+    return AutobutlerWidget.showDialog<bool>(
+      context,
+      builder: (ctx) => AutobutlerWidget.alertDialog(
+        title: const Text('Move Vault to This Device?'),
+        content: Text(
+          'You can move your encrypted vault to ${device.name}. '
+          'The vault must be unlocked first. Decline to set the role without moving the vault.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Keep on Current Device'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Move Vault Here'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<Map<String, String>?> _promptCredentials() async {

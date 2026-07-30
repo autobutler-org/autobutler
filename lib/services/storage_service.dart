@@ -205,11 +205,12 @@ class StorageService with AuthenticatedService {
     invalidateDeviceCache();
   }
 
-  static Future<void> setDeviceRole({
+  static Future<bool> setDeviceRole({
     required String serial,
     required String role,
     required String username,
     required String password,
+    bool moveVault = false,
   }) async {
     final uri = _apiBaseUri.resolve('/api/v0/storage/devices/role');
     final response = await http.put(
@@ -220,6 +221,7 @@ class StorageService with AuthenticatedService {
         'role': role,
         'username': username,
         'password': password,
+        if (moveVault) 'moveVault': true,
       }),
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -229,6 +231,8 @@ class StorageService with AuthenticatedService {
       );
     }
     invalidateDeviceCache();
+    final body = jsonDecode(response.body) as Map<String, dynamic>?;
+    return body?['vaultMigrated'] == true;
   }
 
   static Future<String> startSnapshotBackup({

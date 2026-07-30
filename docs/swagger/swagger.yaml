@@ -2208,9 +2208,11 @@ paths:
       consumes:
       - application/json
       description: Assigns a role (default-storage, snapshot-backup, unassigned) to
-        a device. Requires master password re-entry.
+        a device. Requires master password re-entry. When setting role=default-storage,
+        pass moveVault=true to also migrate the vault database to that device.
       parameters:
-      - description: '{serial: string, role: string, username: string, password: string}'
+      - description: '{serial: string, role: string, username: string, password: string,
+          moveVault?: bool}'
         in: body
         name: body
         required: true

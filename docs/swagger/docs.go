@@ -2508,7 +2508,7 @@ const docTemplate = `{
         },
         "/storage/devices/role": {
             "put": {
-                "description": "Assigns a role (default-storage, snapshot-backup, unassigned) to a device. Requires master password re-entry.",
+                "description": "Assigns a role (default-storage, snapshot-backup, unassigned) to a device. Requires master password re-entry. When setting role=default-storage, pass moveVault=true to also migrate the vault database to that device.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2521,7 +2521,7 @@ const docTemplate = `{
                 "summary": "Set the role of a storage device",
                 "parameters": [
                     {
-                        "description": "{serial: string, role: string, username: string, password: string}",
+                        "description": "{serial: string, role: string, username: string, password: string, moveVault?: bool}",
                         "name": "body",
                         "in": "body",
                         "required": true,
