@@ -5,10 +5,76 @@ import 'package:autobutler/services/cirrus_service.dart';
 import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_highlight/flutter_highlight.dart';
+import 'package:flutter_highlight/themes/atom-one-dark.dart';
+import 'package:flutter_highlight/themes/atom-one-light.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 
-/// A simple plaintext editor for text-like files (txt, md, json, yaml, etc.)
+// ---------------------------------------------------------------------------
+// Language detection
+// ---------------------------------------------------------------------------
+
+/// Maps a lowercase file extension to a flutter_highlight language name.
+/// Falls back to 'plaintext' for unknown extensions.
+String _langForExtension(String ext) {
+  const map = {
+    '.dart': 'dart',
+    '.go': 'go',
+    '.py': 'python',
+    '.js': 'javascript',
+    '.ts': 'typescript',
+    '.jsx': 'javascript',
+    '.tsx': 'typescript',
+    '.json': 'json',
+    '.yaml': 'yaml',
+    '.yml': 'yaml',
+    '.xml': 'xml',
+    '.html': 'html',
+    '.htm': 'html',
+    '.css': 'css',
+    '.scss': 'css',
+    '.sh': 'bash',
+    '.bash': 'bash',
+    '.zsh': 'bash',
+    '.swift': 'swift',
+    '.kt': 'kotlin',
+    '.java': 'java',
+    '.c': 'c',
+    '.h': 'c',
+    '.cpp': 'cpp',
+    '.cc': 'cpp',
+    '.cs': 'cs',
+    '.rs': 'rust',
+    '.rb': 'ruby',
+    '.php': 'php',
+    '.sql': 'sql',
+    '.md': 'markdown',
+    '.toml': 'ini',
+    '.ini': 'ini',
+    '.conf': 'nginx',
+    '.dockerfile': 'dockerfile',
+    '.proto': 'protobuf',
+    '.graphql': 'graphql',
+    '.txt': 'plaintext',
+  };
+  return map[ext.toLowerCase()] ?? 'plaintext';
+}
+
+/// Returns true when the extension is a code/markup type that benefits from
+/// syntax highlighting. Plain .txt files default to the editable view.
+bool _isCodeFile(String ext) =>
+    _langForExtension(ext.toLowerCase()) != 'plaintext';
+
+// ---------------------------------------------------------------------------
+// Widget
+// ---------------------------------------------------------------------------
+
+/// A combined plaintext editor + syntax-highlighted code preview.
+///
+/// For recognised code/markup extensions the toolbar shows a toggle between
+/// ✏️ (edit) and 🎨 (highlight) mode. For plain .txt files only the editor
+/// mode is shown (syntax highlighting adds nothing).
 class PlaintextEditorPage extends StatefulWidget {
   final String filePath;
   final String deviceSerial;
@@ -29,14 +95,22 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
   bool _loading = true;
   bool _saving = false;
   bool _dirty = false;
+  bool _highlightMode =
+      false; // toggled per-session; defaults to highlight for code files
   String? _error;
 
   late String _displayName;
+  late String _ext;
 
   @override
   void initState() {
     super.initState();
     _displayName = widget.filePath.split('/').last;
+    _ext = _displayName.contains('.')
+        ? '.${_displayName.split('.').last.toLowerCase()}'
+        : '';
+    // Auto-enable syntax highlight for code files.
+    _highlightMode = _isCodeFile(_ext);
     _textController.addListener(_onTextChanged);
     _loadFile();
   }
@@ -123,6 +197,7 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
   @override
   Widget build(BuildContext context) {
     final title = _dirty ? '$_displayName •' : _displayName;
+    final isCode = _isCodeFile(_ext);
 
     return Scaffold(
       appBar: AppBar(
@@ -139,21 +214,41 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
           },
         ),
         actions: [
-          if (_saving)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            )
-          else
+          // Highlight / edit mode toggle — only for code files.
+          if (isCode && !_loading && _error == null)
             IconButton(
-              icon: const Icon(Icons.save_outlined),
-              tooltip: 'Save',
-              onPressed: _dirty ? _saveFile : null,
+              icon: Icon(
+                _highlightMode
+                    ? Icons.edit_outlined
+                    : Icons.color_lens_outlined,
+              ),
+              tooltip: _highlightMode
+                  ? 'Switch to edit mode'
+                  : 'Switch to highlight mode',
+              onPressed: () => setState(() {
+                _highlightMode = !_highlightMode;
+                // Leaving highlight mode resets the dirty flag so the user
+                // doesn't see a spurious "unsaved changes" prompt.
+                if (!_highlightMode) _dirty = false;
+              }),
             ),
+          // Save button — only in edit mode.
+          if (!_highlightMode)
+            if (_saving)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            else
+              IconButton(
+                icon: const Icon(Icons.save_outlined),
+                tooltip: 'Save',
+                onPressed: _dirty ? _saveFile : null,
+              ),
           const ThemeToggleButton(),
         ],
       ),
@@ -185,6 +280,43 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
       );
     }
 
+    if (_highlightMode) {
+      return _buildHighlightView(context);
+    }
+
+    return _buildEditorView();
+  }
+
+  // -------------------------------------------------------------------------
+  // Syntax-highlighted read-only view
+  // -------------------------------------------------------------------------
+
+  Widget _buildHighlightView(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = isDark ? atomOneDarkTheme : atomOneLightTheme;
+    final lang = _langForExtension(_ext);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(12),
+      child: HighlightView(
+        _textController.text.isEmpty ? ' ' : _textController.text,
+        language: lang,
+        theme: theme,
+        padding: const EdgeInsets.all(12),
+        textStyle: const TextStyle(
+          fontFamily: 'monospace',
+          fontSize: 13,
+          height: 1.5,
+        ),
+      ),
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Editable plain-text view
+  // -------------------------------------------------------------------------
+
+  Widget _buildEditorView() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: TextField(
