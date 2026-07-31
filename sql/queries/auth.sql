@@ -40,3 +40,9 @@ DELETE FROM sessions WHERE expires_at <= datetime('now');
 
 -- name: DeleteUserSessions :exec
 DELETE FROM sessions WHERE user_id = ?;
+
+-- name: ListActiveSessionsForUser :many
+SELECT token, user_id, expires_at, created_at
+FROM sessions
+WHERE user_id = ? AND expires_at > datetime('now')
+ORDER BY created_at DESC;

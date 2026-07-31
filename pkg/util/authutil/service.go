@@ -2,6 +2,8 @@ package authutil
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -215,4 +217,65 @@ func newSession(ctx context.Context, queries *db.Queries, userID int64) (string,
 	}
 
 	return token, nil
+}
+
+// SessionInfo is a safe, token-free representation of an active session
+// returned to the caller. The ID is the hex-encoded SHA-256 of the raw token
+// so clients can reference a session for revocation without exposing the token.
+type SessionInfo struct {
+	ID        string    `json:"id"`
+	CreatedAt time.Time `json:"createdAt"`
+	ExpiresAt time.Time `json:"expiresAt"`
+}
+
+// sessionID returns the hex-encoded SHA-256 of the raw token, used as a
+// stable, opaque identifier that can be passed back for revocation.
+func sessionID(rawToken string) string {
+	h := sha256.Sum256([]byte(rawToken))
+	return hex.EncodeToString(h[:])
+}
+
+// ListActiveSessions returns all non-expired sessions for the given user,
+// mapped to SessionInfo (token replaced by its SHA-256 hash as ID).
+func ListActiveSessions(ctx context.Context, queries *db.Queries, userID int64) ([]SessionInfo, error) {
+	rows, err := queries.ListActiveSessionsForUser(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list sessions: %w", err)
+	}
+	out := make([]SessionInfo, 0, len(rows))
+	for _, s := range rows {
+		out = append(out, SessionInfo{
+			ID:        sessionID(s.Token),
+			CreatedAt: s.CreatedAt,
+			ExpiresAt: s.ExpiresAt,
+		})
+	}
+	return out, nil
+}
+
+// RevokeSession deletes the session whose sha256(token) matches the given id,
+// scoped to the given user. Returns true if a session was deleted, false if
+// no matching session was found.
+func RevokeSession(ctx context.Context, queries *db.Queries, userID int64, id string) (bool, error) {
+	rows, err := queries.ListActiveSessionsForUser(ctx, userID)
+	if err != nil {
+		return false, fmt.Errorf("failed to list sessions: %w", err)
+	}
+	for _, s := range rows {
+		if sessionID(s.Token) == id {
+			if err := queries.DeleteSession(ctx, s.Token); err != nil {
+				return false, fmt.Errorf("failed to delete session: %w", err)
+			}
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// RevokeAllSessions deletes all sessions for the given user.
+func RevokeAllSessions(ctx context.Context, queries *db.Queries, userID int64) error {
+	if err := queries.DeleteUserSessions(ctx, userID); err != nil {
+		return fmt.Errorf("failed to revoke sessions: %w", err)
+	}
+	return nil
 }

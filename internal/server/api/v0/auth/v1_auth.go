@@ -20,5 +20,9 @@ func (r *router) Routes() []*serverutil.Route {
 		googleAuthorizeRoute,
 		googleCallbackRoute,
 		googleDisconnectRoute,
+		// Session management
+		listSessionsRoute,
+		revokeSessionRoute,
+		revokeAllSessionsRoute,
 	}
 }
