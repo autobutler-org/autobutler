@@ -226,6 +226,24 @@ var getThumbnailRoute = serverutil.ApiRoute(
 				result.Thumbnail = photoutil.ApplyRotation(result.Thumbnail, rotationQuarters)
 			}
 
+			// Compute and store perceptual dHash async — the image is already
+			// decoded here so hashing is nearly free. Non-blocking; a failure to
+			// store the hash does not affect thumbnail delivery.
+			if !isVideo {
+				thumb := result.Thumbnail
+				go func() {
+					hashHex := photoutil.DHashHex(thumb)
+					_ = deps.Database().Queries.UpsertPhotoHash(
+						context.Background(),
+						db.UpsertPhotoHashParams{
+							DeviceSerial: serial,
+							RelPath:      relPath,
+							Dhash:        sql.NullString{String: hashHex, Valid: true},
+						},
+					)
+				}()
+			}
+
 			// Write to cache file
 			tmpPath := cachedPath + ".tmp"
 			f, err := os.Create(tmpPath)
