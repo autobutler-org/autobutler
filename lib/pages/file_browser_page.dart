@@ -363,10 +363,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     try {
       await _controller.deleteNodes(nodes: nodes);
-      if (mounted)
+      if (mounted) {
         _showMessage(
-          'Deleted ${nodes.length} item${nodes.length == 1 ? '' : 's'}',
+          'Deleted ${nodes.length} item${nodes.length == 1 ? "" : "s"}',
         );
+      }
     } catch (_) {
       if (!mounted) return;
       if (snapshot != null) setState(() => _cachedFiles = snapshot);
@@ -1812,7 +1813,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                   : _currentPath;
               final disableNavigation =
                   _handlingPendingFile && isLikelyFilePath(_currentPath);
-              if (_selectionMode)
+              if (_selectionMode) {
                 return _SelectionBar(
                   selectedCount: _selectedPaths.length,
                   totalCount: _allCurrentFiles.length,
@@ -1821,6 +1822,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                   onCancel: _exitSelectionMode,
                   onDelete: _selectedPaths.isNotEmpty ? _deleteSelected : null,
                 );
+              }
               return FileTopBar(
                 currentPath: displayPath,
                 isGridView: _isGridView,
