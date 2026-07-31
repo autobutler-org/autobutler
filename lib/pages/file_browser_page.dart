@@ -103,6 +103,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   Future<List<CirrusFileNode>>? _searchFuture;
   String? _searchQuery;
 
+  // Multi-select / batch delete state (#986)
+  bool _selectionMode = false;
+  final Set<String> _selectedPaths = {};
+  List<CirrusFileNode> _allCurrentFiles = [];
+
   // Archive browser state — non-null when navigating inside an archive.
   _ArchiveContext? _archiveContext;
 
@@ -266,7 +271,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     _filesFuture = fetchFuture.then((files) {
       if (mounted && _generation == generation) {
-        setState(() => _cachedFiles = files);
+        setState(() {
+          _cachedFiles = files;
+          _allCurrentFiles = files;
+        });
         // Cache the listing so rebuilt pages (from context.go navigation) can
         // display it instantly while a fresh fetch is in flight.
         if (archive == null) {
@@ -278,6 +286,94 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   }
 
   Future<void> _refreshFileState() => manualRefresh();
+
+  // ── Multi-select / batch delete (#986) ──────────────────────────────────
+
+  void _onSelectionChanged(
+    CirrusFileNode node, {
+    required bool enterSelectionMode,
+  }) {
+    setState(() {
+      if (enterSelectionMode && !_selectionMode) {
+        _selectionMode = true;
+        _selectedPaths.clear();
+      }
+      if (_selectedPaths.contains(node.apiPath)) {
+        _selectedPaths.remove(node.apiPath);
+      } else {
+        _selectedPaths.add(node.apiPath);
+      }
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _selectionMode = false;
+      _selectedPaths.clear();
+    });
+  }
+
+  void _selectAll() {
+    setState(() {
+      _selectedPaths
+        ..clear()
+        ..addAll(_allCurrentFiles.map((n) => n.apiPath));
+    });
+  }
+
+  Future<void> _deleteSelected() async {
+    if (_selectedPaths.isEmpty) return;
+    final nodes = _allCurrentFiles
+        .where((n) => _selectedPaths.contains(n.apiPath))
+        .toList();
+    if (nodes.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete selected'),
+        content: Text(
+          'Delete ${nodes.length} item${nodes.length == 1 ? '' : 's'}? This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    // Optimistic removal.
+    final snapshot = _cachedFiles;
+    setState(() {
+      if (_cachedFiles != null) {
+        _cachedFiles = _cachedFiles!
+            .where((n) => !_selectedPaths.contains(n.apiPath))
+            .toList();
+        FileBrowserCache.instance.put(_currentPath, _cachedFiles!);
+      }
+    });
+    _exitSelectionMode();
+
+    try {
+      await _controller.deleteNodes(nodes: nodes);
+      if (mounted) {
+        _showMessage(
+          'Deleted ${nodes.length} item${nodes.length == 1 ? "" : "s"}',
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      if (snapshot != null) setState(() => _cachedFiles = snapshot);
+      _showMessage('Delete failed');
+    }
+  }
 
   // ── Optimistic updates ───────────────────────────────────────────────────
 
@@ -1717,6 +1813,16 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                   : _currentPath;
               final disableNavigation =
                   _handlingPendingFile && isLikelyFilePath(_currentPath);
+              if (_selectionMode) {
+                return _SelectionBar(
+                  selectedCount: _selectedPaths.length,
+                  totalCount: _allCurrentFiles.length,
+                  onSelectAll: _selectAll,
+                  onDeselectAll: () => setState(() => _selectedPaths.clear()),
+                  onCancel: _exitSelectionMode,
+                  onDelete: _selectedPaths.isNotEmpty ? _deleteSelected : null,
+                );
+              }
               return FileTopBar(
                 currentPath: displayPath,
                 isGridView: _isGridView,
@@ -1866,6 +1972,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                           onFolderDragExit: _handleFolderDragExit,
                           scrollController: _fileBrowserScrollController,
                           inArchive: _archiveContext != null,
+                          selectionMode: _selectionMode,
+                          selectedPaths: _selectedPaths,
+                          onSelectionChanged: _onSelectionChanged,
                         ),
                         if (_isWebDragging && !_isHoveringFolderDropTarget)
                           IgnorePointer(
@@ -2073,6 +2182,66 @@ class _ArchiveTextPreview extends StatelessWidget {
           text,
           style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
         ),
+      ),
+    );
+  }
+}
+
+/// Top bar shown in place of [FileTopBar] while multi-select mode is active.
+class _SelectionBar extends StatelessWidget {
+  const _SelectionBar({
+    required this.selectedCount,
+    required this.totalCount,
+    required this.onSelectAll,
+    required this.onDeselectAll,
+    required this.onCancel,
+    this.onDelete,
+  });
+
+  final int selectedCount;
+  final int totalCount;
+  final VoidCallback onSelectAll;
+  final VoidCallback onDeselectAll;
+  final VoidCallback onCancel;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      height: 56,
+      color: colors.surfaceContainerHighest,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: 'Cancel selection',
+            onPressed: onCancel,
+          ),
+          Text(
+            '$selectedCount selected',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const Spacer(),
+          TextButton(
+            onPressed: selectedCount < totalCount ? onSelectAll : onDeselectAll,
+            child: Text(
+              selectedCount < totalCount ? 'Select all' : 'Deselect all',
+            ),
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            icon: Icon(
+              Icons.delete_outline,
+              color: onDelete != null
+                  ? colors.error
+                  : colors.onSurface.withValues(alpha: 0.38),
+            ),
+            tooltip: 'Delete selected',
+            onPressed: onDelete,
+          ),
+        ],
       ),
     );
   }

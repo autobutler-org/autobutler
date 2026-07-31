@@ -405,6 +405,38 @@ class CirrusService with AuthenticatedService {
     }
   }
 
+  /// Deletes multiple files/folders in a single request.
+  ///
+  /// All [nodes] must share the same device serial (or all belong to the
+  /// internal storage). Callers are responsible for grouping nodes by serial
+  /// before calling this method.
+  static Future<void> deleteFiles(
+    List<String> filePaths, {
+    String? rootDir,
+    String? deviceSerial,
+  }) async {
+    if (filePaths.isEmpty) return;
+    // The backend accepts repeated `filePaths` query params.
+    final querySegments = <String>[];
+    if (rootDir != null && rootDir.isNotEmpty) {
+      querySegments.add('rootDir=${Uri.encodeQueryComponent(rootDir)}');
+    }
+    for (final p in filePaths) {
+      querySegments.add('filePaths=${Uri.encodeQueryComponent(p)}');
+    }
+    final serial = deviceSerial?.trim() ?? '';
+    if (serial.isNotEmpty) {
+      querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
+    }
+    final uri = _apiBaseUri
+        .resolve('/api/v0/cirrus')
+        .replace(query: querySegments.join('&'));
+    final response = await instance.authenticatedDelete(uri);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to delete files (\${response.statusCode})');
+    }
+  }
+
   static Future<void> moveFile(
     String oldPath,
     String newPath, {

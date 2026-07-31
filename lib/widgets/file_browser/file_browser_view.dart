@@ -43,6 +43,9 @@ class FileBrowserView extends StatefulWidget {
     this.isInitialLoad = false,
     this.errorBuilder,
     this.loadingBuilder,
+    this.selectionMode = false,
+    this.selectedPaths = const {},
+    this.onSelectionChanged,
     super.key,
   });
 
@@ -76,6 +79,20 @@ class FileBrowserView extends StatefulWidget {
   final bool isInitialLoad;
   final Widget Function(BuildContext context, Object error)? errorBuilder;
   final WidgetBuilder? loadingBuilder;
+
+  /// When true, items show checkboxes and taps toggle selection instead of
+  /// opening the file/folder.
+  final bool selectionMode;
+
+  /// The set of `CirrusFileNode.apiPath` values currently selected. The parent
+  /// widget owns this state; [FileBrowserView] reflects it.
+  final Set<String> selectedPaths;
+
+  /// Called when the user taps an item in selection mode or long-presses to
+  /// enter selection mode. The argument is the tapped [CirrusFileNode].
+  /// The parent widget should toggle the path in its own set and rebuild.
+  final void Function(CirrusFileNode node, {required bool enterSelectionMode})?
+  onSelectionChanged;
 
   @override
   State<FileBrowserView> createState() => _FileBrowserViewState();
@@ -242,11 +259,22 @@ class _FileBrowserViewState extends State<FileBrowserView> {
 
   Widget _buildListTile(BuildContext context, CirrusFileNode item) {
     final colors = Theme.of(context).colorScheme;
+    final isSelected = widget.selectedPaths.contains(item.apiPath);
     return Material(
-      color: Colors.transparent,
+      color: isSelected
+          ? colors.primaryContainer.withValues(alpha: 0.35)
+          : Colors.transparent,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        leading: _buildListLeading(item),
+        leading: widget.selectionMode
+            ? Checkbox(
+                value: isSelected,
+                onChanged: (_) => widget.onSelectionChanged?.call(
+                  item,
+                  enterSelectionMode: false,
+                ),
+              )
+            : _buildListLeading(item),
         title: Row(
           children: [
             Expanded(
@@ -349,7 +377,18 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                 ],
               )
             : null,
-        onTap: () => widget.onOpenDirectory(item),
+        onTap: widget.selectionMode
+            ? () => widget.onSelectionChanged?.call(
+                item,
+                enterSelectionMode: false,
+              )
+            : () => widget.onOpenDirectory(item),
+        onLongPress: widget.inArchive || widget.selectionMode
+            ? null
+            : () => widget.onSelectionChanged?.call(
+                item,
+                enterSelectionMode: true,
+              ),
       ),
     );
   }
@@ -467,162 +506,235 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                   ),
                   itemBuilder: (context, index) {
                     final item = files[index];
+                    final isSelected = widget.selectedPaths.contains(
+                      item.apiPath,
+                    );
                     return _buildFolderDropWrapper(
                       item: item,
                       child: Card(
                         clipBehavior: Clip.hardEdge,
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.primaryContainer
+                                  .withValues(alpha: 0.55)
+                            : null,
                         child: InkWell(
-                          onTap: () => widget.onOpenDirectory(item),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (_isImageFile(item))
-                                  SizedBox(
-                                    height: 96,
-                                    width: double.infinity,
-                                    child: CachedNetworkImage(
-                                      imageUrl:
-                                          CirrusService.constructThumbnailUrl(
-                                            item.apiPath,
-                                            serial: item.deviceSerial,
-                                          ).toString(),
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) =>
-                                          Shimmer.fromColors(
-                                            baseColor: Colors.grey[800]!,
-                                            highlightColor: Colors.grey[700]!,
-                                            child: Container(
-                                              color: Colors.grey[800],
-                                            ),
-                                          ),
-                                      errorWidget: (context, url, error) =>
-                                          Center(
-                                            child: AutobutlerFileIcon(
-                                              node: item,
-                                              size: 48,
-                                            ),
-                                          ),
-                                    ),
-                                  )
-                                else
-                                  Center(
-                                    child: AutobutlerFileIcon(
-                                      node: item,
-                                      size: 48,
-                                    ),
-                                  ),
-                                const SizedBox(height: 8),
-                                Flexible(
-                                  child: Text(
-                                    item.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                          onTap: widget.selectionMode
+                              ? () => widget.onSelectionChanged?.call(
+                                  item,
+                                  enterSelectionMode: false,
+                                )
+                              : () => widget.onOpenDirectory(item),
+                          onLongPress: widget.inArchive || widget.selectionMode
+                              ? null
+                              : () => widget.onSelectionChanged?.call(
+                                  item,
+                                  enterSelectionMode: true,
                                 ),
-                                const Spacer(),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                          child: Stack(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    if (widget.showFileSizeAndMenu)
-                                      Flexible(
-                                        child: Text(
-                                          _formatSize(
-                                            item.size,
-                                            item.isDir,
-                                            compressedSize: item.compressedSize,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
+                                    if (_isImageFile(item))
+                                      SizedBox(
+                                        height: 96,
+                                        width: double.infinity,
+                                        child: CachedNetworkImage(
+                                          imageUrl:
+                                              CirrusService.constructThumbnailUrl(
+                                                item.apiPath,
+                                                serial: item.deviceSerial,
+                                              ).toString(),
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) =>
+                                              Shimmer.fromColors(
+                                                baseColor: Colors.grey[800]!,
+                                                highlightColor:
+                                                    Colors.grey[700]!,
+                                                child: Container(
+                                                  color: Colors.grey[800],
+                                                ),
+                                              ),
+                                          errorWidget: (context, url, error) =>
+                                              Center(
+                                                child: AutobutlerFileIcon(
+                                                  node: item,
+                                                  size: 48,
+                                                ),
+                                              ),
+                                        ),
+                                      )
+                                    else
+                                      Center(
+                                        child: AutobutlerFileIcon(
+                                          node: item,
+                                          size: 48,
                                         ),
                                       ),
-                                    if (widget.showFileSizeAndMenu)
-                                      PopupMenuButton<FileMenuAction>(
-                                        icon: const Icon(
-                                          AutobutlerIcons.more_vert,
-                                        ),
-                                        itemBuilder: (context) => [
-                                          PopupMenuItem<FileMenuAction>(
-                                            value: FileMenuAction.download,
-                                            onTap: () => _dispatchMenuAction(
-                                              context,
-                                              item,
-                                              FileMenuAction.download,
+                                    const SizedBox(height: 8),
+                                    Flexible(
+                                      child: Text(
+                                        item.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        if (widget.showFileSizeAndMenu)
+                                          Flexible(
+                                            child: Text(
+                                              _formatSize(
+                                                item.size,
+                                                item.isDir,
+                                                compressedSize:
+                                                    item.compressedSize,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                            child: const Text('Download'),
                                           ),
-                                          if (!widget.inArchive)
-                                            PopupMenuItem<FileMenuAction>(
-                                              value: FileMenuAction.moveRename,
-                                              onTap: () => _dispatchMenuAction(
-                                                context,
-                                                item,
-                                                FileMenuAction.moveRename,
-                                              ),
-                                              child: const Text('Move/Rename'),
+                                        if (widget.showFileSizeAndMenu)
+                                          PopupMenuButton<FileMenuAction>(
+                                            icon: const Icon(
+                                              AutobutlerIcons.more_vert,
                                             ),
-                                          if (!widget.inArchive)
-                                            PopupMenuItem<FileMenuAction>(
-                                              value: FileMenuAction.delete,
-                                              onTap: () => _dispatchMenuAction(
-                                                context,
-                                                item,
-                                                FileMenuAction.delete,
+                                            itemBuilder: (context) => [
+                                              PopupMenuItem<FileMenuAction>(
+                                                value: FileMenuAction.download,
+                                                onTap: () =>
+                                                    _dispatchMenuAction(
+                                                      context,
+                                                      item,
+                                                      FileMenuAction.download,
+                                                    ),
+                                                child: const Text('Download'),
                                               ),
-                                              child: const Text('Delete'),
-                                            ),
-                                          if (!widget.inArchive &&
-                                              _isArchive(item))
-                                            PopupMenuItem<FileMenuAction>(
-                                              value: FileMenuAction.extractHere,
-                                              enabled: !_extractingPaths
-                                                  .contains(item.apiPath),
-                                              onTap: () => _dispatchMenuAction(
-                                                context,
-                                                item,
-                                                FileMenuAction.extractHere,
-                                              ),
-                                              child:
-                                                  _extractingPaths.contains(
-                                                    item.apiPath,
-                                                  )
-                                                  ? const Row(
-                                                      children: [
-                                                        SizedBox(
-                                                          width: 16,
-                                                          height: 16,
-                                                          child:
-                                                              CircularProgressIndicator(
-                                                                strokeWidth: 2,
-                                                              ),
-                                                        ),
-                                                        SizedBox(width: 8),
-                                                        Text('Extracting...'),
-                                                      ],
-                                                    )
-                                                  : const Text('Extract here'),
-                                            ),
-                                          if (widget.isSearchMode &&
-                                              widget.onNavigateToFolder != null)
-                                            PopupMenuItem<FileMenuAction>(
-                                              value: FileMenuAction
-                                                  .navigateToFolder,
-                                              onTap: () =>
-                                                  widget.onNavigateToFolder!(
-                                                    item,
+                                              if (!widget.inArchive)
+                                                PopupMenuItem<FileMenuAction>(
+                                                  value:
+                                                      FileMenuAction.moveRename,
+                                                  onTap: () =>
+                                                      _dispatchMenuAction(
+                                                        context,
+                                                        item,
+                                                        FileMenuAction
+                                                            .moveRename,
+                                                      ),
+                                                  child: const Text(
+                                                    'Move/Rename',
                                                   ),
-                                              child: const Text(
-                                                'Navigate to folder',
-                                              ),
-                                            ),
-                                        ],
-                                      ),
+                                                ),
+                                              if (!widget.inArchive)
+                                                PopupMenuItem<FileMenuAction>(
+                                                  value: FileMenuAction.delete,
+                                                  onTap: () =>
+                                                      _dispatchMenuAction(
+                                                        context,
+                                                        item,
+                                                        FileMenuAction.delete,
+                                                      ),
+                                                  child: const Text('Delete'),
+                                                ),
+                                              if (!widget.inArchive &&
+                                                  _isArchive(item))
+                                                PopupMenuItem<FileMenuAction>(
+                                                  value: FileMenuAction
+                                                      .extractHere,
+                                                  enabled: !_extractingPaths
+                                                      .contains(item.apiPath),
+                                                  onTap: () =>
+                                                      _dispatchMenuAction(
+                                                        context,
+                                                        item,
+                                                        FileMenuAction
+                                                            .extractHere,
+                                                      ),
+                                                  child:
+                                                      _extractingPaths.contains(
+                                                        item.apiPath,
+                                                      )
+                                                      ? const Row(
+                                                          children: [
+                                                            SizedBox(
+                                                              width: 16,
+                                                              height: 16,
+                                                              child:
+                                                                  CircularProgressIndicator(
+                                                                    strokeWidth:
+                                                                        2,
+                                                                  ),
+                                                            ),
+                                                            SizedBox(width: 8),
+                                                            Text(
+                                                              'Extracting...',
+                                                            ),
+                                                          ],
+                                                        )
+                                                      : const Text(
+                                                          'Extract here',
+                                                        ),
+                                                ),
+                                              if (widget.isSearchMode &&
+                                                  widget.onNavigateToFolder !=
+                                                      null)
+                                                PopupMenuItem<FileMenuAction>(
+                                                  value: FileMenuAction
+                                                      .navigateToFolder,
+                                                  onTap: () =>
+                                                      widget
+                                                          .onNavigateToFolder!(
+                                                        item,
+                                                      ),
+                                                  child: const Text(
+                                                    'Navigate to folder',
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                      ],
+                                    ),
                                   ],
                                 ),
-                              ],
-                            ),
+                              ),
+                              // Checkbox overlay in selection mode.
+                              if (widget.selectionMode)
+                                Positioned(
+                                  top: 4,
+                                  left: 4,
+                                  child: IgnorePointer(
+                                    child: Container(
+                                      width: 24,
+                                      height: 24,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surface
+                                            .withValues(alpha: 0.75),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        isSelected
+                                            ? Icons.check_circle
+                                            : Icons.radio_button_unchecked,
+                                        size: 20,
+                                        color: isSelected
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.primary
+                                            : Theme.of(
+                                                context,
+                                              ).colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),

@@ -149,6 +149,32 @@ class FileBrowserController {
     );
   }
 
+  /// Deletes [nodes] in a single batch request per device group.
+  Future<void> deleteNodes({required List<CirrusFileNode> nodes}) async {
+    if (nodes.isEmpty) return;
+    // Group by device serial so each batch request stays on one device.
+    final bySerial = <String, List<CirrusFileNode>>{};
+    for (final n in nodes) {
+      final key = serialOrNull(n.deviceSerial) ?? '';
+      (bySerial[key] ??= []).add(n);
+    }
+    for (final entry in bySerial.entries) {
+      final serial = entry.key.isEmpty ? null : entry.key;
+      final paths = entry.value
+          .map((n) => trimTrailingSlashes(n.name))
+          .toList();
+      // Use the parent dir of the first node as rootDir — they should all
+      // share the same directory within a batch, but the backend ignores
+      // rootDir when explicit filePaths are supplied.
+      final rootDir = toRootDir(parentPath(entry.value.first.apiPath));
+      await CirrusService.deleteFiles(
+        paths,
+        rootDir: rootDir,
+        deviceSerial: serial,
+      );
+    }
+  }
+
   Future<FileMenuActionOutcome?> handleFileAction({
     required CirrusFileNode node,
     required FileMenuAction action,
