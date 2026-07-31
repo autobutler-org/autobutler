@@ -38,11 +38,49 @@ func (c *deviceStatusCache) invalidate() {
 	c.result = nil
 }
 
+// diskProbeCache holds long-lived disk probe results keyed by device data
+// directory. Probes are lightweight but still I/O-bound, so we cache them
+// for probeResultTTL to avoid running a probe on every device-status refresh.
+type diskProbeCache struct {
+	mu      sync.Mutex
+	results map[string]diskProbeCacheEntry
+}
+
+const probeResultTTL = 1 * time.Hour
+
+type diskProbeCacheEntry struct {
+	result   DiskProbeResult
+	cachedAt time.Time
+}
+
+func (c *diskProbeCache) get(dir string) (DiskProbeResult, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.results == nil {
+		return DiskProbeResult{}, false
+	}
+	entry, ok := c.results[dir]
+	if !ok || time.Since(entry.cachedAt) > probeResultTTL {
+		return DiskProbeResult{}, false
+	}
+	return entry.result, true
+}
+
+func (c *diskProbeCache) set(dir string, result DiskProbeResult) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.results == nil {
+		c.results = make(map[string]diskProbeCacheEntry)
+	}
+	c.results[dir] = diskProbeCacheEntry{result: result, cachedAt: time.Now()}
+}
+
 // StorageService wraps a Detector and exposes device-querying methods.
 // Construct with NewStorageService(d) and inject via deputil.Dependencies.
 type StorageService struct {
-	detector Detector
-	cache    deviceStatusCache
+	detector   Detector
+	cache      deviceStatusCache
+	probeCache diskProbeCache
 }
 
 // NewStorageService returns a StorageService backed by the given Detector.
@@ -135,11 +173,30 @@ func (s *StorageService) getDeviceStatusesFresh() ([]*DeviceStatus, error) {
 			dataDir = md.DataDir
 			cirrusDir = md.CirrusDir
 		}
+
+		var probeResult *DiskProbeResult
+		if dataDir != "" {
+			if cached, ok := s.probeCache.get(dataDir); ok {
+				// Use cached probe result — probe ran recently.
+				probeResult = &cached
+			} else {
+				// Kick off a background probe; this call returns the unknown result.
+				// The next GetDeviceStatuses call (after the probe completes) will
+				// return the measured values from cache.
+				go func(dir string) {
+					r := ProbeDisk(dir)
+					s.probeCache.set(dir, r)
+					s.cache.invalidate() // expire status cache so next request shows new data
+				}(dataDir)
+			}
+		}
+
 		statuses = append(statuses, &DeviceStatus{
 			Device:    device,
 			IsEnabled: isEnabled,
 			DataDir:   dataDir,
 			CirrusDir: cirrusDir,
+			DiskProbe: probeResult,
 		})
 	}
 	return statuses, nil
