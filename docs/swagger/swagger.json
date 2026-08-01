@@ -2303,6 +2303,82 @@
                 }
             }
         },
+        "/public/share/{token}": {
+            "get": {
+                "description": "Returns metadata for a public share link (no auth required).",
+                "tags": [
+                    "share"
+                ],
+                "summary": "Get share link metadata",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Raw share token",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v0_share.publicShareMeta"
+                        }
+                    },
+                    "404": {
+                        "description": "Share not found or expired",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/public/share/{token}/download": {
+            "get": {
+                "description": "Stream the file (or zip of folder) for a public share link.",
+                "tags": [
+                    "share"
+                ],
+                "summary": "Download shared content",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Raw share token",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "404": {
+                        "description": "Share not found, expired, or resource missing",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/sbom": {
             "get": {
                 "description": "Returns the Go version and all embedded dependency information from the compiled binary",
@@ -2386,6 +2462,129 @@
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/share": {
+            "get": {
+                "description": "List all active share links created by the authenticated user.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "share"
+                ],
+                "summary": "List share links",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v0_share.shareLinkSummary"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Generate an expiring public share link for a file or folder.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "share"
+                ],
+                "summary": "Create a share link",
+                "parameters": [
+                    {
+                        "description": "Share parameters",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v0_share.createShareRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/v0_share.createShareResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/share/{tokenHash}": {
+            "delete": {
+                "description": "Delete a share link by its token hash. Only the owner can revoke.",
+                "tags": [
+                    "share"
+                ],
+                "summary": "Revoke a share link",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token hash returned by GET /share",
+                        "name": "tokenHash",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -3967,6 +4166,88 @@
             "properties": {
                 "autoUpdate": {
                     "type": "boolean"
+                }
+            }
+        },
+        "v0_share.createShareRequest": {
+            "type": "object",
+            "required": [
+                "resourcePath",
+                "resourceType"
+            ],
+            "properties": {
+                "deviceSerial": {
+                    "description": "DeviceSerial identifies the storage device (empty for the default device).",
+                    "type": "string"
+                },
+                "expiresInHours": {
+                    "description": "ExpiresInHours is the TTL in hours. 0 or negative means no expiry.",
+                    "type": "integer"
+                },
+                "resourcePath": {
+                    "description": "ResourcePath is the file/folder path relative to the device's Cirrus root.",
+                    "type": "string"
+                },
+                "resourceType": {
+                    "description": "ResourceType is \"file\" or \"folder\".",
+                    "type": "string"
+                }
+            }
+        },
+        "v0_share.createShareResponse": {
+            "type": "object",
+            "properties": {
+                "expiresAt": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "v0_share.publicShareMeta": {
+            "type": "object",
+            "properties": {
+                "deviceSerial": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "resourcePath": {
+                    "type": "string"
+                },
+                "resourceType": {
+                    "type": "string"
+                },
+                "viewCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "v0_share.shareLinkSummary": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deviceSerial": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "resourcePath": {
+                    "type": "string"
+                },
+                "resourceType": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "viewCount": {
+                    "type": "integer"
                 }
             }
         },

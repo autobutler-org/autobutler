@@ -106,6 +106,12 @@ var authExemptPaths = map[string]bool{
 	"/api/v0/auth/status":  true,
 }
 
+// authExemptPrefixes are path prefixes whose routes never require a valid session.
+// Public share endpoints live here — the handlers perform their own token validation.
+var authExemptPrefixes = []string{
+	"/api/v0/public/",
+}
+
 func inject(deps deputil.Dependencies) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c = ctxutil.With(c, "deps", deps)
@@ -166,6 +172,12 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 		if authExemptPaths[path] {
 			c.Next()
 			return
+		}
+		for _, prefix := range authExemptPrefixes {
+			if strings.HasPrefix(path, prefix) {
+				c.Next()
+				return
+			}
 		}
 
 		db := deps.Database()

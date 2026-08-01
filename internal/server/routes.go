@@ -23,6 +23,7 @@ import (
 	v0_thumbnails "github.com/autobutler-org/autobutler/internal/server/api/v0/thumbnails"
 	v0_vault "github.com/autobutler-org/autobutler/internal/server/api/v0/vault"
 	v0_version "github.com/autobutler-org/autobutler/internal/server/api/v0/version"
+	v0_share "github.com/autobutler-org/autobutler/internal/server/api/v0/share"
 	v0_webdav "github.com/autobutler-org/autobutler/internal/server/api/v0/webdav"
 	v1_vfs "github.com/autobutler-org/autobutler/internal/server/api/v1/vfs"
 	"github.com/autobutler-org/autobutler/internal/server/middleware"
@@ -71,6 +72,7 @@ func setupRouters(engine *gin.Engine, systemCollector *healthutil.Collector, dep
 		v0_smb.NewRouter(),
 		v0_vault.NewRouter(),
 		v0_version.NewRouter(),
+		v0_share.NewRouter(),
 	}
 	for _, r := range apiRouters {
 		serverutil.RegisterRouterWithGroup(group, r)

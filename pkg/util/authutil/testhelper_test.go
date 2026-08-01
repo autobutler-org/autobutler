@@ -27,7 +27,9 @@ func newTOTPTestDB(t *testing.T) *db.Queries {
 			password_hash        TEXT NOT NULL,
 			recovery_phrase_hash TEXT NOT NULL,
 			created_at           DATETIME NOT NULL DEFAULT (datetime('now')),
-			is_admin             INTEGER NOT NULL DEFAULT 0
+			is_admin             INTEGER NOT NULL DEFAULT 0,
+			totp_secret          TEXT,
+			totp_pending         TEXT
 		);
 		CREATE TABLE IF NOT EXISTS sessions (
 			token      TEXT PRIMARY KEY,
@@ -35,6 +37,17 @@ func newTOTPTestDB(t *testing.T) *db.Queries {
 			expires_at DATETIME NOT NULL,
 			created_at DATETIME NOT NULL DEFAULT (datetime('now')),
 			FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+		);
+		CREATE TABLE IF NOT EXISTS share_links (
+			id            INTEGER PRIMARY KEY AUTOINCREMENT,
+			token_hash    TEXT    NOT NULL UNIQUE,
+			created_by    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+			resource_type TEXT    NOT NULL CHECK(resource_type IN ('file', 'folder')),
+			resource_path TEXT    NOT NULL,
+			device_serial TEXT    NOT NULL DEFAULT '',
+			expires_at    DATETIME,
+			view_count    INTEGER NOT NULL DEFAULT 0,
+			created_at    DATETIME NOT NULL DEFAULT (datetime('now'))
 		);
 	`
 

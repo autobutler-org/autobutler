@@ -15,6 +15,10 @@ func Accepted() *Response {
 	return NewResponse().WithStatusCode(http.StatusAccepted)
 }
 
+func Created(data any) *Response {
+	return NewResponse().WithStatusCode(http.StatusCreated).WithData(data)
+}
+
 func Ok() *Response {
 	return NewResponse().WithStatusCode(http.StatusOK)
 }

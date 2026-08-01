@@ -438,6 +438,63 @@ definitions:
       autoUpdate:
         type: boolean
     type: object
+  v0_share.createShareRequest:
+    properties:
+      deviceSerial:
+        description: DeviceSerial identifies the storage device (empty for the default
+          device).
+        type: string
+      expiresInHours:
+        description: ExpiresInHours is the TTL in hours. 0 or negative means no expiry.
+        type: integer
+      resourcePath:
+        description: ResourcePath is the file/folder path relative to the device's
+          Cirrus root.
+        type: string
+      resourceType:
+        description: ResourceType is "file" or "folder".
+        type: string
+    required:
+    - resourcePath
+    - resourceType
+    type: object
+  v0_share.createShareResponse:
+    properties:
+      expiresAt:
+        type: string
+      token:
+        type: string
+    type: object
+  v0_share.publicShareMeta:
+    properties:
+      deviceSerial:
+        type: string
+      expiresAt:
+        type: string
+      resourcePath:
+        type: string
+      resourceType:
+        type: string
+      viewCount:
+        type: integer
+    type: object
+  v0_share.shareLinkSummary:
+    properties:
+      createdAt:
+        type: string
+      deviceSerial:
+        type: string
+      expiresAt:
+        type: string
+      resourcePath:
+        type: string
+      resourceType:
+        type: string
+      token:
+        type: string
+      viewCount:
+        type: integer
+    type: object
   v0_version.SbomDependencyJSON:
     properties:
       path:
@@ -2075,6 +2132,56 @@ paths:
       summary: Save the rotation for a photo
       tags:
       - photos
+  /public/share/{token}:
+    get:
+      description: Returns metadata for a public share link (no auth required).
+      parameters:
+      - description: Raw share token
+        in: path
+        name: token
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v0_share.publicShareMeta'
+        "404":
+          description: Share not found or expired
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "429":
+          description: Rate limit exceeded
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Get share link metadata
+      tags:
+      - share
+  /public/share/{token}/download:
+    get:
+      description: Stream the file (or zip of folder) for a public share link.
+      parameters:
+      - description: Raw share token
+        in: path
+        name: token
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "404":
+          description: Share not found, expired, or resource missing
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "429":
+          description: Rate limit exceeded
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Download shared content
+      tags:
+      - share
   /sbom:
     get:
       description: Returns the Go version and all embedded dependency information
@@ -2139,6 +2246,87 @@ paths:
       summary: Update settings
       tags:
       - settings
+  /share:
+    get:
+      description: List all active share links created by the authenticated user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v0_share.shareLinkSummary'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: List share links
+      tags:
+      - share
+    post:
+      consumes:
+      - application/json
+      description: Generate an expiring public share link for a file or folder.
+      parameters:
+      - description: Share parameters
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v0_share.createShareRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/v0_share.createShareResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Create a share link
+      tags:
+      - share
+  /share/{tokenHash}:
+    delete:
+      description: Delete a share link by its token hash. Only the owner can revoke.
+      parameters:
+      - description: Token hash returned by GET /share
+        in: path
+        name: tokenHash
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Revoke a share link
+      tags:
+      - share
   /storage/devices/backup:
     post:
       description: Begin a backup to a device
