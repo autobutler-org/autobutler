@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	v0_admin "github.com/autobutler-org/autobutler/internal/server/api/v0/admin"
 	v0_albums "github.com/autobutler-org/autobutler/internal/server/api/v0/albums"
 	v0_auth "github.com/autobutler-org/autobutler/internal/server/api/v0/auth"
 	v0_books "github.com/autobutler-org/autobutler/internal/server/api/v0/books"
@@ -22,7 +23,6 @@ import (
 	v0_thumbnails "github.com/autobutler-org/autobutler/internal/server/api/v0/thumbnails"
 	v0_vault "github.com/autobutler-org/autobutler/internal/server/api/v0/vault"
 	v0_version "github.com/autobutler-org/autobutler/internal/server/api/v0/version"
-	v0_admin "github.com/autobutler-org/autobutler/internal/server/api/v0/admin"
 	v0_webdav "github.com/autobutler-org/autobutler/internal/server/api/v0/webdav"
 	v1_vfs "github.com/autobutler-org/autobutler/internal/server/api/v1/vfs"
 	"github.com/autobutler-org/autobutler/internal/server/middleware"
