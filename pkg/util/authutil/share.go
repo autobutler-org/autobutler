@@ -3,7 +3,6 @@ package authutil
 import (
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"fmt"
@@ -79,8 +78,4 @@ func generateToken() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
-// hashToken returns the SHA-256 hex digest of a raw token.
-func hashToken(raw string) string {
-	sum := sha256.Sum256([]byte(raw))
-	return hex.EncodeToString(sum[:])
-}
+// hashToken lives in service.go — shared by session, challenge, and share tokens.
