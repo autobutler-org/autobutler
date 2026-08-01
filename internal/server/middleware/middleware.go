@@ -246,3 +246,26 @@ func Use(router *gin.Engine, deps deputil.Dependencies) {
 	router.Use(rateLimit())
 	router.Use(requireAuth(deps))
 }
+
+// RequireAdmin is a middleware that rejects requests from non-admin users with
+// 403 Forbidden. It must be applied after requireAuth (which sets "username").
+func RequireAdmin(deps deputil.Dependencies) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		username, ok := ctxutil.Get[string](c, "username")
+		if !ok || username == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+			return
+		}
+		db := deps.Database()
+		if db == nil {
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "service unavailable"})
+			return
+		}
+		isAdmin, err := authutil.IsAdmin(c.Request.Context(), db.Queries, username)
+		if err != nil || !isAdmin {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "admin access required"})
+			return
+		}
+		c.Next()
+	}
+}
