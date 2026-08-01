@@ -1107,7 +1107,8 @@ paths:
       - books
   /cirrus:
     delete:
-      description: Enqueue deletion of files under the specified root directory
+      description: Soft-delete files via rename to trash, returning immediately. DB
+        cleanup and events are dispatched in the background.
       parameters:
       - description: Root directory
         in: query
@@ -1129,7 +1130,7 @@ paths:
       - application/json
       responses:
         "202":
-          description: Ok
+          description: Accepted
           schema:
             $ref: '#/definitions/serverutil.Response'
         "400":
