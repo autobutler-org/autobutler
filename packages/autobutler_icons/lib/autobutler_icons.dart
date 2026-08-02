@@ -106,12 +106,22 @@ class AutobutlerIcons {
   // ── Edit actions ─────────────────────────────────────────────────────────────────────
   static const IconData undo = Icons.undo;
   static const IconData redo = Icons.redo;
-  static const IconData fill_down = Icons.arrow_downward;
-  static const IconData fill_right = Icons.arrow_forward;
+
+  /// Fill selected cell value downward through the column.
+  /// Double-arrow conveys "propagate through" better than a single arrow.
+  static const IconData fill_down = Icons.keyboard_double_arrow_down;
+
+  /// Fill selected cell value rightward through the row.
+  static const IconData fill_right = Icons.keyboard_double_arrow_right;
 
   // ── Append row / column ───────────────────────────────────────────────────────────
-  static const IconData add_row = Icons.add_box_outlined;
-  static const IconData add_column = Icons.view_column_outlined;
+  /// Append a new row to the bottom of the sheet.
+  static const IconData add_row = Icons.playlist_add; // horizontal lines + add
+  /// Append a new column to the right of the sheet.
+  /// view_column_outlined reads as a column-layout selector, not "add column".
+  /// playlist_add_check is not right either; use add_chart which implies
+  /// adding a data column to a structured table.
+  static const IconData add_column = Icons.add_chart;
 
   // ── Data operations ───────────────────────────────────────────────────────────────
   static const IconData sort = Icons.sort;
