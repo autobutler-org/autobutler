@@ -34,11 +34,9 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
     _controller = PdfViewerController();
   }
 
-  Uri get _downloadUri => Uri.parse(
-    CirrusService.constructMediaUrl(
-      widget.filePath,
-      serial: widget.deviceSerial,
-    ),
+  Uri get _downloadUri => CirrusService.constructMediaUrl(
+    widget.filePath,
+    serial: widget.deviceSerial,
   );
 
   @override
@@ -122,12 +120,16 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
           controller: _controller,
           params: PdfViewerParams(
             pageAnchor: PdfPageAnchor.top,
-            onDocumentLoadFinished: (doc) {
-              if (mounted) {
+            onDocumentLoadFinished: (documentRef, loadSucceeded) {
+              if (!mounted) return;
+              if (loadSucceeded) {
+                final doc = documentRef.resolveListenable().document;
                 setState(() {
-                  _totalPages = doc.pages.length;
+                  _totalPages = doc?.pages.length ?? 0;
                   _loading = false;
                 });
+              } else {
+                setState(() => _loading = false);
               }
             },
             errorBannerBuilder: (context, error, stackTrace, documentRef) {
