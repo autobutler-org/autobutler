@@ -12,17 +12,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+
 const sessionCookieName = "session"
 const sessionCookieMaxAge = int(30 * 24 * time.Hour / time.Second)
 
 func setSessionCookie(c *gin.Context, token string) {
 	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie(sessionCookieName, token, sessionCookieMaxAge, "/", "", false, true)
+	// Set Secure=true when the server is running TLS so the browser only sends
+	// the cookie over encrypted connections. In --insecure / HTTP-only dev mode
+	// ServingTLS() returns false so the cookie is still usable.
+	secure := serverutil.ServingTLS()
+	c.SetCookie(sessionCookieName, token, sessionCookieMaxAge, "/", "", secure, true)
 }
 
 func clearSessionCookie(c *gin.Context) {
 	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie(sessionCookieName, "", -1, "/", "", false, true)
+	secure := serverutil.ServingTLS()
+	c.SetCookie(sessionCookieName, "", -1, "/", "", secure, true)
 }
 
 func getQueries(c *gin.Context) (*deputil.Dependencies, bool) {

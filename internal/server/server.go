@@ -62,8 +62,30 @@ func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 	initExternalVault(deps)
 	go vaultDeviceMonitor(deps)
 	go usbDeviceMonitor(deps)
+	go sessionPurgeWorker(deps)
 
 	return syncWorker, nil
+}
+
+// sessionPurgeWorker runs DeleteExpiredSessions once at startup and then
+// every 24 hours to prevent the sessions table from growing indefinitely.
+// GetSession already filters on expires_at, so this is not a security fix —
+// it is a storage hygiene measure.
+func sessionPurgeWorker(deps deputil.Dependencies) {
+	if deps.Database() == nil {
+		return
+	}
+	purge := func() {
+		if err := deps.Database().Queries.DeleteExpiredSessions(context.Background()); err != nil {
+			log.Printf("[auth] session purge: %v", err)
+		}
+	}
+	purge() // run immediately at startup
+	ticker := time.NewTicker(24 * time.Hour)
+	defer ticker.Stop()
+	for range ticker.C {
+		purge()
+	}
 }
 
 func initExternalVault(deps deputil.Dependencies) {

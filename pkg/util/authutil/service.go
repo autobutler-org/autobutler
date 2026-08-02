@@ -124,8 +124,9 @@ func Login(ctx context.Context, queries *db.Queries, params LoginParams) (*Login
 }
 
 // ValidateSession checks a session token and returns the username if valid.
+// The token is hashed before the DB lookup — only the hash is stored at rest.
 func ValidateSession(ctx context.Context, queries *db.Queries, token string) (string, error) {
-	session, err := queries.GetSession(ctx, token)
+	session, err := queries.GetSession(ctx, sessionID(token))
 	if err != nil {
 		return "", fmt.Errorf("invalid or expired session")
 	}
@@ -146,9 +147,9 @@ func ValidateBasicAuth(ctx context.Context, queries *db.Queries, username, passw
 	return user.Username, nil
 }
 
-// Logout deletes a session token.
+// Logout deletes a session by its hash.
 func Logout(ctx context.Context, queries *db.Queries, token string) error {
-	return queries.DeleteSession(ctx, token)
+	return queries.DeleteSession(ctx, sessionID(token))
 }
 
 // Recover resets a user's password using their recovery phrase.
@@ -207,8 +208,12 @@ func newSession(ctx context.Context, queries *db.Queries, userID int64) (string,
 		return "", err
 	}
 
+	// Store the SHA-256 hash of the token, not the raw token. A leaked or
+	// exfiltrated database file therefore does not yield usable session tokens.
+	// The raw token is returned to the caller (and placed in the cookie/header)
+	// but never persisted.
 	_, err = queries.CreateSession(ctx, db.CreateSessionParams{
-		Token:     token,
+		Token:     sessionID(token),
 		UserID:    userID,
 		ExpiresAt: time.Now().Add(sessionDuration),
 	})
@@ -235,8 +240,9 @@ func sessionID(rawToken string) string {
 	return hex.EncodeToString(h[:])
 }
 
-// ListActiveSessions returns all non-expired sessions for the given user,
-// mapped to SessionInfo (token replaced by its SHA-256 hash as ID).
+// ListActiveSessions returns all non-expired sessions for the given user.
+// The stored Token column is already a hash, so it is used directly as the
+// opaque session ID returned to callers.
 func ListActiveSessions(ctx context.Context, queries *db.Queries, userID int64) ([]SessionInfo, error) {
 	rows, err := queries.ListActiveSessionsForUser(ctx, userID)
 	if err != nil {
@@ -245,7 +251,7 @@ func ListActiveSessions(ctx context.Context, queries *db.Queries, userID int64) 
 	out := make([]SessionInfo, 0, len(rows))
 	for _, s := range rows {
 		out = append(out, SessionInfo{
-			ID:        sessionID(s.Token),
+			ID:        s.Token, // already sha256(raw token)
 			CreatedAt: s.CreatedAt,
 			ExpiresAt: s.ExpiresAt,
 		})
@@ -253,16 +259,16 @@ func ListActiveSessions(ctx context.Context, queries *db.Queries, userID int64) 
 	return out, nil
 }
 
-// RevokeSession deletes the session whose sha256(token) matches the given id,
-// scoped to the given user. Returns true if a session was deleted, false if
-// no matching session was found.
+// RevokeSession deletes the session with the given id (a sha256 hash of the
+// raw token, as returned by ListActiveSessions), scoped to the given user.
+// Returns true if a session was deleted, false if no matching session was found.
 func RevokeSession(ctx context.Context, queries *db.Queries, userID int64, id string) (bool, error) {
 	rows, err := queries.ListActiveSessionsForUser(ctx, userID)
 	if err != nil {
 		return false, fmt.Errorf("failed to list sessions: %w", err)
 	}
 	for _, s := range rows {
-		if sessionID(s.Token) == id {
+		if s.Token == id { // stored token is already the hash
 			if err := queries.DeleteSession(ctx, s.Token); err != nil {
 				return false, fmt.Errorf("failed to delete session: %w", err)
 			}
