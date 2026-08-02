@@ -106,6 +106,18 @@ var authExemptPaths = map[string]bool{
 	"/api/v0/auth/status":  true,
 }
 
+// queryTokenAllowedPaths is the set of API paths where a ?token= query
+// parameter is a legitimate authentication method. The WebSocket upgrade
+// endpoint is the canonical case — browsers cannot set the Authorization
+// header on a WebSocket handshake, so the token must travel in the URL.
+//
+// All other endpoints must use the Authorization header or the session cookie.
+// Accepting ?token= everywhere leaks session tokens into access logs, proxy
+// logs, and browser history.
+var queryTokenAllowedPaths = map[string]bool{
+	"/api/v0/events": true, // WebSocket — browser cannot set headers on upgrade
+}
+
 func inject(deps deputil.Dependencies) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c = ctxutil.With(c, "deps", deps)
