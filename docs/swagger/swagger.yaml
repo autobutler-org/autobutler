@@ -1107,7 +1107,11 @@ paths:
       - books
   /cirrus:
     delete:
-      description: Enqueue deletion of files under the specified root directory
+      description: |-
+        Soft-delete (trash) files under the specified root directory.
+        Files are moved to .trash via os.Rename — a pure metadata op —
+        so the response returns immediately. DB cleanup and event
+        publishing happen in a background goroutine.
       parameters:
       - description: Root directory
         in: query
@@ -1129,7 +1133,7 @@ paths:
       - application/json
       responses:
         "202":
-          description: Ok
+          description: Accepted
           schema:
             $ref: '#/definitions/serverutil.Response'
         "400":

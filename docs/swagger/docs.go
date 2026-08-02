@@ -1012,7 +1012,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Enqueue deletion of files under the specified root directory",
+                "description": "Soft-delete (trash) files under the specified root directory.\nFiles are moved to .trash via os.Rename — a pure metadata op —\nso the response returns immediately. DB cleanup and event\npublishing happen in a background goroutine.",
                 "produces": [
                     "application/json"
                 ],
@@ -1047,7 +1047,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "202": {
-                        "description": "Ok",
+                        "description": "Accepted",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
