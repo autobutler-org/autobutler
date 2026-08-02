@@ -1650,7 +1650,14 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
             _CodeBlock(text: 'smb://$hostname.local'),
             const SizedBox(height: 8),
             FilledButton.icon(
-              onPressed: () => launchUrl(Uri.parse('smb://$hostname.local')),
+              // LaunchMode.externalApplication triggers window.open(url, '_blank')
+              // in the web context, which passes the smb:// scheme to the OS
+              // and opens Finder. Without this mode the web url_launcher plugin
+              // defaults to inAppWebView and silently fails for custom schemes.
+              onPressed: () => launchUrl(
+                Uri.parse('smb://$hostname.local'),
+                mode: LaunchMode.externalApplication,
+              ),
               icon: const Icon(AutobutlerIcons.folder_open_outlined, size: 16),
               label: const Text('Open in Finder'),
             ),
@@ -1680,7 +1687,10 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
             _CodeBlock(text: 'smb://$hostname.local'),
             const SizedBox(height: 8),
             FilledButton.icon(
-              onPressed: () => launchUrl(Uri.parse('smb://$hostname.local')),
+              onPressed: () => launchUrl(
+                Uri.parse('smb://$hostname.local'),
+                mode: LaunchMode.externalApplication,
+              ),
               icon: const Icon(AutobutlerIcons.folder_open_outlined, size: 16),
               label: const Text('Open in Files'),
             ),
