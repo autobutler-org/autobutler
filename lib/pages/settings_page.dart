@@ -1650,7 +1650,10 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
             _CodeBlock(text: 'smb://$hostname.local'),
             const SizedBox(height: 8),
             FilledButton.icon(
-              onPressed: () => launchUrl(Uri.parse('smb://$hostname.local')),
+              onPressed: () => _openSmbMount(
+                'smb://$hostname.local',
+                fallbackLabel: 'smb://$hostname.local',
+              ),
               icon: const Icon(AutobutlerIcons.folder_open_outlined, size: 16),
               label: const Text('Open in Finder'),
             ),
@@ -1665,9 +1668,9 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
             _CodeBlock(text: '\\\\$hostname.local'),
             const SizedBox(height: 8),
             FilledButton.icon(
-              onPressed: () => launchUrl(
-                Uri.parse('file://$hostname.local/'),
-                mode: LaunchMode.externalApplication,
+              onPressed: () => _openSmbMount(
+                'file://$hostname.local/',
+                fallbackLabel: '\\\\$hostname.local',
               ),
               icon: const Icon(AutobutlerIcons.folder_open_outlined, size: 16),
               label: const Text('Open in File Explorer'),
@@ -1680,7 +1683,10 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
             _CodeBlock(text: 'smb://$hostname.local'),
             const SizedBox(height: 8),
             FilledButton.icon(
-              onPressed: () => launchUrl(Uri.parse('smb://$hostname.local')),
+              onPressed: () => _openSmbMount(
+                'smb://$hostname.local',
+                fallbackLabel: 'smb://$hostname.local',
+              ),
               icon: const Icon(AutobutlerIcons.folder_open_outlined, size: 16),
               label: const Text('Open in Files'),
             ),
@@ -1695,6 +1701,26 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
     }
 
     return widgets;
+  }
+
+  /// Launches [url] as an external application. Shows a snackbar with a
+  /// manual fallback path if the OS cannot handle the URL scheme.
+  Future<void> _openSmbMount(
+    String url, {
+    required String fallbackLabel,
+  }) async {
+    final uri = Uri.parse(url);
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Could not open automatically. Enter this path manually: $fallbackLabel',
+          ),
+          duration: const Duration(seconds: 8),
+        ),
+      );
+    }
   }
 }
 
