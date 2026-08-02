@@ -237,6 +237,11 @@ func (v *DBVFS) Delete(ctx context.Context, p string, opts DeleteOptions) error 
 	return nil
 }
 
+// Trash falls back to Delete for DBVFS, which has no trash concept.
+func (v *DBVFS) Trash(ctx context.Context, path string, opts TrashOptions) error {
+	return v.Delete(ctx, path, DeleteOptions{Recursive: opts.Recursive})
+}
+
 // MkdirAll ensures that the directory path and all its ancestors exist.
 func (v *DBVFS) MkdirAll(ctx context.Context, p string) error {
 	p = dbCleanPath(p)

@@ -178,6 +178,14 @@ func (v *StorageServiceVFS) Delete(_ context.Context, path string, _ DeleteOptio
 	return err
 }
 
+// Trash moves path to the .trash folder via os.Rename (a pure metadata op).
+func (v *StorageServiceVFS) Trash(_ context.Context, path string, _ TrashOptions) error {
+	_, err := v.svc.TrashFiles(storageutil.TrashFilesParams{
+		FilePaths: []string{path},
+	})
+	return err
+}
+
 // MkdirAll creates a directory (and parents) in the vault.
 func (v *StorageServiceVFS) MkdirAll(_ context.Context, path string) error {
 	dir, name := filepath.Split(strings.TrimRight(path, "/"))

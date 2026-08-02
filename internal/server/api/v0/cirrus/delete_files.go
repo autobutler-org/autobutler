@@ -18,13 +18,16 @@ import (
 
 // deleteFiles godoc
 // @Summary Delete files
-// @Description Enqueue deletion of files under the specified root directory
+// @Description Soft-delete (trash) files under the specified root directory.
+// @Description Files are moved to .trash via os.Rename — a pure metadata op —
+// @Description so the response returns immediately. DB cleanup and event
+// @Description publishing happen in a background goroutine.
 // @Tags cirrus
 // @Produce json
 // @Param rootDir query string false "Root directory"
 // @Param filePaths query []string true "Array of file paths to delete"
 // @Param serial query string false "Device serial number to filter by"
-// @Success 202 {object} serverutil.Response "Ok"
+// @Success 202 {object} serverutil.Response "Accepted"
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /cirrus [delete]
@@ -41,13 +44,22 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 	if !ok {
 		return serverutil.InternalServerError(nil)
 	}
-	// Use VFS.Delete when no serial and VFS is available (routes through StorageServiceVFS).
+
+	// ── Phase 1: fast rename to trash ────────────────────────────────────────
+	//
+	// Use VFS.Trash when no serial and a VFS is registered (routes through
+	// StorageServiceVFS which in turn calls TrashFiles). Fall back to the
+	// StorageService.TrashFiles path for direct-serial requests.
+	//
+	// os.Rename is a pure metadata operation — microseconds on any filesystem,
+	// including the Pi's SD card. This is what makes the response near-instant
+	// for large batches.
 	usedVFS := false
 	if serial == "" {
 		if reg := deps.VFSRegistry(); reg != nil {
 			if fsys, ok := reg.Get("files"); ok {
 				for _, p := range filePaths {
-					if err := fsys.Delete(c.Request.Context(), p, vfs.DeleteOptions{Recursive: true}); err != nil && err != vfs.ErrNotFound {
+					if err := fsys.Trash(c.Request.Context(), p, vfs.TrashOptions{Recursive: true}); err != nil && err != vfs.ErrNotFound {
 						return serverutil.InternalServerError(err)
 					}
 				}
@@ -56,7 +68,7 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 		}
 	}
 	if !usedVFS {
-		if _, err := deps.StorageService().DeleteFiles(storageutil.DeleteFilesParams{
+		if _, err := deps.StorageService().TrashFiles(storageutil.TrashFilesParams{
 			RootDir:      rootDir,
 			FilePaths:    filePaths,
 			DeviceSerial: serial,
@@ -65,29 +77,41 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 		}
 	}
 
-	for _, p := range filePaths {
-		deps.EventBus().Publish(eventbus.Event{
-			Kind:         eventbus.EventDelete,
-			Path:         p,
-			DeviceSerial: serial,
-		})
-		// Clean up all DB records for the deleted photo regardless of whether a
-		// serial is present (empty serial is a valid key in both tables).
-		if database := deps.Database(); database != nil {
+	// ── Phase 2: background cleanup ───────────────────────────────────────────
+	//
+	// DB writes and event publishing are decoupled from the HTTP response.
+	// The files are already invisible to directory listings at this point
+	// (they live in .trash), so the client can update its UI immediately on 202.
+	//
+	// Capture all values by copy — the gin.Context must not be accessed after
+	// the handler returns.
+	database := deps.Database()
+	bus := deps.EventBus()
+	go func(paths []string, deviceSerial string, database *db.DatabaseSqlc, bus *eventbus.Bus) {
+		for _, p := range paths {
+			bus.Publish(eventbus.Event{
+				Kind:         eventbus.EventDelete,
+				Path:         p,
+				DeviceSerial: deviceSerial,
+			})
+			if database == nil {
+				continue
+			}
 			if err := database.Queries.DeletePhotoFromAllAlbums(context.Background(), db.DeletePhotoFromAllAlbumsParams{
-				DeviceSerial: serial,
+				DeviceSerial: deviceSerial,
 				RelPath:      p,
 			}); err != nil {
-				log.Printf("autobutler: delete cleanup: remove album items for %q (serial=%q): %v", p, serial, err)
+				log.Printf("autobutler: delete cleanup: remove album items for %q (serial=%q): %v", p, deviceSerial, err)
 			}
 			if err := database.Queries.DeletePhotoRotation(context.Background(), db.DeletePhotoRotationParams{
-				DeviceSerial: serial,
+				DeviceSerial: deviceSerial,
 				RelPath:      p,
 			}); err != nil {
-				log.Printf("autobutler: delete cleanup: remove rotation for %q (serial=%q): %v", p, serial, err)
+				log.Printf("autobutler: delete cleanup: remove rotation for %q (serial=%q): %v", p, deviceSerial, err)
 			}
 		}
-	}
+	}(filePaths, serial, database, bus)
+
 	return serverutil.Ok()
 }
 

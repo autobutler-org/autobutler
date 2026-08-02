@@ -14,6 +14,10 @@ type VFS interface {
 	Open(ctx context.Context, path string) (io.ReadCloser, error)
 	Write(ctx context.Context, path string, r io.Reader, opts WriteOptions) error
 	Delete(ctx context.Context, path string, opts DeleteOptions) error
+	// Trash moves path to a recoverable trash location if the implementation
+	// supports it. Implementations that do not have a trash concept should
+	// fall back to Delete.
+	Trash(ctx context.Context, path string, opts TrashOptions) error
 	MkdirAll(ctx context.Context, path string) error
 	Move(ctx context.Context, src, dst string) error
 	Watch(ctx context.Context, path string) (<-chan WatchEvent, error)
@@ -52,6 +56,10 @@ type WriteOptions struct {
 }
 
 type DeleteOptions struct {
+	Recursive bool
+}
+
+type TrashOptions struct {
 	Recursive bool
 }
 

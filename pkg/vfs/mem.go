@@ -320,6 +320,11 @@ func (m *MemVFS) Delete(ctx context.Context, path string, opts DeleteOptions) er
 	return nil
 }
 
+// Trash falls back to Delete for MemVFS, which has no trash concept.
+func (m *MemVFS) Trash(ctx context.Context, path string, opts TrashOptions) error {
+	return m.Delete(ctx, path, DeleteOptions{Recursive: opts.Recursive})
+}
+
 // MkdirAll creates the directory at the given path, including all parents.
 func (m *MemVFS) MkdirAll(ctx context.Context, path string) error {
 	m.mu.Lock()

@@ -291,6 +291,11 @@ func (v *LocalVFS) Delete(ctx context.Context, path string, opts DeleteOptions) 
 	return nil
 }
 
+// Trash falls back to Delete for LocalVFS, which has no trash concept.
+func (v *LocalVFS) Trash(ctx context.Context, path string, opts TrashOptions) error {
+	return v.Delete(ctx, path, DeleteOptions{Recursive: opts.Recursive})
+}
+
 // MkdirAll creates the directory at the given path, including all parents.
 func (v *LocalVFS) MkdirAll(ctx context.Context, path string) error {
 	absPath, err := v.abs(path)
