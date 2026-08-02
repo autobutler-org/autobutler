@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
 const sessionCookieName = "session"
 const sessionCookieMaxAge = int(30 * 24 * time.Hour / time.Second)
 
