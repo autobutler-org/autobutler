@@ -56,8 +56,8 @@ func Setup(ctx context.Context, queries *db.Queries, params SetupParams) (*Setup
 	if params.Username == "" {
 		return nil, fmt.Errorf("username is required")
 	}
-	if len(params.Password) < 8 {
-		return nil, fmt.Errorf("password must be at least 8 characters")
+	if len(params.Password) < 12 {
+		return nil, fmt.Errorf("password must be at least 12 characters")
 	}
 
 	complete, err := IsSetupComplete(ctx, queries)
@@ -153,8 +153,8 @@ func Logout(ctx context.Context, queries *db.Queries, token string) error {
 
 // Recover resets a user's password using their recovery phrase.
 func Recover(ctx context.Context, queries *db.Queries, params RecoverParams) (*LoginResult, error) {
-	if len(params.NewPassword) < 8 {
-		return nil, fmt.Errorf("password must be at least 8 characters")
+	if len(params.NewPassword) < 12 {
+		return nil, fmt.Errorf("password must be at least 12 characters")
 	}
 
 	// We need to check the recovery phrase against all users (there's only one in single-user mode)

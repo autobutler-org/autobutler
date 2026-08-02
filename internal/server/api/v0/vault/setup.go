@@ -37,8 +37,8 @@ var setupVaultRoute = serverutil.ApiRoute(
 			return serverutil.BadRequest(fmt.Errorf("invalid request: %w", err))
 		}
 
-		if len(req.MasterPassword) < 8 {
-			return serverutil.BadRequest(fmt.Errorf("master password must be at least 8 characters"))
+		if len(req.MasterPassword) < 12 {
+			return serverutil.BadRequest(fmt.Errorf("master password must be at least 12 characters"))
 		}
 
 		salt, err := vaultcrypto.GenerateSalt()

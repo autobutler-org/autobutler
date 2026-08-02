@@ -140,7 +140,7 @@ func TestSetup_Success(t *testing.T) {
 	queries := newTestDB(t)
 	result, err := authutil.Setup(context.Background(), queries, authutil.SetupParams{
 		Username: "admin",
-		Password: "supersecret",
+		Password: "supersecret123",
 	})
 	if err != nil {
 		t.Fatalf("Setup failed: %v", err)
@@ -168,7 +168,7 @@ func TestSetup_CannotRunTwice(t *testing.T) {
 	queries := newTestDB(t)
 	_, err := authutil.Setup(context.Background(), queries, authutil.SetupParams{
 		Username: "admin",
-		Password: "supersecret",
+		Password: "supersecret123",
 	})
 	if err != nil {
 		t.Fatalf("First setup failed: %v", err)
@@ -176,7 +176,7 @@ func TestSetup_CannotRunTwice(t *testing.T) {
 
 	_, err = authutil.Setup(context.Background(), queries, authutil.SetupParams{
 		Username: "admin2",
-		Password: "anotherpass",
+		Password: "anotherpass456",
 	})
 	if err == nil {
 		t.Error("Expected error on second setup attempt")
@@ -190,7 +190,7 @@ func TestSetup_ShortPassword(t *testing.T) {
 		Password: "short",
 	})
 	if err == nil {
-		t.Error("Expected error for password shorter than 8 chars")
+		t.Error("Expected error for password shorter than 12 chars")
 	}
 }
 
@@ -198,7 +198,7 @@ func TestSetup_EmptyUsername(t *testing.T) {
 	queries := newTestDB(t)
 	_, err := authutil.Setup(context.Background(), queries, authutil.SetupParams{
 		Username: "",
-		Password: "validpassword",
+		Password: "validpassword1",
 	})
 	if err == nil {
 		t.Error("Expected error for empty username")
@@ -209,7 +209,7 @@ func TestLogin_Success(t *testing.T) {
 	queries := newTestDB(t)
 	_, err := authutil.Setup(context.Background(), queries, authutil.SetupParams{
 		Username: "admin",
-		Password: "mypassword",
+		Password: "mypassword123",
 	})
 	if err != nil {
 		t.Fatalf("Setup failed: %v", err)
@@ -217,7 +217,7 @@ func TestLogin_Success(t *testing.T) {
 
 	result, err := authutil.Login(context.Background(), queries, authutil.LoginParams{
 		Username: "admin",
-		Password: "mypassword",
+		Password: "mypassword123",
 	})
 	if err != nil {
 		t.Fatalf("Login failed: %v", err)
@@ -231,7 +231,7 @@ func TestLogin_WrongPassword(t *testing.T) {
 	queries := newTestDB(t)
 	_, _ = authutil.Setup(context.Background(), queries, authutil.SetupParams{
 		Username: "admin",
-		Password: "mypassword",
+		Password: "mypassword123",
 	})
 
 	_, err := authutil.Login(context.Background(), queries, authutil.LoginParams{
@@ -247,12 +247,12 @@ func TestLogin_WrongUsername(t *testing.T) {
 	queries := newTestDB(t)
 	_, _ = authutil.Setup(context.Background(), queries, authutil.SetupParams{
 		Username: "admin",
-		Password: "mypassword",
+		Password: "mypassword123",
 	})
 
 	_, err := authutil.Login(context.Background(), queries, authutil.LoginParams{
 		Username: "notadmin",
-		Password: "mypassword",
+		Password: "mypassword123",
 	})
 	if err == nil {
 		t.Error("Expected error for wrong username")
@@ -267,7 +267,7 @@ func TestValidateSession_Valid(t *testing.T) {
 	queries := newTestDB(t)
 	setupResult, _ := authutil.Setup(context.Background(), queries, authutil.SetupParams{
 		Username: "admin",
-		Password: "mypassword",
+		Password: "mypassword123",
 	})
 
 	username, err := authutil.ValidateSession(context.Background(), queries, setupResult.SessionToken)
@@ -291,7 +291,7 @@ func TestLogout_InvalidatesSession(t *testing.T) {
 	queries := newTestDB(t)
 	setupResult, _ := authutil.Setup(context.Background(), queries, authutil.SetupParams{
 		Username: "admin",
-		Password: "mypassword",
+		Password: "mypassword123",
 	})
 
 	err := authutil.Logout(context.Background(), queries, setupResult.SessionToken)
@@ -352,7 +352,7 @@ func TestRecover_WrongPhrase(t *testing.T) {
 	queries := newTestDB(t)
 	_, _ = authutil.Setup(context.Background(), queries, authutil.SetupParams{
 		Username: "admin",
-		Password: "mypassword",
+		Password: "mypassword123",
 	})
 
 	_, err := authutil.Recover(context.Background(), queries, authutil.RecoverParams{
@@ -368,10 +368,10 @@ func TestValidateBasicAuth_Success(t *testing.T) {
 	queries := newTestDB(t)
 	_, _ = authutil.Setup(context.Background(), queries, authutil.SetupParams{
 		Username: "admin",
-		Password: "mypassword",
+		Password: "mypassword123",
 	})
 
-	username, err := authutil.ValidateBasicAuth(context.Background(), queries, "admin", "mypassword")
+	username, err := authutil.ValidateBasicAuth(context.Background(), queries, "admin", "mypassword123")
 	if err != nil {
 		t.Fatalf("ValidateBasicAuth failed: %v", err)
 	}
@@ -384,7 +384,7 @@ func TestValidateBasicAuth_WrongPassword(t *testing.T) {
 	queries := newTestDB(t)
 	_, _ = authutil.Setup(context.Background(), queries, authutil.SetupParams{
 		Username: "admin",
-		Password: "mypassword",
+		Password: "mypassword123",
 	})
 
 	_, err := authutil.ValidateBasicAuth(context.Background(), queries, "admin", "wrongpassword")
@@ -397,10 +397,10 @@ func TestValidateBasicAuth_WrongUsername(t *testing.T) {
 	queries := newTestDB(t)
 	_, _ = authutil.Setup(context.Background(), queries, authutil.SetupParams{
 		Username: "admin",
-		Password: "mypassword",
+		Password: "mypassword123",
 	})
 
-	_, err := authutil.ValidateBasicAuth(context.Background(), queries, "notadmin", "mypassword")
+	_, err := authutil.ValidateBasicAuth(context.Background(), queries, "notadmin", "mypassword123")
 	if err == nil {
 		t.Error("Expected error for wrong username")
 	}
@@ -410,7 +410,7 @@ func TestRecover_CaseInsensitive(t *testing.T) {
 	queries := newTestDB(t)
 	setupResult, _ := authutil.Setup(context.Background(), queries, authutil.SetupParams{
 		Username: "admin",
-		Password: "mypassword",
+		Password: "mypassword123",
 	})
 
 	// Recovery phrase should work regardless of case

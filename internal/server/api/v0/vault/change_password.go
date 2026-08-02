@@ -29,8 +29,8 @@ var changePasswordRoute = serverutil.ApiRoute(
 			return serverutil.BadRequest(fmt.Errorf("invalid request: %w", err))
 		}
 
-		if len(req.NewPassword) < 8 {
-			return serverutil.BadRequest(fmt.Errorf("new password must be at least 8 characters"))
+		if len(req.NewPassword) < 12 {
+			return serverutil.BadRequest(fmt.Errorf("new password must be at least 12 characters"))
 		}
 
 		ctx := c.Request.Context()

@@ -85,8 +85,8 @@ func startSnapshotBackup(c *gin.Context) *serverutil.Response {
 		if req.Username == "" || req.Password == "" {
 			return serverutil.BadRequest(fmt.Errorf("username and password required for vault backup"))
 		}
-		if len(req.RecoveryPassword) < 8 {
-			return serverutil.BadRequest(fmt.Errorf("recovery password must be at least 8 characters"))
+		if len(req.RecoveryPassword) < 12 {
+			return serverutil.BadRequest(fmt.Errorf("recovery password must be at least 12 characters"))
 		}
 
 		if _, err := authutil.ValidateBasicAuth(ctx, deps.Database().Queries, req.Username, req.Password); err != nil {
