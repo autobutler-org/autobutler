@@ -106,22 +106,35 @@ class AutobutlerIcons {
   // ── Edit actions ─────────────────────────────────────────────────────────────────────
   static const IconData undo = Icons.undo;
   static const IconData redo = Icons.redo;
-  static const IconData fill_down = Icons.arrow_downward;
-  static const IconData fill_right = Icons.arrow_forward;
+
+  /// Fill cells downward from the current cell.
+  static const IconData fill_down =
+      Icons.south; // clear directional arrow (not generic back)
+  /// Fill cells rightward from the current cell.
+  static const IconData fill_right = Icons.east; // clear directional arrow
 
   // ── Append row / column ───────────────────────────────────────────────────────────
-  static const IconData add_row = Icons.add_box_outlined;
-  static const IconData add_column = Icons.view_column_outlined;
+  /// Append a new row at the bottom of the sheet.
+  static const IconData add_row = Icons.playlist_add; // row list + plus
+  /// Append a new column at the right of the sheet.
+  static const IconData add_column = Icons.add_chart; // grid + plus
 
   // ── Data operations ───────────────────────────────────────────────────────────────
   static const IconData sort = Icons.sort;
-  static const IconData remove_duplicates = Icons.filter_list_off;
+
+  /// Remove duplicate rows — deselect/layers-clear is closest standard icon.
+  static const IconData remove_duplicates = Icons.deselect;
   static const IconData find_replace = Icons.find_replace;
-  static const IconData go_to_cell = Icons.my_location;
+
+  /// Navigate to a specific cell — input/submit arrow reads as 'go to'.
+  static const IconData go_to_cell = Icons.input;
 
   // ── Import / Export ────────────────────────────────────────────────────────────────
-  static const IconData export_csv = Icons.download;
-  static const IconData import_csv = Icons.upload;
+  /// Export data as a CSV file.
+  static const IconData export_csv = Icons.file_download;
+
+  /// Import data from a CSV file.
+  static const IconData import_csv = Icons.file_upload;
 
   // ── Navigation & chrome ──────────────────────────────────────────────────────────
   static const IconData arrow_back = Icons.arrow_back;
