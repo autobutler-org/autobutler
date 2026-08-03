@@ -3310,6 +3310,64 @@
                 }
             }
         },
+        "/videos/extract-frame": {
+            "post": {
+                "description": "Extracts a JPEG frame at the given timestamp and saves it alongside the source video.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "videos"
+                ],
+                "summary": "Extract a still frame from a video",
+                "parameters": [
+                    {
+                        "description": "Extract frame request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v0_videos.extractFrameRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v0_videos.extractFrameResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "501": {
+                        "description": "Not Implemented — ffmpeg not available",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/videos/metadata": {
             "get": {
                 "description": "Returns duration, resolution, codec, bitrate, framerate, rotation, and album membership for the specified video.",
@@ -4173,6 +4231,28 @@
                     "type": "integer"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "v0_videos.extractFrameRequest": {
+            "type": "object",
+            "properties": {
+                "relPath": {
+                    "type": "string"
+                },
+                "serial": {
+                    "type": "string"
+                },
+                "timestampMs": {
+                    "type": "integer"
+                }
+            }
+        },
+        "v0_videos.extractFrameResponse": {
+            "type": "object",
+            "properties": {
+                "relPath": {
                     "type": "string"
                 }
             }
