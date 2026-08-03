@@ -110,6 +110,16 @@ func trackDevice(deps deputil.Dependencies) gin.HandlerFunc {
 	}
 }
 
+// queryParamTokenPaths is the allowlist of paths where ?token= query-parameter
+// authentication is honoured. Browsers cannot set custom headers on SSE
+// (EventSource) connections, so the event-stream endpoint must accept ?token=.
+// All other endpoints use cookie or Authorization header only — accepting
+// ?token= everywhere would let session tokens leak into browser history, proxy
+// logs, and gin's access log.
+var queryParamTokenPaths = map[string]bool{
+	"/api/v0/events": true,
+}
+
 // requireAuth validates the request using a fallthrough chain of auth methods.
 // Each method is tried in order; if one fails, the next is attempted. Only if
 // ALL methods fail does the request get a 401.
@@ -117,7 +127,7 @@ func trackDevice(deps deputil.Dependencies) gin.HandlerFunc {
 // Precedence (highest to lowest):
 //  1. Bearer token (Authorization: Bearer <token>)
 //  2. Session cookie
-//  3. Query parameter (?token=)
+//  3. Query parameter (?token=) — only on paths in queryParamTokenPaths
 //  4. HTTP Basic Auth (Authorization: Basic <base64>)
 //
 // Exempt paths (setup, login, recover, status) are always allowed through.
@@ -181,8 +191,13 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 		if cookie, err := c.Cookie("session"); err == nil && cookie != "" {
 			tokens = append(tokens, cookie)
 		}
-		if q := c.Query("token"); q != "" {
-			tokens = append(tokens, q)
+		// Only honour ?token= on the explicit allowlist. SSE (EventSource) cannot
+		// set custom headers, so the event-stream path requires it; everywhere
+		// else the token belongs in the Authorization header or cookie only.
+		if queryParamTokenPaths[path] {
+			if q := c.Query("token"); q != "" {
+				tokens = append(tokens, q)
+			}
 		}
 
 		for _, t := range tokens {
