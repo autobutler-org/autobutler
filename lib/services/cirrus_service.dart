@@ -855,13 +855,15 @@ class CirrusService with AuthenticatedService {
     int? expiresInSeconds,
   }) async {
     final uri = _apiBaseUri.resolve('/api/v0/shares');
-    final body = jsonEncode({
+    final bodyMap = <String, dynamic>{
       'relPath': relPath,
       'serial': serial?.trim() ?? '',
-      if (password != null && password.isNotEmpty) 'password': password,
-      if (maxUses != null) 'maxUses': maxUses,
-      if (expiresInSeconds != null) 'expiresInSeconds': expiresInSeconds,
-    });
+    };
+    if (password != null && password.isNotEmpty) bodyMap['password'] = password;
+    if (maxUses != null) bodyMap['maxUses'] = maxUses;
+    if (expiresInSeconds != null)
+      bodyMap['expiresInSeconds'] = expiresInSeconds;
+    final body = jsonEncode(bodyMap);
     final response = await instance.authenticatedPost(
       uri,
       headers: {'Content-Type': 'application/json'},
