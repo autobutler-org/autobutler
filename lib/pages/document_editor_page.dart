@@ -150,6 +150,9 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   // Word/char count (updated on doc change)
   int _wordCount = 0;
 
+  // In-document find bar (#1046)
+  bool _showFindBar = false;
+
   late String _displayName;
 
   @override
@@ -502,30 +505,39 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
           router.go(widget.overlayTargetRoute!);
         }
       },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(_dirty ? '$_displayName •' : _displayName),
-          actions: _buildAppBarActions(context),
+      child: CallbackShortcuts(
+        bindings: {
+          // Ctrl+F / Cmd+F — toggle find bar (#1046)
+          const SingleActivator(LogicalKeyboardKey.keyF, control: true): () =>
+              setState(() => _showFindBar = !_showFindBar),
+          const SingleActivator(LogicalKeyboardKey.keyF, meta: true): () =>
+              setState(() => _showFindBar = !_showFindBar),
+          // Escape — close find bar when open
+          const SingleActivator(LogicalKeyboardKey.escape): () {
+            if (_showFindBar) setState(() => _showFindBar = false);
+          },
+        },
+        child: Focus(
+          autofocus: false,
+          child: Scaffold(
+            appBar: AppBar(
+              title: Text(_dirty ? '$_displayName •' : _displayName),
+              actions: _buildAppBarActions(context),
+            ),
+            body: _buildBody(context),
+          ),
         ),
-        body: _buildBody(context),
       ),
     );
   }
 
   List<Widget> _buildAppBarActions(BuildContext context) {
     return [
-      // In-document search (TODO: wire to find-in-doc, see #1046)
+      // In-document find bar (#1046)
       IconButton(
-        icon: const Icon(AutobutlerIcons.search_rounded),
-        tooltip: 'Search in document',
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('In-document search coming soon'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        },
+        icon: Icon(_showFindBar ? Icons.close : AutobutlerIcons.search_rounded),
+        tooltip: _showFindBar ? 'Close find bar' : 'Find in document (Ctrl+F)',
+        onPressed: () => setState(() => _showFindBar = !_showFindBar),
       ),
       // Settings shortcut
       IconButton(
@@ -680,6 +692,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     return Column(
       children: [
         if (!_isReadOnly) _buildToolbar(theme),
+        if (!_isReadOnly && _showFindBar) _buildFindBar(cs),
         Expanded(
           child: Center(
             child: ConstrainedBox(
@@ -694,6 +707,16 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildFindBar(ColorScheme cs) {
+    return Container(
+      color: cs.surfaceContainer,
+      child: QuillToolbarSearchDialog(
+        controller: _controller,
+        searchBarAlignment: Alignment.centerLeft,
+      ),
     );
   }
 
