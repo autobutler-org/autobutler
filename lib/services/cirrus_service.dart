@@ -861,8 +861,9 @@ class CirrusService with AuthenticatedService {
     };
     if (password != null && password.isNotEmpty) bodyMap['password'] = password;
     if (maxUses != null) bodyMap['maxUses'] = maxUses;
-    if (expiresInSeconds != null)
+    if (expiresInSeconds != null) {
       bodyMap['expiresInSeconds'] = expiresInSeconds;
+    }
     final body = jsonEncode(bodyMap);
     final response = await instance.authenticatedPost(
       uri,
