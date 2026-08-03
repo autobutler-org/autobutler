@@ -186,6 +186,60 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
     }
   }
 
+  Future<void> _showConvertDialog() async {
+    final params = widget.url.queryParameters;
+    final relPath = params['filePath'] ?? '';
+    final serial = params['serial'];
+    if (relPath.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cannot convert: file path unknown')),
+      );
+      return;
+    }
+
+    final presets = [
+      ('Compatible MP4 (720p)', 'compatible'),
+      ('Small MP4 (480p)', 'small'),
+      ('Web WebM (720p)', 'web'),
+    ];
+
+    final chosen = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Convert Video'),
+        children: [
+          for (final (label, preset) in presets)
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(ctx).pop(preset),
+              child: Text(label),
+            ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+    if (chosen == null || !mounted) return;
+
+    try {
+      final jobId = await CirrusService.transcodeVideo(
+        relPath,
+        serial: serial,
+        preset: chosen,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Conversion queued (job #$jobId)')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Convert failed: $e')));
+    }
+  }
+
   void _enterTrimMode() {
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) return;
@@ -331,10 +385,12 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
               onSelected: (action) {
                 if (action == 'saveFrame') _saveFrame();
                 if (action == 'trim') _enterTrimMode();
+                if (action == 'convert') _showConvertDialog();
               },
               itemBuilder: (_) => const [
                 PopupMenuItem(value: 'saveFrame', child: Text('Save Frame')),
                 PopupMenuItem(value: 'trim', child: Text('Trim Clip')),
+                PopupMenuItem(value: 'convert', child: Text('Convert…')),
               ],
             )
           else

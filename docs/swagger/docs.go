@@ -3379,6 +3379,76 @@ const docTemplate = `{
                 }
             }
         },
+        "/videos/jobs": {
+            "get": {
+                "description": "Returns the 50 most recent video processing jobs, newest first.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "videos"
+                ],
+                "summary": "List recent video jobs",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v0_videos.videoJobJSON"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/videos/jobs/{id}": {
+            "get": {
+                "description": "Returns current status and progress for a video processing job.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "videos"
+                ],
+                "summary": "Get a video job by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Job ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v0_videos.videoJobJSON"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/videos/metadata": {
             "get": {
                 "description": "Returns duration, resolution, codec, bitrate, framerate, rotation, and album membership for the specified video.",
@@ -3431,6 +3501,64 @@ const docTemplate = `{
                     },
                     "501": {
                         "description": "Not Implemented — ffprobe not available",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/videos/transcode": {
+            "post": {
+                "description": "Queues a background transcode job and returns the job ID. Poll GET /videos/jobs/:id for status.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "videos"
+                ],
+                "summary": "Queue a video transcode job",
+                "parameters": [
+                    {
+                        "description": "Transcode request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v0_videos.transcodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/v0_videos.transcodeJobResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "501": {
+                        "description": "Not Implemented — ffmpeg not available",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -4326,6 +4454,29 @@ const docTemplate = `{
                 }
             }
         },
+        "v0_videos.transcodeJobResponse": {
+            "type": "object",
+            "properties": {
+                "jobId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "v0_videos.transcodeRequest": {
+            "type": "object",
+            "properties": {
+                "preset": {
+                    "description": "\"compatible\" | \"small\" | \"web\" | raw preset name",
+                    "type": "string"
+                },
+                "relPath": {
+                    "type": "string"
+                },
+                "serial": {
+                    "type": "string"
+                }
+            }
+        },
         "v0_videos.trimVideoRequest": {
             "type": "object",
             "properties": {
@@ -4347,6 +4498,44 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "relPath": {
+                    "type": "string"
+                }
+            }
+        },
+        "v0_videos.videoJobJSON": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deviceSerial": {
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "inputRelPath": {
+                    "type": "string"
+                },
+                "jobType": {
+                    "type": "string"
+                },
+                "outputRelPath": {
+                    "type": "string"
+                },
+                "preset": {
+                    "type": "string"
+                },
+                "progress": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
                     "type": "string"
                 }
             }

@@ -12,7 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	docs "github.com/autobutler-org/quark/docs/swagger"
 	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/internal/server/middleware"
 	"github.com/autobutler-org/quark/pkg/backup"
@@ -27,6 +26,8 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 	"github.com/autobutler-org/quark/pkg/util/tlsutil"
 	"github.com/autobutler-org/quark/pkg/util/workerutil"
+	docs "github.com/autobutler-org/quark/docs/swagger"
+	v0_videos "github.com/autobutler-org/quark/internal/server/api/v0/videos"
 
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"
@@ -234,6 +235,13 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 	syncWorker, err := setupServices(deps)
 	if err != nil {
 		return fmt.Errorf("failed to setup services: %w", err)
+	}
+
+	// Start the video job worker (transcode queue).
+	videoWorkerCtx, videoWorkerCancel := context.WithCancel(context.Background())
+	defer videoWorkerCancel()
+	if filesDir, dirErr := storageutil.GetCirrusDir(); dirErr == nil {
+		go v0_videos.StartWorker(videoWorkerCtx, deps.Database(), filesDir)
 	}
 
 	// In TLS mode the server binds to HTTPS_PORT (default 443); in insecure
