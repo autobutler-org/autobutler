@@ -7,7 +7,9 @@ import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:data_table/data_sheet.dart';
 import 'package:data_table/data_table.dart';
 import 'package:flutter/material.dart' hide DataTable, DataRow, DataCell;
+import 'package:autobutler/widgets/editor/editor_sidebar_toolbar.dart';
 import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:http/http.dart' as http;
 
@@ -72,6 +74,10 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
   static const _autoSaveDelay = Duration(seconds: 2);
   Timer? _autoSaveTimer;
 
+  // Toolbar mode (#1327)
+  static const _prefKeyToolbarMode = 'spreadsheet_editor_toolbar_mode';
+  EditorToolbarMode _toolbarMode = EditorToolbarMode.top;
+
   String get _displayName {
     final name = widget.filePath.split('/').last;
     return name.endsWith('.absheet')
@@ -118,7 +124,28 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
       router.routeInformationProvider.addListener(_handleOverlayRouteChange);
     }
     _tabController = TabController(length: 1, vsync: this);
+    _loadToolbarMode();
     _loadFile();
+  }
+
+  Future<void> _loadToolbarMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _toolbarMode = (prefs.getString(_prefKeyToolbarMode) == 'sidebar')
+          ? EditorToolbarMode.sidebar
+          : EditorToolbarMode.top;
+    });
+  }
+
+  Future<void> _setToolbarMode(EditorToolbarMode mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _prefKeyToolbarMode,
+      mode == EditorToolbarMode.sidebar ? 'sidebar' : 'top',
+    );
+    if (!mounted) return;
+    setState(() => _toolbarMode = mode);
   }
 
   @override
@@ -327,6 +354,21 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
                 onPressed: _manualSave,
               ),
             const ThemeToggleButton(),
+            IconButton(
+              icon: Icon(
+                _toolbarMode == EditorToolbarMode.sidebar
+                    ? Icons.view_sidebar
+                    : Icons.view_stream,
+              ),
+              tooltip: _toolbarMode == EditorToolbarMode.sidebar
+                  ? 'Switch to top toolbar'
+                  : 'Switch to sidebar toolbar',
+              onPressed: () => _setToolbarMode(
+                _toolbarMode == EditorToolbarMode.sidebar
+                    ? EditorToolbarMode.top
+                    : EditorToolbarMode.sidebar,
+              ),
+            ),
           ],
           bottom: multiTab
               ? TabBar(
@@ -346,13 +388,38 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
   }
 
   Widget _buildSheetTab(_SheetTab tab) {
-    return Column(
-      children: [
-        DataSheetControlBar(controller: tab.controller),
-        Expanded(
-          child: DataSheet(controller: tab.controller, table: tab.table),
-        ),
-      ],
+    final sheet = Expanded(
+      child: DataSheet(controller: tab.controller, table: tab.table),
+    );
+    final controlBar = DataSheetControlBar(controller: tab.controller);
+    final sideControlBar = _SidebarControlBar(controlBar: controlBar);
+
+    return EditorToolbarLayout(
+      mode: _toolbarMode,
+      toolbar: controlBar,
+      sidebarToolbar: sideControlBar,
+      child: Column(children: [sheet]),
+    );
+  }
+}
+
+/// Wraps [DataSheetControlBar] for sidebar mode: fixed width, scrollable,
+/// with a border on the right edge.
+class _SidebarControlBar extends StatelessWidget {
+  const _SidebarControlBar({required this.controlBar});
+
+  final DataSheetControlBar controlBar;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      width: 56,
+      decoration: BoxDecoration(
+        color: cs.surfaceContainer,
+        border: Border(right: BorderSide(color: cs.outline)),
+      ),
+      child: SingleChildScrollView(child: controlBar),
     );
   }
 }
