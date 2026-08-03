@@ -162,10 +162,12 @@ class _SidebarToolbarContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Rebuild the toolbar config with vertical alignment.
-    final verticalConfig = config.copyWith(
+    // QuillSimpleToolbarConfig has no copyWith — reconstruct with the two
+    // fields that differ for sidebar layout.
+    final verticalConfig = QuillSimpleToolbarConfig(
       toolbarIconAlignment: WrapAlignment.start,
       toolbarSectionSpacing: 4,
+      multiRowsDisplay: true,
     );
 
     return SingleChildScrollView(
