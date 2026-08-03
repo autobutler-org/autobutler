@@ -188,7 +188,7 @@ class DataSheetControlBar extends StatelessWidget {
             ),
           ]),
         ];
-        if (widget.vertical) {
+        if (vertical) {
           return SingleChildScrollView(
             scrollDirection: Axis.vertical,
             child: Padding(
