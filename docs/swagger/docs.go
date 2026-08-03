@@ -1012,7 +1012,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Enqueue deletion of files under the specified root directory",
+                "description": "Move files to the trash for deferred deletion. Returns 202 immediately after\nthe rename so the caller does not block on filesystem I/O or DB cleanup.\nDB record removal and event publishing happen asynchronously in a background goroutine.",
                 "produces": [
                     "application/json"
                 ],
