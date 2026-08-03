@@ -844,6 +844,60 @@ class CirrusService with AuthenticatedService {
         .toList(growable: false);
   }
 
+  // --- Share Links ---
+
+  /// Creates a public share link for a file or folder.
+  static Future<Map<String, dynamic>> createShareLink(
+    String relPath, {
+    String? serial,
+    String? password,
+    int? maxUses,
+    int? expiresInSeconds,
+  }) async {
+    final uri = _apiBaseUri.resolve('/api/v0/shares');
+    final body = jsonEncode({
+      'relPath': relPath,
+      'serial': serial?.trim() ?? '',
+      if (password != null && password.isNotEmpty) 'password': password,
+      if (maxUses != null) 'maxUses': maxUses,
+      if (expiresInSeconds != null) 'expiresInSeconds': expiresInSeconds,
+    });
+    final response = await instance.authenticatedPost(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: body,
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        'Failed to create share link (${response.statusCode}): ${response.body}',
+      );
+    }
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  /// Lists all share links.
+  static Future<List<Map<String, dynamic>>> listShareLinks() async {
+    final uri = _apiBaseUri.resolve('/api/v0/shares');
+    final response = await instance.authenticatedGet(uri);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to list share links (${response.statusCode})');
+    }
+    return (jsonDecode(response.body) as List<dynamic>)
+        .whereType<Map<String, dynamic>>()
+        .toList();
+  }
+
+  /// Revokes a share link by ID.
+  static Future<void> deleteShareLink(int id) async {
+    final uri = _apiBaseUri.resolve('/api/v0/shares/$id');
+    final response = await instance.authenticatedDelete(uri);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        'Failed to delete share link $id (${response.statusCode})',
+      );
+    }
+  }
+
   static Future<void> updateToVersion(String version) async {
     final endpointUri = _apiBaseUri.resolve('/api/v0/version/update');
     final body = jsonEncode({'version': version});

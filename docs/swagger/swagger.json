@@ -2112,6 +2112,56 @@
                 }
             }
         },
+        "/s/{token}": {
+            "get": {
+                "description": "Public endpoint — no auth required. Validates token, optional password,\nexpiry, and use-count limits. For files: streams the file bytes.\nFor directories: returns a JSON listing.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "shares"
+                ],
+                "summary": "Access shared file/folder content",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Share token",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Share password (if protected)",
+                        "name": "password",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "401": {
+                        "description": "Password required or wrong password",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Token not found or expired",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "410": {
+                        "description": "Link has reached its maximum use count",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/sbom": {
             "get": {
                 "description": "Returns the Go version and all embedded dependency information from the compiled binary",
@@ -2191,6 +2241,120 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/v0_settings.SettingsJSON"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/shares": {
+            "get": {
+                "description": "Returns the 100 most recent share links created on this instance.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shares"
+                ],
+                "summary": "List share links",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v0_shares.shareLinkJSON"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a short-lived or permanent public share link for a file or folder.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shares"
+                ],
+                "summary": "Create a share link",
+                "parameters": [
+                    {
+                        "description": "Share link parameters",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v0_shares.createShareRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/v0_shares.shareLinkJSON"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/shares/{id}": {
+            "delete": {
+                "description": "Revokes a share link by ID. The link immediately stops working.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shares"
+                ],
+                "summary": "Delete a share link",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Share link ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
                         }
                     },
                     "400": {
@@ -3742,6 +3906,64 @@
             "properties": {
                 "autoUpdate": {
                     "type": "boolean"
+                }
+            }
+        },
+        "v0_shares.createShareRequest": {
+            "type": "object",
+            "properties": {
+                "expiresInSeconds": {
+                    "type": "integer"
+                },
+                "maxUses": {
+                    "type": "integer"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "relPath": {
+                    "type": "string"
+                },
+                "serial": {
+                    "type": "string"
+                }
+            }
+        },
+        "v0_shares.shareLinkJSON": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdBy": {
+                    "type": "string"
+                },
+                "deviceSerial": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "hasPassword": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "maxUses": {
+                    "type": "integer"
+                },
+                "relPath": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "useCount": {
+                    "type": "integer"
                 }
             }
         },

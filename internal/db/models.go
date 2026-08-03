@@ -79,6 +79,19 @@ type Session struct {
 	CreatedAt time.Time
 }
 
+type ShareLink struct {
+	ID           int64
+	Token        string
+	DeviceSerial string
+	RelPath      string
+	PasswordHash string
+	MaxUses      int64
+	UseCount     int64
+	ExpiresAt    sql.NullTime
+	CreatedAt    time.Time
+	CreatedBy    string
+}
+
 type User struct {
 	ID                 int64
 	Username           string
