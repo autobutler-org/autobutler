@@ -72,6 +72,32 @@ func rateLimit() gin.HandlerFunc {
 	}
 }
 
+// queryTokenPrefixes lists the path prefixes for which the ?token= query
+// parameter is accepted as authentication. This mechanism exists for endpoints
+// where setting an Authorization header is not possible (WebSocket) or
+// impractical (media streaming URLs embedded in <video>/<audio> src attributes
+// and file download links). All other paths must use Bearer / cookie / Basic.
+//
+// Keep this list minimal. (#1332)
+var queryTokenPrefixes = []string{
+	"/api/v0/events",   // WebSocket — new WebSocket() cannot set headers
+	"/api/v0/cirrus",   // file download / streaming (src= attribute usage)
+	"/api/v0/photos",   // photo serving
+	"/videos/",         // video deep-link player
+	"/audio/",          // audio deep-link player
+}
+
+// queryTokenAllowed returns true when ?token= auth is permitted for the given
+// request path.
+func queryTokenAllowed(path string) bool {
+	for _, prefix := range queryTokenPrefixes {
+		if strings.HasPrefix(path, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
 // authExemptPaths are API paths that don't require a valid session.
 var authExemptPaths = map[string]bool{
 	"/api/v0/auth/setup":   true,
@@ -174,6 +200,13 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 
 		// Collect all candidate tokens from headers/cookie/query.
 		// Try each in order — fall through on failure.
+		//
+		// The ?token= query parameter is intentionally restricted to a small
+		// allowlist of paths where header-based auth is not possible (WebSocket
+		// event stream) or where the URL appears only in server logs that are
+		// already privileged (video/audio streaming, file downloads). Accepting
+		// it on all endpoints would leak session tokens into browser history,
+		// HTTP proxy logs, and Gin's access log. (#1332)
 		var tokens []string
 		if auth := c.GetHeader("Authorization"); strings.HasPrefix(auth, "Bearer ") {
 			tokens = append(tokens, strings.TrimPrefix(auth, "Bearer "))
@@ -181,7 +214,7 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 		if cookie, err := c.Cookie("session"); err == nil && cookie != "" {
 			tokens = append(tokens, cookie)
 		}
-		if q := c.Query("token"); q != "" {
+		if q := c.Query("token"); q != "" && queryTokenAllowed(path) {
 			tokens = append(tokens, q)
 		}
 
