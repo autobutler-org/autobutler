@@ -21,6 +21,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/photoutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/autobutler/pkg/util/videoutil"
 	"github.com/autobutler-org/autobutler/pkg/vfs"
 
 	"github.com/gin-gonic/gin"
@@ -210,9 +211,41 @@ var getThumbnailRoute = serverutil.ApiRoute(
 				defer sem.Release()
 			}
 
+			// For video files: extract a representative frame via ffmpeg, then
+			// feed that JPEG through the normal photoutil thumbnail pipeline.
+			thumbSrcPath := fullPath
+			var videoFrameTmp string
+			if isVideo {
+				if !videoutil.Available() {
+					return serverutil.NotFound(fmt.Errorf("video thumbnails require ffmpeg (not installed)"))
+				}
+				// Probe to pick a good timestamp (2s or 10% of duration).
+				probeCtx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+				defer cancel()
+				seekTs := 2 * time.Second
+				if info, probeErr := videoutil.Probe(probeCtx, fullPath); probeErr == nil {
+					if tenth := info.Duration / 10; info.Duration < 20*time.Second && tenth < seekTs {
+						seekTs = tenth
+					}
+				}
+				tmpFile, tmpErr := os.CreateTemp("", "vthumb-*.jpg")
+				if tmpErr != nil {
+					return serverutil.InternalServerError(fmt.Errorf("video thumb temp file: %w", tmpErr))
+				}
+				tmpFile.Close()
+				videoFrameTmp = tmpFile.Name()
+				defer os.Remove(videoFrameTmp)
+				extractCtx, extractCancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+				defer extractCancel()
+				if extractErr := videoutil.ExtractFrame(extractCtx, fullPath, seekTs, videoFrameTmp); extractErr != nil {
+					return serverutil.InternalServerError(fmt.Errorf("extract video frame: %w", extractErr))
+				}
+				thumbSrcPath = videoFrameTmp
+			}
+
 			// Generate the thumbnail at the requested size.
 			result, err := photoutil.GenerateThumbnail(photoutil.GenerateThumbnailParams{
-				FilePath: fullPath,
+				FilePath: thumbSrcPath,
 				Width:    width,
 				Height:   height,
 			})
