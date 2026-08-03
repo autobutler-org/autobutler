@@ -35,7 +35,7 @@ require (
 	golang.org/x/time v0.15.0
 	google.golang.org/api v0.291.0
 	howett.net/plist v1.0.1
-	modernc.org/sqlite v1.54.0
+	modernc.org/sqlite v1.55.0
 	nhooyr.io/websocket v1.8.17
 	tailscale.com v1.102.0
 )
