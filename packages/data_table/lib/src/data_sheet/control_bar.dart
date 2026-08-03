@@ -27,7 +27,15 @@ import 'data_sheet_controller.dart';
 class DataSheetControlBar extends StatelessWidget {
   final DataSheetController controller;
 
-  const DataSheetControlBar({super.key, required this.controller});
+  /// When [vertical] is true buttons are stacked in a [Column] and the bar
+  /// scrolls vertically. Use this in sidebar/panel layouts.
+  final bool vertical;
+
+  const DataSheetControlBar({
+    super.key,
+    required this.controller,
+    this.vertical = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -40,175 +48,169 @@ class DataSheetControlBar extends StatelessWidget {
         final hasCol = sel.contextCol >= 0;
         final hasData = controller.rowCount > 0;
 
+        final groups = <Widget>[
+          // ── Structure ──────────────────────────────────────────────
+          // ── Structure ──────────────────────────────────────────────
+          _group([
+            // Insert row before/after the selected row. With nothing
+            // selected the sheet edges are the anchor, so these still
+            // grow the sheet — there is no separate append button.
+            _btn(
+              AutobutlerIcons.insert_row_above,
+              hasRow ? 'Insert row before' : 'Insert row at top',
+              () => controller.insertRowAt(hasRow ? sel.contextRow : 0),
+            ),
+            _btn(
+              AutobutlerIcons.insert_row_below,
+              hasRow ? 'Insert row after' : 'Add row at end',
+              () => controller.insertRowAt(
+                hasRow ? sel.contextRow + 1 : controller.rowCount,
+              ),
+            ),
+            // Insert column before/after the selected column. Columns
+            // live inside rows, so an empty sheet has nowhere to put one.
+            _btn(
+              AutobutlerIcons.insert_column_left,
+              hasCol ? 'Insert column before' : 'Insert column at left',
+              hasData
+                  ? () => controller.insertColumnAt(hasCol ? sel.contextCol : 0)
+                  : null,
+            ),
+            _btn(
+              AutobutlerIcons.insert_column_right,
+              hasCol ? 'Insert column after' : 'Add column at end',
+              hasData
+                  ? () => controller.insertColumnAt(
+                      hasCol ? sel.contextCol + 1 : controller.colCount,
+                    )
+                  : null,
+            ),
+            // Delete row / column
+            _btn(
+              AutobutlerIcons.delete_row,
+              'Delete row',
+              hasRow ? () => controller.deleteRowAt(sel.contextRow) : null,
+            ),
+            _btn(
+              AutobutlerIcons.delete_column,
+              'Delete column',
+              hasCol ? () => controller.deleteColumnAt(sel.contextCol) : null,
+            ),
+            // Duplicate row / column
+            _btn(
+              AutobutlerIcons.duplicate_row,
+              'Duplicate row',
+              hasRow ? () => controller.duplicateRow(sel.contextRow) : null,
+            ),
+            _btn(
+              AutobutlerIcons.duplicate_column,
+              'Duplicate column',
+              hasCol ? () => controller.duplicateColumn(sel.contextCol) : null,
+            ),
+          ]),
+          // ── Edit ───────────────────────────────────────────────────
+          _group([
+            _btn(
+              AutobutlerIcons.undo,
+              'Undo',
+              controller.canUndo ? controller.undo : null,
+            ),
+            _btn(
+              AutobutlerIcons.redo,
+              'Redo',
+              controller.canRedo ? controller.redo : null,
+            ),
+            _btn(
+              AutobutlerIcons.clear_row,
+              'Clear row',
+              hasRow ? () => controller.clearRow(sel.contextRow) : null,
+            ),
+            _btn(
+              AutobutlerIcons.clear_column,
+              'Clear column',
+              hasCol ? () => controller.clearColumn(sel.contextCol) : null,
+            ),
+            _btn(
+              AutobutlerIcons.fill_down,
+              'Fill down',
+              hasCell
+                  ? () => controller.fillDown(sel.contextRow, sel.contextCol)
+                  : null,
+            ),
+            _btn(
+              AutobutlerIcons.fill_right,
+              'Fill right',
+              hasCell
+                  ? () => controller.fillRight(sel.contextRow, sel.contextCol)
+                  : null,
+            ),
+          ]),
+          // ── Data ───────────────────────────────────────────────────
+          _group([
+            _btn(
+              AutobutlerIcons.sort,
+              'Sort…',
+              hasData
+                  ? () => _showSortDialog(
+                      context,
+                      controller,
+                      sel.contextCol >= 0 ? sel.contextCol : 0,
+                    )
+                  : null,
+            ),
+            _btn(
+              AutobutlerIcons.remove_duplicates,
+              'Remove duplicate rows',
+              hasData ? controller.removeDuplicateRows : null,
+            ),
+            _btn(
+              AutobutlerIcons.find_replace,
+              'Find & replace…',
+              () => _showFindReplaceDialog(context, controller),
+            ),
+            _btn(
+              AutobutlerIcons.go_to_cell,
+              'Go to cell…',
+              hasData ? () => _showGoToCellDialog(context, controller) : null,
+            ),
+          ]),
+          // ── Import / Export ────────────────────────────────────────
+          _group([
+            _btn(
+              AutobutlerIcons.export_csv,
+              'Export CSV',
+              hasData ? () => _showExportCsvDialog(context, controller) : null,
+            ),
+            _btn(
+              AutobutlerIcons.import_csv,
+              'Import CSV…',
+              () => _showImportCsvDialog(context, controller),
+            ),
+          ]),
+        ];
+        if (widget.vertical) {
+          return SingleChildScrollView(
+            scrollDirection: Axis.vertical,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children:
+                    groups
+                        .expand((g) => [g, const _HorizontalDivider()])
+                        .toList()
+                      ..removeLast(),
+              ),
+            ),
+          );
+        }
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
             child: Row(
-              children: [
-                // ── Structure ──────────────────────────────────────────────
-                _group([
-                  // Insert row before/after the selected row. With nothing
-                  // selected the sheet edges are the anchor, so these still
-                  // grow the sheet — there is no separate append button.
-                  _btn(
-                    AutobutlerIcons.insert_row_above,
-                    hasRow ? 'Insert row before' : 'Insert row at top',
-                    () => controller.insertRowAt(hasRow ? sel.contextRow : 0),
-                  ),
-                  _btn(
-                    AutobutlerIcons.insert_row_below,
-                    hasRow ? 'Insert row after' : 'Add row at end',
-                    () => controller.insertRowAt(
-                      hasRow ? sel.contextRow + 1 : controller.rowCount,
-                    ),
-                  ),
-                  // Insert column before/after the selected column. Columns
-                  // live inside rows, so an empty sheet has nowhere to put one.
-                  _btn(
-                    AutobutlerIcons.insert_column_left,
-                    hasCol ? 'Insert column before' : 'Insert column at left',
-                    hasData
-                        ? () => controller.insertColumnAt(
-                              hasCol ? sel.contextCol : 0,
-                            )
-                        : null,
-                  ),
-                  _btn(
-                    AutobutlerIcons.insert_column_right,
-                    hasCol ? 'Insert column after' : 'Add column at end',
-                    hasData
-                        ? () => controller.insertColumnAt(
-                              hasCol ? sel.contextCol + 1 : controller.colCount,
-                            )
-                        : null,
-                  ),
-                  // Delete row / column
-                  _btn(
-                    AutobutlerIcons.delete_row,
-                    'Delete row',
-                    hasRow
-                        ? () => controller.deleteRowAt(sel.contextRow)
-                        : null,
-                  ),
-                  _btn(
-                    AutobutlerIcons.delete_column,
-                    'Delete column',
-                    hasCol
-                        ? () => controller.deleteColumnAt(sel.contextCol)
-                        : null,
-                  ),
-                  // Duplicate row / column
-                  _btn(
-                    AutobutlerIcons.duplicate_row,
-                    'Duplicate row',
-                    hasRow
-                        ? () => controller.duplicateRow(sel.contextRow)
-                        : null,
-                  ),
-                  _btn(
-                    AutobutlerIcons.duplicate_column,
-                    'Duplicate column',
-                    hasCol
-                        ? () => controller.duplicateColumn(sel.contextCol)
-                        : null,
-                  ),
-                ]),
-                const _Divider(),
-                // ── Edit ───────────────────────────────────────────────────
-                _group([
-                  _btn(
-                    AutobutlerIcons.undo,
-                    'Undo',
-                    controller.canUndo ? controller.undo : null,
-                  ),
-                  _btn(
-                    AutobutlerIcons.redo,
-                    'Redo',
-                    controller.canRedo ? controller.redo : null,
-                  ),
-                  _btn(
-                    AutobutlerIcons.clear_row,
-                    'Clear row',
-                    hasRow ? () => controller.clearRow(sel.contextRow) : null,
-                  ),
-                  _btn(
-                    AutobutlerIcons.clear_column,
-                    'Clear column',
-                    hasCol
-                        ? () => controller.clearColumn(sel.contextCol)
-                        : null,
-                  ),
-                  _btn(
-                    AutobutlerIcons.fill_down,
-                    'Fill down',
-                    hasCell
-                        ? () => controller.fillDown(
-                              sel.contextRow,
-                              sel.contextCol,
-                            )
-                        : null,
-                  ),
-                  _btn(
-                    AutobutlerIcons.fill_right,
-                    'Fill right',
-                    hasCell
-                        ? () => controller.fillRight(
-                              sel.contextRow,
-                              sel.contextCol,
-                            )
-                        : null,
-                  ),
-                ]),
-                const _Divider(),
-                // ── Data ───────────────────────────────────────────────────
-                _group([
-                  _btn(
-                    AutobutlerIcons.sort,
-                    'Sort…',
-                    hasData
-                        ? () => _showSortDialog(
-                              context,
-                              controller,
-                              sel.contextCol >= 0 ? sel.contextCol : 0,
-                            )
-                        : null,
-                  ),
-                  _btn(
-                    AutobutlerIcons.remove_duplicates,
-                    'Remove duplicate rows',
-                    hasData ? controller.removeDuplicateRows : null,
-                  ),
-                  _btn(
-                    AutobutlerIcons.find_replace,
-                    'Find & replace…',
-                    () => _showFindReplaceDialog(context, controller),
-                  ),
-                  _btn(
-                    AutobutlerIcons.go_to_cell,
-                    'Go to cell…',
-                    hasData
-                        ? () => _showGoToCellDialog(context, controller)
-                        : null,
-                  ),
-                ]),
-                const _Divider(),
-                // ── Import / Export ────────────────────────────────────────
-                _group([
-                  _btn(
-                    AutobutlerIcons.export_csv,
-                    'Export CSV',
-                    hasData
-                        ? () => _showExportCsvDialog(context, controller)
-                        : null,
-                  ),
-                  _btn(
-                    AutobutlerIcons.import_csv,
-                    'Import CSV…',
-                    () => _showImportCsvDialog(context, controller),
-                  ),
-                ]),
-              ],
+              children: groups.expand((g) => [g, const _Divider()]).toList()
+                ..removeLast(),
             ),
           ),
         );
@@ -246,6 +248,15 @@ class _Divider extends StatelessWidget {
       height: 28,
       child: VerticalDivider(width: 12, thickness: 1),
     );
+  }
+}
+
+class _HorizontalDivider extends StatelessWidget {
+  const _HorizontalDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(width: 28, child: Divider(height: 12, thickness: 1));
   }
 }
 
