@@ -30,6 +30,18 @@ type DeviceRole struct {
 	UpdatedAt    time.Time
 }
 
+type FtsDocument struct {
+	ID           int64
+	DeviceSerial string
+	RelPath      string
+	ContentHash  string
+	IndexedAt    time.Time
+}
+
+type FtsIndex struct {
+	Body string
+}
+
 type PhotoAlbum struct {
 	ID            int64
 	Name          string

@@ -20,6 +20,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/favoritesutil"
+	"github.com/autobutler-org/autobutler/pkg/util/ftsutil"
 	"github.com/autobutler-org/autobutler/pkg/util/remoteutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
@@ -217,6 +218,13 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 	syncWorker, err := setupServices(deps)
 	if err != nil {
 		return fmt.Errorf("failed to setup services: %w", err)
+	}
+
+	// Start the FTS event subscriber to index new/changed/deleted documents.
+	ftsCtx, ftsCancel := context.WithCancel(context.Background())
+	defer ftsCancel()
+	if filesDir, dirErr := storageutil.GetCirrusDir(); dirErr == nil && deps.Database() != nil {
+		go ftsutil.StartEventSubscriber(ftsCtx, deps.EventBus(), deps.Database(), filesDir)
 	}
 
 	// In TLS mode the server binds to HTTPS_PORT (default 443); in insecure

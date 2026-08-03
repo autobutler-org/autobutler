@@ -2149,6 +2149,99 @@ const docTemplate = `{
                 }
             }
         },
+        "/search": {
+            "get": {
+                "description": "Searches indexed document contents using SQLite FTS5.\nSupports FTS5 query syntax: AND, OR, NOT, phrase \"exact match\", prefix*.\nPass index=true to trigger background indexing of new/changed files first.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "search"
+                ],
+                "summary": "Full-text document search",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "FTS5 search query",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max results (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device serial to scope search",
+                        "name": "serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Trigger background re-index before search",
+                        "name": "index",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v0_search.searchResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/search/index": {
+            "post": {
+                "description": "Walks the cirrus directory and indexes all supported files.\nReturns immediately; indexing happens in the background.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "search"
+                ],
+                "summary": "Trigger FTS document indexing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device serial (defaults to primary storage)",
+                        "name": "serial",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/settings": {
             "get": {
                 "description": "Retrieves application settings",
@@ -3146,6 +3239,20 @@ const docTemplate = `{
                 }
             }
         },
+        "ftsutil.SearchResult": {
+            "type": "object",
+            "properties": {
+                "deviceSerial": {
+                    "type": "string"
+                },
+                "rank": {
+                    "type": "number"
+                },
+                "relPath": {
+                    "type": "string"
+                }
+            }
+        },
         "serverutil.ContentType": {
             "type": "string",
             "enum": [
@@ -3745,6 +3852,23 @@ const docTemplate = `{
                 },
                 "serial": {
                     "type": "string"
+                }
+            }
+        },
+        "v0_search.searchResponse": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ftsutil.SearchResult"
+                    }
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },

@@ -8,6 +8,15 @@ definitions:
       id:
         type: string
     type: object
+  ftsutil.SearchResult:
+    properties:
+      deviceSerial:
+        type: string
+      rank:
+        type: number
+      relPath:
+        type: string
+    type: object
   serverutil.ContentType:
     enum:
     - text/html
@@ -407,6 +416,17 @@ definitions:
         type: string
     required:
     - relPath
+    type: object
+  v0_search.searchResponse:
+    properties:
+      query:
+        type: string
+      results:
+        items:
+          $ref: '#/definitions/ftsutil.SearchResult'
+        type: array
+      total:
+        type: integer
     type: object
   v0_settings.SettingsJSON:
     properties:
@@ -1936,6 +1956,72 @@ paths:
       summary: Get software bill of materials
       tags:
       - version
+  /search:
+    get:
+      description: |-
+        Searches indexed document contents using SQLite FTS5.
+        Supports FTS5 query syntax: AND, OR, NOT, phrase "exact match", prefix*.
+        Pass index=true to trigger background indexing of new/changed files first.
+      parameters:
+      - description: FTS5 search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: Max results (default 20, max 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Device serial to scope search
+        in: query
+        name: serial
+        type: string
+      - description: Trigger background re-index before search
+        in: query
+        name: index
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v0_search.searchResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Full-text document search
+      tags:
+      - search
+  /search/index:
+    post:
+      description: |-
+        Walks the cirrus directory and indexes all supported files.
+        Returns immediately; indexing happens in the background.
+      parameters:
+      - description: Device serial (defaults to primary storage)
+        in: query
+        name: serial
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Trigger FTS document indexing
+      tags:
+      - search
   /settings:
     get:
       description: Retrieves application settings
