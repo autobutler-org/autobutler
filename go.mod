@@ -10,11 +10,13 @@ require (
 	github.com/gin-contrib/cors v1.7.7
 	github.com/gin-contrib/static v1.1.6
 	github.com/gin-gonic/gin v1.12.0
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
 	github.com/klauspost/compress v1.19.0
 	github.com/mholt/archiver/v4 v4.0.0-alpha.9
 	github.com/shirou/gopsutil/v4 v4.26.6
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/files v1.0.1

@@ -1676,6 +1676,64 @@ paths:
       summary: Get Google import job status
       tags:
       - migration
+  /pairing/qr:
+    get:
+      description: |-
+        Returns a QR code PNG (or the raw pairing URL as JSON) encoding a
+        short-lived token. Scan with a phone to open the AutoButler Flutter
+        app pre-configured with this butler's LAN address.
+      parameters:
+      - description: 'Response format: ''png'' (default) or ''json'''
+        in: query
+        name: format
+        type: string
+      - description: QR image size in pixels (default 256)
+        in: query
+        name: size
+        type: integer
+      produces:
+      - image/png
+      - application/json
+      responses:
+        "200":
+          description: 'JSON: {token, url, expiresIn}'
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Generate mobile pairing QR code
+      tags:
+      - pairing
+  /pairing/validate:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Called by the mobile app after scanning the QR code to verify
+        the token is valid and extract the butler's address.
+      parameters:
+      - description: '{token}'
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{addr, scheme, valid}'
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Validate a pairing token
+      tags:
+      - pairing
   /photos:
     get:
       description: Finds all photos across all managed devices with pagination support.

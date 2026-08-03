@@ -1764,6 +1764,87 @@ const docTemplate = `{
                 }
             }
         },
+        "/pairing/qr": {
+            "get": {
+                "description": "Returns a QR code PNG (or the raw pairing URL as JSON) encoding a\nshort-lived token. Scan with a phone to open the AutoButler Flutter\napp pre-configured with this butler's LAN address.",
+                "produces": [
+                    "image/png",
+                    "application/json"
+                ],
+                "tags": [
+                    "pairing"
+                ],
+                "summary": "Generate mobile pairing QR code",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Response format: 'png' (default) or 'json'",
+                        "name": "format",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "QR image size in pixels (default 256)",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "JSON: {token, url, expiresIn}",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/pairing/validate": {
+            "post": {
+                "description": "Called by the mobile app after scanning the QR code to verify\nthe token is valid and extract the butler's address.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pairing"
+                ],
+                "summary": "Validate a pairing token",
+                "parameters": [
+                    {
+                        "description": "{token}",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{addr, scheme, valid}",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/photos": {
             "get": {
                 "description": "Finds all photos across all managed devices with pagination support.",

@@ -74,10 +74,13 @@ func rateLimit() gin.HandlerFunc {
 
 // authExemptPaths are API paths that don't require a valid session.
 var authExemptPaths = map[string]bool{
-	"/api/v0/auth/setup":   true,
-	"/api/v0/auth/login":   true,
-	"/api/v0/auth/recover": true,
-	"/api/v0/auth/status":  true,
+	"/api/v0/auth/setup":       true,
+	"/api/v0/auth/login":       true,
+	"/api/v0/auth/recover":     true,
+	"/api/v0/auth/status":      true,
+	// Mobile pairing token validation: the phone calling this doesn't have
+	// a session yet — it's using the scanned token to bootstrap. (#1403)
+	"/api/v0/pairing/validate": true,
 }
 
 func inject(deps deputil.Dependencies) gin.HandlerFunc {
