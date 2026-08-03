@@ -62,8 +62,30 @@ func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 	initExternalVault(deps)
 	go vaultDeviceMonitor(deps)
 	go usbDeviceMonitor(deps)
+	go sessionPurgeWorker(deps)
 
 	return syncWorker, nil
+}
+
+// sessionPurgeWorker deletes expired sessions from the database once per day.
+// GetSession already filters on expires_at so stale rows are never returned,
+// but without purging the table grows unboundedly. A daily sweep is more than
+// frequent enough given 30-day session lifetimes.
+func sessionPurgeWorker(deps deputil.Dependencies) {
+	ticker := time.NewTicker(24 * time.Hour)
+	defer ticker.Stop()
+
+	// Run one immediate sweep so stale rows accumulated before this fix are
+	// cleaned up at startup rather than waiting up to 24 hours.
+	if err := deps.Database().Queries.DeleteExpiredSessions(context.Background()); err != nil {
+		log.Printf("[auth] sessionPurgeWorker: startup sweep failed: %v", err)
+	}
+
+	for range ticker.C {
+		if err := deps.Database().Queries.DeleteExpiredSessions(context.Background()); err != nil {
+			log.Printf("[auth] sessionPurgeWorker: purge failed: %v", err)
+		}
+	}
 }
 
 func initExternalVault(deps deputil.Dependencies) {
