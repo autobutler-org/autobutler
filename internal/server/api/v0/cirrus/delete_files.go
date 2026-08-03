@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"sync"
 
 	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
@@ -41,22 +42,23 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 	if !ok {
 		return serverutil.InternalServerError(nil)
 	}
-	// Use VFS.Delete when no serial and VFS is available (routes through StorageServiceVFS).
+
+	// Phase 1: fast rename — returns to client immediately after this.
 	usedVFS := false
 	if serial == "" {
 		if reg := deps.VFSRegistry(); reg != nil {
 			if fsys, ok := reg.Get("files"); ok {
-				for _, p := range filePaths {
-					if err := fsys.Delete(c.Request.Context(), p, vfs.DeleteOptions{Recursive: true}); err != nil && err != vfs.ErrNotFound {
-						return serverutil.InternalServerError(err)
-					}
+				// VFS path: parallelise the renames with a bounded worker pool.
+				if err := parallelVFSDelete(c.Request.Context(), fsys, filePaths); err != nil {
+					return serverutil.InternalServerError(err)
 				}
 				usedVFS = true
 			}
 		}
 	}
 	if !usedVFS {
-		if _, err := deps.StorageService().DeleteFiles(storageutil.DeleteFilesParams{
+		// Non-VFS path: use TrashFiles (os.Rename — microseconds per file).
+		if _, err := deps.StorageService().TrashFiles(storageutil.TrashFilesParams{
 			RootDir:      rootDir,
 			FilePaths:    filePaths,
 			DeviceSerial: serial,
@@ -65,15 +67,20 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 		}
 	}
 
-	for _, p := range filePaths {
-		deps.EventBus().Publish(eventbus.Event{
-			Kind:         eventbus.EventDelete,
-			Path:         p,
-			DeviceSerial: serial,
-		})
-		// Clean up all DB records for the deleted photo regardless of whether a
-		// serial is present (empty serial is a valid key in both tables).
-		if database := deps.Database(); database != nil {
+	// Phase 2: DB cleanup + event publishing — fire-and-forget in background.
+	// Files are already gone from the listing; the client doesn't need to wait.
+	database := deps.Database()
+	bus := deps.EventBus()
+	go func() {
+		for _, p := range filePaths {
+			bus.Publish(eventbus.Event{
+				Kind:         eventbus.EventDelete,
+				Path:         p,
+				DeviceSerial: serial,
+			})
+			if database == nil {
+				continue
+			}
 			if err := database.Queries.DeletePhotoFromAllAlbums(context.Background(), db.DeletePhotoFromAllAlbumsParams{
 				DeviceSerial: serial,
 				RelPath:      p,
@@ -87,8 +94,40 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 				log.Printf("autobutler: delete cleanup: remove rotation for %q (serial=%q): %v", p, serial, err)
 			}
 		}
-	}
+	}()
+
 	return serverutil.Ok()
+}
+
+// parallelVFSDelete deletes files via the VFS with up to 8 concurrent workers.
+func parallelVFSDelete(ctx context.Context, fsys vfs.VFS, filePaths []string) error {
+	const maxWorkers = 8
+	sem := make(chan struct{}, maxWorkers)
+
+	var (
+		mu       sync.Mutex
+		firstErr error
+	)
+
+	var wg sync.WaitGroup
+	for _, p := range filePaths {
+		p := p
+		wg.Add(1)
+		sem <- struct{}{}
+		go func() {
+			defer wg.Done()
+			defer func() { <-sem }()
+			if err := fsys.Delete(ctx, p, vfs.DeleteOptions{Recursive: true}); err != nil && err != vfs.ErrNotFound {
+				mu.Lock()
+				if firstErr == nil {
+					firstErr = err
+				}
+				mu.Unlock()
+			}
+		}()
+	}
+	wg.Wait()
+	return firstErr
 }
 
 var deleteFilesRoute = serverutil.ApiRoute(
