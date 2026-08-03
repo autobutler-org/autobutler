@@ -14,6 +14,7 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:printing/printing.dart';
 import 'package:autobutler/theme/autobutler_theme.dart';
+import 'package:autobutler/widgets/editor/editor_sidebar_toolbar.dart';
 import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -268,6 +269,10 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   static const _prefKeyDarkPage = 'document_editor_dark_page';
   bool _editorDarkPage = false;
 
+  // Toolbar mode (#1327)
+  static const _prefKeyToolbarMode = 'document_editor_toolbar_mode';
+  EditorToolbarMode _toolbarMode = EditorToolbarMode.top;
+
   // Auto-save
   static const _prefKeyAutoSave = 'document_editor_auto_save';
   static const _autoSaveDelay = Duration(seconds: 2);
@@ -352,6 +357,9 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     setState(() {
       _autoSaveEnabled = prefs.getBool(_prefKeyAutoSave) ?? true;
       _editorDarkPage = prefs.getBool(_prefKeyDarkPage) ?? false;
+      _toolbarMode = (prefs.getString(_prefKeyToolbarMode) == 'sidebar')
+          ? EditorToolbarMode.sidebar
+          : EditorToolbarMode.top;
     });
   }
 
@@ -364,6 +372,16 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       _autoSaveTimer?.cancel();
       _autoSaveTimer = null;
     }
+  }
+
+  Future<void> _setToolbarMode(EditorToolbarMode mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _prefKeyToolbarMode,
+      mode == EditorToolbarMode.sidebar ? 'sidebar' : 'top',
+    );
+    if (!mounted) return;
+    setState(() => _toolbarMode = mode);
   }
 
   // ── Read-only / edit toggle (#939) ────────────────────────────────────────
@@ -790,6 +808,27 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
               _printDocument();
             },
           ),
+          const Divider(),
+          ListTile(
+            leading: Icon(
+              _toolbarMode == EditorToolbarMode.sidebar
+                  ? Icons.view_sidebar
+                  : Icons.view_stream,
+            ),
+            title: Text(
+              _toolbarMode == EditorToolbarMode.sidebar
+                  ? 'Switch to top toolbar'
+                  : 'Switch to sidebar toolbar',
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              _setToolbarMode(
+                _toolbarMode == EditorToolbarMode.sidebar
+                    ? EditorToolbarMode.top
+                    : EditorToolbarMode.sidebar,
+              );
+            },
+          ),
           const SizedBox(height: 16),
         ],
       ),
@@ -819,26 +858,35 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       );
     }
 
-    return Column(
-      children: [
-        if (!_isReadOnly) _buildToolbar(theme),
-        // Find works in view mode too — the toolbar above is edit-only, the
-        // find bar is not.
-        if (_showFindBar) _buildFindBar(cs),
-        Expanded(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 900),
-              child: Column(
-                children: [
-                  Expanded(child: _buildPageFrame(cs)),
-                  _buildStatusBar(cs),
-                ],
-              ),
-            ),
+    final editorBody = Expanded(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 900),
+          child: Column(
+            children: [
+              Expanded(child: _buildPageFrame(cs)),
+              _buildStatusBar(cs),
+            ],
           ),
         ),
-      ],
+      ),
+    );
+
+    // Find works in view mode too — the toolbar is edit-only, the find bar is
+    // not, so it sits inside both branches rather than beside the toolbar.
+    if (_isReadOnly) {
+      return Column(
+        children: [if (_showFindBar) _buildFindBar(cs), editorBody],
+      );
+    }
+
+    return EditorToolbarLayout(
+      mode: _toolbarMode,
+      toolbar: _buildToolbar(theme),
+      sidebarToolbar: _buildSidebarToolbar(theme),
+      child: Column(
+        children: [if (_showFindBar) _buildFindBar(cs), editorBody],
+      ),
     );
   }
 
@@ -852,7 +900,25 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
 
   Widget _buildToolbar(ThemeData theme) {
     final cs = theme.colorScheme;
-    final toolbarTheme = theme.copyWith(
+    final tt = _toolbarTheme(theme);
+    return Theme(
+      data: tt,
+      child: Container(
+        decoration: BoxDecoration(
+          color: cs.surfaceContainer,
+          border: Border(bottom: BorderSide(color: cs.outline)),
+        ),
+        child: QuillSimpleToolbar(
+          controller: _controller,
+          config: _toolbarConfig(cs),
+        ),
+      ),
+    );
+  }
+
+  ThemeData _toolbarTheme(ThemeData theme) {
+    final cs = theme.colorScheme;
+    return theme.copyWith(
       colorScheme: cs.copyWith(
         onSurface: cs.onSurface,
         surface: cs.surfaceContainer,
@@ -865,61 +931,60 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         displayColor: cs.onSurface,
       ),
     );
+  }
 
-    return Theme(
-      data: toolbarTheme,
-      child: Container(
-        decoration: BoxDecoration(
-          color: cs.surfaceContainer,
-          border: Border(bottom: BorderSide(color: cs.outline)),
-        ),
-        child: QuillSimpleToolbar(
-          controller: _controller,
-          config: QuillSimpleToolbarConfig(
-            toolbarIconAlignment: WrapAlignment.center,
-            buttonOptions: QuillSimpleToolbarButtonOptions(
-              base: QuillToolbarBaseButtonOptions(
-                iconTheme: QuillIconTheme(
-                  iconButtonUnselectedData: IconButtonData(
-                    color: cs.onSurface,
-                    style: IconButton.styleFrom(
-                      backgroundColor: cs.onSurface.withValues(alpha: 0.05),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                  ),
-                  iconButtonSelectedData: IconButtonData(
-                    style: IconButton.styleFrom(
-                      foregroundColor: cs.onPrimary,
-                      backgroundColor: cs.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                  ),
+  QuillSimpleToolbarConfig _toolbarConfig(ColorScheme cs) {
+    return QuillSimpleToolbarConfig(
+      toolbarIconAlignment: WrapAlignment.center,
+      buttonOptions: QuillSimpleToolbarButtonOptions(
+        base: QuillToolbarBaseButtonOptions(
+          iconTheme: QuillIconTheme(
+            iconButtonUnselectedData: IconButtonData(
+              color: cs.onSurface,
+              style: IconButton.styleFrom(
+                backgroundColor: cs.onSurface.withValues(alpha: 0.05),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
                 ),
               ),
-              selectHeaderStyleDropdownButton:
-                  QuillToolbarSelectHeaderStyleDropdownButtonOptions(
-                    textStyle: TextStyle(color: cs.onSurface, fontSize: 13),
-                  ),
-              backgroundColor: QuillToolbarColorButtonOptions(
-                customOnPressedCallback: _pickBackgroundColor,
+            ),
+            iconButtonSelectedData: IconButtonData(
+              style: IconButton.styleFrom(
+                foregroundColor: cs.onPrimary,
+                backgroundColor: cs.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
               ),
             ),
-            showFontFamily: false,
-            showFontSize: false,
-            showInlineCode: true,
-            showCodeBlock: true,
-            showQuote: true,
-            showLink: false,
-            showSearchButton: false,
-            showSubscript: false,
-            showSuperscript: false,
           ),
         ),
+        selectHeaderStyleDropdownButton:
+            QuillToolbarSelectHeaderStyleDropdownButtonOptions(
+              textStyle: TextStyle(color: cs.onSurface, fontSize: 13),
+            ),
+        backgroundColor: QuillToolbarColorButtonOptions(
+          customOnPressedCallback: _pickBackgroundColor,
+        ),
       ),
+      showFontFamily: false,
+      showFontSize: false,
+      showInlineCode: true,
+      showCodeBlock: true,
+      showQuote: true,
+      showLink: false,
+      showSearchButton: false,
+      showSubscript: false,
+      showSuperscript: false,
+    );
+  }
+
+  Widget _buildSidebarToolbar(ThemeData theme) {
+    final tt = _toolbarTheme(theme);
+    return EditorSidebarToolbar(
+      controller: _controller,
+      toolbarTheme: tt,
+      config: _toolbarConfig(theme.colorScheme),
     );
   }
 
