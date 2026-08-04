@@ -1,0 +1,9 @@
+name: "AutoButler CodeQL config — Go"
+
+query-filters:
+  # fetchURL in pkg/util/updateutil/updateutil.go contacts only an explicit
+  # allowlist of hosts (github.com, objects.githubusercontent.com, Azure blob).
+  # Scheme is enforced to https and the request host is replaced with the
+  # matching allowlist constant before the HTTP call is made.
+  - exclude:
+      id: go/ssrf
