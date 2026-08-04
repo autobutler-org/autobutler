@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:autobutler/router.dart';
 import 'package:autobutler/services/cirrus_service.dart';
+import 'package:autobutler/services/content_search_service.dart';
 import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/utils/safe_set_state_mixin.dart';
 import 'package:autobutler/widgets/autobutler_drawer.dart';
@@ -19,19 +22,23 @@ class SheetsPage extends StatefulWidget {
 class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
   List<CirrusFileNode> _files = [];
   List<CirrusFileNode> _filtered = [];
+  List<ContentSearchResult> _contentResults = [];
+  bool _contentSearching = false;
   bool _loading = true;
   String? _error;
   final _searchController = TextEditingController();
+  Timer? _contentSearchDebounce;
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(_applyFilter);
+    _searchController.addListener(_onSearchChanged);
     _load();
   }
 
   @override
   void dispose() {
+    _contentSearchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -54,6 +61,27 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
         _loading = false;
       });
     }
+  }
+
+  void _onSearchChanged() {
+    _applyFilter();
+    _contentSearchDebounce?.cancel();
+    final q = _searchController.text.trim();
+    if (q.isEmpty) {
+      setStateSafely(() {
+        _contentResults = [];
+        _contentSearching = false;
+      });
+      return;
+    }
+    setStateSafely(() => _contentSearching = true);
+    _contentSearchDebounce = Timer(const Duration(milliseconds: 400), () async {
+      final results = await ContentSearchService.search(q);
+      setStateSafely(() {
+        _contentResults = results;
+        _contentSearching = false;
+      });
+    });
   }
 
   void _applyFilter() {
@@ -253,14 +281,93 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
                 color: colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
+            if (_contentSearching) ...const [
+              SizedBox(height: 16),
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ],
           ],
         ),
       );
     }
 
+    final hasContentResults =
+        _searchController.text.isNotEmpty && _contentResults.isNotEmpty;
+    final totalItems =
+        _filtered.length + (hasContentResults ? _contentResults.length + 1 : 0);
+
     return ListView.builder(
-      itemCount: _filtered.length,
-      itemBuilder: (context, i) => _buildSheetTile(_filtered[i], colorScheme),
+      itemCount: totalItems,
+      itemBuilder: (context, i) {
+        if (i < _filtered.length) {
+          return _buildSheetTile(_filtered[i], colorScheme);
+        }
+        final ci = i - _filtered.length;
+        if (ci == 0) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Row(
+              children: [
+                Icon(
+                  AutobutlerIcons.search_rounded,
+                  size: 14,
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Content matches',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+        return _buildContentResultTile(_contentResults[ci - 1], colorScheme);
+      },
+    );
+  }
+
+  Widget _buildContentResultTile(
+    ContentSearchResult result,
+    ColorScheme colorScheme,
+  ) {
+    return ListTile(
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: colorScheme.tertiaryContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          AutobutlerIcons.search_rounded,
+          size: 18,
+          color: colorScheme.onTertiaryContainer,
+        ),
+      ),
+      title: Text(
+        result.filename,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Text(
+        result.plainSnippet,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: colorScheme.onSurface.withValues(alpha: 0.6),
+          fontSize: 12,
+        ),
+      ),
+      onTap: () => context.push(
+        AppRoutes.sheetFile(result.relPath, serial: result.deviceSerial),
+      ),
     );
   }
 
