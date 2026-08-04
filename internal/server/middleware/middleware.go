@@ -80,6 +80,29 @@ var authExemptPaths = map[string]bool{
 	"/api/v0/auth/status":  true,
 }
 
+// queryParamTokenPaths lists the paths where a ?token= query parameter is
+// accepted as a session credential. Restricting this to streaming/download
+// endpoints prevents session tokens appearing in proxy logs and browser
+// history for ordinary API calls.
+//
+// Legitimate uses:
+//   - /api/v0/events — WebSocket upgrade (JS cannot set custom headers)
+//   - /api/v0/cirrus/download — file served directly in browser tab
+//   - /api/v0/cirrus/download-archive — archive served directly
+//   - /api/v0/photos/thumbnail — <img src="..."> or <video src="...">
+var queryParamTokenPaths = map[string]bool{
+	"/api/v0/events":                    true,
+	"/api/v0/cirrus/download":           true,
+	"/api/v0/cirrus/download-archive":   true,
+	"/api/v0/photos/thumbnail":          true,
+}
+
+// allowsQueryParamToken returns true when the request path is explicitly
+// allow-listed for ?token= authentication.
+func allowsQueryParamToken(path string) bool {
+	return queryParamTokenPaths[path]
+}
+
 func inject(deps deputil.Dependencies) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c = ctxutil.With(c, "deps", deps)
@@ -181,7 +204,7 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 		if cookie, err := c.Cookie("session"); err == nil && cookie != "" {
 			tokens = append(tokens, cookie)
 		}
-		if q := c.Query("token"); q != "" {
+		if q := c.Query("token"); q != "" && allowsQueryParamToken(path) {
 			tokens = append(tokens, q)
 		}
 
