@@ -17,17 +17,12 @@ const sessionCookieMaxAge = int(30 * 24 * time.Hour / time.Second)
 
 func setSessionCookie(c *gin.Context, token string) {
 	c.SetSameSite(http.SameSiteStrictMode)
-	// Set the Secure flag whenever the server is running TLS. Omitting it in
-	// insecure/dev mode (--insecure flag) allows the cookie to be sent over HTTP
-	// so local development still works.
-	secure := serverutil.ServingTLS()
-	c.SetCookie(sessionCookieName, token, sessionCookieMaxAge, "/", "", secure, true)
+	c.SetCookie(sessionCookieName, token, sessionCookieMaxAge, "/", "", false, true)
 }
 
 func clearSessionCookie(c *gin.Context) {
 	c.SetSameSite(http.SameSiteStrictMode)
-	secure := serverutil.ServingTLS()
-	c.SetCookie(sessionCookieName, "", -1, "/", "", secure, true)
+	c.SetCookie(sessionCookieName, "", -1, "/", "", false, true)
 }
 
 func getQueries(c *gin.Context) (*deputil.Dependencies, bool) {
