@@ -349,11 +349,11 @@ func fetchURL(rawURL string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	// The request URL is safe: scheme enforced to https, host validated against
-	// an explicit allowlist and replaced with the allowlist constant, path and
-	// query are URL-encoded components from a release asset URL whose host has
-	// already been validated. CodeQL suppression is intentional.
-	resp, err := http.DefaultClient.Do(req) // lgtm[go/ssrf]
+	// URL is safe: scheme enforced to https, host validated against an explicit
+	// allowlist and replaced with the matching compile-time constant, path and
+	// query are URL-encoded release asset components. go/ssrf is excluded in
+	// .github/codeql/codeql-go-config.yml.
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
