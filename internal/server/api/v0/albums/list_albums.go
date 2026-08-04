@@ -57,24 +57,49 @@ func listAlbums(c *gin.Context) *serverutil.Response {
 }
 
 // buildTree converts a flat album list into a nested tree.
+// Uses an internal linked-node structure so child-of-child relationships are
+// captured correctly regardless of depth, then serialises back to []AlbumJSON.
 func buildTree(albums []AlbumJSON) []AlbumJSON {
-	byID := make(map[int64]*AlbumJSON, len(albums))
-	for i := range albums {
-		byID[albums[i].ID] = &albums[i]
+	type treeNode struct {
+		alb      AlbumJSON
+		children []*treeNode
 	}
-	roots := []AlbumJSON{}
-	for i := range albums {
-		a := &albums[i]
-		if a.ParentID == nil {
-			roots = append(roots, *a)
-		} else {
-			parent, ok := byID[*a.ParentID]
-			if ok {
-				parent.Children = append(parent.Children, *a)
+
+	byID := make(map[int64]*treeNode, len(albums))
+	nodes := make([]*treeNode, len(albums))
+	for i, a := range albums {
+		n := &treeNode{alb: a}
+		nodes[i] = n
+		byID[a.ID] = n
+	}
+
+	var roots []*treeNode
+	for _, n := range nodes {
+		if n.alb.ParentID == nil {
+			roots = append(roots, n)
+		} else if parent, ok := byID[*n.alb.ParentID]; ok {
+			parent.children = append(parent.children, n)
+		}
+		// nodes whose parent isn't in the list are silently dropped
+	}
+
+	var toJSON func(*treeNode) AlbumJSON
+	toJSON = func(n *treeNode) AlbumJSON {
+		a := n.alb
+		if len(n.children) > 0 {
+			a.Children = make([]AlbumJSON, 0, len(n.children))
+			for _, child := range n.children {
+				a.Children = append(a.Children, toJSON(child))
 			}
 		}
+		return a
 	}
-	return roots
+
+	result := make([]AlbumJSON, 0, len(roots))
+	for _, r := range roots {
+		result = append(result, toJSON(r))
+	}
+	return result
 }
 
 var listAlbumsRoute = serverutil.ApiRoute(
