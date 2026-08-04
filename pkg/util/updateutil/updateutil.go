@@ -313,16 +313,35 @@ func fetchURL(rawURL string) ([]byte, error) {
 	if parsed.Scheme != "https" && !allowHTTPInFetchURL {
 		return nil, fmt.Errorf("insecure URL scheme %q: only https is allowed for downloads", parsed.Scheme)
 	}
-	// Validate host is an allowed update server to prevent SSRF.
-	if !allowHTTPInFetchURL && !isAllowedUpdateHost(parsed.Hostname()) {
+
+	// Validate host and replace it with the canonical allowlist value so the
+	// request URL is constructed from a compile-time constant, not user input.
+	// This breaks the taint flow that CodeQL's SSRF rule tracks.
+	canonicalHost, ok := canonicalUpdateHost(parsed.Hostname())
+	if !ok && !allowHTTPInFetchURL {
 		return nil, fmt.Errorf("host %q is not an allowed update server", parsed.Hostname())
 	}
 
-	// Construct request from the sanitised, allowlist-validated URL components
-	// to give CodeQL a clear sanitiser boundary.
+	// Build the request URL from the allowlist-sourced host (untainted) plus
+	// the path/query from the parsed input.
+	scheme := "https"
+	if allowHTTPInFetchURL && parsed.Scheme == "http" {
+		scheme = "http"
+	}
+	var requestHost string
+	if ok {
+		// Use the canonical constant from the allowlist — not the user-supplied value.
+		requestHost = canonicalHost
+		if parsed.Port() != "" {
+			requestHost = canonicalHost + ":" + parsed.Port()
+		}
+	} else {
+		// allowHTTPInFetchURL path (tests only): use the raw host as-is.
+		requestHost = parsed.Host
+	}
 	safeURL := &url.URL{
-		Scheme:   parsed.Scheme,
-		Host:     parsed.Host,
+		Scheme:   scheme,
+		Host:     requestHost,
 		Path:     parsed.EscapedPath(),
 		RawQuery: parsed.RawQuery,
 	}
@@ -339,18 +358,27 @@ func fetchURL(rawURL string) ([]byte, error) {
 		return nil, errChecksumUnavailable
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP %d from %s", resp.StatusCode, parsed.Host)
+		return nil, fmt.Errorf("HTTP %d from %s", resp.StatusCode, requestHost)
 	}
 	return io.ReadAll(resp.Body)
 }
 
-func isAllowedUpdateHost(host string) bool {
+// canonicalUpdateHost returns the allowlist entry that matches host, and true
+// if found. The returned string is a compile-time constant from allowedUpdateHosts,
+// not derived from user input — which breaks the taint chain for SSRF analysis.
+func canonicalUpdateHost(host string) (string, bool) {
 	for _, allowed := range allowedUpdateHosts {
 		if host == allowed {
-			return true
+			return allowed, true
 		}
 	}
-	return false
+	return "", false
+}
+
+// isAllowedUpdateHost reports whether host is in the update server allowlist.
+func isAllowedUpdateHost(host string) bool {
+	_, ok := canonicalUpdateHost(host)
+	return ok
 }
 
 // verifyChecksum fetches a .sha256 file from checksumURL and compares it
