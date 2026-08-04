@@ -21,19 +21,19 @@ SET password_hash = ?
 WHERE id = ?;
 
 -- name: CreateSession :one
-INSERT INTO sessions (token, user_id, expires_at)
-VALUES (?, ?, ?)
+INSERT INTO sessions (token, token_hash, user_id, expires_at)
+VALUES (?, ?, ?, ?)
 RETURNING *;
 
 -- name: GetSession :one
 SELECT s.*, u.username
 FROM sessions s
 JOIN users u ON s.user_id = u.id
-WHERE s.token = ? AND s.expires_at > datetime('now')
+WHERE s.token_hash = ? AND s.expires_at > datetime('now')
 LIMIT 1;
 
 -- name: DeleteSession :exec
-DELETE FROM sessions WHERE token = ?;
+DELETE FROM sessions WHERE token_hash = ?;
 
 -- name: DeleteExpiredSessions :exec
 DELETE FROM sessions WHERE expires_at <= datetime('now');

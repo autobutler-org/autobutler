@@ -3,6 +3,7 @@ package authutil
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -123,9 +124,17 @@ func Login(ctx context.Context, queries *db.Queries, params LoginParams) (*Login
 	return &LoginResult{SessionToken: token}, nil
 }
 
+// hashToken returns the hex-encoded SHA-256 of a raw session token.
+// This is stored in the DB instead of the plaintext token so a leaked DB
+// file cannot be replayed directly.
+func hashToken(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
+}
+
 // ValidateSession checks a session token and returns the username if valid.
 func ValidateSession(ctx context.Context, queries *db.Queries, token string) (string, error) {
-	session, err := queries.GetSession(ctx, token)
+	session, err := queries.GetSession(ctx, sql.NullString{String: hashToken(token), Valid: true})
 	if err != nil {
 		return "", fmt.Errorf("invalid or expired session")
 	}
@@ -148,7 +157,7 @@ func ValidateBasicAuth(ctx context.Context, queries *db.Queries, username, passw
 
 // Logout deletes a session token.
 func Logout(ctx context.Context, queries *db.Queries, token string) error {
-	return queries.DeleteSession(ctx, token)
+	return queries.DeleteSession(ctx, sql.NullString{String: hashToken(token), Valid: true})
 }
 
 // Recover resets a user's password using their recovery phrase.
@@ -209,6 +218,7 @@ func newSession(ctx context.Context, queries *db.Queries, userID int64) (string,
 
 	_, err = queries.CreateSession(ctx, db.CreateSessionParams{
 		Token:     token,
+		TokenHash: sql.NullString{String: hashToken(token), Valid: true},
 		UserID:    userID,
 		ExpiresAt: time.Now().Add(sessionDuration),
 	})
@@ -230,9 +240,9 @@ type SessionInfo struct {
 
 // sessionID returns the hex-encoded SHA-256 of the raw token, used as a
 // stable, opaque identifier that can be passed back for revocation.
+// Delegates to hashToken — same hash, same result.
 func sessionID(rawToken string) string {
-	h := sha256.Sum256([]byte(rawToken))
-	return hex.EncodeToString(h[:])
+	return hashToken(rawToken)
 }
 
 // ListActiveSessions returns all non-expired sessions for the given user,
@@ -263,7 +273,7 @@ func RevokeSession(ctx context.Context, queries *db.Queries, userID int64, id st
 	}
 	for _, s := range rows {
 		if sessionID(s.Token) == id {
-			if err := queries.DeleteSession(ctx, s.Token); err != nil {
+			if err := queries.DeleteSession(ctx, sql.NullString{String: hashToken(s.Token), Valid: true}); err != nil {
 				return false, fmt.Errorf("failed to delete session: %w", err)
 			}
 			return true, nil
