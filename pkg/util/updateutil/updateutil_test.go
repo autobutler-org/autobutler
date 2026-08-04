@@ -20,6 +20,12 @@ import (
 
 var defaultUpdateSource = DefaultUpdateSources[0]
 
+func TestMain(m *testing.M) {
+	// Allow http:// URLs in fetchURL so httptest servers work in unit tests.
+	allowHTTPInFetchURL = true
+	os.Exit(m.Run())
+}
+
 func TestListPossibleUpdates_NoCurrentVersion(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
@@ -639,5 +645,24 @@ func TestFetchURL_500ReturnsError(t *testing.T) {
 	}
 	if errors.Is(err, errChecksumUnavailable) {
 		t.Error("HTTP 500 should not be errChecksumUnavailable")
+	}
+}
+
+func TestFetchURL_RejectsHTTP(t *testing.T) {
+	// Temporarily re-enable the HTTPS restriction for this test.
+	allowHTTPInFetchURL = false
+	defer func() { allowHTTPInFetchURL = true }()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	_, err := fetchURL(server.URL + "/file")
+	if err == nil {
+		t.Error("expected error for http:// URL")
+	}
+	if !strings.Contains(err.Error(), "only https is allowed") {
+		t.Errorf("unexpected error: %v", err)
 	}
 }

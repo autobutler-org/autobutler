@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"runtime"
@@ -287,10 +288,28 @@ func Update(source *UpdateSource, version string) error {
 // errChecksumUnavailable is returned when the .sha256 file returns HTTP 404.
 var errChecksumUnavailable = errors.New("checksum file not found")
 
+// allowHTTPInFetchURL relaxes the HTTPS-only restriction in fetchURL.
+// It must only be set to true in tests.
+var allowHTTPInFetchURL bool
+
 // fetchURL performs a GET and returns the response body as bytes.
-// Returns an error if the status is not 200.
-func fetchURL(url string) ([]byte, error) {
-	resp, err := http.Get(url) //nolint:gosec // URL constructed from validated source
+// Only HTTPS URLs are permitted to prevent unencrypted downloads.
+// Returns errChecksumUnavailable on HTTP 404; other non-200 responses
+// return a descriptive error.
+func fetchURL(rawURL string) ([]byte, error) {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid URL: %w", err)
+	}
+	if parsed.Scheme != "https" && !allowHTTPInFetchURL {
+		return nil, fmt.Errorf("insecure URL scheme %q: only https is allowed for downloads", parsed.Scheme)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, parsed.String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +318,7 @@ func fetchURL(url string) ([]byte, error) {
 		return nil, errChecksumUnavailable
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP %d from %s", resp.StatusCode, url)
+		return nil, fmt.Errorf("HTTP %d from %s", resp.StatusCode, parsed.Host)
 	}
 	return io.ReadAll(resp.Body)
 }
