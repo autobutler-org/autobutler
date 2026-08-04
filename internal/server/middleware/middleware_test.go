@@ -9,7 +9,7 @@ func TestPathAllowsQueryToken(t *testing.T) {
 	}{
 		// Streaming endpoints that legitimately need ?token=
 		{"/api/v0/events", true},
-		{"/api/v0/events?token=abc", true},        // path with query — HasPrefix matches on path
+		{"/api/v0/events?token=abc", true}, // path with query — HasPrefix matches on path
 		{"/api/v0/cirrus/download", true},
 		{"/api/v0/cirrus/download?f=photo.jpg", true},
 		{"/api/v1/vfs/files/video.mp4", true},
