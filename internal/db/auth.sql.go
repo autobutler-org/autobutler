@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
@@ -24,7 +25,7 @@ func (q *Queries) CountUsers(ctx context.Context) (int64, error) {
 const createSession = `-- name: CreateSession :one
 INSERT INTO sessions (token, user_id, expires_at)
 VALUES (?, ?, ?)
-RETURNING token, user_id, expires_at, created_at
+RETURNING token, user_id, expires_at, created_at, token_hash
 `
 
 type CreateSessionParams struct {
@@ -41,6 +42,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 		&i.UserID,
 		&i.ExpiresAt,
 		&i.CreatedAt,
+		&i.TokenHash,
 	)
 	return i, err
 }
@@ -115,7 +117,7 @@ func (q *Queries) GetFirstUser(ctx context.Context) (User, error) {
 }
 
 const getSession = `-- name: GetSession :one
-SELECT s.token, s.user_id, s.expires_at, s.created_at, u.username
+SELECT s.token, s.user_id, s.expires_at, s.created_at, s.token_hash, u.username
 FROM sessions s
 JOIN users u ON s.user_id = u.id
 WHERE s.token = ? AND s.expires_at > datetime('now')
@@ -127,6 +129,7 @@ type GetSessionRow struct {
 	UserID    int64
 	ExpiresAt time.Time
 	CreatedAt time.Time
+	TokenHash sql.NullString
 	Username  string
 }
 
@@ -138,6 +141,7 @@ func (q *Queries) GetSession(ctx context.Context, token string) (GetSessionRow, 
 		&i.UserID,
 		&i.ExpiresAt,
 		&i.CreatedAt,
+		&i.TokenHash,
 		&i.Username,
 	)
 	return i, err
@@ -184,15 +188,22 @@ WHERE user_id = ? AND expires_at > datetime('now')
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListActiveSessionsForUser(ctx context.Context, userID int64) ([]Session, error) {
+type ListActiveSessionsForUserRow struct {
+	Token     string
+	UserID    int64
+	ExpiresAt time.Time
+	CreatedAt time.Time
+}
+
+func (q *Queries) ListActiveSessionsForUser(ctx context.Context, userID int64) ([]ListActiveSessionsForUserRow, error) {
 	rows, err := q.db.QueryContext(ctx, listActiveSessionsForUser, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Session
+	var items []ListActiveSessionsForUserRow
 	for rows.Next() {
-		var i Session
+		var i ListActiveSessionsForUserRow
 		if err := rows.Scan(
 			&i.Token,
 			&i.UserID,

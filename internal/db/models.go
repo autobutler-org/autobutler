@@ -30,6 +30,12 @@ type DeviceRole struct {
 	UpdatedAt    time.Time
 }
 
+type DocumentFt struct {
+	DeviceSerial string
+	RelPath      string
+	Body         string
+}
+
 type PhotoAlbum struct {
 	ID            int64
 	Name          string
@@ -77,6 +83,7 @@ type Session struct {
 	UserID    int64
 	ExpiresAt time.Time
 	CreatedAt time.Time
+	TokenHash sql.NullString
 }
 
 type User struct {
