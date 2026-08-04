@@ -15,14 +15,34 @@ import (
 const sessionCookieName = "session"
 const sessionCookieMaxAge = int(30 * 24 * time.Hour / time.Second)
 
+// secureCookie reports whether the Secure flag should be set on session cookies.
+// It is true when the request was received over HTTPS (TLS or Tailscale),
+// false only in explicit --insecure HTTP mode. Setting Secure:true on an
+// HTTP response causes browsers to reject/ignore the Set-Cookie header.
+func secureCookie(c *gin.Context) bool {
+	// gin sets c.Request.TLS when the listener used a tls.Conn.
+	if c.Request.TLS != nil {
+		return true
+	}
+	// Tailscale/reverse-proxy path: the outer TLS was terminated upstream;
+	// X-Forwarded-Proto or X-Forwarded-Ssl signal the original scheme.
+	if proto := c.GetHeader("X-Forwarded-Proto"); proto == "https" {
+		return true
+	}
+	if ssl := c.GetHeader("X-Forwarded-Ssl"); ssl == "on" {
+		return true
+	}
+	return false
+}
+
 func setSessionCookie(c *gin.Context, token string) {
 	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie(sessionCookieName, token, sessionCookieMaxAge, "/", "", false, true)
+	c.SetCookie(sessionCookieName, token, sessionCookieMaxAge, "/", "", secureCookie(c), true)
 }
 
 func clearSessionCookie(c *gin.Context) {
 	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie(sessionCookieName, "", -1, "/", "", false, true)
+	c.SetCookie(sessionCookieName, "", -1, "/", "", secureCookie(c), true)
 }
 
 func getQueries(c *gin.Context) (*deputil.Dependencies, bool) {
