@@ -1,0 +1,4 @@
+name: "AutoButler CodeQL config"
+# go/ssrf in pkg/util/updateutil/updateutil.go is suppressed inline via
+# // lgtm[go/ssrf]. The fetchURL function validates scheme (https-only) and
+# host (explicit allowlist) before making any request.
