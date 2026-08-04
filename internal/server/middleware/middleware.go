@@ -72,6 +72,33 @@ func rateLimit() gin.HandlerFunc {
 	}
 }
 
+// tokenQueryAllowedPrefixes lists the path prefixes where the ?token= query
+// parameter is accepted as an auth method. It is intentionally narrow:
+//
+//   - /api/v0/events — SSE/WebSocket stream (JS EventSource cannot set headers)
+//   - /api/v0/cirrus/download — media file URLs used in <img src> / <video src>
+//   - /api/v1/vfs — VFS streaming endpoints
+//
+// Accepting ?token= everywhere leaks session tokens into browser history,
+// proxy logs, and the server access log. All other endpoints must use the
+// Authorization header or session cookie.
+var tokenQueryAllowedPrefixes = []string{
+	"/api/v0/events",
+	"/api/v0/cirrus/download",
+	"/api/v1/vfs",
+}
+
+// pathAllowsQueryToken reports whether the request path is in the narrow set
+// of endpoints that may use ?token= auth.
+func pathAllowsQueryToken(path string) bool {
+	for _, prefix := range tokenQueryAllowedPrefixes {
+		if strings.HasPrefix(path, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
 // authExemptPaths are API paths that don't require a valid session.
 var authExemptPaths = map[string]bool{
 	"/api/v0/auth/setup":   true,
@@ -181,7 +208,7 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 		if cookie, err := c.Cookie("session"); err == nil && cookie != "" {
 			tokens = append(tokens, cookie)
 		}
-		if q := c.Query("token"); q != "" {
+		if q := c.Query("token"); q != "" && pathAllowsQueryToken(path) {
 			tokens = append(tokens, q)
 		}
 
