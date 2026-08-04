@@ -292,8 +292,17 @@ var errChecksumUnavailable = errors.New("checksum file not found")
 // It must only be set to true in tests.
 var allowHTTPInFetchURL bool
 
+// allowedUpdateHosts is the set of domains the update client may contact.
+// All others are rejected to prevent SSRF via a compromised or hijacked update source.
+var allowedUpdateHosts = []string{
+	"github.com",
+	"objects.githubusercontent.com",
+	"autobutlerrelease.blob.core.windows.net",
+	// Added at test time via allowHTTPInFetchURL + local httptest servers
+}
+
 // fetchURL performs a GET and returns the response body as bytes.
-// Only HTTPS URLs are permitted to prevent unencrypted downloads.
+// Only HTTPS connections to known update hosts are allowed.
 // Returns errChecksumUnavailable on HTTP 404; other non-200 responses
 // return a descriptive error.
 func fetchURL(rawURL string) ([]byte, error) {
@@ -304,8 +313,20 @@ func fetchURL(rawURL string) ([]byte, error) {
 	if parsed.Scheme != "https" && !allowHTTPInFetchURL {
 		return nil, fmt.Errorf("insecure URL scheme %q: only https is allowed for downloads", parsed.Scheme)
 	}
+	// Validate host is an allowed update server to prevent SSRF.
+	if !allowHTTPInFetchURL && !isAllowedUpdateHost(parsed.Hostname()) {
+		return nil, fmt.Errorf("host %q is not an allowed update server", parsed.Hostname())
+	}
 
-	req, err := http.NewRequest(http.MethodGet, parsed.String(), nil)
+	// Construct request from the sanitised, allowlist-validated URL components
+	// to give CodeQL a clear sanitiser boundary.
+	safeURL := &url.URL{
+		Scheme:   parsed.Scheme,
+		Host:     parsed.Host,
+		Path:     parsed.EscapedPath(),
+		RawQuery: parsed.RawQuery,
+	}
+	req, err := http.NewRequest(http.MethodGet, safeURL.String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -321,6 +342,15 @@ func fetchURL(rawURL string) ([]byte, error) {
 		return nil, fmt.Errorf("HTTP %d from %s", resp.StatusCode, parsed.Host)
 	}
 	return io.ReadAll(resp.Body)
+}
+
+func isAllowedUpdateHost(host string) bool {
+	for _, allowed := range allowedUpdateHosts {
+		if host == allowed {
+			return true
+		}
+	}
+	return false
 }
 
 // verifyChecksum fetches a .sha256 file from checksumURL and compares it

@@ -666,3 +666,38 @@ func TestFetchURL_RejectsHTTP(t *testing.T) {
 		t.Errorf("unexpected error: %v", err)
 	}
 }
+
+func TestFetchURL_RejectsUnknownHost(t *testing.T) {
+	// allowHTTPInFetchURL is true in tests but host allowlist still applies.
+	// Temporarily disable the http-allow flag so both checks fire.
+	allowHTTPInFetchURL = false
+	defer func() { allowHTTPInFetchURL = true }()
+
+	_, err := fetchURL("https://evil.example.com/malware")
+	if err == nil {
+		t.Error("expected error for unknown host")
+	}
+	if !strings.Contains(err.Error(), "not an allowed update server") {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+func TestIsAllowedUpdateHost(t *testing.T) {
+	cases := []struct {
+		host    string
+		allowed bool
+	}{
+		{"github.com", true},
+		{"objects.githubusercontent.com", true},
+		{"autobutlerrelease.blob.core.windows.net", true},
+		{"evil.com", false},
+		{"github.com.evil.com", false},
+		{"", false},
+	}
+	for _, c := range cases {
+		got := isAllowedUpdateHost(c.host)
+		if got != c.allowed {
+			t.Errorf("isAllowedUpdateHost(%q) = %v, want %v", c.host, got, c.allowed)
+		}
+	}
+}
