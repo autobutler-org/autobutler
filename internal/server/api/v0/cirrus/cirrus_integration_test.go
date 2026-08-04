@@ -248,7 +248,7 @@ func TestDeleteFile(t *testing.T) {
 	}
 
 	w := doRequest(engine, http.MethodDelete, "/api/v0/cirrus?filePaths=todelete.txt", nil, "")
-	if w.Code != http.StatusOK {
+	if w.Code != http.StatusAccepted {
 		t.Fatalf("delete returned %d: %s", w.Code, w.Body.String())
 	}
 
