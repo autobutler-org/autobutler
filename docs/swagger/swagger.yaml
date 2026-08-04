@@ -1936,6 +1936,36 @@ paths:
       summary: Get software bill of materials
       tags:
       - version
+  /search/documents:
+    get:
+      description: |-
+        Search indexed .abdoc, .absheet, and plain-text files using FTS5.
+        Supports plain words, "exact phrases", and boolean (word1 AND word2).
+        Returns up to 50 results ordered by relevance with HTML snippet excerpts.
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Search results
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Full-text search over document contents
+      tags:
+      - search
   /settings:
     get:
       description: Retrieves application settings

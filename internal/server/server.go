@@ -23,6 +23,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/util/remoteutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
+	"github.com/autobutler-org/autobutler/pkg/util/searchutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 	"github.com/autobutler-org/autobutler/pkg/util/tlsutil"
 	"github.com/autobutler-org/autobutler/pkg/util/workerutil"
@@ -62,6 +63,27 @@ func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 	initExternalVault(deps)
 	go vaultDeviceMonitor(deps)
 	go usbDeviceMonitor(deps)
+
+	// Build and wire the FTS document search index.
+	if database := deps.Database(); database != nil {
+		searchIdx := searchutil.NewIndex(database.Db)
+		deps.WithSearchIndex(searchIdx)
+		go func() {
+			if err := searchIdx.RebuildFromDevices(context.Background(), deps.StorageService()); err != nil {
+				log.Printf("[search] initial index build failed: %v", err)
+			}
+		}()
+		go func() {
+			events, unsub := deps.EventBus().Subscribe("search-index")
+			defer unsub()
+			for event := range events {
+				cirrusDir, err := storageutil.GetCirrusDir()
+				if err == nil {
+					searchIdx.HandleEvent(context.Background(), event, cirrusDir)
+				}
+			}
+		}()
+	}
 
 	return syncWorker, nil
 }

@@ -2138,6 +2138,47 @@
                 }
             }
         },
+        "/search/documents": {
+            "get": {
+                "description": "Search indexed .abdoc, .absheet, and plain-text files using FTS5.\nSupports plain words, \"exact phrases\", and boolean (word1 AND word2).\nReturns up to 50 results ordered by relevance with HTML snippet excerpts.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "search"
+                ],
+                "summary": "Full-text search over document contents",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Search results",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/settings": {
             "get": {
                 "description": "Retrieves application settings",

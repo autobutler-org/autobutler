@@ -8,6 +8,7 @@ import (
 	"github.com/autobutler-org/autobutler/pkg/botel/exporters/botelsqlite"
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/iosemutil"
+	"github.com/autobutler-org/autobutler/pkg/util/searchutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 	"github.com/autobutler-org/autobutler/pkg/util/vaultcrypto"
 	"github.com/autobutler-org/autobutler/pkg/util/workerutil"
@@ -18,6 +19,7 @@ type Dependencies interface {
 	Database() *db.DatabaseSqlc
 	EventBus() *eventbus.Bus
 	FileIndex() *storageutil.FileIndex
+	SearchIndex() *searchutil.Index
 	HealthDatabase() *db.DatabaseRaw
 	IOSemaphore() *iosemutil.Semaphore
 	MetricsExporter() *botelsqlite.TraceExporter
@@ -28,6 +30,7 @@ type Dependencies interface {
 	WithDatabase(database *db.DatabaseSqlc) Dependencies
 	WithEventBus(b *eventbus.Bus) Dependencies
 	WithFileIndex(idx *storageutil.FileIndex) Dependencies
+	WithSearchIndex(idx *searchutil.Index) Dependencies
 	WithHealthDatabase(healthDatabase *db.DatabaseRaw) Dependencies
 	WithIOSemaphore(sem *iosemutil.Semaphore) Dependencies
 	WithMetricsExporter(exporter *botelsqlite.TraceExporter) Dependencies
@@ -46,6 +49,7 @@ type dependencies struct {
 	database        *db.DatabaseSqlc
 	eventBus        *eventbus.Bus
 	fileIndex       *storageutil.FileIndex
+	searchIndex     *searchutil.Index
 	healthDatabase  *db.DatabaseRaw
 	ioSemaphore     *iosemutil.Semaphore
 	metricsExporter *botelsqlite.TraceExporter
@@ -104,6 +108,11 @@ func (d *dependencies) WithFileIndex(idx *storageutil.FileIndex) Dependencies {
 	return d
 }
 
+func (d *dependencies) WithSearchIndex(idx *searchutil.Index) Dependencies {
+	d.searchIndex = idx
+	return d
+}
+
 func (d *dependencies) WithHealthDatabase(database *db.DatabaseRaw) Dependencies {
 	d.healthDatabase = database
 	return d
@@ -134,6 +143,10 @@ func (d *dependencies) EventBus() *eventbus.Bus {
 
 func (d *dependencies) FileIndex() *storageutil.FileIndex {
 	return d.fileIndex
+}
+
+func (d *dependencies) SearchIndex() *searchutil.Index {
+	return d.searchIndex
 }
 
 func (d *dependencies) HealthDatabase() *db.DatabaseRaw {
