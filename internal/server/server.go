@@ -613,8 +613,11 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 		if err != nil {
 			return fmt.Errorf("failed to load TLS key pair: %w", err)
 		}
+
 		tlsCfg := &tls.Config{
-			GetCertificate: getCertificate,
+			// GetCertificate tries Tailscale (Let's Encrypt *.ts.net) first,
+			// then falls back to the local self-signed cert for LAN clients.
+			GetCertificate: remoteutil.GetCertificate(getCertificate),
 			MinVersion:     tls.VersionTLS13,
 		}
 

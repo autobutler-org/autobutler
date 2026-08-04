@@ -42,10 +42,11 @@ func remoteAccessResponse(enabled bool) RemoteAccessResponse {
 	}
 	status := remoteutil.Status()
 	return RemoteAccessResponse{
-		Enabled:   true,
-		Connected: status.Connected,
-		RemoteURL: status.RemoteURL,
-		Error:     status.Error,
+		Enabled:           true,
+		Connected:         status.Connected,
+		RemoteURL:         status.RemoteURL,
+		TailscaleHostname: remoteutil.TailscaleHostname(),
+		Error:             status.Error,
 	}
 }
 
