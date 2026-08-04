@@ -39,6 +39,9 @@ jobs:
   autobutler-cd-azure:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
 
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'deploy-to-azure')
 
