@@ -91,10 +91,10 @@ var authExemptPaths = map[string]bool{
 //   - /api/v0/cirrus/download-archive — archive served directly
 //   - /api/v0/photos/thumbnail — <img src="..."> or <video src="...">
 var queryParamTokenPaths = map[string]bool{
-	"/api/v0/events":                    true,
-	"/api/v0/cirrus/download":           true,
-	"/api/v0/cirrus/download-archive":   true,
-	"/api/v0/photos/thumbnail":          true,
+	"/api/v0/events":                  true,
+	"/api/v0/cirrus/download":         true,
+	"/api/v0/cirrus/download-archive": true,
+	"/api/v0/photos/thumbnail":        true,
 }
 
 // allowsQueryParamToken returns true when the request path is explicitly
