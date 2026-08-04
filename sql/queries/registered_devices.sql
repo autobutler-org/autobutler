@@ -1,8 +1,7 @@
 -- name: RegisterDevice :one
 INSERT INTO registered_devices (name, device_type, identity_type, ip_address, mac_address, tailscale_key, user_agent)
 VALUES (?, ?, ?, ?, ?, ?, ?)
-ON CONFLICT (ip_address, user_agent)
-DO UPDATE SET
+ON CONFLICT DO UPDATE SET
     name         = excluded.name,
     device_type  = excluded.device_type,
     user_agent   = excluded.user_agent,
@@ -12,8 +11,7 @@ RETURNING *;
 -- name: RegisterTailscaleDevice :one
 INSERT INTO registered_devices (name, device_type, identity_type, ip_address, tailscale_key, user_agent)
 VALUES (?, ?, 'tailscale', ?, ?, ?)
-ON CONFLICT (tailscale_key)
-DO UPDATE SET
+ON CONFLICT DO UPDATE SET
     name        = excluded.name,
     device_type = excluded.device_type,
     ip_address  = excluded.ip_address,
