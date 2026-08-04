@@ -62,6 +62,7 @@ func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 	initExternalVault(deps)
 	go vaultDeviceMonitor(deps)
 	go usbDeviceMonitor(deps)
+	go startSessionPurger(deps)
 
 	return syncWorker, nil
 }
