@@ -5,5 +5,6 @@ query-filters:
   # allowlist of hosts (github.com, objects.githubusercontent.com, Azure blob).
   # Scheme is enforced to https and the request host is replaced with the
   # matching allowlist constant before the HTTP call is made.
+  # Rule ID confirmed from GitHub Code Scanning alert #8.
   - exclude:
-      id: go/ssrf
+      id: go/request-forgery
