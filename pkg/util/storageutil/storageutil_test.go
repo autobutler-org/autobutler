@@ -468,6 +468,37 @@ func TestDetermineFileTypeFromPath(t *testing.T) {
 		{"IMAGE.PNG", FileTypeImage},     // Test case insensitivity
 		{"PHOTO.CR2", FileTypeImage},     // RAW case insensitivity
 		{"generic.bin", FileTypeGeneric}, // Unknown/generic type
+		// Plain text
+		{"readme.md", FileTypeText},
+		{"notes.txt", FileTypeText},
+		{"CHANGES.log", FileTypeText},
+		{"config.env", FileTypeText},
+		{"readme.rst", FileTypeText},
+		// Code / markup (FileTypeCode)
+		{"main.go", FileTypeCode},
+		{"script.py", FileTypeCode},
+		{"app.js", FileTypeCode},
+		{"component.jsx", FileTypeCode},
+		{"component.tsx", FileTypeCode},
+		{"style.css", FileTypeCode},
+		{"style.scss", FileTypeCode},
+		{"index.html", FileTypeCode},
+		{"data.json", FileTypeCode},
+		{"config.yaml", FileTypeCode},
+		{"config.toml", FileTypeCode},
+		{"schema.sql", FileTypeCode},
+		{"main.rs", FileTypeCode},
+		{"App.java", FileTypeCode},
+		{"Main.kt", FileTypeCode},
+		{"util.swift", FileTypeCode},
+		{"widget.dart", FileTypeCode},
+		{"lib.c", FileTypeCode},
+		{"header.h", FileTypeCode},
+		{"class.cpp", FileTypeCode},
+		{"setup.sh", FileTypeCode},
+		{"main.rb", FileTypeCode},
+		// .ts stays video (MPEG-2 transport stream)
+		{"stream.ts", FileTypeVideo},
 	}
 
 	for _, tt := range tests {
