@@ -142,7 +142,7 @@ func createShareLink(c *gin.Context) *serverutil.Response {
 	var expiresAt sql.NullTime
 	if req.ExpiresInSec != nil && *req.ExpiresInSec > 0 {
 		expiresAt = sql.NullTime{
-			Time:  time.Now().Add(time.Duration(*req.ExpiresInSec) * time.Second),
+			Time:  time.Now().UTC().Add(time.Duration(*req.ExpiresInSec) * time.Second),
 			Valid: true,
 		}
 	}
