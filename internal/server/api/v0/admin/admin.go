@@ -1,16 +1,18 @@
 // Package v0_admin implements admin role management endpoints (#1204).
 //
 // Role hierarchy:
-//   owner → admin → user
+//
+//	owner → admin → user
 //
 // 'owner' is the initial account created at setup. There is always exactly one
 // owner. Both 'owner' and 'admin' are considered admin-privileged; only 'user'
 // is restricted.
 //
 // Routes (all require admin privilege except GET /admin/users):
-//   GET  /admin/users           — list all users and their roles
-//   POST /admin/users/:id/promote — promote a user to admin
-//   POST /admin/users/:id/demote  — demote an admin to user (blocked if last admin)
+//
+//	GET  /admin/users           — list all users and their roles
+//	POST /admin/users/:id/promote — promote a user to admin
+//	POST /admin/users/:id/demote  — demote an admin to user (blocked if last admin)
 package v0_admin
 
 import (

@@ -138,9 +138,9 @@ func TestCountAdmins(t *testing.T) {
 		t.Errorf("expected 0, got %d", count)
 	}
 
-	insertUser(t, q, "owner1", "owner")  // owners count as admins
-	insertUser(t, q, "admin1", "admin")  // admins too
-	insertUser(t, q, "user1", "user")    // users do not
+	insertUser(t, q, "owner1", "owner") // owners count as admins
+	insertUser(t, q, "admin1", "admin") // admins too
+	insertUser(t, q, "user1", "user")   // users do not
 
 	count, _ = q.CountAdmins(ctx)
 	if count != 2 {
