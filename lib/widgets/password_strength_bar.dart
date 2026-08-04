@@ -43,13 +43,22 @@ PasswordStrength scorePassword(String password) {
   if (password.isEmpty) return PasswordStrength.empty;
 
   int score = 0;
-  if (password.length >= 8) score++;
-  if (password.length >= 12) score++;
-  if (password.contains(RegExp(r'[A-Z]')) &&
-      password.contains(RegExp(r'[a-z]')))
+  if (password.length >= 8) {
     score++;
-  if (password.contains(RegExp(r'\d'))) score++;
-  if (password.contains(RegExp(r'[^A-Za-z\d]'))) score++;
+  }
+  if (password.length >= 12) {
+    score++;
+  }
+  if (password.contains(RegExp(r'[A-Z]')) &&
+      password.contains(RegExp(r'[a-z]'))) {
+    score++;
+  }
+  if (password.contains(RegExp(r'\d'))) {
+    score++;
+  }
+  if (password.contains(RegExp(r'[^A-Za-z\d]'))) {
+    score++;
+  }
 
   return switch (score) {
     0 || 1 => PasswordStrength.weak,
