@@ -163,6 +163,20 @@ definitions:
       isFavorite:
         type: boolean
     type: object
+  v0_files.ContentSearchResult:
+    properties:
+      relPath:
+        description: RelPath is the path to the file relative to the device's CirrusDir.
+        type: string
+      serial:
+        description: Serial is the storage device serial number.
+        type: string
+      snippet:
+        description: |-
+          Snippet is a highlighted excerpt around the matched terms.
+          Matched terms are enclosed in <b> tags.
+        type: string
+    type: object
   v0_files.FileNodeJSON:
     properties:
       compressedSize:
@@ -1589,6 +1603,43 @@ paths:
           schema:
             $ref: '#/definitions/serverutil.Response'
       summary: Searches for files
+      tags:
+      - cirrus
+  /cirrus/search/content:
+    get:
+      description: |-
+        Full-text search over indexed file contents using SQLite FTS5.
+        Only text-based file formats are indexed (.txt, .md, .csv, .yaml, .json, etc.).
+        Binary formats (images, video, PDF) are not indexed.
+        Returns up to `limit` results ordered by relevance rank.
+      parameters:
+      - description: 'Search query (FTS5 syntax: words, AND/OR/NOT, \'
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: Maximum results to return (default 50, max 200)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v0_files.ContentSearchResult'
+            type: array
+        "400":
+          description: Bad Request — missing query
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Search file contents (FTS5)
       tags:
       - cirrus
   /cirrus/stat:

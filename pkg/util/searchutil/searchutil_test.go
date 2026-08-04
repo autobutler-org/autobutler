@@ -1,0 +1,328 @@
+package searchutil
+
+import (
+	"context"
+	"database/sql"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	_ "modernc.org/sqlite"
+)
+
+// --- schema setup ---
+
+const testSchema = `
+CREATE TABLE IF NOT EXISTS file_content (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    serial     TEXT    NOT NULL,
+    rel_path   TEXT    NOT NULL,
+    extracted  TEXT    NOT NULL DEFAULT '',
+    updated_at DATETIME NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(serial, rel_path)
+);
+CREATE VIRTUAL TABLE IF NOT EXISTS file_content_fts USING fts5(
+    extracted,
+    content=file_content,
+    content_rowid=id,
+    tokenize='porter unicode61'
+);
+CREATE TRIGGER IF NOT EXISTS file_content_ai
+AFTER INSERT ON file_content BEGIN
+    INSERT INTO file_content_fts(rowid, extracted) VALUES (new.id, new.extracted);
+END;
+CREATE TRIGGER IF NOT EXISTS file_content_ad
+AFTER DELETE ON file_content BEGIN
+    INSERT INTO file_content_fts(file_content_fts, rowid, extracted) VALUES ('delete', old.id, old.extracted);
+END;
+CREATE TRIGGER IF NOT EXISTS file_content_au
+AFTER UPDATE ON file_content BEGIN
+    INSERT INTO file_content_fts(file_content_fts, rowid, extracted) VALUES ('delete', old.id, old.extracted);
+    INSERT INTO file_content_fts(rowid, extracted) VALUES (new.id, new.extracted);
+END;
+`
+
+func newTestDB(t *testing.T) *sql.DB {
+	t.Helper()
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("open sqlite3: %v", err)
+	}
+	if _, err := db.Exec(testSchema); err != nil {
+		t.Fatalf("create schema: %v", err)
+	}
+	t.Cleanup(func() { db.Close() })
+	return db
+}
+
+// --- IsIndexable ---
+
+func TestIsIndexable(t *testing.T) {
+	cases := []struct {
+		path     string
+		expected bool
+	}{
+		{"readme.md", true},
+		{"notes.txt", true},
+		{"data.csv", true},
+		{"config.yaml", true},
+		{"config.yml", true},
+		{"config.toml", true},
+		{"data.json", true},
+		{"index.html", true},
+		{"style.css", true},
+		{"script.js", true},
+		{"script.ts", true},
+		{"photo.jpg", false},
+		{"video.mp4", false},
+		{"binary.exe", false},
+		{"archive.zip", false},
+		{"image.png", false},
+		{"document.pdf", false}, // not yet implemented
+	}
+	for _, c := range cases {
+		got := IsIndexable(c.path)
+		if got != c.expected {
+			t.Errorf("IsIndexable(%q) = %v, want %v", c.path, got, c.expected)
+		}
+	}
+}
+
+func TestIsIndexable_CaseInsensitive(t *testing.T) {
+	if !IsIndexable("README.MD") {
+		t.Error("IsIndexable should be case-insensitive for .MD")
+	}
+	if !IsIndexable("NOTES.TXT") {
+		t.Error("IsIndexable should be case-insensitive for .TXT")
+	}
+}
+
+// --- ExtractText ---
+
+func TestExtractText_PlainText(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "hello.txt")
+	if err := os.WriteFile(path, []byte("hello world"), 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	got := ExtractText(path)
+	if got != "hello world" {
+		t.Errorf("ExtractText = %q, want %q", got, "hello world")
+	}
+}
+
+func TestExtractText_NonIndexable(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "photo.jpg")
+	if err := os.WriteFile(path, []byte("fake jpeg"), 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	got := ExtractText(path)
+	if got != "" {
+		t.Errorf("ExtractText of non-indexable file should return \"\", got %q", got)
+	}
+}
+
+func TestExtractText_MissingFile(t *testing.T) {
+	got := ExtractText("/nonexistent/path/file.txt")
+	if got != "" {
+		t.Errorf("ExtractText of missing file should return \"\", got %q", got)
+	}
+}
+
+func TestExtractText_Truncation(t *testing.T) {
+	// Create a file larger than MaxExtractBytes.
+	dir := t.TempDir()
+	path := filepath.Join(dir, "big.txt")
+	big := strings.Repeat("a", MaxExtractBytes+100)
+	if err := os.WriteFile(path, []byte(big), 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	got := ExtractText(path)
+	if len(got) > MaxExtractBytes {
+		t.Errorf("ExtractText returned %d bytes, want <= %d", len(got), MaxExtractBytes)
+	}
+}
+
+// --- sanitiseFTSQuery ---
+
+func TestSanitiseFTSQuery_PlainTerm(t *testing.T) {
+	got := sanitiseFTSQuery("hello")
+	if !strings.HasPrefix(got, `"`) || !strings.HasSuffix(got, `"`) {
+		t.Errorf("plain term should be quoted, got %q", got)
+	}
+}
+
+func TestSanitiseFTSQuery_WithOperator(t *testing.T) {
+	q := "hello AND world"
+	got := sanitiseFTSQuery(q)
+	if got != q {
+		t.Errorf("operator query should pass through unchanged, got %q", got)
+	}
+}
+
+func TestSanitiseFTSQuery_WithPrefix(t *testing.T) {
+	q := "hel*"
+	got := sanitiseFTSQuery(q)
+	if got != q {
+		t.Errorf("prefix query should pass through, got %q", got)
+	}
+}
+
+func TestSanitiseFTSQuery_Empty(t *testing.T) {
+	got := sanitiseFTSQuery("")
+	if got == "" {
+		t.Error("empty query should not return empty string (FTS5 syntax error)")
+	}
+}
+
+// --- UpsertContent / Search / DeleteContent ---
+
+func TestUpsertAndSearch(t *testing.T) {
+	db := newTestDB(t)
+	ctx := context.Background()
+
+	if err := UpsertContent(ctx, db, "sda1", "notes/hello.txt", "The quick brown fox jumps"); err != nil {
+		t.Fatalf("UpsertContent: %v", err)
+	}
+
+	results, err := Search(ctx, db, "quick", 10)
+	if err != nil {
+		t.Fatalf("Search: %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	if results[0].Serial != "sda1" || results[0].RelPath != "notes/hello.txt" {
+		t.Errorf("unexpected result: %+v", results[0])
+	}
+}
+
+func TestSearch_NoResults(t *testing.T) {
+	db := newTestDB(t)
+	ctx := context.Background()
+
+	results, err := Search(ctx, db, "zzznomatch", 10)
+	if err != nil {
+		t.Fatalf("Search: %v", err)
+	}
+	if len(results) != 0 {
+		t.Errorf("expected 0 results, got %d", len(results))
+	}
+	// Must return non-nil empty slice, not nil (JSON [] vs null).
+	if results == nil {
+		t.Error("Search returned nil, want non-nil empty slice")
+	}
+}
+
+func TestSearch_MultipleFiles(t *testing.T) {
+	db := newTestDB(t)
+	ctx := context.Background()
+
+	if err := UpsertContent(ctx, db, "sda1", "a.txt", "golang programming language"); err != nil {
+		t.Fatalf("UpsertContent a: %v", err)
+	}
+	if err := UpsertContent(ctx, db, "sda1", "b.txt", "python programming language"); err != nil {
+		t.Fatalf("UpsertContent b: %v", err)
+	}
+	if err := UpsertContent(ctx, db, "sda1", "c.txt", "unrelated document"); err != nil {
+		t.Fatalf("UpsertContent c: %v", err)
+	}
+
+	results, err := Search(ctx, db, "programming", 10)
+	if err != nil {
+		t.Fatalf("Search: %v", err)
+	}
+	if len(results) != 2 {
+		t.Errorf("expected 2 results for 'programming', got %d", len(results))
+	}
+}
+
+func TestUpsertContent_UpdatesExisting(t *testing.T) {
+	db := newTestDB(t)
+	ctx := context.Background()
+
+	if err := UpsertContent(ctx, db, "sda1", "doc.txt", "original content here"); err != nil {
+		t.Fatalf("first upsert: %v", err)
+	}
+	if err := UpsertContent(ctx, db, "sda1", "doc.txt", "completely updated content"); err != nil {
+		t.Fatalf("second upsert: %v", err)
+	}
+
+	res, _ := Search(ctx, db, "original", 10)
+	if len(res) != 0 {
+		t.Error("old content should not be searchable after update")
+	}
+	res, _ = Search(ctx, db, "updated", 10)
+	if len(res) != 1 {
+		t.Errorf("expected 1 result for updated content, got %d", len(res))
+	}
+}
+
+func TestDeleteContent(t *testing.T) {
+	db := newTestDB(t)
+	ctx := context.Background()
+
+	if err := UpsertContent(ctx, db, "sda1", "todelete.txt", "delete me please"); err != nil {
+		t.Fatalf("UpsertContent: %v", err)
+	}
+	if err := DeleteContent(ctx, db, "sda1", "todelete.txt"); err != nil {
+		t.Fatalf("DeleteContent: %v", err)
+	}
+
+	results, _ := Search(ctx, db, "delete", 10)
+	if len(results) != 0 {
+		t.Errorf("expected 0 results after delete, got %d", len(results))
+	}
+}
+
+func TestDeleteContentBySerial(t *testing.T) {
+	db := newTestDB(t)
+	ctx := context.Background()
+
+	if err := UpsertContent(ctx, db, "sda1", "a.txt", "device alpha content"); err != nil {
+		t.Fatalf("UpsertContent sda1/a: %v", err)
+	}
+	if err := UpsertContent(ctx, db, "sda1", "b.txt", "device alpha second file"); err != nil {
+		t.Fatalf("UpsertContent sda1/b: %v", err)
+	}
+	if err := UpsertContent(ctx, db, "sdb1", "c.txt", "device beta content"); err != nil {
+		t.Fatalf("UpsertContent sdb1/c: %v", err)
+	}
+
+	if err := DeleteContentBySerial(ctx, db, "sda1"); err != nil {
+		t.Fatalf("DeleteContentBySerial: %v", err)
+	}
+
+	// sda1 files gone
+	res, _ := Search(ctx, db, "alpha", 10)
+	if len(res) != 0 {
+		t.Errorf("expected no results for sda1 after DeleteContentBySerial, got %d", len(res))
+	}
+	// sdb1 file still present
+	res, _ = Search(ctx, db, "beta", 10)
+	if len(res) != 1 {
+		t.Errorf("expected sdb1 file to survive, got %d results", len(res))
+	}
+}
+
+func TestSearch_LimitRespected(t *testing.T) {
+	db := newTestDB(t)
+	ctx := context.Background()
+
+	for i := 0; i < 10; i++ {
+		if err := UpsertContent(ctx, db, "dev", strings.Repeat("x", i+1)+".txt",
+			"common keyword here"); err != nil {
+			t.Fatalf("UpsertContent %d: %v", i, err)
+		}
+	}
+
+	results, err := Search(ctx, db, "keyword", 3)
+	if err != nil {
+		t.Fatalf("Search: %v", err)
+	}
+	if len(results) > 3 {
+		t.Errorf("expected <= 3 results, got %d", len(results))
+	}
+}
