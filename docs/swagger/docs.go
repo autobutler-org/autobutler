@@ -1012,7 +1012,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Enqueue deletion of files under the specified root directory",
+                "description": "Soft-deletes files by moving them to the device trash directory (.trash/).\nThe operation returns 202 immediately after the rename — files are invisible\nto listings at once. DB cleanup (album items, rotations, favorites) runs in\nthe background and completes within seconds. VFS-backed paths fall back to\nhard delete via the plugin.",
                 "produces": [
                     "application/json"
                 ],
@@ -1047,7 +1047,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "202": {
-                        "description": "Ok",
+                        "description": "Accepted",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }

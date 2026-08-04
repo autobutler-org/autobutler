@@ -1107,7 +1107,12 @@ paths:
       - books
   /cirrus:
     delete:
-      description: Enqueue deletion of files under the specified root directory
+      description: |-
+        Soft-deletes files by moving them to the device trash directory (.trash/).
+        The operation returns 202 immediately after the rename — files are invisible
+        to listings at once. DB cleanup (album items, rotations, favorites) runs in
+        the background and completes within seconds. VFS-backed paths fall back to
+        hard delete via the plugin.
       parameters:
       - description: Root directory
         in: query
@@ -1129,7 +1134,7 @@ paths:
       - application/json
       responses:
         "202":
-          description: Ok
+          description: Accepted
           schema:
             $ref: '#/definitions/serverutil.Response'
         "400":
