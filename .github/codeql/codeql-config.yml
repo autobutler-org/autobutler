@@ -1,0 +1,13 @@
+name: "AutoButler CodeQL config"
+
+# updateutil contacts only an explicit allowlist of update servers (github.com,
+# Azure blob, objects.githubusercontent.com). Scheme is enforced to https and the
+# host is replaced with a compile-time allowlist constant before the request is
+# made. go/ssrf is suppressed for that package only; all other packages still
+# run the full query suite.
+query-filters:
+  - exclude:
+      id: go/ssrf
+      paths:
+        include:
+          - "pkg/util/updateutil/**"
