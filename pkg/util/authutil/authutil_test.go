@@ -423,3 +423,84 @@ func TestRecover_CaseInsensitive(t *testing.T) {
 		t.Errorf("Recovery should work with uppercased phrase: %v", err)
 	}
 }
+
+// newTestDBRaw is like newTestDB but also returns the underlying *sql.DB so
+// tests can inspect raw table contents (e.g. to verify tokens are hashed).
+// Both the returned Queries and the *sql.DB operate on the same connection
+// pool — use db.New(sqlDB) so all queries hit the same in-memory database.
+func newTestDBRaw(t *testing.T) (*db.Queries, *sql.DB) {
+	t.Helper()
+	sqlDB, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("failed to open in-memory db: %v", err)
+	}
+	t.Cleanup(func() { sqlDB.Close() })
+
+	// SQLite in-memory databases are per-connection by default. Force a single
+	// shared connection so Queries and the raw *sql.DB see the same data.
+	sqlDB.SetMaxOpenConns(1)
+
+	schema := `
+		CREATE TABLE IF NOT EXISTS users (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			username TEXT NOT NULL UNIQUE,
+			password_hash TEXT NOT NULL,
+			recovery_phrase_hash TEXT NOT NULL,
+			created_at DATETIME NOT NULL DEFAULT (datetime('now'))
+		);
+		CREATE TABLE IF NOT EXISTS sessions (
+			token TEXT PRIMARY KEY,
+			user_id INTEGER NOT NULL,
+			expires_at DATETIME NOT NULL,
+			created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+			FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+		);
+	`
+	if _, err := sqlDB.Exec(schema); err != nil {
+		t.Fatalf("failed to create schema: %v", err)
+	}
+	return db.New(sqlDB), sqlDB
+}
+
+// TestSessionTokensHashedAtRest verifies that the raw token returned to the
+// caller is NOT stored verbatim in the sessions table. If a DB backup leaks,
+// the stored value cannot be used directly as a bearer credential.
+func TestSessionTokensHashedAtRest(t *testing.T) {
+	queries, rawDB := newTestDBRaw(t)
+
+	result, err := authutil.Setup(context.Background(), queries, authutil.SetupParams{
+		Username: "admin",
+		Password: "password123",
+	})
+	if err != nil {
+		t.Fatalf("Setup: %v", err)
+	}
+	rawToken := result.SessionToken
+	if rawToken == "" {
+		t.Fatal("expected non-empty session token")
+	}
+
+	// The sessions table must not contain the raw token.
+	var count int
+	if err := rawDB.QueryRow(`SELECT COUNT(*) FROM sessions WHERE token = ?`, rawToken).Scan(&count); err != nil {
+		t.Fatalf("query sessions: %v", err)
+	}
+	if count > 0 {
+		t.Error("raw session token found verbatim in sessions table — token should be stored as a hash")
+	}
+
+	// The hash of the raw token must be present in the table.
+	if err := rawDB.QueryRow(
+		`SELECT COUNT(*) FROM sessions WHERE length(token) = 64`,
+	).Scan(&count); err != nil {
+		t.Fatalf("query sessions hash: %v", err)
+	}
+	if count == 0 {
+		t.Error("expected a 64-char hex SHA-256 hash in sessions table, found none")
+	}
+
+	// ValidateSession must still work with the raw token.
+	if _, err := authutil.ValidateSession(context.Background(), queries, rawToken); err != nil {
+		t.Errorf("ValidateSession with raw token failed: %v", err)
+	}
+}

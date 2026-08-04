@@ -124,8 +124,10 @@ func Login(ctx context.Context, queries *db.Queries, params LoginParams) (*Login
 }
 
 // ValidateSession checks a session token and returns the username if valid.
+// The token is hashed (SHA-256) before the DB lookup — sessions are stored
+// as hashes at rest so a leaked DB file cannot be replayed.
 func ValidateSession(ctx context.Context, queries *db.Queries, token string) (string, error) {
-	session, err := queries.GetSession(ctx, token)
+	session, err := queries.GetSession(ctx, hashToken(token))
 	if err != nil {
 		return "", fmt.Errorf("invalid or expired session")
 	}
@@ -148,7 +150,7 @@ func ValidateBasicAuth(ctx context.Context, queries *db.Queries, username, passw
 
 // Logout deletes a session token.
 func Logout(ctx context.Context, queries *db.Queries, token string) error {
-	return queries.DeleteSession(ctx, token)
+	return queries.DeleteSession(ctx, hashToken(token))
 }
 
 // Recover resets a user's password using their recovery phrase.
@@ -201,14 +203,24 @@ func Recover(ctx context.Context, queries *db.Queries, params RecoverParams) (*L
 	return &LoginResult{SessionToken: token}, nil
 }
 
+// hashToken returns the hex-encoded SHA-256 hash of a session token.
+// This is stored in the DB instead of the raw token so a leaked database
+// file cannot be replayed against the server.
+func hashToken(token string) string {
+	h := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(h[:])
+}
+
 func newSession(ctx context.Context, queries *db.Queries, userID int64) (string, error) {
 	token, err := GenerateSessionToken()
 	if err != nil {
 		return "", err
 	}
 
+	// Store the SHA-256 hash, not the raw token. The caller receives the raw
+	// token to use as a bearer credential; the DB only ever sees the digest.
 	_, err = queries.CreateSession(ctx, db.CreateSessionParams{
-		Token:     token,
+		Token:     hashToken(token),
 		UserID:    userID,
 		ExpiresAt: time.Now().Add(sessionDuration),
 	})
@@ -220,23 +232,18 @@ func newSession(ctx context.Context, queries *db.Queries, userID int64) (string,
 }
 
 // SessionInfo is a safe, token-free representation of an active session
-// returned to the caller. The ID is the hex-encoded SHA-256 of the raw token
-// so clients can reference a session for revocation without exposing the token.
+// returned to the caller. The ID is the stored token hash — since tokens are
+// hashed at rest, the stored value is already a safe opaque identifier that
+// clients can use for revocation without exposing the bearer credential.
 type SessionInfo struct {
 	ID        string    `json:"id"`
 	CreatedAt time.Time `json:"createdAt"`
 	ExpiresAt time.Time `json:"expiresAt"`
 }
 
-// sessionID returns the hex-encoded SHA-256 of the raw token, used as a
-// stable, opaque identifier that can be passed back for revocation.
-func sessionID(rawToken string) string {
-	h := sha256.Sum256([]byte(rawToken))
-	return hex.EncodeToString(h[:])
-}
-
-// ListActiveSessions returns all non-expired sessions for the given user,
-// mapped to SessionInfo (token replaced by its SHA-256 hash as ID).
+// ListActiveSessions returns all non-expired sessions for the given user.
+// Each session's ID is its stored token hash — safe to expose since it
+// cannot be reversed to the bearer credential.
 func ListActiveSessions(ctx context.Context, queries *db.Queries, userID int64) ([]SessionInfo, error) {
 	rows, err := queries.ListActiveSessionsForUser(ctx, userID)
 	if err != nil {
@@ -245,7 +252,7 @@ func ListActiveSessions(ctx context.Context, queries *db.Queries, userID int64) 
 	out := make([]SessionInfo, 0, len(rows))
 	for _, s := range rows {
 		out = append(out, SessionInfo{
-			ID:        sessionID(s.Token),
+			ID:        s.Token, // stored as SHA-256 hash — safe to expose
 			CreatedAt: s.CreatedAt,
 			ExpiresAt: s.ExpiresAt,
 		})
@@ -253,16 +260,15 @@ func ListActiveSessions(ctx context.Context, queries *db.Queries, userID int64) 
 	return out, nil
 }
 
-// RevokeSession deletes the session whose sha256(token) matches the given id,
-// scoped to the given user. Returns true if a session was deleted, false if
-// no matching session was found.
+// RevokeSession deletes the session with the given hash ID, scoped to the
+// given user. Returns true if a session was deleted, false if not found.
 func RevokeSession(ctx context.Context, queries *db.Queries, userID int64, id string) (bool, error) {
 	rows, err := queries.ListActiveSessionsForUser(ctx, userID)
 	if err != nil {
 		return false, fmt.Errorf("failed to list sessions: %w", err)
 	}
 	for _, s := range rows {
-		if sessionID(s.Token) == id {
+		if s.Token == id { // stored token IS the hash, compare directly
 			if err := queries.DeleteSession(ctx, s.Token); err != nil {
 				return false, fmt.Errorf("failed to delete session: %w", err)
 			}
