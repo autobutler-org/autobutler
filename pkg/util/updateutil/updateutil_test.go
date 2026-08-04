@@ -3,6 +3,9 @@ package updateutil
 import (
 	"archive/tar"
 	"compress/gzip"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -519,5 +522,122 @@ func TestListPossibleUpdates_FilteredToEmpty_ReturnsEmptySliceNotNil(t *testing.
 	}
 	if len(result.Versions) != 0 {
 		t.Errorf("Expected 0 versions (no matching assets), got %d", len(result.Versions))
+	}
+}
+
+// --- verifyChecksum / fetchURL ---
+
+func TestVerifyChecksum_Match(t *testing.T) {
+	data := []byte("hello, butler")
+	sum := sha256.Sum256(data)
+	hexSum := hex.EncodeToString(sum[:])
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, hexSum)
+	}))
+	defer server.Close()
+
+	if err := verifyChecksum(data, server.URL+"/checksum"); err != nil {
+		t.Errorf("expected no error for matching checksum, got %v", err)
+	}
+}
+
+func TestVerifyChecksum_Mismatch(t *testing.T) {
+	data := []byte("hello, butler")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Return a completely wrong checksum.
+		fmt.Fprint(w, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+	}))
+	defer server.Close()
+
+	err := verifyChecksum(data, server.URL+"/checksum")
+	if err == nil {
+		t.Error("expected error for mismatched checksum")
+	}
+	if errors.Is(err, errChecksumUnavailable) {
+		t.Error("mismatch should not report errChecksumUnavailable")
+	}
+}
+
+func TestVerifyChecksum_Sha256sumFormat(t *testing.T) {
+	// sha256sum(1) format: "<hex>  <filename>"
+	data := []byte("sha256sum format test")
+	sum := sha256.Sum256(data)
+	hexSum := hex.EncodeToString(sum[:])
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "%s  autobutler-linux-arm64.tar.gz\n", hexSum)
+	}))
+	defer server.Close()
+
+	if err := verifyChecksum(data, server.URL+"/checksum"); err != nil {
+		t.Errorf("expected no error for sha256sum-format checksum, got %v", err)
+	}
+}
+
+func TestVerifyChecksum_Unavailable(t *testing.T) {
+	data := []byte("data")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	err := verifyChecksum(data, server.URL+"/checksum.sha256")
+	if !errors.Is(err, errChecksumUnavailable) {
+		t.Errorf("expected errChecksumUnavailable for 404, got %v", err)
+	}
+}
+
+func TestVerifyChecksum_EmptyFile(t *testing.T) {
+	data := []byte("data")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		// Empty body
+	}))
+	defer server.Close()
+
+	err := verifyChecksum(data, server.URL+"/checksum")
+	if err == nil {
+		t.Error("expected error for empty checksum file")
+	}
+}
+
+func TestVerifyChecksum_InvalidHex(t *testing.T) {
+	data := []byte("data")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "not-a-hex-string")
+	}))
+	defer server.Close()
+
+	err := verifyChecksum(data, server.URL+"/checksum")
+	if err == nil {
+		t.Error("expected error for invalid hex checksum")
+	}
+}
+
+func TestFetchURL_404ReturnsUnavailable(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	_, err := fetchURL(server.URL + "/missing")
+	if !errors.Is(err, errChecksumUnavailable) {
+		t.Errorf("expected errChecksumUnavailable for 404, got %v", err)
+	}
+}
+
+func TestFetchURL_500ReturnsError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	_, err := fetchURL(server.URL + "/error")
+	if err == nil {
+		t.Error("expected error for HTTP 500")
+	}
+	if errors.Is(err, errChecksumUnavailable) {
+		t.Error("HTTP 500 should not be errChecksumUnavailable")
 	}
 }

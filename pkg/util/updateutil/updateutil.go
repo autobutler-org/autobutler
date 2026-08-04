@@ -2,8 +2,11 @@ package updateutil
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -225,7 +228,12 @@ func UpdateFromDefaultSources(version string) error {
 	return fmt.Errorf("failed to update from all default sources: %v", errs)
 }
 
-// Update downloads and installs a new version of the application
+// Update downloads and installs a new version of the application.
+// If a companion .sha256 file is available at the same URL prefix, the
+// archive is verified against it before replacing the running binary.
+// A missing checksum file is treated as a warning (logged) rather than a
+// hard failure, to keep compatibility with update sources that don't yet
+// publish checksums.
 func Update(source *UpdateSource, version string) error {
 	if source == nil {
 		return UpdateFromDefaultSources(version)
@@ -245,24 +253,96 @@ func Update(source *UpdateSource, version string) error {
 		return fmt.Errorf("invalid update source: %s", source.Kind)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s", baseUrl, version, ConstructArchiveName())
+	archiveName := ConstructArchiveName()
+	url := fmt.Sprintf("%s/%s/%s", baseUrl, version, archiveName)
 	fmt.Println("Downloading update from", url)
 
-	resp, err := http.Get(url)
+	// Download the archive into memory so we can verify its checksum before
+	// overwriting the running binary.
+	archiveBytes, err := fetchURL(url)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to download update from %s: %w", url, err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("failed to download update from %s: %s", url, resp.Status)
+	// Attempt checksum verification. A 404 on the .sha256 file is treated as
+	// "checksum unavailable" (warning only) to stay compatible with older
+	// release assets that predate this feature.
+	checksumURL := url + ".sha256"
+	if err := verifyChecksum(archiveBytes, checksumURL); err != nil {
+		if errors.Is(err, errChecksumUnavailable) {
+			fmt.Println("Warning: no checksum file available at", checksumURL, "— skipping verification")
+		} else {
+			return fmt.Errorf("checksum verification failed: %w", err)
+		}
 	}
-	if err := replaceSelf(resp.Body); err != nil {
+
+	if err := replaceSelf(bytes.NewReader(archiveBytes)); err != nil {
 		return fmt.Errorf("failed to replace self with update from %s: %w", url, err)
 	}
 
 	fmt.Println("Update successful.")
 	return nil
+}
+
+// errChecksumUnavailable is returned when the .sha256 file returns HTTP 404.
+var errChecksumUnavailable = errors.New("checksum file not found")
+
+// fetchURL performs a GET and returns the response body as bytes.
+// Returns an error if the status is not 200.
+func fetchURL(url string) ([]byte, error) {
+	resp, err := http.Get(url) //nolint:gosec // URL constructed from validated source
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, errChecksumUnavailable
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP %d from %s", resp.StatusCode, url)
+	}
+	return io.ReadAll(resp.Body)
+}
+
+// verifyChecksum fetches a .sha256 file from checksumURL and compares it
+// against the SHA-256 hash of data. The .sha256 file may contain the bare
+// hex digest or a line in the format produced by sha256sum(1):
+//
+//	<hex>  <filename>
+func verifyChecksum(data []byte, checksumURL string) error {
+	checksumBytes, err := fetchURL(checksumURL)
+	if err != nil {
+		return err // propagates errChecksumUnavailable unchanged
+	}
+
+	line := strings.TrimSpace(string(checksumBytes))
+	// sha256sum(1) format: "<hex>  <filename>" — take only the hex part.
+	parts := strings.Fields(line)
+	if len(parts) == 0 {
+		return errors.New("checksum file is empty")
+	}
+	expected, err := hex.DecodeString(parts[0])
+	if err != nil {
+		return fmt.Errorf("invalid checksum format: %w", err)
+	}
+
+	actual := sha256.Sum256(data)
+	if !hmacEqual(actual[:], expected) {
+		return fmt.Errorf("checksum mismatch: expected %x, got %x", expected, actual)
+	}
+	return nil
+}
+
+// hmacEqual is a constant-time comparison of two byte slices.
+func hmacEqual(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	var diff byte
+	for i := range a {
+		diff |= a[i] ^ b[i]
+	}
+	return diff == 0
 }
 
 const binaryName = "autobutler"
