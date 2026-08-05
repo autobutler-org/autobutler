@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/smartutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,6 +25,9 @@ type HealthJSON struct {
 	// Hostname is the OS hostname of the butler device.
 	// Clients can use this to display accurate LAN mount paths (e.g. smb://hostname.local).
 	Hostname string `json:"hostname"`
+	// SmartDrives contains per-drive S.M.A.R.T. health data. Empty when
+	// smartctl is not installed or no drives report S.M.A.R.T. support.
+	SmartDrives []smartutil.DriveHealth `json:"smartDrives"`
 }
 
 // getHealth godoc
@@ -45,6 +49,10 @@ func (r *router) getHealthRoute() *serverutil.Route {
 			corePercents = []float64{}
 		}
 		hostname, _ := os.Hostname()
+		smartDrives := status.SmartDrives
+		if smartDrives == nil {
+			smartDrives = []smartutil.DriveHealth{}
+		}
 		return serverutil.Ok().WithData(HealthJSON{
 			Healthy:            status.Healthy,
 			Alerts:             alerts,
@@ -59,6 +67,7 @@ func (r *router) getHealthRoute() *serverutil.Route {
 			DiskTotalBytes:     status.DiskTotalBytes,
 			TemperatureCelsius: status.TemperatureCelsius,
 			Hostname:           hostname,
+			SmartDrives:        smartDrives,
 		})
 	})
 }

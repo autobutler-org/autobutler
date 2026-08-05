@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/autobutler-org/autobutler/pkg/util/smartutil"
 	"github.com/shirou/gopsutil/v4/cpu"
 	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/load"
@@ -43,6 +44,9 @@ type HealthStatus struct {
 	DiskUsedBytes      uint64
 	DiskTotalBytes     uint64
 	TemperatureCelsius float64 // highest thermal zone reading, 0 if unavailable
+	// SmartDrives contains S.M.A.R.T. health data for each enumerated block
+	// device. Empty when smartctl is not installed or no drives are found.
+	SmartDrives []smartutil.DriveHealth
 }
 
 // Collector registers OTel observable gauges and provides HealthStatus polling.
@@ -250,6 +254,31 @@ func (c *Collector) CurrentHealth() HealthStatus {
 			status.Healthy = false
 			status.Alerts = append(status.Alerts,
 				fmt.Sprintf("Temperature critical: %.1f°C", maxTemp))
+		}
+	}
+
+	// S.M.A.R.T. disk health — best-effort; missing smartctl or unsupported
+	// devices produce empty entries, not errors.
+	drives := smartutil.QueryAllDrives(context.Background())
+	if drives != nil {
+		status.SmartDrives = drives
+	}
+	for _, d := range status.SmartDrives {
+		if !d.SmartAvailable {
+			continue
+		}
+		if d.PreFailure || !d.Healthy {
+			status.Healthy = false
+			for _, a := range d.Alerts {
+				status.Alerts = append(status.Alerts,
+					fmt.Sprintf("drive %s: %s", d.Device, a))
+			}
+		} else if len(d.Alerts) > 0 {
+			// Reallocated/pending sectors are warnings, not hard failures.
+			for _, a := range d.Alerts {
+				status.Alerts = append(status.Alerts,
+					fmt.Sprintf("drive %s: %s", d.Device, a))
+			}
 		}
 	}
 
