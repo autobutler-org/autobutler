@@ -240,3 +240,24 @@ func errorAs(err error, target any) bool {
 	}
 	return false
 }
+
+func TestFfmpegFormat(t *testing.T) {
+	tests := []struct {
+		kind VideoKind
+		want string
+	}{
+		{VideoKindMKV, "matroska"}, // .mkv extension ≠ ffmpeg format name
+		{VideoKindMP4, "mp4"},
+		{VideoKindMOV, "mov"},
+		{VideoKindAVI, "avi"},
+		{VideoKindWebM, "webm"},
+	}
+	for _, tt := range tests {
+		t.Run(string(tt.kind), func(t *testing.T) {
+			got := ffmpegFormat(tt.kind)
+			if got != tt.want {
+				t.Errorf("ffmpegFormat(%q) = %q; want %q", tt.kind, got, tt.want)
+			}
+		})
+	}
+}

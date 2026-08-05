@@ -124,10 +124,22 @@ func (p *CLIProcessor) Probe(ctx context.Context, path string) (*MediaInfo, erro
 	return info, nil
 }
 
+// ffmpegFormat maps a VideoKind to the ffmpeg format name passed to -f.
+// The extension and the ffmpeg format name differ for some containers
+// (e.g. .mkv → "matroska", .mov → "mov" but ffmpeg accepts both).
+func ffmpegFormat(k VideoKind) string {
+	switch k {
+	case VideoKindMKV:
+		return "matroska"
+	default:
+		return string(k)
+	}
+}
+
 func (p *CLIProcessor) Convert(ctx context.Context, src, dst string, from, to VideoKind) error {
 	args := []string{
 		"-i", src,
-		"-f", string(to),
+		"-f", ffmpegFormat(to),
 		"-y",
 		dst,
 	}
