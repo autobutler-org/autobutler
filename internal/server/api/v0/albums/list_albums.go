@@ -57,8 +57,8 @@ func listAlbums(c *gin.Context) *serverutil.Response {
 }
 
 // buildTree converts a flat album list into a nested tree.
-// Uses a child-index map to avoid value-copy aliasing issues when building
-// multi-level hierarchies.
+// Uses a recursive child-index map to avoid value-copy aliasing issues when
+// building multi-level hierarchies.
 func buildTree(albums []AlbumJSON) []AlbumJSON {
 	// Map album ID → its children IDs.
 	childIDs := make(map[int64][]int64, len(albums))
