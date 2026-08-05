@@ -279,3 +279,12 @@ func RevokeAllSessions(ctx context.Context, queries *db.Queries, userID int64) e
 	}
 	return nil
 }
+
+// PurgeExpiredSessions deletes all sessions whose expires_at is in the past.
+// Safe to call repeatedly — a no-op when no sessions have expired.
+func PurgeExpiredSessions(ctx context.Context, queries *db.Queries) error {
+	if err := queries.DeleteExpiredSessions(ctx); err != nil {
+		return fmt.Errorf("failed to purge expired sessions: %w", err)
+	}
+	return nil
+}

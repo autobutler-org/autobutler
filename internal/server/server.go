@@ -17,6 +17,7 @@ import (
 	"github.com/autobutler-org/autobutler/internal/server/middleware"
 	"github.com/autobutler-org/autobutler/pkg/backup"
 	"github.com/autobutler-org/autobutler/pkg/botel"
+	"github.com/autobutler-org/autobutler/pkg/util/authutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/favoritesutil"
@@ -258,6 +259,20 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 			log.Printf("Error shutting down meter provider: %v", err)
 		}
 		os.Exit(0)
+	}()
+
+	// Periodically purge expired sessions so the sessions table doesn't grow
+	// forever. GetSession already filters on expires_at, so this is a hygiene
+	// task only — not a security requirement.
+	go func() {
+		ticker := time.NewTicker(24 * time.Hour)
+		defer ticker.Stop()
+		for {
+			if err := authutil.PurgeExpiredSessions(context.Background(), deps.Database().Queries); err != nil {
+				log.Printf("[auth] failed to purge expired sessions: %v", err)
+			}
+			<-ticker.C
+		}
 	}()
 
 	router := gin.Default()
