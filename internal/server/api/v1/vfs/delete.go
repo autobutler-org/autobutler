@@ -2,6 +2,7 @@ package v1_vfs
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
@@ -51,14 +52,14 @@ func vfsDelete(c *gin.Context) *serverutil.Response {
 		switch err {
 		case vfs.ErrNotFound:
 			// Treat concurrent deletes as success.
-			return &serverutil.Response{StatusCode: 204}
+			return serverutil.NewResponse().WithStatusCode(http.StatusNoContent)
 		case vfs.ErrNotEmpty:
-			return &serverutil.Response{StatusCode: 409, Error: err}
+			return serverutil.NewResponse().WithStatusCode(http.StatusConflict).WithError(err)
 		default:
 			return serverutil.InternalServerError(err)
 		}
 	}
-	return &serverutil.Response{StatusCode: 204}
+	return serverutil.NewResponse().WithStatusCode(http.StatusNoContent)
 }
 
 var vfsDeleteRoute = serverutil.ApiRoute("DELETE", "/vfs/:ns/*path", vfsDelete)

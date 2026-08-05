@@ -2,6 +2,7 @@ package v1_vfs
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
@@ -47,7 +48,7 @@ func vfsMkdir(c *gin.Context) *serverutil.Response {
 	if err := fsys.MkdirAll(c.Request.Context(), path); err != nil {
 		return serverutil.InternalServerError(err)
 	}
-	return &serverutil.Response{StatusCode: 201}
+	return serverutil.NewResponse().WithStatusCode(http.StatusCreated)
 }
 
 var vfsMkdirRoute = serverutil.ApiRoute("POST", "/vfs/:ns/*path", vfsMkdir)
