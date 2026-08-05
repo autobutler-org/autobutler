@@ -34,6 +34,7 @@ func newAuthTestDB(t *testing.T) (*sql.DB, *db.Queries) {
 			username TEXT NOT NULL UNIQUE,
 			password_hash TEXT NOT NULL,
 			recovery_phrase_hash TEXT NOT NULL,
+			is_admin INTEGER NOT NULL DEFAULT 0,
 			created_at DATETIME NOT NULL DEFAULT (datetime('now'))
 		);
 		CREATE TABLE IF NOT EXISTS sessions (

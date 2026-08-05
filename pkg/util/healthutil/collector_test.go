@@ -1,4 +1,4 @@
-package system_test
+package healthutil_test
 
 import (
 	"testing"

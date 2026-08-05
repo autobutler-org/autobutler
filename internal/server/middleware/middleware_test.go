@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
 	username TEXT NOT NULL UNIQUE,
 	password_hash TEXT NOT NULL,
 	recovery_phrase_hash TEXT NOT NULL,
+	is_admin INTEGER NOT NULL DEFAULT 0,
 	created_at DATETIME NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS sessions (
@@ -57,6 +58,10 @@ func newMiddlewareEngine(t *testing.T, deps deputil.Dependencies) *gin.Engine {
 	engine := gin.New()
 	middleware.Use(engine, deps)
 	engine.GET("/api/v0/protected", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+	// /api/v0/events is the canonical path for ?token= query-param auth (WebSocket).
+	engine.GET("/api/v0/events", func(c *gin.Context) {
 		c.Status(http.StatusOK)
 	})
 	engine.GET("/api/v0/auth/status", func(c *gin.Context) {
@@ -227,8 +232,9 @@ func TestRequireAuth_QueryTokenGrantsAccess(t *testing.T) {
 	deps := deputil.NewDependencies().WithDatabase(&db.DatabaseSqlc{Db: sqlDB, Queries: queries})
 	engine := newMiddlewareEngine(t, deps)
 
+	// Use /api/v0/events — the only path where ?token= query-param auth is permitted.
 	req := httptest.NewRequest(http.MethodGet,
-		"/api/v0/protected?token="+result.SessionToken, nil)
+		"/api/v0/events?token="+result.SessionToken, nil)
 	w := doMiddlewareReq(engine, req)
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200 with ?token=, got %d", w.Code)
