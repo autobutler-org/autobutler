@@ -3159,6 +3159,58 @@
                 }
             }
         },
+        "smartutil.DriveHealth": {
+            "type": "object",
+            "properties": {
+                "alerts": {
+                    "description": "Alerts contains human-readable warning strings for any exceeded thresholds.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "device": {
+                    "description": "Device is the OS device path, e.g. \"/dev/sda\".",
+                    "type": "string"
+                },
+                "healthy": {
+                    "description": "Healthy is true when smartctl's overall-health assessment is \"PASSED\".\nOnly valid when SmartAvailable is true.",
+                    "type": "boolean"
+                },
+                "model": {
+                    "description": "Model is the drive model string from smartctl, if available.",
+                    "type": "string"
+                },
+                "pendingSectors": {
+                    "description": "PendingSectors is the count of sectors pending reallocation (ATA id 197).\nNon-zero means the drive has found read errors it hasn't yet remapped.",
+                    "type": "integer"
+                },
+                "powerOnHours": {
+                    "description": "PowerOnHours is the drive's accumulated power-on time.",
+                    "type": "integer"
+                },
+                "preFailure": {
+                    "description": "PreFailure is true when any pre-failure threshold is exceeded.",
+                    "type": "boolean"
+                },
+                "reallocatedSectors": {
+                    "description": "ReallocatedSectors is the count of reallocated sectors (ATA id 5).\nNon-zero is a warning sign that the drive has bad blocks.",
+                    "type": "integer"
+                },
+                "smartAvailable": {
+                    "description": "SmartAvailable is false when the device does not support S.M.A.R.T.\nor smartctl cannot access it (USB bridge without pass-through, etc.).",
+                    "type": "boolean"
+                },
+                "temperature": {
+                    "description": "Temperature is the drive temperature in Celsius, 0 if unavailable.",
+                    "type": "number"
+                },
+                "uncorrectableErrors": {
+                    "description": "UncorrectableErrors is the offline uncorrectable sector count (ATA id 198).",
+                    "type": "integer"
+                }
+            }
+        },
         "storageutil.BackupToDeviceParams": {
             "type": "object",
             "properties": {
@@ -3506,6 +3558,13 @@
                 },
                 "memUsedBytes": {
                     "type": "integer"
+                },
+                "smartDrives": {
+                    "description": "SmartDrives contains per-drive S.M.A.R.T. health data. Empty when\nsmartctl is not installed or no drives report S.M.A.R.T. support.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/smartutil.DriveHealth"
+                    }
                 },
                 "temperatureCelsius": {
                     "type": "number"
