@@ -14,7 +14,7 @@ import (
 	v0_events "github.com/autobutler-org/autobutler/internal/server/api/v0/events"
 	v0_favorites "github.com/autobutler-org/autobutler/internal/server/api/v0/favorites"
 	v0_health "github.com/autobutler-org/autobutler/internal/server/api/v0/health"
-	v0_metrics "github.com/autobutler-org/autobutler/internal/server/api/v0/metrics"
+
 	v0_migration "github.com/autobutler-org/autobutler/internal/server/api/v0/migration"
 	v0_photos "github.com/autobutler-org/autobutler/internal/server/api/v0/photos"
 	v0_settings "github.com/autobutler-org/autobutler/internal/server/api/v0/settings"
@@ -61,7 +61,6 @@ func setupRouters(engine *gin.Engine, systemCollector *system.Collector, deps de
 		v0_devices.NewRouter(),
 		v0_events.NewRouter(),
 		v0_health.NewRouter(systemCollector),
-		v0_metrics.NewRouter(),
 		v0_migration.NewRouter(),
 		v0_albums.NewRouter(),
 		v0_favorites.NewRouter(),

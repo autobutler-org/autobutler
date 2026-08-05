@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/autobutler-org/autobutler/internal/db"
-	"github.com/autobutler-org/autobutler/pkg/botel/exporters/botelsqlite"
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/iosemutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
@@ -20,7 +19,6 @@ type Dependencies interface {
 	FileIndex() *storageutil.FileIndex
 	HealthDatabase() *db.DatabaseRaw
 	IOSemaphore() *iosemutil.Semaphore
-	MetricsExporter() *botelsqlite.TraceExporter
 	StorageService() *storageutil.StorageService
 	VaultDB() *db.DatabaseSqlc
 	VaultSession() *vaultcrypto.VaultSession
@@ -30,7 +28,6 @@ type Dependencies interface {
 	WithFileIndex(idx *storageutil.FileIndex) Dependencies
 	WithHealthDatabase(healthDatabase *db.DatabaseRaw) Dependencies
 	WithIOSemaphore(sem *iosemutil.Semaphore) Dependencies
-	WithMetricsExporter(exporter *botelsqlite.TraceExporter) Dependencies
 	MetadataStore() vfs.MetadataStore
 	VFSRegistry() vfs.Registry
 	WithMetadataStore(s vfs.MetadataStore) Dependencies
@@ -43,19 +40,18 @@ type Dependencies interface {
 }
 
 type dependencies struct {
-	database        *db.DatabaseSqlc
-	eventBus        *eventbus.Bus
-	fileIndex       *storageutil.FileIndex
-	healthDatabase  *db.DatabaseRaw
-	ioSemaphore     *iosemutil.Semaphore
-	metricsExporter *botelsqlite.TraceExporter
-	storageService  *storageutil.StorageService
-	vaultDB         *db.DatabaseSqlc
-	vaultDBMu       sync.RWMutex
-	vaultSession    *vaultcrypto.VaultSession
-	vfsRegistry     vfs.Registry
-	metadataStore   vfs.MetadataStore
-	worker          workerutil.Worker
+	database       *db.DatabaseSqlc
+	eventBus       *eventbus.Bus
+	fileIndex      *storageutil.FileIndex
+	healthDatabase *db.DatabaseRaw
+	ioSemaphore    *iosemutil.Semaphore
+	storageService *storageutil.StorageService
+	vaultDB        *db.DatabaseSqlc
+	vaultDBMu      sync.RWMutex
+	vaultSession   *vaultcrypto.VaultSession
+	vfsRegistry    vfs.Registry
+	metadataStore  vfs.MetadataStore
+	worker         workerutil.Worker
 }
 
 func NewDependencies() Dependencies {
@@ -78,7 +74,7 @@ func DefaultDependencies() (Dependencies, error) {
 	deps.WithStorageService(svc)                                    // coverage: ignore
 	registry := vfs.NewRegistry()                                   // coverage: ignore
 	_ = registry.Register(vfs.Namespace{                            // coverage: ignore
-		ID:          "files",                             // coverage: ignore
+		ID:          "files",                              // coverage: ignore
 		Description: "Primary vault file store (cirrus)", // coverage: ignore
 	}, vfs.NewStorageServiceVFS(svc, "files")) // coverage: ignore
 	deps.WithVFSRegistry(registry)                                         // coverage: ignore
@@ -106,11 +102,6 @@ func (d *dependencies) WithFileIndex(idx *storageutil.FileIndex) Dependencies {
 
 func (d *dependencies) WithHealthDatabase(database *db.DatabaseRaw) Dependencies {
 	d.healthDatabase = database
-	return d
-}
-
-func (d *dependencies) WithMetricsExporter(exporter *botelsqlite.TraceExporter) Dependencies {
-	d.metricsExporter = exporter
 	return d
 }
 
@@ -147,10 +138,6 @@ func (d *dependencies) IOSemaphore() *iosemutil.Semaphore {
 func (d *dependencies) WithIOSemaphore(sem *iosemutil.Semaphore) Dependencies {
 	d.ioSemaphore = sem
 	return d
-}
-
-func (d *dependencies) MetricsExporter() *botelsqlite.TraceExporter {
-	return d.metricsExporter
 }
 
 func (d *dependencies) StorageService() *storageutil.StorageService {
