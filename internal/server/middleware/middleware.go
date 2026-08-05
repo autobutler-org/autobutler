@@ -72,6 +72,26 @@ func rateLimit() gin.HandlerFunc {
 	}
 }
 
+// tokenQueryParamPaths lists path prefixes where ?token= query-param
+// authentication is permitted. WebSocket upgrades cannot set headers, so the
+// event stream is the primary (and currently only) legitimate consumer.
+// All other endpoints must use Bearer / cookie / Basic Auth.
+var tokenQueryParamPaths = []string{
+	"/api/v0/events",
+	"/api/v1/events",
+}
+
+// tokenQueryParamAllowed returns true when the request path is on one of the
+// streaming endpoints that require query-param token support.
+func tokenQueryParamAllowed(path string) bool {
+	for _, prefix := range tokenQueryParamPaths {
+		if strings.HasPrefix(path, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
 // authExemptPaths are API paths that don't require a valid session.
 var authExemptPaths = map[string]bool{
 	"/api/v0/auth/setup":   true,
@@ -181,7 +201,10 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 		if cookie, err := c.Cookie("session"); err == nil && cookie != "" {
 			tokens = append(tokens, cookie)
 		}
-		if q := c.Query("token"); q != "" {
+		// ?token= query-param auth is restricted to endpoints that cannot set
+		// headers (e.g. WebSocket upgrade). Accepting it everywhere would expose
+		// session tokens in browser history, proxy logs, and access logs.
+		if q := c.Query("token"); q != "" && tokenQueryParamAllowed(path) {
 			tokens = append(tokens, q)
 		}
 
