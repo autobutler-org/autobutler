@@ -41,6 +41,7 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 	if !ok {
 		return serverutil.InternalServerError(nil)
 	}
+
 	// Use VFS.Delete when no serial and VFS is available (routes through StorageServiceVFS).
 	usedVFS := false
 	if serial == "" {
@@ -55,8 +56,14 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 			}
 		}
 	}
+
 	if !usedVFS {
-		if _, err := deps.StorageService().DeleteFiles(storageutil.DeleteFilesParams{
+		// Use TrashFiles (os.Rename) instead of DeleteFiles (os.RemoveAll).
+		// Rename is a pure metadata operation — microseconds even on an SD card —
+		// so we can return 202 immediately and let the real data purge happen on
+		// the 30-day expiry sweep. Files are invisible to listings as soon as
+		// the rename lands.
+		if _, err := deps.StorageService().TrashFiles(storageutil.TrashFilesParams{
 			RootDir:      rootDir,
 			FilePaths:    filePaths,
 			DeviceSerial: serial,
@@ -65,30 +72,41 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 		}
 	}
 
+	// Fire DB cleanup and event publishing asynchronously. The files are already
+	// invisible (renamed to .trash or deleted via VFS), so the client doesn't
+	// need to wait for the DB writes to return.
+	go publishAndCleanup(deps, filePaths, serial)
+
+	return serverutil.Ok()
+}
+
+// publishAndCleanup publishes delete events and removes per-file DB records.
+// Runs in a goroutine so the HTTP handler returns immediately after the
+// filesystem operation completes.
+func publishAndCleanup(deps deputil.Dependencies, filePaths []string, serial string) {
 	for _, p := range filePaths {
 		deps.EventBus().Publish(eventbus.Event{
 			Kind:         eventbus.EventDelete,
 			Path:         p,
 			DeviceSerial: serial,
 		})
-		// Clean up all DB records for the deleted photo regardless of whether a
-		// serial is present (empty serial is a valid key in both tables).
-		if database := deps.Database(); database != nil {
-			if err := database.Queries.DeletePhotoFromAllAlbums(context.Background(), db.DeletePhotoFromAllAlbumsParams{
-				DeviceSerial: serial,
-				RelPath:      p,
-			}); err != nil {
-				log.Printf("autobutler: delete cleanup: remove album items for %q (serial=%q): %v", p, serial, err)
-			}
-			if err := database.Queries.DeletePhotoRotation(context.Background(), db.DeletePhotoRotationParams{
-				DeviceSerial: serial,
-				RelPath:      p,
-			}); err != nil {
-				log.Printf("autobutler: delete cleanup: remove rotation for %q (serial=%q): %v", p, serial, err)
-			}
+		database := deps.Database()
+		if database == nil {
+			continue
+		}
+		if err := database.Queries.DeletePhotoFromAllAlbums(context.Background(), db.DeletePhotoFromAllAlbumsParams{
+			DeviceSerial: serial,
+			RelPath:      p,
+		}); err != nil {
+			log.Printf("autobutler: delete cleanup: remove album items for %q (serial=%q): %v", p, serial, err)
+		}
+		if err := database.Queries.DeletePhotoRotation(context.Background(), db.DeletePhotoRotationParams{
+			DeviceSerial: serial,
+			RelPath:      p,
+		}); err != nil {
+			log.Printf("autobutler: delete cleanup: remove rotation for %q (serial=%q): %v", p, serial, err)
 		}
 	}
-	return serverutil.Ok()
 }
 
 var deleteFilesRoute = serverutil.ApiRoute(
