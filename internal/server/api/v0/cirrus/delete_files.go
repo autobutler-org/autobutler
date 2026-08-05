@@ -8,6 +8,7 @@ import (
 	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/diskprofiler"
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
@@ -15,6 +16,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+// rootProfiler benchmarks the root filesystem once at startup and caches the
+// result for the process lifetime. All IO-adaptive decisions in this file use
+// this profile.
+var rootProfiler = diskprofiler.NewCachedRootProfiler()
 
 // deleteFiles godoc
 // @Summary Delete files
@@ -82,8 +88,12 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 
 // publishAndCleanup publishes delete events and removes per-file DB records.
 // Runs in a goroutine so the HTTP handler returns immediately after the
-// filesystem operation completes.
+// filesystem operation completes. The context timeout is sized to the
+// storage tier so SD-card hosts get more time than SSD hosts.
 func publishAndCleanup(deps deputil.Dependencies, filePaths []string, serial string) {
+	profile := rootProfiler.Get()
+	ctx, cancel := context.WithTimeout(context.Background(), profile.CleanupTimeout)
+	defer cancel()
 	for _, p := range filePaths {
 		deps.EventBus().Publish(eventbus.Event{
 			Kind:         eventbus.EventDelete,
@@ -94,13 +104,13 @@ func publishAndCleanup(deps deputil.Dependencies, filePaths []string, serial str
 		if database == nil {
 			continue
 		}
-		if err := database.Queries.DeletePhotoFromAllAlbums(context.Background(), db.DeletePhotoFromAllAlbumsParams{
+		if err := database.Queries.DeletePhotoFromAllAlbums(ctx, db.DeletePhotoFromAllAlbumsParams{
 			DeviceSerial: serial,
 			RelPath:      p,
 		}); err != nil {
 			log.Printf("autobutler: delete cleanup: remove album items for %q (serial=%q): %v", p, serial, err)
 		}
-		if err := database.Queries.DeletePhotoRotation(context.Background(), db.DeletePhotoRotationParams{
+		if err := database.Queries.DeletePhotoRotation(ctx, db.DeletePhotoRotationParams{
 			DeviceSerial: serial,
 			RelPath:      p,
 		}); err != nil {
