@@ -218,11 +218,6 @@ func (c *Collector) CurrentHealth() HealthStatus {
 		status.MemPercent = v.UsedPercent
 		status.MemUsedBytes = v.Used
 		status.MemTotalBytes = v.Total
-		if v.UsedPercent >= MemCriticalPercent {
-			status.Healthy = false
-			status.Alerts = append(status.Alerts,
-				fmt.Sprintf("Memory usage critical: %.1f%%", v.UsedPercent))
-		}
 	}
 
 	// Disk (root)
@@ -230,11 +225,6 @@ func (c *Collector) CurrentHealth() HealthStatus {
 		status.DiskPercent = usage.UsedPercent
 		status.DiskUsedBytes = usage.Used
 		status.DiskTotalBytes = usage.Total
-		if usage.UsedPercent >= DiskCriticalPercent {
-			status.Healthy = false
-			status.Alerts = append(status.Alerts,
-				fmt.Sprintf("Disk usage critical: %.1f%%", usage.UsedPercent))
-		}
 	}
 
 	// Temperature (highest reading)
@@ -246,12 +236,29 @@ func (c *Collector) CurrentHealth() HealthStatus {
 			}
 		}
 		status.TemperatureCelsius = maxTemp
-		if maxTemp >= TempCriticalCelsius {
-			status.Healthy = false
-			status.Alerts = append(status.Alerts,
-				fmt.Sprintf("Temperature critical: %.1f°C", maxTemp))
-		}
 	}
 
+	applyThresholds(&status)
 	return status
+}
+
+// applyThresholds marks status unhealthy and appends alert strings when any
+// measured value exceeds the critical thresholds. It is extracted so the
+// threshold logic can be unit-tested without gopsutil hardware calls.
+func applyThresholds(s *HealthStatus) {
+	if s.MemPercent >= MemCriticalPercent {
+		s.Healthy = false
+		s.Alerts = append(s.Alerts,
+			fmt.Sprintf("Memory usage critical: %.1f%%", s.MemPercent))
+	}
+	if s.DiskPercent >= DiskCriticalPercent {
+		s.Healthy = false
+		s.Alerts = append(s.Alerts,
+			fmt.Sprintf("Disk usage critical: %.1f%%", s.DiskPercent))
+	}
+	if s.TemperatureCelsius >= TempCriticalCelsius {
+		s.Healthy = false
+		s.Alerts = append(s.Alerts,
+			fmt.Sprintf("Temperature critical: %.1f°C", s.TemperatureCelsius))
+	}
 }
