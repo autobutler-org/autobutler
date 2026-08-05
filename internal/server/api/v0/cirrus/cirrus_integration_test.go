@@ -371,3 +371,81 @@ func TestFileSize(t *testing.T) {
 		t.Errorf("expected size %d, got %d", len(content), int(size))
 	}
 }
+
+// TestDeleteFile_MovesToTrash verifies that DELETE /cirrus moves files into
+// the .trash directory rather than permanently removing them. Files should be
+// invisible to the listing API but still present on disk under .trash/.
+func TestDeleteFile_MovesToTrash(t *testing.T) {
+	engine, cirrusDir := newTestEngine(t)
+
+	content := []byte("important data — do not delete permanently")
+	if err := os.WriteFile(filepath.Join(cirrusDir, "precious.txt"), content, 0644); err != nil {
+		t.Fatalf("write test file: %v", err)
+	}
+
+	w := doRequest(engine, http.MethodDelete, "/api/v0/cirrus?filePaths=precious.txt", nil, "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("delete returned %d: %s", w.Code, w.Body.String())
+	}
+
+	// File must not appear in the listing.
+	files := listFiles(t, engine, "")
+	if contains(fileNames(files), "precious.txt") {
+		t.Error("precious.txt still visible in listing after delete")
+	}
+
+	// File must be present somewhere under .trash/ (soft-delete, not permanent).
+	trashRoot := filepath.Join(cirrusDir, storageutil.TrashDir)
+	found := false
+	_ = filepath.Walk(trashRoot, func(p string, info os.FileInfo, err error) error {
+		if err == nil && !info.IsDir() && strings.HasSuffix(p, "precious.txt") {
+			found = true
+		}
+		return nil
+	})
+	if !found {
+		t.Errorf("precious.txt not found in .trash after delete; trash root: %q", trashRoot)
+	}
+}
+
+// TestDeleteFile_BatchMovesToTrash verifies that multiple files deleted in a
+// single request all land in .trash.
+func TestDeleteFile_BatchMovesToTrash(t *testing.T) {
+	engine, cirrusDir := newTestEngine(t)
+
+	names := []string{"a.txt", "b.txt", "c.txt"}
+	for _, n := range names {
+		if err := os.WriteFile(filepath.Join(cirrusDir, n), []byte(n), 0644); err != nil {
+			t.Fatalf("write %s: %v", n, err)
+		}
+	}
+
+	query := "/api/v0/cirrus?filePaths=a.txt&filePaths=b.txt&filePaths=c.txt"
+	w := doRequest(engine, http.MethodDelete, query, nil, "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("batch delete returned %d: %s", w.Code, w.Body.String())
+	}
+
+	// None should be visible.
+	files := listFiles(t, engine, "")
+	for _, n := range names {
+		if contains(fileNames(files), n) {
+			t.Errorf("%s still visible in listing after batch delete", n)
+		}
+	}
+
+	// All should be in .trash.
+	trashRoot := filepath.Join(cirrusDir, storageutil.TrashDir)
+	for _, n := range names {
+		found := false
+		_ = filepath.Walk(trashRoot, func(p string, info os.FileInfo, err error) error {
+			if err == nil && !info.IsDir() && strings.HasSuffix(p, n) {
+				found = true
+			}
+			return nil
+		})
+		if !found {
+			t.Errorf("%s not found in .trash after batch delete", n)
+		}
+	}
+}
