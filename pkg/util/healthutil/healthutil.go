@@ -1,7 +1,7 @@
 // Package system provides gopsutil-based host hardware health metrics.
 // It is intentionally free of OTel dependencies so the health endpoint
 // has no dependency on any telemetry backend.
-package system
+package healthutil
 
 import (
 	"fmt"
