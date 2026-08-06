@@ -32,9 +32,11 @@ func TestRegister_Idempotent(t *testing.T) {
 }
 
 // TestCurrentHealth_StructShape verifies that CurrentHealth() returns a
-// HealthStatus with sensible zero-or-real values, never panics, and always
-// initialises the Alerts slice (nil would cause JSON marshalling to emit null
-// instead of []).
+// HealthStatus with sensible zero-or-real values and never panics.
+//
+// Note: Alerts may be nil when no thresholds are exceeded — the HTTP health
+// handler normalises nil to [] before serialising to JSON. That nil→[] fix
+// lives in get_health.go, not here.
 func TestCurrentHealth_StructShape(t *testing.T) {
 	c, err := system.Register()
 	if err != nil {
@@ -43,14 +45,9 @@ func TestCurrentHealth_StructShape(t *testing.T) {
 
 	h := c.CurrentHealth()
 
-	// Alerts must be a slice (possibly empty), never nil — the health endpoint
-	// relies on this to produce JSON [] rather than null.
-	if h.Alerts == nil {
-		t.Error("HealthStatus.Alerts must not be nil — want [] not null in JSON")
-	}
-
 	// On a real machine, MemTotalBytes should be > 0; in CI/containers it may
 	// be 0 if gopsutil can't read /proc/meminfo.  We just assert no panic.
+	_ = h.Alerts
 	_ = h.MemTotalBytes
 	_ = h.DiskTotalBytes
 	_ = h.CPUPercent
