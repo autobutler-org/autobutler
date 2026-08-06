@@ -123,3 +123,25 @@ func TestDeleteExpiredSessions_AllExpired(t *testing.T) {
 		t.Errorf("expected 0 sessions after purge, got %d", got)
 	}
 }
+
+// TestSessionPurgeTimeout_ReturnsPositiveDuration verifies that
+// sessionPurgeTimeout returns a positive duration even when deps is nil.
+// The timeout is computed from the storage device speed of the data directory;
+// if profiling fails the function falls back to 30 s.
+func TestSessionPurgeTimeout_ReturnsPositiveDuration(t *testing.T) {
+	timeout := sessionPurgeTimeout(nil)
+	if timeout <= 0 {
+		t.Errorf("expected positive timeout, got %v", timeout)
+	}
+}
+
+// TestSessionPurgeTimeout_WithinReasonableBounds verifies that the returned
+// timeout is at most 60 s (TierSlow max) and at least 5 s (TierFast min).
+func TestSessionPurgeTimeout_WithinReasonableBounds(t *testing.T) {
+	const minTimeout = 5 * time.Second
+	const maxTimeout = 60 * time.Second
+	timeout := sessionPurgeTimeout(nil)
+	if timeout < minTimeout || timeout > maxTimeout {
+		t.Errorf("timeout %v outside expected [%v, %v]", timeout, minTimeout, maxTimeout)
+	}
+}
