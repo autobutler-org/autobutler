@@ -10,7 +10,7 @@ import (
 )
 
 // schema is the DDL for the registered_devices table + indexes, copied from
-// migration 014_device_registration.up.sql so tests are self-contained.
+// migration 020_device_registration.up.sql so tests are self-contained.
 const registrationSchema = `
 CREATE TABLE IF NOT EXISTS registered_devices (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
