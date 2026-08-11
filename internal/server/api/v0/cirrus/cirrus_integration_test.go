@@ -258,6 +258,32 @@ func TestDeleteFile(t *testing.T) {
 	}
 }
 
+func TestDeleteFile_BatchMovedToTrash(t *testing.T) {
+	engine, cirrusDir := newTestEngine(t)
+
+	// Write three files that will be batch-deleted.
+	for _, name := range []string{"a.txt", "b.txt", "c.txt"} {
+		if err := os.WriteFile(filepath.Join(cirrusDir, name), []byte(name), 0644); err != nil {
+			t.Fatalf("failed to write %s: %v", name, err)
+		}
+	}
+
+	// Delete all three in one request (no serial → falls back to DeleteFiles sync path).
+	w := doRequest(engine, http.MethodDelete,
+		"/api/v0/cirrus?filePaths=a.txt&filePaths=b.txt&filePaths=c.txt", nil, "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("delete returned %d: %s", w.Code, w.Body.String())
+	}
+
+	files := listFiles(t, engine, "")
+	names := fileNames(files)
+	for _, name := range []string{"a.txt", "b.txt", "c.txt"} {
+		if contains(names, name) {
+			t.Errorf("file %s still visible after batch delete", name)
+		}
+	}
+}
+
 func TestDeleteWithoutFilePaths(t *testing.T) {
 	engine, _ := newTestEngine(t)
 
