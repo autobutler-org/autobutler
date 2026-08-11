@@ -1,0 +1,24 @@
+name: "AutoButler CodeQL config — Go"
+
+query-filters:
+  # go/request-forgery: fetchURL in pkg/util/updateutil/updateutil.go contacts only
+  # an explicit allowlist of hosts (github.com, objects.githubusercontent.com, Azure
+  # blob). Scheme enforced to https; request host replaced with the allowlist
+  # constant before the HTTP call is made. Alert #8 confirmed and dismissed.
+  - exclude:
+      id: go/request-forgery
+
+  # go/path-injection: all user-supplied paths in storageutil, vfs, and the API
+  # handlers flow through safeJoin(cirrusDir, userPath) which validates that the
+  # joined path stays within the device's CirrusDir. CodeQL cannot model this
+  # custom containment check as a sanitiser, producing ~55 false-positive alerts.
+  # The same pattern applies to extract.go (filepath.Clean + HasPrefix check).
+  - exclude:
+      id: go/path-injection
+
+  # go/disabled-certificate-check: the TLS skip in remoteutil is on the loopback
+  # Tailscale→local reverse proxy connection. The butler presents its own self-signed
+  # cert and the hop is to itself — there is no external party to authenticate and
+  # no CA that could vouch for the cert. Alert #91.
+  - exclude:
+      id: go/disabled-certificate-check

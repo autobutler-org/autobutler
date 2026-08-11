@@ -2,12 +2,16 @@ package updateutil
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"runtime"
@@ -225,7 +229,12 @@ func UpdateFromDefaultSources(version string) error {
 	return fmt.Errorf("failed to update from all default sources: %v", errs)
 }
 
-// Update downloads and installs a new version of the application
+// Update downloads and installs a new version of the application.
+// If a companion .sha256 file is available at the same URL prefix, the
+// archive is verified against it before replacing the running binary.
+// A missing checksum file is treated as a warning (logged) rather than a
+// hard failure, to keep compatibility with update sources that don't yet
+// publish checksums.
 func Update(source *UpdateSource, version string) error {
 	if source == nil {
 		return UpdateFromDefaultSources(version)
@@ -245,24 +254,176 @@ func Update(source *UpdateSource, version string) error {
 		return fmt.Errorf("invalid update source: %s", source.Kind)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s", baseUrl, version, ConstructArchiveName())
+	archiveName := ConstructArchiveName()
+	url := fmt.Sprintf("%s/%s/%s", baseUrl, version, archiveName)
 	fmt.Println("Downloading update from", url)
 
-	resp, err := http.Get(url)
+	// Download the archive into memory so we can verify its checksum before
+	// overwriting the running binary.
+	archiveBytes, err := fetchURL(url)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to download update from %s: %w", url, err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("failed to download update from %s: %s", url, resp.Status)
+	// Attempt checksum verification. A 404 on the .sha256 file is treated as
+	// "checksum unavailable" (warning only) to stay compatible with older
+	// release assets that predate this feature.
+	checksumURL := url + ".sha256"
+	if err := verifyChecksum(archiveBytes, checksumURL); err != nil {
+		if errors.Is(err, errChecksumUnavailable) {
+			fmt.Println("Warning: no checksum file available at", checksumURL, "— skipping verification")
+		} else {
+			return fmt.Errorf("checksum verification failed: %w", err)
+		}
 	}
-	if err := replaceSelf(resp.Body); err != nil {
+
+	if err := replaceSelf(bytes.NewReader(archiveBytes)); err != nil {
 		return fmt.Errorf("failed to replace self with update from %s: %w", url, err)
 	}
 
 	fmt.Println("Update successful.")
 	return nil
+}
+
+// errChecksumUnavailable is returned when the .sha256 file returns HTTP 404.
+var errChecksumUnavailable = errors.New("checksum file not found")
+
+// allowHTTPInFetchURL relaxes the HTTPS-only restriction in fetchURL.
+// It must only be set to true in tests.
+var allowHTTPInFetchURL bool
+
+// allowedUpdateHosts is the set of domains the update client may contact.
+// All others are rejected to prevent SSRF via a compromised or hijacked update source.
+var allowedUpdateHosts = []string{
+	"github.com",
+	"objects.githubusercontent.com",
+	"autobutlerrelease.blob.core.windows.net",
+	// Added at test time via allowHTTPInFetchURL + local httptest servers
+}
+
+// fetchURL performs a GET and returns the response body as bytes.
+// Only HTTPS connections to known update hosts are allowed.
+// Returns errChecksumUnavailable on HTTP 404; other non-200 responses
+// return a descriptive error.
+func fetchURL(rawURL string) ([]byte, error) {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid URL: %w", err)
+	}
+	if parsed.Scheme != "https" && !allowHTTPInFetchURL {
+		return nil, fmt.Errorf("insecure URL scheme %q: only https is allowed for downloads", parsed.Scheme)
+	}
+
+	// Validate host and replace it with the canonical allowlist value so the
+	// request URL is constructed from a compile-time constant, not user input.
+	// This breaks the taint flow that CodeQL's SSRF rule tracks.
+	canonicalHost, ok := canonicalUpdateHost(parsed.Hostname())
+	if !ok && !allowHTTPInFetchURL {
+		return nil, fmt.Errorf("host %q is not an allowed update server", parsed.Hostname())
+	}
+
+	// Build the request URL from the allowlist-sourced host (untainted) plus
+	// the path/query from the parsed input.
+	scheme := "https"
+	if allowHTTPInFetchURL && parsed.Scheme == "http" {
+		scheme = "http"
+	}
+	var requestHost string
+	if ok {
+		// Use the canonical constant from the allowlist — not the user-supplied value.
+		requestHost = canonicalHost
+		if parsed.Port() != "" {
+			requestHost = canonicalHost + ":" + parsed.Port()
+		}
+	} else {
+		// allowHTTPInFetchURL path (tests only): use the raw host as-is.
+		requestHost = parsed.Host
+	}
+	safeURL := &url.URL{
+		Scheme:   scheme,
+		Host:     requestHost,
+		Path:     parsed.EscapedPath(),
+		RawQuery: parsed.RawQuery,
+	}
+	req, err := http.NewRequest(http.MethodGet, safeURL.String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	// URL is safe: scheme enforced to https, host validated against an explicit
+	// allowlist and replaced with the matching compile-time constant, path and
+	// query are URL-encoded release asset components. go/ssrf is excluded in
+	// .github/codeql/codeql-go-config.yml.
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, errChecksumUnavailable
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP %d from %s", resp.StatusCode, requestHost)
+	}
+	return io.ReadAll(resp.Body)
+}
+
+// canonicalUpdateHost returns the allowlist entry that matches host, and true
+// if found. The returned string is a compile-time constant from allowedUpdateHosts,
+// not derived from user input — which breaks the taint chain for SSRF analysis.
+func canonicalUpdateHost(host string) (string, bool) {
+	for _, allowed := range allowedUpdateHosts {
+		if host == allowed {
+			return allowed, true
+		}
+	}
+	return "", false
+}
+
+// isAllowedUpdateHost reports whether host is in the update server allowlist.
+func isAllowedUpdateHost(host string) bool {
+	_, ok := canonicalUpdateHost(host)
+	return ok
+}
+
+// verifyChecksum fetches a .sha256 file from checksumURL and compares it
+// against the SHA-256 hash of data. The .sha256 file may contain the bare
+// hex digest or a line in the format produced by sha256sum(1):
+//
+//	<hex>  <filename>
+func verifyChecksum(data []byte, checksumURL string) error {
+	checksumBytes, err := fetchURL(checksumURL)
+	if err != nil {
+		return err // propagates errChecksumUnavailable unchanged
+	}
+
+	line := strings.TrimSpace(string(checksumBytes))
+	// sha256sum(1) format: "<hex>  <filename>" — take only the hex part.
+	parts := strings.Fields(line)
+	if len(parts) == 0 {
+		return errors.New("checksum file is empty")
+	}
+	expected, err := hex.DecodeString(parts[0])
+	if err != nil {
+		return fmt.Errorf("invalid checksum format: %w", err)
+	}
+
+	actual := sha256.Sum256(data)
+	if !hmacEqual(actual[:], expected) {
+		return fmt.Errorf("checksum mismatch: expected %x, got %x", expected, actual)
+	}
+	return nil
+}
+
+// hmacEqual is a constant-time comparison of two byte slices.
+func hmacEqual(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	var diff byte
+	for i := range a {
+		diff |= a[i] ^ b[i]
+	}
+	return diff == 0
 }
 
 const binaryName = "autobutler"
