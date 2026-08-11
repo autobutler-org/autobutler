@@ -45,6 +45,58 @@ func TestAllow_DifferentIPsAreIndependent(t *testing.T) {
 	}
 }
 
+// TestAllowN_ConsumesMultipleTokens verifies that AllowN deducts n tokens
+// from the bucket, so a burst-2 limiter is exhausted after one AllowN(2).
+func TestAllowN_ConsumesMultipleTokens(t *testing.T) {
+	l := ratelimitutil.NewWithRate(rate.Limit(0.001), 2)
+	// Consume both tokens at once.
+	if !l.AllowN("1.2.3.4", 2) {
+		t.Fatal("expected AllowN(2) to succeed with burst=2")
+	}
+	// No tokens left.
+	if l.AllowN("1.2.3.4", 1) {
+		t.Fatal("expected AllowN(1) to fail after burst exhausted")
+	}
+}
+
+// TestAllowN_PartialConsumption verifies that AllowN(1) is equivalent to
+// Allow when n=1.
+func TestAllowN_PartialConsumption(t *testing.T) {
+	l := ratelimitutil.NewWithRate(rate.Limit(0.001), 3)
+	if !l.AllowN("10.0.0.1", 1) {
+		t.Fatal("expected first AllowN(1) to succeed")
+	}
+	if !l.AllowN("10.0.0.1", 1) {
+		t.Fatal("expected second AllowN(1) to succeed")
+	}
+	if !l.AllowN("10.0.0.1", 1) {
+		t.Fatal("expected third AllowN(1) to succeed")
+	}
+	// Burst of 3 exhausted.
+	if l.AllowN("10.0.0.1", 1) {
+		t.Fatal("expected fourth AllowN(1) to fail")
+	}
+}
+
+// TestAllowN_ExceedsBurst verifies that requesting more tokens than the burst
+// size always fails immediately.
+func TestAllowN_ExceedsBurst(t *testing.T) {
+	l := ratelimitutil.NewWithRate(rate.Limit(0.001), 2)
+	if l.AllowN("9.9.9.9", 3) {
+		t.Fatal("expected AllowN(n > burst) to always fail")
+	}
+}
+
+// TestAllowN_DifferentIPsAreIndependent verifies that AllowN per-IP state is
+// isolated — exhausting one IP doesn't affect another.
+func TestAllowN_DifferentIPsAreIndependent(t *testing.T) {
+	l := ratelimitutil.NewWithRate(rate.Limit(0.001), 1)
+	l.AllowN("a.a.a.a", 1) // exhaust a.a.a.a
+	if !l.AllowN("b.b.b.b", 1) {
+		t.Fatal("b.b.b.b should still have tokens")
+	}
+}
+
 func TestExtractIP(t *testing.T) {
 	cases := []struct {
 		in   string
