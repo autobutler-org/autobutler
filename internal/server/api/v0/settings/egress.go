@@ -22,9 +22,9 @@ type egressStatusJSON struct {
 
 // egressResponse is the top-level response for the update-egress endpoints.
 type egressResponse struct {
-	Backend   string             `json:"backend"`
-	Rules     []egressRuleJSON   `json:"rules"`
-	Status    []egressStatusJSON `json:"status,omitempty"`
+	Backend string             `json:"backend"`
+	Rules   []egressRuleJSON   `json:"rules"`
+	Status  []egressStatusJSON `json:"status,omitempty"`
 }
 
 // getUpdateEgress godoc

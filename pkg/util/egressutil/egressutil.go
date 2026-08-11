@@ -76,8 +76,8 @@ func UpdateEgressRules() []EgressRule {
 type FirewallBackend string
 
 const (
-	BackendUFW      FirewallBackend = "ufw"
-	BackendNone     FirewallBackend = "none"
+	BackendUFW  FirewallBackend = "ufw"
+	BackendNone FirewallBackend = "none"
 )
 
 // DetectBackend returns the firewall backend available on this system.
