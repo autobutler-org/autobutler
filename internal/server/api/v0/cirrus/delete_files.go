@@ -4,11 +4,14 @@ import (
 	"context"
 	"errors"
 	"log"
+	"os"
 	"sync"
+	"time"
 
 	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/diskprofiler"
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
@@ -111,7 +114,7 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 			if database == nil {
 				continue
 			}
-			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(context.Background(), cleanupTimeout())
 			if err := database.Queries.DeletePhotoFromAllAlbums(ctx, db.DeletePhotoFromAllAlbumsParams{
 				DeviceSerial: serial,
 				RelPath:      p,
@@ -124,10 +127,43 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 			}); err != nil {
 				log.Printf("autobutler: delete cleanup: remove rotation for %q (serial=%q): %v", p, serial, err)
 			}
+			cancel()
 		}
 	}()
 
 	return serverutil.Ok()
+}
+
+// cleanupTimeoutOnce caches the storage-tier probe. diskprofiler.Profile writes
+// and reads a 4 MB benchmark file, so it must not run per delete request; the
+// tier of the root filesystem does not change while the process is alive.
+var (
+	cleanupTimeoutOnce  sync.Once
+	cleanupTimeoutValue time.Duration
+)
+
+// cleanupTimeout returns the per-file timeout for post-delete DB cleanup,
+// sized to the host's storage tier (SSD 5s / HDD 30s / SD card 60s).
+//
+// Without this, cleanup used context.Background() — unbounded. A wedged DB
+// write on a slow SD-card host would leak the goroutine for the process
+// lifetime rather than failing and logging.
+func cleanupTimeout() time.Duration {
+	cleanupTimeoutOnce.Do(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		tier, err := diskprofiler.Profile(ctx, os.TempDir())
+		if err != nil {
+			// Probe failure is not fatal — assume the slowest tier so we are
+			// generous with the timeout rather than cutting cleanup short.
+			log.Printf("autobutler: delete cleanup: disk profile failed, assuming slow tier: %v", err)
+			cleanupTimeoutValue = diskprofiler.TierSlow.DeleteTimeout()
+			return
+		}
+		cleanupTimeoutValue = tier.DeleteTimeout()
+		log.Printf("autobutler: delete cleanup: storage tier %s, timeout %s", tier, cleanupTimeoutValue)
+	})
+	return cleanupTimeoutValue
 }
 
 var deleteFilesRoute = serverutil.ApiRoute(
