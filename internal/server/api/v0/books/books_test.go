@@ -10,6 +10,7 @@ import (
 
 	v0_books "github.com/autobutler-org/autobutler/internal/server/api/v0/books"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,14 +19,13 @@ import (
 func newBooksEngine(t *testing.T) (*gin.Engine, string) {
 	t.Helper()
 
-	// Redirect the data directory to a temp location.
-	tmpHome := t.TempDir()
-	t.Setenv("HOME", tmpHome)
-
-	// Pre-create the cirrus directory that GetCirrusDir builds.
-	cirrusDir := filepath.Join(tmpHome, "autobutler", "data", "cirrus")
-	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
-		t.Fatalf("failed to create cirrus dir: %v", err)
+	// Redirect the data directory to a temp location. The layout under HOME is
+	// platform-specific, so ask storageutil for the path rather than hardcoding
+	// it — GetCirrusDir also creates the directory.
+	t.Setenv("HOME", t.TempDir())
+	cirrusDir, err := storageutil.GetCirrusDir()
+	if err != nil {
+		t.Fatalf("failed to resolve cirrus dir: %v", err)
 	}
 
 	gin.SetMode(gin.TestMode)
