@@ -13,6 +13,8 @@ import (
 	"github.com/shirou/gopsutil/v4/load"
 	"github.com/shirou/gopsutil/v4/mem"
 	"github.com/shirou/gopsutil/v4/sensors"
+
+	"github.com/autobutler-org/autobutler/pkg/util/smartutil"
 )
 
 const (
@@ -37,11 +39,23 @@ type HealthStatus struct {
 	DiskUsedBytes      uint64
 	DiskTotalBytes     uint64
 	TemperatureCelsius float64 // highest thermal zone reading, 0 if unavailable
+	// SMARTDrives holds per-drive S.M.A.R.T. data. Nil when smartctl is
+	// unavailable or no devices have been configured.
+	SMARTDrives []smartutil.DriveHealth
 }
 
 // Collector samples host hardware metrics for the health endpoint.
 type Collector struct {
 	cpuHighSince *time.Time
+	// smartDevices are block device paths probed for S.M.A.R.T. data.
+	smartDevices []string
+}
+
+// WithSMARTDevices configures the block device paths that CurrentHealth
+// probes for S.M.A.R.T. data, e.g. []string{"/dev/sda"}. Probing is a
+// no-op when smartctl is not installed or no devices are configured.
+func (c *Collector) WithSMARTDevices(devices []string) {
+	c.smartDevices = devices
 }
 
 // Register creates a new Collector. Call this once at startup.
@@ -156,6 +170,19 @@ func (c *Collector) CurrentHealth() HealthStatus {
 		slog.Warn("system metrics: load.Avg failed", "err", err)
 	} else {
 		_ = avg // available if callers want to extend HealthStatus later
+	}
+
+	// S.M.A.R.T. drive health. Graceful no-op when smartctl is unavailable or
+	// no devices are configured, so this is safe on hosts without smartmontools.
+	if len(c.smartDevices) > 0 {
+		drives := smartutil.QueryDevices(c.smartDevices)
+		status.SMARTDrives = drives
+		for _, d := range drives {
+			if len(d.Alerts) > 0 {
+				status.Healthy = false
+				status.Alerts = append(status.Alerts, d.Alerts...)
+			}
+		}
 	}
 
 	return status
