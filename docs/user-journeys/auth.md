@@ -1,0 +1,147 @@
+# Auth Journeys
+
+Covers first-boot setup, login, logout, and password recovery.
+
+---
+
+### JN-AUTH-001: First-boot setup — create account
+
+**Preconditions:** Butler is freshly installed and has no owner account. App is opened for the first time.
+
+**Steps:**
+1. Open the app.
+2. App detects no setup and navigates to `/setup`.
+3. Enter a username (e.g. `alice`).
+4. Enter a password.
+5. Re-enter the password in the confirm field.
+6. Tap **Create account**.
+7. A recovery phrase is displayed (6 words).
+8. Copy or write down the phrase.
+9. Check the acknowledgement checkbox ("I've saved my recovery phrase").
+10. Tap **Continue**.
+11. App presents a theme selection step (light / dark / system).
+12. Choose a theme.
+13. Tap **Done** (or equivalent).
+
+**Expected result:**
+- App navigates to `/cirrus` (file browser).
+- The username is accepted and the account is live on the butler.
+- The theme chosen is applied immediately.
+
+**Notes:**
+- Recovery phrase is shown exactly once and is not recoverable from the UI after dismissal.
+- Weak password or mismatched confirm should show inline validation errors before submit.
+- Username uniqueness is enforced server-side; duplicate should surface an error on step 6.
+
+---
+
+### JN-AUTH-002: Login with correct credentials
+
+**Preconditions:** Butler is set up (JN-AUTH-001 complete). User is not logged in.
+
+**Steps:**
+1. Open the app (or navigate to `/login`).
+2. Enter the registered username.
+3. Enter the correct password.
+4. Tap **Log in**.
+
+**Expected result:**
+- App navigates to `/cirrus`.
+- Session token is stored; subsequent navigation does not require re-login.
+
+---
+
+### JN-AUTH-003: Login with wrong password
+
+**Preconditions:** Butler is set up. User is not logged in.
+
+**Steps:**
+1. Navigate to `/login`.
+2. Enter the registered username.
+3. Enter an incorrect password.
+4. Tap **Log in**.
+
+**Expected result:**
+- An error message appears below the form (not a blank screen or crash).
+- User remains on the login page.
+- Password field is not auto-cleared (user can correct and retry).
+
+---
+
+### JN-AUTH-004: Toggle password visibility on login screen
+
+**Preconditions:** User is on the `/login` page.
+
+**Steps:**
+1. Enter any text in the password field.
+2. Tap the eye icon next to the password field.
+
+**Expected result:**
+- Password characters become visible.
+- Tapping the icon again hides them.
+
+---
+
+### JN-AUTH-005: Recover account with valid phrase
+
+**Preconditions:** Butler is set up. User has their recovery phrase.
+
+**Steps:**
+1. Navigate to `/login`.
+2. Tap **Forgot password** (or equivalent link).
+3. App navigates to `/recover`.
+4. Enter the recovery phrase.
+5. Enter a new password.
+6. Confirm the new password.
+7. Tap **Reset password**.
+
+**Expected result:**
+- App navigates to `/login` (or directly to `/cirrus` on auto-login).
+- User can log in with the new password.
+- Old password no longer works.
+
+---
+
+### JN-AUTH-006: Recover account with invalid phrase
+
+**Preconditions:** User is on `/recover`.
+
+**Steps:**
+1. Enter an incorrect recovery phrase.
+2. Enter a new password and confirm.
+3. Tap **Reset password**.
+
+**Expected result:**
+- An error message appears.
+- Password is not changed.
+- User remains on the recover page.
+
+---
+
+### JN-AUTH-007: Sign out
+
+**Preconditions:** User is logged in and on any page.
+
+**Steps:**
+1. Open the navigation drawer.
+2. Navigate to **Settings** (`/settings`).
+3. Scroll to the sign-out section.
+4. Tap **Sign out**.
+
+**Expected result:**
+- Session token is cleared.
+- App redirects to `/login`.
+- Navigating back does not bypass the login page.
+
+---
+
+### JN-AUTH-008: Terms of service gate
+
+**Preconditions:** App has a host configured but user has not yet accepted terms.
+
+**Steps:**
+1. Open the app.
+
+**Expected result:**
+- App navigates to `/terms` before any other protected route.
+- User must accept before accessing `/cirrus` or any other feature.
