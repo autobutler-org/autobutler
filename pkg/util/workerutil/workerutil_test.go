@@ -92,3 +92,16 @@ func startWorkerAndQuitOnDone(t *testing.T, fn func(w Worker)) {
 		t.Error("Worker did not exit after quit signal")
 	}
 }
+
+// TestWorker_GetBackupToDeviceChannel verifies the channel is non-nil and
+
+// TestWorker_GetBackupToDeviceChannel_NonNil verifies the channel accessor
+// returns a non-nil channel. Sending to it is not tested here because
+// BackupToDevice makes real OS/hardware calls.
+func TestWorker_GetBackupToDeviceChannel_NonNil(t *testing.T) {
+	w := NewWorker(storageutil.NewStorageService(storageutil.NewDetector()))
+	ch := w.GetBackupToDeviceChannel()
+	if ch == nil {
+		t.Fatal("GetBackupToDeviceChannel returned nil")
+	}
+}
