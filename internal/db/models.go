@@ -85,6 +85,7 @@ type User struct {
 	PasswordHash       string
 	RecoveryPhraseHash string
 	CreatedAt          time.Time
+	IsAdmin            int64
 }
 
 type VaultConfig struct {

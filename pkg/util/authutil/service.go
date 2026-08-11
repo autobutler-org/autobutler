@@ -92,6 +92,14 @@ func Setup(ctx context.Context, queries *db.Queries, params SetupParams) (*Setup
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
+	// First user is automatically the admin.
+	if err := queries.SetUserAdmin(ctx, db.SetUserAdminParams{
+		IsAdmin:  1,
+		Username: user.Username,
+	}); err != nil {
+		return nil, fmt.Errorf("promote first user to admin: %w", err)
+	}
+
 	token, err := newSession(ctx, queries, user.ID)
 	if err != nil {
 		return nil, err

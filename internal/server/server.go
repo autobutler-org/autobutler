@@ -268,7 +268,7 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 
 	// IMPORTANT: middleware.Use MUST be called before setupRoutes
 	middleware.Use(router, deps)
-	if err := setupRoutes(router, systemCollector); err != nil {
+	if err := setupRoutes(router, systemCollector, deps); err != nil {
 		return fmt.Errorf("failed to set up routes: %w", err)
 	}
 	setupSwagger(router)
