@@ -1,4 +1,5 @@
 import 'package:autobutler/services/app_settings.dart';
+import 'package:autobutler/widgets/password_strength_bar.dart';
 import 'package:autobutler/services/auth_service.dart';
 import 'package:autobutler/widgets/core/copy_button.dart';
 import 'package:flutter/material.dart';
@@ -274,7 +275,9 @@ class _SetupFormState extends State<_SetupForm> {
               return null;
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          PasswordStrengthBar(password: widget.passwordController.text),
+          const SizedBox(height: 8),
 
           TextFormField(
             controller: widget.confirmController,
