@@ -107,9 +107,9 @@ func TestListBooks_IgnoresNonBookFiles(t *testing.T) {
 
 	// Write one book and two non-book files.
 	files := map[string][]byte{
-		"novel.epub":  []byte("epub"),
-		"readme.txt":  []byte("not a book"),
-		"cover.png":   []byte("not a book"),
+		"novel.epub": []byte("epub"),
+		"readme.txt": []byte("not a book"),
+		"cover.png":  []byte("not a book"),
 	}
 	for name, content := range files {
 		if err := os.WriteFile(filepath.Join(cirrusDir, name), content, 0644); err != nil {
