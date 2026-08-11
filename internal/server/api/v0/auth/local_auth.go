@@ -15,14 +15,25 @@ import (
 const sessionCookieName = "session"
 const sessionCookieMaxAge = int(30 * 24 * time.Hour / time.Second)
 
+// isTLS returns true when the underlying connection or a trusted proxy indicates
+// that the request arrived over HTTPS. Setting the Secure cookie flag on HTTP
+// would prevent the cookie from being sent, so we only set it on TLS connections.
+func isTLS(c *gin.Context) bool {
+	if c.Request.TLS != nil {
+		return true
+	}
+	// Honour a reverse-proxy header (e.g. nginx → AutoButler over plain HTTP).
+	return c.Request.Header.Get("X-Forwarded-Proto") == "https"
+}
+
 func setSessionCookie(c *gin.Context, token string) {
 	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie(sessionCookieName, token, sessionCookieMaxAge, "/", "", false, true)
+	c.SetCookie(sessionCookieName, token, sessionCookieMaxAge, "/", "", isTLS(c), true)
 }
 
 func clearSessionCookie(c *gin.Context) {
 	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie(sessionCookieName, "", -1, "/", "", false, true)
+	c.SetCookie(sessionCookieName, "", -1, "/", "", isTLS(c), true)
 }
 
 func getQueries(c *gin.Context) (*deputil.Dependencies, bool) {

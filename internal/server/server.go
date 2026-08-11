@@ -17,6 +17,7 @@ import (
 	"github.com/autobutler-org/autobutler/internal/server/middleware"
 	"github.com/autobutler-org/autobutler/pkg/backup"
 	"github.com/autobutler-org/autobutler/pkg/botel"
+	"github.com/autobutler-org/autobutler/pkg/util/authutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/favoritesutil"
@@ -62,6 +63,27 @@ func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 	initExternalVault(deps)
 	go vaultDeviceMonitor(deps)
 	go usbDeviceMonitor(deps)
+
+	// Purge expired sessions once at startup and then every 24 hours. (#1330)
+	// GetSession already filters on expires_at, so stale rows are not a security
+	// issue — but they accumulate forever otherwise on a busy instance.
+	go func() {
+		purge := func() {
+			if db := deps.Database(); db != nil {
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+				if err := authutil.PurgeExpiredSessions(ctx, db.Queries); err != nil {
+					log.Printf("[auth] expired session purge failed: %v", err)
+				}
+			}
+		}
+		purge() // once at startup
+		ticker := time.NewTicker(24 * time.Hour)
+		defer ticker.Stop()
+		for range ticker.C {
+			purge()
+		}
+	}()
 
 	return syncWorker, nil
 }
