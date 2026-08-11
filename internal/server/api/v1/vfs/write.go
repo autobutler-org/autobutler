@@ -53,7 +53,7 @@ func vfsWrite(c *gin.Context) *serverutil.Response {
 	}
 	if err := fsys.Write(c.Request.Context(), path, c.Request.Body, opts); err != nil {
 		if err == vfs.ErrConflict {
-			return &serverutil.Response{StatusCode: http.StatusConflict, Error: err}
+			return serverutil.NewResponse().WithStatusCode(http.StatusConflict).WithError(err)
 		}
 		return serverutil.InternalServerError(err)
 	}
