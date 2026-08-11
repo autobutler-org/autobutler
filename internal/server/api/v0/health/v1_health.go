@@ -1,15 +1,15 @@
 package v0_health
 
 import (
-	"github.com/autobutler-org/autobutler/pkg/botel/system"
+	"github.com/autobutler-org/autobutler/pkg/util/healthutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 )
 
 type router struct {
-	collector *system.Collector
+	collector *healthutil.Collector
 }
 
-func NewRouter(collector *system.Collector) serverutil.Router {
+func NewRouter(collector *healthutil.Collector) serverutil.Router {
 	return &router{collector: collector}
 }
 

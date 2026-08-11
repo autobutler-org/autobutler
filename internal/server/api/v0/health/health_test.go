@@ -7,19 +7,19 @@ import (
 	"testing"
 
 	v0_health "github.com/autobutler-org/autobutler/internal/server/api/v0/health"
-	"github.com/autobutler-org/autobutler/pkg/botel/system"
+	"github.com/autobutler-org/autobutler/pkg/util/healthutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/gin-gonic/gin"
 )
 
 // newHealthEngine creates a gin engine with the health routes registered.
-// Uses system.Register() which attaches to the default no-op OTel provider —
+// Uses healthutil.Register() which attaches to the default no-op OTel provider —
 // safe for unit tests and avoids real process monitoring.
 func newHealthEngine(t *testing.T) *gin.Engine {
 	t.Helper()
-	collector, err := system.Register()
+	collector, err := healthutil.Register()
 	if err != nil {
-		t.Fatalf("system.Register() failed: %v", err)
+		t.Fatalf("healthutil.Register() failed: %v", err)
 	}
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()

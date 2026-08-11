@@ -16,11 +16,11 @@ import (
 	"github.com/autobutler-org/autobutler/internal/db"
 	"github.com/autobutler-org/autobutler/internal/server/middleware"
 	"github.com/autobutler-org/autobutler/pkg/backup"
-	"github.com/autobutler-org/autobutler/pkg/botel"
 	"github.com/autobutler-org/autobutler/pkg/util/authutil"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
 	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
 	"github.com/autobutler-org/autobutler/pkg/util/favoritesutil"
+	"github.com/autobutler-org/autobutler/pkg/util/healthutil"
 	"github.com/autobutler-org/autobutler/pkg/util/remoteutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
@@ -216,24 +216,10 @@ type StartOptions struct {
 }
 
 func StartServer(deps deputil.Dependencies, opts StartOptions) error {
-	tp, err := botel.InitTracer(deps)
+	systemCollector, err := healthutil.Register()
 	if err != nil {
-		return fmt.Errorf("failed to initialize otel trace: %w", err)
+		return fmt.Errorf("failed to initialize system collector: %w", err)
 	}
-
-	mp, systemCollector, err := botel.InitMetrics(deps)
-	if err != nil {
-		return fmt.Errorf("failed to initialize otel metrics: %w", err)
-	}
-
-	defer func() {
-		if err := tp.Shutdown(context.Background()); err != nil {
-			log.Printf("Error shutting down tracer provider: %v", err)
-		}
-		if err := mp.Shutdown(context.Background()); err != nil {
-			log.Printf("Error shutting down meter provider: %v", err)
-		}
-	}()
 
 	deps.WithWorker(workerutil.NewWorker(deps.StorageService()))
 	syncWorker, err := setupServices(deps)
@@ -273,12 +259,6 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 		log.Println("[server] shutting down...")
 		syncWorker.Stop()
 		remoteutil.Stop()
-		if err := tp.Shutdown(context.Background()); err != nil {
-			log.Printf("Error shutting down tracer provider: %v", err)
-		}
-		if err := mp.Shutdown(context.Background()); err != nil {
-			log.Printf("Error shutting down meter provider: %v", err)
-		}
 		os.Exit(0)
 	}()
 

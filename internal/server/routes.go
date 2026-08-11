@@ -14,7 +14,7 @@ import (
 	v0_events "github.com/autobutler-org/autobutler/internal/server/api/v0/events"
 	v0_favorites "github.com/autobutler-org/autobutler/internal/server/api/v0/favorites"
 	v0_health "github.com/autobutler-org/autobutler/internal/server/api/v0/health"
-	v0_metrics "github.com/autobutler-org/autobutler/internal/server/api/v0/metrics"
+
 	v0_migration "github.com/autobutler-org/autobutler/internal/server/api/v0/migration"
 	v0_photos "github.com/autobutler-org/autobutler/internal/server/api/v0/photos"
 	v0_settings "github.com/autobutler-org/autobutler/internal/server/api/v0/settings"
@@ -26,8 +26,8 @@ import (
 	v0_webdav "github.com/autobutler-org/autobutler/internal/server/api/v0/webdav"
 	v1_vfs "github.com/autobutler-org/autobutler/internal/server/api/v1/vfs"
 	"github.com/autobutler-org/autobutler/internal/server/middleware"
-	"github.com/autobutler-org/autobutler/pkg/botel/system"
 	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/autobutler/pkg/util/healthutil"
 	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
 	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
 
@@ -38,13 +38,13 @@ import (
 //go:embed public
 var public embed.FS
 
-func setupRoutes(engine *gin.Engine, systemCollector *system.Collector, deps deputil.Dependencies) error {
+func setupRoutes(engine *gin.Engine, systemCollector *healthutil.Collector, deps deputil.Dependencies) error {
 	setupRouters(engine, systemCollector, deps)
 	setupWebDAV(engine)
 	return setupStaticRoutes(engine)
 }
 
-func setupRouters(engine *gin.Engine, systemCollector *system.Collector, deps deputil.Dependencies) {
+func setupRouters(engine *gin.Engine, systemCollector *healthutil.Collector, deps deputil.Dependencies) {
 	v1group := engine.Group("/api/v1")
 	v1Routers := []serverutil.Router{
 		v1_vfs.NewRouter(),
@@ -61,7 +61,6 @@ func setupRouters(engine *gin.Engine, systemCollector *system.Collector, deps de
 		v0_devices.NewRouter(),
 		v0_events.NewRouter(),
 		v0_health.NewRouter(systemCollector),
-		v0_metrics.NewRouter(),
 		v0_migration.NewRouter(),
 		v0_albums.NewRouter(),
 		v0_favorites.NewRouter(),
