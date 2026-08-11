@@ -25,6 +25,45 @@ definitions:
       statusCode:
         type: integer
     type: object
+  smartutil.DriveHealth:
+    properties:
+      alerts:
+        description: |-
+          Alerts contains human-readable warnings when pre-failure attributes are
+          non-zero or the overall SMART assessment is FAILED/UNKNOWN.
+        items:
+          type: string
+        type: array
+      device:
+        description: Device is the OS path, e.g. "/dev/sda".
+        type: string
+      healthy:
+        description: Healthy is true when the overall SMART assessment is PASSED.
+        type: boolean
+      modelName:
+        description: ModelName is the drive model string returned by smartctl.
+        type: string
+      pendingSectors:
+        description: PendingSectors is the count of sectors pending reallocation.
+        type: integer
+      powerOnHours:
+        description: PowerOnHours is the total drive power-on time (0 if unavailable).
+        type: integer
+      reallocatedSectors:
+        description: |-
+          ReallocatedSectors is the count of reallocated sectors (non-zero = bad
+          blocks remapped — a leading indicator of imminent failure).
+        type: integer
+      serialNumber:
+        description: SerialNumber is the drive serial number.
+        type: string
+      temperatureCelsius:
+        description: TemperatureCelsius is the current drive temperature (0 if unavailable).
+        type: number
+      uncorrectableErrors:
+        description: UncorrectableErrors is the count of offline uncorrectable errors.
+        type: integer
+    type: object
   storageutil.BackupToDeviceParams:
     properties:
       sourceDeviceSerial:
@@ -280,6 +319,13 @@ definitions:
         type: integer
       memUsedBytes:
         type: integer
+      smartDrives:
+        description: |-
+          SMARTDrives contains per-drive S.M.A.R.T. health data. Empty when
+          smartctl is unavailable or no devices are configured.
+        items:
+          $ref: '#/definitions/smartutil.DriveHealth'
+        type: array
       temperatureCelsius:
         type: number
     type: object

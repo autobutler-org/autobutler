@@ -3350,6 +3350,54 @@
                 }
             }
         },
+        "smartutil.DriveHealth": {
+            "type": "object",
+            "properties": {
+                "alerts": {
+                    "description": "Alerts contains human-readable warnings when pre-failure attributes are\nnon-zero or the overall SMART assessment is FAILED/UNKNOWN.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "device": {
+                    "description": "Device is the OS path, e.g. \"/dev/sda\".",
+                    "type": "string"
+                },
+                "healthy": {
+                    "description": "Healthy is true when the overall SMART assessment is PASSED.",
+                    "type": "boolean"
+                },
+                "modelName": {
+                    "description": "ModelName is the drive model string returned by smartctl.",
+                    "type": "string"
+                },
+                "pendingSectors": {
+                    "description": "PendingSectors is the count of sectors pending reallocation.",
+                    "type": "integer"
+                },
+                "powerOnHours": {
+                    "description": "PowerOnHours is the total drive power-on time (0 if unavailable).",
+                    "type": "integer"
+                },
+                "reallocatedSectors": {
+                    "description": "ReallocatedSectors is the count of reallocated sectors (non-zero = bad\nblocks remapped — a leading indicator of imminent failure).",
+                    "type": "integer"
+                },
+                "serialNumber": {
+                    "description": "SerialNumber is the drive serial number.",
+                    "type": "string"
+                },
+                "temperatureCelsius": {
+                    "description": "TemperatureCelsius is the current drive temperature (0 if unavailable).",
+                    "type": "number"
+                },
+                "uncorrectableErrors": {
+                    "description": "UncorrectableErrors is the count of offline uncorrectable errors.",
+                    "type": "integer"
+                }
+            }
+        },
         "storageutil.BackupToDeviceParams": {
             "type": "object",
             "properties": {
@@ -3731,6 +3779,13 @@
                 },
                 "memUsedBytes": {
                     "type": "integer"
+                },
+                "smartDrives": {
+                    "description": "SMARTDrives contains per-drive S.M.A.R.T. health data. Empty when\nsmartctl is unavailable or no devices are configured.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/smartutil.DriveHealth"
+                    }
                 },
                 "temperatureCelsius": {
                     "type": "number"
