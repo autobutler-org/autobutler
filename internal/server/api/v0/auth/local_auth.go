@@ -107,7 +107,7 @@ var authSetupRoute = serverutil.ApiRoute("POST", "/auth/setup", authSetup)
 
 // authLogin godoc
 // @Summary Login
-// @Description Authenticates with username and password, returns a session token
+// @Description Authenticates with username and password. When 2FA is enrolled the response contains requires2FA and a challengeToken instead of a session token; exchange those at /auth/totp/verify to complete login.
 // @Tags auth
 // @Accept json
 // @Produce json
@@ -129,12 +129,20 @@ func authLogin(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(err)
 	}
 
-	result, err := authutil.Login(c.Request.Context(), (*deps).Database().Queries, authutil.LoginParams{
+	result, challenge, err := authutil.LoginOrChallenge(c.Request.Context(), (*deps).Database().Queries, authutil.LoginParams{
 		Username: req.Username,
 		Password: req.Password,
 	})
 	if err != nil {
 		return serverutil.NewResponse().WithStatusCode(http.StatusUnauthorized).WithError(err)
+	}
+
+	// Password verified but 2FA is enrolled: no session yet.
+	if challenge != nil {
+		return serverutil.Ok().WithData(gin.H{
+			"requires2FA":    true,
+			"challengeToken": challenge.ChallengeToken,
+		})
 	}
 
 	setSessionCookie(c, result.SessionToken)

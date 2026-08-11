@@ -91,6 +91,13 @@ type Session struct {
 	CreatedAt time.Time
 }
 
+type TotpChallenge struct {
+	ID        int64
+	UserID    int64
+	TokenHash string
+	ExpiresAt time.Time
+}
+
 type User struct {
 	ID                 int64
 	Username           string
@@ -98,6 +105,8 @@ type User struct {
 	RecoveryPhraseHash string
 	CreatedAt          time.Time
 	IsAdmin            int64
+	TotpSecret         sql.NullString
+	TotpPending        sql.NullString
 }
 
 type VaultConfig struct {

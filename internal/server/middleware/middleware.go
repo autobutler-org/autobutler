@@ -35,6 +35,7 @@ var vaultRateLimiter = ratelimitutil.NewWithRate(0.5, 5)
 // authRateLimitedPaths are the API paths that require rate limiting.
 var authRateLimitedPaths = map[string]bool{
 	"/api/v0/auth/login":           true,
+	"/api/v0/auth/totp/verify":     true,
 	"/api/v0/auth/setup":           true,
 	"/api/v0/auth/recover":         true,
 	"/api/v0/storage/devices/role": true,
@@ -104,6 +105,9 @@ var authExemptPaths = map[string]bool{
 	"/api/v0/auth/login":   true,
 	"/api/v0/auth/recover": true,
 	"/api/v0/auth/status":  true,
+	// Challenge-token exchange: the caller has already passed the password
+	// check but has no session yet, so it cannot require one.
+	"/api/v0/auth/totp/verify": true,
 }
 
 func inject(deps deputil.Dependencies) gin.HandlerFunc {

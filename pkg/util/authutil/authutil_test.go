@@ -27,7 +27,9 @@ func newTestDB(t *testing.T) *db.Queries {
 			password_hash TEXT NOT NULL,
 			recovery_phrase_hash TEXT NOT NULL,
 			created_at DATETIME NOT NULL DEFAULT (datetime('now')),
-			is_admin INTEGER NOT NULL DEFAULT 0
+			is_admin INTEGER NOT NULL DEFAULT 0,
+			totp_secret  TEXT,
+			totp_pending TEXT
 		);
 		CREATE TABLE IF NOT EXISTS sessions (
 			token TEXT PRIMARY KEY,

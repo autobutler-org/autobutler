@@ -43,6 +43,14 @@ type LoginResult struct {
 	SessionToken string
 }
 
+// LoginChallenge is returned when the user has 2FA enabled. The caller must
+// verify a TOTP code via /auth/totp/verify using ChallengeToken before a full
+// session is granted.
+type LoginChallenge struct {
+	ChallengeToken string
+	Requires2FA    bool
+}
+
 // RecoverParams contains parameters for password recovery.
 type RecoverParams struct {
 	RecoveryPhrase string
@@ -120,6 +128,10 @@ func Setup(ctx context.Context, queries *db.Queries, params SetupParams) (*Setup
 }
 
 // Login validates credentials and returns a session token.
+//
+// Login ignores 2FA enrollment and always issues a session on valid
+// credentials. Callers on the interactive login path should use
+// LoginOrChallenge instead, which honours 2FA.
 func Login(ctx context.Context, queries *db.Queries, params LoginParams) (*LoginResult, error) {
 	user, err := queries.GetUserByUsername(ctx, params.Username)
 	if err != nil {
@@ -137,6 +149,43 @@ func Login(ctx context.Context, queries *db.Queries, params LoginParams) (*Login
 	}
 
 	return &LoginResult{SessionToken: token}, nil
+}
+
+// LoginOrChallenge validates credentials. When the user has 2FA enrolled it
+// returns a LoginChallenge and no session; the client must complete the flow
+// via /auth/totp/verify. Otherwise it returns a LoginResult directly.
+//
+// Exactly one of the two results is non-nil on success.
+func LoginOrChallenge(ctx context.Context, queries *db.Queries, params LoginParams) (*LoginResult, *LoginChallenge, error) {
+	user, err := queries.GetUserByUsername(ctx, params.Username)
+	if err != nil {
+		// Don't leak whether the username exists
+		return nil, nil, fmt.Errorf("invalid credentials")
+	}
+
+	if !CheckPassword(params.Password, user.PasswordHash) {
+		return nil, nil, fmt.Errorf("invalid credentials")
+	}
+
+	enabled, err := TOTPIsEnabled(ctx, queries, user.ID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("check 2fa: %w", err)
+	}
+
+	if enabled {
+		rawToken, err := IssueTOTPChallenge(ctx, queries, user.ID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("issue 2fa challenge: %w", err)
+		}
+		return nil, &LoginChallenge{ChallengeToken: rawToken, Requires2FA: true}, nil
+	}
+
+	token, err := newSession(ctx, queries, user.ID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return &LoginResult{SessionToken: token}, nil, nil
 }
 
 // ValidateSession checks a session token and returns the username if valid.

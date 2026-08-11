@@ -16,6 +16,12 @@ func (r *router) Routes() []*serverutil.Route {
 		authLoginRoute,
 		authLogoutRoute,
 		authRecoverRoute,
+		// TOTP 2FA
+		totpStatusRoute,
+		totpEnrollRoute,
+		totpConfirmRoute,
+		totpDisableRoute,
+		totpVerifyRoute,
 		// Google OAuth (for cloud migration feature)
 		googleAuthorizeRoute,
 		googleCallbackRoute,

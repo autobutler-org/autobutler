@@ -48,7 +48,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (username, password_hash, recovery_phrase_hash)
 VALUES (?, ?, ?)
-RETURNING id, username, password_hash, recovery_phrase_hash, created_at, is_admin
+RETURNING id, username, password_hash, recovery_phrase_hash, created_at, is_admin, totp_secret, totp_pending
 `
 
 type CreateUserParams struct {
@@ -67,6 +67,8 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.RecoveryPhraseHash,
 		&i.CreatedAt,
 		&i.IsAdmin,
+		&i.TotpSecret,
+		&i.TotpPending,
 	)
 	return i, err
 }
@@ -99,7 +101,7 @@ func (q *Queries) DeleteUserSessions(ctx context.Context, userID int64) error {
 }
 
 const getFirstUser = `-- name: GetFirstUser :one
-SELECT id, username, password_hash, recovery_phrase_hash, created_at, is_admin FROM users ORDER BY id ASC LIMIT 1
+SELECT id, username, password_hash, recovery_phrase_hash, created_at, is_admin, totp_secret, totp_pending FROM users ORDER BY id ASC LIMIT 1
 `
 
 func (q *Queries) GetFirstUser(ctx context.Context) (User, error) {
@@ -112,6 +114,8 @@ func (q *Queries) GetFirstUser(ctx context.Context) (User, error) {
 		&i.RecoveryPhraseHash,
 		&i.CreatedAt,
 		&i.IsAdmin,
+		&i.TotpSecret,
+		&i.TotpPending,
 	)
 	return i, err
 }
@@ -146,7 +150,7 @@ func (q *Queries) GetSession(ctx context.Context, token string) (GetSessionRow, 
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, username, password_hash, recovery_phrase_hash, created_at, is_admin FROM users WHERE id = ? LIMIT 1
+SELECT id, username, password_hash, recovery_phrase_hash, created_at, is_admin, totp_secret, totp_pending FROM users WHERE id = ? LIMIT 1
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
@@ -159,12 +163,14 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
 		&i.RecoveryPhraseHash,
 		&i.CreatedAt,
 		&i.IsAdmin,
+		&i.TotpSecret,
+		&i.TotpPending,
 	)
 	return i, err
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT id, username, password_hash, recovery_phrase_hash, created_at, is_admin FROM users WHERE username = ? LIMIT 1
+SELECT id, username, password_hash, recovery_phrase_hash, created_at, is_admin, totp_secret, totp_pending FROM users WHERE username = ? LIMIT 1
 `
 
 func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
@@ -177,6 +183,8 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 		&i.RecoveryPhraseHash,
 		&i.CreatedAt,
 		&i.IsAdmin,
+		&i.TotpSecret,
+		&i.TotpPending,
 	)
 	return i, err
 }
