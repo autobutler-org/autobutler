@@ -16,6 +16,9 @@ func (r *router) Routes() []*serverutil.Route {
 		authLoginRoute,
 		authLogoutRoute,
 		authRecoverRoute,
+		// QR pairing
+		generatePairingCodeRoute,
+		exchangePairingTokenRoute,
 		// Google OAuth (for cloud migration feature)
 		googleAuthorizeRoute,
 		googleCallbackRoute,

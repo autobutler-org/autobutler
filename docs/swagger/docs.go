@@ -810,6 +810,91 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/pair": {
+            "post": {
+                "description": "Consumes a single-use pairing token (from scanning the /mobile QR code) and returns a session token. Rate-limited.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Exchange a pairing token for a session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Raw pairing token from the QR code URL",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "token": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/pairing": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a short-lived (10 min) single-use pairing token and returns its URL encoded as a PNG QR code. The admin scans or displays this from /mobile to onboard a new device without typing credentials.",
+                "produces": [
+                    "image/png"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Generate a QR pairing code",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "QR image size in pixels (default 256)",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PNG QR code image",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/recover": {
             "post": {
                 "description": "Resets password using recovery phrase",

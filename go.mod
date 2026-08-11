@@ -15,6 +15,7 @@ require (
 	github.com/klauspost/compress v1.19.1
 	github.com/mholt/archiver/v4 v4.0.0-alpha.9
 	github.com/shirou/gopsutil/v4 v4.26.7
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/files v1.0.1

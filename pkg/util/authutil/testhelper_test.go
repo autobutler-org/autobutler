@@ -29,6 +29,13 @@ func newTOTPTestDB(t *testing.T) *db.Queries {
 			created_at           DATETIME NOT NULL DEFAULT (datetime('now')),
 			is_admin             INTEGER NOT NULL DEFAULT 0
 		);
+		CREATE TABLE IF NOT EXISTS pairing_tokens (
+			id         INTEGER PRIMARY KEY AUTOINCREMENT,
+			token_hash TEXT NOT NULL UNIQUE,
+			created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+			expires_at DATETIME NOT NULL DEFAULT (datetime('now', '+10 minutes')),
+			used_at    DATETIME
+		);
 		CREATE TABLE IF NOT EXISTS sessions (
 			token      TEXT PRIMARY KEY,
 			user_id    INTEGER NOT NULL,

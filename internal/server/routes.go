@@ -101,6 +101,11 @@ func setupStaticRoutes(engine *gin.Engine) error {
 	if err != nil {
 		return err
 	}
+	// /mobile is a minimal pairing page. Registered before the static handler
+	// so it takes precedence over the Flutter SPA's catch-all.
+	engine.GET("/mobile", func(c *gin.Context) {
+		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(mobilePage))
+	})
 	engine.Use(static.Serve("/", fs))
 	// Read index.html once at startup for the SPA fallback.
 	// In dev mode (no built frontend), index.html may not exist — fall back
@@ -124,3 +129,58 @@ func setupStaticRoutes(engine *gin.Engine) error {
 	)
 	return nil
 }
+
+// mobilePage is the HTML served at /mobile — a minimal page that requests a
+// QR pairing code from the API and renders it for scanning by a new device.
+// Requires an authenticated session (the admin loads this page from their
+// already-connected browser to onboard a phone).
+const mobilePage = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pair a device — AutoButler</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 480px; margin: 3rem auto; text-align: center; color: #1a1a2e; }
+  h1 { font-size: 1.4rem; margin-bottom: .5rem; }
+  p  { color: #555; font-size: .95rem; margin: .4rem 0 1.5rem; }
+  img { border: 2px solid #e0e0e0; border-radius: 8px; max-width: 100%; }
+  button { margin-top: 1.5rem; padding: .6rem 1.4rem; border-radius: 6px;
+           border: none; background: #1a73e8; color: #fff; cursor: pointer;
+           font-size: 1rem; }
+  button:hover { background: #1557b0; }
+  .msg { margin-top: 1rem; font-size: .9rem; color: #888; }
+</style>
+</head>
+<body>
+<h1>🦎 Pair a new device</h1>
+<p>Scan the QR code with your phone's camera app to connect it to AutoButler.<br>
+The code expires in <strong>10 minutes</strong> and can only be used once.</p>
+<div id="qr"><p class="msg">Loading…</p></div>
+<button onclick="refresh()">Generate new code</button>
+<p class="msg" id="status"></p>
+<script>
+async function refresh() {
+  document.getElementById('qr').innerHTML = '<p class="msg">Loading…</p>';
+  document.getElementById('status').textContent = '';
+  try {
+    const resp = await fetch('/api/v0/auth/pairing');
+    if (resp.status === 401) {
+      document.getElementById('qr').innerHTML = '<p class="msg">Not authenticated. <a href="/">Log in</a> first.</p>';
+      return;
+    }
+    if (!resp.ok) throw new Error('Server error: ' + resp.status);
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    document.getElementById('qr').innerHTML = '<img src="' + url + '" alt="QR pairing code" width="256" height="256">';
+    document.getElementById('status').textContent = 'Generated at ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    document.getElementById('qr').innerHTML = '<p class="msg">Error: ' + e.message + '</p>';
+  }
+}
+refresh();
+// Auto-refresh every 8 minutes to stay ahead of the 10-min expiry.
+setInterval(refresh, 8 * 60 * 1000);
+</script>
+</body>
+</html>`

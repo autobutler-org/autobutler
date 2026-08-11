@@ -1054,6 +1054,63 @@ paths:
       summary: Logout
       tags:
       - auth
+  /auth/pair:
+    post:
+      description: Consumes a single-use pairing token (from scanning the /mobile
+        QR code) and returns a session token. Rate-limited.
+      parameters:
+      - description: Raw pairing token from the QR code URL
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              token:
+                type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Exchange a pairing token for a session
+      tags:
+      - auth
+  /auth/pairing:
+    get:
+      description: Creates a short-lived (10 min) single-use pairing token and returns
+        its URL encoded as a PNG QR code. The admin scans or displays this from /mobile
+        to onboard a new device without typing credentials.
+      parameters:
+      - description: QR image size in pixels (default 256)
+        in: query
+        name: size
+        type: integer
+      produces:
+      - image/png
+      responses:
+        "200":
+          description: PNG QR code image
+          schema:
+            type: file
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: Generate a QR pairing code
+      tags:
+      - auth
   /auth/recover:
     post:
       consumes:

@@ -35,6 +35,7 @@ var vaultRateLimiter = ratelimitutil.NewWithRate(0.5, 5)
 // authRateLimitedPaths are the API paths that require rate limiting.
 var authRateLimitedPaths = map[string]bool{
 	"/api/v0/auth/login":           true,
+	"/api/v0/auth/pair":            true,
 	"/api/v0/auth/setup":           true,
 	"/api/v0/auth/recover":         true,
 	"/api/v0/storage/devices/role": true,
@@ -104,6 +105,9 @@ var authExemptPaths = map[string]bool{
 	"/api/v0/auth/login":   true,
 	"/api/v0/auth/recover": true,
 	"/api/v0/auth/status":  true,
+	// Pairing token exchange: a new device presents a short-lived code from
+	// the QR and has no session yet, so it cannot require one. Rate-limited above.
+	"/api/v0/auth/pair": true,
 }
 
 func inject(deps deputil.Dependencies) gin.HandlerFunc {
