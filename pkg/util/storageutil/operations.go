@@ -10,6 +10,7 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/autobutler-org/autobutler/pkg/util/iosemutil"
 )
@@ -603,6 +604,8 @@ type StatFileResult struct {
 	IsDir    bool
 	FileType FileType
 	Name     string
+	Size     int64
+	ModTime  time.Time
 }
 
 // StatFile resolves a cirrus-relative path to its filesystem metadata.
@@ -648,6 +651,8 @@ func StatFileImpl(params StatFileParams, device *ManagedDevice, defaultCirrusDir
 		IsDir:    isDir,
 		FileType: fileType,
 		Name:     info.Name(),
+		Size:     info.Size(),
+		ModTime:  info.ModTime(),
 	}, nil
 }
 
