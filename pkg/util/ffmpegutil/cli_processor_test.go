@@ -240,3 +240,26 @@ func errorAs(err error, target any) bool {
 	}
 	return false
 }
+
+// TestMuxerName pins the extension→muxer mapping. The .mkv case is the reason
+// this helper exists: ffmpeg's -f flag wants "matroska", not "mkv", so passing
+// the bare extension through makes Convert fail on that one format only.
+func TestMuxerName(t *testing.T) {
+	tests := []struct {
+		kind VideoKind
+		want string
+	}{
+		{VideoKindMKV, "matroska"},
+		{VideoKindMP4, "mp4"},
+		{VideoKindMOV, "mov"},
+		{VideoKindAVI, "avi"},
+		{VideoKindWebM, "webm"},
+	}
+	for _, tt := range tests {
+		t.Run(string(tt.kind), func(t *testing.T) {
+			if got := muxerName(tt.kind); got != tt.want {
+				t.Errorf("muxerName(%q) = %q; want %q", tt.kind, got, tt.want)
+			}
+		})
+	}
+}
