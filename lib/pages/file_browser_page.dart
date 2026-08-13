@@ -7,6 +7,7 @@ import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/document_editor_page.dart';
 import 'package:autobutler/pages/generic_file_viewer_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
+import 'package:autobutler/pages/pdf_viewer_page.dart';
 import 'package:autobutler/pages/spreadsheet_editor_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/router.dart';
@@ -1592,6 +1593,24 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           ),
         );
         if (!mounted) return;
+        return;
+
+      case 'pdf':
+        // PdfViewerPage loads the file itself, so it only needs the path and
+        // the owning device. Without this case a PDF fell through to default:
+        // and rendered the "No supported editor" state, even though the viewer
+        // existed and /view/<path> dispatched to it correctly (#1184).
+        final pdfSerials = _serialsForActiveDevices();
+        final pdfSerial = pdfSerials.isNotEmpty ? pdfSerials.first : null;
+        FileBrowserCache.instance.markFileOpen(filePath);
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) =>
+                PdfViewerPage(filePath: filePath, deviceSerial: pdfSerial),
+          ),
+        );
+        if (!mounted) return;
+        context.go(AppRoutes.cirrusPath(parentPath(filePath)));
         return;
 
       case 'generic':
