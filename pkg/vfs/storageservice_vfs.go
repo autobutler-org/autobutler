@@ -2,6 +2,7 @@ package vfs
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"mime"
 	"os"
@@ -101,6 +102,21 @@ func (v *StorageServiceVFS) List(_ context.Context, path string, filter *ListFil
 	return out, nil
 }
 
+// cirrusDir resolves the base directory for this namespace, preferring the
+// managed device's cirrus directory over the default. StatFile, DownloadFile,
+// and DeleteFiles all resolve this way internally; this exists so the paths
+// derived directly in this file agree with them.
+func (v *StorageServiceVFS) cirrusDir() (string, error) {
+	device, err := v.svc.FindManagedDeviceBySerial("")
+	if err != nil {
+		return "", err
+	}
+	if device != nil && device.CirrusDir != "" {
+		return device.CirrusDir, nil
+	}
+	return storageutil.GetCirrusDir()
+}
+
 // Stat returns metadata for a single path.
 func (v *StorageServiceVFS) Stat(_ context.Context, path string) (FileInfo, error) {
 	result, err := v.svc.StatFile(storageutil.StatFileParams{FilePath: path})
@@ -112,6 +128,8 @@ func (v *StorageServiceVFS) Stat(_ context.Context, path string) (FileInfo, erro
 		Name:      result.Name,
 		Path:      path,
 		IsDir:     result.IsDir,
+		Size:      result.Size,
+		ModTime:   result.ModTime,
 		MimeType:  mimeType,
 		Namespace: v.namespaceID,
 	}, nil
@@ -126,23 +144,31 @@ func (v *StorageServiceVFS) Open(_ context.Context, path string) (io.ReadCloser,
 	if result.IsFolder {
 		return nil, ErrNotFound
 	}
-	// DownloadFile validates the path via safeJoin internally, but we re-derive
-	// a clean path here so static analysers (CodeQL go/path-injection) can
-	// follow the traversal guard rather than seeing tainted data reach os.Open.
-	cirrusDir, err := storageutil.GetCirrusDir()
+	// Use the path DownloadFile already resolved. It accounts for the managed
+	// device's cirrus directory, which may differ from the default one — see
+	// #1538, where re-deriving from GetCirrusDir() here made Stat and Open
+	// disagree and downloads returned an empty body.
+	//
+	// DownloadFile validates via safeJoin internally; Clean again so static
+	// analysers (CodeQL go/path-injection) can follow the traversal guard
+	// rather than seeing tainted data reach os.Open.
+	safePath := filepath.Clean(result.FullPath)
+	f, err := os.Open(safePath) //nolint:gosec // path validated by DownloadFile's safeJoin + Clean
 	if err != nil {
-		return nil, err
+		if os.IsNotExist(err) {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("open %s: %w", path, err)
 	}
-	safePath, err := storageutil.SafeJoin(cirrusDir, filepath.Clean(path))
-	if err != nil {
-		return nil, ErrPermissionDenied
-	}
-	return os.Open(safePath)
+	return f, nil
 }
 
-// Write writes a file directly into the cirrus directory.
+// Write writes a file into the cirrus directory of the managed device that
+// backs this namespace, falling back to the default cirrus directory when no
+// device is present. Resolving the same way Stat and Open do keeps a written
+// file findable by a subsequent read (#1538).
 func (v *StorageServiceVFS) Write(_ context.Context, path string, r io.Reader, opts WriteOptions) error {
-	cirrusDir, err := storageutil.GetCirrusDir()
+	cirrusDir, err := v.cirrusDir()
 	if err != nil {
 		return err
 	}

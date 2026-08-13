@@ -1971,3 +1971,69 @@ func boundaryFromContentType(t *testing.T, ct string) string {
 	}
 	return parts[1]
 }
+
+// TestStatDownloadAgreeOnDeviceDir is a regression guard for #1538.
+//
+// StatFileImpl and DownloadFileImpl must resolve a relative path against the
+// SAME base directory. They previously diverged in the VFS layer: Stat used the
+// managed device's CirrusDir while Open re-derived from the default one, so on
+// installs where those differ Stat succeeded (no 404) and Open found nothing —
+// the download returned 200 with an empty body.
+func TestStatDownloadAgreeOnDeviceDir(t *testing.T) {
+	device := makeManagedDeviceForImpl(t, "device-with-own-dir")
+	// A default cirrus dir that is deliberately NOT the device's.
+	defaultDir := t.TempDir()
+
+	testFile := filepath.Join(device.CirrusDir, "interview.py")
+	content := []byte("print('hello')\n")
+	if err := os.WriteFile(testFile, content, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	statRes, err := StatFileImpl(StatFileParams{FilePath: "interview.py"}, device, defaultDir)
+	if err != nil {
+		t.Fatalf("StatFileImpl: %v", err)
+	}
+	dlRes, err := DownloadFileImpl(DownloadFileParams{FilePath: "interview.py"}, device, defaultDir)
+	if err != nil {
+		t.Fatalf("DownloadFileImpl: %v", err)
+	}
+
+	if statRes.FullPath != dlRes.FullPath {
+		t.Errorf("Stat and Download disagree on path:\n  stat=%s\n  down=%s",
+			statRes.FullPath, dlRes.FullPath)
+	}
+	if statRes.FullPath != testFile {
+		t.Errorf("expected %s, got %s", testFile, statRes.FullPath)
+	}
+	// The resolved file must actually be readable — the empty-body symptom.
+	got, err := os.ReadFile(dlRes.FullPath)
+	if err != nil {
+		t.Fatalf("resolved download path is not readable: %v", err)
+	}
+	if len(got) != len(content) {
+		t.Errorf("expected %d bytes, got %d", len(content), len(got))
+	}
+}
+
+// TestStatFilePopulatesSizeAndModTime guards the secondary half of #1538:
+// FileInfo.Size feeds Content-Length on the non-seeker download path, so a
+// zero here would advertise an empty body.
+func TestStatFilePopulatesSizeAndModTime(t *testing.T) {
+	device := makeManagedDeviceForImpl(t, "sizes")
+	content := []byte("0123456789")
+	if err := os.WriteFile(filepath.Join(device.CirrusDir, "f.bin"), content, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := StatFileImpl(StatFileParams{FilePath: "f.bin"}, device, "")
+	if err != nil {
+		t.Fatalf("StatFileImpl: %v", err)
+	}
+	if res.Size != int64(len(content)) {
+		t.Errorf("expected Size %d, got %d", len(content), res.Size)
+	}
+	if res.ModTime.IsZero() {
+		t.Error("expected non-zero ModTime")
+	}
+}
