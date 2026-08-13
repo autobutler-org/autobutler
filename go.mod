@@ -1,6 +1,6 @@
 module github.com/autobutler-org/autobutler
 
-go 1.26.5
+go 1.26.6
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.8.0

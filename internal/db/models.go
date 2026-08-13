@@ -30,6 +30,18 @@ type DeviceRole struct {
 	UpdatedAt    time.Time
 }
 
+type FileContent struct {
+	ID        int64
+	Serial    string
+	RelPath   string
+	Extracted string
+	UpdatedAt time.Time
+}
+
+type FileContentFt struct {
+	Extracted string
+}
+
 type PhotoAlbum struct {
 	ID            int64
 	Name          string

@@ -60,6 +60,10 @@ func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 	idx.BuildAndWatch(deps.EventBus(), deps.StorageService().GetManagedDevices)
 	deps.WithFileIndex(idx)
 
+	// Start the FTS5 content indexer — indexes uploaded text files and
+	// removes entries for deleted/moved files.
+	go startContentIndexer(deps)
+
 	initExternalVault(deps)
 	go vaultDeviceMonitor(deps)
 	go usbDeviceMonitor(deps)

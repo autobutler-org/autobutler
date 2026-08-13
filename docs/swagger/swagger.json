@@ -1613,6 +1613,56 @@
                 }
             }
         },
+        "/cirrus/search/content": {
+            "get": {
+                "description": "Full-text search over indexed file contents using SQLite FTS5.\nOnly text-based file formats are indexed (.txt, .md, .csv, .yaml, .json, etc.).\nBinary formats (images, video, PDF) are not indexed.\nReturns up to `limit` results ordered by relevance rank.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cirrus"
+                ],
+                "summary": "Search file contents (FTS5)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query (FTS5 syntax: words, AND/OR/NOT, \\",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Maximum results to return (default 50, max 200)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v0_files.ContentSearchResult"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request — missing query",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/cirrus/stat": {
             "get": {
                 "description": "Returns filesystem metadata for the given cirrus-relative path: whether it is a directory and its file type. Useful for deep-link resolution when the path extension alone is ambiguous (e.g. a folder named \"things.abdoc\").",
@@ -3510,6 +3560,23 @@
             "properties": {
                 "isFavorite": {
                     "type": "boolean"
+                }
+            }
+        },
+        "v0_files.ContentSearchResult": {
+            "type": "object",
+            "properties": {
+                "relPath": {
+                    "description": "RelPath is the path to the file relative to the device's CirrusDir.",
+                    "type": "string"
+                },
+                "serial": {
+                    "description": "Serial is the storage device serial number.",
+                    "type": "string"
+                },
+                "snippet": {
+                    "description": "Snippet is a highlighted excerpt around the matched terms.\nMatched terms are enclosed in \u003cb\u003e tags.",
+                    "type": "string"
                 }
             }
         },
