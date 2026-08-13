@@ -1619,6 +1619,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         if (!mounted) return;
         return;
 
+      case 'code':
+      // Source/config files classified by the backend as 'code' open in
+      // the same plaintext editor for now — no syntax highlighting yet.
       case 'text':
         // Matches what clicking the row does — without this a deep link to a
         // file the browser opens happily reports "No supported editor".
