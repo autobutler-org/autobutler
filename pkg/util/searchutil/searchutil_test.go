@@ -326,3 +326,66 @@ func TestSearch_LimitRespected(t *testing.T) {
 		t.Errorf("expected <= 3 results, got %d", len(results))
 	}
 }
+
+// --- driver capability guard ---
+
+// TestSQLiteDriverHasFTS5 asserts that the SQLite driver this binary is linked
+// against actually provides the fts5 module.
+//
+// Nothing in this package can work without it: migration 019 creates a virtual
+// table USING fts5, so an FTS5-less driver fails at boot with
+// "no such module: fts5" rather than at build time.
+//
+// modernc.org/sqlite (the current driver) compiles FTS5 in unconditionally, so
+// this passes today. The point is to catch a driver swap — notably to
+// mattn/go-sqlite3, where FTS5 is opt-in behind the `sqlite_fts5` build tag —
+// as a red CI run instead of a broken device in the field.
+func TestSQLiteDriverHasFTS5(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	t.Cleanup(func() { db.Close() })
+
+	var enabled bool
+	if err := db.QueryRow(
+		`SELECT EXISTS(SELECT 1 FROM pragma_compile_options() WHERE compile_options = 'ENABLE_FTS5')`,
+	).Scan(&enabled); err != nil {
+		t.Fatalf("read compile options: %v", err)
+	}
+	if !enabled {
+		t.Error("ENABLE_FTS5 missing from sqlite compile options")
+	}
+
+	// The compile flag is necessary but not sufficient — prove the module
+	// registers and the tokeniser used by migration 019 is accepted.
+	if _, err := db.Exec(
+		`CREATE VIRTUAL TABLE fts_probe USING fts5(body, tokenize='porter unicode61')`,
+	); err != nil {
+		t.Fatalf("create fts5 table: %v", err)
+	}
+}
+
+// TestFTS5PorterStemming pins the stemming behaviour Search relies on: a query
+// for "run" must match stored text containing "running". Without the porter
+// tokeniser this silently degrades to exact-token matching, which returns no
+// results and looks like an empty index rather than a broken one.
+func TestFTS5PorterStemming(t *testing.T) {
+	db := newTestDB(t)
+	ctx := context.Background()
+
+	if err := UpsertContent(ctx, db, "dev", "notes.txt", "the servers were running fast"); err != nil {
+		t.Fatalf("UpsertContent: %v", err)
+	}
+
+	results, err := Search(ctx, db, "run", 10)
+	if err != nil {
+		t.Fatalf("Search: %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("porter stemming broken: query %q matched %d docs, want 1", "run", len(results))
+	}
+	if !strings.Contains(results[0].Snippet, "running") {
+		t.Errorf("expected snippet to contain the stemmed match, got %q", results[0].Snippet)
+	}
+}
