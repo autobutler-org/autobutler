@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 )
 
@@ -116,5 +118,14 @@ func TestProvisionAuthKey_ErrorOnEmptyAuthKey(t *testing.T) {
 	_, err := ProvisionAuthKey("device-abc")
 	if err == nil {
 		t.Fatal("expected error on empty auth key, got nil")
+	}
+}
+
+func TestProvisioningURL_DefaultIsHTTPS(t *testing.T) {
+	t.Setenv("AUTOBUTLER_PROVISIONING_URL", "")
+	os.Unsetenv("AUTOBUTLER_PROVISIONING_URL")
+	url := ProvisioningURL()
+	if !strings.HasPrefix(url, "https://") {
+		t.Errorf("default provisioning URL should be HTTPS, got %q", url)
 	}
 }
