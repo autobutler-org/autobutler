@@ -32,14 +32,15 @@ class ContentSearchResult {
 
   factory ContentSearchResult.fromJson(Map<String, dynamic> json) {
     return ContentSearchResult(
-      deviceSerial: (json['deviceSerial'] as String?) ?? '',
+      deviceSerial: (json['serial'] as String?) ?? '',
       relPath: (json['relPath'] as String?) ?? '',
       snippet: (json['snippet'] as String?) ?? '',
     );
   }
 }
 
-/// Calls `GET /api/v0/search/documents?q=<query>` and returns up to 50 results.
+/// Calls `GET /api/v0/cirrus/search/content?q=<query>` and returns up to 50
+/// results (the backend's default limit).
 class ContentSearchService with AuthenticatedService {
   ContentSearchService._();
   static final ContentSearchService instance = ContentSearchService._();
@@ -64,23 +65,39 @@ class ContentSearchService with AuthenticatedService {
   }
 
   /// Returns content-search results for [query].
-  /// Returns an empty list on 4xx/5xx — callers treat no results as "nothing found".
+  ///
+  /// Never throws: on a transport error, a non-2xx status, or a body that is
+  /// not the expected JSON envelope, it logs and returns an empty list so the
+  /// caller can clear its loading state. Note that an unmatched API path does
+  /// not 404 — the server's SPA fallback answers 200 with `index.html`, so the
+  /// body must be validated, not just the status code.
   static Future<List<ContentSearchResult>> search(String query) async {
     if (query.trim().isEmpty) return [];
     final uri = _apiBaseUri.replace(
-      path: '/api/v0/search/documents',
+      path: '/api/v0/cirrus/search/content',
       queryParameters: {'q': query.trim()},
     );
-    final response = await instance.authenticatedGet(uri);
-    if (response.statusCode < 200 || response.statusCode >= 300) {
+    try {
+      final response = await instance.authenticatedGet(uri);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        debugPrint('content search: $uri returned ${response.statusCode}');
+        return [];
+      }
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) return [];
+      final data = decoded['data'];
+      if (data is! List) return [];
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map(ContentSearchResult.fromJson)
+          .toList();
+    } on FormatException catch (e) {
+      // Reached when the SPA fallback serves HTML for an unmatched path.
+      debugPrint('content search: $uri returned a non-JSON body ($e)');
+      return [];
+    } catch (e) {
+      debugPrint('content search: $uri failed ($e)');
       return [];
     }
-    final decoded = jsonDecode(response.body);
-    final data = decoded['data'];
-    if (data is! List) return [];
-    return data
-        .whereType<Map<String, dynamic>>()
-        .map(ContentSearchResult.fromJson)
-        .toList();
   }
 }

@@ -87,6 +87,49 @@ func startContentIndexer(deps deputil.Dependencies) {
 
 const indexTimeout = 5 * time.Second
 
+// backfillTimeout bounds the whole startup indexing pass. A home server with
+// a few thousand documents finishes in well under this; the cap exists so a
+// pathological tree cannot leave the goroutine running forever.
+const backfillTimeout = 10 * time.Minute
+
+// backfillContentIndex indexes the files already present on every managed
+// device. Run once at startup, after startContentIndexer, so that documents
+// written before this build — or before the indexer understood their format —
+// become searchable without the user having to re-save them.
+//
+// Best-effort, like the event-driven path: everything is logged and nothing
+// surfaces to callers, since the index can always be rebuilt from disk.
+func backfillContentIndex(deps deputil.Dependencies) {
+	dbConn := deps.Database()
+	if dbConn == nil || dbConn.Db == nil {
+		return
+	}
+	devices, err := deps.StorageService().GetManagedDevices()
+	if err != nil {
+		log.Printf("[content-indexer] backfill: list devices: %v", err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), backfillTimeout)
+	defer cancel()
+
+	for _, dev := range devices {
+		serial := ""
+		if dev.UsbInfo != nil {
+			serial = dev.UsbInfo.GetSerial()
+		}
+		res, err := searchutil.BackfillTree(ctx, dbConn.Db, serial, dev.CirrusDir)
+		if err != nil {
+			log.Printf("[content-indexer] backfill %s: %v", dev.CirrusDir, err)
+			continue
+		}
+		log.Printf(
+			"[content-indexer] backfill %s: scanned %d, indexed %d, failed %d",
+			dev.CirrusDir, res.Scanned, res.Indexed, res.Failed,
+		)
+	}
+}
+
 // resolveEventPath maps an event's DeviceSerial + relative path to an
 // absolute filesystem path. Returns ("", "") when the device cannot be found.
 func resolveEventPath(deps deputil.Dependencies, evt eventbus.Event) (serial, absPath string) {
