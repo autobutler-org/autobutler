@@ -1045,9 +1045,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
-    // Generic / unsupported file types — show a detail view with download and
-    // "Open with" actions instead of silently failing.
-    if (node.fileType == 'generic' || node.fileType.isEmpty) {
+    // Types with no in-app viewer yet — show a detail view with download and
+    // "Open with" actions instead of silently failing. Named document types
+    // land here too: without them a .pdf ends up worse off than an unclassified
+    // file, which reaches this branch as 'generic' (#1184).
+    if (usesGenericFileViewer(node.fileType)) {
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => GenericFileViewerPage(node: node),
@@ -1569,6 +1571,29 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    // Types with no in-app viewer — download + "Open with…" beats the
+    // "No supported editor" dead end these used to hit (#1184). Shared with the
+    // click path in _handleOpenNode so both agree.
+    if (usesGenericFileViewer(fileType)) {
+      final node = CirrusFileNode(
+        name: filePath.split('/').last,
+        size: 0,
+        isDir: false,
+        deviceName: '',
+        devicePath: '',
+        deviceSerial: '',
+        dirPath: filePath,
+        fileType: fileType,
+      );
+      FileBrowserCache.instance.markFileOpen(filePath);
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => GenericFileViewerPage(node: node),
+        ),
+      );
+      return;
+    }
+
     switch (fileType) {
       case 'abdoc':
         await _openEditorWithUrl(
@@ -1594,24 +1619,17 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         if (!mounted) return;
         return;
 
-      case 'generic':
-        final name = filePath.split('/').last;
-        final node = CirrusFileNode(
-          name: name,
-          size: 0,
-          isDir: false,
-          deviceName: '',
-          devicePath: '',
-          deviceSerial: '',
-          dirPath: filePath,
-          fileType: fileType,
-        );
+      case 'text':
+        // Matches what clicking the row does — without this a deep link to a
+        // file the browser opens happily reports "No supported editor".
         FileBrowserCache.instance.markFileOpen(filePath);
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => GenericFileViewerPage(node: node),
-          ),
-        );
+        try {
+          await context.push<void>(AppRoutes.plaintextEditorPath(filePath));
+        } finally {
+          FileBrowserCache.instance.markFileClosed();
+        }
+        if (!mounted) return;
+        context.go(AppRoutes.cirrusPath(parentPath(filePath)));
         return;
 
       case 'image':
