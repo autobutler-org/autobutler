@@ -48,38 +48,39 @@ class DataSheetControlBar extends StatelessWidget {
               children: [
                 // ── Structure ──────────────────────────────────────────────
                 _group([
-                  // Append row / column
-                  _btn(AutobutlerIcons.add_row, 'Add row', controller.addRow),
-                  _btn(AutobutlerIcons.add_column, 'Add column',
-                      controller.addColumn),
-                  // Insert row before/after selected row
+                  // Insert row before/after the selected row. With nothing
+                  // selected the sheet edges are the anchor, so these still
+                  // grow the sheet — there is no separate append button.
                   _btn(
                     AutobutlerIcons.insert_row_above,
-                    'Insert row before',
-                    hasRow
-                        ? () => controller.insertRowAt(sel.contextRow)
-                        : null,
+                    hasRow ? 'Insert row before' : 'Insert row at top',
+                    () => controller.insertRowAt(hasRow ? sel.contextRow : 0),
                   ),
                   _btn(
                     AutobutlerIcons.insert_row_below,
-                    'Insert row after',
-                    hasRow
-                        ? () => controller.insertRowAt(sel.contextRow + 1)
-                        : null,
+                    hasRow ? 'Insert row after' : 'Add row at end',
+                    () => controller.insertRowAt(
+                      hasRow ? sel.contextRow + 1 : controller.rowCount,
+                    ),
                   ),
-                  // Insert column before/after selected column
+                  // Insert column before/after the selected column. Columns
+                  // live inside rows, so an empty sheet has nowhere to put one.
                   _btn(
                     AutobutlerIcons.insert_column_left,
-                    'Insert column before',
-                    hasCol
-                        ? () => controller.insertColumnAt(sel.contextCol)
+                    hasCol ? 'Insert column before' : 'Insert column at left',
+                    hasData
+                        ? () => controller.insertColumnAt(
+                              hasCol ? sel.contextCol : 0,
+                            )
                         : null,
                   ),
                   _btn(
                     AutobutlerIcons.insert_column_right,
-                    'Insert column after',
-                    hasCol
-                        ? () => controller.insertColumnAt(sel.contextCol + 1)
+                    hasCol ? 'Insert column after' : 'Add column at end',
+                    hasData
+                        ? () => controller.insertColumnAt(
+                              hasCol ? sel.contextCol + 1 : controller.colCount,
+                            )
                         : null,
                   ),
                   // Delete row / column

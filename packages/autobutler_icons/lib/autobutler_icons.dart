@@ -113,12 +113,6 @@ class AutobutlerIcons {
   /// Fill cells rightward from the current cell.
   static const IconData fill_right = Icons.east; // clear directional arrow
 
-  // ── Append row / column ───────────────────────────────────────────────────────────
-  /// Append a new row at the bottom of the sheet.
-  static const IconData add_row = Icons.playlist_add; // row list + plus
-  /// Append a new column at the right of the sheet.
-  static const IconData add_column = Icons.add_chart; // grid + plus
-
   // ── Data operations ───────────────────────────────────────────────────────────────
   static const IconData sort = Icons.sort;
 
