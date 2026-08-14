@@ -99,6 +99,132 @@ DefaultStyles _quillStyles(ColorScheme cs) {
   );
 }
 
+// ── Find shortcut ─────────────────────────────────────────────────────────────
+
+/// Swallows Ctrl/Cmd+F inside a [QuillEditor] and runs [onToggle] instead.
+///
+/// flutter_quill binds Ctrl/Cmd+F to its own modal search dialog
+/// (`OpenSearchIntent`), which would open on top of our inline find bar. Its
+/// `customShortcuts` hook can't override that — the package merges its defaults
+/// *over* the caller's map — so this hangs off `onKeyPressed`, which runs on the
+/// editor's own focus node, below the `Shortcuts` widget that dispatches the
+/// intent. Returning a non-null result stops the event there (#1046).
+///
+/// Returns null for anything else so flutter_quill handles keys as usual.
+KeyEventResult? quillFindKeyInterceptor(KeyEvent event, VoidCallback onToggle) {
+  if (event.logicalKey != LogicalKeyboardKey.keyF) return null;
+  final modified =
+      HardwareKeyboard.instance.isControlPressed ||
+      HardwareKeyboard.instance.isMetaPressed;
+  if (!modified) return null;
+  if (event is KeyDownEvent) onToggle();
+  return KeyEventResult.handled;
+}
+
+/// Inline find bar for the document editor.
+///
+/// [QuillToolbarSearchDialog] owns the search itself (matching, hit list,
+/// selection), but its default chrome is a [Dialog] whose close button calls
+/// `Navigator.pop()` — which pops the editor route when the widget is rendered
+/// inline instead of in a dialog. `childBuilder` swaps that chrome for this
+/// strip, so closing the bar closes the bar (#1046).
+class DocumentFindBar extends StatefulWidget {
+  final QuillController controller;
+  final VoidCallback onClose;
+
+  const DocumentFindBar({
+    required this.controller,
+    required this.onClose,
+    super.key,
+  });
+
+  @override
+  State<DocumentFindBar> createState() => _DocumentFindBarState();
+}
+
+class _DocumentFindBarState extends State<DocumentFindBar> {
+  final FocusNode _fieldFocus = FocusNode(debugLabel: 'find field');
+
+  @override
+  void initState() {
+    super.initState();
+    // `autofocus` is a no-op when something in the scope already holds focus,
+    // which is the case when the bar is opened with Ctrl/Cmd+F from inside the
+    // editor. Take focus outright once the field is in the tree.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _fieldFocus.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _fieldFocus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      color: cs.surfaceContainer,
+      padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
+      child: QuillToolbarSearchDialog(
+        controller: widget.controller,
+        childBuilder: (options) {
+          final hits = options.offsets?.length ?? 0;
+          final hasHits = hits > 0;
+          return Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: options.textEditingController,
+                  focusNode: _fieldFocus,
+                  autofocus: true,
+                  onChanged: options.onTextChanged,
+                  onEditingComplete: options.onEditingComplete,
+                  style: const TextStyle(fontSize: 13),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    hintText: 'Find in document',
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    suffixText: options.text.isEmpty
+                        ? null
+                        : '${hasHits ? options.index + 1 : 0}/$hits',
+                    suffixStyle: TextStyle(
+                      fontSize: 12,
+                      color: cs.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(AutobutlerIcons.keyboard_arrow_up_rounded),
+                tooltip: 'Previous match',
+                onPressed: hasHits ? options.moveToPrevious : null,
+              ),
+              IconButton(
+                icon: const Icon(AutobutlerIcons.expand_more_rounded),
+                tooltip: 'Next match',
+                onPressed: hasHits ? options.moveToNext : null,
+              ),
+              IconButton(
+                icon: const Icon(AutobutlerIcons.close_rounded),
+                tooltip: 'Close find bar (Esc)',
+                onPressed: widget.onClose,
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 class DocumentEditorPage extends StatefulWidget {
@@ -508,18 +634,21 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       },
       child: CallbackShortcuts(
         bindings: {
-          // Ctrl+F / Cmd+F — toggle find bar (#1046)
-          const SingleActivator(LogicalKeyboardKey.keyF, control: true): () =>
-              setState(() => _showFindBar = !_showFindBar),
-          const SingleActivator(LogicalKeyboardKey.keyF, meta: true): () =>
-              setState(() => _showFindBar = !_showFindBar),
+          // Ctrl+F / Cmd+F — toggle find bar (#1046). Only fires when focus is
+          // outside the editor; the editor handles it in _handleEditorKey.
+          const SingleActivator(LogicalKeyboardKey.keyF, control: true):
+              _toggleFindBar,
+          const SingleActivator(LogicalKeyboardKey.keyF, meta: true):
+              _toggleFindBar,
           // Escape — close find bar when open
           const SingleActivator(LogicalKeyboardKey.escape): () {
             if (_showFindBar) setState(() => _showFindBar = false);
           },
         },
         child: Focus(
-          autofocus: false,
+          // Take focus on open so Ctrl+F reaches CallbackShortcuts before the
+          // user has clicked into the editor (which never autofocuses).
+          autofocus: true,
           child: Scaffold(
             appBar: AppBar(
               title: Text(_dirty ? '$_displayName •' : _displayName),
@@ -538,7 +667,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       IconButton(
         icon: Icon(_showFindBar ? Icons.close : AutobutlerIcons.search_rounded),
         tooltip: _showFindBar ? 'Close find bar' : 'Find in document (Ctrl+F)',
-        onPressed: () => setState(() => _showFindBar = !_showFindBar),
+        onPressed: _toggleFindBar,
       ),
       // Settings shortcut
       IconButton(
@@ -693,7 +822,9 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     return Column(
       children: [
         if (!_isReadOnly) _buildToolbar(theme),
-        if (!_isReadOnly && _showFindBar) _buildFindBar(cs),
+        // Find works in view mode too — the toolbar above is edit-only, the
+        // find bar is not.
+        if (_showFindBar) _buildFindBar(cs),
         Expanded(
           child: Center(
             child: ConstrainedBox(
@@ -711,15 +842,13 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     );
   }
 
-  Widget _buildFindBar(ColorScheme cs) {
-    return Container(
-      color: cs.surfaceContainer,
-      child: QuillToolbarSearchDialog(
-        controller: _controller,
-        searchBarAlignment: Alignment.centerLeft,
-      ),
-    );
-  }
+  void _toggleFindBar() => setState(() => _showFindBar = !_showFindBar);
+
+  KeyEventResult? _handleEditorKey(KeyEvent event, Node? node) =>
+      quillFindKeyInterceptor(event, _toggleFindBar);
+
+  Widget _buildFindBar(ColorScheme cs) =>
+      DocumentFindBar(controller: _controller, onClose: _toggleFindBar);
 
   Widget _buildToolbar(ThemeData theme) {
     final cs = theme.colorScheme;
@@ -826,6 +955,10 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
               padding: EdgeInsets.zero,
               placeholder: 'Start writing…',
               customStyles: _quillStyles(pageCs),
+              // Keeps Quill's built-in search dialog from opening on top of the
+              // inline find bar — see [quillFindKeyInterceptor].
+              // ignore: experimental_member_use
+              onKeyPressed: _handleEditorKey,
             ),
           ),
         ),
