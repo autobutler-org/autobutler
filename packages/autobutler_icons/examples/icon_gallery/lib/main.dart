@@ -72,10 +72,7 @@ const _sections = <({String title, List<_IconEntry> icons})>[
   ),
   (
     title: 'Material aliases (append)',
-    icons: [
-      _IconEntry(AutobutlerIcons.add_row, 'add_row'),
-      _IconEntry(AutobutlerIcons.add_column, 'add_column'),
-    ],
+    icons: [],
   ),
   (
     title: 'Material aliases (data ops)',

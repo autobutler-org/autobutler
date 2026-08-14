@@ -7,10 +7,10 @@ Legend: ✅ implemented · 🔜 planned · ❌ out of scope for this package
 
 ## Essential Controls
 
-- ✅ Add Row — `DataSheetController.addRow()`
-- ✅ Add Column — `DataSheetController.addColumn()`
 - ✅ Insert Row Before / After — `insertRowAt(index)`
 - ✅ Insert Column Before / After — `insertColumnAt(index)`
+  - With no selection these anchor to the sheet edges — "before" targets the top/left, "after" appends — so the bar needs
+    no separate append button. Column inserts are disabled while the sheet has no rows, since columns live inside rows.
 - ✅ Delete Row — `deleteRowAt(index)`
 - ✅ Delete Column — `deleteColumnAt(index)`
 
