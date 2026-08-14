@@ -42,4 +42,36 @@ void main() {
       expect(hasSupportedCirrusEditorForType('image'), isFalse);
     });
   });
+
+  group('usesGenericFileViewer', () {
+    test('covers the document types that had no viewer', () {
+      // These reached the "No supported editor" dead end before #1184.
+      expect(usesGenericFileViewer('pdf'), isTrue);
+      expect(usesGenericFileViewer('docx'), isTrue);
+      expect(usesGenericFileViewer('slideshow'), isTrue);
+      expect(usesGenericFileViewer('epub'), isTrue);
+    });
+
+    test('covers unclassified files', () {
+      expect(usesGenericFileViewer('generic'), isTrue);
+      expect(usesGenericFileViewer(''), isTrue);
+      expect(usesGenericFileViewer('  '), isTrue);
+      expect(usesGenericFileViewer('PDF'), isTrue, reason: 'case-insensitive');
+    });
+
+    test('leaves types that have a real viewer alone', () {
+      for (final type in [
+        'abdoc',
+        'absheet',
+        'image',
+        'video',
+        'audio',
+        'text',
+        'archive',
+        'folder',
+      ]) {
+        expect(usesGenericFileViewer(type), isFalse, reason: type);
+      }
+    });
+  });
 }
