@@ -42,6 +42,14 @@ type FileContentFt struct {
 	Extracted string
 }
 
+type PairingToken struct {
+	ID        int64
+	TokenHash string
+	CreatedBy sql.NullInt64
+	ExpiresAt time.Time
+	UsedAt    sql.NullTime
+}
+
 type PhotoAlbum struct {
 	ID            int64
 	Name          string
