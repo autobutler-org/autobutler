@@ -261,7 +261,16 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
         ),
       );
     }
-    if (_filtered.isEmpty) {
+    // Content matches are rendered by the list below, so the empty state must
+    // account for them too. Checking only _filtered here would short-circuit
+    // every content-only search — the common case, since a query that matches
+    // a sheet's contents usually does not also match its filename. Both the
+    // guard and the list read the same flag so they cannot disagree about
+    // whether there is anything to show.
+    final hasContentResults =
+        _searchController.text.isNotEmpty && _contentResults.isNotEmpty;
+
+    if (_filtered.isEmpty && !hasContentResults) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -294,8 +303,6 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
       );
     }
 
-    final hasContentResults =
-        _searchController.text.isNotEmpty && _contentResults.isNotEmpty;
     final totalItems =
         _filtered.length + (hasContentResults ? _contentResults.length + 1 : 0);
 
