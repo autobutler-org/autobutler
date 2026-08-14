@@ -2,6 +2,9 @@
 // indexed file contents using SQLite FTS5.
 //
 // Supported for text extraction (in order of fidelity):
+//   - Autobutler documents (.abdoc) and spreadsheets (.absheet): the prose is
+//     pulled out of the JSON envelope so the index holds readable text rather
+//     than markup (see extractDelta and extractSheet)
 //   - Plaintext files (.txt, .md, .csv, .log, .yaml, .yml, .toml, .json, .xml,
 //     .html, .htm, .ini, .cfg, .conf, .sh, .py, .go, .js, .ts, .css, .sql)
 //   - All other files: content is not indexed (empty string returned)
@@ -11,9 +14,11 @@
 package searchutil
 
 import (
+	"encoding/json"
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 )
@@ -27,6 +32,11 @@ const MaxExtractBytes = 512 * 1024 // 512 KB
 // to read as UTF-8 text for indexing. Binary formats (images, video, audio,
 // executables) are excluded.
 var extractableExtensions = map[string]bool{
+	// Autobutler's own document formats. Both are JSON envelopes, so they are
+	// routed through a structured extractor rather than indexed verbatim.
+	".abdoc":   true,
+	".absheet": true,
+
 	".txt":  true,
 	".md":   true,
 	".csv":  true,
@@ -73,7 +83,88 @@ func ExtractText(path string) string {
 		return ""
 	}
 	defer f.Close()
-	return extractReader(f)
+	raw := extractReader(f)
+	if raw == "" {
+		return ""
+	}
+
+	// Autobutler's own formats wrap prose in JSON. Indexing the envelope
+	// verbatim would work, but every snippet would be full of `{"ops":[{"insert":`
+	// noise and queries would match on JSON keys, so pull the text out instead.
+	// A document too large for MaxExtractBytes arrives here truncated and will
+	// not parse; falling back to the raw text keeps it searchable.
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".abdoc":
+		if text := extractDelta(raw); text != "" {
+			return text
+		}
+	case ".absheet":
+		if text := extractSheet(raw); text != "" {
+			return text
+		}
+	}
+	return raw
+}
+
+// extractDelta pulls the prose out of a Quill Delta document, the format used
+// by .abdoc files: {"ops":[{"insert":"some text"}, …]}. An op's insert is
+// either a string (text) or an object (an embed such as an image); only
+// strings carry indexable content. Returns "" when raw is not a Delta.
+func extractDelta(raw string) string {
+	var doc struct {
+		Ops []struct {
+			Insert any `json:"insert"`
+		} `json:"ops"`
+	}
+	if err := json.Unmarshal([]byte(raw), &doc); err != nil {
+		return ""
+	}
+	var b strings.Builder
+	for _, op := range doc.Ops {
+		if s, ok := op.Insert.(string); ok {
+			b.WriteString(s)
+		}
+	}
+	return strings.TrimSpace(b.String())
+}
+
+// extractSheet pulls the tab names and cell values out of a spreadsheet, the
+// format used by .absheet files:
+// {"tabs":[{"name":"Sheet 1","data":{"rows":[["a","b"], …]}}]}.
+// Cells hold strings (including formulas like "=B1+B2", which stay indexed so
+// they can be searched for) or numbers. Returns "" when raw is not a sheet.
+func extractSheet(raw string) string {
+	var doc struct {
+		Tabs []struct {
+			Name string `json:"name"`
+			Data struct {
+				Rows [][]any `json:"rows"`
+			} `json:"data"`
+		} `json:"tabs"`
+	}
+	if err := json.Unmarshal([]byte(raw), &doc); err != nil {
+		return ""
+	}
+	// Cells are joined by spaces so adjacent values never merge into one token.
+	var parts []string
+	for _, tab := range doc.Tabs {
+		if tab.Name != "" {
+			parts = append(parts, tab.Name)
+		}
+		for _, row := range tab.Data.Rows {
+			for _, cell := range row {
+				switch v := cell.(type) {
+				case string:
+					if v != "" {
+						parts = append(parts, v)
+					}
+				case float64:
+					parts = append(parts, strconv.FormatFloat(v, 'f', -1, 64))
+				}
+			}
+		}
+	}
+	return strings.Join(parts, " ")
 }
 
 // extractReader reads up to MaxExtractBytes from r, truncating at a valid

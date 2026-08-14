@@ -64,6 +64,11 @@ func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 	// removes entries for deleted/moved files.
 	go startContentIndexer(deps)
 
+	// Index files that were already on disk. The event-driven indexer above
+	// only sees writes that happen while it is running, so without this pass
+	// existing documents are never searchable.
+	go backfillContentIndex(deps)
+
 	initExternalVault(deps)
 	go vaultDeviceMonitor(deps)
 	go usbDeviceMonitor(deps)
