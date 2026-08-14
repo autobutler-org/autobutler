@@ -1,4 +1,6 @@
+import 'package:autobutler/models/cirrus_file_node.dart';
 import 'package:autobutler/pages/audio_player_page.dart';
+import 'package:autobutler/pages/generic_file_viewer_page.dart';
 import 'package:autobutler/pages/image_viewer_page.dart';
 import 'package:autobutler/pages/video_viewer_page.dart';
 import 'package:autobutler/services/cirrus_service.dart';
@@ -11,13 +13,16 @@ import 'package:go_router/go_router.dart';
 /// On [initState] it calls [CirrusService.statFile] to determine the file
 /// type, then immediately navigates to the appropriate page:
 ///
-/// | fileType          | Destination                  |
-/// |-------------------|------------------------------|
-/// | `image`           | [ImageViewerPage]            |
-/// | `video` / `audio` | [VideoViewerPage]            |
-/// | `abdoc`           | /docs/&ltpath&gt                 |
-/// | `absheet`         | /sheets/&ltpath&gt               |
-/// | directory / other | /cirrus/&ltpath&gt (FileBrowser) |
+/// | fileType                         | Destination                     |
+/// |----------------------------------|---------------------------------|
+/// | `image`                          | [ImageViewerPage]               |
+/// | `video`                          | [VideoViewerPage]               |
+/// | `audio`                          | [AudioPlayerPage]               |
+/// | `abdoc`                          | /docs/&lt;path&gt;              |
+/// | `absheet`                        | /sheets/&lt;path&gt;            |
+/// | `text`                           | /edit/&lt;path&gt;              |
+/// | `pdf`, `docx`, `epub`, `slideshow`, `generic` | [GenericFileViewerPage] |
+/// | directory                        | /cirrus/&lt;path&gt; (browser)  |
 ///
 /// Navigate to the route built with [AppRoutes.viewFile] to trigger this.
 class FileViewerPage extends StatefulWidget {
@@ -78,10 +83,8 @@ class _FileViewerPageState extends State<FileViewerPage> {
           ? widget.filePath.split('/').last
           : stat.name;
 
-      if (stat.isDir ||
-          stat.fileType == 'archive' ||
-          stat.fileType == 'generic') {
-        // Directory or unhandled type — hand off to the file browser.
+      if (stat.isDir) {
+        // Directory — navigate to the file browser.
         context.go(_cirrusPath(widget.filePath));
         return;
       }
@@ -141,9 +144,30 @@ class _FileViewerPageState extends State<FileViewerPage> {
         case 'text':
           context.push(_buildRoute('/edit', widget.filePath, serial: serial));
 
+        case 'pdf':
+        case 'docx':
+        case 'epub':
+        case 'slideshow':
+        case 'generic':
         default:
-          // Unknown type — fall back to the file browser.
-          context.go(_cirrusPath(widget.filePath));
+          // No dedicated viewer yet — show download + "Open with" actions.
+          // This prevents unsupported types from being silently re-routed or
+          // misrepresented (e.g. showing a JPEG thumbnail for a .docx file).
+          final node = CirrusFileNode(
+            name: name,
+            size: 0,
+            isDir: false,
+            deviceName: '',
+            devicePath: widget.filePath,
+            deviceSerial: serial ?? '',
+            dirPath: widget.filePath,
+            fileType: stat.fileType,
+          );
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute<void>(
+              builder: (_) => GenericFileViewerPage(node: node),
+            ),
+          );
       }
     } catch (e) {
       if (mounted) {
