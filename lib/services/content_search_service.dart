@@ -67,10 +67,10 @@ class ContentSearchService with AuthenticatedService {
   /// Returns content-search results for [query].
   ///
   /// Never throws: on a transport error, a non-2xx status, or a body that is
-  /// not the expected JSON envelope, it logs and returns an empty list so the
-  /// caller can clear its loading state. Note that an unmatched API path does
-  /// not 404 — the server's SPA fallback answers 200 with `index.html`, so the
-  /// body must be validated, not just the status code.
+  /// not a JSON array, it logs and returns an empty list so the caller can
+  /// clear its loading state. Note that an unmatched API path does not 404 —
+  /// the server's SPA fallback answers 200 with `index.html`, so the body must
+  /// be validated, not just the status code.
   static Future<List<ContentSearchResult>> search(String query) async {
     if (query.trim().isEmpty) return [];
     final uri = _apiBaseUri.replace(
@@ -83,14 +83,18 @@ class ContentSearchService with AuthenticatedService {
         debugPrint('content search: $uri returned ${response.statusCode}');
         return [];
       }
+      // WrapApiRoute writes the handler's payload directly (c.JSON(status,
+      // resp.Data)), so a list endpoint answers with a bare JSON array — there
+      // is no {"data": …} envelope to unwrap.
       final decoded = jsonDecode(response.body);
-      if (decoded is! Map<String, dynamic>) return [];
-      final data = decoded['data'];
-      if (data is! List) return [];
-      return data
+      if (decoded is! List) {
+        debugPrint('content search: $uri returned ${decoded.runtimeType}');
+        return [];
+      }
+      return decoded
           .whereType<Map<String, dynamic>>()
           .map(ContentSearchResult.fromJson)
-          .toList();
+          .toList(growable: false);
     } on FormatException catch (e) {
       // Reached when the SPA fallback serves HTML for an unmatched path.
       debugPrint('content search: $uri returned a non-JSON body ($e)');
