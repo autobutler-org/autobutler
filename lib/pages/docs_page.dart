@@ -270,6 +270,7 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
         _searchController.text.isNotEmpty && _contentResults.isNotEmpty;
 
     if (_filtered.isEmpty && !hasContentResults) {
+      final isSearching = _searchController.text.isNotEmpty;
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -281,9 +282,7 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
             ),
             const SizedBox(height: 12),
             Text(
-              _searchController.text.isNotEmpty
-                  ? 'No docs match your search.'
-                  : 'No docs yet.',
+              isSearching ? 'No docs match your search.' : 'No docs yet.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: colorScheme.onSurface.withValues(alpha: 0.5),
@@ -295,6 +294,14 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ],
+            if (!isSearching) ...[
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: _createNewDoc,
+                icon: const Icon(Icons.add),
+                label: const Text('Create new doc'),
               ),
             ],
           ],

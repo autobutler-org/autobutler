@@ -220,8 +220,14 @@ class CirrusService with AuthenticatedService {
       throw Exception('Failed to load files by type (${response.statusCode})');
     }
     final decoded = jsonDecode(response.body);
+    // The backend always returns a JSON array (even when empty: []).
+    // Guard defensively: if for any reason the response is not a list
+    // (e.g. a transitional server version wrapping data in an object,
+    // or an error body slipping through with a 2xx status), return []
+    // rather than throwing — the UI will show the friendly empty state
+    // instead of a raw exception message.
     if (decoded is! List) {
-      throw Exception('Unexpected response format for files by type');
+      return const [];
     }
     return decoded
         .whereType<Map<String, dynamic>>()

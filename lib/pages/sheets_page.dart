@@ -271,6 +271,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
         _searchController.text.isNotEmpty && _contentResults.isNotEmpty;
 
     if (_filtered.isEmpty && !hasContentResults) {
+      final isSearching = _searchController.text.isNotEmpty;
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -282,9 +283,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
             ),
             const SizedBox(height: 12),
             Text(
-              _searchController.text.isNotEmpty
-                  ? 'No sheets match your search.'
-                  : 'No sheets yet.',
+              isSearching ? 'No sheets match your search.' : 'No sheets yet.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: colorScheme.onSurface.withValues(alpha: 0.5),
@@ -296,6 +295,14 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ],
+            if (!isSearching) ...[
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: _createNewSheet,
+                icon: const Icon(Icons.add),
+                label: const Text('Create new sheet'),
               ),
             ],
           ],
