@@ -81,8 +81,8 @@ class DataSheetControlBar extends StatelessWidget {
               hasCol ? 'Insert column after' : 'Add column at end',
               hasData
                   ? () => controller.insertColumnAt(
-                      hasCol ? sel.contextCol + 1 : controller.colCount,
-                    )
+                        hasCol ? sel.contextCol + 1 : controller.colCount,
+                      )
                   : null,
             ),
             // Delete row / column
@@ -152,10 +152,10 @@ class DataSheetControlBar extends StatelessWidget {
               'Sort…',
               hasData
                   ? () => _showSortDialog(
-                      context,
-                      controller,
-                      sel.contextCol >= 0 ? sel.contextCol : 0,
-                    )
+                        context,
+                        controller,
+                        sel.contextCol >= 0 ? sel.contextCol : 0,
+                      )
                   : null,
             ),
             _btn(
@@ -195,11 +195,10 @@ class DataSheetControlBar extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children:
-                    groups
-                        .expand((g) => [g, const _HorizontalDivider()])
-                        .toList()
-                      ..removeLast(),
+                children: groups
+                    .expand((g) => [g, const _HorizontalDivider()])
+                    .toList()
+                  ..removeLast(),
               ),
             ),
           );
