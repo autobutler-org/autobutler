@@ -80,11 +80,12 @@ func rateLimit() gin.HandlerFunc {
 //
 // Keep this list minimal. (#1332)
 var queryTokenPrefixes = []string{
-	"/api/v0/events", // WebSocket — new WebSocket() cannot set headers
-	"/api/v0/cirrus", // file download / streaming (src= attribute usage)
-	"/api/v0/photos", // photo serving
-	"/videos/",       // video deep-link player
-	"/audio/",        // audio deep-link player
+	"/api/v0/events",     // WebSocket — new WebSocket() cannot set headers
+	"/api/v0/cirrus",     // file download / streaming (src= attribute usage)
+	"/api/v0/photos",     // photo serving
+	"/api/v0/thumbnails", // thumbnail serving (Image.network src= cannot set headers)
+	"/videos/",           // video deep-link player
+	"/audio/",            // audio deep-link player
 }
 
 // queryTokenAllowed returns true when ?token= auth is permitted for the given
