@@ -537,42 +537,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    if (_isImageFile(item))
-                                      SizedBox(
-                                        height: 96,
-                                        width: double.infinity,
-                                        child: CachedNetworkImage(
-                                          imageUrl:
-                                              CirrusService.constructThumbnailUrl(
-                                                item.apiPath,
-                                                serial: item.deviceSerial,
-                                              ).toString(),
-                                          fit: BoxFit.cover,
-                                          placeholder: (context, url) =>
-                                              Shimmer.fromColors(
-                                                baseColor: Colors.grey[800]!,
-                                                highlightColor:
-                                                    Colors.grey[700]!,
-                                                child: Container(
-                                                  color: Colors.grey[800],
-                                                ),
-                                              ),
-                                          errorWidget: (context, url, error) =>
-                                              Center(
-                                                child: AutobutlerFileIcon(
-                                                  node: item,
-                                                  size: 48,
-                                                ),
-                                              ),
-                                        ),
-                                      )
-                                    else
-                                      Center(
-                                        child: AutobutlerFileIcon(
-                                          node: item,
-                                          size: 48,
-                                        ),
-                                      ),
+                                    Expanded(child: _buildGridPreview(item)),
                                     const SizedBox(height: 8),
                                     Flexible(
                                       child: Text(
@@ -581,7 +546,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                    const Spacer(),
+                                    const SizedBox(height: 8),
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
@@ -785,31 +750,70 @@ class _FileBrowserViewState extends State<FileBrowserView> {
         lower.endsWith('.heif');
   }
 
-  Widget _buildListLeading(CirrusFileNode item) {
-    if (!_isImageFile(item)) {
-      return AutobutlerFileIcon(node: item);
-    }
+  /// Preview slot for a grid tile. Sized by the caller (an [Expanded] that
+  /// hands it whatever the tile has left over) so every tile lines up without
+  /// risking an overflow, with the thumbnail replacing the icon only once it
+  /// decodes.
+  Widget _buildGridPreview(CirrusFileNode item) {
+    final icon = Center(child: AutobutlerFileIcon(node: item, size: 48));
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(4),
-      child: SizedBox(
-        width: 40,
-        height: 40,
-        child: CachedNetworkImage(
-          imageUrl: CirrusService.constructThumbnailUrl(
-            item.apiPath,
-            serial: item.deviceSerial,
-            size: 'sm',
-          ).toString(),
-          fit: BoxFit.cover,
-          placeholder: (context, url) => Shimmer.fromColors(
-            baseColor: Colors.grey[800]!,
-            highlightColor: Colors.grey[700]!,
-            child: Container(color: Colors.grey[800]),
-          ),
-          errorWidget: (context, url, error) => AutobutlerFileIcon(node: item),
-        ),
-      ),
+    return SizedBox(
+      width: double.infinity,
+      child: !_isImageFile(item)
+          ? icon
+          : CachedNetworkImage(
+              imageUrl: CirrusService.constructThumbnailUrl(
+                item.apiPath,
+                serial: item.deviceSerial,
+              ).toString(),
+              imageBuilder: (context, imageProvider) =>
+                  Image(image: imageProvider, fit: BoxFit.cover),
+              placeholder: (context, url) => Shimmer.fromColors(
+                baseColor: Colors.grey[800]!,
+                highlightColor: Colors.grey[700]!,
+                child: Container(color: Colors.grey[800]),
+              ),
+              errorWidget: (context, url, error) => icon,
+            ),
+    );
+  }
+
+  /// Every row reserves the same leading slot so titles line up whether the
+  /// row ends up showing a thumbnail or a file-type icon.
+  static const double _listLeadingSize = 40;
+
+  Widget _buildListLeading(CirrusFileNode item) {
+    final icon = Center(child: AutobutlerFileIcon(node: item));
+
+    return SizedBox(
+      width: _listLeadingSize,
+      height: _listLeadingSize,
+      child: !_isImageFile(item)
+          ? icon
+          : CachedNetworkImage(
+              imageUrl: CirrusService.constructThumbnailUrl(
+                item.apiPath,
+                serial: item.deviceSerial,
+                size: 'sm',
+              ).toString(),
+              // Only the decoded thumbnail replaces the icon; the placeholder
+              // and error states fall back to it so nothing shifts.
+              imageBuilder: (context, imageProvider) => ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: Image(image: imageProvider, fit: BoxFit.cover),
+              ),
+              placeholder: (context, url) => Shimmer.fromColors(
+                baseColor: Colors.grey[800]!,
+                highlightColor: Colors.grey[700]!,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[800],
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              errorWidget: (context, url, error) => icon,
+            ),
     );
   }
 
