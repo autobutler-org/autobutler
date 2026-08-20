@@ -494,6 +494,47 @@ definitions:
       semver:
         type: string
     type: object
+  v0_videos.VideoMetadataJSON:
+    properties:
+      albums:
+        items:
+          $ref: '#/definitions/v0_videos.albumRefJSON'
+        type: array
+      audioCodec:
+        type: string
+      bitrate:
+        description: bits/s
+        type: integer
+      duration:
+        description: seconds
+        type: number
+      fileName:
+        type: string
+      fileSize:
+        type: integer
+      framerate:
+        type: number
+      height:
+        type: integer
+      isFavorite:
+        type: boolean
+      mtime:
+        type: integer
+      rotation:
+        description: degrees
+        type: integer
+      videoCodec:
+        type: string
+      width:
+        type: integer
+    type: object
+  v0_videos.albumRefJSON:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
   v1_vfs.FileInfoJSON:
     properties:
       content_hash:
@@ -2754,4 +2795,44 @@ paths:
       summary: Write a file to a VFS namespace
       tags:
       - vfs
+  /videos/metadata:
+    get:
+      description: Returns duration, resolution, codec, bitrate, framerate, rotation,
+        and album membership for the specified video.
+      parameters:
+      - description: Device serial
+        in: query
+        name: serial
+        type: string
+      - description: Relative path to the video file
+        in: query
+        name: relPath
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v0_videos.VideoMetadataJSON'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "501":
+          description: Not Implemented — ffprobe not available
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Get metadata for a single video file
+      tags:
+      - videos
 swagger: "2.0"
