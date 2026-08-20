@@ -32,6 +32,7 @@ const (
 	FileTypeSpacer    FileType = "spacer"
 	FileTypeArchive   FileType = "archive"
 	FileTypeText      FileType = "text"
+	FileTypeCode      FileType = "code"
 )
 
 func ImageMIMETypeFromExtension(extension string) string {
@@ -195,9 +196,32 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 		return FileTypeDocx
 	case ".zip", ".rar", ".tar", ".gz", ".tgz", ".7z":
 		return FileTypeArchive
-	case ".txt", ".md", ".json", ".yaml", ".yml", ".xml", ".html", ".css",
-		".js", ".go", ".py", ".sh", ".env", ".toml", ".ini", ".cfg", ".conf", ".log":
+	case ".txt", ".md", ".markdown", ".rst", ".log", ".env":
 		return FileTypeText
+	case ".json", ".yaml", ".yml", ".toml", ".xml", ".ini", ".cfg", ".conf",
+		// Web
+		".html", ".htm", ".css", ".scss", ".sass", ".less",
+		// JavaScript / TypeScript (.ts is MPEG transport stream — stays as video)
+		".js", ".mjs", ".cjs", ".jsx", ".tsx",
+		// Go
+		".go",
+		// Systems languages
+		".c", ".h", ".cpp", ".cc", ".cxx", ".hpp", ".cs", ".rs", ".zig",
+		// JVM
+		".java", ".kt", ".kts", ".scala", ".groovy",
+		// Scripting
+		".py", ".rb", ".php", ".lua", ".perl", ".pl",
+		// Shell
+		".sh", ".bash", ".zsh", ".fish",
+		// Mobile
+		".swift", ".dart", ".m",
+		// Data / query
+		".sql", ".graphql", ".gql",
+		// Config / infra
+		".tf", ".hcl", ".dockerfile", ".makefile",
+		// Lisp family
+		".lisp", ".cl", ".scm", ".clj", ".cljs", ".ex", ".exs", ".erl", ".hrl":
+		return FileTypeCode
 	default:
 		stat, err := os.Stat(filePath)
 		if err == nil && stat != nil {
