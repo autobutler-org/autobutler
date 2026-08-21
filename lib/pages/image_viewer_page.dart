@@ -32,7 +32,16 @@ const _kSidebarWidth = 288.0;
 /// Keyboard: ← → navigate, Escape closes, i toggles sidebar, f toggles
 /// favorite, r rotates 90° CW.
 class ImageViewerPage extends StatefulWidget {
-  final Uint8List bytes;
+  /// Image bytes, when the caller already has them.
+  ///
+  /// Null means "not loaded yet" — supply [loadBytes] and the viewer opens
+  /// immediately, showing its own loading state while the bytes arrive.
+  final Uint8List? bytes;
+
+  /// Fetches the bytes for this image when [bytes] is null. Called once from
+  /// [State.initState]. Returning null renders the unavailable state.
+  final Future<Uint8List?> Function()? loadBytes;
+
   final String name;
   final int initialIndex;
   final int imageCount;
@@ -55,7 +64,8 @@ class ImageViewerPage extends StatefulWidget {
 
   const ImageViewerPage({
     super.key,
-    required this.bytes,
+    this.bytes,
+    this.loadBytes,
     required this.name,
     this.initialIndex = 0,
     this.imageCount = 1,
@@ -64,7 +74,10 @@ class ImageViewerPage extends StatefulWidget {
     this.relPath,
     this.serial,
     this.sourceAlbum,
-  });
+  }) : assert(
+         bytes != null || loadBytes != null,
+         'Supply either bytes or loadBytes',
+       );
 
   @override
   State<ImageViewerPage> createState() => _ImageViewerPageState();
@@ -74,7 +87,10 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     with SingleTickerProviderStateMixin {
   // Navigation state
   late int _currentIndex;
-  late Uint8List _currentBytes;
+
+  /// Null until the initial bytes arrive (see [ImageViewerPage.loadBytes]).
+  Uint8List? _currentBytes;
+  bool _initialLoadFailed = false;
   late String _currentName;
   late String? _currentRelPath;
   late String? _currentSerial;
@@ -123,7 +139,32 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     );
     _rotationValue = Tween<double>(begin: 0, end: 0).animate(_rotationAnim);
 
+    if (_currentBytes == null) {
+      _loading = true;
+      _loadInitialBytes();
+    }
+
     _initPrefs();
+  }
+
+  /// Fetches the bytes the page was opened without. Reuses the same [_loading]
+  /// flag as [_navigate], so the existing in-viewer spinner covers this too.
+  Future<void> _loadInitialBytes() async {
+    try {
+      final bytes = await widget.loadBytes!();
+      if (!mounted) return;
+      setState(() {
+        _currentBytes = bytes;
+        _initialLoadFailed = bytes == null;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _initialLoadFailed = true;
+        _loading = false;
+      });
+    }
   }
 
   @override
@@ -780,6 +821,24 @@ class _ImageViewerPageState extends State<ImageViewerPage>
                     ),
                     child: VideoPlayer(_liveVideoController!),
                   )
+                : _currentBytes == null
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        QuarkIcons.broken_image,
+                        size: 64,
+                        color: Colors.white54,
+                      ),
+                      if (_initialLoadFailed) ...[
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Could not load this image',
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                      ],
+                    ],
+                  )
                 : AnimatedBuilder(
                     animation: _rotationValue,
                     builder: (_, child) => Transform.rotate(
@@ -788,7 +847,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
                     ),
                     child: InteractiveViewer(
                       child: Image.memory(
-                        _currentBytes,
+                        _currentBytes!,
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stack) => const Icon(
                           QuarkIcons.broken_image,

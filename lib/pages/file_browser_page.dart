@@ -1085,7 +1085,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       fileType: node.fileType,
       fileName: node.name,
       serial: _serialForNode(node),
-      onContentFailure: () => _showMessage('Failed to load ${node.name}'),
     );
     if (!mounted) {
       return;
@@ -1543,8 +1542,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// Opens a file whose type is already known, pushing the destination viewer
   /// immediately rather than navigating to a URL and resolving from there.
   ///
-  /// [onContentFailure] fires when the viewer's content could not be fetched —
-  /// callers report that differently, so it stays injected.
+  /// Every branch pushes without awaiting content — each viewer loads its own
+  /// bytes/stream and reports its own failures, so nothing here can fail in a
+  /// way the caller needs to hear about.
   ///
   /// Shared by both entry points: [_handleOpenNode] (click — type comes from
   /// the directory listing) and [_openPendingFileInner] (deep link — type comes
@@ -1555,7 +1555,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     required String fileType,
     required String fileName,
     String? serial,
-    VoidCallback? onContentFailure,
   }) async {
     switch (fileType) {
       // The two editor types drive their own close route via
@@ -1583,22 +1582,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         return _FileOpenOutcome.openedSelfRouting;
 
       case 'image':
-        // The one type still gated on content: ImageViewerPage requires its
-        // bytes at construction, so it cannot be pushed before the download
-        // finishes. Everything else here pushes first and loads internally.
-        final bytes = await CirrusService.downloadFileBytes(
-          filePath,
-          serial: serial,
-        );
-        if (!mounted) return _FileOpenOutcome.openedSelfRouting;
-        if (bytes == null) {
-          onContentFailure?.call();
-          return _FileOpenOutcome.openedSelfRouting;
-        }
+        // Push first, download inside the viewer. The bytes no longer gate
+        // navigation, so this behaves like video/audio (#1564).
         await _openEditorWithUrl(
           filePath: filePath,
           builder: (_, _) => ImageViewerPage(
-            bytes: bytes,
+            loadBytes: () =>
+                CirrusService.downloadFileBytes(filePath, serial: serial),
             name: fileName,
             relPath: filePath,
             serial: serial,
@@ -1739,25 +1729,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
 
     final serials = _serialsForActiveDevices();
-    var contentFailed = false;
     final outcome = await _openKnownFile(
       filePath: filePath,
       fileType: fileType,
       fileName: fileName,
       serial: serials.isNotEmpty ? serials.first : null,
-      onContentFailure: () => contentFailed = true,
     );
     if (!mounted) return;
-
-    if (contentFailed) {
-      setState(() {
-        _routeFailure = _CirrusRouteFailure(
-          requestedPath: filePath,
-          isFileRoute: true,
-        );
-      });
-      return;
-    }
 
     switch (outcome) {
       case _FileOpenOutcome.unhandled:
