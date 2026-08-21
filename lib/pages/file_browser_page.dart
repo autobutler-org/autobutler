@@ -119,9 +119,15 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     _isSearchMode = false;
     _searchFuture = null;
     _searchQuery = null;
-    _currentPath = normalized;
+    // A file path must never become _currentPath: _reloadFiles would call
+    // fetchFiles() on a file and render an empty listing behind the spinner
+    // (#1564). Browse the containing folder while the file resolves instead.
+    final browsePath = isLikelyFilePath(normalized)
+        ? parentPath(normalized)
+        : normalized;
+    _currentPath = browsePath;
     _pendingFileOpen = normalized.isEmpty ? null : normalized;
-    _cachedFiles = FileBrowserCache.instance.get(normalized);
+    _cachedFiles = FileBrowserCache.instance.get(browsePath);
   }
 
   @override
@@ -1020,13 +1026,23 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     // Quark native document format — open in the rich text editor.
     if (lowerName.endsWith('.abdoc')) {
-      _openFileViaRoute(node.apiPath);
+      await _openKnownFile(
+        filePath: node.apiPath,
+        fileType: 'abdoc',
+        fileName: node.name,
+        serial: _serialForNode(node),
+      );
       return;
     }
 
     // Quark native spreadsheet format.
     if (lowerName.endsWith('.absheet')) {
-      _openFileViaRoute(node.apiPath);
+      await _openKnownFile(
+        filePath: node.apiPath,
+        fileType: 'absheet',
+        fileName: node.name,
+        serial: _serialForNode(node),
+      );
       return;
     }
 
@@ -1058,10 +1074,42 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
-    // All other file types — navigate to /cirrus/<path> which resolves the
-    // file type via FileViewerPage and opens the correct viewer. This updates
-    // the URL bar so the link is always shareable.
-    _openFileViaRoute(node.apiPath);
+    // All other file types — the directory listing already told us the type, so
+    // push the viewer now instead of round-tripping through /cirrus/<file>.
+    // Going through the URL first set _currentPath to a *file*, so _reloadFiles
+    // called fetchFiles() on it and rendered an empty grid + spinner until the
+    // content finished loading (#1564). _openEditorWithUrl still syncs the URL
+    // once the push settles, so links stay shareable.
+    final outcome = await _openKnownFile(
+      filePath: node.apiPath,
+      fileType: node.fileType,
+      fileName: node.name,
+      serial: _serialForNode(node),
+      onContentFailure: () => _showMessage('Failed to load ${node.name}'),
+    );
+    if (!mounted) {
+      return;
+    }
+    switch (outcome) {
+      case _FileOpenOutcome.unhandled:
+        // Unknown/empty type from the listing — fall back to the resolving
+        // route, which stats the backend and can report a useful error.
+        _openFileViaRoute(node.apiPath);
+      case _FileOpenOutcome.openedNeedsRouteRestore:
+        context.go(AppRoutes.cirrusPath(parentPath(node.apiPath)));
+      case _FileOpenOutcome.openedSelfRouting:
+      // The editor restored the route itself via overlayCloseRoute.
+    }
+  }
+
+  /// Serial to address [node] with: prefer the one the listing gave us, else
+  /// fall back to the active device filter.
+  String? _serialForNode(CirrusFileNode node) {
+    if (node.deviceSerial.trim().isNotEmpty) {
+      return node.deviceSerial;
+    }
+    final serials = _serialsForActiveDevices();
+    return serials.isNotEmpty ? serials.first : null;
   }
 
   static const _kImageExtensions = {
@@ -1492,6 +1540,86 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
   }
 
+  /// Opens a file whose type is already known, pushing the destination viewer
+  /// immediately rather than navigating to a URL and resolving from there.
+  ///
+  /// [onContentFailure] fires when the viewer's content could not be fetched —
+  /// callers report that differently, so it stays injected.
+  ///
+  /// Shared by both entry points: [_handleOpenNode] (click — type comes from
+  /// the directory listing) and [_openPendingFileInner] (deep link — type comes
+  /// from a stat call). Keeping them on one switch is what stops the two from
+  /// drifting apart the way /cirrus and /view once did (#1418).
+  Future<_FileOpenOutcome> _openKnownFile({
+    required String filePath,
+    required String fileType,
+    required String fileName,
+    String? serial,
+    VoidCallback? onContentFailure,
+  }) async {
+    switch (fileType) {
+      // The two editor types drive their own close route via
+      // overlayCloseRoute, so the caller must not navigate afterwards.
+      case 'abdoc':
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: (targetRoute, closeRoute) => DocumentEditorPage(
+            filePath: filePath,
+            overlayTargetRoute: targetRoute,
+            overlayCloseRoute: closeRoute,
+          ),
+        );
+        return _FileOpenOutcome.openedSelfRouting;
+
+      case 'absheet':
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: (targetRoute, closeRoute) => SpreadsheetEditorPage(
+            filePath: filePath,
+            overlayTargetRoute: targetRoute,
+            overlayCloseRoute: closeRoute,
+          ),
+        );
+        return _FileOpenOutcome.openedSelfRouting;
+
+      case 'image':
+        // The one type still gated on content: ImageViewerPage requires its
+        // bytes at construction, so it cannot be pushed before the download
+        // finishes. Everything else here pushes first and loads internally.
+        final bytes = await CirrusService.downloadFileBytes(
+          filePath,
+          serial: serial,
+        );
+        if (!mounted) return _FileOpenOutcome.openedSelfRouting;
+        if (bytes == null) {
+          onContentFailure?.call();
+          return _FileOpenOutcome.openedSelfRouting;
+        }
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: (_, _) => ImageViewerPage(
+            bytes: bytes,
+            name: fileName,
+            relPath: filePath,
+            serial: serial,
+          ),
+        );
+        return _FileOpenOutcome.openedNeedsRouteRestore;
+
+      case 'video':
+      case 'audio':
+        final url = CirrusService.constructMediaUrl(filePath, serial: serial);
+        await _openEditorWithUrl(
+          filePath: filePath,
+          builder: (_, _) => VideoViewerPage(url: url, name: fileName),
+        );
+        return _FileOpenOutcome.openedNeedsRouteRestore;
+
+      default:
+        return _FileOpenOutcome.unhandled;
+    }
+  }
+
   /// Opens a deep-linked path in the appropriate viewer after mount.
   /// Asks the backend what the path actually is (file vs. directory, and file
   /// type) so that e.g. a folder named "things.abdoc" is opened as a folder
@@ -1594,94 +1722,45 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
-    switch (fileType) {
-      case 'abdoc':
-        await _openEditorWithUrl(
-          filePath: filePath,
-          builder: (targetRoute, closeRoute) => DocumentEditorPage(
-            filePath: filePath,
-            overlayTargetRoute: targetRoute,
-            overlayCloseRoute: closeRoute,
-          ),
-        );
-        if (!mounted) return;
-        return;
+    // Text/code — plaintext editor. Stays outside _openKnownFile because the
+    // click path routes these by extension before fileType is ever consulted.
+    if (fileType == 'code' || fileType == 'text') {
+      // Matches what clicking the row does — without this a deep link to a
+      // file the browser opens happily reports "No supported editor".
+      FileBrowserCache.instance.markFileOpen(filePath);
+      try {
+        await context.push<void>(AppRoutes.plaintextEditorPath(filePath));
+      } finally {
+        FileBrowserCache.instance.markFileClosed();
+      }
+      if (!mounted) return;
+      context.go(AppRoutes.cirrusPath(parentPath(filePath)));
+      return;
+    }
 
-      case 'absheet':
-        await _openEditorWithUrl(
-          filePath: filePath,
-          builder: (targetRoute, closeRoute) => SpreadsheetEditorPage(
-            filePath: filePath,
-            overlayTargetRoute: targetRoute,
-            overlayCloseRoute: closeRoute,
-          ),
-        );
-        if (!mounted) return;
-        return;
+    final serials = _serialsForActiveDevices();
+    var contentFailed = false;
+    final outcome = await _openKnownFile(
+      filePath: filePath,
+      fileType: fileType,
+      fileName: fileName,
+      serial: serials.isNotEmpty ? serials.first : null,
+      onContentFailure: () => contentFailed = true,
+    );
+    if (!mounted) return;
 
-      case 'code':
-      // Source/config files classified by the backend as 'code' open in
-      // the same plaintext editor for now — no syntax highlighting yet.
-      case 'text':
-        // Matches what clicking the row does — without this a deep link to a
-        // file the browser opens happily reports "No supported editor".
-        FileBrowserCache.instance.markFileOpen(filePath);
-        try {
-          await context.push<void>(AppRoutes.plaintextEditorPath(filePath));
-        } finally {
-          FileBrowserCache.instance.markFileClosed();
-        }
-        if (!mounted) return;
-        context.go(AppRoutes.cirrusPath(parentPath(filePath)));
-        return;
+    if (contentFailed) {
+      setState(() {
+        _routeFailure = _CirrusRouteFailure(
+          requestedPath: filePath,
+          isFileRoute: true,
+        );
+      });
+      return;
+    }
 
-      case 'image':
-        final serials = _serialsForActiveDevices();
-        final serial = serials.isNotEmpty ? serials.first : null;
-        final bytes = await CirrusService.downloadFileBytes(
-          filePath,
-          serial: serial,
-        );
-        if (!mounted) return;
-        if (bytes == null) {
-          setState(() {
-            _routeFailure = _CirrusRouteFailure(
-              requestedPath: filePath,
-              isFileRoute: true,
-            );
-          });
-          return;
-        }
-        await _openEditorWithUrl(
-          filePath: filePath,
-          builder: (_, _) => ImageViewerPage(
-            bytes: bytes,
-            name: fileName,
-            relPath: filePath,
-            serial: serial,
-          ),
-        );
-        if (!mounted) return;
-        context.go(AppRoutes.cirrusPath(parentPath(filePath)));
-        return;
-
-      case 'video':
-      case 'audio':
-        final videoSerials = _serialsForActiveDevices();
-        final videoSerial = videoSerials.isNotEmpty ? videoSerials.first : null;
-        final url = CirrusService.constructMediaUrl(
-          filePath,
-          serial: videoSerial,
-        );
-        await _openEditorWithUrl(
-          filePath: filePath,
-          builder: (_, _) => VideoViewerPage(url: url, name: fileName),
-        );
-        if (!mounted) return;
-        context.go(AppRoutes.cirrusPath(parentPath(filePath)));
-        return;
-
-      default:
+    switch (outcome) {
+      case _FileOpenOutcome.unhandled:
         setState(() {
           _routeFailure = _CirrusRouteFailure(
             requestedPath: filePath,
@@ -1689,7 +1768,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             isUnsupported: !hasSupportedCirrusEditorForType(fileType),
           );
         });
-        break;
+      case _FileOpenOutcome.openedNeedsRouteRestore:
+        // Viewer closed — put the URL back on the containing folder so a file
+        // path never lingers as _currentPath.
+        context.go(AppRoutes.cirrusPath(parentPath(filePath)));
+      case _FileOpenOutcome.openedSelfRouting:
+      // The editor restored the route itself via overlayCloseRoute.
     }
   }
 
@@ -2040,6 +2124,20 @@ class _FirstRunSetup extends StatefulWidget {
 
   @override
   State<_FirstRunSetup> createState() => _FirstRunSetupState();
+}
+
+/// Result of [_FileBrowserPageState._openKnownFile].
+enum _FileOpenOutcome {
+  /// No dedicated viewer for this file type — caller decides how to report it.
+  unhandled,
+
+  /// Viewer opened and manages its own close route (abdoc/absheet supply
+  /// overlayCloseRoute). The caller must not navigate afterwards.
+  openedSelfRouting,
+
+  /// Viewer opened and has now closed; the caller should restore the URL to the
+  /// containing folder.
+  openedNeedsRouteRestore,
 }
 
 class _CirrusRouteFailure {
