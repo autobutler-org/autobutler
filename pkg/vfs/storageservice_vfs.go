@@ -117,13 +117,26 @@ func (v *StorageServiceVFS) cirrusDir() (string, error) {
 	return storageutil.GetCirrusDir()
 }
 
+// mimeTypeForName returns the MIME type for a file name. Image formats
+// (including HEIC/HEIF/TIFF/BMP, which Go's stdlib mime package doesn't
+// recognize — see #1567) are resolved via storageutil's own extension table
+// rather than mime.TypeByExtension, which returns "" for them and silently
+// disables server-side JPEG conversion for image previews.
+func mimeTypeForName(name string) string {
+	ext := filepath.Ext(name)
+	if storageutil.DetermineFileTypeFromPath(name) == storageutil.FileTypeImage {
+		return storageutil.ImageMIMETypeFromExtension(ext)
+	}
+	return mime.TypeByExtension(ext)
+}
+
 // Stat returns metadata for a single path.
 func (v *StorageServiceVFS) Stat(_ context.Context, path string) (FileInfo, error) {
 	result, err := v.svc.StatFile(storageutil.StatFileParams{FilePath: path})
 	if err != nil {
 		return FileInfo{}, ErrNotFound
 	}
-	mimeType := mime.TypeByExtension(filepath.Ext(result.Name))
+	mimeType := mimeTypeForName(result.Name)
 	return FileInfo{
 		Name:      result.Name,
 		Path:      path,
@@ -230,7 +243,7 @@ func (v *StorageServiceVFS) Watch(_ context.Context, _ string) (<-chan WatchEven
 
 // deviceFileInfoToVFS converts a storageutil.DeviceFileInfo to a vfs.FileInfo.
 func deviceFileInfoToVFS(f *storageutil.DeviceFileInfo, nsID, dirPath string) FileInfo {
-	mimeType := mime.TypeByExtension(filepath.Ext(f.Name()))
+	mimeType := mimeTypeForName(f.Name())
 	return FileInfo{
 		Name:      f.Name(),
 		Path:      filepath.Join(dirPath, f.Name()),
