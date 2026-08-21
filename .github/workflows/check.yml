@@ -19,6 +19,8 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+      - name: Setup Node
+        uses: ./.github/actions/setup-node
       - name: Setup sqlc
         uses: ./.github/actions/setup-sqlc
       - name: Setup swag
@@ -54,8 +56,6 @@ jobs:
         uses: actions/checkout@v7
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
-      - name: Setup Node
-        uses: ./.github/actions/setup-node
       - name: Tidy
         run: |
           make tidy/flutter
