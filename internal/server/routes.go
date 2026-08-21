@@ -24,13 +24,11 @@ import (
 	v0_vault "github.com/autobutler-org/quark/internal/server/api/v0/vault"
 	v0_version "github.com/autobutler-org/quark/internal/server/api/v0/version"
 	v0_videos "github.com/autobutler-org/quark/internal/server/api/v0/videos"
-	v0_webdav "github.com/autobutler-org/quark/internal/server/api/v0/webdav"
 	v1_vfs "github.com/autobutler-org/quark/internal/server/api/v1/vfs"
 	"github.com/autobutler-org/quark/internal/server/middleware"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/healthutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
-	"github.com/autobutler-org/quark/pkg/util/storageutil"
 
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
@@ -41,7 +39,6 @@ var public embed.FS
 
 func setupRoutes(engine *gin.Engine, systemCollector *healthutil.Collector, deps deputil.Dependencies) error {
 	setupRouters(engine, systemCollector, deps)
-	setupWebDAV(engine)
 	return setupStaticRoutes(engine)
 }
 
@@ -81,21 +78,6 @@ func setupRouters(engine *gin.Engine, systemCollector *healthutil.Collector, dep
 	// Admin-only routes — wrapped with RequireAdmin middleware.
 	adminGroup := group.Group("", middleware.RequireAdmin(deps))
 	serverutil.RegisterRouterWithGroup(adminGroup, v0_admin.NewRouter())
-}
-
-func setupWebDAV(engine *gin.Engine) {
-	cirrusDir, err := storageutil.GetCirrusDir()
-	if err != nil {
-		// Cirrus dir setup happens earlier in StartServer via setupServices,
-		// so this should not fail. Log and skip if it does.
-		slog.Error("webdav: failed to get cirrus dir, WebDAV disabled", "err", err)
-		return
-	}
-
-	handler := v0_webdav.NewHandler(cirrusDir)
-	for _, method := range v0_webdav.WebDAVMethods() {
-		engine.Handle(method, "/dav/*filepath", handler)
-	}
 }
 
 func setupStaticRoutes(engine *gin.Engine) error {

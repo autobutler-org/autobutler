@@ -14,7 +14,7 @@ import (
 
 // StorageServiceVFS adapts storageutil.StorageService to the VFS interface.
 // It is registered as the "files" namespace and backs the /api/v0/cirrus
-// handlers during the Phase 1 migration, with no behaviour change.
+// handlers during the Phase 1 migration, with no behavior change.
 type StorageServiceVFS struct {
 	svc         *storageutil.StorageService
 	namespaceID string
@@ -163,7 +163,7 @@ func (v *StorageServiceVFS) Open(_ context.Context, path string) (io.ReadCloser,
 	// disagree and downloads returned an empty body.
 	//
 	// DownloadFile validates via safeJoin internally; Clean again so static
-	// analysers (CodeQL go/path-injection) can follow the traversal guard
+	// analyzers (CodeQL go/path-injection) can follow the traversal guard
 	// rather than seeing tainted data reach os.Open.
 	safePath := filepath.Clean(result.FullPath)
 	f, err := os.Open(safePath) //nolint:gosec // path validated by DownloadFile's safeJoin + Clean
@@ -185,7 +185,7 @@ func (v *StorageServiceVFS) Write(_ context.Context, path string, r io.Reader, o
 	if err != nil {
 		return err
 	}
-	// filepath.Clean before SafeJoin so static analysers (CodeQL go/path-injection)
+	// filepath.Clean before SafeJoin so static analyzers (CodeQL go/path-injection)
 	// can follow the traversal guard rather than seeing tainted data reach os.Create.
 	safePath, err := storageutil.SafeJoin(cirrusDir, filepath.Clean(path))
 	if err != nil {

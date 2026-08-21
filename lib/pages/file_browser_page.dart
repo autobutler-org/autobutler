@@ -952,7 +952,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       final controller = DataSheetController.fromTable(table);
       controller.loadFromCsv(csvText);
 
-      // Serialise to .absheet JSON envelope.
+      // Serialize to .absheet JSON envelope.
       final absheetJson = jsonEncode({
         'tabs': [
           {

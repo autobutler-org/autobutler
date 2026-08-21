@@ -16,7 +16,7 @@ type SearchResult struct {
 	RelPath string `json:"relPath"`
 	// Snippet is a highlighted excerpt from the matched content.
 	// Matched terms are wrapped in <b>…</b>. The caller is responsible for
-	// sanitising this before rendering in HTML (the excerpt is derived from
+	// sanitizing this before rendering in HTML (the excerpt is derived from
 	// file contents, not user input, but treat it with care).
 	Snippet string `json:"snippet"`
 }
@@ -59,15 +59,15 @@ func DeleteContentBySerial(ctx context.Context, db *sql.DB, serial string) error
 // Search runs a full-text query against the FTS5 index and returns up to
 // limit results ordered by relevance rank. If limit <= 0, DefaultLimit is used.
 // The query string is passed directly to FTS5's MATCH operator — callers
-// should sanitise it for user-facing inputs (e.g. quote terms to avoid FTS5
+// should sanitize it for user-facing inputs (e.g. quote terms to avoid FTS5
 // syntax errors).
 func Search(ctx context.Context, db *sql.DB, query string, limit int) ([]SearchResult, error) {
 	if limit <= 0 {
 		limit = DefaultLimit
 	}
-	// Sanitise the query: wrap in double-quotes if it contains no FTS5
+	// Sanitize the query: wrap in double-quotes if it contains no FTS5
 	// operators so a bare word search never triggers syntax errors.
-	safeQuery := sanitiseFTSQuery(query)
+	safeQuery := sanitizeFTSQuery(query)
 
 	rows, err := db.QueryContext(ctx, `
 		SELECT
@@ -101,10 +101,10 @@ func Search(ctx context.Context, db *sql.DB, query string, limit int) ([]SearchR
 	return results, nil
 }
 
-// sanitiseFTSQuery wraps the query in double-quotes if it contains no FTS5
+// sanitizeFTSQuery wraps the query in double-quotes if it contains no FTS5
 // operators, preventing syntax errors from bare special characters.
 // FTS5 operators: AND, OR, NOT, NEAR, column filters, prefix wildcards.
-func sanitiseFTSQuery(q string) string {
+func sanitizeFTSQuery(q string) string {
 	q = strings.TrimSpace(q)
 	if q == "" {
 		return `""`

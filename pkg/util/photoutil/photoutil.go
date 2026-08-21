@@ -176,7 +176,7 @@ func applyExifOrientation(img image.Image, orientation int) image.Image {
 }
 
 // ApplyRotation rotates img by quarters × 90° clockwise.
-// Negative values are normalised: -1 → 3, -2 → 2, etc.
+// Negative values are normalized: -1 → 3, -2 → 2, etc.
 func ApplyRotation(img image.Image, quarters int64) image.Image {
 	switch ((quarters % 4) + 4) % 4 {
 	case 1:

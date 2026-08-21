@@ -2,7 +2,11 @@
   "name": "quark",
   "private": true,
   "description": "Node.js tooling for Quark development (npx convenience tools).",
+  "scripts": {
+    "check:spelling": "cspell '**/*' --config cspell.json"
+  },
   "devDependencies": {
+    "cspell": "^10.0.1",
     "fantasticon": "^4.1.0"
   }
 }

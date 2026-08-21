@@ -19,7 +19,7 @@ import (
 type BackupToDeviceParams struct {
 	SourceDeviceSerial string               `json:"sourceDeviceSerial"`
 	TargetDeviceSerial string               `json:"targetDeviceSerial"`
-	IOSemaphore        *iosemutil.Semaphore `json:"-"` // not JSON-serialised; set by handler to throttle file copies
+	IOSemaphore        *iosemutil.Semaphore `json:"-"` // not JSON-serialized; set by handler to throttle file copies
 }
 
 // BackupToDeviceResult contains the data of a backup operation
@@ -592,7 +592,7 @@ func UploadFilesStreamedImpl(params UploadFilesStreamedParams, device *ManagedDe
 	return nil
 }
 
-// StatFileParams contains parameters for statting a file or directory
+// StatFileParams contains parameters for stat-ing a file or directory
 type StatFileParams struct {
 	FilePath     string
 	DeviceSerial string

@@ -8,7 +8,7 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/photoutil"
 )
 
-// solidImage returns a plain-colour image of the given size.
+// solidImage returns a plain-color image of the given size.
 func solidImage(w, h int, c color.Color) image.Image {
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 	for y := 0; y < h; y++ {
@@ -21,7 +21,7 @@ func solidImage(w, h int, c color.Color) image.Image {
 
 // gradientImage returns an image with a right-to-left brightness gradient
 // (left is bright, right is dark). After dHash resize this produces non-zero
-// bits because each left pixel is brighter than its right neighbour.
+// bits because each left pixel is brighter than its right neighbor.
 func gradientImage(w, h int) image.Image {
 	img := image.NewGray(image.Rect(0, 0, w, h))
 	for y := 0; y < h; y++ {
@@ -45,8 +45,8 @@ func TestDHash_SameImage(t *testing.T) {
 	}
 }
 
-// TestDHash_UniformImage verifies that a completely uniform (one solid colour)
-// image hashes to 0 — no pixel differs from its neighbour.
+// TestDHash_UniformImage verifies that a completely uniform (one solid color)
+// image hashes to 0 — no pixel differs from its neighbor.
 func TestDHash_UniformImage(t *testing.T) {
 	img := solidImage(64, 64, color.RGBA{R: 128, G: 128, B: 128, A: 255})
 	h := photoutil.DHash(img)
