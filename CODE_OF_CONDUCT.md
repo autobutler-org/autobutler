@@ -37,6 +37,3 @@ Include what happened, where, and when. Links help. We will keep the reporter's 
 We'll acknowledge the report and look into it. Depending on what we find, the response ranges from a private word, to an
 edited or deleted comment, to a temporary or permanent ban from the project. Maintainers who don't follow this document
 face the same consequences as anyone else.
-
-We won't pretend this process is elaborate. It's a small project. The point is that there is a place to take a problem
-and someone who will read it.
