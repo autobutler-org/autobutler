@@ -123,7 +123,7 @@ void main() {
     final controller = QuillController.basic();
     addTearDown(controller.dispose);
 
-    // Guards the premise: this is the behaviour DocumentFindBar replaces.
+    // Guards the premise: this is the behavior DocumentFindBar replaces.
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates:

@@ -170,7 +170,7 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 
 		db := deps.Database()
 		if db == nil {
-			// Database not yet initialised — fail closed rather than allowing
+			// Database not yet initialized — fail closed rather than allowing
 			// unauthenticated access to API/DAV routes.
 			c.AbortWithStatusJSON(http.StatusServiceUnavailable,
 				gin.H{"error": "service unavailable"})
@@ -249,7 +249,7 @@ func Use(router *gin.Engine, deps deputil.Dependencies) {
 	// Basic — neither requires AllowCredentials.
 	//
 	// Combining AllowAllOrigins with AllowCredentials is rejected by browsers
-	// anyway, and is a defence-in-depth problem: it signals that any origin may
+	// anyway, and is a defense-in-depth problem: it signals that any origin may
 	// send credentialed requests. Dropping AllowCredentials means the browser
 	// will not forward session cookies cross-origin (also enforced by the
 	// SameSite=Strict flag on the session cookie itself).

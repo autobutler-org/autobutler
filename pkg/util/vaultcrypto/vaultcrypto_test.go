@@ -66,7 +66,7 @@ func TestDeriveKey_DifferentSalts(t *testing.T) {
 
 func TestEncryptDecrypt_RoundTrip(t *testing.T) {
 	key := DeriveKey("test", []byte("saltsaltsaltsalt"), Argon2Params{Memory: 1024, Iterations: 1, Parallelism: 1})
-	plaintext := []byte(`{"username":"alice","password":"s3cret"}`)
+	plaintext := []byte(`{"username":"alice","password":"secret"}`)
 
 	ciphertext, nonce, err := Encrypt(key, plaintext)
 	if err != nil {

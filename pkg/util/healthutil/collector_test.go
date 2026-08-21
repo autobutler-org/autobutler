@@ -35,7 +35,7 @@ func TestRegister_Idempotent(t *testing.T) {
 // HealthStatus with sensible zero-or-real values and never panics.
 //
 // Note: Alerts may be nil when no thresholds are exceeded — the HTTP health
-// handler normalises nil to [] before serialising to JSON. That nil→[] fix
+// handler normalizes nil to [] before serializing to JSON. That nil→[] fix
 // lives in get_health.go, not here.
 func TestCurrentHealth_StructShape(t *testing.T) {
 	c, err := healthutil.Register()

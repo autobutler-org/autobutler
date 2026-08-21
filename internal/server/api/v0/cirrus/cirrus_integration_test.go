@@ -184,7 +184,7 @@ func TestUploadToSubdirectory(t *testing.T) {
 	engine, _ := newTestEngine(t)
 
 	// The route is registered as /cirrus//upload/*rootDir (double slash avoids gin conflict
-	// with the top-level /cirrus/upload route), but gin normalises request URLs so the
+	// with the top-level /cirrus/upload route), but gin normalizes request URLs so the
 	// actual path to call is /cirrus/upload/{subdir}.
 	w := uploadFile(t, engine, "/api/v0/cirrus/upload/docs", "readme.txt", "docs content")
 	if w.Code != http.StatusOK {

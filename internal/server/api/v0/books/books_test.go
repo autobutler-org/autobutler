@@ -101,7 +101,7 @@ func TestListBooks_WithEpub(t *testing.T) {
 }
 
 // TestListBooks_IgnoresNonBookFiles verifies that non-book files (e.g. .txt, .png)
-// are excluded from the response and only recognised book types are returned.
+// are excluded from the response and only recognized book types are returned.
 func TestListBooks_IgnoresNonBookFiles(t *testing.T) {
 	engine, cirrusDir := newBooksEngine(t)
 

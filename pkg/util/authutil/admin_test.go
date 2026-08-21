@@ -57,7 +57,7 @@ func TestIsAdmin(t *testing.T) {
 	}
 }
 
-// TestIsAdmin_UnknownUser pins the actual behaviour for a username with no row.
+// TestIsAdmin_UnknownUser pins the actual behavior for a username with no row.
 //
 // The doc comment claims "Returns false (not an error) for unknown users", but
 // IsUserAdmin is a sqlc :one query, so a missing row yields sql.ErrNoRows and

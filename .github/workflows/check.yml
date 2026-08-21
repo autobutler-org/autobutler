@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-      - name: Setup go
+      - name: Setup Go
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
@@ -35,6 +35,9 @@ jobs:
       - name: Lint sqlc
         run: |
           make check/lint/sqlc
+      - name: Spellcheck
+        run: |
+          make check/spelling
       - name: Tidy
         run: |
           make tidy/go
@@ -52,9 +55,7 @@ jobs:
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
       - name: Setup Node
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
+        uses: ./.github/actions/setup-node
       - name: Tidy
         run: |
           make tidy/flutter

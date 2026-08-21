@@ -896,15 +896,15 @@ class _TrimBar extends StatelessWidget {
 
   // The label sits in a fixed slot above the handle. Reserving the slot (rather
   // than letting the label size itself around the handle) is what keeps the
-  // handle's centre free to land exactly on the track.
+  // handle's center free to land exactly on the track.
   static const _labelHeight = 14.0;
   static const _labelWidth = 72.0;
   static const _labelGap = 2.0;
   static const _barHeight = _labelHeight + _labelGap + _handleSize;
 
-  /// Shared centre line for the handles and the track, measured from the top
+  /// Shared center line for the handles and the track, measured from the top
   /// of the bar. Everything vertical is anchored to this so the handles and
-  /// the track share a centre instead of each being centred independently.
+  /// the track share a center instead of each being centered independently.
   static const _centerY = _labelHeight + _labelGap + _handleSize / 2;
 
   String _formatMs(int ms) {

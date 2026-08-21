@@ -289,7 +289,7 @@ func (v *DBVFS) Watch(_ context.Context, _ string) (<-chan WatchEvent, error) {
 	return nil, ErrWatchNotSupported
 }
 
-// dbCleanPath normalises a VFS path to an absolute slash-prefixed form.
+// dbCleanPath normalizes a VFS path to an absolute slash-prefixed form.
 // Always returns a path beginning with '/'. Directories keep their trailing slash
 // if provided; files do not. The root is always "/".
 func dbCleanPath(p string) string {

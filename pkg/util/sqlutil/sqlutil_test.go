@@ -65,7 +65,7 @@ func TestFormatTime_UTC(t *testing.T) {
 	}
 }
 
-func TestFormatTime_NonUTCNormalisedToUTC(t *testing.T) {
+func TestFormatTime_NonUTCNormalizedToUTC(t *testing.T) {
 	// A time in US/Pacific (UTC-8 in winter). The output must always be UTC.
 	loc := time.FixedZone("PST", -8*3600)
 	ts := time.Date(2024, 6, 1, 0, 0, 0, 0, loc) // midnight PST = 08:00 UTC
