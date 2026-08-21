@@ -6,7 +6,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/autobutler-org/autobutler/pkg/vfs"
+	"github.com/autobutler-org/quark/pkg/vfs"
 )
 
 // TestLocalVFS_Open_IsReadSeeker verifies that LocalVFS.Open returns an

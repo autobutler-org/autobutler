@@ -3,7 +3,7 @@ package v0_version
 import (
 	"runtime/debug"
 
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/gin-gonic/gin"
 )
 

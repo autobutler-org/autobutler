@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
@@ -183,7 +183,7 @@ func googleCallback(c *gin.Context) *serverutil.Response {
 	<div class="container">
 		<div class="success">✓</div>
 		<h1>Authorization Successful</h1>
-		<p>Redirecting to AutoButler...</p>
+		<p>Redirecting to Quark...</p>
 	</div>
 	<script>
 		console.log('OAuth callback page loaded');

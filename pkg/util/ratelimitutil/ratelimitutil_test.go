@@ -3,7 +3,7 @@ package ratelimitutil_test
 import (
 	"testing"
 
-	"github.com/autobutler-org/autobutler/pkg/util/ratelimitutil"
+	"github.com/autobutler-org/quark/pkg/util/ratelimitutil"
 	"golang.org/x/time/rate"
 )
 

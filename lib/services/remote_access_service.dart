@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:autobutler/services/app_settings.dart';
-import 'package:autobutler/services/authenticated_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/authenticated_service.dart';
 
 class RemoteAccessStatus {
   final bool enabled;

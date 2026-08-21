@@ -1,12 +1,12 @@
 #!/bin/bash
-# AutoButler Headscale + Provisioning Service — VM Setup Script
+# Quark Headscale + Provisioning Service — VM Setup Script
 # Runs as root on first boot via Azure CustomScript extension.
 # Rendered into headscale.rendered.parameters.json by: make render/headscale
 set -euox pipefail
 
 # ── Variables substituted by `make render/headscale` ──────────────────────
 DOMAIN="${HEADSCALE_DOMAIN}"
-ADMIN_EMAIL='admin@autobutler.org'
+ADMIN_EMAIL='admin@quark.org'
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 log() { echo "[setup] $*"; }
@@ -51,7 +51,7 @@ dpkg -i /tmp/headscale.deb
 mkdir -p /etc/headscale /var/lib/headscale
 
 cat > /etc/headscale/config.yaml <<EOF
-server_url: https://network.autobutler.org
+server_url: https://network.quark.org
 listen_addr: 127.0.0.1:8080
 grpc_listen_addr: 127.0.0.1:50443
 metrics_listen_addr: 127.0.0.1:9090
@@ -77,7 +77,7 @@ dns:
   nameservers:
     global:
       - 1.1.1.1
-  base_domain: headscale.autobutler.org
+  base_domain: headscale.quark.org
 
 derp:
   server:
@@ -125,20 +125,20 @@ certbot --nginx -d "${DOMAIN}" \
   && log "TLS certificate issued." \
   || log "WARNING: certbot failed. Once DNS points to this IP, run: sudo certbot --nginx -d ${DOMAIN} --non-interactive --agree-tos -m ${ADMIN_EMAIL} --redirect"
 
-# ── 6. AutoButler provisioning service ───
+# ── 6. Quark provisioning service ───
 
-rm -rf /opt/autobutler-src
-git clone --depth 1 --branch main https://github.com/autobutler-org/autobutler.git /opt/autobutler-src
+rm -rf /opt/quark-src
+git clone --depth 1 --branch main https://github.com/autobutler-org/quark.git /opt/quark-src
 
-cd /opt/autobutler-src
+cd /opt/quark-src
 GOPATH=/root/go GOMODCACHE=/root/go/pkg/mod GOCACHE=/root/go/cache \
-  /usr/local/go/bin/go build -o /usr/local/bin/autobutler-provisioning ./cmd/provisioning/
-log "Provisioning binary installed at /usr/local/bin/autobutler-provisioning"
+  /usr/local/go/bin/go build -o /usr/local/bin/quark-provisioning ./cmd/provisioning/
+log "Provisioning binary installed at /usr/local/bin/quark-provisioning"
 
 # ── 7. Provisioning service systemd unit ──────────────────────────────────
-cat > /etc/systemd/system/autobutler-provisioning.service <<'UNIT'
+cat > /etc/systemd/system/quark-provisioning.service <<'UNIT'
 [Unit]
-Description=AutoButler Provisioning Service
+Description=Quark Provisioning Service
 After=network.target headscale.service
 Requires=headscale.service
 
@@ -149,9 +149,9 @@ Environment=PORT=8081
 Environment=HEADSCALE_URL=http://127.0.0.1:8080
 # Set HEADSCALE_API_KEY post-boot:
 #   sudo headscale apikeys create --expiration 9999d
-#   echo "HEADSCALE_API_KEY=<key>" | sudo tee /etc/autobutler/provisioning.env
-EnvironmentFile=-/etc/autobutler/provisioning.env
-ExecStart=/usr/local/bin/autobutler-provisioning
+#   echo "HEADSCALE_API_KEY=<key>" | sudo tee /etc/quark/provisioning.env
+EnvironmentFile=-/etc/quark/provisioning.env
+ExecStart=/usr/local/bin/quark-provisioning
 Restart=on-failure
 RestartSec=5
 
@@ -159,18 +159,18 @@ RestartSec=5
 WantedBy=multi-user.target
 UNIT
 
-mkdir -p /etc/autobutler
-touch /etc/autobutler/provisioning.env
-chown headscale:headscale /etc/autobutler/provisioning.env
-chmod 600 /etc/autobutler/provisioning.env
+mkdir -p /etc/quark
+touch /etc/quark/provisioning.env
+chown headscale:headscale /etc/quark/provisioning.env
+chmod 600 /etc/quark/provisioning.env
 
 systemctl daemon-reload
-systemctl enable autobutler-provisioning
+systemctl enable quark-provisioning
 # Not started yet — API key required first (see post-deploy steps in README)
 
 log "Setup complete. Public IP: $(curl -s ifconfig.me)"
 log ""
 log "Post-deploy steps:"
 log "  1. Create API key: sudo headscale apikeys create --expiration 9999d"
-log "  2. Store key: echo 'HEADSCALE_API_KEY=<key>' | sudo tee /etc/autobutler/provisioning.env"
-log "  3. Start provisioning: sudo systemctl start autobutler-provisioning"
+log "  2. Store key: echo 'HEADSCALE_API_KEY=<key>' | sudo tee /etc/quark/provisioning.env"
+log "  3. Start provisioning: sudo systemctl start quark-provisioning"

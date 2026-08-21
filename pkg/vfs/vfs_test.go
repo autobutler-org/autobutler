@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/autobutler-org/autobutler/pkg/vfs"
+	"github.com/autobutler-org/quark/pkg/vfs"
 )
 
 func makeLocalVFS(t *testing.T, namespaceID string) vfs.VFS {

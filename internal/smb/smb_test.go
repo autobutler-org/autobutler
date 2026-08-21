@@ -17,7 +17,7 @@ func TestShareBlock_ContainsShareName(t *testing.T) {
 
 // TestShareBlock_ContainsPath verifies the injected path appears in the config block.
 func TestShareBlock_ContainsPath(t *testing.T) {
-	path := "/var/lib/autobutler/files"
+	path := "/var/lib/quark/files"
 	block := shareBlock(path)
 	if !strings.Contains(block, "path = "+path) {
 		t.Errorf("shareBlock missing path %q; got:\n%s", path, block)

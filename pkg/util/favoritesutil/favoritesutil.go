@@ -7,7 +7,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/autobutler-org/autobutler/internal/db"
+	"github.com/autobutler-org/quark/internal/db"
 )
 
 // isUniqueConstraintErr reports whether err is a SQLite unique-constraint

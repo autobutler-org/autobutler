@@ -1,7 +1,7 @@
-import 'package:autobutler/models/photo_album.dart';
-import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
+import 'package:quark/models/photo_album.dart';
+import 'package:quark/theme/quark_colors.dart';
+import 'package:quark_icons/quark_icons.dart';
 
 typedef AlbumSelectedCallback = void Function(PhotoAlbum? album);
 
@@ -43,13 +43,13 @@ class _AlbumTreeTileState extends State<AlbumTreeTile> {
       children: [
         InkWell(
           onTap: () => widget.onSelected(widget.album),
-          borderRadius: BorderRadius.circular(AutobutlerColors.radiusMd),
+          borderRadius: BorderRadius.circular(QuarkColors.radiusMd),
           child: Container(
             decoration: BoxDecoration(
               color: isSelected
                   ? colorScheme.primary.withValues(alpha: 0.12)
                   : Colors.transparent,
-              borderRadius: BorderRadius.circular(AutobutlerColors.radiusMd),
+              borderRadius: BorderRadius.circular(QuarkColors.radiusMd),
             ),
             padding: EdgeInsets.only(
               left: 8 + indent,
@@ -64,8 +64,8 @@ class _AlbumTreeTileState extends State<AlbumTreeTile> {
                     onTap: () => setState(() => _expanded = !_expanded),
                     child: Icon(
                       _expanded
-                          ? AutobutlerIcons.expand_more_rounded
-                          : AutobutlerIcons.chevron_right_rounded,
+                          ? QuarkIcons.expand_more_rounded
+                          : QuarkIcons.chevron_right_rounded,
                       size: 16,
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -74,7 +74,7 @@ class _AlbumTreeTileState extends State<AlbumTreeTile> {
                   const SizedBox(width: 16),
                 const SizedBox(width: 4),
                 Icon(
-                  widget.systemIcon ?? AutobutlerIcons.photo_album_outlined,
+                  widget.systemIcon ?? QuarkIcons.photo_album_outlined,
                   size: 16,
                   color: isSelected
                       ? colorScheme.primary

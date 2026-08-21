@@ -3,8 +3,8 @@ package v0_smb
 import (
 	"errors"
 
-	"github.com/autobutler-org/autobutler/internal/smb"
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/internal/smb"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -43,7 +43,7 @@ var getSmbStatusRoute = serverutil.ApiRoute(
 
 // setupSmb godoc
 // @Summary Set up SMB/Samba network share
-// @Description Installs and configures Samba so AutoButler files are accessible as a network drive. Requires the backend to be running as root.
+// @Description Installs and configures Samba so Quark files are accessible as a network drive. Requires the backend to be running as root.
 // @Tags smb
 // @Accept json
 // @Produce json
@@ -89,7 +89,7 @@ var setupSmbRoute = serverutil.ApiRoute(
 
 // teardownSmb godoc
 // @Summary Disable SMB/Samba network share
-// @Description Removes the AutoButler share from smb.conf and stops the Samba service. Requires the backend to be running as root.
+// @Description Removes the Quark share from smb.conf and stops the Samba service. Requires the backend to be running as root.
 // @Tags smb
 // @Produce json
 // @Success 200 {object} SmbStatusJSON

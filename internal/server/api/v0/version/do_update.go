@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
-	"github.com/autobutler-org/autobutler/pkg/util/updateutil"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/updateutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -42,7 +42,7 @@ func doUpdate(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(err)
 	}
 
-	go restartAutobutler()
+	go restartQuark()
 	return serverutil.Ok().WithData(params)
 }
 
@@ -50,7 +50,7 @@ var doUpdateRoute = serverutil.ApiRoute(
 	"POST", "/version/update", doUpdate,
 )
 
-func restartAutobutler() {
+func restartQuark() {
 	fmt.Println("Update complete. Exiting to allow process manager (launchctl/systemd) to restart...")
 	time.Sleep(time.Second * 2)
 	os.Exit(0)

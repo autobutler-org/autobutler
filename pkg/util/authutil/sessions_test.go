@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/autobutler-org/autobutler/internal/db"
-	"github.com/autobutler-org/autobutler/pkg/util/authutil"
+	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/pkg/util/authutil"
 )
 
 // setupUserWithSessions creates a user and N sessions, returning the user ID

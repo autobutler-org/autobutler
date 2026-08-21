@@ -1,11 +1,11 @@
-import 'package:autobutler/services/local_trust.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quark/services/local_trust.dart';
 
 void main() {
   group('isLocalTrustHost', () {
     test('trusts mDNS .local hostnames', () {
       expect(isLocalTrustHost('openclaw.local'), isTrue);
-      expect(isLocalTrustHost('autobutler.home.local'), isTrue);
+      expect(isLocalTrustHost('quark.home.local'), isTrue);
       expect(isLocalTrustHost('OpenClaw.Local'), isTrue);
     });
 
@@ -53,7 +53,7 @@ void main() {
 
     test('rejects public hostnames', () {
       expect(isLocalTrustHost('example.com'), isFalse);
-      expect(isLocalTrustHost('autobutler.io'), isFalse);
+      expect(isLocalTrustHost('quark.io'), isFalse);
       // A public host that merely contains "local" is not a .local host.
       expect(isLocalTrustHost('local.example.com'), isFalse);
       expect(isLocalTrustHost('mylocal.com'), isFalse);

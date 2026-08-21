@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
 
 func ConnectToDatabase() (*DatabaseSqlc, error) {
@@ -18,7 +18,7 @@ func ConnectToDatabase() (*DatabaseSqlc, error) {
 		return nil, fmt.Errorf("failed to create data directory: %v", err)
 	}
 
-	dataFilePath := filepath.Join(dataDir, "autobutler.db")
+	dataFilePath := filepath.Join(dataDir, "quark.db")
 
 	database.Db, err = sql.Open("sqlite", dataFilePath)
 	if err != nil {
@@ -72,7 +72,7 @@ func ConnectToHealthDatabase() (*DatabaseRaw, error) {
 		panic(fmt.Sprintf("failed to create data directory: %v", err))
 	}
 
-	healthFilePath := filepath.Join(dataDir, "autobutler.health.db")
+	healthFilePath := filepath.Join(dataDir, "quark.health.db")
 
 	// Initialize health database for OTEL traces (no migrations needed)
 	database.Db, err = sql.Open("sqlite", healthFilePath)

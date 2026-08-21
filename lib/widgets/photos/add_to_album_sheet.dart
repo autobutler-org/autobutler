@@ -1,8 +1,8 @@
-import 'package:autobutler/models/photo_album.dart';
-import 'package:autobutler/services/album_service.dart';
-import 'package:autobutler/theme/autobutler_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
+import 'package:quark/models/photo_album.dart';
+import 'package:quark/services/album_service.dart';
+import 'package:quark/theme/quark_colors.dart';
+import 'package:quark_icons/quark_icons.dart';
 
 class AddToAlbumSheet extends StatefulWidget {
   const AddToAlbumSheet({
@@ -23,7 +23,7 @@ class AddToAlbumSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+        borderRadius: BorderRadius.circular(QuarkColors.radiusLg),
       ),
       builder: (_) =>
           AddToAlbumSheet(deviceSerial: deviceSerial, relPath: relPath),
@@ -134,8 +134,8 @@ class _AddToAlbumSheetState extends State<AddToAlbumSheet> {
           contentPadding: EdgeInsets.only(left: 16.0 + depth * 16.0, right: 16),
           leading: Icon(
             inAlbum
-                ? AutobutlerIcons.check_circle_rounded
-                : AutobutlerIcons.photo_album_outlined,
+                ? QuarkIcons.check_circle_rounded
+                : QuarkIcons.photo_album_outlined,
             color: inAlbum
                 ? Theme.of(context).colorScheme.primary
                 : Theme.of(context).colorScheme.onSurfaceVariant,

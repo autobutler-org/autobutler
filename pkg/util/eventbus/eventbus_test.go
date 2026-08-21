@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
+	"github.com/autobutler-org/quark/pkg/util/eventbus"
 )
 
 func TestSubscribeAndPublish(t *testing.T) {

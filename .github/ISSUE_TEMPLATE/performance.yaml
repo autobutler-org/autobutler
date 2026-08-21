@@ -51,7 +51,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: AutoButler version
+      label: Quark version
       placeholder: "e.g. 0.17.0"
     validations:
       required: true
@@ -59,4 +59,4 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: Hardware running AutoButler, number of files/devices, network setup — context that might affect the numbers.
+      description: Hardware running Quark, number of files/devices, network setup — context that might affect the numbers.

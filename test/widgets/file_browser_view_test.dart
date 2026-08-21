@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:autobutler/models/cirrus_file_node.dart';
-import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/widgets/file_browser/file_browser_view.dart';
 
 void main() {
   Future<void> pumpFileBrowserView(

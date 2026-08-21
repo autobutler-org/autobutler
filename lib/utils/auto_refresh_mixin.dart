@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:autobutler/services/app_settings.dart';
 import 'package:flutter/widgets.dart';
+import 'package:quark/services/app_settings.dart';
 
 /// Adds auto-refresh and non-disruptive loading state to a [State].
 ///

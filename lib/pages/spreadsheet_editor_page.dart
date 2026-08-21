@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:autobutler/router.dart';
-import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:data_table/data_sheet.dart';
 import 'package:data_table/data_table.dart';
 import 'package:flutter/material.dart' hide DataTable, DataRow, DataCell;
-import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:http/http.dart' as http;
+import 'package:quark/router.dart';
+import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/utils/file_browser_path_utils.dart';
+import 'package:quark/widgets/layout/theme_toggle_button.dart';
+import 'package:quark_icons/quark_icons.dart';
 
 // ---------------------------------------------------------------------------
 // Per-tab state
@@ -320,9 +320,7 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
               )
             else
               IconButton(
-                icon: Icon(
-                  _dirty ? AutobutlerIcons.save : AutobutlerIcons.save_outlined,
-                ),
+                icon: Icon(_dirty ? QuarkIcons.save : QuarkIcons.save_outlined),
                 tooltip: 'Save',
                 onPressed: _manualSave,
               ),

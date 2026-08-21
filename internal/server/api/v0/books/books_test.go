@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	v0_books "github.com/autobutler-org/autobutler/internal/server/api/v0/books"
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	v0_books "github.com/autobutler-org/quark/internal/server/api/v0/books"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
 	"github.com/gin-gonic/gin"
 )
 

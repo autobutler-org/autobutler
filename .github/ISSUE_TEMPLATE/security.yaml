@@ -9,7 +9,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        ⚠️ **Is this a vulnerability?** If it could be exploited to compromise user data or the device, please [file a private security advisory](https://github.com/autobutler-org/autobutler/security/advisories/new) instead of a public issue. Do not post details publicly.
+        ⚠️ **Is this a vulnerability?** If it could be exploited to compromise user data or the device, please [file a private security advisory](https://github.com/autobutler-org/quark/security/advisories/new) instead of a public issue. Do not post details publicly.
 
         This template is for security *hardening*, *improvements*, or *non-exploitable* concerns.
   - type: dropdown
@@ -52,5 +52,5 @@ body:
   - type: input
     id: version
     attributes:
-      label: AutoButler version
+      label: Quark version
       placeholder: "e.g. 0.17.0"

@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:autobutler/services/app_settings.dart';
-import 'package:autobutler/services/local_trust.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
+import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/local_trust.dart';
 
 /// Thrown when an API call returns 401 — session expired or invalid.
 class UnauthorizedException implements Exception {

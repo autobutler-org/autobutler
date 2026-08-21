@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
 
 // RawToJPEG converts a camera RAW file to a JPEG image by extracting
@@ -87,7 +87,7 @@ func rawViaExiftool(filePath string) (image.Image, error) {
 		return nil, fmt.Errorf("exiftool not found")
 	}
 
-	tmpDir, err := os.MkdirTemp("", "autobutler-raw-*")
+	tmpDir, err := os.MkdirTemp("", "quark-raw-*")
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func rawViaFfmpeg(filePath string) (image.Image, error) {
 		return nil, fmt.Errorf("ffmpeg not found")
 	}
 
-	tmpDir, err := os.MkdirTemp("", "autobutler-raw-*")
+	tmpDir, err := os.MkdirTemp("", "quark-raw-*")
 	if err != nil {
 		return nil, err
 	}

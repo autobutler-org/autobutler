@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/autobutler-org/autobutler/internal/db"
+	"github.com/autobutler-org/quark/internal/db"
 )
 
 // IsAdmin returns true if the given username has the admin role.

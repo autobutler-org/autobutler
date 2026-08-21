@@ -3,7 +3,7 @@ package workerutil
 import (
 	"log"
 
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
 
 type Worker interface {

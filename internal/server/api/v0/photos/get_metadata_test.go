@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/autobutler-org/autobutler/pkg/util/photoutil"
+	"github.com/autobutler-org/quark/pkg/util/photoutil"
 )
 
 // --- roundTo ---

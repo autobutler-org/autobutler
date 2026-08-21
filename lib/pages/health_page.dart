@@ -1,13 +1,13 @@
-import 'package:autobutler/services/app_settings.dart';
-import 'package:autobutler/services/health_service.dart';
-import 'package:autobutler/utils/auto_refresh_mixin.dart';
-import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
-import 'package:autobutler/widgets/autobutler_drawer.dart';
-import 'package:autobutler/widgets/refresh_icon_button.dart';
-import 'package:autobutler/router.dart';
 import 'package:flutter/material.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quark/router.dart';
+import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/health_service.dart';
+import 'package:quark/utils/auto_refresh_mixin.dart';
+import 'package:quark/widgets/layout/quark_app_bar.dart';
+import 'package:quark/widgets/quark_drawer.dart';
+import 'package:quark/widgets/refresh_icon_button.dart';
+import 'package:quark_icons/quark_icons.dart';
 
 class HealthPage extends StatefulWidget {
   const HealthPage({super.key});
@@ -50,9 +50,9 @@ class _HealthPageState extends State<HealthPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AutobutlerAppBar(
+      appBar: QuarkAppBar(
         label: 'Health',
-        icon: AutobutlerIcons.monitor_heart_outlined,
+        icon: QuarkIcons.monitor_heart_outlined,
         actions: [
           RefreshIconButton(
             isRefreshing: isRefreshing,
@@ -60,8 +60,8 @@ class _HealthPageState extends State<HealthPage>
           ),
         ],
       ),
-      drawer: AutobutlerDrawer(
-        activeSection: AutobutlerDrawerSection.health,
+      drawer: QuarkDrawer(
+        activeSection: QuarkDrawerSection.health,
         onTapCirrus: () {
           context.go(AppRoutes.cirrus);
         },
@@ -116,7 +116,7 @@ class _HealthPageState extends State<HealthPage>
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                AutobutlerIcons.error_outline,
+                QuarkIcons.error_outline,
                 size: 48,
                 color: Theme.of(context).colorScheme.error,
               ),
@@ -134,7 +134,7 @@ class _HealthPageState extends State<HealthPage>
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: manualRefresh,
-                icon: const Icon(AutobutlerIcons.refresh),
+                icon: const Icon(QuarkIcons.refresh),
                 label: const Text('Retry'),
               ),
             ],
@@ -158,7 +158,7 @@ class _HealthPageState extends State<HealthPage>
         const SizedBox(height: 8),
         _MetricCard(
           label: 'CPU',
-          icon: AutobutlerIcons.memory,
+          icon: QuarkIcons.memory,
           value: status.cpuPercent,
           unit: '%',
           criticalThreshold: 90,
@@ -172,7 +172,7 @@ class _HealthPageState extends State<HealthPage>
         const SizedBox(height: 8),
         _MetricCard(
           label: 'Memory',
-          icon: AutobutlerIcons.storage,
+          icon: QuarkIcons.storage,
           value: status.memPercent,
           unit: '%',
           criticalThreshold: 95,
@@ -182,7 +182,7 @@ class _HealthPageState extends State<HealthPage>
         const SizedBox(height: 8),
         _MetricCard(
           label: 'Disk',
-          icon: AutobutlerIcons.disc_full,
+          icon: QuarkIcons.disc_full,
           value: status.diskPercent,
           unit: '%',
           criticalThreshold: 90,
@@ -193,7 +193,7 @@ class _HealthPageState extends State<HealthPage>
           const SizedBox(height: 8),
           _MetricCard(
             label: 'Temperature',
-            icon: AutobutlerIcons.thermostat,
+            icon: QuarkIcons.thermostat,
             value: status.temperatureCelsius,
             unit: '°C',
             criticalThreshold: 80,
@@ -220,8 +220,8 @@ class _StatusBanner extends StatelessWidget {
         ? Theme.of(context).colorScheme.onPrimaryContainer
         : Theme.of(context).colorScheme.onErrorContainer;
     final icon = healthy
-        ? AutobutlerIcons.check_circle_outline
-        : AutobutlerIcons.warning_amber;
+        ? QuarkIcons.check_circle_outline
+        : QuarkIcons.warning_amber;
     final label = healthy ? 'All systems healthy' : 'Issues detected';
 
     return Card(

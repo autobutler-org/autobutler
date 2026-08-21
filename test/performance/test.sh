@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_URL="${AUTOBUTLER_BASE_URL:-http://127.0.0.1:8080}"
-AUTH_USER="${AUTOBUTLER_USERNAME:-perf}"
-AUTH_PASS="${AUTOBUTLER_PASSWORD:-perf-password}"
-ACCESS_TOKEN="${AUTOBUTLER_ACCESS_TOKEN:-}"
+BASE_URL="${QUARK_BASE_URL:-http://127.0.0.1:8080}"
+AUTH_USER="${QUARK_USERNAME:-perf}"
+AUTH_PASS="${QUARK_PASSWORD:-perf-password}"
+ACCESS_TOKEN="${QUARK_ACCESS_TOKEN:-}"
 THREADS="${TEST_THREADS:-4}"
 CONCURRENCY="${TEST_CONCURRENCY:-20}"
 DURATION="${TEST_DURATION:-20s}"
@@ -12,7 +12,7 @@ UPLOAD_CONCURRENCY="${TEST_UPLOAD_CONCURRENCY:-10}"
 UPLOAD_COUNT="${TEST_UPLOAD_COUNT:-20}"
 
 WORK_DIR="${WORK_DIR:-$PWD/test-results/performance}"
-PERF_FIXTURE_TARGET_DIR="${PERF_FIXTURE_TARGET_DIR:-$HOME/autobutler/data/cirrus}"
+PERF_FIXTURE_TARGET_DIR="${PERF_FIXTURE_TARGET_DIR:-$HOME/quark/data/cirrus}"
 SCENARIO_DIR="$PWD/test/performance/wrk"
 
 mkdir -p "$WORK_DIR" "$WORK_DIR/upload-fixtures"
@@ -92,8 +92,8 @@ auth_login_and_get_token() {
     -d "{\"username\":\"$AUTH_USER\",\"password\":\"$AUTH_PASS\"}")"
 
   if [[ "$login_status" != "200" ]]; then
-    echo "autobutler auth mismatch: login failed for configured credentials (status=$login_status)." >&2
-    echo "set AUTOBUTLER_ACCESS_TOKEN or AUTOBUTLER_USERNAME/AUTOBUTLER_PASSWORD correctly for this instance." >&2
+    echo "quark auth mismatch: login failed for configured credentials (status=$login_status)." >&2
+    echo "set QUARK_ACCESS_TOKEN or QUARK_USERNAME/QUARK_PASSWORD correctly for this instance." >&2
     return 1
   fi
 

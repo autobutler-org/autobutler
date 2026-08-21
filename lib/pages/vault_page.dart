@@ -1,17 +1,17 @@
-import 'package:autobutler/router.dart';
-import 'package:autobutler/services/vault_service.dart';
-import 'package:autobutler/utils/autobutler_widget.dart';
-import 'package:autobutler/utils/web_download_stub.dart'
-    if (dart.library.html) 'package:autobutler/utils/web_download_web.dart'
-    as web_download;
-import 'package:autobutler/widgets/autobutler_drawer.dart';
-import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
-import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quark/router.dart';
+import 'package:quark/services/vault_service.dart';
+import 'package:quark/utils/quark_widget.dart';
+import 'package:quark/utils/web_download_stub.dart'
+    if (dart.library.html) 'package:quark/utils/web_download_web.dart'
+    as web_download;
+import 'package:quark/widgets/layout/quark_app_bar.dart';
+import 'package:quark/widgets/layout/theme_toggle_button.dart';
+import 'package:quark/widgets/quark_drawer.dart';
+import 'package:quark_icons/quark_icons.dart';
 
 class VaultPage extends StatefulWidget {
   const VaultPage({super.key});
@@ -110,9 +110,9 @@ class _VaultPageState extends State<VaultPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AutobutlerAppBar(
+      appBar: QuarkAppBar(
         label: 'Vault',
-        icon: AutobutlerIcons.lock_outline,
+        icon: QuarkIcons.lock_outline,
         actions: [
           if (_status?.initialized == true && !(_status?.locked ?? true)) ...[
             IconButton(
@@ -121,12 +121,12 @@ class _VaultPageState extends State<VaultPage> {
               onPressed: () => _showEntryEditor(context),
             ),
             IconButton(
-              icon: const Icon(AutobutlerIcons.lock_open),
+              icon: const Icon(QuarkIcons.lock_open),
               tooltip: 'Lock vault',
               onPressed: _lockVault,
             ),
             IconButton(
-              icon: const Icon(AutobutlerIcons.refresh),
+              icon: const Icon(QuarkIcons.refresh),
               tooltip: 'Refresh',
               onPressed: _loadEntries,
             ),
@@ -175,8 +175,8 @@ class _VaultPageState extends State<VaultPage> {
           ],
         ],
       ),
-      drawer: AutobutlerDrawer(
-        activeSection: AutobutlerDrawerSection.vault,
+      drawer: QuarkDrawer(
+        activeSection: QuarkDrawerSection.vault,
         onTapCirrus: () => context.go(AppRoutes.cirrus),
         onTapPhotos: () => context.go(AppRoutes.photos),
         onTapDocs: () => context.go(AppRoutes.docs),
@@ -193,7 +193,7 @@ class _VaultPageState extends State<VaultPage> {
               MediaQuery.of(context).size.width < 860)
           ? FloatingActionButton(
               onPressed: () => _showEntryEditor(context),
-              child: const Icon(AutobutlerIcons.add),
+              child: const Icon(QuarkIcons.add),
             )
           : null,
     );
@@ -233,7 +233,7 @@ class _VaultPageState extends State<VaultPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(AutobutlerIcons.shield_outlined, size: 64),
+              const Icon(QuarkIcons.shield_outlined, size: 64),
               const SizedBox(height: 16),
               Text(
                 'Set up your vault',
@@ -312,7 +312,7 @@ class _VaultPageState extends State<VaultPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                AutobutlerIcons.usb_off,
+                QuarkIcons.usb_off,
                 size: 64,
                 color: Theme.of(context).colorScheme.error,
               ),
@@ -330,7 +330,7 @@ class _VaultPageState extends State<VaultPage> {
               const SizedBox(height: 24),
               FilledButton.icon(
                 onPressed: _loadStatus,
-                icon: const Icon(AutobutlerIcons.refresh),
+                icon: const Icon(QuarkIcons.refresh),
                 label: const Text('Check again'),
               ),
             ],
@@ -350,7 +350,7 @@ class _VaultPageState extends State<VaultPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(AutobutlerIcons.lock_outline, size: 64),
+              const Icon(QuarkIcons.lock_outline, size: 64),
               const SizedBox(height: 16),
               Text(
                 'Vault is locked',
@@ -451,7 +451,7 @@ class _VaultPageState extends State<VaultPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        AutobutlerIcons.key_off_outlined,
+                        QuarkIcons.key_off_outlined,
                         size: 64,
                         color: Theme.of(context).colorScheme.outline,
                       ),
@@ -493,7 +493,7 @@ class _VaultPageState extends State<VaultPage> {
             child: TextField(
               decoration: const InputDecoration(
                 hintText: 'Search vault...',
-                prefixIcon: Icon(AutobutlerIcons.search),
+                prefixIcon: Icon(QuarkIcons.search),
                 border: OutlineInputBorder(),
                 isDense: true,
                 contentPadding: EdgeInsets.symmetric(
@@ -507,7 +507,7 @@ class _VaultPageState extends State<VaultPage> {
           const SizedBox(width: 8),
           if (_folders.isNotEmpty)
             PopupMenuButton<int?>(
-              icon: const Icon(AutobutlerIcons.folder_outlined),
+              icon: const Icon(QuarkIcons.folder_outlined),
               tooltip: 'Filter by folder',
               onSelected: (v) => setState(() => _selectedFolderId = v),
               itemBuilder: (_) => [
@@ -534,9 +534,9 @@ class _VaultPageState extends State<VaultPage> {
     if (file.bytes == null) return;
 
     if (!mounted) return;
-    final format = await AutobutlerWidget.showDialog<String>(
+    final format = await QuarkWidget.showDialog<String>(
       context, // ignore: use_build_context_synchronously
-      builder: (ctx) => AutobutlerWidget.alertDialog(
+      builder: (ctx) => QuarkWidget.alertDialog(
         title: const Text('Import format'),
         content: Text('Importing "${file.name}". Choose the format:'),
         actions: [
@@ -593,9 +593,7 @@ class _VaultPageState extends State<VaultPage> {
   Future<void> _doExport(String format) async {
     try {
       final bytes = await VaultService.exportEntries(format: format);
-      final fileName = format == 'csv'
-          ? 'autobutler_vault.csv'
-          : 'autobutler_vault.json';
+      final fileName = format == 'csv' ? 'quark_vault.csv' : 'quark_vault.json';
       await web_download.saveBytesForDownload(
         Uint8List.fromList(bytes),
         fileName,
@@ -680,7 +678,7 @@ class _EntryTile extends StatelessWidget {
       ),
       title: Text(entry.name),
       subtitle: entry.urlHost.isNotEmpty ? Text(entry.urlHost) : null,
-      trailing: const Icon(AutobutlerIcons.chevron_right),
+      trailing: const Icon(QuarkIcons.chevron_right),
       onTap: onTap,
     );
   }
@@ -742,12 +740,12 @@ class _EntryDetailPageState extends State<_EntryDetailPage> {
         actions: [
           if (!_editing)
             IconButton(
-              icon: const Icon(AutobutlerIcons.edit),
+              icon: const Icon(QuarkIcons.edit),
               onPressed: () => setState(() => _editing = true),
             ),
           if (!_editing)
             IconButton(
-              icon: const Icon(AutobutlerIcons.delete_outline),
+              icon: const Icon(QuarkIcons.delete_outline),
               onPressed: _confirmDelete,
             ),
           if (_editing)
@@ -778,9 +776,7 @@ class _EntryDetailPageState extends State<_EntryDetailPage> {
           copyValue: widget.entry.password,
           trailing: IconButton(
             icon: Icon(
-              _showPassword
-                  ? AutobutlerIcons.visibility_off
-                  : AutobutlerIcons.visibility,
+              _showPassword ? QuarkIcons.visibility_off : QuarkIcons.visibility,
             ),
             onPressed: () => setState(() => _showPassword = !_showPassword),
           ),
@@ -834,14 +830,14 @@ class _EntryDetailPageState extends State<_EntryDetailPage> {
                 IconButton(
                   icon: Icon(
                     _showPassword
-                        ? AutobutlerIcons.visibility_off
-                        : AutobutlerIcons.visibility,
+                        ? QuarkIcons.visibility_off
+                        : QuarkIcons.visibility,
                   ),
                   onPressed: () =>
                       setState(() => _showPassword = !_showPassword),
                 ),
                 IconButton(
-                  icon: const Icon(AutobutlerIcons.casino),
+                  icon: const Icon(QuarkIcons.casino),
                   tooltip: 'Generate password',
                   onPressed: _generatePassword,
                 ),
@@ -920,9 +916,9 @@ class _EntryDetailPageState extends State<_EntryDetailPage> {
   }
 
   Future<void> _confirmDelete() async {
-    final confirmed = await AutobutlerWidget.showDialog<bool>(
+    final confirmed = await QuarkWidget.showDialog<bool>(
       context,
-      builder: (ctx) => AutobutlerWidget.alertDialog(
+      builder: (ctx) => QuarkWidget.alertDialog(
         title: const Text('Delete entry?'),
         content: Text('Delete "${widget.entry.name}"? This cannot be undone.'),
         actions: [
@@ -978,7 +974,7 @@ class _DetailRow extends StatelessWidget {
               Expanded(child: SelectableText(value)),
               if (copiable)
                 IconButton(
-                  icon: const Icon(AutobutlerIcons.copy, size: 18),
+                  icon: const Icon(QuarkIcons.copy, size: 18),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: copyValue ?? value));
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -1081,14 +1077,14 @@ class _EntryEditorPageState extends State<_EntryEditorPage> {
                     IconButton(
                       icon: Icon(
                         _showPassword
-                            ? AutobutlerIcons.visibility_off
-                            : AutobutlerIcons.visibility,
+                            ? QuarkIcons.visibility_off
+                            : QuarkIcons.visibility,
                       ),
                       onPressed: () =>
                           setState(() => _showPassword = !_showPassword),
                     ),
                     IconButton(
-                      icon: const Icon(AutobutlerIcons.casino),
+                      icon: const Icon(QuarkIcons.casino),
                       tooltip: 'Generate password',
                       onPressed: _generatePassword,
                     ),

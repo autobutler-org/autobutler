@@ -20,7 +20,7 @@ type partition struct {
 
 // nonUnixFilesystems is the set of filesystem types that don't support
 // Unix ownership natively. These need uid/gid mount options so that the
-// autobutler service user can write to the drive.
+// quark service user can write to the drive.
 var nonUnixFilesystems = map[string]bool{
 	"exfat":   true,
 	"vfat":    true,
@@ -43,10 +43,10 @@ func detectFsType(devicePath string) string {
 	return strings.ToLower(strings.TrimSpace(string(out)))
 }
 
-// mountServiceUID returns the uid and gid of the autobutler service user,
+// mountServiceUID returns the uid and gid of the quark service user,
 // falling back to the current process user if lookup fails.
 func mountServiceUID() (uid, gid string) {
-	if u, err := user.Lookup("autobutler"); err == nil {
+	if u, err := user.Lookup("quark"); err == nil {
 		return u.Uid, u.Gid
 	}
 	if u, err := user.Current(); err == nil {
@@ -59,7 +59,7 @@ func (p *partition) MountCommand(mountTargetPath string) *exec.Cmd {
 	fsType := detectFsType(p.path)
 	if nonUnixFilesystems[fsType] {
 		// Filesystems without native Unix permissions (exFAT, NTFS, FAT32)
-		// need uid/gid mount options so the autobutler service user can write.
+		// need uid/gid mount options so the quark service user can write.
 		uid, gid := mountServiceUID()
 		return exec.Command(
 			"sudo", "mount",

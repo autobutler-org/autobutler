@@ -9,10 +9,10 @@ publish_to: none
 dependencies:
   flutter:
     sdk: flutter
-  ab_formula:
-    path: ../ab_formula
-  autobutler_icons:
-    path: ../autobutler_icons
+  quark_formula:
+    path: ../quark_formula
+  quark_icons:
+    path: ../quark_icons
 
 dev_dependencies:
   flutter_test:

@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
 
 // StorageServiceVFS adapts storageutil.StorageService to the VFS interface.

@@ -10,7 +10,7 @@ import (
 
 // --- .abdoc / .absheet extraction ---
 
-func TestIsIndexable_AutobutlerFormats(t *testing.T) {
+func TestIsIndexable_QuarkFormats(t *testing.T) {
 	for _, path := range []string{"notes.abdoc", "budget.absheet", "NOTES.ABDOC"} {
 		if !IsIndexable(path) {
 			t.Errorf("IsIndexable(%q) = false, want true", path)

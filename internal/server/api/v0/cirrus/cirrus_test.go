@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
 
 // makeManagedDevice creates a ManagedDevice backed by a real temp directory,

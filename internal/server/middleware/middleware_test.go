@@ -7,10 +7,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/autobutler-org/autobutler/internal/db"
-	"github.com/autobutler-org/autobutler/internal/server/middleware"
-	"github.com/autobutler-org/autobutler/pkg/util/authutil"
-	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/internal/server/middleware"
+	"github.com/autobutler-org/quark/pkg/util/authutil"
+	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/gin-gonic/gin"
 	_ "modernc.org/sqlite"
 )
@@ -62,6 +62,10 @@ func newMiddlewareEngine(t *testing.T, deps deputil.Dependencies) *gin.Engine {
 	})
 	// /api/v0/events is the canonical path for ?token= query-param auth (WebSocket).
 	engine.GET("/api/v0/events", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+	// Thumbnails also accept ?token= — Image.network() cannot set headers.
+	engine.GET("/api/v0/thumbnails/*filePath", func(c *gin.Context) {
 		c.Status(http.StatusOK)
 	})
 	engine.GET("/api/v0/auth/status", func(c *gin.Context) {
@@ -238,6 +242,33 @@ func TestRequireAuth_QueryTokenGrantsAccess(t *testing.T) {
 	w := doMiddlewareReq(engine, req)
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200 with ?token=, got %d", w.Code)
+	}
+}
+
+// TestRequireAuth_QueryTokenGrantsThumbnailAccess verifies ?token= auth works
+// for the thumbnails endpoint. Thumbnails are rendered via Image.network()
+// (an <img src=> under the hood), which cannot set an Authorization header, so
+// the query-param allowlist must cover them. Regression guard for the 401s
+// introduced when the allowlist landed in #1332.
+func TestRequireAuth_QueryTokenGrantsThumbnailAccess(t *testing.T) {
+	sqlDB, queries := newMiddlewareTestDB(t)
+	ctx := context.Background()
+	result, err := authutil.Setup(ctx, queries, authutil.SetupParams{
+		Username: "admin",
+		Password: "SecurePass1!",
+	})
+	if err != nil {
+		t.Fatalf("Setup: %v", err)
+	}
+
+	deps := deputil.NewDependencies().WithDatabase(&db.DatabaseSqlc{Db: sqlDB, Queries: queries})
+	engine := newMiddlewareEngine(t, deps)
+
+	req := httptest.NewRequest(http.MethodGet,
+		"/api/v0/thumbnails/butler.png?size=sm&token="+result.SessionToken, nil)
+	w := doMiddlewareReq(engine, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200 for thumbnail with ?token=, got %d", w.Code)
 	}
 }
 

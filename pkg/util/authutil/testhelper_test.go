@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/autobutler-org/autobutler/internal/db"
-	"github.com/autobutler-org/autobutler/pkg/util/authutil"
+	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/pkg/util/authutil"
 	_ "modernc.org/sqlite"
 )
 

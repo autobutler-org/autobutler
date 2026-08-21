@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/autobutler-org/autobutler/internal/db"
-	"github.com/autobutler-org/autobutler/pkg/backup"
-	"github.com/autobutler-org/autobutler/pkg/util/authutil"
-	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
-	"github.com/autobutler-org/autobutler/pkg/util/deputil"
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/pkg/backup"
+	"github.com/autobutler-org/quark/pkg/util/authutil"
+	"github.com/autobutler-org/quark/pkg/util/ctxutil"
+	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/gin-gonic/gin"
 )
 

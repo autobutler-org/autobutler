@@ -1,5 +1,5 @@
-SHELL := /usr/bin/env
-.SHELLFLAGS = bash -e -c
+SHELL := bash
+.SHELLFLAGS = -e -c
 .DEFAULT_GOAL := help
 .ONESHELL:
 .SILENT:
@@ -15,8 +15,8 @@ export GOOS ?= $(shell $(GO) env GOOS)
 export GOARCH ?= $(shell $(GO) env GOARCH)
 export GOPROXY ?= https://proxy.golang.org,direct
 
-ENTRYPOINT := ./cmd/autobutler
-EXE := ./build/autobutler
+ENTRYPOINT := ./cmd/quark
+EXE := ./build/quark
 
 # Auto-detect Chromium-based browser for Flutter web if CHROME_EXECUTABLE
 # is not already set.  Brave is checked first because users who removed
@@ -220,7 +220,7 @@ build/frontend/web: internal/server/public/stub.txt generate/frontend/sbom ## Bu
 .PHONY: build/provisioning
 build/provisioning: ## Build provisioning service
 	mkdir -p ./build
-	$(GO) build -o ./build/autobutler-provisioning ./cmd/provisioning/
+	$(GO) build -o ./build/quark-provisioning ./cmd/provisioning/
 
 .PHONY: build/lsusb
 build/lsusb: ## Build lsusb utility
@@ -259,35 +259,35 @@ generate/backend/sqlc: ## Generate sqlc files
 
 .PHONY: generate/backend/swagger
 generate/backend/swagger: ## Generate Swagger docs
-	swag init -g ./cmd/autobutler/main.go -o ./docs/swagger --parseInternal
+	swag init -g ./cmd/quark/main.go -o ./docs/swagger --parseInternal
 
 .PHONY: generate/frontend
-generate/frontend: generate/frontend/icons generate/frontend/autobutler-icons generate/frontend/sbom ## Generate frontend files
+generate/frontend: generate/frontend/icons generate/frontend/quark-icons generate/frontend/sbom ## Generate frontend files
 
 .PHONY: generate/frontend/icons
 generate/frontend/icons: ## Generate app icons
 	dart run flutter_launcher_icons
 
-.PHONY: generate/frontend/autobutler-icons
-generate/frontend/autobutler-icons: ## Regenerate AutobutlerIcons.ttf from SVGs using fantasticon
-	npx fantasticon packages/autobutler_icons/svgs \
-		--output packages/autobutler_icons/fonts \
+.PHONY: generate/frontend/quark-icons
+generate/frontend/quark-icons: ## Regenerate QuarkIcons.ttf from SVGs using fantasticon
+	npx fantasticon packages/quark_icons/svgs \
+		--output packages/quark_icons/fonts \
 		--font-types ttf \
-		--name AutobutlerIcons \
-		--config packages/autobutler_icons/.fantasticonrc.json \
+		--name QuarkIcons \
+		--config packages/quark_icons/.fantasticonrc.json \
 		--normalize
 
 .PHONY: generate/frontend/sbom
 generate/frontend/sbom: ## Generate Flutter SBOM asset from pubspec.lock
 	dart run scripts/generate_flutter_sbom.dart
 
-DEPLOY_HOST ?= autobutler
-DEPLOY_PATH ?= ~/autobutler
+DEPLOY_HOST ?= quark
+DEPLOY_PATH ?= ~/quark
 
 .PHONY: remote-deploy
 remote-deploy: build ## Build and deploy to a remote host via scp, then run the binary
 	scp $(EXE) $(DEPLOY_HOST):$(DEPLOY_PATH)
-	ssh $(DEPLOY_HOST) "pkill -f '$(DEPLOY_PATH) serve' || true; nohup $(DEPLOY_PATH) serve > ~/autobutler.log 2>&1 &"
+	ssh $(DEPLOY_HOST) "pkill -f '$(DEPLOY_PATH) serve' || true; nohup $(DEPLOY_PATH) serve > ~/quark.log 2>&1 &"
 
 .PHONY: drive
 drive: ## Create and mount a new MyDrive DMG (auto-numbered: MyDrive, MyDrive2, MyDrive3, …)
@@ -325,7 +325,7 @@ unmount-drive: ## Detach the highest-numbered MyDrive volume currently mounted
 
 .PHONY: serve/backend
 serve/backend: generate/backend ## Serve backend
-	AUTOBUTLER_INSECURE=true $(GO) run $(ENTRYPOINT) serve
+	QUARK_INSECURE=true $(GO) run $(ENTRYPOINT) serve
 
 .PHONY: serve/backend/secure
 serve/backend/secure: generate/backend ## Serve backend with TLS enabled
@@ -351,7 +351,7 @@ test: test/unit
 PERF_PORT ?= 8080
 PERF_BASE_URL ?= http://127.0.0.1:$(PERF_PORT)
 PERF_SUMMARY_WRK_DIRS ?= test-results/performance
-PERF_FIXTURE_TARGET_DIR ?= $(HOME)/autobutler/data/cirrus
+PERF_FIXTURE_TARGET_DIR ?= $(HOME)/quark/data/cirrus
 
 .PHONY: test/perf/generate-files
 test/perf/generate-files: ## Generate file fixtures under a target Cirrus directory for performance testing
@@ -361,10 +361,10 @@ test/perf/generate-files: ## Generate file fixtures under a target Cirrus direct
 test/perf/load: build/backend ## Run local wrk load profile against a temporary local backend
 	mkdir -p test-results/performance
 	$(MAKE) test/perf/generate-files PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
-	PORT=$(PERF_PORT) AUTOBUTLER_INSECURE=true ./build/autobutler serve > test-results/performance/server-load.log 2>&1 &
+	PORT=$(PERF_PORT) QUARK_INSECURE=true ./build/quark serve > test-results/performance/server-load.log 2>&1 &
 	SERVER_PID=$$!
 	trap 'kill $$SERVER_PID 2>/dev/null || true' EXIT
-	export AUTOBUTLER_BASE_URL=$(PERF_BASE_URL)
+	export QUARK_BASE_URL=$(PERF_BASE_URL)
 	export PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
 	export TEST_DURATION_THREADS=2
 	export TEST_DURATION_CONCURRENCY=15
@@ -377,10 +377,10 @@ test/perf/load: build/backend ## Run local wrk load profile against a temporary 
 test/perf/stress: build/backend ## Run local wrk stress profile against a temporary local backend
 	mkdir -p test-results/performance
 	$(MAKE) test/perf/generate-files PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
-	PORT=$(PERF_PORT) AUTOBUTLER_INSECURE=true ./build/autobutler serve > test-results/performance/server-stress.log 2>&1 &
+	PORT=$(PERF_PORT) QUARK_INSECURE=true ./build/quark serve > test-results/performance/server-stress.log 2>&1 &
 	SERVER_PID=$$!
 	trap 'kill $$SERVER_PID 2>/dev/null || true' EXIT
-	export AUTOBUTLER_BASE_URL=$(PERF_BASE_URL)
+	export QUARK_BASE_URL=$(PERF_BASE_URL)
 	export PERF_FIXTURE_TARGET_DIR="$(PERF_FIXTURE_TARGET_DIR)"
 	export TEST_DURATION_THREADS=4
 	export TEST_DURATION_CONCURRENCY=50
@@ -418,7 +418,7 @@ test/unit/backend: internal/server/public/stub.txt ## Run unit tests for backend
 
 .PHONY: test/unit/frontend
 test/unit/frontend: generate/frontend ## Run unit tests for frontend
-	echo "Testing Autobutler frontend..."
+	echo "Testing Quark frontend..."
 	flutter test
 	for pkg in packages/*/; do
 		if [ -f "$$pkg/pubspec.yaml" ] && [ -d "$$pkg/test" ]; then
@@ -561,11 +561,11 @@ release/yank: ## Yank a release: remove from Azure + mark GitHub release as pre-
 	if [ -z "$(VERSION)" ]; then echo "Error: VERSION is required. Usage: make release/yank VERSION=v0.X.Y"; exit 1; fi
 	echo "Yanking $(VERSION) from Azure Blob Storage..."
 	az storage blob delete-batch \
-		--account-name autobutlerrelease \
+		--account-name quarkrelease \
 		--source releases \
-		--pattern "autobutler/$(VERSION)/*"
+		--pattern "quark/$(VERSION)/*"
 	echo "Marking $(VERSION) as pre-release on GitHub..."
-	gh release edit $(VERSION) --prerelease --repo autobutler-org/autobutler
+	gh release edit $(VERSION) --prerelease --repo autobutler-org/quark
 	echo "✅ $(VERSION) yanked. Ship a patch release ASAP."
 
 ##@ Helpers
@@ -587,22 +587,22 @@ env-%: ## Check for env var
 # ── Azure deployment ────────────────────────────────────────────────────────
 
 ## render/headscale: Embed setup-headscale.bash into ARM parameters file.
-## Usage: make render/headscale HEADSCALE_DOMAIN=network.autobutler.org ADMIN_EMAIL=admin.autobutler.org
+## Usage: make render/headscale HEADSCALE_DOMAIN=network.quark.org ADMIN_EMAIL=admin.quark.org
 ## Output: deploy/azure/headscale.rendered.parameters.json (gitignored)
 
-HEADSCALE_DOMAIN ?= network.autobutler.org
+HEADSCALE_DOMAIN ?= network.quark.org
 
 deploy/azure/headscale.rendered.parameters.json: env-HEADSCALE_DOMAIN ## Render ARM parameters file for headscale deployment
 	bash deploy/azure/render.bash
 .PHONY: render/headscale
 render/headscale: deploy/azure/headscale.rendered.parameters.json ## Render ARM parameters file for headscale deployment (alias)
 
-SSH_KEY_PATH ?= ~/.ssh/id_autobutler-headscale.pub
+SSH_KEY_PATH ?= ~/.ssh/id_quark-headscale.pub
 
 .PHONY: deploy/headscale
 deploy/headscale: deploy/azure/headscale.rendered.parameters.json
 	az deployment group create \
-	    --resource-group autobutler-headscale \
+	    --resource-group quark-headscale \
 	    --template-file ./deploy/azure/headscale.json \
 	    --parameters ./$< \
 	    --parameters adminPublicKey="$$(cat $(SSH_KEY_PATH))"

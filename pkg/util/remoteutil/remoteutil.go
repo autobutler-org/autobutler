@@ -19,9 +19,9 @@ import (
 	"tailscale.com/tsnet"
 )
 
-const hostname = "autobutler"
+const hostname = "quark"
 
-const defaultControlURL = "https://network.autobutler.org"
+const defaultControlURL = "https://network.quark.org"
 
 var (
 	mu      sync.Mutex
@@ -31,7 +31,7 @@ var (
 )
 
 func controlURL() string {
-	u := os.Getenv("AUTOBUTLER_HEADSCALE_URL")
+	u := os.Getenv("QUARK_HEADSCALE_URL")
 	if u == "" {
 		u = defaultControlURL
 	}
@@ -47,7 +47,7 @@ func controlURL() string {
 // caller (Start).
 func stateDir() string {
 	if runtime.GOOS == "linux" {
-		svcDir := "/var/lib/autobutler/tsnet"
+		svcDir := "/var/lib/quark/tsnet"
 		if _, err := os.Stat(filepath.Dir(svcDir)); err == nil {
 			return svcDir
 		}
@@ -56,7 +56,7 @@ func stateDir() string {
 	if err != nil {
 		home = os.TempDir()
 	}
-	return filepath.Join(home, ".config", "autobutler", "tsnet")
+	return filepath.Join(home, ".config", "quark", "tsnet")
 }
 
 func Start(authKey string) error {

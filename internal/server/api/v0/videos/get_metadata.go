@@ -10,12 +10,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/autobutler-org/autobutler/internal/db"
-	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
-	"github.com/autobutler-org/autobutler/pkg/util/deputil"
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
-	"github.com/autobutler-org/autobutler/pkg/util/videoutil"
+	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/pkg/util/ctxutil"
+	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/util/videoutil"
 	"github.com/gin-gonic/gin"
 )
 

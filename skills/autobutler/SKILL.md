@@ -1,15 +1,15 @@
 ---
-name: autobutler
-description: Interact with a live AutoButler instance via its REST API. Use when asked to check butler health, list or manage files on the butler, check or trigger updates, inspect connected storage devices, run diagnostics, or perform any operation against a running AutoButler server. Also use when setting up auth or logging into a butler for the first time.
+name: quark
+description: Interact with a live Quark instance via its REST API. Use when asked to check butler health, list or manage files on the butler, check or trigger updates, inspect connected storage devices, run diagnostics, or perform any operation against a running Quark server. Also use when setting up auth or logging into a butler for the first time.
 ---
 
-# AutoButler Skill
+# Quark Skill
 
-AutoButler is a self-hosted private cloud. This skill covers authenticating and making API calls against a live instance.
+Quark is a self-hosted private cloud. This skill covers authenticating and making API calls against a live instance.
 
 ## Configuration
 
-The butler host URL and credentials are stored in `TOOLS.md` under `## AutoButler (local instance)`. Always read that section before making API calls. If no host is configured, ask the user for the URL, username, and password.
+The butler host URL and credentials are stored in `TOOLS.md` under `## Quark (local instance)`. Always read that section before making API calls. If no host is configured, ask the user for the URL, username, and password.
 
 ## Auth Flow
 

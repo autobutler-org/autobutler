@@ -24,7 +24,7 @@ grep -rn '// coverage: ignore' . --include="*.go" 2>/dev/null | while IFS=: read
     filepath="${filepath#./}"
 
     # Convert to module path format used in coverage.out
-    modpath="autobutler/$filepath"
+    modpath="quark/$filepath"
 
     # Use awk to find and modify coverage lines that include this line number
     # Coverage format: filepath:startline.startcol,endline.endcol numstmt count

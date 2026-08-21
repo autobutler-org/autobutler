@@ -1,20 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:autobutler/router.dart';
-import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill_to_pdf/flutter_quill_to_pdf.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:printing/printing.dart';
-import 'package:autobutler/theme/autobutler_theme.dart';
-import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
+import 'package:quark/router.dart';
+import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/theme/quark_theme.dart';
+import 'package:quark/utils/file_browser_path_utils.dart';
+import 'package:quark/widgets/layout/theme_toggle_button.dart';
+import 'package:quark_icons/quark_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // ── Quill styles ──────────────────────────────────────────────────────────────
@@ -203,17 +203,17 @@ class _DocumentFindBarState extends State<DocumentFindBar> {
                 ),
               ),
               IconButton(
-                icon: const Icon(AutobutlerIcons.keyboard_arrow_up_rounded),
+                icon: const Icon(QuarkIcons.keyboard_arrow_up_rounded),
                 tooltip: 'Previous match',
                 onPressed: hasHits ? options.moveToPrevious : null,
               ),
               IconButton(
-                icon: const Icon(AutobutlerIcons.expand_more_rounded),
+                icon: const Icon(QuarkIcons.expand_more_rounded),
                 tooltip: 'Next match',
                 onPressed: hasHits ? options.moveToNext : null,
               ),
               IconButton(
-                icon: const Icon(AutobutlerIcons.close_rounded),
+                icon: const Icon(QuarkIcons.close_rounded),
                 tooltip: 'Close find bar (Esc)',
                 onPressed: widget.onClose,
               ),
@@ -665,13 +665,13 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     return [
       // In-document find bar (#1046)
       IconButton(
-        icon: Icon(_showFindBar ? Icons.close : AutobutlerIcons.search_rounded),
+        icon: Icon(_showFindBar ? Icons.close : QuarkIcons.search_rounded),
         tooltip: _showFindBar ? 'Close find bar' : 'Find in document (Ctrl+F)',
         onPressed: _toggleFindBar,
       ),
       // Settings shortcut
       IconButton(
-        icon: const Icon(AutobutlerIcons.settings_outlined),
+        icon: const Icon(QuarkIcons.settings_outlined),
         tooltip: 'Settings',
         onPressed: () => context.go(AppRoutes.settings),
       ),
@@ -681,8 +681,8 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         IconButton(
           icon: Icon(
             _autoSaveEnabled
-                ? AutobutlerIcons.cloud_sync_outlined
-                : AutobutlerIcons.cloud_off_outlined,
+                ? QuarkIcons.cloud_sync_outlined
+                : QuarkIcons.cloud_off_outlined,
           ),
           tooltip: _autoSaveEnabled ? 'Auto-save on' : 'Auto-save off',
           onPressed: () => _setAutoSaveEnabled(!_autoSaveEnabled),
@@ -699,7 +699,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         )
       else
         IconButton(
-          icon: const Icon(AutobutlerIcons.more_horiz),
+          icon: const Icon(QuarkIcons.more_horiz),
           tooltip: 'More options',
           onPressed: () => _showOverflowMenu(context),
         ),
@@ -719,7 +719,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
             padding: const EdgeInsets.only(right: 4),
             child: FilledButton.icon(
               onPressed: _dirty ? _saveDocument : null,
-              icon: const Icon(AutobutlerIcons.save_outlined, size: 16),
+              icon: const Icon(QuarkIcons.save_outlined, size: 16),
               label: const Text('Save'),
             ),
           ),
@@ -745,12 +745,12 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
           child: _isReadOnly
               ? FilledButton.icon(
                   onPressed: _enterEditMode,
-                  icon: const Icon(AutobutlerIcons.edit_outlined, size: 16),
+                  icon: const Icon(QuarkIcons.edit_outlined, size: 16),
                   label: const Text('Edit'),
                 )
               : OutlinedButton.icon(
                   onPressed: _exitEditMode,
-                  icon: const Icon(AutobutlerIcons.check, size: 16),
+                  icon: const Icon(QuarkIcons.check, size: 16),
                   label: const Text('Done'),
                 ),
         ),
@@ -775,7 +775,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
           ),
           const SizedBox(height: 16),
           ListTile(
-            leading: const Icon(AutobutlerIcons.picture_as_pdf_outlined),
+            leading: const Icon(QuarkIcons.picture_as_pdf_outlined),
             title: const Text('Export as PDF'),
             onTap: () {
               Navigator.pop(context);
@@ -783,7 +783,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
             },
           ),
           ListTile(
-            leading: const Icon(AutobutlerIcons.print_outlined),
+            leading: const Icon(QuarkIcons.print_outlined),
             title: const Text('Print'),
             onTap: () {
               Navigator.pop(context);
@@ -809,7 +809,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(AutobutlerIcons.error_outline, size: 48, color: cs.error),
+            Icon(QuarkIcons.error_outline, size: 48, color: cs.error),
             const SizedBox(height: 12),
             Text(_error!, textAlign: TextAlign.center),
             const SizedBox(height: 12),
@@ -930,8 +930,8 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     // while allowing the user to choose page brightness independently of
     // the global theme toggle.
     final pageCs = _editorDarkPage
-        ? AutobutlerTheme.dark().colorScheme
-        : AutobutlerTheme.light().colorScheme;
+        ? QuarkTheme.dark().colorScheme
+        : QuarkTheme.light().colorScheme;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
@@ -977,8 +977,8 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
           IconButton(
             icon: Icon(
               _editorDarkPage
-                  ? AutobutlerIcons.light_mode_outlined
-                  : AutobutlerIcons.dark_mode_outlined,
+                  ? QuarkIcons.light_mode_outlined
+                  : QuarkIcons.dark_mode_outlined,
               size: 14,
             ),
             tooltip: _editorDarkPage
@@ -998,32 +998,32 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
           ),
           const SizedBox(width: 8),
           _statusItem(
-            icon: AutobutlerIcons.edit_note,
+            icon: QuarkIcons.edit_note,
             label: '$_wordCount words',
             color: muted,
           ),
           const SizedBox(width: 16),
           _statusItem(
-            icon: AutobutlerIcons.lock_outline,
+            icon: QuarkIcons.lock_outline,
             label: 'Private',
             color: muted,
           ),
           const Spacer(),
           if (_isReadOnly)
             _statusItem(
-              icon: AutobutlerIcons.visibility_outlined,
+              icon: QuarkIcons.visibility_outlined,
               label: 'Read-only',
               color: muted,
             )
           else if (_dirty)
             _statusItem(
-              icon: AutobutlerIcons.circle,
+              icon: QuarkIcons.circle,
               label: 'Unsaved',
               color: const Color(0xFFF59E0B),
             )
           else
             _statusItem(
-              icon: AutobutlerIcons.check_circle_outline,
+              icon: QuarkIcons.check_circle_outline,
               label: 'Saved',
               color: const Color(0xFF10B981),
             ),

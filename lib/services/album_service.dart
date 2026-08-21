@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:autobutler/models/photo_album.dart';
-import 'package:autobutler/services/app_settings.dart';
-import 'package:autobutler/services/authenticated_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:quark/models/photo_album.dart';
+import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/authenticated_service.dart';
 
 class AlbumService with AuthenticatedService {
   static final AlbumService _instance = AlbumService._();

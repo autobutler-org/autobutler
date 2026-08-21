@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
-	"github.com/autobutler-org/autobutler/pkg/util/vaultcrypto"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
 	"github.com/gin-gonic/gin"
 )
 
@@ -103,12 +103,12 @@ var exportVaultRoute = serverutil.ApiRoute(
 			}
 			w.Flush()
 
-			c.Header("Content-Disposition", "attachment; filename=autobutler_vault.csv")
+			c.Header("Content-Disposition", "attachment; filename=quark_vault.csv")
 			c.Data(200, "text/csv; charset=utf-8", []byte(buf.String()))
 			return nil
 
 		default:
-			c.Header("Content-Disposition", "attachment; filename=autobutler_vault.json")
+			c.Header("Content-Disposition", "attachment; filename=quark_vault.json")
 			return serverutil.Ok().WithData(exportJSON{
 				Entries: exported,
 				Folders: folderNames,

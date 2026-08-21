@@ -1,7 +1,7 @@
 package storageutil
 
 // DeviceStatus represents the status of a storage device, including whether it's
-// enabled for Autobutler file management
+// enabled for Quark file management
 type DeviceStatus struct {
 	Device
 	IsEnabled bool             `json:"isEnabled"`

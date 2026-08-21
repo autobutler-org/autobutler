@@ -1,8 +1,8 @@
 package v0_settings
 
 import (
-	"github.com/autobutler-org/autobutler/pkg/util/egressutil"
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/egressutil"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -77,7 +77,7 @@ var getUpdateEgressRoute = serverutil.ApiRoute(
 // applyUpdateEgress godoc
 // @Summary Apply update-egress allowlist rules via ufw
 // @Description Applies the outbound firewall allowlist rules for software updates.
-// @Description Requires root privileges (or sudo configured for the autobutler process).
+// @Description Requires root privileges (or sudo configured for the quark process).
 // @Description Rules are idempotent — safe to call multiple times.
 // @Tags settings
 // @Produce json

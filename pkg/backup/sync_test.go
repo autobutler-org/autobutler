@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/util/eventbus"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
 
 func newTestSyncWorker(t *testing.T) (*SyncWorker, string, string) {

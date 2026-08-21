@@ -7,8 +7,8 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"github.com/autobutler-org/autobutler/internal/db"
-	"github.com/autobutler-org/autobutler/pkg/util/favoritesutil"
+	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/pkg/util/favoritesutil"
 )
 
 // newTestDB builds an in-memory SQLite database with the schema required by

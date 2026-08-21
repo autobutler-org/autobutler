@@ -1,14 +1,14 @@
-import 'package:autobutler/models/cirrus_file_node.dart';
-import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/utils/file_browser_path_utils.dart';
-import 'package:autobutler/utils/safe_set_state_mixin.dart';
-import 'package:autobutler/widgets/core/autobutler_file_icon.dart';
-import 'package:autobutler/widgets/core/empty_state_widget.dart';
+import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/utils/file_browser_path_utils.dart';
+import 'package:quark/utils/safe_set_state_mixin.dart';
+import 'package:quark/widgets/core/quark_file_icon.dart';
+import 'package:quark/widgets/core/empty_state_widget.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
+import 'package:quark_icons/quark_icons.dart';
 import 'package:shimmer/shimmer.dart';
 
 enum FileMenuAction {
@@ -242,8 +242,8 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                 const SizedBox(width: 4),
                 Icon(
                   _sortDirection == SortDirection.asc
-                      ? AutobutlerIcons.arrow_upward_rounded
-                      : AutobutlerIcons.arrow_downward_rounded,
+                      ? QuarkIcons.arrow_upward_rounded
+                      : QuarkIcons.arrow_downward_rounded,
                   size: 12,
                   color: colorScheme.onSurface,
                 ),
@@ -312,7 +312,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
         ),
         trailing: widget.showFileSizeAndMenu
             ? PopupMenuButton<FileMenuAction>(
-                icon: const Icon(AutobutlerIcons.more_vert),
+                icon: const Icon(QuarkIcons.more_vert),
                 itemBuilder: (context) => [
                   PopupMenuItem<FileMenuAction>(
                     value: FileMenuAction.download,
@@ -428,7 +428,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
         final raw = snapshot.data ?? const <CirrusFileNode>[];
         if (raw.isEmpty) {
           return const EmptyStateWidget(
-            icon: AutobutlerIcons.folder_open_outlined,
+            icon: QuarkIcons.folder_open_outlined,
             headline: 'No files yet',
             subtext:
                 'Upload files using the button above, or drag and drop here.',
@@ -456,7 +456,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                     for (final entry in groups.entries)
                       ExpansionTile(
                         initiallyExpanded: true,
-                        leading: const Icon(AutobutlerIcons.storage_rounded),
+                        leading: const Icon(QuarkIcons.storage_rounded),
                         title: Text(entry.key),
                         subtitle: Text(
                           '${entry.value.length} '
@@ -567,7 +567,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                                         if (widget.showFileSizeAndMenu)
                                           PopupMenuButton<FileMenuAction>(
                                             icon: const Icon(
-                                              AutobutlerIcons.more_vert,
+                                              QuarkIcons.more_vert,
                                             ),
                                             itemBuilder: (context) => [
                                               PopupMenuItem<FileMenuAction>(
@@ -755,7 +755,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
   /// risking an overflow, with the thumbnail replacing the icon only once it
   /// decodes.
   Widget _buildGridPreview(CirrusFileNode item) {
-    final icon = Center(child: AutobutlerFileIcon(node: item, size: 48));
+    final icon = Center(child: QuarkFileIcon(node: item, size: 48));
 
     return SizedBox(
       width: double.infinity,
@@ -783,7 +783,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
   static const double _listLeadingSize = 40;
 
   Widget _buildListLeading(CirrusFileNode item) {
-    final icon = Center(child: AutobutlerFileIcon(node: item));
+    final icon = Center(child: QuarkFileIcon(node: item));
 
     return SizedBox(
       width: _listLeadingSize,

@@ -1,23 +1,23 @@
-import 'package:autobutler/router.dart';
-import 'package:autobutler/services/app_settings.dart';
-import 'package:autobutler/services/auth_service.dart';
-import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/services/connected_devices_service.dart';
-import 'package:autobutler/services/health_service.dart';
-import 'package:autobutler/services/remote_access_service.dart';
-import 'package:autobutler/services/sbom_service.dart';
-import 'package:autobutler/services/settings_service.dart';
-import 'package:autobutler/services/smb_service.dart';
-import 'package:autobutler/services/storage_service.dart';
-import 'package:autobutler/utils/autobutler_widget.dart';
-import 'package:autobutler/widgets/autobutler_drawer.dart';
-import 'package:autobutler/widgets/core/copy_button.dart';
-import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
-import 'package:autobutler/widgets/refresh_icon_button.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quark/router.dart';
+import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/auth_service.dart';
+import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/connected_devices_service.dart';
+import 'package:quark/services/health_service.dart';
+import 'package:quark/services/remote_access_service.dart';
+import 'package:quark/services/sbom_service.dart';
+import 'package:quark/services/settings_service.dart';
+import 'package:quark/services/smb_service.dart';
+import 'package:quark/services/storage_service.dart';
+import 'package:quark/utils/quark_widget.dart';
+import 'package:quark/widgets/core/copy_button.dart';
+import 'package:quark/widgets/layout/quark_app_bar.dart';
+import 'package:quark/widgets/quark_drawer.dart';
+import 'package:quark/widgets/refresh_icon_button.dart';
+import 'package:quark_icons/quark_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -465,26 +465,26 @@ class _SettingsPageState extends State<SettingsPage> {
       text: isEdit ? _hosts[idx].hostAddress : '',
     );
 
-    final result = await AutobutlerWidget.showDialog<bool>(
+    final result = await QuarkWidget.showDialog<bool>(
       context,
-      builder: (context) => AutobutlerWidget.alertDialog(
-        title: Text(isEdit ? 'Edit AutoButler' : 'Add AutoButler'),
+      builder: (context) => QuarkWidget.alertDialog(
+        title: Text(isEdit ? 'Edit Quark' : 'Add Quark'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AutobutlerWidget.textField(
+            QuarkWidget.textField(
               controller: nameController,
               autofocus: true,
               hintText: 'Nickname (e.g. Home)',
             ),
             const SizedBox(height: 8),
-            AutobutlerWidget.textField(
+            QuarkWidget.textField(
               controller: hostController,
-              hintText: 'http://autobutler.home.local',
+              hintText: 'http://quark.home.local',
             ),
             const SizedBox(height: 6),
             const Text(
-              'Usually http://autobutler.home.local or the IP address shown on your device.',
+              'Usually http://quark.home.local or the IP address shown on your device.',
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
@@ -524,9 +524,9 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _removeHost(int index) async {
-    final confirm = await AutobutlerWidget.showDialog(
+    final confirm = await QuarkWidget.showDialog(
       context,
-      builder: (context) => AutobutlerWidget.alertDialog(
+      builder: (context) => QuarkWidget.alertDialog(
         title: const Text('Remove host'),
         content: const Text('Are you sure you want to remove this host?'),
         actions: [
@@ -551,12 +551,12 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AutobutlerAppBar(
+      appBar: const QuarkAppBar(
         label: 'Settings',
-        icon: AutobutlerIcons.settings_outlined,
+        icon: QuarkIcons.settings_outlined,
       ),
-      drawer: AutobutlerDrawer(
-        activeSection: AutobutlerDrawerSection.settings,
+      drawer: QuarkDrawer(
+        activeSection: QuarkDrawerSection.settings,
         onTapCirrus: () {
           context.go(AppRoutes.cirrus);
         },
@@ -586,7 +586,7 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.all(16),
         children: [
           const Text(
-            'Autobutler',
+            'Quark',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
@@ -599,7 +599,7 @@ class _SettingsPageState extends State<SettingsPage> {
             const SizedBox(height: 8),
             Card(
               child: ListTile(
-                leading: const Icon(AutobutlerIcons.logout),
+                leading: const Icon(QuarkIcons.logout),
                 title: const Text('Sign out'),
                 onTap: _signOut,
               ),
@@ -618,9 +618,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   const SizedBox(height: 6),
                   if (AppSettings.instance.activeHost == null)
-                    const Text(
-                      'Not connected — add your AutoButler address below',
-                    )
+                    const Text('Not connected — add your Quark address below')
                   else if (_isLoadingVersionInfo)
                     const SizedBox(
                       width: 20,
@@ -667,7 +665,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               });
                             },
                       decoration: const InputDecoration(
-                        labelText: 'Update Autobutler to version',
+                        labelText: 'Update Quark to version',
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -688,7 +686,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Icon(AutobutlerIcons.update),
+                            : const Icon(QuarkIcons.update),
                         label: Text(
                           _isUpdatingVersion ? 'Updating...' : 'Start update',
                         ),
@@ -706,7 +704,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ? const ListTile(
                       title: Text('Automatic updates'),
                       subtitle: Text(
-                        'AutoButler will check for and install updates daily',
+                        'Quark will check for and install updates daily',
                       ),
                       trailing: SizedBox(
                         width: 24,
@@ -722,7 +720,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               style: TextStyle(color: Colors.red),
                             )
                           : const Text(
-                              'AutoButler will check for and install updates daily',
+                              'Quark will check for and install updates daily',
                             ),
                       value: _autoUpdate,
                       onChanged: _autoUpdateLoadFailed
@@ -809,7 +807,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           const SizedBox(height: 8),
                           OutlinedButton.icon(
                             onPressed: _loadRemoteAccess,
-                            icon: const Icon(AutobutlerIcons.refresh, size: 16),
+                            icon: const Icon(QuarkIcons.refresh, size: 16),
                             label: const Text('Retry'),
                           ),
                         ],
@@ -821,7 +819,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           Row(
                             children: [
                               const Icon(
-                                AutobutlerIcons.cloud_done_outlined,
+                                QuarkIcons.cloud_done_outlined,
                                 size: 16,
                                 color: Colors.green,
                               ),
@@ -850,10 +848,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Icon(
-                                    AutobutlerIcons.link_off,
-                                    size: 16,
-                                  ),
+                                : const Icon(QuarkIcons.link_off, size: 16),
                             label: const Text('Disable'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Theme.of(
@@ -883,7 +878,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                     ),
                                   )
                                 : const Icon(
-                                    AutobutlerIcons.vpn_key_outlined,
+                                    QuarkIcons.vpn_key_outlined,
                                     size: 16,
                                   ),
                             label: const Text('Enable remote access'),
@@ -972,7 +967,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   else if (_storageError != null)
                     ListTile(
                       leading: Icon(
-                        AutobutlerIcons.error_outline,
+                        QuarkIcons.error_outline,
                         color: Theme.of(context).colorScheme.error,
                       ),
                       title: const Text('Failed to load storage devices'),
@@ -985,10 +980,10 @@ class _SettingsPageState extends State<SettingsPage> {
                       return ListTile(
                         leading: Icon(
                           device.isInternal
-                              ? AutobutlerIcons.storage_rounded
+                              ? QuarkIcons.storage_rounded
                               : device.isUnmounted
-                              ? AutobutlerIcons.usb_off_rounded
-                              : AutobutlerIcons.usb_rounded,
+                              ? QuarkIcons.usb_off_rounded
+                              : QuarkIcons.usb_rounded,
                         ),
                         title: Text(
                           device.name.isNotEmpty
@@ -1009,16 +1004,14 @@ class _SettingsPageState extends State<SettingsPage> {
                               ),
                         trailing: device.isUnmounted
                             ? FilledButton.tonalIcon(
-                                icon: const Icon(
-                                  AutobutlerIcons.play_arrow_rounded,
-                                ),
+                                icon: const Icon(QuarkIcons.play_arrow_rounded),
                                 label: const Text('Mount'),
                                 onPressed: device.serial.isNotEmpty
                                     ? () => _mountDevice(device)
                                     : null,
                               )
                             : IconButton(
-                                icon: const Icon(AutobutlerIcons.edit_outlined),
+                                icon: const Icon(QuarkIcons.edit_outlined),
                                 tooltip: 'Rename',
                                 onPressed: () => _renameStorageDevice(device),
                               ),
@@ -1078,8 +1071,8 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 8),
           ElevatedButton.icon(
             onPressed: () => _addOrEditHost(),
-            icon: const Icon(AutobutlerIcons.add),
-            label: const Text('Add AutoButler'),
+            icon: const Icon(QuarkIcons.add),
+            label: const Text('Add Quark'),
           ),
           const SizedBox(height: 24),
           const Text(
@@ -1088,7 +1081,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 8),
           if (AppSettings.instance.activeHost == null)
-            const Text('Not connected — add your AutoButler address below')
+            const Text('Not connected — add your Quark address below')
           else
             Card(
               child: ExpansionTile(
@@ -1131,7 +1124,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   else if (_devicesError != null)
                     ListTile(
                       leading: Icon(
-                        AutobutlerIcons.error_outline,
+                        QuarkIcons.error_outline,
                         color: Theme.of(context).colorScheme.error,
                       ),
                       title: const Text('Failed to load devices'),
@@ -1142,7 +1135,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   else
                     ..._connectedDevices.map((device) {
                       return ListTile(
-                        leading: const Icon(AutobutlerIcons.devices),
+                        leading: const Icon(QuarkIcons.devices),
                         title: Text(device.ipAddress),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1162,7 +1155,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         isThreeLine: device.userAgent.isNotEmpty,
                         trailing: IconButton(
-                          icon: const Icon(AutobutlerIcons.delete_outline),
+                          icon: const Icon(QuarkIcons.delete_outline),
                           tooltip: 'Remove',
                           onPressed: () => _deleteDevice(device.id),
                         ),
@@ -1334,7 +1327,7 @@ class _InfoSectionHeader extends StatelessWidget {
     final color = Theme.of(context).colorScheme.onSurfaceVariant;
     return Row(
       children: [
-        Icon(AutobutlerIcons.info_outline, size: 16, color: color),
+        Icon(QuarkIcons.info_outline, size: 16, color: color),
         const SizedBox(width: 6),
         Text(
           label,
@@ -1350,7 +1343,7 @@ class _InfoSectionHeader extends StatelessWidget {
   }
 }
 
-/// Shows instructions for mounting AutoButler as a network drive.
+/// Shows instructions for mounting Quark as a network drive.
 /// Fetches the butler's hostname from the health endpoint so the paths
 /// reflect the device's actual LAN name rather than the connection URL.
 class _NetworkDriveCard extends StatefulWidget {
@@ -1519,7 +1512,7 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
       raw = _hostname!;
     } else {
       final h = widget.host;
-      if (h == null) return 'autobutler.local';
+      if (h == null) return 'quark.local';
       final uri = Uri.tryParse(h);
       raw = uri?.host ?? h;
     }
@@ -1546,7 +1539,7 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Access your AutoButler files directly from your operating system\'s file browser.',
+              'Access your Quark files directly from your operating system\'s file browser.',
             ),
             const SizedBox(height: 16),
 
@@ -1564,8 +1557,8 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
                     children: [
                       Icon(
                         _smbStatus!.running
-                            ? AutobutlerIcons.check_circle_outline
-                            : AutobutlerIcons.warning_amber,
+                            ? QuarkIcons.check_circle_outline
+                            : QuarkIcons.warning_amber,
                         size: 16,
                         color: _smbStatus!.running
                             ? Colors.green
@@ -1589,13 +1582,13 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
                             : () async {
                                 await _showSmbSetupDialog(refresh: true);
                               },
-                        icon: const Icon(AutobutlerIcons.refresh, size: 16),
+                        icon: const Icon(QuarkIcons.refresh, size: 16),
                         label: const Text('Refresh config'),
                       ),
                       const SizedBox(width: 8),
                       OutlinedButton.icon(
                         onPressed: _smbBusy ? null : _teardownSmb,
-                        icon: const Icon(AutobutlerIcons.link_off, size: 16),
+                        icon: const Icon(QuarkIcons.link_off, size: 16),
                         label: const Text('Disable'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Theme.of(context).colorScheme.error,
@@ -1614,7 +1607,7 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
                             height: 14,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(AutobutlerIcons.add_link, size: 16),
+                        : const Icon(QuarkIcons.add_link, size: 16),
                     label: const Text('Set up network drive'),
                   ),
                 ],
@@ -1654,7 +1647,7 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
                 'smb://$hostname.local',
                 fallbackLabel: 'smb://$hostname.local',
               ),
-              icon: const Icon(AutobutlerIcons.folder_open_outlined, size: 16),
+              icon: const Icon(QuarkIcons.folder_open_outlined, size: 16),
               label: const Text('Open in Finder'),
             ),
           ]);
@@ -1672,7 +1665,7 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
                 'file://$hostname.local/',
                 fallbackLabel: '\\\\$hostname.local',
               ),
-              icon: const Icon(AutobutlerIcons.folder_open_outlined, size: 16),
+              icon: const Icon(QuarkIcons.folder_open_outlined, size: 16),
               label: const Text('Open in File Explorer'),
             ),
           ]);
@@ -1687,7 +1680,7 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
                 'smb://$hostname.local',
                 fallbackLabel: 'smb://$hostname.local',
               ),
-              icon: const Icon(AutobutlerIcons.folder_open_outlined, size: 16),
+              icon: const Icon(QuarkIcons.folder_open_outlined, size: 16),
               label: const Text('Open in Files'),
             ),
           ]);
@@ -1727,9 +1720,9 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
 class _HelpSupportCard extends StatelessWidget {
   const _HelpSupportCard();
 
-  static const _supportUrl = 'https://autobutler.org/support';
+  static const _supportUrl = 'https://quark.org/support';
   static const _bugUrl =
-      'https://github.com/autobutler-org/autobutler/issues/new?template=bug.yaml';
+      'https://github.com/autobutler-org/quark/issues/new?template=bug.yaml';
 
   @override
   Widget build(BuildContext context) {
@@ -1749,7 +1742,7 @@ class _HelpSupportCard extends StatelessWidget {
                 Uri.parse(_supportUrl),
                 mode: LaunchMode.externalApplication,
               ),
-              icon: const Icon(AutobutlerIcons.help_outline, size: 16),
+              icon: const Icon(QuarkIcons.help_outline, size: 16),
               label: const Text('Visit support page'),
             ),
             const SizedBox(height: 8),
@@ -1758,7 +1751,7 @@ class _HelpSupportCard extends StatelessWidget {
                 Uri.parse(_bugUrl),
                 mode: LaunchMode.externalApplication,
               ),
-              icon: const Icon(AutobutlerIcons.bug_report_outlined, size: 16),
+              icon: const Icon(QuarkIcons.bug_report_outlined, size: 16),
               label: const Text('Report an issue'),
             ),
           ],

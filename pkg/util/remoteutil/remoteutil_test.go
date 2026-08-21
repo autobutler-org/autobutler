@@ -11,18 +11,18 @@ import (
 // TestControlURL_DefaultWhenEnvUnset verifies the default Headscale URL is
 // returned when the env var is not set.
 func TestControlURL_DefaultWhenEnvUnset(t *testing.T) {
-	t.Setenv("AUTOBUTLER_HEADSCALE_URL", "")
+	t.Setenv("QUARK_HEADSCALE_URL", "")
 	got := controlURL()
 	if got != defaultControlURL {
 		t.Errorf("controlURL() = %q; want %q", got, defaultControlURL)
 	}
 }
 
-// TestControlURL_OverriddenByEnv verifies that AUTOBUTLER_HEADSCALE_URL
+// TestControlURL_OverriddenByEnv verifies that QUARK_HEADSCALE_URL
 // overrides the built-in default.
 func TestControlURL_OverriddenByEnv(t *testing.T) {
 	custom := "https://my-headscale.example.com"
-	t.Setenv("AUTOBUTLER_HEADSCALE_URL", custom)
+	t.Setenv("QUARK_HEADSCALE_URL", custom)
 	got := controlURL()
 	if got != custom {
 		t.Errorf("controlURL() = %q; want %q", got, custom)
@@ -34,7 +34,7 @@ func TestControlURL_OverriddenByEnv(t *testing.T) {
 // the value unchanged).
 func TestControlURL_HTTPWarningDoesNotPanic(t *testing.T) {
 	insecure := "http://headscale.internal:8080"
-	t.Setenv("AUTOBUTLER_HEADSCALE_URL", insecure)
+	t.Setenv("QUARK_HEADSCALE_URL", insecure)
 	got := controlURL()
 	if got != insecure {
 		t.Errorf("controlURL() = %q; want %q", got, insecure)
@@ -59,18 +59,18 @@ func TestStateDir_ContainsTsnet(t *testing.T) {
 	}
 }
 
-// TestStateDir_LinuxServicePath verifies that on Linux, when /var/lib/autobutler
+// TestStateDir_LinuxServicePath verifies that on Linux, when /var/lib/quark
 // exists on disk, stateDir returns the systemd service path. Skipped on non-Linux.
 func TestStateDir_LinuxServicePath(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("Linux-only test")
 	}
-	if _, err := os.Stat("/var/lib/autobutler"); err != nil {
-		t.Skip("/var/lib/autobutler does not exist on this machine")
+	if _, err := os.Stat("/var/lib/quark"); err != nil {
+		t.Skip("/var/lib/quark does not exist on this machine")
 	}
 	dir := stateDir()
-	if dir != "/var/lib/autobutler/tsnet" {
-		t.Errorf("stateDir() = %q; want /var/lib/autobutler/tsnet", dir)
+	if dir != "/var/lib/quark/tsnet" {
+		t.Errorf("stateDir() = %q; want /var/lib/quark/tsnet", dir)
 	}
 }
 

@@ -14,7 +14,7 @@ type AutoMountResult struct {
 }
 
 // AutoMountDevice mounts the first partition of the given USB storage device
-// under the autobutler mounts directory, then initializes the Cirrus data
+// under the quark mounts directory, then initializes the Cirrus data
 // directory structure on it.
 //
 // It is a no-op (returns nil, nil) if the device is already mounted.

@@ -1,43 +1,43 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:autobutler/controllers/file_browser_cache.dart';
-import 'package:autobutler/controllers/file_browser_controller.dart';
-import 'package:autobutler/models/cirrus_file_node.dart';
-import 'package:autobutler/pages/document_editor_page.dart';
-import 'package:autobutler/pages/generic_file_viewer_page.dart';
-import 'package:autobutler/pages/image_viewer_page.dart';
-import 'package:autobutler/pages/spreadsheet_editor_page.dart';
-import 'package:autobutler/pages/video_viewer_page.dart';
-import 'package:autobutler/router.dart';
-import 'package:autobutler/services/app_settings.dart';
-import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/services/events_service.dart';
-import 'package:autobutler/services/storage_service.dart';
-import 'package:autobutler/utils/auto_refresh_mixin.dart';
-import 'package:autobutler/utils/cirrus_route_path_utils.dart';
-import 'package:autobutler/utils/file_browser_dialog_utils.dart';
-import 'package:autobutler/utils/file_browser_drag_config.dart';
-import 'package:autobutler/utils/file_browser_path_utils.dart';
-import 'package:autobutler/utils/safe_set_state_mixin.dart';
-import 'package:autobutler/widgets/autobutler_drawer.dart';
-import 'package:autobutler/widgets/core/empty_state_widget.dart';
-import 'package:autobutler/widgets/device_upload_picker.dart';
-import 'package:autobutler/widgets/file_browser/file_browser_header.dart';
-import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
-import 'package:autobutler/widgets/file_browser/file_storage_footer.dart';
-import 'package:autobutler/widgets/file_browser/file_top_bar.dart';
-import 'package:autobutler/widgets/file_browser/new_file_dialog.dart';
-import 'package:autobutler/widgets/file_browser/recent_files_section.dart';
 import 'package:data_table/data_sheet.dart';
 import 'package:data_table/data_table.dart' as dt;
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
+import 'package:quark/controllers/file_browser_cache.dart';
+import 'package:quark/controllers/file_browser_controller.dart';
+import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/pages/document_editor_page.dart';
+import 'package:quark/pages/generic_file_viewer_page.dart';
+import 'package:quark/pages/image_viewer_page.dart';
+import 'package:quark/pages/spreadsheet_editor_page.dart';
+import 'package:quark/pages/video_viewer_page.dart';
+import 'package:quark/router.dart';
+import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/events_service.dart';
+import 'package:quark/services/storage_service.dart';
+import 'package:quark/utils/auto_refresh_mixin.dart';
+import 'package:quark/utils/cirrus_route_path_utils.dart';
+import 'package:quark/utils/file_browser_dialog_utils.dart';
+import 'package:quark/utils/file_browser_drag_config.dart';
+import 'package:quark/utils/file_browser_path_utils.dart';
+import 'package:quark/utils/safe_set_state_mixin.dart';
+import 'package:quark/widgets/core/empty_state_widget.dart';
+import 'package:quark/widgets/device_upload_picker.dart';
+import 'package:quark/widgets/file_browser/file_browser_header.dart';
+import 'package:quark/widgets/file_browser/file_browser_view.dart';
+import 'package:quark/widgets/file_browser/file_storage_footer.dart';
+import 'package:quark/widgets/file_browser/file_top_bar.dart';
+import 'package:quark/widgets/file_browser/new_file_dialog.dart';
+import 'package:quark/widgets/file_browser/recent_files_section.dart';
+import 'package:quark/widgets/quark_drawer.dart';
+import 'package:quark_icons/quark_icons.dart';
 
 class FileBrowserPage extends StatefulWidget {
   /// Optional path to navigate to on load, e.g. 'photos/2024'.
@@ -914,7 +914,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       builder: (ctx) => AlertDialog(
         title: const Text('Convert to .absheet?'),
         content: Text(
-          'Would you like to convert "${node.name}" to an AutoButler '
+          'Would you like to convert "${node.name}" to an Quark '
           'spreadsheet (.absheet)?\n\nThe original CSV file will not be '
           'modified or deleted.',
         ),
@@ -1018,13 +1018,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     final lowerName = node.name.toLowerCase();
 
-    // AutoButler native document format — open in the rich text editor.
+    // Quark native document format — open in the rich text editor.
     if (lowerName.endsWith('.abdoc')) {
       _openFileViaRoute(node.apiPath);
       return;
     }
 
-    // AutoButler native spreadsheet format.
+    // Quark native spreadsheet format.
     if (lowerName.endsWith('.absheet')) {
       _openFileViaRoute(node.apiPath);
       return;
@@ -1283,7 +1283,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(AutobutlerIcons.folder_open, size: 48),
+              const Icon(QuarkIcons.folder_open, size: 48),
               const SizedBox(height: 16),
               Text(
                 isFileRoute ? 'Opening file' : 'Opening folder',
@@ -1335,10 +1335,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     return EmptyStateWidget(
       icon: isUnauthorized
-          ? AutobutlerIcons.lock_outline
+          ? QuarkIcons.lock_outline
           : isMissingFolder
-          ? AutobutlerIcons.folder_off_outlined
-          : AutobutlerIcons.error_outline,
+          ? QuarkIcons.folder_off_outlined
+          : QuarkIcons.error_outline,
       headline: isUnauthorized
           ? 'Access denied'
           : isMissingFolder
@@ -1381,8 +1381,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     return EmptyStateWidget(
       icon: failure.isUnsupported
-          ? AutobutlerIcons.description_outlined
-          : AutobutlerIcons.error_outline,
+          ? QuarkIcons.description_outlined
+          : QuarkIcons.error_outline,
       headline: failure.isUnsupported
           ? 'No supported editor'
           : failure.isUnauthorized
@@ -1725,7 +1725,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           heroTag: 'create_fab',
           onPressed: _showCreateBottomSheet,
           tooltip: 'Create',
-          child: const Icon(AutobutlerIcons.add_rounded),
+          child: const Icon(QuarkIcons.add_rounded),
         ),
       ),
     );
@@ -1748,7 +1748,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                           strokeWidth: 2,
                         ),
                       )
-                    : const Icon(AutobutlerIcons.upload_rounded),
+                    : const Icon(QuarkIcons.upload_rounded),
                 title: Text(
                   _isUploading
                       ? (_uploadTotal > 0
@@ -1765,7 +1765,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                       },
               ),
               ListTile(
-                leading: const Icon(AutobutlerIcons.create_new_folder_outlined),
+                leading: const Icon(QuarkIcons.create_new_folder_outlined),
                 title: const Text('New folder'),
                 enabled: !_isCreatingFolder,
                 onTap: _isCreatingFolder
@@ -1776,7 +1776,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                       },
               ),
               ListTile(
-                leading: const Icon(AutobutlerIcons.edit_document),
+                leading: const Icon(QuarkIcons.edit_document),
                 title: const Text('New file'),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -1794,8 +1794,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: AutobutlerDrawer(
-        activeSection: AutobutlerDrawerSection.cirrus,
+      drawer: QuarkDrawer(
+        activeSection: QuarkDrawerSection.cirrus,
         onTapCirrus: () {
           Navigator.of(context).pop();
         },
@@ -2070,7 +2070,7 @@ class _FirstRunSetupState extends State<_FirstRunSetup> {
   Future<void> _connect() async {
     final raw = _controller.text.trim();
     if (raw.isEmpty) {
-      setState(() => _error = 'Please enter your AutoButler address.');
+      setState(() => _error = 'Please enter your Quark address.');
       return;
     }
 
@@ -2086,7 +2086,7 @@ class _FirstRunSetupState extends State<_FirstRunSetup> {
 
     try {
       await AppSettings.instance.addHost(
-        HostEntry(name: 'My AutoButler', hostAddress: address),
+        HostEntry(name: 'My Quark', hostAddress: address),
       );
       if (mounted) widget.onConnected();
     } catch (e) {
@@ -2111,13 +2111,13 @@ class _FirstRunSetupState extends State<_FirstRunSetup> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Icon(
-                AutobutlerIcons.storage_outlined,
+                QuarkIcons.storage_outlined,
                 size: 56,
                 color: Colors.grey,
               ),
               const SizedBox(height: 16),
               Text(
-                'Connect to your AutoButler',
+                'Connect to your Quark',
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
@@ -2125,7 +2125,7 @@ class _FirstRunSetupState extends State<_FirstRunSetup> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Enter the address of your AutoButler device on your home network.',
+                'Enter the address of your Quark device on your home network.',
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
@@ -2139,13 +2139,13 @@ class _FirstRunSetupState extends State<_FirstRunSetup> {
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _connect(),
                 decoration: InputDecoration(
-                  labelText: 'AutoButler address',
-                  hintText: 'http://autobutler.home.local',
+                  labelText: 'Quark address',
+                  hintText: 'http://quark.home.local',
                   helperText:
-                      'Usually http://autobutler.home.local or http://192.168.x.x',
+                      'Usually http://quark.home.local or http://192.168.x.x',
                   errorText: _error,
                   border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(AutobutlerIcons.link_rounded),
+                  prefixIcon: const Icon(QuarkIcons.link_rounded),
                 ),
               ),
               const SizedBox(height: 16),

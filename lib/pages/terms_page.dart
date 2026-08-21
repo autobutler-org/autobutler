@@ -1,7 +1,7 @@
-import 'package:autobutler/router.dart';
-import 'package:autobutler/services/app_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quark/router.dart';
+import 'package:quark/services/app_settings.dart';
 
 /// Terms and Conditions acceptance gate.
 ///
@@ -36,7 +36,7 @@ class TermsPage extends StatelessWidget {
                   _TermsSection(
                     title: '1. Personal Use',
                     body:
-                        'Autobutler is designed for personal use to manage '
+                        'Quark is designed for personal use to manage '
                         'and back up your own photos and files. You may not '
                         'use the software to store or distribute content that '
                         'violates applicable laws or the rights of others.',
@@ -45,7 +45,7 @@ class TermsPage extends StatelessWidget {
                     title: '2. Your Data',
                     body:
                         'You retain full ownership of all data stored through '
-                        'Autobutler. The app operates on your own hardware; no '
+                        'Quark. The app operates on your own hardware; no '
                         'data is uploaded to third-party servers without your '
                         'explicit action. You are solely responsible for the '
                         'security and backup of your data.',
@@ -53,7 +53,7 @@ class TermsPage extends StatelessWidget {
                   _TermsSection(
                     title: '3. No Warranty',
                     body:
-                        'Autobutler is provided "as is", without warranty of '
+                        'Quark is provided "as is", without warranty of '
                         'any kind, express or implied. The authors make no '
                         'guarantees regarding uptime, data integrity, or '
                         'fitness for a particular purpose. Use at your own risk.',
@@ -61,10 +61,10 @@ class TermsPage extends StatelessWidget {
                   _TermsSection(
                     title: '4. Acceptable Use',
                     body:
-                        'You agree not to use Autobutler for any unlawful '
+                        'You agree not to use Quark for any unlawful '
                         'purpose, to attempt to gain unauthorised access to '
                         'other systems, or to interfere with the operation of '
-                        'the software for other users. Because Autobutler '
+                        'the software for other users. Because Quark '
                         'runs entirely on your own hardware and we have no '
                         'access to your data or device, these terms are '
                         'legally binding but not technically enforceable by '
@@ -75,7 +75,7 @@ class TermsPage extends StatelessWidget {
                     title: '5. Limitation of Liability',
                     body:
                         'To the maximum extent permitted by law, the '
-                        'developers of Autobutler shall not be liable for any '
+                        'developers of Quark shall not be liable for any '
                         'indirect, incidental, special, or consequential '
                         'damages arising from your use of the software, even '
                         'if advised of the possibility of such damages.',

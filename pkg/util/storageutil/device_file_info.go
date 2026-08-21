@@ -6,7 +6,7 @@ import (
 )
 
 // DeviceFileInfo wraps fs.FileInfo with device information. This is the output type
-// for all file functions Autobutler uses internally.
+// for all file functions Quark uses internally.
 type DeviceFileInfo struct {
 	fs.FileInfo  `json:"fileInfo"` // Embedded file info
 	DeviceName   string            `json:"deviceName"`   // Name of the device this file is on

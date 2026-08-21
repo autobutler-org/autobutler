@@ -1,7 +1,7 @@
 // IO implementation: trusts self-signed certs from local hosts.
 import 'dart:io';
 
-import 'package:autobutler/services/local_trust.dart';
+import 'package:quark/services/local_trust.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 

@@ -3,12 +3,12 @@ package v0_favorites
 import (
 	"errors"
 
-	"github.com/autobutler-org/autobutler/internal/db"
-	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
-	"github.com/autobutler-org/autobutler/pkg/util/deputil"
-	"github.com/autobutler-org/autobutler/pkg/util/favoritesutil"
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
-	"github.com/autobutler-org/autobutler/pkg/util/sqlutil"
+	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/pkg/util/ctxutil"
+	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/favoritesutil"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/sqlutil"
 	"github.com/gin-gonic/gin"
 )
 

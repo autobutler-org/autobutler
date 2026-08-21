@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	v0_version "github.com/autobutler-org/autobutler/internal/server/api/v0/version"
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	v0_version "github.com/autobutler-org/quark/internal/server/api/v0/version"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/gin-gonic/gin"
 )
 

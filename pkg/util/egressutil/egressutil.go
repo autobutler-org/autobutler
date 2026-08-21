@@ -1,6 +1,6 @@
-// Package egressutil manages outbound firewall allowlist rules for AutoButler.
+// Package egressutil manages outbound firewall allowlist rules for Quark.
 //
-// AutoButler is designed for airgap-friendly operation — by default no outbound
+// Quark is designed for airgap-friendly operation — by default no outbound
 // traffic is required except to reach the software update servers. This package
 // exposes the canonical set of update-egress hostnames and helper functions for
 // generating and applying ufw rules that implement default-deny egress with an
@@ -21,7 +21,7 @@ import (
 	"strings"
 )
 
-// UpdateHostnames is the canonical set of FQDNs that AutoButler contacts for
+// UpdateHostnames is the canonical set of FQDNs that Quark contacts for
 // software update checks and downloads. Adding a host here automatically
 // includes it in the generated firewall rules.
 var UpdateHostnames = []string{
@@ -33,8 +33,8 @@ var UpdateHostnames = []string{
 	"objects.githubusercontent.com",
 	// GitHub CDN — alternate asset host.
 	"codeload.github.com",
-	// Azure Blob Storage — autobutlerrelease storage account.
-	"autobutlerrelease.blob.core.windows.net",
+	// Azure Blob Storage — quarkrelease storage account.
+	"quarkrelease.blob.core.windows.net",
 }
 
 // EgressRule represents a single outbound firewall allowlist rule.
@@ -50,7 +50,7 @@ type EgressRule struct {
 }
 
 // UpdateEgressRules returns the minimal set of outbound firewall rules needed
-// for AutoButler to check for and download software updates.
+// for Quark to check for and download software updates.
 func UpdateEgressRules() []EgressRule {
 	rules := make([]EgressRule, 0, len(UpdateHostnames)+2)
 
@@ -65,7 +65,7 @@ func UpdateEgressRules() []EgressRule {
 			Host:    host,
 			Port:    "443",
 			Proto:   "tcp",
-			Comment: fmt.Sprintf("AutoButler update egress: %s", host),
+			Comment: fmt.Sprintf("Quark update egress: %s", host),
 		})
 	}
 

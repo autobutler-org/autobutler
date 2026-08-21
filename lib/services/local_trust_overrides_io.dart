@@ -2,8 +2,8 @@
 // app creates, including ones we don't construct ourselves.
 import 'dart:io';
 
-import 'package:autobutler/services/app_settings.dart';
-import 'package:autobutler/services/local_trust.dart';
+import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/local_trust.dart';
 
 /// Applies [isLocalTrustHost] to every [HttpClient] created in this isolate.
 ///
