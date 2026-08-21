@@ -191,7 +191,7 @@ func TestStatFileImpl_NestedFolderNamedLikeFile(t *testing.T) {
 	}
 }
 
-// Statting a path that does not exist must return an error.
+// Stat-ing a path that does not exist must return an error.
 func TestStatFileImpl_NotFound(t *testing.T) {
 	dev, cirrusDir := makeTestDevice(t)
 
@@ -201,7 +201,7 @@ func TestStatFileImpl_NotFound(t *testing.T) {
 	}
 }
 
-// Statting a plain directory (no misleading extension) must report isDir=true.
+// Stat-ing a plain directory (no misleading extension) must report isDir=true.
 func TestStatFileImpl_PlainDirectory(t *testing.T) {
 	dev, cirrusDir := makeTestDevice(t)
 	if err := os.Mkdir(filepath.Join(cirrusDir, "photos"), 0755); err != nil {

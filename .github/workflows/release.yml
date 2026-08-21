@@ -33,9 +33,7 @@ jobs:
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
       - name: Setup Node
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
+        uses: ./.github/actions/setup-node
       - name: Build frontend [web]
         env:
           FLUTTER_BUILD_MODE: release

@@ -81,7 +81,7 @@ void main() {
     expect(controller.cellAt(0, 1).value, 'a');
   });
 
-  testWidgets('a selection restores the relative insert behaviour', (
+  testWidgets('a selection restores the relative insert behavior', (
     tester,
   ) async {
     final controller = _makeController([

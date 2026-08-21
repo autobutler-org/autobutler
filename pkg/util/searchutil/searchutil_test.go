@@ -145,33 +145,33 @@ func TestExtractText_Truncation(t *testing.T) {
 	}
 }
 
-// --- sanitiseFTSQuery ---
+// --- sanitizeFTSQuery ---
 
-func TestSanitiseFTSQuery_PlainTerm(t *testing.T) {
-	got := sanitiseFTSQuery("hello")
+func TestSanitizeFTSQuery_PlainTerm(t *testing.T) {
+	got := sanitizeFTSQuery("hello")
 	if !strings.HasPrefix(got, `"`) || !strings.HasSuffix(got, `"`) {
 		t.Errorf("plain term should be quoted, got %q", got)
 	}
 }
 
-func TestSanitiseFTSQuery_WithOperator(t *testing.T) {
+func TestSanitizeFTSQuery_WithOperator(t *testing.T) {
 	q := "hello AND world"
-	got := sanitiseFTSQuery(q)
+	got := sanitizeFTSQuery(q)
 	if got != q {
 		t.Errorf("operator query should pass through unchanged, got %q", got)
 	}
 }
 
-func TestSanitiseFTSQuery_WithPrefix(t *testing.T) {
+func TestSanitizeFTSQuery_WithPrefix(t *testing.T) {
 	q := "hel*"
-	got := sanitiseFTSQuery(q)
+	got := sanitizeFTSQuery(q)
 	if got != q {
 		t.Errorf("prefix query should pass through, got %q", got)
 	}
 }
 
-func TestSanitiseFTSQuery_Empty(t *testing.T) {
-	got := sanitiseFTSQuery("")
+func TestSanitizeFTSQuery_Empty(t *testing.T) {
+	got := sanitizeFTSQuery("")
 	if got == "" {
 		t.Error("empty query should not return empty string (FTS5 syntax error)")
 	}
@@ -358,7 +358,7 @@ func TestSQLiteDriverHasFTS5(t *testing.T) {
 	}
 
 	// The compile flag is necessary but not sufficient — prove the module
-	// registers and the tokeniser used by migration 019 is accepted.
+	// registers and the tokenizer used by migration 019 is accepted.
 	if _, err := db.Exec(
 		`CREATE VIRTUAL TABLE fts_probe USING fts5(body, tokenize='porter unicode61')`,
 	); err != nil {
@@ -366,9 +366,9 @@ func TestSQLiteDriverHasFTS5(t *testing.T) {
 	}
 }
 
-// TestFTS5PorterStemming pins the stemming behaviour Search relies on: a query
+// TestFTS5PorterStemming pins the stemming behavior Search relies on: a query
 // for "run" must match stored text containing "running". Without the porter
-// tokeniser this silently degrades to exact-token matching, which returns no
+// tokenizer this silently degrades to exact-token matching, which returns no
 // results and looks like an empty index rather than a broken one.
 func TestFTS5PorterStemming(t *testing.T) {
 	db := newTestDB(t)

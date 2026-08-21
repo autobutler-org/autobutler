@@ -35,8 +35,8 @@ func NewLocalVFS(root string, namespaceID string) (*LocalVFS, error) {
 // escape the root.
 //
 // filepath.Join calls filepath.Clean internally, but we call it explicitly so
-// that static analysers (CodeQL go/path-injection) recognise this function as
-// a sanitiser rather than treating the joined result as tainted user data.
+// that static analyzers (CodeQL go/path-injection) recognize this function as
+// a sanitizer rather than treating the joined result as tainted user data.
 func (v *LocalVFS) abs(path string) (string, error) {
 	clean := filepath.Clean(filepath.Join(v.root, filepath.FromSlash(path)))
 	if clean != v.root && !strings.HasPrefix(clean, v.root+string(os.PathSeparator)) {
@@ -310,7 +310,7 @@ func (v *LocalVFS) Move(_ context.Context, src, dst string) error {
 	if err != nil {
 		return err
 	}
-	// Re-clean so static analysers (CodeQL go/path-injection) can follow the
+	// Re-clean so static analyzers (CodeQL go/path-injection) can follow the
 	// traversal guard through abs() rather than treating outputs as tainted.
 	srcAbs = filepath.Clean(srcAbs)
 	dstAbs = filepath.Clean(dstAbs)

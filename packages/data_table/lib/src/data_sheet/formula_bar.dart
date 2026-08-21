@@ -23,7 +23,7 @@ const _kRefPalette = [
   Color(0xFF3A0CA3), // indigo
   Color(0xFF7B2CBF), // violet
   // Cycle 2: R O Y G B I V
-  Color(0xFFE63946), // vermillion
+  Color(0xFFE63946), // vermilion
   Color(0xFFBB3E03), // rust
   Color(0xFFE9D8A6), // sand
   Color(0xFF4C956C), // leaf green
@@ -182,7 +182,7 @@ class _FormulaTextEditingController extends TextEditingController {
   }
 
   /// Returns the index just past the end of a cell-ref lexeme starting at
-  /// [from] in [source]. The lexer normalises token values (strips `$`,
+  /// [from] in [source]. The lexer normalizes token values (strips `$`,
   /// uppercases), so `tok.value.length` is unreliable for source offsets;
   /// this walks the raw source instead.
   static int _tokenSrcEnd(String source, int from) {
