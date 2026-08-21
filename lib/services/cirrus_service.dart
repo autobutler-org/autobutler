@@ -877,6 +877,35 @@ class CirrusService with AuthenticatedService {
     return data['relPath'] as String;
   }
 
+  /// Trims [relPath] to the range [startMs, endMs] and saves a new file.
+  /// Returns the relative path of the saved clip.
+  static Future<String> trimVideo(
+    String relPath, {
+    String? serial,
+    required int startMs,
+    required int endMs,
+  }) async {
+    final uri = _apiBaseUri.resolve('/api/v0/videos/trim');
+    final body = jsonEncode({
+      'relPath': relPath,
+      'serial': serial?.trim() ?? '',
+      'startMs': startMs,
+      'endMs': endMs,
+    });
+    final response = await instance.authenticatedPost(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: body,
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        'Failed to trim video (${response.statusCode}): ${response.body}',
+      );
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return data['relPath'] as String;
+  }
+
   static Future<void> updateToVersion(String version) async {
     final endpointUri = _apiBaseUri.resolve('/api/v0/version/update');
     final body = jsonEncode({'version': version});
