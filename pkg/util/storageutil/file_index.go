@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
+	"github.com/autobutler-org/quark/pkg/util/eventbus"
 )
 
 // IndexedFile is a lightweight record stored in the FileIndex.

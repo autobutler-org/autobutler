@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/autobutler-org/autobutler/pkg/vfs"
+	"github.com/autobutler-org/quark/pkg/vfs"
 )
 
 func newDBVFS(t *testing.T, ns string) *vfs.DBVFS {

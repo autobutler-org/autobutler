@@ -18,8 +18,8 @@ import (
 	"slices"
 	"strings"
 
-	github "github.com/autobutler-org/autobutler/pkg/util/githubutil"
-	"github.com/autobutler-org/autobutler/pkg/util/versionutil"
+	github "github.com/autobutler-org/quark/pkg/util/githubutil"
+	"github.com/autobutler-org/quark/pkg/util/versionutil"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 )
@@ -36,7 +36,7 @@ func init() {
 
 func ConstructArchiveName() string {
 	goos := fmt.Sprintf("%s%s", strings.ToUpper(string(runtime.GOOS[0])), string(runtime.GOOS[1:]))
-	return fmt.Sprintf("autobutler_%s_%s.tar.gz", goos, runtime.GOARCH)
+	return fmt.Sprintf("quark_%s_%s.tar.gz", goos, runtime.GOARCH)
 }
 
 func GetLatestVersionFromDefaultSources() (string, error) {
@@ -297,7 +297,7 @@ var allowHTTPInFetchURL bool
 var allowedUpdateHosts = []string{
 	"github.com",
 	"objects.githubusercontent.com",
-	"autobutlerrelease.blob.core.windows.net",
+	"quarkrelease.blob.core.windows.net",
 	// Added at test time via allowHTTPInFetchURL + local httptest servers
 }
 
@@ -426,7 +426,7 @@ func hmacEqual(a, b []byte) bool {
 	return diff == 0
 }
 
-const binaryName = "autobutler"
+const binaryName = "quark"
 
 var backupName = fmt.Sprintf("%s_backup", binaryName)
 var extractedName = fmt.Sprintf("%s_extracted", binaryName)
@@ -462,7 +462,7 @@ func replaceSelf(body io.Reader) error {
 	if err != nil {
 		return fmt.Errorf("failed to get executable path: %w", err)
 	}
-	tmpFile, err := os.CreateTemp("", "autobutler_update_*")
+	tmpFile, err := os.CreateTemp("", "quark_update_*")
 	if err != nil {
 		return fmt.Errorf("failed to create temp file for update: %w", err)
 	}
@@ -527,7 +527,7 @@ func replaceSelf(body io.Reader) error {
 	// Create a temporary file in the same directory as the target executable
 	// This ensures we're on the same filesystem for atomic rename
 	execDir := execPath[:strings.LastIndex(execPath, "/")]
-	tmpNew, err := os.CreateTemp(execDir, ".autobutler_new_*")
+	tmpNew, err := os.CreateTemp(execDir, ".quark_new_*")
 	if err != nil {
 		return fmt.Errorf("failed to create temp file in target directory: %w", err)
 	}

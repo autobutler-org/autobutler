@@ -41,7 +41,7 @@ func installPlistService() error {
 	return nil
 }
 
-const sudoersDropInPath = "/etc/sudoers.d/autobutler"
+const sudoersDropInPath = "/etc/sudoers.d/quark"
 
 func createServiceUser() error {
 	if _, err := user.Lookup(serviceUserName); err == nil {
@@ -52,7 +52,7 @@ func createServiceUser() error {
 		"--system",
 		"--no-create-home",
 		"--shell", "/usr/sbin/nologin",
-		"--comment", "AutoButler service account",
+		"--comment", "Quark service account",
 		serviceUserName,
 	).Run()
 }
@@ -87,7 +87,7 @@ func Install() error {
 	}
 	switch runtime.GOOS {
 	case "linux":
-		if err := exec.Command("cp", "-v", executable, "/usr/local/bin/autobutler").Run(); err != nil {
+		if err := exec.Command("cp", "-v", executable, "/usr/local/bin/quark").Run(); err != nil {
 			return fmt.Errorf("failed to copy binary: %w", err)
 		}
 		if err := createServiceUser(); err != nil {
@@ -104,7 +104,7 @@ func Install() error {
 		}
 		return installSystemdService()
 	case "darwin": // coverage: ignore - Not run in CI
-		if err := exec.Command("cp", "-v", executable, "/Applications/autobutler").Run(); err != nil {
+		if err := exec.Command("cp", "-v", executable, "/Applications/quark").Run(); err != nil {
 			return fmt.Errorf("failed to copy binary to /Applications: %w", err)
 		}
 		return installPlistService()

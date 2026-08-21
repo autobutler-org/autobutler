@@ -8,12 +8,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/autobutler-org/autobutler/internal/db"
-	v0_webdav "github.com/autobutler-org/autobutler/internal/server/api/v0/webdav"
-	"github.com/autobutler-org/autobutler/pkg/util/authutil"
-	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
-	"github.com/autobutler-org/autobutler/pkg/util/deputil"
-	"github.com/autobutler-org/autobutler/pkg/util/ratelimitutil"
+	"github.com/autobutler-org/quark/internal/db"
+	v0_webdav "github.com/autobutler-org/quark/internal/server/api/v0/webdav"
+	"github.com/autobutler-org/quark/pkg/util/authutil"
+	"github.com/autobutler-org/quark/pkg/util/ctxutil"
+	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/ratelimitutil"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -241,7 +241,7 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 		// All methods exhausted.
 		// WebDAV clients need the WWW-Authenticate header to prompt for credentials.
 		if v0_webdav.IsWebDAVPath(path) {
-			c.Header("WWW-Authenticate", `Basic realm="AutoButler"`)
+			c.Header("WWW-Authenticate", `Basic realm="Quark"`)
 		}
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
 		c.Abort()
@@ -273,7 +273,7 @@ func Use(router *gin.Engine, deps deputil.Dependencies) {
 	config.ExposeHeaders = []string{"Content-Length"}
 	config.AllowCredentials = false // see comment above
 	config.MaxAge = 12 * time.Hour
-	router.Use(otelgin.Middleware("autobutler-server"))
+	router.Use(otelgin.Middleware("quark-server"))
 	router.Use(cors.New(config))
 	router.Use(inject(deps))
 	router.Use(trackDevice(deps))

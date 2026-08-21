@@ -1,11 +1,11 @@
 import 'dart:io';
 
-import 'package:autobutler/pages/document_editor_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quark/pages/document_editor_page.dart';
 
 /// flutter_quill binds Ctrl/Cmd+F to its own modal search dialog. The document
 /// editor shows an inline find bar instead, so the built-in dialog must never

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/autobutler-org/autobutler/pkg/migration"
+	"github.com/autobutler-org/quark/pkg/migration"
 )
 
 // --- helpers -----------------------------------------------------------------

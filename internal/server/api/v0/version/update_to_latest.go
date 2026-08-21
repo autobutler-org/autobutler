@@ -1,8 +1,8 @@
 package v0_version
 
 import (
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
-	"github.com/autobutler-org/autobutler/pkg/util/updateutil"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/updateutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,7 +25,7 @@ func updateToLatest(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(err)
 	}
 
-	restartAutobutler()
+	restartQuark()
 	return serverutil.Ok().WithData(UpdateRequest{
 		Version: latestVersion,
 	})

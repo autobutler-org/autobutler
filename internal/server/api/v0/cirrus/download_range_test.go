@@ -8,13 +8,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	v0_files "github.com/autobutler-org/autobutler/internal/server/api/v0/cirrus"
-	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
-	"github.com/autobutler-org/autobutler/pkg/util/deputil"
-	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
-	"github.com/autobutler-org/autobutler/pkg/vfs"
+	v0_files "github.com/autobutler-org/quark/internal/server/api/v0/cirrus"
+	"github.com/autobutler-org/quark/pkg/util/ctxutil"
+	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/eventbus"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/vfs"
 	"github.com/gin-gonic/gin"
 )
 
@@ -36,7 +36,7 @@ func newVFSTestEngine(t *testing.T) (*gin.Engine, string) {
 	}
 
 	mountPoint := t.TempDir()
-	cirrusDir := filepath.Join(mountPoint, "autobutler", "data", "cirrus")
+	cirrusDir := filepath.Join(mountPoint, "quark", "data", "cirrus")
 	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
 		t.Fatalf("MkdirAll: %v", err)
 	}

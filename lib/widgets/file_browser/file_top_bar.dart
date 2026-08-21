@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:autobutler/services/storage_service.dart';
-import 'package:autobutler/theme/autobutler_colors.dart';
-import 'package:autobutler/widgets/autobutler_brand_button.dart';
-import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
-import 'package:autobutler/widgets/refresh_icon_button.dart';
+import 'package:quark/services/storage_service.dart';
+import 'package:quark/theme/quark_colors.dart';
+import 'package:quark/widgets/quark_brand_button.dart';
+import 'package:quark/widgets/layout/theme_toggle_button.dart';
+import 'package:quark/widgets/refresh_icon_button.dart';
 import 'package:flutter/material.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
+import 'package:quark_icons/quark_icons.dart';
 import 'package:flutter/services.dart';
 
 class FileTopBar extends StatefulWidget {
@@ -168,7 +168,7 @@ class _FileTopBarState extends State<FileTopBar> {
             const SizedBox(width: 4),
             _iconBtn(
               context: context,
-              icon: AutobutlerIcons.settings_outlined,
+              icon: QuarkIcons.settings_outlined,
               onTap: widget.onOpenSettings,
               tooltip: 'Settings',
             ),
@@ -198,7 +198,7 @@ class _FileTopBarState extends State<FileTopBar> {
       children: [
         _iconBtn(
           context: context,
-          icon: AutobutlerIcons.search_rounded,
+          icon: QuarkIcons.search_rounded,
           onTap: _openSearch,
           tooltip: 'Search',
         ),
@@ -230,13 +230,13 @@ class _FileTopBarState extends State<FileTopBar> {
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(vertical: 8),
             prefixIcon: Icon(
-              AutobutlerIcons.search_rounded,
+              QuarkIcons.search_rounded,
               size: 18,
               color: colorScheme.onSurfaceVariant,
             ),
             suffixIcon: IconButton(
               icon: Icon(
-                AutobutlerIcons.close_rounded,
+                QuarkIcons.close_rounded,
                 size: 16,
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -246,15 +246,15 @@ class _FileTopBarState extends State<FileTopBar> {
             filled: true,
             fillColor: colorScheme.surfaceContainerHighest,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+              borderRadius: BorderRadius.circular(QuarkColors.radiusLg),
               borderSide: BorderSide(color: colorScheme.outline),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+              borderRadius: BorderRadius.circular(QuarkColors.radiusLg),
               borderSide: BorderSide(color: colorScheme.outline),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+              borderRadius: BorderRadius.circular(QuarkColors.radiusLg),
               borderSide: BorderSide(color: colorScheme.primary),
             ),
           ),
@@ -265,7 +265,7 @@ class _FileTopBarState extends State<FileTopBar> {
   }
 
   Widget _buildBrand(BuildContext context) {
-    return AutobutlerBrandButton(label: 'Files', onTap: widget.onOpenDrawer);
+    return QuarkBrandButton(label: 'Files', onTap: widget.onOpenDrawer);
   }
 
   Widget _buildNavButtons(BuildContext context) {
@@ -275,7 +275,7 @@ class _FileTopBarState extends State<FileTopBar> {
       children: [
         _iconBtn(
           context: context,
-          icon: AutobutlerIcons.arrow_back_rounded,
+          icon: QuarkIcons.arrow_back_rounded,
           onTap: !navEnabled || widget.currentPath.isEmpty
               ? null
               : widget.onGoUp,
@@ -284,7 +284,7 @@ class _FileTopBarState extends State<FileTopBar> {
         const SizedBox(width: 4),
         _iconBtn(
           context: context,
-          icon: AutobutlerIcons.arrow_upward_rounded,
+          icon: QuarkIcons.arrow_upward_rounded,
           onTap: !navEnabled || widget.currentPath.isEmpty
               ? null
               : widget.onGoUp,
@@ -368,7 +368,7 @@ class _FileTopBarState extends State<FileTopBar> {
         minimumSize: const WidgetStatePropertyAll(Size(220, 0)),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+            borderRadius: BorderRadius.circular(QuarkColors.radiusLg),
           ),
         ),
         padding: const WidgetStatePropertyAll(
@@ -403,7 +403,7 @@ class _FileTopBarState extends State<FileTopBar> {
         _menuSectionHeader(context, 'Layout'),
         _menuRadioItem(
           context: context,
-          icon: AutobutlerIcons.view_list_rounded,
+          icon: QuarkIcons.view_list_rounded,
           label: 'List',
           selected: !widget.isGridView,
           onTap: () {
@@ -412,7 +412,7 @@ class _FileTopBarState extends State<FileTopBar> {
         ),
         _menuRadioItem(
           context: context,
-          icon: AutobutlerIcons.grid_view_rounded,
+          icon: QuarkIcons.grid_view_rounded,
           label: 'Grid',
           selected: widget.isGridView,
           onTap: () {
@@ -428,8 +428,8 @@ class _FileTopBarState extends State<FileTopBar> {
           visualDensity: VisualDensity.compact,
           leading: Icon(
             widget.isUnifiedView
-                ? AutobutlerIcons.folder_copy_outlined
-                : AutobutlerIcons.device_hub_outlined,
+                ? QuarkIcons.folder_copy_outlined
+                : QuarkIcons.device_hub_outlined,
             size: 18,
             color: colorScheme.onSurfaceVariant,
           ),
@@ -446,7 +446,7 @@ class _FileTopBarState extends State<FileTopBar> {
       ],
       child: _chip(
         context: context,
-        icon: AutobutlerIcons.tune_rounded,
+        icon: QuarkIcons.tune_rounded,
         label: 'Views',
         iconOnly: true,
         onTap: () {
@@ -503,11 +503,7 @@ class _FileTopBarState extends State<FileTopBar> {
         ),
       ),
       trailing: selected
-          ? Icon(
-              AutobutlerIcons.check_rounded,
-              size: 16,
-              color: colorScheme.primary,
-            )
+          ? Icon(QuarkIcons.check_rounded, size: 16, color: colorScheme.primary)
           : const SizedBox(width: 16),
       onTap: onTap,
     );
@@ -526,8 +522,8 @@ class _FileTopBarState extends State<FileTopBar> {
           child: _chip(
             context: context,
             icon: isSelected
-                ? AutobutlerIcons.check_circle_outline_rounded
-                : AutobutlerIcons.circle_outlined,
+                ? QuarkIcons.check_circle_outline_rounded
+                : QuarkIcons.circle_outlined,
             label: device.name.isNotEmpty ? device.name : device.mountPoint,
             onTap: widget.onDeviceToggled != null
                 ? () => widget.onDeviceToggled!(device.devicePath)
@@ -565,7 +561,7 @@ class _FileTopBarState extends State<FileTopBar> {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
         border: Border.all(color: colorScheme.outline),
-        borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+        borderRadius: BorderRadius.circular(QuarkColors.radiusLg),
       ),
       // LayoutBuilder inside the Container so constraints.maxWidth already
       // reflects the width after the Container's padding is subtracted.
@@ -585,7 +581,7 @@ class _FileTopBarState extends State<FileTopBar> {
                   child: Padding(
                     padding: const EdgeInsets.all(2),
                     child: Icon(
-                      AutobutlerIcons.home_rounded,
+                      QuarkIcons.home_rounded,
                       size: 16,
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -673,9 +669,7 @@ class _FileTopBarState extends State<FileTopBar> {
           dense: true,
           visualDensity: VisualDensity.compact,
           leading: Icon(
-            idx == 0
-                ? AutobutlerIcons.home_rounded
-                : AutobutlerIcons.folder_rounded,
+            idx == 0 ? QuarkIcons.home_rounded : QuarkIcons.folder_rounded,
             size: 18,
             color: colorScheme.onSurfaceVariant,
           ),
@@ -696,7 +690,7 @@ class _FileTopBarState extends State<FileTopBar> {
             minimumSize: const WidgetStatePropertyAll(Size(200, 0)),
             shape: WidgetStatePropertyAll(
               RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+                borderRadius: BorderRadius.circular(QuarkColors.radiusLg),
               ),
             ),
             padding: const WidgetStatePropertyAll(
@@ -722,7 +716,7 @@ class _FileTopBarState extends State<FileTopBar> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 child: Icon(
-                  AutobutlerIcons.more_horiz_rounded,
+                  QuarkIcons.more_horiz_rounded,
                   size: 14,
                   color: colorScheme.onSurface.withValues(alpha: 0.55),
                 ),
@@ -739,7 +733,7 @@ class _FileTopBarState extends State<FileTopBar> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Icon(
-            AutobutlerIcons.chevron_right_rounded,
+            QuarkIcons.chevron_right_rounded,
             size: 14,
             color: colorScheme.onSurface.withValues(alpha: 0.4),
           ),
@@ -827,7 +821,7 @@ class _FileTopBarState extends State<FileTopBar> {
       children: [
         _chip(
           context: context,
-          icon: AutobutlerIcons.upload_rounded,
+          icon: QuarkIcons.upload_rounded,
           label: widget.isUploading
               ? (widget.uploadTotal > 0
                     ? '${widget.uploadCompleted}/${widget.uploadTotal}'
@@ -838,14 +832,14 @@ class _FileTopBarState extends State<FileTopBar> {
         const SizedBox(width: 6),
         _chip(
           context: context,
-          icon: AutobutlerIcons.create_new_folder_outlined,
+          icon: QuarkIcons.create_new_folder_outlined,
           label: 'New folder',
           onTap: widget.isCreatingFolder ? null : widget.onCreateFolderPressed,
         ),
         const SizedBox(width: 6),
         _chip(
           context: context,
-          icon: AutobutlerIcons.edit_document,
+          icon: QuarkIcons.edit_document,
           label: 'New file',
           onTap: widget.onNewFilePressed,
         ),
@@ -860,8 +854,8 @@ class _FileTopBarState extends State<FileTopBar> {
         _segmentedToggle(
           context: context,
           segments: const [
-            (icon: AutobutlerIcons.view_list_rounded, label: 'List'),
-            (icon: AutobutlerIcons.grid_view_rounded, label: 'Grid'),
+            (icon: QuarkIcons.view_list_rounded, label: 'List'),
+            (icon: QuarkIcons.grid_view_rounded, label: 'Grid'),
           ],
           selectedIndex: widget.isGridView ? 1 : 0,
           onSelected: (index) {
@@ -875,8 +869,8 @@ class _FileTopBarState extends State<FileTopBar> {
         _chip(
           context: context,
           icon: widget.isUnifiedView
-              ? AutobutlerIcons.folder_copy_outlined
-              : AutobutlerIcons.device_hub_outlined,
+              ? QuarkIcons.folder_copy_outlined
+              : QuarkIcons.device_hub_outlined,
           label: widget.isUnifiedView ? 'Unified' : 'Per-device',
           onTap: widget.onToggleUnifiedView,
           active: widget.isUnifiedView,
@@ -892,7 +886,7 @@ class _FileTopBarState extends State<FileTopBar> {
     required ValueChanged<int> onSelected,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final radius = BorderRadius.circular(AutobutlerColors.radiusLg);
+    final radius = BorderRadius.circular(QuarkColors.radiusLg);
     return Material(
       color: colorScheme.surfaceContainerHighest,
       shape: RoundedRectangleBorder(
@@ -913,13 +907,13 @@ class _FileTopBarState extends State<FileTopBar> {
             segRadius = radius;
           } else if (isFirst) {
             segRadius = BorderRadius.only(
-              topLeft: Radius.circular(AutobutlerColors.radiusLg),
-              bottomLeft: Radius.circular(AutobutlerColors.radiusLg),
+              topLeft: Radius.circular(QuarkColors.radiusLg),
+              bottomLeft: Radius.circular(QuarkColors.radiusLg),
             );
           } else if (isLast) {
             segRadius = BorderRadius.only(
-              topRight: Radius.circular(AutobutlerColors.radiusLg),
-              bottomRight: Radius.circular(AutobutlerColors.radiusLg),
+              topRight: Radius.circular(QuarkColors.radiusLg),
+              bottomRight: Radius.circular(QuarkColors.radiusLg),
             );
           } else {
             segRadius = BorderRadius.zero;
@@ -985,7 +979,7 @@ class _FileTopBarState extends State<FileTopBar> {
     required String tooltip,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final radius = BorderRadius.circular(AutobutlerColors.radiusMd);
+    final radius = BorderRadius.circular(QuarkColors.radiusMd);
     return Tooltip(
       message: tooltip,
       child: MouseRegion(
@@ -1027,7 +1021,7 @@ class _FileTopBarState extends State<FileTopBar> {
     bool iconOnly = false,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final radius = BorderRadius.circular(AutobutlerColors.radiusLg);
+    final radius = BorderRadius.circular(QuarkColors.radiusLg);
     final iconColor = active
         ? colorScheme.primary
         : colorScheme.onSurfaceVariant;

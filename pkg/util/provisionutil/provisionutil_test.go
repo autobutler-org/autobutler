@@ -10,9 +10,9 @@ import (
 )
 
 // TestProvisioningURL_DefaultWhenEnvUnset verifies the built-in default is
-// returned when AUTOBUTLER_PROVISIONING_URL is not set.
+// returned when QUARK_PROVISIONING_URL is not set.
 func TestProvisioningURL_DefaultWhenEnvUnset(t *testing.T) {
-	t.Setenv("AUTOBUTLER_PROVISIONING_URL", "")
+	t.Setenv("QUARK_PROVISIONING_URL", "")
 	if got := ProvisioningURL(); got != defaultProvisioningURL {
 		t.Errorf("ProvisioningURL() = %q; want %q", got, defaultProvisioningURL)
 	}
@@ -21,7 +21,7 @@ func TestProvisioningURL_DefaultWhenEnvUnset(t *testing.T) {
 // TestProvisioningURL_OverriddenByEnv verifies the env var overrides the default.
 func TestProvisioningURL_OverriddenByEnv(t *testing.T) {
 	custom := "https://provision.example.internal"
-	t.Setenv("AUTOBUTLER_PROVISIONING_URL", custom)
+	t.Setenv("QUARK_PROVISIONING_URL", custom)
 	if got := ProvisioningURL(); got != custom {
 		t.Errorf("ProvisioningURL() = %q; want %q", got, custom)
 	}
@@ -30,7 +30,7 @@ func TestProvisioningURL_OverriddenByEnv(t *testing.T) {
 // TestProvisioningSecret_EmptyWhenUnset verifies empty string returned when
 // the env var is absent.
 func TestProvisioningSecret_EmptyWhenUnset(t *testing.T) {
-	t.Setenv("AUTOBUTLER_PROVISIONING_SECRET", "")
+	t.Setenv("QUARK_PROVISIONING_SECRET", "")
 	if got := ProvisioningSecret(); got != "" {
 		t.Errorf("ProvisioningSecret() = %q; want empty string", got)
 	}
@@ -38,7 +38,7 @@ func TestProvisioningSecret_EmptyWhenUnset(t *testing.T) {
 
 // TestProvisioningSecret_FromEnv verifies the secret is read from env.
 func TestProvisioningSecret_FromEnv(t *testing.T) {
-	t.Setenv("AUTOBUTLER_PROVISIONING_SECRET", "super-secret-token")
+	t.Setenv("QUARK_PROVISIONING_SECRET", "super-secret-token")
 	if got := ProvisioningSecret(); got != "super-secret-token" {
 		t.Errorf("ProvisioningSecret() = %q; want 'super-secret-token'", got)
 	}
@@ -62,8 +62,8 @@ func TestProvisionAuthKey_ReturnsKeyOnSuccess(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	t.Setenv("AUTOBUTLER_PROVISIONING_URL", ts.URL)
-	t.Setenv("AUTOBUTLER_PROVISIONING_SECRET", "test-secret")
+	t.Setenv("QUARK_PROVISIONING_URL", ts.URL)
+	t.Setenv("QUARK_PROVISIONING_SECRET", "test-secret")
 
 	key, err := ProvisionAuthKey("device-abc")
 	if err != nil {
@@ -82,8 +82,8 @@ func TestProvisionAuthKey_ErrorOnNonOKStatus(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	t.Setenv("AUTOBUTLER_PROVISIONING_URL", ts.URL)
-	t.Setenv("AUTOBUTLER_PROVISIONING_SECRET", "bad-secret")
+	t.Setenv("QUARK_PROVISIONING_URL", ts.URL)
+	t.Setenv("QUARK_PROVISIONING_SECRET", "bad-secret")
 
 	_, err := ProvisionAuthKey("device-xyz")
 	if err == nil {
@@ -92,10 +92,10 @@ func TestProvisionAuthKey_ErrorOnNonOKStatus(t *testing.T) {
 }
 
 // TestProvisionAuthKey_ErrorWhenSecretMissing verifies that missing
-// AUTOBUTLER_PROVISIONING_SECRET is caught before any network call.
+// QUARK_PROVISIONING_SECRET is caught before any network call.
 func TestProvisionAuthKey_ErrorWhenSecretMissing(t *testing.T) {
-	t.Setenv("AUTOBUTLER_PROVISIONING_SECRET", "")
-	t.Setenv("AUTOBUTLER_PROVISIONING_URL", "https://127.0.0.1:0") // unreachable — should not be called
+	t.Setenv("QUARK_PROVISIONING_SECRET", "")
+	t.Setenv("QUARK_PROVISIONING_URL", "https://127.0.0.1:0") // unreachable — should not be called
 
 	_, err := ProvisionAuthKey("device-xyz")
 	if err == nil {
@@ -112,8 +112,8 @@ func TestProvisionAuthKey_ErrorOnEmptyAuthKey(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	t.Setenv("AUTOBUTLER_PROVISIONING_URL", ts.URL)
-	t.Setenv("AUTOBUTLER_PROVISIONING_SECRET", "some-secret")
+	t.Setenv("QUARK_PROVISIONING_URL", ts.URL)
+	t.Setenv("QUARK_PROVISIONING_SECRET", "some-secret")
 
 	_, err := ProvisionAuthKey("device-abc")
 	if err == nil {
@@ -122,8 +122,8 @@ func TestProvisionAuthKey_ErrorOnEmptyAuthKey(t *testing.T) {
 }
 
 func TestProvisioningURL_DefaultIsHTTPS(t *testing.T) {
-	t.Setenv("AUTOBUTLER_PROVISIONING_URL", "")
-	os.Unsetenv("AUTOBUTLER_PROVISIONING_URL")
+	t.Setenv("QUARK_PROVISIONING_URL", "")
+	os.Unsetenv("QUARK_PROVISIONING_URL")
 	url := ProvisioningURL()
 	if !strings.HasPrefix(url, "https://") {
 		t.Errorf("default provisioning URL should be HTTPS, got %q", url)

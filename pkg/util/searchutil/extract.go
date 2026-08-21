@@ -2,7 +2,7 @@
 // indexed file contents using SQLite FTS5.
 //
 // Supported for text extraction (in order of fidelity):
-//   - Autobutler documents (.abdoc) and spreadsheets (.absheet): the prose is
+//   - Quark documents (.abdoc) and spreadsheets (.absheet): the prose is
 //     pulled out of the JSON envelope so the index holds readable text rather
 //     than markup (see extractDelta and extractSheet)
 //   - Plaintext files (.txt, .md, .csv, .log, .yaml, .yml, .toml, .json, .xml,
@@ -32,7 +32,7 @@ const MaxExtractBytes = 512 * 1024 // 512 KB
 // to read as UTF-8 text for indexing. Binary formats (images, video, audio,
 // executables) are excluded.
 var extractableExtensions = map[string]bool{
-	// Autobutler's own document formats. Both are JSON envelopes, so they are
+	// Quark's own document formats. Both are JSON envelopes, so they are
 	// routed through a structured extractor rather than indexed verbatim.
 	".abdoc":   true,
 	".absheet": true,
@@ -88,7 +88,7 @@ func ExtractText(path string) string {
 		return ""
 	}
 
-	// Autobutler's own formats wrap prose in JSON. Indexing the envelope
+	// Quark's own formats wrap prose in JSON. Indexing the envelope
 	// verbatim would work, but every snippet would be full of `{"ops":[{"insert":`
 	// noise and queries would match on JSON keys, so pull the text out instead.
 	// A document too large for MaxExtractBytes arrives here truncated and will

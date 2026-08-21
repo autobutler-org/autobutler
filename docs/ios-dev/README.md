@@ -6,7 +6,7 @@ Total nightmare.
 
 Install XCode, including the iOS dev kit.
 
-## Opening Autobutler
+## Opening Quark
 
 Open the [Runner XCode project](../ios/Runner.xcodeproj/)
 
@@ -17,7 +17,7 @@ in the file tree thing.
 
 ![Runner Project Signing Menu](./runner-project-signing-menu.png)
 
-Login with an account tied to Autobutler LLC, then you should get that as an option in the "Team" dropdown on the side.
+Login with an account tied to Quark LLC, then you should get that as an option in the "Team" dropdown on the side.
 
 ## Signing Certificate
 

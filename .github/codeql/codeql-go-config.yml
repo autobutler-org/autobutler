@@ -1,4 +1,4 @@
-name: "AutoButler CodeQL config — Go"
+name: "Quark CodeQL config — Go"
 
 query-filters:
   # go/request-forgery: fetchURL in pkg/util/updateutil/updateutil.go contacts only

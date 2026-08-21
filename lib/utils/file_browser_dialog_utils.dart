@@ -1,13 +1,13 @@
-import 'package:autobutler/controllers/file_browser_controller.dart';
-import 'package:autobutler/models/cirrus_file_node.dart';
-import 'package:autobutler/models/move_rename_result.dart';
-import 'package:autobutler/services/storage_service.dart';
-import 'package:autobutler/utils/autobutler_widget.dart';
-import 'package:autobutler/utils/file_browser_path_utils.dart';
-import 'package:autobutler/widgets/file_browser/file_breadcrumb_bar.dart';
-import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:quark/controllers/file_browser_controller.dart';
+import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/models/move_rename_result.dart';
+import 'package:quark/services/storage_service.dart';
+import 'package:quark/utils/file_browser_path_utils.dart';
+import 'package:quark/utils/quark_widget.dart';
+import 'package:quark/widgets/file_browser/file_breadcrumb_bar.dart';
+import 'package:quark/widgets/file_browser/file_browser_view.dart';
 
 Future<String?> promptForFolderName(BuildContext context) async {
   final value = await _promptForText(
@@ -55,7 +55,7 @@ Future<MoveRenameResult?> promptForMoveRenamePath(
   final showDevicePicker = devices.length > 1;
   StorageDevice? selectedDevice = devices.isNotEmpty ? devices.first : null;
 
-  final result = await AutobutlerWidget.showDialog<MoveRenameResult?>(
+  final result = await QuarkWidget.showDialog<MoveRenameResult?>(
     context,
     useRootNavigator: true,
     builder: (dialogContext) {
@@ -109,7 +109,7 @@ Future<MoveRenameResult?> promptForMoveRenamePath(
             return normCurrent.startsWith('/') ? normCurrent : '/$normCurrent';
           }
 
-          return AutobutlerWidget.alertDialog(
+          return QuarkWidget.alertDialog(
             title: const Text('Move / Rename'),
             scrollable: true,
             content: SizedBox(
@@ -173,7 +173,7 @@ Future<MoveRenameResult?> promptForMoveRenamePath(
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      AutobutlerWidget.textField(
+                      QuarkWidget.textField(
                         controller: nameController,
                         hintText: 'New file name',
                         autofocus: true,
@@ -266,11 +266,11 @@ Future<bool?> confirmDelete(BuildContext context, String itemName) async {
     return null;
   }
 
-  return AutobutlerWidget.showDialog<bool>(
+  return QuarkWidget.showDialog<bool>(
     context,
     useRootNavigator: true,
     builder: (dialogContext) {
-      return AutobutlerWidget.alertDialog(
+      return QuarkWidget.alertDialog(
         title: const Text('Delete'),
         content: Text('Delete $itemName?'),
         actions: [
@@ -302,15 +302,15 @@ Future<String?> _promptForText({
   final textController = TextEditingController();
   final String? value;
   try {
-    value = await AutobutlerWidget.showDialog(
+    value = await QuarkWidget.showDialog(
       context,
       useRootNavigator: true,
       builder: (dialogContext) {
-        return AutobutlerWidget.alertDialog(
+        return QuarkWidget.alertDialog(
           title: Text(title),
           content: Padding(
             padding: const EdgeInsets.only(top: 12),
-            child: AutobutlerWidget.textField(
+            child: QuarkWidget.textField(
               controller: textController,
               autofocus: true,
               hintText: hintText,

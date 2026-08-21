@@ -1,5 +1,5 @@
-import 'package:autobutler/utils/file_browser_drag_config.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quark/utils/file_browser_drag_config.dart';
 
 void main() {
   group('FileBrowserDragConfig', () {

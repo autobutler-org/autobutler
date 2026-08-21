@@ -3,7 +3,7 @@ package healthutil_test
 import (
 	"testing"
 
-	"github.com/autobutler-org/autobutler/pkg/util/healthutil"
+	"github.com/autobutler-org/quark/pkg/util/healthutil"
 )
 
 // TestRegister_ReturnsNonNilCollector verifies that Register() succeeds against

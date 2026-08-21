@@ -1,14 +1,14 @@
-import 'package:autobutler/models/photo_album.dart';
-import 'package:autobutler/pages/image_viewer_page.dart';
-import 'package:autobutler/pages/photos_page.dart';
-import 'package:autobutler/services/album_service.dart';
-import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/theme/autobutler_colors.dart';
-import 'package:autobutler/widgets/core/empty_state_widget.dart';
-import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
-import 'package:autobutler/widgets/photos/add_to_album_sheet.dart';
 import 'package:flutter/material.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
+import 'package:quark/models/photo_album.dart';
+import 'package:quark/pages/image_viewer_page.dart';
+import 'package:quark/pages/photos_page.dart';
+import 'package:quark/services/album_service.dart';
+import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/theme/quark_colors.dart';
+import 'package:quark/widgets/core/empty_state_widget.dart';
+import 'package:quark/widgets/layout/theme_toggle_button.dart';
+import 'package:quark/widgets/photos/add_to_album_sheet.dart';
+import 'package:quark_icons/quark_icons.dart';
 
 class AlbumPage extends StatefulWidget {
   const AlbumPage({required this.album, super.key});
@@ -108,11 +108,11 @@ class _AlbumPageState extends State<AlbumPage> {
         actions: [
           TextButton.icon(
             onPressed: _openAddPhotosMode,
-            icon: const Icon(AutobutlerIcons.add_rounded, size: 18),
+            icon: const Icon(QuarkIcons.add_rounded, size: 18),
             label: const Text('Add Photos'),
           ),
           IconButton(
-            icon: const Icon(AutobutlerIcons.refresh_rounded),
+            icon: const Icon(QuarkIcons.refresh_rounded),
             tooltip: 'Refresh',
             onPressed: _load,
           ),
@@ -132,7 +132,7 @@ class _AlbumPageState extends State<AlbumPage> {
               const PopupMenuItem(
                 value: 'grid-up',
                 child: ListTile(
-                  leading: Icon(AutobutlerIcons.crop_square_outlined),
+                  leading: Icon(QuarkIcons.crop_square_outlined),
                   title: Text('Larger photos'),
                   contentPadding: EdgeInsets.zero,
                 ),
@@ -140,7 +140,7 @@ class _AlbumPageState extends State<AlbumPage> {
               const PopupMenuItem(
                 value: 'grid-down',
                 child: ListTile(
-                  leading: Icon(AutobutlerIcons.grid_view_outlined),
+                  leading: Icon(QuarkIcons.grid_view_outlined),
                   title: Text('Smaller photos'),
                   contentPadding: EdgeInsets.zero,
                 ),
@@ -156,7 +156,7 @@ class _AlbumPageState extends State<AlbumPage> {
           ? Center(child: Text('Error: $_error'))
           : _items.isEmpty
           ? EmptyStateWidget(
-              icon: AutobutlerIcons.photo_album_outlined,
+              icon: QuarkIcons.photo_album_outlined,
               headline: 'No photos yet',
               subtext:
                   'Add photos to "${widget.album.name}" from the Photos view.',
@@ -239,7 +239,7 @@ class _AlbumPageState extends State<AlbumPage> {
                           errorBuilder: (context, error, stack) => Container(
                             color: colorScheme.surfaceContainerHighest,
                             child: Icon(
-                              AutobutlerIcons.broken_image_outlined,
+                              QuarkIcons.broken_image_outlined,
                               color: colorScheme.onSurface.withValues(
                                 alpha: 0.3,
                               ),
@@ -259,14 +259,14 @@ class _AlbumPageState extends State<AlbumPage> {
     showModalBottomSheet<void>(
       context: context,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AutobutlerColors.radiusLg),
+        borderRadius: BorderRadius.circular(QuarkColors.radiusLg),
       ),
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(AutobutlerIcons.photo_album_outlined),
+              leading: const Icon(QuarkIcons.photo_album_outlined),
               title: const Text('Add to another album'),
               onTap: () {
                 Navigator.of(ctx).pop();
@@ -279,7 +279,7 @@ class _AlbumPageState extends State<AlbumPage> {
             ),
             ListTile(
               leading: Icon(
-                AutobutlerIcons.remove_circle_outline,
+                QuarkIcons.remove_circle_outline,
                 color: Theme.of(ctx).colorScheme.error,
               ),
               title: Text(

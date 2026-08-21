@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/autobutler-org/autobutler/internal/db"
+	"github.com/autobutler-org/quark/internal/db"
 )
 
 func MigrateVault(ctx context.Context, source, target *db.DatabaseSqlc) error {

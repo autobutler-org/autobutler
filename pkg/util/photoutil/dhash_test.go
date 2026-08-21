@@ -5,7 +5,7 @@ import (
 	"image/color"
 	"testing"
 
-	"github.com/autobutler-org/autobutler/pkg/util/photoutil"
+	"github.com/autobutler-org/quark/pkg/util/photoutil"
 )
 
 // solidImage returns a plain-colour image of the given size.

@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:autobutler/services/app_settings.dart';
-import 'package:autobutler/services/ws_connect_stub.dart'
-    if (dart.library.io) 'package:autobutler/services/ws_connect_io.dart';
 import 'package:flutter/foundation.dart';
+import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/ws_connect_stub.dart'
+    if (dart.library.io) 'package:quark/services/ws_connect_io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 /// A single file-system mutation event from the server.

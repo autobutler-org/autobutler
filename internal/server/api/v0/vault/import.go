@@ -9,9 +9,9 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/autobutler-org/autobutler/internal/db"
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
-	"github.com/autobutler-org/autobutler/pkg/util/vaultcrypto"
+	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
 	"github.com/gin-gonic/gin"
 )
 
@@ -50,7 +50,7 @@ var importVaultRoute = serverutil.ApiRoute(
 
 		switch format {
 		case "json":
-			entries, parseErrors = parseAutoButlerJSON(data)
+			entries, parseErrors = parseQuarkJSON(data)
 		case "bitwarden":
 			entries, parseErrors = parseBitwardenCSV(data)
 		case "csv":
@@ -192,7 +192,7 @@ func detectFormat(data []byte) string {
 	return "csv"
 }
 
-func parseAutoButlerJSON(data []byte) ([]importEntry, []string) {
+func parseQuarkJSON(data []byte) ([]importEntry, []string) {
 	var export exportJSON
 	if err := json.Unmarshal(data, &export); err != nil {
 		var arr []exportEntry

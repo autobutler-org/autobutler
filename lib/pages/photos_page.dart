@@ -1,30 +1,30 @@
-import 'package:autobutler/models/cirrus_file_node.dart';
-import 'package:autobutler/utils/auto_refresh_mixin.dart';
-import 'package:autobutler/widgets/core/empty_state_widget.dart';
-import 'package:autobutler/widgets/device_upload_picker.dart';
-import 'package:autobutler/widgets/refresh_icon_button.dart';
-import 'package:autobutler/pages/image_viewer_page.dart';
-import 'package:autobutler/services/app_settings.dart';
-import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/services/storage_service.dart';
-import 'package:autobutler/widgets/autobutler_drawer.dart';
-import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
-import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
-import 'package:autobutler/models/photo_album.dart';
-import 'package:autobutler/pages/album_page.dart';
-import 'package:autobutler/services/album_service.dart';
-import 'package:autobutler/services/favorites_service.dart';
-import 'package:autobutler/widgets/photos/album_sidebar.dart';
-import 'package:autobutler/widgets/photos/photo_selection_bar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-import 'package:autobutler/router.dart';
 import 'package:flutter/material.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:photo_manager/photo_manager.dart';
+import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/models/photo_album.dart';
+import 'package:quark/pages/album_page.dart';
+import 'package:quark/pages/image_viewer_page.dart';
+import 'package:quark/router.dart';
+import 'package:quark/services/album_service.dart';
+import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/favorites_service.dart';
+import 'package:quark/services/storage_service.dart';
+import 'package:quark/utils/auto_refresh_mixin.dart';
+import 'package:quark/widgets/core/empty_state_widget.dart';
+import 'package:quark/widgets/device_upload_picker.dart';
+import 'package:quark/widgets/layout/quark_app_bar.dart';
+import 'package:quark/widgets/layout/theme_toggle_button.dart';
+import 'package:quark/widgets/photos/album_sidebar.dart';
+import 'package:quark/widgets/photos/photo_selection_bar.dart';
+import 'package:quark/widgets/quark_drawer.dart';
+import 'package:quark/widgets/refresh_icon_button.dart';
+import 'package:quark_icons/quark_icons.dart';
 
 class PhotosPage extends StatefulWidget {
   const PhotosPage({this.addingToAlbum, super.key});
@@ -454,13 +454,13 @@ class _PhotosPageState extends State<PhotosPage>
         contentPadding: EdgeInsets.zero,
         onTap: () => _selectCategory(cat),
         leading: Icon(switch (cat) {
-          PhotoCategory.cirrus => AutobutlerIcons.cloud,
-          PhotoCategory.mobile => AutobutlerIcons.smartphone,
-          PhotoCategory.all => AutobutlerIcons.photo_library,
-          PhotoCategory.favorites => AutobutlerIcons.star_rounded,
+          PhotoCategory.cirrus => QuarkIcons.cloud,
+          PhotoCategory.mobile => QuarkIcons.smartphone,
+          PhotoCategory.all => QuarkIcons.photo_library,
+          PhotoCategory.favorites => QuarkIcons.star_rounded,
         }, color: selected ? theme.colorScheme.primary : null),
         title: Text('$label: $count', style: theme.textTheme.titleMedium),
-        trailing: selected ? const Icon(AutobutlerIcons.check, size: 16) : null,
+        trailing: selected ? const Icon(QuarkIcons.check, size: 16) : null,
       );
     }
 
@@ -496,7 +496,7 @@ class _PhotosPageState extends State<PhotosPage>
                         });
                       }
                     : null,
-                icon: const Icon(AutobutlerIcons.crop_square_outlined),
+                icon: const Icon(QuarkIcons.crop_square_outlined),
                 tooltip: 'Larger photos',
               ),
               Expanded(
@@ -523,7 +523,7 @@ class _PhotosPageState extends State<PhotosPage>
                         });
                       }
                     : null,
-                icon: const Icon(AutobutlerIcons.grid_view_outlined),
+                icon: const Icon(QuarkIcons.grid_view_outlined),
                 tooltip: 'Smaller photos',
               ),
             ],
@@ -544,8 +544,8 @@ class _PhotosPageState extends State<PhotosPage>
               ),
               trailing: Icon(
                 _categoriesExpanded
-                    ? AutobutlerIcons.expand_less
-                    : AutobutlerIcons.expand_more,
+                    ? QuarkIcons.expand_less
+                    : QuarkIcons.expand_more,
               ),
               onTap: () {
                 setState(() {
@@ -627,7 +627,7 @@ class _PhotosPageState extends State<PhotosPage>
       bottom: 4,
       right: 4,
       child: Icon(
-        AutobutlerIcons.star_rounded,
+        QuarkIcons.star_rounded,
         size: 16,
         color: Colors.white,
         shadows: const [Shadow(blurRadius: 4, color: Colors.black54)],
@@ -690,7 +690,7 @@ class _PhotosPageState extends State<PhotosPage>
                   ),
                   child: isSelected
                       ? const Icon(
-                          AutobutlerIcons.check,
+                          QuarkIcons.check,
                           size: 14,
                           color: Colors.white,
                         )
@@ -881,15 +881,14 @@ class _PhotosPageState extends State<PhotosPage>
       child: photos.isEmpty && !_isLoadingMoreCirrus
           ? (_selectedCategory == PhotoCategory.favorites
                 ? const EmptyStateWidget(
-                    icon: AutobutlerIcons.star_outline_rounded,
+                    icon: QuarkIcons.star_outline_rounded,
                     headline: 'No favorites yet',
                     subtext: 'Tap ★ on any photo to save it here.',
                   )
                 : const EmptyStateWidget(
-                    icon: AutobutlerIcons.photo_library_outlined,
+                    icon: QuarkIcons.photo_library_outlined,
                     headline: 'No photos yet',
-                    subtext:
-                        'Photos you upload to AutoButler will appear here.',
+                    subtext: 'Photos you upload to Quark will appear here.',
                   ))
           : GridView.builder(
               controller: _scrollController,
@@ -1166,9 +1165,9 @@ class _PhotosPageState extends State<PhotosPage>
                     const ThemeToggleButton(),
                   ],
                 )
-              : AutobutlerAppBar(
+              : QuarkAppBar(
                   label: 'Photos',
-                  icon: AutobutlerIcons.photo_library_outlined,
+                  icon: QuarkIcons.photo_library_outlined,
                   actions: [
                     IconButton(
                       icon: _isUploading
@@ -1192,8 +1191,8 @@ class _PhotosPageState extends State<PhotosPage>
                     ),
                   ],
                 ),
-          drawer: AutobutlerDrawer(
-            activeSection: AutobutlerDrawerSection.photos,
+          drawer: QuarkDrawer(
+            activeSection: QuarkDrawerSection.photos,
             onTapCirrus: () {
               context.go(AppRoutes.cirrus);
             },
@@ -1315,11 +1314,10 @@ class _PhotosPageState extends State<PhotosPage>
                             photos.isEmpty
                                 ? const SliverFillRemaining(
                                     child: EmptyStateWidget(
-                                      icon: AutobutlerIcons
-                                          .photo_library_outlined,
+                                      icon: QuarkIcons.photo_library_outlined,
                                       headline: 'No photos yet',
                                       subtext:
-                                          'Photos you upload to AutoButler will appear here.',
+                                          'Photos you upload to Quark will appear here.',
                                     ),
                                   )
                                 : SliverGrid(
@@ -1388,7 +1386,7 @@ class _PhotosPageState extends State<PhotosPage>
                               ),
                               child: Center(
                                 child: Icon(
-                                  AutobutlerIcons.keyboard_arrow_up_rounded,
+                                  QuarkIcons.keyboard_arrow_up_rounded,
                                   size: 20,
                                   color: Theme.of(context).colorScheme.onSurface
                                       .withValues(alpha: 0.4),

@@ -1,7 +1,7 @@
 {
-  "name": "autobutler",
+  "name": "quark",
   "private": true,
-  "description": "Node.js tooling for AutoButler development (npx convenience tools).",
+  "description": "Node.js tooling for Quark development (npx convenience tools).",
   "devDependencies": {
     "fantasticon": "^4.1.0"
   }

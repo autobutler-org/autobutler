@@ -6,9 +6,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
-	"github.com/autobutler-org/autobutler/pkg/util/updateutil"
-	"github.com/autobutler-org/autobutler/pkg/util/versionutil"
+	"github.com/autobutler-org/quark/pkg/util/settingsutil"
+	"github.com/autobutler-org/quark/pkg/util/updateutil"
+	"github.com/autobutler-org/quark/pkg/util/versionutil"
 )
 
 // startAutoUpdateChecker runs a background goroutine that checks for and

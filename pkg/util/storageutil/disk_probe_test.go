@@ -3,7 +3,7 @@ package storageutil_test
 import (
 	"testing"
 
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
 
 func TestProbeDisk_ReturnsResult(t *testing.T) {

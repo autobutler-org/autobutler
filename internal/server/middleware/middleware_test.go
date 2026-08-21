@@ -7,10 +7,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/autobutler-org/autobutler/internal/db"
-	"github.com/autobutler-org/autobutler/internal/server/middleware"
-	"github.com/autobutler-org/autobutler/pkg/util/authutil"
-	"github.com/autobutler-org/autobutler/pkg/util/deputil"
+	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/internal/server/middleware"
+	"github.com/autobutler-org/quark/pkg/util/authutil"
+	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/gin-gonic/gin"
 	_ "modernc.org/sqlite"
 )

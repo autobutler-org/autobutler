@@ -1,10 +1,11 @@
 import 'dart:async';
-import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/utils/web_download_stub.dart'
-    if (dart.library.html) 'package:autobutler/utils/web_download_web.dart'
-    as web_download;
-import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
+
 import 'package:flutter/material.dart';
+import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/utils/web_download_stub.dart'
+    if (dart.library.html) 'package:quark/utils/web_download_web.dart'
+    as web_download;
+import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:video_player/video_player.dart';
 
 class AudioPlayerPage extends StatefulWidget {

@@ -1,16 +1,16 @@
 import 'dart:async';
 
-import 'package:autobutler/router.dart';
-import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/services/content_search_service.dart';
-import 'package:autobutler/models/cirrus_file_node.dart';
-import 'package:autobutler/utils/safe_set_state_mixin.dart';
-import 'package:autobutler/widgets/autobutler_drawer.dart';
-import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
+import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/router.dart';
+import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/content_search_service.dart';
+import 'package:quark/utils/safe_set_state_mixin.dart';
+import 'package:quark/widgets/layout/quark_app_bar.dart';
+import 'package:quark/widgets/quark_drawer.dart';
+import 'package:quark_icons/quark_icons.dart';
 
 class SheetsPage extends StatefulWidget {
   const SheetsPage({super.key});
@@ -164,9 +164,9 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AutobutlerAppBar(
+      appBar: QuarkAppBar(
         label: 'Sheets',
-        icon: AutobutlerIcons.table_chart_outlined,
+        icon: QuarkIcons.table_chart_outlined,
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -174,19 +174,19 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
             onPressed: _createNewSheet,
           ),
           IconButton(
-            icon: const Icon(AutobutlerIcons.refresh_rounded),
+            icon: const Icon(QuarkIcons.refresh_rounded),
             tooltip: 'Reload',
             onPressed: _load,
           ),
           IconButton(
-            icon: const Icon(AutobutlerIcons.settings_outlined),
+            icon: const Icon(QuarkIcons.settings_outlined),
             tooltip: 'Settings',
             onPressed: () => context.go('/settings'),
           ),
         ],
       ),
-      drawer: AutobutlerDrawer(
-        activeSection: AutobutlerDrawerSection.sheets,
+      drawer: QuarkDrawer(
+        activeSection: QuarkDrawerSection.sheets,
         onTapCirrus: () => context.go('/cirrus'),
         onTapPhotos: () => context.go('/photos'),
         onTapDocs: () => context.go('/docs'),
@@ -216,10 +216,10 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
         controller: _searchController,
         decoration: InputDecoration(
           hintText: 'Search sheets…',
-          prefixIcon: const Icon(AutobutlerIcons.search_rounded, size: 20),
+          prefixIcon: const Icon(QuarkIcons.search_rounded, size: 20),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
-                  icon: const Icon(AutobutlerIcons.clear_rounded, size: 18),
+                  icon: const Icon(QuarkIcons.clear_rounded, size: 18),
                   onPressed: () => _searchController.clear(),
                 )
               : null,
@@ -248,11 +248,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              AutobutlerIcons.error_outline,
-              size: 40,
-              color: colorScheme.error,
-            ),
+            Icon(QuarkIcons.error_outline, size: 40, color: colorScheme.error),
             const SizedBox(height: 12),
             Text(_error!, textAlign: TextAlign.center),
             const SizedBox(height: 12),
@@ -277,7 +273,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              AutobutlerIcons.table_chart_outlined,
+              QuarkIcons.table_chart_outlined,
               size: 48,
               color: colorScheme.onSurface.withValues(alpha: 0.3),
             ),
@@ -326,7 +322,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
             child: Row(
               children: [
                 Icon(
-                  AutobutlerIcons.search_rounded,
+                  QuarkIcons.search_rounded,
                   size: 14,
                   color: colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
@@ -360,7 +356,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
-          AutobutlerIcons.search_rounded,
+          QuarkIcons.search_rounded,
           size: 18,
           color: colorScheme.onTertiaryContainer,
         ),
@@ -403,7 +399,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
           borderRadius: BorderRadius.circular(6),
         ),
         child: Icon(
-          AutobutlerIcons.table_chart_outlined,
+          QuarkIcons.table_chart_outlined,
           size: 18,
           color: Colors.green.shade600,
         ),

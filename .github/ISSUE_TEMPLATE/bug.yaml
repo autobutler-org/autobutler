@@ -54,8 +54,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: AutoButler version
-      description: What version of AutoButler are you running? (Find it in Settings → About, or run `autobutler version`)
+      label: Quark version
+      description: What version of Quark are you running? (Find it in Settings → About, or run `quark version`)
       placeholder: "e.g. 0.1.0"
     validations:
       required: true

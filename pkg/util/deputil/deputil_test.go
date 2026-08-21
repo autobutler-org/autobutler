@@ -3,7 +3,7 @@ package deputil
 import (
 	"testing"
 
-	"github.com/autobutler-org/autobutler/internal/db"
+	"github.com/autobutler-org/quark/internal/db"
 )
 
 func TestNewDependencies(t *testing.T) {

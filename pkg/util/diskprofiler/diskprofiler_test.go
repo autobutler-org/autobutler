@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/autobutler-org/autobutler/pkg/util/diskprofiler"
+	"github.com/autobutler-org/quark/pkg/util/diskprofiler"
 )
 
 // TestProfile_ReturnsTierForTempDir verifies that Profile completes without

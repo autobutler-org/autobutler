@@ -2,7 +2,7 @@
 .DS_Store
 
 # Binaries for programs and plugins
-./autobutler
+./quark
 # Distribution directory
 internal/server/public/*
 !internal/server/public/stub.txt

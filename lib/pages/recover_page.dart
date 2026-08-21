@@ -1,9 +1,9 @@
-import 'package:autobutler/router.dart';
-import 'package:autobutler/services/auth_service.dart';
-import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:flutter/material.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quark/router.dart';
+import 'package:quark/services/auth_service.dart';
+import 'package:quark/widgets/layout/theme_toggle_button.dart';
+import 'package:quark_icons/quark_icons.dart';
 
 /// Password recovery screen — resets password using the recovery phrase.
 class RecoverPage extends StatefulWidget {
@@ -84,7 +84,7 @@ class _RecoverPageState extends State<RecoverPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Icon(
-                      AutobutlerIcons.key_rounded,
+                      QuarkIcons.key_rounded,
                       size: 48,
                       color: theme.colorScheme.primary,
                       semanticLabel: 'Recovery',
@@ -120,7 +120,7 @@ class _RecoverPageState extends State<RecoverPage> {
                         labelText: 'Recovery phrase',
                         hintText: 'word-word-word-word-word-word',
                         border: OutlineInputBorder(),
-                        prefixIcon: Icon(AutobutlerIcons.key_outlined),
+                        prefixIcon: Icon(QuarkIcons.key_outlined),
                       ),
                       textInputAction: TextInputAction.next,
                       autocorrect: false,
@@ -137,12 +137,12 @@ class _RecoverPageState extends State<RecoverPage> {
                         labelText: 'New password',
                         helperText: 'At least 8 characters',
                         border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(AutobutlerIcons.lock_outline),
+                        prefixIcon: const Icon(QuarkIcons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
-                                ? AutobutlerIcons.visibility_outlined
-                                : AutobutlerIcons.visibility_off_outlined,
+                                ? QuarkIcons.visibility_outlined
+                                : QuarkIcons.visibility_off_outlined,
                           ),
                           tooltip: _obscurePassword
                               ? 'Show password'
@@ -174,12 +174,12 @@ class _RecoverPageState extends State<RecoverPage> {
                       decoration: InputDecoration(
                         labelText: 'Confirm new password',
                         border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(AutobutlerIcons.lock_outline),
+                        prefixIcon: const Icon(QuarkIcons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscureConfirm
-                                ? AutobutlerIcons.visibility_outlined
-                                : AutobutlerIcons.visibility_off_outlined,
+                                ? QuarkIcons.visibility_outlined
+                                : QuarkIcons.visibility_off_outlined,
                           ),
                           tooltip: _obscureConfirm
                               ? 'Show password'
@@ -245,7 +245,7 @@ class _ErrorBanner extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              AutobutlerIcons.error_outline,
+              QuarkIcons.error_outline,
               color: theme.colorScheme.onErrorContainer,
               size: 20,
             ),

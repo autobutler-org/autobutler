@@ -1,16 +1,16 @@
 import 'dart:math' as math;
 
-import 'package:autobutler/models/photo_album.dart';
-import 'package:autobutler/models/photo_metadata.dart';
-import 'package:autobutler/services/album_service.dart';
-import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/services/favorites_service.dart';
-import 'package:autobutler/widgets/photos/photo_selection_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:flutter/services.dart';
-import 'package:autobutler/pages/album_page.dart';
-import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
+import 'package:quark/models/photo_album.dart';
+import 'package:quark/models/photo_metadata.dart';
+import 'package:quark/pages/album_page.dart';
+import 'package:quark/services/album_service.dart';
+import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/favorites_service.dart';
+import 'package:quark/widgets/layout/theme_toggle_button.dart';
+import 'package:quark/widgets/photos/photo_selection_bar.dart';
+import 'package:quark_icons/quark_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 
@@ -589,7 +589,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       backgroundColor: Colors.black,
       foregroundColor: Colors.white,
       leading: IconButton(
-        icon: const Icon(AutobutlerIcons.arrow_back),
+        icon: const Icon(QuarkIcons.arrow_back),
         tooltip: 'Back (Esc)',
         onPressed: () => Navigator.of(context).pop(_listChanged),
       ),
@@ -602,12 +602,12 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       actions: [
         if (showNav) ...[
           IconButton(
-            icon: const Icon(AutobutlerIcons.chevron_left),
+            icon: const Icon(QuarkIcons.chevron_left),
             tooltip: 'Previous (←)',
             onPressed: (_hasPrev && !_loading) ? () => _navigate(-1) : null,
           ),
           IconButton(
-            icon: const Icon(AutobutlerIcons.chevron_right),
+            icon: const Icon(QuarkIcons.chevron_right),
             tooltip: 'Next (→)',
             onPressed: (_hasNext && !_loading) ? () => _navigate(1) : null,
           ),
@@ -617,7 +617,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
           message: 'Favorite (F)',
           child: IconButton(
             icon: Icon(
-              _isFavorite ? AutobutlerIcons.star : AutobutlerIcons.star_border,
+              _isFavorite ? QuarkIcons.star : QuarkIcons.star_border,
               color: _isFavorite
                   ? Theme.of(context).colorScheme.primary
                   : Colors.white,
@@ -628,7 +628,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         Tooltip(
           message: 'Rotate 90° CW (R)',
           child: IconButton(
-            icon: const Icon(AutobutlerIcons.rotate_90_degrees_cw_outlined),
+            icon: const Icon(QuarkIcons.rotate_90_degrees_cw_outlined),
             onPressed: _rotate,
           ),
         ),
@@ -636,7 +636,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
           Tooltip(
             message: 'Download',
             child: IconButton(
-              icon: const Icon(AutobutlerIcons.download_outlined),
+              icon: const Icon(QuarkIcons.download_outlined),
               onPressed: _download,
             ),
           ),
@@ -644,9 +644,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
           message: 'Info (I)',
           child: IconButton(
             icon: Icon(
-              _sidebarOpen
-                  ? AutobutlerIcons.info
-                  : AutobutlerIcons.info_outline,
+              _sidebarOpen ? QuarkIcons.info : QuarkIcons.info_outline,
               color: _sidebarOpen
                   ? Theme.of(context).colorScheme.primary
                   : Colors.white,
@@ -656,7 +654,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         ),
         if (_currentRelPath != null)
           PopupMenuButton<_MoreAction>(
-            icon: const Icon(AutobutlerIcons.more_vert),
+            icon: const Icon(QuarkIcons.more_vert),
             color: const Color(0xFF1E1E1E),
             onSelected: (action) {
               switch (action) {
@@ -706,7 +704,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         Tooltip(
           message: 'Keyboard shortcuts (?)',
           child: IconButton(
-            icon: const Icon(AutobutlerIcons.keyboard_outlined, size: 20),
+            icon: const Icon(QuarkIcons.keyboard_outlined, size: 20),
             onPressed: () => _showShortcutsDialog(context),
           ),
         ),
@@ -793,7 +791,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
                         _currentBytes,
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stack) => const Icon(
-                          AutobutlerIcons.broken_image,
+                          QuarkIcons.broken_image,
                           size: 64,
                           color: Colors.white54,
                         ),
@@ -993,11 +991,11 @@ class _MetadataContent {
           title: 'Date & Time',
           children: [
             _InfoRow(
-              icon: AutobutlerIcons.calendar_today_outlined,
+              icon: QuarkIcons.calendar_today_outlined,
               value: _formatDate(displayDate.toLocal()),
             ),
             _InfoRow(
-              icon: AutobutlerIcons.access_time_outlined,
+              icon: QuarkIcons.access_time_outlined,
               value: _formatTime(displayDate.toLocal()),
             ),
             if (dateTaken == null && mtime != null)
@@ -1020,7 +1018,7 @@ class _MetadataContent {
           title: 'Location',
           children: [
             _InfoRow(
-              icon: AutobutlerIcons.location_on_outlined,
+              icon: QuarkIcons.location_on_outlined,
               value:
                   '${exif!.latitude!.toStringAsFixed(5)}, '
                   '${exif.longitude!.toStringAsFixed(5)}',
@@ -1040,13 +1038,11 @@ class _MetadataContent {
       ].where((s) => s != null && s.isNotEmpty).join(' ');
       if (makeModel.isNotEmpty) {
         rows.add(
-          _InfoRow(icon: AutobutlerIcons.camera_alt_outlined, value: makeModel),
+          _InfoRow(icon: QuarkIcons.camera_alt_outlined, value: makeModel),
         );
       }
       if (cam.lens != null && cam.lens!.isNotEmpty) {
-        rows.add(
-          _InfoRow(icon: AutobutlerIcons.lens_outlined, value: cam.lens!),
-        );
+        rows.add(_InfoRow(icon: QuarkIcons.lens_outlined, value: cam.lens!));
       }
       final settings = <String>[];
       if (cam.aperture != null) settings.add('f/${cam.aperture}');
@@ -1055,7 +1051,7 @@ class _MetadataContent {
       if (settings.isNotEmpty) {
         rows.add(
           _InfoRow(
-            icon: AutobutlerIcons.tune_outlined,
+            icon: QuarkIcons.tune_outlined,
             value: settings.join('  ·  '),
           ),
         );
@@ -1063,7 +1059,7 @@ class _MetadataContent {
       if (cam.focalLength != null) {
         rows.add(
           _InfoRow(
-            icon: AutobutlerIcons.straighten_outlined,
+            icon: QuarkIcons.straighten_outlined,
             value: '${cam.focalLength} mm',
           ),
         );
@@ -1084,17 +1080,17 @@ class _MetadataContent {
           title: 'File Info',
           children: [
             _InfoRow(
-              icon: AutobutlerIcons.insert_drive_file_outlined,
+              icon: QuarkIcons.insert_drive_file_outlined,
               value: m.fileName,
             ),
-            _InfoRow(icon: AutobutlerIcons.image_outlined, value: ext),
+            _InfoRow(icon: QuarkIcons.image_outlined, value: ext),
             _InfoRow(
-              icon: AutobutlerIcons.storage_outlined,
+              icon: QuarkIcons.storage_outlined,
               value: _formatBytes(m.fileSize),
             ),
             if (m.width > 0 && m.height > 0)
               _InfoRow(
-                icon: AutobutlerIcons.photo_size_select_large_outlined,
+                icon: QuarkIcons.photo_size_select_large_outlined,
                 value: '${m.width} × ${m.height}',
               ),
           ],
@@ -1112,7 +1108,7 @@ class _MetadataContent {
                 (a) => InkWell(
                   onTap: () => onAlbumTap(a),
                   child: _InfoRow(
-                    icon: AutobutlerIcons.photo_album_outlined,
+                    icon: QuarkIcons.photo_album_outlined,
                     value: a.name,
                     tappable: true,
                   ),
@@ -1248,7 +1244,7 @@ class _InfoRow extends StatelessWidget {
           ),
           if (tappable)
             const Icon(
-              AutobutlerIcons.chevron_right,
+              QuarkIcons.chevron_right,
               size: 16,
               color: Colors.white24,
             ),

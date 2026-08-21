@@ -4,24 +4,24 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/autobutler-org/autobutler/pkg/util/githubutil"
+	"github.com/autobutler-org/quark/pkg/util/githubutil"
 )
 
 var DefaultUpdateSources = []*UpdateSource{
 	NewUpdateSource(
 		UpdateSourceKindAzure,
-		"autobutlerrelease",
-		"releases/autobutler",
+		"quarkrelease",
+		"releases/quark",
 	),
 	NewUpdateSource(
 		UpdateSourceKindGithub,
 		"autobutler-org",
-		"autobutler.org",
+		"quark.org",
 	),
 	NewUpdateSource(
 		UpdateSourceKindGithub,
 		"autobutler-org",
-		"autobutler",
+		"quark",
 	),
 }
 

@@ -30,8 +30,8 @@ body:
   - type: textarea
     id: epic-description
     attributes:
-      label: What do you want to see in Autobutler?
-      description: '...'
-      placeholder: 'Come on now...'
+      label: What do you want to see in Quark?
+      description: "..."
+      placeholder: "Come on now..."
     validations:
       required: true

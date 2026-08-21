@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:autobutler/services/content_search_service.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quark/services/content_search_service.dart';
 
 void main() {
   group('ContentSearchResult.fromJson', () {

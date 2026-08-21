@@ -1,12 +1,12 @@
-import 'package:autobutler/models/cirrus_file_node.dart';
-import 'package:autobutler/pages/audio_player_page.dart';
-import 'package:autobutler/pages/generic_file_viewer_page.dart';
-import 'package:autobutler/pages/image_viewer_page.dart';
-import 'package:autobutler/pages/video_viewer_page.dart';
-import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/pages/audio_player_page.dart';
+import 'package:quark/pages/generic_file_viewer_page.dart';
+import 'package:quark/pages/image_viewer_page.dart';
+import 'package:quark/pages/video_viewer_page.dart';
+import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/widgets/layout/theme_toggle_button.dart';
 
 /// A routing shim that resolves a Cirrus file path to its correct viewer.
 ///

@@ -61,8 +61,8 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
 
 ### Packages Directory
 
-- `packages/` contains fully independent Dart or Flutter libraries maintained alongside Autobutler.
-- These packages are kept generic and are **not** monolithic to the Autobutler codebase — they are intended for both internal
+- `packages/` contains fully independent Dart or Flutter libraries maintained alongside Quark.
+- These packages are kept generic and are **not** monolithic to the Quark codebase — they are intended for both internal
   use and eventual public publication.
 - Other Flutter developers can adopt these packages independently; keep them decoupled from app-specific logic to maximize
   reusability.

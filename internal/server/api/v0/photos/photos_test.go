@@ -9,11 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	v0_photos "github.com/autobutler-org/autobutler/internal/server/api/v0/photos"
-	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
-	"github.com/autobutler-org/autobutler/pkg/util/deputil"
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
-	"github.com/autobutler-org/autobutler/pkg/vfs"
+	v0_photos "github.com/autobutler-org/quark/internal/server/api/v0/photos"
+	"github.com/autobutler-org/quark/pkg/util/ctxutil"
+	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/vfs"
 	"github.com/gin-gonic/gin"
 )
 

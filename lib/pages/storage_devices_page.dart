@@ -1,18 +1,18 @@
 import 'dart:async';
 
-import 'package:autobutler/router.dart';
-import 'package:autobutler/services/app_settings.dart';
-import 'package:autobutler/services/storage_service.dart';
-import 'package:autobutler/services/vault_service.dart';
-import 'package:autobutler/utils/auto_refresh_mixin.dart';
-import 'package:autobutler/utils/autobutler_widget.dart';
-import 'package:autobutler/widgets/autobutler_drawer.dart';
-import 'package:autobutler/widgets/core/autobutler_storage_bar.dart';
-import 'package:autobutler/widgets/layout/autobutler_app_bar.dart';
-import 'package:autobutler/widgets/refresh_icon_button.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quark/router.dart';
+import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/storage_service.dart';
+import 'package:quark/services/vault_service.dart';
+import 'package:quark/utils/auto_refresh_mixin.dart';
+import 'package:quark/utils/quark_widget.dart';
+import 'package:quark/widgets/core/quark_storage_bar.dart';
+import 'package:quark/widgets/layout/quark_app_bar.dart';
+import 'package:quark/widgets/quark_drawer.dart';
+import 'package:quark/widgets/refresh_icon_button.dart';
+import 'package:quark_icons/quark_icons.dart';
 
 class StorageDevicesPage extends StatefulWidget {
   const StorageDevicesPage({super.key});
@@ -118,9 +118,9 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
   Future<Map<String, String>?> _promptCredentials() async {
     final usernameCtrl = TextEditingController();
     final passwordCtrl = TextEditingController();
-    final result = await AutobutlerWidget.showDialog<Map<String, String>>(
+    final result = await QuarkWidget.showDialog<Map<String, String>>(
       context,
-      builder: (ctx) => AutobutlerWidget.alertDialog(
+      builder: (ctx) => QuarkWidget.alertDialog(
         title: const Text('Authenticate'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -170,9 +170,9 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
     if (creds == null || !mounted) return;
 
     final recoveryCtrl = TextEditingController();
-    final includeVault = await AutobutlerWidget.showDialog<bool>(
+    final includeVault = await QuarkWidget.showDialog<bool>(
       context,
-      builder: (ctx) => AutobutlerWidget.alertDialog(
+      builder: (ctx) => QuarkWidget.alertDialog(
         title: const Text('Snapshot Backup'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -317,9 +317,9 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AutobutlerAppBar(
+      appBar: QuarkAppBar(
         label: 'Devices',
-        icon: AutobutlerIcons.device_hub_outlined,
+        icon: QuarkIcons.device_hub_outlined,
         actions: [
           RefreshIconButton(
             isRefreshing: isRefreshing,
@@ -327,8 +327,8 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
           ),
         ],
       ),
-      drawer: AutobutlerDrawer(
-        activeSection: AutobutlerDrawerSection.devices,
+      drawer: QuarkDrawer(
+        activeSection: QuarkDrawerSection.devices,
         onTapCirrus: () => context.go(AppRoutes.cirrus),
         onTapPhotos: () => context.go(AppRoutes.photos),
         onTapDocs: () => context.go(AppRoutes.docs),
@@ -451,8 +451,8 @@ class _DeviceCard extends StatelessWidget {
               children: [
                 Icon(
                   device.isInternal
-                      ? AutobutlerIcons.computer_outlined
-                      : AutobutlerIcons.usb_outlined,
+                      ? QuarkIcons.computer_outlined
+                      : QuarkIcons.usb_outlined,
                   size: 20,
                   color: theme.colorScheme.primary,
                 ),
@@ -511,7 +511,7 @@ class _DeviceCard extends StatelessWidget {
             // Storage bar (only when totalBytes is known)
             if (device.totalBytes > 0) ...[
               const SizedBox(height: 12),
-              AutobutlerStorageBar(usedFraction: usedPct),
+              QuarkStorageBar(usedFraction: usedPct),
               const SizedBox(height: 4),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -561,7 +561,7 @@ class _DeviceCard extends StatelessWidget {
                         height: 14,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(AutobutlerIcons.link_outlined, size: 16),
+                    : const Icon(QuarkIcons.link_outlined, size: 16),
                 label: Text(isMounting ? 'Mounting…' : 'Mount'),
               ),
             ],
@@ -576,25 +576,19 @@ class _DeviceCard extends StatelessWidget {
                   if (onSetRole != null)
                     OutlinedButton.icon(
                       onPressed: onSetRole,
-                      icon: const Icon(AutobutlerIcons.label_outline, size: 16),
+                      icon: const Icon(QuarkIcons.label_outline, size: 16),
                       label: const Text('Set Role'),
                     ),
                   if (onBackup != null)
                     FilledButton.icon(
                       onPressed: isBackupRunning ? null : onBackup,
-                      icon: const Icon(
-                        AutobutlerIcons.backup_outlined,
-                        size: 16,
-                      ),
+                      icon: const Icon(QuarkIcons.backup_outlined, size: 16),
                       label: const Text('Back Up'),
                     ),
                   if (onVerify != null)
                     OutlinedButton.icon(
                       onPressed: isBackupRunning ? null : onVerify,
-                      icon: const Icon(
-                        AutobutlerIcons.verified_outlined,
-                        size: 16,
-                      ),
+                      icon: const Icon(QuarkIcons.verified_outlined, size: 16),
                       label: const Text('Verify'),
                     ),
                 ],
@@ -694,8 +688,8 @@ class _RoleDialog extends StatelessWidget {
     return ListTile(
       leading: Icon(
         selected
-            ? AutobutlerIcons.radio_button_checked
-            : AutobutlerIcons.radio_button_unchecked,
+            ? QuarkIcons.radio_button_checked
+            : QuarkIcons.radio_button_unchecked,
       ),
       title: Text(title),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
@@ -742,10 +736,10 @@ class _BackupProgressCard extends StatelessWidget {
               children: [
                 Icon(
                   status.isRunning
-                      ? AutobutlerIcons.backup_outlined
+                      ? QuarkIcons.backup_outlined
                       : status.isComplete
-                      ? AutobutlerIcons.check_circle_outline
-                      : AutobutlerIcons.error_outline,
+                      ? QuarkIcons.check_circle_outline
+                      : QuarkIcons.error_outline,
                   size: 20,
                 ),
                 const SizedBox(width: 8),

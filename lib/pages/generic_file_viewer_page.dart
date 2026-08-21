@@ -1,12 +1,12 @@
-import 'package:autobutler/models/cirrus_file_node.dart';
-import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/widgets/core/autobutler_file_icon.dart';
-import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:autobutler/pages/generic_file_viewer_open_stub.dart'
-    if (dart.library.io) 'package:autobutler/pages/generic_file_viewer_open_native.dart'
+import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/pages/generic_file_viewer_open_stub.dart'
+    if (dart.library.io) 'package:quark/pages/generic_file_viewer_open_native.dart'
     as native_open;
+import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/widgets/core/quark_file_icon.dart';
+import 'package:quark/widgets/layout/theme_toggle_button.dart';
 
 class GenericFileViewerPage extends StatefulWidget {
   final CirrusFileNode node;
@@ -106,7 +106,7 @@ class _GenericFileViewerPageState extends State<GenericFileViewerPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              AutobutlerFileIcon(
+              QuarkFileIcon(
                 node: widget.node,
                 size: 80,
                 color: theme.colorScheme.onSurfaceVariant,

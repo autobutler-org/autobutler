@@ -1,0 +1,115 @@
+name: Performance Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    - cron: "0 7 * * *"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  USERNAME: perf
+  PASSWORD: perf-password
+
+jobs:
+  performance-loadtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Setup sqlc
+        uses: ./.github/actions/setup-sqlc
+
+      - name: Setup swag
+        uses: ./.github/actions/setup-swag
+
+      - name: Setup wrk
+        uses: ./.github/actions/setup-wrk
+
+      - name: Run load test profile
+        run: |
+          make test/perf/load
+
+      - name: Upload load test artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: loadtest-results
+          path: test-results/performance/
+          if-no-files-found: warn
+
+  performance-stress:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Setup sqlc
+        uses: ./.github/actions/setup-sqlc
+
+      - name: Setup swag
+        uses: ./.github/actions/setup-swag
+
+      - name: Setup wrk
+        uses: ./.github/actions/setup-wrk
+
+      - name: Run stress profile
+        run: |
+          make test/perf/stress
+
+      - name: Upload stress test artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: stress-results
+          path: test-results/performance/
+          if-no-files-found: warn
+
+  performance-summary:
+    runs-on: ubuntu-latest
+    needs:
+      - performance-loadtest
+      - performance-stress
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Download load test results
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: loadtest-results
+          path: test-results/performance
+
+      - name: Download stress test results
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: stress-results
+          path: test-results/performance
+
+      - name: Render performance summary
+        run: |
+          make test/perf/summary >> ${GITHUB_STEP_SUMMARY}

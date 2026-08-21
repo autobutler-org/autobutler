@@ -1,12 +1,13 @@
 import 'dart:async';
-import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/utils/web_download_stub.dart'
-    if (dart.library.html) 'package:autobutler/utils/web_download_web.dart'
-    as web_download;
+
 import 'package:flutter/material.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
 import 'package:flutter/services.dart';
-import 'package:autobutler/widgets/layout/theme_toggle_button.dart';
+import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/utils/web_download_stub.dart'
+    if (dart.library.html) 'package:quark/utils/web_download_web.dart'
+    as web_download;
+import 'package:quark/widgets/layout/theme_toggle_button.dart';
+import 'package:quark_icons/quark_icons.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoViewerPage extends StatefulWidget {
@@ -199,8 +200,8 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
                   children: [
                     Icon(
                       _isUnsupportedFormat
-                          ? AutobutlerIcons.video_file_outlined
-                          : AutobutlerIcons.error_outline,
+                          ? QuarkIcons.video_file_outlined
+                          : QuarkIcons.error_outline,
                       size: 36,
                     ),
                     const SizedBox(height: 12),
@@ -296,7 +297,7 @@ class _FullscreenVideoPageState extends State<_FullscreenVideoPage> {
           child: Align(
             alignment: Alignment.topLeft,
             child: IconButton(
-              icon: const Icon(AutobutlerIcons.arrow_back, color: Colors.white),
+              icon: const Icon(QuarkIcons.arrow_back, color: Colors.white),
               onPressed: () => Navigator.of(context).pop(),
             ),
           ),
@@ -558,8 +559,8 @@ class _PlayerControls extends StatelessWidget {
                       },
                       icon: Icon(
                         value.isPlaying
-                            ? AutobutlerIcons.pause
-                            : AutobutlerIcons.play_arrow,
+                            ? QuarkIcons.pause
+                            : QuarkIcons.play_arrow,
                         color: Colors.white,
                       ),
                     ),
@@ -569,7 +570,7 @@ class _PlayerControls extends StatelessWidget {
                         _seekBy(const Duration(seconds: -10));
                       },
                       icon: const Icon(
-                        AutobutlerIcons.replay_10,
+                        QuarkIcons.replay_10,
                         color: Colors.white,
                       ),
                     ),
@@ -579,7 +580,7 @@ class _PlayerControls extends StatelessWidget {
                         _seekBy(const Duration(seconds: 10));
                       },
                       icon: const Icon(
-                        AutobutlerIcons.forward_10,
+                        QuarkIcons.forward_10,
                         color: Colors.white,
                       ),
                     ),
@@ -593,9 +594,7 @@ class _PlayerControls extends StatelessWidget {
                         controller.setVolume(isMuted ? 1 : 0);
                       },
                       icon: Icon(
-                        isMuted
-                            ? AutobutlerIcons.volume_off
-                            : AutobutlerIcons.volume_up,
+                        isMuted ? QuarkIcons.volume_off : QuarkIcons.volume_up,
                         color: Colors.white,
                       ),
                     ),
@@ -629,8 +628,8 @@ class _PlayerControls extends StatelessWidget {
                       },
                       icon: Icon(
                         isFullscreen
-                            ? AutobutlerIcons.fullscreen_exit
-                            : AutobutlerIcons.fullscreen,
+                            ? QuarkIcons.fullscreen_exit
+                            : QuarkIcons.fullscreen,
                         color: Colors.white,
                       ),
                     ),

@@ -1,10 +1,10 @@
 # Authentication
 
-AutoButler uses local username/password auth. No cloud, no OAuth required — your credentials live on your device.
+Quark uses local username/password auth. No cloud, no OAuth required — your credentials live on your device.
 
 ## First boot
 
-When you start AutoButler for the first time, there are no users. Everything is wide open until you run setup — so do that first.
+When you start Quark for the first time, there are no users. Everything is wide open until you run setup — so do that first.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/setup \
@@ -16,9 +16,9 @@ You'll get back a session token and a **recovery phrase**. Write the phrase down
 
 ```json
 {
-  "token": "abc123...",
-  "recoveryPhrase": "wagon-river-flame-orbit-cedar-stone",
-  "message": "Setup complete. Store your recovery phrase somewhere safe — it will not be shown again."
+	"token": "abc123...",
+	"recoveryPhrase": "wagon-river-flame-orbit-cedar-stone",
+	"message": "Setup complete. Store your recovery phrase somewhere safe — it will not be shown again."
 }
 ```
 

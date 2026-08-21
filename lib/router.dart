@@ -1,22 +1,22 @@
-import 'package:autobutler/pages/document_editor_page.dart';
-import 'package:autobutler/pages/terms_page.dart';
-import 'package:autobutler/pages/plaintext_editor_page.dart';
-import 'package:autobutler/pages/docs_page.dart';
-import 'package:autobutler/pages/file_browser_page.dart';
-import 'package:autobutler/pages/health_page.dart';
-import 'package:autobutler/pages/storage_devices_page.dart';
-import 'package:autobutler/pages/login_page.dart';
-import 'package:autobutler/pages/photos_page.dart';
-import 'package:autobutler/pages/recover_page.dart';
-import 'package:autobutler/pages/settings_page.dart';
-import 'package:autobutler/pages/setup_page.dart';
-import 'package:autobutler/pages/sheets_page.dart';
-import 'package:autobutler/pages/spreadsheet_editor_page.dart';
-import 'package:autobutler/pages/vault_page.dart';
-import 'package:autobutler/services/app_settings.dart';
-import 'package:autobutler/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quark/pages/docs_page.dart';
+import 'package:quark/pages/document_editor_page.dart';
+import 'package:quark/pages/file_browser_page.dart';
+import 'package:quark/pages/health_page.dart';
+import 'package:quark/pages/login_page.dart';
+import 'package:quark/pages/photos_page.dart';
+import 'package:quark/pages/plaintext_editor_page.dart';
+import 'package:quark/pages/recover_page.dart';
+import 'package:quark/pages/settings_page.dart';
+import 'package:quark/pages/setup_page.dart';
+import 'package:quark/pages/sheets_page.dart';
+import 'package:quark/pages/spreadsheet_editor_page.dart';
+import 'package:quark/pages/storage_devices_page.dart';
+import 'package:quark/pages/terms_page.dart';
+import 'package:quark/pages/vault_page.dart';
+import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/auth_service.dart';
 
 // Route paths — use these constants everywhere instead of string literals.
 class AppRoutes {

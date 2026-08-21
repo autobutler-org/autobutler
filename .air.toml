@@ -1,4 +1,4 @@
-# Air configuration for hot-reloading the autobutler backend.
+# Air configuration for hot-reloading the quark backend.
 # https://github.com/air-verse/air
 #
 # This file provides the default (non-root) configuration.
@@ -17,7 +17,7 @@ tmp_dir = "tmp"
   cmd = "make build/backend"
 
   # Binary to run after a successful build
-  entrypoint = ["./build/autobutler"]
+  entrypoint = ["./build/quark"]
 
   # Arguments passed to the binary on startup
   args_bin = ["serve"]

@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/autobutler-org/autobutler/pkg/util/tlsutil"
+	"github.com/autobutler-org/quark/pkg/util/tlsutil"
 )
 
 func TestEnsureSelfSignedCert_CreatesFiles(t *testing.T) {

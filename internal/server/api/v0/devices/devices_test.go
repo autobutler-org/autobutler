@@ -9,11 +9,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/autobutler-org/autobutler/internal/db"
-	v0_devices "github.com/autobutler-org/autobutler/internal/server/api/v0/devices"
-	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
-	"github.com/autobutler-org/autobutler/pkg/util/deputil"
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/internal/db"
+	v0_devices "github.com/autobutler-org/quark/internal/server/api/v0/devices"
+	"github.com/autobutler-org/quark/pkg/util/ctxutil"
+	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/gin-gonic/gin"
 	_ "modernc.org/sqlite"
 )
@@ -95,7 +95,7 @@ func TestListDevices_ReturnsUpsertedDevices(t *testing.T) {
 
 	_, err := queries.UpsertConnectedDevice(ctx, db.UpsertConnectedDeviceParams{
 		IpAddress: "192.168.1.10",
-		UserAgent: "AutoButler-Flutter/1.0",
+		UserAgent: "Quark-Flutter/1.0",
 	})
 	if err != nil {
 		t.Fatalf("UpsertConnectedDevice: %v", err)
@@ -113,8 +113,8 @@ func TestListDevices_ReturnsUpsertedDevices(t *testing.T) {
 	if devices[0].IPAddress != "192.168.1.10" {
 		t.Errorf("IPAddress = %q; want '192.168.1.10'", devices[0].IPAddress)
 	}
-	if devices[0].UserAgent != "AutoButler-Flutter/1.0" {
-		t.Errorf("UserAgent = %q; want 'AutoButler-Flutter/1.0'", devices[0].UserAgent)
+	if devices[0].UserAgent != "Quark-Flutter/1.0" {
+		t.Errorf("UserAgent = %q; want 'Quark-Flutter/1.0'", devices[0].UserAgent)
 	}
 }
 

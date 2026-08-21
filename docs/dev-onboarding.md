@@ -1,6 +1,6 @@
 # Dev Onboarding
 
-Get AutoButler running locally in about 10 minutes.
+Get Quark running locally in about 10 minutes.
 
 ## Prerequisites
 
@@ -18,8 +18,8 @@ need the backend (no Flutter), run `make setup/gotools setup/air setup/sqlc setu
 ## Clone and build
 
 ```bash
-git clone https://github.com/autobutler-org/autobutler.git
-cd autobutler
+git clone https://github.com/autobutler-org/quark.git
+cd quark
 make setup
 make generate
 make build
@@ -72,7 +72,7 @@ Run `make check` before pushing. CI runs it and will fail if the linter is unhap
 
 ## Database changes
 
-AutoButler uses SQLite with golang-migrate for schema migrations and sqlc for query generation.
+Quark uses SQLite with golang-migrate for schema migrations and sqlc for query generation.
 
 1. Add a migration file in `internal/db/migrations/` (name it `NNN_description.up.sql` and `NNN_description.down.sql`)
 2. Add queries to `sql/queries/`
@@ -84,7 +84,7 @@ Don't edit the generated files by hand — they'll be overwritten by `make gener
 ## Project structure
 
 ```text
-cmd/autobutler/         Entry point
+cmd/quark/         Entry point
 internal/
   db/                   sqlc-generated database layer + migrations
   server/api/v1/        API handlers (one file per route group)
@@ -118,23 +118,23 @@ sql/queries/            sqlc SQL queries
 
 Run `make help` to see everything. The most common ones:
 
-| Target | What it does |
-| ------ | ------------ |
-| `make watch/backend` | Backend with hot reload |
-| `make serve/frontend` | Flutter web dev server |
-| `make serve/frontend/mobile` | Flutter mobile (after `make emulate`) |
-| `make emulate/android` | Launch Android emulator |
-| `make emulate/ios` | Launch iOS simulator |
-| `make build` | Build everything |
-| `make generate` | Regenerate sqlc + swagger |
-| `make generate/backend/sqlc` | Regenerate DB layer only |
-| `make generate/backend/swagger` | Regenerate API docs only |
-| `make check` | Full lint + format check |
-| `make format` | Auto-format code |
-| `make test/unit/backend` | Go unit tests with coverage |
-| `make test/unit/frontend` | Flutter unit tests |
-| `make test/integration/backend` | Go integration tests |
-| `make tidy` | Tidy Go + Flutter dependencies |
+| Target                          | What it does                          |
+| ------------------------------- | ------------------------------------- |
+| `make watch/backend`            | Backend with hot reload               |
+| `make serve/frontend`           | Flutter web dev server                |
+| `make serve/frontend/mobile`    | Flutter mobile (after `make emulate`) |
+| `make emulate/android`          | Launch Android emulator               |
+| `make emulate/ios`              | Launch iOS simulator                  |
+| `make build`                    | Build everything                      |
+| `make generate`                 | Regenerate sqlc + swagger             |
+| `make generate/backend/sqlc`    | Regenerate DB layer only              |
+| `make generate/backend/swagger` | Regenerate API docs only              |
+| `make check`                    | Full lint + format check              |
+| `make format`                   | Auto-format code                      |
+| `make test/unit/backend`        | Go unit tests with coverage           |
+| `make test/unit/frontend`       | Flutter unit tests                    |
+| `make test/integration/backend` | Go integration tests                  |
+| `make tidy`                     | Tidy Go + Flutter dependencies        |
 
 ## Notes
 
