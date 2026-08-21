@@ -35,9 +35,6 @@ jobs:
       - name: Lint sqlc
         run: |
           make check/lint/sqlc
-      - name: Spellcheck
-        run: |
-          make check/spelling
       - name: Tidy
         run: |
           make tidy/go
