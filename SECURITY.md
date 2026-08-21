@@ -1,4 +1,4 @@
-# Security Policy
+Z# Security Policy
 
 Quark stores people's photos, documents, and passwords on hardware in their homes. We take reports seriously.
 
@@ -19,7 +19,7 @@ Check your version in **Settings → About**, or run `quark version`. The curren
 Please include:
 
 - What you found, and which component it affects
-- Steps to reproduce, ideally against a local `make watch` instance
+- Steps to reproduce
 - The version you tested
 - What an attacker could actually do with it, and what access they'd need first
 
