@@ -27,7 +27,7 @@ space where someone is representing the project.
 
 ## Reporting
 
-Report a problem privately to the maintainers at <jamesaorson@gmail.com>. If the report is about a maintainer, say so —
+Report a problem privately to the maintainers at <admin@autobutler.org>. If the report is about a maintainer, say so —
 we'll recuse them from handling it.
 
 Include what happened, where, and when. Links help. We will keep the reporter's identity private.
