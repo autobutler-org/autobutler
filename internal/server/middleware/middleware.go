@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/autobutler-org/quark/internal/db"
-	v0_webdav "github.com/autobutler-org/quark/internal/server/api/v0/webdav"
 	"github.com/autobutler-org/quark/pkg/util/authutil"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
@@ -158,8 +157,8 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 		path := c.Request.URL.Path
 
 		// Static assets and the Flutter web app don't need auth — the client-side
-		// AuthGate handles the login flow. Only /api/ and /dav/ routes require a session.
-		if !strings.HasPrefix(path, "/api/") && !v0_webdav.IsWebDAVPath(path) {
+		// AuthGate handles the login flow. Only /api/ routes require a session.
+		if !strings.HasPrefix(path, "/api/") {
 			c.Next()
 			return
 		}
@@ -238,11 +237,6 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 			}
 		}
 
-		// All methods exhausted.
-		// WebDAV clients need the WWW-Authenticate header to prompt for credentials.
-		if v0_webdav.IsWebDAVPath(path) {
-			c.Header("WWW-Authenticate", `Basic realm="Quark"`)
-		}
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
 		c.Abort()
 	}
@@ -251,8 +245,8 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 func Use(router *gin.Engine, deps deputil.Dependencies) {
 	// CORS: the Flutter web UI is embedded and served from the same origin, so
 	// cross-origin access is only needed for native clients (iOS/Android, curl,
-	// desktop apps) and the Tailscale WebDAV mount. Those clients authenticate
-	// via Authorization: Bearer or Basic — neither requires AllowCredentials.
+	// desktop apps). Those clients authenticate via Authorization: Bearer or
+	// Basic — neither requires AllowCredentials.
 	//
 	// Combining AllowAllOrigins with AllowCredentials is rejected by browsers
 	// anyway, and is a defence-in-depth problem: it signals that any origin may
@@ -268,7 +262,6 @@ func Use(router *gin.Engine, deps deputil.Dependencies) {
 		"Origin",
 		"Accept",
 		"X-Requested-With",
-		"Depth", // WebDAV
 	}
 	config.ExposeHeaders = []string{"Content-Length"}
 	config.AllowCredentials = false // see comment above
