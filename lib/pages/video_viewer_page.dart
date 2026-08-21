@@ -27,6 +27,11 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
   bool _isUnsupportedFormat = false;
   bool _downloading = false;
   bool _savingFrame = false;
+  bool _trimMode = false;
+  bool _exportingTrim = false;
+  // Trim handles as fractions [0.0, 1.0] of total duration.
+  double _trimStart = 0.0;
+  double _trimEnd = 1.0;
 
   static const _nonWebNativeExtensions = {
     '.mov',
@@ -181,6 +186,64 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
     }
   }
 
+  void _enterTrimMode() {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return;
+    controller.pause();
+    setState(() {
+      _trimMode = true;
+      _trimStart = 0.0;
+      _trimEnd = 1.0;
+    });
+  }
+
+  Future<void> _exportTrim() async {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return;
+    if (_exportingTrim) return;
+
+    final params = widget.url.queryParameters;
+    final relPath = params['filePath'] ?? '';
+    final serial = params['serial'];
+    if (relPath.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cannot trim: file path unknown')),
+      );
+      return;
+    }
+
+    final totalMs = controller.value.duration.inMilliseconds;
+    final startMs = (_trimStart * totalMs).round();
+    final endMs = (_trimEnd * totalMs).round();
+
+    setState(() => _exportingTrim = true);
+    try {
+      final savedPath = await CirrusService.trimVideo(
+        relPath,
+        serial: serial,
+        startMs: startMs,
+        endMs: endMs,
+      );
+      if (!mounted) return;
+      final fileName = savedPath.split('/').last;
+      setState(() {
+        _trimMode = false;
+        _trimStart = 0.0;
+        _trimEnd = 1.0;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Clip saved as $fileName')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Trim failed: $e')));
+    } finally {
+      if (mounted) setState(() => _exportingTrim = false);
+    }
+  }
+
   Future<void> _saveFrame() async {
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) return;
@@ -234,14 +297,44 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
       appBar: AppBar(
         title: Text(widget.name),
         actions: [
-          if (!_savingFrame)
+          if (_exportingTrim)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else if (_trimMode) ...[
+            TextButton(
+              onPressed: _exportTrim,
+              child: const Text(
+                'Save Clip',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            TextButton(
+              onPressed: () => setState(() {
+                _trimMode = false;
+                _trimStart = 0.0;
+                _trimEnd = 1.0;
+              }),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+          ] else if (!_savingFrame)
             PopupMenuButton<String>(
               tooltip: 'More options',
               onSelected: (action) {
                 if (action == 'saveFrame') _saveFrame();
+                if (action == 'trim') _enterTrimMode();
               },
               itemBuilder: (_) => const [
                 PopupMenuItem(value: 'saveFrame', child: Text('Save Frame')),
+                PopupMenuItem(value: 'trim', child: Text('Trim Clip')),
               ],
             )
           else
@@ -281,6 +374,11 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
             ? _InlineVideoPlayer(
                 controller: controller,
                 onToggleFullscreen: _openFullscreen,
+                trimMode: _trimMode,
+                trimStart: _trimStart,
+                trimEnd: _trimEnd,
+                onTrimStartChanged: (v) => setState(() => _trimStart = v),
+                onTrimEndChanged: (v) => setState(() => _trimEnd = v),
               )
             : const SizedBox.shrink(),
       ),
@@ -291,10 +389,20 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
 class _InlineVideoPlayer extends StatelessWidget {
   final VideoPlayerController controller;
   final VoidCallback onToggleFullscreen;
+  final bool trimMode;
+  final double trimStart;
+  final double trimEnd;
+  final ValueChanged<double>? onTrimStartChanged;
+  final ValueChanged<double>? onTrimEndChanged;
 
   const _InlineVideoPlayer({
     required this.controller,
     required this.onToggleFullscreen,
+    this.trimMode = false,
+    this.trimStart = 0.0,
+    this.trimEnd = 1.0,
+    this.onTrimStartChanged,
+    this.onTrimEndChanged,
   });
 
   @override
@@ -305,6 +413,11 @@ class _InlineVideoPlayer extends StatelessWidget {
         controller: controller,
         isFullscreen: false,
         onToggleFullscreen: onToggleFullscreen,
+        trimMode: trimMode,
+        trimStart: trimStart,
+        trimEnd: trimEnd,
+        onTrimStartChanged: onTrimStartChanged,
+        onTrimEndChanged: onTrimEndChanged,
       ),
     );
   }
@@ -379,12 +492,23 @@ class _VideoSurfaceWithControls extends StatefulWidget {
   final bool isFullscreen;
   final VoidCallback onToggleFullscreen;
   final Widget? topOverlay;
+  // Trim state passed down from _VideoViewerPageState.
+  final bool trimMode;
+  final double trimStart;
+  final double trimEnd;
+  final ValueChanged<double>? onTrimStartChanged;
+  final ValueChanged<double>? onTrimEndChanged;
 
   const _VideoSurfaceWithControls({
     required this.controller,
     required this.isFullscreen,
     required this.onToggleFullscreen,
     this.topOverlay,
+    this.trimMode = false,
+    this.trimStart = 0.0,
+    this.trimEnd = 1.0,
+    this.onTrimStartChanged,
+    this.onTrimEndChanged,
   });
 
   @override
@@ -529,6 +653,11 @@ class _VideoSurfaceWithControlsState extends State<_VideoSurfaceWithControls> {
                   widget.onToggleFullscreen();
                 },
                 onInteraction: _onControlsInteraction,
+                trimMode: widget.trimMode,
+                trimStart: widget.trimStart,
+                trimEnd: widget.trimEnd,
+                onTrimStartChanged: widget.onTrimStartChanged,
+                onTrimEndChanged: widget.onTrimEndChanged,
               ),
             ),
           ),
@@ -543,12 +672,22 @@ class _PlayerControls extends StatelessWidget {
   final bool isFullscreen;
   final VoidCallback onToggleFullscreen;
   final VoidCallback onInteraction;
+  final bool trimMode;
+  final double trimStart;
+  final double trimEnd;
+  final ValueChanged<double>? onTrimStartChanged;
+  final ValueChanged<double>? onTrimEndChanged;
 
   const _PlayerControls({
     required this.controller,
     required this.isFullscreen,
     required this.onToggleFullscreen,
     required this.onInteraction,
+    this.trimMode = false,
+    this.trimStart = 0.0,
+    this.trimEnd = 1.0,
+    this.onTrimStartChanged,
+    this.onTrimEndChanged,
   });
 
   Future<void> _seekBy(Duration delta) async {
@@ -603,16 +742,35 @@ class _PlayerControls extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              VideoProgressIndicator(
-                controller,
-                allowScrubbing: true,
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                colors: VideoProgressColors(
-                  playedColor: Theme.of(context).colorScheme.primary,
-                  bufferedColor: Colors.white54,
-                  backgroundColor: Colors.white24,
+              if (trimMode)
+                _TrimBar(
+                  start: trimStart,
+                  end: trimEnd,
+                  duration: controller.value.duration,
+                  onStartChanged: (v) {
+                    onTrimStartChanged?.call(v);
+                    final ms = (v * controller.value.duration.inMilliseconds)
+                        .round();
+                    controller.seekTo(Duration(milliseconds: ms));
+                  },
+                  onEndChanged: (v) {
+                    onTrimEndChanged?.call(v);
+                    final ms = (v * controller.value.duration.inMilliseconds)
+                        .round();
+                    controller.seekTo(Duration(milliseconds: ms));
+                  },
+                )
+              else
+                VideoProgressIndicator(
+                  controller,
+                  allowScrubbing: !trimMode,
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  colors: VideoProgressColors(
+                    playedColor: Theme.of(context).colorScheme.primary,
+                    bufferedColor: Colors.white54,
+                    backgroundColor: Colors.white24,
+                  ),
                 ),
-              ),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -708,5 +866,180 @@ class _PlayerControls extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+/// A trim range bar with two draggable handles (start and end).
+///
+/// Renders a track with:
+/// - A semi-transparent overlay for the un-selected regions (before start, after end)
+/// - A highlighted selected region between start and end
+/// - Draggable circular handles at start and end positions
+/// - Timestamp labels above each handle
+class _TrimBar extends StatelessWidget {
+  final double start; // 0.0–1.0 fraction
+  final double end; // 0.0–1.0 fraction
+  final Duration duration;
+  final ValueChanged<double> onStartChanged;
+  final ValueChanged<double> onEndChanged;
+
+  const _TrimBar({
+    required this.start,
+    required this.end,
+    required this.duration,
+    required this.onStartChanged,
+    required this.onEndChanged,
+  });
+
+  static const _handleSize = 24.0;
+  static const _trackHeight = 6.0;
+
+  // The label sits in a fixed slot above the handle. Reserving the slot (rather
+  // than letting the label size itself around the handle) is what keeps the
+  // handle's centre free to land exactly on the track.
+  static const _labelHeight = 14.0;
+  static const _labelWidth = 72.0;
+  static const _labelGap = 2.0;
+  static const _barHeight = _labelHeight + _labelGap + _handleSize;
+
+  /// Shared centre line for the handles and the track, measured from the top
+  /// of the bar. Everything vertical is anchored to this so the handles and
+  /// the track share a centre instead of each being centred independently.
+  static const _centerY = _labelHeight + _labelGap + _handleSize / 2;
+
+  String _formatMs(int ms) {
+    final d = Duration(milliseconds: ms);
+    final h = d.inHours;
+    final m = d.inMinutes % 60;
+    final s = d.inSeconds % 60;
+    final tenths = (ms % 1000) ~/ 100;
+    if (h > 0) {
+      return '${h}h${m.toString().padLeft(2, '0')}m${s.toString().padLeft(2, '0')}s';
+    }
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}.$tenths';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final totalMs = duration.inMilliseconds;
+    final startLabel = _formatMs((start * totalMs).round());
+    final endLabel = _formatMs((end * totalMs).round());
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final startX = start * width;
+          final endX = end * width;
+
+          return SizedBox(
+            height: _barHeight,
+            child: Stack(
+              children: [
+                // Track background
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: _centerY - _trackHeight / 2,
+                  child: Container(
+                    height: _trackHeight,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(_trackHeight / 2),
+                    ),
+                  ),
+                ),
+                // Selected region highlight
+                Positioned(
+                  left: startX,
+                  width: (endX - startX).clamp(0.0, width),
+                  top: _centerY - _trackHeight / 2,
+                  child: Container(
+                    height: _trackHeight,
+                    color: primary.withValues(alpha: 0.7),
+                  ),
+                ),
+                // Start handle + label
+                ..._buildHandle(
+                  centerX: startX,
+                  width: width,
+                  label: startLabel,
+                  color: primary,
+                  onDragDelta: (dx) => onStartChanged(
+                    ((startX + dx) / width).clamp(0.0, end - 0.01),
+                  ),
+                ),
+                // End handle + label
+                ..._buildHandle(
+                  centerX: endX,
+                  width: width,
+                  label: endLabel,
+                  color: primary,
+                  onDragDelta: (dx) => onEndChanged(
+                    ((endX + dx) / width).clamp(start + 0.01, 1.0),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// The label and the handle are positioned separately on purpose. Nesting
+  /// them in a single Column made the Column — not the handle — the thing
+  /// being positioned, so the handle inherited the label's width and height
+  /// and drifted right and down off the track.
+  List<Widget> _buildHandle({
+    required double centerX,
+    required double width,
+    required String label,
+    required Color color,
+    required ValueChanged<double> onDragDelta,
+  }) {
+    // Slot widths can exceed the bar on very narrow layouts; keep the clamp
+    // bounds ordered so they stay valid.
+    final labelLeftMax = (width - _labelWidth).clamp(0.0, double.infinity);
+    final handleLeftMax = (width - _handleSize).clamp(0.0, double.infinity);
+
+    return [
+      Positioned(
+        top: 0,
+        left: (centerX - _labelWidth / 2).clamp(0.0, labelLeftMax),
+        width: _labelWidth,
+        height: _labelHeight,
+        child: Center(
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white, fontSize: 10),
+          ),
+        ),
+      ),
+      Positioned(
+        top: _centerY - _handleSize / 2,
+        left: (centerX - _handleSize / 2).clamp(0.0, handleLeftMax),
+        child: GestureDetector(
+          onHorizontalDragUpdate: (details) => onDragDelta(details.delta.dx),
+          child: Container(
+            width: _handleSize,
+            height: _handleSize,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 4,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ];
   }
 }
