@@ -598,7 +598,11 @@ class CirrusService with AuthenticatedService {
     String? fileName,
   }) async {
     var uri = _buildDownloadUri(filePath, serial: serial);
-    if (kIsWeb && _needsServerConversion(filePath)) {
+    if (_needsServerConversion(filePath)) {
+      // Not just a web concern: Flutter's built-in image decoder (Skia, via
+      // Image.memory) can't decode HEIC/TIFF/BMP/RAW on any platform without
+      // a dedicated codec plugin, which this app doesn't bundle. Request the
+      // server-side JPEG conversion everywhere, not only on web (#1567).
       final params = Map<String, String>.from(uri.queryParameters);
       params['format'] = 'jpeg';
       uri = uri.replace(queryParameters: params);
