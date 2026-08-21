@@ -24,7 +24,7 @@ const (
 	CPUSustainedDuration = 60 * time.Second
 )
 
-// HealthStatus summarises the current alert state for the health indicator.
+// HealthStatus summarizes the current alert state for the health indicator.
 type HealthStatus struct {
 	Healthy            bool
 	Alerts             []string

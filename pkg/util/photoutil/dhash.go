@@ -22,7 +22,7 @@ const (
 //
 // Algorithm:
 //  1. Resize img to dHashWidth × dHashHeight (9 × 8) using bilinear interpolation.
-//  2. Convert to greyscale.
+//  2. Convert to grayscale.
 //  3. For each row, compare adjacent pixel pairs left-to-right: set bit = 1
 //     when left pixel is brighter than right pixel.
 //

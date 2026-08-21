@@ -485,13 +485,17 @@ watch/frontend: generate/frontend ## Watch frontend on web
 ##@ Code quality
 
 .PHONY: check
-check: check/backend check/frontend ## Check code
+check: check/backend check/frontend check/spelling ## Check code
 
 .PHONY: check/backend
 check/backend: generate/backend check/format/go check/lint/go check/lint/sqlc ## Check backend code
 
 .PHONY: check/frontend
 check/frontend: check/format/flutter check/lint/flutter ## Check frontend code
+
+.PHONY: check/spelling
+check/spelling: ## Check spelling in code and docs
+	npm run check:spelling
 
 .PHONY: check/go
 check/go: check/format/go check/lint/go ## Check Go code

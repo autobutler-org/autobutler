@@ -41,7 +41,7 @@ upgrade/dart: ## Upgrade Dart package and dependencies
 check: check/format check/lint ## Check code
 
 .PHONY: check/dart
-check/flutdartter: check/format/dart check/lint/dart ## Check Dart package code
+check/dart: check/format/dart check/lint/dart ## Check Dart package code
 
 .PHONY: check/format
 check/format: check/format/dart ## Check code formatting

@@ -2,7 +2,7 @@ package storageutil
 
 // io_stress_test.go — IO stress benchmarks for pkg/util/storageutil.
 //
-// These benchmarks characterise system behaviour under concurrent IO load,
+// These benchmarks characterize system behavior under concurrent IO load,
 // simulating the "family scenario": multiple operations hitting a single
 // storage path simultaneously. They are self-contained (synthetic files,
 // temp dirs) and do not require real hardware.
@@ -237,7 +237,7 @@ func BenchmarkScenarioC_ConcurrentSmallReads(b *testing.B) {
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // Models: all semaphore slots filled; measures how quickly a new waiter is
-// unblocked when a slot is released. Pure synchronisation overhead, no disk IO.
+// unblocked when a slot is released. Pure synchronization overhead, no disk IO.
 
 func BenchmarkScenarioD_SemaphoreContention(b *testing.B) {
 	sem := iosemutil.NewWithConcurrency(2) // tight concurrency to force contention

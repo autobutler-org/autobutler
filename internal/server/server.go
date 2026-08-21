@@ -217,7 +217,7 @@ func setupSwagger(router *gin.Engine) {
 	router.GET("/swagger/:any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 }
 
-// StartOptions controls optional server startup behaviour.
+// StartOptions controls optional server startup behavior.
 type StartOptions struct {
 	// Insecure disables TLS and serves over plain HTTP.
 	// Use only for local development.

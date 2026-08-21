@@ -11,7 +11,7 @@ void main() {
     // `deviceSerial`.
     const realResponse =
         '[{"serial":"","relPath":"something.txt.abdoc",'
-        '"snippet":"\\u003cb\\u003esdfsdfsadfsdffsdfasdf\\u003c/b\\u003e"}]';
+        '"snippet":"\\u003cb\\u003e hello world\\u003c/b\\u003e"}]';
 
     test('parses the backend response shape', () {
       final decoded = jsonDecode(realResponse) as List;
@@ -23,7 +23,7 @@ void main() {
       expect(results, hasLength(1));
       expect(results.single.relPath, 'something.txt.abdoc');
       expect(results.single.deviceSerial, '');
-      expect(results.single.snippet, '<b>sdfsdfsadfsdffsdfasdf</b>');
+      expect(results.single.snippet, '<b> hello world</b>');
     });
 
     test('exposes filename and tag-stripped snippet for the result tile', () {
@@ -33,7 +33,7 @@ void main() {
       );
 
       expect(result.filename, 'something.txt.abdoc');
-      expect(result.plainSnippet, 'sdfsdfsadfsdffsdfasdf');
+      expect(result.plainSnippet, ' hello world');
     });
 
     test('reads nested paths down to the filename', () {

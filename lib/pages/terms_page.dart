@@ -62,7 +62,7 @@ class TermsPage extends StatelessWidget {
                     title: '4. Acceptable Use',
                     body:
                         'You agree not to use Quark for any unlawful '
-                        'purpose, to attempt to gain unauthorised access to '
+                        'purpose, to attempt to gain unauthorized access to '
                         'other systems, or to interfere with the operation of '
                         'the software for other users. Because Quark '
                         'runs entirely on your own hardware and we have no '
