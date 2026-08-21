@@ -742,16 +742,6 @@ class _PlayerControls extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              VideoProgressIndicator(
-                controller,
-                allowScrubbing: !trimMode,
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                colors: VideoProgressColors(
-                  playedColor: Theme.of(context).colorScheme.primary,
-                  bufferedColor: Colors.white54,
-                  backgroundColor: Colors.white24,
-                ),
-              ),
               if (trimMode)
                 _TrimBar(
                   start: trimStart,
@@ -769,6 +759,17 @@ class _PlayerControls extends StatelessWidget {
                         .round();
                     controller.seekTo(Duration(milliseconds: ms));
                   },
+                )
+              else
+                VideoProgressIndicator(
+                  controller,
+                  allowScrubbing: !trimMode,
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  colors: VideoProgressColors(
+                    playedColor: Theme.of(context).colorScheme.primary,
+                    bufferedColor: Colors.white54,
+                    backgroundColor: Colors.white24,
+                  ),
                 ),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -893,6 +894,19 @@ class _TrimBar extends StatelessWidget {
   static const _handleSize = 24.0;
   static const _trackHeight = 6.0;
 
+  // The label sits in a fixed slot above the handle. Reserving the slot (rather
+  // than letting the label size itself around the handle) is what keeps the
+  // handle's centre free to land exactly on the track.
+  static const _labelHeight = 14.0;
+  static const _labelWidth = 72.0;
+  static const _labelGap = 2.0;
+  static const _barHeight = _labelHeight + _labelGap + _handleSize;
+
+  /// Shared centre line for the handles and the track, measured from the top
+  /// of the bar. Everything vertical is anchored to this so the handles and
+  /// the track share a centre instead of each being centred independently.
+  static const _centerY = _labelHeight + _labelGap + _handleSize / 2;
+
   String _formatMs(int ms) {
     final d = Duration(milliseconds: ms);
     final h = d.inHours;
@@ -921,14 +935,14 @@ class _TrimBar extends StatelessWidget {
           final endX = end * width;
 
           return SizedBox(
-            height: _handleSize + 20, // track + labels
+            height: _barHeight,
             child: Stack(
-              alignment: Alignment.center,
               children: [
                 // Track background
                 Positioned(
                   left: 0,
                   right: 0,
+                  top: _centerY - _trackHeight / 2,
                   child: Container(
                     height: _trackHeight,
                     decoration: BoxDecoration(
@@ -941,89 +955,30 @@ class _TrimBar extends StatelessWidget {
                 Positioned(
                   left: startX,
                   width: (endX - startX).clamp(0.0, width),
+                  top: _centerY - _trackHeight / 2,
                   child: Container(
                     height: _trackHeight,
                     color: primary.withValues(alpha: 0.7),
                   ),
                 ),
                 // Start handle + label
-                Positioned(
-                  left: (startX - _handleSize / 2).clamp(
-                    0.0,
-                    width - _handleSize,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        startLabel,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                        ),
-                      ),
-                      GestureDetector(
-                        onHorizontalDragUpdate: (details) {
-                          final newFrac = ((startX + details.delta.dx) / width)
-                              .clamp(0.0, end - 0.01);
-                          onStartChanged(newFrac);
-                        },
-                        child: Container(
-                          width: _handleSize,
-                          height: _handleSize,
-                          decoration: BoxDecoration(
-                            color: primary,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.4),
-                                blurRadius: 4,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                ..._buildHandle(
+                  centerX: startX,
+                  width: width,
+                  label: startLabel,
+                  color: primary,
+                  onDragDelta: (dx) => onStartChanged(
+                    ((startX + dx) / width).clamp(0.0, end - 0.01),
                   ),
                 ),
                 // End handle + label
-                Positioned(
-                  left: (endX - _handleSize / 2).clamp(
-                    0.0,
-                    width - _handleSize,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        endLabel,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                        ),
-                      ),
-                      GestureDetector(
-                        onHorizontalDragUpdate: (details) {
-                          final newFrac = ((endX + details.delta.dx) / width)
-                              .clamp(start + 0.01, 1.0);
-                          onEndChanged(newFrac);
-                        },
-                        child: Container(
-                          width: _handleSize,
-                          height: _handleSize,
-                          decoration: BoxDecoration(
-                            color: primary,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.4),
-                                blurRadius: 4,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                ..._buildHandle(
+                  centerX: endX,
+                  width: width,
+                  label: endLabel,
+                  color: primary,
+                  onDragDelta: (dx) => onEndChanged(
+                    ((endX + dx) / width).clamp(start + 0.01, 1.0),
                   ),
                 ),
               ],
@@ -1032,5 +987,59 @@ class _TrimBar extends StatelessWidget {
         },
       ),
     );
+  }
+
+  /// The label and the handle are positioned separately on purpose. Nesting
+  /// them in a single Column made the Column — not the handle — the thing
+  /// being positioned, so the handle inherited the label's width and height
+  /// and drifted right and down off the track.
+  List<Widget> _buildHandle({
+    required double centerX,
+    required double width,
+    required String label,
+    required Color color,
+    required ValueChanged<double> onDragDelta,
+  }) {
+    // Slot widths can exceed the bar on very narrow layouts; keep the clamp
+    // bounds ordered so they stay valid.
+    final labelLeftMax = (width - _labelWidth).clamp(0.0, double.infinity);
+    final handleLeftMax = (width - _handleSize).clamp(0.0, double.infinity);
+
+    return [
+      Positioned(
+        top: 0,
+        left: (centerX - _labelWidth / 2).clamp(0.0, labelLeftMax),
+        width: _labelWidth,
+        height: _labelHeight,
+        child: Center(
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white, fontSize: 10),
+          ),
+        ),
+      ),
+      Positioned(
+        top: _centerY - _handleSize / 2,
+        left: (centerX - _handleSize / 2).clamp(0.0, handleLeftMax),
+        child: GestureDetector(
+          onHorizontalDragUpdate: (details) => onDragDelta(details.delta.dx),
+          child: Container(
+            width: _handleSize,
+            height: _handleSize,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 4,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ];
   }
 }
