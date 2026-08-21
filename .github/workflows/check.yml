@@ -19,8 +19,6 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-      - name: Setup Node
-        uses: ./.github/actions/setup-node
       - name: Setup sqlc
         uses: ./.github/actions/setup-sqlc
       - name: Setup swag
@@ -74,6 +72,16 @@ jobs:
             echo "Error: Uncommitted changes found. Please commit the generated code."
             exit 1
           fi
+  check-misc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Setup Node
+        uses: ./.github/actions/setup-node
+      - name: Spellcheck
+        run: |
+          make check/spelling
 
   security-backend:
     runs-on: ubuntu-latest
