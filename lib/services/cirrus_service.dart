@@ -850,6 +850,33 @@ class CirrusService with AuthenticatedService {
         .toList(growable: false);
   }
 
+  /// Extracts a still frame from a video at [timestampMs] milliseconds.
+  /// Returns the relative path of the saved JPEG file.
+  static Future<String> extractVideoFrame(
+    String relPath, {
+    String? serial,
+    required int timestampMs,
+  }) async {
+    final uri = _apiBaseUri.resolve('/api/v0/videos/extract-frame');
+    final body = jsonEncode({
+      'relPath': relPath,
+      'serial': serial?.trim() ?? '',
+      'timestampMs': timestampMs,
+    });
+    final response = await instance.authenticatedPost(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: body,
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        'Failed to extract frame (${response.statusCode}): ${response.body}',
+      );
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return data['relPath'] as String;
+  }
+
   static Future<void> updateToVersion(String version) async {
     final endpointUri = _apiBaseUri.resolve('/api/v0/version/update');
     final body = jsonEncode({'version': version});

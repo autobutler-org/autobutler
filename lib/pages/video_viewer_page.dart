@@ -26,6 +26,7 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
   String? _errorMessage;
   bool _isUnsupportedFormat = false;
   bool _downloading = false;
+  bool _savingFrame = false;
 
   static const _nonWebNativeExtensions = {
     '.mov',
@@ -180,6 +181,51 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
     }
   }
 
+  Future<void> _saveFrame() async {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return;
+    if (_savingFrame) return;
+
+    // Derive relPath and serial from the media URL query parameters.
+    final params = widget.url.queryParameters;
+    final relPath = params['filePath'] ?? '';
+    final serial = params['serial'];
+    if (relPath.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cannot save frame: file path unknown')),
+      );
+      return;
+    }
+
+    final wasPlaying = controller.value.isPlaying;
+    if (wasPlaying) await controller.pause();
+
+    final positionMs = controller.value.position.inMilliseconds;
+
+    if (!mounted) return;
+    setState(() => _savingFrame = true);
+    try {
+      final savedPath = await CirrusService.extractVideoFrame(
+        relPath,
+        serial: serial,
+        timestampMs: positionMs,
+      );
+      if (!mounted) return;
+      final fileName = savedPath.split('/').last;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Frame saved as $fileName')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Save frame failed: $e')));
+    } finally {
+      if (mounted) setState(() => _savingFrame = false);
+      if (wasPlaying && _controller != null) await _controller!.play();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
@@ -187,7 +233,28 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.name),
-        actions: const [ThemeToggleButton()],
+        actions: [
+          if (!_savingFrame)
+            PopupMenuButton<String>(
+              tooltip: 'More options',
+              onSelected: (action) {
+                if (action == 'saveFrame') _saveFrame();
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'saveFrame', child: Text('Save Frame')),
+              ],
+            )
+          else
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          const ThemeToggleButton(),
+        ],
       ),
       body: Center(
         child: _loading
