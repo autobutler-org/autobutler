@@ -43,7 +43,7 @@ PODS:
     - FlutterMacOS
   - open_filex (0.0.2):
     - Flutter
-  - photo_manager (3.11.0):
+  - photo_manager (3.12.0):
     - Flutter
     - FlutterMacOS
   - printing (1.0.0):
@@ -125,7 +125,7 @@ SPEC CHECKSUMS:
   flutter_keyboard_visibility_temp_fork: 95b2d534bacf6ac62e7fcbe5c2a9e2c2a17ce06f
   flutter_secure_storage_darwin: acdb3f316ed05a3e68f856e0353b133eec373a23
   open_filex: 432f3cd11432da3e39f47fcc0df2b1603854eff1
-  photo_manager: 6ab48c2ce7ec21aa06d59e6cc049f0b6d9ba7f94
+  photo_manager: c303e4476f6c220274119f0212a7753e45edd4a2
   printing: 54ff03f28fe9ba3aa93358afb80a8595a071dd07
   quill_native_bridge_ios: f47af4b14e7757968486641656c5d23250cee521
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf

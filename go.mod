@@ -1,4 +1,4 @@
-module github.com/autobutler-org/autobutler
+module github.com/autobutler-org/quark
 
 go 1.26.6
 

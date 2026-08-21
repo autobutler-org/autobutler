@@ -6,13 +6,13 @@ import (
 	"log"
 	"sync"
 
-	"github.com/autobutler-org/autobutler/internal/db"
-	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
-	"github.com/autobutler-org/autobutler/pkg/util/deputil"
-	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
-	"github.com/autobutler-org/autobutler/pkg/vfs"
+	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/pkg/util/ctxutil"
+	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/eventbus"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/vfs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -116,13 +116,13 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 				DeviceSerial: serial,
 				RelPath:      p,
 			}); err != nil {
-				log.Printf("autobutler: delete cleanup: remove album items for %q (serial=%q): %v", p, serial, err)
+				log.Printf("quark: delete cleanup: remove album items for %q (serial=%q): %v", p, serial, err)
 			}
 			if err := database.Queries.DeletePhotoRotation(ctx, db.DeletePhotoRotationParams{
 				DeviceSerial: serial,
 				RelPath:      p,
 			}); err != nil {
-				log.Printf("autobutler: delete cleanup: remove rotation for %q (serial=%q): %v", p, serial, err)
+				log.Printf("quark: delete cleanup: remove rotation for %q (serial=%q): %v", p, serial, err)
 			}
 		}
 	}()

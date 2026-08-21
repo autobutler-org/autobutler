@@ -3,9 +3,9 @@ package v0_settings
 import (
 	"errors"
 
-	"github.com/autobutler-org/autobutler/pkg/util/remoteutil"
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
-	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
+	"github.com/autobutler-org/quark/pkg/util/remoteutil"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/settingsutil"
 	"github.com/gin-gonic/gin"
 )
 

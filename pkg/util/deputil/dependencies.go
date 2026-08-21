@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/autobutler-org/autobutler/internal/db"
-	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
-	"github.com/autobutler-org/autobutler/pkg/util/iosemutil"
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
-	"github.com/autobutler-org/autobutler/pkg/util/vaultcrypto"
-	"github.com/autobutler-org/autobutler/pkg/util/workerutil"
-	"github.com/autobutler-org/autobutler/pkg/vfs"
+	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/pkg/util/eventbus"
+	"github.com/autobutler-org/quark/pkg/util/iosemutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
+	"github.com/autobutler-org/quark/pkg/util/workerutil"
+	"github.com/autobutler-org/quark/pkg/vfs"
 )
 
 type Dependencies interface {

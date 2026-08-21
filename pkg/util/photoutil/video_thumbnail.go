@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/autobutler-org/autobutler/pkg/util/ffmpegutil"
+	"github.com/autobutler-org/quark/pkg/util/ffmpegutil"
 
 	"github.com/KononK/resize"
 )
@@ -19,7 +19,7 @@ var defaultProcessor ffmpegutil.VideoProcessor = ffmpegutil.NewCLIProcessor()
 // VideoToThumbnail extracts a frame from a video file and returns a thumbnail.
 // Requires ffmpeg to be installed on the system.
 func VideoToThumbnail(filePath string, width, height uint) (image.Image, error) {
-	tmpDir, err := os.MkdirTemp("", "autobutler-vidthumb-*")
+	tmpDir, err := os.MkdirTemp("", "quark-vidthumb-*")
 	if err != nil {
 		return nil, fmt.Errorf("create temp dir: %w", err)
 	}

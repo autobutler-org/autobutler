@@ -1,12 +1,12 @@
-import 'package:autobutler/router.dart';
-import 'package:autobutler/theme/autobutler_theme.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
-import 'package:autobutler/services/app_settings.dart';
-import 'package:autobutler/services/local_trust_overrides_stub.dart'
-    if (dart.library.io) 'package:autobutler/services/local_trust_overrides_io.dart';
-import 'package:flutter/material.dart';
+import 'package:quark/router.dart';
+import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/local_trust_overrides_stub.dart'
+    if (dart.library.io) 'package:quark/services/local_trust_overrides_io.dart';
+import 'package:quark/theme/quark_theme.dart';
 
 Future<void> main() async {
   usePathUrlStrategy();
@@ -15,11 +15,11 @@ Future<void> main() async {
   // Butlers on the local network serve self-signed certificates. Install the
   // trust policy after settings load so it can consult the configured host.
   installLocalTrustHttpOverrides();
-  runApp(const AutobutlerApp());
+  runApp(const QuarkApp());
 }
 
-class AutobutlerApp extends StatelessWidget {
-  const AutobutlerApp({super.key});
+class QuarkApp extends StatelessWidget {
+  const QuarkApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +28,9 @@ class AutobutlerApp extends StatelessWidget {
       builder: (context, mode, _) {
         return MaterialApp.router(
           debugShowCheckedModeBanner: false,
-          title: 'Autobutler',
-          theme: AutobutlerTheme.light(),
-          darkTheme: AutobutlerTheme.dark(),
+          title: 'Quark',
+          theme: QuarkTheme.light(),
+          darkTheme: QuarkTheme.dark(),
           themeMode: mode,
           routerConfig: router,
           localizationsDelegates: const [

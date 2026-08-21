@@ -1,11 +1,8 @@
 package v0_version
 
-import "github.com/autobutler-org/autobutler/pkg/util/serverutil"
+import "github.com/autobutler-org/quark/pkg/util/serverutil"
 
-const (
-	org  = "autobutler-org"
-	repo = "autobutler.org"
-)
+const org = "autobutler-org"
 
 type router struct{}
 

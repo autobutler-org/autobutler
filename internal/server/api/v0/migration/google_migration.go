@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log"
 
-	v1_auth "github.com/autobutler-org/autobutler/internal/server/api/v0/auth"
-	"github.com/autobutler-org/autobutler/pkg/migration"
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	v1_auth "github.com/autobutler-org/quark/internal/server/api/v0/auth"
+	"github.com/autobutler-org/quark/pkg/migration"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
 
 	"github.com/gin-gonic/gin"
 )

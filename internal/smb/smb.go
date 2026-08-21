@@ -1,4 +1,4 @@
-// Package smb provides utilities for configuring AutoButler as a Samba
+// Package smb provides utilities for configuring Quark as a Samba
 // (SMB/CIFS) network share on Linux, allowing file access directly from
 // macOS Finder, Windows Explorer, and Linux file managers on the same LAN.
 package smb
@@ -12,22 +12,22 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
 
 const (
-	shareName     = "autobutler"
+	shareName     = "quark"
 	smbConfigPath = "/etc/samba/smb.conf"
 	smbService    = "smbd"
 )
 
 var errNotLinux = errors.New("SMB setup is only supported on Linux")
 
-// shareBlock returns the smb.conf stanza for the AutoButler share.
+// shareBlock returns the smb.conf stanza for the Quark share.
 func shareBlock(filesDir string) string {
 	return fmt.Sprintf(`
 [%s]
-   comment = AutoButler Files
+   comment = Quark Files
    path = %s
    writeable = yes
    create mask = 0775
@@ -47,7 +47,7 @@ func IsInstalled() bool {
 	return err == nil
 }
 
-// IsConfigured returns true when the AutoButler share block exists in smb.conf.
+// IsConfigured returns true when the Quark share block exists in smb.conf.
 func IsConfigured() bool {
 	data, err := os.ReadFile(smbConfigPath)
 	if err != nil {
@@ -89,7 +89,7 @@ func GetStatus() (*Status, error) {
 	}, nil
 }
 
-// Setup installs and configures Samba for AutoButler.
+// Setup installs and configures Samba for Quark.
 // Must be run as root (or via sudo).
 func Setup(username, password string) error {
 	if !IsLinux() {
@@ -98,7 +98,7 @@ func Setup(username, password string) error {
 
 	filesDir, err := storageutil.GetCirrusDir()
 	if err != nil {
-		return fmt.Errorf("failed to locate AutoButler files directory: %w", err)
+		return fmt.Errorf("failed to locate Quark files directory: %w", err)
 	}
 
 	// Ensure the files directory exists.
@@ -152,14 +152,14 @@ func Setup(username, password string) error {
 	if !strings.HasSuffix(host, ".local") {
 		host += ".local"
 	}
-	fmt.Printf("\n✅ AutoButler SMB share configured.\n")
+	fmt.Printf("\n✅ Quark SMB share configured.\n")
 	fmt.Printf("   macOS:   smb://%s/%s\n", host, shareName)
 	fmt.Printf("   Windows: \\\\%s\\%s\n", host, shareName)
 	fmt.Printf("   Path:    %s\n", filepath.Join(filesDir))
 	return nil
 }
 
-// Teardown removes the AutoButler share from smb.conf and stops the smbd service.
+// Teardown removes the Quark share from smb.conf and stops the smbd service.
 // Must be run as root (or via sudo).
 func Teardown() error {
 	if !IsLinux() {

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/autobutler-org/autobutler/internal/db"
+	"github.com/autobutler-org/quark/internal/db"
 )
 
 // hashToken returns the hex-encoded SHA-256 of a raw session token.

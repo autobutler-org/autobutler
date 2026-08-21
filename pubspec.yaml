@@ -1,4 +1,4 @@
-name: autobutler
+name: quark
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -60,8 +60,8 @@ dependencies:
   printing: ^5.14.3
   data_table:
     path: packages/data_table
-  autobutler_icons:
-    path: packages/autobutler_icons
+  quark_icons:
+    path: packages/quark_icons
 
 dev_dependencies:
   flutter_test:
@@ -80,8 +80,8 @@ flutter_launcher_icons:
   ios: true
   web:
     generate: true
-    image_path: assets/autobutler.png
-  image_path: assets/autobutler.png
+    image_path: assets/quark.png
+  image_path: assets/quark.png
   remove_alpha_ios: true
 
 # For information on the generic Dart part of this file, see the

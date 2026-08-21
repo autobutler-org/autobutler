@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

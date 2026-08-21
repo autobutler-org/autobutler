@@ -57,7 +57,7 @@ func ProbeDisk(dir string) DiskProbeResult {
 	result := DiskProbeResult{SpeedClass: DiskSpeedUnknown}
 
 	// Write a temporary file with random data (avoids OS compressing/caching it).
-	tmpPath := filepath.Join(dir, ".autobutler-probe-tmp")
+	tmpPath := filepath.Join(dir, ".quark-probe-tmp")
 	data := make([]byte, probeSizeBytes)
 	for i := range data {
 		data[i] = byte(i & 0xff)

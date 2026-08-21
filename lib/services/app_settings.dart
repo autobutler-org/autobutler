@@ -1,11 +1,11 @@
 import 'dart:convert';
 
-import 'package:autobutler/controllers/file_browser_cache.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 // flutter_secure_storage requires a secure context (HTTPS) on web.
 // We only use it on native platforms; on web we fall back to in-memory only.
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:quark/controllers/file_browser_cache.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HostEntry {

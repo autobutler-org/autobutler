@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/autobutler-org/autobutler/pkg/util/githubutil"
+	"github.com/autobutler-org/quark/pkg/util/githubutil"
 )
 
 func mockReleasesServer(t *testing.T, releases []githubutil.Release) *httptest.Server {
@@ -150,18 +150,18 @@ func TestFetchLatestRelease_HTTPError(t *testing.T) {
 }
 
 func TestFetchGitHubReleases_Integration(t *testing.T) {
-	t.Skip("https://github.com/autobutler-org/autobutler/issues/493: The API is super flaky in CI for some crazy reason...Skipping for now.")
+	t.Skip("https://github.com/autobutler-org/quark/issues/493: The API is super flaky in CI for some crazy reason...Skipping for now.")
 
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	releases, err := githubutil.FetchReleases("autobutler-org", "autobutler")
+	releases, err := githubutil.FetchReleases("autobutler-org", "quark")
 	if err != nil {
 		t.Fatalf("FetchGitHubReleases failed: %v", err)
 	}
 	if len(releases) == 0 {
-		t.Error("Expected at least one release from autobutler-org/autobutler repository")
+		t.Error("Expected at least one release from autobutler-org/quark repository")
 	}
 	if len(releases) > 0 && releases[0].TagName == "" {
 		t.Error("Expected TagName to be non-empty")

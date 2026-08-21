@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
 )
 
 func TestNewResponse_Defaults(t *testing.T) {

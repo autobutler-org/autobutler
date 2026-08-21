@@ -2,10 +2,10 @@
 
 ## Overview
 
-AutoButler releases are distributed via two sources:
+Quark releases are distributed via two sources:
 
 - **Azure Blob Storage** — primary source for device auto-updates
-  (`autobutlerrelease.blob.core.windows.net/releases/autobutler/<version>/`)
+  (`quarkrelease.blob.core.windows.net/releases/quark/<version>/`)
 - **GitHub Releases** — secondary source; also used for manual downloads
 
 Releases are created automatically by the `.goreleaser.yaml` CI pipeline on tag push.
@@ -36,26 +36,26 @@ Or manually via Azure CLI:
 
 ```bash
 az storage blob delete-batch \
-  --account-name autobutlerrelease \
+  --account-name quarkrelease \
   --source releases \
-  --pattern "autobutler/v0.X.Y/*"
+  --pattern "quark/v0.X.Y/*"
 ```
 
-Or via the Azure Portal: Storage account → `autobutlerrelease` → Containers →
-`releases` → `autobutler/` → delete the version folder.
+Or via the Azure Portal: Storage account → `quarkrelease` → Containers →
+`releases` → `quark/` → delete the version folder.
 
 ### GitHub Releases
 
 Mark the release as a pre-release so `GET /repos/.../releases/latest` skips it:
 
 ```bash
-gh release edit v0.X.Y --prerelease --repo autobutler-org/autobutler
+gh release edit v0.X.Y --prerelease --repo autobutler-org/quark
 ```
 
 Or delete it entirely if the assets should not be downloadable at all:
 
 ```bash
-gh release delete v0.X.Y --repo autobutler-org/autobutler
+gh release delete v0.X.Y --repo autobutler-org/quark
 ```
 
 ### After yanking
@@ -67,12 +67,13 @@ gh release delete v0.X.Y --repo autobutler-org/autobutler
 ## Blob path convention
 
 ```
-releases/autobutler/<version>/<artifact>
+releases/quark/<version>/<artifact>
 ```
 
 Example:
+
 ```
-releases/autobutler/v0.15.0/autobutler_linux_arm64.tar.gz
+releases/quark/v0.15.0/quark_linux_arm64.tar.gz
 ```
 
 The artifact name is constructed from `ConstructArchiveName()` in

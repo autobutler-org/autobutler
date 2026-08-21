@@ -1,6 +1,6 @@
-import 'package:autobutler/theme/autobutler_colors.dart';
+import 'package:quark/theme/quark_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
+import 'package:quark_icons/quark_icons.dart';
 
 /// Describes a creatable file type shown in the new-file dialog.
 class NewFileType {
@@ -21,12 +21,12 @@ const _kFileTypes = [
   NewFileType(
     label: 'Document',
     extension: '.abdoc',
-    icon: AutobutlerIcons.edit_document,
+    icon: QuarkIcons.edit_document,
   ),
   NewFileType(
     label: 'Spreadsheet',
     extension: '.absheet',
-    icon: AutobutlerIcons.table_chart,
+    icon: QuarkIcons.table_chart,
   ),
   NewFileType(
     label: 'Generic File',
@@ -191,7 +191,7 @@ class _TypeCard extends StatelessWidget {
             color: isSelected ? colorScheme.primary : colorScheme.outline,
             width: isSelected ? 2 : 1,
           ),
-          borderRadius: BorderRadius.circular(AutobutlerColors.radiusMd),
+          borderRadius: BorderRadius.circular(QuarkColors.radiusMd),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

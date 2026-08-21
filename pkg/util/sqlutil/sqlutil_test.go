@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/autobutler-org/autobutler/pkg/util/sqlutil"
+	"github.com/autobutler-org/quark/pkg/util/sqlutil"
 )
 
 // ── NullInt64 ────────────────────────────────────────────────────────────────

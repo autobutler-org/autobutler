@@ -2,17 +2,17 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "metadata": {
-    "description": "Deploys a lightweight Ubuntu VM to run the Headscale control server and AutoButler provisioning service."
+    "description": "Deploys a lightweight Ubuntu VM to run the Headscale control server and Quark provisioning service."
   },
   "parameters": {
     "vmName": {
       "type": "string",
-      "defaultValue": "autobutler-headscale",
+      "defaultValue": "quark-headscale",
       "metadata": { "description": "Name of the virtual machine." }
     },
     "adminUsername": {
       "type": "string",
-      "defaultValue": "autobutler",
+      "defaultValue": "quark",
       "metadata": { "description": "Admin username for the VM." }
     },
     "adminPublicKey": {
@@ -33,9 +33,9 @@
     },
     "headscaleDomain": {
       "type": "string",
-      "defaultValue": "network.autobutler.org",
+      "defaultValue": "network.quark.org",
       "metadata": {
-        "description": "Public domain for Headscale (e.g. network.autobutler.org). Must have DNS A record pointing to this VM's public IP."
+        "description": "Public domain for Headscale (e.g. network.quark.org). Must have DNS A record pointing to this VM's public IP."
       }
     },
     "headscaleApiKey": {

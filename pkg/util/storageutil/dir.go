@@ -10,7 +10,7 @@ import (
 )
 
 func getServiceDataDir() string {
-	return "/var/lib/autobutler/data"
+	return "/var/lib/quark/data"
 }
 
 func isRunningAsServiceUser() bool {
@@ -18,7 +18,7 @@ func isRunningAsServiceUser() bool {
 	if err != nil {
 		return false
 	}
-	return u.Username == "autobutler"
+	return u.Username == "quark"
 }
 
 func ConstructCirrusDir(dataDir string) string {
@@ -61,14 +61,14 @@ func GetDataDirForDevice(mountPoint string) string {
 	isSystemDevice := mountPoint == "/" || mountPoint == "/System/Volumes/Data"
 
 	if isSystemDevice {
-		// Use platform-specific user directories (~/Library/Application Support/Autobutler/data on macOS)
+		// Use platform-specific user directories (~/Library/Application Support/Quark/data on macOS)
 		switch runtime.GOOS {
 		case "darwin": // coverage: ignore - Not run in CI
 			homeDir, err := os.UserHomeDir()
 			if err != nil {
 				homeDir = "/" // coverage: ignore - requires UserHomeDir to fail
 			}
-			return filepath.Join(homeDir, "Library", "Application Support", "Autobutler", "data")
+			return filepath.Join(homeDir, "Library", "Application Support", "Quark", "data")
 		case "linux": // coverage: ignore - Not run in mac dev environments
 			if isRunningAsServiceUser() {
 				return getServiceDataDir() // coverage: ignore
@@ -77,12 +77,12 @@ func GetDataDirForDevice(mountPoint string) string {
 			if err != nil {
 				homeDir = "/var/lib" // coverage: ignore
 			}
-			return filepath.Join(homeDir, "autobutler", "data") // coverage: ignore
+			return filepath.Join(homeDir, "quark", "data") // coverage: ignore
 		}
 	}
 
-	// For external devices, use autobutler directory on the device itself
-	return filepath.Join(mountPoint, "autobutler", "data")
+	// For external devices, use quark directory on the device itself
+	return filepath.Join(mountPoint, "quark", "data")
 }
 
 func GetDataDir() string {

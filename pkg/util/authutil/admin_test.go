@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/autobutler-org/autobutler/internal/db"
-	"github.com/autobutler-org/autobutler/pkg/util/authutil"
+	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/pkg/util/authutil"
 )
 
 // mkUser inserts a user and optionally promotes them to admin.

@@ -1,8 +1,8 @@
-import 'package:autobutler/pages/login_page.dart';
-import 'package:autobutler/pages/setup_page.dart';
-import 'package:autobutler/services/app_settings.dart';
-import 'package:autobutler/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:quark/pages/login_page.dart';
+import 'package:quark/pages/setup_page.dart';
+import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/auth_service.dart';
 
 /// Wraps the app's main content and enforces authentication.
 ///

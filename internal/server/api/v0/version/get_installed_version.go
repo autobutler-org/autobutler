@@ -1,8 +1,8 @@
 package v0_version
 
 import (
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
-	"github.com/autobutler-org/autobutler/pkg/util/versionutil"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/versionutil"
 	"github.com/gin-gonic/gin"
 )
 

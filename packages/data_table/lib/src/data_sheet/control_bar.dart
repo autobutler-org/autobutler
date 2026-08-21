@@ -1,4 +1,4 @@
-import 'package:autobutler_icons/autobutler_icons.dart';
+import 'package:quark_icons/quark_icons.dart';
 import 'package:flutter/material.dart' hide Icons;
 
 import 'data_sheet_controller.dart';
@@ -52,12 +52,12 @@ class DataSheetControlBar extends StatelessWidget {
                   // selected the sheet edges are the anchor, so these still
                   // grow the sheet — there is no separate append button.
                   _btn(
-                    AutobutlerIcons.insert_row_above,
+                    QuarkIcons.insert_row_above,
                     hasRow ? 'Insert row before' : 'Insert row at top',
                     () => controller.insertRowAt(hasRow ? sel.contextRow : 0),
                   ),
                   _btn(
-                    AutobutlerIcons.insert_row_below,
+                    QuarkIcons.insert_row_below,
                     hasRow ? 'Insert row after' : 'Add row at end',
                     () => controller.insertRowAt(
                       hasRow ? sel.contextRow + 1 : controller.rowCount,
@@ -66,7 +66,7 @@ class DataSheetControlBar extends StatelessWidget {
                   // Insert column before/after the selected column. Columns
                   // live inside rows, so an empty sheet has nowhere to put one.
                   _btn(
-                    AutobutlerIcons.insert_column_left,
+                    QuarkIcons.insert_column_left,
                     hasCol ? 'Insert column before' : 'Insert column at left',
                     hasData
                         ? () => controller.insertColumnAt(
@@ -75,7 +75,7 @@ class DataSheetControlBar extends StatelessWidget {
                         : null,
                   ),
                   _btn(
-                    AutobutlerIcons.insert_column_right,
+                    QuarkIcons.insert_column_right,
                     hasCol ? 'Insert column after' : 'Add column at end',
                     hasData
                         ? () => controller.insertColumnAt(
@@ -85,14 +85,14 @@ class DataSheetControlBar extends StatelessWidget {
                   ),
                   // Delete row / column
                   _btn(
-                    AutobutlerIcons.delete_row,
+                    QuarkIcons.delete_row,
                     'Delete row',
                     hasRow
                         ? () => controller.deleteRowAt(sel.contextRow)
                         : null,
                   ),
                   _btn(
-                    AutobutlerIcons.delete_column,
+                    QuarkIcons.delete_column,
                     'Delete column',
                     hasCol
                         ? () => controller.deleteColumnAt(sel.contextCol)
@@ -100,14 +100,14 @@ class DataSheetControlBar extends StatelessWidget {
                   ),
                   // Duplicate row / column
                   _btn(
-                    AutobutlerIcons.duplicate_row,
+                    QuarkIcons.duplicate_row,
                     'Duplicate row',
                     hasRow
                         ? () => controller.duplicateRow(sel.contextRow)
                         : null,
                   ),
                   _btn(
-                    AutobutlerIcons.duplicate_column,
+                    QuarkIcons.duplicate_column,
                     'Duplicate column',
                     hasCol
                         ? () => controller.duplicateColumn(sel.contextCol)
@@ -118,29 +118,29 @@ class DataSheetControlBar extends StatelessWidget {
                 // ── Edit ───────────────────────────────────────────────────
                 _group([
                   _btn(
-                    AutobutlerIcons.undo,
+                    QuarkIcons.undo,
                     'Undo',
                     controller.canUndo ? controller.undo : null,
                   ),
                   _btn(
-                    AutobutlerIcons.redo,
+                    QuarkIcons.redo,
                     'Redo',
                     controller.canRedo ? controller.redo : null,
                   ),
                   _btn(
-                    AutobutlerIcons.clear_row,
+                    QuarkIcons.clear_row,
                     'Clear row',
                     hasRow ? () => controller.clearRow(sel.contextRow) : null,
                   ),
                   _btn(
-                    AutobutlerIcons.clear_column,
+                    QuarkIcons.clear_column,
                     'Clear column',
                     hasCol
                         ? () => controller.clearColumn(sel.contextCol)
                         : null,
                   ),
                   _btn(
-                    AutobutlerIcons.fill_down,
+                    QuarkIcons.fill_down,
                     'Fill down',
                     hasCell
                         ? () => controller.fillDown(
@@ -150,7 +150,7 @@ class DataSheetControlBar extends StatelessWidget {
                         : null,
                   ),
                   _btn(
-                    AutobutlerIcons.fill_right,
+                    QuarkIcons.fill_right,
                     'Fill right',
                     hasCell
                         ? () => controller.fillRight(
@@ -164,7 +164,7 @@ class DataSheetControlBar extends StatelessWidget {
                 // ── Data ───────────────────────────────────────────────────
                 _group([
                   _btn(
-                    AutobutlerIcons.sort,
+                    QuarkIcons.sort,
                     'Sort…',
                     hasData
                         ? () => _showSortDialog(
@@ -175,17 +175,17 @@ class DataSheetControlBar extends StatelessWidget {
                         : null,
                   ),
                   _btn(
-                    AutobutlerIcons.remove_duplicates,
+                    QuarkIcons.remove_duplicates,
                     'Remove duplicate rows',
                     hasData ? controller.removeDuplicateRows : null,
                   ),
                   _btn(
-                    AutobutlerIcons.find_replace,
+                    QuarkIcons.find_replace,
                     'Find & replace…',
                     () => _showFindReplaceDialog(context, controller),
                   ),
                   _btn(
-                    AutobutlerIcons.go_to_cell,
+                    QuarkIcons.go_to_cell,
                     'Go to cell…',
                     hasData
                         ? () => _showGoToCellDialog(context, controller)
@@ -196,14 +196,14 @@ class DataSheetControlBar extends StatelessWidget {
                 // ── Import / Export ────────────────────────────────────────
                 _group([
                   _btn(
-                    AutobutlerIcons.export_csv,
+                    QuarkIcons.export_csv,
                     'Export CSV',
                     hasData
                         ? () => _showExportCsvDialog(context, controller)
                         : null,
                   ),
                   _btn(
-                    AutobutlerIcons.import_csv,
+                    QuarkIcons.import_csv,
                     'Import CSV…',
                     () => _showImportCsvDialog(context, controller),
                   ),

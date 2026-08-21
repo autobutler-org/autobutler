@@ -1,6 +1,6 @@
 {
-    "name": "autobutler",
-    "short_name": "autobutler",
+    "name": "quark",
+    "short_name": "quark",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

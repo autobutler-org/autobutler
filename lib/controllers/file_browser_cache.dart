@@ -1,4 +1,4 @@
-import 'package:autobutler/models/cirrus_file_node.dart';
+import 'package:quark/models/cirrus_file_node.dart';
 
 /// In-memory cache of file listings keyed by folder path.
 ///

@@ -1,6 +1,6 @@
-# AutoButler Docs
+# Quark Docs
 
-AutoButler is a self-hosted personal cloud that runs on a device in your home. This is the technical documentation
+Quark is a self-hosted personal cloud that runs on a device in your home. This is the technical documentation
 for contributors and people running their own instance.
 
 Looking for setup instructions? Start with the [README](../README.md).
@@ -16,10 +16,6 @@ Looking for setup instructions? Start with the [README](../README.md).
 
 - [Authentication](./auth.md) — local auth setup, login, recovery
 - [Mobile Setup](./mobile-setup.md) — running the app on a physical Android or iOS device
-
-## Deployment
-
-- [Azure App Service](./azure-deployment.md) — Deploy to Azure with persistent storage
 
 ## Reference
 

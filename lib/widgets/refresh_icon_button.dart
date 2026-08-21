@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
+import 'package:quark_icons/quark_icons.dart';
 
 /// An [IconButton] that shows a small [CircularProgressIndicator] in place of
 /// the refresh icon while [isRefreshing] is true, and disables taps.
@@ -29,7 +29,7 @@ class RefreshIconButton extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onSurface,
               ),
             )
-          : const Icon(AutobutlerIcons.refresh),
+          : const Icon(QuarkIcons.refresh),
     );
   }
 }

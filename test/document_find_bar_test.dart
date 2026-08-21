@@ -1,7 +1,7 @@
-import 'package:autobutler/pages/document_editor_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quark/pages/document_editor_page.dart';
 
 /// The find bar renders inline, not in a dialog, so nothing inside it may pop
 /// the route — flutter_quill's own close button does exactly that, which is why

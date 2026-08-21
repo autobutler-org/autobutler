@@ -1,17 +1,17 @@
-# AutoButler
+# Quark
 
 Your own private cloud, running in your house. Photos, files, documents — all on hardware you own, off servers you don't trust.
 
-[![CI](https://github.com/autobutler-org/autobutler/actions/workflows/autobutler-ci.yml/badge.svg?branch=main)](https://github.com/autobutler-org/autobutler/actions/workflows/autobutler-ci.yml)
-[![Code Quality](https://github.com/autobutler-org/autobutler/actions/workflows/autobutler-check.yml/badge.svg?branch=main)](https://github.com/autobutler-org/autobutler/actions/workflows/autobutler-check.yml)
-[![CodeQL](https://github.com/autobutler-org/autobutler/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/autobutler-org/autobutler/actions/workflows/codeql.yml)
+[![CI](https://github.com/autobutler-org/quark/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/autobutler-org/quark/actions/workflows/ci.yml)
+[![Code Quality](https://github.com/autobutler-org/quark/actions/workflows/check.yml/badge.svg?branch=main)](https://github.com/autobutler-org/quark/actions/workflows/check.yml)
+[![CodeQL](https://github.com/autobutler-org/quark/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/autobutler-org/quark/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
 ## What is it?
 
-AutoButler is a self-hosted personal cloud that runs on a device in your home. Think Google Drive or iCloud, except the data never leaves your house and nobody's training AI on your family photos.
+Quark is a self-hosted personal cloud that runs on a device in your home. Think Google Drive or iCloud, except the data never leaves your house and nobody's training AI on your family photos.
 
 You buy the hardware once. No subscriptions. No data mining. It's yours.
 
@@ -27,8 +27,8 @@ You buy the hardware once. No subscriptions. No data mining. It's yours.
 **Prerequisites:** Go, Flutter, Make, [air](https://github.com/air-verse/air), sqlc, swag
 
 ```bash
-git clone https://github.com/autobutler-org/autobutler.git # Include --recursive if you want to do OS image builds
-cd autobutler
+git clone https://github.com/autobutler-org/quark.git # Include --recursive if you want to do OS image builds
+cd quark
 make setup
 make generate
 make build
@@ -73,7 +73,6 @@ make help     # all targets
 - [Dev Onboarding](docs/dev-onboarding.md)
 - [Authentication](docs/auth.md)
 - [Mobile Setup](docs/mobile-setup.md)
-- [Azure Deployment](docs/azure-deployment.md)
 - [Raspberry Pi Setup](os/README.md)
 - [Release Process](docs/release.md)
 - [Contributing](CONTRIBUTING.md)

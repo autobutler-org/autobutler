@@ -10,11 +10,11 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
+	"github.com/autobutler-org/quark/pkg/util/settingsutil"
 	"github.com/google/uuid"
 )
 
-const defaultProvisioningURL = "https://network.autobutler.org:8081"
+const defaultProvisioningURL = "https://network.quark.org:8081"
 
 type provisionRequest struct {
 	DeviceID string `json:"device_id"`
@@ -25,14 +25,14 @@ type provisionResponse struct {
 }
 
 func ProvisioningURL() string {
-	if u := os.Getenv("AUTOBUTLER_PROVISIONING_URL"); u != "" {
+	if u := os.Getenv("QUARK_PROVISIONING_URL"); u != "" {
 		return u
 	}
 	return defaultProvisioningURL
 }
 
 func ProvisioningSecret() string {
-	return os.Getenv("AUTOBUTLER_PROVISIONING_SECRET")
+	return os.Getenv("QUARK_PROVISIONING_SECRET")
 }
 
 func GetDeviceID() (string, error) {
@@ -83,7 +83,7 @@ func ProvisionAuthKey(deviceID string) (string, error) {
 
 	secret := ProvisioningSecret()
 	if secret == "" {
-		return "", fmt.Errorf("AUTOBUTLER_PROVISIONING_SECRET is not set; cannot authenticate with provisioning service")
+		return "", fmt.Errorf("QUARK_PROVISIONING_SECRET is not set; cannot authenticate with provisioning service")
 	}
 	req.Header.Set("X-Provisioning-Secret", secret)
 

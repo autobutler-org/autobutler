@@ -14,12 +14,12 @@ import (
 	"strings"
 	"testing"
 
-	v1_files "github.com/autobutler-org/autobutler/internal/server/api/v0/cirrus"
-	"github.com/autobutler-org/autobutler/pkg/util/ctxutil"
-	"github.com/autobutler-org/autobutler/pkg/util/deputil"
-	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	v1_files "github.com/autobutler-org/quark/internal/server/api/v0/cirrus"
+	"github.com/autobutler-org/quark/pkg/util/ctxutil"
+	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/eventbus"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -48,7 +48,7 @@ func newTestEngine(t *testing.T) (*gin.Engine, string) {
 
 	// Create a temp dir to act as the device mount point.
 	mountPoint := t.TempDir()
-	cirrusDir := filepath.Join(mountPoint, "autobutler", "data", "cirrus")
+	cirrusDir := filepath.Join(mountPoint, "quark", "data", "cirrus")
 	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
 		t.Fatalf("failed to create cirrus dir: %v", err)
 	}

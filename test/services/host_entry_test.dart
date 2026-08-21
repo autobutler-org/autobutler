@@ -1,5 +1,5 @@
-import 'package:autobutler/services/app_settings.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quark/services/app_settings.dart';
 
 void main() {
   group('HostEntry', () {

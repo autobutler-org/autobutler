@@ -1,16 +1,16 @@
 import 'dart:convert';
 
-import 'package:autobutler/models/cirrus_file_node.dart';
-import 'package:autobutler/models/paginated_photos_response.dart';
-import 'package:autobutler/models/photo_metadata.dart';
-import 'package:autobutler/services/app_settings.dart';
-import 'package:autobutler/services/authenticated_service.dart';
-import 'package:autobutler/utils/web_download_stub.dart'
-    if (dart.library.html) 'package:autobutler/utils/web_download_web.dart'
-    as web_download;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:http/http.dart' as http;
+import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/models/paginated_photos_response.dart';
+import 'package:quark/models/photo_metadata.dart';
+import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/utils/web_download_stub.dart'
+    if (dart.library.html) 'package:quark/utils/web_download_web.dart'
+    as web_download;
 
 class CirrusRequestException implements Exception {
   const CirrusRequestException({

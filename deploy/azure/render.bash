@@ -4,7 +4,7 @@
 #   2. Base64-encoding the result
 #   3. Writing headscale.rendered.parameters.json for upload to Azure
 #
-# Called by: make render/headscale HEADSCALE_DOMAIN=ts.autobutler.org
+# Called by: make render/headscale HEADSCALE_DOMAIN=ts.quark.org
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -12,7 +12,7 @@ SETUP_SCRIPT="${SCRIPT_DIR}/setup-headscale.bash"
 OUTPUT="${SCRIPT_DIR}/headscale.rendered.parameters.json"
 TEMPLATE="${SCRIPT_DIR}/headscale.json"
 
-: "${HEADSCALE_DOMAIN:?HEADSCALE_DOMAIN is required. Example: make render/headscale HEADSCALE_DOMAIN=ts.autobutler.org}"
+: "${HEADSCALE_DOMAIN:?HEADSCALE_DOMAIN is required. Example: make render/headscale HEADSCALE_DOMAIN=ts.quark.org}"
 
 echo "[render] Substituting variables into setup-headscale.bash..."
 RENDERED_SCRIPT=$(
@@ -36,8 +36,8 @@ params = {
     "\$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "vmName":          {"value": "autobutler-headscale"},
-        "adminUsername":   {"value": "autobutler"},
+        "vmName":          {"value": "quark-headscale"},
+        "adminUsername":   {"value": "quark"},
         "adminPublicKey":  {"value": "REPLACE_WITH_YOUR_SSH_PUBLIC_KEY"},
         "vmSize":          {"value": "Standard_B1s"},
         "headscaleDomain": {"value": "${HEADSCALE_DOMAIN}"},

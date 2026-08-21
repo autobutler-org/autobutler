@@ -1,6 +1,6 @@
 package v0_albums
 
-import "github.com/autobutler-org/autobutler/pkg/util/serverutil"
+import "github.com/autobutler-org/quark/pkg/util/serverutil"
 
 // Router for /api/v1/albums endpoints
 

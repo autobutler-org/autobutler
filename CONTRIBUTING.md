@@ -25,4 +25,4 @@ Run `make check` before you push. If the linter is unhappy, fix it first.
 
 ## Found a bug or have an idea?
 
-[Open an issue](https://github.com/autobutler-org/autobutler/issues/new). We read them.
+[Open an issue](https://github.com/autobutler-org/quark/issues/new). We read them.

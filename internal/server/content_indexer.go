@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/autobutler-org/autobutler/pkg/util/deputil"
-	"github.com/autobutler-org/autobutler/pkg/util/eventbus"
-	"github.com/autobutler-org/autobutler/pkg/util/searchutil"
-	"github.com/autobutler-org/autobutler/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/eventbus"
+	"github.com/autobutler-org/quark/pkg/util/searchutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
 
 // startContentIndexer subscribes to file events and keeps the FTS5 content

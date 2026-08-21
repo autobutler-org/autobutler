@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/autobutler-org/autobutler/pkg/util/iosemutil"
+	"github.com/autobutler-org/quark/pkg/util/iosemutil"
 )
 
 func TestNew(t *testing.T) {

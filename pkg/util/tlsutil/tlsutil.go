@@ -1,5 +1,5 @@
 // Package tlsutil provides helpers for provisioning self-signed TLS certificates
-// used by the Autobutler server when running in production (HTTPS) mode.
+// used by the Quark server when running in production (HTTPS) mode.
 package tlsutil
 
 import (
@@ -99,8 +99,8 @@ func generate(certFile, keyFile string) error {
 	tmpl := &x509.Certificate{
 		SerialNumber: serial,
 		Subject: pkix.Name{
-			Organization: []string{"Autobutler Self-Signed"},
-			CommonName:   "autobutler-local",
+			Organization: []string{"Quark Self-Signed"},
+			CommonName:   "quark-local",
 		},
 		NotBefore:             now.Add(-1 * time.Minute), // slight back-date for clock skew
 		NotAfter:              now.Add(certValidity),

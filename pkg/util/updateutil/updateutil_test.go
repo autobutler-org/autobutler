@@ -15,7 +15,7 @@ import (
 	"strings"
 	"testing"
 
-	github "github.com/autobutler-org/autobutler/pkg/util/githubutil"
+	github "github.com/autobutler-org/quark/pkg/util/githubutil"
 )
 
 var defaultUpdateSource = DefaultUpdateSources[0]
@@ -63,8 +63,8 @@ func TestUpdate_404Response(t *testing.T) {
 	}))
 	defer server.Close()
 
-	os.Setenv("AUTOBUTLER_UPDATE_URL", server.URL)
-	defer os.Unsetenv("AUTOBUTLER_UPDATE_URL")
+	os.Setenv("QUARK_UPDATE_URL", server.URL)
+	defer os.Unsetenv("QUARK_UPDATE_URL")
 
 	err := Update(defaultUpdateSource, "v1.0.0")
 	if err == nil {
@@ -169,16 +169,16 @@ func TestReplaceSelf_BinaryNotInArchive(t *testing.T) {
 }
 
 func TestConstants(t *testing.T) {
-	if binaryName != "autobutler" {
-		t.Errorf("Expected binaryName to be 'autobutler', got '%s'", binaryName)
+	if binaryName != "quark" {
+		t.Errorf("Expected binaryName to be 'quark', got '%s'", binaryName)
 	}
 
-	expectedBackupName := "autobutler_backup"
+	expectedBackupName := "quark_backup"
 	if backupName != expectedBackupName {
 		t.Errorf("Expected backupName to be '%s', got '%s'", expectedBackupName, backupName)
 	}
 
-	expectedExtractedName := "autobutler_extracted"
+	expectedExtractedName := "quark_extracted"
 	if extractedName != expectedExtractedName {
 		t.Errorf("Expected extractedName to be '%s', got '%s'", expectedExtractedName, extractedName)
 	}
@@ -189,9 +189,9 @@ func TestConstants(t *testing.T) {
 // download → decompress → extract path without hitting GitHub.
 func serveRealReleaseTarGz(t *testing.T) (*httptest.Server, string) {
 	t.Helper()
-	tarPath := "/tmp/autobutler-test-release/autobutler_Linux_arm64.tar.gz"
+	tarPath := "/tmp/quark-test-release/quark_Linux_arm64.tar.gz"
 	if _, err := os.Stat(tarPath); os.IsNotExist(err) {
-		t.Skip("Real release tarball not available at " + tarPath + " — run: curl -sL https://github.com/autobutler-org/autobutler/releases/download/v0.13.0/autobutler_Linux_arm64.tar.gz -o " + tarPath)
+		t.Skip("Real release tarball not available at " + tarPath + " — run: curl -sL https://github.com/autobutler-org/quark/releases/download/v0.13.0/quark_Linux_arm64.tar.gz -o " + tarPath)
 	}
 	data, err := os.ReadFile(tarPath)
 	if err != nil {
@@ -216,7 +216,7 @@ func TestUpdate_RealRelease_ReplaceSelf(t *testing.T) {
 	if runtime.GOOS != "linux" || runtime.GOARCH != "arm64" {
 		t.Skipf("Real release test only runs on linux/arm64, got %s/%s", runtime.GOOS, runtime.GOARCH)
 	}
-	tarPath := "/tmp/autobutler-test-release/autobutler_Linux_arm64.tar.gz"
+	tarPath := "/tmp/quark-test-release/quark_Linux_arm64.tar.gz"
 	if _, err := os.Stat(tarPath); os.IsNotExist(err) {
 		t.Skip("Real release tarball not available")
 	}
@@ -238,7 +238,7 @@ func TestUpdate_RealRelease_ReplaceSelf(t *testing.T) {
 }
 
 func TestReplaceSelf_WithRealTarball(t *testing.T) {
-	tarPath := "/tmp/autobutler-test-release/autobutler_Linux_arm64.tar.gz"
+	tarPath := "/tmp/quark-test-release/quark_Linux_arm64.tar.gz"
 	if _, err := os.Stat(tarPath); os.IsNotExist(err) {
 		t.Skip("Real release tarball not available")
 	}
@@ -466,7 +466,7 @@ func TestIsDevelopmentVersion(t *testing.T) {
 }
 
 func TestUpdateSource_BaseURLOverride(t *testing.T) {
-	source := NewUpdateSource(UpdateSourceKindGithub, "autobutler-org", "autobutler")
+	source := NewUpdateSource(UpdateSourceKindGithub, "autobutler-org", "quark")
 
 	// Without override: should return real github.com URL
 	if got := source.BaseUrl(); got == "" {
@@ -491,7 +491,7 @@ func TestUpdate_WithBaseURLOverride_404(t *testing.T) {
 	}))
 	defer server.Close()
 
-	source := NewUpdateSource(UpdateSourceKindGithub, "autobutler-org", "autobutler")
+	source := NewUpdateSource(UpdateSourceKindGithub, "autobutler-org", "quark")
 	source.BaseURLOverride = server.URL
 
 	err := Update(source, "v1.0.0")
@@ -572,7 +572,7 @@ func TestVerifyChecksum_Sha256sumFormat(t *testing.T) {
 	hexSum := hex.EncodeToString(sum[:])
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "%s  autobutler-linux-arm64.tar.gz\n", hexSum)
+		fmt.Fprintf(w, "%s  quark-linux-arm64.tar.gz\n", hexSum)
 	}))
 	defer server.Close()
 
@@ -689,7 +689,7 @@ func TestIsAllowedUpdateHost(t *testing.T) {
 	}{
 		{"github.com", true},
 		{"objects.githubusercontent.com", true},
-		{"autobutlerrelease.blob.core.windows.net", true},
+		{"quarkrelease.blob.core.windows.net", true},
 		{"evil.com", false},
 		{"github.com.evil.com", false},
 		{"", false},

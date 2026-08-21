@@ -118,7 +118,7 @@ https://example.com,alice,
 	}
 }
 
-func TestParseAutoButlerJSON(t *testing.T) {
+func TestParseQuarkJSON(t *testing.T) {
 	j := `{
 		"entries": [
 			{"name": "GitHub", "url": "https://github.com", "username": "alice", "password": "pw", "folderName": "Dev"},
@@ -126,7 +126,7 @@ func TestParseAutoButlerJSON(t *testing.T) {
 		],
 		"folders": ["Dev"]
 	}`
-	entries, errs := parseAutoButlerJSON([]byte(j))
+	entries, errs := parseQuarkJSON([]byte(j))
 	if len(errs) > 0 {
 		t.Errorf("unexpected errors: %v", errs)
 	}
@@ -138,9 +138,9 @@ func TestParseAutoButlerJSON(t *testing.T) {
 	}
 }
 
-func TestParseAutoButlerJSON_Array(t *testing.T) {
+func TestParseQuarkJSON_Array(t *testing.T) {
 	j := `[{"name": "Test", "url": "https://test.com", "username": "u", "password": "p"}]`
-	entries, errs := parseAutoButlerJSON([]byte(j))
+	entries, errs := parseQuarkJSON([]byte(j))
 	if len(errs) > 0 {
 		t.Errorf("unexpected errors: %v", errs)
 	}

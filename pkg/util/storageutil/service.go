@@ -91,7 +91,7 @@ func NewStorageService(d Detector) *StorageService {
 	}
 }
 
-// GetManagedDevices returns all devices that have an autobutler data directory.
+// GetManagedDevices returns all devices that have an quark data directory.
 func (s *StorageService) GetManagedDevices() ([]ManagedDevice, error) {
 	devices, err := s.detector.DetectDevices()
 	if err != nil {

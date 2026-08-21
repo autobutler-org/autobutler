@@ -1,4 +1,4 @@
-import 'package:autobutler/services/app_settings.dart';
+import 'package:quark/services/app_settings.dart';
 import 'package:flutter/material.dart';
 
 /// A standalone [IconButton] that cycles the app theme between light and dark,

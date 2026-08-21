@@ -1,0 +1,103 @@
+name: Armbian Build
+
+permissions:
+  contents: read
+  packages: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_tag:
+        description: "Quark release tag to embed (for example: v1.2.3). Leave empty to use latest release"
+        required: false
+        type: string
+      armbian_release:
+        description: "Armbian userspace release"
+        required: false
+        type: string
+        default: noble
+  workflow_call:
+    inputs:
+      build_tag:
+        required: false
+        type: string
+      armbian_release:
+        required: false
+        type: string
+        default: noble
+
+jobs:
+  armbian-build:
+    name: Build Armbian image
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        board:
+          - rpi4b
+          - odroidn2
+    outputs:
+      build_tag: ${{ steps.resolve-tag.outputs.build_tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Resolve Quark tag
+        id: resolve-tag
+        env:
+          INPUT_TAG: ${{ inputs.build_tag }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "${INPUT_TAG}" ]; then
+            TAG="${INPUT_TAG#refs/tags/}"
+          else
+            TAG="$(curl -fsSL \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              https://api.github.com/repos/autobutler-org/quark/releases/latest | jq -r '.tag_name')"
+          fi
+
+          if [ -z "${TAG}" ] || [ "${TAG}" = "null" ]; then
+            echo "Failed to resolve Quark tag"
+            exit 1
+          fi
+
+          echo "build_tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Resolved Quark tag: ${TAG}"
+
+      - name: Build image with embedded Quark tag
+        uses: ./armbian-build
+        env:
+          IMAGE_BINARY_URL: https://quarkrelease.blob.core.windows.net/releases/quark/${{ steps.resolve-tag.outputs.build_tag }}/quark_Linux_arm64.tar.gz
+        with:
+          armbian_target: build
+          armbian_board: ${{ matrix.board }}
+          armbian_release: ${{ inputs.armbian_release }}
+          armbian_image_version: ${{ steps.resolve-tag.outputs.build_tag }}
+          armbian_extensions: quark-image
+
+      - name: Rename images
+        run: |
+          for ext in img.xz.sha img.xz img.txt; do
+            src=$(find build/output/images/ -maxdepth 1 -name "*.${ext}" | head -1)
+            if [ -n "${src}" ]; then
+              mv "${src}" "build/output/images/quark-armbian.${ext}"
+            fi
+          done
+
+      - name: Upload images to Azure Blob Storage
+        env:
+          AZURE_STORAGE_SAS_TOKEN: ${{ secrets.AZURE_STORAGE_SAS_TOKEN }}
+        run: |
+          az storage blob upload-batch \
+            --source build/output/images/ \
+            --destination "https://quarkrelease.blob.core.windows.net/releases" \
+            --destination-path "quark/${{ steps.resolve-tag.outputs.build_tag }}/${{ matrix.board }}" \
+            --tier Hot \
+            --sas-token "${AZURE_STORAGE_SAS_TOKEN}" \
+            --overwrite

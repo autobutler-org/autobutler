@@ -1,7 +1,7 @@
-import 'package:autobutler/models/cirrus_file_node.dart';
-import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/utils/file_browser_path_utils.dart';
 import 'package:http/http.dart' as http;
+import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/utils/file_browser_path_utils.dart';
 
 Future<void> uploadMultipartFilesToCurrentPath({
   required String currentPath,

@@ -1,10 +1,10 @@
 // ignore_for_file: use_null_aware_elements
 import 'dart:convert';
 
-import 'package:autobutler/services/app_settings.dart';
-import 'package:autobutler/services/authenticated_service.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/authenticated_service.dart';
 
 class VaultStatus {
   final bool initialized;

@@ -6,9 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	v0_health "github.com/autobutler-org/autobutler/internal/server/api/v0/health"
-	"github.com/autobutler-org/autobutler/pkg/util/healthutil"
-	"github.com/autobutler-org/autobutler/pkg/util/serverutil"
+	v0_health "github.com/autobutler-org/quark/internal/server/api/v0/health"
+	"github.com/autobutler-org/quark/pkg/util/healthutil"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/gin-gonic/gin"
 )
 

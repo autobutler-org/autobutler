@@ -1,7 +1,7 @@
-import 'package:autobutler/pages/auth_gate.dart';
-import 'package:autobutler/pages/file_browser_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quark/pages/auth_gate.dart';
+import 'package:quark/pages/file_browser_page.dart';
 
 void main() {
   // AuthGate skips authentication entirely when no host is configured —

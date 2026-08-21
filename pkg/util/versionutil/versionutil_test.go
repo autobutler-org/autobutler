@@ -4,7 +4,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/autobutler-org/autobutler/pkg/util/versionutil"
+	"github.com/autobutler-org/quark/pkg/util/versionutil"
 )
 
 func TestCompareVersions(t *testing.T) {

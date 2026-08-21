@@ -5,7 +5,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/autobutler-org/autobutler/pkg/migration"
+	"github.com/autobutler-org/quark/pkg/migration"
 
 	"golang.org/x/oauth2"
 )

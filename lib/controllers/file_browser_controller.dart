@@ -1,15 +1,15 @@
-import 'package:autobutler/models/cirrus_file_node.dart';
-import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/services/file_browser_actions.dart';
-import 'package:autobutler/services/storage_service.dart';
-import 'package:autobutler/utils/autobutler_widget.dart';
-import 'package:autobutler/utils/file_browser_dialog_utils.dart';
-import 'package:autobutler/utils/file_browser_path_utils.dart';
-import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/file_browser_actions.dart';
+import 'package:quark/services/storage_service.dart';
+import 'package:quark/utils/file_browser_dialog_utils.dart';
+import 'package:quark/utils/file_browser_path_utils.dart';
+import 'package:quark/utils/quark_widget.dart';
+import 'package:quark/widgets/file_browser/file_browser_view.dart';
 
 class FileMenuActionOutcome {
   const FileMenuActionOutcome({
@@ -229,10 +229,10 @@ class FileBrowserController {
           if (normalizedTarget == normalizedOld ||
               normalizedTarget.startsWith('$normalizedOld/')) {
             // show an error dialog
-            await AutobutlerWidget.showDialog<void>(
+            await QuarkWidget.showDialog<void>(
               context,
               useRootNavigator: true,
-              builder: (dialogContext) => AutobutlerWidget.alertDialog(
+              builder: (dialogContext) => QuarkWidget.alertDialog(
                 title: const Text('Invalid target'),
                 content: const Text(
                   'Cannot move a folder into itself or one of its subfolders.',

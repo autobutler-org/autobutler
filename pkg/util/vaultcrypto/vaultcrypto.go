@@ -27,7 +27,7 @@ var (
 // On unlock we decrypt the stored blob and compare to this value.
 // This is intentionally not secret — security comes from the AES-256-GCM
 // encryption, not from the plaintext being unknown.
-var verificationPlaintext = []byte("autobutler-vault-ok")
+var verificationPlaintext = []byte("quark-vault-ok")
 
 // Argon2Params holds tunable parameters for Argon2id key derivation.
 type Argon2Params struct {

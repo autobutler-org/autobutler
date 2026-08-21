@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/autobutler-org/autobutler/pkg/util/settingsutil"
+	"github.com/autobutler-org/quark/pkg/util/settingsutil"
 )
 
 // settingsFile returns the path used by settingsutil during the test.

@@ -1,7 +1,7 @@
-import 'package:autobutler/services/health_service.dart';
-import 'package:autobutler/widgets/core/autobutler_storage_bar.dart';
+import 'package:quark/services/health_service.dart';
+import 'package:quark/widgets/core/quark_storage_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
+import 'package:quark_icons/quark_icons.dart';
 
 class FileStorageFooter extends StatefulWidget {
   const FileStorageFooter({super.key});
@@ -53,7 +53,7 @@ class _FileStorageFooterState extends State<FileStorageFooter> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final barColor = AutobutlerStorageBar.colorForFraction(_diskPercent);
+    final barColor = QuarkStorageBar.colorForFraction(_diskPercent);
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.secondary,
@@ -63,7 +63,7 @@ class _FileStorageFooterState extends State<FileStorageFooter> {
       child: Row(
         children: [
           Icon(
-            AutobutlerIcons.storage_rounded,
+            QuarkIcons.storage_rounded,
             size: 14,
             color: colorScheme.onSurface.withValues(alpha: 0.4),
           ),
@@ -79,7 +79,7 @@ class _FileStorageFooterState extends State<FileStorageFooter> {
           Expanded(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 320),
-              child: AutobutlerStorageBar(usedFraction: _diskPercent),
+              child: QuarkStorageBar(usedFraction: _diskPercent),
             ),
           ),
           const SizedBox(width: 8),

@@ -1,11 +1,11 @@
-import 'package:autobutler/models/cirrus_file_node.dart';
-import 'package:autobutler/services/cirrus_service.dart';
-import 'package:autobutler/theme/autobutler_colors.dart';
-import 'package:autobutler/utils/cirrus_route_path_utils.dart';
-import 'package:autobutler/widgets/core/autobutler_file_icon.dart';
-import 'package:autobutler/widgets/file_browser/file_browser_view.dart';
+import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/theme/quark_colors.dart';
+import 'package:quark/utils/cirrus_route_path_utils.dart';
+import 'package:quark/widgets/core/quark_file_icon.dart';
+import 'package:quark/widgets/file_browser/file_browser_view.dart';
 import 'package:flutter/material.dart';
-import 'package:autobutler_icons/autobutler_icons.dart';
+import 'package:quark_icons/quark_icons.dart';
 
 /// A horizontally-scrolling strip showing recently uploaded files.
 /// Displayed at the root of the file browser (not in search mode).
@@ -85,7 +85,7 @@ class _RecentFilesSectionState extends State<RecentFilesSection> {
               Row(
                 children: [
                   Icon(
-                    AutobutlerIcons.schedule_rounded,
+                    QuarkIcons.schedule_rounded,
                     size: 14,
                     color: colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
@@ -146,7 +146,7 @@ class _RecentFileChip extends StatelessWidget {
         color: colorScheme.surfaceContainerHighest,
         shape: RoundedRectangleBorder(
           side: BorderSide(color: colorScheme.outline),
-          borderRadius: BorderRadius.circular(AutobutlerColors.radiusMd),
+          borderRadius: BorderRadius.circular(QuarkColors.radiusMd),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -156,7 +156,7 @@ class _RecentFileChip extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                AutobutlerFileIcon(
+                QuarkFileIcon(
                   node: file,
                   size: 20,
                   color: colorScheme.onSurfaceVariant,
@@ -202,7 +202,7 @@ class _RecentFileChip extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.all(4),
                         child: Icon(
-                          AutobutlerIcons.folder_open_rounded,
+                          QuarkIcons.folder_open_rounded,
                           size: 14,
                           color: colorScheme.onSurface.withValues(alpha: 0.4),
                         ),
