@@ -750,6 +750,40 @@ class _FileBrowserViewState extends State<FileBrowserView> {
         lower.endsWith('.heif');
   }
 
+  /// Extensions the server classifies as a video; kept in sync with
+  /// `storageutil.DetermineFileTypeFromPath` so the two agree on what the
+  /// thumbnail endpoint will accept.
+  static const _videoExtensions = <String>{
+    '.mp4',
+    '.m4v',
+    '.webm',
+    '.ogv',
+    '.avi',
+    '.mov',
+    '.mkv',
+    '.wmv',
+    '.flv',
+    '.3gp',
+    '.3g2',
+    '.mpeg',
+    '.mpg',
+    '.ts',
+  };
+
+  static bool _isVideoFile(CirrusFileNode node) {
+    if (node.isDir) return false;
+    if (node.fileType == 'video') return true;
+    final lower = node.name.toLowerCase();
+    final dot = lower.lastIndexOf('.');
+    return dot >= 0 && _videoExtensions.contains(lower.substring(dot));
+  }
+
+  /// Whether the server can render a thumbnail for this node. Videos go
+  /// through ffmpeg frame extraction on the backend and come back as JPEG,
+  /// so they use the same thumbnail URL as images.
+  static bool _hasServerThumbnail(CirrusFileNode node) =>
+      _isImageFile(node) || _isVideoFile(node);
+
   /// Preview slot for a grid tile. Sized by the caller (an [Expanded] that
   /// hands it whatever the tile has left over) so every tile lines up without
   /// risking an overflow, with the thumbnail replacing the icon only once it
@@ -759,7 +793,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
 
     return SizedBox(
       width: double.infinity,
-      child: !_isImageFile(item)
+      child: !_hasServerThumbnail(item)
           ? icon
           : CachedNetworkImage(
               imageUrl: CirrusService.constructThumbnailUrl(
@@ -788,7 +822,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
     return SizedBox(
       width: _listLeadingSize,
       height: _listLeadingSize,
-      child: !_isImageFile(item)
+      child: !_hasServerThumbnail(item)
           ? icon
           : CachedNetworkImage(
               imageUrl: CirrusService.constructThumbnailUrl(
