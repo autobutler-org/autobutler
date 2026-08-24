@@ -220,12 +220,19 @@ IOS_BUILD_NUMBER ?=
 
 .PHONY: build/frontend/ios/ipa
 build/frontend/ios/ipa: check/frontend/ios/release ## Build a signed iOS IPA for the App Store
-	# Release archives start from a clean slate. Flutter's incremental build system has
-	# been observed skipping release_unpack_ios/aot_assembly_release and reusing a
-	# debug-mode App.framework and Flutter.framework left in DerivedData's
-	# Release-iphoneos products dir -- silently shipping a debug build that dies on
-	# launch with "debug mode Flutter apps can only be launched from Flutter tooling".
-	# Set IOS_SKIP_CLEAN=1 to skip this when iterating on signing or export settings.
+	# Xcode must not be open on this workspace. Its background Debug builds write into
+	# the same DerivedData products dir, and the archive then skips
+	# release_unpack_ios/aot_assembly_release and reuses that debug-mode
+	# App.framework/Flutter.framework -- shipping a debug build that installs fine and
+	# then refuses to launch. check/frontend/ios/ipa below is the backstop.
+	if pgrep -qx Xcode; then
+		echo "Error: Xcode is running. Quit it before archiving."
+		echo "  Its background builds corrupt the release archive (see docs/ios-release.md)."
+		echo "  Set IOS_ALLOW_XCODE=1 to override; the IPA is verified either way."
+		if [ -z "$(IOS_ALLOW_XCODE)" ]; then exit 1; fi
+	fi
+	# Start from a clean slate so no stale intermediate can be reused.
+	# Set IOS_SKIP_CLEAN=1 when iterating on signing or export settings.
 	if [ -z "$(IOS_SKIP_CLEAN)" ]; then
 		rm -rf $$HOME/Library/Developer/Xcode/DerivedData/Runner-*
 		flutter clean
@@ -261,7 +268,8 @@ check/frontend/ios/ipa: ## Verify an IPA is a real release build (IOS_IPA=path)
 	if unzip -l "$$ipa" | grep -q "kernel_blob.bin"; then
 		echo "Error: $$ipa is a DEBUG build (contains flutter_assets/kernel_blob.bin)."
 		echo "  It would install from TestFlight and then refuse to launch."
-		echo "  Fix: make build/frontend/ios/ipa   (a clean rebuild resolves this)"
+		echo "  Cause: Xcode was open during the archive, or a stale debug intermediate"
+		echo "         was reused. Quit Xcode, then: make build/frontend/ios/ipa"
 		exit 1
 	fi
 	if ! unzip -l "$$ipa" | grep -q "App.framework/App"; then
