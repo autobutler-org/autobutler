@@ -89,6 +89,66 @@ Override the build number for a one-off:
 IOS_BUILD_NUMBER=7 make build/frontend/ios/ipa
 ```
 
+## Continuous integration
+
+`.github/workflows/ios-release.yml` builds and uploads from a `macos-15` runner. It runs
+automatically as a job in `release.yml` on any `v*.*.*` tag push, after the GoReleaser
+job succeeds, and can also be triggered by hand from the Actions tab (uncheck **upload**
+to build and verify without publishing).
+
+CI runs the same `make build/frontend/ios/ipa` target as local, so the two cannot drift.
+The only difference is signing: locally Xcode signs automatically from your keychain,
+while CI imports a certificate and profile into a throwaway keychain and signs manually.
+
+### Secrets
+
+All six are required. Add them under Settings > Secrets and variables > Actions.
+
+| Secret | What it is |
+|---|---|
+| `IOS_DIST_CERT_P12_BASE64` | base64 of the Apple Distribution certificate exported as `.p12` |
+| `IOS_DIST_CERT_PASSWORD` | the password you set when exporting that `.p12` |
+| `IOS_PROVISIONING_PROFILE_BASE64` | base64 of the App Store `.mobileprovision` |
+| `APP_STORE_CONNECT_KEY_ID` | API key ID |
+| `APP_STORE_CONNECT_ISSUER_ID` | API issuer ID |
+| `APP_STORE_CONNECT_PRIVATE_KEY` | full contents of the `.p8`, including the BEGIN/END lines |
+
+### Producing the certificate secret
+
+In Keychain Access, find **Apple Distribution: Autobutler LLC**, expand it, and select
+**both the certificate and its private key**. Right-click > Export 2 items > `.p12`. An
+export without the private key cannot sign, and the CI script fails explicitly if that
+happens.
+
+```bash
+base64 -i Certificates.p12 | pbcopy
+```
+
+### Producing the profile secret
+
+Create an **App Store** distribution profile for `org.autobutler.quark` at
+<https://developer.apple.com/account/resources/profiles>, download it, then:
+
+```bash
+base64 -i Quark_App_Store.mobileprovision | pbcopy
+```
+
+Development and ad-hoc profiles are rejected by the CI script — it checks for a
+`ProvisionedDevices` key, which only non-App-Store profiles carry.
+
+### Build numbers in CI
+
+The workflow uses `github.run_number` unless you pass `build_number` explicitly. Because
+App Store Connect never frees a consumed build number, a manual upload can push the real
+high-water mark above the run number. If a CI upload is rejected as a duplicate, re-run
+with an explicit `build_number` above the last one used.
+
+### Expiry
+
+Apple Distribution certificates last one year and provisioning profiles one year. Both
+secrets must be regenerated before they expire, or tagged releases start failing at the
+signing step. Nothing warns you in advance.
+
 ## Versioning rules
 
 Both numbers come from `version:` in `pubspec.yaml` (`<version>+<build>`).
@@ -152,12 +212,19 @@ Symptom: the app installs from TestFlight, then shows a black screen reading *"I
 debug mode Flutter apps can only be launched from Flutter tooling, IDEs with Flutter
 plugins or from Xcode."*
 
-Cause: `flutter build ipa --release` can silently produce a debug artifact. Flutter's
-incremental build system skips `release_unpack_ios` and `aot_assembly_release` and reuses
-a debug-mode `App.framework` and `Flutter.framework` left behind in DerivedData's
-`Release-iphoneos` products directory by an earlier `flutter run`. The build reports
-success, `xcodebuild` really does use `-configuration Release`, and the IPA uploads and
-installs normally. It just cannot launch.
+Cause: **Xcode was open on the workspace during the archive.** Its background Debug
+builds write into the same DerivedData products directory; the CLI archive then skips
+`release_unpack_ios` and `aot_assembly_release` and reuses that debug-mode
+`App.framework` and `Flutter.framework`. The build reports success, `xcodebuild` really
+does use `-configuration Release`, and the IPA uploads and installs normally. It just
+cannot launch.
+
+Observed across six runs: debug every time Xcode was open, release every time it was
+closed. Wiping DerivedData does *not* prevent it; only quitting Xcode does. This is the
+same contention that produces the `disk I/O error` above.
+
+`make build/frontend/ios/ipa` refuses to run while Xcode is open (`IOS_ALLOW_XCODE=1`
+overrides), and verifies the exported IPA regardless.
 
 How to tell them apart:
 
@@ -170,8 +237,8 @@ How to tell them apart:
 `make check/frontend/ios/ipa` checks this, and `make build/frontend/ios/ipa` runs it
 automatically. Never upload an IPA that has not been through it.
 
-Recovery is a clean rebuild — which the build target now does unconditionally. Note the
-bad build number is gone forever; bump and re-upload.
+Recovery: quit Xcode and rebuild. The bad build number is gone forever — bump and
+re-upload.
 
 ### `The bundle version must be higher than the previously uploaded version`
 
