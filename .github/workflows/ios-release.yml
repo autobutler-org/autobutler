@@ -1,0 +1,113 @@
+name: iOS Release
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: "iOS build number. Must be higher than any build already uploaded for this version. Defaults to the workflow run number."
+        required: false
+        type: string
+      upload:
+        description: "Upload to App Store Connect. Uncheck to build and verify only."
+        required: false
+        type: boolean
+        default: true
+  workflow_call:
+    inputs:
+      build_number:
+        required: false
+        type: string
+      upload:
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      IOS_DIST_CERT_P12_BASE64:
+        required: true
+      IOS_DIST_CERT_PASSWORD:
+        required: true
+      IOS_PROVISIONING_PROFILE_BASE64:
+        required: true
+      APP_STORE_CONNECT_KEY_ID:
+        required: true
+      APP_STORE_CONNECT_ISSUER_ID:
+        required: true
+      APP_STORE_CONNECT_PRIVATE_KEY:
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  ios-release:
+    # Signing, archiving and altool are all macOS-only.
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
+
+      - name: Prepare code signing
+        env:
+          IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: ./scripts/ios-ci-signing.bash
+
+      - name: Install App Store Connect API key
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          if [[ -z "${APP_STORE_CONNECT_KEY_ID}" || -z "${APP_STORE_CONNECT_PRIVATE_KEY}" ]]; then
+            echo "Error: APP_STORE_CONNECT_KEY_ID and APP_STORE_CONNECT_PRIVATE_KEY must be set."
+            echo "  See docs/ios-release.md for how to create the API key."
+            exit 1
+          fi
+          mkdir -p ~/.appstoreconnect/private_keys
+          printf '%s' "${APP_STORE_CONNECT_PRIVATE_KEY}" \
+            > ~/.appstoreconnect/private_keys/"AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
+          chmod 600 ~/.appstoreconnect/private_keys/*.p8
+
+      # Build numbers are consumed permanently by App Store Connect, so this must
+      # exceed anything already uploaded for this version. github.run_number is
+      # monotonic; override it when a manual upload has moved ahead of it.
+      - name: Build signed IPA
+        env:
+          IOS_BUILD_NUMBER: ${{ inputs.build_number || github.run_number }}
+        run: |
+          make build/frontend/ios/ipa \
+            IOS_EXPORT_OPTIONS=ios/ExportOptions.ci.plist \
+            IOS_BUILD_NUMBER="${IOS_BUILD_NUMBER}"
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-ipa
+          path: build/ios/ipa/*.ipa
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish to App Store Connect
+        if: ${{ inputs.upload }}
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: make publish/frontend/ios
+
+      - name: Clean up signing material
+        if: always()
+        run: |
+          rm -rf ~/.appstoreconnect/private_keys
+          rm -rf ~/Library/MobileDevice/Provisioning\ Profiles
+          rm -f ios/ExportOptions.ci.plist
