@@ -212,6 +212,121 @@ build/frontend/android: ## Build Android app
 build/frontend/ios: ## Build iOS app
 	flutter build ios --$(FLUTTER_BUILD_MODE) --no-codesign
 
+# App Store Connect distribution. IOS_BUILD_NUMBER must increase on every upload;
+# it defaults to the build number in pubspec.yaml (the '+N' suffix on 'version:').
+IOS_EXPORT_OPTIONS ?= ios/ExportOptions.plist
+IOS_IPA_DIR ?= build/ios/ipa
+IOS_BUILD_NUMBER ?=
+
+.PHONY: build/frontend/ios/ipa
+build/frontend/ios/ipa: check/frontend/ios/release ## Build a signed iOS IPA for the App Store
+	# Release archives start from a clean slate. Flutter's incremental build system has
+	# been observed skipping release_unpack_ios/aot_assembly_release and reusing a
+	# debug-mode App.framework and Flutter.framework left in DerivedData's
+	# Release-iphoneos products dir -- silently shipping a debug build that dies on
+	# launch with "debug mode Flutter apps can only be launched from Flutter tooling".
+	# Set IOS_SKIP_CLEAN=1 to skip this when iterating on signing or export settings.
+	if [ -z "$(IOS_SKIP_CLEAN)" ]; then
+		rm -rf $$HOME/Library/Developer/Xcode/DerivedData/Runner-*
+		flutter clean
+		flutter pub get
+	fi
+	flutter build ipa \
+		--release \
+		--export-options-plist=$(IOS_EXPORT_OPTIONS) \
+		$(if $(IOS_BUILD_NUMBER),--build-number=$(IOS_BUILD_NUMBER),)
+	ipa="$$(ls -t $(IOS_IPA_DIR)/*.ipa 2>/dev/null | head -1)"
+	if [ -z "$$ipa" ]; then
+		echo "Error: no IPA was produced in $(IOS_IPA_DIR)."
+		echo "Check the xcodebuild output above; a signing failure is the usual cause."
+		echo "Run 'make check/frontend/ios/release' to verify signing prerequisites."
+		exit 1
+	fi
+	$(MAKE) check/frontend/ios/ipa IOS_IPA="$$ipa"
+	echo "Built $$ipa"
+	echo "Next: make publish/frontend/ios"
+
+.PHONY: check/frontend/ios/ipa
+check/frontend/ios/ipa: ## Verify an IPA is a real release build (IOS_IPA=path)
+	ipa="$(IOS_IPA)"
+	if [ -z "$$ipa" ]; then
+		ipa="$$(ls -t $(IOS_IPA_DIR)/*.ipa 2>/dev/null | head -1)"
+	fi
+	if [ -z "$$ipa" ] || [ ! -f "$$ipa" ]; then
+		echo "Error: no IPA to check. Run 'make build/frontend/ios/ipa' first."
+		exit 1
+	fi
+	# A debug Flutter build ships a JIT kernel blob and a stub App binary. Such a build
+	# uploads and installs fine, then refuses to launch from the home screen or TestFlight.
+	if unzip -l "$$ipa" | grep -q "kernel_blob.bin"; then
+		echo "Error: $$ipa is a DEBUG build (contains flutter_assets/kernel_blob.bin)."
+		echo "  It would install from TestFlight and then refuse to launch."
+		echo "  Fix: make build/frontend/ios/ipa   (a clean rebuild resolves this)"
+		exit 1
+	fi
+	if ! unzip -l "$$ipa" | grep -q "App.framework/App"; then
+		echo "Error: $$ipa has no App.framework/App binary."
+		exit 1
+	fi
+	echo "OK: $$ipa is a release build."
+
+.PHONY: check/frontend/ios/release
+check/frontend/ios/release: ## Check iOS App Store release prerequisites
+	failed=0
+	if [ "$(UNAME_S)" != "Darwin" ]; then
+		echo "Error: iOS release builds require macOS (found $(UNAME_S))."
+		exit 1
+	fi
+	if ! xcode-select -p >/dev/null 2>&1; then
+		echo "Missing: Xcode command line tools. Run 'make setup/ios' first."
+		failed=1
+	fi
+	if [ ! -f "$(IOS_EXPORT_OPTIONS)" ]; then
+		echo "Missing: $(IOS_EXPORT_OPTIONS)."
+		failed=1
+	fi
+	if ! security find-identity -v -p codesigning 2>/dev/null | grep -q "Apple Distribution"; then
+		echo "Missing: an 'Apple Distribution' signing identity in your keychain."
+		echo "  Fix: open Xcode > Settings > Accounts, sign in with the Apple Developer"
+		echo "       account for team 4NK7MWUA57, then 'Manage Certificates' > '+' >"
+		echo "       'Apple Distribution'."
+		failed=1
+	fi
+	if [ ! -d "$$HOME/Library/MobileDevice/Provisioning Profiles" ]; then
+		echo "Warning: no provisioning profiles installed yet. Xcode will fetch an App Store"
+		echo "         profile automatically on the first archive if the bundle ID"
+		echo "         org.autobutler.quark is registered in App Store Connect."
+	fi
+	if [ $$failed -ne 0 ]; then
+		echo
+		echo "iOS release prerequisites are not satisfied."
+		exit 1
+	fi
+	echo "iOS release prerequisites OK."
+
+.PHONY: publish/frontend/ios
+publish/frontend/ios: ## Upload the iOS IPA to App Store Connect
+	ipa="$$(ls -t $(IOS_IPA_DIR)/*.ipa 2>/dev/null | head -1)"
+	if [ -z "$$ipa" ]; then
+		echo "Error: no IPA found in $(IOS_IPA_DIR). Run 'make build/frontend/ios/ipa' first."
+		exit 1
+	fi
+	if [ -z "$$APP_STORE_CONNECT_KEY_ID" ] || [ -z "$$APP_STORE_CONNECT_ISSUER_ID" ]; then
+		echo "Error: APP_STORE_CONNECT_KEY_ID and APP_STORE_CONNECT_ISSUER_ID must be set."
+		echo "  Create an API key at https://appstoreconnect.apple.com/access/integrations/api"
+		echo "  with the 'App Manager' role, then place the downloaded .p8 at:"
+		echo "    ~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8"
+		echo "  and export both variables (or add them to .env)."
+		exit 1
+	fi
+	xcrun altool --upload-app \
+		--type ios \
+		--file "$$ipa" \
+		--apiKey "$$APP_STORE_CONNECT_KEY_ID" \
+		--apiIssuer "$$APP_STORE_CONNECT_ISSUER_ID"
+	echo "Uploaded $$ipa to App Store Connect."
+	echo "Next: the build appears under TestFlight after processing (usually 5-30 minutes)."
+
 .PHONY: build/frontend/web
 build/frontend/web: internal/server/public/stub.txt generate/frontend/sbom ## Build web app
 	flutter build web --$(FLUTTER_BUILD_MODE)
