@@ -66,3 +66,13 @@ jobs:
     with:
       build_tag: ${{ github.ref_name }}
     secrets: inherit
+
+  ios-release:
+    needs: release
+    if: success() && startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: read
+    uses: ./.github/workflows/release-ios.yml
+    with:
+      upload: true
+    secrets: inherit

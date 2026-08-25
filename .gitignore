@@ -124,3 +124,6 @@ CLAUDE.md
 
 # Test plugin binary (built by plugin subprocess host tests)
 testplugin
+
+# Generated on CI runners by scripts/ios-ci-signing.bash
+ios/ExportOptions.ci.plist

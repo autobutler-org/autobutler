@@ -4,6 +4,16 @@ SHELL := bash
 .ONESHELL:
 .SILENT:
 
+# .ONESHELL needs GNU Make 3.82+. macOS ships 3.81, where it is silently ignored and
+# every recipe line runs in its own shell -- multi-line `if` blocks then die with
+# "syntax error: unexpected end of file", which points nowhere near the real problem.
+MIN_MAKE := 3.82
+ifneq ($(firstword $(sort $(MAKE_VERSION) $(MIN_MAKE))),$(MIN_MAKE))
+$(error GNU Make $(MAKE_VERSION) is too old; this Makefile needs $(MIN_MAKE)+. \
+On macOS run `brew install make` and use `gmake`, or put \
+"$$(brew --prefix)/opt/make/libexec/gnubin" first on PATH.)
+endif
+
 ifneq (,$(wildcard ./.env))
     include .env
     export
@@ -11,8 +21,13 @@ endif
 
 GO := $(shell which go)
 AIR := $(shell which air)
+# Only ask Go for its defaults when Go is actually installed. On a macOS CI runner
+# without it, $(GO) is empty and the shell call becomes `env GOOS`, which floods the
+# log with "env: GOOS: No such file or directory" on every recipe.
+ifneq ($(GO),)
 export GOOS ?= $(shell $(GO) env GOOS)
 export GOARCH ?= $(shell $(GO) env GOARCH)
+endif
 export GOPROXY ?= https://proxy.golang.org,direct
 
 ENTRYPOINT := ./cmd/quark
@@ -205,12 +220,139 @@ endif
 FLUTTER_BUILD_MODE ?= debug
 
 .PHONY: build/frontend/android
-build/frontend/android: ## Build Android app
+build/frontend/android: generate/frontend/sbom ## Build Android app
 	flutter build apk --$(FLUTTER_BUILD_MODE)
 
 .PHONY: build/frontend/ios
-build/frontend/ios: ## Build iOS app
+build/frontend/ios: generate/frontend/sbom ## Build iOS app
 	flutter build ios --$(FLUTTER_BUILD_MODE) --no-codesign
+
+# App Store Connect distribution. IOS_BUILD_NUMBER must increase on every upload;
+# it defaults to the build number in pubspec.yaml (the '+N' suffix on 'version:').
+IOS_EXPORT_OPTIONS ?= ios/ExportOptions.plist
+IOS_IPA_DIR ?= build/ios/ipa
+IOS_BUILD_NUMBER ?=
+
+# The bare `export` at the top of this file (active whenever .env exists) pushes every
+# make variable into recipe environments, FLUTTER_BUILD_MODE ?= debug included. Flutter's
+# xcode_backend reads FLUTTER_BUILD_MODE before falling back to CONFIGURATION, so an
+# archive would emit debug artifacts while xcodebuild really did run -configuration
+# Release -- producing an IPA that installs from TestFlight and then refuses to launch.
+.PHONY: build/frontend/ios/ipa
+build/frontend/ios/ipa: FLUTTER_BUILD_MODE := release
+build/frontend/ios/ipa: check/frontend/ios/release ## Build a signed iOS IPA for the App Store
+	# Xcode open on this workspace can contend with the CLI archive over DerivedData and
+	# produce "accessing build database ... disk I/O error". Warn, do not block.
+	if pgrep -qx Xcode >/dev/null; then
+		echo "Warning: Xcode is running. Quit it if the archive fails on DerivedData I/O."
+	fi
+	# Start from a clean slate so no stale intermediate can be reused.
+	# Set IOS_SKIP_CLEAN=1 when iterating on signing or export settings.
+	if [ -z "$(IOS_SKIP_CLEAN)" ]; then
+		flutter clean
+	fi
+	flutter pub get
+	# assets/sbom_flutter.json is declared in pubspec.yaml but generated, not committed
+	# (see .gitignore). Without it the archive dies late in
+	# release_ios_bundle_flutter_assets with "Failed to bundle asset files".
+	$(MAKE) generate/frontend/sbom
+	flutter build ipa \
+		--release \
+		--export-options-plist=$(IOS_EXPORT_OPTIONS) \
+		$(if $(IOS_BUILD_NUMBER),--build-number=$(IOS_BUILD_NUMBER),)
+	ipa="$$(ls -t $(IOS_IPA_DIR)/*.ipa 2>/dev/null | head -1)"
+	if [ -z "$$ipa" ]; then
+		echo "Error: no IPA was produced in $(IOS_IPA_DIR)."
+		echo "Check the xcodebuild output above; a signing failure is the usual cause."
+		echo "Run 'make check/frontend/ios/release' to verify signing prerequisites."
+		exit 1
+	fi
+	$(MAKE) check/frontend/ios/ipa IOS_IPA="$$ipa"
+	echo "Built $$ipa"
+	echo "Next: make publish/frontend/ios"
+
+.PHONY: check/frontend/ios/ipa
+check/frontend/ios/ipa: ## Verify an IPA is a real release build (IOS_IPA=path)
+	ipa="$(IOS_IPA)"
+	if [ -z "$$ipa" ]; then
+		ipa="$$(ls -t $(IOS_IPA_DIR)/*.ipa 2>/dev/null | head -1)"
+	fi
+	if [ -z "$$ipa" ] || [ ! -f "$$ipa" ]; then
+		echo "Error: no IPA to check. Run 'make build/frontend/ios/ipa' first."
+		exit 1
+	fi
+	# A debug Flutter build ships a JIT kernel blob and a stub App binary. Such a build
+	# uploads and installs fine, then refuses to launch from the home screen or TestFlight.
+	if unzip -l "$$ipa" | grep -q "kernel_blob.bin"; then
+		echo "Error: $$ipa is a DEBUG build (contains flutter_assets/kernel_blob.bin)."
+		echo "  It would install from TestFlight and then refuse to launch."
+		echo "  Cause: FLUTTER_BUILD_MODE leaked into the environment as 'debug', or a"
+		echo "         stale debug intermediate was reused. Check: make --eval='p:; @env |"
+		echo "         grep FLUTTER_BUILD_MODE' p"
+		exit 1
+	fi
+	if ! unzip -l "$$ipa" | grep -q "App.framework/App"; then
+		echo "Error: $$ipa has no App.framework/App binary."
+		exit 1
+	fi
+	echo "OK: $$ipa is a release build."
+
+.PHONY: check/frontend/ios/release
+check/frontend/ios/release: ## Check iOS App Store release prerequisites
+	failed=0
+	if [ "$(UNAME_S)" != "Darwin" ]; then
+		echo "Error: iOS release builds require macOS (found $(UNAME_S))."
+		exit 1
+	fi
+	if ! xcode-select -p >/dev/null 2>&1; then
+		echo "Missing: Xcode command line tools. Run 'make setup/ios' first."
+		failed=1
+	fi
+	if [ ! -f "$(IOS_EXPORT_OPTIONS)" ]; then
+		echo "Missing: $(IOS_EXPORT_OPTIONS)."
+		failed=1
+	fi
+	if ! security find-identity -v -p codesigning 2>/dev/null | grep -q "Apple Distribution"; then
+		echo "Missing: an 'Apple Distribution' signing identity in your keychain."
+		echo "  Fix: open Xcode > Settings > Accounts, sign in with the Apple Developer"
+		echo "       account for team 4NK7MWUA57, then 'Manage Certificates' > '+' >"
+		echo "       'Apple Distribution'."
+		failed=1
+	fi
+	if [ ! -d "$$HOME/Library/MobileDevice/Provisioning Profiles" ]; then
+		echo "Warning: no provisioning profiles installed yet. Xcode will fetch an App Store"
+		echo "         profile automatically on the first archive if the bundle ID"
+		echo "         org.autobutler.quark is registered in App Store Connect."
+	fi
+	if [ $$failed -ne 0 ]; then
+		echo
+		echo "iOS release prerequisites are not satisfied."
+		exit 1
+	fi
+	echo "iOS release prerequisites OK."
+
+.PHONY: publish/frontend/ios
+publish/frontend/ios: ## Upload the iOS IPA to App Store Connect
+	ipa="$$(ls -t $(IOS_IPA_DIR)/*.ipa 2>/dev/null | head -1)"
+	if [ -z "$$ipa" ]; then
+		echo "Error: no IPA found in $(IOS_IPA_DIR). Run 'make build/frontend/ios/ipa' first."
+		exit 1
+	fi
+	if [ -z "$$APP_STORE_CONNECT_KEY_ID" ] || [ -z "$$APP_STORE_CONNECT_ISSUER_ID" ]; then
+		echo "Error: APP_STORE_CONNECT_KEY_ID and APP_STORE_CONNECT_ISSUER_ID must be set."
+		echo "  Create an API key at https://appstoreconnect.apple.com/access/integrations/api"
+		echo "  with the 'App Manager' role, then place the downloaded .p8 at:"
+		echo "    ~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8"
+		echo "  and export both variables (or add them to .env)."
+		exit 1
+	fi
+	xcrun altool --upload-app \
+		--type ios \
+		--file "$$ipa" \
+		--apiKey "$$APP_STORE_CONNECT_KEY_ID" \
+		--apiIssuer "$$APP_STORE_CONNECT_ISSUER_ID"
+	echo "Uploaded $$ipa to App Store Connect."
+	echo "Next: the build appears under TestFlight after processing (usually 5-30 minutes)."
 
 .PHONY: build/frontend/web
 build/frontend/web: internal/server/public/stub.txt generate/frontend/sbom ## Build web app
