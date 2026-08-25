@@ -3,13 +3,6 @@ on:
   pull_request:
     branches:
       - main
-    secrets:
-      IOS_DIST_CERT_P12_BASE64:
-        required: true
-      IOS_DIST_CERT_PASSWORD:
-        required: true
-      IOS_PROVISIONING_PROFILE_BASE64:
-        required: true
   workflow_dispatch:
 permissions:
   contents: read
