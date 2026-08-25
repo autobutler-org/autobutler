@@ -81,57 +81,15 @@ jobs:
       - name: Build [android]
         run: |
           make build/frontend/android
-  ios-changes:
-    # Gate ci-ios on whether anything that can affect the iOS build actually changed.
-    # Most pull requests here are dependency bumps that cannot touch it, and a macOS
-    # runner bills at roughly 10x a Linux one.
-    #
-    # This is a job-level gate rather than an `on.pull_request.paths` filter because a
-    # workflow-level filter would suppress ci-backend and ci-frontend too, and would
-    # leave any required status check pending forever instead of reporting skipped.
-    runs-on: ubuntu-latest
-    outputs:
-      ios: ${{ steps.filter.outputs.ios }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - name: Detect iOS-relevant changes
-        id: filter
-        run: |
-          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
-            echo "Not a pull request -- building unconditionally."
-            echo "ios=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          git fetch --quiet origin "${{ github.base_ref }}"
-          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
-          echo "Changed files:"
-          echo "$changed"
-          # lib, assets and packages are compiled into the app; Makefile carries the
-          # build target; pubspec pins the Flutter SDK and every dependency.
-          pattern='^(ios/|lib/|assets/|packages/|pubspec\.(yaml|lock)$|Makefile$|scripts/ios-|\.github/workflows/ci\.yml$)'
-          if grep -qE "$pattern" <<< "$changed"; then
-            echo "ios=true" >> "$GITHUB_OUTPUT"
-            echo "iOS-relevant changes found; ci-ios will run."
-          else
-            echo "ios=false" >> "$GITHUB_OUTPUT"
-            echo "No iOS-relevant changes; skipping ci-ios."
-          fi
   ci-ios:
     # macOS runners bill at a multiple of Linux minutes, so this job is deliberately
     # narrow: build the App Store IPA and let check/frontend/ios/ipa verify it is a real
     # release build. No upload -- nothing here consumes an App Store build number.
-    needs: ios-changes
     runs-on: macos-15
     timeout-minutes: 45
     # Signing secrets are not exposed to pull requests from forks, so the job would fail
     # for reasons a contributor cannot fix. Skip it there rather than show a red X.
-    if: >-
-      needs.ios-changes.outputs.ios == 'true' &&
-      (github.event_name == 'workflow_dispatch' ||
-       github.event.pull_request.head.repo.full_name == github.repository)
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
