@@ -220,11 +220,11 @@ endif
 FLUTTER_BUILD_MODE ?= debug
 
 .PHONY: build/frontend/android
-build/frontend/android: ## Build Android app
+build/frontend/android: generate/frontend/sbom ## Build Android app
 	flutter build apk --$(FLUTTER_BUILD_MODE)
 
 .PHONY: build/frontend/ios
-build/frontend/ios: ## Build iOS app
+build/frontend/ios: generate/frontend/sbom ## Build iOS app
 	flutter build ios --$(FLUTTER_BUILD_MODE) --no-codesign
 
 # App Store Connect distribution. IOS_BUILD_NUMBER must increase on every upload;
@@ -250,8 +250,12 @@ build/frontend/ios/ipa: check/frontend/ios/release ## Build a signed iOS IPA for
 	# Set IOS_SKIP_CLEAN=1 when iterating on signing or export settings.
 	if [ -z "$(IOS_SKIP_CLEAN)" ]; then
 		flutter clean
-		flutter pub get
 	fi
+	flutter pub get
+	# assets/sbom_flutter.json is declared in pubspec.yaml but generated, not committed
+	# (see .gitignore). Without it the archive dies late in
+	# release_ios_bundle_flutter_assets with "Failed to bundle asset files".
+	$(MAKE) generate/frontend/sbom
 	flutter build ipa \
 		--release \
 		--export-options-plist=$(IOS_EXPORT_OPTIONS) \
