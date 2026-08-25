@@ -1,0 +1,52 @@
+name: Check wiki
+on:
+  # Fires when anyone creates or edits a wiki page, including web-UI edits.
+  # Wikis have no branch protection, so this is after-the-fact detection
+  # rather than a gate - but it is the only hook GitHub gives us.
+  gollum:
+  # A wiki edit made while the workflow was broken would never be re-checked,
+  # so sweep once a day regardless.
+  schedule:
+    - cron: "17 9 * * *"
+  # The wiki inherits its lint rules from this repo, so a change here can
+  # break the wiki. Catch that in the PR instead of after merge.
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .markdownlint.yaml
+      - .github/workflows/autobutler-wiki.yml
+  workflow_dispatch:
+defaults:
+  run:
+    shell: bash
+permissions:
+  contents: read
+jobs:
+  autobutler-check-wiki:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Setup node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      # The wiki is a real git repo at <repo>.wiki.git. This repo is public, so
+      # it clones anonymously and needs no token. Note the branch is `master`:
+      # GitHub never migrated wikis to `main`.
+      - name: Checkout wiki
+        run: |
+          git clone --depth 1 \
+            https://github.com/${{ github.repository }}.wiki.git \
+            "${RUNNER_TEMP}/wiki"
+      # The wiki's .markdownlint.yaml does `extends: .markdownlint.base.yaml`
+      # and normally curls that file from main. Hand it the checked-out copy
+      # instead so a PR is linted against its own proposed rules.
+      - name: Use this checkout's lint rules
+        run: |
+          cp .markdownlint.yaml "${RUNNER_TEMP}/wiki/.markdownlint.base.yaml"
+      - name: Check wiki
+        working-directory: ${{ runner.temp }}/wiki
+        run: |
+          make check
