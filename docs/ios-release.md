@@ -83,11 +83,6 @@ make check/frontend/ios/ipa IOS_IPA=path    # a specific one
 
 The build appears in TestFlight after processing, usually 5–30 minutes.
 
-Override the build number for a one-off:
-
-```bash
-IOS_BUILD_NUMBER=7 make build/frontend/ios/ipa
-```
 
 ## Continuous integration
 
@@ -160,7 +155,31 @@ signing step. Nothing warns you in advance.
 
 ## Versioning rules
 
-Both numbers come from `version:` in `pubspec.yaml` (`<version>+<build>`).
+The **version** (`CFBundleShortVersionString`) comes from `version:` in `pubspec.yaml`.
+The **build number** (`CFBundleVersion`) is queried from App Store Connect at build time:
+`scripts/ios-next-build-number.bash` asks for the highest build already uploaded for that
+marketing version and adds one. `pubspec.yaml` carries no `+N` suffix.
+
+```bash
+scripts/ios-next-build-number.bash                # print the next number
+scripts/ios-next-build-number.bash --version 1.0.0
+IOS_BUILD_NUMBER=42 make build/frontend/ios/ipa   # skip the query
+```
+
+Asking App Store Connect is the only way to be certain, because it is the system of
+record and never frees a consumed number. Every alternative can go wrong:
+`github.run_number` is a per-workflow-file counter, so a tag release and a standalone
+dispatch draw from different sequences, and it does not change across a re-run — so
+retrying a failed upload reuses a consumed number. A timestamp is monotonic but can never
+be mixed with sequential numbering: upload `202608252313` once and every later build must
+exceed it forever.
+
+The query needs App Store Connect credentials, so builds that never upload should pass
+`IOS_BUILD_NUMBER` explicitly. `ci-ios` does exactly that.
+
+This is iOS-only. Android's `versionCode` is an int32 capped at 2100000000, and Flutter
+derives it by stripping non-digits from the build number. Without a `+N` in pubspec,
+Android's versionCode comes from the version's own digits (`0.31.1` -> `311`).
 
 - **Build numbers are consumed permanently.** Once App Store Connect has seen a
   `version (build)` pair, it can never be uploaded again — expiring or deleting the

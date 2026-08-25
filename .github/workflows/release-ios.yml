@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       build_number:
-        description: "iOS build number. Must be higher than any build already uploaded for this version. Defaults to the workflow run number."
+        description: "iOS build number. Leave empty to use the next unused number from App Store Connect."
         required: false
         type: string
       upload:
@@ -82,16 +82,24 @@ jobs:
             > ~/.appstoreconnect/private_keys/"AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
           chmod 600 ~/.appstoreconnect/private_keys/*.p8
 
-      # Build numbers are consumed permanently by App Store Connect, so this must
-      # exceed anything already uploaded for this version. github.run_number is
-      # monotonic; override it when a manual upload has moved ahead of it.
+      # No build number is passed by default: the Makefile asks App Store Connect for the
+      # next unused one. github.run_number cannot do this safely -- it is a per-workflow
+      # counter, so a tag release and a standalone dispatch draw from different
+      # sequences, and it is stable across re-runs, so retrying a failed upload would
+      # reuse a number App Store Connect has already consumed.
       - name: Build signed IPA
         env:
-          IOS_BUILD_NUMBER: ${{ inputs.build_number || github.run_number }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          INPUT_BUILD_NUMBER: ${{ inputs.build_number }}
         run: |
-          make build/frontend/ios/ipa \
-            IOS_EXPORT_OPTIONS=ios/ExportOptions.ci.plist \
-            IOS_BUILD_NUMBER="${IOS_BUILD_NUMBER}"
+          args=(IOS_EXPORT_OPTIONS=ios/ExportOptions.ci.plist)
+          # Only override when explicitly asked. An empty IOS_BUILD_NUMBER would still
+          # count as "set" to make and suppress the query.
+          if [[ -n "${INPUT_BUILD_NUMBER}" ]]; then
+            args+=("IOS_BUILD_NUMBER=${INPUT_BUILD_NUMBER}")
+          fi
+          make build/frontend/ios/ipa "${args[@]}"
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v7
