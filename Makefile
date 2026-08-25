@@ -219,13 +219,20 @@ endif
 
 FLUTTER_BUILD_MODE ?= debug
 
+# The app version comes from the most recent git tag, so a build can never claim a
+# version that was never released. pubspec.yaml deliberately has no `version:` field --
+# it was a second place to edit and drifted from the tags it was meant to track.
+# Override with BUILD_NAME=X.Y.Z.
+BUILD_NAME ?= $(shell git describe --tags --abbrev=0 2>/dev/null | sed -E 's/^v//')
+
 .PHONY: build/frontend/android
 build/frontend/android: generate/frontend/sbom ## Build Android app
-	flutter build apk --$(FLUTTER_BUILD_MODE)
+	flutter build apk --$(FLUTTER_BUILD_MODE) $(if $(BUILD_NAME),--build-name=$(BUILD_NAME),)
 
 .PHONY: build/frontend/ios
 build/frontend/ios: generate/frontend/sbom ## Build iOS app
-	flutter build ios --$(FLUTTER_BUILD_MODE) --no-codesign
+	flutter build ios --$(FLUTTER_BUILD_MODE) --no-codesign \
+		$(if $(BUILD_NAME),--build-name=$(BUILD_NAME),)
 
 # App Store Connect distribution. A build number must be unique and strictly increasing
 # within a marketing version, and App Store Connect never frees one once consumed. So
@@ -260,16 +267,24 @@ build/frontend/ios/ipa: check/frontend/ios/release ## Build a signed iOS IPA for
 	# (see .gitignore). Without it the archive dies late in
 	# release_ios_bundle_flutter_assets with "Failed to bundle asset files".
 	$(MAKE) generate/frontend/sbom
+	if [ -z "$(BUILD_NAME)" ]; then
+		echo "Error: no git tag found to derive the app version from."
+		echo "  The version comes from the most recent tag, for example v0.31.1."
+		echo "  Fix: git fetch --tags   (CI needs fetch-tags on actions/checkout)"
+		echo "       or pass BUILD_NAME=X.Y.Z explicitly."
+		exit 1
+	fi
 	if [ -n "$(IOS_BUILD_NUMBER)" ]; then
 		build_number="$(IOS_BUILD_NUMBER)"
 	else
 		# Diagnostics go to stderr, so this captures just the number.
-		build_number="$$(scripts/ios-next-build-number.bash)"
+		build_number="$$(scripts/ios-next-build-number.bash --version "$(BUILD_NAME)")"
 	fi
-	echo "Building with CFBundleVersion $$build_number"
+	echo "Building $(BUILD_NAME) ($$build_number)"
 	flutter build ipa \
 		--release \
 		--export-options-plist=$(IOS_EXPORT_OPTIONS) \
+		--build-name=$(BUILD_NAME) \
 		--build-number="$$build_number"
 	ipa="$$(ls -t $(IOS_IPA_DIR)/*.ipa 2>/dev/null | head -1)"
 	if [ -z "$$ipa" ]; then

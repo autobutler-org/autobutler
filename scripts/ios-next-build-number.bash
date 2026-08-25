@@ -22,7 +22,7 @@ Usage: scripts/ios-next-build-number.bash [--version X.Y.Z] [--bundle-id ID]
 Prints the next unused App Store Connect build number for a marketing version.
 
 Options:
-  --version X.Y.Z    Marketing version to scope to. Default: 'version:' in pubspec.yaml
+  --version X.Y.Z    Marketing version to scope to. Default: the most recent git tag
   --bundle-id ID     App bundle ID. Default: read from ios/Runner.xcodeproj
   -h, --help         Show this help.
 
@@ -67,9 +67,12 @@ if [[ -z "${APP_STORE_CONNECT_KEY_ID}" || -z "${APP_STORE_CONNECT_ISSUER_ID}" ]]
 fi
 
 if [[ -z "${VERSION}" ]]; then
-    VERSION="$(sed -n -E 's/^version:[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' \
-        "${REPO_ROOT}/pubspec.yaml" | head -1)"
-    [[ -n "${VERSION}" ]] || die "could not read 'version:' from pubspec.yaml"
+    # Same source as the Makefile: the most recent tag, not pubspec.yaml, which carries
+    # no version field precisely so the two cannot disagree.
+    VERSION="$(git -C "${REPO_ROOT}" describe --tags --abbrev=0 2>/dev/null | sed -E 's/^v//')"
+    [[ -n "${VERSION}" ]] || die \
+        "no git tag found to derive the app version from." \
+        "Fetch tags with 'git fetch --tags', or pass --version X.Y.Z."
 fi
 
 if [[ -z "${BUNDLE_ID}" ]]; then
