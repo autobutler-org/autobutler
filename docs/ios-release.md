@@ -68,9 +68,9 @@ make build/frontend/ios/ipa     # clean, archive, export, verify
 make publish/frontend/ios       # upload to App Store Connect
 ```
 
-`build/frontend/ios/ipa` wipes DerivedData and runs `flutter clean` first, then verifies
-the exported IPA is a genuine release build before handing it to you. Both steps exist
-because of a real incident — see [Debug build shipped to
+`build/frontend/ios/ipa` runs `flutter clean` first, then verifies the exported IPA is a
+genuine release build before handing it to you. The verification exists because of a real
+incident — see [Debug build shipped to
 TestFlight](#debug-build-shipped-to-testflight). Set `IOS_SKIP_CLEAN=1` to skip the clean
 when iterating on signing or export settings; the verification always runs.
 
@@ -189,8 +189,12 @@ signing, symbols uploaded.
 Usually accompanied by `mkdtemp ... No such file or directory` and asset catalog errors
 like `Each TDDistiller instance can be distilled only one time!`.
 
-Two build services are fighting over one DerivedData tree, or the cache is corrupt.
-**Quit Xcode**, then:
+Something is deleting or writing DerivedData underneath the build. Two common causes:
+Xcode is open on the workspace and its background build service is contending with the
+CLI archive, or a `rm -rf` of DerivedData is racing the build.
+
+Never delete DerivedData while a build is running — a half-deleted tree produces exactly
+these errors. Recover with Xcode quit and nothing building:
 
 ```bash
 rm -rf ~/Library/Developer/Xcode/DerivedData/Runner-* \
@@ -198,7 +202,11 @@ rm -rf ~/Library/Developer/Xcode/DerivedData/Runner-* \
 flutter clean && flutter pub get && (cd ios && pod install)
 ```
 
-Keep Xcode closed during CLI archives.
+If the directory reappears or `rm` reports "Directory not empty", a background Xcode
+service is recreating it; that is harmless once the tree is otherwise empty.
+
+`make build/frontend/ios/ipa` warns when Xcode is running but does not block, and it does
+not touch DerivedData itself.
 
 ### `MinimumOSVersion too low (90068)`
 
@@ -212,19 +220,29 @@ Symptom: the app installs from TestFlight, then shows a black screen reading *"I
 debug mode Flutter apps can only be launched from Flutter tooling, IDEs with Flutter
 plugins or from Xcode."*
 
-Cause: **Xcode was open on the workspace during the archive.** Its background Debug
-builds write into the same DerivedData products directory; the CLI archive then skips
-`release_unpack_ios` and `aot_assembly_release` and reuses that debug-mode
-`App.framework` and `Flutter.framework`. The build reports success, `xcodebuild` really
-does use `-configuration Release`, and the IPA uploads and installs normally. It just
-cannot launch.
+Cause: **`FLUTTER_BUILD_MODE=debug` leaking into the build environment.** The bare
+`export` near the top of the Makefile is not scoped to `.env` — GNU make applies it to
+*every* variable, so `FLUTTER_BUILD_MODE ?= debug` reaches the environment of every
+recipe. Flutter's `xcode_backend` reads `FLUTTER_BUILD_MODE` before falling back to
+`CONFIGURATION`, so it emits debug artifacts inside an archive that `xcodebuild` is
+genuinely running as `-configuration Release`. The build reports success and the IPA
+uploads and installs normally. It just cannot launch.
 
-Observed across six runs: debug every time Xcode was open, release every time it was
-closed. Wiping DerivedData does *not* prevent it; only quitting Xcode does. This is the
-same contention that produces the `disk I/O error` above.
+`build/frontend/ios/ipa` pins the variable for its own recipe:
 
-`make build/frontend/ios/ipa` refuses to run while Xcode is open (`IOS_ALLOW_XCODE=1`
-overrides), and verifies the exported IPA regardless.
+```make
+build/frontend/ios/ipa: FLUTTER_BUILD_MODE := release
+```
+
+The other frontend targets pass `--$(FLUTTER_BUILD_MODE)` and so stay self-consistent;
+only this target hardcodes `--release`, which is why it alone diverged. CI never hit this
+— there is no `.env` on a runner, so the `export` block never activates.
+
+To confirm the variable is clean:
+
+```bash
+make --eval='p:; @env | grep FLUTTER_BUILD_MODE' p    # should print nothing
+```
 
 How to tell them apart:
 

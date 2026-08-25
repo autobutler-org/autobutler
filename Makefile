@@ -218,23 +218,22 @@ IOS_EXPORT_OPTIONS ?= ios/ExportOptions.plist
 IOS_IPA_DIR ?= build/ios/ipa
 IOS_BUILD_NUMBER ?=
 
+# The bare `export` at the top of this file (active whenever .env exists) pushes every
+# make variable into recipe environments, FLUTTER_BUILD_MODE ?= debug included. Flutter's
+# xcode_backend reads FLUTTER_BUILD_MODE before falling back to CONFIGURATION, so an
+# archive would emit debug artifacts while xcodebuild really did run -configuration
+# Release -- producing an IPA that installs from TestFlight and then refuses to launch.
 .PHONY: build/frontend/ios/ipa
+build/frontend/ios/ipa: FLUTTER_BUILD_MODE := release
 build/frontend/ios/ipa: check/frontend/ios/release ## Build a signed iOS IPA for the App Store
-	# Xcode must not be open on this workspace. Its background Debug builds write into
-	# the same DerivedData products dir, and the archive then skips
-	# release_unpack_ios/aot_assembly_release and reuses that debug-mode
-	# App.framework/Flutter.framework -- shipping a debug build that installs fine and
-	# then refuses to launch. check/frontend/ios/ipa below is the backstop.
-	if pgrep -qx Xcode; then
-		echo "Error: Xcode is running. Quit it before archiving."
-		echo "  Its background builds corrupt the release archive (see docs/ios-release.md)."
-		echo "  Set IOS_ALLOW_XCODE=1 to override; the IPA is verified either way."
-		if [ -z "$(IOS_ALLOW_XCODE)" ]; then exit 1; fi
+	# Xcode open on this workspace can contend with the CLI archive over DerivedData and
+	# produce "accessing build database ... disk I/O error". Warn, do not block.
+	if pgrep -qx Xcode >/dev/null; then
+		echo "Warning: Xcode is running. Quit it if the archive fails on DerivedData I/O."
 	fi
 	# Start from a clean slate so no stale intermediate can be reused.
 	# Set IOS_SKIP_CLEAN=1 when iterating on signing or export settings.
 	if [ -z "$(IOS_SKIP_CLEAN)" ]; then
-		rm -rf $$HOME/Library/Developer/Xcode/DerivedData/Runner-*
 		flutter clean
 		flutter pub get
 	fi
@@ -268,8 +267,9 @@ check/frontend/ios/ipa: ## Verify an IPA is a real release build (IOS_IPA=path)
 	if unzip -l "$$ipa" | grep -q "kernel_blob.bin"; then
 		echo "Error: $$ipa is a DEBUG build (contains flutter_assets/kernel_blob.bin)."
 		echo "  It would install from TestFlight and then refuse to launch."
-		echo "  Cause: Xcode was open during the archive, or a stale debug intermediate"
-		echo "         was reused. Quit Xcode, then: make build/frontend/ios/ipa"
+		echo "  Cause: FLUTTER_BUILD_MODE leaked into the environment as 'debug', or a"
+		echo "         stale debug intermediate was reused. Check: make --eval='p:; @env |"
+		echo "         grep FLUTTER_BUILD_MODE' p"
 		exit 1
 	fi
 	if ! unzip -l "$$ipa" | grep -q "App.framework/App"; then
