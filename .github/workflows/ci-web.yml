@@ -1,0 +1,30 @@
+name: CI - Web
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+jobs:
+  ci-web:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
+      - name: Setup Node
+        uses: ./.github/actions/setup-node
+      - name: Tidy
+        run: |
+          make tidy/flutter
+      - name: Run unit tests
+        run: |
+          make test/unit/frontend
+      - name: Build [web]
+        run: |
+          make build/frontend/web

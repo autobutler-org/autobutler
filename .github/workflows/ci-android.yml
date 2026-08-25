@@ -1,0 +1,39 @@
+name: CI - Android
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+jobs:
+  ci-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
+      - name: Setup Node
+        uses: ./.github/actions/setup-node
+      - name: Restore Gradle caches
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/**/*.gradle.kts', 'pubspec.lock') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+      - name: Tidy
+        run: |
+          make tidy/flutter
+      - name: Run unit tests
+        run: |
+          make test/unit/frontend
+      - name: Build [android]
+        run: |
+          make build/frontend/android
