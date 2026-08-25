@@ -81,3 +81,47 @@ jobs:
       - name: Build [android]
         run: |
           make build/frontend/android
+  ci-ios:
+    # macOS runners bill at a multiple of Linux minutes, so this job is deliberately
+    # narrow: build the App Store IPA and let check/frontend/ios/ipa verify it is a real
+    # release build. No upload -- nothing here consumes an App Store build number.
+    runs-on: macos-15
+    timeout-minutes: 45
+    # Signing secrets are not exposed to pull requests from forks, so the job would fail
+    # for reasons a contributor cannot fix. Skip it there rather than show a red X.
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
+      - name: Restore CocoaPods cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            ios/Pods
+            ~/Library/Caches/CocoaPods
+          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'pubspec.lock') }}
+          restore-keys: |
+            pods-${{ runner.os }}-
+      - name: Prepare code signing
+        env:
+          IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: ./scripts/ios-ci-signing.bash
+      - name: Build [ios]
+        run: |
+          make build/frontend/ios/ipa IOS_EXPORT_OPTIONS=ios/ExportOptions.ci.plist
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-ipa-ci
+          path: build/ios/ipa/*.ipa
+          if-no-files-found: error
+          retention-days: 7
+      - name: Clean up signing material
+        if: always()
+        run: |
+          rm -rf ~/Library/MobileDevice/Provisioning\ Profiles
+          rm -f ios/ExportOptions.ci.plist

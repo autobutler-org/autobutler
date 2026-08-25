@@ -91,7 +91,7 @@ IOS_BUILD_NUMBER=7 make build/frontend/ios/ipa
 
 ## Continuous integration
 
-`.github/workflows/ios-release.yml` builds and uploads from a `macos-15` runner. It runs
+`.github/workflows/release-ios.yml` builds and uploads from a `macos-15` runner. It runs
 automatically as a job in `release.yml` on any `v*.*.*` tag push, after the GoReleaser
 job succeeds, and can also be triggered by hand from the Actions tab (uncheck **upload**
 to build and verify without publishing).
