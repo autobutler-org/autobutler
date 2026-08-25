@@ -15,6 +15,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          # build/frontend/android takes the app version from the most recent tag, and
+          # the default checkout is shallow with no tags. Without these the version
+          # silently falls back to Flutter's 1.0.0 default.
+          fetch-tags: true
+          fetch-depth: 0
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
       - name: Setup Node
