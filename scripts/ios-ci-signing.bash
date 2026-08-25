@@ -141,6 +141,23 @@ if /usr/libexec/PlistBuddy -c 'Print :ProvisionedDevices' "${PROFILE_PLIST}" >/d
     exit 1
 fi
 
+# Xcode-managed profiles are the ones automatic signing generates for you. Manual
+# signing refuses them outright -- "is Xcode managed, but signing settings require a
+# manually managed profile" -- and the archive only discovers that ~40s in. Catch it now.
+if [[ "$(/usr/libexec/PlistBuddy -c 'Print :IsXcodeManaged' "${PROFILE_PLIST}" 2>/dev/null)" == "true" ]]; then
+    echo "Error: '${PROFILE_NAME}' is an Xcode-managed profile."
+    echo "  CI signs manually, and Xcode refuses to use a managed profile that way."
+    echo "  Reusing the one Xcode created locally will not work, however convenient."
+    echo
+    echo "  Fix: create a manually managed profile at"
+    echo "       https://developer.apple.com/account/resources/profiles"
+    echo "       Type 'App Store Connect', App ID '${BUNDLE_ID}', your Apple Distribution"
+    echo "       certificate. Then:"
+    echo "         base64 -i <downloaded>.mobileprovision \\"
+    echo "           | gh secret set IOS_PROVISIONING_PROFILE_BASE64 --repo <owner>/<repo>"
+    exit 1
+fi
+
 # Xcode 16 moved the profile directory. xcodebuild still reads the legacy path, but
 # which one wins depends on the toolchain version on the runner, so install to both.
 for PROFILE_DIR in \

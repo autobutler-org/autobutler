@@ -133,8 +133,17 @@ Create an **App Store** distribution profile for `org.autobutler.quark` at
 base64 -i Quark_App_Store.mobileprovision | pbcopy
 ```
 
-Development and ad-hoc profiles are rejected by the CI script — it checks for a
-`ProvisionedDevices` key, which only non-App-Store profiles carry.
+It must be a **manually managed** profile from the portal. The one Xcode generates for
+you during a local archive looks identical and has the right type, but carries
+`IsXcodeManaged: true`, and manual signing refuses it:
+
+```
+Provisioning profile "..." is Xcode managed, but signing settings require a
+manually managed profile.
+```
+
+The CI script rejects both that and development/ad-hoc profiles up front, rather than
+letting the archive discover it forty seconds in.
 
 ### Build numbers in CI
 
