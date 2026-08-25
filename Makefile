@@ -227,11 +227,15 @@ build/frontend/android: generate/frontend/sbom ## Build Android app
 build/frontend/ios: generate/frontend/sbom ## Build iOS app
 	flutter build ios --$(FLUTTER_BUILD_MODE) --no-codesign
 
-# App Store Connect distribution. IOS_BUILD_NUMBER must increase on every upload;
-# it defaults to the build number in pubspec.yaml (the '+N' suffix on 'version:').
+# App Store Connect distribution. A build number must be unique and strictly increasing
+# within a marketing version, and App Store Connect never frees one once consumed. So
+# ask it what it already has rather than guess: any counter or clock can collide or run
+# backwards between trigger paths, and a consumed number can never be reclaimed.
+#
+# Set IOS_BUILD_NUMBER=N to skip the query -- builds that never upload (CI verification,
+# local testing) should, since the query needs App Store Connect credentials.
 IOS_EXPORT_OPTIONS ?= ios/ExportOptions.plist
 IOS_IPA_DIR ?= build/ios/ipa
-IOS_BUILD_NUMBER ?=
 
 # The bare `export` at the top of this file (active whenever .env exists) pushes every
 # make variable into recipe environments, FLUTTER_BUILD_MODE ?= debug included. Flutter's
@@ -256,10 +260,17 @@ build/frontend/ios/ipa: check/frontend/ios/release ## Build a signed iOS IPA for
 	# (see .gitignore). Without it the archive dies late in
 	# release_ios_bundle_flutter_assets with "Failed to bundle asset files".
 	$(MAKE) generate/frontend/sbom
+	if [ -n "$(IOS_BUILD_NUMBER)" ]; then
+		build_number="$(IOS_BUILD_NUMBER)"
+	else
+		# Diagnostics go to stderr, so this captures just the number.
+		build_number="$$(scripts/ios-next-build-number.bash)"
+	fi
+	echo "Building with CFBundleVersion $$build_number"
 	flutter build ipa \
 		--release \
 		--export-options-plist=$(IOS_EXPORT_OPTIONS) \
-		$(if $(IOS_BUILD_NUMBER),--build-number=$(IOS_BUILD_NUMBER),)
+		--build-number="$$build_number"
 	ipa="$$(ls -t $(IOS_IPA_DIR)/*.ipa 2>/dev/null | head -1)"
 	if [ -z "$$ipa" ]; then
 		echo "Error: no IPA was produced in $(IOS_IPA_DIR)."

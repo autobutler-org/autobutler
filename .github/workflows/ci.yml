@@ -120,8 +120,12 @@ jobs:
           IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
         run: ./scripts/ios-ci-signing.bash
       - name: Build [ios]
+        # Fixed build number: this job verifies the build and never uploads, so it has no
+        # App Store Connect credentials to query the real next number with.
         run: |
-          make build/frontend/ios/ipa IOS_EXPORT_OPTIONS=ios/ExportOptions.ci.plist
+          make build/frontend/ios/ipa \
+            IOS_EXPORT_OPTIONS=ios/ExportOptions.ci.plist \
+            IOS_BUILD_NUMBER=1
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
