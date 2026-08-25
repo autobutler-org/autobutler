@@ -21,8 +21,13 @@ endif
 
 GO := $(shell which go)
 AIR := $(shell which air)
+# Only ask Go for its defaults when Go is actually installed. On a macOS CI runner
+# without it, $(GO) is empty and the shell call becomes `env GOOS`, which floods the
+# log with "env: GOOS: No such file or directory" on every recipe.
+ifneq ($(GO),)
 export GOOS ?= $(shell $(GO) env GOOS)
 export GOARCH ?= $(shell $(GO) env GOARCH)
+endif
 export GOPROXY ?= https://proxy.golang.org,direct
 
 ENTRYPOINT := ./cmd/quark

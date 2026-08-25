@@ -115,3 +115,4 @@ jobs:
           rm -rf ~/Library/MobileDevice/Provisioning\ Profiles
           rm -rf ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles
           rm -f ios/ExportOptions.ci.plist
+          security delete-keychain ~/Library/Keychains/quark-signing.keychain-db || true

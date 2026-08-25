@@ -74,7 +74,16 @@ echo "${IOS_PROVISIONING_PROFILE_BASE64}" | base64 --decode > "${PROFILE_PATH}"
 # A dedicated keychain keeps the runner's login keychain untouched and lets the
 # job leave no credentials behind. The password is ephemeral and never leaves
 # this process.
-KEYCHAIN="${WORK_DIR}/quark-signing.keychain-db"
+#
+# It must NOT live in WORK_DIR: that is removed by the EXIT trap, which would delete
+# the keychain the moment this script finishes and leave the search list pointing at a
+# file that no longer exists. Later build steps would then fail with "no Apple
+# Distribution identity" despite this script reporting success.
+KEYCHAIN_DIR="${HOME}/Library/Keychains"
+mkdir -p "${KEYCHAIN_DIR}"
+KEYCHAIN="${KEYCHAIN_DIR}/quark-signing.keychain-db"
+# Recreate from scratch so a rerun on a warm runner cannot inherit stale contents.
+security delete-keychain "${KEYCHAIN}" 2>/dev/null || true
 KEYCHAIN_PASSWORD="$(uuidgen)"
 
 security create-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN}"
@@ -98,6 +107,18 @@ if ! security find-identity -v -p codesigning "${KEYCHAIN}" | grep -q "Apple Dis
     echo "  The certificate is probably an Apple Development cert, or the export"
     echo "  omitted its private key. Re-export from Keychain Access selecting BOTH"
     echo "  the certificate and its private key."
+    exit 1
+fi
+
+# Check again without naming the keychain. Everything downstream -- xcodebuild,
+# codesign, check/frontend/ios/release -- resolves identities through the default
+# search list, so verifying only the keychain we just built would miss a search-list
+# problem and fail later with a far less obvious message.
+if ! security find-identity -v -p codesigning | grep -q "Apple Distribution"; then
+    echo "Error: the identity imported but is not visible through the default keychain"
+    echo "  search list, so codesign and xcodebuild will not find it."
+    echo "  Current search list:"
+    security list-keychains -d user | sed 's/^/    /'
     exit 1
 fi
 
@@ -166,3 +187,4 @@ echo "  Team:    ${TEAM_ID}"
 echo "  Bundle:  ${BUNDLE_ID}"
 echo "  Profile: ${PROFILE_NAME} (${PROFILE_UUID})"
 echo "  Export:  ${OUT}"
+echo "  Keychain: ${KEYCHAIN}"
