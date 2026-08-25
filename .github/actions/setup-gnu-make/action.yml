@@ -1,0 +1,23 @@
+name: Setup GNU make
+description: >
+  Put GNU Make 3.82+ first on PATH. macOS ships GNU Make 3.81, which silently ignores
+  .ONESHELL, so every recipe line runs in its own shell and multi-line `if` blocks fail
+  with "syntax error: unexpected end of file".
+runs:
+  using: composite
+  steps:
+    - name: Install GNU make
+      shell: bash
+      run: |
+        if [[ "${RUNNER_OS}" != "macOS" ]]; then
+          echo "Not macOS; system make is already $(make --version | head -1)."
+          exit 0
+        fi
+        brew list make >/dev/null 2>&1 || brew install make
+        gnubin="$(brew --prefix)/opt/make/libexec/gnubin"
+        if [[ ! -x "${gnubin}/make" ]]; then
+          echo "Error: expected GNU make at ${gnubin}/make after 'brew install make'."
+          exit 1
+        fi
+        echo "${gnubin}" >> "${GITHUB_PATH}"
+        echo "Using $("${gnubin}/make" --version | head -1) from ${gnubin}"

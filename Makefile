@@ -4,6 +4,16 @@ SHELL := bash
 .ONESHELL:
 .SILENT:
 
+# .ONESHELL needs GNU Make 3.82+. macOS ships 3.81, where it is silently ignored and
+# every recipe line runs in its own shell -- multi-line `if` blocks then die with
+# "syntax error: unexpected end of file", which points nowhere near the real problem.
+MIN_MAKE := 3.82
+ifneq ($(firstword $(sort $(MAKE_VERSION) $(MIN_MAKE))),$(MIN_MAKE))
+$(error GNU Make $(MAKE_VERSION) is too old; this Makefile needs $(MIN_MAKE)+. \
+On macOS run `brew install make` and use `gmake`, or put \
+"$$(brew --prefix)/opt/make/libexec/gnubin" first on PATH.)
+endif
+
 ifneq (,$(wildcard ./.env))
     include .env
     export

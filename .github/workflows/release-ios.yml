@@ -57,6 +57,9 @@ jobs:
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
 
+      - name: Setup GNU make
+        uses: ./.github/actions/setup-gnu-make
+
       - name: Prepare code signing
         env:
           IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
