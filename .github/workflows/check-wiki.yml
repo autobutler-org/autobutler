@@ -4,10 +4,6 @@ on:
   # Wikis have no branch protection, so this is after-the-fact detection
   # rather than a gate - but it is the only hook GitHub gives us.
   gollum:
-  # A wiki edit made while the workflow was broken would never be re-checked,
-  # so sweep once a day regardless.
-  schedule:
-    - cron: "17 9 * * *"
   # The wiki inherits its lint rules from this repo, so a change here can
   # break the wiki. Catch that in the PR instead of after merge.
   pull_request:
@@ -15,7 +11,7 @@ on:
       - main
     paths:
       - .markdownlint.yaml
-      - .github/workflows/autobutler-wiki.yml
+      - .github/workflows/check-wiki.yml
   workflow_dispatch:
 defaults:
   run:
@@ -23,7 +19,7 @@ defaults:
 permissions:
   contents: read
 jobs:
-  autobutler-check-wiki:
+  check-wiki:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
