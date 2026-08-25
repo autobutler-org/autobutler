@@ -155,15 +155,29 @@ signing step. Nothing warns you in advance.
 
 ## Versioning rules
 
-The **version** (`CFBundleShortVersionString`) comes from `version:` in `pubspec.yaml`.
-The **build number** (`CFBundleVersion`) is queried from App Store Connect at build time:
+Neither number lives in `pubspec.yaml` — it has no `version:` field at all.
+
+The **version** (`CFBundleShortVersionString`) comes from the most recent git tag, with
+the leading `v` stripped: `v0.31.1` builds `0.31.1`. A build therefore cannot claim a
+version that was never released, and there is no second place to remember to edit.
+
+The **build number** (`CFBundleVersion`) is queried from App Store Connect at build time.
 `scripts/ios-next-build-number.bash` asks for the highest build already uploaded for that
-marketing version and adds one. `pubspec.yaml` carries no `+N` suffix.
+version and adds one.
 
 ```bash
-scripts/ios-next-build-number.bash                # print the next number
+make build/frontend/ios/ipa                       # version from the tag, build from ASC
+BUILD_NAME=0.32.0 make build/frontend/ios/ipa     # override the version
+IOS_BUILD_NUMBER=42 make build/frontend/ios/ipa   # skip the ASC query
+```
+
+Both need git tags present. `actions/checkout` is shallow by default and fetches none, so
+the iOS jobs set `fetch-tags: true`. Without them the build fails up front rather than
+silently shipping `1.0.0`, which is what Flutter defaults to when no version is supplied.
+
+```bash
+scripts/ios-next-build-number.bash                # for the current tag's version
 scripts/ios-next-build-number.bash --version 1.0.0
-IOS_BUILD_NUMBER=42 make build/frontend/ios/ipa   # skip the query
 ```
 
 Asking App Store Connect is the only way to be certain, because it is the system of
