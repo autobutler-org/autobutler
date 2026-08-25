@@ -69,8 +69,21 @@ trap 'rm -rf "${WORK_DIR}"' EXIT
 
 CERT_PATH="${WORK_DIR}/dist.p12"
 PROFILE_PATH="${WORK_DIR}/profile.mobileprovision"
-echo "${IOS_DIST_CERT_P12_BASE64}" | base64 --decode > "${CERT_PATH}"
-echo "${IOS_PROVISIONING_PROFILE_BASE64}" | base64 --decode > "${PROFILE_PATH}"
+decode_secret() {
+    local var_name="$1" out="$2" what="$3"
+    if ! printf '%s' "${!var_name}" | base64 --decode > "${out}" 2>/dev/null; then
+        echo "Error: ${var_name} is not valid base64."
+        echo "  Set it from the file's base64, not the file itself:"
+        echo "    base64 -i <file> | gh secret set ${var_name} --repo <owner>/<repo>"
+        exit 1
+    fi
+    if [[ ! -s "${out}" ]]; then
+        echo "Error: ${var_name} decoded to an empty ${what}."
+        exit 1
+    fi
+}
+decode_secret IOS_DIST_CERT_P12_BASE64 "${CERT_PATH}" "certificate"
+decode_secret IOS_PROVISIONING_PROFILE_BASE64 "${PROFILE_PATH}" "profile"
 
 # A dedicated keychain keeps the runner's login keychain untouched and lets the
 # job leave no credentials behind. The password is ephemeral and never leaves
@@ -126,7 +139,22 @@ fi
 # Read the profile's own metadata rather than hardcoding a name that Apple may
 # regenerate. The profile is a CMS-signed plist.
 PROFILE_PLIST="${WORK_DIR}/profile.plist"
-security cms -D -i "${PROFILE_PATH}" > "${PROFILE_PLIST}" 2>/dev/null
+# Do not silence this: under `set -e` a suppressed failure here exits the script with
+# no output at all, which is the least debuggable thing it can do.
+if ! security cms -D -i "${PROFILE_PATH}" > "${PROFILE_PLIST}" 2>"${WORK_DIR}/cms.err"; then
+    echo "Error: IOS_PROVISIONING_PROFILE_BASE64 did not decode to a valid"
+    echo "  .mobileprovision file. 'security cms' said:"
+    sed 's/^/    /' "${WORK_DIR}/cms.err"
+    echo
+    echo "  Decoded $(wc -c < "${PROFILE_PATH}" | tr -d ' ') bytes; first 16 bytes were:"
+    echo "    $(head -c 16 "${PROFILE_PATH}" | xxd -p 2>/dev/null || true)"
+    echo "  A real profile begins with an ASN.1 SEQUENCE (hex 3082...)."
+    echo
+    echo "  Regenerate the secret with:"
+    echo "    base64 -i <file>.mobileprovision \\"
+    echo "      | gh secret set IOS_PROVISIONING_PROFILE_BASE64 --repo <owner>/<repo>"
+    exit 1
+fi
 
 PROFILE_NAME="$(/usr/libexec/PlistBuddy -c 'Print :Name' "${PROFILE_PLIST}")"
 PROFILE_UUID="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "${PROFILE_PLIST}")"
