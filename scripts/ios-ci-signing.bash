@@ -34,6 +34,7 @@ See docs/ios-release.md for how to obtain the certificate and profile.
 USAGE
 }
 
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="ios/ExportOptions.ci.plist"
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -149,6 +150,37 @@ for PROFILE_DIR in \
     cp "${PROFILE_PATH}" "${PROFILE_DIR}/${PROFILE_UUID}.mobileprovision"
 done
 
+# `flutter build ipa` archives using the project's own signing settings, and the Runner
+# target specifies none -- so Xcode falls back to automatic signing, which needs an Apple
+# ID in Xcode > Settings > Accounts and fails on a runner with "No Accounts: Add a new
+# account in Accounts settings."
+#
+# The Runner target defines no CODE_SIGN_STYLE or CODE_SIGN_IDENTITY of its own and uses
+# Flutter/Release.xcconfig as the base configuration for its Release build, so settings
+# appended here reach the archive. Later assignments win in an xcconfig, so this must go
+# at the end, after the CocoaPods include.
+RELEASE_XCCONFIG="${REPO_ROOT}/ios/Flutter/Release.xcconfig"
+MARKER="// --- quark ci signing (generated; not for commit) ---"
+
+if [[ ! -f "${RELEASE_XCCONFIG}" ]]; then
+    echo "Error: ${RELEASE_XCCONFIG} not found."
+    exit 1
+fi
+# Idempotent: drop any block a previous run left behind. Truncating by line number
+# avoids sed delimiter trouble -- the marker contains '/' characters.
+if grep -qF "${MARKER}" "${RELEASE_XCCONFIG}"; then
+    MARKER_LINE="$(grep -nF "${MARKER}" "${RELEASE_XCCONFIG}" | head -1 | cut -d: -f1)"
+    head -n "$((MARKER_LINE - 1))" "${RELEASE_XCCONFIG}" > "${RELEASE_XCCONFIG}.tmp"
+    command mv -f "${RELEASE_XCCONFIG}.tmp" "${RELEASE_XCCONFIG}"
+fi
+cat >> "${RELEASE_XCCONFIG}" <<XCCONFIG
+${MARKER}
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_IDENTITY = Apple Distribution
+PROVISIONING_PROFILE_SPECIFIER = ${PROFILE_NAME}
+DEVELOPMENT_TEAM = ${TEAM_ID}
+XCCONFIG
+
 cat > "${OUT}" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -188,3 +220,4 @@ echo "  Bundle:  ${BUNDLE_ID}"
 echo "  Profile: ${PROFILE_NAME} (${PROFILE_UUID})"
 echo "  Export:  ${OUT}"
 echo "  Keychain: ${KEYCHAIN}"
+echo "  Archive signing pinned to Manual in ${RELEASE_XCCONFIG#"${REPO_ROOT}/"}"
