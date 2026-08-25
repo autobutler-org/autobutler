@@ -119,9 +119,14 @@ if /usr/libexec/PlistBuddy -c 'Print :ProvisionedDevices' "${PROFILE_PLIST}" >/d
     exit 1
 fi
 
-PROFILE_DIR="${HOME}/Library/MobileDevice/Provisioning Profiles"
-mkdir -p "${PROFILE_DIR}"
-cp "${PROFILE_PATH}" "${PROFILE_DIR}/${PROFILE_UUID}.mobileprovision"
+# Xcode 16 moved the profile directory. xcodebuild still reads the legacy path, but
+# which one wins depends on the toolchain version on the runner, so install to both.
+for PROFILE_DIR in \
+    "${HOME}/Library/MobileDevice/Provisioning Profiles" \
+    "${HOME}/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
+    mkdir -p "${PROFILE_DIR}"
+    cp "${PROFILE_PATH}" "${PROFILE_DIR}/${PROFILE_UUID}.mobileprovision"
+done
 
 cat > "${OUT}" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
