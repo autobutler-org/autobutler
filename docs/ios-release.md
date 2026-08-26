@@ -86,7 +86,7 @@ The build appears in TestFlight after processing, usually 5–30 minutes.
 
 ## Continuous integration
 
-`.github/workflows/release-ios.yml` builds and uploads from a `macos-15` runner. It runs
+`.github/workflows/release-ios.yml` builds and uploads from a `macos-26` runner. It runs
 automatically as a job in `release.yml` on any `v*.*.*` tag push, after the GoReleaser
 job succeeds, and can also be triggered by hand from the Actions tab (uncheck **upload**
 to build and verify without publishing).
@@ -249,6 +249,20 @@ service is recreating it; that is harmless once the tree is otherwise empty.
 
 `make build/frontend/ios/ipa` warns when Xcode is running but does not block, and it does
 not touch DerivedData itself.
+
+### `SDK version issue ... must be built with the iOS 26 SDK or later (409)`
+
+altool rejects the upload after the archive and transfer have both succeeded:
+
+```
+Validation failed (409) SDK version issue. This app was built with the iOS 18.5 SDK.
+All iOS and iPadOS apps must be built with the iOS 26 SDK or later.
+```
+
+The runner's Xcode is too old. `macos-15` images ship Xcode 16.x; `macos-26` ships
+Xcode 26. Both iOS jobs run on `macos-26` for that reason, and they must stay in step: if
+`ci-ios` builds against an older SDK than `release-ios`, CI goes green on an artifact the
+release path cannot upload.
 
 ### `MinimumOSVersion too low (90068)`
 
