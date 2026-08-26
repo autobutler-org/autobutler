@@ -1,0 +1,110 @@
+package v0_files_test
+
+import (
+	"net/http"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+)
+
+// A directory smuggled into the multipart filename is dropped: the upload
+// lands at the upload root under the filename's basename. Two layers enforce
+// that — multipart.Part.FileName() already applies filepath.Base per RFC 7578
+// §4.2, and the handler applies it again — so removing either one on its own
+// does not change the behavior these tests assert.
+//
+// That silent flattening is what made "New Document" 404: the frontend sent
+// "notes/meeting.abdoc" as the filename and then navigated to /docs/notes/
+// meeting.abdoc, while the file was written to the root as meeting.abdoc
+// (#1603). The fix is client-side — a "/" is now rejected in the New Document
+// / New Spreadsheet dialog — so what these tests pin is the backend half of
+// the invariant: for a flat name, the path the caller navigates to and the
+// path the backend writes are the same string, and a name that is not flat
+// never silently becomes one somewhere else.
+func TestUploadStripsDirectoryFromFileName(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name     string
+		uploaded string
+		want     string
+		wantGone string
+	}{
+		{
+			name:     "nested name flattens to its basename",
+			uploaded: "notes/meeting.abdoc",
+			want:     "meeting.abdoc",
+			wantGone: "notes",
+		},
+		{
+			name:     "traversal cannot escape the upload root",
+			uploaded: "../../escape.abdoc",
+			want:     "escape.abdoc",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name+" (storage service)", func(t *testing.T) {
+			t.Parallel()
+			e, filesDir := newTestEngine(t)
+			assertUploadLandsAt(t, e, filesDir, tc.uploaded, tc.want, tc.wantGone)
+		})
+		t.Run(tc.name+" (vfs)", func(t *testing.T) {
+			t.Parallel()
+			e, filesDir := newStorageVFSTestEngine(t)
+			assertUploadLandsAt(t, e, filesDir, tc.uploaded, tc.want, tc.wantGone)
+		})
+	}
+}
+
+// TestUploadIntoNestedRootDirKeepsTheDirectory is the other half: a directory
+// passed as the upload path (not smuggled into the filename) is honored, and
+// the file is reachable at rootDir/basename. This is the shape option (a) of
+// #1603 would build on if creating docs in subfolders is ever wanted.
+func TestUploadIntoNestedRootDirKeepsTheDirectory(t *testing.T) {
+	t.Parallel()
+
+	e, filesDir := newStorageVFSTestEngine(t)
+	w := uploadFile(t, e, "/api/v0/files/upload/notes", "meeting.abdoc", "{}")
+	if w.Code != http.StatusOK {
+		t.Fatalf("upload returned %d: %s", w.Code, w.Body.String())
+	}
+	assertFileExists(t, filepath.Join(filesDir, "notes", "meeting.abdoc"))
+}
+
+func assertUploadLandsAt(
+	t *testing.T,
+	e *gin.Engine,
+	filesDir, uploaded, want, wantGone string,
+) {
+	t.Helper()
+
+	w := uploadFile(t, e, "/api/v0/files/upload", uploaded, "{}")
+	if w.Code != http.StatusOK {
+		t.Fatalf("upload of %q returned %d: %s", uploaded, w.Code, w.Body.String())
+	}
+
+	assertFileExists(t, filepath.Join(filesDir, want))
+
+	if wantGone != "" {
+		gone := filepath.Join(filesDir, wantGone)
+		if _, err := os.Stat(gone); err == nil {
+			t.Fatalf("upload of %q created %s; the directory should have been stripped", uploaded, gone)
+		}
+	}
+
+	// Nothing may be written above the upload root.
+	outside := filepath.Join(filepath.Dir(filesDir), want)
+	if _, err := os.Stat(outside); err == nil {
+		t.Fatalf("upload of %q escaped the upload root to %s", uploaded, outside)
+	}
+}
+
+func assertFileExists(t *testing.T, path string) {
+	t.Helper()
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("expected a file at %s: %v", path, err)
+	}
+}

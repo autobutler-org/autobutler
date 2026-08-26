@@ -7,6 +7,7 @@ import 'package:quark/models/file_node.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/services/content_search_service.dart';
+import 'package:quark/utils/file_browser_dialog_utils.dart';
 import 'package:quark/utils/safe_set_state_mixin.dart';
 import 'package:quark/widgets/layout/quark_app_bar.dart';
 import 'package:quark/widgets/quark_drawer.dart';
@@ -109,31 +110,10 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
   }
 
   Future<void> _createNewDoc() async {
-    final nameController = TextEditingController();
-    final name = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('New Document'),
-        content: TextField(
-          controller: nameController,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Document name',
-            border: OutlineInputBorder(),
-          ),
-          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, nameController.text.trim()),
-            child: const Text('Create'),
-          ),
-        ],
-      ),
+    final name = await promptForNewFileName(
+      context,
+      title: 'New Document',
+      hintText: 'Document name',
     );
     if (name == null || name.isEmpty || !mounted) return;
 
