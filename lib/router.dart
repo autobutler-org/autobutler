@@ -19,7 +19,7 @@ import 'package:quark/pages/vault_page.dart';
 import 'package:quark/pages/video_viewer_page.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/files_service.dart';
 
 // Route paths — use these constants everywhere instead of string literals.
 class AppRoutes {
@@ -315,7 +315,7 @@ final router = GoRouter(
         final raw = state.pathParameters['path'] ?? '';
         final filePath = Uri.decodeComponent(raw);
         final serial = state.uri.queryParameters['serial'];
-        final url = CirrusService.constructMediaUrl(filePath, serial: serial);
+        final url = FilesService.constructMediaUrl(filePath, serial: serial);
         final name = filePath.split('/').last;
         return VideoViewerPage(url: url, name: name);
       },
@@ -328,7 +328,7 @@ final router = GoRouter(
         final raw = state.pathParameters['path'] ?? '';
         final filePath = Uri.decodeComponent(raw);
         final serial = state.uri.queryParameters['serial'];
-        final url = CirrusService.constructMediaUrl(filePath, serial: serial);
+        final url = FilesService.constructMediaUrl(filePath, serial: serial);
         final name = filePath.split('/').last;
         return AudioPlayerPage(url: url, name: name);
       },
