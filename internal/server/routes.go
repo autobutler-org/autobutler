@@ -23,6 +23,7 @@ import (
 	v0_notifications "github.com/autobutler-org/quark/internal/server/api/v0/notifications"
 	v0_photos "github.com/autobutler-org/quark/internal/server/api/v0/photos"
 	v0_playback "github.com/autobutler-org/quark/internal/server/api/v0/playback"
+	v0_plugins "github.com/autobutler-org/quark/internal/server/api/v0/plugins"
 	v0_previews "github.com/autobutler-org/quark/internal/server/api/v0/previews"
 	v0_settings "github.com/autobutler-org/quark/internal/server/api/v0/settings"
 	v0_ssh "github.com/autobutler-org/quark/internal/server/api/v0/ssh"
@@ -71,6 +72,7 @@ func setupRouters(engine *gin.Engine, systemCollector *healthutil.Collector, dep
 		v0_favorites.NewRouter(),
 		v0_photos.NewRouter(),
 		v0_playback.NewRouter(),
+		v0_plugins.NewRouter(),
 		v0_previews.NewRouter(),
 		v0_settings.NewRouter(),
 		v0_storage.NewRouter(),

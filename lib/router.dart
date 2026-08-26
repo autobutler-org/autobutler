@@ -18,6 +18,8 @@ import 'package:quark/pages/model_viewer_page.dart';
 import 'package:quark/pages/photo_duplicates_page.dart';
 import 'package:quark/pages/photos_page.dart';
 import 'package:quark/pages/plaintext_editor_page.dart';
+import 'package:quark/pages/plugin_page.dart';
+import 'package:quark/pages/plugins_page.dart';
 import 'package:quark/pages/recover_page.dart';
 import 'package:quark/pages/request_account_page.dart';
 import 'package:quark/pages/settings_page.dart';
@@ -127,6 +129,13 @@ class AppRoutes {
   /// The Books page: every PDF and EPUB on the Quark (#1678).
   static const books = '/books';
   static const vault = '/vault';
+
+  /// The plugin marketplace: what can be installed and what is.
+  static const plugins = '/plugins';
+
+  /// One installed plugin's page, e.g. pluginPath('hello') → '/plugins/hello'.
+  static String pluginPath(String pluginId) =>
+      '$plugins/${Uri.encodeComponent(pluginId)}';
 
   /// The System page (#2351): the Quark's health, its drives and its jobs,
   /// one tab each. Its tabs have their own URLs, see [systemTab]; this bare
@@ -802,6 +811,17 @@ final router = GoRouter(
     GoRoute(
       path: AppRoutes.vault,
       builder: (context, state) => const VaultPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.plugins,
+      builder: (context, state) => const PluginsPage(),
+      routes: [
+        GoRoute(
+          path: ':id',
+          builder: (context, state) =>
+              PluginPage(pluginId: state.pathParameters['id']!),
+        ),
+      ],
     ),
     ...tabbedRoutes(
       path: AppRoutes.system,

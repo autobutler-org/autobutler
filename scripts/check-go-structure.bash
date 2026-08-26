@@ -118,6 +118,9 @@ OS_FILE_ALLOWED=(
     "pkg/util/storageutil/"
     # Mounting and unmounting USB drives.
     "pkg/util/deviceutil/"
+    # Installed plugin manifests under <datadir>/plugins, app data rather than the
+    # user's files.
+    "pkg/util/pluginutil/"
     # System configuration: settings, the hostname helper, remote access, updates,
     # ssh keys, repair, provisioning, TLS certificates, apt holds and memory tuning.
     "pkg/util/settingsutil/"
