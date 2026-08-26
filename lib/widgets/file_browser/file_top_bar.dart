@@ -31,6 +31,7 @@ class FileTopBar extends StatefulWidget {
     required this.onSearchClosed,
     required this.onRefresh,
     required this.onUploadPressed,
+    this.onUploadFolderPressed,
     required this.onCreateFolderPressed,
     required this.onNewFilePressed,
     required this.onOpenDrawer,
@@ -60,6 +61,14 @@ class FileTopBar extends StatefulWidget {
   final VoidCallback onSearchClosed;
   final VoidCallback onRefresh;
   final VoidCallback onUploadPressed;
+
+  /// Folder upload, when the platform has a folder picker at all.
+  ///
+  /// It gets no button of its own: to the user "upload" is one action, and
+  /// whether they are uploading a file or a folder is a property of what they
+  /// pick, not a different feature. Null on mobile, which has no folder
+  /// picker — there Upload goes straight to the file picker, as it always has.
+  final VoidCallback? onUploadFolderPressed;
   final VoidCallback onCreateFolderPressed;
   final VoidCallback onNewFilePressed;
   final VoidCallback onOpenDrawer;
@@ -815,20 +824,60 @@ class _FileTopBarState extends State<FileTopBar> {
     return '${text.substring(0, head)}\u2026${text.substring(text.length - tail)}';
   }
 
+  Widget _uploadChip(BuildContext context, {VoidCallback? onTap}) {
+    return _chip(
+      context: context,
+      icon: QuarkIcons.upload_rounded,
+      label: widget.isUploading
+          ? (widget.uploadTotal > 0
+                ? '${widget.uploadCompleted}/${widget.uploadTotal}'
+                : 'Uploading...')
+          : 'Upload',
+      onTap: widget.isUploading ? null : onTap,
+    );
+  }
+
+  /// One Upload chip, whatever this platform can upload.
+  ///
+  /// Where folders can be picked the chip opens a chooser rather than gaining
+  /// a sibling in the toolbar, because no picker we can reach offers files and
+  /// folders in one pass — `<input webkitdirectory>` selects folders only, and
+  /// file_picker implements a combined dialog on macOS alone. That platform
+  /// constraint belongs inside the Upload action, not spread across the bar.
+  Widget _buildUploadChip(BuildContext context) {
+    final onUploadFolder = widget.onUploadFolderPressed;
+    if (onUploadFolder == null || widget.isUploading) {
+      return _uploadChip(context, onTap: widget.onUploadPressed);
+    }
+
+    return MenuAnchor(
+      menuChildren: [
+        MenuItemButton(
+          onPressed: widget.onUploadPressed,
+          leadingIcon: const Icon(QuarkIcons.upload_rounded),
+          child: const Text('Files'),
+        ),
+        MenuItemButton(
+          onPressed: onUploadFolder,
+          leadingIcon: const Icon(Icons.drive_folder_upload_outlined),
+          child: const Text('Folder'),
+        ),
+      ],
+      builder: (context, controller, _) {
+        return _uploadChip(
+          context,
+          onTap: () =>
+              controller.isOpen ? controller.close() : controller.open(),
+        );
+      },
+    );
+  }
+
   Widget _buildActions(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _chip(
-          context: context,
-          icon: QuarkIcons.upload_rounded,
-          label: widget.isUploading
-              ? (widget.uploadTotal > 0
-                    ? '${widget.uploadCompleted}/${widget.uploadTotal}'
-                    : 'Uploading...')
-              : 'Upload',
-          onTap: widget.isUploading ? null : widget.onUploadPressed,
-        ),
+        _buildUploadChip(context),
         const SizedBox(width: 6),
         _chip(
           context: context,

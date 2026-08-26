@@ -28,6 +28,7 @@ import 'package:quark/utils/file_browser_dialog_utils.dart';
 import 'package:quark/utils/file_browser_drag_config.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/safe_set_state_mixin.dart';
+import 'package:quark/utils/upload_tree_utils.dart';
 import 'package:quark/widgets/core/empty_state_widget.dart';
 import 'package:quark/widgets/device_upload_picker.dart';
 import 'package:quark/widgets/file_browser/file_browser_header.dart';
@@ -407,8 +408,32 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   Future<void> _uploadSelectedFiles(
     List<http.MultipartFile> selectedFiles,
     String uploadPath,
+  ) {
+    return _uploadPendingFiles(
+      selectedFiles
+          .map(
+            (file) => PendingUpload(
+              relativeDir: '',
+              name: file.filename ?? 'file',
+              build: () async => file,
+            ),
+          )
+          .toList(),
+      uploadPath,
+    );
+  }
+
+  /// Uploads [pending] under [uploadPath], one request per directory.
+  ///
+  /// Structure travels through the nested upload route's rootDir, never
+  /// through the multipart filename — the backend drops directories there on
+  /// purpose as traversal protection, so a nested filename would silently
+  /// flatten (the same collision as #1603).
+  Future<void> _uploadPendingFiles(
+    List<PendingUpload> pending,
+    String uploadPath,
   ) async {
-    if (_isUploading || selectedFiles.isEmpty) {
+    if (_isUploading || pending.isEmpty) {
       return;
     }
 
@@ -441,41 +466,52 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     setState(() {
       _isUploading = true;
-      _uploadTotal = selectedFiles.length;
+      _uploadTotal = pending.length;
       _uploadCompleted = 0;
     });
 
     int failed = 0;
     try {
-      for (final file in selectedFiles) {
-        try {
-          await _controller.uploadFiles(
-            currentPath: uploadPath,
-            selectedFiles: [file],
-            serial: targetSerial,
-          );
-        } catch (_) {
-          failed++;
-          debugPrint(
-            '[file_browser_page.dart] Failed to upload ${file.filename}',
-          );
+      for (final group in groupByRelativeDir(pending).entries) {
+        final targetPath = uploadTargetPath(uploadPath, group.key);
+        for (final upload in group.value) {
+          try {
+            // Built here rather than up front: a folder upload cannot hold
+            // every file's bytes at once, so each one is read, sent, and
+            // released before the next.
+            final file = await upload.build();
+            if (file == null) {
+              failed++;
+            } else {
+              await _controller.uploadFiles(
+                currentPath: targetPath,
+                selectedFiles: [file],
+                serial: targetSerial,
+              );
+            }
+          } catch (_) {
+            failed++;
+            debugPrint(
+              '[file_browser_page.dart] Failed to upload ${upload.name}',
+            );
+          }
+          if (mounted) setState(() => _uploadCompleted++);
         }
-        if (mounted) setState(() => _uploadCompleted++);
       }
 
       if (!mounted) return;
 
       _refreshFileState();
 
-      final succeeded = selectedFiles.length - failed;
+      final succeeded = pending.length - failed;
       if (failed == 0) {
-        final label = selectedFiles.length == 1
-            ? selectedFiles.first.filename ?? 'file'
-            : '${selectedFiles.length} files';
+        final label = pending.length == 1
+            ? pending.first.name
+            : '${pending.length} files';
         _showMessage('Uploaded $label');
       } else {
         _showMessage(
-          'Uploaded $succeeded of ${selectedFiles.length} ($failed failed)',
+          'Uploaded $succeeded of ${pending.length} ($failed failed)',
         );
       }
     } finally {
@@ -487,6 +523,36 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           _recentFilesSectionKey++;
         });
       }
+    }
+  }
+
+  Future<void> _handleUploadFolderPressed() async {
+    if (_isUploading) {
+      return;
+    }
+
+    try {
+      final uploads = await _controller.pickUploadFolder();
+      if (uploads.isEmpty) {
+        return;
+      }
+
+      if (uploads.length >= kMaxUploadFiles) {
+        _showMessage(
+          'Uploading the first $kMaxUploadFiles files — the folder holds more',
+        );
+      }
+
+      await _uploadPendingFiles(uploads, _currentPath);
+    } on MissingPluginException {
+      if (!mounted) {
+        return;
+      }
+
+      _showMessage('File picker plugin not available. Fully restart the app.');
+    } catch (e) {
+      debugPrint('[file_browser_page.dart] Folder upload failed: $e');
+      _showMessage('Unable to read the selected folder');
     }
   }
 
@@ -523,31 +589,41 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
 
     try {
-      final selectedFiles = <http.MultipartFile>[];
-      for (final droppedItem in droppedItems) {
-        if (droppedItem is! DropItemFile) {
-          continue;
-        }
-
-        final bytes = await _readDroppedFileBytes(droppedItem);
-        if (bytes == null || bytes.isEmpty) {
-          continue;
-        }
-
-        selectedFiles.add(
-          _controller.multipartFileFromBytes(
+      // A dropped folder arrives as DropItemDirectory, a sibling of
+      // DropItemFile rather than a subtype, with its contents in .children.
+      // Walking into it is the difference between uploading a folder and
+      // reporting "No files to upload" while holding the files (#1614).
+      final flattened = flattenDroppedItems(
+        droppedItems,
+        buildUpload: (file, name) async {
+          final bytes = await _readDroppedFileBytes(file);
+          if (bytes == null || bytes.isEmpty) {
+            return null;
+          }
+          return _controller.multipartFileFromBytes(
             bytes: bytes,
-            filename: droppedItem.name,
-          ),
-        );
-      }
+            filename: name,
+          );
+        },
+      );
 
-      if (selectedFiles.isEmpty) {
+      if (flattened.uploads.isEmpty) {
         _showMessage('No files to upload');
         return;
       }
 
-      await _uploadSelectedFiles(selectedFiles, uploadPath);
+      if (flattened.truncated) {
+        _showMessage(
+          'Uploading the first $kMaxUploadFiles files — the folder holds more',
+        );
+      } else if (flattened.skippedTooDeep > 0) {
+        _showMessage(
+          'Skipped ${flattened.skippedTooDeep} folders nested deeper than '
+          '$kMaxUploadDepth levels',
+        );
+      }
+
+      await _uploadPendingFiles(flattened.uploads, uploadPath);
     } catch (_) {
       debugPrint('[file_browser_page.dart] Error in catch block');
       _showMessage('Unable to read dropped files');
@@ -1769,6 +1845,18 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                         _handleUploadPressed();
                       },
               ),
+              if (_controller.isFolderUploadSupported)
+                ListTile(
+                  leading: const Icon(Icons.drive_folder_upload_outlined),
+                  title: const Text('Upload folder'),
+                  enabled: !_isUploading,
+                  onTap: _isUploading
+                      ? null
+                      : () {
+                          Navigator.of(ctx).pop();
+                          _handleUploadFolderPressed();
+                        },
+                ),
               ListTile(
                 leading: const Icon(QuarkIcons.create_new_folder_outlined),
                 title: const Text('New folder'),
@@ -1868,6 +1956,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                 onSearchClosed: _handleSearchClosed,
                 onRefresh: _refreshFileState,
                 onUploadPressed: _handleUploadPressed,
+                onUploadFolderPressed: _controller.isFolderUploadSupported
+                    ? _handleUploadFolderPressed
+                    : null,
                 onCreateFolderPressed: _handleCreateFolderPressed,
                 onNewFilePressed: _handleNewFilePressed,
                 uploadTotal: _uploadTotal,
