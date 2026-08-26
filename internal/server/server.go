@@ -12,7 +12,9 @@ import (
 	"syscall"
 	"time"
 
+	docs "github.com/autobutler-org/quark/docs/swagger"
 	"github.com/autobutler-org/quark/internal/db"
+	v0_videos "github.com/autobutler-org/quark/internal/server/api/v0/videos"
 	"github.com/autobutler-org/quark/internal/server/middleware"
 	"github.com/autobutler-org/quark/pkg/backup"
 	"github.com/autobutler-org/quark/pkg/util/authutil"
@@ -26,8 +28,6 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 	"github.com/autobutler-org/quark/pkg/util/tlsutil"
 	"github.com/autobutler-org/quark/pkg/util/workerutil"
-	docs "github.com/autobutler-org/quark/docs/swagger"
-	v0_videos "github.com/autobutler-org/quark/internal/server/api/v0/videos"
 
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"
