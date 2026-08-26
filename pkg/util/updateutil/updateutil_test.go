@@ -621,15 +621,21 @@ func TestVerifyChecksum_InvalidHex(t *testing.T) {
 	}
 }
 
-func TestFetchURL_404ReturnsUnavailable(t *testing.T) {
+// fetchURL must stay agnostic about *what* was missing. It used to return
+// errChecksumUnavailable for every 404, so a download from a repository that
+// does not exist was reported as "checksum file not found" (#1610).
+func TestFetchURL_404ReturnsNotFound(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 	}))
 	defer server.Close()
 
 	_, err := fetchURL(server.URL + "/missing")
-	if !errors.Is(err, errChecksumUnavailable) {
-		t.Errorf("expected errChecksumUnavailable for 404, got %v", err)
+	if !errors.Is(err, errNotFound) {
+		t.Errorf("expected errNotFound for 404, got %v", err)
+	}
+	if errors.Is(err, errChecksumUnavailable) {
+		t.Error("fetchURL must not assume a 404 means the checksum file is missing")
 	}
 }
 
@@ -643,8 +649,8 @@ func TestFetchURL_500ReturnsError(t *testing.T) {
 	if err == nil {
 		t.Error("expected error for HTTP 500")
 	}
-	if errors.Is(err, errChecksumUnavailable) {
-		t.Error("HTTP 500 should not be errChecksumUnavailable")
+	if errors.Is(err, errNotFound) {
+		t.Error("HTTP 500 should not be errNotFound")
 	}
 }
 
