@@ -24,6 +24,9 @@ class AppRoutes {
 
   /// Legacy alias. The file browser lived at /cirrus for the product's whole
   /// life, so external links and bookmarks exist. This redirects to [files].
+  ///
+  // TODO(pre-v1.0.0, #1601): delete this constant and the two /cirrus GoRoutes
+  // that redirect to /files.
   static const legacyCirrus = '/cirrus';
 
   /// Deep-link pattern for opening a specific file in the correct viewer.
@@ -140,6 +143,7 @@ final router = GoRouter(
       },
     ),
     GoRoute(
+      // TODO(pre-v1.0.0, #1601): delete this route with the /cirrus alias.
       // /cirrus/:path redirects to /files/:path. The browser lived at /cirrus
       // before the rename, so old links and bookmarks must keep resolving.
       path: '${AppRoutes.legacyCirrus}/:path(.*)',
@@ -153,6 +157,7 @@ final router = GoRouter(
       },
     ),
     GoRoute(
+      // TODO(pre-v1.0.0, #1601): delete this route with the /cirrus alias.
       // Bare /cirrus → /files.
       path: AppRoutes.legacyCirrus,
       redirect: (context, state) => AppRoutes.files,

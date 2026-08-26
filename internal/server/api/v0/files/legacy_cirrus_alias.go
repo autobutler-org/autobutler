@@ -8,6 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// TODO(pre-v1.0.0, #1601): delete this file, legacy_cirrus_alias_test.go, the
+// legacyAliasRoutes call in v1_files.go, and the "/api/v0/cirrus" entry in
+// queryTokenPrefixes in internal/server/middleware/middleware.go.
+//
 // Deprecated compatibility shim for the Cirrus -> Files rename (#1601).
 //
 // The API moved from /api/v0/cirrus/* to /api/v0/files/*. Clients built before

@@ -12,6 +12,8 @@ import (
 	v1_files "github.com/autobutler-org/quark/internal/server/api/v0/files"
 )
 
+// TODO(pre-v1.0.0, #1601): delete this file alongside legacy_cirrus_alias.go.
+//
 // Tests for the deprecated /cirrus -> /files alias (#1601). Delete alongside
 // the shim in legacy_cirrus_alias.go.
 

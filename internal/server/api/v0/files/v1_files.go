@@ -27,6 +27,7 @@ func (r *router) Routes() []*serverutil.Route {
 		uploadFilesNestedRoute,
 	}
 
+	// TODO(pre-v1.0.0, #1601): delete these two lines and return canonical.
 	// Pre-rename clients still call /cirrus/*. Deprecated shim — see
 	// legacy_cirrus_alias.go (#1601).
 	aliases := legacyAliasRoutes(canonical)
