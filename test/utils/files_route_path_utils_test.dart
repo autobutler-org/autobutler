@@ -27,10 +27,7 @@ void main() {
 
   group('supported editor helpers', () {
     test('recognize editor-backed file paths and types', () {
-      expect(
-        hasSupportedFilesEditorForPath('/Documents/report.abdoc'),
-        isTrue,
-      );
+      expect(hasSupportedFilesEditorForPath('/Documents/report.abdoc'), isTrue);
       expect(
         hasSupportedFilesEditorForPath('/Documents/budget.absheet'),
         isTrue,

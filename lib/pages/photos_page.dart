@@ -277,7 +277,9 @@ class _PhotosPageState extends State<PhotosPage>
       _quarkInitialLoadDone = true;
       return items;
     } catch (_) {
-      debugPrint('[photos_page.dart] Error loading initial Quark-stored photos');
+      debugPrint(
+        '[photos_page.dart] Error loading initial Quark-stored photos',
+      );
       _quarkInitialLoadDone = true;
       return const <PhotoItem>[];
     }
@@ -389,8 +391,7 @@ class _PhotosPageState extends State<PhotosPage>
     await _photosFuture;
   }
 
-  bool get _hasMoreQuark =>
-      _quarkInitialLoadDone && _quarkOffset < _quarkTotal;
+  bool get _hasMoreQuark => _quarkInitialLoadDone && _quarkOffset < _quarkTotal;
 
   int _minColumnsByScale() {
     return _minPreviewColumns;
@@ -465,9 +466,7 @@ class _PhotosPageState extends State<PhotosPage>
     }
 
     // For Quark-stored photos, show total from server (includes un-fetched pages)
-    final quarkDisplayCount = _quarkInitialLoadDone
-        ? _quarkTotal
-        : quarkCount;
+    final quarkDisplayCount = _quarkInitialLoadDone ? _quarkTotal : quarkCount;
 
     final selectedLabel = switch (_selectedCategory) {
       PhotoCategory.all => 'All',
@@ -559,11 +558,7 @@ class _PhotosPageState extends State<PhotosPage>
                 'All',
                 quarkDisplayCount + mobileCount,
               ),
-              categoryButton(
-                PhotoCategory.quark,
-                'Quark',
-                quarkDisplayCount,
-              ),
+              categoryButton(PhotoCategory.quark, 'Quark', quarkDisplayCount),
               categoryButton(PhotoCategory.mobile, 'Mobile', mobileCount),
               categoryButton(
                 PhotoCategory.favorites,

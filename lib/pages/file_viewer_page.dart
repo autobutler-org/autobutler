@@ -72,10 +72,7 @@ class _FileViewerPageState extends State<FileViewerPage> {
       final serial = widget.deviceSerial.trim().isEmpty
           ? null
           : widget.deviceSerial;
-      final stat = await FilesService.statFile(
-        widget.filePath,
-        serial: serial,
-      );
+      final stat = await FilesService.statFile(widget.filePath, serial: serial);
 
       if (!mounted) return;
 

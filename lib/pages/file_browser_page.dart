@@ -60,11 +60,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   bool _fabVisible = true;
   double _lastScrollOffset = 0.0;
 
-  Future<List<FileNode>> _filesFuture = Future.value(
-    const <FileNode>[],
-  );
-  List<FileNode>?
-  _cachedFiles; // last successful result, shown during refresh
+  Future<List<FileNode>> _filesFuture = Future.value(const <FileNode>[]);
+  List<FileNode>? _cachedFiles; // last successful result, shown during refresh
   int _generation = 0; // incremented on each reload to discard stale fetches
   String _currentPath = '';
 
@@ -289,10 +286,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   // ── Multi-select / batch delete (#986) ──────────────────────────────────
 
-  void _onSelectionChanged(
-    FileNode node, {
-    required bool enterSelectionMode,
-  }) {
+  void _onSelectionChanged(FileNode node, {required bool enterSelectionMode}) {
     setState(() {
       if (enterSelectionMode && !_selectionMode) {
         _selectionMode = true;
@@ -1363,10 +1357,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
               onPressed: () => _setPath(parent),
               child: const Text('Go to parent'),
             ),
-          OutlinedButton(
-            onPressed: _goHome,
-            child: const Text('Go to /files'),
-          ),
+          OutlinedButton(onPressed: _goHome, child: const Text('Go to /files')),
         ],
       ),
     );
@@ -1407,10 +1398,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
               onPressed: () => _setPath(parent),
               child: const Text('Open containing folder'),
             ),
-          OutlinedButton(
-            onPressed: _goHome,
-            child: const Text('Go to /files'),
-          ),
+          OutlinedButton(onPressed: _goHome, child: const Text('Go to /files')),
         ],
       ),
     );
