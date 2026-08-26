@@ -4,12 +4,19 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"io"
 	"mime"
 	"os"
 	"path/filepath"
 	"strings"
 )
+
+// errListBudgetSpent unwinds a recursive List once MaxResults is reached.
+// Returning plain nil from a nested level only stopped that level: the parent
+// loop carried on appending, so MaxResults=2 could return 3 entries. Caught by
+// the VFS conformance suite added with #1605.
+var errListBudgetSpent = errors.New("vfs: list result budget spent")
 
 // LocalVFS is a VFS backed by a directory on the host filesystem.
 type LocalVFS struct {
@@ -150,9 +157,10 @@ func (v *LocalVFS) List(ctx context.Context, path string, filter *ListFilter) ([
 
 			results = append(results, info)
 
-			// Apply MaxResults
+			// Apply MaxResults. The sentinel unwinds every level of the walk,
+			// not just this one.
 			if filter != nil && filter.MaxResults > 0 && len(results) >= filter.MaxResults {
-				return nil
+				return errListBudgetSpent
 			}
 
 			// Recurse into directories
@@ -165,7 +173,7 @@ func (v *LocalVFS) List(ctx context.Context, path string, filter *ListFilter) ([
 		return nil
 	}
 
-	if err := collect(absPath, ""); err != nil {
+	if err := collect(absPath, ""); err != nil && !errors.Is(err, errListBudgetSpent) {
 		return nil, err
 	}
 

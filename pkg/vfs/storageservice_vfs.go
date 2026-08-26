@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"mime"
 	"os"
 	"path/filepath"
@@ -34,9 +35,16 @@ func serialSet(serials []string) map[string]bool {
 	return set
 }
 
-// List returns the contents of the given directory path across all managed devices,
-// deduplicating folders (same logic as the existing files listFilesImpl).
-func (v *StorageServiceVFS) List(_ context.Context, path string, filter *ListFilter) ([]FileInfo, error) {
+// List returns the contents of the given directory path across all managed
+// devices, deduplicating folders (same logic as the existing files
+// listFilesImpl).
+//
+// filter.Recursive walks the whole subtree. It used to be silently ignored:
+// the implementation always delegated to storageutil.StatFilesInDir, a
+// single-level os.ReadDir, so every caller asking for a recursive listing —
+// the Docs page, Recent files, filename search, folder download — only ever
+// saw files sitting at the storage root (#1605).
+func (v *StorageServiceVFS) List(ctx context.Context, path string, filter *ListFilter) ([]FileInfo, error) {
 	devices, err := v.svc.GetManagedDevices()
 	if err != nil {
 		return nil, err
@@ -48,11 +56,44 @@ func (v *StorageServiceVFS) List(_ context.Context, path string, filter *ListFil
 		allowedSerials = serialSet(filter.SerialFilter)
 	}
 
-	var allFiles []*storageutil.DeviceFileInfo
+	recursive := filter != nil && filter.Recursive
+	maxResults := 0
+	if filter != nil {
+		maxResults = filter.MaxResults
+	}
+
+	// Deduplicate directories (keep first occurrence, show all files). Keyed by
+	// the path relative to the listing root rather than the base name, so two
+	// distinct subfolders that happen to share a name survive a recursive walk.
+	seenDirs := make(map[string]bool)
+	out := make([]FileInfo, 0)
+
+	full := func() bool { return maxResults > 0 && len(out) >= maxResults }
+
+	// add applies dedup and the per-entry filters. Filtering happens here, as
+	// each entry is produced, so MaxResults can stop a recursive walk instead of
+	// materializing the whole library and truncating afterwards.
+	add := func(f storageutil.WalkedFile) {
+		if f.Info.IsDir() {
+			if seenDirs[f.RelPath] {
+				return
+			}
+			seenDirs[f.RelPath] = true
+		}
+		fi := deviceFileInfoToVFS(f.Info, v.namespaceID, path, f.RelPath)
+		if !matchesFilter(fi, filter) {
+			return
+		}
+		out = append(out, fi)
+	}
+
 	sawListing := false
 	sawNotFound := false
 
 	for _, device := range devices {
+		if full() {
+			break
+		}
 		serial := ""
 		if device.UsbInfo != nil {
 			serial = device.UsbInfo.GetSerial()
@@ -65,41 +106,81 @@ func (v *StorageServiceVFS) List(_ context.Context, path string, filter *ListFil
 		if err != nil {
 			continue
 		}
-		files, err := storageutil.StatFilesInDir(fullDir, device.Name, device.DataDir, serial)
+
+		err = v.listDevice(ctx, fullDir, device, serial, recursive, add, full)
 		if err != nil {
+			if ctx != nil && ctx.Err() != nil {
+				return nil, ctx.Err()
+			}
 			if path != "" {
 				sawNotFound = true
 			}
 			continue
 		}
 		sawListing = true
-		allFiles = append(allFiles, files...)
 	}
 
 	if path != "" && sawNotFound && !sawListing {
 		return nil, ErrNotFound
 	}
 
-	// Deduplicate directories (keep first occurrence, show all files).
-	seenDirs := make(map[string]bool)
-	out := make([]FileInfo, 0, len(allFiles))
-	for _, f := range allFiles {
-		if f.IsDir() {
-			if seenDirs[f.Name()] {
-				continue
-			}
-			seenDirs[f.Name()] = true
-		}
-		fi := deviceFileInfoToVFS(f, v.namespaceID, path)
-		if filter != nil && filter.MimePrefix != "" && !strings.HasPrefix(fi.MimeType, filter.MimePrefix) {
-			continue
-		}
-		out = append(out, fi)
-		if filter != nil && filter.MaxResults > 0 && len(out) >= filter.MaxResults {
-			break
-		}
-	}
 	return out, nil
+}
+
+// listDevice feeds one device's entries under fullDir to add, walking the whole
+// subtree when recursive is set and stopping as soon as full reports the result
+// budget is spent.
+func (v *StorageServiceVFS) listDevice(
+	ctx context.Context,
+	fullDir string,
+	device storageutil.ManagedDevice,
+	serial string,
+	recursive bool,
+	add func(storageutil.WalkedFile),
+	full func() bool,
+) error {
+	if !recursive {
+		files, err := storageutil.StatFilesInDir(fullDir, device.Name, device.DataDir, serial)
+		if err != nil {
+			return err
+		}
+		for _, f := range files {
+			if full() {
+				break
+			}
+			// At a single level the relative path is just the entry name.
+			add(storageutil.WalkedFile{Info: f, RelPath: f.Name()})
+		}
+		return nil
+	}
+
+	return storageutil.WalkFilesInDir(ctx, fullDir, device.Name, device.DataDir, serial,
+		func(f storageutil.WalkedFile) error {
+			add(f)
+			if full() {
+				return fs.SkipAll
+			}
+			return nil
+		},
+	)
+}
+
+// matchesFilter applies the per-entry filters. AfterPath and MimePrefix were
+// both declared on ListFilter and honored by other implementations while this
+// one dropped them, the same way it dropped Recursive (#1605).
+func matchesFilter(fi FileInfo, filter *ListFilter) bool {
+	if filter == nil {
+		return true
+	}
+	if filter.AfterPath != "" && fi.Path <= filter.AfterPath {
+		return false
+	}
+	// Directories have no meaningful MIME type, so a MIME filter never applies
+	// to them — matching LocalVFS, which lets directories through.
+	if filter.MimePrefix != "" && !fi.IsDir && !strings.HasPrefix(fi.MimeType, filter.MimePrefix) {
+		return false
+	}
+	return true
 }
 
 // filesDir resolves the base directory for this namespace, preferring the
@@ -242,11 +323,15 @@ func (v *StorageServiceVFS) Watch(_ context.Context, _ string) (<-chan WatchEven
 }
 
 // deviceFileInfoToVFS converts a storageutil.DeviceFileInfo to a vfs.FileInfo.
-func deviceFileInfoToVFS(f *storageutil.DeviceFileInfo, nsID, dirPath string) FileInfo {
+// relPath is the entry's path relative to the listing root — the entry name for
+// a single-level listing, "sub/deep.abdoc" for a recursive one. Callers such as
+// the folder-download zip builder trim the requested path off Path to get an
+// archive-relative name, so it has to carry the full subtree path.
+func deviceFileInfoToVFS(f *storageutil.DeviceFileInfo, nsID, dirPath, relPath string) FileInfo {
 	mimeType := mimeTypeForName(f.Name())
 	return FileInfo{
 		Name:      f.Name(),
-		Path:      filepath.Join(dirPath, f.Name()),
+		Path:      filepath.ToSlash(filepath.Join(dirPath, relPath)),
 		Size:      f.Size(),
 		IsDir:     f.IsDir(),
 		MimeType:  mimeType,
