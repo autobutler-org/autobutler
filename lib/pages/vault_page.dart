@@ -185,6 +185,7 @@ class _VaultPageState extends State<VaultPage> {
         onTapHealth: () => context.go(AppRoutes.health),
         onTapVault: () => Navigator.pop(context),
         onTapSettings: () => context.go(AppRoutes.settings),
+        onTapPlugins: () => context.go(AppRoutes.plugins),
       ),
       body: _buildBody(),
       floatingActionButton:

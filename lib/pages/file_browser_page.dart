@@ -1820,6 +1820,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         onTapSettings: () {
           context.go(AppRoutes.settings);
         },
+        onTapPlugins: () => context.go(AppRoutes.plugins),
       ),
       body: Column(
         children: [
