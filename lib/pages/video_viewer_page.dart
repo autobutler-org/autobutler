@@ -223,7 +223,7 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
     if (chosen == null || !mounted) return;
 
     try {
-      final jobId = await CirrusService.transcodeVideo(
+      final jobId = await FilesService.transcodeVideo(
         relPath,
         serial: serial,
         preset: chosen,
