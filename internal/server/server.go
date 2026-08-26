@@ -34,8 +34,8 @@ import (
 )
 
 func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
-	if err := storageutil.SetupCirrusDir(); err != nil {
-		return nil, fmt.Errorf("failed to setup cirrus directory: %w", err)
+	if err := storageutil.SetupFilesDir(); err != nil {
+		return nil, fmt.Errorf("failed to setup files directory: %w", err)
 	}
 	go deps.Worker().Process()
 	go deps.Worker().LogErrors()

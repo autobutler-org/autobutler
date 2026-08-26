@@ -20,7 +20,7 @@ import (
 // deleteFiles godoc
 // @Summary Delete files
 // @Description Soft-delete files via rename to trash, returning immediately. DB cleanup and events are dispatched in the background.
-// @Tags cirrus
+// @Tags files
 // @Produce json
 // @Param rootDir query string false "Root directory"
 // @Param filePaths query []string true "Array of file paths to delete"
@@ -28,7 +28,7 @@ import (
 // @Success 202 {object} serverutil.Response "Accepted"
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Router /cirrus [delete]
+// @Router /files [delete]
 func deleteFiles(c *gin.Context) *serverutil.Response {
 	rootDir := c.Query("rootDir")
 	filePaths := c.QueryArray("filePaths")
@@ -131,5 +131,5 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 }
 
 var deleteFilesRoute = serverutil.ApiRoute(
-	"DELETE", "/cirrus", deleteFiles,
+	"DELETE", "/files", deleteFiles,
 )

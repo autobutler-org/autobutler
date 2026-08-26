@@ -26,7 +26,7 @@ class QuarkBrandButton extends StatelessWidget {
   final VoidCallback onTap;
 
   /// Icon shown inside the brand badge. Defaults to [QuarkIcons.storage_rounded]
-  /// (used for the Files/Cirrus page). Pass a page-appropriate icon for other pages.
+  /// (used for the Files page). Pass a page-appropriate icon for other pages.
   final IconData icon;
 
   @override

@@ -142,7 +142,7 @@ var getThumbnailRoute = serverutil.ApiRoute(
 		}
 
 		// StorageService fallback: serial-scoped, RAW, video, or no VFS.
-		filesDir, err := storageutil.GetCirrusDir()
+		filesDir, err := storageutil.GetFilesDir()
 		if err != nil {
 			return serverutil.InternalServerError(err)
 		}
@@ -150,7 +150,7 @@ var getThumbnailRoute = serverutil.ApiRoute(
 			if devices, err := deps.StorageService().GetManagedDevices(); err == nil {
 				for _, d := range devices {
 					if d.UsbInfo != nil && d.UsbInfo.GetSerial() == serial {
-						filesDir = d.CirrusDir
+						filesDir = d.FilesDir
 						break
 					}
 				}

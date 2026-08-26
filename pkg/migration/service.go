@@ -194,7 +194,7 @@ func (s *Service) processArchive(ctx context.Context, job *ImportJob, archive *A
 		return fmt.Errorf("failed to extract archive: %w", err)
 	}
 
-	// Upload extracted files to cirrus
+	// Upload extracted files to the files root
 	job.Status = ImportStatusUploading
 	job.UpdatedAt = time.Now()
 	s.store.Update(ctx, job)

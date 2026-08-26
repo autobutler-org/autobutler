@@ -33,8 +33,8 @@ func TestBuildPopulatesIndex(t *testing.T) {
 	makeFile(t, subDir, "report.pdf")
 
 	dev := ManagedDevice{
-		Device:    Device{},
-		CirrusDir: root,
+		Device:   Device{},
+		FilesDir: root,
 	}
 
 	idx := NewFileIndex()
@@ -52,7 +52,7 @@ func TestSearchByQuery(t *testing.T) {
 	makeFile(t, root, "world.md")
 	makeFile(t, root, "hello_world.go")
 
-	dev := ManagedDevice{CirrusDir: root}
+	dev := ManagedDevice{FilesDir: root}
 	idx := NewFileIndex()
 	idx.Build([]ManagedDevice{dev})
 
@@ -78,8 +78,8 @@ func TestSearchBySerial(t *testing.T) {
 	makeFile(t, rootA, "file_a.txt")
 	makeFile(t, rootB, "file_b.txt")
 
-	devA := ManagedDevice{CirrusDir: rootA}
-	devB := ManagedDevice{CirrusDir: rootB}
+	devA := ManagedDevice{FilesDir: rootA}
+	devB := ManagedDevice{FilesDir: rootB}
 
 	idx := NewFileIndex()
 	idx.Build([]ManagedDevice{devA, devB})
@@ -99,7 +99,7 @@ func TestSearchBySerial(t *testing.T) {
 
 func TestHandleAdd(t *testing.T) {
 	idx := NewFileIndex()
-	idx.HandleAdd("/cirrus", "newfile.txt", "")
+	idx.HandleAdd("/files", "newfile.txt", "")
 
 	results := idx.Search("newfile", nil)
 	if len(results) != 1 {
@@ -115,14 +115,14 @@ func TestHandleAdd(t *testing.T) {
 
 func TestHandleDelete(t *testing.T) {
 	idx := NewFileIndex()
-	idx.HandleAdd("/cirrus", "todelete.txt", "")
+	idx.HandleAdd("/files", "todelete.txt", "")
 
 	results := idx.Search("todelete", nil)
 	if len(results) != 1 {
 		t.Fatalf("expected 1 result before delete, got %d", len(results))
 	}
 
-	idx.HandleDelete("/cirrus", "todelete.txt")
+	idx.HandleDelete("/files", "todelete.txt")
 
 	results = idx.Search("todelete", nil)
 	if len(results) != 0 {
@@ -132,9 +132,9 @@ func TestHandleDelete(t *testing.T) {
 
 func TestHandleMove(t *testing.T) {
 	idx := NewFileIndex()
-	idx.HandleAdd("/cirrus", "old_name.txt", "ABC")
+	idx.HandleAdd("/files", "old_name.txt", "ABC")
 
-	idx.HandleMove("/cirrus", "old_name.txt", "new_name.txt", "ABC")
+	idx.HandleMove("/files", "old_name.txt", "new_name.txt", "ABC")
 
 	results := idx.Search("old_name", nil)
 	if len(results) != 0 {
@@ -159,8 +159,8 @@ func TestBuildMultipleDevices(t *testing.T) {
 	makeFile(t, rootA, "alpha.txt")
 	makeFile(t, rootB, "beta.txt")
 
-	devA := ManagedDevice{CirrusDir: rootA}
-	devB := ManagedDevice{CirrusDir: rootB}
+	devA := ManagedDevice{FilesDir: rootA}
+	devB := ManagedDevice{FilesDir: rootB}
 
 	idx := NewFileIndex()
 	idx.Build([]ManagedDevice{devA, devB})
@@ -177,7 +177,7 @@ func TestConcurrentAccess(t *testing.T) {
 
 	go func() {
 		for i := 0; i < 100; i++ {
-			idx.HandleAdd("/cirrus", "concurrent.txt", "")
+			idx.HandleAdd("/files", "concurrent.txt", "")
 		}
 		close(done)
 	}()

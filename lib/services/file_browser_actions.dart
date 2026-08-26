@@ -1,6 +1,6 @@
 import 'package:http/http.dart' as http;
-import 'package:quark/models/cirrus_file_node.dart';
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/models/file_node.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 
 Future<void> uploadMultipartFilesToCurrentPath({
@@ -8,7 +8,7 @@ Future<void> uploadMultipartFilesToCurrentPath({
   required List<http.MultipartFile> selectedFiles,
   String? serial,
 }) {
-  return CirrusService.uploadFilesFromFormData(
+  return FilesService.uploadFilesFromFormData(
     toRootDir(currentPath),
     selectedFiles,
     serial: serial,
@@ -19,14 +19,14 @@ Future<void> createFolderAtCurrentPath({
   required String currentPath,
   required String folderName,
 }) {
-  return CirrusService.createFolder(toRootDir(currentPath), folderName);
+  return FilesService.createFolder(toRootDir(currentPath), folderName);
 }
 
-Future<String?> downloadNode({required CirrusFileNode node}) {
+Future<String?> downloadNode({required FileNode node}) {
   final itemName = trimTrailingSlashes(node.name);
   final filePath = node.apiPath;
 
-  return CirrusService.saveFile(
+  return FilesService.saveFile(
     filePath,
     serial: serialOrNull(node.deviceSerial),
     fileName: itemName,
@@ -34,7 +34,7 @@ Future<String?> downloadNode({required CirrusFileNode node}) {
 }
 
 Future<void> moveRenameNode({
-  required CirrusFileNode node,
+  required FileNode node,
   required String targetInput,
   String? newDeviceSerial,
 }) {
@@ -45,7 +45,7 @@ Future<void> moveRenameNode({
       : joinPath(basePath, targetInput);
 
   final serial = serialOrNull(node.deviceSerial);
-  return CirrusService.moveFile(
+  return FilesService.moveFile(
     oldPath,
     targetPath,
     oldDeviceSerial: serial,
@@ -53,16 +53,16 @@ Future<void> moveRenameNode({
   );
 }
 
-Future<void> extractNode({required CirrusFileNode node}) {
-  return CirrusService.extractFile(
+Future<void> extractNode({required FileNode node}) {
+  return FilesService.extractFile(
     node.apiPath,
     serial: serialOrNull(node.deviceSerial),
   );
 }
 
-Future<void> deleteNode({required CirrusFileNode node}) {
+Future<void> deleteNode({required FileNode node}) {
   final rootDir = toRootDir(parentPath(node.apiPath));
-  return CirrusService.deleteFile(
+  return FilesService.deleteFile(
     rootDir,
     trimTrailingSlashes(node.name),
     deviceSerial: serialOrNull(node.deviceSerial),

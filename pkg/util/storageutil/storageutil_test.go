@@ -221,9 +221,9 @@ func (m *mockUsbDevice) Partitions() ([]Partition, error) { return nil, nil }
 func TestGetManagedDevices(t *testing.T) {
 	// Create a temporary directory to simulate a managed device
 	tempDir := t.TempDir()
-	cirrusDir := ConstructCirrusDir(tempDir)
-	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
-		t.Fatalf("Failed to create test cirrus directory: %v", err)
+	filesDir := ConstructFilesDir(tempDir)
+	if err := os.MkdirAll(filesDir, 0755); err != nil {
+		t.Fatalf("Failed to create test files directory: %v", err)
 	}
 
 	// Verify the function executes against the real detector without error.
@@ -243,7 +243,7 @@ func TestGetManagedDevices(t *testing.T) {
 		if device.DataDir == "" {
 			t.Errorf("Device %d has empty DataDir", i)
 		}
-		if device.CirrusDir == "" {
+		if device.FilesDir == "" {
 			t.Errorf("Device %d has empty FilesDir", i)
 		}
 	}
@@ -251,9 +251,9 @@ func TestGetManagedDevices(t *testing.T) {
 
 func TestStorageService_GetManagedDevices(t *testing.T) {
 	tempDir := t.TempDir()
-	cirrusDir := ConstructCirrusDir(tempDir)
-	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
-		t.Fatalf("failed to create cirrus dir: %v", err)
+	filesDir := ConstructFilesDir(tempDir)
+	if err := os.MkdirAll(filesDir, 0755); err != nil {
+		t.Fatalf("failed to create files dir: %v", err)
 	}
 
 	mock := &mockDetector{
@@ -286,9 +286,9 @@ func TestStorageService_IsolatedFromDefault(t *testing.T) {
 
 func TestStorageService_FindManagedDeviceBySerial(t *testing.T) {
 	tempDir := t.TempDir()
-	cirrusDir := ConstructCirrusDir(tempDir)
-	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
-		t.Fatalf("failed to create cirrus dir: %v", err)
+	filesDir := ConstructFilesDir(tempDir)
+	if err := os.MkdirAll(filesDir, 0755); err != nil {
+		t.Fatalf("failed to create files dir: %v", err)
 	}
 
 	serial := "ABC123"
@@ -314,9 +314,9 @@ func TestStorageService_FindManagedDeviceBySerial(t *testing.T) {
 
 func TestStorageService_FindManagedDeviceBySerial_EmptySerial(t *testing.T) {
 	tempDir := t.TempDir()
-	cirrusDir := ConstructCirrusDir(tempDir)
-	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
-		t.Fatalf("failed to create cirrus dir: %v", err)
+	filesDir := ConstructFilesDir(tempDir)
+	if err := os.MkdirAll(filesDir, 0755); err != nil {
+		t.Fatalf("failed to create files dir: %v", err)
 	}
 
 	mock := &mockDetector{
@@ -367,7 +367,7 @@ func TestGetDeviceStatuses(t *testing.T) {
 			if status.DataDir == "" {
 				t.Errorf("statuses[%d].DataDir is empty for enabled device %s", i, status.Name)
 			}
-			if status.CirrusDir == "" {
+			if status.FilesDir == "" {
 				t.Errorf("statuses[%d].FilesDir is empty for enabled device %s", i, status.Name)
 			}
 		}
@@ -418,8 +418,8 @@ func TestGetDataDirForDevice_ExternalDevice(t *testing.T) {
 	}
 }
 
-func TestGetCirrusDir(t *testing.T) {
-	filesDir, err := GetCirrusDir()
+func TestGetFilesDir(t *testing.T) {
+	filesDir, err := GetFilesDir()
 	if err != nil {
 		t.Fatalf("Expected no error, got: %v", err)
 	}
@@ -797,18 +797,18 @@ func TestDeleteFiles_SingleDevice(t *testing.T) {
 	testFile := filepath.Join(tmpDir, "testfile.txt")
 	os.WriteFile(testFile, []byte("test content"), 0644)
 
-	// This test would need the GetCirrusDir to return our tmpDir
+	// This test would need the GetFilesDir to return our tmpDir
 	// Since we can't easily mock that, we'll test the structure
 	params := DeleteFilesParams{
 		RootDir:   "",
 		FilePaths: []string{"testfile.txt"},
 	}
 
-	// Note: This will fail in testing because GetCirrusDir returns a fixed path
+	// Note: This will fail in testing because GetFilesDir returns a fixed path
 	// In a real app, you'd use dependency injection
 	svc := NewStorageService(NewDetector())
 	_, err := svc.DeleteFiles(params)
-	// We expect an error since the file isn't in the actual GetCirrusDir()
+	// We expect an error since the file isn't in the actual GetFilesDir()
 	_ = err // Just verify it doesn't panic
 }
 
@@ -818,7 +818,7 @@ func TestMoveFile(t *testing.T) {
 		NewFilePath: "new/path/file.txt",
 	}
 
-	// This will fail because GetCirrusDir returns a fixed path
+	// This will fail because GetFilesDir returns a fixed path
 	// but it tests the code doesn't panic
 	svc := NewStorageService(NewDetector())
 	_, err := svc.MoveFile(params)
@@ -831,12 +831,12 @@ func TestCreateFolder(t *testing.T) {
 		FolderName: "testfolder",
 	}
 
-	// This will create a real folder in the GetCirrusDir
+	// This will create a real folder in the GetFilesDir
 	// Clean up afterwards if needed
 	svc := NewStorageService(NewDetector())
 	result, err := svc.CreateFolder(params)
 	if err != nil {
-		// Expected since we can't control GetCirrusDir in tests
+		// Expected since we can't control GetFilesDir in tests
 		t.Logf("CreateFolder returned error (expected): %v", err)
 	} else if result != nil {
 		// If it succeeded, verify the result structure
@@ -977,7 +977,7 @@ func TestDoesFileExist(t *testing.T) {
 
 func TestMoveFile_CreateDirectory(t *testing.T) {
 	// This test validates that MoveFile creates the destination directory
-	// We can't easily test this without interfering with GetCirrusDir(),
+	// We can't easily test this without interfering with GetFilesDir(),
 	// but we can at least verify the function structure
 	params := MoveFileParams{
 		OldFilePath: "nonexistent/old.txt",
@@ -1030,9 +1030,9 @@ func TestMoveFile_ToRootDirectory(t *testing.T) {
 	os.WriteFile(sourceFile, []byte("test"), 0644)
 
 	// Get the current files dir and construct paths relative to it
-	filesDir, err := GetCirrusDir()
+	filesDir, err := GetFilesDir()
 	if err != nil {
-		t.Fatalf("GetCirrusDir failed: %v", err)
+		t.Fatalf("GetFilesDir failed: %v", err)
 	}
 
 	// Create test structure in actual filesDir
@@ -1102,11 +1102,11 @@ func TestInitializeDeviceDataDir(t *testing.T) {
 	}
 
 	// Verify the directory structure was created
-	// For external devices, the path is: mountPoint/quark/data/cirrus
+	// For external devices, the path is: mountPoint/quark/data/files
 	dataDir := filepath.Join(tempDir, "quark", "data")
-	cirrusDir := ConstructCirrusDir(dataDir)
-	if _, err := os.Stat(cirrusDir); os.IsNotExist(err) {
-		t.Errorf("Expected cirrus directory to be created at %s", cirrusDir)
+	filesDir := ConstructFilesDir(dataDir)
+	if _, err := os.Stat(filesDir); os.IsNotExist(err) {
+		t.Errorf("Expected files directory to be created at %s", filesDir)
 	}
 }
 
@@ -1114,8 +1114,8 @@ func TestInitializeDeviceDataDir_AlreadyExists(t *testing.T) {
 	// Create a temporary directory with existing structure
 	tempDir := t.TempDir()
 	dataDir := filepath.Join(tempDir, "quark", "data")
-	cirrusDir := ConstructCirrusDir(dataDir)
-	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
+	filesDir := ConstructFilesDir(dataDir)
+	if err := os.MkdirAll(filesDir, 0755); err != nil {
 		t.Fatalf("Failed to create test directory: %v", err)
 	}
 
@@ -1200,9 +1200,9 @@ func TestDetermineFileType_Directory(t *testing.T) {
 func TestDetermineFileType_RegularFile(t *testing.T) {
 	// Test with a regular file - should use DetermineFileTypeFromPath
 	// Create a test file in the actual filesDir
-	filesDir, err := GetCirrusDir()
+	filesDir, err := GetFilesDir()
 	if err != nil {
-		t.Fatalf("GetCirrusDir failed: %v", err)
+		t.Fatalf("GetFilesDir failed: %v", err)
 	}
 	testDir := filepath.Join(filesDir, "test_determine_type")
 	testFile := filepath.Join(testDir, "test.pdf")
@@ -1355,7 +1355,7 @@ func TestDeviceFileInfo_WrapperMethods(t *testing.T) {
 	}
 }
 
-func TestSetupCirrusDir(t *testing.T) {
+func TestSetupFilesDir(t *testing.T) {
 	tests := []struct {
 		name          string
 		setupBefore   func(t *testing.T, dataDir string) // Setup function to prepare test state
@@ -1363,39 +1363,39 @@ func TestSetupCirrusDir(t *testing.T) {
 		validateAfter func(t *testing.T, dataDir string) // Validation function to check post-setup state
 	}{
 		{
-			name: "creates cirrus directory when neither exists",
+			name: "creates files directory when neither exists",
 			setupBefore: func(t *testing.T, dataDir string) {
 				// Both directories don't exist
 			},
 			wantError: false,
 			validateAfter: func(t *testing.T, dataDir string) {
-				cirrusDir := ConstructCirrusDir(dataDir)
-				info, err := os.Stat(cirrusDir)
+				filesDir := ConstructFilesDir(dataDir)
+				info, err := os.Stat(filesDir)
 				if err != nil {
-					t.Fatalf("cirrus directory should exist: %v", err)
+					t.Fatalf("files directory should exist: %v", err)
 				}
 				if !info.IsDir() {
-					t.Errorf("cirrus path should be a directory")
+					t.Errorf("files storage path should be a directory")
 				}
 			},
 		},
 		{
-			name: "does not error when cirrus directory already exists",
+			name: "does not error when files directory already exists",
 			setupBefore: func(t *testing.T, dataDir string) {
-				cirrusDir := ConstructCirrusDir(dataDir)
-				if err := os.MkdirAll(cirrusDir, 0755); err != nil {
-					t.Fatalf("failed to create cirrus directory: %v", err)
+				filesDir := ConstructFilesDir(dataDir)
+				if err := os.MkdirAll(filesDir, 0755); err != nil {
+					t.Fatalf("failed to create files directory: %v", err)
 				}
 			},
 			wantError: false,
 			validateAfter: func(t *testing.T, dataDir string) {
-				cirrusDir := ConstructCirrusDir(dataDir)
-				info, err := os.Stat(cirrusDir)
+				filesDir := ConstructFilesDir(dataDir)
+				info, err := os.Stat(filesDir)
 				if err != nil {
-					t.Fatalf("cirrus directory should exist: %v", err)
+					t.Fatalf("files directory should exist: %v", err)
 				}
 				if !info.IsDir() {
-					t.Errorf("cirrus path should be a directory")
+					t.Errorf("files storage path should be a directory")
 				}
 			},
 		},
@@ -1414,14 +1414,14 @@ func TestSetupCirrusDir(t *testing.T) {
 			},
 			wantError: false,
 			validateAfter: func(t *testing.T, dataDir string) {
-				cirrusDir := ConstructCirrusDir(dataDir)
+				filesDir := ConstructFilesDir(dataDir)
 				legacyFilesPath := filepath.Join(dataDir, "files")
 
-				// Check that file was moved to cirrus
-				migratedFile := filepath.Join(cirrusDir, "test.txt")
+				// Check that file was moved to the storage dir
+				migratedFile := filepath.Join(filesDir, "test.txt")
 				content, err := os.ReadFile(migratedFile)
 				if err != nil {
-					t.Fatalf("migrated file should exist in cirrus: %v", err)
+					t.Fatalf("migrated file should exist in the storage dir: %v", err)
 				}
 				if string(content) != "test content" {
 					t.Errorf("migrated file content mismatch: got %q, want %q", string(content), "test content")
@@ -1450,12 +1450,12 @@ func TestSetupCirrusDir(t *testing.T) {
 			},
 			wantError: false,
 			validateAfter: func(t *testing.T, dataDir string) {
-				cirrusDir := ConstructCirrusDir(dataDir)
+				filesDir := ConstructFilesDir(dataDir)
 				legacyFilesPath := filepath.Join(dataDir, "files")
 
 				// Check that all files were moved
 				for i := 1; i <= 3; i++ {
-					migratedFile := filepath.Join(cirrusDir, fmt.Sprintf("file%d.txt", i))
+					migratedFile := filepath.Join(filesDir, fmt.Sprintf("file%d.txt", i))
 					content, err := os.ReadFile(migratedFile)
 					if err != nil {
 						t.Fatalf("file%d.txt should be migrated: %v", i, err)
@@ -1491,11 +1491,11 @@ func TestSetupCirrusDir(t *testing.T) {
 			},
 			wantError: false,
 			validateAfter: func(t *testing.T, dataDir string) {
-				cirrusDir := ConstructCirrusDir(dataDir)
+				filesDir := ConstructFilesDir(dataDir)
 				legacyFilesPath := filepath.Join(dataDir, "files")
 
 				// Check that subdirectory was moved
-				movedSubDir := filepath.Join(cirrusDir, "subdir")
+				movedSubDir := filepath.Join(filesDir, "subdir")
 				nestedFile := filepath.Join(movedSubDir, "nested.txt")
 				content, err := os.ReadFile(nestedFile)
 				if err != nil {
@@ -1530,16 +1530,16 @@ func TestSetupCirrusDir(t *testing.T) {
 			},
 		},
 		{
-			name: "migrates when both cirrus and legacy exist with content",
+			name: "migrates when both storage dir and legacy exist with content",
 			setupBefore: func(t *testing.T, dataDir string) {
-				cirrusDir := ConstructCirrusDir(dataDir)
+				filesDir := ConstructFilesDir(dataDir)
 				legacyFilesPath := filepath.Join(dataDir, "files")
 
-				// Create cirrus directory with existing file
-				if err := os.MkdirAll(cirrusDir, 0755); err != nil {
-					t.Fatalf("failed to create cirrus directory: %v", err)
+				// Create files directory with existing file
+				if err := os.MkdirAll(filesDir, 0755); err != nil {
+					t.Fatalf("failed to create files directory: %v", err)
 				}
-				existingFile := filepath.Join(cirrusDir, "existing.txt")
+				existingFile := filepath.Join(filesDir, "existing.txt")
 				if err := os.WriteFile(existingFile, []byte("existing content"), 0644); err != nil {
 					t.Fatalf("failed to create existing file: %v", err)
 				}
@@ -1555,18 +1555,18 @@ func TestSetupCirrusDir(t *testing.T) {
 			},
 			wantError: false,
 			validateAfter: func(t *testing.T, dataDir string) {
-				cirrusDir := ConstructCirrusDir(dataDir)
+				filesDir := ConstructFilesDir(dataDir)
 				legacyFilesPath := filepath.Join(dataDir, "files")
 
-				// Check both files are in cirrus
-				existingFile := filepath.Join(cirrusDir, "existing.txt")
-				migratedFile := filepath.Join(cirrusDir, "legacy.txt")
+				// Check both files are in the storage dir
+				existingFile := filepath.Join(filesDir, "existing.txt")
+				migratedFile := filepath.Join(filesDir, "legacy.txt")
 
 				if _, err := os.Stat(existingFile); err != nil {
-					t.Errorf("existing file should still be in cirrus: %v", err)
+					t.Errorf("existing file should still be in the storage dir: %v", err)
 				}
 				if _, err := os.Stat(migratedFile); err != nil {
-					t.Errorf("legacy file should be migrated to cirrus: %v", err)
+					t.Errorf("legacy file should be migrated to the storage dir: %v", err)
 				}
 
 				// Check that legacy directory was removed
@@ -1578,14 +1578,14 @@ func TestSetupCirrusDir(t *testing.T) {
 		{
 			name: "handles file naming conflicts by suffixing",
 			setupBefore: func(t *testing.T, dataDir string) {
-				cirrusDir := ConstructCirrusDir(dataDir)
+				filesDir := ConstructFilesDir(dataDir)
 				legacyFilesPath := filepath.Join(dataDir, "files")
 
-				// Create cirrus directory with a file
-				if err := os.MkdirAll(cirrusDir, 0755); err != nil {
-					t.Fatalf("failed to create cirrus directory: %v", err)
+				// Create files directory with a file
+				if err := os.MkdirAll(filesDir, 0755); err != nil {
+					t.Fatalf("failed to create files directory: %v", err)
 				}
-				conflictFile := filepath.Join(cirrusDir, "conflict.txt")
+				conflictFile := filepath.Join(filesDir, "conflict.txt")
 				if err := os.WriteFile(conflictFile, []byte("original content"), 0644); err != nil {
 					t.Fatalf("failed to create original file: %v", err)
 				}
@@ -1601,10 +1601,10 @@ func TestSetupCirrusDir(t *testing.T) {
 			},
 			wantError: false,
 			validateAfter: func(t *testing.T, dataDir string) {
-				cirrusDir := ConstructCirrusDir(dataDir)
+				filesDir := ConstructFilesDir(dataDir)
 
 				// Check original file still exists
-				originalFile := filepath.Join(cirrusDir, "conflict.txt")
+				originalFile := filepath.Join(filesDir, "conflict.txt")
 				content, err := os.ReadFile(originalFile)
 				if err != nil {
 					t.Fatalf("original file should exist: %v", err)
@@ -1614,7 +1614,7 @@ func TestSetupCirrusDir(t *testing.T) {
 				}
 
 				// Check migrated file was created with suffix
-				migratedFile := filepath.Join(cirrusDir, "conflict_(1).txt")
+				migratedFile := filepath.Join(filesDir, "conflict_(1).txt")
 				content, err = os.ReadFile(migratedFile)
 				if err != nil {
 					t.Fatalf("migrated file with suffix should exist: %v", err)
@@ -1634,14 +1634,14 @@ func TestSetupCirrusDir(t *testing.T) {
 			// Run setup
 			tt.setupBefore(t, tmpDir)
 
-			// Temporarily change GetDataDir by modifying cirrus and files paths directly
-			cirrusDir := ConstructCirrusDir(tmpDir)
+			// Temporarily change GetDataDir by modifying storage and legacy paths directly
+			filesDir := ConstructFilesDir(tmpDir)
 			legacyFilesPath := filepath.Join(tmpDir, "files")
 
 			// Copy the migration logic inline to test with our temp directory
-			if _, err := os.Stat(cirrusDir); os.IsNotExist(err) {
-				if err := os.MkdirAll(cirrusDir, 0755); err != nil {
-					t.Fatalf("failed to create cirrus directory: %v", err)
+			if _, err := os.Stat(filesDir); os.IsNotExist(err) {
+				if err := os.MkdirAll(filesDir, 0755); err != nil {
+					t.Fatalf("failed to create files directory: %v", err)
 				}
 			}
 
@@ -1652,10 +1652,10 @@ func TestSetupCirrusDir(t *testing.T) {
 				}
 				for _, entry := range entries {
 					oldPath := filepath.Join(legacyFilesPath, entry.Name())
-					targetPath := filepath.Join(cirrusDir, entry.Name())
+					targetPath := filepath.Join(filesDir, entry.Name())
 					newPath := GetNonConflictingPath(targetPath)
 					if err := os.Rename(oldPath, newPath); err != nil {
-						t.Fatalf("failed to move file %s to cirrus directory: %v", entry.Name(), err)
+						t.Fatalf("failed to move file %s to files directory: %v", entry.Name(), err)
 					}
 				}
 				if err := os.RemoveAll(legacyFilesPath); err != nil {
@@ -1760,9 +1760,9 @@ func TestGetNonConflictingPath(t *testing.T) {
 func makeManagedDeviceForImpl(t *testing.T, name string) *ManagedDevice {
 	t.Helper()
 	dir := t.TempDir()
-	cirrusDir := filepath.Join(dir, "cirrus")
-	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
-		t.Fatalf("failed to create cirrus dir: %v", err)
+	filesDir := filepath.Join(dir, "files")
+	if err := os.MkdirAll(filesDir, 0755); err != nil {
+		t.Fatalf("failed to create files dir: %v", err)
 	}
 	return &ManagedDevice{
 		Device: Device{
@@ -1770,14 +1770,14 @@ func makeManagedDeviceForImpl(t *testing.T, name string) *ManagedDevice {
 			MountPoint: dir,
 			IsInternal: true,
 		},
-		DataDir:   dir,
-		CirrusDir: cirrusDir,
+		DataDir:  dir,
+		FilesDir: filesDir,
 	}
 }
 
 func TestDeleteFilesImpl(t *testing.T) {
 	device := makeManagedDeviceForImpl(t, "test-device")
-	testFile := filepath.Join(device.CirrusDir, "to-delete.txt")
+	testFile := filepath.Join(device.FilesDir, "to-delete.txt")
 	if err := os.WriteFile(testFile, []byte("content"), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -1803,14 +1803,14 @@ func TestCreateFolderImpl(t *testing.T) {
 	if result.CurrentDir != "" {
 		t.Errorf("Expected empty CurrentDir, got %q", result.CurrentDir)
 	}
-	if _, err := os.Stat(filepath.Join(device.CirrusDir, "new-folder")); err != nil {
+	if _, err := os.Stat(filepath.Join(device.FilesDir, "new-folder")); err != nil {
 		t.Errorf("Expected folder to exist: %v", err)
 	}
 }
 
 func TestDownloadFileImpl(t *testing.T) {
 	device := makeManagedDeviceForImpl(t, "test-device")
-	testFile := filepath.Join(device.CirrusDir, "file.txt")
+	testFile := filepath.Join(device.FilesDir, "file.txt")
 	if err := os.WriteFile(testFile, []byte("hello"), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -1839,13 +1839,13 @@ func TestDownloadFileImpl_NotFound(t *testing.T) {
 
 func TestMoveFileImpl(t *testing.T) {
 	device := makeManagedDeviceForImpl(t, "test-device")
-	src := filepath.Join(device.CirrusDir, "source.txt")
+	src := filepath.Join(device.FilesDir, "source.txt")
 	if err := os.WriteFile(src, []byte("move me"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
 	params := MoveFileParams{OldFilePath: "source.txt", NewFilePath: "dest.txt"}
-	result, err := MoveFileImpl(params, device, device, device.CirrusDir)
+	result, err := MoveFileImpl(params, device, device, device.FilesDir)
 	if err != nil {
 		t.Fatalf("MoveFileImpl failed: %v", err)
 	}
@@ -1853,7 +1853,7 @@ func TestMoveFileImpl(t *testing.T) {
 	if _, err := os.Stat(src); !os.IsNotExist(err) {
 		t.Error("Expected source file to be gone")
 	}
-	if _, err := os.Stat(filepath.Join(device.CirrusDir, "dest.txt")); err != nil {
+	if _, err := os.Stat(filepath.Join(device.FilesDir, "dest.txt")); err != nil {
 		t.Errorf("Expected dest file to exist: %v", err)
 	}
 }
@@ -1863,10 +1863,10 @@ func TestBackupToDeviceWithDevices(t *testing.T) {
 	target := makeManagedDeviceForImpl(t, "target")
 
 	// Write some files to source
-	if err := os.WriteFile(filepath.Join(source.CirrusDir, "a.txt"), []byte("hello"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(source.FilesDir, "a.txt"), []byte("hello"), 0644); err != nil {
 		t.Fatal(err)
 	}
-	subDir := filepath.Join(source.CirrusDir, "sub")
+	subDir := filepath.Join(source.FilesDir, "sub")
 	if err := os.MkdirAll(subDir, 0755); err != nil {
 		t.Fatal(err)
 	}
@@ -1882,10 +1882,10 @@ func TestBackupToDeviceWithDevices(t *testing.T) {
 	if result.SourceDeviceSerial != "source" || result.TargetDeviceSerial != "target" {
 		t.Errorf("Unexpected result: %+v", result)
 	}
-	if _, err := os.Stat(filepath.Join(target.CirrusDir, "a.txt")); err != nil {
+	if _, err := os.Stat(filepath.Join(target.FilesDir, "a.txt")); err != nil {
 		t.Errorf("Expected a.txt in target: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(target.CirrusDir, "sub", "b.txt")); err != nil {
+	if _, err := os.Stat(filepath.Join(target.FilesDir, "sub", "b.txt")); err != nil {
 		t.Errorf("Expected sub/b.txt in target: %v", err)
 	}
 }
@@ -1899,11 +1899,11 @@ func TestUploadFilesStreamed_SingleFile(t *testing.T) {
 		Reader:       r,
 		RootDir:      "",
 		DeviceSerial: "",
-	}, device, device.CirrusDir)
+	}, device, device.FilesDir)
 	if err != nil {
 		t.Fatalf("UploadFilesStreamedImpl failed: %v", err)
 	}
-	dest := filepath.Join(device.CirrusDir, "test.txt")
+	dest := filepath.Join(device.FilesDir, "test.txt")
 	got, err := os.ReadFile(dest)
 	if err != nil {
 		t.Fatalf("Expected uploaded file at %s: %v", dest, err)
@@ -1915,7 +1915,7 @@ func TestUploadFilesStreamed_SingleFile(t *testing.T) {
 
 func TestUploadFilesStreamed_ConflictRename(t *testing.T) {
 	device := makeManagedDeviceForImpl(t, "test-device")
-	existing := filepath.Join(device.CirrusDir, "file.txt")
+	existing := filepath.Join(device.FilesDir, "file.txt")
 	if err := os.WriteFile(existing, []byte("old"), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -1926,7 +1926,7 @@ func TestUploadFilesStreamed_ConflictRename(t *testing.T) {
 		Reader:       r,
 		RootDir:      "",
 		DeviceSerial: "",
-	}, device, device.CirrusDir)
+	}, device, device.FilesDir)
 	if err != nil {
 		t.Fatalf("UploadFilesStreamedImpl failed: %v", err)
 	}
@@ -1934,7 +1934,7 @@ func TestUploadFilesStreamed_ConflictRename(t *testing.T) {
 	if string(old) != "old" {
 		t.Error("Original file was overwritten, expected conflict rename")
 	}
-	renamed := filepath.Join(device.CirrusDir, "file_(1).txt")
+	renamed := filepath.Join(device.FilesDir, "file_(1).txt")
 	got, err := os.ReadFile(renamed)
 	if err != nil {
 		t.Fatalf("Expected renamed file at %s: %v", renamed, err)
@@ -1953,11 +1953,11 @@ func TestUploadFilesStreamed_SubDirectory(t *testing.T) {
 		Reader:       r,
 		RootDir:      "docs/2024",
 		DeviceSerial: "",
-	}, device, device.CirrusDir)
+	}, device, device.FilesDir)
 	if err != nil {
 		t.Fatalf("UploadFilesStreamedImpl failed: %v", err)
 	}
-	dest := filepath.Join(device.CirrusDir, "docs", "2024", "notes.txt")
+	dest := filepath.Join(device.FilesDir, "docs", "2024", "notes.txt")
 	got, err := os.ReadFile(dest)
 	if err != nil {
 		t.Fatalf("Expected uploaded file at %s: %v", dest, err)
@@ -2007,15 +2007,15 @@ func boundaryFromContentType(t *testing.T, ct string) string {
 //
 // StatFileImpl and DownloadFileImpl must resolve a relative path against the
 // SAME base directory. They previously diverged in the VFS layer: Stat used the
-// managed device's CirrusDir while Open re-derived from the default one, so on
+// managed device's FilesDir while Open re-derived from the default one, so on
 // installs where those differ Stat succeeded (no 404) and Open found nothing —
 // the download returned 200 with an empty body.
 func TestStatDownloadAgreeOnDeviceDir(t *testing.T) {
 	device := makeManagedDeviceForImpl(t, "device-with-own-dir")
-	// A default cirrus dir that is deliberately NOT the device's.
+	// A default files dir that is deliberately NOT the device's.
 	defaultDir := t.TempDir()
 
-	testFile := filepath.Join(device.CirrusDir, "interview.py")
+	testFile := filepath.Join(device.FilesDir, "interview.py")
 	content := []byte("print('hello')\n")
 	if err := os.WriteFile(testFile, content, 0644); err != nil {
 		t.Fatal(err)
@@ -2053,7 +2053,7 @@ func TestStatDownloadAgreeOnDeviceDir(t *testing.T) {
 func TestStatFilePopulatesSizeAndModTime(t *testing.T) {
 	device := makeManagedDeviceForImpl(t, "sizes")
 	content := []byte("0123456789")
-	if err := os.WriteFile(filepath.Join(device.CirrusDir, "f.bin"), content, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(device.FilesDir, "f.bin"), content, 0644); err != nil {
 		t.Fatal(err)
 	}
 

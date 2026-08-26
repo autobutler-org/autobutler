@@ -101,7 +101,7 @@ class TermsPage extends StatelessWidget {
                   onPressed: () async {
                     await AppSettings.instance.acceptTerms();
                     if (context.mounted) {
-                      context.go(AppRoutes.cirrus);
+                      context.go(AppRoutes.files);
                     }
                   },
                   child: const Padding(

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
 
 enum QuarkDrawerSection {
-  cirrus,
+  files,
   photos,
   docs,
   sheets,
@@ -18,7 +18,7 @@ class QuarkDrawer extends StatelessWidget {
   const QuarkDrawer({
     super.key,
     required this.activeSection,
-    this.onTapCirrus,
+    this.onTapFiles,
     this.onTapPhotos,
     this.onTapDocs,
     this.onTapSheets,
@@ -29,7 +29,7 @@ class QuarkDrawer extends StatelessWidget {
   });
 
   final QuarkDrawerSection activeSection;
-  final FutureOr<void> Function()? onTapCirrus;
+  final FutureOr<void> Function()? onTapFiles;
   final FutureOr<void> Function()? onTapPhotos;
   final FutureOr<void> Function()? onTapDocs;
   final FutureOr<void> Function()? onTapSheets;
@@ -58,8 +58,8 @@ class QuarkDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(QuarkIcons.storage_rounded),
             title: const Text('Files'),
-            selected: activeSection == QuarkDrawerSection.cirrus,
-            onTap: () => onTapCirrus?.call(),
+            selected: activeSection == QuarkDrawerSection.files,
+            onTap: () => onTapFiles?.call(),
           ),
           ListTile(
             leading: const Icon(QuarkIcons.photo_library_outlined),

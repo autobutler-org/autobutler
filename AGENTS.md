@@ -96,7 +96,7 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
 - In `Column`/`Row` layouts, use `Expanded`/`Flexible` correctly so children receive bounded constraints.
 - Respect safe areas and platform insets (`SafeArea`, keyboard insets) for production UI.
 - Keep top-level page navigation consistent: pages should use a hamburger menu in the app bar/drawer pattern by default
-  (for example, Cirrus/Photos/Settings), not a back button, unless a page is explicitly a drill-down/detail flow.
+  (for example, Files/Photos/Settings), not a back button, unless a page is explicitly a drill-down/detail flow.
 
 ### Custom Widget Guidelines (spreadsheet editor)
 
@@ -146,7 +146,7 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
 
 ### Navigation and routing (always follow this)
 
-- The app uses `go_router` with `PathUrlStrategy` — clean URLs (`/cirrus`, `/photos`, no `#`).
+- The app uses `go_router` with `PathUrlStrategy` — clean URLs (`/files`, `/photos`, no `#`).
 - All routes are declared in `lib/router.dart`. Route path strings are constants on `AppRoutes`.
 - **When adding a new top-level page, you must:**
   1. Add a `static const` path to `AppRoutes` in `lib/router.dart`

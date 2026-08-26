@@ -26,7 +26,7 @@ Journey IDs are stable — don't renumber when adding new ones.
 | File                                     | Feature Area                                           |
 | ---------------------------------------- | ------------------------------------------------------ |
 | [auth.md](auth.md)                       | Setup, login, logout, recovery                         |
-| [file-browser.md](file-browser.md)       | Cirrus file browser (browse, upload, download, manage) |
+| [file-browser.md](file-browser.md)       | file browser (browse, upload, download, manage) |
 | [photos.md](photos.md)                   | Photos, albums, favorites                              |
 | [docs.md](docs.md)                       | Document editor (.abdoc files)                         |
 | [sheets.md](sheets.md)                   | Spreadsheet editor (.absheet files)                    |

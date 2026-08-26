@@ -1,4 +1,4 @@
-import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/models/file_node.dart';
 
 /// In-memory cache of file listings keyed by folder path.
 ///
@@ -13,11 +13,11 @@ class FileBrowserCache {
   FileBrowserCache._();
   static final instance = FileBrowserCache._();
 
-  final Map<String, List<CirrusFileNode>> _cache = {};
+  final Map<String, List<FileNode>> _cache = {};
 
-  List<CirrusFileNode>? get(String path) => _cache[path];
+  List<FileNode>? get(String path) => _cache[path];
 
-  void put(String path, List<CirrusFileNode> files) {
+  void put(String path, List<FileNode> files) {
     _cache[path] = List.unmodifiable(files);
   }
 

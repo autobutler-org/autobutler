@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	v1_files "github.com/autobutler-org/quark/internal/server/api/v0/cirrus"
+	v1_files "github.com/autobutler-org/quark/internal/server/api/v0/files"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
@@ -40,7 +40,7 @@ func (f *fakeDetector) DetectDevices() ([]storageutil.Device, error) {
 	}, nil
 }
 
-// newTestEngine creates a gin engine with the cirrus routes registered and
+// newTestEngine creates a gin engine with the files routes registered and
 // a fake StorageService pointing at a temp directory injected via deps.
 // This avoids relying on HOME env var tricks and works across all platforms.
 func newTestEngine(t *testing.T) (*gin.Engine, string) {
@@ -48,9 +48,9 @@ func newTestEngine(t *testing.T) (*gin.Engine, string) {
 
 	// Create a temp dir to act as the device mount point.
 	mountPoint := t.TempDir()
-	cirrusDir := filepath.Join(mountPoint, "quark", "data", "cirrus")
-	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
-		t.Fatalf("failed to create cirrus dir: %v", err)
+	filesDir := filepath.Join(mountPoint, "quark", "data", "cirrus")
+	if err := os.MkdirAll(filesDir, 0755); err != nil {
+		t.Fatalf("failed to create files dir: %v", err)
 	}
 
 	// Build a deps with a fake StorageService so handlers get a real-looking
@@ -67,7 +67,7 @@ func newTestEngine(t *testing.T) (*gin.Engine, string) {
 	})
 	group := engine.Group("/api/v0")
 	serverutil.RegisterRouterWithGroup(group, v1_files.NewRouter())
-	return engine, cirrusDir
+	return engine, filesDir
 }
 
 // doRequest fires an HTTP request against the test engine.
@@ -98,10 +98,10 @@ func uploadFile(t *testing.T, engine *gin.Engine, uploadPath, filename, content 
 	return doRequest(engine, http.MethodPost, uploadPath, &buf, mw.FormDataContentType())
 }
 
-// listFiles returns parsed file nodes from GET /api/v1/cirrus.
+// listFiles returns parsed file nodes from GET /api/v0/files.
 func listFiles(t *testing.T, engine *gin.Engine, rootDir string) []map[string]any {
 	t.Helper()
-	path := "/api/v0/cirrus"
+	path := "/api/v0/files"
 	if rootDir != "" {
 		path += "?rootDir=" + rootDir
 	}
@@ -146,7 +146,7 @@ func TestListFiles_EmptyDir(t *testing.T) {
 func TestUploadAndList(t *testing.T) {
 	engine, _ := newTestEngine(t)
 
-	w := uploadFile(t, engine, "/api/v0/cirrus/upload", "hello.txt", "hello world")
+	w := uploadFile(t, engine, "/api/v0/files/upload", "hello.txt", "hello world")
 	if w.Code != http.StatusOK {
 		t.Fatalf("upload returned %d: %s", w.Code, w.Body.String())
 	}
@@ -168,7 +168,7 @@ func TestUploadMultipleFiles(t *testing.T) {
 	engine, _ := newTestEngine(t)
 
 	for _, name := range []string{"a.txt", "b.txt", "c.txt"} {
-		w := uploadFile(t, engine, "/api/v0/cirrus/upload", name, "content of "+name)
+		w := uploadFile(t, engine, "/api/v0/files/upload", name, "content of "+name)
 		if w.Code != http.StatusOK {
 			t.Fatalf("upload %s returned %d: %s", name, w.Code, w.Body.String())
 		}
@@ -183,10 +183,10 @@ func TestUploadMultipleFiles(t *testing.T) {
 func TestUploadToSubdirectory(t *testing.T) {
 	engine, _ := newTestEngine(t)
 
-	// The route is registered as /cirrus//upload/*rootDir (double slash avoids gin conflict
-	// with the top-level /cirrus/upload route), but gin normalizes request URLs so the
-	// actual path to call is /cirrus/upload/{subdir}.
-	w := uploadFile(t, engine, "/api/v0/cirrus/upload/docs", "readme.txt", "docs content")
+	// The route is registered as /files//upload/*rootDir (double slash avoids gin conflict
+	// with the top-level /files/upload route), but gin normalizes request URLs so the
+	// actual path to call is /files/upload/{subdir}.
+	w := uploadFile(t, engine, "/api/v0/files/upload/docs", "readme.txt", "docs content")
 	if w.Code != http.StatusOK {
 		t.Fatalf("upload to subdir returned %d: %s", w.Code, w.Body.String())
 	}
@@ -207,22 +207,22 @@ func TestUploadToSubdirectory(t *testing.T) {
 func TestListFiles_NonExistentSubdirectoryReturnsNotFound(t *testing.T) {
 	engine, _ := newTestEngine(t)
 
-	w := doRequest(engine, http.MethodGet, "/api/v0/cirrus?rootDir=ghosts", nil, "")
+	w := doRequest(engine, http.MethodGet, "/api/v0/files?rootDir=ghosts", nil, "")
 	if w.Code != http.StatusNotFound {
 		t.Fatalf("expected 404, got %d: %s", w.Code, w.Body.String())
 	}
 }
 
 func TestDownloadFile(t *testing.T) {
-	engine, cirrusDir := newTestEngine(t)
+	engine, filesDir := newTestEngine(t)
 
 	// Write file directly to disk (bypasses upload multipart parsing in test env)
 	content := "download me"
-	if err := os.WriteFile(filepath.Join(cirrusDir, "download.txt"), []byte(content), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(filesDir, "download.txt"), []byte(content), 0644); err != nil {
 		t.Fatalf("failed to write test file: %v", err)
 	}
 
-	w := doRequest(engine, http.MethodGet, "/api/v0/cirrus/download?filePath=download.txt", nil, "")
+	w := doRequest(engine, http.MethodGet, "/api/v0/files/download?filePath=download.txt", nil, "")
 	if w.Code != http.StatusOK {
 		t.Fatalf("download returned %d: %s", w.Code, w.Body.String())
 	}
@@ -234,20 +234,20 @@ func TestDownloadFile(t *testing.T) {
 func TestDownloadNonExistentFile(t *testing.T) {
 	engine, _ := newTestEngine(t)
 
-	w := doRequest(engine, http.MethodGet, "/api/v0/cirrus/download?filePath=ghost.txt", nil, "")
+	w := doRequest(engine, http.MethodGet, "/api/v0/files/download?filePath=ghost.txt", nil, "")
 	if w.Code != http.StatusNotFound {
 		t.Errorf("expected 404, got %d: %s", w.Code, w.Body.String())
 	}
 }
 
 func TestDeleteFile(t *testing.T) {
-	engine, cirrusDir := newTestEngine(t)
+	engine, filesDir := newTestEngine(t)
 
-	if err := os.WriteFile(filepath.Join(cirrusDir, "todelete.txt"), []byte("bye"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(filesDir, "todelete.txt"), []byte("bye"), 0644); err != nil {
 		t.Fatalf("failed to write test file: %v", err)
 	}
 
-	w := doRequest(engine, http.MethodDelete, "/api/v0/cirrus?filePaths=todelete.txt", nil, "")
+	w := doRequest(engine, http.MethodDelete, "/api/v0/files?filePaths=todelete.txt", nil, "")
 	if w.Code != http.StatusOK {
 		t.Fatalf("delete returned %d: %s", w.Code, w.Body.String())
 	}
@@ -259,18 +259,18 @@ func TestDeleteFile(t *testing.T) {
 }
 
 func TestDeleteFile_BatchMovedToTrash(t *testing.T) {
-	engine, cirrusDir := newTestEngine(t)
+	engine, filesDir := newTestEngine(t)
 
 	// Write three files that will be batch-deleted.
 	for _, name := range []string{"a.txt", "b.txt", "c.txt"} {
-		if err := os.WriteFile(filepath.Join(cirrusDir, name), []byte(name), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(filesDir, name), []byte(name), 0644); err != nil {
 			t.Fatalf("failed to write %s: %v", name, err)
 		}
 	}
 
 	// Delete all three in one request (no serial → falls back to DeleteFiles sync path).
 	w := doRequest(engine, http.MethodDelete,
-		"/api/v0/cirrus?filePaths=a.txt&filePaths=b.txt&filePaths=c.txt", nil, "")
+		"/api/v0/files?filePaths=a.txt&filePaths=b.txt&filePaths=c.txt", nil, "")
 	if w.Code != http.StatusOK {
 		t.Fatalf("delete returned %d: %s", w.Code, w.Body.String())
 	}
@@ -287,16 +287,16 @@ func TestDeleteFile_BatchMovedToTrash(t *testing.T) {
 func TestDeleteWithoutFilePaths(t *testing.T) {
 	engine, _ := newTestEngine(t)
 
-	w := doRequest(engine, http.MethodDelete, "/api/v0/cirrus", nil, "")
+	w := doRequest(engine, http.MethodDelete, "/api/v0/files", nil, "")
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected 400, got %d: %s", w.Code, w.Body.String())
 	}
 }
 
 func TestMoveFile(t *testing.T) {
-	engine, cirrusDir := newTestEngine(t)
+	engine, filesDir := newTestEngine(t)
 
-	if err := os.WriteFile(filepath.Join(cirrusDir, "original.txt"), []byte("move me"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(filesDir, "original.txt"), []byte("move me"), 0644); err != nil {
 		t.Fatalf("failed to write test file: %v", err)
 	}
 
@@ -304,7 +304,7 @@ func TestMoveFile(t *testing.T) {
 		"oldFilePath": "original.txt",
 		"newFilePath": "renamed.txt",
 	})
-	w := doRequest(engine, http.MethodPut, "/api/v0/cirrus", bytes.NewReader(body), "application/json")
+	w := doRequest(engine, http.MethodPut, "/api/v0/files", bytes.NewReader(body), "application/json")
 	if w.Code != http.StatusOK {
 		t.Fatalf("move returned %d: %s", w.Code, w.Body.String())
 	}
@@ -327,7 +327,7 @@ func TestCreateFolder(t *testing.T) {
 	mw.WriteField("folderName", "myfolder")
 	mw.Close()
 
-	w := doRequest(engine, http.MethodPost, "/api/v0/cirrus/folder//", &buf, mw.FormDataContentType())
+	w := doRequest(engine, http.MethodPost, "/api/v0/files/folder//", &buf, mw.FormDataContentType())
 	if w.Code != http.StatusOK {
 		t.Fatalf("create folder returned %d: %s", w.Code, w.Body.String())
 	}
@@ -347,15 +347,15 @@ func TestCreateFolder(t *testing.T) {
 }
 
 func TestSearchFiles(t *testing.T) {
-	engine, cirrusDir := newTestEngine(t)
+	engine, filesDir := newTestEngine(t)
 
 	for _, name := range []string{"apple.txt", "apricot.txt", "banana.txt"} {
-		if err := os.WriteFile(filepath.Join(cirrusDir, name), []byte("content"), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(filesDir, name), []byte("content"), 0644); err != nil {
 			t.Fatalf("failed to write %s: %v", name, err)
 		}
 	}
 
-	w := doRequest(engine, http.MethodGet, "/api/v0/cirrus/search?query=ap", nil, "")
+	w := doRequest(engine, http.MethodGet, "/api/v0/files/search?query=ap", nil, "")
 	if w.Code != http.StatusOK {
 		t.Fatalf("search returned %d: %s", w.Code, w.Body.String())
 	}
@@ -377,10 +377,10 @@ func TestSearchFiles(t *testing.T) {
 }
 
 func TestFileSize(t *testing.T) {
-	engine, cirrusDir := newTestEngine(t)
+	engine, filesDir := newTestEngine(t)
 
 	content := "exact content"
-	if err := os.WriteFile(filepath.Join(cirrusDir, "sized.txt"), []byte(content), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(filesDir, "sized.txt"), []byte(content), 0644); err != nil {
 		t.Fatalf("failed to write test file: %v", err)
 	}
 

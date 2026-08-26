@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:http/http.dart' as http;
-import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/models/file_node.dart';
 import 'package:quark/models/paginated_photos_response.dart';
 import 'package:quark/models/photo_metadata.dart';
 import 'package:quark/services/app_settings.dart';
@@ -12,8 +12,8 @@ import 'package:quark/utils/web_download_stub.dart'
     if (dart.library.html) 'package:quark/utils/web_download_web.dart'
     as web_download;
 
-class CirrusRequestException implements Exception {
-  const CirrusRequestException({
+class FilesRequestException implements Exception {
+  const FilesRequestException({
     required this.statusCode,
     required this.message,
   });
@@ -25,10 +25,10 @@ class CirrusRequestException implements Exception {
   String toString() => message;
 }
 
-class CirrusService with AuthenticatedService {
-  static final CirrusService _instance = CirrusService._();
-  CirrusService._();
-  static CirrusService get instance => _instance;
+class FilesService with AuthenticatedService {
+  static final FilesService _instance = FilesService._();
+  FilesService._();
+  static FilesService get instance => _instance;
   static Map<String, String> get _authHeaders => instance.authHeaders;
 
   static Uri get _apiBaseUri {
@@ -85,7 +85,7 @@ class CirrusService with AuthenticatedService {
     if (token != null && token.isNotEmpty) {
       querySegments.add('token=${Uri.encodeQueryComponent(token)}');
     }
-    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus/download');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/files/download');
     return endpointUri.replace(query: querySegments.join('&'));
   }
 
@@ -148,7 +148,7 @@ class CirrusService with AuthenticatedService {
     return PaginatedPhotosResponse.fromJson(decoded);
   }
 
-  static Future<List<CirrusFileNode>> getFiles(
+  static Future<List<FileNode>> getFiles(
     String path, {
     List<String>? serials,
   }) async {
@@ -170,36 +170,36 @@ class CirrusService with AuthenticatedService {
       querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
     }
 
-    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/files');
     final uri = querySegments.isEmpty
         ? endpointUri
         : endpointUri.replace(query: querySegments.join('&'));
 
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw CirrusRequestException(
+      throw FilesRequestException(
         statusCode: response.statusCode,
         message: _responseMessage(
           response,
-          fallback: 'Failed to load cirrus files (${response.statusCode})',
+          fallback: 'Failed to load files (${response.statusCode})',
         ),
       );
     }
 
     final decoded = jsonDecode(response.body);
     if (decoded is! List) {
-      throw Exception('Unexpected cirrus response format');
+      throw Exception('Unexpected files response format');
     }
 
     return decoded
         .whereType<Map<String, dynamic>>()
-        .map(CirrusFileNode.fromJson)
+        .map(FileNode.fromJson)
         .toList(growable: false);
   }
 
   /// Returns all files of [fileType] across all devices, newest-modified first.
   /// [fileType] should be one of the server-defined type strings: 'abdoc', 'absheet', etc.
-  static Future<List<CirrusFileNode>> getFilesByType(
+  static Future<List<FileNode>> getFilesByType(
     String fileType, {
     List<String>? serials,
   }) async {
@@ -212,7 +212,7 @@ class CirrusService with AuthenticatedService {
       }
     }
     final uri = _apiBaseUri
-        .resolve('/api/v0/cirrus/by-type')
+        .resolve('/api/v0/files/by-type')
         .replace(query: querySegments.join('&'));
 
     final response = await instance.authenticatedGet(uri);
@@ -231,12 +231,12 @@ class CirrusService with AuthenticatedService {
     }
     return decoded
         .whereType<Map<String, dynamic>>()
-        .map(CirrusFileNode.fromJson)
+        .map(FileNode.fromJson)
         .toList(growable: false);
   }
 
   /// Returns recently modified files across all devices, newest first.
-  static Future<List<CirrusFileNode>> getRecentFiles({
+  static Future<List<FileNode>> getRecentFiles({
     int limit = 20,
     List<String>? serials,
   }) async {
@@ -247,7 +247,7 @@ class CirrusService with AuthenticatedService {
       }
     }
     final uri = _apiBaseUri
-        .resolve('/api/v0/cirrus/recent')
+        .resolve('/api/v0/files/recent')
         .replace(query: querySegments.join('&'));
 
     final response = await instance.authenticatedGet(uri);
@@ -260,11 +260,11 @@ class CirrusService with AuthenticatedService {
     }
     return decoded
         .whereType<Map<String, dynamic>>()
-        .map(CirrusFileNode.fromJson)
+        .map(FileNode.fromJson)
         .toList(growable: false);
   }
 
-  static Future<List<CirrusFileNode>> searchFiles(
+  static Future<List<FileNode>> searchFiles(
     String query, {
     List<String>? serials,
   }) async {
@@ -279,30 +279,30 @@ class CirrusService with AuthenticatedService {
     for (final serial in serialValues) {
       querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
     }
-    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus/search');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/files/search');
     final uri = querySegments.isEmpty
         ? endpointUri
         : endpointUri.replace(query: querySegments.join('&'));
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to load cirrus files (${response.statusCode})');
+      throw Exception('Failed to load files (${response.statusCode})');
     }
 
     final decoded = jsonDecode(response.body);
     if (decoded is! List) {
-      throw Exception('Unexpected cirrus response format');
+      throw Exception('Unexpected files response format');
     }
 
     return decoded
         .whereType<Map<String, dynamic>>()
-        .map(CirrusFileNode.fromJson)
+        .map(FileNode.fromJson)
         .toList(growable: false);
   }
 
   /// Lists the direct children of [subPath] inside the archive at [filePath].
-  /// Returns the entries as [CirrusFileNode]s with [isDir] set appropriately.
+  /// Returns the entries as [FileNode]s with [isDir] set appropriately.
   /// No data is extracted to disk — only archive headers are read.
-  static Future<List<CirrusFileNode>> listArchiveEntries(
+  static Future<List<FileNode>> listArchiveEntries(
     String filePath, {
     String subPath = '',
     String? serial,
@@ -317,7 +317,7 @@ class CirrusService with AuthenticatedService {
     if (serialValue.isNotEmpty) {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
-    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus/list-archive');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/files/list-archive');
     final uri = endpointUri.replace(query: querySegments.join('&'));
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -331,7 +331,7 @@ class CirrusService with AuthenticatedService {
     }
     return decoded
         .whereType<Map<String, dynamic>>()
-        .map(CirrusFileNode.fromJson)
+        .map(FileNode.fromJson)
         .toList(growable: false);
   }
 
@@ -343,7 +343,7 @@ class CirrusService with AuthenticatedService {
     if (serialValue.isNotEmpty) {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
-    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus/extract');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/files/extract');
     final uri = endpointUri.replace(query: querySegments.join('&'));
     final response = await instance.authenticatedPost(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -365,11 +365,11 @@ class CirrusService with AuthenticatedService {
     if (serialValue.isNotEmpty) {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
-    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus/stat');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/files/stat');
     final uri = endpointUri.replace(query: querySegments.join('&'));
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw CirrusRequestException(
+      throw FilesRequestException(
         statusCode: response.statusCode,
         message: _responseMessage(
           response,
@@ -402,7 +402,7 @@ class CirrusService with AuthenticatedService {
       queryParams['serial'] = serial;
     }
 
-    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/files');
     final uri = endpointUri.replace(queryParameters: queryParams);
 
     final response = await instance.authenticatedDelete(uri);
@@ -435,7 +435,7 @@ class CirrusService with AuthenticatedService {
       querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
     }
     final uri = _apiBaseUri
-        .resolve('/api/v0/cirrus')
+        .resolve('/api/v0/files')
         .replace(query: querySegments.join('&'));
     final response = await instance.authenticatedDelete(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -449,7 +449,7 @@ class CirrusService with AuthenticatedService {
     String? oldDeviceSerial,
     String? newDeviceSerial,
   }) async {
-    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/files');
     final requestBody = <String, String>{
       'oldFilePath': oldPath,
       'newFilePath': newPath,
@@ -481,8 +481,8 @@ class CirrusService with AuthenticatedService {
   static Future<void> createFolder(String folderPath, String folderName) async {
     final trimmedFolderPath = folderPath.trim();
     final endpointPath = trimmedFolderPath.isEmpty
-        ? '/api/v0/cirrus/folder/'
-        : _joinPaths('/api/v0/cirrus/folder', trimmedFolderPath);
+        ? '/api/v0/files/folder/'
+        : _joinPaths('/api/v0/files/folder', trimmedFolderPath);
     final endpointUri = _apiBaseUri.resolve(endpointPath);
 
     final request = http.MultipartRequest('POST', endpointUri);
@@ -501,7 +501,7 @@ class CirrusService with AuthenticatedService {
     String? serial,
     bool overwrite = false,
   }) async {
-    final uploadEndpointPath = _joinPaths('/api/v0/cirrus/upload', uploadPath);
+    final uploadEndpointPath = _joinPaths('/api/v0/files/upload', uploadPath);
     final endpointUri = _apiBaseUri.resolve(uploadEndpointPath);
 
     final serialValue = serial?.trim() ?? '';
@@ -580,7 +580,7 @@ class CirrusService with AuthenticatedService {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
     final endpointUri = _apiBaseUri.resolve(
-      '/api/v0/cirrus/download-archive-file',
+      '/api/v0/files/download-archive-file',
     );
     final uri = endpointUri.replace(query: querySegments.join('&'));
     final response = await instance.authenticatedGet(uri);
@@ -718,7 +718,7 @@ class CirrusService with AuthenticatedService {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
 
-    final endpointUri = _apiBaseUri.resolve('/api/v0/cirrus/download');
+    final endpointUri = _apiBaseUri.resolve('/api/v0/files/download');
     return endpointUri.replace(query: querySegments.join('&'));
   }
 

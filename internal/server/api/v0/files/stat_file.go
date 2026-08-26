@@ -18,15 +18,15 @@ type StatFileJSON struct {
 
 // statFile godoc
 // @Summary Stat a file or directory
-// @Description Returns filesystem metadata for the given cirrus-relative path: whether it is a directory and its file type. Useful for deep-link resolution when the path extension alone is ambiguous (e.g. a folder named "things.abdoc").
-// @Tags cirrus
+// @Description Returns filesystem metadata for the given files-relative path: whether it is a directory and its file type. Useful for deep-link resolution when the path extension alone is ambiguous (e.g. a folder named "things.abdoc").
+// @Tags files
 // @Produce json
-// @Param filePath query string true "Cirrus-relative path to stat"
+// @Param filePath query string true "Files-relative path to stat"
 // @Param serial query string false "Device serial number"
 // @Success 200 {object} StatFileJSON
 // @Failure 404 {object} serverutil.Response "Not Found"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Router /cirrus/stat [get]
+// @Router /files/stat [get]
 func statFile(c *gin.Context) *serverutil.Response {
 	filePath := c.Query("filePath")
 
@@ -71,5 +71,5 @@ func statFile(c *gin.Context) *serverutil.Response {
 }
 
 var statFileRoute = serverutil.ApiRoute(
-	"GET", "/cirrus/stat", statFile,
+	"GET", "/files/stat", statFile,
 )

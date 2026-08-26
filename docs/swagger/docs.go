@@ -1039,7 +1039,7 @@ const docTemplate = `{
         },
         "/books": {
             "get": {
-                "description": "Finds all books in the cirrus directory",
+                "description": "Finds all books in the files directory",
                 "produces": [
                     "application/json"
                 ],
@@ -1066,14 +1066,40 @@ const docTemplate = `{
                 }
             }
         },
-        "/cirrus": {
+        "/events": {
+            "get": {
+                "description": "Upgrades the connection to WebSocket and pushes JSON events for file system mutations (upload, delete, move, new_folder)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Stream real-time file/device events",
+                "responses": {
+                    "101": {
+                        "description": "Switching Protocols",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/files": {
             "get": {
                 "description": "merges files across all managed devices for the given filePath. If deviceSerial is empty, list files across all devices. Otherwise, only for the specified device",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "cirrus"
+                    "files"
                 ],
                 "summary": "Lists files",
                 "parameters": [
@@ -1117,7 +1143,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "cirrus"
+                    "files"
                 ],
                 "summary": "Move or rename a file",
                 "parameters": [
@@ -1158,7 +1184,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "cirrus"
+                    "files"
                 ],
                 "summary": "Delete files",
                 "parameters": [
@@ -1208,14 +1234,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/cirrus/by-type": {
+        "/files/by-type": {
             "get": {
                 "description": "Recursively walks all managed devices and returns files whose fileType matches the given value, sorted newest-first.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "cirrus"
+                    "files"
                 ],
                 "summary": "List all files of a given type",
                 "parameters": [
@@ -1262,14 +1288,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/cirrus/download": {
+        "/files/download": {
             "get": {
                 "description": "Downloads a single file or zips a folder and streams it back to the client",
                 "produces": [
                     "application/octet-stream"
                 ],
                 "tags": [
-                    "cirrus"
+                    "files"
                 ],
                 "summary": "Download a file or folder",
                 "parameters": [
@@ -1314,20 +1340,20 @@ const docTemplate = `{
                 }
             }
         },
-        "/cirrus/download-archive-file": {
+        "/files/download-archive-file": {
             "get": {
                 "description": "Reads the specified entry from the archive and streams it to the client. No data is extracted to disk.",
                 "produces": [
                     "application/octet-stream"
                 ],
                 "tags": [
-                    "cirrus"
+                    "files"
                 ],
                 "summary": "Download a single file from inside an archive",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Path to the archive file (relative to device cirrus directory)",
+                        "description": "Path to the archive file (relative to device files directory)",
                         "name": "filePath",
                         "in": "query",
                         "required": true
@@ -1374,14 +1400,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/cirrus/extract": {
+        "/files/extract": {
             "post": {
                 "description": "Extracts a zip file into a subdirectory named after the archive (without its extension) in the same directory",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "cirrus"
+                    "files"
                 ],
                 "summary": "Extract a zip archive in place",
                 "parameters": [
@@ -1421,7 +1447,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/cirrus/folder/{folderDir}": {
+        "/files/folder/{folderDir}": {
             "post": {
                 "description": "Enqueue create-folder operation under the given folder directory",
                 "consumes": [
@@ -1431,7 +1457,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "cirrus"
+                    "files"
                 ],
                 "summary": "Create a new folder",
                 "parameters": [
@@ -1478,20 +1504,20 @@ const docTemplate = `{
                 }
             }
         },
-        "/cirrus/list-archive": {
+        "/files/list-archive": {
             "get": {
                 "description": "Opens the archive at filePath and returns the direct children of subPath as FileNodeJSON entries. No data is extracted to disk — only archive headers are read.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "cirrus"
+                    "files"
                 ],
                 "summary": "List contents of an archive file at a given virtual path",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Path to the archive file (relative to device cirrus directory)",
+                        "description": "Path to the archive file (relative to device files directory)",
                         "name": "filePath",
                         "in": "query",
                         "required": true
@@ -1534,14 +1560,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/cirrus/recent": {
+        "/files/recent": {
             "get": {
                 "description": "Returns files sorted by modification time (newest first) across all managed devices.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "cirrus"
+                    "files"
                 ],
                 "summary": "List recently uploaded files",
                 "parameters": [
@@ -1581,14 +1607,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/cirrus/search": {
+        "/files/search": {
             "get": {
                 "description": "searches for a file across all managed devices for the given search term. If deviceSerial is empty, search across all devices. Otherwise, only for the specified device",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "cirrus"
+                    "files"
                 ],
                 "summary": "Searches for files",
                 "parameters": [
@@ -1624,14 +1650,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/cirrus/search/content": {
+        "/files/search/content": {
             "get": {
                 "description": "Full-text search over indexed file contents using SQLite FTS5.\nOnly text-based file formats are indexed (.txt, .md, .csv, .yaml, .json, etc.).\nBinary formats (images, video, PDF) are not indexed.\nReturns up to ` + "`" + `limit` + "`" + ` results ordered by relevance rank.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "cirrus"
+                    "files"
                 ],
                 "summary": "Search file contents (FTS5)",
                 "parameters": [
@@ -1674,20 +1700,20 @@ const docTemplate = `{
                 }
             }
         },
-        "/cirrus/stat": {
+        "/files/stat": {
             "get": {
-                "description": "Returns filesystem metadata for the given cirrus-relative path: whether it is a directory and its file type. Useful for deep-link resolution when the path extension alone is ambiguous (e.g. a folder named \"things.abdoc\").",
+                "description": "Returns filesystem metadata for the given files-relative path: whether it is a directory and its file type. Useful for deep-link resolution when the path extension alone is ambiguous (e.g. a folder named \"things.abdoc\").",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "cirrus"
+                    "files"
                 ],
                 "summary": "Stat a file or directory",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Cirrus-relative path to stat",
+                        "description": "Files-relative path to stat",
                         "name": "filePath",
                         "in": "query",
                         "required": true
@@ -1721,7 +1747,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/cirrus/upload": {
+        "/files/upload": {
             "post": {
                 "description": "Upload one or more files via multipart/form-data",
                 "consumes": [
@@ -1731,7 +1757,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "cirrus"
+                    "files"
                 ],
                 "summary": "Upload files to the top-level directory",
                 "parameters": [
@@ -1765,7 +1791,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/cirrus/upload/{rootDir}": {
+        "/files/upload/{rootDir}": {
             "post": {
                 "description": "Upload one or more files via multipart/form-data",
                 "consumes": [
@@ -1775,7 +1801,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "cirrus"
+                    "files"
                 ],
                 "summary": "Upload files to a nested directory",
                 "parameters": [
@@ -1805,32 +1831,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/events": {
-            "get": {
-                "description": "Upgrades the connection to WebSocket and pushes JSON events for file system mutations (upload, delete, move, new_folder)",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "events"
-                ],
-                "summary": "Stream real-time file/device events",
-                "responses": {
-                    "101": {
-                        "description": "Switching Protocols",
-                        "schema": {
-                            "type": "string"
                         }
                     },
                     "400": {
@@ -3753,7 +3753,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "relPath": {
-                    "description": "RelPath is the path to the file relative to the device's CirrusDir.",
+                    "description": "RelPath is the path to the file relative to the device's FilesDir.",
                     "type": "string"
                 },
                 "serial": {

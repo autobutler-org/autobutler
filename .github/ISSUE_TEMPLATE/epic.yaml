@@ -21,7 +21,7 @@ body:
         - Photos
         - Docs
         - Books
-        - Cirrus (Drive)
+        - Files (Drive)
         - General UI
         - Backend
       default: 0

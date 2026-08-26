@@ -19,17 +19,17 @@ func makeSource(t *testing.T, name, serial string, files map[string]string) Sour
 		os.MkdirAll(filepath.Dir(full), 0755)
 		os.WriteFile(full, []byte(content), 0644)
 	}
-	return SourceDevice{Name: name, Serial: serial, CirrusDir: dir}
+	return SourceDevice{Name: name, Serial: serial, FilesDir: dir}
 }
 
 func makeTarget(t *testing.T) *storageutil.ManagedDevice {
 	t.Helper()
 	dir := t.TempDir()
-	cirrus := filepath.Join(dir, "cirrus")
-	os.MkdirAll(cirrus, 0755)
+	files := filepath.Join(dir, "files")
+	os.MkdirAll(files, 0755)
 	return &storageutil.ManagedDevice{
-		DataDir:   dir,
-		CirrusDir: cirrus,
+		DataDir:  dir,
+		FilesDir: files,
 	}
 }
 
@@ -66,9 +66,9 @@ func TestSnapshotBackup_MultiSource(t *testing.T) {
 	}
 
 	// Verify files are namespaced by device.
-	assertFileContent(t, filepath.Join(target.CirrusDir, "Drive A_SERIAL-A", "photos/a.jpg"), "photo-a")
-	assertFileContent(t, filepath.Join(target.CirrusDir, "Drive A_SERIAL-A", "docs/a.txt"), "doc-a")
-	assertFileContent(t, filepath.Join(target.CirrusDir, "Drive B_SERIAL-B", "photos/b.jpg"), "photo-b")
+	assertFileContent(t, filepath.Join(target.FilesDir, "Drive A_SERIAL-A", "photos/a.jpg"), "photo-a")
+	assertFileContent(t, filepath.Join(target.FilesDir, "Drive A_SERIAL-A", "docs/a.txt"), "doc-a")
+	assertFileContent(t, filepath.Join(target.FilesDir, "Drive B_SERIAL-B", "photos/b.jpg"), "photo-b")
 
 	if job.Status != BackupStatusCompleted {
 		t.Errorf("expected COMPLETED, got %s", job.Status)
@@ -99,7 +99,7 @@ func TestSnapshotBackup_InternalDevice(t *testing.T) {
 		t.Fatalf("SnapshotBackup failed: %v", err)
 	}
 
-	assertFileContent(t, filepath.Join(target.CirrusDir, "internal", "data.txt"), "internal-data")
+	assertFileContent(t, filepath.Join(target.FilesDir, "internal", "data.txt"), "internal-data")
 }
 
 func TestSnapshotBackup_SmartSkip(t *testing.T) {
@@ -109,12 +109,12 @@ func TestSnapshotBackup_SmartSkip(t *testing.T) {
 	target := makeTarget(t)
 
 	// Pre-populate target with matching file.
-	destDir := filepath.Join(target.CirrusDir, "Drive_SER1")
+	destDir := filepath.Join(target.FilesDir, "Drive_SER1")
 	os.MkdirAll(destDir, 0755)
 	destFile := filepath.Join(destDir, "file.txt")
 	os.WriteFile(destFile, []byte("content"), 0644)
 	// Set mtime to match source.
-	srcInfo, _ := os.Stat(filepath.Join(src.CirrusDir, "file.txt"))
+	srcInfo, _ := os.Stat(filepath.Join(src.FilesDir, "file.txt"))
 	os.Chtimes(destFile, srcInfo.ModTime(), srcInfo.ModTime())
 
 	store := NewInMemoryBackupJobStore()
@@ -145,7 +145,7 @@ func TestSnapshotBackup_OverwriteStale(t *testing.T) {
 	target := makeTarget(t)
 
 	// Pre-populate target with smaller (stale) file.
-	destDir := filepath.Join(target.CirrusDir, "Drive_SER1")
+	destDir := filepath.Join(target.FilesDir, "Drive_SER1")
 	os.MkdirAll(destDir, 0755)
 	os.WriteFile(filepath.Join(destDir, "file.txt"), []byte("old"), 0644)
 

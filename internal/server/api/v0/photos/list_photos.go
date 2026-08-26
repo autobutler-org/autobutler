@@ -131,7 +131,7 @@ func listPhotos(c *gin.Context) *serverutil.Response {
 			if device.UsbInfo != nil {
 				deviceSerial = device.UsbInfo.GetSerial()
 			}
-			photos, err := photoutil.FindAllPhotosRecursively(device.CirrusDir)
+			photos, err := photoutil.FindAllPhotosRecursively(device.FilesDir)
 			if err != nil {
 				continue
 			}

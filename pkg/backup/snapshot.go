@@ -58,7 +58,7 @@ func SnapshotBackup(
 			DeviceSerial: src.Serial,
 			DeviceName:   src.Name,
 		}
-		files, bytes, err := scanDir(src.CirrusDir)
+		files, bytes, err := scanDir(src.FilesDir)
 		if err != nil {
 			return failJob(ctx, params, fmt.Errorf("scan %s: %w", src.Name, err))
 		}
@@ -84,9 +84,9 @@ func SnapshotBackup(
 	lastPublish := time.Time{}
 	for i, src := range sources {
 		dirName := deviceDirName(src.Name, src.Serial)
-		targetBase := filepath.Join(target.CirrusDir, dirName)
+		targetBase := filepath.Join(target.FilesDir, dirName)
 
-		srcFS := os.DirFS(src.CirrusDir)
+		srcFS := os.DirFS(src.FilesDir)
 		err := fs.WalkDir(srcFS, ".", func(relPath string, d fs.DirEntry, walkErr error) error {
 			if walkErr != nil {
 				return walkErr
@@ -102,7 +102,7 @@ func SnapshotBackup(
 				return os.MkdirAll(targetPath, 0755)
 			}
 
-			srcPath := filepath.Join(src.CirrusDir, relPath)
+			srcPath := filepath.Join(src.FilesDir, relPath)
 			srcInfo, err := os.Stat(srcPath)
 			if err != nil {
 				return fmt.Errorf("stat source: %w", err)
@@ -168,17 +168,17 @@ func SnapshotBackup(
 
 	// Phase 3: vault export (if requested).
 	if params.Vault != nil {
-		if _, err := ExportVault(ctx, params.Vault.Queries, params.Vault.LiveKey, params.Vault.RecoveryPassword, target.CirrusDir); err != nil {
+		if _, err := ExportVault(ctx, params.Vault.Queries, params.Vault.LiveKey, params.Vault.RecoveryPassword, target.FilesDir); err != nil {
 			return failJob(ctx, params, fmt.Errorf("vault export: %w", err))
 		}
 	}
 
 	// Phase 4: generate integrity manifest.
-	manifest, err := GenerateManifest(target.CirrusDir)
+	manifest, err := GenerateManifest(target.FilesDir)
 	if err != nil {
 		return failJob(ctx, params, fmt.Errorf("generate manifest: %w", err))
 	}
-	if err := WriteManifest(manifest, target.CirrusDir); err != nil {
+	if err := WriteManifest(manifest, target.FilesDir); err != nil {
 		return failJob(ctx, params, fmt.Errorf("write manifest: %w", err))
 	}
 

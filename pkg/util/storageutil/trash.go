@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// TrashDir is the directory inside each device's CirrusDir where trashed files live.
+// TrashDir is the directory inside each device's FilesDir where trashed files live.
 const TrashDir = ".trash"
 
 // TrashRetentionDays is how long items stay in the trash before auto-expiry.
@@ -16,7 +16,7 @@ const TrashRetentionDays = 30
 
 // TrashEntry is the metadata stored alongside each trashed item.
 type TrashEntry struct {
-	OriginalPath string    `json:"originalPath"` // relative to CirrusDir
+	OriginalPath string    `json:"originalPath"` // relative to FilesDir
 	TrashedAt    time.Time `json:"trashedAt"`
 }
 
@@ -37,35 +37,35 @@ type TrashFilesResult struct {
 	RootDir string
 }
 
-// TrashFiles moves files/directories into the .trash folder under the device's CirrusDir.
+// TrashFiles moves files/directories into the .trash folder under the device's FilesDir.
 func (s *StorageService) TrashFiles(params TrashFilesParams) (*TrashFilesResult, error) {
 	device, err := s.FindManagedDeviceBySerial(params.DeviceSerial)
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
 
-	defaultCirrusDir, err := GetCirrusDir()
+	defaultFilesDir, err := GetFilesDir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+		return nil, fmt.Errorf("failed to get files directory: %w", err)
 	}
 
-	return TrashFilesImpl(params, device, defaultCirrusDir)
+	return TrashFilesImpl(params, device, defaultFilesDir)
 }
 
 // TrashFilesImpl is the testable core of TrashFiles.
-func TrashFilesImpl(params TrashFilesParams, device *ManagedDevice, defaultCirrusDir string) (*TrashFilesResult, error) {
-	cirrusDir := defaultCirrusDir
+func TrashFilesImpl(params TrashFilesParams, device *ManagedDevice, defaultFilesDir string) (*TrashFilesResult, error) {
+	filesDir := defaultFilesDir
 	if device != nil {
-		cirrusDir = device.CirrusDir
+		filesDir = device.FilesDir
 	}
 
-	trashRoot := filepath.Join(cirrusDir, TrashDir)
+	trashRoot := filepath.Join(filesDir, TrashDir)
 	if err := os.MkdirAll(trashRoot, 0o700); err != nil {
 		return nil, fmt.Errorf("failed to create trash directory: %w", err)
 	}
 
 	for _, filePath := range params.FilePaths {
-		fullPath, err := safeJoin(cirrusDir, params.RootDir, filePath)
+		fullPath, err := safeJoin(filesDir, params.RootDir, filePath)
 		if err != nil {
 			return nil, fmt.Errorf("invalid file path: %w", err)
 		}
@@ -110,22 +110,22 @@ func (s *StorageService) RestoreFile(params RestoreFileParams) (*RestoreFileResu
 		return nil, err // coverage: ignore
 	}
 
-	defaultCirrusDir, err := GetCirrusDir()
+	defaultFilesDir, err := GetFilesDir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+		return nil, fmt.Errorf("failed to get files directory: %w", err)
 	}
 
-	return RestoreFileImpl(params, device, defaultCirrusDir)
+	return RestoreFileImpl(params, device, defaultFilesDir)
 }
 
 // RestoreFileImpl is the testable core of RestoreFile.
-func RestoreFileImpl(params RestoreFileParams, device *ManagedDevice, defaultCirrusDir string) (*RestoreFileResult, error) {
-	cirrusDir := defaultCirrusDir
+func RestoreFileImpl(params RestoreFileParams, device *ManagedDevice, defaultFilesDir string) (*RestoreFileResult, error) {
+	filesDir := defaultFilesDir
 	if device != nil {
-		cirrusDir = device.CirrusDir
+		filesDir = device.FilesDir
 	}
 
-	trashRoot := filepath.Join(cirrusDir, TrashDir)
+	trashRoot := filepath.Join(filesDir, TrashDir)
 	trashDest := filepath.Join(trashRoot, params.TrashName)
 
 	metaBytes, err := os.ReadFile(trashMetaFile(trashDest))
@@ -138,7 +138,7 @@ func RestoreFileImpl(params RestoreFileParams, device *ManagedDevice, defaultCir
 		return nil, fmt.Errorf("corrupt trash metadata: %w", err)
 	}
 
-	restoreTo, err := safeJoin(cirrusDir, meta.OriginalPath)
+	restoreTo, err := safeJoin(filesDir, meta.OriginalPath)
 	if err != nil {
 		return nil, fmt.Errorf("invalid original path in metadata: %w", err)
 	}
@@ -175,22 +175,22 @@ func (s *StorageService) ListTrash(params ListTrashParams) ([]TrashItem, error) 
 		return nil, err // coverage: ignore
 	}
 
-	defaultCirrusDir, err := GetCirrusDir()
+	defaultFilesDir, err := GetFilesDir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+		return nil, fmt.Errorf("failed to get files directory: %w", err)
 	}
 
-	return ListTrashImpl(params, device, defaultCirrusDir)
+	return ListTrashImpl(params, device, defaultFilesDir)
 }
 
 // ListTrashImpl is the testable core of ListTrash.
-func ListTrashImpl(params ListTrashParams, device *ManagedDevice, defaultCirrusDir string) ([]TrashItem, error) {
-	cirrusDir := defaultCirrusDir
+func ListTrashImpl(params ListTrashParams, device *ManagedDevice, defaultFilesDir string) ([]TrashItem, error) {
+	filesDir := defaultFilesDir
 	if device != nil {
-		cirrusDir = device.CirrusDir
+		filesDir = device.FilesDir
 	}
 
-	trashRoot := filepath.Join(cirrusDir, TrashDir)
+	trashRoot := filepath.Join(filesDir, TrashDir)
 	entries, err := os.ReadDir(trashRoot)
 	if os.IsNotExist(err) {
 		return nil, nil
@@ -233,13 +233,13 @@ func ListTrashImpl(params ListTrashParams, device *ManagedDevice, defaultCirrusD
 
 // PurgeExpiredTrash deletes items that have been in the trash longer than TrashRetentionDays.
 // Call this from a background ticker.
-func PurgeExpiredTrashImpl(device *ManagedDevice, defaultCirrusDir string) error {
-	cirrusDir := defaultCirrusDir
+func PurgeExpiredTrashImpl(device *ManagedDevice, defaultFilesDir string) error {
+	filesDir := defaultFilesDir
 	if device != nil {
-		cirrusDir = device.CirrusDir
+		filesDir = device.FilesDir
 	}
 
-	trashRoot := filepath.Join(cirrusDir, TrashDir)
+	trashRoot := filepath.Join(filesDir, TrashDir)
 	entries, err := os.ReadDir(trashRoot)
 	if os.IsNotExist(err) {
 		return nil

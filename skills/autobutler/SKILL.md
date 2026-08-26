@@ -57,7 +57,7 @@ Alert if `diskPercent > 85` or `temperatureCelsius > 70`.
 
 ### List files
 ```bash
-curl -s "$BUTLER_URL/api/v1/cirrus" -H "Authorization: Bearer $TOKEN"
+curl -s "$BUTLER_URL/api/v0/files" -H "Authorization: Bearer $TOKEN"
 # With subdirectory: ?rootDir=Photos
 # With specific device: ?serial=<serial>
 ```

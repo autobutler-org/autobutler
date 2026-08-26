@@ -22,14 +22,14 @@ import (
 // extractFile godoc
 // @Summary Extract a zip archive in place
 // @Description Extracts a zip file into a subdirectory named after the archive (without its extension) in the same directory
-// @Tags cirrus
+// @Tags files
 // @Produce json
 // @Param filePath query string true "Path to the zip file to extract"
 // @Param serial query string false "Device serial number"
 // @Success 200 {object} serverutil.Response "OK"
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Router /cirrus/extract [post]
+// @Router /files/extract [post]
 func extractFile(c *gin.Context) *serverutil.Response {
 	filePath := c.Query("filePath")
 	serial := c.Query("serial")
@@ -163,5 +163,5 @@ func extractFileVFS(c *gin.Context, fsys vfs.VFS, filePath string) error {
 }
 
 var extractFileRoute = serverutil.ApiRoute(
-	"POST", "/cirrus/extract", extractFile,
+	"POST", "/files/extract", extractFile,
 )

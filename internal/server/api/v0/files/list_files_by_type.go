@@ -16,14 +16,14 @@ import (
 // listFilesByType godoc
 // @Summary List all files of a given type
 // @Description Recursively walks all managed devices and returns files whose fileType matches the given value, sorted newest-first.
-// @Tags cirrus
+// @Tags files
 // @Produce json
 // @Param fileType query string true "File type to filter by (e.g. abdoc, absheet)"
 // @Param serial query []string false "Filter by device serial(s)"
 // @Success 200 {array} FileNodeWithTimeJSON
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Router /cirrus/by-type [get]
+// @Router /files/by-type [get]
 func listFilesByType(c *gin.Context) *serverutil.Response {
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	if !ok {
@@ -101,13 +101,13 @@ func listFilesByType(c *gin.Context) *serverutil.Response {
 	}
 
 	for _, device := range selectedDevices {
-		cirrusDir := device.CirrusDir
+		filesDir := device.FilesDir
 		deviceSerial := DefaultDeviceSerial
 		if device.UsbInfo != nil {
 			deviceSerial = device.UsbInfo.GetSerial()
 		}
 
-		infos, walkErr := storageutil.StatFilesInDir(cirrusDir, device.Name, device.DataDir, deviceSerial)
+		infos, walkErr := storageutil.StatFilesInDir(filesDir, device.Name, device.DataDir, deviceSerial)
 		if walkErr != nil {
 			continue
 		}
@@ -118,7 +118,7 @@ func listFilesByType(c *gin.Context) *serverutil.Response {
 			if storageutil.DetermineFileTypeFromPath(info.FullPath) != targetType {
 				continue
 			}
-			relPath, relErr := filepath.Rel(cirrusDir, info.FullPath)
+			relPath, relErr := filepath.Rel(filesDir, info.FullPath)
 			if relErr != nil {
 				relPath = info.Name()
 			}
@@ -147,7 +147,7 @@ func listFilesByType(c *gin.Context) *serverutil.Response {
 }
 
 var listFilesByTypeRoute = serverutil.ApiRoute(
-	"GET", "/cirrus/by-type", func(c *gin.Context) *serverutil.Response {
+	"GET", "/files/by-type", func(c *gin.Context) *serverutil.Response {
 		return listFilesByType(c)
 	},
 )

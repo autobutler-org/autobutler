@@ -22,16 +22,16 @@ import (
 // downloadArchiveFile godoc
 // @Summary Download a single file from inside an archive
 // @Description Reads the specified entry from the archive and streams it to the client. No data is extracted to disk.
-// @Tags cirrus
+// @Tags files
 // @Produce octet-stream
-// @Param filePath query string true "Path to the archive file (relative to device cirrus directory)"
+// @Param filePath query string true "Path to the archive file (relative to device files directory)"
 // @Param entryPath query string true "Path of the entry inside the archive"
 // @Param serial query string false "Device serial number"
 // @Success 200 {file} binary "File content"
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 404 {object} serverutil.Response "Entry not found"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Router /cirrus/download-archive-file [get]
+// @Router /files/download-archive-file [get]
 func downloadArchiveFile(c *gin.Context) *serverutil.Response {
 	archivePath := c.Query("filePath")
 	entryPath := c.Query("entryPath")
@@ -103,7 +103,7 @@ func downloadArchiveFile(c *gin.Context) *serverutil.Response {
 		DeviceSerial: serial,
 	})
 	if err != nil {
-		log.Printf("[cirrus] ReadArchiveEntry failed: path=%q entry=%q err=%v", archivePath, entryPath, err)
+		log.Printf("[files] ReadArchiveEntry failed: path=%q entry=%q err=%v", archivePath, entryPath, err)
 	}
 	if err != nil {
 		return serverutil.InternalServerError(err)
@@ -120,7 +120,7 @@ func downloadArchiveFile(c *gin.Context) *serverutil.Response {
 }
 
 var downloadArchiveFileRoute = serverutil.ApiRoute(
-	"GET", "/cirrus/download-archive-file", func(c *gin.Context) *serverutil.Response {
+	"GET", "/files/download-archive-file", func(c *gin.Context) *serverutil.Response {
 		return downloadArchiveFile(c)
 	},
 )

@@ -89,7 +89,7 @@ internal/
   db/                   sqlc-generated database layer + migrations
   server/api/v1/        API handlers (one file per route group)
     albums/             Photo album CRUD
-    cirrus/             File browser and file-type listing
+    files/              File browser and file-type listing
     favorites/          Favorites toggle, list, and check
     photos/             Photo listing, metadata, rotation
     thumbnails/         Thumbnail generation and cache
@@ -102,9 +102,9 @@ pkg/util/               Shared utilities
   storageutil/          File system and device utilities
   updateutil/           Version/update logic
 lib/                    Flutter frontend
-  models/               Data models (CirrusFileNode, PhotoAlbum, etc.)
+  models/               Data models (FileNode, PhotoAlbum, etc.)
   pages/                UI pages (photos, docs, sheets, file browser, etc.)
-  services/             API clients (CirrusService, FavoritesService, etc.)
+  services/             API clients (FilesService, FavoritesService, etc.)
   utils/                Shared utilities (SafeSetStateMixin, path helpers)
   widgets/              Reusable components
     layout/             AppBar, drawer, brand button

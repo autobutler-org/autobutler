@@ -13,7 +13,7 @@ import (
 )
 
 // StorageServiceVFS adapts storageutil.StorageService to the VFS interface.
-// It is registered as the "files" namespace and backs the /api/v0/cirrus
+// It is registered as the "files" namespace and backs the /api/v0/files
 // handlers during the Phase 1 migration, with no behavior change.
 type StorageServiceVFS struct {
 	svc         *storageutil.StorageService
@@ -35,7 +35,7 @@ func serialSet(serials []string) map[string]bool {
 }
 
 // List returns the contents of the given directory path across all managed devices,
-// deduplicating folders (same logic as the existing cirrus listFilesImpl).
+// deduplicating folders (same logic as the existing files listFilesImpl).
 func (v *StorageServiceVFS) List(_ context.Context, path string, filter *ListFilter) ([]FileInfo, error) {
 	devices, err := v.svc.GetManagedDevices()
 	if err != nil {
@@ -61,7 +61,7 @@ func (v *StorageServiceVFS) List(_ context.Context, path string, filter *ListFil
 		if allowedSerials != nil && !allowedSerials[serial] {
 			continue
 		}
-		fullDir, err := storageutil.SafeJoin(device.CirrusDir, path)
+		fullDir, err := storageutil.SafeJoin(device.FilesDir, path)
 		if err != nil {
 			continue
 		}
@@ -102,19 +102,19 @@ func (v *StorageServiceVFS) List(_ context.Context, path string, filter *ListFil
 	return out, nil
 }
 
-// cirrusDir resolves the base directory for this namespace, preferring the
-// managed device's cirrus directory over the default. StatFile, DownloadFile,
+// filesDir resolves the base directory for this namespace, preferring the
+// managed device's files directory over the default. StatFile, DownloadFile,
 // and DeleteFiles all resolve this way internally; this exists so the paths
 // derived directly in this file agree with them.
-func (v *StorageServiceVFS) cirrusDir() (string, error) {
+func (v *StorageServiceVFS) filesDir() (string, error) {
 	device, err := v.svc.FindManagedDeviceBySerial("")
 	if err != nil {
 		return "", err
 	}
-	if device != nil && device.CirrusDir != "" {
-		return device.CirrusDir, nil
+	if device != nil && device.FilesDir != "" {
+		return device.FilesDir, nil
 	}
-	return storageutil.GetCirrusDir()
+	return storageutil.GetFilesDir()
 }
 
 // mimeTypeForName returns the MIME type for a file name. Image formats
@@ -158,8 +158,8 @@ func (v *StorageServiceVFS) Open(_ context.Context, path string) (io.ReadCloser,
 		return nil, ErrNotFound
 	}
 	// Use the path DownloadFile already resolved. It accounts for the managed
-	// device's cirrus directory, which may differ from the default one — see
-	// #1538, where re-deriving from GetCirrusDir() here made Stat and Open
+	// device's files directory, which may differ from the default one — see
+	// #1538, where re-deriving from GetFilesDir() here made Stat and Open
 	// disagree and downloads returned an empty body.
 	//
 	// DownloadFile validates via safeJoin internally; Clean again so static
@@ -176,18 +176,18 @@ func (v *StorageServiceVFS) Open(_ context.Context, path string) (io.ReadCloser,
 	return f, nil
 }
 
-// Write writes a file into the cirrus directory of the managed device that
-// backs this namespace, falling back to the default cirrus directory when no
+// Write writes a file into the files directory of the managed device that
+// backs this namespace, falling back to the default files directory when no
 // device is present. Resolving the same way Stat and Open do keeps a written
 // file findable by a subsequent read (#1538).
 func (v *StorageServiceVFS) Write(_ context.Context, path string, r io.Reader, opts WriteOptions) error {
-	cirrusDir, err := v.cirrusDir()
+	filesDir, err := v.filesDir()
 	if err != nil {
 		return err
 	}
 	// filepath.Clean before SafeJoin so static analyzers (CodeQL go/path-injection)
 	// can follow the traversal guard rather than seeing tainted data reach os.Create.
-	safePath, err := storageutil.SafeJoin(cirrusDir, filepath.Clean(path))
+	safePath, err := storageutil.SafeJoin(filesDir, filepath.Clean(path))
 	if err != nil {
 		return ErrPermissionDenied
 	}

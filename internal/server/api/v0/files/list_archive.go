@@ -18,15 +18,15 @@ import (
 // listArchive godoc
 // @Summary List contents of an archive file at a given virtual path
 // @Description Opens the archive at filePath and returns the direct children of subPath as FileNodeJSON entries. No data is extracted to disk — only archive headers are read.
-// @Tags cirrus
+// @Tags files
 // @Produce json
-// @Param filePath query string true "Path to the archive file (relative to device cirrus directory)"
+// @Param filePath query string true "Path to the archive file (relative to device files directory)"
 // @Param subPath query string false "Virtual subdirectory inside the archive to list (empty = root)"
 // @Param serial query string false "Device serial number"
 // @Success 200 {array} FileNodeJSON
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Router /cirrus/list-archive [get]
+// @Router /files/list-archive [get]
 func listArchive(c *gin.Context) *serverutil.Response {
 	filePath := c.Query("filePath")
 	if filePath == "" {
@@ -189,7 +189,7 @@ func listArchive(c *gin.Context) *serverutil.Response {
 }
 
 var listArchiveRoute = serverutil.ApiRoute(
-	"GET", "/cirrus/list-archive", func(c *gin.Context) *serverutil.Response {
+	"GET", "/files/list-archive", func(c *gin.Context) *serverutil.Response {
 		return listArchive(c)
 	},
 )

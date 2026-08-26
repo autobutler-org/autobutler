@@ -123,7 +123,7 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 
 	// Fallback: direct disk access.
 	{
-		filesDir, err := storageutil.GetCirrusDir()
+		filesDir, err := storageutil.GetFilesDir()
 		if err != nil {
 			return serverutil.InternalServerError(err)
 		}
@@ -131,7 +131,7 @@ func getPhotoMetadata(c *gin.Context) *serverutil.Response {
 			if devices, err := deps.StorageService().GetManagedDevices(); err == nil {
 				for _, d := range devices {
 					if d.UsbInfo != nil && d.UsbInfo.GetSerial() == serial {
-						filesDir = d.CirrusDir
+						filesDir = d.FilesDir
 						break
 					}
 				}
@@ -205,13 +205,13 @@ rotations:
 
 	// Live-video companion: resolve via disk only (VFS doesn't expose sidecar detection).
 	liveVideoPath := ""
-	if filesDir, err := storageutil.GetCirrusDir(); err == nil {
+	if filesDir, err := storageutil.GetFilesDir(); err == nil {
 		searchDir := filesDir
 		if serial != "" {
 			if devices, dErr := deps.StorageService().GetManagedDevices(); dErr == nil {
 				for _, d := range devices {
 					if d.UsbInfo != nil && d.UsbInfo.GetSerial() == serial {
-						searchDir = d.CirrusDir
+						searchDir = d.FilesDir
 						break
 					}
 				}

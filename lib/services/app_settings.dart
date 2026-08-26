@@ -103,7 +103,7 @@ class AppSettings {
 
   /// Session token set after a successful login or setup.
   /// Persisted via [FlutterSecureStorage] — survives app restarts.
-  /// Populated by [AuthService] after login/setup; consumed by [CirrusService].
+  /// Populated by [AuthService] after login/setup; consumed by [FilesService].
   String? get sessionToken => _sessionToken;
 
   Future<void> setSessionToken(String? token) async {

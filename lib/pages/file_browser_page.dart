@@ -11,7 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:quark/controllers/file_browser_cache.dart';
 import 'package:quark/controllers/file_browser_controller.dart';
-import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/models/file_node.dart';
 import 'package:quark/pages/document_editor_page.dart';
 import 'package:quark/pages/generic_file_viewer_page.dart';
 import 'package:quark/pages/image_viewer_page.dart';
@@ -19,11 +19,11 @@ import 'package:quark/pages/spreadsheet_editor_page.dart';
 import 'package:quark/pages/video_viewer_page.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/services/events_service.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
-import 'package:quark/utils/cirrus_route_path_utils.dart';
+import 'package:quark/utils/files_route_path_utils.dart';
 import 'package:quark/utils/file_browser_dialog_utils.dart';
 import 'package:quark/utils/file_browser_drag_config.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
@@ -60,10 +60,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   bool _fabVisible = true;
   double _lastScrollOffset = 0.0;
 
-  Future<List<CirrusFileNode>> _filesFuture = Future.value(
-    const <CirrusFileNode>[],
+  Future<List<FileNode>> _filesFuture = Future.value(
+    const <FileNode>[],
   );
-  List<CirrusFileNode>?
+  List<FileNode>?
   _cachedFiles; // last successful result, shown during refresh
   int _generation = 0; // incremented on each reload to discard stale fetches
   String _currentPath = '';
@@ -73,7 +73,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   String? _pendingFileOpen;
 
   bool _handlingPendingFile = false;
-  _CirrusRouteFailure? _routeFailure;
+  _FilesRouteFailure? _routeFailure;
   bool _isGridView = false;
 
   /// When true, files from all devices are shown merged (unified).
@@ -100,13 +100,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   // Search state
   bool _isSearchMode = false;
-  Future<List<CirrusFileNode>>? _searchFuture;
+  Future<List<FileNode>>? _searchFuture;
   String? _searchQuery;
 
   // Multi-select / batch delete state (#986)
   bool _selectionMode = false;
   final Set<String> _selectedPaths = {};
-  List<CirrusFileNode> _allCurrentFiles = [];
+  List<FileNode> _allCurrentFiles = [];
 
   // Archive browser state — non-null when navigating inside an archive.
   _ArchiveContext? _archiveContext;
@@ -186,7 +186,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     _noHostSelected = AppSettings.instance.activeHost == null;
     if (_noHostSelected) {
       setState(() {
-        _filesFuture = Future.value(const <CirrusFileNode>[]);
+        _filesFuture = Future.value(const <FileNode>[]);
       });
       return;
     }
@@ -247,7 +247,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   void _reloadFiles() {
     _noHostSelected = AppSettings.instance.activeHost == null;
     if (_noHostSelected) {
-      _filesFuture = Future.value(const <CirrusFileNode>[]);
+      _filesFuture = Future.value(const <FileNode>[]);
       return;
     }
 
@@ -255,9 +255,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     final serials = _serialsForActiveDevices();
     final archive = _archiveContext;
 
-    Future<List<CirrusFileNode>> fetchFuture;
+    Future<List<FileNode>> fetchFuture;
     if (archive != null) {
-      fetchFuture = CirrusService.listArchiveEntries(
+      fetchFuture = FilesService.listArchiveEntries(
         archive.archivePath,
         subPath: archive.subPath,
         serial: serials.isNotEmpty ? serials.first : null,
@@ -290,7 +290,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   // ── Multi-select / batch delete (#986) ──────────────────────────────────
 
   void _onSelectionChanged(
-    CirrusFileNode node, {
+    FileNode node, {
     required bool enterSelectionMode,
   }) {
     setState(() {
@@ -379,7 +379,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   /// Immediately remove a node from the displayed list.
   /// If the server call fails, [_refreshFileState] will reconcile.
-  void _optimisticRemove(CirrusFileNode node) {
+  void _optimisticRemove(FileNode node) {
     final current = _cachedFiles;
     if (current == null) return;
     final updated = current.where((n) => n.apiPath != node.apiPath).toList();
@@ -393,7 +393,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   void _optimisticAddFolder(String folderName) {
     final current = _cachedFiles;
     if (current == null) return;
-    final placeholder = CirrusFileNode(
+    final placeholder = FileNode(
       name: folderName,
       size: 0,
       isDir: true,
@@ -776,7 +776,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         filename: fileName,
       );
 
-      await CirrusService.uploadFilesFromFormData(_currentPath, [file]);
+      await FilesService.uploadFilesFromFormData(_currentPath, [file]);
 
       if (!mounted) return;
 
@@ -811,7 +811,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   }
 
   Future<void> _handleFileMenuAction(
-    CirrusFileNode node,
+    FileNode node,
     FileMenuAction action,
   ) async {
     // When inside an archive, handle download specially via the archive endpoint.
@@ -821,12 +821,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         final entryPath = archive.subPath.isEmpty
             ? node.name
             : '${archive.subPath}/${node.name}';
-        final bytes = await CirrusService.downloadArchiveFileBytes(
+        final bytes = await FilesService.downloadArchiveFileBytes(
           archive.archivePath,
           entryPath,
         );
         if (bytes != null && mounted) {
-          await CirrusService.saveBytesToFile(bytes, node.name);
+          await FilesService.saveBytesToFile(bytes, node.name);
           _showMessage('Downloaded ${node.name}');
         }
       } catch (_) {
@@ -906,7 +906,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   // ── CSV → .absheet conversion (#1019) ──────────────────────────────────
 
-  Future<void> _handleCsvOpen(CirrusFileNode node) async {
+  Future<void> _handleCsvOpen(FileNode node) async {
     if (!mounted) return;
 
     final confirm = await showDialog<bool>(
@@ -935,7 +935,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     try {
       // Download the CSV.
-      final bytes = await CirrusService.downloadFileBytes(
+      final bytes = await FilesService.downloadFileBytes(
         node.apiPath,
         serial: serialOrNull(node.deviceSerial),
         fileName: node.name,
@@ -978,7 +978,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         utf8.encode(absheetJson),
         filename: absheetName,
       );
-      await CirrusService.uploadFilesFromFormData(
+      await FilesService.uploadFilesFromFormData(
         folder,
         [uploadFile],
         serial: serialOrNull(node.deviceSerial),
@@ -989,7 +989,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       // Refresh the file list so the new .absheet appears.
       _refreshFileState();
 
-      // Open the new .absheet through the canonical Cirrus file route.
+      // Open the new .absheet through the canonical files route.
       final absheetPath = folder.isEmpty ? absheetName : '$folder/$absheetName';
       _openFileViaRoute(absheetPath);
     } catch (e) {
@@ -998,7 +998,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
   }
 
-  Future<void> _handleOpenNode(CirrusFileNode node) async {
+  Future<void> _handleOpenNode(FileNode node) async {
     if (node.isDir) {
       _openDirectory(node);
       return;
@@ -1058,7 +1058,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
-    // All other file types — navigate to /cirrus/<path> which resolves the
+    // All other file types — navigate to /files/<path> which resolves the
     // file type via FileViewerPage and opens the correct viewer. This updates
     // the URL bar so the link is always shareable.
     _openFileViaRoute(node.apiPath);
@@ -1075,7 +1075,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     '.tif',
   };
 
-  Future<void> _openArchiveFile(CirrusFileNode node) async {
+  Future<void> _openArchiveFile(FileNode node) async {
     final archive = _archiveContext!;
     final entryPath = archive.subPath.isEmpty
         ? node.name
@@ -1085,7 +1085,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         : '';
 
     try {
-      final bytes = await CirrusService.downloadArchiveFileBytes(
+      final bytes = await FilesService.downloadArchiveFileBytes(
         archive.archivePath,
         entryPath,
       );
@@ -1111,14 +1111,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       }
 
       // Fallback: download the file.
-      await CirrusService.saveBytesToFile(bytes, node.name);
+      await FilesService.saveBytesToFile(bytes, node.name);
       if (mounted) _showMessage('Downloaded ${node.name}');
     } catch (e) {
       if (mounted) _showMessage('Failed to open file: $e');
     }
   }
 
-  void _openDirectory(CirrusFileNode node) {
+  void _openDirectory(FileNode node) {
     if (!node.isDir) {
       return;
     }
@@ -1138,7 +1138,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   }
 
   /// Enter an archive file as a virtual directory.
-  void _openArchive(CirrusFileNode node) {
+  void _openArchive(FileNode node) {
     setState(() {
       _archiveContext = _ArchiveContext(
         archivePath: node.apiPath,
@@ -1153,7 +1153,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   }
 
   /// Descend into a subdirectory inside the current archive.
-  void _descendIntoArchiveDir(CirrusFileNode node) {
+  void _descendIntoArchiveDir(FileNode node) {
     final ctx = _archiveContext!;
     final newSubPath = ctx.subPath.isEmpty
         ? node.name
@@ -1179,7 +1179,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   void _handleSearchChanged(String query) {
     setState(() {
       _isSearchMode = true;
-      _searchFuture = CirrusService.searchFiles(query);
+      _searchFuture = FilesService.searchFiles(query);
       _searchQuery = query;
     });
   }
@@ -1192,7 +1192,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     });
   }
 
-  void _navigateToFolder(CirrusFileNode node) {
+  void _navigateToFolder(FileNode node) {
     // Use the node's API path to determine the containing folder and switch to it.
     final parent = parentPath(node.apiPath);
     _setPath(parent);
@@ -1238,7 +1238,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     if (normalized == _currentPath) {
       return;
     }
-    context.go(AppRoutes.cirrusPath(normalized));
+    context.go(AppRoutes.filesPath(normalized));
   }
 
   void _showMessage(String message) {
@@ -1272,7 +1272,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   }
 
   Widget _buildRouteResolutionLoadingShell(BuildContext context) {
-    final routeLabel = cirrusRouteDisplayPath(_currentPath);
+    final routeLabel = filesRouteDisplayPath(_currentPath);
     final isFileRoute = isLikelyFilePath(_currentPath);
 
     return Center(
@@ -1305,7 +1305,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     );
   }
 
-  Future<void> _retryRouteFailure(_CirrusRouteFailure failure) async {
+  Future<void> _retryRouteFailure(_FilesRouteFailure failure) async {
     if (!mounted) {
       return;
     }
@@ -1323,14 +1323,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   }
 
   Widget _buildFolderRouteErrorState(BuildContext context, Object error) {
-    final requestError = error is CirrusRequestException ? error : null;
+    final requestError = error is FilesRequestException ? error : null;
     final isMissingFolder = requestError?.statusCode == 404;
     final isUnauthorized =
         requestError?.statusCode == 401 || requestError?.statusCode == 403;
     final normalizedPath = normalizePath(_currentPath);
     final routeLabel = normalizedPath.isEmpty
-        ? AppRoutes.cirrus
-        : AppRoutes.cirrusPath(normalizedPath);
+        ? AppRoutes.files
+        : AppRoutes.filesPath(normalizedPath);
     final parent = parentPath(normalizedPath);
 
     return EmptyStateWidget(
@@ -1345,10 +1345,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           ? 'Folder not found'
           : 'Unable to open folder',
       subtext: isUnauthorized
-          ? 'You do not have access to $routeLabel. Retry, move up a level, or return to /cirrus.'
+          ? 'You do not have access to $routeLabel. Retry, move up a level, or return to /files.'
           : isMissingFolder
-          ? 'The folder at $routeLabel is unavailable. Retry, move up a level, or return to /cirrus.'
-          : 'Cirrus could not load $routeLabel. Retry, move up a level, or return to /cirrus.',
+          ? 'The folder at $routeLabel is unavailable. Retry, move up a level, or return to /files.'
+          : 'Files could not load $routeLabel. Retry, move up a level, or return to /files.',
       action: Wrap(
         alignment: WrapAlignment.center,
         spacing: 12,
@@ -1365,7 +1365,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             ),
           OutlinedButton(
             onPressed: _goHome,
-            child: const Text('Go to /cirrus'),
+            child: const Text('Go to /files'),
           ),
         ],
       ),
@@ -1374,9 +1374,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   Widget _buildFileRouteErrorState(
     BuildContext context,
-    _CirrusRouteFailure failure,
+    _FilesRouteFailure failure,
   ) {
-    final routeLabel = cirrusRouteDisplayPath(failure.requestedPath);
+    final routeLabel = filesRouteDisplayPath(failure.requestedPath);
     final parent = parentPath(failure.requestedPath);
 
     return EmptyStateWidget(
@@ -1389,10 +1389,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           ? 'File access denied'
           : 'File not found',
       subtext: failure.isUnsupported
-          ? 'No supported editor is available for $routeLabel. Retry, open the containing folder, or return to /cirrus.'
+          ? 'No supported editor is available for $routeLabel. Retry, open the containing folder, or return to /files.'
           : failure.isUnauthorized
-          ? 'You do not have access to $routeLabel. Retry, open the containing folder, or return to /cirrus.'
-          : 'The file at $routeLabel is unavailable. Retry, open the containing folder, or return to /cirrus.',
+          ? 'You do not have access to $routeLabel. Retry, open the containing folder, or return to /files.'
+          : 'The file at $routeLabel is unavailable. Retry, open the containing folder, or return to /files.',
       action: Wrap(
         alignment: WrapAlignment.center,
         spacing: 12,
@@ -1409,7 +1409,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             ),
           OutlinedButton(
             onPressed: _goHome,
-            child: const Text('Go to /cirrus'),
+            child: const Text('Go to /files'),
           ),
         ],
       ),
@@ -1421,7 +1421,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     if (!mounted) {
       return;
     }
-    context.go(AppRoutes.cirrusPath(filePath));
+    context.go(AppRoutes.filesPath(filePath));
   }
 
   Future<void> _openEditorWithUrl({
@@ -1431,13 +1431,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     FileBrowserCache.instance.markFileOpen(filePath);
 
     final navigator = Navigator.of(context);
-    final targetRoute = AppRoutes.cirrusPath(filePath);
+    final targetRoute = AppRoutes.filesPath(filePath);
     final routeBeforeOpen = GoRouter.of(
       context,
     ).routeInformationProvider.value.uri.toString();
     final shouldSyncRoute = routeBeforeOpen != targetRoute;
     final closeRoute = routeBeforeOpen.isEmpty || routeBeforeOpen == targetRoute
-        ? AppRoutes.cirrusPath(parentPath(filePath))
+        ? AppRoutes.filesPath(parentPath(filePath))
         : routeBeforeOpen;
     var routeSyncFailed = false;
     var routeSynced = false;
@@ -1488,7 +1488,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
 
     if (routeSyncFailed) {
-      context.go(AppRoutes.cirrusPath(parentPath(filePath)));
+      context.go(AppRoutes.filesPath(parentPath(filePath)));
     }
   }
 
@@ -1531,15 +1531,15 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     late final String fileType;
     late final String fileName;
     try {
-      final stat = await CirrusService.statFile(filePath);
+      final stat = await FilesService.statFile(filePath);
       isDir = stat.isDir;
       fileType = stat.fileType;
       fileName = stat.name.isEmpty ? filePath.split('/').last : stat.name;
-    } on CirrusRequestException catch (error) {
+    } on FilesRequestException catch (error) {
       if (!mounted) return;
       if (isLikelyFilePath(filePath)) {
         setState(() {
-          _routeFailure = _CirrusRouteFailure(
+          _routeFailure = _FilesRouteFailure(
             requestedPath: filePath,
             isFileRoute: true,
             isUnauthorized: error.statusCode == 401 || error.statusCode == 403,
@@ -1553,7 +1553,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       if (!mounted) return;
       if (isLikelyFilePath(filePath)) {
         setState(() {
-          _routeFailure = _CirrusRouteFailure(
+          _routeFailure = _FilesRouteFailure(
             requestedPath: filePath,
             isFileRoute: true,
           );
@@ -1575,7 +1575,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     // "No supported editor" dead end these used to hit (#1184). Shared with the
     // click path in _handleOpenNode so both agree.
     if (usesGenericFileViewer(fileType)) {
-      final node = CirrusFileNode(
+      final node = FileNode(
         name: filePath.split('/').last,
         size: 0,
         isDir: false,
@@ -1632,20 +1632,20 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           FileBrowserCache.instance.markFileClosed();
         }
         if (!mounted) return;
-        context.go(AppRoutes.cirrusPath(parentPath(filePath)));
+        context.go(AppRoutes.filesPath(parentPath(filePath)));
         return;
 
       case 'image':
         final serials = _serialsForActiveDevices();
         final serial = serials.isNotEmpty ? serials.first : null;
-        final bytes = await CirrusService.downloadFileBytes(
+        final bytes = await FilesService.downloadFileBytes(
           filePath,
           serial: serial,
         );
         if (!mounted) return;
         if (bytes == null) {
           setState(() {
-            _routeFailure = _CirrusRouteFailure(
+            _routeFailure = _FilesRouteFailure(
               requestedPath: filePath,
               isFileRoute: true,
             );
@@ -1662,14 +1662,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           ),
         );
         if (!mounted) return;
-        context.go(AppRoutes.cirrusPath(parentPath(filePath)));
+        context.go(AppRoutes.filesPath(parentPath(filePath)));
         return;
 
       case 'video':
       case 'audio':
         final videoSerials = _serialsForActiveDevices();
         final videoSerial = videoSerials.isNotEmpty ? videoSerials.first : null;
-        final url = CirrusService.constructMediaUrl(
+        final url = FilesService.constructMediaUrl(
           filePath,
           serial: videoSerial,
         );
@@ -1678,15 +1678,15 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           builder: (_, _) => VideoViewerPage(url: url, name: fileName),
         );
         if (!mounted) return;
-        context.go(AppRoutes.cirrusPath(parentPath(filePath)));
+        context.go(AppRoutes.filesPath(parentPath(filePath)));
         return;
 
       default:
         setState(() {
-          _routeFailure = _CirrusRouteFailure(
+          _routeFailure = _FilesRouteFailure(
             requestedPath: filePath,
             isFileRoute: true,
-            isUnsupported: !hasSupportedCirrusEditorForType(fileType),
+            isUnsupported: !hasSupportedFilesEditorForType(fileType),
           );
         });
         break;
@@ -1795,8 +1795,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: QuarkDrawer(
-        activeSection: QuarkDrawerSection.cirrus,
-        onTapCirrus: () {
+        activeSection: QuarkDrawerSection.files,
+        onTapFiles: () {
           Navigator.of(context).pop();
         },
         onTapPhotos: () {
@@ -1893,7 +1893,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             isGridView: _isGridView,
             isSearchMode: _isSearchMode,
             filesFuture: _isSearchMode
-                ? (_searchFuture ?? Future.value(const <CirrusFileNode>[]))
+                ? (_searchFuture ?? Future.value(const <FileNode>[]))
                 : _filesFuture,
             searchQuery: _searchQuery,
             onClose: () {
@@ -1973,7 +1973,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                         FileBrowserView(
                           filesFuture: _isSearchMode
                               ? (_searchFuture ??
-                                    Future.value(const <CirrusFileNode>[]))
+                                    Future.value(const <FileNode>[]))
                               : _filesFuture,
                           initialData: _isSearchMode ? null : _cachedFiles,
                           isInitialLoad: isInitialLoad,
@@ -2042,8 +2042,8 @@ class _FirstRunSetup extends StatefulWidget {
   State<_FirstRunSetup> createState() => _FirstRunSetupState();
 }
 
-class _CirrusRouteFailure {
-  const _CirrusRouteFailure({
+class _FilesRouteFailure {
+  const _FilesRouteFailure({
     required this.requestedPath,
     required this.isFileRoute,
     this.isUnauthorized = false,
@@ -2178,7 +2178,7 @@ class _ArchiveContext {
     required this.archiveSerial,
   });
 
-  /// Path to the archive file, relative to the device cirrus directory.
+  /// Path to the archive file, relative to the device files directory.
   final String archivePath;
 
   /// Current virtual subdirectory inside the archive. Empty string = root.

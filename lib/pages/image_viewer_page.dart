@@ -6,7 +6,7 @@ import 'package:quark/models/photo_album.dart';
 import 'package:quark/models/photo_metadata.dart';
 import 'package:quark/pages/album_page.dart';
 import 'package:quark/services/album_service.dart';
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/services/favorites_service.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark/widgets/photos/photo_selection_bar.dart';
@@ -22,7 +22,7 @@ const _kSidebarWidth = 288.0;
 ///
 /// Required: [bytes], [name].
 ///
-/// Optional Cirrus extras (enable metadata, download, delete, album actions):
+/// Optional Quark-device extras (enable metadata, download, delete, album actions):
 ///   [relPath], [serial].
 ///
 /// Optional context: [sourceAlbum] — when set, the more menu shows
@@ -38,12 +38,12 @@ class ImageViewerPage extends StatefulWidget {
   final int imageCount;
 
   /// Returns (bytes, name, relPath, serial). relPath and serial may be null
-  /// for local-device assets that have no Cirrus path.
+  /// for local-device assets that have no Quark path.
   final Future<(Uint8List?, String, String?, String?)> Function(int index)?
   onLoadImage;
   final Future<int> Function()? getImageCount;
 
-  /// Relative path on the Cirrus server (enables metadata & server actions).
+  /// Relative path on the Quark device (enables metadata & server actions).
   final String? relPath;
 
   /// Device serial (paired with [relPath]).
@@ -142,15 +142,15 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     final sidebarOpen = prefs.getBool(_kSidebarOpenKey) ?? true;
 
     // Rotation and favorite state come from the server metadata response for
-    // Cirrus photos; leave them at defaults here and let
+    // Quark photos; leave them at defaults here and let
     // _loadMetadataForCurrent apply the server values.
     setState(() => _sidebarOpen = sidebarOpen);
     _loadMetadata();
   }
 
-  // Rotation is always server-backed. Only Cirrus photos (with a relPath)
+  // Rotation is always server-backed. Only Quark photos (with a relPath)
   // support rotation — local device assets have no server path to key on.
-  bool get _isCirrusPhoto =>
+  bool get _isQuarkPhoto =>
       _currentRelPath != null && _currentRelPath!.isNotEmpty;
 
   // --- Navigation ---
@@ -221,7 +221,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     if (relPath == null || relPath.isEmpty) return;
     setState(() => _metadataLoading = true);
     try {
-      final meta = await CirrusService.getPhotoMetadata(
+      final meta = await FilesService.getPhotoMetadata(
         relPath,
         serial: _currentSerial,
       );
@@ -251,7 +251,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     final videoPath = _metadata?.livePhotoVideoPath;
     if (videoPath == null) return;
 
-    final url = CirrusService.constructMediaUrl(
+    final url = FilesService.constructMediaUrl(
       videoPath,
       serial: _currentSerial,
     );
@@ -294,7 +294,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   }
 
   Future<void> _toggleFavorite() async {
-    if (!_isCirrusPhoto) return;
+    if (!_isQuarkPhoto) return;
     final relPath = _currentRelPath!;
     final serial = _currentSerial;
 
@@ -322,10 +322,10 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   }
 
   Future<void> _rotate() async {
-    if (!_isCirrusPhoto) {
+    if (!_isQuarkPhoto) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Rotation is only supported for Cirrus photos'),
+          content: Text('Rotation is only supported for Quark photos'),
         ),
       );
       return;
@@ -347,7 +347,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     _rotationAnim.forward(from: 0);
 
     try {
-      await CirrusService.rotatePhoto(
+      await FilesService.rotatePhoto(
         _currentRelPath!,
         serial: _currentSerial,
         rotationQuarters: newQuarters,
@@ -357,7 +357,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       // being served from memory. Combined with Cache-Control: no-cache on
       // the server, the revalidation request picks up the new ETag
       // (rotation-aware) and gets the updated thumbnail bytes.
-      final thumbUrl = CirrusService.constructThumbnailUrl(
+      final thumbUrl = FilesService.constructThumbnailUrl(
         _currentRelPath!,
         serial: _currentSerial,
       ).toString();
@@ -383,7 +383,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     final relPath = _currentRelPath;
     if (relPath == null) return;
     try {
-      await CirrusService.saveFile(
+      await FilesService.saveFile(
         relPath,
         serial: _currentSerial,
         fileName: _currentName,
@@ -468,7 +468,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     final relPath = _currentRelPath;
     if (relPath == null) return;
     try {
-      final newRelPath = await CirrusService.copyPhoto(
+      final newRelPath = await FilesService.copyPhoto(
         relPath,
         serial: _currentSerial,
       );
@@ -519,7 +519,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       final dir = relPath.contains('/')
           ? relPath.substring(0, relPath.lastIndexOf('/'))
           : '';
-      await CirrusService.deleteFile(
+      await FilesService.deleteFile(
         dir,
         _currentName,
         deviceSerial: _currentSerial,

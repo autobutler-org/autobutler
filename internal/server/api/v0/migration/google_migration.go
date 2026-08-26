@@ -22,14 +22,14 @@ func init() {
 	// Initialize service with real Google API implementations
 	store := migration.NewInMemoryJobStore()
 
-	// Use system cirrus path for now (can be device-specific later)
-	cirrusPath, err := storageutil.GetCirrusDir()
+	// Use system files path for now (can be device-specific later)
+	filesPath, err := storageutil.GetFilesDir()
 	if err != nil {
-		panic(fmt.Sprintf("failed to initialize cirrus directory: %v", err))
+		panic(fmt.Sprintf("failed to initialize files directory: %v", err))
 	}
 	oauthConfig := v1_auth.GetGoogleOAuthConfig()
 
-	apiService = migration.NewGoogleAPIService(store, cirrusPath, oauthConfig)
+	apiService = migration.NewGoogleAPIService(store, filesPath, oauthConfig)
 
 	// Start background worker
 	jobWorker = NewGoogleAPIJobWorker(apiService)

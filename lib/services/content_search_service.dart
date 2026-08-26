@@ -15,7 +15,7 @@ class ContentSearchResult {
   /// Empty string means the internal (non-USB) device.
   final String deviceSerial;
 
-  /// Path relative to the device's CirrusDir root (e.g. "docs/meeting.abdoc").
+  /// Path relative to the device's files root (e.g. "docs/meeting.abdoc").
   final String relPath;
 
   /// HTML fragment with matched terms wrapped in `<b>…</b>`.
@@ -39,7 +39,7 @@ class ContentSearchResult {
   }
 }
 
-/// Calls `GET /api/v0/cirrus/search/content?q=<query>` and returns up to 50
+/// Calls `GET /api/v0/files/search/content?q=<query>` and returns up to 50
 /// results (the backend's default limit).
 class ContentSearchService with AuthenticatedService {
   ContentSearchService._();
@@ -74,7 +74,7 @@ class ContentSearchService with AuthenticatedService {
   static Future<List<ContentSearchResult>> search(String query) async {
     if (query.trim().isEmpty) return [];
     final uri = _apiBaseUri.replace(
-      path: '/api/v0/cirrus/search/content',
+      path: '/api/v0/files/search/content',
       queryParameters: {'q': query.trim()},
     );
     try {

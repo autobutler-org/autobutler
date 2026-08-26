@@ -73,8 +73,8 @@ func getVideoMetadata(c *gin.Context) *serverutil.Response {
 	}
 	serial := c.Query("serial")
 
-	// Resolve the cirrus directory — same pattern as photos.
-	filesDir, err := storageutil.GetCirrusDir()
+	// Resolve the files directory — same pattern as photos.
+	filesDir, err := storageutil.GetFilesDir()
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
@@ -82,7 +82,7 @@ func getVideoMetadata(c *gin.Context) *serverutil.Response {
 		if devices, err := deps.StorageService().GetManagedDevices(); err == nil {
 			for _, d := range devices {
 				if d.UsbInfo != nil && d.UsbInfo.GetSerial() == serial {
-					filesDir = d.CirrusDir
+					filesDir = d.FilesDir
 					break
 				}
 			}

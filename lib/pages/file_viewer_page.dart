@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/models/file_node.dart';
 import 'package:quark/pages/audio_player_page.dart';
 import 'package:quark/pages/generic_file_viewer_page.dart';
 import 'package:quark/pages/image_viewer_page.dart';
 import 'package:quark/pages/video_viewer_page.dart';
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 
-/// A routing shim that resolves a Cirrus file path to its correct viewer.
+/// A routing shim that resolves a files path to its correct viewer.
 ///
-/// On [initState] it calls [CirrusService.statFile] to determine the file
+/// On [initState] it calls [FilesService.statFile] to determine the file
 /// type, then immediately navigates to the appropriate page:
 ///
 /// | fileType                         | Destination                     |
@@ -22,7 +22,7 @@ import 'package:quark/widgets/layout/theme_toggle_button.dart';
 /// | `absheet`                        | /sheets/&lt;path&gt;            |
 /// | `text`                           | /edit/&lt;path&gt;              |
 /// | `pdf`, `docx`, `epub`, `slideshow`, `generic` | [GenericFileViewerPage] |
-/// | directory                        | /cirrus/&lt;path&gt; (browser)  |
+/// | directory                        | /files/&lt;path&gt; (browser)  |
 ///
 /// Navigate to the route built with [AppRoutes.viewFile] to trigger this.
 class FileViewerPage extends StatefulWidget {
@@ -43,9 +43,9 @@ class FileViewerPage extends StatefulWidget {
 // Private helpers — avoids circular import with router.dart
 // ---------------------------------------------------------------------------
 
-String _cirrusPath(String path) {
+String _filesPath(String path) {
   final clean = path.replaceAll(RegExp(r'^/+'), '');
-  return clean.isEmpty ? '/cirrus' : '/cirrus/$clean';
+  return clean.isEmpty ? '/files' : '/files/\$clean';
 }
 
 String _buildRoute(String base, String path, {String? serial}) {
@@ -72,7 +72,7 @@ class _FileViewerPageState extends State<FileViewerPage> {
       final serial = widget.deviceSerial.trim().isEmpty
           ? null
           : widget.deviceSerial;
-      final stat = await CirrusService.statFile(
+      final stat = await FilesService.statFile(
         widget.filePath,
         serial: serial,
       );
@@ -85,13 +85,13 @@ class _FileViewerPageState extends State<FileViewerPage> {
 
       if (stat.isDir) {
         // Directory — navigate to the file browser.
-        context.go(_cirrusPath(widget.filePath));
+        context.go(_filesPath(widget.filePath));
         return;
       }
 
       switch (stat.fileType) {
         case 'image':
-          final bytes = await CirrusService.downloadFileBytes(
+          final bytes = await FilesService.downloadFileBytes(
             widget.filePath,
             serial: serial,
           );
@@ -112,7 +112,7 @@ class _FileViewerPageState extends State<FileViewerPage> {
           );
 
         case 'video':
-          final videoUrl = CirrusService.constructMediaUrl(
+          final videoUrl = FilesService.constructMediaUrl(
             widget.filePath,
             serial: serial,
           );
@@ -124,7 +124,7 @@ class _FileViewerPageState extends State<FileViewerPage> {
           );
 
         case 'audio':
-          final audioUrl = CirrusService.constructMediaUrl(
+          final audioUrl = FilesService.constructMediaUrl(
             widget.filePath,
             serial: serial,
           );
@@ -153,7 +153,7 @@ class _FileViewerPageState extends State<FileViewerPage> {
           // No dedicated viewer yet — show download + "Open with" actions.
           // This prevents unsupported types from being silently re-routed or
           // misrepresented (e.g. showing a JPEG thumbnail for a .docx file).
-          final node = CirrusFileNode(
+          final node = FileNode(
             name: name,
             size: 0,
             isDir: false,
@@ -199,7 +199,7 @@ class _FileViewerPageState extends State<FileViewerPage> {
                     if (context.canPop()) {
                       context.pop();
                     } else {
-                      context.go('/cirrus');
+                      context.go('/files');
                     }
                   },
                   icon: const Icon(Icons.arrow_back),

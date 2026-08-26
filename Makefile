@@ -522,7 +522,7 @@ PERF_SUMMARY_WRK_DIRS ?= test-results/performance
 PERF_FIXTURE_TARGET_DIR ?= $(HOME)/quark/data/cirrus
 
 .PHONY: test/perf/generate-files
-test/perf/generate-files: ## Generate file fixtures under a target Cirrus directory for performance testing
+test/perf/generate-files: ## Generate file fixtures under a target files directory for performance testing
 	bash ./test/performance/generate_files.sh "$(PERF_FIXTURE_TARGET_DIR)"
 
 .PHONY: test/perf/load

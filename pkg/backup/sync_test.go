@@ -24,7 +24,7 @@ func newTestSyncWorker(t *testing.T) (*SyncWorker, string, string) {
 	// (serial "") so that internal-source deletes propagate to it.
 	w.getManagedDevices = func() ([]storageutil.ManagedDevice, error) {
 		return []storageutil.ManagedDevice{
-			{Device: storageutil.Device{IsInternal: false}, CirrusDir: dstDir},
+			{Device: storageutil.Device{IsInternal: false}, FilesDir: dstDir},
 		}, nil
 	}
 
@@ -100,10 +100,10 @@ func TestSyncWorker_DeletePath_Directory(t *testing.T) {
 }
 
 // TestSyncWorker_DeletePath_CrossDevice verifies that a delete event originating
-// from a USB device (non-empty DeviceSerial) propagates to internal Cirrus AND
+// from a USB device (non-empty DeviceSerial) propagates to internal Files AND
 // all other USB devices, but NOT to the source device.
 func TestSyncWorker_DeletePath_CrossDevice(t *testing.T) {
-	srcDir := t.TempDir()     // internal Cirrus dir
+	srcDir := t.TempDir()     // internal Files dir
 	deviceADir := t.TempDir() // source USB device (device-A)
 	deviceBDir := t.TempDir() // another USB device (device-B)
 	bus := eventbus.New()
@@ -114,12 +114,12 @@ func TestSyncWorker_DeletePath_CrossDevice(t *testing.T) {
 	w.getManagedDevices = func() ([]storageutil.ManagedDevice, error) {
 		return []storageutil.ManagedDevice{
 			{
-				Device:    storageutil.Device{IsInternal: false, UsbInfo: newMockUsbDevice("device-A")},
-				CirrusDir: deviceADir,
+				Device:   storageutil.Device{IsInternal: false, UsbInfo: newMockUsbDevice("device-A")},
+				FilesDir: deviceADir,
 			},
 			{
-				Device:    storageutil.Device{IsInternal: false, UsbInfo: newMockUsbDevice("device-B")},
-				CirrusDir: deviceBDir,
+				Device:   storageutil.Device{IsInternal: false, UsbInfo: newMockUsbDevice("device-B")},
+				FilesDir: deviceBDir,
 			},
 		}, nil
 	}
@@ -132,9 +132,9 @@ func TestSyncWorker_DeletePath_CrossDevice(t *testing.T) {
 	// Delete originates from device-A
 	w.deletePath(context.Background(), relPath, "device-A")
 
-	// Internal Cirrus should be deleted (source was a USB device)
+	// Internal Files should be deleted (source was a USB device)
 	if _, err := os.Stat(filepath.Join(srcDir, relPath)); !os.IsNotExist(err) {
-		t.Error("file should have been deleted from internal Cirrus")
+		t.Error("file should have been deleted from internal Files")
 	}
 	// device-B should be deleted
 	if _, err := os.Stat(filepath.Join(deviceBDir, relPath)); !os.IsNotExist(err) {
@@ -147,10 +147,10 @@ func TestSyncWorker_DeletePath_CrossDevice(t *testing.T) {
 }
 
 // TestSyncWorker_DeletePath_InternalSource verifies that a delete event from
-// internal Cirrus (empty DeviceSerial) propagates to all USB devices but does
-// NOT attempt to re-delete from internal Cirrus.
+// internal Files (empty DeviceSerial) propagates to all USB devices but does
+// NOT attempt to re-delete from internal Files.
 func TestSyncWorker_DeletePath_InternalSource(t *testing.T) {
-	srcDir := t.TempDir()     // internal Cirrus dir
+	srcDir := t.TempDir()     // internal Files dir
 	deviceADir := t.TempDir() // USB device (device-A)
 	bus := eventbus.New()
 
@@ -160,8 +160,8 @@ func TestSyncWorker_DeletePath_InternalSource(t *testing.T) {
 	w.getManagedDevices = func() ([]storageutil.ManagedDevice, error) {
 		return []storageutil.ManagedDevice{
 			{
-				Device:    storageutil.Device{IsInternal: false, UsbInfo: newMockUsbDevice("device-A")},
-				CirrusDir: deviceADir,
+				Device:   storageutil.Device{IsInternal: false, UsbInfo: newMockUsbDevice("device-A")},
+				FilesDir: deviceADir,
 			},
 		}, nil
 	}
@@ -177,9 +177,9 @@ func TestSyncWorker_DeletePath_InternalSource(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(deviceADir, relPath)); !os.IsNotExist(err) {
 		t.Error("file should have been deleted from device-A")
 	}
-	// Internal Cirrus should NOT be touched (source was internal)
+	// Internal Files should NOT be touched (source was internal)
 	if _, err := os.Stat(filepath.Join(srcDir, relPath)); os.IsNotExist(err) {
-		t.Error("file should NOT have been deleted from internal Cirrus (it was the source)")
+		t.Error("file should NOT have been deleted from internal Files (it was the source)")
 	}
 }
 

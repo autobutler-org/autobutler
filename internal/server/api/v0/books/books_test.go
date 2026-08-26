@@ -15,24 +15,24 @@ import (
 )
 
 // newBooksEngine creates a gin engine with the books routes registered.
-// It points HOME at a temp dir so GetCirrusDir() resolves to a controlled location.
+// It points HOME at a temp dir so GetFilesDir() resolves to a controlled location.
 func newBooksEngine(t *testing.T) (*gin.Engine, string) {
 	t.Helper()
 
 	// Redirect the data directory to a temp location. The layout under HOME is
 	// platform-specific, so ask storageutil for the path rather than hardcoding
-	// it — GetCirrusDir also creates the directory.
+	// it — GetFilesDir also creates the directory.
 	t.Setenv("HOME", t.TempDir())
-	cirrusDir, err := storageutil.GetCirrusDir()
+	filesDir, err := storageutil.GetFilesDir()
 	if err != nil {
-		t.Fatalf("failed to resolve cirrus dir: %v", err)
+		t.Fatalf("failed to resolve files dir: %v", err)
 	}
 
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()
 	group := engine.Group("/api/v0")
 	serverutil.RegisterRouterWithGroup(group, v0_books.NewRouter())
-	return engine, cirrusDir
+	return engine, filesDir
 }
 
 func doGet(engine *gin.Engine, path string) *httptest.ResponseRecorder {
@@ -42,7 +42,7 @@ func doGet(engine *gin.Engine, path string) *httptest.ResponseRecorder {
 	return w
 }
 
-// TestListBooks_EmptyDir verifies that an empty cirrus directory returns 200
+// TestListBooks_EmptyDir verifies that an empty files directory returns 200
 // with an empty JSON array.
 func TestListBooks_EmptyDir(t *testing.T) {
 	engine, _ := newBooksEngine(t)
@@ -61,13 +61,13 @@ func TestListBooks_EmptyDir(t *testing.T) {
 	}
 }
 
-// TestListBooks_WithEpub verifies that an .epub file in the cirrus directory
+// TestListBooks_WithEpub verifies that an .epub file in the files directory
 // appears in the response with the correct fields populated.
 func TestListBooks_WithEpub(t *testing.T) {
-	engine, cirrusDir := newBooksEngine(t)
+	engine, filesDir := newBooksEngine(t)
 
 	// Create a minimal .epub placeholder.
-	epubPath := filepath.Join(cirrusDir, "test-book.epub")
+	epubPath := filepath.Join(filesDir, "test-book.epub")
 	if err := os.WriteFile(epubPath, []byte("fake epub content"), 0644); err != nil {
 		t.Fatalf("failed to write epub: %v", err)
 	}
@@ -103,7 +103,7 @@ func TestListBooks_WithEpub(t *testing.T) {
 // TestListBooks_IgnoresNonBookFiles verifies that non-book files (e.g. .txt, .png)
 // are excluded from the response and only recognized book types are returned.
 func TestListBooks_IgnoresNonBookFiles(t *testing.T) {
-	engine, cirrusDir := newBooksEngine(t)
+	engine, filesDir := newBooksEngine(t)
 
 	// Write one book and two non-book files.
 	files := map[string][]byte{
@@ -112,7 +112,7 @@ func TestListBooks_IgnoresNonBookFiles(t *testing.T) {
 		"cover.png":  []byte("not a book"),
 	}
 	for name, content := range files {
-		if err := os.WriteFile(filepath.Join(cirrusDir, name), content, 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(filesDir, name), content, 0644); err != nil {
 			t.Fatalf("failed to write %s: %v", name, err)
 		}
 	}
@@ -137,9 +137,9 @@ func TestListBooks_IgnoresNonBookFiles(t *testing.T) {
 // TestListBooks_PdfIncluded verifies that .pdf files are also returned (PDF is a
 // supported book type alongside epub).
 func TestListBooks_PdfIncluded(t *testing.T) {
-	engine, cirrusDir := newBooksEngine(t)
+	engine, filesDir := newBooksEngine(t)
 
-	if err := os.WriteFile(filepath.Join(cirrusDir, "manual.pdf"), []byte("%PDF"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(filesDir, "manual.pdf"), []byte("%PDF"), 0644); err != nil {
 		t.Fatalf("failed to write pdf: %v", err)
 	}
 
@@ -163,9 +163,9 @@ func TestListBooks_PdfIncluded(t *testing.T) {
 // TestListBooks_SubdirectoryRecursion verifies that books nested in subdirectories
 // are also returned.
 func TestListBooks_SubdirectoryRecursion(t *testing.T) {
-	engine, cirrusDir := newBooksEngine(t)
+	engine, filesDir := newBooksEngine(t)
 
-	subDir := filepath.Join(cirrusDir, "fiction", "scifi")
+	subDir := filepath.Join(filesDir, "fiction", "scifi")
 	if err := os.MkdirAll(subDir, 0755); err != nil {
 		t.Fatalf("failed to create subdir: %v", err)
 	}

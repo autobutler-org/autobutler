@@ -27,13 +27,13 @@ type FileNodeWithTimeJSON struct {
 // listRecentFiles godoc
 // @Summary List recently uploaded files
 // @Description Returns files sorted by modification time (newest first) across all managed devices.
-// @Tags cirrus
+// @Tags files
 // @Produce json
 // @Param limit query int false "Maximum number of files to return (default 20, max 200)"
 // @Param serial query []string false "Filter by device serial(s)"
 // @Success 200 {array} FileNodeWithTimeJSON
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Router /cirrus/recent [get]
+// @Router /files/recent [get]
 func listRecentFiles(c *gin.Context) *serverutil.Response {
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	if !ok {
@@ -114,13 +114,13 @@ func listRecentFiles(c *gin.Context) *serverutil.Response {
 	}
 
 	for _, device := range selectedDevices {
-		cirrusDir := device.CirrusDir
+		filesDir := device.FilesDir
 		deviceSerial := DefaultDeviceSerial
 		if device.UsbInfo != nil {
 			deviceSerial = device.UsbInfo.GetSerial()
 		}
 		// Walk all files recursively
-		infos, walkErr := storageutil.StatFilesInDir(cirrusDir, device.Name, device.DataDir, deviceSerial)
+		infos, walkErr := storageutil.StatFilesInDir(filesDir, device.Name, device.DataDir, deviceSerial)
 		if walkErr != nil {
 			continue
 		}
@@ -128,10 +128,10 @@ func listRecentFiles(c *gin.Context) *serverutil.Response {
 			if info.IsDir() {
 				continue // only return files, not directories
 			}
-			// info.FullPath is filepath.Join(cirrusDir, entry.Name()) from StatFilesInDir.
-			// Compute the API-relative path by stripping the cirrusDir prefix so the
+			// info.FullPath is filepath.Join(filesDir, entry.Name()) from StatFilesInDir.
+			// Compute the API-relative path by stripping the filesDir prefix so the
 			// client can use it directly in API calls — same shape list_files produces.
-			relPath, relErr := filepath.Rel(cirrusDir, info.FullPath)
+			relPath, relErr := filepath.Rel(filesDir, info.FullPath)
 			if relErr != nil {
 				relPath = info.Name()
 			}
@@ -164,7 +164,7 @@ func listRecentFiles(c *gin.Context) *serverutil.Response {
 }
 
 var listRecentFilesRoute = serverutil.ApiRoute(
-	"GET", "/cirrus/recent", func(c *gin.Context) *serverutil.Response {
+	"GET", "/files/recent", func(c *gin.Context) *serverutil.Response {
 		return listRecentFiles(c)
 	},
 )

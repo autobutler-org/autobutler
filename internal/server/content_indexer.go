@@ -118,14 +118,14 @@ func backfillContentIndex(deps deputil.Dependencies) {
 		if dev.UsbInfo != nil {
 			serial = dev.UsbInfo.GetSerial()
 		}
-		res, err := searchutil.BackfillTree(ctx, dbConn.Db, serial, dev.CirrusDir)
+		res, err := searchutil.BackfillTree(ctx, dbConn.Db, serial, dev.FilesDir)
 		if err != nil {
-			log.Printf("[content-indexer] backfill %s: %v", dev.CirrusDir, err)
+			log.Printf("[content-indexer] backfill %s: %v", dev.FilesDir, err)
 			continue
 		}
 		log.Printf(
 			"[content-indexer] backfill %s: scanned %d, indexed %d, failed %d",
-			dev.CirrusDir, res.Scanned, res.Indexed, res.Failed,
+			dev.FilesDir, res.Scanned, res.Indexed, res.Failed,
 		)
 	}
 }
@@ -144,7 +144,7 @@ func resolveEventPath(deps deputil.Dependencies, evt eventbus.Event) (serial, ab
 			devSerial = dev.UsbInfo.GetSerial()
 		}
 		if devSerial == serial || (serial == "" && dev.UsbInfo == nil) {
-			abs := filepath.Join(dev.CirrusDir, evt.Path)
+			abs := filepath.Join(dev.FilesDir, evt.Path)
 			return devSerial, abs
 		}
 	}

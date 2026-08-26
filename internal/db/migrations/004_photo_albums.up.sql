@@ -11,7 +11,7 @@ CREATE TABLE
     );
 
 -- Each row is a pointer: album -> photo file on disk (identified by device
--- serial + relative path within that device's Cirrus directory).
+-- serial + relative path within that device's files directory).
 -- A photo can appear in multiple albums (copy semantics). The file itself
 -- lives on disk; this table is purely metadata.
 CREATE TABLE

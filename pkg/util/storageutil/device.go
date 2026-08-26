@@ -38,7 +38,7 @@ func (d *Device) ApplySimpleCategorization() {
 	}
 
 	// Traverse the mount point
-	cirrusDir, err := GetCirrusDirForDevice(d.MountPoint)
+	filesDir, err := GetFilesDirForDevice(d.MountPoint)
 	if err != nil {
 		return
 	}
@@ -47,7 +47,7 @@ func (d *Device) ApplySimpleCategorization() {
 	backupBytes := uint64(0)
 	otherBytes := uint64(0)
 
-	filepath.Walk(cirrusDir, func(path string, info os.FileInfo, err error) error {
+	filepath.Walk(filesDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil // skip errors
 		}

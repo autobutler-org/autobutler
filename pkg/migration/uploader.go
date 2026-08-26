@@ -12,22 +12,23 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
 
-// CirrusFileUploader uploads files to cirrus storage
-type CirrusFileUploader struct {
+// StorageFileUploader uploads files to the files storage root.
+// Named distinctly from the FileUploader interface in types.go that it implements.
+type StorageFileUploader struct {
 	deviceSerial   string
 	storageService *storageutil.StorageService
 }
 
-// NewCirrusFileUploader creates a new cirrus file uploader
-func NewCirrusFileUploader(deviceSerial string, svc *storageutil.StorageService) *CirrusFileUploader {
-	return &CirrusFileUploader{
+// NewStorageFileUploader creates a new file uploader
+func NewStorageFileUploader(deviceSerial string, svc *storageutil.StorageService) *StorageFileUploader {
+	return &StorageFileUploader{
 		deviceSerial:   deviceSerial,
 		storageService: svc,
 	}
 }
 
-// UploadFile uploads a single file to cirrus storage
-func (u *CirrusFileUploader) UploadFile(ctx context.Context, filePath string, content io.Reader, deviceSerial string) error {
+// UploadFile uploads a single file to files storage
+func (u *StorageFileUploader) UploadFile(ctx context.Context, filePath string, content io.Reader, deviceSerial string) error {
 	serial := deviceSerial
 	if serial == "" {
 		serial = u.deviceSerial
@@ -65,7 +66,7 @@ func (u *CirrusFileUploader) UploadFile(ctx context.Context, filePath string, co
 }
 
 // UploadDirectory uploads an entire directory recursively
-func (u *CirrusFileUploader) UploadDirectory(ctx context.Context, sourcePath string, destPath string, deviceSerial string) error {
+func (u *StorageFileUploader) UploadDirectory(ctx context.Context, sourcePath string, destPath string, deviceSerial string) error {
 	serial := deviceSerial
 	if serial == "" {
 		serial = u.deviceSerial

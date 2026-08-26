@@ -20,14 +20,14 @@ type moveFileRequest struct {
 // moveFile godoc
 // @Summary Move or rename a file
 // @Description Enqueue a file move operation between paths/devices
-// @Tags cirrus
+// @Tags files
 // @Accept json
 // @Produce json
 // @Param body body moveFileRequest true "Move file request"
 // @Success 202 {object} serverutil.Response "Ok"
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Router /cirrus [put]
+// @Router /files [put]
 func moveFile(c *gin.Context) *serverutil.Response {
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	if !ok {
@@ -72,5 +72,5 @@ func moveFile(c *gin.Context) *serverutil.Response {
 }
 
 var moveFileRoute = serverutil.ApiRoute(
-	"PUT", "/cirrus", moveFile,
+	"PUT", "/files", moveFile,
 )

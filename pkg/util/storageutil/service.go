@@ -101,14 +101,14 @@ func (s *StorageService) GetManagedDevices() ([]ManagedDevice, error) {
 	var managed []ManagedDevice
 	for _, device := range devices {
 		dataDir := GetDataDirForDevice(device.MountPoint)
-		cirrusDir, err := GetCirrusDirForDevice(device.MountPoint)
+		filesDir, err := GetFilesDirForDevice(device.MountPoint)
 		if err != nil {
 			continue
 		}
 		managed = append(managed, ManagedDevice{
-			Device:    device,
-			DataDir:   dataDir,
-			CirrusDir: cirrusDir,
+			Device:   device,
+			DataDir:  dataDir,
+			FilesDir: filesDir,
 		})
 	}
 	return managed, nil
@@ -167,11 +167,11 @@ func (s *StorageService) getDeviceStatusesFresh() ([]*DeviceStatus, error) {
 	for _, device := range devices {
 		isEnabled := device.IsInternal
 		dataDir := ""
-		cirrusDir := ""
+		filesDir := ""
 		if md, exists := enabledMap[device.MountPoint]; exists {
 			isEnabled = true
 			dataDir = md.DataDir
-			cirrusDir = md.CirrusDir
+			filesDir = md.FilesDir
 		}
 
 		var probeResult *DiskProbeResult
@@ -195,7 +195,7 @@ func (s *StorageService) getDeviceStatusesFresh() ([]*DeviceStatus, error) {
 			Device:    device,
 			IsEnabled: isEnabled,
 			DataDir:   dataDir,
-			CirrusDir: cirrusDir,
+			FilesDir:  filesDir,
 			DiskProbe: probeResult,
 		})
 	}

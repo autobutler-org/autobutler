@@ -11,6 +11,6 @@ request = function()
 
   return wrk.format(
     "GET",
-    "/api/v1/cirrus?rootDir=" .. root
+    "/api/v1/files?rootDir=" .. root
   )
 end

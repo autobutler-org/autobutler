@@ -26,10 +26,10 @@ import (
 	_ "golang.org/x/image/webp"
 )
 
-// downloadCirrusFile godoc
+// downloadFile godoc
 // @Summary Download a file or folder
 // @Description Downloads a single file or zips a folder and streams it back to the client
-// @Tags cirrus
+// @Tags files
 // @Produce application/octet-stream
 // @Param filePath query string false "File path to download"
 // @Param serial query string false "Device serial number to filter by"
@@ -37,7 +37,7 @@ import (
 // @Success 200 {file} file
 // @Failure 404 {object} serverutil.Response "Not Found"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Router /cirrus/download [get]
+// @Router /files/download [get]
 func downloadFile(c *gin.Context) *serverutil.Response {
 	filePath := c.Query("filePath")
 	serial := c.Query("serial")
@@ -268,5 +268,5 @@ func downloadFileVFS(c *gin.Context, deps deputil.Dependencies, fsys vfs.VFS, fi
 }
 
 var downloadFileRoute = serverutil.ApiRoute(
-	"GET", "/cirrus/download", downloadFile,
+	"GET", "/files/download", downloadFile,
 )

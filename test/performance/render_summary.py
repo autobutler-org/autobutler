@@ -8,7 +8,7 @@ from pathlib import Path
 
 WRK_SCENARIOS = [
     "albums_list.txt",
-    "cirrus_list.txt",
+    "files_list.txt",
     "photos_list.txt",
     "photos_metadata.txt",
     "thumbnails.txt",

@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
-import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/models/file_node.dart';
 import 'package:quark/router.dart';
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/services/content_search_service.dart';
 import 'package:quark/utils/safe_set_state_mixin.dart';
 import 'package:quark/widgets/layout/quark_app_bar.dart';
@@ -20,8 +20,8 @@ class DocsPage extends StatefulWidget {
 }
 
 class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
-  List<CirrusFileNode> _files = [];
-  List<CirrusFileNode> _filtered = [];
+  List<FileNode> _files = [];
+  List<FileNode> _filtered = [];
   List<ContentSearchResult> _contentResults = [];
   bool _contentSearching = false;
   bool _loading = true;
@@ -49,7 +49,7 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
       _error = null;
     });
     try {
-      final files = await CirrusService.getFilesByType('abdoc');
+      final files = await FilesService.getFilesByType('abdoc');
       setStateSafely(() {
         _files = files;
         _applyFilter();
@@ -100,7 +100,7 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
     });
   }
 
-  Future<void> _openDoc(CirrusFileNode node) async {
+  Future<void> _openDoc(FileNode node) async {
     await context.push(
       AppRoutes.docFile(node.apiPath, serial: node.deviceSerial),
     );
@@ -145,7 +145,7 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
         bytes,
         filename: fileName,
       );
-      await CirrusService.uploadFilesFromFormData('', [file]);
+      await FilesService.uploadFilesFromFormData('', [file]);
       if (!mounted) return;
       context.push(AppRoutes.docFile(fileName));
       _load();
@@ -186,7 +186,7 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
       ),
       drawer: QuarkDrawer(
         activeSection: QuarkDrawerSection.docs,
-        onTapCirrus: () => context.go('/cirrus'),
+        onTapFiles: () => context.go('/files'),
         onTapPhotos: () => context.go('/photos'),
         onTapDocs: () => Navigator.of(context).pop(),
         onTapSheets: () => context.go('/sheets'),
@@ -382,7 +382,7 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
     );
   }
 
-  Widget _buildDocTile(CirrusFileNode node, ColorScheme colorScheme) {
+  Widget _buildDocTile(FileNode node, ColorScheme colorScheme) {
     // Strip the filename from dirPath to get the folder path for the subtitle.
     final folder = node.dirPath.contains('/')
         ? node.dirPath.substring(0, node.dirPath.lastIndexOf('/'))

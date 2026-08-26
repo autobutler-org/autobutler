@@ -20,15 +20,19 @@ import 'package:quark/services/auth_service.dart';
 
 // Route paths — use these constants everywhere instead of string literals.
 class AppRoutes {
-  static const cirrus = '/cirrus';
+  static const files = '/files';
+
+  /// Legacy alias. The file browser lived at /cirrus for the product's whole
+  /// life, so external links and bookmarks exist. This redirects to [files].
+  static const legacyCirrus = '/cirrus';
 
   /// Deep-link pattern for opening a specific file in the correct viewer.
   /// e.g. /view/photos/2024/beach.jpg resolves the type and opens the viewer.
   static const viewFile = '/view';
 
   /// Deep-link pattern for a specific path inside the file browser.
-  /// e.g. /cirrus/photos/2024 navigates directly to photos/2024.
-  static const cirrusDeep = '/cirrus/:path(.*)';
+  /// e.g. /files/photos/2024 navigates directly to photos/2024.
+  static const filesDeep = '/files/:path(.*)';
 
   static const photos = '/photos';
   static const docs = '/docs';
@@ -65,11 +69,11 @@ class AppRoutes {
         : base;
   }
 
-  /// Build a deep-link URL for a given cirrus path.
-  /// e.g. cirrusPath('photos/2024') → '/cirrus/photos/2024'
-  static String cirrusPath(String path) {
+  /// Build a deep-link URL for a given files path.
+  /// e.g. filesPath('photos/2024') → '/files/photos/2024'
+  static String filesPath(String path) {
     final clean = path.replaceAll(RegExp(r'^/+'), '');
-    return clean.isEmpty ? cirrus : '/cirrus/$clean';
+    return clean.isEmpty ? files : '$files/$clean';
   }
 
   /// Build a URL for a specific document file.
@@ -95,7 +99,7 @@ class AppRoutes {
 }
 
 final router = GoRouter(
-  initialLocation: AppRoutes.cirrus,
+  initialLocation: AppRoutes.files,
   redirect: _authRedirect,
   // Refresh the router whenever the session token changes so a 401-triggered
   // token clear immediately redirects to the login page.
@@ -105,11 +109,11 @@ final router = GoRouter(
   ]),
   routes: [
     GoRoute(
-      path: AppRoutes.cirrus,
+      path: AppRoutes.files,
       builder: (context, state) => const FileBrowserPage(),
       routes: [
         GoRoute(
-          // Matches /cirrus/<anything>, including slashes.
+          // Matches /files/<anything>, including slashes.
           // Always renders FileBrowserPage so go_router owns the page and
           // URL changes (back, go-up, breadcrumb) correctly trigger
           // didUpdateWidget. FileBrowserPage._openPendingFile stats the path
@@ -124,16 +128,34 @@ final router = GoRouter(
       ],
     ),
     GoRoute(
-      // /view/:path redirects to /cirrus/:path for backward compatibility.
+      // /view/:path redirects to /files/:path for backward compatibility.
       path: '${AppRoutes.viewFile}/:path(.*)',
       redirect: (context, state) {
         final raw = state.pathParameters['path'] ?? '';
         final serial = state.uri.queryParameters['serial'];
-        final base = AppRoutes.cirrusPath(Uri.decodeComponent(raw));
+        final base = AppRoutes.filesPath(Uri.decodeComponent(raw));
         return serial != null && serial.isNotEmpty
             ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
             : base;
       },
+    ),
+    GoRoute(
+      // /cirrus/:path redirects to /files/:path. The browser lived at /cirrus
+      // before the rename, so old links and bookmarks must keep resolving.
+      path: '${AppRoutes.legacyCirrus}/:path(.*)',
+      redirect: (context, state) {
+        final raw = state.pathParameters['path'] ?? '';
+        final serial = state.uri.queryParameters['serial'];
+        final base = AppRoutes.filesPath(Uri.decodeComponent(raw));
+        return serial != null && serial.isNotEmpty
+            ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
+            : base;
+      },
+    ),
+    GoRoute(
+      // Bare /cirrus → /files.
+      path: AppRoutes.legacyCirrus,
+      redirect: (context, state) => AppRoutes.files,
     ),
     GoRoute(
       path: AppRoutes.photos,
@@ -193,12 +215,12 @@ final router = GoRouter(
     GoRoute(
       path: AppRoutes.setup,
       builder: (context, state) =>
-          SetupPage(onSetupComplete: () => context.go(AppRoutes.cirrus)),
+          SetupPage(onSetupComplete: () => context.go(AppRoutes.files)),
     ),
     GoRoute(
       path: AppRoutes.login,
       builder: (context, state) =>
-          LoginPage(onLoginSuccess: () => context.go(AppRoutes.cirrus)),
+          LoginPage(onLoginSuccess: () => context.go(AppRoutes.files)),
     ),
     GoRoute(
       path: AppRoutes.recover,

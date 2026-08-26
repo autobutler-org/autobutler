@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quark/controllers/file_browser_controller.dart';
-import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/models/file_node.dart';
 import 'package:quark/models/move_rename_result.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
@@ -62,11 +62,11 @@ Future<MoveRenameResult?> promptForMoveRenamePath(
       bool hasInvalidChar = nameController.text.contains('/');
       return StatefulBuilder(
         builder: (context, setState) {
-          Future<List<CirrusFileNode>> filesFuture() {
+          Future<List<FileNode>> filesFuture() {
             return controller.fetchFiles(currentAbsolutePath);
           }
 
-          void openDirectory(CirrusFileNode node) {
+          void openDirectory(FileNode node) {
             if (!node.isDir) return;
             // Prevent opening the folder that's being moved into itself
             if (initialName != null && initialName.trim().isNotEmpty) {

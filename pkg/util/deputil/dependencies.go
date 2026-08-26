@@ -74,8 +74,8 @@ func DefaultDependencies() (Dependencies, error) {
 	deps.WithStorageService(svc)                                    // coverage: ignore
 	registry := vfs.NewRegistry()                                   // coverage: ignore
 	_ = registry.Register(vfs.Namespace{                            // coverage: ignore
-		ID:          "files",                             // coverage: ignore
-		Description: "Primary vault file store (cirrus)", // coverage: ignore
+		ID:          "files",                            // coverage: ignore
+		Description: "Primary vault file store (files)", // coverage: ignore
 	}, vfs.NewStorageServiceVFS(svc, "files")) // coverage: ignore
 	deps.WithVFSRegistry(registry)                                         // coverage: ignore
 	deps.WithMetadataStore(vfs.NewSQLiteMetadataStore(deps.Database().Db)) // coverage: ignore

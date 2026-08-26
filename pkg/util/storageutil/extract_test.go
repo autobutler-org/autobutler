@@ -18,14 +18,14 @@ import (
 func makeDevice(t *testing.T) *ManagedDevice {
 	t.Helper()
 	dir := t.TempDir()
-	cirrus := filepath.Join(dir, "cirrus")
-	if err := os.MkdirAll(cirrus, 0755); err != nil {
+	filesRoot := filepath.Join(dir, "cirrus")
+	if err := os.MkdirAll(filesRoot, 0755); err != nil {
 		t.Fatalf("makeDevice: %v", err)
 	}
 	return &ManagedDevice{
-		Device:    Device{Name: "test", MountPoint: dir, IsInternal: true},
-		DataDir:   dir,
-		CirrusDir: cirrus,
+		Device:   Device{Name: "test", MountPoint: dir, IsInternal: true},
+		DataDir:  dir,
+		FilesDir: filesRoot,
 	}
 }
 
@@ -117,7 +117,7 @@ func TestExtractFileImpl_Zip_BasicExtraction(t *testing.T) {
 		{"hello.txt", "hello world"},
 		{"subdir/nested.txt", "nested content"},
 	})
-	writeFile(t, device.CirrusDir, "archive.zip", data)
+	writeFile(t, device.FilesDir, "archive.zip", data)
 
 	result, err := ExtractFileImpl(ExtractFileParams{FilePath: "archive.zip"}, device, "")
 	if err != nil {
@@ -133,7 +133,7 @@ func TestExtractFileImpl_Zip_PathTraversal(t *testing.T) {
 	for _, name := range cases {
 		t.Run(name, func(t *testing.T) {
 			data := buildZip(t, []struct{ name, content string }{{name, "bad"}})
-			writeFile(t, device.CirrusDir, "traversal.zip", data)
+			writeFile(t, device.FilesDir, "traversal.zip", data)
 			_, err := ExtractFileImpl(ExtractFileParams{FilePath: "traversal.zip"}, device, "")
 			if err == nil {
 				t.Errorf("expected error for traversal entry %q", name)
@@ -165,7 +165,7 @@ func TestExtractFileImpl_Zip_SizeLimit(t *testing.T) {
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
 	}
-	writeFile(t, device.CirrusDir, "small.zip", buf.Bytes())
+	writeFile(t, device.FilesDir, "small.zip", buf.Bytes())
 	result, err := ExtractFileImpl(ExtractFileParams{FilePath: "small.zip"}, device, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -181,7 +181,7 @@ func TestExtractFileImpl_TarGz_BasicExtraction(t *testing.T) {
 		{"hello.txt", "hello from tar"},
 		{"subdir/nested.txt", "nested tar content"},
 	})
-	writeFile(t, device.CirrusDir, "archive.tar.gz", data)
+	writeFile(t, device.FilesDir, "archive.tar.gz", data)
 
 	result, err := ExtractFileImpl(ExtractFileParams{FilePath: "archive.tar.gz"}, device, "")
 	if err != nil {
@@ -197,7 +197,7 @@ func TestExtractFileImpl_TarGz_PathTraversal(t *testing.T) {
 	for _, name := range cases {
 		t.Run(name, func(t *testing.T) {
 			data := buildTarGz(t, []struct{ name, content string }{{name, "bad"}})
-			writeFile(t, device.CirrusDir, "traversal.tar.gz", data)
+			writeFile(t, device.FilesDir, "traversal.tar.gz", data)
 			_, err := ExtractFileImpl(ExtractFileParams{FilePath: "traversal.tar.gz"}, device, "")
 			if err == nil {
 				t.Errorf("expected error for traversal entry %q", name)
@@ -211,7 +211,7 @@ func TestExtractFileImpl_Tgz_BasicExtraction(t *testing.T) {
 	data := buildTarGz(t, []struct{ name, content string }{
 		{"file.txt", "tgz content"},
 	})
-	writeFile(t, device.CirrusDir, "archive.tgz", data)
+	writeFile(t, device.FilesDir, "archive.tgz", data)
 
 	result, err := ExtractFileImpl(ExtractFileParams{FilePath: "archive.tgz"}, device, "")
 	if err != nil {
@@ -226,7 +226,7 @@ func TestExtractFileImpl_Gz_BasicExtraction(t *testing.T) {
 	device := makeDevice(t)
 	data := buildBareGz(t, "raw gz content")
 	// Bare .gz decompresses to a single file named after the archive minus .gz.
-	writeFile(t, device.CirrusDir, "data.txt.gz", data)
+	writeFile(t, device.FilesDir, "data.txt.gz", data)
 
 	result, err := ExtractFileImpl(ExtractFileParams{FilePath: "data.txt.gz"}, device, "")
 	if err != nil {
@@ -262,7 +262,7 @@ func TestExtractFileImpl_Tar_BasicExtraction(t *testing.T) {
 	if err := tw.Close(); err != nil {
 		t.Fatal(err)
 	}
-	writeFile(t, device.CirrusDir, "archive.tar", buf.Bytes())
+	writeFile(t, device.FilesDir, "archive.tar", buf.Bytes())
 
 	result, err := ExtractFileImpl(ExtractFileParams{FilePath: "archive.tar"}, device, "")
 	if err != nil {
@@ -283,7 +283,7 @@ func TestExtractFileImpl_FileNotFound(t *testing.T) {
 
 func TestExtractFileImpl_NotAnArchive(t *testing.T) {
 	device := makeDevice(t)
-	writeFile(t, device.CirrusDir, "doc.pdf", []byte("%PDF"))
+	writeFile(t, device.FilesDir, "doc.pdf", []byte("%PDF"))
 	_, err := ExtractFileImpl(ExtractFileParams{FilePath: "doc.pdf"}, device, "")
 	if err == nil {
 		t.Fatal("expected error for non-archive file")
@@ -296,7 +296,7 @@ func TestExtractFileImpl_UnsupportedFormat(t *testing.T) {
 	// third-party writer. Test with a hypothetical unsupported extension instead
 	// by temporarily verifying the error message for an unknown extension.
 	// We do this by writing a file with a known archive extension but wrong content.
-	writeFile(t, device.CirrusDir, "archive.zip", []byte("not a zip"))
+	writeFile(t, device.FilesDir, "archive.zip", []byte("not a zip"))
 	_, err := ExtractFileImpl(ExtractFileParams{FilePath: "archive.zip"}, device, "")
 	if err == nil {
 		t.Fatal("expected error for corrupt zip")
@@ -392,7 +392,7 @@ func TestExtractFileImpl_EntryCountLimit(t *testing.T) {
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
 	}
-	writeFile(t, device.CirrusDir, "many.zip", buf.Bytes())
+	writeFile(t, device.FilesDir, "many.zip", buf.Bytes())
 
 	_, err := ExtractFileImpl(ExtractFileParams{FilePath: "many.zip"}, device, "")
 	if err == nil {

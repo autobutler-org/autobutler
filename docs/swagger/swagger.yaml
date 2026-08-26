@@ -166,7 +166,7 @@ definitions:
   v0_files.ContentSearchResult:
     properties:
       relPath:
-        description: RelPath is the path to the file relative to the device's CirrusDir.
+        description: RelPath is the path to the file relative to the device's FilesDir.
         type: string
       serial:
         description: Serial is the storage device serial number.
@@ -1278,7 +1278,7 @@ paths:
       - auth
   /books:
     get:
-      description: Finds all books in the cirrus directory
+      description: Finds all books in the files directory
       produces:
       - application/json
       responses:
@@ -1295,7 +1295,25 @@ paths:
       summary: List books
       tags:
       - books
-  /cirrus:
+  /events:
+    get:
+      description: Upgrades the connection to WebSocket and pushes JSON events for
+        file system mutations (upload, delete, move, new_folder)
+      produces:
+      - application/json
+      responses:
+        "101":
+          description: Switching Protocols
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Stream real-time file/device events
+      tags:
+      - events
+  /files:
     delete:
       description: Soft-delete files via rename to trash, returning immediately. DB
         cleanup and events are dispatched in the background.
@@ -1333,7 +1351,7 @@ paths:
             $ref: '#/definitions/serverutil.Response'
       summary: Delete files
       tags:
-      - cirrus
+      - files
     get:
       description: merges files across all managed devices for the given filePath.
         If deviceSerial is empty, list files across all devices. Otherwise, only for
@@ -1362,7 +1380,7 @@ paths:
             $ref: '#/definitions/serverutil.Response'
       summary: Lists files
       tags:
-      - cirrus
+      - files
     put:
       consumes:
       - application/json
@@ -1391,8 +1409,8 @@ paths:
             $ref: '#/definitions/serverutil.Response'
       summary: Move or rename a file
       tags:
-      - cirrus
-  /cirrus/by-type:
+      - files
+  /files/by-type:
     get:
       description: Recursively walks all managed devices and returns files whose fileType
         matches the given value, sorted newest-first.
@@ -1428,8 +1446,8 @@ paths:
             $ref: '#/definitions/serverutil.Response'
       summary: List all files of a given type
       tags:
-      - cirrus
-  /cirrus/download:
+      - files
+  /files/download:
     get:
       description: Downloads a single file or zips a folder and streams it back to
         the client
@@ -1463,13 +1481,13 @@ paths:
             $ref: '#/definitions/serverutil.Response'
       summary: Download a file or folder
       tags:
-      - cirrus
-  /cirrus/download-archive-file:
+      - files
+  /files/download-archive-file:
     get:
       description: Reads the specified entry from the archive and streams it to the
         client. No data is extracted to disk.
       parameters:
-      - description: Path to the archive file (relative to device cirrus directory)
+      - description: Path to the archive file (relative to device files directory)
         in: query
         name: filePath
         required: true
@@ -1504,8 +1522,8 @@ paths:
             $ref: '#/definitions/serverutil.Response'
       summary: Download a single file from inside an archive
       tags:
-      - cirrus
-  /cirrus/extract:
+      - files
+  /files/extract:
     post:
       description: Extracts a zip file into a subdirectory named after the archive
         (without its extension) in the same directory
@@ -1536,8 +1554,8 @@ paths:
             $ref: '#/definitions/serverutil.Response'
       summary: Extract a zip archive in place
       tags:
-      - cirrus
-  /cirrus/folder/{folderDir}:
+      - files
+  /files/folder/{folderDir}:
     post:
       consumes:
       - multipart/form-data
@@ -1574,14 +1592,14 @@ paths:
             $ref: '#/definitions/serverutil.Response'
       summary: Create a new folder
       tags:
-      - cirrus
-  /cirrus/list-archive:
+      - files
+  /files/list-archive:
     get:
       description: Opens the archive at filePath and returns the direct children of
         subPath as FileNodeJSON entries. No data is extracted to disk — only archive
         headers are read.
       parameters:
-      - description: Path to the archive file (relative to device cirrus directory)
+      - description: Path to the archive file (relative to device files directory)
         in: query
         name: filePath
         required: true
@@ -1613,8 +1631,8 @@ paths:
             $ref: '#/definitions/serverutil.Response'
       summary: List contents of an archive file at a given virtual path
       tags:
-      - cirrus
-  /cirrus/recent:
+      - files
+  /files/recent:
     get:
       description: Returns files sorted by modification time (newest first) across
         all managed devices.
@@ -1645,8 +1663,8 @@ paths:
             $ref: '#/definitions/serverutil.Response'
       summary: List recently uploaded files
       tags:
-      - cirrus
-  /cirrus/search:
+      - files
+  /files/search:
     get:
       description: searches for a file across all managed devices for the given search
         term. If deviceSerial is empty, search across all devices. Otherwise, only
@@ -1675,8 +1693,8 @@ paths:
             $ref: '#/definitions/serverutil.Response'
       summary: Searches for files
       tags:
-      - cirrus
-  /cirrus/search/content:
+      - files
+  /files/search/content:
     get:
       description: |-
         Full-text search over indexed file contents using SQLite FTS5.
@@ -1712,14 +1730,14 @@ paths:
             $ref: '#/definitions/serverutil.Response'
       summary: Search file contents (FTS5)
       tags:
-      - cirrus
-  /cirrus/stat:
+      - files
+  /files/stat:
     get:
-      description: 'Returns filesystem metadata for the given cirrus-relative path:
+      description: 'Returns filesystem metadata for the given files-relative path:
         whether it is a directory and its file type. Useful for deep-link resolution
         when the path extension alone is ambiguous (e.g. a folder named "things.abdoc").'
       parameters:
-      - description: Cirrus-relative path to stat
+      - description: Files-relative path to stat
         in: query
         name: filePath
         required: true
@@ -1745,8 +1763,8 @@ paths:
             $ref: '#/definitions/serverutil.Response'
       summary: Stat a file or directory
       tags:
-      - cirrus
-  /cirrus/upload:
+      - files
+  /files/upload:
     post:
       consumes:
       - multipart/form-data
@@ -1774,8 +1792,8 @@ paths:
             $ref: '#/definitions/serverutil.Response'
       summary: Upload files to the top-level directory
       tags:
-      - cirrus
-  /cirrus/upload/{rootDir}:
+      - files
+  /files/upload/{rootDir}:
     post:
       consumes:
       - multipart/form-data
@@ -1808,25 +1826,7 @@ paths:
             $ref: '#/definitions/serverutil.Response'
       summary: Upload files to a nested directory
       tags:
-      - cirrus
-  /events:
-    get:
-      description: Upgrades the connection to WebSocket and pushes JSON events for
-        file system mutations (upload, delete, move, new_folder)
-      produces:
-      - application/json
-      responses:
-        "101":
-          description: Switching Protocols
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      summary: Stream real-time file/device events
-      tags:
-      - events
+      - files
   /health:
     get:
       description: 'Returns current hardware health: CPU, memory, disk usage and temperature.

@@ -1,7 +1,7 @@
-import 'package:quark/models/cirrus_file_node.dart';
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/models/file_node.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/theme/quark_colors.dart';
-import 'package:quark/utils/cirrus_route_path_utils.dart';
+import 'package:quark/utils/files_route_path_utils.dart';
 import 'package:quark/widgets/core/quark_file_icon.dart';
 import 'package:quark/widgets/file_browser/file_browser_view.dart';
 import 'package:flutter/material.dart';
@@ -21,8 +21,8 @@ class RecentFilesSection extends StatefulWidget {
     super.key,
   });
 
-  final void Function(CirrusFileNode) onOpenFile;
-  final Future<void> Function(CirrusFileNode, FileMenuAction) onFileMenuAction;
+  final void Function(FileNode) onOpenFile;
+  final Future<void> Function(FileNode, FileMenuAction) onFileMenuAction;
   final void Function(String path) onNavigateToFolder;
 
   @override
@@ -30,29 +30,29 @@ class RecentFilesSection extends StatefulWidget {
 }
 
 class _RecentFilesSectionState extends State<RecentFilesSection> {
-  late Future<List<CirrusFileNode>> _future;
+  late Future<List<FileNode>> _future;
 
   @override
   void initState() {
     super.initState();
-    _future = CirrusService.getRecentFiles(limit: 20);
+    _future = FilesService.getRecentFiles(limit: 20);
   }
 
-  String _parentPath(CirrusFileNode node) {
+  String _parentPath(FileNode node) {
     final path = node.apiPath;
     final slash = path.lastIndexOf('/');
     if (slash <= 0) return '';
     return path.substring(0, slash);
   }
 
-  /// Returns true for any file type that Cirrus can route into an editor or
+  /// Returns true for any file type that the file browser can route into an editor or
   /// conversion flow rather than downloading directly.
   static bool _opensInApp(String name) {
     final lower = name.toLowerCase();
-    return hasSupportedCirrusEditorForPath(lower) || lower.endsWith('.csv');
+    return hasSupportedFilesEditorForPath(lower) || lower.endsWith('.csv');
   }
 
-  void _openOrDownload(CirrusFileNode file) {
+  void _openOrDownload(FileNode file) {
     if (_opensInApp(file.name)) {
       widget.onOpenFile(file);
     } else {
@@ -62,7 +62,7 @@ class _RecentFilesSectionState extends State<RecentFilesSection> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<CirrusFileNode>>(
+    return FutureBuilder<List<FileNode>>(
       future: _future,
       builder: (context, snapshot) {
         // Don't show section at all while loading or on error or if empty.
@@ -133,7 +133,7 @@ class _RecentFileChip extends StatelessWidget {
     required this.onFolderTap,
   });
 
-  final CirrusFileNode file;
+  final FileNode file;
   final VoidCallback onTap;
   final VoidCallback onFolderTap;
 

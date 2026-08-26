@@ -16,13 +16,13 @@ import (
 // @Summary Searches for files
 // @Schemes http https
 // @Description searches for a file across all managed devices for the given search term. If deviceSerial is empty, search across all devices. Otherwise, only for the specified device
-// @Tags cirrus
+// @Tags files
 // @Produce json
 // @Success 200 {array} FileNodeJSON
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Param query query string false "Search term to find"
 // @Param serial query string false "Device serial number to filter by"
-// @Router /cirrus/search [get]
+// @Router /files/search [get]
 func searchFiles(c *gin.Context) *serverutil.Response {
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	if !ok {
@@ -49,7 +49,7 @@ func searchFiles(c *gin.Context) *serverutil.Response {
 	allFiles := make([]FileNodeJSON, 0, len(matches))
 	for _, f := range matches {
 		// DirPath must be the full relative path (e.g. "docs/notes.txt"), not
-		// just the parent dir. The Flutter CirrusFileNode.apiPath getter uses
+		// just the parent dir. The Flutter FileNode.apiPath getter uses
 		// DirPath as the full API path, consistent with how list_files.go
 		// populates it (filepath.Join(rootDir, file.Name())).
 		allFiles = append(allFiles, FileNodeJSON{
@@ -153,7 +153,7 @@ func searchFilesDiskWalk(c *gin.Context, deps deputil.Dependencies, query string
 }
 
 var searchFilesRoute = serverutil.ApiRoute(
-	"GET", "/cirrus/search", func(c *gin.Context) *serverutil.Response {
+	"GET", "/files/search", func(c *gin.Context) *serverutil.Response {
 		return searchFiles(c)
 	},
 )

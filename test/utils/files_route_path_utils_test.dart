@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quark/utils/cirrus_route_path_utils.dart';
+import 'package:quark/utils/files_route_path_utils.dart';
 
 void main() {
   group('isLikelyFilePath', () {
@@ -15,12 +15,12 @@ void main() {
     });
   });
 
-  group('cirrusRouteDisplayPath', () {
-    test('formats empty and non-empty Cirrus paths', () {
-      expect(cirrusRouteDisplayPath(''), '/cirrus');
+  group('filesRouteDisplayPath', () {
+    test('formats empty and non-empty files paths', () {
+      expect(filesRouteDisplayPath(''), '/files');
       expect(
-        cirrusRouteDisplayPath('/Documents/report.abdoc'),
-        '/cirrus/Documents/report.abdoc',
+        filesRouteDisplayPath('/Documents/report.abdoc'),
+        '/files/Documents/report.abdoc',
       );
     });
   });
@@ -28,18 +28,18 @@ void main() {
   group('supported editor helpers', () {
     test('recognize editor-backed file paths and types', () {
       expect(
-        hasSupportedCirrusEditorForPath('/Documents/report.abdoc'),
+        hasSupportedFilesEditorForPath('/Documents/report.abdoc'),
         isTrue,
       );
       expect(
-        hasSupportedCirrusEditorForPath('/Documents/budget.absheet'),
+        hasSupportedFilesEditorForPath('/Documents/budget.absheet'),
         isTrue,
       );
-      expect(hasSupportedCirrusEditorForPath('/Documents/photo.jpg'), isFalse);
+      expect(hasSupportedFilesEditorForPath('/Documents/photo.jpg'), isFalse);
 
-      expect(hasSupportedCirrusEditorForType('abdoc'), isTrue);
-      expect(hasSupportedCirrusEditorForType('absheet'), isTrue);
-      expect(hasSupportedCirrusEditorForType('image'), isFalse);
+      expect(hasSupportedFilesEditorForType('abdoc'), isTrue);
+      expect(hasSupportedFilesEditorForType('absheet'), isTrue);
+      expect(hasSupportedFilesEditorForType('image'), isFalse);
     });
   });
 

@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
-import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/models/file_node.dart';
 import 'package:quark/router.dart';
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/services/content_search_service.dart';
 import 'package:quark/utils/safe_set_state_mixin.dart';
 import 'package:quark/widgets/layout/quark_app_bar.dart';
@@ -20,8 +20,8 @@ class SheetsPage extends StatefulWidget {
 }
 
 class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
-  List<CirrusFileNode> _files = [];
-  List<CirrusFileNode> _filtered = [];
+  List<FileNode> _files = [];
+  List<FileNode> _filtered = [];
   List<ContentSearchResult> _contentResults = [];
   bool _contentSearching = false;
   bool _loading = true;
@@ -49,7 +49,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
       _error = null;
     });
     try {
-      final files = await CirrusService.getFilesByType('absheet');
+      final files = await FilesService.getFilesByType('absheet');
       setStateSafely(() {
         _files = files;
         _applyFilter();
@@ -100,7 +100,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
     });
   }
 
-  Future<void> _openSheet(CirrusFileNode node) async {
+  Future<void> _openSheet(FileNode node) async {
     await context.push(
       AppRoutes.sheetFile(node.apiPath, serial: node.deviceSerial),
     );
@@ -146,7 +146,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
         bytes,
         filename: fileName,
       );
-      await CirrusService.uploadFilesFromFormData('', [file]);
+      await FilesService.uploadFilesFromFormData('', [file]);
       if (!mounted) return;
       context.push(AppRoutes.sheetFile(fileName));
       _load();
@@ -187,7 +187,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
       ),
       drawer: QuarkDrawer(
         activeSection: QuarkDrawerSection.sheets,
-        onTapCirrus: () => context.go('/cirrus'),
+        onTapFiles: () => context.go('/files'),
         onTapPhotos: () => context.go('/photos'),
         onTapDocs: () => context.go('/docs'),
         onTapSheets: () => Navigator.of(context).pop(),
@@ -381,7 +381,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
     );
   }
 
-  Widget _buildSheetTile(CirrusFileNode node, ColorScheme colorScheme) {
+  Widget _buildSheetTile(FileNode node, ColorScheme colorScheme) {
     final folder = node.dirPath.contains('/')
         ? node.dirPath.substring(0, node.dirPath.lastIndexOf('/'))
         : '';

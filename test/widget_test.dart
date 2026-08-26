@@ -20,7 +20,7 @@ void main() {
     await tester.pump();
 
     // Child renders — file browser is visible, not a login screen.
-    // The top bar shows 'Files' as the brand label (restyled from 'Cirrus').
+    // The top bar shows 'Files' as the brand label.
     expect(find.text('Files'), findsOneWidget);
     expect(find.byIcon(Icons.storage_rounded), findsOneWidget);
   });

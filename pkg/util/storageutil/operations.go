@@ -60,14 +60,14 @@ func BackupToDeviceWithDevices(params BackupToDeviceParams, sourceDevice *Manage
 		return nil, errors.New("source and target devices cannot be the same")
 	}
 
-	sourceDirFs := os.DirFS(sourceDevice.CirrusDir)
-	// Walk all contents of sourceDirFs. If the file exists in targetDevice.CirrusDir, it will be overwritten. If it doesn't exist, it will be created.
+	sourceDirFs := os.DirFS(sourceDevice.FilesDir)
+	// Walk all contents of sourceDirFs. If the file exists in targetDevice.FilesDir, it will be overwritten. If it doesn't exist, it will be created.
 	err := fs.WalkDir(sourceDirFs, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		sourcePath := filepath.Join(sourceDevice.CirrusDir, path)
-		targetPath := filepath.Join(targetDevice.CirrusDir, path)
+		sourcePath := filepath.Join(sourceDevice.FilesDir, path)
+		targetPath := filepath.Join(targetDevice.FilesDir, path)
 
 		// Backup directory
 		if d.IsDir() {
@@ -141,23 +141,23 @@ func (s *StorageService) DeleteFiles(params DeleteFilesParams) (*DeleteFilesResu
 		return nil, err // coverage: ignore - requires device detection failure
 	}
 
-	defaultCirrusDir, err := GetCirrusDir()
+	defaultFilesDir, err := GetFilesDir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+		return nil, fmt.Errorf("failed to get files directory: %w", err)
 	}
 
-	return DeleteFilesImpl(params, device, defaultCirrusDir)
+	return DeleteFilesImpl(params, device, defaultFilesDir)
 }
 
-// DeleteFilesImpl removes files using pre-resolved device and cirrus directory.
+// DeleteFilesImpl removes files using pre-resolved device and files directory.
 // Use this in tests to inject test devices without hitting the real filesystem detector.
-func DeleteFilesImpl(params DeleteFilesParams, device *ManagedDevice, defaultCirrusDir string) (*DeleteFilesResult, error) {
-	cirrusDir := defaultCirrusDir
+func DeleteFilesImpl(params DeleteFilesParams, device *ManagedDevice, defaultFilesDir string) (*DeleteFilesResult, error) {
+	filesDir := defaultFilesDir
 	if device != nil {
-		cirrusDir = device.CirrusDir
+		filesDir = device.FilesDir
 	}
 	for _, filePath := range params.FilePaths {
-		fullPath, err := safeJoin(cirrusDir, params.RootDir, filePath)
+		fullPath, err := safeJoin(filesDir, params.RootDir, filePath)
 		if err != nil {
 			return nil, fmt.Errorf("invalid file path: %w", err)
 		}
@@ -198,31 +198,31 @@ func (s *StorageService) MoveFile(params MoveFileParams) (*MoveFileResult, error
 		return nil, err // coverage: ignore - requires device detection failure
 	}
 
-	defaultCirrusDir, err := GetCirrusDir()
+	defaultFilesDir, err := GetFilesDir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+		return nil, fmt.Errorf("failed to get files directory: %w", err)
 	}
 
-	return MoveFileImpl(params, oldDevice, newDevice, defaultCirrusDir)
+	return MoveFileImpl(params, oldDevice, newDevice, defaultFilesDir)
 }
 
-// MoveFileImpl moves a file using pre-resolved devices and cirrus directory.
+// MoveFileImpl moves a file using pre-resolved devices and files directory.
 // Use this in tests to inject test devices without hitting the real filesystem detector.
-func MoveFileImpl(params MoveFileParams, oldDevice *ManagedDevice, newDevice *ManagedDevice, defaultCirrusDir string) (*MoveFileResult, error) {
-	oldCirrusDir := defaultCirrusDir
+func MoveFileImpl(params MoveFileParams, oldDevice *ManagedDevice, newDevice *ManagedDevice, defaultFilesDir string) (*MoveFileResult, error) {
+	oldFilesDir := defaultFilesDir
 	if oldDevice != nil {
-		oldCirrusDir = oldDevice.CirrusDir
+		oldFilesDir = oldDevice.FilesDir
 	}
-	newCirrusDir := defaultCirrusDir
+	newFilesDir := defaultFilesDir
 	if newDevice != nil {
-		newCirrusDir = newDevice.CirrusDir
+		newFilesDir = newDevice.FilesDir
 	}
 
-	oldFullPath, err := safeJoin(oldCirrusDir, params.OldFilePath)
+	oldFullPath, err := safeJoin(oldFilesDir, params.OldFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("invalid old file path: %w", err)
 	}
-	newFullPath, err := safeJoin(newCirrusDir, params.NewFilePath)
+	newFullPath, err := safeJoin(newFilesDir, params.NewFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("invalid new file path: %w", err)
 	}
@@ -293,19 +293,19 @@ func (s *StorageService) CreateFolder(params CreateFolderParams) (*CreateFolderR
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
-	defaultCirrusDir, err := GetCirrusDir()
+	defaultFilesDir, err := GetFilesDir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+		return nil, fmt.Errorf("failed to get files directory: %w", err)
 	}
-	return CreateFolderImpl(params, device, defaultCirrusDir)
+	return CreateFolderImpl(params, device, defaultFilesDir)
 }
 
-// CreateFolderImpl creates a folder using a pre-resolved device and cirrus directory.
+// CreateFolderImpl creates a folder using a pre-resolved device and files directory.
 // Use this in tests to inject test devices without hitting the real filesystem detector.
-func CreateFolderImpl(params CreateFolderParams, device *ManagedDevice, defaultCirrusDir string) (*CreateFolderResult, error) {
-	rootDir := defaultCirrusDir
+func CreateFolderImpl(params CreateFolderParams, device *ManagedDevice, defaultFilesDir string) (*CreateFolderResult, error) {
+	rootDir := defaultFilesDir
 	if device != nil {
-		rootDir = device.CirrusDir
+		rootDir = device.FilesDir
 	}
 	fullPath, err := safeJoin(rootDir, params.FolderDir, params.FolderName)
 	if err != nil {
@@ -342,21 +342,21 @@ func (s *StorageService) DownloadFile(params DownloadFileParams) (*DownloadFileR
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
-	defaultCirrusDir, err := GetCirrusDir()
+	defaultFilesDir, err := GetFilesDir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+		return nil, fmt.Errorf("failed to get files directory: %w", err)
 	}
-	return DownloadFileImpl(params, device, defaultCirrusDir)
+	return DownloadFileImpl(params, device, defaultFilesDir)
 }
 
-// DownloadFileImpl prepares a file for download using pre-resolved device and cirrus directory.
+// DownloadFileImpl prepares a file for download using pre-resolved device and files directory.
 // Use this in tests to inject test devices without hitting the real filesystem detector.
-func DownloadFileImpl(params DownloadFileParams, device *ManagedDevice, defaultCirrusDir string) (*DownloadFileResult, error) {
-	cirrusDir := defaultCirrusDir
+func DownloadFileImpl(params DownloadFileParams, device *ManagedDevice, defaultFilesDir string) (*DownloadFileResult, error) {
+	filesDir := defaultFilesDir
 	if device != nil {
-		cirrusDir = device.CirrusDir
+		filesDir = device.FilesDir
 	}
-	fullPath, err := safeJoin(cirrusDir, params.FilePath)
+	fullPath, err := safeJoin(filesDir, params.FilePath)
 	if err != nil {
 		return nil, fmt.Errorf("invalid file path: %w", err)
 	}
@@ -389,19 +389,19 @@ func (s *StorageService) UploadFilesStreamed(params UploadFilesStreamedParams) e
 	if err != nil {
 		return fmt.Errorf("device not found: %w", err)
 	}
-	defaultCirrusDir, err := GetCirrusDir()
+	defaultFilesDir, err := GetFilesDir()
 	if err != nil {
-		return fmt.Errorf("failed to get cirrus directory: %w", err)
+		return fmt.Errorf("failed to get files directory: %w", err)
 	}
-	return UploadFilesStreamedImpl(params, device, defaultCirrusDir)
+	return UploadFilesStreamedImpl(params, device, defaultFilesDir)
 }
 
-// UploadFilesStreamedImpl streams file uploads using pre-resolved device and cirrus directory.
+// UploadFilesStreamedImpl streams file uploads using pre-resolved device and files directory.
 // Use this in tests to inject test devices without hitting the real filesystem detector.
-func UploadFilesStreamedImpl(params UploadFilesStreamedParams, device *ManagedDevice, defaultCirrusDir string) error {
-	cirrusDir := defaultCirrusDir
+func UploadFilesStreamedImpl(params UploadFilesStreamedParams, device *ManagedDevice, defaultFilesDir string) error {
+	filesDir := defaultFilesDir
 	if device != nil {
-		cirrusDir = device.CirrusDir
+		filesDir = device.FilesDir
 	}
 
 	for {
@@ -418,7 +418,7 @@ func UploadFilesStreamedImpl(params UploadFilesStreamedParams, device *ManagedDe
 			// Strip any directory components from the client-supplied filename to
 			// prevent path traversal via the filename itself.
 			fileName := filepath.Base(part.FileName())
-			destDir, err := safeJoin(cirrusDir, params.RootDir)
+			destDir, err := safeJoin(filesDir, params.RootDir)
 			if err != nil {
 				part.Close()
 				return fmt.Errorf("invalid upload directory: %w", err)
@@ -462,8 +462,8 @@ func UploadFilesStreamedImpl(params UploadFilesStreamedParams, device *ManagedDe
 			// same filesystem as the final destination.
 			dataDir := GetDataDir()
 			if device != nil {
-				// device.CirrusDir is <dataDir>/cirrus, so parent is device data dir
-				dataDir = filepath.Dir(cirrusDir)
+				// device.FilesDir is <dataDir>/cirrus, so parent is device data dir
+				dataDir = filepath.Dir(filesDir)
 			}
 			tmpBase := filepath.Join(dataDir, "tmp")
 			if err := os.MkdirAll(tmpBase, 0755); err != nil {
@@ -608,27 +608,27 @@ type StatFileResult struct {
 	ModTime  time.Time
 }
 
-// StatFile resolves a cirrus-relative path to its filesystem metadata.
+// StatFile resolves a files-relative path to its filesystem metadata.
 func (s *StorageService) StatFile(params StatFileParams) (*StatFileResult, error) {
 	device, err := s.FindManagedDeviceBySerial(params.DeviceSerial)
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
-	defaultCirrusDir, err := GetCirrusDir()
+	defaultFilesDir, err := GetFilesDir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+		return nil, fmt.Errorf("failed to get files directory: %w", err)
 	}
-	return StatFileImpl(params, device, defaultCirrusDir)
+	return StatFileImpl(params, device, defaultFilesDir)
 }
 
-// StatFileImpl resolves a path using pre-resolved device and cirrus directory.
+// StatFileImpl resolves a path using pre-resolved device and files directory.
 // Use this in tests to inject test devices without hitting the real filesystem detector.
-func StatFileImpl(params StatFileParams, device *ManagedDevice, defaultCirrusDir string) (*StatFileResult, error) {
-	cirrusDir := defaultCirrusDir
+func StatFileImpl(params StatFileParams, device *ManagedDevice, defaultFilesDir string) (*StatFileResult, error) {
+	filesDir := defaultFilesDir
 	if device != nil {
-		cirrusDir = device.CirrusDir
+		filesDir = device.FilesDir
 	}
-	fullPath, err := safeJoin(cirrusDir, params.FilePath)
+	fullPath, err := safeJoin(filesDir, params.FilePath)
 	if err != nil {
 		return nil, fmt.Errorf("invalid file path: %w", err)
 	}
@@ -658,18 +658,18 @@ func StatFileImpl(params StatFileParams, device *ManagedDevice, defaultCirrusDir
 
 // CopyFileParams contains parameters for duplicating a file in-place.
 type CopyFileParams struct {
-	// RelPath is the cirrus-relative path of the source file.
+	// RelPath is the files-relative path of the source file.
 	RelPath      string
 	DeviceSerial string
 }
 
 // CopyFileResult contains the result of a file copy operation.
 type CopyFileResult struct {
-	// NewRelPath is the cirrus-relative path of the newly created copy.
+	// NewRelPath is the files-relative path of the newly created copy.
 	NewRelPath string
 }
 
-// CopyFile duplicates a file within the same cirrus directory, producing a
+// CopyFile duplicates a file within the same files directory, producing a
 // non-conflicting name by appending "_copy" (and further numeric suffixes if
 // needed). It is the service-layer entry point and resolves the device by
 // serial before delegating to CopyFileImpl.
@@ -678,23 +678,23 @@ func (s *StorageService) CopyFile(params CopyFileParams) (*CopyFileResult, error
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
-	defaultCirrusDir, err := GetCirrusDir()
+	defaultFilesDir, err := GetFilesDir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+		return nil, fmt.Errorf("failed to get files directory: %w", err)
 	}
-	return CopyFileImpl(params, device, defaultCirrusDir)
+	return CopyFileImpl(params, device, defaultFilesDir)
 }
 
-// CopyFileImpl duplicates a file using pre-resolved device and cirrus directory.
+// CopyFileImpl duplicates a file using pre-resolved device and files directory.
 // Use this in tests to inject test devices without hitting the real filesystem
 // detector.
-func CopyFileImpl(params CopyFileParams, device *ManagedDevice, defaultCirrusDir string) (*CopyFileResult, error) {
-	cirrusDir := defaultCirrusDir
+func CopyFileImpl(params CopyFileParams, device *ManagedDevice, defaultFilesDir string) (*CopyFileResult, error) {
+	filesDir := defaultFilesDir
 	if device != nil {
-		cirrusDir = device.CirrusDir
+		filesDir = device.FilesDir
 	}
 
-	srcFull, err := safeJoin(cirrusDir, params.RelPath)
+	srcFull, err := safeJoin(filesDir, params.RelPath)
 	if err != nil {
 		return nil, fmt.Errorf("invalid relPath: %w", err)
 	}
@@ -713,7 +713,7 @@ func CopyFileImpl(params CopyFileParams, device *ManagedDevice, defaultCirrusDir
 		return nil, fmt.Errorf("copy failed: %w", err)
 	}
 
-	newRelPath, err := filepath.Rel(cirrusDir, destFull)
+	newRelPath, err := filepath.Rel(filesDir, destFull)
 	if err != nil {
 		return nil, fmt.Errorf("failed to compute relative path: %w", err)
 	}

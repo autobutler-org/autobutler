@@ -21,7 +21,7 @@ type BackfillResult struct {
 	Failed int
 }
 
-// BackfillTree walks cirrusDir and indexes the contents of every indexable
+// BackfillTree walks filesDir and indexes the contents of every indexable
 // file beneath it, attributing them to serial.
 //
 // The content index is kept in sync by file events, which only covers files
@@ -37,18 +37,18 @@ type BackfillResult struct {
 // The walk is best-effort: unreadable files and failed inserts are counted in
 // the result and skipped. An error is returned only when the walk itself
 // cannot proceed, and ctx cancellation stops it early.
-func BackfillTree(ctx context.Context, db *sql.DB, serial, cirrusDir string) (BackfillResult, error) {
+func BackfillTree(ctx context.Context, db *sql.DB, serial, filesDir string) (BackfillResult, error) {
 	var result BackfillResult
-	if cirrusDir == "" {
+	if filesDir == "" {
 		return result, nil
 	}
-	if _, err := os.Stat(cirrusDir); err != nil {
+	if _, err := os.Stat(filesDir); err != nil {
 		// A device that is not currently mounted is not an error worth
 		// failing startup over.
 		return result, nil
 	}
 
-	walkErr := filepath.WalkDir(cirrusDir, func(path string, d fs.DirEntry, err error) error {
+	walkErr := filepath.WalkDir(filesDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			// Skip subtrees we cannot read rather than abandoning the walk.
 			if d != nil && d.IsDir() {
@@ -74,7 +74,7 @@ func BackfillTree(ctx context.Context, db *sql.DB, serial, cirrusDir string) (Ba
 		if text == "" {
 			return nil
 		}
-		relPath, relErr := filepath.Rel(cirrusDir, path)
+		relPath, relErr := filepath.Rel(filesDir, path)
 		if relErr != nil {
 			result.Failed++
 			return nil
@@ -90,7 +90,7 @@ func BackfillTree(ctx context.Context, db *sql.DB, serial, cirrusDir string) (Ba
 		return nil
 	})
 	if walkErr != nil && !strings.Contains(walkErr.Error(), context.Canceled.Error()) {
-		return result, fmt.Errorf("backfill walk %s: %w", cirrusDir, walkErr)
+		return result, fmt.Errorf("backfill walk %s: %w", filesDir, walkErr)
 	}
 	return result, nil
 }

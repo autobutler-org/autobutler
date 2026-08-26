@@ -11,17 +11,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newTrashTestFS(t *testing.T) (cirrusDir string, device *storageutil.ManagedDevice) {
+func newTrashTestFS(t *testing.T) (filesDir string, device *storageutil.ManagedDevice) {
 	t.Helper()
 	tmp := t.TempDir()
-	return tmp, nil // nil device → falls back to defaultCirrusDir
+	return tmp, nil // nil device → falls back to defaultFilesDir
 }
 
 func TestTrashFilesImpl_MovesFileToTrash(t *testing.T) {
-	cirrusDir, device := newTrashTestFS(t)
+	filesDir, device := newTrashTestFS(t)
 
 	// Create a file to trash.
-	fileDir := filepath.Join(cirrusDir, "docs")
+	fileDir := filepath.Join(filesDir, "docs")
 	require.NoError(t, os.MkdirAll(fileDir, 0o700))
 	require.NoError(t, os.WriteFile(filepath.Join(fileDir, "notes.txt"), []byte("hello"), 0o600))
 
@@ -30,7 +30,7 @@ func TestTrashFilesImpl_MovesFileToTrash(t *testing.T) {
 		FilePaths: []string{"notes.txt"},
 	}
 
-	result, err := storageutil.TrashFilesImpl(params, device, cirrusDir)
+	result, err := storageutil.TrashFilesImpl(params, device, filesDir)
 	require.NoError(t, err)
 	assert.Equal(t, "docs", result.RootDir)
 
@@ -39,7 +39,7 @@ func TestTrashFilesImpl_MovesFileToTrash(t *testing.T) {
 	assert.True(t, os.IsNotExist(err), "original file should no longer exist")
 
 	// Trash dir should contain it.
-	trashRoot := filepath.Join(cirrusDir, storageutil.TrashDir)
+	trashRoot := filepath.Join(filesDir, storageutil.TrashDir)
 	entries, err := os.ReadDir(trashRoot)
 	require.NoError(t, err)
 	// One item + one metadata sidecar.
@@ -47,16 +47,16 @@ func TestTrashFilesImpl_MovesFileToTrash(t *testing.T) {
 }
 
 func TestListTrashImpl_ReturnsItems(t *testing.T) {
-	cirrusDir, device := newTrashTestFS(t)
+	filesDir, device := newTrashTestFS(t)
 
 	// Trash a file first.
-	require.NoError(t, os.WriteFile(filepath.Join(cirrusDir, "a.txt"), []byte("x"), 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(filesDir, "a.txt"), []byte("x"), 0o600))
 	_, err := storageutil.TrashFilesImpl(storageutil.TrashFilesParams{
 		RootDir: "", FilePaths: []string{"a.txt"},
-	}, device, cirrusDir)
+	}, device, filesDir)
 	require.NoError(t, err)
 
-	items, err := storageutil.ListTrashImpl(storageutil.ListTrashParams{}, device, cirrusDir)
+	items, err := storageutil.ListTrashImpl(storageutil.ListTrashParams{}, device, filesDir)
 	require.NoError(t, err)
 	require.Len(t, items, 1)
 	assert.Equal(t, "a.txt", filepath.Base(items[0].OriginalPath))
@@ -64,25 +64,25 @@ func TestListTrashImpl_ReturnsItems(t *testing.T) {
 }
 
 func TestRestoreFileImpl_RestoresFile(t *testing.T) {
-	cirrusDir, device := newTrashTestFS(t)
+	filesDir, device := newTrashTestFS(t)
 
-	subDir := filepath.Join(cirrusDir, "media")
+	subDir := filepath.Join(filesDir, "media")
 	require.NoError(t, os.MkdirAll(subDir, 0o700))
 	require.NoError(t, os.WriteFile(filepath.Join(subDir, "photo.jpg"), []byte("img"), 0o600))
 
 	_, err := storageutil.TrashFilesImpl(storageutil.TrashFilesParams{
 		RootDir: "media", FilePaths: []string{"photo.jpg"},
-	}, device, cirrusDir)
+	}, device, filesDir)
 	require.NoError(t, err)
 
 	// List to get the trash name.
-	items, err := storageutil.ListTrashImpl(storageutil.ListTrashParams{}, device, cirrusDir)
+	items, err := storageutil.ListTrashImpl(storageutil.ListTrashParams{}, device, filesDir)
 	require.NoError(t, err)
 	require.Len(t, items, 1)
 
 	result, err := storageutil.RestoreFileImpl(storageutil.RestoreFileParams{
 		TrashName: items[0].TrashName,
-	}, device, cirrusDir)
+	}, device, filesDir)
 	require.NoError(t, err)
 	assert.Contains(t, result.RestoredPath, "photo.jpg")
 
@@ -91,15 +91,15 @@ func TestRestoreFileImpl_RestoresFile(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Trash should be empty.
-	items2, err := storageutil.ListTrashImpl(storageutil.ListTrashParams{}, device, cirrusDir)
+	items2, err := storageutil.ListTrashImpl(storageutil.ListTrashParams{}, device, filesDir)
 	require.NoError(t, err)
 	assert.Empty(t, items2)
 }
 
 func TestPurgeExpiredTrashImpl_DeletesOldItems(t *testing.T) {
-	cirrusDir, device := newTrashTestFS(t)
+	filesDir, device := newTrashTestFS(t)
 
-	trashRoot := filepath.Join(cirrusDir, storageutil.TrashDir)
+	trashRoot := filepath.Join(filesDir, storageutil.TrashDir)
 	require.NoError(t, os.MkdirAll(trashRoot, 0o700))
 
 	// Write an already-expired item (mtime in the past).
@@ -112,7 +112,7 @@ func TestPurgeExpiredTrashImpl_DeletesOldItems(t *testing.T) {
 	newItem := filepath.Join(trashRoot, "20990101T000000Z_new.txt")
 	require.NoError(t, os.WriteFile(newItem, []byte("new"), 0o600))
 
-	err := storageutil.PurgeExpiredTrashImpl(device, cirrusDir)
+	err := storageutil.PurgeExpiredTrashImpl(device, filesDir)
 	require.NoError(t, err)
 
 	_, errOld := os.Stat(oldItem)

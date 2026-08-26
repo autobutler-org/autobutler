@@ -21,19 +21,21 @@ func isRunningAsServiceUser() bool {
 	return u.Username == "quark"
 }
 
-func ConstructCirrusDir(dataDir string) string {
+// ConstructFilesDir returns the on-disk storage root. The directory is still
+// named "cirrus" on purpose — see SetupFilesDir for why renaming it is unsafe.
+func ConstructFilesDir(dataDir string) string {
 	return filepath.Join(dataDir, "cirrus")
 }
 
-func GetCirrusDir() (string, error) {
-	cirrusPath := ConstructCirrusDir(GetDataDir())
-	if err := os.MkdirAll(cirrusPath, 0755); err != nil {
-		return "", fmt.Errorf("failed to create cirrus directory: %w", err)
+func GetFilesDir() (string, error) {
+	filesPath := ConstructFilesDir(GetDataDir())
+	if err := os.MkdirAll(filesPath, 0755); err != nil {
+		return "", fmt.Errorf("failed to create files directory: %w", err)
 	}
-	return cirrusPath, nil
+	return filesPath, nil
 }
 
-func GetCirrusDirForDevice(mountPoint string) (string, error) {
+func GetFilesDirForDevice(mountPoint string) (string, error) {
 	if mountPoint == "" {
 		return "", errors.New("mount point is empty")
 	}
@@ -47,11 +49,11 @@ func GetCirrusDirForDevice(mountPoint string) (string, error) {
 	}
 
 	dataDir := GetDataDirForDevice(mountPoint)
-	cirrusPath := ConstructCirrusDir(dataDir)
-	if err := os.MkdirAll(cirrusPath, 0755); err != nil {
-		return "", fmt.Errorf("failed to create cirrus directory for device at %s: %v", mountPoint, err)
+	filesPath := ConstructFilesDir(dataDir)
+	if err := os.MkdirAll(filesPath, 0755); err != nil {
+		return "", fmt.Errorf("failed to create files directory for device at %s: %v", mountPoint, err)
 	}
-	return cirrusPath, nil
+	return filesPath, nil
 }
 
 // GetDataDirForDevice returns the data directory path for a specific device mount point
