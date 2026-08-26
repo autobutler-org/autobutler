@@ -1,0 +1,57 @@
+name: CI - Backend
+on:
+  # Also on push to main so the badges have a run attributed to the branch. Without it
+  # every run belongs to a pull request's head ref and a ?branch=main badge reads
+  # "no status".
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+jobs:
+  ci-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Setup go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Setup sqlc
+        uses: ./.github/actions/setup-sqlc
+      - name: Setup swag
+        uses: ./.github/actions/setup-swag
+      - name: Build
+        run: |
+          make build/backend
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          path: build/quark
+          if-no-files-found: error
+      - name: Check backend cross-compile [darwin/arm64]
+        env:
+          GOOS: darwin
+          GOARCH: arm64
+        run: |
+          make build/backend
+      - name: Check backend cross-compile [linux/arm64]
+        env:
+          GOOS: linux
+          GOARCH: arm64
+        run: |
+          make build/backend
+      - name: Run unit tests
+        env:
+          PRINT_COVERAGE: true
+        run: |
+          make test/unit/backend
+      - name: Run integration tests
+        run: |
+          make test/integration/backend
