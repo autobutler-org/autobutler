@@ -120,6 +120,10 @@ Future<MoveRenameResult?> promptForMoveRenamePath(
                   if (showDevicePicker) ...[
                     DropdownButtonFormField<StorageDevice>(
                       initialValue: selectedDevice,
+                      // A device name is arbitrary length and the dialog is
+                      // narrow on a phone; without isExpanded the button sizes
+                      // to the label and overflows its own row.
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Destination device',
                         isDense: true,
@@ -132,6 +136,8 @@ Future<MoveRenameResult?> promptForMoveRenamePath(
                                 d.name.isNotEmpty
                                     ? '${d.name}${d.isInternal ? ' (Internal)' : ''}'
                                     : d.mountPoint,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           )

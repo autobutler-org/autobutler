@@ -84,8 +84,10 @@ void main() {
     expect(material.type, MaterialType.transparency);
   }, variant: _iOS);
 
-  testWidgets('the Move / Rename device picker opens on iOS', (tester) async {
-    // The reported repro: two devices means the Material dropdown is shown.
+  Future<void> openMoveRename(
+    WidgetTester tester, {
+    required List<StorageDevice> devices,
+  }) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Builder(
@@ -94,10 +96,7 @@ void main() {
               context,
               startPath: '',
               initialName: 'notes.txt',
-              devices: [
-                _device('Internal', isInternal: true),
-                _device('External', isInternal: false),
-              ],
+              devices: devices,
             ),
             child: const Text('open'),
           ),
@@ -106,11 +105,43 @@ void main() {
     );
 
     await tester.tap(find.text('open'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    // Settle, not a fixed pump: the dialog's fade transition paints nothing
+    // until it finishes, and an overflow is only reported when it paints.
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('the Move / Rename device picker opens on iOS', (tester) async {
+    // The reported repro: two devices means the Material dropdown is shown.
+    await openMoveRename(
+      tester,
+      devices: [
+        _device('Internal', isInternal: true),
+        _device('External', isInternal: false),
+      ],
+    );
 
     expect(tester.takeException(), isNull);
     expect(find.text('Move / Rename'), findsOneWidget);
+    expect(find.byType(DropdownButtonFormField<StorageDevice>), findsOneWidget);
+  }, variant: _iOS);
+
+  testWidgets('the device picker fits a phone-width dialog', (tester) async {
+    // A dialog on a phone leaves the dropdown ~174 logical pixels. The device
+    // name is arbitrary length, so the button has to give way rather than size
+    // to its label and overflow its own row.
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await openMoveRename(
+      tester,
+      devices: [
+        _device('Samsung Portable SSD T7 Shield', isInternal: true),
+        _device('External', isInternal: false),
+      ],
+    );
+
+    expect(tester.takeException(), isNull);
     expect(find.byType(DropdownButtonFormField<StorageDevice>), findsOneWidget);
   }, variant: _iOS);
 }
