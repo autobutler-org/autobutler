@@ -32,6 +32,7 @@ import 'package:quark/widgets/core/empty_state_widget.dart';
 import 'package:quark/widgets/device_upload_picker.dart';
 import 'package:quark/widgets/file_browser/file_browser_header.dart';
 import 'package:quark/widgets/file_browser/file_browser_view.dart';
+import 'package:quark/widgets/file_browser/file_selection_bar.dart';
 import 'package:quark/widgets/file_browser/file_storage_footer.dart';
 import 'package:quark/widgets/file_browser/file_top_bar.dart';
 import 'package:quark/widgets/file_browser/new_file_dialog.dart';
@@ -1839,7 +1840,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
               final disableNavigation =
                   _handlingPendingFile && isLikelyFilePath(_currentPath);
               if (_selectionMode) {
-                return _SelectionBar(
+                return FileSelectionBar(
                   selectedCount: _selectedPaths.length,
                   totalCount: _allCurrentFiles.length,
                   onSelectAll: _selectAll,
@@ -2207,66 +2208,6 @@ class _ArchiveTextPreview extends StatelessWidget {
           text,
           style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
         ),
-      ),
-    );
-  }
-}
-
-/// Top bar shown in place of [FileTopBar] while multi-select mode is active.
-class _SelectionBar extends StatelessWidget {
-  const _SelectionBar({
-    required this.selectedCount,
-    required this.totalCount,
-    required this.onSelectAll,
-    required this.onDeselectAll,
-    required this.onCancel,
-    this.onDelete,
-  });
-
-  final int selectedCount;
-  final int totalCount;
-  final VoidCallback onSelectAll;
-  final VoidCallback onDeselectAll;
-  final VoidCallback onCancel;
-  final VoidCallback? onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Container(
-      height: 56,
-      color: colors.surfaceContainerHighest,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.close),
-            tooltip: 'Cancel selection',
-            onPressed: onCancel,
-          ),
-          Text(
-            '$selectedCount selected',
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-          const Spacer(),
-          TextButton(
-            onPressed: selectedCount < totalCount ? onSelectAll : onDeselectAll,
-            child: Text(
-              selectedCount < totalCount ? 'Select all' : 'Deselect all',
-            ),
-          ),
-          const SizedBox(width: 4),
-          IconButton(
-            icon: Icon(
-              Icons.delete_outline,
-              color: onDelete != null
-                  ? colors.error
-                  : colors.onSurface.withValues(alpha: 0.38),
-            ),
-            tooltip: 'Delete selected',
-            onPressed: onDelete,
-          ),
-        ],
       ),
     );
   }
