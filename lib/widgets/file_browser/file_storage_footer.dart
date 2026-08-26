@@ -59,40 +59,50 @@ class _FileStorageFooterState extends State<FileStorageFooter> {
         color: colorScheme.secondary,
         border: Border(top: BorderSide(color: colorScheme.outline)),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          Icon(
-            QuarkIcons.storage_rounded,
-            size: 14,
-            color: colorScheme.onSurface.withValues(alpha: 0.4),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            _loaded ? _label : 'Storage',
-            style: TextStyle(
-              fontSize: 12,
-              color: colorScheme.onSurface.withValues(alpha: 0.4),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 320),
-              child: QuarkStorageBar(usedFraction: _diskPercent),
-            ),
-          ),
-          const SizedBox(width: 8),
-          if (_loaded && _diskPercent > 0)
-            Text(
-              '${(_diskPercent * 100).toStringAsFixed(0)}%',
-              style: TextStyle(
-                fontSize: 11,
-                color: barColor,
-                fontWeight: FontWeight.w500,
+      // This footer is the last child of the page's Column, so it lands flush
+      // against the physical bottom edge — where iOS draws the home indicator
+      // and Android its gesture bar. `top: false` because the bar only ever
+      // sits at the bottom; the decoration stays on the outer container so the
+      // inset region is painted rather than left bare (#1598).
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              Icon(
+                QuarkIcons.storage_rounded,
+                size: 14,
+                color: colorScheme.onSurface.withValues(alpha: 0.4),
               ),
-            ),
-        ],
+              const SizedBox(width: 8),
+              Text(
+                _loaded ? _label : 'Storage',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colorScheme.onSurface.withValues(alpha: 0.4),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 320),
+                  child: QuarkStorageBar(usedFraction: _diskPercent),
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (_loaded && _diskPercent > 0)
+                Text(
+                  '${(_diskPercent * 100).toStringAsFixed(0)}%',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: barColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
