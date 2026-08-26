@@ -1,7 +1,6 @@
 package v0_files
 
 import (
-	"path/filepath"
 	"sort"
 
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
@@ -107,35 +106,38 @@ func listFilesByType(c *gin.Context) *serverutil.Response {
 			deviceSerial = device.UsbInfo.GetSerial()
 		}
 
-		infos, walkErr := storageutil.StatFilesInDir(filesDir, device.Name, device.DataDir, deviceSerial)
+		// Walk the whole subtree. This used to call StatFilesInDir, a
+		// single-level read, so the endpoint only ever returned files sitting
+		// at the storage root despite promising a recursive walk (#1605).
+		walkErr := storageutil.WalkFilesInDir(
+			c.Request.Context(), filesDir, device.Name, device.DataDir, deviceSerial,
+			func(f storageutil.WalkedFile) error {
+				info := f.Info
+				if info.IsDir() {
+					return nil
+				}
+				if storageutil.DetermineFileTypeFromPath(info.FullPath) != targetType {
+					return nil
+				}
+				allFiles = append(allFiles, FileNodeWithTimeJSON{
+					FileNodeJSON: FileNodeJSON{
+						Name:         info.Name(),
+						Size:         info.FileInfo.Size(),
+						IsDir:        false,
+						DeviceName:   info.DeviceName,
+						DevicePath:   info.DevicePath,
+						DirPath:      f.RelPath,
+						FullPath:     info.FullPath,
+						DeviceSerial: deviceSerial,
+						FileType:     fileTypeParam,
+					},
+					ModifiedAt: info.ModTime(),
+				})
+				return nil
+			},
+		)
 		if walkErr != nil {
 			continue
-		}
-		for _, info := range infos {
-			if info.IsDir() {
-				continue
-			}
-			if storageutil.DetermineFileTypeFromPath(info.FullPath) != targetType {
-				continue
-			}
-			relPath, relErr := filepath.Rel(filesDir, info.FullPath)
-			if relErr != nil {
-				relPath = info.Name()
-			}
-			allFiles = append(allFiles, FileNodeWithTimeJSON{
-				FileNodeJSON: FileNodeJSON{
-					Name:         info.Name(),
-					Size:         info.FileInfo.Size(),
-					IsDir:        false,
-					DeviceName:   info.DeviceName,
-					DevicePath:   info.DevicePath,
-					DirPath:      relPath,
-					FullPath:     info.FullPath,
-					DeviceSerial: deviceSerial,
-					FileType:     fileTypeParam,
-				},
-				ModifiedAt: info.ModTime(),
-			})
 		}
 	}
 

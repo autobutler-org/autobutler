@@ -1,7 +1,6 @@
 package v0_files
 
 import (
-	"path/filepath"
 	"sort"
 	"strconv"
 	"time"
@@ -119,35 +118,36 @@ func listRecentFiles(c *gin.Context) *serverutil.Response {
 		if device.UsbInfo != nil {
 			deviceSerial = device.UsbInfo.GetSerial()
 		}
-		// Walk all files recursively
-		infos, walkErr := storageutil.StatFilesInDir(filesDir, device.Name, device.DataDir, deviceSerial)
+		// Walk all files recursively. This used to call StatFilesInDir, a
+		// single-level read, so "recent files" could never surface anything
+		// outside the storage root (#1605). WalkedFile.RelPath is the
+		// API-relative path the client uses directly — the same shape
+		// list_files produces.
+		walkErr := storageutil.WalkFilesInDir(
+			c.Request.Context(), filesDir, device.Name, device.DataDir, deviceSerial,
+			func(f storageutil.WalkedFile) error {
+				info := f.Info
+				if info.IsDir() {
+					return nil // only return files, not directories
+				}
+				allFiles = append(allFiles, FileNodeWithTimeJSON{
+					FileNodeJSON: FileNodeJSON{
+						Name:         info.Name(),
+						Size:         info.FileInfo.Size(),
+						IsDir:        false,
+						DeviceName:   info.DeviceName,
+						DevicePath:   info.DevicePath,
+						DirPath:      f.RelPath,
+						FullPath:     info.FullPath,
+						DeviceSerial: deviceSerial,
+					},
+					ModifiedAt: info.ModTime(),
+				})
+				return nil
+			},
+		)
 		if walkErr != nil {
 			continue
-		}
-		for _, info := range infos {
-			if info.IsDir() {
-				continue // only return files, not directories
-			}
-			// info.FullPath is filepath.Join(filesDir, entry.Name()) from StatFilesInDir.
-			// Compute the API-relative path by stripping the filesDir prefix so the
-			// client can use it directly in API calls — same shape list_files produces.
-			relPath, relErr := filepath.Rel(filesDir, info.FullPath)
-			if relErr != nil {
-				relPath = info.Name()
-			}
-			allFiles = append(allFiles, FileNodeWithTimeJSON{
-				FileNodeJSON: FileNodeJSON{
-					Name:         info.Name(),
-					Size:         info.FileInfo.Size(),
-					IsDir:        false,
-					DeviceName:   info.DeviceName,
-					DevicePath:   info.DevicePath,
-					DirPath:      relPath,
-					FullPath:     info.FullPath,
-					DeviceSerial: deviceSerial,
-				},
-				ModifiedAt: info.ModTime(),
-			})
 		}
 	}
 

@@ -1,6 +1,7 @@
 package storageutil
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -320,6 +321,82 @@ func StatFilesInDir(dir string, deviceName string, devicePath string, deviceSeri
 		return strings.Compare(a.Name(), b.Name())
 	})
 	return files, nil
+}
+
+// WalkedFile is one entry produced by WalkFilesInDir: the entry itself plus
+// its path relative to the directory the walk started from.
+type WalkedFile struct {
+	Info *DeviceFileInfo
+	// RelPath is slash-separated and relative to the walk root, e.g.
+	// "sub/deep.abdoc". StatFilesInDir's single-level listing only ever needs
+	// a base name, which is why callers that walk need this instead.
+	RelPath string
+}
+
+// WalkFilesInDir recursively walks dir and calls visit for every entry beneath
+// it, in lexical order, parents before children. The root itself is not
+// visited.
+//
+// visit may return fs.SkipDir to skip the current directory's contents or
+// fs.SkipAll to stop the walk; both are reported as success. Any other error
+// stops the walk and is returned.
+//
+// Symlinks are reported but never followed, so the walk cannot escape dir or
+// loop — the same containment the single-level StatFilesInDir listing has.
+//
+// Directory entries carry the filesystem's own size rather than the size of
+// their contents. StatFilesInDir computes subtree sizes with GetFolderSize,
+// which is a full walk per directory and so quadratic when the caller is
+// already walking; LocalVFS reports raw directory sizes for the same reason.
+func WalkFilesInDir(
+	ctx context.Context,
+	dir string,
+	deviceName string,
+	devicePath string,
+	deviceSerial string,
+	visit func(WalkedFile) error,
+) error {
+	root := filepath.Clean(dir)
+	if _, err := os.Stat(root); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("%w: %s", ErrPathNotFound, dir)
+		}
+		return fmt.Errorf("error reading the directory %s: %w", dir, err)
+	}
+
+	return filepath.WalkDir(root, func(fullPath string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			// An unreadable subdirectory must not abort the whole listing —
+			// skip it and keep walking the rest of the tree.
+			if entry != nil && entry.IsDir() {
+				return fs.SkipDir
+			}
+			return nil
+		}
+		if ctx != nil && ctx.Err() != nil {
+			return ctx.Err()
+		}
+		if fullPath == root {
+			return nil
+		}
+
+		rel, relErr := filepath.Rel(root, fullPath)
+		if relErr != nil {
+			return nil // coverage: ignore - WalkDir only yields paths under root
+		}
+		rel = filepath.ToSlash(rel)
+
+		info, infoErr := entry.Info()
+		if infoErr != nil {
+			// The entry vanished mid-walk; nothing to report for it.
+			return nil // coverage: ignore - requires a concurrent delete
+		}
+
+		return visit(WalkedFile{
+			Info:    NewDeviceFileInfo(info, deviceName, devicePath, fullPath, deviceSerial),
+			RelPath: rel,
+		})
+	})
 }
 
 // GetNonConflictingPath returns a file path that doesn't conflict with existing files.
