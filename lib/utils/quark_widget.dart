@@ -93,7 +93,7 @@ class QuarkWidget {
       return CupertinoAlertDialog(
         key: key,
         title: title,
-        content: content,
+        content: content == null ? null : _materialHost(content),
         actions: actions ?? const <Widget>[],
       );
     }
@@ -127,6 +127,27 @@ class QuarkWidget {
       alignment: alignment,
       constraints: constraints,
       scrollable: scrollable,
+    );
+  }
+
+  /// Hosts [child] in a transparent [material.Material].
+  ///
+  /// A [CupertinoAlertDialog] puts no Material in the tree, so any Material
+  /// widget in its content — a dropdown, an [material.InkWell], a list tile —
+  /// trips `debugCheckHasMaterial` and the whole dialog fails to build on iOS.
+  /// Callers pass the same content to both branches of [alertDialog], so the
+  /// Cupertino branch has to supply the ancestor itself.
+  ///
+  /// Transparency keeps the dialog's own surface visible, and inheriting the
+  /// ambient text style keeps Cupertino typography rather than swapping in
+  /// Material's `bodyMedium`.
+  static Widget _materialHost(Widget child) {
+    return Builder(
+      builder: (context) => material.Material(
+        type: material.MaterialType.transparency,
+        textStyle: DefaultTextStyle.of(context).style,
+        child: child,
+      ),
     );
   }
 
