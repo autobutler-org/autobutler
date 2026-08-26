@@ -1,8 +1,12 @@
 name: CI - Android
 on:
+  # Also on push to main so the badges have a run attributed to the branch. Without it
+  # every run belongs to a pull request's head ref and a ?branch=main badge reads
+  # "no status".
+  push:
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
