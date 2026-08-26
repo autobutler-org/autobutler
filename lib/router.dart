@@ -50,11 +50,38 @@ class AppRoutes {
   static const terms = '/terms';
   static const plaintextEditor = '/edit';
 
+  /// Percent-encode a file path for use in a URL, keeping `/` as the segment
+  /// separator.
+  ///
+  /// go_router always reports the current location percent-encoded, so routes
+  /// built here must be encoded too. Raw interpolation produced `/files/my
+  /// doc.abdoc` while the live location read `/files/my%20doc.abdoc`, and every
+  /// site that string-compares a built route against the live location then
+  /// mismatched for any name containing a space (#1604).
+  static String encodeFilePath(String path) {
+    final clean = path.replaceAll(RegExp(r'^/+'), '');
+    if (clean.isEmpty) {
+      return clean;
+    }
+    return clean.split('/').map(Uri.encodeComponent).join('/');
+  }
+
+  /// Canonical form of [route] for comparison against the live go_router
+  /// location. Both sides go through `Uri.parse`, so a route that differs only
+  /// in percent-encoding still compares equal (#1604).
+  static String canonicalRoute(String route) {
+    try {
+      return Uri.parse(route).toString();
+    } on FormatException {
+      return route;
+    }
+  }
+
   /// Build a URL for a specific plaintext file.
   /// e.g. plaintextEditorPath('notes/readme.txt') → '/edit/notes/readme.txt'
   /// Device serial is passed as a query param when non-empty.
   static String plaintextEditorPath(String path, {String? serial}) {
-    final clean = path.replaceAll(RegExp(r'^/+'), '');
+    final clean = encodeFilePath(path);
     final base = '$plaintextEditor/$clean';
     return (serial != null && serial.isNotEmpty)
         ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
@@ -65,7 +92,7 @@ class AppRoutes {
   /// e.g. viewFile('photos/beach.jpg') → '/view/photos/beach.jpg'
   /// Device serial is passed as a query param when non-empty.
   static String viewFilePath(String path, {String? serial}) {
-    final clean = path.replaceAll(RegExp(r'^/+'), '');
+    final clean = encodeFilePath(path);
     final base = '$viewFile/$clean';
     return (serial != null && serial.isNotEmpty)
         ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
@@ -75,7 +102,7 @@ class AppRoutes {
   /// Build a deep-link URL for a given files path.
   /// e.g. filesPath('photos/2024') → '/files/photos/2024'
   static String filesPath(String path) {
-    final clean = path.replaceAll(RegExp(r'^/+'), '');
+    final clean = encodeFilePath(path);
     return clean.isEmpty ? files : '$files/$clean';
   }
 
@@ -83,7 +110,7 @@ class AppRoutes {
   /// e.g. docFile('reports/q1.abdoc') → '/docs/reports/q1.abdoc'
   /// Device serial is passed as a query param when non-empty.
   static String docFile(String path, {String? serial}) {
-    final clean = path.replaceAll(RegExp(r'^/+'), '');
+    final clean = encodeFilePath(path);
     final base = '$docs/$clean';
     return (serial != null && serial.isNotEmpty)
         ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
@@ -93,7 +120,7 @@ class AppRoutes {
   /// Build a URL for a specific spreadsheet file.
   /// e.g. sheetFile('data/budget.absheet') → '/sheets/data/budget.absheet'
   static String sheetFile(String path, {String? serial}) {
-    final clean = path.replaceAll(RegExp(r'^/+'), '');
+    final clean = encodeFilePath(path);
     final base = '$sheets/$clean';
     return (serial != null && serial.isNotEmpty)
         ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
@@ -123,8 +150,10 @@ final router = GoRouter(
           // and launches the right viewer for files.
           path: ':path(.*)',
           builder: (context, state) {
-            final raw = state.pathParameters['path'] ?? '';
-            final filePath = Uri.decodeComponent(raw);
+            // go_router already percent-decodes path parameters, so this is
+            // the real path — decoding again threw for names containing '%'
+            // and silently mangled a literal '%20' (#1604).
+            final filePath = state.pathParameters['path'] ?? '';
             return FileBrowserPage(initialPath: filePath);
           },
         ),
@@ -136,7 +165,7 @@ final router = GoRouter(
       redirect: (context, state) {
         final raw = state.pathParameters['path'] ?? '';
         final serial = state.uri.queryParameters['serial'];
-        final base = AppRoutes.filesPath(Uri.decodeComponent(raw));
+        final base = AppRoutes.filesPath(raw);
         return serial != null && serial.isNotEmpty
             ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
             : base;
@@ -150,7 +179,7 @@ final router = GoRouter(
       redirect: (context, state) {
         final raw = state.pathParameters['path'] ?? '';
         final serial = state.uri.queryParameters['serial'];
-        final base = AppRoutes.filesPath(Uri.decodeComponent(raw));
+        final base = AppRoutes.filesPath(raw);
         return serial != null && serial.isNotEmpty
             ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
             : base;
@@ -174,8 +203,7 @@ final router = GoRouter(
           // Matches /docs/<anything including slashes> — opens the doc editor.
           path: ':path(.*)',
           builder: (context, state) {
-            final raw = state.pathParameters['path'] ?? '';
-            final filePath = Uri.decodeComponent(raw);
+            final filePath = state.pathParameters['path'] ?? '';
             final serial = state.uri.queryParameters['serial'] ?? '';
             return DocumentEditorPage(filePath: filePath, deviceSerial: serial);
           },
@@ -190,8 +218,7 @@ final router = GoRouter(
           // Matches /sheets/<anything including slashes> — opens the sheet editor.
           path: ':path(.*)',
           builder: (context, state) {
-            final raw = state.pathParameters['path'] ?? '';
-            final filePath = Uri.decodeComponent(raw);
+            final filePath = state.pathParameters['path'] ?? '';
             final serial = state.uri.queryParameters['serial'] ?? '';
             return SpreadsheetEditorPage(
               filePath: filePath,
@@ -236,8 +263,7 @@ final router = GoRouter(
       // Matches /edit/<anything including slashes> — opens the plaintext editor.
       path: '${AppRoutes.plaintextEditor}/:path(.*)',
       builder: (context, state) {
-        final raw = state.pathParameters['path'] ?? '';
-        final filePath = Uri.decodeComponent(raw);
+        final filePath = state.pathParameters['path'] ?? '';
         final serial = state.uri.queryParameters['serial'] ?? '';
         return PlaintextEditorPage(filePath: filePath, deviceSerial: serial);
       },

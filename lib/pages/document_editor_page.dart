@@ -314,12 +314,21 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     return name.endsWith('.abdoc') ? name.substring(0, name.length - 6) : name;
   }
 
-  String _currentRoute() =>
-      router.routeInformationProvider.value.uri.toString();
+  /// The live location, canonicalized. go_router always reports it
+  /// percent-encoded while `overlayTargetRoute` is built from the raw path, so
+  /// comparing the two directly reported "moved externally" for every file
+  /// whose name needed encoding — a space being the common case — and popped
+  /// the editor the instant it opened (#1604).
+  String _currentRoute() => AppRoutes.canonicalRoute(
+    router.routeInformationProvider.value.uri.toString(),
+  );
+
+  bool _isOnRoute(String route) =>
+      _currentRoute() == AppRoutes.canonicalRoute(route);
 
   Future<void> _handleOverlayRouteChange() async {
     final targetRoute = widget.overlayTargetRoute;
-    if (targetRoute == null || !mounted || _currentRoute() == targetRoute) {
+    if (targetRoute == null || !mounted || _isOnRoute(targetRoute)) {
       return;
     }
 
@@ -340,7 +349,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_routeMovedExternally && _currentRoute() == targetRoute) {
+      if (!_routeMovedExternally && _isOnRoute(targetRoute)) {
         router.go(closeRoute);
       }
     });

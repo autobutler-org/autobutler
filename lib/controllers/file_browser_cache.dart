@@ -1,4 +1,5 @@
 import 'package:quark/models/file_node.dart';
+import 'package:quark/utils/file_browser_path_utils.dart';
 
 /// In-memory cache of file listings keyed by folder path.
 ///
@@ -29,13 +30,33 @@ class FileBrowserCache {
 
   String? _openFilePath;
 
-  /// Mark [path] as currently open in a viewer/editor overlay.
-  void markFileOpen(String path) => _openFilePath = path;
+  /// Keys are normalized on the way in and out so callers cannot disagree about
+  /// the format. `markFileOpen` used to store the raw path while the
+  /// `didUpdateWidget` guard looked it up normalized, which left that guard
+  /// dead for every path missing a leading slash (#1604).
+  static String _key(String path) => normalizePath(path);
 
-  /// Clear the open-file marker once the viewer/editor is dismissed.
-  void markFileClosed() => _openFilePath = null;
+  /// Mark [path] as currently open in a viewer/editor overlay.
+  void markFileOpen(String path) => _openFilePath = _key(path);
+
+  /// Clear the open-file marker once the viewer/editor for [path] is dismissed.
+  ///
+  /// Scoped to [path] so a viewer that closes late cannot clear a marker set by
+  /// whatever opened after it.
+  void markFileClosed(String path) {
+    if (_openFilePath == _key(path)) {
+      _openFilePath = null;
+    }
+  }
+
+  /// Clear the open-file marker regardless of which path set it.
+  void clearOpenFile() => _openFilePath = null;
 
   /// Returns true if [path] is already being shown — prevents a second viewer
   /// from being pushed by a background [FileBrowserPage] rebuild.
-  bool isFileOpen(String path) => _openFilePath == path;
+  bool isFileOpen(String path) =>
+      _openFilePath != null && _openFilePath == _key(path);
+
+  /// The path currently marked open, normalized. Null when nothing is open.
+  String? get openFilePath => _openFilePath;
 }
