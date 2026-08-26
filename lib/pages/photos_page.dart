@@ -1217,6 +1217,7 @@ class _PhotosPageState extends State<PhotosPage>
             onTapSettings: () {
               context.go(AppRoutes.settings);
             },
+            onTapPlugins: () => context.go(AppRoutes.plugins),
           ),
           body: FutureBuilder<List<PhotoItem>>(
             future: _photosFuture,

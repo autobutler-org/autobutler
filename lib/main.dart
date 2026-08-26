@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:go_router/go_router.dart';
+import 'package:quark/models/plugin_manifest.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/local_trust_overrides_stub.dart'
     if (dart.library.io) 'package:quark/services/local_trust_overrides_io.dart';
+import 'package:quark/services/plugin_service.dart';
+import 'package:quark/services/plugin_state.dart';
 import 'package:quark/theme/quark_theme.dart';
 
 Future<void> main() async {
@@ -18,8 +22,38 @@ Future<void> main() async {
   runApp(const QuarkApp());
 }
 
-class QuarkApp extends StatelessWidget {
+class QuarkApp extends StatefulWidget {
   const QuarkApp({super.key});
+
+  @override
+  State<QuarkApp> createState() => _QuarkAppState();
+}
+
+class _QuarkAppState extends State<QuarkApp> {
+  List<PluginManifest> _plugins = const [];
+  late GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = buildRouter(plugins: _plugins);
+    _loadPlugins();
+  }
+
+  Future<void> _loadPlugins() async {
+    if (AppSettings.instance.activeHost == null) return;
+    try {
+      final plugins = await PluginService.listPlugins();
+      if (!mounted) return;
+      PluginState.instance.setPlugins(plugins);
+      setState(() {
+        _plugins = plugins;
+        _router = buildRouter(plugins: _plugins);
+      });
+    } catch (_) {
+      // Plugins are non-critical; fail silently on load errors.
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +66,7 @@ class QuarkApp extends StatelessWidget {
           theme: QuarkTheme.light(),
           darkTheme: QuarkTheme.dark(),
           themeMode: mode,
-          routerConfig: router,
+          routerConfig: _router,
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,

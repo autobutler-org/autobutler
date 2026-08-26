@@ -5,8 +5,10 @@ import 'package:quark/pages/document_editor_page.dart';
 import 'package:quark/pages/file_browser_page.dart';
 import 'package:quark/pages/health_page.dart';
 import 'package:quark/pages/login_page.dart';
+import 'package:quark/models/plugin_manifest.dart';
 import 'package:quark/pages/photos_page.dart';
 import 'package:quark/pages/plaintext_editor_page.dart';
+import 'package:quark/pages/plugins_page.dart';
 import 'package:quark/pages/recover_page.dart';
 import 'package:quark/pages/settings_page.dart';
 import 'package:quark/pages/setup_page.dart';
@@ -17,6 +19,7 @@ import 'package:quark/pages/terms_page.dart';
 import 'package:quark/pages/vault_page.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
+import 'package:quark/widgets/plugin_renderer.dart';
 
 // Route paths — use these constants everywhere instead of string literals.
 class AppRoutes {
@@ -37,11 +40,15 @@ class AppRoutes {
   static const health = '/health';
   static const vault = '/vault';
   static const settings = '/settings';
+  static const plugins = '/plugins';
   static const setup = '/setup';
   static const login = '/login';
   static const recover = '/recover';
   static const terms = '/terms';
   static const plaintextEditor = '/edit';
+
+  /// Plugin pages are served at `/plugins/<id>`.
+  static String pluginPath(String pluginId) => '/plugins/$pluginId';
 
   /// Build a URL for a specific plaintext file.
   /// e.g. plaintextEditorPath('notes/readme.txt') → '/edit/notes/readme.txt'
@@ -94,7 +101,24 @@ class AppRoutes {
   }
 }
 
-final router = GoRouter(
+/// Builds plugin routes from the given manifests.
+///
+/// Only plugins that contribute a nav item get a route; the page itself is
+/// rendered declaratively from the manifest by [PluginPage].
+List<RouteBase> buildPluginRoutes(List<PluginManifest> plugins) {
+  return [
+    for (final plugin in plugins)
+      if (plugin.contributes.navItem != null)
+        GoRoute(
+          path: AppRoutes.pluginPath(plugin.id),
+          builder: (context, state) =>
+              PluginPage(name: plugin.name, pageNode: plugin.contributes.page),
+        ),
+  ];
+}
+
+// Arrow form so the whole configuration below keeps main's indentation.
+GoRouter buildRouter({List<PluginManifest> plugins = const []}) => GoRouter(
   initialLocation: AppRoutes.cirrus,
   redirect: _authRedirect,
   // Refresh the router whenever the session token changes so a 401-triggered
@@ -191,6 +215,10 @@ final router = GoRouter(
       builder: (context, state) => const SettingsPage(),
     ),
     GoRoute(
+      path: AppRoutes.plugins,
+      builder: (context, state) => const PluginsPage(),
+    ),
+    GoRoute(
       path: AppRoutes.setup,
       builder: (context, state) =>
           SetupPage(onSetupComplete: () => context.go(AppRoutes.cirrus)),
@@ -215,10 +243,13 @@ final router = GoRouter(
         return PlaintextEditorPage(filePath: filePath, deviceSerial: serial);
       },
     ),
+    ...buildPluginRoutes(plugins),
   ],
   errorBuilder: (context, state) =>
       Scaffold(body: Center(child: Text('Page not found: ${state.uri}'))),
 );
+
+final router = buildRouter();
 
 /// Top-level redirect — handles auth gating.
 Future<String?> _authRedirect(BuildContext context, GoRouterState state) async {
