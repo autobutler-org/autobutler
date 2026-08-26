@@ -9,11 +9,21 @@ class AlbumSidebar extends StatefulWidget {
   const AlbumSidebar({
     required this.selectedAlbumId,
     required this.onAlbumSelected,
+    this.shrinkWrap = false,
     super.key,
   });
 
   final int? selectedAlbumId;
   final void Function(PhotoAlbum? album) onAlbumSelected;
+
+  /// Size to the album list's own height instead of filling the parent.
+  ///
+  /// Required whenever this widget sits somewhere with unbounded height — the
+  /// compact photos layout puts it inside a sliver, where `Expanded` is a hard
+  /// layout error and the whole subtree fails to lay out (#1599). It also stops
+  /// the album list from scrolling independently inside an outer scroll view,
+  /// which is the right thing there anyway.
+  final bool shrinkWrap;
 
   @override
   State<AlbumSidebar> createState() => AlbumSidebarState();
@@ -131,6 +141,7 @@ class AlbumSidebarState extends State<AlbumSidebar> {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: widget.shrinkWrap ? MainAxisSize.min : MainAxisSize.max,
       children: [
         // ── Header ──────────────────────────────────────────────────────────
         Padding(
@@ -175,19 +186,27 @@ class AlbumSidebarState extends State<AlbumSidebar> {
             ),
           )
         else
-          Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.zero,
-              itemCount: allAlbums.length,
-              itemBuilder: (context, index) =>
-                  _buildAlbumTile(context, allAlbums[index]),
-            ),
-          ),
+          _buildAlbumList(context, allAlbums),
         // ── Footer divider ───────────────────────────────────────────────────
         const SizedBox(height: 8),
         Divider(height: 1, color: colorScheme.outline.withValues(alpha: 0.5)),
       ],
     );
+  }
+
+  /// The album list, expanding to fill the parent or shrink-wrapping to its
+  /// own height depending on whether the parent bounds it (#1599).
+  Widget _buildAlbumList(BuildContext context, List<PhotoAlbum> albums) {
+    final list = ListView.builder(
+      padding: EdgeInsets.zero,
+      shrinkWrap: widget.shrinkWrap,
+      // Already inside an outer scroll view when shrink-wrapped; a nested
+      // scrollable on the same axis would fight it for drag gestures.
+      physics: widget.shrinkWrap ? const NeverScrollableScrollPhysics() : null,
+      itemCount: albums.length,
+      itemBuilder: (context, index) => _buildAlbumTile(context, albums[index]),
+    );
+    return widget.shrinkWrap ? list : Expanded(child: list);
   }
 
   Widget _buildAlbumTile(BuildContext context, PhotoAlbum album) {
