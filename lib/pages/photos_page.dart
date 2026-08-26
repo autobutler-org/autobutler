@@ -34,7 +34,7 @@ class PhotosPage extends StatefulWidget {
   final PhotoAlbum? addingToAlbum;
 
   @override
-  State<PhotosPage> createState() => _PhotosPageState();
+  State<PhotosPage> createState() => PhotosPageState();
 }
 
 enum PhotoCategory { quark, mobile, all, favorites }
@@ -61,7 +61,7 @@ class PhotoItem {
   }
 }
 
-class _PhotosPageState extends State<PhotosPage>
+class PhotosPageState extends State<PhotosPage>
     with WidgetsBindingObserver, AutoRefreshMixin {
   static const int _defaultCrossAxisCount = 4;
   static const int _minPreviewColumns = 1;
@@ -120,7 +120,7 @@ class _PhotosPageState extends State<PhotosPage>
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _measureAndJumpNav());
+    _scheduleNavMeasure();
     // If launched in adding-to-album mode, enter selection mode immediately
     if (widget.addingToAlbum != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -129,22 +129,73 @@ class _PhotosPageState extends State<PhotosPage>
     }
   }
 
+  /// Frames to wait for the nav panel to report a size before giving up.
+  ///
+  /// Every failure path here used to re-post itself unconditionally, so the
+  /// three retries below were an unbounded frame loop. It ran forever on
+  /// desktop, where the nav panel is never built at all, and forever in compact
+  /// mode too while the sidebar's layout error stopped it ever getting a size —
+  /// a permanent frame loop behind an already-blank screen. Nothing checked
+  /// `mounted` either, so the chain outlived the State it belonged to (#1599).
+  static const int _navMeasureMaxFrames = 20;
+
+  /// Whether the most recent build used the compact layout. Only that layout
+  /// builds a nav panel, so it is the only one with anything to measure.
+  bool _compactLayout = false;
+  int _navMeasureAttempts = 0;
+  bool _navMeasureScheduled = false;
+
+  /// True once the nav measurement has finished — either it jumped the scroll
+  /// view past the nav panel, or it gave up. Either way nothing is still
+  /// scheduling frames.
+  @visibleForTesting
+  bool get navScrollSettled => _navScrollInitialized;
+
+  /// Frames spent waiting for the nav panel to report a size.
+  @visibleForTesting
+  int get navMeasureAttempts => _navMeasureAttempts;
+
+  /// Schedules a measurement attempt, at most one outstanding at a time.
+  void _scheduleNavMeasure() {
+    if (_navScrollInitialized || _navMeasureScheduled) return;
+    _navMeasureScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _navMeasureScheduled = false;
+      _measureAndJumpNav();
+    });
+  }
+
   void _measureAndJumpNav() {
-    if (_navScrollInitialized) return;
+    if (_navScrollInitialized || !mounted) return;
+    // Desktop lays the sidebar out in a bounded Row with no nav panel, so
+    // there is nothing to measure and nothing to wait for.
+    if (!_compactLayout) return;
+
+    void retry() {
+      _navMeasureAttempts++;
+      if (_navMeasureAttempts >= _navMeasureMaxFrames) {
+        // Give up rather than spin. The page simply stays scrolled to the top
+        // with the nav panel visible — cosmetic, and the user can scroll.
+        _navScrollInitialized = true;
+        return;
+      }
+      _scheduleNavMeasure();
+    }
+
     final ctx = _navPanelKey.currentContext;
     if (ctx == null) {
       // Nav not yet in tree — retry next frame
-      WidgetsBinding.instance.addPostFrameCallback((_) => _measureAndJumpNav());
+      retry();
       return;
     }
     final box = ctx.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _measureAndJumpNav());
+      retry();
       return;
     }
     final navHeight = box.size.height;
     if (navHeight <= 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _measureAndJumpNav());
+      retry();
       return;
     }
     // Recreate the scroll controller with the nav height as initial offset.
@@ -475,12 +526,30 @@ class _PhotosPageState extends State<PhotosPage>
       PhotoCategory.favorites => 'Favorites',
     };
 
+    // The compact layout puts this sidebar inside a SliverToBoxAdapter, which
+    // hands its child unbounded height. `Expanded` there is a hard layout
+    // error — the subtree fails to lay out and the whole view renders empty,
+    // silently in release builds (#1599). So compact shrink-wraps instead, and
+    // the album list scrolls with the page rather than inside itself.
+    final albumSidebar = AlbumSidebar(
+      key: _albumSidebarKey,
+      selectedAlbumId: null,
+      shrinkWrap: compact,
+      onAlbumSelected: (album) {
+        if (album == null) return;
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => AlbumPage(album: album)));
+      },
+    );
+
     return Container(
       width: compact ? double.infinity : 280,
       padding: const EdgeInsets.all(16),
       color: theme.colorScheme.surfaceContainerLowest,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
         children: [
           Row(
             children: [
@@ -568,18 +637,7 @@ class _PhotosPageState extends State<PhotosPage>
             ],
           ],
           const SizedBox(height: 16),
-          Expanded(
-            child: AlbumSidebar(
-              key: _albumSidebarKey,
-              selectedAlbumId: null,
-              onAlbumSelected: (album) {
-                if (album == null) return;
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => AlbumPage(album: album)),
-                );
-              },
-            ),
-          ),
+          if (compact) albumSidebar else Expanded(child: albumSidebar),
         ],
       ),
     );
@@ -1221,6 +1279,12 @@ class _PhotosPageState extends State<PhotosPage>
               return LayoutBuilder(
                 builder: (context, constraints) {
                   final compact = constraints.maxWidth < 900;
+                  // Recorded for _measureAndJumpNav, which runs after this
+                  // build and only has something to measure in compact mode.
+                  _compactLayout = compact;
+                  if (compact && !_navScrollInitialized) {
+                    _scheduleNavMeasure();
+                  }
                   final contentWidth = compact
                       ? constraints.maxWidth
                       : (constraints.maxWidth - 281)
