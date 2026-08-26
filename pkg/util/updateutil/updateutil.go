@@ -13,6 +13,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/user"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"slices"
@@ -216,6 +218,13 @@ func ListPossibleUpdates(source *UpdateSource, allVersions bool) (*ListPossibleU
 
 // UpdateFromDefaultSources tries to update from all default sources until one succeeds
 func UpdateFromDefaultSources(version string) error {
+	// Checked once, before the loop. Without this the updater downloaded and
+	// extracted the whole binary once per source before discovering it could
+	// not write the result anywhere (#1609).
+	if err := CanSelfUpdate(); err != nil {
+		return err
+	}
+
 	errs := []error{}
 	for _, source := range DefaultUpdateSources {
 		fmt.Printf("Attempting to update from source: %v, with URL %s\n", source, source.UpdateUrl())
@@ -244,6 +253,12 @@ func Update(source *UpdateSource, version string) error {
 		return errors.New("version cannot be empty")
 	}
 
+	// Before the backup copy and the download, not after: both are wasted work
+	// if the binary cannot be replaced at the end of it (#1609).
+	if err := CanSelfUpdate(); err != nil {
+		return err
+	}
+
 	_, err := backupSelf()
 	if err != nil {
 		return fmt.Errorf("failed to copy current binary: %w", err)
@@ -262,6 +277,13 @@ func Update(source *UpdateSource, version string) error {
 	// overwriting the running binary.
 	archiveBytes, err := fetchURL(url)
 	if err != nil {
+		if errors.Is(err, errNotFound) {
+			return fmt.Errorf(
+				"no release asset %s for version %s at %s: the version, the release, "+
+					"or the update source itself does not exist: %w",
+				archiveName, version, source, err,
+			)
+		}
 		return fmt.Errorf("failed to download update from %s: %w", url, err)
 	}
 
@@ -285,7 +307,15 @@ func Update(source *UpdateSource, version string) error {
 	return nil
 }
 
-// errChecksumUnavailable is returned when the .sha256 file returns HTTP 404.
+// errNotFound is returned by fetchURL on HTTP 404. It carries no opinion about
+// what was missing — callers wrap it with the meaning for their own request.
+// It used to be spelled errChecksumUnavailable and returned for *every* 404,
+// so a download from a repository that does not exist reported "checksum file
+// not found" and sent readers looking at release assets (#1610).
+var errNotFound = errors.New("not found (HTTP 404)")
+
+// errChecksumUnavailable means the archive downloaded fine but no .sha256
+// companion file was published alongside it.
 var errChecksumUnavailable = errors.New("checksum file not found")
 
 // allowHTTPInFetchURL relaxes the HTTPS-only restriction in fetchURL.
@@ -303,8 +333,8 @@ var allowedUpdateHosts = []string{
 
 // fetchURL performs a GET and returns the response body as bytes.
 // Only HTTPS connections to known update hosts are allowed.
-// Returns errChecksumUnavailable on HTTP 404; other non-200 responses
-// return a descriptive error.
+// Returns errNotFound on HTTP 404; other non-200 responses return a
+// descriptive error.
 func fetchURL(rawURL string) ([]byte, error) {
 	parsed, err := url.Parse(rawURL)
 	if err != nil {
@@ -359,7 +389,7 @@ func fetchURL(rawURL string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, errChecksumUnavailable
+		return nil, errNotFound
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("HTTP %d from %s", resp.StatusCode, requestHost)
@@ -393,7 +423,11 @@ func isAllowedUpdateHost(host string) bool {
 func verifyChecksum(data []byte, checksumURL string) error {
 	checksumBytes, err := fetchURL(checksumURL)
 	if err != nil {
-		return err // propagates errChecksumUnavailable unchanged
+		if errors.Is(err, errNotFound) {
+			// Only *here* does a 404 mean "no checksum was published".
+			return errChecksumUnavailable
+		}
+		return err
 	}
 
 	line := strings.TrimSpace(string(checksumBytes))
@@ -458,9 +492,9 @@ func backupSelf() (string, error) {
 }
 
 func replaceSelf(body io.Reader) error {
-	execPath, err := os.Executable()
+	execPath, err := resolvedExecutable()
 	if err != nil {
-		return fmt.Errorf("failed to get executable path: %w", err)
+		return err
 	}
 	tmpFile, err := os.CreateTemp("", "quark_update_*")
 	if err != nil {
@@ -524,12 +558,17 @@ func replaceSelf(body io.Reader) error {
 	// Close the file before operations
 	binFile.Close()
 
-	// Create a temporary file in the same directory as the target executable
-	// This ensures we're on the same filesystem for atomic rename
-	execDir := execPath[:strings.LastIndex(execPath, "/")]
+	// Create a temporary file in the same directory as the target executable.
+	// This keeps the subsequent rename atomic and on the same filesystem, so it
+	// must not be relocated to /tmp — that would trade a permission failure for
+	// a torn-binary failure. CanSelfUpdate checks this is writable up front.
+	execDir := filepath.Dir(execPath)
 	tmpNew, err := os.CreateTemp(execDir, ".quark_new_*")
 	if err != nil {
-		return fmt.Errorf("failed to create temp file in target directory: %w", err)
+		return fmt.Errorf(
+			"%w: failed to create temp file in %s: %w",
+			ErrSelfUpdateUnavailable, execDir, err,
+		)
 	}
 	tmpNewPath := tmpNew.Name()
 	defer os.Remove(tmpNewPath)
@@ -564,4 +603,115 @@ func replaceSelf(body io.Reader) error {
 	}
 
 	return nil
+}
+
+// ── Self-update preflight (#1609) ───────────────────────────────────────────
+
+// ErrSelfUpdateUnavailable reports that this process cannot replace its own
+// binary, whatever the update source. Callers should surface it as-is: the
+// wrapped message names the directory, the account, and the way out.
+var ErrSelfUpdateUnavailable = errors.New("cannot self-update")
+
+// selfUpdateDir returns the directory holding the running executable — the
+// directory replaceSelf must be able to write to.
+//
+// Symlinks are resolved so that the answer is the directory the atomic rename
+// actually lands in. With the binary installed at serviceBinaryPath and
+// /usr/local/bin/quark kept as a symlink, the resolved directory is the
+// group-writable one, not the root-owned one the symlink lives in.
+func selfUpdateDir() (string, error) {
+	execPath, err := resolvedExecutable()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Dir(execPath), nil
+}
+
+// resolvedExecutable returns the path of the running binary with symlinks
+// resolved, so the update lands on the real file rather than replacing a
+// symlink with a regular file.
+//
+// On Linux os.Executable already resolves (/proc/self/exe); on darwin it can
+// hand back the path as invoked. With /usr/local/bin/quark kept as a symlink
+// into the self-updatable directory, that difference decides whether an update
+// replaces the binary or clobbers the symlink.
+func resolvedExecutable() (string, error) {
+	execPath, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("failed to get executable path: %w", err)
+	}
+	resolved, err := filepath.EvalSymlinks(execPath)
+	if err != nil {
+		// Keep the unresolved path: it is still the best available answer, and
+		// the write probe decides whether it is usable.
+		return execPath, nil
+	}
+	return resolved, nil
+}
+
+// CanSelfUpdate reports whether the running process can replace its own binary
+// in place, without downloading anything.
+//
+// replaceSelf creates its temp file in the directory holding the executable so
+// the final rename is atomic and on the same filesystem — that is correct and
+// must not be traded for a temp file in /tmp. The consequence is that the
+// account the service runs as needs write access to that directory. Under the
+// packaged systemd unit it did not, so every update attempt downloaded and
+// extracted the full binary once per source before failing on a raw
+// "permission denied" from deep inside the updater (#1609).
+//
+// The check is a real create-and-remove rather than a permission-bit test, so
+// it agrees with what replaceSelf will actually be allowed to do — read-only
+// mounts, ACLs and immutable flags included.
+func CanSelfUpdate() error {
+	dir, err := selfUpdateDir()
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrSelfUpdateUnavailable, err)
+	}
+	return canSelfUpdateIn(dir)
+}
+
+// canSelfUpdateIn is CanSelfUpdate against an explicit directory, so the
+// failure path can be exercised without a binary installed in a directory it cannot write.
+func canSelfUpdateIn(dir string) error {
+	probe, err := os.CreateTemp(dir, ".quark_preflight_*")
+	if err != nil {
+		return fmt.Errorf(
+			"%w: %s is not writable by %s.\n"+
+				"Replacing a running binary in place requires write access to the directory "+
+				"holding it.\n"+
+				"Fix it by running `sudo quark install`, which moves the binary to %s and "+
+				"leaves %s as a symlink to it, or update through your package manager or OS "+
+				"image instead.\n"+
+				"Underlying error: %w",
+			ErrSelfUpdateUnavailable, dir, currentAccountDescription(),
+			SelfUpdatableBinDir, LegacyBinPath, err,
+		)
+	}
+	name := probe.Name()
+	probe.Close()
+	if err := os.Remove(name); err != nil {
+		fmt.Printf("Warning: failed to remove preflight probe file %s: %v\n", name, err)
+	}
+	return nil
+}
+
+// SelfUpdatableBinDir and LegacyBinPath describe the install layout that makes
+// self-update possible. They live here rather than in internal/install so the
+// preflight message can name the fix; internal/install is what implements it.
+const (
+	SelfUpdatableBinDir = "/opt/quark/bin"
+	LegacyBinPath       = "/usr/local/bin/quark"
+)
+
+// currentAccountDescription names the account this process runs as, for error
+// messages. os/user can fail in a static build with no cgo, so the numeric uid
+// is the fallback — it is what `systemctl show quark -p User` will be compared
+// against either way.
+func currentAccountDescription() string {
+	uid := os.Geteuid()
+	if u, err := user.Current(); err == nil && u.Username != "" {
+		return fmt.Sprintf("user %s (uid %d)", u.Username, uid)
+	}
+	return fmt.Sprintf("uid %d", uid)
 }

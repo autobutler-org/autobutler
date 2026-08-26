@@ -34,6 +34,14 @@ func startAutoUpdateChecker(ctx context.Context) {
 			continue
 		}
 
+		// Nothing downstream can succeed if the binary cannot be replaced, and
+		// the check is local — so it runs before any network request rather
+		// than after a full download (#1609).
+		if err := updateutil.CanSelfUpdate(); err != nil {
+			log.Printf("[autoupdate] skipping check: %v", err)
+			continue
+		}
+
 		log.Printf("[autoupdate] checking for updates...")
 
 		latestVersion, err := updateutil.GetLatestVersionFromDefaultSources()

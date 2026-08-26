@@ -1720,7 +1720,7 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
 class _HelpSupportCard extends StatelessWidget {
   const _HelpSupportCard();
 
-  static const _supportUrl = 'https://quark.org/support';
+  static const _supportUrl = 'https://quark.autobutler.org/support';
   static const _bugUrl =
       'https://github.com/autobutler-org/quark/issues/new?template=bug.yaml';
 

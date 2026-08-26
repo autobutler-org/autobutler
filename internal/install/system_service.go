@@ -1,12 +1,33 @@
 package install
 
 import (
+	"os"
 	"runtime"
 )
 
 const (
-	serviceUserName    = "quark"
-	serviceDataDir     = "/var/lib/quark"
+	serviceUserName  = "quark"
+	serviceGroupName = "quark"
+	serviceDataDir   = "/var/lib/quark"
+
+	// serviceBinDir holds the installed binary, and is group-owned by the
+	// service account so the service can replace its own binary in place.
+	//
+	// The binary used to live directly in /usr/local/bin, which is root:root
+	// 0755. replaceSelf creates its temp file in the directory holding the
+	// executable — correctly, so the final rename is atomic and same-filesystem
+	// — so an unprivileged service could never complete an update there
+	// (#1609). legacyBinPath is kept as a symlink into this directory so
+	// `quark` stays on PATH and existing unit files keep resolving.
+	serviceBinDir  = "/opt/quark/bin"
+	serviceBinPath = serviceBinDir + "/quark"
+	legacyBinPath  = "/usr/local/bin/quark"
+
+	// serviceBinDirMode is setgid (2775) so anything created in the directory
+	// inherits the quark group, keeping the directory writable across updates.
+	serviceBinDirMode = os.ModeSetgid | 0775
+	binaryMode        = 0755
+
 	systemdServiceName = "quark.service"
 
 	systemdServiceContent = `[Unit]
@@ -16,7 +37,7 @@ After=network.target
 [Service]
 User=quark
 Group=quark
-ExecStart=/usr/local/bin/quark serve
+ExecStart=/opt/quark/bin/quark serve
 Environment="PORT=80"
 Environment="HTTPS_PORT=443"
 Environment="GIN_MODE=release"
