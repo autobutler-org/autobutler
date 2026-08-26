@@ -185,9 +185,9 @@ func gatherSourceDevices(ctx context.Context, deps deputil.Dependencies, targetS
 			continue
 		}
 		sources = append(sources, backup.SourceDevice{
-			Name:      name,
-			Serial:    serial,
-			CirrusDir: d.CirrusDir,
+			Name:     name,
+			Serial:   serial,
+			FilesDir: d.FilesDir,
 		})
 	}
 	return sources, nil
@@ -223,7 +223,7 @@ func verifySnapshotBackup(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(fmt.Errorf("device not found"))
 	}
 
-	result, err := backup.VerifyBackup(dev.CirrusDir, req.Full)
+	result, err := backup.VerifyBackup(dev.FilesDir, req.Full)
 	if err != nil {
 		return serverutil.BadRequest(fmt.Errorf("verify failed: %w", err))
 	}

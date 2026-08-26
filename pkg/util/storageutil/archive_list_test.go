@@ -60,14 +60,14 @@ func buildTarGzForList(t *testing.T, entries []struct{ name, content string }) [
 func makeListDevice(t *testing.T) *ManagedDevice {
 	t.Helper()
 	dir := t.TempDir()
-	cirrus := filepath.Join(dir, "cirrus")
-	if err := os.MkdirAll(cirrus, 0755); err != nil {
+	filesRoot := filepath.Join(dir, "files")
+	if err := os.MkdirAll(filesRoot, 0755); err != nil {
 		t.Fatal(err)
 	}
 	return &ManagedDevice{
-		Device:    Device{Name: "test", MountPoint: dir, IsInternal: true},
-		DataDir:   dir,
-		CirrusDir: cirrus,
+		Device:   Device{Name: "test", MountPoint: dir, IsInternal: true},
+		DataDir:  dir,
+		FilesDir: filesRoot,
 	}
 }
 
@@ -88,7 +88,7 @@ func TestListArchiveEntriesImpl_ZipRoot(t *testing.T) {
 		{"photos/img002.jpg", "jpg2"},
 		{"docs/report.pdf", "pdf"},
 	})
-	writeArchive(t, device.CirrusDir, "archive.zip", data)
+	writeArchive(t, device.FilesDir, "archive.zip", data)
 
 	entries, err := ListArchiveEntriesImpl(ListArchiveParams{FilePath: "archive.zip"}, device, "")
 	if err != nil {
@@ -125,7 +125,7 @@ func TestListArchiveEntriesImpl_ZipSubPath(t *testing.T) {
 		{"photos/vacation/img002.jpg", "jpg2"},
 		{"photos/portrait.jpg", "jpg3"},
 	})
-	writeArchive(t, device.CirrusDir, "archive.zip", data)
+	writeArchive(t, device.FilesDir, "archive.zip", data)
 
 	entries, err := ListArchiveEntriesImpl(ListArchiveParams{
 		FilePath: "archive.zip",
@@ -157,7 +157,7 @@ func TestListArchiveEntriesImpl_TarGz(t *testing.T) {
 		{"file.txt", "hello"},
 		{"subdir/nested.txt", "world"},
 	})
-	writeArchive(t, device.CirrusDir, "archive.tar.gz", data)
+	writeArchive(t, device.FilesDir, "archive.tar.gz", data)
 
 	entries, err := ListArchiveEntriesImpl(ListArchiveParams{FilePath: "archive.tar.gz"}, device, "")
 	if err != nil {
@@ -185,7 +185,7 @@ func TestListArchiveEntriesImpl_FileNotFound(t *testing.T) {
 
 func TestListArchiveEntriesImpl_NotAnArchive(t *testing.T) {
 	device := makeListDevice(t)
-	if err := os.WriteFile(filepath.Join(device.CirrusDir, "doc.pdf"), []byte("%PDF"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(device.FilesDir, "doc.pdf"), []byte("%PDF"), 0644); err != nil {
 		t.Fatal(err)
 	}
 	_, err := ListArchiveEntriesImpl(ListArchiveParams{FilePath: "doc.pdf"}, device, "")
@@ -197,7 +197,7 @@ func TestListArchiveEntriesImpl_NotAnArchive(t *testing.T) {
 func TestListArchiveEntriesImpl_InvalidSubPath(t *testing.T) {
 	device := makeListDevice(t)
 	data := buildZipForList(t, []struct{ name, content string }{{"file.txt", "x"}})
-	writeArchive(t, device.CirrusDir, "archive.zip", data)
+	writeArchive(t, device.FilesDir, "archive.zip", data)
 
 	_, err := ListArchiveEntriesImpl(ListArchiveParams{
 		FilePath: "archive.zip",
@@ -228,7 +228,7 @@ func TestListArchiveEntriesImpl_ZipCompressedSize(t *testing.T) {
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
 	}
-	writeArchive(t, device.CirrusDir, "compressed.zip", buf.Bytes())
+	writeArchive(t, device.FilesDir, "compressed.zip", buf.Bytes())
 
 	entries, err := ListArchiveEntriesImpl(ListArchiveParams{FilePath: "compressed.zip"}, device, "")
 	if err != nil {

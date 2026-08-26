@@ -18,18 +18,18 @@ Base URL: configured in `TOOLS.md`. All endpoints require `Authorization: Bearer
 | ------ | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | GET    | `/api/v1/health` | System health. Returns: `{healthy, alerts[], cpuPercent, cpuCorePercents[], cpuCoreCount, memPercent, memUsedBytes, memTotalBytes, diskPercent, diskUsedBytes, diskTotalBytes, temperatureCelsius}` |
 
-## Files (Cirrus)
+## Files
 
 | Method | Path                                | Description                                                                              |
 | ------ | ----------------------------------- | ---------------------------------------------------------------------------------------- |
-| GET    | `/api/v1/cirrus`                    | List files. Query params: `rootDir` (subdirectory), `serial` (device serial)             |
-| GET    | `/api/v1/cirrus/search`             | Search files. Query params: `query` (required), `serial`                                 |
-| GET    | `/api/v1/cirrus/download`           | Download file. Query params: `filePath` (required), `serial`                             |
-| POST   | `/api/v1/cirrus/upload`             | Upload file (multipart). Field: file                                                     |
-| POST   | `/api/v1/cirrus/upload/{rootDir}`   | Upload to subdirectory. Query param: `serial`                                            |
-| PUT    | `/api/v1/cirrus`                    | Move/rename file. Body: `{oldFilePath, newFilePath, oldDeviceSerial?, newDeviceSerial?}` |
-| DELETE | `/api/v1/cirrus`                    | Delete file. Query params: `rootDir`, `filePaths`, `serial`                              |
-| POST   | `/api/v1/cirrus/folder/{folderDir}` | Create folder. Form field: `folderName`                                                  |
+| GET    | `/api/v0/files`                    | List files. Query params: `rootDir` (subdirectory), `serial` (device serial)             |
+| GET    | `/api/v0/files/search`             | Search files. Query params: `query` (required), `serial`                                 |
+| GET    | `/api/v0/files/download`           | Download file. Query params: `filePath` (required), `serial`                             |
+| POST   | `/api/v0/files/upload`             | Upload file (multipart). Field: file                                                     |
+| POST   | `/api/v0/files/upload/{rootDir}`   | Upload to subdirectory. Query param: `serial`                                            |
+| PUT    | `/api/v0/files`                    | Move/rename file. Body: `{oldFilePath, newFilePath, oldDeviceSerial?, newDeviceSerial?}` |
+| DELETE | `/api/v0/files`                    | Delete file. Query params: `rootDir`, `filePaths`, `serial`                              |
+| POST   | `/api/v0/files/folder/{folderDir}` | Create folder. Form field: `folderName`                                                  |
 
 ### File node shape
 
@@ -75,7 +75,7 @@ Base URL: configured in `TOOLS.md`. All endpoints require `Authorization: Bearer
 	"isInternal": true,
 	"isEnabled": true,
 	"dataDir": "/var/lib/quark/data",
-	"cirrusDir": "/var/lib/quark/data/cirrus"
+	"filesDir": "/var/lib/quark/data/cirrus"
 }
 ```
 

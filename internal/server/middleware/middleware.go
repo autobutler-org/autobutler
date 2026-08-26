@@ -79,8 +79,10 @@ func rateLimit() gin.HandlerFunc {
 //
 // Keep this list minimal. (#1332)
 var queryTokenPrefixes = []string{
-	"/api/v0/events",     // WebSocket — new WebSocket() cannot set headers
-	"/api/v0/cirrus",     // file download / streaming (src= attribute usage)
+	"/api/v0/events", // WebSocket — new WebSocket() cannot set headers
+	"/api/v0/files",  // file download / streaming (src= attribute usage)
+	// TODO(pre-v1.0.0, #1601): delete this entry with the /cirrus alias shim.
+	"/api/v0/cirrus",     // deprecated alias of /api/v0/files, kept for pre-rename clients (#1601)
 	"/api/v0/photos",     // photo serving
 	"/api/v0/thumbnails", // thumbnail serving (Image.network src= cannot set headers)
 	"/videos/",           // video deep-link player

@@ -70,8 +70,8 @@ func trimVideo(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(fmt.Errorf("endMs must be greater than startMs"))
 	}
 
-	// Resolve cirrus directory.
-	filesDir, err := storageutil.GetCirrusDir()
+	// Resolve files directory.
+	filesDir, err := storageutil.GetFilesDir()
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
@@ -79,7 +79,7 @@ func trimVideo(c *gin.Context) *serverutil.Response {
 		if devices, err := deps.StorageService().GetManagedDevices(); err == nil {
 			for _, d := range devices {
 				if d.UsbInfo != nil && d.UsbInfo.GetSerial() == req.Serial {
-					filesDir = d.CirrusDir
+					filesDir = d.FilesDir
 					break
 				}
 			}

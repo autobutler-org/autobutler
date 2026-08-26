@@ -6,7 +6,7 @@ import 'package:data_table/data_table.dart';
 import 'package:flutter/material.dart' hide DataTable, DataRow, DataCell;
 import 'package:http/http.dart' as http;
 import 'package:quark/router.dart';
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark_icons/quark_icons.dart';
@@ -142,7 +142,7 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
       _error = null;
     });
     try {
-      final bytes = await CirrusService.downloadFileBytes(
+      final bytes = await FilesService.downloadFileBytes(
         widget.filePath,
         serial: serialOrNull(widget.deviceSerial),
       );
@@ -233,7 +233,7 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
         bytes,
         filename: fileName,
       );
-      await CirrusService.uploadFilesFromFormData(
+      await FilesService.uploadFilesFromFormData(
         parentDir,
         [file],
         serial: serialOrNull(widget.deviceSerial),

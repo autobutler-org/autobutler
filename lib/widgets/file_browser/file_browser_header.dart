@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
-import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/models/file_node.dart';
 
 class FileBrowserHeader extends StatelessWidget {
   const FileBrowserHeader({
@@ -14,7 +14,7 @@ class FileBrowserHeader extends StatelessWidget {
 
   final bool isGridView;
   final bool isSearchMode;
-  final Future<List<CirrusFileNode>>? filesFuture;
+  final Future<List<FileNode>>? filesFuture;
   final String? searchQuery;
   final VoidCallback? onClose;
 
@@ -36,8 +36,8 @@ class FileBrowserHeader extends StatelessWidget {
             ),
           ),
         ),
-        child: FutureBuilder<List<CirrusFileNode>>(
-          future: filesFuture ?? Future.value(const <CirrusFileNode>[]),
+        child: FutureBuilder<List<FileNode>>(
+          future: filesFuture ?? Future.value(const <FileNode>[]),
           builder: (context, snapshot) {
             final count = snapshot.hasData ? snapshot.data!.length : 0;
             final query = searchQuery ?? '';

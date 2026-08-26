@@ -128,14 +128,14 @@ func (w *SyncWorker) defaultResolveTarget(ctx context.Context) (string, error) {
 			if dev == nil {
 				return "", nil
 			}
-			return dev.CirrusDir, nil
+			return dev.FilesDir, nil
 		}
 	}
 	return "", nil
 }
 
 func (w *SyncWorker) defaultResolveInternalDir() (string, error) {
-	return storageutil.GetCirrusDir()
+	return storageutil.GetFilesDir()
 }
 
 func (w *SyncWorker) defaultGetManagedDevices() ([]storageutil.ManagedDevice, error) {
@@ -183,7 +183,7 @@ func (w *SyncWorker) syncPath(ctx context.Context, relPath string) {
 }
 
 func (w *SyncWorker) deletePath(ctx context.Context, relPath string, sourceSerial string) {
-	// 1. Delete from internal Cirrus (if source was a USB device, not internal).
+	// 1. Delete from internal Files (if source was a USB device, not internal).
 	if sourceSerial != "" {
 		internalDir, err := w.resolveInternalDir()
 		if err == nil && internalDir != "" {
@@ -209,7 +209,7 @@ func (w *SyncWorker) deletePath(ctx context.Context, relPath string, sourceSeria
 		if sourceSerial != "" && devSerial == sourceSerial {
 			continue
 		}
-		os.RemoveAll(filepath.Join(dev.CirrusDir, relPath))
+		os.RemoveAll(filepath.Join(dev.FilesDir, relPath))
 	}
 }
 

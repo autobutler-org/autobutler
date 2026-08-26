@@ -177,7 +177,7 @@ class _VaultPageState extends State<VaultPage> {
       ),
       drawer: QuarkDrawer(
         activeSection: QuarkDrawerSection.vault,
-        onTapCirrus: () => context.go(AppRoutes.cirrus),
+        onTapFiles: () => context.go(AppRoutes.files),
         onTapPhotos: () => context.go(AppRoutes.photos),
         onTapDocs: () => context.go(AppRoutes.docs),
         onTapSheets: () => context.go(AppRoutes.sheets),

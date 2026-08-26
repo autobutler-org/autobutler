@@ -16,9 +16,9 @@ const (
 )
 
 type SourceDevice struct {
-	Name      string
-	Serial    string
-	CirrusDir string
+	Name     string
+	Serial   string
+	FilesDir string
 }
 
 type SourceDeviceProgress struct {

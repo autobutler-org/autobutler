@@ -24,7 +24,7 @@ type ArchiveEntry struct {
 
 // ListArchiveParams contains parameters for listing archive contents.
 type ListArchiveParams struct {
-	// FilePath is the path to the archive, relative to the device cirrus directory.
+	// FilePath is the path to the archive, relative to the device files directory.
 	FilePath string
 	// SubPath is the virtual subdirectory inside the archive to list (empty = root).
 	// Use forward slashes. Must not contain ".." or start with "/".
@@ -40,21 +40,21 @@ func (s *StorageService) ListArchiveEntries(params ListArchiveParams) ([]Archive
 	if err != nil {
 		return nil, err // coverage: ignore
 	}
-	defaultCirrusDir, err := GetCirrusDir()
+	defaultFilesDir, err := GetFilesDir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+		return nil, fmt.Errorf("failed to get files directory: %w", err)
 	}
-	return ListArchiveEntriesImpl(params, device, defaultCirrusDir)
+	return ListArchiveEntriesImpl(params, device, defaultFilesDir)
 }
 
-// ListArchiveEntriesImpl is the testable entry point with injected device/cirrusDir.
-func ListArchiveEntriesImpl(params ListArchiveParams, device *ManagedDevice, defaultCirrusDir string) ([]ArchiveEntry, error) {
-	cirrusDir := defaultCirrusDir
+// ListArchiveEntriesImpl is the testable entry point with injected device/filesDir.
+func ListArchiveEntriesImpl(params ListArchiveParams, device *ManagedDevice, defaultFilesDir string) ([]ArchiveEntry, error) {
+	filesDir := defaultFilesDir
 	if device != nil {
-		cirrusDir = device.CirrusDir
+		filesDir = device.FilesDir
 	}
 
-	fullPath := filepath.Join(cirrusDir, params.FilePath)
+	fullPath := filepath.Join(filesDir, params.FilePath)
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("file not found: %s", params.FilePath)
 	}

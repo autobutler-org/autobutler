@@ -12,7 +12,7 @@ UPLOAD_CONCURRENCY="${TEST_UPLOAD_CONCURRENCY:-10}"
 UPLOAD_COUNT="${TEST_UPLOAD_COUNT:-20}"
 
 WORK_DIR="${WORK_DIR:-$PWD/test-results/performance}"
-PERF_FIXTURE_TARGET_DIR="${PERF_FIXTURE_TARGET_DIR:-$HOME/quark/data/cirrus}"
+PERF_FIXTURE_TARGET_DIR="${PERF_FIXTURE_TARGET_DIR:-$HOME/quark/data/files}"
 SCENARIO_DIR="$PWD/test/performance/wrk"
 
 mkdir -p "$WORK_DIR" "$WORK_DIR/upload-fixtures"
@@ -145,7 +145,7 @@ run_upload_stress() {
   ls "$WORK_DIR/upload-fixtures"/*.bin | \
     xargs -I{} -P "$UPLOAD_CONCURRENCY" \
       curl -sS -o /dev/null -w "%{http_code}\n" \
-        -X POST "$BASE_URL/api/v0/cirrus/upload" \
+        -X POST "$BASE_URL/api/v0/files/upload" \
         -H "Authorization: Bearer $ACCESS_TOKEN" \
         -F "file=@{}" > "$WORK_DIR/upload_status_codes.txt"
 
@@ -164,7 +164,7 @@ main() {
   prepare_fixtures
   seed_albums
 
-  run_wrk "cirrus_list" "$SCENARIO_DIR/cirrus_list.lua"
+  run_wrk "files_list" "$SCENARIO_DIR/files_list.lua"
   run_wrk "photos_list" "$SCENARIO_DIR/photos_list.lua"
   run_wrk "thumbnails" "$SCENARIO_DIR/thumbnails.lua"
   run_wrk "albums_list" "$SCENARIO_DIR/albums_list.lua"

@@ -3,7 +3,7 @@ import 'package:quark/models/photo_album.dart';
 import 'package:quark/pages/image_viewer_page.dart';
 import 'package:quark/pages/photos_page.dart';
 import 'package:quark/services/album_service.dart';
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/theme/quark_colors.dart';
 import 'package:quark/widgets/core/empty_state_widget.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
@@ -173,7 +173,7 @@ class _AlbumPageState extends State<AlbumPage> {
                 itemCount: _items.length,
                 itemBuilder: (context, idx) {
                   final item = _items[idx];
-                  final url = CirrusService.constructThumbnailUrl(
+                  final url = FilesService.constructThumbnailUrl(
                     item.relPath,
                     serial: item.deviceSerial,
                   );
@@ -183,7 +183,7 @@ class _AlbumPageState extends State<AlbumPage> {
                       _isOpeningPhoto = true;
                       try {
                         final navigator = Navigator.of(context);
-                        final bytes = await CirrusService.downloadFileBytes(
+                        final bytes = await FilesService.downloadFileBytes(
                           item.relPath,
                           serial: item.deviceSerial,
                         );
@@ -204,7 +204,7 @@ class _AlbumPageState extends State<AlbumPage> {
                                   return (null, '', null, null);
                                 }
                                 final ni = _items[newIdx];
-                                final b = await CirrusService.downloadFileBytes(
+                                final b = await FilesService.downloadFileBytes(
                                   ni.relPath,
                                   serial: ni.deviceSerial,
                                 );

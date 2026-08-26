@@ -1,5 +1,5 @@
-import 'package:quark/models/cirrus_file_node.dart';
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/models/file_node.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/safe_set_state_mixin.dart';
 import 'package:quark/widgets/core/quark_file_icon.dart';
@@ -49,10 +49,10 @@ class FileBrowserView extends StatefulWidget {
     super.key,
   });
 
-  final Future<List<CirrusFileNode>> filesFuture;
-  final List<CirrusFileNode>? initialData;
-  final Future<void> Function(CirrusFileNode, FileMenuAction) onFileMenuAction;
-  final void Function(CirrusFileNode) onOpenDirectory;
+  final Future<List<FileNode>> filesFuture;
+  final List<FileNode>? initialData;
+  final Future<void> Function(FileNode, FileMenuAction) onFileMenuAction;
+  final void Function(FileNode) onOpenDirectory;
   final bool isGridView;
 
   /// When true (default), files from all devices are shown merged.
@@ -66,7 +66,7 @@ class FileBrowserView extends StatefulWidget {
   final ScrollController? scrollController;
   final bool showFileSizeAndMenu;
   final bool isSearchMode;
-  final void Function(CirrusFileNode)? onNavigateToFolder;
+  final void Function(FileNode)? onNavigateToFolder;
 
   /// When true, we are browsing inside an archive — only download is available
   /// for files (no move/rename/delete).
@@ -84,14 +84,14 @@ class FileBrowserView extends StatefulWidget {
   /// opening the file/folder.
   final bool selectionMode;
 
-  /// The set of `CirrusFileNode.apiPath` values currently selected. The parent
+  /// The set of `FileNode.apiPath` values currently selected. The parent
   /// widget owns this state; [FileBrowserView] reflects it.
   final Set<String> selectedPaths;
 
   /// Called when the user taps an item in selection mode or long-presses to
-  /// enter selection mode. The argument is the tapped [CirrusFileNode].
+  /// enter selection mode. The argument is the tapped [FileNode].
   /// The parent widget should toggle the path in its own set and rebuild.
-  final void Function(CirrusFileNode node, {required bool enterSelectionMode})?
+  final void Function(FileNode node, {required bool enterSelectionMode})?
   onSelectionChanged;
 
   @override
@@ -116,8 +116,8 @@ class _FileBrowserViewState extends State<FileBrowserView> {
     });
   }
 
-  List<CirrusFileNode> _sorted(List<CirrusFileNode> files) {
-    final sorted = List<CirrusFileNode>.from(files);
+  List<FileNode> _sorted(List<FileNode> files) {
+    final sorted = List<FileNode>.from(files);
     sorted.sort((a, b) {
       // Directories always first.
       final dirCmp = (b.isDir ? 1 : 0) - (a.isDir ? 1 : 0);
@@ -142,7 +142,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
   }
 
   Widget _buildFolderDropWrapper({
-    required CirrusFileNode item,
+    required FileNode item,
     required Widget child,
   }) {
     if (!kIsWeb || widget.onDropToFolder == null || !item.isDir) {
@@ -159,7 +159,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
 
   void _dispatchMenuAction(
     BuildContext context,
-    CirrusFileNode item,
+    FileNode item,
     FileMenuAction action,
   ) {
     Future<void>.delayed(Duration.zero, () async {
@@ -257,7 +257,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
 
   // ── List tile ─────────────────────────────────────────────────────────────
 
-  Widget _buildListTile(BuildContext context, CirrusFileNode item) {
+  Widget _buildListTile(BuildContext context, FileNode item) {
     final colors = Theme.of(context).colorScheme;
     final isSelected = widget.selectedPaths.contains(item.apiPath);
     return Material(
@@ -399,7 +399,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
-    return FutureBuilder<List<CirrusFileNode>>(
+    return FutureBuilder<List<FileNode>>(
       future: widget.filesFuture,
       initialData: widget.initialData,
       builder: (context, snapshot) {
@@ -425,7 +425,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
           );
         }
 
-        final raw = snapshot.data ?? const <CirrusFileNode>[];
+        final raw = snapshot.data ?? const <FileNode>[];
         if (raw.isEmpty) {
           return const EmptyStateWidget(
             icon: QuarkIcons.folder_open_outlined,
@@ -439,7 +439,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
 
         // ── Segmented view ────────────────────────────────────────────────
         if (!widget.isUnifiedView && !widget.isSearchMode) {
-          final groups = <String, List<CirrusFileNode>>{};
+          final groups = <String, List<FileNode>>{};
           for (final f in files) {
             final key = f.deviceName.isNotEmpty
                 ? f.deviceName
@@ -738,7 +738,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
     );
   }
 
-  static bool _isImageFile(CirrusFileNode node) {
+  static bool _isImageFile(FileNode node) {
     if (node.isDir) return false;
     final lower = node.name.toLowerCase();
     return lower.endsWith('.jpg') ||
@@ -770,7 +770,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
     '.ts',
   };
 
-  static bool _isVideoFile(CirrusFileNode node) {
+  static bool _isVideoFile(FileNode node) {
     if (node.isDir) return false;
     if (node.fileType == 'video') return true;
     final lower = node.name.toLowerCase();
@@ -781,14 +781,14 @@ class _FileBrowserViewState extends State<FileBrowserView> {
   /// Whether the server can render a thumbnail for this node. Videos go
   /// through ffmpeg frame extraction on the backend and come back as JPEG,
   /// so they use the same thumbnail URL as images.
-  static bool _hasServerThumbnail(CirrusFileNode node) =>
+  static bool _hasServerThumbnail(FileNode node) =>
       _isImageFile(node) || _isVideoFile(node);
 
   /// Preview slot for a grid tile. Sized by the caller (an [Expanded] that
   /// hands it whatever the tile has left over) so every tile lines up without
   /// risking an overflow, with the thumbnail replacing the icon only once it
   /// decodes.
-  Widget _buildGridPreview(CirrusFileNode item) {
+  Widget _buildGridPreview(FileNode item) {
     final icon = Center(child: QuarkFileIcon(node: item, size: 48));
 
     return SizedBox(
@@ -796,7 +796,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
       child: !_hasServerThumbnail(item)
           ? icon
           : CachedNetworkImage(
-              imageUrl: CirrusService.constructThumbnailUrl(
+              imageUrl: FilesService.constructThumbnailUrl(
                 item.apiPath,
                 serial: item.deviceSerial,
               ).toString(),
@@ -816,7 +816,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
   /// row ends up showing a thumbnail or a file-type icon.
   static const double _listLeadingSize = 40;
 
-  Widget _buildListLeading(CirrusFileNode item) {
+  Widget _buildListLeading(FileNode item) {
     final icon = Center(child: QuarkFileIcon(node: item));
 
     return SizedBox(
@@ -825,7 +825,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
       child: !_hasServerThumbnail(item)
           ? icon
           : CachedNetworkImage(
-              imageUrl: CirrusService.constructThumbnailUrl(
+              imageUrl: FilesService.constructThumbnailUrl(
                 item.apiPath,
                 serial: item.deviceSerial,
                 size: 'sm',
@@ -851,12 +851,12 @@ class _FileBrowserViewState extends State<FileBrowserView> {
     );
   }
 
-  static bool _isArchive(CirrusFileNode node) {
+  static bool _isArchive(FileNode node) {
     if (node.isDir) return false;
     return node.fileType == 'archive';
   }
 
-  static String _fileType(CirrusFileNode node) {
+  static String _fileType(FileNode node) {
     if (node.isDir) return '';
     final dot = node.name.lastIndexOf('.');
     if (dot < 0) return 'file';

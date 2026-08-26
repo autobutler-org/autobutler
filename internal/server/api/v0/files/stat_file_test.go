@@ -11,10 +11,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// statPath calls GET /api/v1/cirrus/stat and returns the decoded JSON body.
+// statPath calls GET /api/v0/files/stat and returns the decoded JSON body.
 func statPath(t *testing.T, engine *gin.Engine, filePath string) (map[string]any, int) {
 	t.Helper()
-	url := fmt.Sprintf("/api/v0/cirrus/stat?filePath=%s", filePath)
+	url := fmt.Sprintf("/api/v0/files/stat?filePath=%s", filePath)
 	w := doRequest(engine, http.MethodGet, url, nil, "")
 	if w.Code == http.StatusOK {
 		var result map[string]any
@@ -29,8 +29,8 @@ func statPath(t *testing.T, engine *gin.Engine, filePath string) (map[string]any
 // --- stat endpoint: regular files ---
 
 func TestStatFile_AbdocFile(t *testing.T) {
-	engine, cirrusDir := newTestEngine(t)
-	if err := os.WriteFile(filepath.Join(cirrusDir, "note.abdoc"), []byte("{}"), 0644); err != nil {
+	engine, filesDir := newTestEngine(t)
+	if err := os.WriteFile(filepath.Join(filesDir, "note.abdoc"), []byte("{}"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -47,8 +47,8 @@ func TestStatFile_AbdocFile(t *testing.T) {
 }
 
 func TestStatFile_AbsheetFile(t *testing.T) {
-	engine, cirrusDir := newTestEngine(t)
-	if err := os.WriteFile(filepath.Join(cirrusDir, "budget.absheet"), []byte("{}"), 0644); err != nil {
+	engine, filesDir := newTestEngine(t)
+	if err := os.WriteFile(filepath.Join(filesDir, "budget.absheet"), []byte("{}"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -65,8 +65,8 @@ func TestStatFile_AbsheetFile(t *testing.T) {
 }
 
 func TestStatFile_ImageFile(t *testing.T) {
-	engine, cirrusDir := newTestEngine(t)
-	if err := os.WriteFile(filepath.Join(cirrusDir, "photo.jpg"), []byte("\xFF\xD8"), 0644); err != nil {
+	engine, filesDir := newTestEngine(t)
+	if err := os.WriteFile(filepath.Join(filesDir, "photo.jpg"), []byte("\xFF\xD8"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -83,8 +83,8 @@ func TestStatFile_ImageFile(t *testing.T) {
 }
 
 func TestStatFile_VideoFile(t *testing.T) {
-	engine, cirrusDir := newTestEngine(t)
-	if err := os.WriteFile(filepath.Join(cirrusDir, "clip.mp4"), []byte("ftyp"), 0644); err != nil {
+	engine, filesDir := newTestEngine(t)
+	if err := os.WriteFile(filepath.Join(filesDir, "clip.mp4"), []byte("ftyp"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -103,8 +103,8 @@ func TestStatFile_VideoFile(t *testing.T) {
 // --- stat endpoint: plain directories ---
 
 func TestStatFile_PlainDirectory(t *testing.T) {
-	engine, cirrusDir := newTestEngine(t)
-	if err := os.Mkdir(filepath.Join(cirrusDir, "photos"), 0755); err != nil {
+	engine, filesDir := newTestEngine(t)
+	if err := os.Mkdir(filepath.Join(filesDir, "photos"), 0755); err != nil {
 		t.Fatal(err)
 	}
 
@@ -125,8 +125,8 @@ func TestStatFile_PlainDirectory(t *testing.T) {
 // extension must be identified as a directory, not as that file type.
 
 func TestStatFile_FolderNamedLikeAbdoc(t *testing.T) {
-	engine, cirrusDir := newTestEngine(t)
-	if err := os.Mkdir(filepath.Join(cirrusDir, "things.abdoc"), 0755); err != nil {
+	engine, filesDir := newTestEngine(t)
+	if err := os.Mkdir(filepath.Join(filesDir, "things.abdoc"), 0755); err != nil {
 		t.Fatal(err)
 	}
 
@@ -143,8 +143,8 @@ func TestStatFile_FolderNamedLikeAbdoc(t *testing.T) {
 }
 
 func TestStatFile_FolderNamedLikeAbsheet(t *testing.T) {
-	engine, cirrusDir := newTestEngine(t)
-	if err := os.Mkdir(filepath.Join(cirrusDir, "data.absheet"), 0755); err != nil {
+	engine, filesDir := newTestEngine(t)
+	if err := os.Mkdir(filepath.Join(filesDir, "data.absheet"), 0755); err != nil {
 		t.Fatal(err)
 	}
 
@@ -161,8 +161,8 @@ func TestStatFile_FolderNamedLikeAbsheet(t *testing.T) {
 }
 
 func TestStatFile_FolderNamedLikeImage(t *testing.T) {
-	engine, cirrusDir := newTestEngine(t)
-	if err := os.Mkdir(filepath.Join(cirrusDir, "photo.jpg"), 0755); err != nil {
+	engine, filesDir := newTestEngine(t)
+	if err := os.Mkdir(filepath.Join(filesDir, "photo.jpg"), 0755); err != nil {
 		t.Fatal(err)
 	}
 
@@ -179,8 +179,8 @@ func TestStatFile_FolderNamedLikeImage(t *testing.T) {
 }
 
 func TestStatFile_FolderNamedLikeVideo(t *testing.T) {
-	engine, cirrusDir := newTestEngine(t)
-	if err := os.Mkdir(filepath.Join(cirrusDir, "clip.mp4"), 0755); err != nil {
+	engine, filesDir := newTestEngine(t)
+	if err := os.Mkdir(filepath.Join(filesDir, "clip.mp4"), 0755); err != nil {
 		t.Fatal(err)
 	}
 
@@ -199,8 +199,8 @@ func TestStatFile_FolderNamedLikeVideo(t *testing.T) {
 // --- stat endpoint: nested paths ---
 
 func TestStatFile_NestedFile(t *testing.T) {
-	engine, cirrusDir := newTestEngine(t)
-	sub := filepath.Join(cirrusDir, "docs")
+	engine, filesDir := newTestEngine(t)
+	sub := filepath.Join(filesDir, "docs")
 	if err := os.Mkdir(sub, 0755); err != nil {
 		t.Fatal(err)
 	}
@@ -221,8 +221,8 @@ func TestStatFile_NestedFile(t *testing.T) {
 }
 
 func TestStatFile_NestedFolderNamedLikeFile(t *testing.T) {
-	engine, cirrusDir := newTestEngine(t)
-	sub := filepath.Join(cirrusDir, "projects")
+	engine, filesDir := newTestEngine(t)
+	sub := filepath.Join(filesDir, "projects")
 	if err := os.Mkdir(sub, 0755); err != nil {
 		t.Fatal(err)
 	}

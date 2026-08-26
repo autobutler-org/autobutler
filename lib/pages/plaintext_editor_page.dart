@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:quark/router.dart';
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 
@@ -60,7 +60,7 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
     });
     try {
       final serial = serialOrNull(widget.deviceSerial);
-      final bytes = await CirrusService.downloadFileBytes(
+      final bytes = await FilesService.downloadFileBytes(
         widget.filePath,
         serial: serial,
       );
@@ -97,7 +97,7 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
         bytes,
         filename: fileName,
       );
-      await CirrusService.uploadFilesFromFormData(
+      await FilesService.uploadFilesFromFormData(
         parentDir,
         [file],
         serial: serial,
@@ -134,7 +134,7 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
             if (context.canPop()) {
               context.pop();
             } else {
-              context.go(AppRoutes.cirrus);
+              context.go(AppRoutes.files);
             }
           },
         ),

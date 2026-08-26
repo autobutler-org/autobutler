@@ -42,7 +42,7 @@ var importBackupRoute = serverutil.ApiRoute(
 
 		qtx := deps.VaultDB().Queries.WithTx(tx)
 
-		result, err := backup.ImportVault(ctx, qtx, liveKey, req.RecoveryPassword, dev.CirrusDir)
+		result, err := backup.ImportVault(ctx, qtx, liveKey, req.RecoveryPassword, dev.FilesDir)
 		if err != nil {
 			return serverutil.BadRequest(fmt.Errorf("import failed: %w", err))
 		}

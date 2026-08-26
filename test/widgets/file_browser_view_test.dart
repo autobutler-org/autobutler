@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/models/file_node.dart';
 import 'package:quark/widgets/file_browser/file_browser_view.dart';
 
 void main() {
   Future<void> pumpFileBrowserView(
     WidgetTester tester, {
-    required Future<List<CirrusFileNode>> filesFuture,
+    required Future<List<FileNode>> filesFuture,
     bool isInitialLoad = false,
     Widget Function(BuildContext context, Object error)? errorBuilder,
     WidgetBuilder? loadingBuilder,
@@ -36,19 +36,19 @@ void main() {
   ) async {
     await pumpFileBrowserView(
       tester,
-      filesFuture: Future.value(const <CirrusFileNode>[]),
+      filesFuture: Future.value(const <FileNode>[]),
       isInitialLoad: true,
-      loadingBuilder: (_) => const Text('Opening /cirrus/Documents'),
+      loadingBuilder: (_) => const Text('Opening /files/Documents'),
     );
 
-    expect(find.text('Opening /cirrus/Documents'), findsOneWidget);
+    expect(find.text('Opening /files/Documents'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
   testWidgets('uses the custom error builder for failed folder loads', (
     WidgetTester tester,
   ) async {
-    final completer = Completer<List<CirrusFileNode>>();
+    final completer = Completer<List<FileNode>>();
     await pumpFileBrowserView(
       tester,
       filesFuture: completer.future,

@@ -16,7 +16,7 @@ import (
 // newFolder godoc
 // @Summary Create a new folder
 // @Description Enqueue create-folder operation under the given folder directory
-// @Tags cirrus
+// @Tags files
 // @Accept multipart/form-data
 // @Produce json
 // @Param folderDir path string true "Folder directory"
@@ -25,7 +25,7 @@ import (
 // @Success 202 {object} serverutil.Response "Ok"
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Router /cirrus/folder/{folderDir} [post]
+// @Router /files/folder/{folderDir} [post]
 func newFolder(c *gin.Context) *serverutil.Response {
 	folderDir := c.Param("folderDir")
 	folderName := c.PostForm("folderName")
@@ -73,5 +73,5 @@ func newFolder(c *gin.Context) *serverutil.Response {
 }
 
 var newFolderRoute = serverutil.ApiRoute(
-	"POST", "/cirrus/folder/*folderDir", newFolder,
+	"POST", "/files/folder/*folderDir", newFolder,
 )

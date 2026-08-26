@@ -12,7 +12,7 @@ body:
       label: Component
       multiple: true
       options:
-        - Cirrus (Drive)
+        - Files (Drive)
         - Photos
         - Docs
         - Books

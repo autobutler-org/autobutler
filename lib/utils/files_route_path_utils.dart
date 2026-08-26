@@ -1,9 +1,9 @@
-String cirrusRouteDisplayPath(String path) {
+String filesRouteDisplayPath(String path) {
   final trimmed = path.trim();
   if (trimmed.isEmpty || trimmed == '/') {
-    return '/cirrus';
+    return '/files';
   }
-  return trimmed.startsWith('/cirrus') ? trimmed : '/cirrus$trimmed';
+  return trimmed.startsWith('/files') ? trimmed : '/files$trimmed';
 }
 
 bool isLikelyFilePath(String path) {
@@ -23,12 +23,12 @@ bool isLikelyFilePath(String path) {
   return dotIndex > 0 && dotIndex < lastSegment.length - 1;
 }
 
-bool hasSupportedCirrusEditorForPath(String path) {
+bool hasSupportedFilesEditorForPath(String path) {
   final normalized = path.trim().toLowerCase();
   return normalized.endsWith('.abdoc') || normalized.endsWith('.absheet');
 }
 
-bool hasSupportedCirrusEditorForType(String fileType) {
+bool hasSupportedFilesEditorForType(String fileType) {
   final normalized = fileType.trim().toLowerCase();
   return normalized == 'abdoc' || normalized == 'absheet';
 }

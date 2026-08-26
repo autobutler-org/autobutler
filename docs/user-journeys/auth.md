@@ -24,7 +24,7 @@ Covers first-boot setup, login, logout, and password recovery.
 13. Tap **Done** (or equivalent).
 
 **Expected result:**
-- App navigates to `/cirrus` (file browser).
+- App navigates to `/files` (file browser).
 - The username is accepted and the account is live on the butler.
 - The theme chosen is applied immediately.
 
@@ -46,7 +46,7 @@ Covers first-boot setup, login, logout, and password recovery.
 4. Tap **Log in**.
 
 **Expected result:**
-- App navigates to `/cirrus`.
+- App navigates to `/files`.
 - Session token is stored; subsequent navigation does not require re-login.
 
 ---
@@ -96,7 +96,7 @@ Covers first-boot setup, login, logout, and password recovery.
 7. Tap **Reset password**.
 
 **Expected result:**
-- App navigates to `/login` (or directly to `/cirrus` on auto-login).
+- App navigates to `/login` (or directly to `/files` on auto-login).
 - User can log in with the new password.
 - Old password no longer works.
 
@@ -144,4 +144,4 @@ Covers first-boot setup, login, logout, and password recovery.
 
 **Expected result:**
 - App navigates to `/terms` before any other protected route.
-- User must accept before accessing `/cirrus` or any other feature.
+- User must accept before accessing `/files` or any other feature.

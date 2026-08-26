@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/models/file_node.dart';
 
 void main() {
-  group('CirrusFileNode.fromJson', () {
+  group('FileNode.fromJson', () {
     test('parses a fully populated JSON payload', () {
       final json = <String, dynamic>{
         'name': 'photo.jpg',
@@ -14,7 +14,7 @@ void main() {
         'dirPath': '/photos/vacation',
       };
 
-      final node = CirrusFileNode.fromJson(json);
+      final node = FileNode.fromJson(json);
 
       expect(node.name, 'photo.jpg');
       expect(node.size, 1024);
@@ -36,7 +36,7 @@ void main() {
         'dir_path': '/documents',
       };
 
-      final node = CirrusFileNode.fromJson(json);
+      final node = FileNode.fromJson(json);
 
       expect(node.isDir, false);
       expect(node.deviceName, 'Internal');
@@ -46,7 +46,7 @@ void main() {
     });
 
     test('defaults missing fields gracefully', () {
-      final node = CirrusFileNode.fromJson(<String, dynamic>{});
+      final node = FileNode.fromJson(<String, dynamic>{});
 
       expect(node.name, '');
       expect(node.size, 0);
@@ -60,14 +60,14 @@ void main() {
     test('parses size from string', () {
       final json = <String, dynamic>{'name': 'file.txt', 'size': '2048'};
 
-      final node = CirrusFileNode.fromJson(json);
+      final node = FileNode.fromJson(json);
       expect(node.size, 2048);
     });
 
     test('parses size from double', () {
       final json = <String, dynamic>{'name': 'file.txt', 'size': 1024.5};
 
-      final node = CirrusFileNode.fromJson(json);
+      final node = FileNode.fromJson(json);
       expect(node.size, 1024);
     });
 
@@ -77,35 +77,35 @@ void main() {
         'size': 'not-a-number',
       };
 
-      final node = CirrusFileNode.fromJson(json);
+      final node = FileNode.fromJson(json);
       expect(node.size, 0);
     });
 
     test('parses isDir from string "true"', () {
       final json = <String, dynamic>{'name': 'folder', 'isDir': 'true'};
 
-      final node = CirrusFileNode.fromJson(json);
+      final node = FileNode.fromJson(json);
       expect(node.isDir, true);
     });
 
     test('parses isDir from string "True" (case insensitive)', () {
       final json = <String, dynamic>{'name': 'folder', 'isDir': 'True'};
 
-      final node = CirrusFileNode.fromJson(json);
+      final node = FileNode.fromJson(json);
       expect(node.isDir, true);
     });
 
     test('parses isDir from string "false"', () {
       final json = <String, dynamic>{'name': 'file.txt', 'isDir': 'false'};
 
-      final node = CirrusFileNode.fromJson(json);
+      final node = FileNode.fromJson(json);
       expect(node.isDir, false);
     });
   });
 
-  group('CirrusFileNode.apiPath', () {
+  group('FileNode.apiPath', () {
     test('returns dirPath with leading/trailing slashes stripped', () {
-      const node = CirrusFileNode(
+      const node = FileNode(
         name: 'file.txt',
         size: 0,
         isDir: false,
@@ -119,7 +119,7 @@ void main() {
     });
 
     test('falls back to name when dirPath is empty', () {
-      const node = CirrusFileNode(
+      const node = FileNode(
         name: 'readme.md',
         size: 0,
         isDir: false,
@@ -133,7 +133,7 @@ void main() {
     });
 
     test('falls back to name when dirPath is whitespace', () {
-      const node = CirrusFileNode(
+      const node = FileNode(
         name: 'readme.md',
         size: 0,
         isDir: false,
@@ -147,7 +147,7 @@ void main() {
     });
 
     test('strips multiple leading slashes', () {
-      const node = CirrusFileNode(
+      const node = FileNode(
         name: '',
         size: 0,
         isDir: true,

@@ -67,23 +67,23 @@ func (s *StorageService) ExtractFile(params ExtractFileParams) (*ExtractFileResu
 	if err != nil {
 		return nil, err // coverage: ignore - requires device detection failure
 	}
-	defaultCirrusDir, err := GetCirrusDir()
+	defaultFilesDir, err := GetFilesDir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cirrus directory: %w", err)
+		return nil, fmt.Errorf("failed to get files directory: %w", err)
 	}
-	return ExtractFileImpl(params, device, defaultCirrusDir)
+	return ExtractFileImpl(params, device, defaultFilesDir)
 }
 
-// ExtractFileImpl extracts an archive using a pre-resolved device and cirrus
+// ExtractFileImpl extracts an archive using a pre-resolved device and files
 // directory. Use this in tests to inject test devices without hitting the real
 // filesystem detector.
-func ExtractFileImpl(params ExtractFileParams, device *ManagedDevice, defaultCirrusDir string) (*ExtractFileResult, error) {
-	cirrusDir := defaultCirrusDir
+func ExtractFileImpl(params ExtractFileParams, device *ManagedDevice, defaultFilesDir string) (*ExtractFileResult, error) {
+	filesDir := defaultFilesDir
 	if device != nil {
-		cirrusDir = device.CirrusDir
+		filesDir = device.FilesDir
 	}
 
-	fullPath := filepath.Join(cirrusDir, params.FilePath)
+	fullPath := filepath.Join(filesDir, params.FilePath)
 
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("file not found: %s", params.FilePath)

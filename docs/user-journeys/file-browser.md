@@ -1,6 +1,6 @@
-# File Browser (Cirrus) Journeys
+# File Browser Journeys
 
-Covers browsing, uploading, downloading, and managing files via the Cirrus file browser at `/cirrus`.
+Covers browsing, uploading, downloading, and managing files via the file browser at `/files`.
 
 ---
 
@@ -9,7 +9,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 **Preconditions:** User is logged in.
 
 **Steps:**
-1. Navigate to `/cirrus`.
+1. Navigate to `/files`.
 
 **Expected result:**
 - A list (or grid) of files and folders at the root of the butler's storage is shown.
@@ -20,15 +20,15 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-002: Navigate into a folder
 
-**Preconditions:** At least one folder exists in Cirrus (JN-FB-001 passes).
+**Preconditions:** At least one folder exists in Files (JN-FB-001 passes).
 
 **Steps:**
-1. Navigate to `/cirrus`.
+1. Navigate to `/files`.
 2. Tap a folder in the listing.
 
 **Expected result:**
 - File listing updates to show the contents of that folder.
-- URL updates to `/cirrus/<folder-name>`.
+- URL updates to `/files/<folder-name>`.
 - Breadcrumb updates to reflect the current path.
 
 ---
@@ -48,7 +48,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-004: Toggle between list view and grid view
 
-**Preconditions:** User is at `/cirrus`.
+**Preconditions:** User is at `/files`.
 
 **Steps:**
 1. Tap the grid/list toggle button in the top bar.
@@ -64,7 +64,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 **Preconditions:** Multiple storage devices are connected.
 
 **Steps:**
-1. Navigate to `/cirrus`.
+1. Navigate to `/files`.
 2. Tap the unified/device-grouped toggle.
 
 **Expected result:**
@@ -78,7 +78,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 **Preconditions:** User is logged in. A file is available on the client device.
 
 **Steps:**
-1. Navigate to `/cirrus` (or any subfolder).
+1. Navigate to `/files` (or any subfolder).
 2. Tap the **upload** FAB or button.
 3. Select a file from the system file picker.
 
@@ -93,7 +93,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 **Preconditions:** User is on a platform that supports drag-and-drop.
 
 **Steps:**
-1. Navigate to `/cirrus`.
+1. Navigate to `/files`.
 2. Drag a file from the OS file manager onto the file browser drop zone.
 
 **Expected result:**
@@ -105,10 +105,10 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-008: Download a file
 
-**Preconditions:** At least one file exists in Cirrus.
+**Preconditions:** At least one file exists in Files.
 
 **Steps:**
-1. Navigate to `/cirrus`.
+1. Navigate to `/files`.
 2. Long-press (mobile) or right-click / use the context menu (desktop/web) on a file.
 3. Select **Download**.
 
@@ -120,7 +120,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-009: Create a new folder
 
-**Preconditions:** User is logged in, at any path in `/cirrus`.
+**Preconditions:** User is logged in, at any path in `/files`.
 
 **Steps:**
 1. Tap the **New folder** button or FAB action.
@@ -135,7 +135,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-010: Rename a file or folder
 
-**Preconditions:** At least one file or folder exists in Cirrus.
+**Preconditions:** At least one file or folder exists in Files.
 
 **Steps:**
 1. Open the context menu on a file or folder.
@@ -151,7 +151,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-011: Move a file or folder
 
-**Preconditions:** At least two folders exist in Cirrus.
+**Preconditions:** At least two folders exist in Files.
 
 **Steps:**
 1. Open the context menu on a file or folder.
@@ -167,7 +167,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-012: Delete a single file
 
-**Preconditions:** At least one file exists in Cirrus.
+**Preconditions:** At least one file exists in Files.
 
 **Steps:**
 1. Open the context menu on a file.
@@ -181,10 +181,10 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-013: Batch delete multiple files
 
-**Preconditions:** Multiple files exist in Cirrus.
+**Preconditions:** Multiple files exist in Files.
 
 **Steps:**
-1. Navigate to `/cirrus`.
+1. Navigate to `/files`.
 2. Enter multi-select mode (long-press a file on mobile, or use the selection checkbox on desktop/web).
 3. Select two or more files.
 4. Tap **Delete selected**.
@@ -199,10 +199,10 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-014: Search for a file by name
 
-**Preconditions:** At least one file exists in Cirrus.
+**Preconditions:** At least one file exists in Files.
 
 **Steps:**
-1. Navigate to `/cirrus`.
+1. Navigate to `/files`.
 2. Tap the search icon.
 3. Enter a partial or full filename.
 
@@ -215,7 +215,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-015: Open an image file in the image viewer
 
-**Preconditions:** An image file (jpg, png, etc.) exists in Cirrus.
+**Preconditions:** An image file (jpg, png, etc.) exists in Files.
 
 **Steps:**
 1. Navigate to the folder containing the image.
@@ -230,7 +230,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-016: Open a video file in the video viewer
 
-**Preconditions:** A video file exists in Cirrus.
+**Preconditions:** A video file exists in Files.
 
 **Steps:**
 1. Tap the video file in the file browser.
@@ -243,7 +243,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-017: Open and play an audio file
 
-**Preconditions:** An audio file exists in Cirrus.
+**Preconditions:** An audio file exists in Files.
 
 **Steps:**
 1. Tap the audio file in the file browser.
@@ -256,7 +256,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-018: Open a plaintext file in the plaintext editor
 
-**Preconditions:** A `.txt` (or similar plaintext) file exists in Cirrus.
+**Preconditions:** A `.txt` (or similar plaintext) file exists in Files.
 
 **Steps:**
 1. Tap the file in the file browser.
@@ -269,7 +269,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-019: Open a generic/unsupported file (native open)
 
-**Preconditions:** A file of a type without a dedicated viewer (e.g. `.zip`, `.pdf`) exists in Cirrus.
+**Preconditions:** A file of a type without a dedicated viewer (e.g. `.zip`, `.pdf`) exists in Files.
 
 **Steps:**
 1. Tap the file.
@@ -282,7 +282,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-020: Browse inside an archive
 
-**Preconditions:** A `.zip` or other supported archive file exists in Cirrus.
+**Preconditions:** A `.zip` or other supported archive file exists in Files.
 
 **Steps:**
 1. Navigate to the archive file in the file browser.
@@ -297,7 +297,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-021: Extract an archive
 
-**Preconditions:** A supported archive file exists in Cirrus.
+**Preconditions:** A supported archive file exists in Files.
 
 **Steps:**
 1. Open the context menu on the archive file.
@@ -314,7 +314,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 **Preconditions:** User has opened or uploaded files previously.
 
 **Steps:**
-1. Navigate to `/cirrus` root.
+1. Navigate to `/files` root.
 
 **Expected result:**
 - A "Recent files" section is visible above the main listing.
@@ -327,7 +327,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 **Preconditions:** Multiple storage devices are connected.
 
 **Steps:**
-1. Navigate to `/cirrus`.
+1. Navigate to `/files`.
 2. Open the device filter (header or filter UI).
 3. Deselect one or more devices.
 
@@ -339,7 +339,7 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-024: Real-time file update via WebSocket
 
-**Preconditions:** User has `/cirrus` open. Another client or the butler uploads a file concurrently.
+**Preconditions:** User has `/files` open. Another client or the butler uploads a file concurrently.
 
 **Steps:**
 1. Have a second client (or the butler itself) upload a new file.
@@ -351,10 +351,10 @@ Covers browsing, uploading, downloading, and managing files via the Cirrus file 
 
 ### JN-FB-025: Deep-link directly to a subfolder
 
-**Preconditions:** A subfolder `photos/2024` exists in Cirrus.
+**Preconditions:** A subfolder `photos/2024` exists in Files.
 
 **Steps:**
-1. Navigate directly to `/cirrus/photos/2024`.
+1. Navigate directly to `/files/photos/2024`.
 
 **Expected result:**
 - File browser opens at `photos/2024`.

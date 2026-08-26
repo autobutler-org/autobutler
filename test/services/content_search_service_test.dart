@@ -5,7 +5,7 @@ import 'package:quark/services/content_search_service.dart';
 
 void main() {
   group('ContentSearchResult.fromJson', () {
-    // The exact body returned by GET /api/v0/cirrus/search/content. The
+    // The exact body returned by GET /api/v0/files/search/content. The
     // handler's payload is written directly by WrapApiRoute, so this is a bare
     // array with a `serial` key — not a {"data": …} envelope, and not
     // `deviceSerial`.

@@ -21,19 +21,26 @@ func isRunningAsServiceUser() bool {
 	return u.Username == "quark"
 }
 
-func ConstructCirrusDir(dataDir string) string {
-	return filepath.Join(dataDir, "cirrus")
+// ConstructFilesDir returns the on-disk storage root for a data directory.
+func ConstructFilesDir(dataDir string) string {
+	return filepath.Join(dataDir, "files")
 }
 
-func GetCirrusDir() (string, error) {
-	cirrusPath := ConstructCirrusDir(GetDataDir())
-	if err := os.MkdirAll(cirrusPath, 0755); err != nil {
-		return "", fmt.Errorf("failed to create cirrus directory: %w", err)
+func GetFilesDir() (string, error) {
+	filesPath := ConstructFilesDir(GetDataDir())
+	if err := os.MkdirAll(filesPath, 0755); err != nil {
+		return "", fmt.Errorf("failed to create files directory: %w", err)
 	}
-	return cirrusPath, nil
+	return filesPath, nil
 }
 
-func GetCirrusDirForDevice(mountPoint string) (string, error) {
+// GetFilesDirForDevice returns the storage root on an external device.
+//
+// Note: a device formatted by a build from before the Cirrus -> Files rename
+// (#1601) keeps its data under <dataDir>/cirrus, and is deliberately not
+// migrated — only the system data dir is, on startup. This is a decision, not
+// an oversight; such a device shows up empty until someone moves it by hand.
+func GetFilesDirForDevice(mountPoint string) (string, error) {
 	if mountPoint == "" {
 		return "", errors.New("mount point is empty")
 	}
@@ -47,11 +54,11 @@ func GetCirrusDirForDevice(mountPoint string) (string, error) {
 	}
 
 	dataDir := GetDataDirForDevice(mountPoint)
-	cirrusPath := ConstructCirrusDir(dataDir)
-	if err := os.MkdirAll(cirrusPath, 0755); err != nil {
-		return "", fmt.Errorf("failed to create cirrus directory for device at %s: %v", mountPoint, err)
+	filesPath := ConstructFilesDir(dataDir)
+	if err := os.MkdirAll(filesPath, 0755); err != nil {
+		return "", fmt.Errorf("failed to create files directory for device at %s: %v", mountPoint, err)
 	}
-	return cirrusPath, nil
+	return filesPath, nil
 }
 
 // GetDataDirForDevice returns the data directory path for a specific device mount point

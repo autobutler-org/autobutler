@@ -19,7 +19,7 @@ Covers the Docs page (`/docs`) and the document editor for `.abdoc` files.
 
 ### JN-DOC-002: Open an existing document
 
-**Preconditions:** At least one `.abdoc` file exists in Cirrus.
+**Preconditions:** At least one `.abdoc` file exists in Files.
 
 **Steps:**
 1. Navigate to `/docs`.

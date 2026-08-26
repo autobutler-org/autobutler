@@ -1,16 +1,16 @@
 # Photos Journeys
 
-Covers the Photos page (`/photos`), including Cirrus photos, mobile device photos, albums, and favorites.
+Covers the Photos page (`/photos`), including Quark photos, mobile device photos, albums, and favorites.
 
 ---
 
-### JN-PH-001: Browse Cirrus photos
+### JN-PH-001: Browse Quark photos
 
-**Preconditions:** Image files exist in Cirrus.
+**Preconditions:** Image files exist on the Quark device.
 
 **Steps:**
 1. Navigate to `/photos`.
-2. Ensure the **Cirrus** or **All** category tab is selected.
+2. Ensure the **Quark** or **All** category tab is selected.
 
 **Expected result:**
 - Thumbnail grid of images stored on the butler is displayed.
@@ -46,9 +46,9 @@ Covers the Photos page (`/photos`), including Cirrus photos, mobile device photo
 
 ---
 
-### JN-PH-004: Paginate through Cirrus photos
+### JN-PH-004: Paginate through Quark photos
 
-**Preconditions:** More than one page of Cirrus photos exists (> page size, default 50).
+**Preconditions:** More than one page of Quark photos exists (> page size, default 50).
 
 **Steps:**
 1. Navigate to `/photos`.
@@ -84,7 +84,7 @@ Covers the Photos page (`/photos`), including Cirrus photos, mobile device photo
 
 **Expected result:**
 - Upload progress is shown.
-- After completion, the uploaded photo(s) appear in the Cirrus category.
+- After completion, the uploaded photo(s) appear in the Quark category.
 
 ---
 
@@ -127,7 +127,7 @@ Covers the Photos page (`/photos`), including Cirrus photos, mobile device photo
 
 **Expected result:**
 - Photo is removed from the Favorites listing.
-- It still appears under its original category (Cirrus / Mobile / All).
+- It still appears under its original category (Quark / Mobile / All).
 
 ---
 
@@ -178,7 +178,7 @@ Covers the Photos page (`/photos`), including Cirrus photos, mobile device photo
 
 ### JN-PH-013: View photo metadata
 
-**Preconditions:** A Cirrus photo is open in the image viewer.
+**Preconditions:** A Quark photo is open in the image viewer.
 
 **Steps:**
 1. Open the info panel or tap the info icon.
@@ -188,9 +188,9 @@ Covers the Photos page (`/photos`), including Cirrus photos, mobile device photo
 
 ---
 
-### JN-PH-014: Rotate a Cirrus photo
+### JN-PH-014: Rotate a Quark photo
 
-**Preconditions:** A Cirrus photo is open.
+**Preconditions:** A Quark photo is open.
 
 **Steps:**
 1. Open the rotate action (toolbar or context menu).
@@ -202,9 +202,9 @@ Covers the Photos page (`/photos`), including Cirrus photos, mobile device photo
 
 ---
 
-### JN-PH-015: Copy a Cirrus photo
+### JN-PH-015: Copy a Quark photo
 
-**Preconditions:** A Cirrus photo exists.
+**Preconditions:** A Quark photo exists.
 
 **Steps:**
 1. Open context menu on the photo.

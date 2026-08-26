@@ -240,7 +240,7 @@ func DetermineFileType(rootDir string, file *DeviceFileInfo) FileType {
 	if file.IsDir() {
 		return FileTypeFolder
 	}
-	filesDir, err := GetCirrusDir()
+	filesDir, err := GetFilesDir()
 	if err != nil {
 		return FileTypeGeneric
 	}
@@ -347,41 +347,24 @@ func GetNonConflictingPath(targetPath string) string {
 	}
 }
 
-func SetupCirrusDir() error {
-	// Check if the cirrus dir exists
-	// If cirrus dir exists, check if legacy files dir exists
-	// if so, move the contents of legacy files dir to cirrus dir, then delete legacy files dir
-	cirrusDir := ConstructCirrusDir(GetDataDir())
-	legacyFilesDir := filepath.Join(GetDataDir(), "files")
+// SetupFilesDir prepares the system storage root, migrating a pre-rename
+// "cirrus" directory into place first. Called once on startup.
+func SetupFilesDir() error {
+	return setupFilesDirIn(GetDataDir())
+}
 
-	if _, err := os.Stat(cirrusDir); os.IsNotExist(err) {
-		// Cirrus dir does not exist, create it
-		if err := os.MkdirAll(cirrusDir, 0755); err != nil {
-			return fmt.Errorf("failed to create cirrus directory: %w", err)
-		}
+// setupFilesDirIn is SetupFilesDir with an injectable data directory so the
+// migration can be tested against a temp dir instead of the real one.
+func setupFilesDirIn(dataDir string) error {
+	// TODO(pre-v1.0.0, #1601): drop this call along with legacy_cirrus_dir.go.
+	if err := migrateLegacyCirrusDir(dataDir); err != nil {
+		return err
 	}
 
-	if _, err := os.Stat(legacyFilesDir); err == nil {
-		// Legacy files dir exists, move contents to cirrus dir
-		entries, err := os.ReadDir(legacyFilesDir)
-		if err != nil {
-			return fmt.Errorf("failed to read legacy files directory: %w", err)
-		}
-		for _, entry := range entries {
-			oldPath := filepath.Join(legacyFilesDir, entry.Name())
-			targetPath := filepath.Join(cirrusDir, entry.Name())
-			// Use GetNonConflictingPath to handle naming conflicts
-			newPath := GetNonConflictingPath(targetPath)
-			if err := os.Rename(oldPath, newPath); err != nil {
-				return fmt.Errorf("failed to move file %s to cirrus directory: %w", entry.Name(), err)
-			}
-		}
-		// Delete legacy files dir
-		if err := os.RemoveAll(legacyFilesDir); err != nil {
-			return fmt.Errorf("failed to delete legacy files directory: %w", err)
-		}
+	filesDir := ConstructFilesDir(dataDir)
+	if err := os.MkdirAll(filesDir, 0755); err != nil {
+		return fmt.Errorf("failed to create storage directory: %w", err)
 	}
-
 	return nil
 }
 
@@ -538,9 +521,9 @@ func FindFileAcrossDevices(dirsWithDevice []DirWithDevice, relPath string) (stri
 // InitializeDeviceDataDir creates the quark data directory structure on a device
 func InitializeDeviceDataDir(mountPoint string) error {
 	dataDir := GetDataDirForDevice(mountPoint)
-	cirrusDir := ConstructCirrusDir(dataDir)
+	filesDir := ConstructFilesDir(dataDir)
 
-	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
+	if err := os.MkdirAll(filesDir, 0755); err != nil {
 		return err // coverage: ignore - requires filesystem permission errors
 	}
 

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/services/connected_devices_service.dart';
 import 'package:quark/services/health_service.dart';
 import 'package:quark/services/remote_access_service.dart';
@@ -384,8 +384,8 @@ class _SettingsPageState extends State<SettingsPage> {
     });
 
     try {
-      final installed = await CirrusService.getInstalledVersion();
-      final versions = await CirrusService.listAvailableVersions();
+      final installed = await FilesService.getInstalledVersion();
+      final versions = await FilesService.listAvailableVersions();
       if (!mounted) return;
 
       var installedVersion =
@@ -434,7 +434,7 @@ class _SettingsPageState extends State<SettingsPage> {
     });
 
     try {
-      await CirrusService.updateToVersion(version);
+      await FilesService.updateToVersion(version);
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -557,8 +557,8 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       drawer: QuarkDrawer(
         activeSection: QuarkDrawerSection.settings,
-        onTapCirrus: () {
-          context.go(AppRoutes.cirrus);
+        onTapFiles: () {
+          context.go(AppRoutes.files);
         },
         onTapPhotos: () {
           context.go(AppRoutes.photos);
@@ -1257,7 +1257,7 @@ class _SettingsPageState extends State<SettingsPage> {
     if (confirmed != true || !mounted) return;
     await AuthService.logout();
     if (!mounted) return;
-    if (mounted) context.go(AppRoutes.cirrus);
+    if (mounted) context.go(AppRoutes.files);
   }
 
   String _formatRelative(DateTime dt) {

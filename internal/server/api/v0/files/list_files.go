@@ -63,8 +63,8 @@ func listFilesImpl(rootDir string, devices []storageutil.ManagedDevice) ([]FileN
 	sawListing := false
 	sawNotFound := false
 	for _, device := range devices {
-		cirrusDir := device.CirrusDir
-		fullPathDir, err := storageutil.SafeJoin(cirrusDir, rootDir)
+		filesDir := device.FilesDir
+		fullPathDir, err := storageutil.SafeJoin(filesDir, rootDir)
 		if err != nil {
 			return nil, err
 		}
@@ -120,13 +120,13 @@ func listFilesImpl(rootDir string, devices []storageutil.ManagedDevice) ([]FileN
 // @Summary Lists files
 // @Schemes http https
 // @Description merges files across all managed devices for the given filePath. If deviceSerial is empty, list files across all devices. Otherwise, only for the specified device
-// @Tags cirrus
+// @Tags files
 // @Produce json
 // @Success 200 {array} FileNodeJSON
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Param rootDir query string false "File dir to list"
 // @Param serial query string false "Device serial number to filter by"
-// @Router /cirrus [get]
+// @Router /files [get]
 func listFiles(c *gin.Context) *serverutil.Response {
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	if !ok {
@@ -181,7 +181,7 @@ func listFiles(c *gin.Context) *serverutil.Response {
 }
 
 var listFilesRoute = serverutil.ApiRoute(
-	"GET", "/cirrus", func(c *gin.Context) *serverutil.Response {
+	"GET", "/files", func(c *gin.Context) *serverutil.Response {
 		return listFiles(c)
 	},
 )

@@ -63,8 +63,8 @@ func extractVideoFrame(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(fmt.Errorf("relPath is required"))
 	}
 
-	// Resolve cirrus directory.
-	filesDir, err := storageutil.GetCirrusDir()
+	// Resolve files directory.
+	filesDir, err := storageutil.GetFilesDir()
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
@@ -72,7 +72,7 @@ func extractVideoFrame(c *gin.Context) *serverutil.Response {
 		if devices, err := deps.StorageService().GetManagedDevices(); err == nil {
 			for _, d := range devices {
 				if d.UsbInfo != nil && d.UsbInfo.GetSerial() == req.Serial {
-					filesDir = d.CirrusDir
+					filesDir = d.FilesDir
 					break
 				}
 			}

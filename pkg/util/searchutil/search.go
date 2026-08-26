@@ -12,7 +12,7 @@ import (
 type SearchResult struct {
 	// Serial is the storage device serial that holds the file.
 	Serial string `json:"serial"`
-	// RelPath is the relative path of the file within the device's CirrusDir.
+	// RelPath is the relative path of the file within the device's FilesDir.
 	RelPath string `json:"relPath"`
 	// Snippet is a highlighted excerpt from the matched content.
 	// Matched terms are wrapped in <b>…</b>. The caller is responsible for

@@ -12,8 +12,8 @@ import (
 // IndexedFile is a lightweight record stored in the FileIndex.
 type IndexedFile struct {
 	Name         string // filename only (no directory)
-	RelPath      string // relative path from CirrusDir root (e.g. "docs/notes.txt")
-	CirrusDir    string // absolute path to the device's CirrusDir
+	RelPath      string // relative path from FilesDir root (e.g. "docs/notes.txt")
+	FilesDir     string // absolute path to the device's FilesDir
 	DeviceSerial string // empty = internal
 }
 
@@ -21,7 +21,7 @@ type IndexedFile struct {
 // It is built once at startup and updated incrementally via HandleEvent.
 type FileIndex struct {
 	mu    sync.RWMutex
-	files map[string]IndexedFile // key: CirrusDir + "\x00" + RelPath
+	files map[string]IndexedFile // key: FilesDir + "\x00" + RelPath
 }
 
 // NewFileIndex creates and returns an empty FileIndex.
@@ -29,9 +29,9 @@ func NewFileIndex() *FileIndex {
 	return &FileIndex{files: make(map[string]IndexedFile)}
 }
 
-// key returns the map key for a given cirrusDir + relPath.
-func (idx *FileIndex) key(cirrusDir, relPath string) string {
-	return cirrusDir + "\x00" + relPath
+// key returns the map key for a given filesDir + relPath.
+func (idx *FileIndex) key(filesDir, relPath string) string {
+	return filesDir + "\x00" + relPath
 }
 
 // Build walks all managed devices and populates the index.
@@ -44,11 +44,11 @@ func (idx *FileIndex) Build(devices []ManagedDevice) {
 		if dev.UsbInfo != nil {
 			serial = dev.UsbInfo.GetSerial()
 		}
-		_ = filepath.WalkDir(dev.CirrusDir, func(path string, d os.DirEntry, err error) error {
+		_ = filepath.WalkDir(dev.FilesDir, func(path string, d os.DirEntry, err error) error {
 			if err != nil || d.IsDir() {
 				return nil
 			}
-			rel, relErr := filepath.Rel(dev.CirrusDir, path)
+			rel, relErr := filepath.Rel(dev.FilesDir, path)
 			if relErr != nil {
 				return nil
 			}
@@ -56,10 +56,10 @@ func (idx *FileIndex) Build(devices []ManagedDevice) {
 			f := IndexedFile{
 				Name:         d.Name(),
 				RelPath:      rel,
-				CirrusDir:    dev.CirrusDir,
+				FilesDir:     dev.FilesDir,
 				DeviceSerial: serial,
 			}
-			idx.files[idx.key(dev.CirrusDir, rel)] = f
+			idx.files[idx.key(dev.FilesDir, rel)] = f
 			return nil
 		})
 	}
@@ -85,34 +85,34 @@ func (idx *FileIndex) Search(query string, serials map[string]bool) []IndexedFil
 }
 
 // HandleAdd adds or updates a file in the index.
-func (idx *FileIndex) HandleAdd(cirrusDir, relPath, serial string) {
+func (idx *FileIndex) HandleAdd(filesDir, relPath, serial string) {
 	name := filepath.Base(relPath)
 	idx.mu.Lock()
 	defer idx.mu.Unlock()
-	idx.files[idx.key(cirrusDir, relPath)] = IndexedFile{
+	idx.files[idx.key(filesDir, relPath)] = IndexedFile{
 		Name:         name,
 		RelPath:      relPath,
-		CirrusDir:    cirrusDir,
+		FilesDir:     filesDir,
 		DeviceSerial: serial,
 	}
 }
 
 // HandleDelete removes a file from the index.
-func (idx *FileIndex) HandleDelete(cirrusDir, relPath string) {
+func (idx *FileIndex) HandleDelete(filesDir, relPath string) {
 	idx.mu.Lock()
 	defer idx.mu.Unlock()
-	delete(idx.files, idx.key(cirrusDir, relPath))
+	delete(idx.files, idx.key(filesDir, relPath))
 }
 
 // HandleMove renames a file in the index.
-func (idx *FileIndex) HandleMove(cirrusDir, oldRelPath, newRelPath, serial string) {
+func (idx *FileIndex) HandleMove(filesDir, oldRelPath, newRelPath, serial string) {
 	idx.mu.Lock()
 	defer idx.mu.Unlock()
-	delete(idx.files, idx.key(cirrusDir, oldRelPath))
-	idx.files[idx.key(cirrusDir, newRelPath)] = IndexedFile{
+	delete(idx.files, idx.key(filesDir, oldRelPath))
+	idx.files[idx.key(filesDir, newRelPath)] = IndexedFile{
 		Name:         filepath.Base(newRelPath),
 		RelPath:      newRelPath,
-		CirrusDir:    cirrusDir,
+		FilesDir:     filesDir,
 		DeviceSerial: serial,
 	}
 }
@@ -140,39 +140,39 @@ func (idx *FileIndex) BuildAndWatch(bus *eventbus.Bus, getDevices GetManagedDevi
 			if err != nil {
 				continue
 			}
-			cirrusDir, serial := resolveDevice(devices, evt.DeviceSerial)
-			if cirrusDir == "" {
+			filesDir, serial := resolveDevice(devices, evt.DeviceSerial)
+			if filesDir == "" {
 				continue
 			}
 			switch evt.Kind {
 			case eventbus.EventUpload, eventbus.EventNewFolder:
-				idx.HandleAdd(cirrusDir, evt.Path, serial)
+				idx.HandleAdd(filesDir, evt.Path, serial)
 			case eventbus.EventDelete:
-				idx.HandleDelete(cirrusDir, evt.Path)
+				idx.HandleDelete(filesDir, evt.Path)
 			case eventbus.EventMove:
-				idx.HandleMove(cirrusDir, evt.Path, evt.NewPath, serial)
+				idx.HandleMove(filesDir, evt.Path, evt.NewPath, serial)
 			}
 		}
 	}()
 }
 
-// resolveDevice finds the CirrusDir and serial for the given sourceSerial.
+// resolveDevice finds the FilesDir and serial for the given sourceSerial.
 // If sourceSerial is empty or no USB device matches, falls back to the
 // internal (non-USB) device.
-func resolveDevice(devices []ManagedDevice, sourceSerial string) (cirrusDir, serial string) {
+func resolveDevice(devices []ManagedDevice, sourceSerial string) (filesDir, serial string) {
 	for _, d := range devices {
 		s := ""
 		if d.UsbInfo != nil {
 			s = d.UsbInfo.GetSerial()
 		}
 		if s == sourceSerial && sourceSerial != "" {
-			return d.CirrusDir, s
+			return d.FilesDir, s
 		}
 	}
 	// Fall back to internal device
 	for _, d := range devices {
 		if d.UsbInfo == nil {
-			return d.CirrusDir, ""
+			return d.FilesDir, ""
 		}
 	}
 	return "", ""

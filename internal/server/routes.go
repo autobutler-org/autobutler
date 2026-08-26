@@ -9,10 +9,10 @@ import (
 	v0_albums "github.com/autobutler-org/quark/internal/server/api/v0/albums"
 	v0_auth "github.com/autobutler-org/quark/internal/server/api/v0/auth"
 	v0_books "github.com/autobutler-org/quark/internal/server/api/v0/books"
-	v0_files "github.com/autobutler-org/quark/internal/server/api/v0/cirrus"
 	v0_devices "github.com/autobutler-org/quark/internal/server/api/v0/devices"
 	v0_events "github.com/autobutler-org/quark/internal/server/api/v0/events"
 	v0_favorites "github.com/autobutler-org/quark/internal/server/api/v0/favorites"
+	v0_files "github.com/autobutler-org/quark/internal/server/api/v0/files"
 	v0_health "github.com/autobutler-org/quark/internal/server/api/v0/health"
 
 	v0_migration "github.com/autobutler-org/quark/internal/server/api/v0/migration"

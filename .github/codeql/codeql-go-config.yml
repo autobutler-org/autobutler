@@ -9,8 +9,8 @@ query-filters:
       id: go/request-forgery
 
   # go/path-injection: all user-supplied paths in storageutil, vfs, and the API
-  # handlers flow through safeJoin(cirrusDir, userPath) which validates that the
-  # joined path stays within the device's CirrusDir. CodeQL cannot model this
+  # handlers flow through safeJoin(filesDir, userPath) which validates that the
+  # joined path stays within the device's FilesDir. CodeQL cannot model this
   # custom containment check as a sanitizer, producing ~55 false-positive alerts.
   # The same pattern applies to extract.go (filepath.Clean + HasPrefix check).
   - exclude:

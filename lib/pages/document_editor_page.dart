@@ -10,7 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:printing/printing.dart';
 import 'package:quark/router.dart';
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/theme/quark_theme.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
@@ -404,7 +404,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     });
 
     try {
-      final bytes = await CirrusService.downloadFileBytes(
+      final bytes = await FilesService.downloadFileBytes(
         widget.filePath,
         serial: serialOrNull(widget.deviceSerial),
       );
@@ -530,7 +530,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         bytes,
         filename: fileName,
       );
-      await CirrusService.uploadFilesFromFormData(
+      await FilesService.uploadFilesFromFormData(
         parentDir,
         [file],
         serial: serial,

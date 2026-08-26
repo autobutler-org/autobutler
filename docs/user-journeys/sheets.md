@@ -19,7 +19,7 @@ Covers the Sheets page (`/sheets`) and the spreadsheet editor for `.absheet` fil
 
 ### JN-SH-002: Open an existing spreadsheet
 
-**Preconditions:** At least one `.absheet` file exists in Cirrus.
+**Preconditions:** At least one `.absheet` file exists in Files.
 
 **Steps:**
 1. Navigate to `/sheets`.

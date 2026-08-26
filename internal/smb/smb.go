@@ -76,7 +76,7 @@ type Status struct {
 
 // GetStatus returns the current SMB setup state.
 func GetStatus() (*Status, error) {
-	filesDir, err := storageutil.GetCirrusDir()
+	filesDir, err := storageutil.GetFilesDir()
 	if err != nil {
 		filesDir = ""
 	}
@@ -96,7 +96,7 @@ func Setup(username, password string) error {
 		return errNotLinux
 	}
 
-	filesDir, err := storageutil.GetCirrusDir()
+	filesDir, err := storageutil.GetFilesDir()
 	if err != nil {
 		return fmt.Errorf("failed to locate Quark files directory: %w", err)
 	}

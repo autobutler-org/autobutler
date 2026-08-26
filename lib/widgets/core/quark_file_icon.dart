@@ -1,4 +1,4 @@
-import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/models/file_node.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:flutter/material.dart';
 
@@ -10,11 +10,11 @@ class QuarkFileIcon extends StatelessWidget {
     super.key,
   });
 
-  final CirrusFileNode node;
+  final FileNode node;
   final double size;
   final Color? color;
 
-  static IconData iconForNode(CirrusFileNode node) {
+  static IconData iconForNode(FileNode node) {
     if (node.isDir) return QuarkIcons.folder_outlined;
     final lower = node.name.toLowerCase();
 

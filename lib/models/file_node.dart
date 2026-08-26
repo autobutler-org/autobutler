@@ -1,5 +1,5 @@
-class CirrusFileNode {
-  const CirrusFileNode({
+class FileNode {
+  const FileNode({
     required this.name,
     required this.size,
     required this.isDir,
@@ -21,13 +21,13 @@ class CirrusFileNode {
   final String dirPath;
   final String fileType;
 
-  /// API path relative to the Cirrus root, safe to use in API calls.
+  /// API path relative to the files root, safe to use in API calls.
   String get apiPath {
     final raw = dirPath.trim().isNotEmpty ? dirPath : name;
     return raw.trim().replaceAll(RegExp(r'^/+|/+$'), '');
   }
 
-  factory CirrusFileNode.fromJson(Map<String, dynamic> json) {
+  factory FileNode.fromJson(Map<String, dynamic> json) {
     int parseSize(Object? value) {
       if (value is int) {
         return value;
@@ -55,7 +55,7 @@ class CirrusFileNode {
       return value?.toString() ?? '';
     }
 
-    return CirrusFileNode(
+    return FileNode(
       name: parseString(json['name']),
       size: parseSize(json['size']),
       compressedSize: parseSize(

@@ -9,7 +9,7 @@ import (
 // TestShareBlock_ContainsShareName verifies that the generated Samba share
 // block includes the share name section header.
 func TestShareBlock_ContainsShareName(t *testing.T) {
-	block := shareBlock("/data/cirrus")
+	block := shareBlock("/data/files")
 	if !strings.Contains(block, "["+shareName+"]") {
 		t.Errorf("shareBlock missing [%s] header; got:\n%s", shareName, block)
 	}

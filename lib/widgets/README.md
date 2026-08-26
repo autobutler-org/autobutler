@@ -27,7 +27,7 @@ All widgets use `QuarkColors` (from `lib/theme/quark_colors.dart`) for colors, r
 
 `lib/widgets/core/quark_file_icon.dart`
 
-Renders the appropriate icon for a `CirrusFileNode` based on file extension. Canonical single source for icon-per-filetype logic.
+Renders the appropriate icon for a `FileNode` based on file extension. Canonical single source for icon-per-filetype logic.
 
 ```dart
 QuarkFileIcon(node: myFile)
@@ -36,7 +36,7 @@ QuarkFileIcon(node: myFile, size: 48, color: Colors.grey)
 
 **Props:**
 
-- `node` (required) — `CirrusFileNode`
+- `node` (required) — `FileNode`
 - `size` — double, default `20.0`
 - `color` — optional `Color`
 

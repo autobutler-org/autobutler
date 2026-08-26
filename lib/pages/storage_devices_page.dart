@@ -329,7 +329,7 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
       ),
       drawer: QuarkDrawer(
         activeSection: QuarkDrawerSection.devices,
-        onTapCirrus: () => context.go(AppRoutes.cirrus),
+        onTapFiles: () => context.go(AppRoutes.files),
         onTapPhotos: () => context.go(AppRoutes.photos),
         onTapDocs: () => context.go(AppRoutes.docs),
         onTapSheets: () => context.go(AppRoutes.sheets),

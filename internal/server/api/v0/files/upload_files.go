@@ -18,14 +18,14 @@ import (
 // uploadFiles godoc
 // @Summary Upload files to the top-level directory
 // @Description Upload one or more files via multipart/form-data
-// @Tags cirrus
+// @Tags files
 // @Accept multipart/form-data
 // @Produce json
 // @Param serial query string false "Device serial number to upload to"
 // @Param file formData file true "File to upload"
 // @Success 200 {object} serverutil.Response "OK"
 // @Failure 400 {object} serverutil.Response "Bad Request"
-// @Router /cirrus/upload [post]
+// @Router /files/upload [post]
 func uploadFiles(c *gin.Context) *serverutil.Response {
 	return uploadFilesNested(c, "")
 }
@@ -33,7 +33,7 @@ func uploadFiles(c *gin.Context) *serverutil.Response {
 // uploadFiles godoc
 // @Summary Upload files to a nested directory
 // @Description Upload one or more files via multipart/form-data
-// @Tags cirrus
+// @Tags files
 // @Accept multipart/form-data
 // @Produce json
 // @Param rootDir path string true "Directory to upload into"
@@ -41,7 +41,7 @@ func uploadFiles(c *gin.Context) *serverutil.Response {
 // @Param file formData file true "File to upload"
 // @Success 200 {object} serverutil.Response "OK"
 // @Failure 400 {object} serverutil.Response "Bad Request"
-// @Router /cirrus/upload/{rootDir} [post]
+// @Router /files/upload/{rootDir} [post]
 func uploadFilesNested(c *gin.Context, rootDir string) *serverutil.Response {
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	if !ok {
@@ -122,13 +122,13 @@ func uploadFilesNested(c *gin.Context, rootDir string) *serverutil.Response {
 }
 
 var uploadFilesRoute = serverutil.ApiRoute(
-	"POST", "/cirrus/upload", func(c *gin.Context) *serverutil.Response {
+	"POST", "/files/upload", func(c *gin.Context) *serverutil.Response {
 		return uploadFiles(c)
 	},
 )
 
 var uploadFilesNestedRoute = serverutil.ApiRoute(
-	"POST", "/cirrus//upload/*rootDir", func(c *gin.Context) *serverutil.Response {
+	"POST", "/files//upload/*rootDir", func(c *gin.Context) *serverutil.Response {
 		return uploadFilesNested(c, c.Param("rootDir"))
 	},
 )

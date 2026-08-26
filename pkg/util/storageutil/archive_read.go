@@ -27,21 +27,21 @@ func (s *StorageService) ReadArchiveEntry(params ReadArchiveEntryParams) (io.Rea
 	if err != nil {
 		return nil, 0, err // coverage: ignore
 	}
-	defaultCirrusDir, err := GetCirrusDir()
+	defaultFilesDir, err := GetFilesDir()
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to get cirrus directory: %w", err)
+		return nil, 0, fmt.Errorf("failed to get files directory: %w", err)
 	}
-	return ReadArchiveEntryImpl(params, device, defaultCirrusDir)
+	return ReadArchiveEntryImpl(params, device, defaultFilesDir)
 }
 
-// ReadArchiveEntryImpl is the testable entry point with injected device/cirrusDir.
-func ReadArchiveEntryImpl(params ReadArchiveEntryParams, device *ManagedDevice, defaultCirrusDir string) (io.ReadCloser, int64, error) {
-	cirrusDir := defaultCirrusDir
+// ReadArchiveEntryImpl is the testable entry point with injected device/filesDir.
+func ReadArchiveEntryImpl(params ReadArchiveEntryParams, device *ManagedDevice, defaultFilesDir string) (io.ReadCloser, int64, error) {
+	filesDir := defaultFilesDir
 	if device != nil {
-		cirrusDir = device.CirrusDir
+		filesDir = device.FilesDir
 	}
 
-	fullPath := filepath.Join(cirrusDir, params.ArchivePath)
+	fullPath := filepath.Join(filesDir, params.ArchivePath)
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 		return nil, 0, fmt.Errorf("file not found: %s", params.ArchivePath)
 	}

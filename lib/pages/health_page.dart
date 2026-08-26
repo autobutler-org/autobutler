@@ -62,8 +62,8 @@ class _HealthPageState extends State<HealthPage>
       ),
       drawer: QuarkDrawer(
         activeSection: QuarkDrawerSection.health,
-        onTapCirrus: () {
-          context.go(AppRoutes.cirrus);
+        onTapFiles: () {
+          context.go(AppRoutes.files);
         },
         onTapPhotos: () {
           context.go(AppRoutes.photos);

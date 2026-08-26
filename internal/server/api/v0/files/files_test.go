@@ -13,9 +13,9 @@ import (
 func makeManagedDevice(t *testing.T, name string) storageutil.ManagedDevice {
 	t.Helper()
 	dir := t.TempDir()
-	cirrusDir := filepath.Join(dir, "cirrus")
-	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
-		t.Fatalf("failed to create cirrus dir: %v", err)
+	filesDir := filepath.Join(dir, "files")
+	if err := os.MkdirAll(filesDir, 0755); err != nil {
+		t.Fatalf("failed to create files dir: %v", err)
 	}
 	return storageutil.ManagedDevice{
 		Device: storageutil.Device{
@@ -23,8 +23,8 @@ func makeManagedDevice(t *testing.T, name string) storageutil.ManagedDevice {
 			MountPoint: dir,
 			IsInternal: true,
 		},
-		DataDir:   dir,
-		CirrusDir: cirrusDir,
+		DataDir:  dir,
+		FilesDir: filesDir,
 	}
 }
 
@@ -42,11 +42,11 @@ func TestListFilesImpl_EmptyDevice(t *testing.T) {
 func TestListFilesImpl_WithFiles(t *testing.T) {
 	device := makeManagedDevice(t, "test-device")
 
-	// Create some files in the cirrus dir
-	if err := os.WriteFile(filepath.Join(device.CirrusDir, "file1.txt"), []byte("hello"), 0644); err != nil {
+	// Create some files in the files dir
+	if err := os.WriteFile(filepath.Join(device.FilesDir, "file1.txt"), []byte("hello"), 0644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(device.CirrusDir, "file2.pdf"), []byte("world"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(device.FilesDir, "file2.pdf"), []byte("world"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -79,7 +79,7 @@ func TestListFilesImpl_WithFiles(t *testing.T) {
 func TestListFilesImpl_WithSubdirectory(t *testing.T) {
 	device := makeManagedDevice(t, "test-device")
 
-	subdir := filepath.Join(device.CirrusDir, "docs")
+	subdir := filepath.Join(device.FilesDir, "docs")
 	if err := os.Mkdir(subdir, 0755); err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +114,7 @@ func TestListFilesImpl_DeduplicateFolders(t *testing.T) {
 	device2 := makeManagedDevice(t, "device2")
 
 	for _, d := range []storageutil.ManagedDevice{device1, device2} {
-		if err := os.Mkdir(filepath.Join(d.CirrusDir, "photos"), 0755); err != nil {
+		if err := os.Mkdir(filepath.Join(d.FilesDir, "photos"), 0755); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -137,7 +137,7 @@ func TestListFilesImpl_FilesNotDeduplicatedAcrossDevices(t *testing.T) {
 	device2 := makeManagedDevice(t, "device2")
 
 	for _, d := range []storageutil.ManagedDevice{device1, device2} {
-		if err := os.WriteFile(filepath.Join(d.CirrusDir, "backup.zip"), []byte("data"), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(d.FilesDir, "backup.zip"), []byte("data"), 0644); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -177,7 +177,7 @@ func TestListFilesImpl_NonExistentSubdir(t *testing.T) {
 
 func TestFileNodeJSON_Fields(t *testing.T) {
 	device := makeManagedDevice(t, "my-device")
-	if err := os.WriteFile(filepath.Join(device.CirrusDir, "test.txt"), []byte("content"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(device.FilesDir, "test.txt"), []byte("content"), 0644); err != nil {
 		t.Fatal(err)
 	}
 

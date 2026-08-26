@@ -16,19 +16,19 @@ import (
 // GoogleAPIService implements direct API downloading
 type GoogleAPIService struct {
 	store       ImportJobStore
-	cirrusPath  string
+	filesPath   string
 	oauthConfig *oauth2.Config
 }
 
 // NewGoogleAPIService creates a service that downloads directly from Google APIs
 func NewGoogleAPIService(
 	store ImportJobStore,
-	cirrusPath string,
+	filesPath string,
 	oauthConfig *oauth2.Config,
 ) *GoogleAPIService {
 	return &GoogleAPIService{
 		store:       store,
-		cirrusPath:  cirrusPath,
+		filesPath:   filesPath,
 		oauthConfig: oauthConfig,
 	}
 }
@@ -86,17 +86,17 @@ func (s *GoogleAPIService) ProcessImport(ctx context.Context, jobID string, emai
 		return fmt.Errorf("failed to update job status: %w", err)
 	}
 
-	// Create ZIP file at Cirrus root
+	// Create ZIP file at files root
 	zipFileName := fmt.Sprintf("Google_Data_%s_%d.zip", email, time.Now().Unix())
-	zipPath := filepath.Join(s.cirrusPath, zipFileName)
+	zipPath := filepath.Join(s.filesPath, zipFileName)
 
-	// Ensure cirrus directory exists
-	if err := os.MkdirAll(s.cirrusPath, 0755); err != nil {
+	// Ensure files directory exists
+	if err := os.MkdirAll(s.filesPath, 0755); err != nil {
 		job.Status = ImportStatusFailed
-		job.ErrorMsg = fmt.Sprintf("failed to create cirrus directory: %v", err)
+		job.ErrorMsg = fmt.Sprintf("failed to create files directory: %v", err)
 		job.UpdatedAt = time.Now()
 		s.store.Update(ctx, job)
-		return fmt.Errorf("failed to create cirrus directory: %w", err)
+		return fmt.Errorf("failed to create files directory: %w", err)
 	}
 
 	zipFile, err := os.Create(zipPath)

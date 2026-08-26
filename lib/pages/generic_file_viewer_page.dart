@@ -1,15 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/models/file_node.dart';
 import 'package:quark/pages/generic_file_viewer_open_stub.dart'
     if (dart.library.io) 'package:quark/pages/generic_file_viewer_open_native.dart'
     as native_open;
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/widgets/core/quark_file_icon.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 
 class GenericFileViewerPage extends StatefulWidget {
-  final CirrusFileNode node;
+  final FileNode node;
 
   const GenericFileViewerPage({super.key, required this.node});
 
@@ -37,7 +37,7 @@ class _GenericFileViewerPageState extends State<GenericFileViewerPage> {
     if (_downloading) return;
     setState(() => _downloading = true);
     try {
-      await CirrusService.saveFile(
+      await FilesService.saveFile(
         widget.node.apiPath,
         serial: widget.node.deviceSerial.isEmpty
             ? null
@@ -64,7 +64,7 @@ class _GenericFileViewerPageState extends State<GenericFileViewerPage> {
     if (_opening || kIsWeb) return;
     setState(() => _opening = true);
     try {
-      final bytes = await CirrusService.downloadFileBytes(
+      final bytes = await FilesService.downloadFileBytes(
         widget.node.apiPath,
         serial: widget.node.deviceSerial.isEmpty
             ? null

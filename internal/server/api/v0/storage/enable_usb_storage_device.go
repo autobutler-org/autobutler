@@ -80,7 +80,7 @@ func enableUsbStorageDevice(c *gin.Context) *serverutil.Response {
 	// mount state immediately rather than returning stale data for up to 10s.
 	deps.StorageService().InvalidateDeviceCache()
 
-	cirrusDir, err := storageutil.GetCirrusDirForDevice(mountTargetPath)
+	filesDir, err := storageutil.GetFilesDirForDevice(mountTargetPath)
 	if err != nil {
 		return serverutil.InternalServerError(fmt.Errorf("failed to initialize data directory on mounted device: %w", err))
 	}
@@ -88,7 +88,7 @@ func enableUsbStorageDevice(c *gin.Context) *serverutil.Response {
 	return serverutil.Ok().WithData(gin.H{
 		"message":    "USB storage device mounted successfully",
 		"mount_path": mountTargetPath,
-		"data_dir":   cirrusDir,
+		"data_dir":   filesDir,
 	})
 }
 

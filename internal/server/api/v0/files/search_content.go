@@ -16,7 +16,7 @@ import (
 type ContentSearchResult struct {
 	// Serial is the storage device serial number.
 	Serial string `json:"serial"`
-	// RelPath is the path to the file relative to the device's CirrusDir.
+	// RelPath is the path to the file relative to the device's FilesDir.
 	RelPath string `json:"relPath"`
 	// Snippet is a highlighted excerpt around the matched terms.
 	// Matched terms are enclosed in <b> tags.
@@ -30,14 +30,14 @@ type ContentSearchResult struct {
 // @Description Only text-based file formats are indexed (.txt, .md, .csv, .yaml, .json, etc.).
 // @Description Binary formats (images, video, PDF) are not indexed.
 // @Description Returns up to `limit` results ordered by relevance rank.
-// @Tags cirrus
+// @Tags files
 // @Produce json
 // @Param q      query string true  "Search query (FTS5 syntax: words, AND/OR/NOT, \"phrases\", prefix*)"
 // @Param limit  query int    false "Maximum results to return (default 50, max 200)"
 // @Success 200 {array}  ContentSearchResult
 // @Failure 400 {object} serverutil.Response "Bad Request — missing query"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Router /cirrus/search/content [get]
+// @Router /files/search/content [get]
 func searchContent(c *gin.Context) *serverutil.Response {
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	if !ok {
@@ -81,6 +81,6 @@ func searchContent(c *gin.Context) *serverutil.Response {
 }
 
 var searchContentRoute = serverutil.ApiRoute(
-	"GET", "/cirrus/search/content",
+	"GET", "/files/search/content",
 	func(c *gin.Context) *serverutil.Response { return searchContent(c) },
 )

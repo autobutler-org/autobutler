@@ -5,14 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:photo_manager/photo_manager.dart';
-import 'package:quark/models/cirrus_file_node.dart';
+import 'package:quark/models/file_node.dart';
 import 'package:quark/models/photo_album.dart';
 import 'package:quark/pages/album_page.dart';
 import 'package:quark/pages/image_viewer_page.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/album_service.dart';
 import 'package:quark/services/app_settings.dart';
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/services/favorites_service.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
@@ -37,25 +37,25 @@ class PhotosPage extends StatefulWidget {
   State<PhotosPage> createState() => _PhotosPageState();
 }
 
-enum PhotoCategory { cirrus, mobile, all, favorites }
+enum PhotoCategory { quark, mobile, all, favorites }
 
 class PhotoItem {
-  final CirrusFileNode? cirrus;
+  final FileNode? quark;
   final AssetEntity? asset;
-  final bool isCirrus;
+  final bool isFiles;
   final bool hasLiveVideo;
 
-  PhotoItem._({this.cirrus, this.asset, this.hasLiveVideo = false})
-    : isCirrus = cirrus != null;
+  PhotoItem._({this.quark, this.asset, this.hasLiveVideo = false})
+    : isFiles = quark != null;
 
-  factory PhotoItem.fromCirrus(CirrusFileNode c, {bool hasLiveVideo = false}) =>
-      PhotoItem._(cirrus: c, hasLiveVideo: hasLiveVideo);
+  factory PhotoItem.fromFiles(FileNode c, {bool hasLiveVideo = false}) =>
+      PhotoItem._(quark: c, hasLiveVideo: hasLiveVideo);
   factory PhotoItem.fromAsset(AssetEntity a) => PhotoItem._(asset: a);
 
   /// Stable key for use in sets (favorites, selection).
   String get selectionKey {
-    if (isCirrus) {
-      return '${cirrus!.deviceSerial}:${cirrus!.apiPath}';
+    if (isFiles) {
+      return '${quark!.deviceSerial}:${quark!.apiPath}';
     }
     return 'asset:${asset!.id}';
   }
@@ -71,12 +71,12 @@ class _PhotosPageState extends State<PhotosPage>
 
   Future<List<PhotoItem>> _photosFuture = Future.value(const <PhotoItem>[]);
 
-  // Cirrus pagination state
-  List<PhotoItem> _cirrusPhotos = <PhotoItem>[];
-  int _cirrusTotal = 0;
-  int _cirrusOffset = 0;
-  bool _isLoadingMoreCirrus = false;
-  bool _cirrusInitialLoadDone = false;
+  // Quark-device pagination state
+  List<PhotoItem> _quarkPhotos = <PhotoItem>[];
+  int _quarkTotal = 0;
+  int _quarkOffset = 0;
+  bool _isLoadingMoreQuark = false;
+  bool _quarkInitialLoadDone = false;
 
   List<PhotoItem> _mobilePhotos = const <PhotoItem>[];
 
@@ -84,7 +84,7 @@ class _PhotosPageState extends State<PhotosPage>
   bool _categoriesExpanded = false;
   bool _isUploading = false;
   int _previewColumns = _defaultCrossAxisCount;
-  PhotoCategory _selectedCategory = PhotoCategory.cirrus;
+  PhotoCategory _selectedCategory = PhotoCategory.quark;
 
   // Favorites: set of selectionKeys for photos that are favorited.
   // Fetched eagerly from the server on every refresh via FavoritesService.listFavoriteKeys().
@@ -185,29 +185,29 @@ class _PhotosPageState extends State<PhotosPage>
 
     // Trigger fetch when scrolled past 80%
     if (currentScroll >= maxScroll * 0.8) {
-      _loadMoreCirrusPhotos();
+      _loadMoreQuarkPhotos();
     }
   }
 
-  /// Load the next page of cirrus photos via the paginated endpoint.
-  Future<void> _loadMoreCirrusPhotos() async {
-    if (_isLoadingMoreCirrus) return;
-    if (_cirrusOffset >= _cirrusTotal && _cirrusInitialLoadDone) return;
+  /// Load the next page of Quark-stored photos via the paginated endpoint.
+  Future<void> _loadMoreQuarkPhotos() async {
+    if (_isLoadingMoreQuark) return;
+    if (_quarkOffset >= _quarkTotal && _quarkInitialLoadDone) return;
 
     setState(() {
-      _isLoadingMoreCirrus = true;
+      _isLoadingMoreQuark = true;
     });
 
     try {
-      final response = await CirrusService.getPhotos(
-        offset: _cirrusOffset,
+      final response = await FilesService.getPhotos(
+        offset: _quarkOffset,
         limit: _pageSize,
       );
 
       final newPhotos = response.photos
           .map(
-            (p) => PhotoItem.fromCirrus(
-              CirrusFileNode(
+            (p) => PhotoItem.fromFiles(
+              FileNode(
                 name: p.fileName,
                 size: p.size,
                 isDir: false,
@@ -222,42 +222,42 @@ class _PhotosPageState extends State<PhotosPage>
           .toList(growable: false);
 
       setState(() {
-        _cirrusPhotos = [..._cirrusPhotos, ...newPhotos];
-        _cirrusTotal = response.total;
-        _cirrusOffset += newPhotos.length;
-        _cirrusInitialLoadDone = true;
-        _isLoadingMoreCirrus = false;
+        _quarkPhotos = [..._quarkPhotos, ...newPhotos];
+        _quarkTotal = response.total;
+        _quarkOffset += newPhotos.length;
+        _quarkInitialLoadDone = true;
+        _isLoadingMoreQuark = false;
         // Rebuild the future so FutureBuilder picks up the new list
         _photosFuture = _photosForCategory(_selectedCategory);
       });
     } catch (_) {
-      debugPrint('[photos_page.dart] Error loading more cirrus photos');
+      debugPrint('[photos_page.dart] Error loading more Quark-stored photos');
       setState(() {
-        _isLoadingMoreCirrus = false;
-        _cirrusInitialLoadDone = true;
+        _isLoadingMoreQuark = false;
+        _quarkInitialLoadDone = true;
       });
     }
   }
 
-  /// Initial load of cirrus photos (first page).
-  Future<List<PhotoItem>> _loadCirrusPhotos() async {
+  /// Initial load of Quark-stored photos (first page).
+  Future<List<PhotoItem>> _loadQuarkPhotos() async {
     if (_noHostSelected) return const <PhotoItem>[];
 
-    _cirrusPhotos = <PhotoItem>[];
-    _cirrusOffset = 0;
-    _cirrusTotal = 0;
-    _cirrusInitialLoadDone = false;
+    _quarkPhotos = <PhotoItem>[];
+    _quarkOffset = 0;
+    _quarkTotal = 0;
+    _quarkInitialLoadDone = false;
 
     try {
-      final response = await CirrusService.getPhotos(
+      final response = await FilesService.getPhotos(
         offset: 0,
         limit: _pageSize,
       );
 
       final items = response.photos
           .map(
-            (p) => PhotoItem.fromCirrus(
-              CirrusFileNode(
+            (p) => PhotoItem.fromFiles(
+              FileNode(
                 name: p.fileName,
                 size: p.size,
                 isDir: false,
@@ -271,29 +271,31 @@ class _PhotosPageState extends State<PhotosPage>
           )
           .toList(growable: false);
 
-      _cirrusPhotos = items;
-      _cirrusTotal = response.total;
-      _cirrusOffset = items.length;
-      _cirrusInitialLoadDone = true;
+      _quarkPhotos = items;
+      _quarkTotal = response.total;
+      _quarkOffset = items.length;
+      _quarkInitialLoadDone = true;
       return items;
     } catch (_) {
-      debugPrint('[photos_page.dart] Error loading initial cirrus photos');
-      _cirrusInitialLoadDone = true;
+      debugPrint(
+        '[photos_page.dart] Error loading initial Quark-stored photos',
+      );
+      _quarkInitialLoadDone = true;
       return const <PhotoItem>[];
     }
   }
 
   Future<void> _primeSources() async {
-    final cirrusFuture = _safeLoadPhotos(_loadCirrusPhotos);
+    final quarkFuture = _safeLoadPhotos(_loadQuarkPhotos);
     if (kIsWeb) {
-      _cirrusPhotos = await cirrusFuture;
+      _quarkPhotos = await quarkFuture;
       _mobilePhotos = const <PhotoItem>[];
       return;
     }
 
     final mobileFuture = _safeLoadPhotos(_loadMobilePhotos);
-    final lists = await Future.wait([cirrusFuture, mobileFuture]);
-    _cirrusPhotos = lists[0];
+    final lists = await Future.wait([quarkFuture, mobileFuture]);
+    _quarkPhotos = lists[0];
     _mobilePhotos = lists[1];
   }
 
@@ -310,19 +312,19 @@ class _PhotosPageState extends State<PhotosPage>
 
   Future<List<PhotoItem>> _photosForCategory(PhotoCategory category) async {
     if (kIsWeb) {
-      return _cirrusPhotos;
+      return _quarkPhotos;
     }
 
     switch (category) {
-      case PhotoCategory.cirrus:
-        return _cirrusPhotos;
+      case PhotoCategory.quark:
+        return _quarkPhotos;
       case PhotoCategory.mobile:
         return _mobilePhotos;
       case PhotoCategory.all:
-        return [..._cirrusPhotos, ..._mobilePhotos];
+        return [..._quarkPhotos, ..._mobilePhotos];
       case PhotoCategory.favorites:
         return [
-          ..._cirrusPhotos,
+          ..._quarkPhotos,
           ..._mobilePhotos,
         ].where((p) => _favoriteKeys.contains(p.selectionKey)).toList();
     }
@@ -389,8 +391,7 @@ class _PhotosPageState extends State<PhotosPage>
     await _photosFuture;
   }
 
-  bool get _hasMoreCirrus =>
-      _cirrusInitialLoadDone && _cirrusOffset < _cirrusTotal;
+  bool get _hasMoreQuark => _quarkInitialLoadDone && _quarkOffset < _quarkTotal;
 
   int _minColumnsByScale() {
     return _minPreviewColumns;
@@ -425,7 +426,7 @@ class _PhotosPageState extends State<PhotosPage>
   Widget _buildSidebar(
     BuildContext context,
     double availableWidth,
-    int cirrusCount,
+    int quarkCount,
     int mobileCount, {
     bool compact = false,
   }) {
@@ -454,7 +455,7 @@ class _PhotosPageState extends State<PhotosPage>
         contentPadding: EdgeInsets.zero,
         onTap: () => _selectCategory(cat),
         leading: Icon(switch (cat) {
-          PhotoCategory.cirrus => QuarkIcons.cloud,
+          PhotoCategory.quark => QuarkIcons.cloud,
           PhotoCategory.mobile => QuarkIcons.smartphone,
           PhotoCategory.all => QuarkIcons.photo_library,
           PhotoCategory.favorites => QuarkIcons.star_rounded,
@@ -464,14 +465,12 @@ class _PhotosPageState extends State<PhotosPage>
       );
     }
 
-    // For cirrus, show total from server (includes un-fetched pages)
-    final cirrusDisplayCount = _cirrusInitialLoadDone
-        ? _cirrusTotal
-        : cirrusCount;
+    // For Quark-stored photos, show total from server (includes un-fetched pages)
+    final quarkDisplayCount = _quarkInitialLoadDone ? _quarkTotal : quarkCount;
 
     final selectedLabel = switch (_selectedCategory) {
       PhotoCategory.all => 'All',
-      PhotoCategory.cirrus => 'Cirrus',
+      PhotoCategory.quark => 'Quark',
       PhotoCategory.mobile => 'Mobile',
       PhotoCategory.favorites => 'Favorites',
     };
@@ -536,8 +535,8 @@ class _PhotosPageState extends State<PhotosPage>
               title: const Text('Showing'),
               subtitle: Text(
                 '$selectedLabel: ${switch (_selectedCategory) {
-                  PhotoCategory.all => cirrusDisplayCount + mobileCount,
-                  PhotoCategory.cirrus => cirrusDisplayCount,
+                  PhotoCategory.all => quarkDisplayCount + mobileCount,
+                  PhotoCategory.quark => quarkDisplayCount,
                   PhotoCategory.mobile => mobileCount,
                   PhotoCategory.favorites => _favoriteKeys.length,
                 }}',
@@ -557,13 +556,9 @@ class _PhotosPageState extends State<PhotosPage>
               categoryButton(
                 PhotoCategory.all,
                 'All',
-                cirrusDisplayCount + mobileCount,
+                quarkDisplayCount + mobileCount,
               ),
-              categoryButton(
-                PhotoCategory.cirrus,
-                'Cirrus',
-                cirrusDisplayCount,
-              ),
+              categoryButton(PhotoCategory.quark, 'Quark', quarkDisplayCount),
               categoryButton(PhotoCategory.mobile, 'Mobile', mobileCount),
               categoryButton(
                 PhotoCategory.favorites,
@@ -593,8 +588,8 @@ class _PhotosPageState extends State<PhotosPage>
   // Builds a single photo tile. Extracted so both the desktop GridView and
   // the mobile SliverGrid can share the same tile logic.
   Future<void> _toggleFavorite(PhotoItem item) async {
-    if (!item.isCirrus) return;
-    final c = item.cirrus!;
+    if (!item.isFiles) return;
+    final c = item.quark!;
     try {
       final nowFav = await FavoritesService.toggle(
         relPath: c.apiPath,
@@ -706,9 +701,9 @@ class _PhotosPageState extends State<PhotosPage>
       // Normal mode — use original long-press to enter selection
     }
 
-    if (p.isCirrus) {
-      final c = p.cirrus!;
-      final url = CirrusService.constructThumbnailUrl(
+    if (p.isFiles) {
+      final c = p.quark!;
+      final url = FilesService.constructThumbnailUrl(
         c.apiPath,
         serial: c.deviceSerial,
       );
@@ -745,7 +740,7 @@ class _PhotosPageState extends State<PhotosPage>
             _isOpeningPhoto = true;
             try {
               final navigator = Navigator.of(context);
-              final bytes = await CirrusService.downloadFileBytes(
+              final bytes = await FilesService.downloadFileBytes(
                 c.apiPath,
                 serial: c.deviceSerial,
               );
@@ -766,9 +761,9 @@ class _PhotosPageState extends State<PhotosPage>
                       final live = await _photosForCategory(_selectedCategory);
                       if (newIdx >= live.length) return (null, '', null, null);
                       final item = live[newIdx];
-                      if (item.isCirrus) {
-                        final nc = item.cirrus!;
-                        var b = await CirrusService.downloadFileBytes(
+                      if (item.isFiles) {
+                        final nc = item.quark!;
+                        var b = await FilesService.downloadFileBytes(
                           nc.apiPath,
                           serial: nc.deviceSerial,
                         );
@@ -839,9 +834,9 @@ class _PhotosPageState extends State<PhotosPage>
                     final live = await _photosForCategory(_selectedCategory);
                     if (newIdx >= live.length) return (null, '', null, null);
                     final item = live[newIdx];
-                    if (item.isCirrus) {
-                      final nc = item.cirrus!;
-                      var b = await CirrusService.downloadFileBytes(
+                    if (item.isFiles) {
+                      final nc = item.quark!;
+                      var b = await FilesService.downloadFileBytes(
                         nc.apiPath,
                         serial: nc.deviceSerial,
                       );
@@ -868,17 +863,17 @@ class _PhotosPageState extends State<PhotosPage>
   }
 
   Widget _buildPhotoGrid(List<PhotoItem> photos, int crossAxisCount) {
-    // When viewing cirrus (or all), we may have more pages to load.
+    // When viewing Quark-stored photos (or all), we may have more pages to load.
     // Show an extra item as a loading indicator if there are more.
     final showLoadingIndicator =
-        _hasMoreCirrus &&
-        (_selectedCategory == PhotoCategory.cirrus ||
+        _hasMoreQuark &&
+        (_selectedCategory == PhotoCategory.quark ||
             _selectedCategory == PhotoCategory.all);
     final itemCount = photos.length + (showLoadingIndicator ? 1 : 0);
 
     return RefreshIndicator(
       onRefresh: manualRefresh,
-      child: photos.isEmpty && !_isLoadingMoreCirrus
+      child: photos.isEmpty && !_isLoadingMoreQuark
           ? (_selectedCategory == PhotoCategory.favorites
                 ? const EmptyStateWidget(
                     icon: QuarkIcons.star_outline_rounded,
@@ -954,9 +949,9 @@ class _PhotosPageState extends State<PhotosPage>
     // Flow 2: user tapped Done while in adding-to-album mode.
     // Pass the full set of loaded photos so that any selected device assets
     // are counted as skipped (and the user gets feedback) rather than silently
-    // ignored. _addSelectedToAlbum already rejects non-Cirrus items.
+    // ignored. _addSelectedToAlbum already rejects photos not stored on Quark.
     await _addSelectedToAlbum(_addingToAlbum!, [
-      ..._cirrusPhotos,
+      ..._quarkPhotos,
       ..._mobilePhotos,
     ]);
   }
@@ -973,11 +968,11 @@ class _PhotosPageState extends State<PhotosPage>
     int skipped = 0;
     int failed = 0;
     for (final item in selected) {
-      if (!item.isCirrus) {
+      if (!item.isFiles) {
         skipped++;
         continue;
       }
-      final c = item.cirrus!;
+      final c = item.quark!;
       try {
         await AlbumService.addPhotoToAlbum(
           album.id,
@@ -1071,7 +1066,7 @@ class _PhotosPageState extends State<PhotosPage>
       setState(() => _isUploading = true);
 
       try {
-        await CirrusService.uploadFilesFromFormData(
+        await FilesService.uploadFilesFromFormData(
           '',
           multipartFiles,
           serial: targetSerial,
@@ -1193,8 +1188,8 @@ class _PhotosPageState extends State<PhotosPage>
                 ),
           drawer: QuarkDrawer(
             activeSection: QuarkDrawerSection.photos,
-            onTapCirrus: () {
-              context.go(AppRoutes.cirrus);
+            onTapFiles: () {
+              context.go(AppRoutes.files);
             },
             onTapPhotos: () {
               Navigator.of(context).pop();
@@ -1236,7 +1231,7 @@ class _PhotosPageState extends State<PhotosPage>
                   final sidebar = _buildSidebar(
                     context,
                     contentWidth,
-                    _cirrusPhotos.length,
+                    _quarkPhotos.length,
                     _mobilePhotos.length,
                     compact: compact,
                   );
@@ -1278,8 +1273,8 @@ class _PhotosPageState extends State<PhotosPage>
                   }
 
                   final showLoadingIndicator =
-                      _hasMoreCirrus &&
-                      (_selectedCategory == PhotoCategory.cirrus ||
+                      _hasMoreQuark &&
+                      (_selectedCategory == PhotoCategory.quark ||
                           _selectedCategory == PhotoCategory.all);
                   final itemCount =
                       photos.length + (showLoadingIndicator ? 1 : 0);

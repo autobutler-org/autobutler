@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	v0_files "github.com/autobutler-org/quark/internal/server/api/v0/cirrus"
+	v0_files "github.com/autobutler-org/quark/internal/server/api/v0/files"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
@@ -36,8 +36,8 @@ func newVFSTestEngine(t *testing.T) (*gin.Engine, string) {
 	}
 
 	mountPoint := t.TempDir()
-	cirrusDir := filepath.Join(mountPoint, "quark", "data", "cirrus")
-	if err := os.MkdirAll(cirrusDir, 0755); err != nil {
+	filesDir := filepath.Join(mountPoint, "quark", "data", "files")
+	if err := os.MkdirAll(filesDir, 0755); err != nil {
 		t.Fatalf("MkdirAll: %v", err)
 	}
 	svc := storageutil.NewStorageService(&fakeDetector{mountPoint: mountPoint})
@@ -70,7 +70,7 @@ func TestDownload_RangeRequest(t *testing.T) {
 	}
 
 	// Request bytes 5–9 ("fghij").
-	req := httptest.NewRequest(http.MethodGet, "/api/v0/cirrus/download?filePath=alpha.txt", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v0/files/download?filePath=alpha.txt", nil)
 	req.Header.Set("Range", "bytes=5-9")
 	w := httptest.NewRecorder()
 	engine.ServeHTTP(w, req)
@@ -101,7 +101,7 @@ func TestDownload_FullFile(t *testing.T) {
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v0/cirrus/download?filePath=hello.txt", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v0/files/download?filePath=hello.txt", nil)
 	w := httptest.NewRecorder()
 	engine.ServeHTTP(w, req)
 
@@ -122,7 +122,7 @@ func TestDownload_AcceptRangesHeader(t *testing.T) {
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v0/cirrus/download?filePath=test.bin", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v0/files/download?filePath=test.bin", nil)
 	w := httptest.NewRecorder()
 	engine.ServeHTTP(w, req)
 

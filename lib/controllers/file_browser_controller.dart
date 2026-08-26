@@ -2,8 +2,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:quark/models/cirrus_file_node.dart';
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/models/file_node.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/services/file_browser_actions.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/utils/file_browser_dialog_utils.dart';
@@ -24,11 +24,11 @@ class FileMenuActionOutcome {
 class FileBrowserController {
   const FileBrowserController();
 
-  Future<List<CirrusFileNode>> fetchFiles(
+  Future<List<FileNode>> fetchFiles(
     String currentPath, {
     List<String>? serials,
   }) {
-    return CirrusService.getFiles(currentPath, serials: serials);
+    return FilesService.getFiles(currentPath, serials: serials);
   }
 
   /// Picks one or more files for upload.
@@ -140,9 +140,9 @@ class FileBrowserController {
 
   /// Delete a single node. Caller is responsible for confirmation and
   /// any optimistic UI updates.
-  Future<void> deleteNode({required CirrusFileNode node}) {
+  Future<void> deleteNode({required FileNode node}) {
     final rootDir = toRootDir(parentPath(node.apiPath));
-    return CirrusService.deleteFile(
+    return FilesService.deleteFile(
       rootDir,
       trimTrailingSlashes(node.name),
       deviceSerial: serialOrNull(node.deviceSerial),
@@ -150,10 +150,10 @@ class FileBrowserController {
   }
 
   /// Deletes [nodes] in a single batch request per device group.
-  Future<void> deleteNodes({required List<CirrusFileNode> nodes}) async {
+  Future<void> deleteNodes({required List<FileNode> nodes}) async {
     if (nodes.isEmpty) return;
     // Group by device serial so each batch request stays on one device.
-    final bySerial = <String, List<CirrusFileNode>>{};
+    final bySerial = <String, List<FileNode>>{};
     for (final n in nodes) {
       final key = serialOrNull(n.deviceSerial) ?? '';
       (bySerial[key] ??= []).add(n);
@@ -167,7 +167,7 @@ class FileBrowserController {
       // share the same directory within a batch, but the backend ignores
       // rootDir when explicit filePaths are supplied.
       final rootDir = toRootDir(parentPath(entry.value.first.apiPath));
-      await CirrusService.deleteFiles(
+      await FilesService.deleteFiles(
         paths,
         rootDir: rootDir,
         deviceSerial: serial,
@@ -176,7 +176,7 @@ class FileBrowserController {
   }
 
   Future<FileMenuActionOutcome?> handleFileAction({
-    required CirrusFileNode node,
+    required FileNode node,
     required FileMenuAction action,
     required BuildContext context,
   }) async {
@@ -318,7 +318,7 @@ class FileBrowserController {
 
   String nextPathForOpenDirectory({
     required String currentPath,
-    required CirrusFileNode node,
+    required FileNode node,
   }) {
     return joinPath(currentPath, node.name);
   }
@@ -327,7 +327,7 @@ class FileBrowserController {
     return parentPath(currentPath);
   }
 
-  String downloadedMessage(CirrusFileNode node) {
+  String downloadedMessage(FileNode node) {
     return 'Downloaded ${trimTrailingSlashes(node.name)}';
   }
 }

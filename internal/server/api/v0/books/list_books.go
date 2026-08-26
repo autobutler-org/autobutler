@@ -18,14 +18,14 @@ type BookJSON struct {
 
 // listBooks godoc
 // @Summary List books
-// @Description Finds all books in the cirrus directory
+// @Description Finds all books in the files directory
 // @Tags books
 // @Produce json
 // @Success 200 {array} BookJSON
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /books [get]
 func listBooks(c *gin.Context) *serverutil.Response {
-	rootDir, err := storageutil.GetCirrusDir()
+	rootDir, err := storageutil.GetFilesDir()
 	if err != nil {
 		return serverutil.NewResponse().WithStatusCode(500).WithError(err)
 	}

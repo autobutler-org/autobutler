@@ -519,10 +519,10 @@ test: test/unit
 PERF_PORT ?= 8080
 PERF_BASE_URL ?= http://127.0.0.1:$(PERF_PORT)
 PERF_SUMMARY_WRK_DIRS ?= test-results/performance
-PERF_FIXTURE_TARGET_DIR ?= $(HOME)/quark/data/cirrus
+PERF_FIXTURE_TARGET_DIR ?= $(HOME)/quark/data/files
 
 .PHONY: test/perf/generate-files
-test/perf/generate-files: ## Generate file fixtures under a target Cirrus directory for performance testing
+test/perf/generate-files: ## Generate file fixtures under a target files directory for performance testing
 	bash ./test/performance/generate_files.sh "$(PERF_FIXTURE_TARGET_DIR)"
 
 .PHONY: test/perf/load

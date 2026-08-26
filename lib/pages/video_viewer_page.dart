@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:quark/services/cirrus_service.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/utils/web_download_stub.dart'
     if (dart.library.html) 'package:quark/utils/web_download_web.dart'
     as web_download;
@@ -171,7 +171,7 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
   Future<void> _downloadVideo() async {
     setState(() => _downloading = true);
     try {
-      final Uint8List? bytes = await CirrusService.downloadFileBytes(
+      final Uint8List? bytes = await FilesService.downloadFileBytes(
         widget.url.path,
       );
       if (bytes == null) throw Exception('Empty response from server');
@@ -218,7 +218,7 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
 
     setState(() => _exportingTrim = true);
     try {
-      final savedPath = await CirrusService.trimVideo(
+      final savedPath = await FilesService.trimVideo(
         relPath,
         serial: serial,
         startMs: startMs,
@@ -268,7 +268,7 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
     if (!mounted) return;
     setState(() => _savingFrame = true);
     try {
-      final savedPath = await CirrusService.extractVideoFrame(
+      final savedPath = await FilesService.extractVideoFrame(
         relPath,
         serial: serial,
         timestampMs: positionMs,
