@@ -1420,11 +1420,17 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     final navigator = Navigator.of(context);
     final targetRoute = AppRoutes.filesPath(filePath);
-    final routeBeforeOpen = GoRouter.of(
-      context,
-    ).routeInformationProvider.value.uri.toString();
-    final shouldSyncRoute = routeBeforeOpen != targetRoute;
-    final closeRoute = routeBeforeOpen.isEmpty || routeBeforeOpen == targetRoute
+    // The live location is always percent-encoded, so both sides go through
+    // canonicalRoute before comparing. Comparing the raw strings made every
+    // name containing a space look like a different route, which fired a
+    // spurious mid-push context.go and popped the viewer straight back (#1604).
+    final routeBeforeOpen = AppRoutes.canonicalRoute(
+      GoRouter.of(context).routeInformationProvider.value.uri.toString(),
+    );
+    final isAlreadyOnTarget =
+        routeBeforeOpen == AppRoutes.canonicalRoute(targetRoute);
+    final shouldSyncRoute = !isAlreadyOnTarget;
+    final closeRoute = routeBeforeOpen.isEmpty || isAlreadyOnTarget
         ? AppRoutes.filesPath(parentPath(filePath))
         : routeBeforeOpen;
     var routeSyncFailed = false;
@@ -1468,7 +1474,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
       await pushFuture;
     } finally {
-      FileBrowserCache.instance.markFileClosed();
+      FileBrowserCache.instance.markFileClosed(filePath);
     }
 
     if (!mounted) {
@@ -1574,11 +1580,21 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         fileType: fileType,
       );
       FileBrowserCache.instance.markFileOpen(filePath);
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => GenericFileViewerPage(node: node),
-        ),
-      );
+      try {
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(
+            builder: (_) => GenericFileViewerPage(node: node),
+          ),
+        );
+      } finally {
+        // Without this the marker leaked and both navigation guards then
+        // refused to open any file page until restart (#1604).
+        FileBrowserCache.instance.markFileClosed(filePath);
+      }
+      if (!mounted) return;
+      // Return the URL to the parent folder, as every other branch does — the
+      // route otherwise stays pointed at the file, so reopening it is a no-op.
+      context.go(AppRoutes.filesPath(parentPath(filePath)));
       return;
     }
 
@@ -1617,7 +1633,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         try {
           await context.push<void>(AppRoutes.plaintextEditorPath(filePath));
         } finally {
-          FileBrowserCache.instance.markFileClosed();
+          FileBrowserCache.instance.markFileClosed(filePath);
         }
         if (!mounted) return;
         context.go(AppRoutes.filesPath(parentPath(filePath)));
