@@ -349,3 +349,104 @@ Future<String?> _promptForText({
 
   return normalized;
 }
+
+/// Prompts for the name of a new file (a doc, a sheet, …).
+///
+/// A `/` is rejected rather than treated as a directory. The upload endpoint
+/// drops any directory in the multipart filename and writes the file at the
+/// upload root under its basename, so a nested name would create the file
+/// somewhere other than where the caller navigates — the #1603 404. Keeping
+/// the name flat is what makes "the path we navigate to" and "the path the
+/// backend wrote" the same string.
+///
+/// Returns the trimmed name, or null when cancelled or left empty.
+Future<String?> promptForNewFileName(
+  BuildContext context, {
+  required String title,
+  required String hintText,
+  String confirmLabel = 'Create',
+}) async {
+  await Future<void>.delayed(Duration.zero);
+  if (!context.mounted) {
+    return null;
+  }
+
+  final nameController = TextEditingController();
+  final String? value;
+  try {
+    value = await QuarkWidget.showDialog<String>(
+      context,
+      useRootNavigator: true,
+      builder: (dialogContext) {
+        bool hasInvalidChar = false;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            void submit() {
+              final name = nameController.text.trim();
+              if (name.isEmpty || name.contains('/')) return;
+              Navigator.of(dialogContext).pop(name);
+            }
+
+            return QuarkWidget.alertDialog(
+              title: Text(title),
+              content: Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    QuarkWidget.textField(
+                      controller: nameController,
+                      autofocus: true,
+                      hintText: hintText,
+                      textInputAction: TextInputAction.done,
+                      onChanged: (v) {
+                        final invalid = v.contains('/');
+                        if (invalid != hasInvalidChar) {
+                          setState(() => hasInvalidChar = invalid);
+                        }
+                      },
+                      onSubmitted: (_) => submit(),
+                    ),
+                    if (hasInvalidChar)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6.0),
+                        child: Text(
+                          'The name cannot contain "/"',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  autofocus: true,
+                  onPressed: hasInvalidChar ? null : submit,
+                  child: Text(confirmLabel),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  } finally {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      nameController.dispose();
+    });
+  }
+
+  final normalized = (value ?? '').trim();
+  if (normalized.isEmpty || normalized.contains('/')) {
+    return null;
+  }
+  return normalized;
+}
