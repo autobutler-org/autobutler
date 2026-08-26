@@ -18,7 +18,7 @@ import (
 func makeDevice(t *testing.T) *ManagedDevice {
 	t.Helper()
 	dir := t.TempDir()
-	filesRoot := filepath.Join(dir, "cirrus")
+	filesRoot := filepath.Join(dir, "files")
 	if err := os.MkdirAll(filesRoot, 0755); err != nil {
 		t.Fatalf("makeDevice: %v", err)
 	}

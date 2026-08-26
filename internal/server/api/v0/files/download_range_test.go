@@ -36,7 +36,7 @@ func newVFSTestEngine(t *testing.T) (*gin.Engine, string) {
 	}
 
 	mountPoint := t.TempDir()
-	filesDir := filepath.Join(mountPoint, "quark", "data", "cirrus")
+	filesDir := filepath.Join(mountPoint, "quark", "data", "files")
 	if err := os.MkdirAll(filesDir, 0755); err != nil {
 		t.Fatalf("MkdirAll: %v", err)
 	}

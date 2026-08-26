@@ -60,7 +60,7 @@ func buildTarGzForList(t *testing.T, entries []struct{ name, content string }) [
 func makeListDevice(t *testing.T) *ManagedDevice {
 	t.Helper()
 	dir := t.TempDir()
-	filesRoot := filepath.Join(dir, "cirrus")
+	filesRoot := filepath.Join(dir, "files")
 	if err := os.MkdirAll(filesRoot, 0755); err != nil {
 		t.Fatal(err)
 	}

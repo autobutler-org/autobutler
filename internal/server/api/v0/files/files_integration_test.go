@@ -48,7 +48,7 @@ func newTestEngine(t *testing.T) (*gin.Engine, string) {
 
 	// Create a temp dir to act as the device mount point.
 	mountPoint := t.TempDir()
-	filesDir := filepath.Join(mountPoint, "quark", "data", "cirrus")
+	filesDir := filepath.Join(mountPoint, "quark", "data", "files")
 	if err := os.MkdirAll(filesDir, 0755); err != nil {
 		t.Fatalf("failed to create files dir: %v", err)
 	}

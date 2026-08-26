@@ -458,11 +458,11 @@ func UploadFilesStreamedImpl(params UploadFilesStreamedParams, device *ManagedDe
 			}
 
 			// Write to a temp file in data/tmp, then atomically move into place.
-			// Determine tmp base adjacent to the cirrus/data dir so it's on the
+			// Determine tmp base adjacent to the data dir so it's on the
 			// same filesystem as the final destination.
 			dataDir := GetDataDir()
 			if device != nil {
-				// device.FilesDir is <dataDir>/cirrus, so parent is device data dir
+				// device.FilesDir is <dataDir>/files, so parent is device data dir
 				dataDir = filepath.Dir(filesDir)
 			}
 			tmpBase := filepath.Join(dataDir, "tmp")

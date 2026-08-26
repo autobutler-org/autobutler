@@ -347,48 +347,24 @@ func GetNonConflictingPath(targetPath string) string {
 	}
 }
 
+// SetupFilesDir prepares the system storage root, migrating a pre-rename
+// "cirrus" directory into place first. Called once on startup.
 func SetupFilesDir() error {
-	// NOTE: the on-disk directory is still named "cirrus" (see ConstructFilesDir).
-	// Only the code/API names moved to "files".
-	//
-	// This matters: an EARLIER rename already went the other way. A legacy
-	// on-disk "files" directory is migrated INTO the current storage dir and
-	// then deleted. If the storage dir itself were ever renamed to "files",
-	// filesDir and legacyFilesDir below would resolve to the SAME path and this
-	// function would shuffle a user's files onto _(1)-suffixed names and then
-	// os.RemoveAll them. Do not repoint ConstructFilesDir without rewriting this.
-	storageDir := ConstructFilesDir(GetDataDir())
-	legacyFilesDir := filepath.Join(GetDataDir(), "files")
+	return setupFilesDirIn(GetDataDir())
+}
 
-	if storageDir == legacyFilesDir {
-		return fmt.Errorf(
-			"refusing to migrate: storage dir and legacy dir are the same path (%s)", storageDir)
+// setupFilesDirIn is SetupFilesDir with an injectable data directory so the
+// migration can be tested against a temp dir instead of the real one.
+func setupFilesDirIn(dataDir string) error {
+	// TODO(pre-v1.0.0, #1601): drop this call along with legacy_cirrus_dir.go.
+	if err := migrateLegacyCirrusDir(dataDir); err != nil {
+		return err
 	}
 
-	if _, err := os.Stat(storageDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(storageDir, 0755); err != nil {
-			return fmt.Errorf("failed to create storage directory: %w", err)
-		}
+	filesDir := ConstructFilesDir(dataDir)
+	if err := os.MkdirAll(filesDir, 0755); err != nil {
+		return fmt.Errorf("failed to create storage directory: %w", err)
 	}
-
-	if _, err := os.Stat(legacyFilesDir); err == nil {
-		entries, err := os.ReadDir(legacyFilesDir)
-		if err != nil {
-			return fmt.Errorf("failed to read legacy files directory: %w", err)
-		}
-		for _, entry := range entries {
-			oldPath := filepath.Join(legacyFilesDir, entry.Name())
-			targetPath := filepath.Join(storageDir, entry.Name())
-			newPath := GetNonConflictingPath(targetPath)
-			if err := os.Rename(oldPath, newPath); err != nil {
-				return fmt.Errorf("failed to move file %s to storage directory: %w", entry.Name(), err)
-			}
-		}
-		if err := os.RemoveAll(legacyFilesDir); err != nil {
-			return fmt.Errorf("failed to delete legacy files directory: %w", err)
-		}
-	}
-
 	return nil
 }
 

@@ -13,7 +13,7 @@ import (
 func makeManagedDevice(t *testing.T, name string) storageutil.ManagedDevice {
 	t.Helper()
 	dir := t.TempDir()
-	filesDir := filepath.Join(dir, "cirrus")
+	filesDir := filepath.Join(dir, "files")
 	if err := os.MkdirAll(filesDir, 0755); err != nil {
 		t.Fatalf("failed to create files dir: %v", err)
 	}
