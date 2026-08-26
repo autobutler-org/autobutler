@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
@@ -37,6 +38,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isLoadingVersionInfo = false;
   bool _isUpdatingVersion = false;
   String? _versionLoadError;
+  String? _appVersion;
 
   bool _autoUpdate = false;
   bool _autoUpdateLoadFailed = false;
@@ -77,6 +79,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _theme = AppSettings.instance.themeMode.value;
     _refreshIntervalSeconds = AppSettings.instance.refreshIntervalSeconds;
     setState(() {});
+    _loadAppVersion();
     _loadVersionInfo();
     _loadSettings();
     _loadSbom();
@@ -366,6 +369,20 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Future<void> _loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (!mounted) return;
+      setState(() {
+        _appVersion = info.buildNumber.isNotEmpty
+            ? '${info.version} (${info.buildNumber})'
+            : info.version;
+      });
+    } catch (e) {
+      debugPrint('[settings_page.dart] Error: $e');
+    }
+  }
+
   Future<void> _loadVersionInfo() async {
     if (AppSettings.instance.activeHost == null) {
       setState(() {
@@ -589,6 +606,16 @@ class _SettingsPageState extends State<SettingsPage> {
             'Quark',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
+          if (_appVersion != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              'App version $_appVersion',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           // Sign out — only show if there's an active session
           if (AppSettings.instance.sessionToken != null) ...[
