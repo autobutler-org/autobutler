@@ -9,10 +9,12 @@ Covers the Sheets page (`/sheets`) and the spreadsheet editor for `.absheet` fil
 **Preconditions:** User is logged in.
 
 **Steps:**
+
 1. Navigate to `/sheets`.
 
 **Expected result:**
-- A list of `.absheet` files stored on the butler is displayed.
+
+- A list of `.absheet` files stored on the quark is displayed.
 - Empty state is shown if no spreadsheets exist.
 
 ---
@@ -22,10 +24,12 @@ Covers the Sheets page (`/sheets`) and the spreadsheet editor for `.absheet` fil
 **Preconditions:** At least one `.absheet` file exists in Files.
 
 **Steps:**
+
 1. Navigate to `/sheets`.
 2. Tap a spreadsheet in the list.
 
 **Expected result:**
+
 - Spreadsheet editor opens (`SpreadsheetEditorPage`) with the file contents loaded.
 - URL updates to `/sheets/<path-to-file>`.
 
@@ -36,13 +40,15 @@ Covers the Sheets page (`/sheets`) and the spreadsheet editor for `.absheet` fil
 **Preconditions:** User is logged in.
 
 **Steps:**
+
 1. Navigate to `/sheets`.
 2. Tap the **New spreadsheet** FAB or button.
 3. Enter a filename/title.
 4. Confirm.
 
 **Expected result:**
-- New `.absheet` file is created on the butler.
+
+- New `.absheet` file is created on the quark.
 - Editor opens for the new file with an empty grid.
 
 ---
@@ -52,14 +58,16 @@ Covers the Sheets page (`/sheets`) and the spreadsheet editor for `.absheet` fil
 **Preconditions:** A spreadsheet is open (JN-SH-002 or JN-SH-003).
 
 **Steps:**
+
 1. Tap a cell in the grid.
 2. Enter a value.
 3. Confirm the cell edit (tap away or press Enter).
 4. Trigger save (explicit save button, or autosave).
 
 **Expected result:**
+
 - Cell value is updated in the grid.
-- Changes are persisted to the butler.
+- Changes are persisted to the quark.
 - Re-opening the spreadsheet shows the saved content.
 
 ---
@@ -69,9 +77,11 @@ Covers the Sheets page (`/sheets`) and the spreadsheet editor for `.absheet` fil
 **Preconditions:** A `.absheet` file exists at `data/budget.absheet`.
 
 **Steps:**
+
 1. Navigate directly to `/sheets/data/budget.absheet`.
 
 **Expected result:**
+
 - Spreadsheet editor opens with the correct file.
 
 ---
@@ -81,7 +91,9 @@ Covers the Sheets page (`/sheets`) and the spreadsheet editor for `.absheet` fil
 **Preconditions:** Multiple devices are connected. A spreadsheet exists on a non-default device.
 
 **Steps:**
+
 1. Navigate to `/sheets/<path>?serial=<device-serial>`.
 
 **Expected result:**
+
 - Editor opens the file from the specified device.

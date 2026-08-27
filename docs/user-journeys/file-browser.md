@@ -9,10 +9,12 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** User is logged in.
 
 **Steps:**
+
 1. Navigate to `/files`.
 
 **Expected result:**
-- A list (or grid) of files and folders at the root of the butler's storage is shown.
+
+- A list (or grid) of files and folders at the root of the quark's storage is shown.
 - Empty state widget is displayed if no files exist yet.
 - Storage usage footer is visible.
 
@@ -23,10 +25,12 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** At least one folder exists in Files (JN-FB-001 passes).
 
 **Steps:**
+
 1. Navigate to `/files`.
 2. Tap a folder in the listing.
 
 **Expected result:**
+
 - File listing updates to show the contents of that folder.
 - URL updates to `/files/<folder-name>`.
 - Breadcrumb updates to reflect the current path.
@@ -38,9 +42,11 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** User is inside a subfolder (JN-FB-002 complete).
 
 **Steps:**
+
 1. Tap a parent segment in the breadcrumb.
 
 **Expected result:**
+
 - File listing updates to show the parent folder's contents.
 - URL updates to match the parent path.
 
@@ -51,9 +57,11 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** User is at `/files`.
 
 **Steps:**
+
 1. Tap the grid/list toggle button in the top bar.
 
 **Expected result:**
+
 - View switches from list to grid (or vice versa).
 - File names and icons remain correct in the new layout.
 
@@ -64,10 +72,12 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** Multiple storage devices are connected.
 
 **Steps:**
+
 1. Navigate to `/files`.
 2. Tap the unified/device-grouped toggle.
 
 **Expected result:**
+
 - In unified mode: files from all devices are shown interleaved without section headers.
 - In device-grouped mode: files are grouped under per-device section headers.
 
@@ -78,11 +88,13 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** User is logged in. A file is available on the client device.
 
 **Steps:**
+
 1. Navigate to `/files` (or any subfolder).
 2. Tap the **upload** FAB or button.
 3. Select a file from the system file picker.
 
 **Expected result:**
+
 - Upload progress indicator is shown.
 - On completion, the file appears in the current directory listing.
 
@@ -93,10 +105,12 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** User is on a platform that supports drag-and-drop.
 
 **Steps:**
+
 1. Navigate to `/files`.
 2. Drag a file from the OS file manager onto the file browser drop zone.
 
 **Expected result:**
+
 - Drop zone highlights when file is hovered over it.
 - File uploads on drop.
 - File appears in the listing after upload completes.
@@ -108,11 +122,13 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** At least one file exists in Files.
 
 **Steps:**
+
 1. Navigate to `/files`.
 2. Long-press (mobile) or right-click / use the context menu (desktop/web) on a file.
 3. Select **Download**.
 
 **Expected result:**
+
 - File download begins.
 - File is saved to the client device's downloads location.
 
@@ -123,11 +139,13 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** User is logged in, at any path in `/files`.
 
 **Steps:**
+
 1. Tap the **New folder** button or FAB action.
 2. Enter a folder name in the dialog.
 3. Confirm.
 
 **Expected result:**
+
 - New folder appears in the current directory listing.
 - Folder is navigable (JN-FB-002).
 
@@ -138,12 +156,14 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** At least one file or folder exists in Files.
 
 **Steps:**
+
 1. Open the context menu on a file or folder.
 2. Select **Rename**.
 3. Enter a new name.
 4. Confirm.
 
 **Expected result:**
+
 - Item appears in the listing with the new name.
 - Old name no longer appears.
 
@@ -154,12 +174,14 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** At least two folders exist in Files.
 
 **Steps:**
+
 1. Open the context menu on a file or folder.
 2. Select **Move**.
 3. Choose a destination folder in the picker.
 4. Confirm.
 
 **Expected result:**
+
 - Item disappears from the source directory listing.
 - Item appears in the destination directory.
 
@@ -170,11 +192,13 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** At least one file exists in Files.
 
 **Steps:**
+
 1. Open the context menu on a file.
 2. Select **Delete**.
 3. Confirm the deletion prompt.
 
 **Expected result:**
+
 - File no longer appears in the listing.
 
 ---
@@ -184,6 +208,7 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** Multiple files exist in Files.
 
 **Steps:**
+
 1. Navigate to `/files`.
 2. Enter multi-select mode (long-press a file on mobile, or use the selection checkbox on desktop/web).
 3. Select two or more files.
@@ -191,6 +216,7 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 5. Confirm the deletion prompt.
 
 **Expected result:**
+
 - All selected files are removed from the listing.
 - Unselected files remain.
 - App exits selection mode after deletion.
@@ -202,11 +228,13 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** At least one file exists in Files.
 
 **Steps:**
+
 1. Navigate to `/files`.
 2. Tap the search icon.
 3. Enter a partial or full filename.
 
 **Expected result:**
+
 - Results update in real time (or on submit) to show matching files.
 - Non-matching files are hidden.
 - Clearing the search restores the full listing.
@@ -218,10 +246,12 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** An image file (jpg, png, etc.) exists in Files.
 
 **Steps:**
+
 1. Navigate to the folder containing the image.
 2. Tap the image file.
 
 **Expected result:**
+
 - Image viewer opens (`ImageViewerPage`).
 - Image is displayed correctly.
 - User can navigate back to the file browser.
@@ -233,9 +263,11 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** A video file exists in Files.
 
 **Steps:**
+
 1. Tap the video file in the file browser.
 
 **Expected result:**
+
 - Video viewer opens (`VideoViewerPage`).
 - Video is playable.
 
@@ -246,9 +278,11 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** An audio file exists in Files.
 
 **Steps:**
+
 1. Tap the audio file in the file browser.
 
 **Expected result:**
+
 - Audio player opens (`AudioPlayerPage`).
 - Playback controls are functional.
 
@@ -259,9 +293,11 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** A `.txt` (or similar plaintext) file exists in Files.
 
 **Steps:**
+
 1. Tap the file in the file browser.
 
 **Expected result:**
+
 - Plaintext editor opens (`PlaintextEditorPage`) at the correct path.
 - File contents are displayed and editable.
 
@@ -272,9 +308,11 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** A file of a type without a dedicated viewer (e.g. `.zip`, `.pdf`) exists in Files.
 
 **Steps:**
+
 1. Tap the file.
 
 **Expected result:**
+
 - App attempts to open the file with the OS native handler.
 - If no handler is available, a clear error or fallback message is shown.
 
@@ -285,10 +323,12 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** A `.zip` or other supported archive file exists in Files.
 
 **Steps:**
+
 1. Navigate to the archive file in the file browser.
 2. Tap the archive.
 
 **Expected result:**
+
 - File browser enters archive navigation mode.
 - Contents of the archive are listed.
 - User can navigate subfolders within the archive.
@@ -300,11 +340,13 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** A supported archive file exists in Files.
 
 **Steps:**
+
 1. Open the context menu on the archive file.
 2. Select **Extract**.
 
 **Expected result:**
-- Archive is extracted on the butler.
+
+- Archive is extracted on the quark.
 - Extracted contents appear in the current directory.
 
 ---
@@ -314,9 +356,11 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** User has opened or uploaded files previously.
 
 **Steps:**
+
 1. Navigate to `/files` root.
 
 **Expected result:**
+
 - A "Recent files" section is visible above the main listing.
 - Recently accessed files are shown with correct names.
 
@@ -327,11 +371,13 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** Multiple storage devices are connected.
 
 **Steps:**
+
 1. Navigate to `/files`.
 2. Open the device filter (header or filter UI).
 3. Deselect one or more devices.
 
 **Expected result:**
+
 - Only files from the selected devices are shown.
 - Re-selecting a device restores its files.
 
@@ -339,12 +385,14 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 
 ### JN-FB-024: Real-time file update via WebSocket
 
-**Preconditions:** User has `/files` open. Another client or the butler uploads a file concurrently.
+**Preconditions:** User has `/files` open. Another client or the quark uploads a file concurrently.
 
 **Steps:**
-1. Have a second client (or the butler itself) upload a new file.
+
+1. Have a second client (or the quark itself) upload a new file.
 
 **Expected result:**
+
 - New file appears in the file listing without a manual refresh.
 
 ---
@@ -354,8 +402,10 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 **Preconditions:** A subfolder `photos/2024` exists in Files.
 
 **Steps:**
+
 1. Navigate directly to `/files/photos/2024`.
 
 **Expected result:**
+
 - File browser opens at `photos/2024`.
 - Breadcrumb shows the correct path.

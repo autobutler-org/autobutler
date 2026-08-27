@@ -300,7 +300,7 @@ Future<String?> _authRedirect(BuildContext context, GoRouterState state) async {
     if (!status.setupComplete) return AppRoutes.setup;
     return AppRoutes.login;
   } catch (_) {
-    // Can't reach butler — allow through; individual pages will surface errors.
+    // Can't reach quark — allow through; individual pages will surface errors.
     return null;
   }
 }

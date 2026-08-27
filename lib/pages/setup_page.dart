@@ -5,7 +5,7 @@ import 'package:quark/widgets/core/copy_button.dart';
 import 'package:quark/widgets/password_strength_bar.dart';
 import 'package:quark_icons/quark_icons.dart';
 
-/// First-boot setup screen — creates the owner account on the butler.
+/// First-boot setup screen — creates the owner account on the quark.
 ///
 /// Three steps:
 ///  1. Create account (username + password)
@@ -203,7 +203,7 @@ class _SetupFormState extends State<_SetupForm> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Set up your butler',
+            'Set up your quark',
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -211,7 +211,7 @@ class _SetupFormState extends State<_SetupForm> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Create your owner account. This is the only account that can manage the butler.',
+            'Create your owner account. This is the only account that can manage the quark.',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),

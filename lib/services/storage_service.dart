@@ -170,7 +170,7 @@ class StorageService with AuthenticatedService {
         .toList();
   }
 
-  /// Mounts a USB device by serial. Requires the butler to be running as root.
+  /// Mounts a USB device by serial. Requires the quark to be running as root.
   static Future<void> mountDevice(String serial) async {
     final uri = _apiBaseUri.resolve('/api/v0/storage/devices/usb/$serial');
     final response = await http.post(uri, headers: _authHeaders);

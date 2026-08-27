@@ -137,11 +137,11 @@ func RemoteURL() string {
 }
 
 // StartProxy starts an HTTP reverse proxy on the tsnet listener at :80,
-// forwarding traffic to the local butler server at localPort. It is idempotent:
+// forwarding traffic to the local quark server at localPort. It is idempotent:
 // if the proxy listener is already open, it returns nil immediately.
 //
 // The proxy is intentionally unauthenticated at the tsnet layer — access
-// control is enforced by the proxied butler server's own auth middleware. Only
+// control is enforced by the proxied quark server's own auth middleware. Only
 // peers on the tailnet can reach this listener.
 // HasPersistedState returns true if tsnet has previously stored credentials
 // on disk and can reconnect without a new auth key.
@@ -159,8 +159,8 @@ func HasPersistedState() bool {
 	return false
 }
 
-// StartProxy forwards tailnet traffic to the local butler on [localPort].
-// [localTLS] must match how the butler is actually serving that port — see
+// StartProxy forwards tailnet traffic to the local quark on [localPort].
+// [localTLS] must match how the quark is actually serving that port — see
 // serverutil.ServingTLS. Proxying plain HTTP at the TLS listener shows up as
 // "TLS handshake error from 127.0.0.1" in the server log and fails every
 // request.
@@ -193,7 +193,7 @@ func StartProxy(localPort int, localTLS bool) error {
 		},
 	}
 	if localTLS {
-		// The butler presents its own self-signed cert, and this hop is a
+		// The quark presents its own self-signed cert, and this hop is a
 		// loopback connection to that same process — there is no third party to
 		// authenticate, and no CA that could vouch for the cert.
 		rp.Transport = &http.Transport{

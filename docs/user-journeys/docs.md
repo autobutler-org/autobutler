@@ -9,10 +9,12 @@ Covers the Docs page (`/docs`) and the document editor for `.abdoc` files.
 **Preconditions:** User is logged in.
 
 **Steps:**
+
 1. Navigate to `/docs`.
 
 **Expected result:**
-- A list of `.abdoc` files stored on the butler is displayed.
+
+- A list of `.abdoc` files stored on the quark is displayed.
 - Empty state is shown if no documents exist.
 
 ---
@@ -22,10 +24,12 @@ Covers the Docs page (`/docs`) and the document editor for `.abdoc` files.
 **Preconditions:** At least one `.abdoc` file exists in Files.
 
 **Steps:**
+
 1. Navigate to `/docs`.
 2. Tap a document in the list.
 
 **Expected result:**
+
 - Document editor opens (`DocumentEditorPage`) with the file contents rendered.
 - URL updates to `/docs/<path-to-file>`.
 
@@ -36,13 +40,15 @@ Covers the Docs page (`/docs`) and the document editor for `.abdoc` files.
 **Preconditions:** User is logged in.
 
 **Steps:**
+
 1. Navigate to `/docs`.
 2. Tap the **New document** FAB or button.
 3. Enter a filename/title.
 4. Confirm.
 
 **Expected result:**
-- New `.abdoc` file is created on the butler.
+
+- New `.abdoc` file is created on the quark.
 - Editor opens for the new file.
 
 ---
@@ -52,11 +58,13 @@ Covers the Docs page (`/docs`) and the document editor for `.abdoc` files.
 **Preconditions:** A document is open in the editor (JN-DOC-002 or JN-DOC-003).
 
 **Steps:**
+
 1. Make changes to the document content.
 2. Trigger save (explicit save button, or autosave).
 
 **Expected result:**
-- Changes are persisted to the butler.
+
+- Changes are persisted to the quark.
 - Re-opening the document shows the saved content.
 
 ---
@@ -66,9 +74,11 @@ Covers the Docs page (`/docs`) and the document editor for `.abdoc` files.
 **Preconditions:** A `.abdoc` file exists at `reports/q1.abdoc`.
 
 **Steps:**
+
 1. Navigate directly to `/docs/reports/q1.abdoc`.
 
 **Expected result:**
+
 - Document editor opens with the correct file.
 - No intermediate navigation step required.
 
@@ -79,7 +89,9 @@ Covers the Docs page (`/docs`) and the document editor for `.abdoc` files.
 **Preconditions:** Multiple devices are connected. A document exists on a non-default device.
 
 **Steps:**
+
 1. Navigate to `/docs/<path>?serial=<device-serial>`.
 
 **Expected result:**
+
 - Editor opens the file from the specified device.

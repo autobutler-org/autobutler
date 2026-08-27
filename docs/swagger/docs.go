@@ -3906,7 +3906,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "hostname": {
-                    "description": "Hostname is the OS hostname of the butler device.\nClients can use this to display accurate LAN mount paths (e.g. smb://hostname.local).",
+                    "description": "Hostname is the OS hostname of the quark device.\nClients can use this to display accurate LAN mount paths (e.g. smb://hostname.local).",
                     "type": "string"
                 },
                 "memPercent": {

@@ -17,7 +17,7 @@ query-filters:
       id: go/path-injection
 
   # go/disabled-certificate-check: the TLS skip in remoteutil is on the loopback
-  # Tailscale→local reverse proxy connection. The butler presents its own self-signed
+  # Tailscale→local reverse proxy connection. The quark presents its own self-signed
   # cert and the hop is to itself — there is no external party to authenticate and
   # no CA that could vouch for the cert. Alert #91.
   - exclude:

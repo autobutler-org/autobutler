@@ -66,7 +66,7 @@ func TestEnsureSelfSignedCert_CreatesFiles(t *testing.T) {
 	}
 }
 
-// The app reaches the butler by its mDNS name (e.g. https://openclaw.local), so
+// The app reaches the quark by its mDNS name (e.g. https://openclaw.local), so
 // that name must be a SAN or the cert never matches the URL being used.
 func TestEnsureSelfSignedCert_IncludesMDNSHostname(t *testing.T) {
 	hostname, err := os.Hostname()

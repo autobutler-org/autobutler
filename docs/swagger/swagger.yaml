@@ -271,7 +271,7 @@ definitions:
         type: boolean
       hostname:
         description: |-
-          Hostname is the OS hostname of the butler device.
+          Hostname is the OS hostname of the quark device.
           Clients can use this to display accurate LAN mount paths (e.g. smb://hostname.local).
         type: string
       memPercent:

@@ -344,7 +344,7 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
 
   Widget _buildBody() {
     if (AppSettings.instance.activeHost == null) {
-      return const Center(child: Text('No butler host configured.'));
+      return const Center(child: Text('No quark host configured.'));
     }
     if (_error != null) {
       return Center(
