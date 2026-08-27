@@ -23,6 +23,7 @@ import 'package:quark/services/upload_manager.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/services/events_service.dart';
 import 'package:quark/services/storage_service.dart';
+import 'package:quark/services/upload_chunk_source.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
 import 'package:quark/utils/files_route_path_utils.dart';
 import 'package:quark/utils/file_browser_dialog_utils.dart';
@@ -497,24 +498,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     });
   }
 
-  Future<void> _uploadSelectedFiles(
-    List<http.MultipartFile> selectedFiles,
-    String uploadPath,
-  ) {
-    return _uploadPendingFiles(
-      selectedFiles
-          .map(
-            (file) => PendingUpload(
-              relativeDir: '',
-              name: file.filename ?? 'file',
-              build: () async => file,
-            ),
-          )
-          .toList(),
-      uploadPath,
-    );
-  }
-
   /// Uploads [pending] under [uploadPath], one request per directory.
   ///
   /// Structure travels through the nested upload route's rootDir, never
@@ -624,7 +607,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         return;
       }
 
-      await _uploadSelectedFiles(selectedFiles, _currentPath);
+      await _uploadPendingFiles(selectedFiles, _currentPath);
     } on MissingPluginException {
       if (!mounted) {
         return;
@@ -653,6 +636,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       final flattened = flattenDroppedItems(
         droppedItems,
         buildUpload: (file, name) async {
+          // Reached only below the chunking threshold. Above it the file goes
+          // out slice by slice through the chunk source and is never read
+          // whole (#1629).
           final bytes = await _readDroppedFileBytes(file);
           if (bytes == null || bytes.isEmpty) {
             return null;
@@ -662,6 +648,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             filename: name,
           );
         },
+        openChunkSource: openDroppedFileChunkSource,
       );
 
       if (flattened.uploads.isEmpty) {

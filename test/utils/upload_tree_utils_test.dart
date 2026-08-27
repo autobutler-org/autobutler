@@ -121,6 +121,39 @@ void main() {
       expect(result.uploads.single.name, 'notes.txt');
     });
 
+    test('a drop with no chunk opener still produces uploads', () {
+      // The optional half of #1629: a caller that only knows how to build a
+      // whole multipart file keeps working, and its files take the
+      // single-request path however large they are.
+      final result = flatten([file('notes.txt')]);
+
+      expect(result.uploads.single.openChunkSource, isNull);
+    });
+
+    test('threads a chunk opener through to each file', () {
+      final opened = <String>[];
+      final result = flattenDroppedItems(
+        [
+          dir('photos', [file('a.jpg')]),
+          file('b.jpg'),
+        ],
+        buildUpload: (f, name) async =>
+            http.MultipartFile.fromBytes('files', _bytes, filename: name),
+        openChunkSource: (f) async {
+          opened.add(f.name);
+          return null;
+        },
+      );
+
+      expect(result.uploads, hasLength(2));
+      for (final upload in result.uploads) {
+        expect(upload.openChunkSource, isNotNull);
+      }
+
+      // Deferred, like build: nothing is opened by walking the tree.
+      expect(opened, isEmpty);
+    });
+
     test('files land where the folder said they were', () {
       final result = flatten([
         dir('photos', [

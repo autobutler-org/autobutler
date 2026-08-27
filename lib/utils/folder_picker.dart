@@ -16,3 +16,13 @@ bool get isFolderPickerSupported => platform.isFolderPickerSupportedPlatform;
 Future<List<PendingUpload>> pickFolderUploads() {
   return platform.pickFolderUploadsPlatform();
 }
+
+/// Prompts for one or more files.
+///
+/// Split by platform for the same reason the folder picker is: what each
+/// platform can hand back differs, and on the web the difference decides
+/// whether a large file fits in the tab at all (#1629). Supported everywhere,
+/// unlike folder selection.
+Future<List<PendingUpload>> pickFileUploads() {
+  return platform.pickFileUploadsPlatform();
+}

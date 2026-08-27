@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:quark/services/upload_chunk_source_io.dart';
 import 'package:quark/utils/upload_tree_utils.dart';
 
 /// Desktop can open a directory chooser; mobile cannot.
@@ -58,7 +59,8 @@ Future<List<PendingUpload>> pickFolderUploadsPlatform() async {
         relativeDir: relativeDir,
         name: name,
         // fromPath streams off disk, so a large folder never lands in memory
-        // all at once.
+        // all at once. Unchanged by #1629: this is the small-file path, and it
+        // was already the thing the web side had to be taught.
         build: () async {
           try {
             return await http.MultipartFile.fromPath(
@@ -71,6 +73,7 @@ Future<List<PendingUpload>> pickFolderUploadsPlatform() async {
             return null;
           }
         },
+        openChunkSource: () => FileUploadChunkSource.open(entity.path),
       ),
     );
   }
@@ -94,4 +97,68 @@ String _relativeTo(String rootPath, String filePath) {
 String _basename(String relativePath) {
   final lastSlash = relativePath.lastIndexOf('/');
   return lastSlash < 0 ? relativePath : relativePath.substring(lastSlash + 1);
+}
+
+/// Plain file selection.
+///
+/// `withData: false` because every native picker hands back a real path, and
+/// reading the bytes as well would put the whole file in memory for nothing —
+/// the same waste #1629 removed from the web side. A picker that somehow
+/// returns no path still works: that file falls back to its bytes and takes
+/// the single-request path.
+Future<List<PendingUpload>> pickFileUploadsPlatform() async {
+  final result = await FilePicker.pickFiles(
+    withData: false,
+    allowMultiple: true,
+  );
+  if (result == null || result.files.isEmpty) {
+    return const [];
+  }
+
+  final uploads = <PendingUpload>[];
+  for (final picked in result.files) {
+    final name = picked.name.trim();
+    if (name.isEmpty) {
+      continue;
+    }
+
+    final path = picked.path;
+    if (path == null || path.isEmpty) {
+      final bytes = picked.bytes;
+      if (bytes == null) {
+        continue;
+      }
+      uploads.add(
+        PendingUpload(
+          relativeDir: '',
+          name: name,
+          build: () async =>
+              http.MultipartFile.fromBytes('files', bytes, filename: name),
+        ),
+      );
+      continue;
+    }
+
+    uploads.add(
+      PendingUpload(
+        relativeDir: '',
+        name: name,
+        build: () async {
+          try {
+            return await http.MultipartFile.fromPath(
+              'files',
+              path,
+              filename: name,
+            );
+          } catch (e) {
+            debugPrint('[folder_picker_io.dart] Failed to read $name: $e');
+            return null;
+          }
+        },
+        openChunkSource: () => FileUploadChunkSource.open(path),
+      ),
+    );
+  }
+
+  return uploads;
 }
