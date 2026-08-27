@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quark/services/files_service.dart';
+import 'package:quark/services/local_media_proxy.dart';
 import 'package:quark/utils/web_download_stub.dart'
     if (dart.library.html) 'package:quark/utils/web_download_web.dart'
     as web_download;
@@ -22,6 +23,7 @@ class VideoViewerPage extends StatefulWidget {
 
 class _VideoViewerPageState extends State<VideoViewerPage> {
   VideoPlayerController? _controller;
+  LocalMediaProxy? _proxy;
   bool _loading = true;
   String? _errorMessage;
   bool _isUnsupportedFormat = false;
@@ -66,39 +68,57 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
       _isUnsupportedFormat = false;
     });
 
-    VideoPlayerController? networkController;
+    VideoPlayerController? controller;
+    LocalMediaProxy? proxy;
     try {
-      networkController = VideoPlayerController.networkUrl(
-        widget.url,
+      // A quark on the local network serves a self-signed cert that AVPlayer
+      // and ExoPlayer both reject. Terminate TLS in Dart, where the app's
+      // local-trust exception applies, and re-serve over loopback.
+      if (mediaNeedsLocalProxy(widget.url)) {
+        proxy = await LocalMediaProxy.start(widget.url);
+      }
+      controller = VideoPlayerController.networkUrl(
+        proxy?.localUrl ?? widget.url,
         formatHint: _formatHintFromFileName(widget.name),
       );
-      await networkController.initialize();
+      await controller.initialize();
     } catch (e) {
       debugPrint('[video_viewer_page.dart] initialize error: $e');
-      await networkController?.dispose();
+      await controller?.dispose();
+      // A 404 or a 401 is not a codec problem, and issue #1627 is precisely
+      // about that mislabelling. Prefer whatever the server actually said.
+      final upstreamError = proxy?.lastUpstreamError;
+      await proxy?.close();
       if (!mounted) {
         return;
       }
-      final nonWebNative = _isNonWebNativeFormat(widget.name);
+      final nonWebNative =
+          upstreamError == null && _isNonWebNativeFormat(widget.name);
       setState(() {
         _loading = false;
         _isUnsupportedFormat = nonWebNative;
-        _errorMessage = nonWebNative
-            ? 'This video format (${_extensionOf(widget.name)}) isn\'t supported '
-                  'for in-browser playback. Download the file to watch it locally.'
-            : 'Unable to play this media. The file may use an unsupported '
-                  'codec/profile. ($e)';
+        _errorMessage = switch ((upstreamError, nonWebNative)) {
+          (final MediaUpstreamException error, _) => error.userMessage,
+          (_, true) =>
+            'This video format (${_extensionOf(widget.name)}) isn\'t supported '
+                'for in-browser playback. Download the file to watch it locally.',
+          _ =>
+            'Unable to play this media. The file may use an unsupported '
+                'codec/profile. ($e)',
+        };
       });
       return;
     }
 
     if (!mounted) {
-      await networkController.dispose();
+      await controller.dispose();
+      await proxy?.close();
       return;
     }
 
     setState(() {
-      _controller = networkController;
+      _controller = controller;
+      _proxy = proxy;
       _loading = false;
     });
 
@@ -107,7 +127,7 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
     // In that case the video shows in a paused state — the user can tap the
     // play button to start playback.
     try {
-      await networkController.play();
+      await controller.play();
     } catch (_) {
       // Autoplay blocked or unsupported; stay paused.
     }
@@ -131,6 +151,8 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
   void dispose() {
     _controller?.dispose();
     _controller = null;
+    _proxy?.close();
+    _proxy = null;
     super.dispose();
   }
 
