@@ -1,6 +1,6 @@
 /// Shared "is this host on my own network?" predicate.
 ///
-/// A butler on the local network serves a self-signed certificate, so the
+/// A quark on the local network serves a self-signed certificate, so the
 /// client must opt out of chain verification for those hosts — and only those.
 /// This is the single source of truth for that decision; both the HTTP client
 /// ([buildLocalTrustHttpClient]) and the WebSocket connector
@@ -12,7 +12,7 @@ library;
 
 /// Hostname suffixes that only ever resolve inside a local network.
 ///
-/// `.local` is mDNS/Bonjour — the primary way the app reaches a butler
+/// `.local` is mDNS/Bonjour — the primary way the app reaches a quark
 /// (`openclaw.local`, `quark.home.local`). The rest are the conventional
 /// private-network suffixes; `.home.arpa` is the RFC 8375 standard one.
 const _localSuffixes = <String>[

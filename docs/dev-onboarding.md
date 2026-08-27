@@ -31,17 +31,34 @@ generate`.
 
 ## Run the backend
 
+There are two modes, and they differ in both scheme and port. Pick one explicitly:
+
 ```bash
-make watch/backend
+make watch/backend         # plain HTTP  on http://localhost:8080
+make watch/backend/secure  # HTTPS       on https://localhost (:443)
 ```
 
-This starts the server on `http://localhost:8080` with hot reload via air. Edit Go files and the server restarts
-automatically.
+Both hot-reload via air — edit Go files and the server restarts automatically. The `serve/backend` and
+`serve/backend/secure` targets are the same two modes without the file watcher.
 
-If you need root for USB device mounting (Linux):
+Which one you want depends on what you're working on:
+
+| | `watch/backend` | `watch/backend/secure` |
+| --- | --- | --- |
+| URL | `http://localhost:8080` | `https://localhost` (:443) |
+| TLS | none | self-signed, generated on first boot into `<dataDir>/certs/` |
+| `curl` | works as-is | needs `-k` (the cert is not in any trust store) |
+| Root needed | no | on Linux, yes — `:443` is privileged |
+
+The self-signed certificate is never added to your system trust store. The Flutter client opts out of chain
+verification for local and LAN addresses so it can talk to it; browsers and `curl` will still warn.
+
+If you need root — for USB device mounting on Linux, or to bind `:443` in secure mode — prefix any backend
+target with `AS_ROOT=1`, which runs it under `sudo`:
 
 ```bash
 make watch/backend AS_ROOT=1
+make watch/backend/secure AS_ROOT=1
 ```
 
 ## Run the frontend
@@ -87,12 +104,13 @@ Don't edit the generated files by hand — they'll be overwritten by `make gener
 cmd/quark/         Entry point
 internal/
   db/                   sqlc-generated database layer + migrations
-  server/api/v1/        API handlers (one file per route group)
+  server/api/v0/        API handlers (one file per route group) — mounted at /api/v0
     albums/             Photo album CRUD
     files/              File browser and file-type listing
     favorites/          Favorites toggle, list, and check
     photos/             Photo listing, metadata, rotation
     thumbnails/         Thumbnail generation and cache
+  server/api/v1/        Mounted at /api/v1 — currently only vfs/
   server/middleware/    Gin middleware (auth, OTEL, etc.)
 pkg/util/               Shared utilities
   authutil/             Auth: hashing, session tokens, recovery phrases
@@ -120,7 +138,8 @@ Run `make help` to see everything. The most common ones:
 
 | Target                          | What it does                          |
 | ------------------------------- | ------------------------------------- |
-| `make watch/backend`            | Backend with hot reload               |
+| `make watch/backend`            | Backend hot reload, http://localhost:8080 |
+| `make watch/backend/secure`     | Backend hot reload, https://localhost |
 | `make serve/frontend`           | Flutter web dev server                |
 | `make serve/frontend/mobile`    | Flutter mobile (after `make emulate`) |
 | `make emulate/android`          | Launch Android emulator               |
@@ -138,6 +157,6 @@ Run `make help` to see everything. The most common ones:
 
 ## Notes
 
-- USB device mounting requires root on Linux (`AS_ROOT=1`)
-- Swagger UI is at `http://localhost:8080/swagger` once the backend is running
+- USB device mounting requires root on Linux, as does binding `:443` in secure mode (`AS_ROOT=1`)
+- Swagger UI is at `http://localhost:8080/swagger` in insecure mode, or `https://localhost/swagger` in secure mode
 - `make generate` must be run before committing schema or query changes — CI enforces this

@@ -45,25 +45,6 @@ class ContentSearchService with AuthenticatedService {
   ContentSearchService._();
   static final ContentSearchService instance = ContentSearchService._();
 
-  static Uri get _apiBaseUri {
-    final configured = AppSettings.instance.activeHost;
-    final base =
-        configured ??
-        const String.fromEnvironment(
-          'API_BASE_URL',
-          defaultValue: 'http://localhost:8080',
-        );
-    final uri = Uri.parse(base);
-    final isLoopback =
-        uri.host == 'localhost' || uri.host == '127.0.0.1' || uri.host == '::1';
-    if (!kIsWeb &&
-        defaultTargetPlatform == TargetPlatform.android &&
-        isLoopback) {
-      return uri.replace(host: '10.0.2.2');
-    }
-    return uri;
-  }
-
   /// Returns content-search results for [query].
   ///
   /// Never throws: on a transport error, a non-2xx status, or a body that is
@@ -73,7 +54,7 @@ class ContentSearchService with AuthenticatedService {
   /// be validated, not just the status code.
   static Future<List<ContentSearchResult>> search(String query) async {
     if (query.trim().isEmpty) return [];
-    final uri = _apiBaseUri.replace(
+    final uri = apiBaseUri.replace(
       path: '/api/v0/files/search/content',
       queryParameters: {'q': query.trim()},
     );

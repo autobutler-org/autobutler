@@ -534,7 +534,7 @@ func TestListPossibleUpdates_FilteredToEmpty_ReturnsEmptySliceNotNil(t *testing.
 // --- verifyChecksum / fetchURL ---
 
 func TestVerifyChecksum_Match(t *testing.T) {
-	data := []byte("hello, butler")
+	data := []byte("hello, quark")
 	sum := sha256.Sum256(data)
 	hexSum := hex.EncodeToString(sum[:])
 
@@ -549,7 +549,7 @@ func TestVerifyChecksum_Match(t *testing.T) {
 }
 
 func TestVerifyChecksum_Mismatch(t *testing.T) {
-	data := []byte("hello, butler")
+	data := []byte("hello, quark")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Return a completely wrong checksum.
 		fmt.Fprint(w, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef")

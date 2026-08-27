@@ -1,7 +1,6 @@
 // ignore_for_file: use_null_aware_elements
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
@@ -197,27 +196,7 @@ class VaultService with AuthenticatedService {
     'Content-Type': 'application/json',
   };
 
-  static Uri _apiUri(String path) {
-    final configured = AppSettings.instance.activeHost;
-    final base =
-        configured ??
-        String.fromEnvironment(
-          'API_BASE_URL',
-          defaultValue: 'http://localhost:8080',
-        );
-    final uri = Uri.parse(base);
-    final isLoopbackHost =
-        uri.host == 'localhost' || uri.host == '127.0.0.1' || uri.host == '::1';
-    Uri resolved;
-    if (!kIsWeb &&
-        defaultTargetPlatform == TargetPlatform.android &&
-        isLoopbackHost) {
-      resolved = uri.replace(host: '10.0.2.2');
-    } else {
-      resolved = uri;
-    }
-    return resolved.resolve('/api/v0$path');
-  }
+  static Uri _apiUri(String path) => apiBaseUri.resolve('/api/v0$path');
 
   static Future<VaultStatus> getStatus() async {
     final resp = await http.get(

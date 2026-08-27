@@ -39,11 +39,20 @@ make build
 
 ### Run it locally
 
-Backend with hot reload:
+Backend with hot reload. Pick a mode — they differ in scheme *and* port:
 
 ```bash
-make watch/backend
+make watch/backend         # plain HTTP  on http://localhost:8080
+make watch/backend/secure  # HTTPS       on https://localhost (:443), self-signed cert
 ```
+
+The secure mode generates a self-signed certificate on first boot. It is not
+added to any trust store, so `curl` needs `-k` and browsers will warn; the
+Flutter app skips chain verification for local addresses on purpose. Binding
+`:443` requires root on Linux — see `AS_ROOT=1` below.
+
+Without hot reload, `make serve/backend` and `make serve/backend/secure` are the
+same two modes.
 
 Frontend (web):
 
@@ -59,9 +68,12 @@ make emulate/android  # or emulate/ios
 make serve/frontend/mobile
 ```
 
-> USB device mounting requires root on Linux. Use `AS_ROOT=1` with any backend target if you need it.
+> USB device mounting requires root on Linux, as does binding `:443` in secure
+> mode. Use `AS_ROOT=1` with any backend target if you need it — e.g.
+> `make watch/backend/secure AS_ROOT=1`.
 
-Swagger UI is at `http://localhost:8080/swagger` once the backend is running.
+Swagger UI is at `http://localhost:8080/swagger` in insecure mode, or
+`https://localhost/swagger` in secure mode.
 
 ### Other useful commands
 

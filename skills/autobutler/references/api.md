@@ -6,17 +6,17 @@ Base URL: configured in `TOOLS.md`. All endpoints require `Authorization: Bearer
 
 | Method | Path                   | Auth required | Description                                                                                  |
 | ------ | ---------------------- | ------------- | -------------------------------------------------------------------------------------------- |
-| GET    | `/api/v1/auth/status`  | No            | Returns `{"setup": bool}`                                                                    |
-| POST   | `/api/v1/auth/setup`   | No            | First-boot account creation. Body: `{username, password}`. Returns `{token, recoveryPhrase}` |
-| POST   | `/api/v1/auth/login`   | No            | Body: `{username, password}`. Returns `{token}`                                              |
-| POST   | `/api/v1/auth/logout`  | Yes           | Invalidates session. Returns `{message}`                                                     |
-| POST   | `/api/v1/auth/recover` | No            | Body: `{recoveryPhrase, newPassword}`. Returns `{token}`                                     |
+| GET    | `/api/v0/auth/status`  | No            | Returns `{"setup": bool}`                                                                    |
+| POST   | `/api/v0/auth/setup`   | No            | First-boot account creation. Body: `{username, password}`. Returns `{token, recoveryPhrase}` |
+| POST   | `/api/v0/auth/login`   | No            | Body: `{username, password}`. Returns `{token}`                                              |
+| POST   | `/api/v0/auth/logout`  | Yes           | Invalidates session. Returns `{message}`                                                     |
+| POST   | `/api/v0/auth/recover` | No            | Body: `{recoveryPhrase, newPassword}`. Returns `{token}`                                     |
 
 ## Health
 
 | Method | Path             | Description                                                                                                                                                                                         |
 | ------ | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/v1/health` | System health. Returns: `{healthy, alerts[], cpuPercent, cpuCorePercents[], cpuCoreCount, memPercent, memUsedBytes, memTotalBytes, diskPercent, diskUsedBytes, diskTotalBytes, temperatureCelsius}` |
+| GET    | `/api/v0/health` | System health. Returns: `{healthy, alerts[], cpuPercent, cpuCorePercents[], cpuCoreCount, memPercent, memUsedBytes, memTotalBytes, diskPercent, diskUsedBytes, diskTotalBytes, temperatureCelsius}` |
 
 ## Files
 
@@ -48,18 +48,18 @@ Base URL: configured in `TOOLS.md`. All endpoints require `Authorization: Bearer
 
 | Method | Path                            | Description                                         |
 | ------ | ------------------------------- | --------------------------------------------------- |
-| GET    | `/api/v1/photos`                | List photos. Query params: `serial`, `rootDir`      |
-| GET    | `/api/v1/thumbnails/{filePath}` | Get thumbnail. Path: URL-encoded file path segments |
+| GET    | `/api/v0/photos`                | List photos. Query params: `serial`, `rootDir`      |
+| GET    | `/api/v0/thumbnails/{filePath}` | Get thumbnail. Path: URL-encoded file path segments |
 
 ## Storage Devices
 
 | Method | Path                                      | Description                                    |
 | ------ | ----------------------------------------- | ---------------------------------------------- |
-| GET    | `/api/v1/storage/devices/status`          | List all devices. Returns `{count, devices[]}` |
-| GET    | `/api/v1/storage/devices/status/{serial}` | Single device status                           |
-| POST   | `/api/v1/storage/devices/usb/{serial}`    | Enable USB device                              |
-| DELETE | `/api/v1/storage/devices/usb/{serial}`    | Disable/unmount USB device                     |
-| POST   | `/api/v1/storage/devices/backup`          | Trigger backup to device. Body: `{serial}`     |
+| GET    | `/api/v0/storage/devices/status`          | List all devices. Returns `{count, devices[]}` |
+| GET    | `/api/v0/storage/devices/status/{serial}` | Single device status                           |
+| POST   | `/api/v0/storage/devices/usb/{serial}`    | Enable USB device                              |
+| DELETE | `/api/v0/storage/devices/usb/{serial}`    | Disable/unmount USB device                     |
+| POST   | `/api/v0/storage/devices/backup`          | Trigger backup to device. Body: `{serial}`     |
 
 ### Device shape
 
@@ -83,16 +83,16 @@ Base URL: configured in `TOOLS.md`. All endpoints require `Authorization: Bearer
 
 | Method | Path                        | Description                                                                                |
 | ------ | --------------------------- | ------------------------------------------------------------------------------------------ |
-| GET    | `/api/v1/version`           | Installed version. Returns `{semver, gitCommit, goVersion, buildDate}`                     |
-| GET    | `/api/v1/version/available` | List available versions. Returns `[{version, url}]`. Query param: `all=true` for full list |
-| POST   | `/api/v1/version/latest`    | Update to latest version                                                                   |
-| POST   | `/api/v1/version/update`    | Update to specific version. Body: `{version}`                                              |
+| GET    | `/api/v0/version`           | Installed version. Returns `{semver, gitCommit, goVersion, buildDate}`                     |
+| GET    | `/api/v0/version/available` | List available versions. Returns `[{version, url}]`. Query param: `all=true` for full list |
+| POST   | `/api/v0/version/latest`    | Update to latest version                                                                   |
+| POST   | `/api/v0/version/update`    | Update to specific version. Body: `{version}`                                              |
 
 ## SBOM
 
 | Method | Path           | Description                |
 | ------ | -------------- | -------------------------- |
-| GET    | `/api/v1/sbom` | Software bill of materials |
+| GET    | `/api/v0/sbom` | Software bill of materials |
 
 ## Error responses
 

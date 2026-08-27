@@ -104,7 +104,7 @@ class EventsService {
     final token = AppSettings.instance.sessionToken;
     if (token == null) {
       // Unauthenticated: the server would answer the upgrade with a 401. The
-      // router lets us reach this page with no token when the butler is
+      // router lets us reach this page with no token when the quark is
       // unreachable, so wait for _onTokenChanged rather than hammering it.
       debugPrint('[EventsService] no session token — deferring connect');
       return;
@@ -171,7 +171,7 @@ class EventsService {
 
   void _scheduleReconnect() {
     if (_disposed) return;
-    // Back off exponentially — a butler that is down, or a token the server
+    // Back off exponentially — a quark that is down, or a token the server
     // rejects, shouldn't be retried twelve times a minute forever.
     final delayMs = _baseReconnectDelay.inMilliseconds * (1 << _attempt);
     final delay = Duration(

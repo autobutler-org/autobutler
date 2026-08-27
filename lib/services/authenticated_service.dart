@@ -42,9 +42,9 @@ String _extractHost(String? url) {
   }
 }
 
-/// Mixin providing a shared auth header helper for services that talk to the butler API.
+/// Mixin providing a shared auth header helper for services that talk to the quark API.
 ///
-/// Include this mixin in any service class that makes HTTP calls to the butler.
+/// Include this mixin in any service class that makes HTTP calls to the quark.
 /// Use [authHeaders] to inject the session token into every request.
 /// Call [checkUnauthorized] after every response to handle session expiry.
 mixin AuthenticatedService {

@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
-import 'package:quark/services/files_service.dart';
 import 'package:quark/services/connected_devices_service.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/services/health_service.dart';
 import 'package:quark/services/remote_access_service.dart';
 import 'package:quark/services/sbom_service.dart';
@@ -143,7 +143,7 @@ class _SettingsPageState extends State<SettingsPage> {
         title: const Text('Disable remote access'),
         content: const Text(
           'This will disconnect the Tailscale tunnel. '
-          'You will no longer be able to reach this butler remotely. Continue?',
+          'You will no longer be able to reach this quark remotely. Continue?',
         ),
         actions: [
           TextButton(
@@ -822,7 +822,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Access your butler from anywhere using Tailscale.',
+                            'Access your quark from anywhere using Tailscale.',
                           ),
                           const SizedBox(height: 12),
                           OutlinedButton.icon(
@@ -1304,7 +1304,7 @@ class _InfoSectionHeader extends StatelessWidget {
 }
 
 /// Shows instructions for mounting Quark as a network drive.
-/// Fetches the butler's hostname from the health endpoint so the paths
+/// Fetches the quark's hostname from the health endpoint so the paths
 /// reflect the device's actual LAN name rather than the connection URL.
 class _NetworkDriveCard extends StatefulWidget {
   const _NetworkDriveCard({required this.host});
@@ -1811,11 +1811,11 @@ class _HostDialogState extends State<_HostDialog> {
             textInputAction: TextInputAction.done,
             // Enter in the address field saves, same as the button.
             onSubmitted: (_) => _submit(),
-            hintText: 'http://quark.home.local',
+            hintText: 'https://quark.home.local',
           ),
           const SizedBox(height: 6),
           const Text(
-            'Usually http://quark.home.local or the IP address shown on your device.',
+            'Usually https://quark.home.local or the IP address shown on your device.',
             style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ],

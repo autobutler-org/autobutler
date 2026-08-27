@@ -144,7 +144,7 @@ func generate(certFile, keyFile string) error {
 }
 
 // localDNSNames returns the machine's own hostname plus its mDNS/Bonjour name
-// ("openclaw" and "openclaw.local"), so clients reaching the butler by the name
+// ("openclaw" and "openclaw.local"), so clients reaching the quark by the name
 // it advertises on the LAN get a certificate that actually matches the URL.
 // Without these, only IP-based URLs match the cert.
 func localDNSNames() []string {

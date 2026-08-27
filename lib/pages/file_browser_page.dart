@@ -2228,10 +2228,10 @@ class _FirstRunSetupState extends State<_FirstRunSetup> {
       return;
     }
 
-    var address = raw;
-    if (!address.startsWith('http://') && !address.startsWith('https://')) {
-      address = 'http://$address';
-    }
+    // A quark serves TLS; a schemeless address must become https://.
+    // addHost normalizes too — doing it here keeps the value we show and the
+    // value we store identical.
+    final address = normalizeHostAddress(raw);
 
     setState(() {
       _saving = true;
@@ -2294,9 +2294,9 @@ class _FirstRunSetupState extends State<_FirstRunSetup> {
                 onSubmitted: (_) => _connect(),
                 decoration: InputDecoration(
                   labelText: 'Quark address',
-                  hintText: 'http://quark.home.local',
+                  hintText: 'https://quark.home.local',
                   helperText:
-                      'Usually http://quark.home.local or http://192.168.x.x',
+                      'Usually https://quark.home.local or https://192.168.x.x',
                   errorText: _error,
                   border: const OutlineInputBorder(),
                   prefixIcon: const Icon(QuarkIcons.link_rounded),

@@ -7,7 +7,7 @@ import 'package:quark/services/authenticated_service.dart';
 
 /// Result of a successful [AuthService.checkStatus] call.
 class AuthStatus {
-  /// Whether the butler has been set up with a local account.
+  /// Whether the quark has been set up with a local account.
   final bool setupComplete;
 
   const AuthStatus({required this.setupComplete});
@@ -29,20 +29,11 @@ class LoginResult {
   const LoginResult({required this.sessionToken});
 }
 
-/// Communicates with the butler auth API.
+/// Communicates with the quark auth API.
 class AuthService {
-  static Uri get _baseUri {
-    final configured = AppSettings.instance.activeHost;
-    final base =
-        configured ??
-        const String.fromEnvironment(
-          'API_BASE_URL',
-          defaultValue: 'http://localhost:8080',
-        );
-    return Uri.parse(base);
-  }
+  static Uri get _baseUri => Uri.parse(apiBaseUrl);
 
-  /// Checks whether initial setup has been completed on the butler.
+  /// Checks whether initial setup has been completed on the quark.
   static Future<AuthStatus> checkStatus() async {
     final uri = _baseUri.resolve('/api/v0/auth/status');
     final client = buildLocalTrustHttpClient();
