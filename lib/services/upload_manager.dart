@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:quark/services/file_browser_actions.dart';
+import 'package:quark/utils/task_pool.dart';
 import 'package:quark/utils/upload_tree_utils.dart';
 import 'package:quark/utils/upload_unload_guard.dart';
 
@@ -70,9 +70,13 @@ class UploadManager extends ChangeNotifier {
        _concurrency = concurrency;
 
   UploadSender? _sender;
+
+  late final TaskPool<_QueuedUpload> _pool = TaskPool<_QueuedUpload>(
+    concurrency: _concurrency,
+    worker: _upload,
+  );
   final int _concurrency;
 
-  final Queue<_QueuedUpload> _queue = Queue<_QueuedUpload>();
   final StreamController<UploadBatchResult> _results =
       StreamController<UploadBatchResult>.broadcast();
 
@@ -115,7 +119,7 @@ class UploadManager extends ChangeNotifier {
     for (final group in groupByRelativeDir(uploads).entries) {
       final targetPath = uploadTargetPath(uploadPath, group.key);
       for (final upload in group.value) {
-        _queue.add(_QueuedUpload(upload, targetPath, serial));
+        _pool.add(_QueuedUpload(upload, targetPath, serial));
       }
     }
 
@@ -133,17 +137,10 @@ class UploadManager extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // A pool of workers sharing one queue, rather than fixed batches of
-      // [_concurrency]: a batch runs only as fast as its slowest file, so one
-      // large file would hold three idle workers behind it. Workers pull the
-      // next file the moment they are free.
-      //
-      // The outer loop picks up anything enqueued while the pool was draining.
-      // Nothing can slip past it: the check and the finally below are separated
-      // by no await, so no enqueue can land in between.
-      while (_queue.isNotEmpty) {
-        await Future.wait([for (var i = 0; i < _concurrency; i++) _worker()]);
-      }
+      // TaskPool handles the fan-out and picks up anything enqueued mid-run.
+      // Failures are counted in _upload rather than thrown, so this does not
+      // need to guard against one file taking the batch down.
+      await _pool.drain();
     } finally {
       final result = UploadBatchResult(
         total: _total,
@@ -163,35 +160,30 @@ class UploadManager extends ChangeNotifier {
     }
   }
 
-  /// Takes files off the queue until it is empty.
-  ///
-  /// Dart runs this isolate single-threaded, so removeFirst between awaits
-  /// cannot hand the same file to two workers.
-  Future<void> _worker() async {
-    while (_queue.isNotEmpty) {
-      final queued = _queue.removeFirst();
-      try {
-        // Built here, as it is sent: a folder upload cannot hold every file's
-        // bytes at once, and now at most [_concurrency] of them are live.
-        final file = await queued.upload.build();
-        if (file == null) {
-          _failed++;
-        } else {
-          await _send(
-            currentPath: queued.targetPath,
-            selectedFiles: [file],
-            serial: queued.serial,
-          );
-        }
-      } catch (e) {
+  /// Sends one file. A failure is counted, never rethrown — one unreadable
+  /// file must not take the rest of the folder with it.
+  Future<void> _upload(_QueuedUpload queued) async {
+    try {
+      // Built here, as it is sent: a folder upload cannot hold every file's
+      // bytes at once, and only [_concurrency] of them are ever live.
+      final file = await queued.upload.build();
+      if (file == null) {
         _failed++;
-        debugPrint(
-          '[upload_manager.dart] Failed to upload ${queued.upload.name}: $e',
+      } else {
+        await _send(
+          currentPath: queued.targetPath,
+          selectedFiles: [file],
+          serial: queued.serial,
         );
       }
-      _completed++;
-      notifyListeners();
+    } catch (e) {
+      _failed++;
+      debugPrint(
+        '[upload_manager.dart] Failed to upload ${queued.upload.name}: $e',
+      );
     }
+    _completed++;
+    notifyListeners();
   }
 
   Future<void> _send({
