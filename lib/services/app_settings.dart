@@ -8,6 +8,29 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quark/controllers/file_browser_cache.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Matches an explicit URI scheme prefix (`https://`, `http://`, `ws://`, ...).
+///
+/// Requires the `://` so a schemeless `host:port` is not mistaken for a scheme
+/// — `Uri.parse('quark.local:8080')` reads `quark.local` as the scheme, which
+/// is exactly the misparse this normalization exists to prevent.
+final _schemePrefix = RegExp(r'^[a-zA-Z][a-zA-Z0-9+.\-]*://');
+
+/// Ensures a host address carries an explicit scheme, defaulting to `https://`.
+///
+/// A quark serves TLS, so a bare hostname must resolve to `https://` — without
+/// a scheme `Uri.parse` yields a path-only URI with no authority and the
+/// request silently degrades to plain HTTP against port 80.
+///
+/// An address that already names a scheme is returned untouched: an explicit
+/// `http://` the user typed stays `http://`. Empty and origin-relative
+/// addresses (the web build stores `/`) are left alone — they have no host.
+String normalizeHostAddress(String address) {
+  final trimmed = address.trim();
+  if (trimmed.isEmpty || trimmed.startsWith('/')) return trimmed;
+  if (_schemePrefix.hasMatch(trimmed)) return trimmed;
+  return 'https://$trimmed';
+}
+
 class HostEntry {
   final String name;
   final String hostAddress;
@@ -53,8 +76,14 @@ class AppSettings {
     final hostsJson = _prefs!.getString('hosts') ?? '[]';
     try {
       final decoded = jsonDecode(hostsJson) as List;
+      // Normalize on load, not just on add/update: an entry persisted by an
+      // older build (or any path that skipped normalization) would otherwise
+      // stay schemeless forever and keep resolving to plain HTTP.
       _hosts = decoded
-          .map((e) => HostEntry.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) =>
+                _normalizeHost(HostEntry.fromJson(e as Map<String, dynamic>)),
+          )
           .toList();
     } catch (_) {
       debugPrint('[app_settings.dart] Error in catch block');
@@ -151,15 +180,12 @@ class AppSettings {
     }
   }
 
-  /// Ensures the host address has a scheme — accepts both http:// and https://.
-  /// Bare hostnames default to https://.
+  /// Ensures the host address has a scheme, defaulting bare hostnames to
+  /// `https://`. See [normalizeHostAddress].
   HostEntry _normalizeHost(HostEntry h) {
-    final addr = h.hostAddress.trim();
-    if (addr.startsWith('https://') || addr.startsWith('http://')) {
-      return h;
-    }
-    // No scheme — prepend https://
-    return HostEntry(name: h.name, hostAddress: 'https://$addr');
+    final normalized = normalizeHostAddress(h.hostAddress);
+    if (normalized == h.hostAddress) return h;
+    return HostEntry(name: h.name, hostAddress: normalized);
   }
 
   Future<void> removeHost(int idx) async {

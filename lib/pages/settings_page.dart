@@ -480,11 +480,11 @@ class _SettingsPageState extends State<SettingsPage> {
             const SizedBox(height: 8),
             QuarkWidget.textField(
               controller: hostController,
-              hintText: 'http://quark.home.local',
+              hintText: 'https://quark.home.local',
             ),
             const SizedBox(height: 6),
             const Text(
-              'Usually http://quark.home.local or the IP address shown on your device.',
+              'Usually https://quark.home.local or the IP address shown on your device.',
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
