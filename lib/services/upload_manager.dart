@@ -27,6 +27,14 @@ class UploadBatchResult {
   bool get hadFailures => failed > 0;
 }
 
+/// How many uploads are in flight at once.
+///
+/// A browser allows about six connections per host on HTTP/1.1, and the file
+/// listing and device calls need some of those too — saturating the pool is
+/// what made uploads look stalled in the first place. Four keeps the pipe busy
+/// while leaving the rest of the app able to talk to the server.
+const int kDefaultUploadConcurrency = 4;
+
 /// Sends one file. Swapped out in tests; in the app it is the real upload.
 typedef UploadSender =
     Future<void> Function({
@@ -49,15 +57,20 @@ typedef UploadSender =
 /// reload still ends an upload, because the bytes are read and sent by this
 /// page — see [setUploadUnloadGuard], which is the one case that warns.
 class UploadManager extends ChangeNotifier {
-  UploadManager._();
+  UploadManager._() : _concurrency = kDefaultUploadConcurrency;
 
   static final UploadManager instance = UploadManager._();
 
   /// For tests: an isolated manager, so one test's queue is not another's.
   @visibleForTesting
-  UploadManager.forTesting({UploadSender? sender}) : _sender = sender;
+  UploadManager.forTesting({
+    UploadSender? sender,
+    int concurrency = kDefaultUploadConcurrency,
+  }) : _sender = sender,
+       _concurrency = concurrency;
 
   UploadSender? _sender;
+  final int _concurrency;
 
   final Queue<_QueuedUpload> _queue = Queue<_QueuedUpload>();
   final StreamController<UploadBatchResult> _results =
@@ -120,29 +133,16 @@ class UploadManager extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // A pool of workers sharing one queue, rather than fixed batches of
+      // [_concurrency]: a batch runs only as fast as its slowest file, so one
+      // large file would hold three idle workers behind it. Workers pull the
+      // next file the moment they are free.
+      //
+      // The outer loop picks up anything enqueued while the pool was draining.
+      // Nothing can slip past it: the check and the finally below are separated
+      // by no await, so no enqueue can land in between.
       while (_queue.isNotEmpty) {
-        final queued = _queue.removeFirst();
-        try {
-          // Built here, one at a time: a folder upload cannot hold every
-          // file's bytes at once.
-          final file = await queued.upload.build();
-          if (file == null) {
-            _failed++;
-          } else {
-            await _send(
-              currentPath: queued.targetPath,
-              selectedFiles: [file],
-              serial: queued.serial,
-            );
-          }
-        } catch (e) {
-          _failed++;
-          debugPrint(
-            '[upload_manager.dart] Failed to upload ${queued.upload.name}: $e',
-          );
-        }
-        _completed++;
-        notifyListeners();
+        await Future.wait([for (var i = 0; i < _concurrency; i++) _worker()]);
       }
     } finally {
       final result = UploadBatchResult(
@@ -160,6 +160,37 @@ class UploadManager extends ChangeNotifier {
       if (!_results.isClosed) {
         _results.add(result);
       }
+    }
+  }
+
+  /// Takes files off the queue until it is empty.
+  ///
+  /// Dart runs this isolate single-threaded, so removeFirst between awaits
+  /// cannot hand the same file to two workers.
+  Future<void> _worker() async {
+    while (_queue.isNotEmpty) {
+      final queued = _queue.removeFirst();
+      try {
+        // Built here, as it is sent: a folder upload cannot hold every file's
+        // bytes at once, and now at most [_concurrency] of them are live.
+        final file = await queued.upload.build();
+        if (file == null) {
+          _failed++;
+        } else {
+          await _send(
+            currentPath: queued.targetPath,
+            selectedFiles: [file],
+            serial: queued.serial,
+          );
+        }
+      } catch (e) {
+        _failed++;
+        debugPrint(
+          '[upload_manager.dart] Failed to upload ${queued.upload.name}: $e',
+        );
+      }
+      _completed++;
+      notifyListeners();
     }
   }
 

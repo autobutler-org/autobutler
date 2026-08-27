@@ -187,6 +187,141 @@ void main() {
     // Reported once it is over, never as a prompt beforehand.
     expect(result.note, 'Stopped at the first 2000 files');
   });
+
+  group('concurrency', () {
+    test('sends several at once instead of one at a time', () async {
+      var inFlight = 0;
+      var peak = 0;
+      final gate = Completer<void>();
+      final manager = UploadManager.forTesting(
+        concurrency: 3,
+        sender: ({required currentPath, required selectedFiles, serial}) async {
+          inFlight++;
+          peak = peak > inFlight ? peak : inFlight;
+          await gate.future;
+          inFlight--;
+        },
+      );
+
+      final done = manager.results.first;
+      manager.enqueue(
+        uploads: List.generate(9, (i) => upload('f$i.txt')),
+        uploadPath: '',
+      );
+
+      await pumpEventQueue();
+      expect(peak, 3, reason: 'the whole pool is working, not one worker');
+
+      gate.complete();
+      final result = await done;
+      expect(result.total, 9);
+      expect(result.failed, 0);
+    });
+
+    test('never exceeds the pool size', () async {
+      var inFlight = 0;
+      var peak = 0;
+      final gates = <Completer<void>>[];
+      final manager = UploadManager.forTesting(
+        concurrency: 2,
+        sender: ({required currentPath, required selectedFiles, serial}) async {
+          inFlight++;
+          peak = peak > inFlight ? peak : inFlight;
+          final gate = Completer<void>();
+          gates.add(gate);
+          await gate.future;
+          inFlight--;
+        },
+      );
+
+      final done = manager.results.first;
+      manager.enqueue(
+        uploads: List.generate(8, (i) => upload('f$i.txt')),
+        uploadPath: '',
+      );
+
+      // Release them a few at a time; the cap must hold throughout, not just
+      // at the start.
+      while (peak < 2 || gates.any((g) => !g.isCompleted)) {
+        for (final gate in List.of(gates)) {
+          if (!gate.isCompleted) gate.complete();
+        }
+        await pumpEventQueue();
+      }
+
+      final result = await done;
+      expect(result.total, 8);
+      expect(peak, lessThanOrEqualTo(2), reason: 'bounded, not unbounded');
+      expect(gates, hasLength(8), reason: 'every file was still sent');
+    });
+
+    test('one slow file does not hold the pool behind it', () async {
+      // The reason for a shared queue rather than fixed batches: a batch runs
+      // at the speed of its slowest member.
+      final slow = Completer<void>();
+      final finished = <String>[];
+      final manager = UploadManager.forTesting(
+        concurrency: 2,
+        sender: ({required currentPath, required selectedFiles, serial}) async {
+          final name = selectedFiles.single.filename!;
+          if (name == 'slow.txt') {
+            await slow.future;
+          }
+          finished.add(name);
+        },
+      );
+
+      final done = manager.results.first;
+      manager.enqueue(
+        uploads: [
+          upload('slow.txt'),
+          upload('a.txt'),
+          upload('b.txt'),
+          upload('c.txt'),
+        ],
+        uploadPath: '',
+      );
+
+      await pumpEventQueue();
+      expect(
+        finished,
+        containsAll(['a.txt', 'b.txt', 'c.txt']),
+        reason: 'the other worker kept going past the stuck file',
+      );
+
+      slow.complete();
+      final result = await done;
+      expect(result.total, 4);
+      expect(result.failed, 0);
+    });
+
+    test('a failure in one worker does not stop the others', () async {
+      final manager = UploadManager.forTesting(
+        concurrency: 3,
+        sender: ({required currentPath, required selectedFiles, serial}) async {
+          if (selectedFiles.single.filename == 'bad.txt') {
+            throw Exception('network down');
+          }
+        },
+      );
+
+      final done = manager.results.first;
+      manager.enqueue(
+        uploads: [
+          upload('a.txt'),
+          upload('bad.txt'),
+          upload('b.txt'),
+          upload('c.txt'),
+        ],
+        uploadPath: '',
+      );
+      final result = await done;
+
+      expect(result.total, 4);
+      expect(result.failed, 1);
+      expect(result.succeeded, 3);
+    });
+  });
 }
 
 final _bytes = Uint8List.fromList([1, 2, 3]);
