@@ -19,6 +19,7 @@ import 'package:quark/pages/spreadsheet_editor_page.dart';
 import 'package:quark/pages/video_viewer_page.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/upload_manager.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/services/events_service.dart';
 import 'package:quark/services/storage_service.dart';
@@ -28,6 +29,7 @@ import 'package:quark/utils/file_browser_dialog_utils.dart';
 import 'package:quark/utils/file_browser_drag_config.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/safe_set_state_mixin.dart';
+import 'package:quark/utils/upload_tree_utils.dart';
 import 'package:quark/widgets/core/empty_state_widget.dart';
 import 'package:quark/widgets/device_upload_picker.dart';
 import 'package:quark/widgets/file_browser/file_browser_header.dart';
@@ -95,6 +97,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   // WebSocket event subscription for real-time file updates
   StreamSubscription<FileEvent>? _eventSub;
+  StreamSubscription<UploadBatchResult>? _uploadResultSub;
 
   // Search state
   bool _isSearchMode = false;
@@ -142,10 +145,90 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       });
     }
     _eventSub = EventsService.instance.events.listen((evt) {
-      // Any file mutation on the server triggers a refresh
+      // Any file mutation on the server triggers a refresh — except our own
+      // uploads. Every uploaded file publishes one of these, so a folder
+      // upload would fire a refresh per file, each one a devices call and a
+      // listing call, all competing with the uploads for the few connections
+      // a browser allows per host. The batch refreshes once when it drains.
+      if (UploadManager.instance.isUploading) {
+        return;
+      }
       if ({'upload', 'delete', 'move', 'new_folder'}.contains(evt.kind)) {
         manualRefresh();
       }
+    });
+
+    UploadManager.instance.addListener(_onUploadProgress);
+    _uploadResultSub = UploadManager.instance.results.listen((result) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _recentFilesSectionKey++);
+      _refreshFileState();
+      _showMessage(
+        _uploadReport(result),
+        duration: result.hadFailures || result.endedEarly
+            ? const Duration(seconds: 10)
+            : null,
+      );
+    });
+    // Assigned directly rather than through _onUploadProgress: this runs
+    // during initState, where there is no build to schedule yet, and a page
+    // opened mid-upload would otherwise call setState before its first frame.
+    _isUploading = UploadManager.instance.isUploading;
+    _uploadTotal = UploadManager.instance.total;
+    _uploadCompleted = UploadManager.instance.completed;
+  }
+
+  /// What to tell the user once a batch is over.
+  ///
+  /// A failure gets named, not just counted: "12 failed" leaves them guessing,
+  /// and the reason is the difference between retrying and giving up.
+  String _uploadReport(UploadBatchResult result) {
+    final note = result.note;
+    final suffix = note == null ? '' : ' — $note';
+
+    if (result.cancelled) {
+      final skipped = result.skipped > 0 ? ', ${result.skipped} skipped' : '';
+      return 'Upload cancelled — ${result.succeeded} of ${result.total} '
+          'uploaded$skipped';
+    }
+
+    if (result.stoppedEarly) {
+      return 'Upload stopped after $kMaxConsecutiveUploadFailures failures in '
+              'a row — ${result.succeeded} of ${result.total} uploaded, '
+              '${result.skipped} not attempted. ${result.firstError ?? ''}'
+          .trim();
+    }
+
+    if (result.hadFailures) {
+      final reason = result.firstError;
+      return 'Uploaded ${result.succeeded} of ${result.total} '
+          '(${result.failed} failed)$suffix'
+          '${reason == null ? '' : '. $reason'}';
+    }
+
+    return 'Uploaded ${result.total} files$suffix';
+  }
+
+  /// Mirrors the manager's progress into this page's state.
+  ///
+  /// The page renders an upload it does not own, so it may well be showing one
+  /// that a different folder started — which is the point.
+  void _onUploadProgress() {
+    if (!mounted) {
+      return;
+    }
+    final manager = UploadManager.instance;
+    if (manager.isUploading == _isUploading &&
+        manager.total == _uploadTotal &&
+        manager.completed == _uploadCompleted) {
+      return;
+    }
+    setState(() {
+      _isUploading = manager.isUploading;
+      _uploadTotal = manager.total;
+      _uploadCompleted = manager.completed;
     });
   }
 
@@ -181,6 +264,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   @override
   Future<void> refresh() async {
+    // Deliberately not gated on UploadManager.isUploading. Gating it here made
+    // the reload button dead for the rest of the session if an upload ever
+    // failed to finish, and refreshing was never the expensive half: what
+    // stalled a folder upload was a refresh per uploaded file, triggered by
+    // our own server events, and that is guarded where it starts — in the
+    // event listener in initState. A refresh the user asked for, or one every
+    // fifteen seconds, is two requests, not two per file.
     _noHostSelected = AppSettings.instance.activeHost == null;
     if (_noHostSelected) {
       setState(() {
@@ -237,6 +327,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   @override
   void dispose() {
     _eventSub?.cancel();
+    _uploadResultSub?.cancel();
+    // Detaching only stops us watching — the upload itself keeps running.
+    UploadManager.instance.removeListener(_onUploadProgress);
     _folderDragExitTimer?.cancel();
     _fileBrowserScrollController.dispose();
     super.dispose();
@@ -407,8 +500,48 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   Future<void> _uploadSelectedFiles(
     List<http.MultipartFile> selectedFiles,
     String uploadPath,
-  ) async {
-    if (_isUploading || selectedFiles.isEmpty) {
+  ) {
+    return _uploadPendingFiles(
+      selectedFiles
+          .map(
+            (file) => PendingUpload(
+              relativeDir: '',
+              name: file.filename ?? 'file',
+              build: () async => file,
+            ),
+          )
+          .toList(),
+      uploadPath,
+    );
+  }
+
+  /// Uploads [pending] under [uploadPath], one request per directory.
+  ///
+  /// Structure travels through the nested upload route's rootDir, never
+  /// through the multipart filename — the backend drops directories there on
+  /// purpose as traversal protection, so a nested filename would silently
+  /// flatten (the same collision as #1603).
+  /// What the user should be told about a cap, once the upload is over.
+  ///
+  /// Not a prompt: they asked to upload a folder, so upload the folder. A cap
+  /// is worth reporting, but not worth standing in the way first.
+  String? _capNote(DropFlattenResult flattened) {
+    if (flattened.truncated) {
+      return 'Stopped at the first $kMaxUploadFiles files';
+    }
+    if (flattened.skippedTooDeep > 0) {
+      return 'Skipped ${flattened.skippedTooDeep} folders nested deeper '
+          'than $kMaxUploadDepth levels';
+    }
+    return null;
+  }
+
+  Future<void> _uploadPendingFiles(
+    List<PendingUpload> pending,
+    String uploadPath, {
+    String? note,
+  }) async {
+    if (pending.isEmpty) {
       return;
     }
 
@@ -439,54 +572,44 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       // Fall through with null serial (default device)
     }
 
-    setState(() {
-      _isUploading = true;
-      _uploadTotal = selectedFiles.length;
-      _uploadCompleted = 0;
-    });
+    // Handed off rather than run here: an upload outlives the folder the user
+    // started it from, so it cannot be owned by this State. Progress arrives
+    // back through the listener wired up in initState.
+    UploadManager.instance.enqueue(
+      uploads: pending,
+      uploadPath: uploadPath,
+      serial: targetSerial,
+      note: note,
+    );
+  }
 
-    int failed = 0;
+  Future<void> _handleUploadFolderPressed() async {
+    if (_isUploading) {
+      return;
+    }
+
     try {
-      for (final file in selectedFiles) {
-        try {
-          await _controller.uploadFiles(
-            currentPath: uploadPath,
-            selectedFiles: [file],
-            serial: targetSerial,
-          );
-        } catch (_) {
-          failed++;
-          debugPrint(
-            '[file_browser_page.dart] Failed to upload ${file.filename}',
-          );
-        }
-        if (mounted) setState(() => _uploadCompleted++);
+      final uploads = await _controller.pickUploadFolder();
+      if (uploads.isEmpty) {
+        return;
       }
 
-      if (!mounted) return;
-
-      _refreshFileState();
-
-      final succeeded = selectedFiles.length - failed;
-      if (failed == 0) {
-        final label = selectedFiles.length == 1
-            ? selectedFiles.first.filename ?? 'file'
-            : '${selectedFiles.length} files';
-        _showMessage('Uploaded $label');
-      } else {
-        _showMessage(
-          'Uploaded $succeeded of ${selectedFiles.length} ($failed failed)',
-        );
+      await _uploadPendingFiles(
+        uploads,
+        _currentPath,
+        note: uploads.length >= kMaxUploadFiles
+            ? 'Stopped at the first $kMaxUploadFiles files'
+            : null,
+      );
+    } on MissingPluginException {
+      if (!mounted) {
+        return;
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isUploading = false;
-          _uploadTotal = 0;
-          _uploadCompleted = 0;
-          _recentFilesSectionKey++;
-        });
-      }
+
+      _showMessage('File picker plugin not available. Fully restart the app.');
+    } catch (e) {
+      debugPrint('[file_browser_page.dart] Folder upload failed: $e');
+      _showMessage('Unable to read the selected folder');
     }
   }
 
@@ -523,31 +646,34 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
 
     try {
-      final selectedFiles = <http.MultipartFile>[];
-      for (final droppedItem in droppedItems) {
-        if (droppedItem is! DropItemFile) {
-          continue;
-        }
-
-        final bytes = await _readDroppedFileBytes(droppedItem);
-        if (bytes == null || bytes.isEmpty) {
-          continue;
-        }
-
-        selectedFiles.add(
-          _controller.multipartFileFromBytes(
+      // A dropped folder arrives as DropItemDirectory, a sibling of
+      // DropItemFile rather than a subtype, with its contents in .children.
+      // Walking into it is the difference between uploading a folder and
+      // reporting "No files to upload" while holding the files (#1614).
+      final flattened = flattenDroppedItems(
+        droppedItems,
+        buildUpload: (file, name) async {
+          final bytes = await _readDroppedFileBytes(file);
+          if (bytes == null || bytes.isEmpty) {
+            return null;
+          }
+          return _controller.multipartFileFromBytes(
             bytes: bytes,
-            filename: droppedItem.name,
-          ),
-        );
-      }
+            filename: name,
+          );
+        },
+      );
 
-      if (selectedFiles.isEmpty) {
+      if (flattened.uploads.isEmpty) {
         _showMessage('No files to upload');
         return;
       }
 
-      await _uploadSelectedFiles(selectedFiles, uploadPath);
+      await _uploadPendingFiles(
+        flattened.uploads,
+        uploadPath,
+        note: _capNote(flattened),
+      );
     } catch (_) {
       debugPrint('[file_browser_page.dart] Error in catch block');
       _showMessage('Unable to read dropped files');
@@ -1236,10 +1362,17 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     context.go(AppRoutes.filesPath(normalized));
   }
 
-  void _showMessage(String message) {
+  void _showMessage(String message, {Duration? duration}) {
     final messenger = ScaffoldMessenger.of(context);
     messenger.clearSnackBars();
-    messenger.showSnackBar(SnackBar(content: Text(message)));
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        // Something went wrong is worth reading; the default four seconds is
+        // not enough for a sentence naming the reason.
+        duration: duration ?? const Duration(seconds: 4),
+      ),
+    );
   }
 
   void _goHome() {
@@ -1769,6 +1902,18 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                         _handleUploadPressed();
                       },
               ),
+              if (_controller.isFolderUploadSupported)
+                ListTile(
+                  leading: const Icon(Icons.drive_folder_upload_outlined),
+                  title: const Text('Upload folder'),
+                  enabled: !_isUploading,
+                  onTap: _isUploading
+                      ? null
+                      : () {
+                          Navigator.of(ctx).pop();
+                          _handleUploadFolderPressed();
+                        },
+                ),
               ListTile(
                 leading: const Icon(QuarkIcons.create_new_folder_outlined),
                 title: const Text('New folder'),
@@ -1868,6 +2013,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                 onSearchClosed: _handleSearchClosed,
                 onRefresh: _refreshFileState,
                 onUploadPressed: _handleUploadPressed,
+                onUploadFolderPressed: _controller.isFolderUploadSupported
+                    ? _handleUploadFolderPressed
+                    : null,
+                onCancelUploadPressed: UploadManager.instance.cancel,
                 onCreateFolderPressed: _handleCreateFolderPressed,
                 onNewFilePressed: _handleNewFilePressed,
                 uploadTotal: _uploadTotal,

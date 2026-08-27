@@ -1,9 +1,11 @@
 package v0_files_test
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -106,5 +108,53 @@ func assertFileExists(t *testing.T, path string) {
 	t.Helper()
 	if _, err := os.Stat(path); err != nil {
 		t.Fatalf("expected a file at %s: %v", path, err)
+	}
+}
+
+// The client uploads several files at once now, and a folder upload sends a
+// whole directory's worth concurrently to the same nested rootDir. Each
+// request calls MkdirAll on that directory before writing, so they race on
+// creating it. os.MkdirAll tolerates the directory already existing, but that
+// is the kind of thing worth holding still rather than assuming.
+func TestConcurrentUploadsIntoTheSameNestedDir(t *testing.T) {
+	t.Parallel()
+
+	const workers = 8
+
+	for _, tc := range []struct {
+		name   string
+		engine func(t *testing.T) (*gin.Engine, string)
+	}{
+		{name: "storage service", engine: newTestEngine},
+		{name: "vfs", engine: newStorageVFSTestEngine},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			e, filesDir := tc.engine(t)
+
+			var wg sync.WaitGroup
+			codes := make([]int, workers)
+			for i := range workers {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					name := fmt.Sprintf("file%d.txt", i)
+					w := uploadFile(t, e, "/api/v0/files/upload/notes/2024", name, name)
+					codes[i] = w.Code
+				}()
+			}
+			wg.Wait()
+
+			for i, code := range codes {
+				if code != http.StatusOK {
+					t.Errorf("upload %d returned %d, want %d", i, code, http.StatusOK)
+				}
+			}
+
+			// Every file is present, in the one directory they all created.
+			for i := range workers {
+				assertFileExists(t, filepath.Join(filesDir, "notes", "2024", fmt.Sprintf("file%d.txt", i)))
+			}
+		})
 	}
 }

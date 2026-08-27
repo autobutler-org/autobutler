@@ -7,8 +7,10 @@ import 'package:quark/services/files_service.dart';
 import 'package:quark/services/file_browser_actions.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/utils/file_browser_dialog_utils.dart';
+import 'package:quark/utils/folder_picker.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/quark_widget.dart';
+import 'package:quark/utils/upload_tree_utils.dart';
 import 'package:quark/widgets/file_browser/file_browser_view.dart';
 
 class FileMenuActionOutcome {
@@ -38,8 +40,8 @@ class FileBrowserController {
   /// multi-select — enabled via [allowMultiple: true]. If the platform
   /// returns only a single file, the list will have one entry.
   ///
-  /// Folder selection is not supported via the browser/platform file picker
-  /// (browser security restriction). Folder upload is tracked separately.
+  /// Selects files only. For folders see [pickUploadFolder], which needs a
+  /// different picker on every platform and so cannot share this entry point.
   ///
   /// Returns an empty list if the user cancelled.
   Future<List<http.MultipartFile>> pickUploadFiles() async {
@@ -57,6 +59,20 @@ class FileBrowserController {
       if (f != null) files.add(f);
     }
     return files;
+  }
+
+  /// Whether this platform can offer folder selection at all.
+  ///
+  /// Web and desktop can; mobile has no meaningful folder picker, so callers
+  /// hide the affordance rather than offering one that cannot work.
+  bool get isFolderUploadSupported => isFolderPickerSupported;
+
+  /// Picks a folder and returns its files, each carrying the directory it sat
+  /// in relative to the chosen folder.
+  ///
+  /// Returns an empty list if the user cancelled or the folder holds no files.
+  Future<List<PendingUpload>> pickUploadFolder() {
+    return pickFolderUploads();
   }
 
   /// @deprecated Use [pickUploadFiles] instead.
