@@ -32,6 +32,7 @@ class FileTopBar extends StatefulWidget {
     required this.onRefresh,
     required this.onUploadPressed,
     this.onUploadFolderPressed,
+    this.onCancelUploadPressed,
     required this.onCreateFolderPressed,
     required this.onNewFilePressed,
     required this.onOpenDrawer,
@@ -69,6 +70,13 @@ class FileTopBar extends StatefulWidget {
   /// pick, not a different feature. Null on mobile, which has no folder
   /// picker — there Upload goes straight to the file picker, as it always has.
   final VoidCallback? onUploadFolderPressed;
+
+  /// Abandons an upload in progress.
+  ///
+  /// The chip stays live while uploading so this is reachable: a batch that is
+  /// failing its way through a thousand files should not leave the user
+  /// watching a disabled button.
+  final VoidCallback? onCancelUploadPressed;
   final VoidCallback onCreateFolderPressed;
   final VoidCallback onNewFilePressed;
   final VoidCallback onOpenDrawer;
@@ -824,7 +832,11 @@ class _FileTopBarState extends State<FileTopBar> {
     return '${text.substring(0, head)}\u2026${text.substring(text.length - tail)}';
   }
 
-  Widget _uploadChip(BuildContext context, {VoidCallback? onTap}) {
+  Widget _uploadChip(
+    BuildContext context, {
+    VoidCallback? onTap,
+    bool enabledWhileUploading = false,
+  }) {
     return _chip(
       context: context,
       icon: QuarkIcons.upload_rounded,
@@ -833,7 +845,7 @@ class _FileTopBarState extends State<FileTopBar> {
                 ? '${widget.uploadCompleted}/${widget.uploadTotal}'
                 : 'Uploading...')
           : 'Upload',
-      onTap: widget.isUploading ? null : onTap,
+      onTap: widget.isUploading && !enabledWhileUploading ? null : onTap,
     );
   }
 
@@ -845,13 +857,34 @@ class _FileTopBarState extends State<FileTopBar> {
   /// file_picker implements a combined dialog on macOS alone. That platform
   /// constraint belongs inside the Upload action, not spread across the bar.
   Widget _buildUploadChip(BuildContext context) {
+    final onCancel = widget.onCancelUploadPressed;
+    if (widget.isUploading) {
+      // Still one chip, still showing progress — but it opens a way out. An
+      // upload that is failing its way through a large folder must not leave
+      // the user watching a disabled button.
+      if (onCancel == null) {
+        return _uploadChip(context);
+      }
+      return _uploadMenu(
+        context,
+        items: [
+          MenuItemButton(
+            onPressed: onCancel,
+            leadingIcon: const Icon(QuarkIcons.close_rounded),
+            child: const Text('Cancel upload'),
+          ),
+        ],
+      );
+    }
+
     final onUploadFolder = widget.onUploadFolderPressed;
-    if (onUploadFolder == null || widget.isUploading) {
+    if (onUploadFolder == null) {
       return _uploadChip(context, onTap: widget.onUploadPressed);
     }
 
-    return MenuAnchor(
-      menuChildren: [
+    return _uploadMenu(
+      context,
+      items: [
         MenuItemButton(
           onPressed: widget.onUploadPressed,
           leadingIcon: const Icon(QuarkIcons.upload_rounded),
@@ -863,11 +896,18 @@ class _FileTopBarState extends State<FileTopBar> {
           child: const Text('Folder'),
         ),
       ],
+    );
+  }
+
+  Widget _uploadMenu(BuildContext context, {required List<Widget> items}) {
+    return MenuAnchor(
+      menuChildren: items,
       builder: (context, controller, _) {
         return _uploadChip(
           context,
           onTap: () =>
               controller.isOpen ? controller.close() : controller.open(),
+          enabledWhileUploading: true,
         );
       },
     );

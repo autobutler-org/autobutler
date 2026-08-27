@@ -49,6 +49,17 @@ class TaskPool<T> {
 
   void addAll(Iterable<T> items) => _queue.addAll(items);
 
+  /// Drops everything not yet started.
+  ///
+  /// Items already in flight are not interrupted — there is nothing to
+  /// interrupt them with — so a [drain] in progress ends once they finish.
+  /// Returns how many were dropped.
+  int clear() {
+    final dropped = _queue.length;
+    _queue.clear();
+    return dropped;
+  }
+
   /// Works through the queue, [concurrency] at a time, until nothing is left.
   ///
   /// Rethrows the first error a worker threw, after everything else has run.

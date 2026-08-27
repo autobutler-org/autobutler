@@ -150,11 +150,15 @@ void main() {
   test(
     'a file that fails does not take the rest of the batch with it',
     () async {
-      var call = 0;
+      final sent = <String>[];
       final manager = UploadManager.forTesting(
+        // One attempt each: retries are covered separately, and this is about
+        // what happens to the other files when one is beyond saving.
+        maxAttempts: 1,
         sender: ({required currentPath, required selectedFiles, serial}) async {
-          call++;
-          if (call == 1) throw Exception('network down');
+          final name = selectedFiles.single.filename!;
+          if (name == 'a.txt') throw Exception('network down');
+          sent.add(name);
         },
       );
 
@@ -165,7 +169,7 @@ void main() {
       );
       final result = await done;
 
-      expect(call, 3);
+      expect(sent, unorderedEquals(['b.txt', 'c.txt']));
       expect(result.failed, 1);
       expect(result.succeeded, 2);
     },
@@ -320,6 +324,144 @@ void main() {
       expect(result.total, 4);
       expect(result.failed, 1);
       expect(result.succeeded, 3);
+    });
+  });
+
+  group('failure path', () {
+    test('retries a file before giving up on it', () async {
+      var attempts = 0;
+      final manager = UploadManager.forTesting(
+        concurrency: 1,
+        sender: ({required currentPath, required selectedFiles, serial}) async {
+          attempts++;
+          if (attempts < 3) throw Exception('server busy');
+        },
+      );
+
+      final done = manager.results.first;
+      manager.enqueue(uploads: [upload('a.txt')], uploadPath: '');
+      final result = await done;
+
+      expect(attempts, 3, reason: 'a struggling server usually lands on retry');
+      expect(result.failed, 0);
+    });
+
+    test(
+      'a file that never responds fails instead of holding a worker',
+      () async {
+        // The Raspberry Pi case: the server accepts the request and then stops
+        // answering. Nothing can abort the request, so the timeout is what frees
+        // the worker — without it the batch never ends and the UI never unlocks.
+        final manager = UploadManager.forTesting(
+          concurrency: 1,
+          attemptTimeout: const Duration(milliseconds: 50),
+          maxAttempts: 1,
+          sender: ({required currentPath, required selectedFiles, serial}) =>
+              Completer<void>().future,
+        );
+
+        final done = manager.results.first;
+        manager.enqueue(uploads: [upload('a.txt')], uploadPath: '');
+        final result = await done;
+
+        expect(result.failed, 1);
+        expect(result.firstError, contains('no response'));
+        expect(manager.isUploading, isFalse, reason: 'the UI unlocks');
+      },
+    );
+
+    test('gives up on the batch after enough failures in a row', () async {
+      var sent = 0;
+      final manager = UploadManager.forTesting(
+        concurrency: 1,
+        maxAttempts: 1,
+        maxConsecutiveFailures: 3,
+        sender: ({required currentPath, required selectedFiles, serial}) async {
+          sent++;
+          throw Exception('disk full');
+        },
+      );
+
+      final done = manager.results.first;
+      manager.enqueue(
+        uploads: List.generate(50, (i) => upload('f$i.txt')),
+        uploadPath: '',
+      );
+      final result = await done;
+
+      expect(sent, 3, reason: 'it stopped rather than grinding through 50');
+      expect(result.stoppedEarly, isTrue);
+      expect(result.total, 50);
+      expect(result.completed, 3);
+      expect(result.skipped, 47);
+      expect(result.firstError, contains('disk full'));
+      expect(manager.isUploading, isFalse);
+    });
+
+    test('a success resets the run of failures', () async {
+      var sent = 0;
+      final manager = UploadManager.forTesting(
+        concurrency: 1,
+        maxAttempts: 1,
+        maxConsecutiveFailures: 3,
+        sender: ({required currentPath, required selectedFiles, serial}) async {
+          sent++;
+          // Fail, fail, succeed, repeating: intermittent, not terminal.
+          if (sent % 3 != 0) throw Exception('flaky');
+        },
+      );
+
+      final done = manager.results.first;
+      manager.enqueue(
+        uploads: List.generate(9, (i) => upload('f$i.txt')),
+        uploadPath: '',
+      );
+      final result = await done;
+
+      expect(result.stoppedEarly, isFalse, reason: 'never 3 bad in a row');
+      expect(result.completed, 9);
+      expect(result.failed, 6);
+    });
+
+    test('cancel stops the queue and unlocks', () async {
+      final gates = <Completer<void>>[];
+      final manager = UploadManager.forTesting(
+        concurrency: 1,
+        sender: ({required currentPath, required selectedFiles, serial}) {
+          final gate = Completer<void>();
+          gates.add(gate);
+          return gate.future;
+        },
+      );
+
+      final done = manager.results.first;
+      manager.enqueue(
+        uploads: List.generate(20, (i) => upload('f$i.txt')),
+        uploadPath: '',
+      );
+      await pumpEventQueue();
+
+      manager.cancel();
+      // The one in flight is not interrupted; it finishes and the run ends.
+      for (final gate in List.of(gates)) {
+        if (!gate.isCompleted) gate.complete();
+      }
+      final result = await done;
+
+      expect(result.cancelled, isTrue);
+      expect(result.completed, 1);
+      expect(result.skipped, 19);
+      expect(manager.isUploading, isFalse, reason: 'the UI unlocks');
+    });
+
+    test('cancel on an idle manager does nothing', () {
+      final manager = UploadManager.forTesting(
+        sender:
+            ({required currentPath, required selectedFiles, serial}) async {},
+      );
+
+      expect(manager.cancel, returnsNormally);
+      expect(manager.isUploading, isFalse);
     });
   });
 }

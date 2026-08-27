@@ -165,16 +165,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       }
       setState(() => _recentFilesSectionKey++);
       _refreshFileState();
-      final note = result.note;
-      final suffix = note == null ? '' : ' — $note';
-      if (!result.hadFailures) {
-        _showMessage('Uploaded ${result.total} files$suffix');
-      } else {
-        _showMessage(
-          'Uploaded ${result.succeeded} of ${result.total} '
-          '(${result.failed} failed)$suffix',
-        );
-      }
+      _showMessage(
+        _uploadReport(result),
+        duration: result.hadFailures || result.endedEarly
+            ? const Duration(seconds: 10)
+            : null,
+      );
     });
     // Assigned directly rather than through _onUploadProgress: this runs
     // during initState, where there is no build to schedule yet, and a page
@@ -182,6 +178,37 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     _isUploading = UploadManager.instance.isUploading;
     _uploadTotal = UploadManager.instance.total;
     _uploadCompleted = UploadManager.instance.completed;
+  }
+
+  /// What to tell the user once a batch is over.
+  ///
+  /// A failure gets named, not just counted: "12 failed" leaves them guessing,
+  /// and the reason is the difference between retrying and giving up.
+  String _uploadReport(UploadBatchResult result) {
+    final note = result.note;
+    final suffix = note == null ? '' : ' — $note';
+
+    if (result.cancelled) {
+      final skipped = result.skipped > 0 ? ', ${result.skipped} skipped' : '';
+      return 'Upload cancelled — ${result.succeeded} of ${result.total} '
+          'uploaded$skipped';
+    }
+
+    if (result.stoppedEarly) {
+      return 'Upload stopped after $kMaxConsecutiveUploadFailures failures in '
+              'a row — ${result.succeeded} of ${result.total} uploaded, '
+              '${result.skipped} not attempted. ${result.firstError ?? ''}'
+          .trim();
+    }
+
+    if (result.hadFailures) {
+      final reason = result.firstError;
+      return 'Uploaded ${result.succeeded} of ${result.total} '
+          '(${result.failed} failed)$suffix'
+          '${reason == null ? '' : '. $reason'}';
+    }
+
+    return 'Uploaded ${result.total} files$suffix';
   }
 
   /// Mirrors the manager's progress into this page's state.
@@ -1335,10 +1362,17 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     context.go(AppRoutes.filesPath(normalized));
   }
 
-  void _showMessage(String message) {
+  void _showMessage(String message, {Duration? duration}) {
     final messenger = ScaffoldMessenger.of(context);
     messenger.clearSnackBars();
-    messenger.showSnackBar(SnackBar(content: Text(message)));
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        // Something went wrong is worth reading; the default four seconds is
+        // not enough for a sentence naming the reason.
+        duration: duration ?? const Duration(seconds: 4),
+      ),
+    );
   }
 
   void _goHome() {
@@ -1982,6 +2016,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                 onUploadFolderPressed: _controller.isFolderUploadSupported
                     ? _handleUploadFolderPressed
                     : null,
+                onCancelUploadPressed: UploadManager.instance.cancel,
                 onCreateFolderPressed: _handleCreateFolderPressed,
                 onNewFilePressed: _handleNewFilePressed,
                 uploadTotal: _uploadTotal,

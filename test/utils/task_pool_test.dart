@@ -182,6 +182,34 @@ void main() {
     expect(ran, 1);
   });
 
+  test('clear drops what has not started and ends the drain', () async {
+    final started = <int>[];
+    final gate = Completer<void>();
+    late final TaskPool<int> pool;
+    pool = TaskPool<int>(
+      concurrency: 2,
+      worker: (item) async {
+        started.add(item);
+        await gate.future;
+      },
+    );
+
+    pool.addAll(List.generate(10, (i) => i));
+    final draining = pool.drain();
+    await pumpEventQueue();
+
+    expect(started, hasLength(2), reason: 'two in flight, eight queued');
+    expect(pool.clear(), 8);
+
+    // The two in flight are not interrupted, but nothing new starts.
+    gate.complete();
+    await draining;
+
+    expect(started, hasLength(2));
+    expect(pool.pending, 0);
+    expect(pool.isDraining, isFalse);
+  });
+
   test('rejects a nonsensical concurrency', () {
     expect(
       () => TaskPool<int>(concurrency: 0, worker: (_) async {}),

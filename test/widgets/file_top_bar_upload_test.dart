@@ -12,7 +12,10 @@ void main() {
     WidgetTester tester, {
     required VoidCallback onUpload,
     VoidCallback? onUploadFolder,
+    VoidCallback? onCancelUpload,
     bool isUploading = false,
+    int uploadTotal = 0,
+    int uploadCompleted = 0,
   }) async {
     // Wide enough that the bar lays out its full action row rather than a
     // compact variant.
@@ -30,6 +33,8 @@ void main() {
             onToggleUnifiedView: () {},
             isSearchMode: false,
             isUploading: isUploading,
+            uploadTotal: uploadTotal,
+            uploadCompleted: uploadCompleted,
             isCreatingFolder: false,
             isRefreshing: false,
             onGoHome: () {},
@@ -40,6 +45,7 @@ void main() {
             onRefresh: () {},
             onUploadPressed: onUpload,
             onUploadFolderPressed: onUploadFolder,
+            onCancelUploadPressed: onCancelUpload,
             onCreateFolderPressed: () {},
             onNewFilePressed: () {},
             onOpenDrawer: () {},
@@ -123,10 +129,67 @@ void main() {
       onUpload: () => files++,
       onUploadFolder: () => folders++,
       isUploading: true,
+      uploadTotal: 100,
+      uploadCompleted: 12,
     );
 
+    // The chip shows progress instead of offering another upload.
     expect(find.text('Upload'), findsNothing);
+    expect(find.text('12/100'), findsOneWidget);
     expect(files, 0);
     expect(folders, 0);
+  });
+
+  testWidgets('an upload in flight can still be cancelled', (tester) async {
+    // A batch failing its way through a large folder must not leave the user
+    // watching a disabled button with no way out.
+    var cancels = 0;
+    var files = 0;
+    await pumpBar(
+      tester,
+      onUpload: () => files++,
+      onUploadFolder: () {},
+      onCancelUpload: () => cancels++,
+      isUploading: true,
+      uploadTotal: 100,
+      uploadCompleted: 12,
+    );
+
+    await tester.tap(find.text('12/100'));
+    await tester.pumpAndSettle();
+
+    // Cancel, and nothing that would start more work.
+    expect(
+      find.widgetWithText(MenuItemButton, 'Cancel upload'),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(MenuItemButton, 'Files'), findsNothing);
+    expect(find.widgetWithText(MenuItemButton, 'Folder'), findsNothing);
+
+    await tester.tap(find.widgetWithText(MenuItemButton, 'Cancel upload'));
+    await tester.pumpAndSettle();
+
+    expect(cancels, 1);
+    expect(files, 0);
+  });
+
+  testWidgets('with no cancel handler the chip stays inert while uploading', (
+    tester,
+  ) async {
+    var files = 0;
+    await pumpBar(
+      tester,
+      onUpload: () => files++,
+      onUploadFolder: () {},
+      isUploading: true,
+      uploadTotal: 100,
+      uploadCompleted: 12,
+    );
+
+    await tester.tap(find.text('12/100'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MenuItemButton), findsNothing);
+    expect(files, 0);
   });
 }
