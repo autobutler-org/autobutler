@@ -170,6 +170,10 @@ void main() {
             builder: (_, _) => const Scaffold(body: Text('files')),
           ),
           GoRoute(
+            path: AppRoutes.settings,
+            builder: (_, _) => const Scaffold(body: Text('settings')),
+          ),
+          GoRoute(
             path: AppRoutes.terms,
             builder: (_, _) => const Scaffold(body: Text('terms')),
           ),
@@ -201,6 +205,31 @@ void main() {
 
       expect(find.text('terms'), findsOneWidget);
       expect(find.text('files'), findsNothing);
+    });
+
+    // The reported repro: terms already accepted for the Quark you're on,
+    // then you retype the backend URL in Settings. That points the app at a
+    // Quark you've never accepted terms for, so the gate must fire again.
+    testWidgets('retyping the backend URL sends an accepted user to terms', (
+      tester,
+    ) async {
+      await settings.addHost(
+        HostEntry(name: 'Mine', hostAddress: 'http://accepted.local'),
+      );
+      await settings.acceptTerms();
+
+      final router = await pumpGatedRouter(tester);
+      router.go(AppRoutes.settings);
+      await tester.pumpAndSettle();
+      expect(find.text('settings'), findsOneWidget);
+
+      await settings.updateHost(
+        0,
+        HostEntry(name: 'Mine', hostAddress: 'http://never-seen.local'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('terms'), findsOneWidget);
     });
 
     testWidgets('switching to another host re-runs the gate', (tester) async {

@@ -136,6 +136,8 @@ class AppRoutes {
 final Listenable routerRefreshListenable = Listenable.merge([
   // A 401 clears the session token; redirect to login immediately.
   AppSettings.instance.sessionTokenNotifier,
+  // Terms acceptance is per-Quark, so this flips both when the user accepts
+  // and when the active host changes to one they haven't accepted for.
   AppSettings.instance.hasAcceptedTerms,
   // Connecting to (or switching) a Quark re-runs the terms/login gate right
   // away instead of on the next unrelated navigation (#1623).
@@ -300,7 +302,7 @@ Future<String?> authRedirect(BuildContext context, GoRouterState state) async {
   // No host configured — let the main app handle the "add host" prompt.
   if (AppSettings.instance.activeHost == null) return null;
 
-  // Terms must be accepted before accessing the app.
+  // Terms must be accepted for this Quark before accessing the app.
   if (!AppSettings.instance.hasAcceptedTerms.value) return AppRoutes.terms;
 
   // Already authenticated.
