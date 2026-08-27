@@ -37,6 +37,14 @@ class AppSettings {
   /// Notifies listeners whenever the terms acceptance state changes.
   /// The router listens to this to redirect to the terms page when not yet accepted.
   final ValueNotifier<bool> hasAcceptedTerms = ValueNotifier(false);
+
+  /// Notifies listeners whenever [activeHost] changes — a host added, edited,
+  /// removed, or selected.
+  ///
+  /// The router listens to this so the terms/login gate re-runs the moment a
+  /// Quark is connected for the first time. Without it the redirect only fired
+  /// on the next unrelated navigation, so terms showed up late (#1623).
+  final ValueNotifier<String?> activeHostNotifier = ValueNotifier(null);
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   static const _sessionTokenKey = 'session_token';
@@ -96,6 +104,8 @@ class AppSettings {
         await _saveHosts();
       }
     }
+
+    _publishActiveHost();
   }
 
   List<HostEntry> get hosts => List.unmodifiable(_hosts);
@@ -130,12 +140,19 @@ class AppSettings {
       ? _hosts[_activeIndex].hostAddress
       : null;
 
+  /// Publishes the current [activeHost] to [activeHostNotifier].
+  /// Every mutation of [_hosts] or [_activeIndex] must end with this call.
+  void _publishActiveHost() {
+    activeHostNotifier.value = activeHost;
+  }
+
   Future<void> _saveHosts() async {
     await _prefs?.setString(
       'hosts',
       jsonEncode(_hosts.map((e) => e.toJson()).toList()),
     );
     await _prefs?.setInt('activeHostIndex', _activeIndex);
+    _publishActiveHost();
   }
 
   Future<void> addHost(HostEntry h) async {
@@ -178,6 +195,7 @@ class AppSettings {
       // Clear cached file listings — they belong to the previous host.
       FileBrowserCache.instance.clear();
       await _prefs?.setInt('activeHostIndex', _activeIndex);
+      _publishActiveHost();
     }
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quark/router.dart';
+import 'package:quark/services/app_settings.dart';
 
 void main() {
   group('AppRoutes.encodeFilePath', () {
@@ -137,6 +138,90 @@ void main() {
         AppRoutes.filesPath('/odd%20name.abdoc'),
       );
       expect(seen, '/odd%20name.abdoc');
+    });
+  });
+
+  // #1623: the terms gate only re-ran when `refreshListenable` fired, and
+  // `activeHost` wasn't in that list. Connecting to a Quark for the first time
+  // therefore left the user on the file browser until some later navigation
+  // happened to re-run the redirect.
+  group('the terms gate reacts to connecting a host', () {
+    final settings = AppSettings.instance;
+
+    Future<void> clearHosts() async {
+      while (settings.hosts.isNotEmpty) {
+        await settings.removeHost(settings.hosts.length - 1);
+      }
+    }
+
+    setUp(clearHosts);
+    tearDown(clearHosts);
+
+    /// The real redirect and the real refresh listenable, over stub pages so
+    /// the test doesn't mount the whole app.
+    Future<GoRouter> pumpGatedRouter(WidgetTester tester) async {
+      final router = GoRouter(
+        initialLocation: AppRoutes.files,
+        redirect: authRedirect,
+        refreshListenable: routerRefreshListenable,
+        routes: [
+          GoRoute(
+            path: AppRoutes.files,
+            builder: (_, _) => const Scaffold(body: Text('files')),
+          ),
+          GoRoute(
+            path: AppRoutes.terms,
+            builder: (_, _) => const Scaffold(body: Text('terms')),
+          ),
+        ],
+      );
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+      return router;
+    }
+
+    testWidgets('no host configured leaves the first-run browser up', (
+      tester,
+    ) async {
+      await pumpGatedRouter(tester);
+
+      expect(find.text('files'), findsOneWidget);
+    });
+
+    testWidgets('adding the first host shows terms without any navigation', (
+      tester,
+    ) async {
+      await pumpGatedRouter(tester);
+      expect(find.text('files'), findsOneWidget);
+
+      await settings.addHost(
+        HostEntry(name: 'My Quark', hostAddress: 'http://quark.local'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('terms'), findsOneWidget);
+      expect(find.text('files'), findsNothing);
+    });
+
+    testWidgets('switching to another host re-runs the gate', (tester) async {
+      await settings.addHost(
+        HostEntry(name: 'One', hostAddress: 'http://one.local'),
+      );
+      await settings.addHost(
+        HostEntry(name: 'Two', hostAddress: 'http://two.local'),
+      );
+
+      final router = await pumpGatedRouter(tester);
+      expect(find.text('terms'), findsOneWidget);
+
+      // Force the browser back up, then switch hosts: the gate must catch it.
+      router.go(AppRoutes.files);
+      await tester.pumpAndSettle();
+
+      await settings.setActiveIndex(0);
+      await tester.pumpAndSettle();
+
+      expect(find.text('terms'), findsOneWidget);
     });
   });
 }

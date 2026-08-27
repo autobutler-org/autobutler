@@ -128,15 +128,24 @@ class AppRoutes {
   }
 }
 
+/// Everything that can invalidate the [authRedirect] gate.
+///
+/// A state change missing from this list leaves the gate stale until some
+/// unrelated navigation happens to re-run it — which is how connecting to a
+/// Quark used to show the terms page late (#1623).
+final Listenable routerRefreshListenable = Listenable.merge([
+  // A 401 clears the session token; redirect to login immediately.
+  AppSettings.instance.sessionTokenNotifier,
+  AppSettings.instance.hasAcceptedTerms,
+  // Connecting to (or switching) a Quark re-runs the terms/login gate right
+  // away instead of on the next unrelated navigation (#1623).
+  AppSettings.instance.activeHostNotifier,
+]);
+
 final router = GoRouter(
   initialLocation: AppRoutes.files,
-  redirect: _authRedirect,
-  // Refresh the router whenever the session token changes so a 401-triggered
-  // token clear immediately redirects to the login page.
-  refreshListenable: Listenable.merge([
-    AppSettings.instance.sessionTokenNotifier,
-    AppSettings.instance.hasAcceptedTerms,
-  ]),
+  redirect: authRedirect,
+  refreshListenable: routerRefreshListenable,
   routes: [
     GoRoute(
       path: AppRoutes.files,
@@ -274,7 +283,10 @@ final router = GoRouter(
 );
 
 /// Top-level redirect — handles auth gating.
-Future<String?> _authRedirect(BuildContext context, GoRouterState state) async {
+/// The app's auth/terms gate. Exported so tests can drive the real rules
+/// without mounting every page in the app.
+@visibleForTesting
+Future<String?> authRedirect(BuildContext context, GoRouterState state) async {
   final publicRoutes = {
     AppRoutes.setup,
     AppRoutes.login,
