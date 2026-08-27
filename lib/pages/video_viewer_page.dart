@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quark/services/files_service.dart';
+import 'package:quark/services/trusted_media_controller.dart';
 import 'package:quark/utils/web_download_stub.dart'
     if (dart.library.html) 'package:quark/utils/web_download_web.dart'
     as web_download;
@@ -21,6 +22,7 @@ class VideoViewerPage extends StatefulWidget {
 }
 
 class _VideoViewerPageState extends State<VideoViewerPage> {
+  TrustedMediaController? _media;
   VideoPlayerController? _controller;
   bool _loading = true;
   String? _errorMessage;
@@ -66,16 +68,17 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
       _isUnsupportedFormat = false;
     });
 
-    VideoPlayerController? networkController;
+    TrustedMediaController? media;
     try {
-      networkController = VideoPlayerController.networkUrl(
+      media = await createTrustedMediaController(
         widget.url,
+        fileName: widget.name,
         formatHint: _formatHintFromFileName(widget.name),
       );
-      await networkController.initialize();
+      await media.controller.initialize();
     } catch (e) {
       debugPrint('[video_viewer_page.dart] initialize error: $e');
-      await networkController?.dispose();
+      await media?.dispose();
       if (!mounted) {
         return;
       }
@@ -93,12 +96,13 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
     }
 
     if (!mounted) {
-      await networkController.dispose();
+      await media.dispose();
       return;
     }
 
     setState(() {
-      _controller = networkController;
+      _media = media;
+      _controller = media!.controller;
       _loading = false;
     });
 
@@ -107,7 +111,7 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
     // In that case the video shows in a paused state — the user can tap the
     // play button to start playback.
     try {
-      await networkController.play();
+      await media.controller.play();
     } catch (_) {
       // Autoplay blocked or unsupported; stay paused.
     }
@@ -129,7 +133,8 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _media?.dispose();
+    _media = null;
     _controller = null;
     super.dispose();
   }

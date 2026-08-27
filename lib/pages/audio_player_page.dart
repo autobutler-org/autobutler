@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:quark/services/files_service.dart';
+import 'package:quark/services/trusted_media_controller.dart';
 import 'package:quark/utils/web_download_stub.dart'
     if (dart.library.html) 'package:quark/utils/web_download_web.dart'
     as web_download;
@@ -19,7 +20,7 @@ class AudioPlayerPage extends StatefulWidget {
 }
 
 class _AudioPlayerPageState extends State<AudioPlayerPage> {
-  VideoPlayerController? _controller;
+  TrustedMediaController? _media;
   bool _loading = true;
   String? _errorMessage;
   bool _downloading = false;
@@ -36,13 +37,16 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
       _errorMessage = null;
     });
 
-    VideoPlayerController? controller;
+    TrustedMediaController? media;
     try {
-      controller = VideoPlayerController.networkUrl(widget.url);
-      await controller.initialize();
+      media = await createTrustedMediaController(
+        widget.url,
+        fileName: widget.name,
+      );
+      await media.controller.initialize();
     } catch (e) {
       debugPrint('[audio_player_page.dart] initialize error: $e');
-      await controller?.dispose();
+      await media?.dispose();
       if (!mounted) return;
       setState(() {
         _loading = false;
@@ -54,24 +58,24 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
     }
 
     if (!mounted) {
-      await controller.dispose();
+      await media.dispose();
       return;
     }
 
     setState(() {
-      _controller = controller;
+      _media = media;
       _loading = false;
     });
 
     try {
-      await controller.play();
+      await media.controller.play();
     } catch (_) {}
   }
 
   @override
   void dispose() {
-    _controller?.dispose();
-    _controller = null;
+    _media?.dispose();
+    _media = null;
     super.dispose();
   }
 
@@ -120,8 +124,8 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
                 onDownload: _download,
                 downloading: _downloading,
               )
-            : _controller != null
-            ? _AudioControls(controller: _controller!)
+            : _media != null
+            ? _AudioControls(controller: _media!.controller)
             : const SizedBox.shrink(),
       ),
     );
