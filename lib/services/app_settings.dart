@@ -31,6 +31,40 @@ String normalizeHostAddress(String address) {
   return 'https://$trimmed';
 }
 
+/// Base URL used when no host has been configured yet.
+///
+/// Matches the plain-HTTP dev target (`make serve/backend`), which serves
+/// :8080 in insecure mode. Only ever reached when [AppSettings.activeHost] is
+/// null — a configured host always wins.
+const String defaultApiBaseUrl = 'http://localhost:8080';
+
+/// The configured quark base URL, falling back to [defaultApiBaseUrl].
+///
+/// `API_BASE_URL` overrides the fallback at build time via
+/// `--dart-define=API_BASE_URL=...`.
+String get apiBaseUrl =>
+    AppSettings.instance.activeHost ??
+    const String.fromEnvironment(
+      'API_BASE_URL',
+      defaultValue: defaultApiBaseUrl,
+    );
+
+/// [apiBaseUrl] as a [Uri], with the Android emulator's loopback alias applied.
+///
+/// The emulator reaches the host machine at 10.0.2.2 rather than localhost, so
+/// a loopback address is rewritten before any request goes out.
+Uri get apiBaseUri {
+  final uri = Uri.parse(apiBaseUrl);
+  final isLoopback =
+      uri.host == 'localhost' || uri.host == '127.0.0.1' || uri.host == '::1';
+  if (!kIsWeb &&
+      defaultTargetPlatform == TargetPlatform.android &&
+      isLoopback) {
+    return uri.replace(host: '10.0.2.2');
+  }
+  return uri;
+}
+
 class HostEntry {
   final String name;
   final String hostAddress;

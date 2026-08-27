@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:quark/models/photo_album.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
@@ -10,27 +9,7 @@ class AlbumService with AuthenticatedService {
   AlbumService._();
   static AlbumService get instance => _instance;
 
-  static Uri _apiUri(String path) {
-    final configured = AppSettings.instance.activeHost;
-    final base =
-        configured ??
-        String.fromEnvironment(
-          'API_BASE_URL',
-          defaultValue: 'http://localhost:8080',
-        );
-    final uri = Uri.parse(base);
-    final isLoopbackHost =
-        uri.host == 'localhost' || uri.host == '127.0.0.1' || uri.host == '::1';
-    Uri resolved;
-    if (!kIsWeb &&
-        defaultTargetPlatform == TargetPlatform.android &&
-        isLoopbackHost) {
-      resolved = uri.replace(host: '10.0.2.2');
-    } else {
-      resolved = uri;
-    }
-    return resolved.replace(path: '/api/v0$path');
-  }
+  static Uri _apiUri(String path) => apiBaseUri.replace(path: '/api/v0$path');
 
   static Future<List<PhotoAlbum>> listAlbums({bool tree = false}) async {
     final uri = _apiUri(

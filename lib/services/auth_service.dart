@@ -31,16 +31,7 @@ class LoginResult {
 
 /// Communicates with the quark auth API.
 class AuthService {
-  static Uri get _baseUri {
-    final configured = AppSettings.instance.activeHost;
-    final base =
-        configured ??
-        const String.fromEnvironment(
-          'API_BASE_URL',
-          defaultValue: 'http://localhost:8080',
-        );
-    return Uri.parse(base);
-  }
+  static Uri get _baseUri => Uri.parse(apiBaseUrl);
 
   /// Checks whether initial setup has been completed on the quark.
   static Future<AuthStatus> checkStatus() async {

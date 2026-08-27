@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
@@ -107,25 +106,6 @@ class StorageService with AuthenticatedService {
     _inFlight = null;
   }
 
-  static Uri get _apiBaseUri {
-    final configured = AppSettings.instance.activeHost;
-    final base =
-        configured ??
-        String.fromEnvironment(
-          'API_BASE_URL',
-          defaultValue: 'http://localhost:8080',
-        );
-    final uri = Uri.parse(base);
-    final isLoopback =
-        uri.host == 'localhost' || uri.host == '127.0.0.1' || uri.host == '::1';
-    if (!kIsWeb &&
-        defaultTargetPlatform == TargetPlatform.android &&
-        isLoopback) {
-      return uri.replace(host: '10.0.2.2');
-    }
-    return uri;
-  }
-
   /// Returns all storage devices with their current status and display names.
   ///
   /// Results are cached for [_deviceCacheTtl]. Simultaneous callers share a
@@ -154,7 +134,7 @@ class StorageService with AuthenticatedService {
   }
 
   static Future<List<StorageDevice>> _fetchDevices() async {
-    final uri = _apiBaseUri.resolve('/api/v0/storage/devices/status');
+    final uri = apiBaseUri.resolve('/api/v0/storage/devices/status');
     final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
@@ -172,7 +152,7 @@ class StorageService with AuthenticatedService {
 
   /// Mounts a USB device by serial. Requires the quark to be running as root.
   static Future<void> mountDevice(String serial) async {
-    final uri = _apiBaseUri.resolve('/api/v0/storage/devices/usb/$serial');
+    final uri = apiBaseUri.resolve('/api/v0/storage/devices/usb/$serial');
     final response = await http.post(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
@@ -189,7 +169,7 @@ class StorageService with AuthenticatedService {
   static Future<void> renameDevice(String devicePath, String name) async {
     // Device paths contain slashes (e.g. /dev/disk3s5) — pass as a query
     // param so they don't get misinterpreted as URL path segments.
-    final uri = _apiBaseUri
+    final uri = apiBaseUri
         .resolve('/api/v0/storage/devices/rename')
         .replace(queryParameters: {'devicePath': devicePath});
     final response = await http.patch(
@@ -211,7 +191,7 @@ class StorageService with AuthenticatedService {
     required String username,
     required String password,
   }) async {
-    final uri = _apiBaseUri.resolve('/api/v0/storage/devices/role');
+    final uri = apiBaseUri.resolve('/api/v0/storage/devices/role');
     final response = await http.put(
       uri,
       headers: {'Content-Type': 'application/json', ..._authHeaders},
@@ -237,7 +217,7 @@ class StorageService with AuthenticatedService {
     String? password,
     String? recoveryPassword,
   }) async {
-    final uri = _apiBaseUri.resolve('/api/v0/storage/devices/snapshot-backup');
+    final uri = apiBaseUri.resolve('/api/v0/storage/devices/snapshot-backup');
     final body = <String, dynamic>{'targetDeviceSerial': targetDeviceSerial};
     if (username != null) body['username'] = username;
     if (password != null) body['password'] = password;
@@ -259,7 +239,7 @@ class StorageService with AuthenticatedService {
   }
 
   static Future<BackupJobStatus> getSnapshotBackupStatus(String jobId) async {
-    final uri = _apiBaseUri.resolve(
+    final uri = apiBaseUri.resolve(
       '/api/v0/storage/devices/snapshot-backup/status/$jobId',
     );
     final response = await http.get(uri, headers: _authHeaders);
@@ -274,7 +254,7 @@ class StorageService with AuthenticatedService {
     required String deviceSerial,
     bool full = false,
   }) async {
-    final uri = _apiBaseUri.resolve(
+    final uri = apiBaseUri.resolve(
       '/api/v0/storage/devices/snapshot-backup/verify',
     );
     final response = await http.post(

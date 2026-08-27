@@ -89,28 +89,9 @@ class SbomService with AuthenticatedService {
 
   static Map<String, String> get _authHeaders => instance.authHeaders;
 
-  static Uri get _apiBaseUri {
-    final configured = AppSettings.instance.activeHost;
-    final base =
-        configured ??
-        String.fromEnvironment(
-          'API_BASE_URL',
-          defaultValue: 'http://localhost:8080',
-        );
-    final uri = Uri.parse(base);
-    final isLoopback =
-        uri.host == 'localhost' || uri.host == '127.0.0.1' || uri.host == '::1';
-    if (!kIsWeb &&
-        defaultTargetPlatform == TargetPlatform.android &&
-        isLoopback) {
-      return uri.replace(host: '10.0.2.2');
-    }
-    return uri;
-  }
-
   /// Fetch Go SBOM from the backend.
   static Future<GoSbom> getGoSbom() async {
-    final uri = _apiBaseUri.resolve('/api/v0/sbom');
+    final uri = apiBaseUri.resolve('/api/v0/sbom');
     final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode != 200) {
       throw Exception('Failed to load Go SBOM: ${response.statusCode}');

@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
 
@@ -16,27 +15,7 @@ class FavoritesService with AuthenticatedService {
   FavoritesService._();
   static FavoritesService get instance => _instance;
 
-  static Uri _apiUri(String path) {
-    final configured = AppSettings.instance.activeHost;
-    final base =
-        configured ??
-        String.fromEnvironment(
-          'API_BASE_URL',
-          defaultValue: 'http://localhost:8080',
-        );
-    final uri = Uri.parse(base);
-    final isLoopbackHost =
-        uri.host == 'localhost' || uri.host == '127.0.0.1' || uri.host == '::1';
-    Uri resolved;
-    if (!kIsWeb &&
-        defaultTargetPlatform == TargetPlatform.android &&
-        isLoopbackHost) {
-      resolved = uri.replace(host: '10.0.2.2');
-    } else {
-      resolved = uri;
-    }
-    return resolved.resolve('/api/v0$path');
-  }
+  static Uri _apiUri(String path) => apiBaseUri.resolve('/api/v0$path');
 
   /// Toggles favorite state. Returns the new isFavorite value.
   static Future<bool> toggle({required String relPath, String? serial}) async {
