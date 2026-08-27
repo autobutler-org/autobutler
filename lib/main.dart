@@ -12,7 +12,7 @@ Future<void> main() async {
   usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
   await AppSettings.instance.load();
-  // Butlers on the local network serve self-signed certificates. Install the
+  // Quarks on the local network serve self-signed certificates. Install the
   // trust policy after settings load so it can consult the configured host.
   installLocalTrustHttpOverrides();
   runApp(const QuarkApp());

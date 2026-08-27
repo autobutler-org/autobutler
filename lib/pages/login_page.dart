@@ -4,7 +4,7 @@ import 'package:quark/router.dart';
 import 'package:quark/services/auth_service.dart';
 import 'package:quark_icons/quark_icons.dart';
 
-/// Login screen shown when the butler has been set up but no session exists.
+/// Login screen shown when the quark has been set up but no session exists.
 class LoginPage extends StatefulWidget {
   final VoidCallback onLoginSuccess;
 
@@ -95,7 +95,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Enter your butler credentials.',
+                      'Enter your credentials.',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurface.withValues(
                           alpha: 0.6,

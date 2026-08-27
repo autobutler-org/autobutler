@@ -6,9 +6,10 @@ Covers first-boot setup, login, logout, and password recovery.
 
 ### JN-AUTH-001: First-boot setup — create account
 
-**Preconditions:** Butler is freshly installed and has no owner account. App is opened for the first time.
+**Preconditions:** Quark is freshly installed and has no owner account. App is opened for the first time.
 
 **Steps:**
+
 1. Open the app.
 2. App detects no setup and navigates to `/setup`.
 3. Enter a username (e.g. `alice`).
@@ -24,11 +25,13 @@ Covers first-boot setup, login, logout, and password recovery.
 13. Tap **Done** (or equivalent).
 
 **Expected result:**
+
 - App navigates to `/files` (file browser).
-- The username is accepted and the account is live on the butler.
+- The username is accepted and the account is live on the quark.
 - The theme chosen is applied immediately.
 
 **Notes:**
+
 - Recovery phrase is shown exactly once and is not recoverable from the UI after dismissal.
 - Weak password or mismatched confirm should show inline validation errors before submit.
 - Username uniqueness is enforced server-side; duplicate should surface an error on step 6.
@@ -37,31 +40,36 @@ Covers first-boot setup, login, logout, and password recovery.
 
 ### JN-AUTH-002: Login with correct credentials
 
-**Preconditions:** Butler is set up (JN-AUTH-001 complete). User is not logged in.
+**Preconditions:** Quark is set up (JN-AUTH-001 complete). User is not logged in.
 
 **Steps:**
+
 1. Open the app (or navigate to `/login`).
 2. Enter the registered username.
 3. Enter the correct password.
 4. Tap **Log in**.
 
 **Expected result:**
+
 - App navigates to `/files`.
 - Session token is stored; subsequent navigation does not require re-login.
+  Quark
 
 ---
 
 ### JN-AUTH-003: Login with wrong password
 
-**Preconditions:** Butler is set up. User is not logged in.
+**Preconditions:** Quark is set up. User is not logged in.
 
 **Steps:**
+
 1. Navigate to `/login`.
 2. Enter the registered username.
 3. Enter an incorrect password.
 4. Tap **Log in**.
 
 **Expected result:**
+
 - An error message appears below the form (not a blank screen or crash).
 - User remains on the login page.
 - Password field is not auto-cleared (user can correct and retry).
@@ -73,10 +81,12 @@ Covers first-boot setup, login, logout, and password recovery.
 **Preconditions:** User is on the `/login` page.
 
 **Steps:**
+
 1. Enter any text in the password field.
 2. Tap the eye icon next to the password field.
 
 **Expected result:**
+
 - Password characters become visible.
 - Tapping the icon again hides them.
 
@@ -84,9 +94,10 @@ Covers first-boot setup, login, logout, and password recovery.
 
 ### JN-AUTH-005: Recover account with valid phrase
 
-**Preconditions:** Butler is set up. User has their recovery phrase.
+**Preconditions:** Quark is set up. User has their recovery phrase.
 
 **Steps:**
+
 1. Navigate to `/login`.
 2. Tap **Forgot password** (or equivalent link).
 3. App navigates to `/recover`.
@@ -96,6 +107,7 @@ Covers first-boot setup, login, logout, and password recovery.
 7. Tap **Reset password**.
 
 **Expected result:**
+
 - App navigates to `/login` (or directly to `/files` on auto-login).
 - User can log in with the new password.
 - Old password no longer works.
@@ -107,11 +119,13 @@ Covers first-boot setup, login, logout, and password recovery.
 **Preconditions:** User is on `/recover`.
 
 **Steps:**
+
 1. Enter an incorrect recovery phrase.
 2. Enter a new password and confirm.
 3. Tap **Reset password**.
 
 **Expected result:**
+
 - An error message appears.
 - Password is not changed.
 - User remains on the recover page.
@@ -123,12 +137,14 @@ Covers first-boot setup, login, logout, and password recovery.
 **Preconditions:** User is logged in and on any page.
 
 **Steps:**
+
 1. Open the navigation drawer.
 2. Navigate to **Settings** (`/settings`).
 3. Scroll to the sign-out section.
 4. Tap **Sign out**.
 
 **Expected result:**
+
 - Session token is cleared.
 - App redirects to `/login`.
 - Navigating back does not bypass the login page.
@@ -140,8 +156,10 @@ Covers first-boot setup, login, logout, and password recovery.
 **Preconditions:** App has a host configured but user has not yet accepted terms.
 
 **Steps:**
+
 1. Open the app.
 
 **Expected result:**
+
 - App navigates to `/terms` before any other protected route.
 - User must accept before accessing `/files` or any other feature.

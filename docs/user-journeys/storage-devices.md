@@ -1,17 +1,19 @@
 # Storage Devices Journeys
 
-Covers the Storage Devices page (`/devices`) — listing, mounting, renaming, and backing up storage devices connected to the butler.
+Covers the Storage Devices page (`/devices`) — listing, mounting, renaming, and backing up storage devices connected to the quark.
 
 ---
 
 ### JN-SD-001: View connected storage devices
 
-**Preconditions:** User is logged in. At least one storage device is connected to the butler.
+**Preconditions:** User is logged in. At least one storage device is connected to the quark.
 
 **Steps:**
+
 1. Navigate to `/devices`.
 
 **Expected result:**
+
 - List of storage devices is displayed.
 - Each device shows: name, serial, mount status, and storage usage bar.
 
@@ -19,12 +21,14 @@ Covers the Storage Devices page (`/devices`) — listing, mounting, renaming, an
 
 ### JN-SD-002: View storage devices page with no devices
 
-**Preconditions:** No storage devices are connected to the butler.
+**Preconditions:** No storage devices are connected to the quark.
 
 **Steps:**
+
 1. Navigate to `/devices`.
 
 **Expected result:**
+
 - Empty state or informational message is shown (not a crash).
 
 ---
@@ -34,11 +38,13 @@ Covers the Storage Devices page (`/devices`) — listing, mounting, renaming, an
 **Preconditions:** A storage device is connected but not yet mounted.
 
 **Steps:**
+
 1. Navigate to `/devices`.
 2. Find the unmounted device in the list.
 3. Tap **Mount**.
 
 **Expected result:**
+
 - Device status changes to mounted.
 - A success snackbar or confirmation is shown.
 - Files on the device become accessible in the file browser.
@@ -50,9 +56,11 @@ Covers the Storage Devices page (`/devices`) — listing, mounting, renaming, an
 **Preconditions:** User is on `/devices`.
 
 **Steps:**
+
 1. Wait for the auto-refresh interval to elapse.
 
 **Expected result:**
+
 - Device list refreshes without manual intervention.
 - Status changes (e.g. a newly connected device) are reflected.
 
@@ -63,9 +71,11 @@ Covers the Storage Devices page (`/devices`) — listing, mounting, renaming, an
 **Preconditions:** User is on `/devices`.
 
 **Steps:**
+
 1. Tap the **Refresh** button.
 
 **Expected result:**
+
 - Device list reloads immediately.
 
 ---
@@ -75,12 +85,14 @@ Covers the Storage Devices page (`/devices`) — listing, mounting, renaming, an
 **Preconditions:** At least one storage device is listed.
 
 **Steps:**
+
 1. Navigate to `/devices`.
 2. Tap the rename action on a device (or long-press for context menu).
 3. Enter a new name.
 4. Confirm.
 
 **Expected result:**
+
 - Device appears in the list with the new name.
 
 ---
@@ -90,9 +102,11 @@ Covers the Storage Devices page (`/devices`) — listing, mounting, renaming, an
 **Preconditions:** At least one mounted storage device is connected.
 
 **Steps:**
+
 1. Navigate to `/devices`.
 
 **Expected result:**
+
 - Each device shows a visual storage usage bar indicating used vs. total capacity.
 - Used and total sizes are shown as human-readable values (GB, TB).
 
@@ -103,11 +117,13 @@ Covers the Storage Devices page (`/devices`) — listing, mounting, renaming, an
 **Preconditions:** A storage device capable of backup is connected.
 
 **Steps:**
+
 1. Navigate to `/devices`.
 2. Initiate a backup for a device.
 3. Monitor the backup status.
 
 **Expected result:**
+
 - Backup job starts and a status indicator updates with progress.
 - On completion, a success state is shown.
 - Polling stops when the job is done.
@@ -119,7 +135,9 @@ Covers the Storage Devices page (`/devices`) — listing, mounting, renaming, an
 **Preconditions:** Vault is initialized and assigned to a specific device.
 
 **Steps:**
+
 1. Navigate to `/devices`.
 
 **Expected result:**
+
 - The device holding vault data is visually marked (icon or label).

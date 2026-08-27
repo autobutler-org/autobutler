@@ -34,7 +34,7 @@ class _AuthGateState extends State<AuthGate> {
   Future<void> _check() async {
     // No host configured — the app has its own "no host" state handling.
     // Skip the auth check entirely; the user will be prompted to add a host
-    // before any butler calls are made, so there's nothing to authenticate against.
+    // before any quark calls are made, so there's nothing to authenticate against.
     if (AppSettings.instance.activeHost == null) {
       if (mounted) setState(() => _state = _GateState.authenticated);
       return;
@@ -55,7 +55,7 @@ class _AuthGateState extends State<AuthGate> {
     } catch (e) {
       debugPrint('[auth_gate.dart] Error: $e');
       if (!mounted) return;
-      // If we can't reach the butler, let the main app handle the error.
+      // If we can't reach the quark, let the main app handle the error.
       setState(() => _state = _GateState.authenticated);
     }
   }

@@ -22,7 +22,7 @@ type ConnectedDeviceJSON struct {
 
 // listDevices godoc
 // @Summary List connected devices
-// @Description Returns all unique client IP + User-Agent combinations that have connected to the butler
+// @Description Returns all unique client IP + User-Agent combinations that have connected to the quark
 // @Tags devices
 // @Produce json
 // @Success 200 {array} ConnectedDeviceJSON

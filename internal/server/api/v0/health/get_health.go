@@ -21,7 +21,7 @@ type HealthJSON struct {
 	DiskUsedBytes      uint64    `json:"diskUsedBytes"`
 	DiskTotalBytes     uint64    `json:"diskTotalBytes"`
 	TemperatureCelsius float64   `json:"temperatureCelsius"`
-	// Hostname is the OS hostname of the butler device.
+	// Hostname is the OS hostname of the quark device.
 	// Clients can use this to display accurate LAN mount paths (e.g. smb://hostname.local).
 	Hostname string `json:"hostname"`
 }

@@ -10,7 +10,7 @@ import 'package:quark/services/local_trust.dart';
 /// [buildLocalTrustHttpClient] only covers services that go through the
 /// [AuthenticatedService] mixin. Several services call the top-level
 /// `http.get`/`http.post` helpers, and widgets like `Image.network` create
-/// their own clients — all of which would otherwise reject the butler's
+/// their own clients — all of which would otherwise reject the quark's
 /// self-signed certificate. Installing an override catches them all in one
 /// place.
 class LocalTrustHttpOverrides extends HttpOverrides {
