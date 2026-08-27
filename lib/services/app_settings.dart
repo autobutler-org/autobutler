@@ -108,13 +108,17 @@ class AppSettings {
     // host appropriate for the running platform so developers can quickly connect.
     if (_hosts.isEmpty) {
       if (kDebugMode) {
-        // Use https:// so the Flutter client exercises the TLS path even in
-        // debug mode. The self-signed cert is trusted via badCertificateCallback
-        // in AuthenticatedService for local/LAN addresses.
-        var loopback = 'http://localhost:8080';
-        if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-          loopback = 'http://10.0.2.2:8080';
-        }
+        // Targets the plain-HTTP dev server (`make serve/backend`), which
+        // listens on :8080 only in insecure mode. Scheme and port move
+        // together: :8080 is never served over TLS, so `https://localhost:8080`
+        // would connect to nothing. To develop against the secure server
+        // (`make serve/backend/secure`, TLS on :443) point this at
+        // `https://localhost` instead — its self-signed cert is accepted by
+        // badCertificateCallback in AuthenticatedService for local-trust hosts.
+        final loopback =
+            !kIsWeb && defaultTargetPlatform == TargetPlatform.android
+            ? 'http://10.0.2.2:8080'
+            : 'http://localhost:8080';
         _hosts = [HostEntry(name: 'Local', hostAddress: loopback)];
         _activeIndex = 0;
         await _saveHosts();
