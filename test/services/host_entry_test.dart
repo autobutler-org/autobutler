@@ -60,4 +60,69 @@ void main() {
       expect(entry.hostAddress, 'http://test.local');
     });
   });
+
+  group('normalizeHostAddress', () {
+    test('prepends https:// to a bare hostname', () {
+      expect(
+        normalizeHostAddress('quark.home.local'),
+        'https://quark.home.local',
+      );
+    });
+
+    test('prepends https:// to a bare host:port', () {
+      expect(
+        normalizeHostAddress('quark.home.local:8443'),
+        'https://quark.home.local:8443',
+      );
+    });
+
+    test('prepends https:// to a bare IP address', () {
+      expect(normalizeHostAddress('192.168.1.100'), 'https://192.168.1.100');
+    });
+
+    test('leaves an explicit https:// address untouched', () {
+      expect(
+        normalizeHostAddress('https://quark.home.local'),
+        'https://quark.home.local',
+      );
+    });
+
+    test('leaves an explicit http:// address untouched', () {
+      expect(
+        normalizeHostAddress('http://quark.home.local'),
+        'http://quark.home.local',
+      );
+    });
+
+    test('leaves a non-http scheme untouched', () {
+      expect(
+        normalizeHostAddress('ws://quark.home.local'),
+        'ws://quark.home.local',
+      );
+    });
+
+    test('leaves the origin-relative web default untouched', () {
+      expect(normalizeHostAddress('/'), '/');
+    });
+
+    test('leaves an empty address empty', () {
+      expect(normalizeHostAddress(''), '');
+      expect(normalizeHostAddress('   '), '');
+    });
+
+    test('trims surrounding whitespace before adding the scheme', () {
+      expect(
+        normalizeHostAddress('  quark.home.local  '),
+        'https://quark.home.local',
+      );
+    });
+
+    test('is idempotent', () {
+      const bare = 'quark.home.local';
+      expect(
+        normalizeHostAddress(normalizeHostAddress(bare)),
+        normalizeHostAddress(bare),
+      );
+    });
+  });
 }

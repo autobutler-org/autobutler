@@ -5,7 +5,23 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug: backend",
+      // Plain HTTP on :8080. Matches `make watch/backend`.
+      "name": "Debug: backend (insecure, http://localhost:8080)",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cmd/quark/main.go",
+      "args": [
+        "serve",
+        "--insecure",
+      ],
+      "envFile": "${workspaceFolder}/.env",
+    },
+    {
+      // HTTPS on :443 with a self-signed cert. Matches `make watch/backend/secure`.
+      // Binding :443 needs root on Linux; run VS Code with the privilege or use
+      // the insecure config above.
+      "name": "Debug: backend (secure, https://localhost)",
       "type": "go",
       "request": "launch",
       "mode": "debug",

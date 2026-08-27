@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
 
@@ -67,27 +66,8 @@ class HealthService with AuthenticatedService {
   HealthService._();
   static HealthService get instance => _instance;
 
-  static Uri get _apiBaseUri {
-    final configured = AppSettings.instance.activeHost;
-    final base =
-        configured ??
-        String.fromEnvironment(
-          'API_BASE_URL',
-          defaultValue: 'http://localhost:8080',
-        );
-    final uri = Uri.parse(base);
-    final isLoopback =
-        uri.host == 'localhost' || uri.host == '127.0.0.1' || uri.host == '::1';
-    if (!kIsWeb &&
-        defaultTargetPlatform == TargetPlatform.android &&
-        isLoopback) {
-      return uri.replace(host: '10.0.2.2');
-    }
-    return uri;
-  }
-
   static Future<HealthStatus> getHealth() async {
-    final uri = _apiBaseUri.resolve('/api/v0/health');
+    final uri = apiBaseUri.resolve('/api/v0/health');
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to fetch health (${response.statusCode})');
