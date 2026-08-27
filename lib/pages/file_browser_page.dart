@@ -19,6 +19,7 @@ import 'package:quark/pages/spreadsheet_editor_page.dart';
 import 'package:quark/pages/video_viewer_page.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/upload_manager.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/services/events_service.dart';
 import 'package:quark/services/storage_service.dart';
@@ -96,6 +97,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   // WebSocket event subscription for real-time file updates
   StreamSubscription<FileEvent>? _eventSub;
+  StreamSubscription<UploadBatchResult>? _uploadResultSub;
 
   // Search state
   bool _isSearchMode = false;
@@ -143,10 +145,58 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       });
     }
     _eventSub = EventsService.instance.events.listen((evt) {
-      // Any file mutation on the server triggers a refresh
+      // Any file mutation on the server triggers a refresh — except our own
+      // uploads. Every uploaded file publishes one of these, so a folder
+      // upload would fire a refresh per file, each one a devices call and a
+      // listing call, all competing with the uploads for the few connections
+      // a browser allows per host. The batch refreshes once when it drains.
+      if (UploadManager.instance.isUploading) {
+        return;
+      }
       if ({'upload', 'delete', 'move', 'new_folder'}.contains(evt.kind)) {
         manualRefresh();
       }
+    });
+
+    UploadManager.instance.addListener(_onUploadProgress);
+    _uploadResultSub = UploadManager.instance.results.listen((result) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _recentFilesSectionKey++);
+      _refreshFileState();
+      final note = result.note;
+      final suffix = note == null ? '' : ' — $note';
+      if (!result.hadFailures) {
+        _showMessage('Uploaded ${result.total} files$suffix');
+      } else {
+        _showMessage(
+          'Uploaded ${result.succeeded} of ${result.total} '
+          '(${result.failed} failed)$suffix',
+        );
+      }
+    });
+    _onUploadProgress();
+  }
+
+  /// Mirrors the manager's progress into this page's state.
+  ///
+  /// The page renders an upload it does not own, so it may well be showing one
+  /// that a different folder started — which is the point.
+  void _onUploadProgress() {
+    if (!mounted) {
+      return;
+    }
+    final manager = UploadManager.instance;
+    if (manager.isUploading == _isUploading &&
+        manager.total == _uploadTotal &&
+        manager.completed == _uploadCompleted) {
+      return;
+    }
+    setState(() {
+      _isUploading = manager.isUploading;
+      _uploadTotal = manager.total;
+      _uploadCompleted = manager.completed;
     });
   }
 
@@ -182,6 +232,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   @override
   Future<void> refresh() async {
+    // An upload in flight has first claim on the connection pool. Refreshing
+    // underneath it is what made a large folder upload look like it had
+    // stalled. The listing is going to be out of date mid-upload anyway, and
+    // the batch triggers a refresh the moment it drains.
+    if (UploadManager.instance.isUploading) {
+      return;
+    }
     _noHostSelected = AppSettings.instance.activeHost == null;
     if (_noHostSelected) {
       setState(() {
@@ -238,6 +295,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   @override
   void dispose() {
     _eventSub?.cancel();
+    _uploadResultSub?.cancel();
+    // Detaching only stops us watching — the upload itself keeps running.
+    UploadManager.instance.removeListener(_onUploadProgress);
     _folderDragExitTimer?.cancel();
     _fileBrowserScrollController.dispose();
     super.dispose();
@@ -429,11 +489,27 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// through the multipart filename — the backend drops directories there on
   /// purpose as traversal protection, so a nested filename would silently
   /// flatten (the same collision as #1603).
+  /// What the user should be told about a cap, once the upload is over.
+  ///
+  /// Not a prompt: they asked to upload a folder, so upload the folder. A cap
+  /// is worth reporting, but not worth standing in the way first.
+  String? _capNote(DropFlattenResult flattened) {
+    if (flattened.truncated) {
+      return 'Stopped at the first $kMaxUploadFiles files';
+    }
+    if (flattened.skippedTooDeep > 0) {
+      return 'Skipped ${flattened.skippedTooDeep} folders nested deeper '
+          'than $kMaxUploadDepth levels';
+    }
+    return null;
+  }
+
   Future<void> _uploadPendingFiles(
     List<PendingUpload> pending,
-    String uploadPath,
-  ) async {
-    if (_isUploading || pending.isEmpty) {
+    String uploadPath, {
+    String? note,
+  }) async {
+    if (pending.isEmpty) {
       return;
     }
 
@@ -464,66 +540,15 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       // Fall through with null serial (default device)
     }
 
-    setState(() {
-      _isUploading = true;
-      _uploadTotal = pending.length;
-      _uploadCompleted = 0;
-    });
-
-    int failed = 0;
-    try {
-      for (final group in groupByRelativeDir(pending).entries) {
-        final targetPath = uploadTargetPath(uploadPath, group.key);
-        for (final upload in group.value) {
-          try {
-            // Built here rather than up front: a folder upload cannot hold
-            // every file's bytes at once, so each one is read, sent, and
-            // released before the next.
-            final file = await upload.build();
-            if (file == null) {
-              failed++;
-            } else {
-              await _controller.uploadFiles(
-                currentPath: targetPath,
-                selectedFiles: [file],
-                serial: targetSerial,
-              );
-            }
-          } catch (_) {
-            failed++;
-            debugPrint(
-              '[file_browser_page.dart] Failed to upload ${upload.name}',
-            );
-          }
-          if (mounted) setState(() => _uploadCompleted++);
-        }
-      }
-
-      if (!mounted) return;
-
-      _refreshFileState();
-
-      final succeeded = pending.length - failed;
-      if (failed == 0) {
-        final label = pending.length == 1
-            ? pending.first.name
-            : '${pending.length} files';
-        _showMessage('Uploaded $label');
-      } else {
-        _showMessage(
-          'Uploaded $succeeded of ${pending.length} ($failed failed)',
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isUploading = false;
-          _uploadTotal = 0;
-          _uploadCompleted = 0;
-          _recentFilesSectionKey++;
-        });
-      }
-    }
+    // Handed off rather than run here: an upload outlives the folder the user
+    // started it from, so it cannot be owned by this State. Progress arrives
+    // back through the listener wired up in initState.
+    UploadManager.instance.enqueue(
+      uploads: pending,
+      uploadPath: uploadPath,
+      serial: targetSerial,
+      note: note,
+    );
   }
 
   Future<void> _handleUploadFolderPressed() async {
@@ -537,13 +562,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         return;
       }
 
-      if (uploads.length >= kMaxUploadFiles) {
-        _showMessage(
-          'Uploading the first $kMaxUploadFiles files — the folder holds more',
-        );
-      }
-
-      await _uploadPendingFiles(uploads, _currentPath);
+      await _uploadPendingFiles(
+        uploads,
+        _currentPath,
+        note: uploads.length >= kMaxUploadFiles
+            ? 'Stopped at the first $kMaxUploadFiles files'
+            : null,
+      );
     } on MissingPluginException {
       if (!mounted) {
         return;
@@ -612,18 +637,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         return;
       }
 
-      if (flattened.truncated) {
-        _showMessage(
-          'Uploading the first $kMaxUploadFiles files — the folder holds more',
-        );
-      } else if (flattened.skippedTooDeep > 0) {
-        _showMessage(
-          'Skipped ${flattened.skippedTooDeep} folders nested deeper than '
-          '$kMaxUploadDepth levels',
-        );
-      }
-
-      await _uploadPendingFiles(flattened.uploads, uploadPath);
+      await _uploadPendingFiles(
+        flattened.uploads,
+        uploadPath,
+        note: _capNote(flattened),
+      );
     } catch (_) {
       debugPrint('[file_browser_page.dart] Error in catch block');
       _showMessage('Unable to read dropped files');
