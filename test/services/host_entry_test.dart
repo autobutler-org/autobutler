@@ -64,8 +64,8 @@ void main() {
   group('normalizeHostAddress', () {
     test('prepends https:// to a bare hostname', () {
       expect(
-        normalizeHostAddress('brandons-macbook-pro-2.local'),
-        'https://brandons-macbook-pro-2.local',
+        normalizeHostAddress('quark.home.local'),
+        'https://quark.home.local',
       );
     });
 
