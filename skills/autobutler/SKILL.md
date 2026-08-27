@@ -13,11 +13,11 @@ The quark host URL and credentials are stored in `TOOLS.md` under `## Quark (loc
 
 ## Auth Flow
 
-All API endpoints except `/api/v1/auth/*` require `Authorization: Bearer <token>`.
+All API endpoints except `/api/v0/auth/*` require `Authorization: Bearer <token>`.
 
 ### Login (normal)
 ```bash
-curl -s -X POST $QUARK_URL/api/v1/auth/login \
+curl -s -X POST $QUARK_URL/api/v0/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"<user>","password":"<pass>"}'
 # → {"token":"<64-hex-char token>"}
@@ -27,9 +27,9 @@ Store the token in-memory for the session. Do not persist it to files.
 
 ### First boot (setup not complete)
 ```bash
-curl -s $QUARK_URL/api/v1/auth/status
+curl -s $QUARK_URL/api/v0/auth/status
 # → {"setup":false} means first boot — call /auth/setup instead
-curl -s -X POST $QUARK_URL/api/v1/auth/setup \
+curl -s -X POST $QUARK_URL/api/v0/auth/setup \
   -H "Content-Type: application/json" \
   -d '{"username":"<user>","password":"<pass>"}'
 # → {"token":"...","recoveryPhrase":"word-word-word-word-word-word","message":"..."}
@@ -38,7 +38,7 @@ curl -s -X POST $QUARK_URL/api/v1/auth/setup \
 
 ### Recovery phrase reset
 ```bash
-curl -s -X POST $QUARK_URL/api/v1/auth/recover \
+curl -s -X POST $QUARK_URL/api/v0/auth/recover \
   -H "Content-Type: application/json" \
   -d '{"recoveryPhrase":"word-word-word-word-word-word","newPassword":"<new>"}'
 # → {"token":"..."}
@@ -50,7 +50,7 @@ See [`references/api.md`](references/api.md) for the full endpoint reference.
 
 ### Health check
 ```bash
-curl -s $QUARK_URL/api/v1/health -H "Authorization: Bearer $TOKEN"
+curl -s $QUARK_URL/api/v0/health -H "Authorization: Bearer $TOKEN"
 ```
 Key fields: `healthy` (bool), `alerts` (array), `cpuPercent`, `memPercent`, `diskPercent`, `temperatureCelsius`.
 Alert if `diskPercent > 85` or `temperatureCelsius > 70`.
@@ -64,20 +64,23 @@ curl -s "$QUARK_URL/api/v0/files" -H "Authorization: Bearer $TOKEN"
 
 ### Check version / trigger update
 ```bash
-curl -s $QUARK_URL/api/v1/version -H "Authorization: Bearer $TOKEN"
-curl -s $QUARK_URL/api/v1/version/available -H "Authorization: Bearer $TOKEN"
-curl -s -X POST $QUARK_URL/api/v1/version/latest -H "Authorization: Bearer $TOKEN"
+curl -s $QUARK_URL/api/v0/version -H "Authorization: Bearer $TOKEN"
+curl -s $QUARK_URL/api/v0/version/available -H "Authorization: Bearer $TOKEN"
+curl -s -X POST $QUARK_URL/api/v0/version/latest -H "Authorization: Bearer $TOKEN"
 ```
 
 ### Storage devices
 ```bash
-curl -s $QUARK_URL/api/v1/storage/devices/status -H "Authorization: Bearer $TOKEN"
+curl -s $QUARK_URL/api/v0/storage/devices/status -H "Authorization: Bearer $TOKEN"
 ```
 
 ## Notes
 
 - Tokens are valid for 30 days; re-login if you get a 401
-- The quark runs on port 80 locally; may be on a different port remotely
-- All endpoints are under `/api/v1/` prefix
+- `$QUARK_URL` depends on how the quark is being run: `http://localhost:8080` for
+  `make watch/backend`, `https://localhost` (:443, self-signed — `curl` needs `-k`) for
+  `make watch/backend/secure`, and `http://<tailscale-ip>:80` over remote access
+- All endpoints listed here are under the `/api/v0/` prefix. `/api/v1/` exists but
+  currently mounts only `/vfs`
 - Swagger UI available at `$QUARK_URL/swagger` when the backend is running
 - **Always set a `User-Agent` header** matching your agent name (e.g. `exokomodo-bot`, `sable-bot`). The quark tracks connected devices by IP + User-Agent — this is how the admin sees which agent is talking to the quark in the devices list.
