@@ -50,6 +50,15 @@ mixin AutoRefreshMixin<T extends StatefulWidget>
   /// Update your widget state inside this method.
   Future<void> refresh();
 
+  /// How long a refresh may be in flight before another is allowed to start.
+  ///
+  /// Not a request timeout — the earlier fetch carries on, it just stops
+  /// holding the door shut. Without this a single request that never returns
+  /// leaves [_refreshInFlight] true and every later refresh, the reload button
+  /// included, returns immediately for the rest of the session. A saturated
+  /// connection pool reaches that easily, which a large upload creates.
+  Duration get refreshTimeout => const Duration(seconds: 30);
+
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   @override
@@ -93,16 +102,32 @@ mixin AutoRefreshMixin<T extends StatefulWidget>
   }
 
   Future<void> _triggerRefresh({bool initial = false}) async {
-    if (_refreshInFlight) return;
-    // Debounce: suppress calls that arrive within 1s of a refresh that has
-    // already started (e.g. lifecycle resume + timer firing simultaneously).
-    // This prevents the duplicate /storage/devices/status calls seen in #1022.
     final now = DateTime.now();
-    if (!initial &&
-        _lastRefreshStarted != null &&
-        now.difference(_lastRefreshStarted!) < const Duration(seconds: 1)) {
+    final startedAt = _lastRefreshStarted;
+
+    if (_refreshInFlight) {
+      // Let one through if the refresh holding the flag has been "in flight"
+      // implausibly long. A fetch with no timeout can hang indefinitely — a
+      // listing queued behind a large upload will — and without this the flag
+      // never clears and refreshing is dead for the rest of the session. The
+      // stale one is left to finish or not; whichever resolves last simply
+      // clears the flag.
+      if (startedAt == null || now.difference(startedAt) < refreshTimeout) {
+        return;
+      }
+      debugPrint(
+        '[auto_refresh_mixin.dart] previous refresh still in flight after '
+        '$refreshTimeout; starting another rather than staying wedged',
+      );
+    } else if (!initial &&
+        startedAt != null &&
+        now.difference(startedAt) < const Duration(seconds: 1)) {
+      // Debounce: suppress calls that arrive within 1s of a refresh that has
+      // already started (e.g. lifecycle resume + timer firing simultaneously).
+      // This prevents the duplicate /storage/devices/status calls seen in #1022.
       return;
     }
+
     _refreshInFlight = true;
     _lastRefreshStarted = now;
     if (mounted) {
@@ -110,6 +135,9 @@ mixin AutoRefreshMixin<T extends StatefulWidget>
     }
     try {
       await refresh();
+    } catch (e) {
+      // A refresh that failed is not a reason to stop refreshing.
+      debugPrint('[auto_refresh_mixin.dart] refresh() failed: $e');
     } finally {
       _refreshInFlight = false;
       if (mounted) {

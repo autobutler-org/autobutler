@@ -176,7 +176,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         );
       }
     });
-    _onUploadProgress();
+    // Assigned directly rather than through _onUploadProgress: this runs
+    // during initState, where there is no build to schedule yet, and a page
+    // opened mid-upload would otherwise call setState before its first frame.
+    _isUploading = UploadManager.instance.isUploading;
+    _uploadTotal = UploadManager.instance.total;
+    _uploadCompleted = UploadManager.instance.completed;
   }
 
   /// Mirrors the manager's progress into this page's state.
@@ -232,13 +237,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   @override
   Future<void> refresh() async {
-    // An upload in flight has first claim on the connection pool. Refreshing
-    // underneath it is what made a large folder upload look like it had
-    // stalled. The listing is going to be out of date mid-upload anyway, and
-    // the batch triggers a refresh the moment it drains.
-    if (UploadManager.instance.isUploading) {
-      return;
-    }
+    // Deliberately not gated on UploadManager.isUploading. Gating it here made
+    // the reload button dead for the rest of the session if an upload ever
+    // failed to finish, and refreshing was never the expensive half: what
+    // stalled a folder upload was a refresh per uploaded file, triggered by
+    // our own server events, and that is guarded where it starts — in the
+    // event listener in initState. A refresh the user asked for, or one every
+    // fifteen seconds, is two requests, not two per file.
     _noHostSelected = AppSettings.instance.activeHost == null;
     if (_noHostSelected) {
       setState(() {
