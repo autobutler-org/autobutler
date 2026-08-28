@@ -3,7 +3,11 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:quark/models/upload_session.dart';
+import 'package:quark/services/resumable_upload_service.dart';
+import 'package:quark/services/upload_chunk_source.dart';
 import 'package:quark/services/upload_manager.dart';
+import 'package:quark/utils/upload_session_record.dart';
 import 'package:quark/utils/upload_tree_utils.dart';
 
 /// An upload must outlive the folder it was started from.
@@ -464,6 +468,742 @@ void main() {
       expect(manager.isUploading, isFalse);
     });
   });
+
+  /// A large file used to be read whole into the tab's memory and started again
+  /// from zero on any interruption (#1629). Both are properties of what one
+  /// worker does with one file; the pool above it is untouched.
+  group('chunked uploads', () {
+    late _FakeUploadServer server;
+    late InMemoryUploadSessionStore store;
+    late List<String> sentWhole;
+
+    setUp(() {
+      server = _FakeUploadServer();
+      store = InMemoryUploadSessionStore();
+      sentWhole = <String>[];
+    });
+
+    UploadManager managerFor({
+      int chunkSizeBytes = 8,
+      int chunkedThresholdBytes = 8,
+      int concurrency = 1,
+      int maxAttempts = kMaxUploadAttempts,
+      int maxChunkAttempts = 3,
+      int maxConsecutiveFailures = kMaxConsecutiveUploadFailures,
+      Duration attemptTimeout = kUploadAttemptTimeout,
+    }) {
+      return UploadManager.forTesting(
+        sender: ({required currentPath, required selectedFiles, serial}) async {
+          sentWhole.add(selectedFiles.single.filename!);
+        },
+        sessionClient: server,
+        sessionStore: store,
+        concurrency: concurrency,
+        maxAttempts: maxAttempts,
+        maxChunkAttempts: maxChunkAttempts,
+        maxConsecutiveFailures: maxConsecutiveFailures,
+        attemptTimeout: attemptTimeout,
+        chunkSizeBytes: chunkSizeBytes,
+        chunkedThresholdBytes: chunkedThresholdBytes,
+        chunkRetryBackoff: Duration.zero,
+      );
+    }
+
+    final modified = DateTime.utc(2026, 2, 3);
+
+    PendingUpload sized(String name, int size, {String relativeDir = ''}) {
+      return PendingUpload(
+        relativeDir: relativeDir,
+        name: name,
+        build: () async =>
+            http.MultipartFile.fromBytes('files', _bytes, filename: name),
+        openChunkSource: () async =>
+            _FakeChunkSource(size, lastModified: modified),
+      );
+    }
+
+    String keyFor(String name, int size, {String rootDir = ''}) {
+      return uploadFileIdentity(
+        rootDir: rootDir,
+        fileName: name,
+        size: size,
+        lastModified: modified,
+      );
+    }
+
+    /// Every range the server was asked for, as `start-end` with an exclusive
+    /// end — the form the client reasons in, before it becomes an inclusive
+    /// Content-Range on the wire.
+    void expectCovers(List<String> ranges, int total) {
+      var expected = 0;
+      for (final range in ranges) {
+        final parts = range.split('-');
+        expect(
+          int.parse(parts[0]),
+          expected,
+          reason: 'chunk $range does not start where the last one ended',
+        );
+        expected = int.parse(parts[1]);
+      }
+      expect(expected, total, reason: 'the last chunk must reach the end');
+    }
+
+    test('a file below the threshold never opens a session', () async {
+      // No regression in the common case: a photo is still one request, and
+      // chunking it would only add a session round trip.
+      final manager = managerFor(chunkedThresholdBytes: 16);
+
+      final done = manager.results.first;
+      manager.enqueue(uploads: [sized('small.bin', 15)], uploadPath: '/docs');
+      final result = await done;
+
+      expect(sentWhole, ['small.bin']);
+      expect(server.created, isEmpty);
+      expect(server.ranges, isEmpty);
+      expect(result.failed, 0);
+    });
+
+    test('a file with no chunk source takes the whole-file path', () async {
+      // What keeps every pre-#1629 caller working.
+      final manager = managerFor();
+
+      final done = manager.results.first;
+      manager.enqueue(
+        uploads: [
+          PendingUpload(
+            relativeDir: '',
+            name: 'legacy.bin',
+            build: () async => http.MultipartFile.fromBytes(
+              'files',
+              _bytes,
+              filename: 'legacy.bin',
+            ),
+          ),
+        ],
+        uploadPath: '',
+      );
+      final result = await done;
+
+      expect(sentWhole, ['legacy.bin']);
+      expect(server.created, isEmpty);
+      expect(result.failed, 0);
+    });
+
+    test(
+      'chunks a file that does not divide evenly by the chunk size',
+      () async {
+        // The last partial chunk is where off-by-one lives.
+        final manager = managerFor();
+
+        final done = manager.results.first;
+        manager.enqueue(uploads: [sized('big.bin', 20)], uploadPath: '');
+        final result = await done;
+
+        expect(server.ranges, ['0-8', '8-16', '16-20']);
+        expectCovers(server.ranges, 20);
+        expect(
+          sentWhole,
+          isEmpty,
+          reason: 'no multipart request for a big file',
+        );
+        expect(result.failed, 0);
+        expect(result.succeeded, 1);
+      },
+    );
+
+    test('a file that is exactly one chunk is one request', () async {
+      final manager = managerFor();
+
+      final done = manager.results.first;
+      manager.enqueue(uploads: [sized('exact.bin', 8)], uploadPath: '');
+      await done;
+
+      expect(server.ranges, ['0-8']);
+      expectCovers(server.ranges, 8);
+    });
+
+    test('a chunk that fails resumes from the committed offset', () async {
+      // Not from zero: the offset the server has already accepted is the whole
+      // point of the protocol.
+      server.intercept = (attempt, start, end) async {
+        if (attempt == 2) {
+          throw Exception('connection reset');
+        }
+        return null;
+      };
+      final manager = managerFor();
+
+      final done = manager.results.first;
+      manager.enqueue(uploads: [sized('big.bin', 20)], uploadPath: '');
+      final result = await done;
+
+      expect(server.ranges, ['0-8', '8-16', '8-16', '16-20']);
+      expect(
+        server.ranges.where((r) => r == '0-8'),
+        hasLength(1),
+        reason: 'the bytes already committed are never sent again',
+      );
+      expect(server.created, hasLength(1), reason: 'the session survived');
+      expect(result.failed, 0);
+    });
+
+    test('a 409 carrying the real offset resyncs and finishes', () async {
+      // The lost-response case: the server has the bytes, the client does not
+      // know it. Resyncing costs a header; restarting would cost the file.
+      server.intercept = (attempt, start, end) async {
+        if (attempt == 1) {
+          server.sessions[server.created.last]!.offset = 8;
+          return const ChunkOffsetMismatch(offset: 8);
+        }
+        return null;
+      };
+      final manager = managerFor();
+
+      final done = manager.results.first;
+      manager.enqueue(uploads: [sized('big.bin', 20)], uploadPath: '');
+      final result = await done;
+
+      expect(server.ranges, ['0-8', '8-16', '16-20']);
+      expect(server.created, hasLength(1), reason: 'resync, not restart');
+      expect(result.failed, 0);
+    });
+
+    test('resumes a stored session from where the server got to', () async {
+      final sessionId = server.seed(
+        fileName: 'big.bin',
+        totalSize: 20,
+        offset: 8,
+      );
+      final key = keyFor('big.bin', 20);
+      store.write(
+        UploadSessionRecord(
+          fileKey: key,
+          sessionId: sessionId,
+          offset: 8,
+          totalSize: 20,
+          fileName: 'big.bin',
+          createdAt: DateTime.now(),
+        ),
+      );
+      final manager = managerFor();
+
+      final done = manager.results.first;
+      manager.enqueue(uploads: [sized('big.bin', 20)], uploadPath: '');
+      final result = await done;
+
+      expect(server.created, isEmpty, reason: 'the stored session was reused');
+      expect(server.ranges, ['8-16', '16-20']);
+      expect(result.failed, 0);
+      expect(store.read(key), isNull, reason: 'a finished file leaves nothing');
+    });
+
+    test(
+      'a 404 on a resumed session discards the record and restarts',
+      () async {
+        final key = keyFor('big.bin', 20);
+        store.write(
+          UploadSessionRecord(
+            fileKey: key,
+            sessionId: 'ghost',
+            offset: 8,
+            totalSize: 20,
+            fileName: 'big.bin',
+            createdAt: DateTime.now(),
+          ),
+        );
+        final manager = managerFor();
+
+        final done = manager.results.first;
+        manager.enqueue(uploads: [sized('big.bin', 20)], uploadPath: '');
+        final result = await done;
+
+        expect(
+          server.created,
+          hasLength(1),
+          reason: 'a fresh session, not two',
+        );
+        expect(server.ranges, ['0-8', '8-16', '16-20']);
+        expectCovers(server.ranges, 20);
+        expect(result.failed, 0);
+        expect(store.read(key), isNull);
+      },
+    );
+
+    test('a stored record whose size disagrees is discarded', () async {
+      // The identity is name, size and last-modified, which is weak on
+      // purpose. This is the check that keeps the weakness from corrupting a
+      // file: the server's own description of the session has to agree.
+      final sessionId = server.seed(
+        fileName: 'big.bin',
+        totalSize: 999,
+        offset: 8,
+      );
+      final key = keyFor('big.bin', 20);
+      store.write(
+        UploadSessionRecord(
+          fileKey: key,
+          sessionId: sessionId,
+          offset: 8,
+          totalSize: 20,
+          fileName: 'big.bin',
+          createdAt: DateTime.now(),
+        ),
+      );
+      final manager = managerFor();
+
+      final done = manager.results.first;
+      manager.enqueue(uploads: [sized('big.bin', 20)], uploadPath: '');
+      final result = await done;
+
+      expect(server.created, hasLength(1));
+      expect(server.ranges, ['0-8', '8-16', '16-20']);
+      expect(result.failed, 0);
+      expect(server.deleted, [
+        sessionId,
+      ], reason: 'the session we abandoned frees its temp file now');
+    });
+
+    test('a stored record whose name disagrees is discarded', () async {
+      final sessionId = server.seed(
+        fileName: 'other.bin',
+        totalSize: 20,
+        offset: 8,
+      );
+      final key = keyFor('big.bin', 20);
+      store.write(
+        UploadSessionRecord(
+          fileKey: key,
+          sessionId: sessionId,
+          offset: 8,
+          totalSize: 20,
+          fileName: 'big.bin',
+          createdAt: DateTime.now(),
+        ),
+      );
+      final manager = managerFor();
+
+      final done = manager.results.first;
+      manager.enqueue(uploads: [sized('big.bin', 20)], uploadPath: '');
+      await done;
+
+      expect(server.created, hasLength(1));
+      expect(server.ranges, ['0-8', '8-16', '16-20']);
+    });
+
+    test('a stale record is pruned rather than resumed', () async {
+      final sessionId = server.seed(
+        fileName: 'big.bin',
+        totalSize: 20,
+        offset: 8,
+      );
+      final key = keyFor('big.bin', 20);
+      store.write(
+        UploadSessionRecord(
+          fileKey: key,
+          sessionId: sessionId,
+          offset: 8,
+          totalSize: 20,
+          fileName: 'big.bin',
+          createdAt: DateTime.now().subtract(const Duration(days: 3)),
+        ),
+      );
+      final manager = managerFor();
+
+      final done = manager.results.first;
+      manager.enqueue(uploads: [sized('big.bin', 20)], uploadPath: '');
+      await done;
+
+      expect(server.created, hasLength(1), reason: 'started over');
+      expect(server.ranges, ['0-8', '8-16', '16-20']);
+    });
+
+    test('a session that vanishes mid-file starts that file over', () async {
+      // Sessions live in the server's memory, so a restart drops them. The
+      // client cannot resume what is not there.
+      server.intercept = (attempt, start, end) async {
+        if (attempt == 2) {
+          return const ChunkSessionGone();
+        }
+        return null;
+      };
+      final manager = managerFor();
+
+      final done = manager.results.first;
+      manager.enqueue(uploads: [sized('big.bin', 20)], uploadPath: '');
+      final result = await done;
+
+      expect(server.created, hasLength(2), reason: 'a second session');
+      expect(server.ranges, ['0-8', '8-16', '0-8', '8-16', '16-20']);
+      expect(result.failed, 0);
+      expect(store.read(keyFor('big.bin', 20)), isNull);
+    });
+
+    test('cancel stops a chunked file on a chunk boundary', () async {
+      // The one thing a whole-file upload could not do. Cancelling used to
+      // mean waiting out however long the file in flight took, which for a
+      // four-gigabyte file is the whole upload.
+      late UploadManager manager;
+      server.intercept = (attempt, start, end) async {
+        if (attempt == 1) {
+          manager.cancel();
+        }
+        return null;
+      };
+      manager = managerFor();
+
+      final done = manager.results.first;
+      manager.enqueue(uploads: [sized('big.bin', 40)], uploadPath: '');
+      final result = await done;
+
+      expect(server.ranges, ['0-8'], reason: 'it stopped at the boundary');
+      expect(result.cancelled, isTrue);
+      expect(result.completed, 0, reason: 'neither sent nor failed');
+      expect(result.failed, 0);
+      expect(
+        store.read(keyFor('big.bin', 40))?.offset,
+        8,
+        reason: 'the record stays, so the file resumes rather than restarts',
+      );
+      expect(manager.isUploading, isFalse, reason: 'the UI unlocks');
+    });
+
+    test('a rejected chunk fails the file, not the batch', () async {
+      server.intercept = (attempt, start, end) async {
+        if (start == 8) {
+          return const ChunkRejected(statusCode: 400, message: 'bad range');
+        }
+        return null;
+      };
+      final manager = managerFor(maxAttempts: 1);
+
+      final done = manager.results.first;
+      manager.enqueue(
+        uploads: [sized('big.bin', 20), sized('small.bin', 4)],
+        uploadPath: '',
+      );
+      final result = await done;
+
+      expect(result.failed, 1);
+      expect(result.firstError, contains('bad range'));
+      expect(sentWhole, ['small.bin'], reason: 'the other file still went');
+    });
+
+    test('gives up on the batch after enough chunked files fail', () async {
+      server.intercept = (attempt, start, end) async =>
+          const ChunkRejected(statusCode: 500, message: 'disk full');
+      final manager = managerFor(maxAttempts: 1, maxConsecutiveFailures: 2);
+
+      final done = manager.results.first;
+      manager.enqueue(
+        uploads: List.generate(6, (i) => sized('f$i.bin', 20)),
+        uploadPath: '',
+      );
+      final result = await done;
+
+      expect(result.stoppedEarly, isTrue);
+      expect(result.failed, 2);
+      expect(result.total, 6);
+      expect(result.skipped, 4);
+      expect(result.firstError, contains('disk full'));
+      expect(manager.isUploading, isFalse, reason: 'the UI unlocks');
+    });
+
+    test(
+      'a chunk that never answers fails the file rather than the pool',
+      () async {
+        // The timeout bounds one chunk, not the whole file — a four-gigabyte
+        // upload is minutes of honest work and must not trip it.
+        server.intercept = (attempt, start, end) =>
+            Completer<ChunkUploadOutcome?>().future;
+        final manager = managerFor(
+          maxAttempts: 1,
+          maxChunkAttempts: 1,
+          attemptTimeout: const Duration(milliseconds: 50),
+        );
+
+        final done = manager.results.first;
+        manager.enqueue(uploads: [sized('big.bin', 20)], uploadPath: '');
+        final result = await done;
+
+        expect(result.failed, 1);
+        expect(result.firstError, contains('no response'));
+        expect(manager.isUploading, isFalse);
+      },
+    );
+
+    test('reports byte progress while a single file is in flight', () async {
+      // completed counts whole files, which reads as no movement at all for as
+      // long as one large file takes.
+      final manager = managerFor();
+      final seen = <int>[];
+      manager.addListener(() {
+        final progress = manager.chunkedProgress['/big.bin'];
+        if (progress != null) seen.add(progress.sent);
+      });
+
+      final done = manager.results.first;
+      manager.enqueue(uploads: [sized('big.bin', 20)], uploadPath: '');
+      await done;
+
+      expect(seen, containsAllInOrder([0, 8, 16, 20]));
+      expect(manager.chunkedProgress, isEmpty, reason: 'cleared when done');
+    });
+
+    test('releases the chunk source however the file ends', () async {
+      final sources = <_FakeChunkSource>[];
+      server.intercept = (attempt, start, end) async =>
+          const ChunkRejected(statusCode: 500, message: 'nope');
+      final manager = UploadManager.forTesting(
+        sender:
+            ({required currentPath, required selectedFiles, serial}) async {},
+        sessionClient: server,
+        sessionStore: store,
+        concurrency: 1,
+        maxAttempts: 1,
+        chunkSizeBytes: 8,
+        chunkedThresholdBytes: 8,
+        chunkRetryBackoff: Duration.zero,
+      );
+
+      final done = manager.results.first;
+      manager.enqueue(
+        uploads: [
+          PendingUpload(
+            relativeDir: '',
+            name: 'big.bin',
+            build: () async => http.MultipartFile.fromBytes(
+              'files',
+              _bytes,
+              filename: 'big.bin',
+            ),
+            openChunkSource: () async {
+              final source = _FakeChunkSource(20);
+              sources.add(source);
+              return source;
+            },
+          ),
+        ],
+        uploadPath: '',
+      );
+      await done;
+
+      expect(sources.single.released, isTrue);
+    });
+
+    test('sends the session to the directory the file belongs in', () async {
+      final manager = managerFor();
+
+      final done = manager.results.first;
+      manager.enqueue(
+        uploads: [sized('a.mp4', 20, relativeDir: 'photos/2024')],
+        uploadPath: '/vacation',
+      );
+      await done;
+
+      // Structure travels in rootDir, never in the filename (#1603).
+      expect(server.createdRootDirs, ['vacation/photos/2024']);
+      expect(server.createdFileNames, ['a.mp4']);
+    });
+
+    test('still runs four files at a time', () async {
+      // #1629 changes what one worker does, not how many run.
+      expect(kDefaultUploadConcurrency, 4);
+
+      var inFlight = 0;
+      var peak = 0;
+      final gate = Completer<void>();
+      server.intercept = (attempt, start, end) async {
+        inFlight++;
+        peak = peak > inFlight ? peak : inFlight;
+        await gate.future;
+        inFlight--;
+        return null;
+      };
+      final manager = managerFor(concurrency: kDefaultUploadConcurrency);
+
+      final done = manager.results.first;
+      manager.enqueue(
+        uploads: List.generate(9, (i) => sized('f$i.bin', 8)),
+        uploadPath: '',
+      );
+
+      await pumpEventQueue();
+      expect(peak, kDefaultUploadConcurrency);
+
+      gate.complete();
+      final result = await done;
+      expect(result.total, 9);
+      expect(result.failed, 0);
+      expect(peak, lessThanOrEqualTo(kDefaultUploadConcurrency));
+    });
+  });
 }
 
 final _bytes = Uint8List.fromList([1, 2, 3]);
+
+/// A chunk source that knows its size and nothing else.
+///
+/// The fake session client below never asks it for bytes: what these tests are
+/// about is the loop over ranges and the retry accounting, and neither needs
+/// real bytes to be wrong in an interesting way.
+class _FakeChunkSource implements UploadChunkSource {
+  _FakeChunkSource(this.size, {this.lastModified});
+
+  @override
+  final int size;
+
+  @override
+  final DateTime? lastModified;
+
+  bool released = false;
+
+  @override
+  Future<http.Response> putRange({
+    required Uri uri,
+    required Map<String, String> headers,
+    required int start,
+    required int end,
+  }) {
+    throw UnsupportedError('the fake session client never sends bytes');
+  }
+
+  @override
+  void release() => released = true;
+}
+
+class _FakeSession {
+  _FakeSession({
+    required this.rootDir,
+    required this.fileName,
+    required this.totalSize,
+    this.offset = 0,
+  });
+
+  final String rootDir;
+  final String fileName;
+  final int totalSize;
+  int offset;
+}
+
+/// The session half of the contract, in memory.
+///
+/// It enforces what the real server enforces — a chunk starts at the committed
+/// offset, a replay below it is accepted and written nowhere, an unknown
+/// session is gone — so a test that passes here is testing the protocol rather
+/// than a mock's habits.
+class _FakeUploadServer implements ResumableUploadClient {
+  final Map<String, _FakeSession> sessions = {};
+  final List<String> created = [];
+  final List<String> createdRootDirs = [];
+  final List<String> createdFileNames = [];
+  final List<String> deleted = [];
+  final List<String> ranges = [];
+
+  int puts = 0;
+  int _counter = 0;
+
+  /// Steps in before the server sees a chunk. Returning an outcome forces it;
+  /// throwing stands in for a connection that dropped mid-request.
+  Future<ChunkUploadOutcome?> Function(int attempt, int start, int end)?
+  intercept;
+
+  /// A session that already exists, as one left behind by an earlier page.
+  String seed({
+    required String fileName,
+    required int totalSize,
+    String rootDir = '',
+    int offset = 0,
+  }) {
+    final sessionId = 'seeded-${++_counter}';
+    sessions[sessionId] = _FakeSession(
+      rootDir: rootDir,
+      fileName: fileName,
+      totalSize: totalSize,
+      offset: offset,
+    );
+    return sessionId;
+  }
+
+  @override
+  Future<UploadSession> createSession({
+    required String rootDir,
+    required String fileName,
+    required int totalSize,
+    String? serial,
+    bool overwrite = false,
+  }) async {
+    final sessionId = 'session-${++_counter}';
+    sessions[sessionId] = _FakeSession(
+      rootDir: rootDir,
+      fileName: fileName,
+      totalSize: totalSize,
+    );
+    created.add(sessionId);
+    createdRootDirs.add(rootDir);
+    createdFileNames.add(fileName);
+    return UploadSession(sessionId: sessionId, offset: 0);
+  }
+
+  @override
+  Future<ChunkUploadOutcome> putChunk({
+    required String sessionId,
+    required UploadChunkSource source,
+    required int start,
+    required int end,
+    required int totalSize,
+  }) async {
+    puts++;
+    ranges.add('$start-$end');
+    final forced = await intercept?.call(puts, start, end);
+    if (forced != null) {
+      return forced;
+    }
+
+    final session = sessions[sessionId];
+    if (session == null) {
+      return const ChunkSessionGone();
+    }
+    if (end <= session.offset) {
+      // Idempotent replay: a retry after a response lost in flight.
+      return ChunkAccepted(
+        offset: session.offset,
+        complete: session.offset >= session.totalSize,
+      );
+    }
+    if (start != session.offset) {
+      return ChunkOffsetMismatch(offset: session.offset);
+    }
+
+    session.offset = end;
+    final complete = session.offset >= session.totalSize;
+    if (complete) {
+      sessions.remove(sessionId);
+    }
+    return ChunkAccepted(
+      offset: session.offset,
+      complete: complete,
+      path: complete ? '${session.rootDir}/${session.fileName}' : null,
+    );
+  }
+
+  @override
+  Future<UploadSessionStatus?> getSession(String sessionId) async {
+    final session = sessions[sessionId];
+    if (session == null) {
+      return null;
+    }
+    return UploadSessionStatus(
+      sessionId: sessionId,
+      offset: session.offset,
+      totalSize: session.totalSize,
+      fileName: session.fileName,
+      rootDir: session.rootDir,
+    );
+  }
+
+  @override
+  Future<void> deleteSession(String sessionId) async {
+    deleted.add(sessionId);
+    sessions.remove(sessionId);
+  }
+}

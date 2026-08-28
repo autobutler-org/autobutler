@@ -1,4 +1,3 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -44,21 +43,14 @@ class FileBrowserController {
   /// different picker on every platform and so cannot share this entry point.
   ///
   /// Returns an empty list if the user cancelled.
-  Future<List<http.MultipartFile>> pickUploadFiles() async {
-    final result = await FilePicker.pickFiles(
-      withData: true,
-      allowMultiple: true,
-    );
-    if (result == null || result.files.isEmpty) {
-      return [];
-    }
-
-    final files = <http.MultipartFile>[];
-    for (final platformFile in result.files) {
-      final f = await multipartFileFromPlatformFile(platformFile);
-      if (f != null) files.add(f);
-    }
-    return files;
+  ///
+  /// Returns [PendingUpload]s rather than built multipart files: the bytes are
+  /// fetched when the file is sent, and a file large enough to be chunked has
+  /// its bytes fetched a range at a time and never all at once (#1629). This
+  /// used to go through file_picker with `withData: true`, which read every
+  /// selected file into memory before anything was sent.
+  Future<List<PendingUpload>> pickUploadFiles() {
+    return pickFileUploads();
   }
 
   /// Whether this platform can offer folder selection at all.
@@ -73,40 +65,6 @@ class FileBrowserController {
   /// Returns an empty list if the user cancelled or the folder holds no files.
   Future<List<PendingUpload>> pickUploadFolder() {
     return pickFolderUploads();
-  }
-
-  /// @deprecated Use [pickUploadFiles] instead.
-  Future<http.MultipartFile?> pickUploadFile() async {
-    final files = await pickUploadFiles();
-    return files.isEmpty ? null : files.first;
-  }
-
-  Future<http.MultipartFile?> multipartFileFromPlatformFile(
-    PlatformFile selected,
-  ) async {
-    final bytes = selected.bytes;
-
-    // Web cannot use MultipartFile.fromPath because it depends on dart:io.
-    if (kIsWeb) {
-      if (bytes == null) {
-        return null;
-      }
-      return multipartFileFromBytes(bytes: bytes, filename: selected.name);
-    }
-
-    final path = selected.path;
-    if (path != null && path.isNotEmpty) {
-      return http.MultipartFile.fromPath(
-        'files',
-        path,
-        filename: selected.name,
-      );
-    }
-
-    if (bytes == null) {
-      return null;
-    }
-    return multipartFileFromBytes(bytes: bytes, filename: selected.name);
   }
 
   http.MultipartFile multipartFileFromBytes({
