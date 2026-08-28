@@ -159,7 +159,8 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 		path := c.Request.URL.Path
 
 		// Static assets and the Flutter web app don't need auth — the client-side
-		// AuthGate handles the login flow. Only /api/ routes require a session.
+		// authRedirect (lib/router.dart) gates terms and session, consulting this
+		// server's status endpoint. Only /api/ routes require a session.
 		if !strings.HasPrefix(path, "/api/") {
 			c.Next()
 			return
