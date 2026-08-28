@@ -55,7 +55,7 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
       _error = null;
     });
     try {
-      final files = await FilesService.getFilesByType('abdoc');
+      final files = await FilesService.getFilesByType('qdoc');
       setStateSafely(() {
         _files = files;
         _applyFilter();
@@ -123,7 +123,7 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
     if (name == null || name.isEmpty || !mounted) return;
 
     try {
-      final fileName = name.endsWith('.abdoc') ? name : '$name.abdoc';
+      final fileName = name.endsWith('.qdoc') ? name : '$name.qdoc';
       final bytes = '{"ops":[{"insert":"\\n"}]}'.codeUnits;
       final file = http.MultipartFile.fromBytes(
         'files',
@@ -399,7 +399,7 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
         ),
       ),
       title: Text(
-        node.name.replaceAll(RegExp(r'\.abdoc$', caseSensitive: false), ''),
+        node.name.replaceAll(RegExp(r'\.qdoc$', caseSensitive: false), ''),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),

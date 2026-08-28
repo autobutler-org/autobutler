@@ -20,15 +20,15 @@ void main() {
 
     test('encodes spaces but keeps the separators', () {
       expect(
-        AppRoutes.encodeFilePath('my folder/my doc.abdoc'),
-        'my%20folder/my%20doc.abdoc',
+        AppRoutes.encodeFilePath('my folder/my doc.qdoc'),
+        'my%20folder/my%20doc.qdoc',
       );
     });
 
     test('encodes a literal percent so it survives one decode', () {
       expect(
-        AppRoutes.encodeFilePath('holiday 100%.abdoc'),
-        'holiday%20100%25.abdoc',
+        AppRoutes.encodeFilePath('holiday 100%.qdoc'),
+        'holiday%20100%25.qdoc',
       );
     });
 
@@ -40,14 +40,14 @@ void main() {
 
   group('route builders emit URLs go_router can echo back verbatim', () {
     // #1604: these were built by raw interpolation, so a name with a space
-    // produced '/files/my doc.abdoc' while the live location read
-    // '/files/my%20doc.abdoc'. Every site comparing the two mismatched.
+    // produced '/files/my doc.qdoc' while the live location read
+    // '/files/my%20doc.qdoc'. Every site comparing the two mismatched.
     for (final name in const [
-      'plain.abdoc',
-      'my doc.abdoc',
-      'holiday 100%.abdoc',
-      'a+b.abdoc',
-      'note#1.abdoc',
+      'plain.qdoc',
+      'my doc.qdoc',
+      'holiday 100%.qdoc',
+      'a+b.qdoc',
+      'note#1.qdoc',
     ]) {
       test('filesPath round-trips [$name]', () {
         final built = AppRoutes.filesPath('/folder/$name');
@@ -60,10 +60,10 @@ void main() {
     }
 
     test('docFile, sheetFile and plaintextEditorPath encode too', () {
-      expect(AppRoutes.docFile('/my doc.abdoc'), '/docs/my%20doc.abdoc');
+      expect(AppRoutes.docFile('/my doc.qdoc'), '/docs/my%20doc.qdoc');
       expect(
-        AppRoutes.sheetFile('/my sheet.absheet'),
-        '/sheets/my%20sheet.absheet',
+        AppRoutes.sheetFile('/my sheet.qsheet'),
+        '/sheets/my%20sheet.qsheet',
       );
       expect(
         AppRoutes.plaintextEditorPath('/my notes.txt'),
@@ -75,8 +75,8 @@ void main() {
   group('AppRoutes.canonicalRoute', () {
     test('makes an unencoded route compare equal to the live location', () {
       expect(
-        AppRoutes.canonicalRoute('/files/my doc.abdoc'),
-        AppRoutes.canonicalRoute('/files/my%20doc.abdoc'),
+        AppRoutes.canonicalRoute('/files/my doc.qdoc'),
+        AppRoutes.canonicalRoute('/files/my%20doc.qdoc'),
       );
     });
 
@@ -119,26 +119,26 @@ void main() {
     ) async {
       final seen = await pathSeenFor(
         tester,
-        AppRoutes.filesPath('/my doc.abdoc'),
+        AppRoutes.filesPath('/my doc.qdoc'),
       );
-      expect(seen, '/my doc.abdoc');
+      expect(seen, '/my doc.qdoc');
     });
 
     // Decoding a second time threw FormatException on any name with a '%'.
     testWidgets('a name with a percent sign does not throw', (tester) async {
       final seen = await pathSeenFor(
         tester,
-        AppRoutes.filesPath('/holiday 100%.abdoc'),
+        AppRoutes.filesPath('/holiday 100%.qdoc'),
       );
-      expect(seen, '/holiday 100%.abdoc');
+      expect(seen, '/holiday 100%.qdoc');
     });
 
     testWidgets('a literal %20 in a name is preserved', (tester) async {
       final seen = await pathSeenFor(
         tester,
-        AppRoutes.filesPath('/odd%20name.abdoc'),
+        AppRoutes.filesPath('/odd%20name.qdoc'),
       );
-      expect(seen, '/odd%20name.abdoc');
+      expect(seen, '/odd%20name.qdoc');
     });
   });
 

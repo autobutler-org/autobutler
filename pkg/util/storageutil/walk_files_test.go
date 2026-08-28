@@ -60,10 +60,10 @@ func relPaths(files []storageutil.WalkedFile) []string {
 // replaces at every recursive call site, only ever saw the top level.
 func TestWalkFilesInDir_ReachesNestedFiles(t *testing.T) {
 	root := t.TempDir()
-	seedTree(t, root, "top.txt", "sub/deep.abdoc", "sub/nested/deeper.txt", "empty/")
+	seedTree(t, root, "top.txt", "sub/deep.qdoc", "sub/nested/deeper.txt", "empty/")
 
 	got := relPaths(collectWalk(t, root))
-	want := []string{"empty", "sub", "sub/deep.abdoc", "sub/nested", "sub/nested/deeper.txt", "top.txt"}
+	want := []string{"empty", "sub", "sub/deep.qdoc", "sub/nested", "sub/nested/deeper.txt", "top.txt"}
 	if strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Errorf("walk\n got: %v\nwant: %v", got, want)
 	}

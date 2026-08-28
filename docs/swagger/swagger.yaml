@@ -1463,7 +1463,7 @@ paths:
       description: Recursively walks all managed devices and returns files whose fileType
         matches the given value, sorted newest-first.
       parameters:
-      - description: File type to filter by (e.g. abdoc, absheet)
+      - description: File type to filter by (e.g. qdoc, qsheet)
         in: query
         name: fileType
         required: true
@@ -1783,7 +1783,7 @@ paths:
     get:
       description: 'Returns filesystem metadata for the given files-relative path:
         whether it is a directory and its file type. Useful for deep-link resolution
-        when the path extension alone is ambiguous (e.g. a folder named "things.abdoc").'
+        when the path extension alone is ambiguous (e.g. a folder named "things.qdoc").'
       parameters:
       - description: Files-relative path to stat
         in: query

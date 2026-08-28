@@ -8,27 +8,27 @@ import (
 	"testing"
 )
 
-// --- .abdoc / .absheet extraction ---
+// --- .qdoc / .qsheet extraction ---
 
 func TestIsIndexable_QuarkFormats(t *testing.T) {
-	for _, path := range []string{"notes.abdoc", "budget.absheet", "NOTES.ABDOC"} {
+	for _, path := range []string{"notes.qdoc", "budget.qsheet", "NOTES.QDOC"} {
 		if !IsIndexable(path) {
 			t.Errorf("IsIndexable(%q) = false, want true", path)
 		}
 	}
 }
 
-// A doc named "something.txt.abdoc" must be treated as a doc, not as text:
+// A doc named "something.txt.qdoc" must be treated as a doc, not as text:
 // filepath.Ext only sees the final extension.
 func TestIsIndexable_DoubleExtensionUsesLast(t *testing.T) {
-	if !IsIndexable("something.txt.abdoc") {
-		t.Error("IsIndexable(\"something.txt.abdoc\") = false, want true")
+	if !IsIndexable("something.txt.qdoc") {
+		t.Error("IsIndexable(\"something.txt.qdoc\") = false, want true")
 	}
 }
 
-func TestExtractText_Abdoc(t *testing.T) {
+func TestExtractText_Qdoc(t *testing.T) {
 	const delta = `{"ops":[{"insert":"hello world"},{"insert":"\nsecond line\n"}]}`
-	path := writeTemp(t, "notes.abdoc", delta)
+	path := writeTemp(t, "notes.qdoc", delta)
 
 	got := ExtractText(path)
 	const want = "hello world\nsecond line"
@@ -43,18 +43,18 @@ func TestExtractText_Abdoc(t *testing.T) {
 
 // An op's insert is an object for embeds (images and the like). Those carry no
 // indexable text and must not break extraction of the surrounding prose.
-func TestExtractText_AbdocSkipsEmbeds(t *testing.T) {
+func TestExtractText_QdocSkipsEmbeds(t *testing.T) {
 	const delta = `{"ops":[{"insert":"before "},{"insert":{"image":"a.png"}},{"insert":"after"}]}`
-	path := writeTemp(t, "embed.abdoc", delta)
+	path := writeTemp(t, "embed.qdoc", delta)
 
 	if got, want := ExtractText(path), "before after"; got != want {
 		t.Errorf("ExtractText = %q, want %q", got, want)
 	}
 }
 
-func TestExtractText_Absheet(t *testing.T) {
+func TestExtractText_Qsheet(t *testing.T) {
 	const sheet = `{"tabs":[{"name":"Budget","data":{"rows":[["=B1+B2","rent"],["",42]]}}]}`
-	path := writeTemp(t, "budget.absheet", sheet)
+	path := writeTemp(t, "budget.qsheet", sheet)
 
 	got := ExtractText(path)
 	for _, want := range []string{"Budget", "=B1+B2", "rent", "42"} {
@@ -70,9 +70,9 @@ func TestExtractText_Absheet(t *testing.T) {
 
 // Malformed JSON still gets indexed verbatim rather than dropped — a truncated
 // or hand-edited document should stay searchable.
-func TestExtractText_MalformedAbdocFallsBackToRaw(t *testing.T) {
+func TestExtractText_MalformedQdocFallsBackToRaw(t *testing.T) {
 	const broken = `{"ops":[{"insert":"unterminated`
-	path := writeTemp(t, "broken.abdoc", broken)
+	path := writeTemp(t, "broken.qdoc", broken)
 
 	if got := ExtractText(path); got != broken {
 		t.Errorf("ExtractText = %q, want raw fallback %q", got, broken)
@@ -80,11 +80,11 @@ func TestExtractText_MalformedAbdocFallsBackToRaw(t *testing.T) {
 }
 
 // The end-to-end case behind #1339: the query string lives only inside an
-// .abdoc envelope, so it is findable only if the Delta is unwrapped.
-func TestBackfillThenSearch_Abdoc(t *testing.T) {
+// .qdoc envelope, so it is findable only if the Delta is unwrapped.
+func TestBackfillThenSearch_Qdoc(t *testing.T) {
 	db := newTestDB(t)
 	dir := t.TempDir()
-	writeAt(t, filepath.Join(dir, "something.txt.abdoc"),
+	writeAt(t, filepath.Join(dir, "something.txt.qdoc"),
 		`{"ops":[{"insert":"sdfsdfsadfsdffsdfasdf\n"}]}`)
 
 	res, err := BackfillTree(context.Background(), db, "", dir)
@@ -102,8 +102,8 @@ func TestBackfillThenSearch_Abdoc(t *testing.T) {
 	if len(hits) != 1 {
 		t.Fatalf("got %d hits, want 1", len(hits))
 	}
-	if hits[0].RelPath != "something.txt.abdoc" {
-		t.Errorf("RelPath = %q, want %q", hits[0].RelPath, "something.txt.abdoc")
+	if hits[0].RelPath != "something.txt.qdoc" {
+		t.Errorf("RelPath = %q, want %q", hits[0].RelPath, "something.txt.qdoc")
 	}
 }
 

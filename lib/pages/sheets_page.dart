@@ -55,7 +55,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
       _error = null;
     });
     try {
-      final files = await FilesService.getFilesByType('absheet');
+      final files = await FilesService.getFilesByType('qsheet');
       setStateSafely(() {
         _files = files;
         _applyFilter();
@@ -122,7 +122,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
     if (name == null || name.isEmpty || !mounted) return;
 
     try {
-      final fileName = name.endsWith('.absheet') ? name : '$name.absheet';
+      final fileName = name.endsWith('.qsheet') ? name : '$name.qsheet';
       final bytes =
           '{"tabs":[{"name":"Sheet 1","data":{"columns":[],"rows":[]}}]}'
               .codeUnits;
@@ -397,7 +397,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
         ),
       ),
       title: Text(
-        node.name.replaceAll(RegExp(r'\.absheet$', caseSensitive: false), ''),
+        node.name.replaceAll(RegExp(r'\.qsheet$', caseSensitive: false), ''),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),

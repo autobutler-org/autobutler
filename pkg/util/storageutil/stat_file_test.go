@@ -28,40 +28,40 @@ func makeTestDevice(t *testing.T) (ManagedDevice, string) {
 
 func TestStatFileImpl_RegularFile(t *testing.T) {
 	dev, filesDir := makeTestDevice(t)
-	if err := os.WriteFile(filepath.Join(filesDir, "note.abdoc"), []byte("{}"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(filesDir, "note.qdoc"), []byte("{}"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
-	result, err := StatFileImpl(StatFileParams{FilePath: "note.abdoc"}, &dev, filesDir)
+	result, err := StatFileImpl(StatFileParams{FilePath: "note.qdoc"}, &dev, filesDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if result.IsDir {
 		t.Error("expected IsDir=false for a regular file")
 	}
-	if result.FileType != FileTypeAbdoc {
-		t.Errorf("expected FileType %q, got %q", FileTypeAbdoc, result.FileType)
+	if result.FileType != FileTypeQdoc {
+		t.Errorf("expected FileType %q, got %q", FileTypeQdoc, result.FileType)
 	}
-	if result.Name != "note.abdoc" {
-		t.Errorf("expected Name %q, got %q", "note.abdoc", result.Name)
+	if result.Name != "note.qdoc" {
+		t.Errorf("expected Name %q, got %q", "note.qdoc", result.Name)
 	}
 }
 
-// A folder whose name ends in .abdoc must be reported as a directory, not as
-// an abdoc file. This is the core regression case: extension-only heuristics
-// would misidentify "things.abdoc/" as a document.
-func TestStatFileImpl_FolderNamedLikeAbdoc(t *testing.T) {
+// A folder whose name ends in .qdoc must be reported as a directory, not as
+// an qdoc file. This is the core regression case: extension-only heuristics
+// would misidentify "things.qdoc/" as a document.
+func TestStatFileImpl_FolderNamedLikeQdoc(t *testing.T) {
 	dev, filesDir := makeTestDevice(t)
-	if err := os.Mkdir(filepath.Join(filesDir, "things.abdoc"), 0755); err != nil {
+	if err := os.Mkdir(filepath.Join(filesDir, "things.qdoc"), 0755); err != nil {
 		t.Fatal(err)
 	}
 
-	result, err := StatFileImpl(StatFileParams{FilePath: "things.abdoc"}, &dev, filesDir)
+	result, err := StatFileImpl(StatFileParams{FilePath: "things.qdoc"}, &dev, filesDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if !result.IsDir {
-		t.Error("expected IsDir=true for a folder named things.abdoc")
+		t.Error("expected IsDir=true for a folder named things.qdoc")
 	}
 	if result.FileType != FileTypeFolder {
 		t.Errorf("expected FileType %q, got %q", FileTypeFolder, result.FileType)
@@ -69,18 +69,18 @@ func TestStatFileImpl_FolderNamedLikeAbdoc(t *testing.T) {
 }
 
 // A folder named like a spreadsheet file must also be reported as a directory.
-func TestStatFileImpl_FolderNamedLikeAbsheet(t *testing.T) {
+func TestStatFileImpl_FolderNamedLikeQsheet(t *testing.T) {
 	dev, filesDir := makeTestDevice(t)
-	if err := os.Mkdir(filepath.Join(filesDir, "budget.absheet"), 0755); err != nil {
+	if err := os.Mkdir(filepath.Join(filesDir, "budget.qsheet"), 0755); err != nil {
 		t.Fatal(err)
 	}
 
-	result, err := StatFileImpl(StatFileParams{FilePath: "budget.absheet"}, &dev, filesDir)
+	result, err := StatFileImpl(StatFileParams{FilePath: "budget.qsheet"}, &dev, filesDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if !result.IsDir {
-		t.Error("expected IsDir=true for a folder named budget.absheet")
+		t.Error("expected IsDir=true for a folder named budget.qsheet")
 	}
 	if result.FileType != FileTypeFolder {
 		t.Errorf("expected FileType %q, got %q", FileTypeFolder, result.FileType)
@@ -125,22 +125,22 @@ func TestStatFileImpl_ImageFile(t *testing.T) {
 	}
 }
 
-// An actual spreadsheet file must be reported as absheet.
-func TestStatFileImpl_AbsheetFile(t *testing.T) {
+// An actual spreadsheet file must be reported as qsheet.
+func TestStatFileImpl_QsheetFile(t *testing.T) {
 	dev, filesDir := makeTestDevice(t)
-	if err := os.WriteFile(filepath.Join(filesDir, "data.absheet"), []byte("{}"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(filesDir, "data.qsheet"), []byte("{}"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
-	result, err := StatFileImpl(StatFileParams{FilePath: "data.absheet"}, &dev, filesDir)
+	result, err := StatFileImpl(StatFileParams{FilePath: "data.qsheet"}, &dev, filesDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if result.IsDir {
-		t.Error("expected IsDir=false for an absheet file")
+		t.Error("expected IsDir=false for an qsheet file")
 	}
-	if result.FileType != FileTypeAbsheet {
-		t.Errorf("expected FileType %q, got %q", FileTypeAbsheet, result.FileType)
+	if result.FileType != FileTypeQsheet {
+		t.Errorf("expected FileType %q, got %q", FileTypeQsheet, result.FileType)
 	}
 }
 
@@ -151,19 +151,19 @@ func TestStatFileImpl_NestedFile(t *testing.T) {
 	if err := os.Mkdir(subDir, 0755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(subDir, "report.abdoc"), []byte("{}"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(subDir, "report.qdoc"), []byte("{}"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
-	result, err := StatFileImpl(StatFileParams{FilePath: "documents/report.abdoc"}, &dev, filesDir)
+	result, err := StatFileImpl(StatFileParams{FilePath: "documents/report.qdoc"}, &dev, filesDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if result.IsDir {
-		t.Error("expected IsDir=false for nested abdoc file")
+		t.Error("expected IsDir=false for nested qdoc file")
 	}
-	if result.FileType != FileTypeAbdoc {
-		t.Errorf("expected FileType %q, got %q", FileTypeAbdoc, result.FileType)
+	if result.FileType != FileTypeQdoc {
+		t.Errorf("expected FileType %q, got %q", FileTypeQdoc, result.FileType)
 	}
 }
 
@@ -195,7 +195,7 @@ func TestStatFileImpl_NestedFolderNamedLikeFile(t *testing.T) {
 func TestStatFileImpl_NotFound(t *testing.T) {
 	dev, filesDir := makeTestDevice(t)
 
-	_, err := StatFileImpl(StatFileParams{FilePath: "nonexistent.abdoc"}, &dev, filesDir)
+	_, err := StatFileImpl(StatFileParams{FilePath: "nonexistent.qdoc"}, &dev, filesDir)
 	if err == nil {
 		t.Error("expected error for non-existent path, got nil")
 	}
@@ -227,18 +227,18 @@ func TestStatFileImpl_NilDevice(t *testing.T) {
 	if err := os.MkdirAll(filesDir, 0755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(filesDir, "doc.abdoc"), []byte("{}"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(filesDir, "doc.qdoc"), []byte("{}"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
-	result, err := StatFileImpl(StatFileParams{FilePath: "doc.abdoc"}, nil, filesDir)
+	result, err := StatFileImpl(StatFileParams{FilePath: "doc.qdoc"}, nil, filesDir)
 	if err != nil {
 		t.Fatalf("unexpected error with nil device: %v", err)
 	}
 	if result.IsDir {
 		t.Error("expected IsDir=false")
 	}
-	if result.FileType != FileTypeAbdoc {
-		t.Errorf("expected FileType %q, got %q", FileTypeAbdoc, result.FileType)
+	if result.FileType != FileTypeQdoc {
+		t.Errorf("expected FileType %q, got %q", FileTypeQdoc, result.FileType)
 	}
 }

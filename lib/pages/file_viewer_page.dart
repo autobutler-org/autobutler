@@ -18,8 +18,8 @@ import 'package:quark/widgets/layout/theme_toggle_button.dart';
 /// | `image`                          | [ImageViewerPage]               |
 /// | `video`                          | [VideoViewerPage]               |
 /// | `audio`                          | [AudioPlayerPage]               |
-/// | `abdoc`                          | /docs/&lt;path&gt;              |
-/// | `absheet`                        | /sheets/&lt;path&gt;            |
+/// | `qdoc`                          | /docs/&lt;path&gt;              |
+/// | `qsheet`                        | /sheets/&lt;path&gt;            |
 /// | `text`                           | /edit/&lt;path&gt;              |
 /// | `pdf`, `docx`, `epub`, `slideshow`, `generic` | [GenericFileViewerPage] |
 /// | directory                        | /files/&lt;path&gt; (browser)  |
@@ -132,10 +132,10 @@ class _FileViewerPageState extends State<FileViewerPage> {
             ),
           );
 
-        case 'abdoc':
+        case 'qdoc':
           context.go(_buildRoute('/docs', widget.filePath, serial: serial));
 
-        case 'absheet':
+        case 'qsheet':
           context.go(_buildRoute('/sheets', widget.filePath, serial: serial));
 
         case 'text':

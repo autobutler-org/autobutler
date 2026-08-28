@@ -871,10 +871,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     try {
       // Create empty content based on file type.
       final String emptyContent;
-      if (fileName.endsWith('.absheet')) {
+      if (fileName.endsWith('.qsheet')) {
         emptyContent =
             '{"tabs":[{"name":"Sheet 1","data":{"columns":[],"rows":[]}}]}';
-      } else if (fileName.endsWith('.abdoc')) {
+      } else if (fileName.endsWith('.qdoc')) {
         emptyContent = '{"ops":[{"insert":"\\n"}]}';
       } else {
         emptyContent = '';
@@ -900,7 +900,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       // For generic files, only open the plaintext editor for text-like
       // extensions; otherwise just refresh the listing.
       final isKnownType =
-          fileName.endsWith('.abdoc') || fileName.endsWith('.absheet');
+          fileName.endsWith('.qdoc') || fileName.endsWith('.qsheet');
       if (isKnownType) {
         _refreshFileState();
         _openFileViaRoute(filePath);
@@ -1015,7 +1015,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
   }
 
-  // ── CSV → .absheet conversion (#1019) ──────────────────────────────────
+  // ── CSV → .qsheet conversion (#1019) ──────────────────────────────────
 
   Future<void> _handleCsvOpen(FileNode node) async {
     if (!mounted) return;
@@ -1023,10 +1023,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Convert to .absheet?'),
+        title: const Text('Convert to .qsheet?'),
         content: Text(
           'Would you like to convert "${node.name}" to an Quark '
-          'spreadsheet (.absheet)?\n\nThe original CSV file will not be '
+          'spreadsheet (.qsheet)?\n\nThe original CSV file will not be '
           'modified or deleted.',
         ),
         actions: [
@@ -1063,8 +1063,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       final controller = DataSheetController.fromTable(table);
       controller.loadFromCsv(csvText);
 
-      // Serialize to .absheet JSON envelope.
-      final absheetJson = jsonEncode({
+      // Serialize to .qsheet JSON envelope.
+      final qsheetJson = jsonEncode({
         'tabs': [
           {
             'name': node.name.replaceAll(
@@ -1082,12 +1082,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         RegExp(r'\.csv$', caseSensitive: false),
         '',
       );
-      final absheetName = '$baseName.absheet';
+      final qsheetName = '$baseName.qsheet';
       final folder = parentPath(node.apiPath);
       final uploadFile = http.MultipartFile.fromBytes(
         'files',
-        utf8.encode(absheetJson),
-        filename: absheetName,
+        utf8.encode(qsheetJson),
+        filename: qsheetName,
       );
       await FilesService.uploadFilesFromFormData(
         folder,
@@ -1097,12 +1097,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       );
       if (!mounted) return;
 
-      // Refresh the file list so the new .absheet appears.
+      // Refresh the file list so the new .qsheet appears.
       _refreshFileState();
 
-      // Open the new .absheet through the canonical files route.
-      final absheetPath = folder.isEmpty ? absheetName : '$folder/$absheetName';
-      _openFileViaRoute(absheetPath);
+      // Open the new .qsheet through the canonical files route.
+      final qsheetPath = folder.isEmpty ? qsheetName : '$folder/$qsheetName';
+      _openFileViaRoute(qsheetPath);
     } catch (e) {
       if (!mounted) return;
       _showMessage('Conversion failed: $e');
@@ -1130,18 +1130,18 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     final lowerName = node.name.toLowerCase();
 
     // Quark native document format — open in the rich text editor.
-    if (lowerName.endsWith('.abdoc')) {
+    if (lowerName.endsWith('.qdoc')) {
       _openFileViaRoute(node.apiPath);
       return;
     }
 
     // Quark native spreadsheet format.
-    if (lowerName.endsWith('.absheet')) {
+    if (lowerName.endsWith('.qsheet')) {
       _openFileViaRoute(node.apiPath);
       return;
     }
 
-    // CSV — offer to convert to .absheet (#1019).
+    // CSV — offer to convert to .qsheet (#1019).
     if (lowerName.endsWith('.csv')) {
       await _handleCsvOpen(node);
       return;
@@ -1626,7 +1626,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
   /// Opens a deep-linked path in the appropriate viewer after mount.
   /// Asks the backend what the path actually is (file vs. directory, and file
-  /// type) so that e.g. a folder named "things.abdoc" is opened as a folder
+  /// type) so that e.g. a folder named "things.qdoc" is opened as a folder
   /// rather than being launched in the document editor.
   Future<void> _openPendingFile(String filePath) async {
     if (!mounted) return;
@@ -1738,7 +1738,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
 
     switch (fileType) {
-      case 'abdoc':
+      case 'qdoc':
         await _openEditorWithUrl(
           filePath: filePath,
           builder: (targetRoute, closeRoute) => DocumentEditorPage(
@@ -1750,7 +1750,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         if (!mounted) return;
         return;
 
-      case 'absheet':
+      case 'qsheet':
         await _openEditorWithUrl(
           filePath: filePath,
           builder: (targetRoute, closeRoute) => SpreadsheetEditorPage(

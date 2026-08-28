@@ -177,7 +177,7 @@ class FilesService with AuthenticatedService {
   }
 
   /// Returns all files of [fileType] across all devices, newest-modified first.
-  /// [fileType] should be one of the server-defined type strings: 'abdoc', 'absheet', etc.
+  /// [fileType] should be one of the server-defined type strings: 'qdoc', 'qsheet', etc.
   static Future<List<FileNode>> getFilesByType(
     String fileType, {
     List<String>? serials,
@@ -331,7 +331,7 @@ class FilesService with AuthenticatedService {
   }
 
   /// Returns filesystem metadata for [filePath]: whether it is a directory
-  /// and its resolved [fileType] string (e.g. "image", "abdoc", "folder").
+  /// and its resolved [fileType] string (e.g. "image", "qdoc", "folder").
   /// Throws if the path does not exist or the request fails.
   static Future<({bool isDir, String fileType, String name})> statFile(
     String filePath, {

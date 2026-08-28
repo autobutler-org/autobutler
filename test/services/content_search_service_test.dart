@@ -10,7 +10,7 @@ void main() {
     // array with a `serial` key — not a {"data": …} envelope, and not
     // `deviceSerial`.
     const realResponse =
-        '[{"serial":"","relPath":"something.txt.abdoc",'
+        '[{"serial":"","relPath":"something.txt.qdoc",'
         '"snippet":"\\u003cb\\u003e hello world\\u003c/b\\u003e"}]';
 
     test('parses the backend response shape', () {
@@ -21,7 +21,7 @@ void main() {
           .toList();
 
       expect(results, hasLength(1));
-      expect(results.single.relPath, 'something.txt.abdoc');
+      expect(results.single.relPath, 'something.txt.qdoc');
       expect(results.single.deviceSerial, '');
       expect(results.single.snippet, '<b> hello world</b>');
     });
@@ -32,18 +32,18 @@ void main() {
         decoded.first as Map<String, dynamic>,
       );
 
-      expect(result.filename, 'something.txt.abdoc');
+      expect(result.filename, 'something.txt.qdoc');
       expect(result.plainSnippet, ' hello world');
     });
 
     test('reads nested paths down to the filename', () {
       final result = ContentSearchResult.fromJson({
         'serial': 'ABC123',
-        'relPath': 'notes/2026/meeting.abdoc',
+        'relPath': 'notes/2026/meeting.qdoc',
         'snippet': 'x',
       });
 
-      expect(result.filename, 'meeting.abdoc');
+      expect(result.filename, 'meeting.qdoc');
       expect(result.deviceSerial, 'ABC123');
     });
 

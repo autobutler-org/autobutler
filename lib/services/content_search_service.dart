@@ -15,7 +15,7 @@ class ContentSearchResult {
   /// Empty string means the internal (non-USB) device.
   final String deviceSerial;
 
-  /// Path relative to the device's files root (e.g. "docs/meeting.abdoc").
+  /// Path relative to the device's files root (e.g. "docs/meeting.qdoc").
   final String relPath;
 
   /// HTML fragment with matched terms wrapped in `<b>…</b>`.

@@ -1247,7 +1247,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "File type to filter by (e.g. abdoc, absheet)",
+                        "description": "File type to filter by (e.g. qdoc, qsheet)",
                         "name": "fileType",
                         "in": "query",
                         "required": true
@@ -1702,7 +1702,7 @@ const docTemplate = `{
         },
         "/files/stat": {
             "get": {
-                "description": "Returns filesystem metadata for the given files-relative path: whether it is a directory and its file type. Useful for deep-link resolution when the path extension alone is ambiguous (e.g. a folder named \"things.abdoc\").",
+                "description": "Returns filesystem metadata for the given files-relative path: whether it is a directory and its file type. Useful for deep-link resolution when the path extension alone is ambiguous (e.g. a folder named \"things.qdoc\").",
                 "produces": [
                     "application/json"
                 ],

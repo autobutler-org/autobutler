@@ -17,7 +17,7 @@ import (
 // @Description Recursively walks all managed devices and returns files whose fileType matches the given value, sorted newest-first.
 // @Tags files
 // @Produce json
-// @Param fileType query string true "File type to filter by (e.g. abdoc, absheet)"
+// @Param fileType query string true "File type to filter by (e.g. qdoc, qsheet)"
 // @Param serial query []string false "Filter by device serial(s)"
 // @Success 200 {array} FileNodeWithTimeJSON
 // @Failure 400 {object} serverutil.Response "Bad Request"

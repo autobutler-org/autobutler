@@ -2,7 +2,7 @@
 // indexed file contents using SQLite FTS5.
 //
 // Supported for text extraction (in order of fidelity):
-//   - Quark documents (.abdoc) and spreadsheets (.absheet): the prose is
+//   - Quark documents (.qdoc) and spreadsheets (.qsheet): the prose is
 //     pulled out of the JSON envelope so the index holds readable text rather
 //     than markup (see extractDelta and extractSheet)
 //   - Plaintext files (.txt, .md, .csv, .log, .yaml, .yml, .toml, .json, .xml,
@@ -34,8 +34,8 @@ const MaxExtractBytes = 512 * 1024 // 512 KB
 var extractableExtensions = map[string]bool{
 	// Quark's own document formats. Both are JSON envelopes, so they are
 	// routed through a structured extractor rather than indexed verbatim.
-	".abdoc":   true,
-	".absheet": true,
+	".qdoc":   true,
+	".qsheet": true,
 
 	".txt":  true,
 	".md":   true,
@@ -94,11 +94,11 @@ func ExtractText(path string) string {
 	// A document too large for MaxExtractBytes arrives here truncated and will
 	// not parse; falling back to the raw text keeps it searchable.
 	switch strings.ToLower(filepath.Ext(path)) {
-	case ".abdoc":
+	case ".qdoc":
 		if text := extractDelta(raw); text != "" {
 			return text
 		}
-	case ".absheet":
+	case ".qsheet":
 		if text := extractSheet(raw); text != "" {
 			return text
 		}
@@ -107,7 +107,7 @@ func ExtractText(path string) string {
 }
 
 // extractDelta pulls the prose out of a Quill Delta document, the format used
-// by .abdoc files: {"ops":[{"insert":"some text"}, …]}. An op's insert is
+// by .qdoc files: {"ops":[{"insert":"some text"}, …]}. An op's insert is
 // either a string (text) or an object (an embed such as an image); only
 // strings carry indexable content. Returns "" when raw is not a Delta.
 func extractDelta(raw string) string {
@@ -129,7 +129,7 @@ func extractDelta(raw string) string {
 }
 
 // extractSheet pulls the tab names and cell values out of a spreadsheet, the
-// format used by .absheet files:
+// format used by .qsheet files:
 // {"tabs":[{"name":"Sheet 1","data":{"rows":[["a","b"], …]}}]}.
 // Cells hold strings (including formulas like "=B1+B2", which stay indexed so
 // they can be searched for) or numbers. Returns "" when raw is not a sheet.

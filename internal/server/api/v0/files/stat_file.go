@@ -18,7 +18,7 @@ type StatFileJSON struct {
 
 // statFile godoc
 // @Summary Stat a file or directory
-// @Description Returns filesystem metadata for the given files-relative path: whether it is a directory and its file type. Useful for deep-link resolution when the path extension alone is ambiguous (e.g. a folder named "things.abdoc").
+// @Description Returns filesystem metadata for the given files-relative path: whether it is a directory and its file type. Useful for deep-link resolution when the path extension alone is ambiguous (e.g. a folder named "things.qdoc").
 // @Tags files
 // @Produce json
 // @Param filePath query string true "Files-relative path to stat"

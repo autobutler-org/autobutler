@@ -124,23 +124,23 @@ func decodeFilePaths(t *testing.T, body []byte) []string {
 }
 
 // The reported symptom: the Docs page was empty on load because every existing
-// .abdoc lived in a subfolder, and /files/by-type only ever saw the storage
+// .qdoc lived in a subfolder, and /files/by-type only ever saw the storage
 // root (#1605).
 func TestListFilesByType_FindsNestedDocs(t *testing.T) {
 	engine, filesDir := newStorageVFSTestEngine(t)
 
-	writeFixture(t, filesDir, "root.abdoc")
-	writeFixture(t, filesDir, "sub/deep.abdoc")
-	writeFixture(t, filesDir, "sub/nested/deeper.abdoc")
+	writeFixture(t, filesDir, "root.qdoc")
+	writeFixture(t, filesDir, "sub/deep.qdoc")
+	writeFixture(t, filesDir, "sub/nested/deeper.qdoc")
 	writeFixture(t, filesDir, "sub/ignored.txt")
 
-	w := doRequest(engine, http.MethodGet, "/api/v0/files/by-type?fileType=abdoc", nil, "")
+	w := doRequest(engine, http.MethodGet, "/api/v0/files/by-type?fileType=qdoc", nil, "")
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
 	}
 
 	got := decodeFilePaths(t, w.Body.Bytes())
-	for _, want := range []string{"root.abdoc", "sub/deep.abdoc", "sub/nested/deeper.abdoc"} {
+	for _, want := range []string{"root.qdoc", "sub/deep.qdoc", "sub/nested/deeper.qdoc"} {
 		if !slices.Contains(got, want) {
 			t.Errorf("expected %q in the by-type listing, got %v", want, got)
 		}

@@ -10,7 +10,7 @@ void main() {
     });
 
     test('returns true when the final segment looks like a file', () {
-      expect(isLikelyFilePath('/Documents/report.abdoc'), isTrue);
+      expect(isLikelyFilePath('/Documents/report.qdoc'), isTrue);
       expect(isLikelyFilePath('/Documents/archive.zip'), isTrue);
     });
   });
@@ -19,23 +19,23 @@ void main() {
     test('formats empty and non-empty files paths', () {
       expect(filesRouteDisplayPath(''), '/files');
       expect(
-        filesRouteDisplayPath('/Documents/report.abdoc'),
-        '/files/Documents/report.abdoc',
+        filesRouteDisplayPath('/Documents/report.qdoc'),
+        '/files/Documents/report.qdoc',
       );
     });
   });
 
   group('supported editor helpers', () {
     test('recognize editor-backed file paths and types', () {
-      expect(hasSupportedFilesEditorForPath('/Documents/report.abdoc'), isTrue);
+      expect(hasSupportedFilesEditorForPath('/Documents/report.qdoc'), isTrue);
       expect(
-        hasSupportedFilesEditorForPath('/Documents/budget.absheet'),
+        hasSupportedFilesEditorForPath('/Documents/budget.qsheet'),
         isTrue,
       );
       expect(hasSupportedFilesEditorForPath('/Documents/photo.jpg'), isFalse);
 
-      expect(hasSupportedFilesEditorForType('abdoc'), isTrue);
-      expect(hasSupportedFilesEditorForType('absheet'), isTrue);
+      expect(hasSupportedFilesEditorForType('qdoc'), isTrue);
+      expect(hasSupportedFilesEditorForType('qsheet'), isTrue);
       expect(hasSupportedFilesEditorForType('image'), isFalse);
     });
   });
@@ -58,8 +58,8 @@ void main() {
 
     test('leaves types that have a real viewer alone', () {
       for (final type in [
-        'abdoc',
-        'absheet',
+        'qdoc',
+        'qsheet',
         'image',
         'video',
         'audio',

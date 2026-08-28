@@ -11,7 +11,7 @@ class NewFileType {
   });
 
   final String label;
-  final String extension; // includes the dot, e.g. ".abdoc"
+  final String extension; // includes the dot, e.g. ".qdoc"
   final IconData icon;
 }
 
@@ -20,12 +20,12 @@ class NewFileType {
 const _kFileTypes = [
   NewFileType(
     label: 'Document',
-    extension: '.abdoc',
+    extension: '.qdoc',
     icon: QuarkIcons.edit_document,
   ),
   NewFileType(
     label: 'Spreadsheet',
-    extension: '.absheet',
+    extension: '.qsheet',
     icon: QuarkIcons.table_chart,
   ),
   NewFileType(

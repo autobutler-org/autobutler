@@ -19,8 +19,6 @@ type FileType string
 var ErrPathNotFound = errors.New("path not found")
 
 const (
-	FileTypeAbdoc     FileType = "abdoc"
-	FileTypeAbsheet   FileType = "absheet"
 	FileTypeAudio     FileType = "audio"
 	FileTypeDocx      FileType = "docx"
 	FileTypeEpub      FileType = "epub"
@@ -28,6 +26,8 @@ const (
 	FileTypeGeneric   FileType = "generic"
 	FileTypeImage     FileType = "image"
 	FileTypePDF       FileType = "pdf"
+	FileTypeQdoc      FileType = "qdoc"
+	FileTypeQsheet    FileType = "qsheet"
 	FileTypeSlideshow FileType = "slideshow"
 	FileTypeVideo     FileType = "video"
 	FileTypeSpacer    FileType = "spacer"
@@ -189,10 +189,10 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 		return FileTypeVideo
 	case ".epub":
 		return FileTypeEpub
-	case ".abdoc":
-		return FileTypeAbdoc
-	case ".absheet":
-		return FileTypeAbsheet
+	case ".qdoc":
+		return FileTypeQdoc
+	case ".qsheet":
+		return FileTypeQsheet
 	case ".docx":
 		return FileTypeDocx
 	case ".zip", ".rar", ".tar", ".gz", ".tgz", ".7z":
@@ -328,7 +328,7 @@ func StatFilesInDir(dir string, deviceName string, devicePath string, deviceSeri
 type WalkedFile struct {
 	Info *DeviceFileInfo
 	// RelPath is slash-separated and relative to the walk root, e.g.
-	// "sub/deep.abdoc". StatFilesInDir's single-level listing only ever needs
+	// "sub/deep.qdoc". StatFilesInDir's single-level listing only ever needs
 	// a base name, which is why callers that walk need this instead.
 	RelPath string
 }
