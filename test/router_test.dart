@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quark/router.dart';
@@ -148,14 +149,31 @@ void main() {
   group('the terms gate reacts to connecting a host', () {
     final settings = AppSettings.instance;
 
-    Future<void> clearHosts() async {
+    const secureStorage = MethodChannel(
+      'plugins.it_nomads.com/flutter_secure_storage',
+    );
+
+    setUpAll(() {
+      // The session token lives in secure storage on native platforms, and
+      // there's no plugin behind it in a unit test.
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(secureStorage, (_) async => null);
+    });
+
+    tearDownAll(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(secureStorage, null);
+    });
+
+    Future<void> reset() async {
       while (settings.hosts.isNotEmpty) {
         await settings.removeHost(settings.hosts.length - 1);
       }
+      await settings.setSessionToken(null);
     }
 
-    setUp(clearHosts);
-    tearDown(clearHosts);
+    setUp(reset);
+    tearDown(reset);
 
     /// The real redirect and the real refresh listenable, over stub pages so
     /// the test doesn't mount the whole app.
@@ -238,6 +256,9 @@ void main() {
         HostEntry(name: 'Mine', hostAddress: 'http://accepted.local'),
       );
       await settings.acceptTerms();
+      // Signed in, because that is who is sitting in Settings retyping the
+      // address. A signed-out user is sent to login instead (#1624).
+      await settings.setSessionToken('test-session');
 
       final router = await pumpGatedRouter(tester);
       router.go(AppRoutes.settings);
