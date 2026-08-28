@@ -12,16 +12,30 @@ const NoSemver = "NOSEMVER"
 
 var Semver string = NoSemver
 
+// GitCommit is stamped by the Makefile with -ldflags, and is the reason a
+// build can name itself at all.
+//
+// The build info below carries the same thing, but only sometimes: the
+// toolchain records vcs.revision when it can see a git checkout, so a binary
+// built from a source tarball, inside a container without .git, or with
+// -buildvcs=false reports NOCOMMIT and has no way to say which build it is.
+// A value the linker put there survives all of that.
+var GitCommit string = NoCommit
+
 func GetVersion() *Version {
+	version := NewVersion(GitCommit, runtime.Version(), "")
 	info, ok := debug.ReadBuildInfo()
-	version := NewVersion(NoCommit, runtime.Version(), "")
 	if !ok || info == nil {
 		return version // coverage: ignore
 	}
 	for _, setting := range info.Settings {
 		switch setting.Key {
 		case "vcs.revision": // coverage: ignore
-			version.GitCommit = setting.Value
+			// Only as a fallback: an unstamped `go build` still names itself,
+			// while a stamped build keeps the commit the Makefile chose.
+			if version.GitCommit == NoCommit {
+				version.GitCommit = setting.Value
+			}
 		case "vcs.time": // coverage: ignore
 			version.BuildDate = setting.Value
 		}
