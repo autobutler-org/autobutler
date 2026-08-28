@@ -22,25 +22,32 @@ func (q *Queries) CountUsers(ctx context.Context) (int64, error) {
 }
 
 const createSession = `-- name: CreateSession :one
-INSERT INTO sessions (token, user_id, expires_at)
-VALUES (?, ?, ?)
-RETURNING token, user_id, expires_at, created_at
+INSERT INTO sessions (token, user_id, expires_at, last_used_at)
+VALUES (?, ?, ?, ?)
+RETURNING token, user_id, expires_at, created_at, last_used_at
 `
 
 type CreateSessionParams struct {
-	Token     string
-	UserID    int64
-	ExpiresAt time.Time
+	Token      string
+	UserID     int64
+	ExpiresAt  time.Time
+	LastUsedAt time.Time
 }
 
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error) {
-	row := q.db.QueryRowContext(ctx, createSession, arg.Token, arg.UserID, arg.ExpiresAt)
+	row := q.db.QueryRowContext(ctx, createSession,
+		arg.Token,
+		arg.UserID,
+		arg.ExpiresAt,
+		arg.LastUsedAt,
+	)
 	var i Session
 	err := row.Scan(
 		&i.Token,
 		&i.UserID,
 		&i.ExpiresAt,
 		&i.CreatedAt,
+		&i.LastUsedAt,
 	)
 	return i, err
 }
@@ -117,7 +124,7 @@ func (q *Queries) GetFirstUser(ctx context.Context) (User, error) {
 }
 
 const getSession = `-- name: GetSession :one
-SELECT s.token, s.user_id, s.expires_at, s.created_at, u.username
+SELECT s.token, s.user_id, s.expires_at, s.created_at, s.last_used_at, u.username
 FROM sessions s
 JOIN users u ON s.user_id = u.id
 WHERE s.token = ? AND s.expires_at > datetime('now')
@@ -125,11 +132,12 @@ LIMIT 1
 `
 
 type GetSessionRow struct {
-	Token     string
-	UserID    int64
-	ExpiresAt time.Time
-	CreatedAt time.Time
-	Username  string
+	Token      string
+	UserID     int64
+	ExpiresAt  time.Time
+	CreatedAt  time.Time
+	LastUsedAt time.Time
+	Username   string
 }
 
 func (q *Queries) GetSession(ctx context.Context, token string) (GetSessionRow, error) {
@@ -140,6 +148,7 @@ func (q *Queries) GetSession(ctx context.Context, token string) (GetSessionRow, 
 		&i.UserID,
 		&i.ExpiresAt,
 		&i.CreatedAt,
+		&i.LastUsedAt,
 		&i.Username,
 	)
 	return i, err
@@ -188,15 +197,22 @@ WHERE user_id = ? AND expires_at > datetime('now')
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListActiveSessionsForUser(ctx context.Context, userID int64) ([]Session, error) {
+type ListActiveSessionsForUserRow struct {
+	Token     string
+	UserID    int64
+	ExpiresAt time.Time
+	CreatedAt time.Time
+}
+
+func (q *Queries) ListActiveSessionsForUser(ctx context.Context, userID int64) ([]ListActiveSessionsForUserRow, error) {
 	rows, err := q.db.QueryContext(ctx, listActiveSessionsForUser, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Session
+	var items []ListActiveSessionsForUserRow
 	for rows.Next() {
-		var i Session
+		var i ListActiveSessionsForUserRow
 		if err := rows.Scan(
 			&i.Token,
 			&i.UserID,
@@ -214,6 +230,25 @@ func (q *Queries) ListActiveSessionsForUser(ctx context.Context, userID int64) (
 		return nil, err
 	}
 	return items, nil
+}
+
+const renewSession = `-- name: RenewSession :exec
+UPDATE sessions
+SET expires_at = ?, last_used_at = ?
+WHERE token = ?
+`
+
+type RenewSessionParams struct {
+	ExpiresAt  time.Time
+	LastUsedAt time.Time
+	Token      string
+}
+
+// Slides a session's expiry forward on use (#1647). The new expiry is computed
+// in Go so the cap against created_at stays testable; this only writes it.
+func (q *Queries) RenewSession(ctx context.Context, arg RenewSessionParams) error {
+	_, err := q.db.ExecContext(ctx, renewSession, arg.ExpiresAt, arg.LastUsedAt, arg.Token)
+	return err
 }
 
 const updateUserPassword = `-- name: UpdateUserPassword :exec
