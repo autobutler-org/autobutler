@@ -8,6 +8,7 @@ import 'package:quark/pages/album_page.dart';
 import 'package:quark/services/album_service.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/services/favorites_service.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark/widgets/photos/photo_selection_bar.dart';
 import 'package:quark_icons/quark_icons.dart';
@@ -315,9 +316,9 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       if (!mounted) return;
       // Roll back and surface the error.
       setState(() => _isFavorite = !_isFavorite);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to update favorite: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'update the favorite'))),
+      );
     }
   }
 
@@ -373,9 +374,9 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         );
       });
       _rotationAnim.forward(from: 0);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Rotation failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'rotate the photo'))),
+      );
     }
   }
 
@@ -390,9 +391,9 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Download failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'download the photo'))),
+        );
       }
     }
   }
@@ -416,9 +417,9 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       _loadMetadata(); // refresh album list in sidebar
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to add to album: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'add it to the album'))),
+        );
       }
     }
   }
@@ -441,7 +442,9 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to remove from album: $e')),
+          SnackBar(
+            content: Text(Errors.message(e, 'remove it from the album')),
+          ),
         );
       }
     }
@@ -482,9 +485,9 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       ).showSnackBar(SnackBar(content: Text('Copy saved as $newName')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Copy failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'copy the photo'))),
+      );
     }
   }
 
@@ -529,9 +532,9 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       Navigator.of(context).pop(_listChanged);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Delete failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'delete the photo'))),
+        );
       }
     }
   }

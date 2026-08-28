@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark_icons/quark_icons.dart';
+import 'package:quark/utils/error_text.dart';
 
 /// First-run "point me at a Quark" form.
 ///
@@ -59,7 +60,7 @@ class _QuarkConnectFormState extends State<QuarkConnectForm> {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = 'Could not connect. Check the address and try again.';
+          _error = Errors.couldNotConnect;
         });
       }
     }

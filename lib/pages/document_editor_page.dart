@@ -13,6 +13,7 @@ import 'package:quark/router.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/theme/quark_theme.dart';
 import 'package:quark/utils/connection_error.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
@@ -507,7 +508,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Auto-save failed: $e'),
+          content: Text(Errors.message(e, 'auto-save')),
           duration: const Duration(seconds: 3),
         ),
       );
@@ -524,9 +525,9 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       ).showSnackBar(const SnackBar(content: Text('Saved')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'save the document'))),
+      );
     }
   }
 
@@ -583,17 +584,17 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       final bytes = await _buildPdfBytes();
       if (!mounted) return;
       if (bytes == null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Failed to generate PDF')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.couldNot('export the document'))),
+        );
         return;
       }
       await Printing.sharePdf(bytes: bytes, filename: '$_displayName.pdf');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Export failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'export the document'))),
+      );
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
@@ -607,16 +608,16 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       if (!mounted) return;
       if (bytes == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to generate PDF for printing')),
+          SnackBar(content: Text(Errors.couldNot('print the document'))),
         );
         return;
       }
       await Printing.layoutPdf(onLayout: (_) => bytes);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Print failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'print the document'))),
+      );
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
@@ -830,7 +831,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
             Icon(QuarkIcons.error_outline, size: 48, color: cs.error),
             const SizedBox(height: 12),
             Text(
-              'Failed to load document: $error',
+              Errors.message(error, 'load the document'),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),

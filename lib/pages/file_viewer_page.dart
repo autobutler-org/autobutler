@@ -6,6 +6,7 @@ import 'package:quark/pages/generic_file_viewer_page.dart';
 import 'package:quark/pages/image_viewer_page.dart';
 import 'package:quark/pages/video_viewer_page.dart';
 import 'package:quark/services/files_service.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 
 /// A routing shim that resolves a files path to its correct viewer.
@@ -94,7 +95,9 @@ class _FileViewerPageState extends State<FileViewerPage> {
           );
           if (!mounted) return;
           if (bytes == null) {
-            setState(() => _errorMessage = 'Failed to download image.');
+            setState(
+              () => _errorMessage = Errors.couldNot('download the image'),
+            );
             return;
           }
           Navigator.of(context).pushReplacement(
@@ -168,7 +171,7 @@ class _FileViewerPageState extends State<FileViewerPage> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _errorMessage = e.toString());
+        setState(() => _errorMessage = Errors.message(e, 'open the file'));
       }
     }
   }

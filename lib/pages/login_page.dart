@@ -4,6 +4,7 @@ import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
 import 'package:quark/utils/connection_error.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/host_manager.dart';
 import 'package:quark/widgets/quark_connect_form.dart';
@@ -79,9 +80,7 @@ class _LoginPageState extends State<LoginPage> {
         // An unreachable Quark is not a failed sign-in, and saying so in the
         // credentials banner reads as "wrong password". It gets its own state.
         _disconnected = isQuarkUnreachableError(e);
-        _error = _disconnected
-            ? null
-            : e.toString().replaceFirst('Exception: ', '');
+        _error = _disconnected ? null : Errors.message(e, 'sign in');
         _loading = false;
       });
       // Announce error to screen readers

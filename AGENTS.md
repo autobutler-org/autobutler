@@ -129,6 +129,24 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
 - Represent loading, success, and error states explicitly in UI flows.
 - Handle service errors deterministically and surface user-friendly feedback.
 
+### Error text (always follow this)
+
+- **Every user-facing error string comes from `Errors` in `lib/utils/error_text.dart`.** Never write error copy inline,
+  and never put a thrown object into text a user reads — `'Save failed: $e'` renders exception class names, OS errno
+  values and full request URIs into the UI (#1622).
+- In a page or widget, call `Errors.message(error, '<action>')`. The action is a bare verb phrase that reads after
+  "Couldn't": `'save the file'`, `'load your photos'`, `'delete the album'` — lowercase, no trailing period.
+- In a service, throw a type `Errors` can read:
+  - `ApiException(statusCode, contextForLogs)` — the Quark answered with a non-success status.
+  - `throwApiError(statusCode, body?['error'], contextForLogs)` — same, but the Quark may have sent its own message.
+  - `MessageException('...')` — only for copy written for a user to read, like "Invalid username or password."
+  - plain `Exception('...')` — diagnostics only. It never reaches the UI; the user sees the generic sentence instead.
+- **To extend, add a `static` method or a status branch to `Errors`** — never a new string at the call site. Statuses the
+  backend does not return do not need a branch; the fallback is a true sentence, and a guess is not.
+- This is also the groundwork for localization: these strings are the app's whole user-facing error vocabulary, so
+  translating means swapping the bodies in one file, not hunting interpolations across twenty pages.
+- `test/utils/error_text_test.dart` enforces the rule — it fails the build on any `Text('...$e')` left in `lib/`.
+
 ### Refresh pattern (always follow this)
 
 - **All pages with a refresh action must use `AutoRefreshMixin`** (`lib/utils/auto_refresh_mixin.dart`).

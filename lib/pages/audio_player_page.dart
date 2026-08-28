@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/services/local_media_proxy.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/web_download_stub.dart'
     if (dart.library.html) 'package:quark/utils/web_download_web.dart'
     as web_download;
@@ -62,9 +63,7 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
       setState(() {
         _loading = false;
         _errorMessage =
-            upstreamError?.userMessage ??
-            'Unable to play this audio file. The format may not be '
-                'supported by this browser. ($e)';
+            upstreamError?.userMessage ?? Errors.unsupportedAudioFormat;
       });
       return;
     }
@@ -103,9 +102,9 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
       await web_download.saveBytesForDownload(bytes, widget.name);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Download failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'download the file'))),
+      );
     } finally {
       if (mounted) setState(() => _downloading = false);
     }

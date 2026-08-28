@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/utils/error_text.dart';
 
 class RemoteAccessStatus {
   final bool enabled;
@@ -27,8 +28,9 @@ class RemoteAccessService with AuthenticatedService {
     final uri = apiBaseUri.resolve('/api/v0/settings/remote-access');
     final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        'Failed to get remote access status (${response.statusCode})',
+      throw ApiException(
+        response.statusCode,
+        'Failed to get remote access status',
       );
     }
     final json = jsonDecode(response.body) as Map<String, dynamic>;
@@ -44,10 +46,11 @@ class RemoteAccessService with AuthenticatedService {
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
-      final msg =
-          body?['error'] as String? ??
-          'Failed to enable remote access (${response.statusCode})';
-      throw Exception(msg);
+      throwApiError(
+        response.statusCode,
+        body?['error'],
+        'Failed to enable remote access',
+      );
     }
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return RemoteAccessStatus.fromJson(json);
@@ -58,10 +61,11 @@ class RemoteAccessService with AuthenticatedService {
     final response = await http.delete(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
-      final msg =
-          body?['error'] as String? ??
-          'Failed to disable remote access (${response.statusCode})';
-      throw Exception(msg);
+      throwApiError(
+        response.statusCode,
+        body?['error'],
+        'Failed to disable remote access',
+      );
     }
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return RemoteAccessStatus.fromJson(json);

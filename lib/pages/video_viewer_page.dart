@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/services/local_media_proxy.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/web_download_stub.dart'
     if (dart.library.html) 'package:quark/utils/web_download_web.dart'
     as web_download;
@@ -99,12 +100,8 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
         _isUnsupportedFormat = nonWebNative;
         _errorMessage = switch ((upstreamError, nonWebNative)) {
           (final MediaUpstreamException error, _) => error.userMessage,
-          (_, true) =>
-            'This video format (${_extensionOf(widget.name)}) isn\'t supported '
-                'for in-browser playback. Download the file to watch it locally.',
-          _ =>
-            'Unable to play this media. The file may use an unsupported '
-                'codec/profile. ($e)',
+          (_, true) => Errors.unsupportedVideoFormat(_extensionOf(widget.name)),
+          _ => Errors.unplayableMedia,
         };
       });
       return;
@@ -200,9 +197,9 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
       await web_download.saveBytesForDownload(bytes, widget.name);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Download failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'download the video'))),
+      );
     } finally {
       if (mounted) setState(() => _downloading = false);
     }
@@ -258,9 +255,9 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
       ).showSnackBar(SnackBar(content: Text('Clip saved as $fileName')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Trim failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'trim the video'))),
+      );
     } finally {
       if (mounted) setState(() => _exportingTrim = false);
     }
@@ -302,9 +299,9 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
       ).showSnackBar(SnackBar(content: Text('Frame saved as $fileName')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Save frame failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'save the frame'))),
+      );
     } finally {
       if (mounted) setState(() => _savingFrame = false);
       if (wasPlaying && _controller != null) await _controller!.play();

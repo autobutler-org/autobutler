@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/utils/error_text.dart';
 
 class ConnectedDevice {
   const ConnectedDevice({
@@ -44,7 +45,7 @@ class ConnectedDevicesService with AuthenticatedService {
     final uri = apiBaseUri.resolve('/api/v0/devices');
     final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to fetch devices (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to fetch devices');
     }
     final decoded = jsonDecode(response.body);
 
@@ -68,7 +69,7 @@ class ConnectedDevicesService with AuthenticatedService {
     final uri = apiBaseUri.resolve('/api/v0/devices/$id');
     final response = await http.delete(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to delete device (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to delete device');
     }
   }
 }

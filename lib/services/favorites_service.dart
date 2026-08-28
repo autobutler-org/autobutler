@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/utils/error_text.dart';
 
 class FavoriteStatus {
   final bool isFavorite;
@@ -25,7 +26,7 @@ class FavoritesService with AuthenticatedService {
       body: json.encode({'relPath': relPath, 'deviceSerial': serial ?? ''}),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to toggle favorite: ${response.statusCode}');
+      throw ApiException(response.statusCode, 'Failed to toggle favorite');
     }
     final d = json.decode(response.body) as Map<String, dynamic>;
     return d['isFavorite'] as bool? ?? false;

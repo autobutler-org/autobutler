@@ -8,6 +8,7 @@ import 'package:quark/services/file_browser_actions.dart';
 import 'package:quark/services/resumable_upload_service.dart';
 import 'package:quark/services/upload_chunk_source.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/task_pool.dart';
 import 'package:quark/utils/upload_config.dart';
 import 'package:quark/utils/upload_session_record.dart';
@@ -352,7 +353,10 @@ class UploadManager extends ChangeNotifier {
         // is sent, so only [_concurrency] files are ever live at a time.
         final file = await queued.upload.build();
         if (file == null) {
-          _recordFailure(queued.upload.name, 'could not be read');
+          _recordFailure(
+            queued.upload.name,
+            Errors.couldNot('read ${queued.upload.name}'),
+          );
           return;
         }
         await _send(
@@ -385,7 +389,10 @@ class UploadManager extends ChangeNotifier {
       }
     }
 
-    _recordFailure(queued.upload.name, '$lastError');
+    _recordFailure(
+      queued.upload.name,
+      Errors.message(lastError, 'upload ${queued.upload.name}'),
+    );
   }
 
   /// Sends one large file through a resumable session, a chunk at a time.
@@ -434,7 +441,9 @@ class UploadManager extends ChangeNotifier {
           return;
         }
         _store.remove(fileKey);
-        lastError = Exception('the upload session expired before it finished');
+        lastError = const MessageException(
+          'The upload session expired before it finished.',
+        );
       } on _UploadStopped {
         // Neither sent nor failed: the run is ending and this file stopped on
         // a chunk boundary. Its record stays, so picking it up again resumes
@@ -456,7 +465,7 @@ class UploadManager extends ChangeNotifier {
     }
 
     _chunked.remove(progressKey);
-    _recordFailure(name, '$lastError');
+    _recordFailure(name, Errors.message(lastError, 'upload $name'));
   }
 
   /// Runs one session to the end of the file.

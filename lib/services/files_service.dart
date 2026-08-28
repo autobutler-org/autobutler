@@ -8,6 +8,7 @@ import 'package:quark/models/paginated_photos_response.dart';
 import 'package:quark/models/photo_metadata.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/web_download_stub.dart'
     if (dart.library.html) 'package:quark/utils/web_download_web.dart'
     as web_download;
@@ -116,7 +117,7 @@ class FilesService with AuthenticatedService {
 
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to load photos (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to load photos');
     }
 
     final decoded = jsonDecode(response.body);
@@ -196,7 +197,7 @@ class FilesService with AuthenticatedService {
 
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to load files by type (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to load files by type');
     }
     final decoded = jsonDecode(response.body);
     // The backend always returns a JSON array (even when empty: []).
@@ -231,7 +232,7 @@ class FilesService with AuthenticatedService {
 
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to load recent files (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to load recent files');
     }
     final decoded = jsonDecode(response.body);
     if (decoded is! List) {
@@ -264,7 +265,7 @@ class FilesService with AuthenticatedService {
         : endpointUri.replace(query: querySegments.join('&'));
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to load files (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to load files');
     }
 
     final decoded = jsonDecode(response.body);
@@ -300,9 +301,7 @@ class FilesService with AuthenticatedService {
     final uri = endpointUri.replace(query: querySegments.join('&'));
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        'Failed to list archive entries (${response.statusCode})',
-      );
+      throw ApiException(response.statusCode, 'Failed to list archive entries');
     }
     final decoded = jsonDecode(response.body);
     if (decoded is! List) {
@@ -326,7 +325,7 @@ class FilesService with AuthenticatedService {
     final uri = endpointUri.replace(query: querySegments.join('&'));
     final response = await instance.authenticatedPost(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to extract file (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to extract file');
     }
   }
 
@@ -386,7 +385,7 @@ class FilesService with AuthenticatedService {
 
     final response = await instance.authenticatedDelete(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to delete file (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to delete file');
     }
   }
 
@@ -418,7 +417,7 @@ class FilesService with AuthenticatedService {
         .replace(query: querySegments.join('&'));
     final response = await instance.authenticatedDelete(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to delete files (\${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to delete files');
     }
   }
 
@@ -453,7 +452,7 @@ class FilesService with AuthenticatedService {
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to move file (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to move file');
     }
   }
 
@@ -470,7 +469,7 @@ class FilesService with AuthenticatedService {
 
     final response = await request.send();
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to create folder (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to create folder');
     }
   }
 
@@ -498,7 +497,7 @@ class FilesService with AuthenticatedService {
 
     final response = await request.send();
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to upload files (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to upload files');
     }
 
     return response;
@@ -512,7 +511,7 @@ class FilesService with AuthenticatedService {
     final uri = _buildDownloadUri(filePath, serial: serial);
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to download file (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to download file');
     }
 
     final resolvedName = _resolveDownloadFileName(
@@ -564,8 +563,9 @@ class FilesService with AuthenticatedService {
     final uri = endpointUri.replace(query: querySegments.join('&'));
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        'Failed to download archive file (${response.statusCode})',
+      throw ApiException(
+        response.statusCode,
+        'Failed to download archive file',
       );
     }
     return response.bodyBytes;
@@ -588,7 +588,7 @@ class FilesService with AuthenticatedService {
     }
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to download file (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to download file');
     }
 
     return response.bodyBytes;
@@ -620,7 +620,7 @@ class FilesService with AuthenticatedService {
     final uri = constructThumbnailUrl(filePath, serial: serial);
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to download thumbnail (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to download thumbnail');
     }
     return response.bodyBytes;
   }
@@ -637,7 +637,7 @@ class FilesService with AuthenticatedService {
         .replace(queryParameters: params);
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to load photo metadata (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to load photo metadata');
     }
     return PhotoMetadata.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
@@ -663,7 +663,7 @@ class FilesService with AuthenticatedService {
       body: body,
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to save rotation (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to save rotation');
     }
   }
 
@@ -681,7 +681,7 @@ class FilesService with AuthenticatedService {
       body: body,
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to copy photo (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to copy photo');
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return data['relPath'] as String;
@@ -801,8 +801,9 @@ class FilesService with AuthenticatedService {
     final endpointUri = apiBaseUri.resolve('/api/v0/version');
     final response = await instance.authenticatedGet(endpointUri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        'Failed to get installed version (${response.statusCode})',
+      throw ApiException(
+        response.statusCode,
+        'Failed to get installed version',
       );
     }
     final decoded = jsonDecode(response.body);
@@ -819,8 +820,9 @@ class FilesService with AuthenticatedService {
     final uri = all ? endpointUri.replace(query: 'all=true') : endpointUri;
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        'Failed to list available versions (${response.statusCode})',
+      throw ApiException(
+        response.statusCode,
+        'Failed to list available versions',
       );
     }
     final decoded = jsonDecode(response.body);
@@ -852,9 +854,7 @@ class FilesService with AuthenticatedService {
       body: body,
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        'Failed to extract frame (${response.statusCode}): ${response.body}',
-      );
+      throw ApiException(response.statusCode, 'Failed to extract frame');
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return data['relPath'] as String;
@@ -881,9 +881,7 @@ class FilesService with AuthenticatedService {
       body: body,
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        'Failed to trim video (${response.statusCode}): ${response.body}',
-      );
+      throw ApiException(response.statusCode, 'Failed to trim video');
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return data['relPath'] as String;
@@ -898,9 +896,7 @@ class FilesService with AuthenticatedService {
       body: body,
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        'Failed to perform update (${response.statusCode}): ${response.body}',
-      );
+      throw ApiException(response.statusCode, 'Failed to perform update');
     }
   }
 }

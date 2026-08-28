@@ -17,6 +17,7 @@ import 'package:quark/services/favorites_service.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
 import 'package:quark/utils/connection_error.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/widgets/core/empty_state_widget.dart';
 import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/device_upload_picker.dart';
@@ -685,9 +686,9 @@ class PhotosPageState extends State<PhotosPage>
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to update favorite: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'update the favorite'))),
+      );
     }
   }
 
@@ -1081,7 +1082,7 @@ class PhotosPageState extends State<PhotosPage>
           '$added ${added == 1 ? 'photo' : 'photos'} added to "${album.name}"';
       if (failed > 0) message += ' ($failed failed)';
     } else {
-      message = 'Failed to add photos to "${album.name}"';
+      message = Errors.couldNot('add photos to "${album.name}"');
     }
 
     ScaffoldMessenger.of(
@@ -1164,9 +1165,9 @@ class PhotosPageState extends State<PhotosPage>
         await manualRefresh();
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'upload your photos'))),
+        );
       } finally {
         if (mounted) setState(() => _isUploading = false);
       }
@@ -1342,7 +1343,11 @@ class PhotosPageState extends State<PhotosPage>
                     }
                     if (snapshot.hasError) {
                       return buildDesktop(
-                        const Center(child: Text('Failed to load photos')),
+                        Center(
+                          child: Text(
+                            Errors.message(snapshot.error!, 'load your photos'),
+                          ),
+                        ),
                       );
                     }
                     return buildDesktop(
@@ -1358,7 +1363,11 @@ class PhotosPageState extends State<PhotosPage>
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (snapshot.hasError) {
-                    return const Center(child: Text('Failed to load photos'));
+                    return Center(
+                      child: Text(
+                        Errors.message(snapshot.error!, 'load your photos'),
+                      ),
+                    );
                   }
 
                   final showLoadingIndicator =

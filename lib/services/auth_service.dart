@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/utils/error_text.dart';
 
 /// Result of a successful [AuthService.checkStatus] call.
 class AuthStatus {
@@ -44,7 +45,7 @@ class AuthService {
       client.close();
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to check auth status (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to check auth status');
     }
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     return AuthStatus(setupComplete: body['setup'] as bool? ?? false);
@@ -71,7 +72,7 @@ class AuthService {
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = _tryDecodeError(response.body);
-      throw Exception(body ?? 'Setup failed (${response.statusCode})');
+      throwApiError(response.statusCode, body, 'Setup failed');
     }
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final token = body['token'] as String;
@@ -98,11 +99,11 @@ class AuthService {
       client.close();
     }
     if (response.statusCode == 401) {
-      throw Exception('Invalid username or password.');
+      throw const MessageException('Invalid username or password.');
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = _tryDecodeError(response.body);
-      throw Exception(body ?? 'Login failed (${response.statusCode})');
+      throwApiError(response.statusCode, body, 'Login failed');
     }
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final token = body['token'] as String;
@@ -132,7 +133,7 @@ class AuthService {
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = _tryDecodeError(response.body);
-      throw Exception(body ?? 'Recovery failed (${response.statusCode})');
+      throwApiError(response.statusCode, body, 'Recovery failed');
     }
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final token = body['token'] as String;

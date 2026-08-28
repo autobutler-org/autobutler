@@ -14,6 +14,7 @@ import 'package:quark/services/settings_service.dart';
 import 'package:quark/services/smb_service.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/utils/connection_error.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/widgets/core/copy_button.dart';
 import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/host_manager.dart';
@@ -114,7 +115,7 @@ class _SettingsPageState extends State<SettingsPage> {
   String? _versionLoadError;
 
   bool _autoUpdate = false;
-  bool _autoUpdateLoadFailed = false;
+  String? _autoUpdateError;
   bool _isLoadingAutoUpdate = false;
 
   // SBOM state
@@ -225,7 +226,7 @@ class _SettingsPageState extends State<SettingsPage> {
       debugPrint('[settings_page.dart] Remote access error: $e');
       if (!mounted) return;
       setState(() {
-        _remoteAccessError = e.toString();
+        _remoteAccessError = Errors.message(e, 'load remote access status');
         _isLoadingRemoteAccess = false;
       });
       _noteReachability(e);
@@ -248,7 +249,7 @@ class _SettingsPageState extends State<SettingsPage> {
       if (!mounted) return;
       setState(() => _isTogglingRemoteAccess = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to enable remote access: $e')),
+        SnackBar(content: Text(Errors.message(e, 'enable remote access'))),
       );
     }
   }
@@ -290,7 +291,7 @@ class _SettingsPageState extends State<SettingsPage> {
       if (!mounted) return;
       setState(() => _isTogglingRemoteAccess = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to disable remote access: $e')),
+        SnackBar(content: Text(Errors.message(e, 'disable remote access'))),
       );
     }
   }
@@ -320,7 +321,7 @@ class _SettingsPageState extends State<SettingsPage> {
       debugPrint('[settings_page.dart] Error: $e');
       if (!mounted) return;
       setState(() {
-        _devicesError = e.toString();
+        _devicesError = Errors.message(e, 'load your devices');
         _isLoadingDevices = false;
       });
       _noteReachability(e);
@@ -334,9 +335,9 @@ class _SettingsPageState extends State<SettingsPage> {
     } catch (e) {
       debugPrint('[settings_page.dart] Error: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to remove device: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'remove the device'))),
+      );
     }
   }
 
@@ -365,7 +366,7 @@ class _SettingsPageState extends State<SettingsPage> {
       debugPrint('[settings_page.dart] Error loading storage devices: $e');
       if (!mounted) return;
       setState(() {
-        _storageError = e.toString();
+        _storageError = Errors.message(e, 'load your drives');
         _isLoadingStorage = false;
       });
       _noteReachability(e);
@@ -383,9 +384,9 @@ class _SettingsPageState extends State<SettingsPage> {
     } catch (e) {
       debugPrint('[settings_page.dart] Error mounting device: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to mount device: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'mount the drive'))),
+      );
     }
   }
 
@@ -423,9 +424,9 @@ class _SettingsPageState extends State<SettingsPage> {
     } catch (e) {
       debugPrint('[settings_page.dart] Error renaming storage device: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to rename device: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'rename the drive'))),
+      );
     }
   }
 
@@ -447,11 +448,7 @@ class _SettingsPageState extends State<SettingsPage> {
         debugPrint('[settings_page.dart] Error: $e');
         // The Go SBOM is the only source here that comes from the Quark, so
         // it is the only one an unreachable Quark explains (#1637).
-        errors.add(
-          isQuarkUnreachableError(e)
-              ? 'Go SBOM: $quarkDisconnectedShort'
-              : 'Go SBOM: $e',
-        );
+        errors.add(Errors.message(e, 'load the Go SBOM'));
         _noteReachability(e);
       }
     }
@@ -460,7 +457,7 @@ class _SettingsPageState extends State<SettingsPage> {
       nextFlutterSbom = await SbomService.getFlutterSbom();
     } catch (e) {
       debugPrint('[settings_page.dart] Error: $e');
-      errors.add('Flutter SBOM: $e');
+      errors.add(Errors.message(e, 'load the Flutter SBOM'));
     }
 
     if (!mounted) return;
@@ -482,7 +479,7 @@ class _SettingsPageState extends State<SettingsPage> {
       if (!mounted) return;
       setState(() {
         _autoUpdate = autoUpdate;
-        _autoUpdateLoadFailed = false;
+        _autoUpdateError = null;
         _isLoadingAutoUpdate = false;
       });
       _noteReachability(null);
@@ -490,7 +487,7 @@ class _SettingsPageState extends State<SettingsPage> {
       debugPrint('[settings_page.dart] Error loading settings: $e');
       if (!mounted) return;
       setState(() {
-        _autoUpdateLoadFailed = true;
+        _autoUpdateError = Errors.message(e, 'load the setting');
         _isLoadingAutoUpdate = false;
       });
       _noteReachability(e);
@@ -548,7 +545,7 @@ class _SettingsPageState extends State<SettingsPage> {
       debugPrint('[settings_page.dart] Error: $e');
       if (!mounted) return;
       setState(() {
-        _versionLoadError = e.toString();
+        _versionLoadError = Errors.message(e, 'load version info');
         _isLoadingVersionInfo = false;
       });
       _noteReachability(e);
@@ -573,9 +570,9 @@ class _SettingsPageState extends State<SettingsPage> {
     } catch (e) {
       debugPrint('[settings_page.dart] Error: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Update failed: ${e.toString()}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'start the update'))),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -676,7 +673,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     Text(
                       _disconnected
                           ? quarkDisconnectedShort
-                          : 'Failed to load version info',
+                          : _versionLoadError!,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.error,
                       ),
@@ -763,18 +760,18 @@ class _SettingsPageState extends State<SettingsPage> {
                     )
                   : SwitchListTile(
                       title: const Text('Automatic updates'),
-                      subtitle: _autoUpdateLoadFailed
+                      subtitle: _autoUpdateError != null
                           ? Text(
                               _disconnected
                                   ? quarkDisconnectedShort
-                                  : 'Could not load setting — server may be unreachable',
+                                  : _autoUpdateError!,
                               style: const TextStyle(color: Colors.red),
                             )
                           : const Text(
                               'Quark will check for and install updates daily',
                             ),
                       value: _autoUpdate,
-                      onChanged: _autoUpdateLoadFailed
+                      onChanged: _autoUpdateError != null
                           ? null
                           : (newValue) async {
                               setState(() {
@@ -793,7 +790,9 @@ class _SettingsPageState extends State<SettingsPage> {
                                 });
                                 messenger.showSnackBar(
                                   SnackBar(
-                                    content: Text('Failed to save setting: $e'),
+                                    content: Text(
+                                      Errors.message(e, 'save the setting'),
+                                    ),
                                   ),
                                 );
                               }
@@ -852,8 +851,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           Text(
                             _disconnected
                                 ? quarkDisconnectedShort
-                                : 'Failed to load remote access status: '
-                                      '$_remoteAccessError',
+                                : _remoteAccessError!,
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.error,
                             ),
@@ -990,7 +988,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   _isLoadingStorage
                       ? 'Loading...'
                       : _storageError != null
-                      ? 'Failed to load'
+                      ? Errors.loadFailedShort
                       : _storageDevices.isEmpty
                       ? 'No devices found'
                       : '${_storageDevices.length} device${_storageDevices.length == 1 ? '' : 's'}',
@@ -1025,11 +1023,8 @@ class _SettingsPageState extends State<SettingsPage> {
                         color: Theme.of(context).colorScheme.error,
                       ),
                       title: Text(
-                        _disconnected
-                            ? quarkDisconnectedShort
-                            : 'Failed to load storage devices',
+                        _disconnected ? quarkDisconnectedShort : _storageError!,
                       ),
-                      subtitle: _disconnected ? null : Text(_storageError!),
                     )
                   else if (_storageDevices.isEmpty)
                     const ListTile(title: Text('No storage devices found'))
@@ -1107,7 +1102,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   _isLoadingDevices
                       ? 'Loading...'
                       : _devicesError != null
-                      ? 'Failed to load devices'
+                      ? Errors.loadFailedShort
                       : _connectedDevices.isEmpty
                       ? 'No devices recorded yet'
                       : '${_connectedDevices.length} device${_connectedDevices.length == 1 ? '' : 's'}',
@@ -1142,11 +1137,8 @@ class _SettingsPageState extends State<SettingsPage> {
                         color: Theme.of(context).colorScheme.error,
                       ),
                       title: Text(
-                        _disconnected
-                            ? quarkDisconnectedShort
-                            : 'Failed to load devices',
+                        _disconnected ? quarkDisconnectedShort : _devicesError!,
                       ),
-                      subtitle: _disconnected ? null : Text(_devicesError!),
                     )
                   else if (_connectedDevices.isEmpty)
                     const ListTile(title: Text('No devices recorded yet'))
@@ -1218,7 +1210,7 @@ class _SettingsPageState extends State<SettingsPage> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
-                  'Failed to load some SBOM sources:\n$_sbomError',
+                  _sbomError!,
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ),
@@ -1410,9 +1402,9 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Setup failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'set up the network drive'))),
+      );
     } finally {
       if (mounted) setState(() => _smbBusy = false);
     }
@@ -1504,9 +1496,9 @@ class _NetworkDriveCardState extends State<_NetworkDriveCard> {
       ).showSnackBar(const SnackBar(content: Text('Network drive disabled')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to disable: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'disable the network drive'))),
+      );
     } finally {
       if (mounted) setState(() => _smbBusy = false);
     }
