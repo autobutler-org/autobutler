@@ -84,7 +84,15 @@ class AppSettings {
 
   List<HostEntry> _hosts = [];
   int _activeIndex = -1;
-  String? _sessionToken;
+
+  /// Session tokens per Quark, keyed by [_hostKey].
+  ///
+  /// Per-host, not app-wide: a single token meant switching Quarks carried the
+  /// old one along, so the router's gate believed you were signed in to a
+  /// Quark you had never logged into. Against a reachable Quark that resolved
+  /// itself — a 401 clears the token — but an unreachable one never answers at
+  /// all, so the stale token stood and every page failed instead (#1645).
+  Map<String, String> _sessionTokens = {};
   SharedPreferences? _prefs;
 
   /// Notifies listeners whenever the session token changes.
@@ -99,7 +107,7 @@ class AppSettings {
   /// a Quark the user hasn't accepted terms for yet.
   final ValueNotifier<bool> hasAcceptedTerms = ValueNotifier(false);
 
-  /// Hosts the user has accepted the terms for, keyed by [_termsKey].
+  /// Hosts the user has accepted the terms for, keyed by [_hostKey].
   Set<String> _acceptedTermsHosts = {};
 
   /// Notifies listeners whenever [activeHost] changes — a host added, edited,
@@ -111,6 +119,8 @@ class AppSettings {
   final ValueNotifier<String?> activeHostNotifier = ValueNotifier(null);
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
+  /// Holds a JSON object of host key -> token. Pre-#1645 builds wrote a bare
+  /// token string here instead; [load] migrates that onto the active host.
   static const _sessionTokenKey = 'session_token';
   static const _acceptedTermsHostsKey = 'acceptedTermsHosts';
 
@@ -148,14 +158,14 @@ class AppSettings {
     _activeIndex =
         _prefs!.getInt('activeHostIndex') ?? (_hosts.isEmpty ? -1 : 0);
 
-    if (kIsWeb) {
-      // On web, use shared_preferences (localStorage) — flutter_secure_storage
-      // requires HTTPS and will fail over plain HTTP during development.
-      _sessionToken = _prefs!.getString(_sessionTokenKey);
-    } else {
-      _sessionToken = await _secureStorage.read(key: _sessionTokenKey);
-    }
-    sessionTokenNotifier.value = _sessionToken;
+    // Read raw here, but decode below: a pre-#1645 bare token has to be
+    // attributed to a host, and the active host is not settled until the
+    // default-host block has run.
+    final storedTokens = kIsWeb
+        // On web, use shared_preferences (localStorage) — flutter_secure_storage
+        // requires HTTPS and will fail over plain HTTP during development.
+        ? _prefs!.getString(_sessionTokenKey)
+        : await _secureStorage.read(key: _sessionTokenKey);
 
     final storedTermsHosts = _prefs!.getStringList(_acceptedTermsHostsKey);
     _acceptedTermsHosts = storedTermsHosts?.toSet() ?? {};
@@ -186,6 +196,17 @@ class AppSettings {
       }
     }
 
+    // Decode the token store now that the active host is settled. A JSON object
+    // is the current shape; anything else is the pre-#1645 bare token string,
+    // which belongs to whichever Quark the user was last on. With no host to
+    // attribute it to we leave it for a later launch, exactly as the legacy
+    // terms bool below does.
+    final legacyToken = _decodeSessionTokens(storedTokens);
+    if (legacyToken != null && activeHost != null) {
+      _sessionTokens[_hostKey(activeHost!)] = legacyToken;
+      await _persistSessionTokens();
+    }
+
     // Migrate the legacy app-wide bool now that the active host is settled.
     // Only migrate once there is a host to attribute the acceptance to — with
     // none configured we leave the legacy key for a later launch to pick up.
@@ -193,7 +214,7 @@ class AppSettings {
         (_prefs!.getBool(_legacyAcceptedTermsKey) ?? false)) {
       final host = activeHost;
       if (host != null) {
-        _acceptedTermsHosts.add(_termsKey(host));
+        _acceptedTermsHosts.add(_hostKey(host));
         await _persistAcceptedTermsHosts();
         await _prefs!.remove(_legacyAcceptedTermsKey);
       }
@@ -205,28 +226,68 @@ class AppSettings {
   List<HostEntry> get hosts => List.unmodifiable(_hosts);
   int get activeIndex => _activeIndex;
 
-  /// Session token set after a successful login or setup.
-  /// Persisted via [FlutterSecureStorage] — survives app restarts.
+  /// Session token for the current [activeHost], set after a successful login
+  /// or setup. Persisted — survives app restarts.
   /// Populated by [AuthService] after login/setup; consumed by [FilesService].
-  String? get sessionToken => _sessionToken;
+  ///
+  /// Null for a Quark the user has never signed into, which is what sends them
+  /// to login on switching hosts without waiting on a 401 that an unreachable
+  /// Quark would never send (#1645).
+  String? get sessionToken => sessionTokenFor(activeHost);
 
+  /// Session token stored for [hostAddress], if any.
+  String? sessionTokenFor(String? hostAddress) =>
+      hostAddress == null ? null : _sessionTokens[_hostKey(hostAddress)];
+
+  /// Stores [token] against the current [activeHost], or clears it when null.
+  ///
+  /// With no host configured there is nothing to attribute a token to, so
+  /// storage is left alone — but the notifier still publishes the null that
+  /// [sessionToken] now reports.
   Future<void> setSessionToken(String? token) async {
-    _sessionToken = token;
-    sessionTokenNotifier.value = token;
+    final host = activeHost;
+    if (host != null && token != sessionToken) {
+      if (token != null) {
+        _sessionTokens[_hostKey(host)] = token;
+      } else {
+        _sessionTokens.remove(_hostKey(host));
+      }
+      await _persistSessionTokens();
+    }
+    sessionTokenNotifier.value = sessionToken;
+  }
+
+  /// Reads [stored] into [_sessionTokens].
+  ///
+  /// Returns a pre-#1645 bare token string when that is what was stored, for
+  /// the caller to attribute to a host; null when the store was already a map,
+  /// empty, or unreadable.
+  String? _decodeSessionTokens(String? stored) {
+    // Reassigned, never merged: [load] rebuilds every other field from the
+    // store too, and keeping stale entries would leave a signed-out user
+    // holding a token the store no longer has.
+    _sessionTokens = {};
+    if (stored == null || stored.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(stored);
+      if (decoded is Map) {
+        _sessionTokens = decoded.map((k, v) => MapEntry('$k', '$v'));
+        return null;
+      }
+    } catch (_) {
+      // Not JSON at all — a bare token from a pre-#1645 build.
+    }
+    return stored;
+  }
+
+  Future<void> _persistSessionTokens() async {
+    final encoded = jsonEncode(_sessionTokens);
     if (kIsWeb) {
       // Use shared_preferences (localStorage) on web — flutter_secure_storage
       // requires HTTPS and fails over plain HTTP in development.
-      if (token != null) {
-        await _prefs?.setString(_sessionTokenKey, token);
-      } else {
-        await _prefs?.remove(_sessionTokenKey);
-      }
+      await _prefs?.setString(_sessionTokenKey, encoded);
     } else {
-      if (token != null) {
-        await _secureStorage.write(key: _sessionTokenKey, value: token);
-      } else {
-        await _secureStorage.delete(key: _sessionTokenKey);
-      }
+      await _secureStorage.write(key: _sessionTokenKey, value: encoded);
     }
   }
 
@@ -243,13 +304,17 @@ class AppSettings {
   void _publishActiveHost() {
     final host = activeHost;
     hasAcceptedTerms.value =
-        host != null && _acceptedTermsHosts.contains(_termsKey(host));
+        host != null && _acceptedTermsHosts.contains(_hostKey(host));
+    // Tokens are per-host, so switching Quarks changes what [sessionToken]
+    // reports; republish so no listener is left holding the old host's.
+    sessionTokenNotifier.value = sessionToken;
     activeHostNotifier.value = host;
   }
 
   /// Normalized lookup key for a host address, so `https://Quark.local` and
-  /// `https://quark.local/` count as the same Quark.
-  static String _termsKey(String hostAddress) {
+  /// `https://quark.local/` count as the same Quark. Keys both the accepted
+  /// terms and the session tokens.
+  static String _hostKey(String hostAddress) {
     final trimmed = hostAddress.trim().toLowerCase();
     final withoutTrailingSlashes = trimmed.replaceAll(RegExp(r'/+$'), '');
     return withoutTrailingSlashes.isEmpty ? trimmed : withoutTrailingSlashes;
@@ -264,7 +329,7 @@ class AppSettings {
 
   /// Whether the terms have been accepted for [hostAddress].
   bool hasAcceptedTermsFor(String hostAddress) =>
-      _acceptedTermsHosts.contains(_termsKey(hostAddress));
+      _acceptedTermsHosts.contains(_hostKey(hostAddress));
 
   Future<void> _saveHosts() async {
     await _prefs?.setString(
@@ -298,6 +363,12 @@ class AppSettings {
 
   Future<void> removeHost(int idx) async {
     if (idx >= 0 && idx < _hosts.length) {
+      // Forgetting a Quark forgets the session with it. Only touches storage
+      // when there was actually a token — a host nobody signed into must not
+      // drag the secure-storage plugin into the call.
+      if (_sessionTokens.remove(_hostKey(_hosts[idx].hostAddress)) != null) {
+        await _persistSessionTokens();
+      }
       _hosts.removeAt(idx);
       if (_activeIndex >= _hosts.length) {
         _activeIndex = _hosts.length - 1;
@@ -336,7 +407,7 @@ class AppSettings {
   Future<void> acceptTerms() async {
     final host = activeHost;
     if (host == null) return;
-    _acceptedTermsHosts.add(_termsKey(host));
+    _acceptedTermsHosts.add(_hostKey(host));
     await _persistAcceptedTermsHosts();
     _publishActiveHost();
   }
