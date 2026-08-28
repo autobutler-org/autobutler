@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quark/pages/settings_page.dart';
@@ -16,14 +17,31 @@ import 'package:quark/services/app_settings.dart';
 void main() {
   final settings = AppSettings.instance;
 
-  Future<void> clearHosts() async {
+  const secureStorage = MethodChannel(
+    'plugins.it_nomads.com/flutter_secure_storage',
+  );
+
+  setUpAll(() {
+    // The session token lives in secure storage on native platforms, and
+    // there's no plugin behind it in a unit test.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(secureStorage, (_) async => null);
+  });
+
+  tearDownAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(secureStorage, null);
+  });
+
+  Future<void> reset() async {
     while (settings.hosts.isNotEmpty) {
       await settings.removeHost(settings.hosts.length - 1);
     }
+    await settings.setSessionToken(null);
   }
 
-  setUp(clearHosts);
-  tearDown(clearHosts);
+  setUp(reset);
+  tearDown(reset);
 
   /// Whether the dialog route was still on the navigator when the active host
   /// changed. Saving from inside the dialog's own button made the terms gate
@@ -33,10 +51,11 @@ void main() {
   late List<String> errors;
   late void Function() stopWatchingErrors;
 
-  /// Settings is behind the auth gate, and with no Quark configured the gate
-  /// now sends the user to the login page instead (#1639). Seeding an accepted
-  /// host is what puts Settings on screen at all; the flow under test is then
-  /// adding a *second* Quark from it.
+  /// Settings is behind the auth gate: with no Quark configured the gate sends
+  /// the user to login (#1639), and so does a signed-out user whose Quark is
+  /// unreachable (#1624). An accepted host plus a session is what puts Settings
+  /// on screen at all; the flow under test is then adding a *second* Quark
+  /// from it.
   const seedAddress = 'http://127.0.0.1:1';
 
   Future<void> pumpSettings(WidgetTester tester) async {
@@ -46,6 +65,7 @@ void main() {
 
     await settings.addHost(HostEntry(name: 'Seed', hostAddress: seedAddress));
     await settings.acceptTerms();
+    await settings.setSessionToken('test-session');
 
     errors = <String>[];
     final priorOnError = FlutterError.onError;

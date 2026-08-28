@@ -287,6 +287,14 @@ final router = GoRouter(
       Scaffold(body: Center(child: Text('Page not found: ${state.uri}'))),
 );
 
+/// How the gate asks the Quark whether it has been set up yet.
+///
+/// A `var` purely so tests can make the probe fail on demand: the
+/// unreachable-Quark path below is otherwise only reachable with a real
+/// server to take down.
+@visibleForTesting
+Future<AuthStatus> Function() authStatusProbe = AuthService.checkStatus;
+
 /// Top-level redirect — handles auth gating.
 /// The app's auth/terms gate. Exported so tests can drive the real rules
 /// without mounting every page in the app.
@@ -316,13 +324,38 @@ Future<String?> authRedirect(BuildContext context, GoRouterState state) async {
   // Already authenticated.
   if (AppSettings.instance.sessionToken != null) return null;
 
-  // Check server-side status.
+  return destinationForSignedOutUser();
+}
+
+/// Where a user who has accepted terms but holds no session belongs:
+/// [AppRoutes.setup] on a Quark nobody has claimed yet, [AppRoutes.login]
+/// otherwise.
+///
+/// An unreachable Quark also resolves to [AppRoutes.login]. This used to
+/// resolve to "stay where you are", which stranded a signed-out user on a
+/// /files that could only render errors — including the user who had just
+/// accepted terms, if the status call happened to fail at that moment (#1624).
+/// Login is the screen they need either way, and it surfaces the connection
+/// failure when they try to sign in.
+Future<String> destinationForSignedOutUser() async {
   try {
-    final status = await AuthService.checkStatus();
-    if (!status.setupComplete) return AppRoutes.setup;
-    return AppRoutes.login;
+    final status = await authStatusProbe();
+    return status.setupComplete ? AppRoutes.login : AppRoutes.setup;
   } catch (_) {
-    // Can't reach quark — allow through; individual pages will surface errors.
-    return null;
+    return AppRoutes.login;
   }
+}
+
+/// Where to land once terms have just been accepted.
+///
+/// The terms page navigates here directly rather than bouncing through /files
+/// and trusting [authRedirect] to move the user on: that second hop silently
+/// did nothing whenever the status call failed (#1624).
+Future<String> destinationAfterAcceptingTerms() async {
+  final settings = AppSettings.instance;
+  // No Quark configured is a login-page state now, not a file-browser one:
+  // that is where hosts are added (#1639).
+  if (settings.activeHost == null) return AppRoutes.login;
+  if (settings.sessionToken != null) return AppRoutes.files;
+  return destinationForSignedOutUser();
 }

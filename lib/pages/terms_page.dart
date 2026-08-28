@@ -7,7 +7,8 @@ import 'package:quark/services/app_settings.dart';
 ///
 /// Shown on first launch (or after a reset) before the user can access the app.
 /// Tapping "I Agree" persists the acceptance via [AppSettings] and navigates
-/// to the main file-browser view.
+/// straight to wherever the user belongs next — setup, login, or the file
+/// browser.
 class TermsPage extends StatelessWidget {
   const TermsPage({super.key});
 
@@ -92,27 +93,57 @@ class TermsPage extends StatelessWidget {
               ),
             ),
           ),
-          SafeArea(
+          const SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () async {
-                    await AppSettings.instance.acceptTerms();
-                    if (context.mounted) {
-                      context.go(AppRoutes.files);
-                    }
-                  },
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 4),
-                    child: Text('I Agree', style: TextStyle(fontSize: 16)),
-                  ),
-                ),
-              ),
+              padding: EdgeInsets.all(24),
+              child: SizedBox(width: double.infinity, child: _AgreeButton()),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The "I Agree" button.
+///
+/// Stateful only to hold the in-flight state: accepting terms resolves the
+/// next route, which asks the Quark whether it has been set up, and that is a
+/// network round-trip the user should see happening.
+class _AgreeButton extends StatefulWidget {
+  const _AgreeButton();
+
+  @override
+  State<_AgreeButton> createState() => _AgreeButtonState();
+}
+
+class _AgreeButtonState extends State<_AgreeButton> {
+  bool _accepting = false;
+
+  Future<void> _accept() async {
+    setState(() => _accepting = true);
+    await AppSettings.instance.acceptTerms();
+    // Resolved here rather than by going to /files and leaving it to the
+    // router's redirect: that redirect silently did nothing when the status
+    // call failed, stranding the user on a signed-out file browser (#1624).
+    final destination = await destinationAfterAcceptingTerms();
+    if (!mounted) return;
+    context.go(destination);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton(
+      onPressed: _accepting ? null : _accept,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: _accepting
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator.adaptive(strokeWidth: 2),
+              )
+            : const Text('I Agree', style: TextStyle(fontSize: 16)),
       ),
     );
   }
