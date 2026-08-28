@@ -14,7 +14,7 @@ import (
 // newTestDB creates an in-memory SQLite database with the auth schema applied.
 func newTestDB(t *testing.T) *db.Queries {
 	t.Helper()
-	sqlDB, err := sql.Open("sqlite", ":memory:")
+	sqlDB, err := sql.Open("sqlite", db.DSN(":memory:"))
 	if err != nil {
 		t.Fatalf("failed to open in-memory db: %v", err)
 	}
