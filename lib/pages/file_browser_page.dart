@@ -25,6 +25,7 @@ import 'package:quark/services/events_service.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/services/upload_chunk_source.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
+import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/files_route_path_utils.dart';
 import 'package:quark/utils/file_browser_dialog_utils.dart';
 import 'package:quark/utils/file_browser_drag_config.dart';
@@ -32,6 +33,7 @@ import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/safe_set_state_mixin.dart';
 import 'package:quark/utils/upload_tree_utils.dart';
 import 'package:quark/widgets/core/empty_state_widget.dart';
+import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/device_upload_picker.dart';
 import 'package:quark/widgets/file_browser/file_browser_header.dart';
 import 'package:quark/widgets/file_browser/file_browser_view.dart';
@@ -1439,6 +1441,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   }
 
   Widget _buildFolderRouteErrorState(BuildContext context, Object error) {
+    // A Quark the app never reached is not a folder problem, and "Go to
+    // parent" cannot fix it — say what is actually wrong instead (#1637).
+    if (isQuarkUnreachableError(error)) {
+      return QuarkDisconnectedView(
+        onRetry: _refreshFileState,
+        onManageHosts: () => context.go(AppRoutes.settings),
+      );
+    }
     final requestError = error is FilesRequestException ? error : null;
     final isMissingFolder = requestError?.statusCode == 404;
     final isUnauthorized =
@@ -1489,6 +1499,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     BuildContext context,
     _FilesRouteFailure failure,
   ) {
+    if (failure.isUnreachable) {
+      return QuarkDisconnectedView(
+        onRetry: () => _retryRouteFailure(failure),
+        onManageHosts: () => context.go(AppRoutes.settings),
+      );
+    }
     final routeLabel = filesRouteDisplayPath(failure.requestedPath);
     final parent = parentPath(failure.requestedPath);
 
@@ -1665,13 +1681,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       }
       _setPath(filePath);
       return;
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       if (isLikelyFilePath(filePath)) {
         setState(() {
           _routeFailure = _FilesRouteFailure(
             requestedPath: filePath,
             isFileRoute: true,
+            isUnreachable: isQuarkUnreachableError(error),
           );
         });
         return;
@@ -2192,12 +2209,17 @@ class _FilesRouteFailure {
     required this.isFileRoute,
     this.isUnauthorized = false,
     this.isUnsupported = false,
+    this.isUnreachable = false,
   });
 
   final String requestedPath;
   final bool isFileRoute;
   final bool isUnauthorized;
   final bool isUnsupported;
+
+  /// The stat never reached the Quark, so nothing is known about the file
+  /// itself — "File not found" would be an invented cause (#1637).
+  final bool isUnreachable;
 }
 
 /// Tracks the state when the user has navigated inside an archive file.

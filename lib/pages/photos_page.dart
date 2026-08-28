@@ -16,7 +16,9 @@ import 'package:quark/services/files_service.dart';
 import 'package:quark/services/favorites_service.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
+import 'package:quark/utils/connection_error.dart';
 import 'package:quark/widgets/core/empty_state_widget.dart';
+import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/device_upload_picker.dart';
 import 'package:quark/widgets/layout/quark_app_bar.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
@@ -81,6 +83,15 @@ class PhotosPageState extends State<PhotosPage>
   List<PhotoItem> _mobilePhotos = const <PhotoItem>[];
 
   bool _noHostSelected = false;
+
+  /// Whether the last attempt to list Quark-stored photos never reached the
+  /// Quark (#1637).
+  ///
+  /// Without this the page swallows the failure and renders "No photos yet",
+  /// which tells the user their library is empty when in fact it is simply out
+  /// of reach — the most misleading state in the app.
+  bool _quarkUnreachable = false;
+
   bool _categoriesExpanded = false;
   bool _isUploading = false;
   int _previewColumns = _defaultCrossAxisCount;
@@ -292,7 +303,12 @@ class PhotosPageState extends State<PhotosPage>
 
   /// Initial load of Quark-stored photos (first page).
   Future<List<PhotoItem>> _loadQuarkPhotos() async {
-    if (_noHostSelected) return const <PhotoItem>[];
+    if (_noHostSelected) {
+      // No host is a different state with its own UI, so a flag left over
+      // from the host that was just removed must not outlive it.
+      _quarkUnreachable = false;
+      return const <PhotoItem>[];
+    }
 
     _quarkPhotos = <PhotoItem>[];
     _quarkOffset = 0;
@@ -326,12 +342,14 @@ class PhotosPageState extends State<PhotosPage>
       _quarkTotal = response.total;
       _quarkOffset = items.length;
       _quarkInitialLoadDone = true;
+      _quarkUnreachable = false;
       return items;
-    } catch (_) {
+    } catch (e) {
       debugPrint(
-        '[photos_page.dart] Error loading initial Quark-stored photos',
+        '[photos_page.dart] Error loading initial Quark-stored photos: $e',
       );
       _quarkInitialLoadDone = true;
+      _quarkUnreachable = isQuarkUnreachableError(e);
       return const <PhotoItem>[];
     }
   }
@@ -932,7 +950,14 @@ class PhotosPageState extends State<PhotosPage>
     return RefreshIndicator(
       onRefresh: manualRefresh,
       child: photos.isEmpty && !_isLoadingMoreQuark
-          ? (_selectedCategory == PhotoCategory.favorites
+          // "No photos yet" would be a lie when the library is merely out of
+          // reach, so an unreachable Quark wins over every empty state (#1637).
+          ? (_quarkUnreachable
+                ? QuarkDisconnectedView(
+                    onRetry: manualRefresh,
+                    onManageHosts: () => context.go(AppRoutes.settings),
+                  )
+                : _selectedCategory == PhotoCategory.favorites
                 ? const EmptyStateWidget(
                     icon: QuarkIcons.star_outline_rounded,
                     headline: 'No favorites yet',

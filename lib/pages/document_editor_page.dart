@@ -12,7 +12,9 @@ import 'package:printing/printing.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/theme/quark_theme.dart';
+import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
+import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -254,7 +256,10 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   bool _saving = false;
   bool _dirty = false;
   bool _exporting = false;
-  String? _error;
+
+  /// The thrown object, not its message — the render decides whether it means
+  /// "your Quark is unreachable" or "the request failed" (#1637).
+  Object? _error;
   bool _routeMovedExternally = false;
 
   // Read-only / edit mode (#939)
@@ -456,7 +461,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Failed to load document: $e';
+        _error = e;
       });
     }
   }
@@ -813,14 +818,21 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_error != null) {
+    final error = _error;
+    if (error != null) {
+      if (isQuarkUnreachableError(error)) {
+        return QuarkDisconnectedView(onRetry: _loadDocument);
+      }
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(QuarkIcons.error_outline, size: 48, color: cs.error),
             const SizedBox(height: 12),
-            Text(_error!, textAlign: TextAlign.center),
+            Text(
+              'Failed to load document: $error',
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 12),
             FilledButton(onPressed: _loadDocument, child: const Text('Retry')),
           ],

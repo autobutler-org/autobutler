@@ -7,7 +7,9 @@ import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/services/vault_service.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
+import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/quark_widget.dart';
+import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/core/quark_storage_bar.dart';
 import 'package:quark/widgets/layout/quark_app_bar.dart';
 import 'package:quark/widgets/quark_drawer.dart';
@@ -24,7 +26,10 @@ class StorageDevicesPage extends StatefulWidget {
 class _StorageDevicesPageState extends State<StorageDevicesPage>
     with WidgetsBindingObserver, AutoRefreshMixin {
   List<StorageDevice>? _devices;
-  String? _error;
+
+  /// The thrown object, not its message — the render decides whether it means
+  /// "your Quark is unreachable" or "the request failed" (#1637).
+  Object? _error;
   final Set<String> _mounting = {};
   String? _activeBackupJobId;
   BackupJobStatus? _backupStatus;
@@ -56,7 +61,7 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
     } catch (e) {
       debugPrint('[storage_devices_page.dart] Error: $e');
       if (!mounted) return;
-      setState(() => _error = e.toString());
+      setState(() => _error = e);
     }
   }
 
@@ -346,12 +351,19 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
     if (AppSettings.instance.activeHost == null) {
       return const Center(child: Text('No quark host configured.'));
     }
-    if (_error != null) {
+    final error = _error;
+    if (error != null) {
+      if (isQuarkUnreachableError(error)) {
+        return QuarkDisconnectedView(
+          onRetry: manualRefresh,
+          onManageHosts: () => context.go(AppRoutes.settings),
+        );
+      }
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'Error: $_error',
+            'Error: $error',
             style: const TextStyle(color: Colors.red),
           ),
         ),
