@@ -42,6 +42,7 @@ func newAuthTestDB(t *testing.T) (*sql.DB, *db.Queries) {
 			user_id INTEGER NOT NULL,
 			expires_at DATETIME NOT NULL,
 			created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+			last_used_at DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
 			FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 		);
 	`

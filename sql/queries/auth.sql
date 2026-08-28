@@ -21,8 +21,8 @@ SET password_hash = ?
 WHERE id = ?;
 
 -- name: CreateSession :one
-INSERT INTO sessions (token, user_id, expires_at)
-VALUES (?, ?, ?)
+INSERT INTO sessions (token, user_id, expires_at, last_used_at)
+VALUES (?, ?, ?, ?)
 RETURNING *;
 
 -- name: GetSession :one
@@ -31,6 +31,13 @@ FROM sessions s
 JOIN users u ON s.user_id = u.id
 WHERE s.token = ? AND s.expires_at > datetime('now')
 LIMIT 1;
+
+-- Slides a session's expiry forward on use (#1647). The new expiry is computed
+-- in Go so the cap against created_at stays testable; this only writes it.
+-- name: RenewSession :exec
+UPDATE sessions
+SET expires_at = ?, last_used_at = ?
+WHERE token = ?;
 
 -- name: DeleteSession :exec
 DELETE FROM sessions WHERE token = ?;

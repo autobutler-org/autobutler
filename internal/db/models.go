@@ -85,10 +85,11 @@ type PhotoRotation struct {
 }
 
 type Session struct {
-	Token     string
-	UserID    int64
-	ExpiresAt time.Time
-	CreatedAt time.Time
+	Token      string
+	UserID     int64
+	ExpiresAt  time.Time
+	CreatedAt  time.Time
+	LastUsedAt time.Time
 }
 
 type User struct {
