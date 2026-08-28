@@ -1,0 +1,124 @@
+import 'package:flutter/material.dart';
+import 'package:quark/services/app_settings.dart';
+import 'package:quark_icons/quark_icons.dart';
+
+/// First-run "point me at a Quark" form.
+///
+/// Shown wherever the app has no host configured at all — the login page
+/// (#1639) and the file browser's first-run state.
+class QuarkConnectForm extends StatefulWidget {
+  const QuarkConnectForm({
+    super.key,
+    required this.onConnected,
+    this.autofocus = true,
+  });
+
+  /// Fired once the address has been saved as the active host.
+  final VoidCallback onConnected;
+
+  final bool autofocus;
+
+  @override
+  State<QuarkConnectForm> createState() => _QuarkConnectFormState();
+}
+
+class _QuarkConnectFormState extends State<QuarkConnectForm> {
+  final _controller = TextEditingController();
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _connect() async {
+    final raw = _controller.text.trim();
+    if (raw.isEmpty) {
+      setState(() => _error = 'Please enter your Quark address.');
+      return;
+    }
+
+    // A quark serves TLS; a schemeless address must become https://.
+    // addHost normalizes too — doing it here keeps the value we show and the
+    // value we store identical.
+    final address = normalizeHostAddress(raw);
+
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+
+    try {
+      await AppSettings.instance.addHost(
+        HostEntry(name: 'My Quark', hostAddress: address),
+      );
+      if (mounted) widget.onConnected();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _error = 'Could not connect. Check the address and try again.';
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Icon(QuarkIcons.storage_outlined, size: 56, color: Colors.grey),
+        const SizedBox(height: 16),
+        Text(
+          'Connect to your Quark',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Enter the address of your Quark device on your home network.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
+        ),
+        const SizedBox(height: 24),
+        TextField(
+          controller: _controller,
+          autofocus: widget.autofocus,
+          keyboardType: TextInputType.url,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _connect(),
+          decoration: InputDecoration(
+            labelText: 'Quark address',
+            hintText: 'https://quark.home.local',
+            helperText:
+                'Usually https://quark.home.local or https://192.168.x.x',
+            errorText: _error,
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(QuarkIcons.link_rounded),
+          ),
+        ),
+        const SizedBox(height: 16),
+        FilledButton(
+          onPressed: _saving ? null : _connect,
+          child: _saving
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('Connect'),
+        ),
+      ],
+    );
+  }
+}

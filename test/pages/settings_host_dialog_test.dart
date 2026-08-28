@@ -33,10 +33,19 @@ void main() {
   late List<String> errors;
   late void Function() stopWatchingErrors;
 
+  /// Settings is behind the auth gate, and with no Quark configured the gate
+  /// now sends the user to the login page instead (#1639). Seeding an accepted
+  /// host is what puts Settings on screen at all; the flow under test is then
+  /// adding a *second* Quark from it.
+  const seedAddress = 'http://127.0.0.1:1';
+
   Future<void> pumpSettings(WidgetTester tester) async {
     tester.view.physicalSize = const Size(1200, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
+
+    await settings.addHost(HostEntry(name: 'Seed', hostAddress: seedAddress));
+    await settings.acceptTerms();
 
     errors = <String>[];
     final priorOnError = FlutterError.onError;
@@ -74,6 +83,10 @@ void main() {
         GoRoute(
           path: AppRoutes.settings,
           builder: (_, _) => const SettingsPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.login,
+          builder: (_, _) => const Scaffold(body: Text('login')),
         ),
         GoRoute(path: AppRoutes.terms, builder: (_, _) => const TermsPage()),
       ],
@@ -121,7 +134,8 @@ void main() {
       isFalse,
       reason: 'the dialog must be popped before the terms gate re-runs',
     );
-    expect(settings.hosts.single.hostAddress, 'http://new-quark.local');
+    expect(settings.hosts.last.hostAddress, 'http://new-quark.local');
+    expect(settings.activeHost, 'http://new-quark.local');
     expect(find.byType(TermsPage), findsOneWidget);
     expect(errors, isEmpty);
   });
@@ -139,7 +153,8 @@ void main() {
     stopWatchingErrors();
 
     expect(dialogStillPushedWhenHostChanged, isFalse);
-    expect(settings.hosts.single.hostAddress, 'http://new-quark.local');
+    expect(settings.hosts.last.hostAddress, 'http://new-quark.local');
+    expect(settings.activeHost, 'http://new-quark.local');
     expect(find.byType(TermsPage), findsOneWidget);
     expect(errors, isEmpty);
   });
@@ -155,7 +170,7 @@ void main() {
     await settle(tester);
     stopWatchingErrors();
 
-    expect(settings.hosts, isEmpty);
+    expect(settings.hosts.single.hostAddress, seedAddress);
     expect(find.byType(SettingsPage), findsOneWidget);
     expect(errors, isEmpty);
   });
@@ -170,7 +185,7 @@ void main() {
     await settle(tester);
     stopWatchingErrors();
 
-    expect(settings.hosts, isEmpty);
+    expect(settings.hosts.single.hostAddress, seedAddress);
     expect(find.byType(TextField), findsNWidgets(2));
   });
 }

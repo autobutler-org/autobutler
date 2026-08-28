@@ -40,6 +40,7 @@ import 'package:quark/widgets/file_browser/file_storage_footer.dart';
 import 'package:quark/widgets/file_browser/file_top_bar.dart';
 import 'package:quark/widgets/file_browser/new_file_dialog.dart';
 import 'package:quark/widgets/file_browser/recent_files_section.dart';
+import 'package:quark/widgets/quark_connect_form.dart';
 import 'package:quark/widgets/quark_drawer.dart';
 import 'package:quark_icons/quark_icons.dart';
 
@@ -2061,14 +2062,25 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
           Expanded(
             child: _noHostSelected
-                ? _FirstRunSetup(
-                    onConnected: () {
-                      setState(() {
-                        _noHostSelected =
-                            AppSettings.instance.activeHost == null;
-                        if (!_noHostSelected) _reloadFiles();
-                      });
-                    },
+                ? Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 24,
+                      ),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 400),
+                        child: QuarkConnectForm(
+                          onConnected: () {
+                            setState(() {
+                              _noHostSelected =
+                                  AppSettings.instance.activeHost == null;
+                              if (!_noHostSelected) _reloadFiles();
+                            });
+                          },
+                        ),
+                      ),
+                    ),
                   )
                 : _routeFailure != null
                 ? _buildFileRouteErrorState(context, _routeFailure!)
@@ -2174,15 +2186,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   }
 }
 
-class _FirstRunSetup extends StatefulWidget {
-  const _FirstRunSetup({required this.onConnected});
-
-  final VoidCallback onConnected;
-
-  @override
-  State<_FirstRunSetup> createState() => _FirstRunSetupState();
-}
-
 class _FilesRouteFailure {
   const _FilesRouteFailure({
     required this.requestedPath,
@@ -2195,120 +2198,6 @@ class _FilesRouteFailure {
   final bool isFileRoute;
   final bool isUnauthorized;
   final bool isUnsupported;
-}
-
-class _FirstRunSetupState extends State<_FirstRunSetup> {
-  final _controller = TextEditingController();
-  bool _saving = false;
-  String? _error;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _connect() async {
-    final raw = _controller.text.trim();
-    if (raw.isEmpty) {
-      setState(() => _error = 'Please enter your Quark address.');
-      return;
-    }
-
-    // A quark serves TLS; a schemeless address must become https://.
-    // addHost normalizes too — doing it here keeps the value we show and the
-    // value we store identical.
-    final address = normalizeHostAddress(raw);
-
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
-
-    try {
-      await AppSettings.instance.addHost(
-        HostEntry(name: 'My Quark', hostAddress: address),
-      );
-      if (mounted) widget.onConnected();
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _saving = false;
-          _error = 'Could not connect. Check the address and try again.';
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Icon(
-                QuarkIcons.storage_outlined,
-                size: 56,
-                color: Colors.grey,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Connect to your Quark',
-                textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Enter the address of your Quark device on your home network.',
-                textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-              ),
-              const SizedBox(height: 24),
-              TextField(
-                controller: _controller,
-                autofocus: true,
-                keyboardType: TextInputType.url,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _connect(),
-                decoration: InputDecoration(
-                  labelText: 'Quark address',
-                  hintText: 'https://quark.home.local',
-                  helperText:
-                      'Usually https://quark.home.local or https://192.168.x.x',
-                  errorText: _error,
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(QuarkIcons.link_rounded),
-                ),
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _saving ? null : _connect,
-                child: _saving
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Connect'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 /// Tracks the state when the user has navigated inside an archive file.

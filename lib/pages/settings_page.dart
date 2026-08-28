@@ -12,8 +12,8 @@ import 'package:quark/services/sbom_service.dart';
 import 'package:quark/services/settings_service.dart';
 import 'package:quark/services/smb_service.dart';
 import 'package:quark/services/storage_service.dart';
-import 'package:quark/utils/quark_widget.dart';
 import 'package:quark/widgets/core/copy_button.dart';
+import 'package:quark/widgets/host_manager.dart';
 import 'package:quark/widgets/layout/quark_app_bar.dart';
 import 'package:quark/widgets/quark_drawer.dart';
 import 'package:quark/widgets/refresh_icon_button.dart';
@@ -28,8 +28,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  List<HostEntry> _hosts = [];
-  int _active = -1;
   ThemeMode _theme = ThemeMode.system;
   String? _installedVersion;
   List<String> _availableVersions = [];
@@ -72,8 +70,6 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _load() {
-    _hosts = AppSettings.instance.hosts;
-    _active = AppSettings.instance.activeIndex;
     _theme = AppSettings.instance.themeMode.value;
     _refreshIntervalSeconds = AppSettings.instance.refreshIntervalSeconds;
     setState(() {});
@@ -452,59 +448,6 @@ class _SettingsPageState extends State<SettingsPage> {
           _isUpdatingVersion = false;
         });
       }
-    }
-  }
-
-  Future<void> _addOrEditHost({int? index}) async {
-    final isEdit = index != null;
-    final idx = index ?? 0;
-
-    final entry = await QuarkWidget.showDialog<HostEntry>(
-      context,
-      builder: (context) =>
-          _HostDialog(isEdit: isEdit, initial: isEdit ? _hosts[idx] : null),
-    );
-    if (entry == null) return;
-
-    // Saved only once the dialog is gone. Adding a host, or pointing one at a
-    // new address, changes the active host — that re-runs the router's terms
-    // gate and can replace this page (#1623). Doing it from inside the
-    // dialog's own button tore the settings subtree down while the dialog was
-    // still on screen, which is what produced the disposed-controller and
-    // inherited-element errors.
-    if (isEdit) {
-      await AppSettings.instance.updateHost(idx, entry);
-    } else {
-      await AppSettings.instance.addHost(entry);
-    }
-
-    if (!mounted) return;
-    _load();
-  }
-
-  Future<void> _removeHost(int index) async {
-    final confirm = await QuarkWidget.showDialog(
-      context,
-      builder: (context) => QuarkWidget.alertDialog(
-        title: const Text('Remove host'),
-        content: const Text('Are you sure you want to remove this host?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      await AppSettings.instance.removeHost(index);
-      if (!mounted) return;
-      _load();
     }
   }
 
@@ -987,53 +930,7 @@ class _SettingsPageState extends State<SettingsPage> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          RadioGroup<int>(
-            groupValue: _active,
-            onChanged: (v) async {
-              if (v == null) return;
-              await AppSettings.instance.setActiveIndex(v);
-              _load();
-            },
-            child: Column(
-              children: _hosts.asMap().entries.map((e) {
-                final idx = e.key;
-                final host = e.value;
-                return Card(
-                  child: ListTile(
-                    leading: Radio<int>(value: idx),
-                    title: Text(host.name),
-                    subtitle: Text(host.hostAddress),
-                    trailing: PopupMenuButton<String>(
-                      onSelected: (action) {
-                        if (action == 'edit') {
-                          _addOrEditHost(index: idx);
-                        } else if (action == 'remove') {
-                          _removeHost(idx);
-                        }
-                      },
-                      itemBuilder: (_) => [
-                        const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                        const PopupMenuItem(
-                          value: 'remove',
-                          child: Text('Remove'),
-                        ),
-                      ],
-                    ),
-                    onTap: () async {
-                      await AppSettings.instance.setActiveIndex(idx);
-                      _load();
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          const SizedBox(height: 8),
-          ElevatedButton.icon(
-            onPressed: () => _addOrEditHost(),
-            icon: const Icon(QuarkIcons.add),
-            label: const Text('Add Quark'),
-          ),
+          HostManager(onChanged: _load),
           const SizedBox(height: 24),
           const Text(
             'Connected Devices',
@@ -1746,87 +1643,6 @@ class _CodeBlock extends StatelessWidget {
           CopyButton(text: text),
         ],
       ),
-    );
-  }
-}
-
-/// The add/edit Quark dialog.
-///
-/// Owns its text controllers so they live exactly as long as the dialog's
-/// element. They used to be created by the caller and disposed in a post-frame
-/// callback once `showDialog` resolved, which killed them while the dismiss
-/// transition was still running and the fields were still mounted — hence
-/// "A TextEditingController was used after being disposed".
-///
-/// It also only ever pops a value: saving is the caller's job, so the route
-/// stack is never mutated while this dialog is on screen.
-class _HostDialog extends StatefulWidget {
-  const _HostDialog({required this.isEdit, this.initial});
-
-  final bool isEdit;
-  final HostEntry? initial;
-
-  @override
-  State<_HostDialog> createState() => _HostDialogState();
-}
-
-class _HostDialogState extends State<_HostDialog> {
-  late final TextEditingController _name = TextEditingController(
-    text: widget.initial?.name ?? '',
-  );
-  late final TextEditingController _address = TextEditingController(
-    text: widget.initial?.hostAddress ?? '',
-  );
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _address.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    final name = _name.text.trim();
-    final address = _address.text.trim();
-    if (name.isEmpty || address.isEmpty) return;
-    Navigator.of(context).pop(HostEntry(name: name, hostAddress: address));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return QuarkWidget.alertDialog(
-      title: Text(widget.isEdit ? 'Edit Quark' : 'Add Quark'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          QuarkWidget.textField(
-            controller: _name,
-            autofocus: true,
-            textInputAction: TextInputAction.next,
-            hintText: 'Nickname (e.g. Home)',
-          ),
-          const SizedBox(height: 8),
-          QuarkWidget.textField(
-            controller: _address,
-            textInputAction: TextInputAction.done,
-            // Enter in the address field saves, same as the button.
-            onSubmitted: (_) => _submit(),
-            hintText: 'https://quark.home.local',
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Usually https://quark.home.local or the IP address shown on your device.',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        TextButton(onPressed: _submit, child: const Text('Save')),
-      ],
     );
   }
 }

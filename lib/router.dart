@@ -145,7 +145,10 @@ final Listenable routerRefreshListenable = Listenable.merge([
 ]);
 
 final router = GoRouter(
-  initialLocation: AppRoutes.files,
+  // The login page is the landing page (#1639). It is the one route that is
+  // always reachable, and it owns host management, so a user pointed at a
+  // Quark they can't reach can still fix it instead of being stuck.
+  initialLocation: AppRoutes.login,
   redirect: authRedirect,
   refreshListenable: routerRefreshListenable,
   routes: [
@@ -289,21 +292,26 @@ final router = GoRouter(
 /// without mounting every page in the app.
 @visibleForTesting
 Future<String?> authRedirect(BuildContext context, GoRouterState state) async {
-  final publicRoutes = {
-    AppRoutes.setup,
-    AppRoutes.login,
-    AppRoutes.recover,
-    AppRoutes.terms,
-  };
+  final location = state.matchedLocation;
 
-  // Public routes are always accessible.
-  if (publicRoutes.contains(state.matchedLocation)) return null;
+  // The terms page itself, or the redirect below loops.
+  if (location == AppRoutes.terms) return null;
 
-  // No host configured — let the main app handle the "add host" prompt.
-  if (AppSettings.instance.activeHost == null) return null;
+  // No Quark configured at all. /setup and /recover are useless too — there is
+  // no API base to talk to — so everything lands on login, which is where
+  // hosts are added (#1639).
+  if (AppSettings.instance.activeHost == null) {
+    return location == AppRoutes.login ? null : AppRoutes.login;
+  }
 
-  // Terms must be accepted for this Quark before accessing the app.
+  // Terms must be accepted for this Quark before anything else, including the
+  // public routes below: with login as the landing page, connecting a Quark
+  // from the login page still has to show terms straight away (#1631).
   if (!AppSettings.instance.hasAcceptedTerms.value) return AppRoutes.terms;
+
+  // Routes reachable without a session.
+  const publicRoutes = {AppRoutes.setup, AppRoutes.login, AppRoutes.recover};
+  if (publicRoutes.contains(location)) return null;
 
   // Already authenticated.
   if (AppSettings.instance.sessionToken != null) return null;
