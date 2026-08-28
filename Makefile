@@ -33,6 +33,17 @@ export GOPROXY ?= https://proxy.golang.org,direct
 ENTRYPOINT := ./cmd/quark
 EXE := ./build/quark
 
+# AS_ROOT=1 runs the backend targets under sudo. Needed for USB device mounting
+# on Linux, and for binding the privileged :443 port that the secure targets use.
+# The env assignment is placed after sudo (via `env`) rather than before it, so
+# it survives sudo's environment scrubbing without depending on `sudo -E` being
+# permitted by sudoers.
+ifeq ($(AS_ROOT),1)
+SUDO := sudo
+else
+SUDO :=
+endif
+
 # Auto-detect Chromium-based browser for Flutter web if CHROME_EXECUTABLE
 # is not already set.  Brave is checked first because users who removed
 # Chrome in favour of Brave still need a Chromium engine for Flutter.
@@ -492,12 +503,12 @@ unmount-drive: ## Detach the highest-numbered MyDrive volume currently mounted
 	hdiutil detach "/Volumes/$$highest_name"
 
 .PHONY: serve/backend
-serve/backend: generate/backend ## Serve backend
-	QUARK_INSECURE=true $(GO) run $(ENTRYPOINT) serve
+serve/backend: generate/backend ## Serve backend over plain HTTP on :8080 (insecure)
+	$(SUDO) env QUARK_INSECURE=true $(GO) run $(ENTRYPOINT) serve
 
 .PHONY: serve/backend/secure
-serve/backend/secure: generate/backend ## Serve backend with TLS enabled
-	$(GO) run $(ENTRYPOINT) serve
+serve/backend/secure: generate/backend ## Serve backend over HTTPS on :443 (self-signed)
+	$(SUDO) $(GO) run $(ENTRYPOINT) serve
 
 .PHONY: serve/frontend
 serve/frontend: serve/frontend/web ## Serve frontend
@@ -642,8 +653,12 @@ upgrade/go: generate/backend ## Upgrade dependencies (go)
 	$(MAKE) tidy/go
 
 .PHONY: watch/backend
-watch/backend: build/backend ## Watch backend for changes
-	$(AIR)
+watch/backend: build/backend ## Watch backend for changes, plain HTTP on :8080 (insecure)
+	$(SUDO) env QUARK_INSECURE=true $(AIR)
+
+.PHONY: watch/backend/secure
+watch/backend/secure: build/backend ## Watch backend for changes, HTTPS on :443 (self-signed)
+	$(SUDO) $(AIR)
 
 .PHONY: watch/frontend
 watch/frontend: generate/frontend ## Watch frontend on web

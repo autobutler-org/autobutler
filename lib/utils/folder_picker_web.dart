@@ -3,6 +3,7 @@ import 'dart:js_interop';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:quark/services/upload_chunk_source_web.dart';
 import 'package:quark/utils/upload_tree_utils.dart';
 import 'package:web/web.dart' as web;
 
@@ -16,12 +17,32 @@ import 'package:web/web.dart' as web;
 /// does not surface the property at all.
 bool get isFolderPickerSupportedPlatform => true;
 
-Future<List<PendingUpload>> pickFolderUploadsPlatform() async {
+Future<List<PendingUpload>> pickFolderUploadsPlatform() {
+  return _pickUploads(directory: true);
+}
+
+/// Plain file selection, also straight to the DOM rather than through
+/// file_picker.
+///
+/// file_picker's web backend has no setting that hands back a lazy handle:
+/// `withData: true` reads every byte into the heap, and `withData: false` is
+/// worse — it base64s the whole file into a data URL. Either way a large file
+/// is in memory before it is sent, which is the third of the three places
+/// #1629 had to fix. An `<input type="file">` gives us the `File` objects
+/// themselves, and a `File` is a `Blob`: sliceable, and read only when
+/// something consumes the slice.
+Future<List<PendingUpload>> pickFileUploadsPlatform() {
+  return _pickUploads(directory: false);
+}
+
+Future<List<PendingUpload>> _pickUploads({required bool directory}) async {
   final input = web.HTMLInputElement()
     ..type = 'file'
     ..multiple = true
     ..style.display = 'none';
-  input.setAttribute('webkitdirectory', 'true');
+  if (directory) {
+    input.setAttribute('webkitdirectory', 'true');
+  }
   web.document.body?.append(input);
 
   final completer = Completer<List<PendingUpload>>();
@@ -88,6 +109,9 @@ List<PendingUpload> _uploadsFromInput(web.HTMLInputElement input) {
         name: name,
         build: () async {
           try {
+            // Only ever reached below the chunking threshold — a large file
+            // goes out slice by slice through the chunk source instead, and
+            // never lands here whole (#1629).
             final buffer = await file.arrayBuffer().toDart;
             return http.MultipartFile.fromBytes(
               'files',
@@ -99,6 +123,12 @@ List<PendingUpload> _uploadsFromInput(web.HTMLInputElement input) {
             return null;
           }
         },
+        // A File is a Blob, so the chunk source is a handle on bytes the
+        // browser already holds — nothing is read here.
+        openChunkSource: () async => BlobUploadChunkSource(
+          file,
+          lastModified: DateTime.fromMillisecondsSinceEpoch(file.lastModified),
+        ),
       ),
     );
   }

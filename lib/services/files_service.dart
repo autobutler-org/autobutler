@@ -31,27 +31,6 @@ class FilesService with AuthenticatedService {
   static FilesService get instance => _instance;
   static Map<String, String> get _authHeaders => instance.authHeaders;
 
-  static Uri get _apiBaseUri {
-    final configured = AppSettings.instance.activeHost;
-    final base =
-        configured ??
-        String.fromEnvironment(
-          'API_BASE_URL',
-          defaultValue: 'http://localhost:8080',
-        );
-    final uri = Uri.parse(base);
-    final isLoopbackHost =
-        uri.host == 'localhost' || uri.host == '127.0.0.1' || uri.host == '::1';
-
-    if (!kIsWeb &&
-        defaultTargetPlatform == TargetPlatform.android &&
-        isLoopbackHost) {
-      return uri.replace(host: '10.0.2.2');
-    }
-
-    return uri;
-  }
-
   static String _responseMessage(
     http.Response response, {
     required String fallback,
@@ -85,7 +64,7 @@ class FilesService with AuthenticatedService {
     if (token != null && token.isNotEmpty) {
       querySegments.add('token=${Uri.encodeQueryComponent(token)}');
     }
-    final endpointUri = _apiBaseUri.resolve('/api/v0/files/download');
+    final endpointUri = apiBaseUri.resolve('/api/v0/files/download');
     return endpointUri.replace(query: querySegments.join('&'));
   }
 
@@ -103,7 +82,7 @@ class FilesService with AuthenticatedService {
         .split('/')
         .map((s) => Uri.encodeComponent(s))
         .join('/');
-    final endpointUri = _apiBaseUri.resolve('/api/v0/thumbnails/$encodedPath');
+    final endpointUri = apiBaseUri.resolve('/api/v0/thumbnails/$encodedPath');
 
     // Build query params — include token when set so Image.network() (which
     // cannot set custom headers) can still authenticate.
@@ -132,7 +111,7 @@ class FilesService with AuthenticatedService {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
 
-    final endpointUri = _apiBaseUri.resolve('/api/v0/photos');
+    final endpointUri = apiBaseUri.resolve('/api/v0/photos');
     final uri = endpointUri.replace(query: querySegments.join('&'));
 
     final response = await instance.authenticatedGet(uri);
@@ -170,7 +149,7 @@ class FilesService with AuthenticatedService {
       querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
     }
 
-    final endpointUri = _apiBaseUri.resolve('/api/v0/files');
+    final endpointUri = apiBaseUri.resolve('/api/v0/files');
     final uri = querySegments.isEmpty
         ? endpointUri
         : endpointUri.replace(query: querySegments.join('&'));
@@ -211,7 +190,7 @@ class FilesService with AuthenticatedService {
         querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
       }
     }
-    final uri = _apiBaseUri
+    final uri = apiBaseUri
         .resolve('/api/v0/files/by-type')
         .replace(query: querySegments.join('&'));
 
@@ -246,7 +225,7 @@ class FilesService with AuthenticatedService {
         querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
       }
     }
-    final uri = _apiBaseUri
+    final uri = apiBaseUri
         .resolve('/api/v0/files/recent')
         .replace(query: querySegments.join('&'));
 
@@ -279,7 +258,7 @@ class FilesService with AuthenticatedService {
     for (final serial in serialValues) {
       querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
     }
-    final endpointUri = _apiBaseUri.resolve('/api/v0/files/search');
+    final endpointUri = apiBaseUri.resolve('/api/v0/files/search');
     final uri = querySegments.isEmpty
         ? endpointUri
         : endpointUri.replace(query: querySegments.join('&'));
@@ -317,7 +296,7 @@ class FilesService with AuthenticatedService {
     if (serialValue.isNotEmpty) {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
-    final endpointUri = _apiBaseUri.resolve('/api/v0/files/list-archive');
+    final endpointUri = apiBaseUri.resolve('/api/v0/files/list-archive');
     final uri = endpointUri.replace(query: querySegments.join('&'));
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -343,7 +322,7 @@ class FilesService with AuthenticatedService {
     if (serialValue.isNotEmpty) {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
-    final endpointUri = _apiBaseUri.resolve('/api/v0/files/extract');
+    final endpointUri = apiBaseUri.resolve('/api/v0/files/extract');
     final uri = endpointUri.replace(query: querySegments.join('&'));
     final response = await instance.authenticatedPost(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -365,7 +344,7 @@ class FilesService with AuthenticatedService {
     if (serialValue.isNotEmpty) {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
-    final endpointUri = _apiBaseUri.resolve('/api/v0/files/stat');
+    final endpointUri = apiBaseUri.resolve('/api/v0/files/stat');
     final uri = endpointUri.replace(query: querySegments.join('&'));
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -402,7 +381,7 @@ class FilesService with AuthenticatedService {
       queryParams['serial'] = serial;
     }
 
-    final endpointUri = _apiBaseUri.resolve('/api/v0/files');
+    final endpointUri = apiBaseUri.resolve('/api/v0/files');
     final uri = endpointUri.replace(queryParameters: queryParams);
 
     final response = await instance.authenticatedDelete(uri);
@@ -434,7 +413,7 @@ class FilesService with AuthenticatedService {
     if (serial.isNotEmpty) {
       querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
     }
-    final uri = _apiBaseUri
+    final uri = apiBaseUri
         .resolve('/api/v0/files')
         .replace(query: querySegments.join('&'));
     final response = await instance.authenticatedDelete(uri);
@@ -449,7 +428,7 @@ class FilesService with AuthenticatedService {
     String? oldDeviceSerial,
     String? newDeviceSerial,
   }) async {
-    final endpointUri = _apiBaseUri.resolve('/api/v0/files');
+    final endpointUri = apiBaseUri.resolve('/api/v0/files');
     final requestBody = <String, String>{
       'oldFilePath': oldPath,
       'newFilePath': newPath,
@@ -483,7 +462,7 @@ class FilesService with AuthenticatedService {
     final endpointPath = trimmedFolderPath.isEmpty
         ? '/api/v0/files/folder/'
         : _joinPaths('/api/v0/files/folder', trimmedFolderPath);
-    final endpointUri = _apiBaseUri.resolve(endpointPath);
+    final endpointUri = apiBaseUri.resolve(endpointPath);
 
     final request = http.MultipartRequest('POST', endpointUri);
     request.fields['folderName'] = folderName;
@@ -502,7 +481,7 @@ class FilesService with AuthenticatedService {
     bool overwrite = false,
   }) async {
     final uploadEndpointPath = _joinPaths('/api/v0/files/upload', uploadPath);
-    final endpointUri = _apiBaseUri.resolve(uploadEndpointPath);
+    final endpointUri = apiBaseUri.resolve(uploadEndpointPath);
 
     final serialValue = serial?.trim() ?? '';
     final queryParams = <String, String>{
@@ -579,7 +558,7 @@ class FilesService with AuthenticatedService {
     if (serialValue.isNotEmpty) {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
-    final endpointUri = _apiBaseUri.resolve(
+    final endpointUri = apiBaseUri.resolve(
       '/api/v0/files/download-archive-file',
     );
     final uri = endpointUri.replace(query: querySegments.join('&'));
@@ -653,7 +632,7 @@ class FilesService with AuthenticatedService {
     final params = <String, String>{'relPath': relPath};
     final serialValue = serial?.trim() ?? '';
     if (serialValue.isNotEmpty) params['serial'] = serialValue;
-    final uri = _apiBaseUri
+    final uri = apiBaseUri
         .resolve('/api/v0/photos/metadata')
         .replace(queryParameters: params);
     final response = await instance.authenticatedGet(uri);
@@ -672,7 +651,7 @@ class FilesService with AuthenticatedService {
     String? serial,
     required int rotationQuarters,
   }) async {
-    final uri = _apiBaseUri.resolve('/api/v0/photos/rotate');
+    final uri = apiBaseUri.resolve('/api/v0/photos/rotate');
     final body = jsonEncode({
       'relPath': relPath,
       'serial': serial?.trim() ?? '',
@@ -691,7 +670,7 @@ class FilesService with AuthenticatedService {
   /// Duplicates a photo on the server. Returns the relative path of the new
   /// file (e.g. "photos/IMG_001_copy.jpg").
   static Future<String> copyPhoto(String relPath, {String? serial}) async {
-    final uri = _apiBaseUri.resolve('/api/v0/photos/copy');
+    final uri = apiBaseUri.resolve('/api/v0/photos/copy');
     final body = jsonEncode({
       'relPath': relPath,
       'serial': serial?.trim() ?? '',
@@ -718,7 +697,7 @@ class FilesService with AuthenticatedService {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
     }
 
-    final endpointUri = _apiBaseUri.resolve('/api/v0/files/download');
+    final endpointUri = apiBaseUri.resolve('/api/v0/files/download');
     return endpointUri.replace(query: querySegments.join('&'));
   }
 
@@ -819,7 +798,7 @@ class FilesService with AuthenticatedService {
   }
 
   static Future<Map<String, dynamic>> getInstalledVersion() async {
-    final endpointUri = _apiBaseUri.resolve('/api/v0/version');
+    final endpointUri = apiBaseUri.resolve('/api/v0/version');
     final response = await instance.authenticatedGet(endpointUri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
@@ -836,7 +815,7 @@ class FilesService with AuthenticatedService {
   static Future<List<Map<String, dynamic>>> listAvailableVersions({
     bool all = false,
   }) async {
-    final endpointUri = _apiBaseUri.resolve('/api/v0/version/available');
+    final endpointUri = apiBaseUri.resolve('/api/v0/version/available');
     final uri = all ? endpointUri.replace(query: 'all=true') : endpointUri;
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -861,7 +840,7 @@ class FilesService with AuthenticatedService {
     String? serial,
     required int timestampMs,
   }) async {
-    final uri = _apiBaseUri.resolve('/api/v0/videos/extract-frame');
+    final uri = apiBaseUri.resolve('/api/v0/videos/extract-frame');
     final body = jsonEncode({
       'relPath': relPath,
       'serial': serial?.trim() ?? '',
@@ -889,7 +868,7 @@ class FilesService with AuthenticatedService {
     required int startMs,
     required int endMs,
   }) async {
-    final uri = _apiBaseUri.resolve('/api/v0/videos/trim');
+    final uri = apiBaseUri.resolve('/api/v0/videos/trim');
     final body = jsonEncode({
       'relPath': relPath,
       'serial': serial?.trim() ?? '',
@@ -911,7 +890,7 @@ class FilesService with AuthenticatedService {
   }
 
   static Future<void> updateToVersion(String version) async {
-    final endpointUri = _apiBaseUri.resolve('/api/v0/version/update');
+    final endpointUri = apiBaseUri.resolve('/api/v0/version/update');
     final body = jsonEncode({'version': version});
     final response = await instance.authenticatedPost(
       endpointUri,

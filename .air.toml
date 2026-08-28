@@ -1,25 +1,30 @@
 # Air configuration for hot-reloading the quark backend.
 # https://github.com/air-verse/air
 #
-# This file provides the default (non-root) configuration.
-# `make watch/backend` may override individual flags on the CLI — CLI flags
-# always take precedence over this file, so the Makefile's AS_ROOT=1 branch
-# (which prefixes the build command with sudo) continues to work unchanged.
+# This file does not choose a scheme or port — the caller does, by setting
+# QUARK_INSECURE in the environment. Air passes its own environment through to
+# the binary it runs, so the Makefile targets select the mode:
 #
-# Run directly:  air
-# Via Makefile:  make watch/backend
+#   make watch/backend          QUARK_INSECURE=true  -> plain HTTP  on :8080
+#   make watch/backend/secure   (unset)              -> HTTPS       on :443, self-signed
+#
+# Running `air` directly inherits whatever your shell has set; with nothing set
+# that means the secure path (HTTPS on :443), which needs root on Linux.
+# Prefix any backend target with AS_ROOT=1 to run it under sudo.
 
 root = "."
 tmp_dir = "tmp"
 
 [build]
-  # Build command — overridden by Makefile when AS_ROOT=1
+  # Build command. With AS_ROOT=1 the Makefile runs air itself under sudo, so
+  # this rebuild inherits root too.
   cmd = "make build/backend"
 
   # Binary to run after a successful build
   entrypoint = ["./build/quark"]
 
-  # Arguments passed to the binary on startup
+  # Arguments passed to the binary on startup. The TLS mode is deliberately not
+  # set here — see the header comment; QUARK_INSECURE in the environment picks it.
   args_bin = ["serve"]
 
   # Directories to ignore when watching for changes.

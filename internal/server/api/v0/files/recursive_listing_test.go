@@ -14,6 +14,7 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/util/uploadutil"
 	"github.com/autobutler-org/quark/pkg/vfs"
 	"github.com/gin-gonic/gin"
 )
@@ -28,6 +29,16 @@ import (
 // registers a LocalVFS for the same namespace — that one cannot reproduce
 // anything specific to the StorageService-backed implementation.
 func newStorageVFSTestEngine(t *testing.T) (*gin.Engine, string) {
+	t.Helper()
+	deps, filesDir := newStorageVFSDeps(t)
+	return newEngineForDeps(deps), filesDir
+}
+
+// newStorageVFSDeps builds the dependency graph behind newStorageVFSTestEngine.
+// It is split out so a test that has to reach into deps — at the upload session
+// store, for instance (#1629) — gets the same wiring instead of a second copy
+// of it that drifts.
+func newStorageVFSDeps(t *testing.T) (deputil.Dependencies, string) {
 	t.Helper()
 
 	mountPoint := t.TempDir()
@@ -48,8 +59,23 @@ func newStorageVFSTestEngine(t *testing.T) (*gin.Engine, string) {
 	deps := deputil.NewDependencies().
 		WithStorageService(svc).
 		WithVFSRegistry(registry).
-		WithEventBus(eventbus.New())
+		WithEventBus(eventbus.New()).
+		WithUploadSessions(newTestSessionStore(mountPoint))
 
+	return deps, filesDir
+}
+
+// newTestSessionStore stages chunked uploads under the test's own mount point.
+// The production default sits in the real data directory, which a test must
+// never write to.
+func newTestSessionStore(mountPoint string) *uploadutil.SessionStore {
+	return uploadutil.NewSessionStore(uploadutil.NewSessionStoreParams{
+		StagingDir: filepath.Join(mountPoint, "quark", "data", "tmp", "upload-sessions"),
+	})
+}
+
+// newEngineForDeps registers the files routes against a given dependency graph.
+func newEngineForDeps(deps deputil.Dependencies) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()
 	engine.Use(func(c *gin.Context) {
@@ -58,7 +84,7 @@ func newStorageVFSTestEngine(t *testing.T) (*gin.Engine, string) {
 	})
 	group := engine.Group("/api/v0")
 	serverutil.RegisterRouterWithGroup(group, v1_files.NewRouter())
-	return engine, filesDir
+	return engine
 }
 
 func writeFixture(t *testing.T, filesDir, rel string) {

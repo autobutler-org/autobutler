@@ -236,6 +236,28 @@ definitions:
       name:
         type: string
     type: object
+  v0_files.createUploadSessionRequest:
+    properties:
+      fileName:
+        type: string
+      overwrite:
+        type: boolean
+      rootDir:
+        type: string
+      serial:
+        type: string
+      totalSize:
+        type: integer
+    type: object
+  v0_files.createUploadSessionResponse:
+    properties:
+      expiresAt:
+        type: string
+      offset:
+        type: integer
+      sessionId:
+        type: string
+    type: object
   v0_files.moveFileRequest:
     properties:
       newDeviceSerial:
@@ -246,6 +268,32 @@ definitions:
         type: string
       oldFilePath:
         type: string
+    type: object
+  v0_files.uploadChunkResponse:
+    properties:
+      complete:
+        type: boolean
+      offset:
+        type: integer
+      path:
+        type: string
+      sessionId:
+        type: string
+    type: object
+  v0_files.uploadSessionStatusResponse:
+    properties:
+      expiresAt:
+        type: string
+      fileName:
+        type: string
+      offset:
+        type: integer
+      rootDir:
+        type: string
+      sessionId:
+        type: string
+      totalSize:
+        type: integer
     type: object
   v0_health.HealthJSON:
     properties:
@@ -1791,6 +1839,119 @@ paths:
           schema:
             $ref: '#/definitions/serverutil.Response'
       summary: Upload files to the top-level directory
+      tags:
+      - files
+  /files/upload-session:
+    post:
+      consumes:
+      - application/json
+      description: Reserve a session for one file; the bytes follow as chunks on PUT
+      parameters:
+      - description: File the session will carry
+        in: body
+        name: session
+        required: true
+        schema:
+          $ref: '#/definitions/v0_files.createUploadSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v0_files.createUploadSessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Open a resumable upload session
+      tags:
+      - files
+  /files/upload-session/{sessionId}:
+    delete:
+      description: Drops the session and the bytes staged for it
+      parameters:
+      - description: Upload session id
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Abandon a resumable upload session
+      tags:
+      - files
+    get:
+      description: Returns the committed offset a resuming client continues from
+      parameters:
+      - description: Upload session id
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v0_files.uploadSessionStatusResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Ask what a resumable upload has committed
+      tags:
+      - files
+    put:
+      consumes:
+      - application/octet-stream
+      description: Append the chunk named by Content-Range; the last one commits the
+        file
+      parameters:
+      - description: Upload session id
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Byte range of this chunk, e.g. bytes 0-8388607/20971520
+        in: header
+        name: Content-Range
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v0_files.uploadChunkResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Send one chunk of a resumable upload
       tags:
       - files
   /files/upload/{rootDir}:

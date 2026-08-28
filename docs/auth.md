@@ -2,12 +2,16 @@
 
 Quark uses local username/password auth. No cloud, no OAuth required — your credentials live on your device.
 
+The examples below use `http://localhost:8080`, which is what `make watch/backend` (or `make serve/backend`)
+serves. If you're running the secure mode instead, the base URL is `https://localhost` and `curl` needs `-k`,
+because the certificate is self-signed.
+
 ## First boot
 
 When you start Quark for the first time, there are no users. Everything is wide open until you run setup — so do that first.
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/auth/setup \
+curl -X POST http://localhost:8080/api/v0/auth/setup \
   -H "Content-Type: application/json" \
   -d '{"username": "you", "password": "your-password"}'
 ```
@@ -25,7 +29,7 @@ You'll get back a session token and a **recovery phrase**. Write the phrase down
 ## Logging in
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/auth/login \
+curl -X POST http://localhost:8080/api/v0/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username": "you", "password": "your-password"}'
 ```
@@ -37,7 +41,7 @@ Returns a session token. Sessions last 30 days.
 Pass it as a Bearer token:
 
 ```bash
-curl http://localhost:8080/api/v1/some-endpoint \
+curl http://localhost:8080/api/v0/some-endpoint \
   -H "Authorization: Bearer <your-token>"
 ```
 
@@ -46,7 +50,7 @@ Or it gets set automatically as a cookie if you're going through the browser.
 ## Logging out
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/auth/logout \
+curl -X POST http://localhost:8080/api/v0/auth/logout \
   -H "Authorization: Bearer <your-token>"
 ```
 
@@ -57,7 +61,7 @@ This kills the session server-side. The cookie gets cleared too.
 Use your recovery phrase:
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/auth/recover \
+curl -X POST http://localhost:8080/api/v0/auth/recover \
   -H "Content-Type: application/json" \
   -d '{"recoveryPhrase": "wagon-river-flame-orbit-cedar-stone", "newPassword": "new-password"}'
 ```
@@ -67,7 +71,7 @@ This resets your password, invalidates all existing sessions, and gives you a fr
 ## Check setup status
 
 ```bash
-curl http://localhost:8080/api/v1/auth/status
+curl http://localhost:8080/api/v0/auth/status
 ```
 
 Returns `{"setup": true}` or `{"setup": false}`. Useful for the frontend to know whether to show the onboarding flow.

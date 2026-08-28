@@ -1791,6 +1791,175 @@ const docTemplate = `{
                 }
             }
         },
+        "/files/upload-session": {
+            "post": {
+                "description": "Reserve a session for one file; the bytes follow as chunks on PUT",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Open a resumable upload session",
+                "parameters": [
+                    {
+                        "description": "File the session will carry",
+                        "name": "session",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v0_files.createUploadSessionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v0_files.createUploadSessionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/files/upload-session/{sessionId}": {
+            "get": {
+                "description": "Returns the committed offset a resuming client continues from",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Ask what a resumable upload has committed",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Upload session id",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v0_files.uploadSessionStatusResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Append the chunk named by Content-Range; the last one commits the file",
+                "consumes": [
+                    "application/octet-stream"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Send one chunk of a resumable upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Upload session id",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Byte range of this chunk, e.g. bytes 0-8388607/20971520",
+                        "name": "Content-Range",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v0_files.uploadChunkResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Drops the session and the bytes staged for it",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Abandon a resumable upload session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Upload session id",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/files/upload/{rootDir}": {
             "post": {
                 "description": "Upload one or more files via multipart/form-data",
@@ -3855,6 +4024,40 @@ const docTemplate = `{
                 }
             }
         },
+        "v0_files.createUploadSessionRequest": {
+            "type": "object",
+            "properties": {
+                "fileName": {
+                    "type": "string"
+                },
+                "overwrite": {
+                    "type": "boolean"
+                },
+                "rootDir": {
+                    "type": "string"
+                },
+                "serial": {
+                    "type": "string"
+                },
+                "totalSize": {
+                    "type": "integer"
+                }
+            }
+        },
+        "v0_files.createUploadSessionResponse": {
+            "type": "object",
+            "properties": {
+                "expiresAt": {
+                    "type": "string"
+                },
+                "offset": {
+                    "type": "integer"
+                },
+                "sessionId": {
+                    "type": "string"
+                }
+            }
+        },
         "v0_files.moveFileRequest": {
             "type": "object",
             "properties": {
@@ -3869,6 +4072,46 @@ const docTemplate = `{
                 },
                 "oldFilePath": {
                     "type": "string"
+                }
+            }
+        },
+        "v0_files.uploadChunkResponse": {
+            "type": "object",
+            "properties": {
+                "complete": {
+                    "type": "boolean"
+                },
+                "offset": {
+                    "type": "integer"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "sessionId": {
+                    "type": "string"
+                }
+            }
+        },
+        "v0_files.uploadSessionStatusResponse": {
+            "type": "object",
+            "properties": {
+                "expiresAt": {
+                    "type": "string"
+                },
+                "fileName": {
+                    "type": "string"
+                },
+                "offset": {
+                    "type": "integer"
+                },
+                "rootDir": {
+                    "type": "string"
+                },
+                "sessionId": {
+                    "type": "string"
+                },
+                "totalSize": {
+                    "type": "integer"
                 }
             }
         },

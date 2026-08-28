@@ -1,5 +1,6 @@
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:http/http.dart' as http;
+import 'package:quark/services/upload_chunk_source.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 
 /// How deep we walk into a dropped or picked folder before giving up.
@@ -21,11 +22,17 @@ const int kMaxUploadFiles = 2000;
 /// [build] is deferred on purpose: a folder upload of any size cannot hold
 /// every file's bytes at once, so the caller builds each multipart file
 /// immediately before sending it and lets it go afterwards.
+///
+/// [openChunkSource] is the large-file route added by #1629. Deferring it too
+/// serves a second purpose: opening the file is how its size becomes known,
+/// and the size is what decides between a session and today's single multipart
+/// POST.
 class PendingUpload {
   const PendingUpload({
     required this.relativeDir,
     required this.name,
     required this.build,
+    this.openChunkSource,
   });
 
   /// Directory relative to the upload root, `''` for the root itself.
@@ -36,6 +43,14 @@ class PendingUpload {
   final String name;
 
   final Future<http.MultipartFile?> Function() build;
+
+  /// Opens this file for ranged reads, or null when the platform can only hand
+  /// over the whole thing at once.
+  ///
+  /// Null on a [PendingUpload] built the old way, which is what keeps every
+  /// existing caller working: a file with no chunk source simply takes the
+  /// single-request path however large it is.
+  final Future<UploadChunkSource?> Function()? openChunkSource;
 }
 
 /// The outcome of walking a dropped folder.
@@ -129,6 +144,7 @@ DropFlattenResult flattenDroppedItems(
   int maxFiles = kMaxUploadFiles,
   required Future<http.MultipartFile?> Function(DropItemFile file, String name)
   buildUpload,
+  Future<UploadChunkSource?> Function(DropItemFile file)? openChunkSource,
 }) {
   final uploads = <PendingUpload>[];
   var truncated = false;
@@ -167,6 +183,9 @@ DropFlattenResult flattenDroppedItems(
           relativeDir: relativeDir,
           name: name,
           build: () => buildUpload(item, name),
+          openChunkSource: openChunkSource == null
+              ? null
+              : () => openChunkSource(item),
         ),
       );
     }
