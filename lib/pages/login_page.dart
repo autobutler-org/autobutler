@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
+import 'package:quark/utils/connection_error.dart';
+import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/host_manager.dart';
 import 'package:quark/widgets/quark_connect_form.dart';
 import 'package:quark_icons/quark_icons.dart';
@@ -34,6 +36,12 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   String? _error;
 
+  /// Set when the last sign-in attempt never reached the Quark, so the page
+  /// says so plainly instead of rendering a socket error (#1637). This is the
+  /// only page that can be reached with an unreachable Quark configured, so it
+  /// is where the explanation matters most.
+  bool _disconnected = false;
+
   /// Whether the inline host list is expanded.
   ///
   /// Inline rather than in a dialog or sheet on purpose: switching hosts can
@@ -55,6 +63,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() {
       _loading = true;
       _error = null;
+      _disconnected = false;
     });
     try {
       await AuthService.login(
@@ -67,7 +76,12 @@ class _LoginPageState extends State<LoginPage> {
       debugPrint('[login_page.dart] Error: $e');
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst('Exception: ', '');
+        // An unreachable Quark is not a failed sign-in, and saying so in the
+        // credentials banner reads as "wrong password". It gets its own state.
+        _disconnected = isQuarkUnreachableError(e);
+        _error = _disconnected
+            ? null
+            : e.toString().replaceFirst('Exception: ', '');
         _loading = false;
       });
       // Announce error to screen readers
@@ -157,7 +171,10 @@ class _LoginPageState extends State<LoginPage> {
           const SizedBox(height: 24),
 
           // Error banner
-          if (_error != null) ...[
+          if (_disconnected) ...[
+            QuarkDisconnectedBanner(onRetry: _loading ? null : _submit),
+            const SizedBox(height: 16),
+          ] else if (_error != null) ...[
             _ErrorBanner(message: _error!),
             const SizedBox(height: 16),
           ],

@@ -97,6 +97,55 @@ EmptyStateWidget(
 
 ---
 
+### `QuarkDisconnectedView` / `QuarkDisconnectedBanner`
+
+`lib/widgets/core/quark_disconnected_state.dart`
+
+The "can't reach your Quark right now" state, in two sizes. Use it whenever a load fails
+with `isQuarkUnreachableError(error)` (`lib/utils/connection_error.dart`) — never render the
+exception itself.
+
+Pick the shape by what is left of the page:
+
+- **`QuarkDisconnectedView`** — the page has nothing to show, so the state takes it over.
+- **`QuarkDisconnectedBanner`** — the page stays usable (Settings, login), so the state sits
+  above it. Defaults to `quarkTroubleshootingStepsInPlace`, which drops "in Settings" rather
+  than sending the user to a page they are already on.
+
+Neither variant says *where* on the screen the address is. Direction does not survive contact
+with a real layout — login puts the host card above this state, Settings puts host management
+below it — so name a destination ("in Settings") or nothing at all.
+
+```dart
+if (isQuarkUnreachableError(error)) {
+  return QuarkDisconnectedView(
+    onRetry: manualRefresh,
+    onManageHosts: () => context.go(AppRoutes.settings),
+  );
+}
+
+// A page that keeps working while disconnected:
+if (_disconnected) QuarkDisconnectedBanner(onRetry: _load),
+```
+
+**`QuarkDisconnectedView` props:**
+
+- `onRetry` — optional `VoidCallback`; omit and no "Try again" button is shown
+- `onManageHosts` — optional `VoidCallback`; omit on pages that already show host management
+- `manageHostsLabel` — `String`, default `'Check the address'`
+- `steps` — `List<String>`, default `quarkTroubleshootingSteps`
+
+**`QuarkDisconnectedBanner` props:**
+
+- `onRetry` — optional `VoidCallback`
+- `steps` — `List<String>`, default `quarkTroubleshootingStepsInPlace`
+
+**Shared copy:** `quarkDisconnectedHeadline`, `quarkDisconnectedBody`, `quarkDisconnectedInline`
+(one line, for a form's error text) and `quarkDisconnectedShort` (`'Not connected'`, for a row
+under a banner that already explains it).
+
+---
+
 ## Layout widgets
 
 ### `QuarkAppBar`

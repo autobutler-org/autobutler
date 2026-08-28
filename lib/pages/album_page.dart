@@ -5,7 +5,9 @@ import 'package:quark/pages/photos_page.dart';
 import 'package:quark/services/album_service.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/theme/quark_colors.dart';
+import 'package:quark/utils/connection_error.dart';
 import 'package:quark/widgets/core/empty_state_widget.dart';
+import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark/widgets/photos/add_to_album_sheet.dart';
 import 'package:quark_icons/quark_icons.dart';
@@ -23,7 +25,10 @@ class _AlbumPageState extends State<AlbumPage> {
   List<PhotoAlbumItem> _items = [];
   bool _loading = true;
   bool _isOpeningPhoto = false;
-  String? _error;
+
+  /// The thrown object, not its message — the render decides whether it means
+  /// "your Quark is unreachable" or "the request failed" (#1637).
+  Object? _error;
   int _crossAxisCount = 3;
 
   @override
@@ -47,7 +52,7 @@ class _AlbumPageState extends State<AlbumPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = e;
         _loading = false;
       });
     }
@@ -153,7 +158,9 @@ class _AlbumPageState extends State<AlbumPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-          ? Center(child: Text('Error: $_error'))
+          ? (isQuarkUnreachableError(_error!)
+                ? QuarkDisconnectedView(onRetry: _load)
+                : Center(child: Text('Error: ${_error!}')))
           : _items.isEmpty
           ? EmptyStateWidget(
               icon: QuarkIcons.photo_album_outlined,

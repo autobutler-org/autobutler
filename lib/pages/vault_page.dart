@@ -4,10 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/vault_service.dart';
+import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/quark_widget.dart';
 import 'package:quark/utils/web_download_stub.dart'
     if (dart.library.html) 'package:quark/utils/web_download_web.dart'
     as web_download;
+import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/layout/quark_app_bar.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark/widgets/quark_drawer.dart';
@@ -23,7 +25,12 @@ class VaultPage extends StatefulWidget {
 class _VaultPageState extends State<VaultPage> {
   VaultStatus? _status;
   bool _loading = true;
-  String? _error;
+
+  /// The thrown object, not its message — the render decides whether it means
+  /// "your Quark is unreachable" or "the request failed" (#1637). Distinct
+  /// from [_buildDeviceDisconnectedView], which is the vault's own USB drive
+  /// being unplugged from a Quark the app can reach perfectly well.
+  Object? _error;
 
   List<VaultEntryItem> _entries = [];
   List<VaultFolder> _folders = [];
@@ -69,7 +76,7 @@ class _VaultPageState extends State<VaultPage> {
     } catch (e) {
       setState(() {
         _loading = false;
-        _error = e.toString();
+        _error = e;
       });
     }
   }
@@ -85,7 +92,7 @@ class _VaultPageState extends State<VaultPage> {
         _folders = results[1] as List<VaultFolder>;
       });
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = e);
     }
   }
 
@@ -203,12 +210,19 @@ class _VaultPageState extends State<VaultPage> {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_error != null) {
+    final error = _error;
+    if (error != null) {
+      if (isQuarkUnreachableError(error)) {
+        return QuarkDisconnectedView(
+          onRetry: _loadStatus,
+          onManageHosts: () => context.go(AppRoutes.settings),
+        );
+      }
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(_error!, style: const TextStyle(color: Colors.red)),
+            Text('$error', style: const TextStyle(color: Colors.red)),
             const SizedBox(height: 16),
             ElevatedButton(onPressed: _loadStatus, child: const Text('Retry')),
           ],
@@ -289,7 +303,11 @@ class _VaultPageState extends State<VaultPage> {
                       _setupConfirmCtrl.clear();
                       _loadStatus();
                     } catch (e) {
-                      setState(() => _setupError = e.toString());
+                      setState(
+                        () => _setupError = isQuarkUnreachableError(e)
+                            ? quarkDisconnectedInline
+                            : e.toString(),
+                      );
                     }
                   },
                   child: const Text('Create Vault'),
@@ -419,7 +437,9 @@ class _VaultPageState extends State<VaultPage> {
       _loadStatus();
     } catch (e) {
       setState(() {
-        _unlockError = e.toString();
+        _unlockError = isQuarkUnreachableError(e)
+            ? quarkDisconnectedInline
+            : e.toString();
         _unlocking = false;
       });
     }

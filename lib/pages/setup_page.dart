@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
+import 'package:quark/utils/connection_error.dart';
 import 'package:quark/widgets/core/copy_button.dart';
+import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/password_strength_bar.dart';
 import 'package:quark_icons/quark_icons.dart';
 
@@ -72,7 +74,11 @@ class _SetupPageState extends State<SetupPage> {
       debugPrint('[setup_page.dart] Error: $e');
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst('Exception: ', '');
+        // An unreachable Quark is not a rejected request; saying so plainly
+        // beats a socket error in a form's error banner (#1637).
+        _error = isQuarkUnreachableError(e)
+            ? quarkDisconnectedInline
+            : e.toString().replaceFirst('Exception: ', '');
         _loading = false;
       });
     }

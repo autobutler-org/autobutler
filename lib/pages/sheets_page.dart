@@ -7,8 +7,10 @@ import 'package:quark/models/file_node.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/services/content_search_service.dart';
+import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/file_browser_dialog_utils.dart';
 import 'package:quark/utils/safe_set_state_mixin.dart';
+import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/layout/quark_app_bar.dart';
 import 'package:quark/widgets/quark_drawer.dart';
 import 'package:quark_icons/quark_icons.dart';
@@ -26,7 +28,10 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
   List<ContentSearchResult> _contentResults = [];
   bool _contentSearching = false;
   bool _loading = true;
-  String? _error;
+
+  /// The thrown object, not its message — the render decides whether it means
+  /// "your Quark is unreachable" or "the request failed" (#1637).
+  Object? _error;
   final _searchController = TextEditingController();
   Timer? _contentSearchDebounce;
 
@@ -58,7 +63,7 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
       });
     } catch (e) {
       setStateSafely(() {
-        _error = e.toString();
+        _error = e;
         _loading = false;
       });
     }
@@ -223,14 +228,21 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_error != null) {
+    final error = _error;
+    if (error != null) {
+      if (isQuarkUnreachableError(error)) {
+        return QuarkDisconnectedView(
+          onRetry: _load,
+          onManageHosts: () => context.go(AppRoutes.settings),
+        );
+      }
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(QuarkIcons.error_outline, size: 40, color: colorScheme.error),
             const SizedBox(height: 12),
-            Text(_error!, textAlign: TextAlign.center),
+            Text('$error', textAlign: TextAlign.center),
             const SizedBox(height: 12),
             FilledButton(onPressed: _load, child: const Text('Retry')),
           ],

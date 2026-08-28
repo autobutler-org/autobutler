@@ -7,7 +7,9 @@ import 'package:flutter/material.dart' hide DataTable, DataRow, DataCell;
 import 'package:http/http.dart' as http;
 import 'package:quark/router.dart';
 import 'package:quark/services/files_service.dart';
+import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
+import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark_icons/quark_icons.dart';
 
@@ -63,7 +65,10 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
   bool _loading = true;
   bool _saving = false;
   bool _dirty = false;
-  String? _error;
+
+  /// The thrown object, not its message — the render decides whether it means
+  /// "your Quark is unreachable" or "the request failed" (#1637).
+  Object? _error;
   bool _routeMovedExternally = false;
 
   late TabController _tabController;
@@ -175,7 +180,7 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = e.toString();
+        _error = e;
       });
     }
   }
@@ -294,13 +299,16 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
       );
     }
 
-    if (_error != null) {
+    final error = _error;
+    if (error != null) {
       return Scaffold(
         appBar: AppBar(
           title: Text(title),
           actions: const [ThemeToggleButton()],
         ),
-        body: Center(child: Text('Error: $_error')),
+        body: isQuarkUnreachableError(error)
+            ? QuarkDisconnectedView(onRetry: _loadFile)
+            : Center(child: Text('Error: $error')),
       );
     }
 

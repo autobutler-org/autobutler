@@ -12,7 +12,9 @@ import 'package:quark/services/sbom_service.dart';
 import 'package:quark/services/settings_service.dart';
 import 'package:quark/services/smb_service.dart';
 import 'package:quark/services/storage_service.dart';
+import 'package:quark/utils/connection_error.dart';
 import 'package:quark/widgets/core/copy_button.dart';
+import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/host_manager.dart';
 import 'package:quark/widgets/layout/quark_app_bar.dart';
 import 'package:quark/widgets/quark_drawer.dart';
@@ -63,6 +65,27 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isLoadingStorage = false;
   String? _storageError;
 
+  /// Whether the last section load failed to reach the Quark at all (#1637).
+  ///
+  /// Page-level rather than per-section: every section talks to the same
+  /// Quark, so one unreachable section means they all are, and one banner
+  /// explains it once instead of six rows each repeating a socket error. This
+  /// page keeps working while disconnected on purpose — host management lives
+  /// on it, and it is where the address gets fixed.
+  bool _disconnected = false;
+
+  /// Records whether a section's load reached the Quark.
+  ///
+  /// Pass the thrown object, or null on success. A section that succeeded
+  /// proves the Quark is reachable, so success clears the banner even if
+  /// another section is still failing for its own reasons.
+  void _noteReachability(Object? error) {
+    if (!mounted) return;
+    final disconnected = error != null && isQuarkUnreachableError(error);
+    if (disconnected == _disconnected) return;
+    setState(() => _disconnected = disconnected);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -72,6 +95,9 @@ class _SettingsPageState extends State<SettingsPage> {
   void _load() {
     _theme = AppSettings.instance.themeMode.value;
     _refreshIntervalSeconds = AppSettings.instance.refreshIntervalSeconds;
+    // Cleared up front so removing the last host retires the banner: with no
+    // host every loader below returns early and none would ever clear it.
+    _disconnected = false;
     setState(() {});
     _loadVersionInfo();
     _loadSettings();
@@ -101,6 +127,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _remoteAccessStatus = status;
         _isLoadingRemoteAccess = false;
       });
+      _noteReachability(null);
     } catch (e) {
       debugPrint('[settings_page.dart] Remote access error: $e');
       if (!mounted) return;
@@ -108,6 +135,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _remoteAccessError = e.toString();
         _isLoadingRemoteAccess = false;
       });
+      _noteReachability(e);
     }
   }
 
@@ -194,6 +222,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _connectedDevices = devices;
         _isLoadingDevices = false;
       });
+      _noteReachability(null);
     } catch (e) {
       debugPrint('[settings_page.dart] Error: $e');
       if (!mounted) return;
@@ -201,6 +230,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _devicesError = e.toString();
         _isLoadingDevices = false;
       });
+      _noteReachability(e);
     }
   }
 
@@ -237,6 +267,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _storageDevices = devices;
         _isLoadingStorage = false;
       });
+      _noteReachability(null);
     } catch (e) {
       debugPrint('[settings_page.dart] Error loading storage devices: $e');
       if (!mounted) return;
@@ -244,6 +275,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _storageError = e.toString();
         _isLoadingStorage = false;
       });
+      _noteReachability(e);
     }
   }
 
@@ -317,9 +349,17 @@ class _SettingsPageState extends State<SettingsPage> {
     if (AppSettings.instance.activeHost != null) {
       try {
         nextGoSbom = await SbomService.getGoSbom();
+        _noteReachability(null);
       } catch (e) {
         debugPrint('[settings_page.dart] Error: $e');
-        errors.add('Go SBOM: $e');
+        // The Go SBOM is the only source here that comes from the Quark, so
+        // it is the only one an unreachable Quark explains (#1637).
+        errors.add(
+          isQuarkUnreachableError(e)
+              ? 'Go SBOM: $quarkDisconnectedShort'
+              : 'Go SBOM: $e',
+        );
+        _noteReachability(e);
       }
     }
 
@@ -352,6 +392,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _autoUpdateLoadFailed = false;
         _isLoadingAutoUpdate = false;
       });
+      _noteReachability(null);
     } catch (e) {
       debugPrint('[settings_page.dart] Error loading settings: $e');
       if (!mounted) return;
@@ -359,6 +400,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _autoUpdateLoadFailed = true;
         _isLoadingAutoUpdate = false;
       });
+      _noteReachability(e);
     }
   }
 
@@ -411,6 +453,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _selectedUpdateVersion = selectedVersion;
         _isLoadingVersionInfo = false;
       });
+      _noteReachability(null);
     } catch (e) {
       debugPrint('[settings_page.dart] Error: $e');
       if (!mounted) return;
@@ -418,6 +461,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _versionLoadError = e.toString();
         _isLoadingVersionInfo = false;
       });
+      _noteReachability(e);
     }
   }
 
@@ -488,6 +532,12 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // Above everything, because it explains every "Not connected" row
+          // below it — and the address it points at is on this page (#1637).
+          if (_disconnected) ...[
+            QuarkDisconnectedBanner(onRetry: _load),
+            const SizedBox(height: 24),
+          ],
           const Text(
             'Quark',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -521,7 +571,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   const SizedBox(height: 6),
                   if (AppSettings.instance.activeHost == null)
-                    const Text('Not connected — add your Quark address below')
+                    const Text(
+                      'Not connected — add your Quark address under Backend hosts',
+                    )
                   else if (_isLoadingVersionInfo)
                     const SizedBox(
                       width: 20,
@@ -530,7 +582,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     )
                   else if (_versionLoadError != null)
                     Text(
-                      'Failed to load version info',
+                      _disconnected
+                          ? quarkDisconnectedShort
+                          : 'Failed to load version info',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.error,
                       ),
@@ -618,9 +672,11 @@ class _SettingsPageState extends State<SettingsPage> {
                   : SwitchListTile(
                       title: const Text('Automatic updates'),
                       subtitle: _autoUpdateLoadFailed
-                          ? const Text(
-                              'Could not load setting — server may be unreachable',
-                              style: TextStyle(color: Colors.red),
+                          ? Text(
+                              _disconnected
+                                  ? quarkDisconnectedShort
+                                  : 'Could not load setting — server may be unreachable',
+                              style: const TextStyle(color: Colors.red),
                             )
                           : const Text(
                               'Quark will check for and install updates daily',
@@ -702,7 +758,10 @@ class _SettingsPageState extends State<SettingsPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Failed to load remote access status: $_remoteAccessError',
+                            _disconnected
+                                ? quarkDisconnectedShort
+                                : 'Failed to load remote access status: '
+                                      '$_remoteAccessError',
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.error,
                             ),
@@ -873,8 +932,12 @@ class _SettingsPageState extends State<SettingsPage> {
                         QuarkIcons.error_outline,
                         color: Theme.of(context).colorScheme.error,
                       ),
-                      title: const Text('Failed to load storage devices'),
-                      subtitle: Text(_storageError!),
+                      title: Text(
+                        _disconnected
+                            ? quarkDisconnectedShort
+                            : 'Failed to load storage devices',
+                      ),
+                      subtitle: _disconnected ? null : Text(_storageError!),
                     )
                   else if (_storageDevices.isEmpty)
                     const ListTile(title: Text('No storage devices found'))
@@ -938,7 +1001,9 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 8),
           if (AppSettings.instance.activeHost == null)
-            const Text('Not connected — add your Quark address below')
+            const Text(
+              'Not connected — add your Quark address under Backend hosts',
+            )
           else
             Card(
               child: ExpansionTile(
@@ -984,8 +1049,12 @@ class _SettingsPageState extends State<SettingsPage> {
                         QuarkIcons.error_outline,
                         color: Theme.of(context).colorScheme.error,
                       ),
-                      title: const Text('Failed to load devices'),
-                      subtitle: Text(_devicesError!),
+                      title: Text(
+                        _disconnected
+                            ? quarkDisconnectedShort
+                            : 'Failed to load devices',
+                      ),
+                      subtitle: _disconnected ? null : Text(_devicesError!),
                     )
                   else if (_connectedDevices.isEmpty)
                     const ListTile(title: Text('No devices recorded yet'))

@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:quark/router.dart';
 import 'package:quark/services/files_service.dart';
+import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
+import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 
 /// A simple plaintext editor for text-like files (txt, md, json, yaml, etc.)
@@ -29,7 +31,10 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
   bool _loading = true;
   bool _saving = false;
   bool _dirty = false;
-  String? _error;
+
+  /// The thrown object, not its message — the render decides whether it means
+  /// "your Quark is unreachable" or "the request failed" (#1637).
+  Object? _error;
 
   late String _displayName;
 
@@ -79,7 +84,7 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Failed to load file: $e';
+        _error = e;
       });
     }
   }
@@ -166,7 +171,11 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_error != null) {
+    final error = _error;
+    if (error != null) {
+      if (isQuarkUnreachableError(error)) {
+        return QuarkDisconnectedView(onRetry: _loadFile);
+      }
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -177,7 +186,7 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
               color: Theme.of(context).colorScheme.error,
             ),
             const SizedBox(height: 12),
-            Text(_error!, textAlign: TextAlign.center),
+            Text('Failed to load file: $error', textAlign: TextAlign.center),
             const SizedBox(height: 12),
             FilledButton(onPressed: _loadFile, child: const Text('Retry')),
           ],
