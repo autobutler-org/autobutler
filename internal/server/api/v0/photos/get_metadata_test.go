@@ -220,3 +220,42 @@ func TestFindLivePhotoVideo_HeicWithMov(t *testing.T) {
 		t.Errorf("expected 'burst.MOV', got %q", result)
 	}
 }
+
+// The returned path must keep the album directory from relPath while using the
+// video's real filename. Nothing covered a nested path before, and the name is
+// handed to the client as livePhotoVideoPath.
+func TestFindLivePhotoVideo_NestedRelPath(t *testing.T) {
+	tmp := t.TempDir()
+	os.WriteFile(filepath.Join(tmp, "photo.jpg"), []byte("fake"), 0600)
+	os.WriteFile(filepath.Join(tmp, "photo.mov"), []byte("fake"), 0600)
+
+	result := findLivePhotoVideo(filepath.Join(tmp, "photo.jpg"), "albums/2024/photo.jpg")
+	if result != "albums/2024/photo.mov" {
+		t.Errorf("expected 'albums/2024/photo.mov', got %q", result)
+	}
+}
+
+// A Live Photo's companion is a .mov, so it wins when a library holds both.
+func TestFindLivePhotoVideo_PrefersMovOverMp4(t *testing.T) {
+	tmp := t.TempDir()
+	os.WriteFile(filepath.Join(tmp, "photo.jpg"), []byte("fake"), 0600)
+	os.WriteFile(filepath.Join(tmp, "photo.mp4"), []byte("fake"), 0600)
+	os.WriteFile(filepath.Join(tmp, "photo.mov"), []byte("fake"), 0600)
+
+	result := findLivePhotoVideo(filepath.Join(tmp, "photo.jpg"), "photo.jpg")
+	if result != "photo.mov" {
+		t.Errorf("expected 'photo.mov', got %q", result)
+	}
+}
+
+// A video whose stem merely starts with the image's stem is a different file.
+func TestFindLivePhotoVideo_IgnoresDifferentStem(t *testing.T) {
+	tmp := t.TempDir()
+	os.WriteFile(filepath.Join(tmp, "photo.jpg"), []byte("fake"), 0600)
+	os.WriteFile(filepath.Join(tmp, "photo-2.mov"), []byte("fake"), 0600)
+
+	result := findLivePhotoVideo(filepath.Join(tmp, "photo.jpg"), "photo.jpg")
+	if result != "" {
+		t.Errorf("expected '' for a non-matching stem, got %q", result)
+	}
+}

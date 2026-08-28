@@ -8,6 +8,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -238,18 +239,45 @@ rotations:
 // findLivePhotoVideo checks if a companion .MOV file exists for an image,
 // which indicates an iPhone Live Photo. Returns the relative path to the
 // video, or "" if none found.
+//
+// The sibling is found by reading the directory rather than by stat-ing
+// candidate spellings. A stat loop reports the spelling it guessed, not the
+// one on disk: on a case-insensitive filesystem (macOS, Windows) stat of
+// "photo.MOV" succeeds for a file actually named "photo.mov", so the client
+// was handed a path that does not exist as spelled — and would 404 against a
+// case-sensitive filesystem holding the same library.
 func findLivePhotoVideo(fullPath, relPath string) string {
 	ext := strings.ToLower(filepath.Ext(fullPath))
 	if ext != ".heic" && ext != ".heif" && ext != ".jpg" && ext != ".jpeg" {
 		return ""
 	}
 
-	base := strings.TrimSuffix(fullPath, filepath.Ext(fullPath))
-	for _, vidExt := range []string{".MOV", ".mov", ".Mp4", ".mp4"} {
-		candidate := base + vidExt
-		if _, err := os.Stat(candidate); err == nil {
-			relBase := strings.TrimSuffix(relPath, filepath.Ext(relPath))
-			return relBase + vidExt
+	entries, err := os.ReadDir(filepath.Dir(fullPath))
+	if err != nil {
+		return ""
+	}
+
+	imageName := filepath.Base(fullPath)
+	stem := strings.TrimSuffix(imageName, filepath.Ext(imageName))
+
+	// .mov before .mp4: a Live Photo's companion is a .mov, and preferring it
+	// keeps the result stable for a library holding both. Within an extension
+	// os.ReadDir is already sorted, so the pick is deterministic either way.
+	for _, want := range []string{".mov", ".mp4"} {
+		for _, e := range entries {
+			name := e.Name()
+			if e.IsDir() || !strings.EqualFold(filepath.Ext(name), want) {
+				continue
+			}
+			if !strings.EqualFold(strings.TrimSuffix(name, filepath.Ext(name)), stem) {
+				continue
+			}
+			// Keep relPath's directory and swap in the real filename, so the
+			// returned path is spelled exactly as it is on disk.
+			if dir := path.Dir(relPath); dir != "." && dir != "/" {
+				return path.Join(dir, name)
+			}
+			return name
 		}
 	}
 	return ""
