@@ -26,17 +26,17 @@ import (
 // uses.
 //
 // Note for anyone adding cases here: GetSession filters with
-// `expires_at > datetime('now')`, which compares a Go-formatted local
-// timestamp against SQLite's UTC one as plain text. That only sorts correctly
-// when the two differ in the date part, so keep expiries at least a day either
-// side of now rather than minutes.
+// `expires_at > datetime('now')`, a text comparison. Since #1650 both sides are
+// SQLite's canonical UTC format, so that sorts correctly at any resolution --
+// the day-either-side margin these cases use is no longer required, only
+// habit.
 func newRenewalTestDB(t *testing.T) (*sql.DB, *db.Queries) {
 	t.Helper()
 	// A shared-cache memory DB, uniquely named per test: plain ":memory:" gives
 	// every pooled connection its own empty database, and these tests read
 	// through the pool while the code under test holds its own connection.
 	dsn := fmt.Sprintf("file:%s?mode=memory&cache=shared", t.Name())
-	sqlDB, err := sql.Open("sqlite", dsn)
+	sqlDB, err := sql.Open("sqlite", db.DSN(dsn))
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}

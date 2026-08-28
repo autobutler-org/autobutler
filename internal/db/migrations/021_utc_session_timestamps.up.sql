@@ -1,0 +1,21 @@
+-- Migration 021: drop sessions written with local-time timestamps (#1650)
+--
+-- expires_at and last_used_at were written by the driver in Go's t.String()
+-- format -- "2026-08-28 16:04:23.848055 -0700 PDT m=+3600.0" -- in local time,
+-- while every query compares them against datetime('now'), which is UTC. The
+-- comparison was therefore wrong by the server's UTC offset: west of UTC a
+-- session expired early, east of it a session outlived its expiry.
+--
+-- From this migration on, connections set _time_format=datetime&_timezone=UTC
+-- so timestamps are stored in SQLite's own canonical UTC format and compare
+-- correctly.
+--
+-- Existing rows cannot be converted in place. SQLite's datetime() returns NULL
+-- for the t.String() format (verified: the trailing monotonic-clock reading and
+-- the zone abbreviation are not ISO8601), and the offset sits at a variable
+-- position because Go trims trailing zeros from the fractional seconds, so
+-- there is no reliable pure-SQL way to recover the instant. Rather than risk
+-- silently corrupting a security-relevant expiry, drop the sessions -- the same
+-- call migration 013 made. Users log in once more; every session issued
+-- afterwards is correct.
+DELETE FROM sessions;

@@ -20,7 +20,7 @@ func ConnectToDatabase() (*DatabaseSqlc, error) {
 
 	dataFilePath := filepath.Join(dataDir, "quark.db")
 
-	database.Db, err = sql.Open("sqlite", dataFilePath)
+	database.Db, err = sql.Open("sqlite", DSN(dataFilePath))
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %v", err)
 	}
@@ -44,7 +44,7 @@ func ConnectToVaultDatabase(dbPath string) (*DatabaseSqlc, error) {
 
 	var database DatabaseSqlc
 	var err error
-	database.Db, err = sql.Open("sqlite", dbPath)
+	database.Db, err = sql.Open("sqlite", DSN(dbPath))
 	if err != nil {
 		return nil, fmt.Errorf("failed to open vault database: %v", err)
 	}
@@ -75,7 +75,7 @@ func ConnectToHealthDatabase() (*DatabaseRaw, error) {
 	healthFilePath := filepath.Join(dataDir, "quark.health.db")
 
 	// Initialize health database for OTEL traces (no migrations needed)
-	database.Db, err = sql.Open("sqlite", healthFilePath)
+	database.Db, err = sql.Open("sqlite", DSN(healthFilePath))
 	if err != nil {
 		panic(fmt.Sprintf("failed to open health database: %v", err))
 	}

@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 func newMiddlewareTestDB(t *testing.T) (*sql.DB, *db.Queries) {
 	t.Helper()
-	sqlDB, err := sql.Open("sqlite", ":memory:")
+	sqlDB, err := sql.Open("sqlite", db.DSN(":memory:"))
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}

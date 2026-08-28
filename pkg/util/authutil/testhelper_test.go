@@ -14,7 +14,7 @@ import (
 // Used across admin, TOTP, pairing, and share link tests.
 func newTOTPTestDB(t *testing.T) *db.Queries {
 	t.Helper()
-	sqlDB, err := sql.Open("sqlite", ":memory:")
+	sqlDB, err := sql.Open("sqlite", db.DSN(":memory:"))
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
