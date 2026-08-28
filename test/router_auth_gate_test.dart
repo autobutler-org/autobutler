@@ -187,6 +187,54 @@ void main() {
     });
   });
 
+  // #1645: the stored token was restored on launch but never consulted, because
+  // /login sat in publicRoutes and returned null unconditionally.
+  group('a stored session survives a restart', () {
+    setUp(() async {
+      await addUnacceptedHost();
+      await settings.acceptTerms();
+    });
+
+    testWidgets('landing on login with a token goes straight to files', (
+      tester,
+    ) async {
+      await settings.setSessionToken('a-token');
+      addTearDown(() => settings.setSessionToken(null));
+      authStatusProbe = () async =>
+          throw StateError('must not probe with a live session');
+
+      await pumpGatedRouter(tester, initialLocation: AppRoutes.login);
+
+      expect(find.text('files'), findsOneWidget);
+      expect(find.text('login'), findsNothing);
+    });
+
+    testWidgets('without a token the login page still shows', (tester) async {
+      authStatusProbe = () async => const AuthStatus(setupComplete: true);
+
+      await pumpGatedRouter(tester, initialLocation: AppRoutes.login);
+
+      expect(find.text('login'), findsOneWidget);
+    });
+
+    // The self-heal the optimistic skip relies on: a 401 clears the token,
+    // which fires the refresh listenable and re-runs the gate.
+    testWidgets('a token cleared by a 401 lands back on login', (tester) async {
+      await settings.setSessionToken('a-stale-token');
+      addTearDown(() => settings.setSessionToken(null));
+      authStatusProbe = () async => const AuthStatus(setupComplete: true);
+
+      await pumpGatedRouter(tester, initialLocation: AppRoutes.login);
+      expect(find.text('files'), findsOneWidget);
+
+      await settings.setSessionToken(null);
+      await tester.pumpAndSettle();
+
+      expect(find.text('login'), findsOneWidget);
+      expect(find.text('files'), findsNothing);
+    });
+  });
+
   // The terms gate runs ahead of everything, so an unaccepted Quark sees terms
   // rather than the login page it would otherwise be sent to.
   testWidgets('settings still requires terms for the active Quark', (
