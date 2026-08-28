@@ -458,69 +458,28 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _addOrEditHost({int? index}) async {
     final isEdit = index != null;
     final idx = index ?? 0;
-    final nameController = TextEditingController(
-      text: isEdit ? _hosts[idx].name : '',
-    );
-    final hostController = TextEditingController(
-      text: isEdit ? _hosts[idx].hostAddress : '',
-    );
 
-    final result = await QuarkWidget.showDialog<bool>(
+    final entry = await QuarkWidget.showDialog<HostEntry>(
       context,
-      builder: (context) => QuarkWidget.alertDialog(
-        title: Text(isEdit ? 'Edit Quark' : 'Add Quark'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            QuarkWidget.textField(
-              controller: nameController,
-              autofocus: true,
-              hintText: 'Nickname (e.g. Home)',
-            ),
-            const SizedBox(height: 8),
-            QuarkWidget.textField(
-              controller: hostController,
-              hintText: 'https://quark.home.local',
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Usually https://quark.home.local or the IP address shown on your device.',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final name = nameController.text.trim();
-              final host = hostController.text.trim();
-              if (name.isEmpty || host.isEmpty) return;
-              final entry = HostEntry(name: name, hostAddress: host);
-              final navigator = Navigator.of(context);
-              if (isEdit) {
-                await AppSettings.instance.updateHost(idx, entry);
-              } else {
-                await AppSettings.instance.addHost(entry);
-              }
-              navigator.pop(true);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+      builder: (context) =>
+          _HostDialog(isEdit: isEdit, initial: isEdit ? _hosts[idx] : null),
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      nameController.dispose();
-      hostController.dispose();
-    });
+    if (entry == null) return;
 
-    if (result == true) {
-      _load();
+    // Saved only once the dialog is gone. Adding a host, or pointing one at a
+    // new address, changes the active host — that re-runs the router's terms
+    // gate and can replace this page (#1623). Doing it from inside the
+    // dialog's own button tore the settings subtree down while the dialog was
+    // still on screen, which is what produced the disposed-controller and
+    // inherited-element errors.
+    if (isEdit) {
+      await AppSettings.instance.updateHost(idx, entry);
+    } else {
+      await AppSettings.instance.addHost(entry);
     }
+
+    if (!mounted) return;
+    _load();
   }
 
   Future<void> _removeHost(int index) async {
@@ -544,6 +503,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (confirm == true) {
       await AppSettings.instance.removeHost(index);
+      if (!mounted) return;
       _load();
     }
   }
@@ -1786,6 +1746,87 @@ class _CodeBlock extends StatelessWidget {
           CopyButton(text: text),
         ],
       ),
+    );
+  }
+}
+
+/// The add/edit Quark dialog.
+///
+/// Owns its text controllers so they live exactly as long as the dialog's
+/// element. They used to be created by the caller and disposed in a post-frame
+/// callback once `showDialog` resolved, which killed them while the dismiss
+/// transition was still running and the fields were still mounted — hence
+/// "A TextEditingController was used after being disposed".
+///
+/// It also only ever pops a value: saving is the caller's job, so the route
+/// stack is never mutated while this dialog is on screen.
+class _HostDialog extends StatefulWidget {
+  const _HostDialog({required this.isEdit, this.initial});
+
+  final bool isEdit;
+  final HostEntry? initial;
+
+  @override
+  State<_HostDialog> createState() => _HostDialogState();
+}
+
+class _HostDialogState extends State<_HostDialog> {
+  late final TextEditingController _name = TextEditingController(
+    text: widget.initial?.name ?? '',
+  );
+  late final TextEditingController _address = TextEditingController(
+    text: widget.initial?.hostAddress ?? '',
+  );
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _address.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final name = _name.text.trim();
+    final address = _address.text.trim();
+    if (name.isEmpty || address.isEmpty) return;
+    Navigator.of(context).pop(HostEntry(name: name, hostAddress: address));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return QuarkWidget.alertDialog(
+      title: Text(widget.isEdit ? 'Edit Quark' : 'Add Quark'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          QuarkWidget.textField(
+            controller: _name,
+            autofocus: true,
+            textInputAction: TextInputAction.next,
+            hintText: 'Nickname (e.g. Home)',
+          ),
+          const SizedBox(height: 8),
+          QuarkWidget.textField(
+            controller: _address,
+            textInputAction: TextInputAction.done,
+            // Enter in the address field saves, same as the button.
+            onSubmitted: (_) => _submit(),
+            hintText: 'https://quark.home.local',
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Usually https://quark.home.local or the IP address shown on your device.',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        TextButton(onPressed: _submit, child: const Text('Save')),
+      ],
     );
   }
 }
