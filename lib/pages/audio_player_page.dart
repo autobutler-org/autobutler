@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:quark/services/files_service.dart';
+import 'package:quark/services/local_media_proxy.dart';
 import 'package:quark/utils/web_download_stub.dart'
     if (dart.library.html) 'package:quark/utils/web_download_web.dart'
     as web_download;
@@ -20,6 +21,7 @@ class AudioPlayerPage extends StatefulWidget {
 
 class _AudioPlayerPageState extends State<AudioPlayerPage> {
   VideoPlayerController? _controller;
+  LocalMediaProxy? _proxy;
   bool _loading = true;
   String? _errorMessage;
   bool _downloading = false;
@@ -37,29 +39,45 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
     });
 
     VideoPlayerController? controller;
+    LocalMediaProxy? proxy;
     try {
-      controller = VideoPlayerController.networkUrl(widget.url);
+      // A quark on the local network serves a self-signed cert that the
+      // native player refuses. Route through a loopback proxy that terminates
+      // TLS in Dart, where the app's trust exception applies.
+      if (mediaNeedsLocalProxy(widget.url)) {
+        proxy = await LocalMediaProxy.start(widget.url);
+      }
+      controller = VideoPlayerController.networkUrl(
+        proxy?.localUrl ?? widget.url,
+      );
       await controller.initialize();
     } catch (e) {
       debugPrint('[audio_player_page.dart] initialize error: $e');
       await controller?.dispose();
+      // If the server answered 404 or 401, say that. Blaming the codec sends
+      // the user off re-encoding a file that was never the problem.
+      final upstreamError = proxy?.lastUpstreamError;
+      await proxy?.close();
       if (!mounted) return;
       setState(() {
         _loading = false;
         _errorMessage =
+            upstreamError?.userMessage ??
             'Unable to play this audio file. The format may not be '
-            'supported by this browser. ($e)';
+                'supported by this browser. ($e)';
       });
       return;
     }
 
     if (!mounted) {
       await controller.dispose();
+      await proxy?.close();
       return;
     }
 
     setState(() {
       _controller = controller;
+      _proxy = proxy;
       _loading = false;
     });
 
@@ -72,6 +90,8 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
   void dispose() {
     _controller?.dispose();
     _controller = null;
+    _proxy?.close();
+    _proxy = null;
     super.dispose();
   }
 
