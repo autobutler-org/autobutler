@@ -30,9 +30,12 @@ No single commit is wrong. Nobody is looking at the aggregate.
 
 The AutoButler → Quark rename is still live in the tree in more than one place:
 
-- `cmd/provisioning/main.go:138` hardcodes the Headscale user identity as `"autobutler"`, while
-  `pkg/util/storageutil/dir.go:21` checks the *current* service account name against `"quark"`. Two
-  halves of "who owns this device" now disagree with each other.
+- `cmd/provisioning/main.go:138` still hardcodes the Headscale tenant username as `"autobutler"`,
+  while `pkg/util/storageutil/dir.go:21` checks the local Unix service account against `"quark"`.
+  These are genuinely different namespaces — a coordination-server tenant vs. a system user — so
+  this is not a single identity disagreeing with itself, and the provisioning string cannot simply
+  be flipped without breaking already-provisioned devices. It is still visible rename residue: the
+  name a new deployment gets on the coordination server is the old product name.
 - `pkg/util/updateutil/types.go:11-30` documents a real bug the rename caused: a
   `DefaultUpdateSources` entry pointed at `autobutler-org/quark.org`, a repository that never
   existed. It's fixed now, with a regression test (`sources_test.go:54`) — but it's the second
@@ -103,9 +106,9 @@ pretense until there's an actual breaking change to version around.
 
 ### Config reads scattered, with inconsistent naming
 
-There's no central config struct. Environment variables are read via bare `os.Getenv` in at least
-seven different files, with no shared prefix convention: `HEADSCALE_URL`, `PROVISIONING_SECRET`,
-`PORT`, `HTTPS_PORT` are unprefixed; `QUARK_HEADSCALE_URL`, `QUARK_PROVISIONING_SECRET`,
+There's no central config struct. Environment variables are read via bare `os.Getenv` in six
+non-test files (eight counting tests), with no shared prefix convention: `HEADSCALE_URL`,
+`PROVISIONING_SECRET`, `PORT`, `HTTPS_PORT` are unprefixed; `QUARK_HEADSCALE_URL`, `QUARK_PROVISIONING_SECRET`,
 `QUARK_PROVISIONING_URL`, `QUARK_INSECURE` are `QUARK_`-prefixed — for overlapping concepts (compare
 `HEADSCALE_URL` in `cmd/provisioning/main.go` against `QUARK_HEADSCALE_URL` in
 `pkg/util/remoteutil/remoteutil.go:34`). `.env.example` documents 5 variables; the codebase actually
@@ -114,19 +117,20 @@ reads 15.
 ### A stale coverage exclusion list
 
 `scripts/coverage-excluded-packages.txt` still lists `quark/pkg/ui/components`, `quark/pkg/ui/types`,
-and `quark/pkg/ui/views` — packages that don't exist in this repository anymore; they were removed
-when the project switched its server-rendered UI to Vue, years before the current Flutter app existed.
-Three of eleven entries (27%) in a file whose entire job is "stay accurate" are dead. Nobody's
-job is to notice when an excluded package is deleted.
+and `quark/pkg/ui/views` — packages that don't exist in this repository anymore. They were removed
+by #482 when the project switched its server-rendered UI to Vue (2025-12-21), about ten weeks before
+the Flutter app was merged into the monorepo (#622, 2026-03-05). Three of eleven entries (27%) in
+a file whose entire job is "stay accurate" are dead. Nobody's job is to notice when an excluded
+package is deleted.
 
 ## Flutter frontend
 
 ### One controller, in the one file that needed it least
 
 `lib/controllers/file_browser_controller.dart` (plus `file_browser_cache.dart`) is the *only*
-controller in the app, backing `file_browser_page.dart`. All 22 other pages — including several
+controller in the app, backing `file_browser_page.dart`. All 23 other pages — including several
 larger and more stateful than the file browser — call services directly from `State` classes.
-`settings_page.dart` alone imports 9 services directly (`app_settings`, `auth_service`,
+`settings_page.dart` alone imports 10 services directly (`app_settings`, `auth_service`,
 `connected_devices_service`, `files_service`, `health_service`, `remote_access_service`,
 `sbom_service`, `settings_service`, `smb_service`, `storage_service`). The extraction happened once,
 for the file browser's own problem, and was never generalized into "this is how a complex page talks
@@ -178,23 +182,25 @@ above is what "still leaking two cleanup passes later" looks like.
 
 ### Pages that became dumping grounds
 
-Six pages account for 9,200+ lines: `file_browser_page.dart` (2,350 lines), `settings_page.dart`
-(1,832), `photos_page.dart` (1,491), `image_viewer_page.dart` (1,328), `vault_page.dart` (1,168),
-`video_viewer_page.dart` (1,045). `settings_page.dart` in particular mixes host management, SMB
-config, SBOM/version info, remote access, and help/support UI in one file with no internal
-sectioning. Each addition to these files was a reasonable, scoped PR; the file just never got split
-as it grew, because splitting a file is never itself the task at hand.
+Seven pages account for 10,400+ lines: `file_browser_page.dart` (2,350 lines), `settings_page.dart`
+(1,832), `photos_page.dart` (1,491), `image_viewer_page.dart` (1,328), `document_editor_page.dart`
+(1,176), `vault_page.dart` (1,168), `video_viewer_page.dart` (1,067). `settings_page.dart` in
+particular mixes host management, SMB config, SBOM/version info, remote access, and help/support UI
+in one file with no internal sectioning. Each addition to these files was a reasonable, scoped PR;
+the file just never got split as it grew, because splitting a file is never itself the task at hand.
 
 ### Test coverage tracks "what shipped most recently," not "what's risky"
 
 `upload_manager.dart`, `resumable_upload_service.dart`, `content_search_service.dart`, and
-`app_settings.dart` are all well-tested. Three sizable, stateful features have no dedicated tests at
-all: vault/encryption (`vault_page.dart` + `vault_service.dart`, 1,168 lines), SMB + remote access
-(`storage_devices_page.dart` + `smb_service.dart` + `remote_access_service.dart`, 783 lines), and
-video playback controls (`video_viewer_page.dart`, 1,045 lines). This is the classic shape of
-iteratively-built test coverage: whichever feature just got built gets a matching test file, because
-that's the scope of the PR that built it; adjacent, older code that never had that moment gets
-skipped indefinitely.
+`app_settings.dart` are all well-tested. Sizable, stateful features that have no dedicated tests:
+vault/encryption (`vault_page.dart` + `vault_service.dart`, 1,682 lines combined), video playback
+controls (`video_viewer_page.dart`, 1,067 lines), and SMB + remote access (`smb_service.dart` +
+`remote_access_service.dart`, 148 lines, both reached only from `settings_page.dart`). Note that
+`storage_devices_page.dart` (783 lines) is *not* in that last group — it imports neither service,
+and `StorageDevice` itself is covered by `test/services/storage_device_test.dart`. This is the
+classic shape of iteratively-built test coverage: whichever feature just got built gets a matching
+test file, because that's the scope of the PR that built it; adjacent, older code that never had
+that moment gets skipped indefinitely.
 
 ## Cross-cutting
 
@@ -223,9 +229,12 @@ decisions:
    write it down in `AGENTS.md` and apply it to `settings_page.dart`/`photos_page.dart` next. If no,
    delete the one that exists rather than leaving it as an unexplained exception.
 6. **Switch new migrations to timestamp-prefixed names** to stop the renumbering churn at the root.
-7. **Resolve the `autobutler`/`quark` identity split** in `cmd/provisioning/main.go` vs.
-   `pkg/util/storageutil/dir.go` — pick one and finish the rename the way #1601 finished Cirrus →
-   Files: a deprecation shim with a tracking issue, not a silent flip.
+7. **Decide what to do about the `autobutler` string in `cmd/provisioning/main.go`** — but note
+   this one is *not* cheap cleanup. It is a Headscale tenant username on the coordination server,
+   not a local identity, so flipping it breaks every device already provisioned under
+   `autobutler`. If it changes at all it needs a dual-read/backfill migration, not the deprecation
+   shim that worked for Cirrus → Files. The `"quark"` check in `pkg/util/storageutil/dir.go` is a
+   local Unix service account and is unrelated; leaving them different is defensible.
 
 The through-line for all seven: whenever a fix or a rename touches more than one call site, leave a
 `TODO(#issue)` at every site it didn't finish, the way #1601 did — that's the difference between a
