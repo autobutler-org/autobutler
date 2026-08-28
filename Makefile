@@ -236,6 +236,14 @@ FLUTTER_BUILD_MODE ?= debug
 # Override with BUILD_NAME=X.Y.Z.
 BUILD_NAME ?= $(shell git describe --tags --abbrev=0 2>/dev/null | sed -E 's/^v//')
 
+# Dev runs get no tag: `flutter run` stamps no --build-name, on purpose -- a dirty
+# working tree must not report itself as a released version. The commit identifies it
+# instead, passed as a Dart compile-time constant so it reaches web the same as mobile
+# (version.json is a release-build artifact; --build-number is an integer on Android).
+# Seven characters to match what the Quark's own commit is shortened to in Settings.
+GIT_SHA ?= $(shell git rev-parse --short=7 HEAD 2>/dev/null)
+FLUTTER_RUN_DEFINES := $(if $(GIT_SHA),--dart-define=GIT_SHA=$(GIT_SHA),)
+
 .PHONY: build/frontend/android
 build/frontend/android: generate/frontend/sbom ## Build Android app
 	flutter build apk --$(FLUTTER_BUILD_MODE) $(if $(BUILD_NAME),--build-name=$(BUILD_NAME),)
@@ -393,7 +401,7 @@ publish/frontend/ios: ## Upload the iOS IPA to App Store Connect
 
 .PHONY: build/frontend/web
 build/frontend/web: internal/server/public/stub.txt generate/frontend/sbom ## Build web app
-	flutter build web --$(FLUTTER_BUILD_MODE)
+	flutter build web --$(FLUTTER_BUILD_MODE) $(if $(BUILD_NAME),--build-name=$(BUILD_NAME),)
 	cp -R ./build/web/. ./internal/server/public/
 
 .PHONY: build/provisioning
@@ -515,12 +523,13 @@ serve/frontend: serve/frontend/web ## Serve frontend
 
 .PHONY: serve/frontend/mobile
 serve/frontend/mobile: generate/frontend ## Serve mobile frontend
-	flutter run
+	flutter run $(FLUTTER_RUN_DEFINES)
 
 .PHONY: serve/frontend/web
 serve/frontend/web: generate/frontend ## Serve web frontend
 	flutter run \
-		-d web-server
+		-d web-server \
+		$(FLUTTER_RUN_DEFINES)
 
 PRINT_COVERAGE ?= 0
 
@@ -663,7 +672,7 @@ watch/backend/secure: build/backend ## Watch backend for changes, HTTPS on :443 
 .PHONY: watch/frontend
 watch/frontend: generate/frontend ## Watch frontend on web
 	echo "Defaulting to web since it supports hot reload..."
-	flutter run -d chrome
+	flutter run -d chrome $(FLUTTER_RUN_DEFINES)
 
 ##@ Code quality
 

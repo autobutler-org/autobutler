@@ -57,6 +57,7 @@ dependencies:
   shimmer: ^3.0.0
   flutter_quill_to_pdf: ^2.3.9
   printing: ^5.14.3
+  package_info_plus: ^9.0.1
   data_table:
     path: packages/data_table
   quark_icons:
