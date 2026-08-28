@@ -226,6 +226,10 @@ build: ## Build web frontend and backend
 # Only the commit, never Semver: NOSEMVER is what makes CompareVersions return 2,
 # which is the guard that stops autoupdate installing over a dev binary. Stamping a
 # version here would arm it (see internal/server/autoupdate.go).
+#
+# Every way of starting the backend needs this, `go run` most of all: it records no
+# vcs.revision at all, so a `serve/backend` process has nothing to fall back on and
+# reports NOCOMMIT without it.
 GO_LDFLAGS := $(if $(GIT_SHA),-ldflags "-X github.com/autobutler-org/quark/pkg/util/versionutil.GitCommit=$(GIT_SHA)",)
 
 .PHONY: build/backend
@@ -517,11 +521,11 @@ unmount-drive: ## Detach the highest-numbered MyDrive volume currently mounted
 
 .PHONY: serve/backend
 serve/backend: generate/backend ## Serve backend over plain HTTP on :8080 (insecure)
-	$(SUDO) env QUARK_INSECURE=true $(GO) run $(ENTRYPOINT) serve
+	$(SUDO) env QUARK_INSECURE=true $(GO) run $(GO_LDFLAGS) $(ENTRYPOINT) serve
 
 .PHONY: serve/backend/secure
 serve/backend/secure: generate/backend ## Serve backend over HTTPS on :443 (self-signed)
-	$(SUDO) $(GO) run $(ENTRYPOINT) serve
+	$(SUDO) $(GO) run $(GO_LDFLAGS) $(ENTRYPOINT) serve
 
 .PHONY: serve/frontend
 serve/frontend: serve/frontend/web ## Serve frontend
@@ -773,7 +777,7 @@ release/yank: ## Yank a release: remove from Azure + mark GitHub release as pre-
 
 .PHONY: version
 version: ## Print version
-	$(GO) run $(ENTRYPOINT) version
+	$(GO) run $(GO_LDFLAGS) $(ENTRYPOINT) version
 
 .PHONY: help
 help: ## Displays help info
