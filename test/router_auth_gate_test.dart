@@ -187,6 +187,108 @@ void main() {
     });
   });
 
+  // #1645: the stored token was restored on launch but never consulted, because
+  // /login sat in publicRoutes and returned null unconditionally.
+  group('a stored session survives a restart', () {
+    setUp(() async {
+      await addUnacceptedHost();
+      await settings.acceptTerms();
+    });
+
+    testWidgets('landing on login with a token goes straight to files', (
+      tester,
+    ) async {
+      await settings.setSessionToken('a-token');
+      addTearDown(() => settings.setSessionToken(null));
+      authStatusProbe = () async =>
+          throw StateError('must not probe with a live session');
+
+      await pumpGatedRouter(tester, initialLocation: AppRoutes.login);
+
+      expect(find.text('files'), findsOneWidget);
+      expect(find.text('login'), findsNothing);
+    });
+
+    testWidgets('without a token the login page still shows', (tester) async {
+      authStatusProbe = () async => const AuthStatus(setupComplete: true);
+
+      await pumpGatedRouter(tester, initialLocation: AppRoutes.login);
+
+      expect(find.text('login'), findsOneWidget);
+    });
+
+    // The self-heal the optimistic skip relies on: a 401 clears the token,
+    // which fires the refresh listenable and re-runs the gate.
+    testWidgets('a token cleared by a 401 lands back on login', (tester) async {
+      await settings.setSessionToken('a-stale-token');
+      addTearDown(() => settings.setSessionToken(null));
+      authStatusProbe = () async => const AuthStatus(setupComplete: true);
+
+      await pumpGatedRouter(tester, initialLocation: AppRoutes.login);
+      expect(find.text('files'), findsOneWidget);
+
+      await settings.setSessionToken(null);
+      await tester.pumpAndSettle();
+
+      expect(find.text('login'), findsOneWidget);
+      expect(find.text('files'), findsNothing);
+    });
+  });
+
+  // The reported bug: signed into one Quark, switch to another you have never
+  // signed into. Against a reachable Quark the 401 sorted it out; an
+  // unreachable one never answers, so the old host's token stood and every
+  // page rendered failures instead of the gate sending the user to login.
+  group('switching to a Quark you are not signed into', () {
+    late HostEntry signedIn;
+
+    setUp(() async {
+      await addUnacceptedHost();
+      await settings.acceptTerms();
+      signedIn = settings.hosts.single;
+      await settings.setSessionToken('a-token');
+      // The second Quark: terms accepted so the terms gate is not what fires,
+      // and no session, because the user has never signed into it.
+      await addUnacceptedHost();
+      await settings.acceptTerms();
+    });
+
+    tearDown(() => settings.setSessionToken(null));
+
+    testWidgets('lands on login even when that Quark is unreachable', (
+      tester,
+    ) async {
+      authStatusProbe = () async => throw Exception('connection refused');
+
+      // Back to the signed-in Quark to start, as the user was.
+      await settings.setActiveIndex(0);
+      await pumpGatedRouter(tester);
+      expect(find.text('files'), findsOneWidget);
+
+      await settings.setActiveIndex(1);
+      await tester.pumpAndSettle();
+
+      expect(find.text('login'), findsOneWidget);
+      expect(find.text('files'), findsNothing);
+    });
+
+    testWidgets('switching back restores the session on the first Quark', (
+      tester,
+    ) async {
+      authStatusProbe = () async => throw Exception('connection refused');
+
+      await settings.setActiveIndex(1);
+      await pumpGatedRouter(tester);
+      expect(find.text('login'), findsOneWidget);
+
+      await settings.setActiveIndex(0);
+      await tester.pumpAndSettle();
+
+      expect(find.text('files'), findsOneWidget);
+      expect(settings.sessionTokenFor(signedIn.hostAddress), 'a-token');
+    });
+  });
+
   // The terms gate runs ahead of everything, so an unaccepted Quark sees terms
   // rather than the login page it would otherwise be sent to.
   testWidgets('settings still requires terms for the active Quark', (

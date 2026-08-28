@@ -317,6 +317,19 @@ Future<String?> authRedirect(BuildContext context, GoRouterState state) async {
   // from the login page still has to show terms straight away (#1631).
   if (!AppSettings.instance.hasAcceptedTerms.value) return AppRoutes.terms;
 
+  // A stored session is honored on launch instead of asking for credentials
+  // again (#1645). This sits above the public-route allowance below, which
+  // returns null for /login and would otherwise leave a token-holding user
+  // parked on the landing page (#1639).
+  //
+  // Optimistic: no probe first. A stale token self-heals — checkUnauthorized
+  // clears it on any 401, sessionTokenNotifier is in routerRefreshListenable,
+  // and the gate re-runs and lands the user back on login.
+  if (location == AppRoutes.login &&
+      AppSettings.instance.sessionToken != null) {
+    return AppRoutes.files;
+  }
+
   // Routes reachable without a session.
   const publicRoutes = {AppRoutes.setup, AppRoutes.login, AppRoutes.recover};
   if (publicRoutes.contains(location)) return null;
