@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/utils/error_text.dart';
 
 class SbomDependency {
   const SbomDependency({
@@ -94,7 +95,7 @@ class SbomService with AuthenticatedService {
     final uri = apiBaseUri.resolve('/api/v0/sbom');
     final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode != 200) {
-      throw Exception('Failed to load Go SBOM: ${response.statusCode}');
+      throw ApiException(response.statusCode, 'Failed to load Go SBOM');
     }
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
 

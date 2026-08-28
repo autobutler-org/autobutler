@@ -144,7 +144,7 @@ class _LocalMediaProxyIo implements LocalMediaProxy {
       debugPrint('[local_media_proxy] forward failed: $error');
       _lastUpstreamError ??= MediaUpstreamException(
         HttpStatus.badGateway,
-        'Could not reach ${_upstream.host}: $error',
+        'could not reach ${_upstream.host}',
       );
       try {
         response.statusCode = HttpStatus.badGateway;

@@ -6,6 +6,7 @@ import 'package:quark/services/album_service.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/theme/quark_colors.dart';
 import 'package:quark/utils/connection_error.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/widgets/core/empty_state_widget.dart';
 import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
@@ -96,10 +97,12 @@ class _AlbumPageState extends State<AlbumPage> {
         relPath: item.relPath,
       );
       await _load();
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to remove photo from album')),
+        SnackBar(
+          content: Text(Errors.message(e, 'remove the photo from the album')),
+        ),
       );
     }
   }
@@ -160,7 +163,9 @@ class _AlbumPageState extends State<AlbumPage> {
           : _error != null
           ? (isQuarkUnreachableError(_error!)
                 ? QuarkDisconnectedView(onRetry: _load)
-                : Center(child: Text('Error: ${_error!}')))
+                : Center(
+                    child: Text(Errors.message(_error!, 'load the album')),
+                  ))
           : _items.isEmpty
           ? EmptyStateWidget(
               icon: QuarkIcons.photo_album_outlined,

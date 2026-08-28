@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:quark/router.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/utils/connection_error.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
@@ -261,9 +262,9 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'save the sheet'))),
+      );
     }
   }
 
@@ -277,9 +278,9 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
       ).showSnackBar(const SnackBar(content: Text('Saved')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'save the sheet'))),
+      );
     }
   }
 
@@ -308,7 +309,7 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
         ),
         body: isQuarkUnreachableError(error)
             ? QuarkDisconnectedView(onRetry: _loadFile)
-            : Center(child: Text('Error: $error')),
+            : Center(child: Text(Errors.message(error, 'load the sheet'))),
       );
     }
 

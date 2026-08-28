@@ -3,6 +3,7 @@ import 'package:quark/models/photo_album.dart';
 import 'package:quark/services/album_service.dart';
 import 'package:quark/theme/quark_colors.dart';
 import 'package:quark_icons/quark_icons.dart';
+import 'package:quark/utils/error_text.dart';
 
 class AddToAlbumSheet extends StatefulWidget {
   const AddToAlbumSheet({
@@ -77,11 +78,11 @@ class _AddToAlbumSheetState extends State<AddToAlbumSheet> {
         );
         setState(() => _inAlbums.add(album.id));
       }
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to update album')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'update the album'))),
+      );
     }
   }
 

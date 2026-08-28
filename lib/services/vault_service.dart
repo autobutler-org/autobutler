@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/utils/error_text.dart';
 
 class VaultStatus {
   final bool initialized;
@@ -204,7 +205,7 @@ class VaultService with AuthenticatedService {
       headers: _authHeaders,
     );
     if (resp.statusCode != 200) {
-      throw Exception('Failed to get vault status: ${resp.statusCode}');
+      throw ApiException(resp.statusCode, 'Failed to get vault status');
     }
     return VaultStatus.fromJson(json.decode(resp.body) as Map<String, dynamic>);
   }
@@ -217,7 +218,7 @@ class VaultService with AuthenticatedService {
     );
     if (resp.statusCode != 200) {
       final body = json.decode(resp.body) as Map<String, dynamic>;
-      throw Exception(body['error'] ?? 'Setup failed: ${resp.statusCode}');
+      throwApiError(resp.statusCode, body['error'], 'Setup failed');
     }
   }
 
@@ -229,7 +230,7 @@ class VaultService with AuthenticatedService {
     );
     if (resp.statusCode == 401) return false;
     if (resp.statusCode != 200) {
-      throw Exception('Unlock failed: ${resp.statusCode}');
+      throw ApiException(resp.statusCode, 'Unlock failed');
     }
     return true;
   }
@@ -237,7 +238,7 @@ class VaultService with AuthenticatedService {
   static Future<void> lock() async {
     final resp = await http.post(_apiUri('/vault/lock'), headers: _jsonHeaders);
     if (resp.statusCode != 200) {
-      throw Exception('Lock failed: ${resp.statusCode}');
+      throw ApiException(resp.statusCode, 'Lock failed');
     }
   }
 
@@ -247,7 +248,7 @@ class VaultService with AuthenticatedService {
       headers: _authHeaders,
     );
     if (resp.statusCode != 200) {
-      throw Exception('Failed to list entries: ${resp.statusCode}');
+      throw ApiException(resp.statusCode, 'Failed to list entries');
     }
     final body = json.decode(resp.body) as Map<String, dynamic>;
     final list = body['entries'] as List<dynamic>? ?? [];
@@ -265,7 +266,7 @@ class VaultService with AuthenticatedService {
       throw VaultLockedException();
     }
     if (resp.statusCode != 200) {
-      throw Exception('Failed to get entry: ${resp.statusCode}');
+      throw ApiException(resp.statusCode, 'Failed to get entry');
     }
     return VaultEntryDetail.fromJson(
       json.decode(resp.body) as Map<String, dynamic>,
@@ -298,7 +299,7 @@ class VaultService with AuthenticatedService {
     );
     if (resp.statusCode == 423) throw VaultLockedException();
     if (resp.statusCode != 200) {
-      throw Exception('Failed to create entry: ${resp.statusCode}');
+      throw ApiException(resp.statusCode, 'Failed to create entry');
     }
     return VaultEntryDetail.fromJson(
       json.decode(resp.body) as Map<String, dynamic>,
@@ -332,7 +333,7 @@ class VaultService with AuthenticatedService {
     );
     if (resp.statusCode == 423) throw VaultLockedException();
     if (resp.statusCode != 200) {
-      throw Exception('Failed to update entry: ${resp.statusCode}');
+      throw ApiException(resp.statusCode, 'Failed to update entry');
     }
   }
 
@@ -342,7 +343,7 @@ class VaultService with AuthenticatedService {
       headers: _authHeaders,
     );
     if (resp.statusCode != 200) {
-      throw Exception('Failed to delete entry: ${resp.statusCode}');
+      throw ApiException(resp.statusCode, 'Failed to delete entry');
     }
   }
 
@@ -352,7 +353,7 @@ class VaultService with AuthenticatedService {
       headers: _authHeaders,
     );
     if (resp.statusCode != 200) {
-      throw Exception('Failed to list folders: ${resp.statusCode}');
+      throw ApiException(resp.statusCode, 'Failed to list folders');
     }
     final body = json.decode(resp.body) as Map<String, dynamic>;
     final list = body['folders'] as List<dynamic>? ?? [];
@@ -374,7 +375,7 @@ class VaultService with AuthenticatedService {
       }),
     );
     if (resp.statusCode != 200) {
-      throw Exception('Failed to create folder: ${resp.statusCode}');
+      throw ApiException(resp.statusCode, 'Failed to create folder');
     }
   }
 
@@ -384,7 +385,7 @@ class VaultService with AuthenticatedService {
       headers: _authHeaders,
     );
     if (resp.statusCode != 200) {
-      throw Exception('Failed to delete folder: ${resp.statusCode}');
+      throw ApiException(resp.statusCode, 'Failed to delete folder');
     }
   }
 
@@ -409,7 +410,7 @@ class VaultService with AuthenticatedService {
       }),
     );
     if (resp.statusCode != 200) {
-      throw Exception('Failed to generate password: ${resp.statusCode}');
+      throw ApiException(resp.statusCode, 'Failed to generate password');
     }
     final body = json.decode(resp.body) as Map<String, dynamic>;
     return body['password'] as String;
@@ -421,7 +422,7 @@ class VaultService with AuthenticatedService {
       headers: _authHeaders,
     );
     if (resp.statusCode != 200) {
-      throw Exception('Failed to get storage location: ${resp.statusCode}');
+      throw ApiException(resp.statusCode, 'Failed to get storage location');
     }
     return VaultStorageLocation.fromJson(
       json.decode(resp.body) as Map<String, dynamic>,
@@ -444,13 +445,11 @@ class VaultService with AuthenticatedService {
     );
     if (resp.statusCode == 423) throw VaultLockedException();
     if (resp.statusCode == 401) {
-      throw Exception('Invalid credentials');
+      throw const MessageException('Invalid credentials.');
     }
     if (resp.statusCode != 200) {
       final body = json.decode(resp.body) as Map<String, dynamic>;
-      throw Exception(
-        body['error'] ?? 'Failed to change storage: ${resp.statusCode}',
-      );
+      throwApiError(resp.statusCode, body['error'], 'Failed to change storage');
     }
   }
 
@@ -469,7 +468,7 @@ class VaultService with AuthenticatedService {
     final body = await streamed.stream.bytesToString();
     if (streamed.statusCode == 423) throw VaultLockedException();
     if (streamed.statusCode != 200) {
-      throw Exception('Import failed: ${streamed.statusCode}');
+      throw ApiException(streamed.statusCode, 'Import failed');
     }
     return json.decode(body) as Map<String, dynamic>;
   }
@@ -481,7 +480,7 @@ class VaultService with AuthenticatedService {
     );
     if (resp.statusCode == 423) throw VaultLockedException();
     if (resp.statusCode != 200) {
-      throw Exception('Export failed: ${resp.statusCode}');
+      throw ApiException(resp.statusCode, 'Export failed');
     }
     return resp.bodyBytes;
   }
@@ -500,10 +499,10 @@ class VaultService with AuthenticatedService {
     );
     if (resp.statusCode == 423) throw VaultLockedException();
     if (resp.statusCode == 401) {
-      throw Exception('Current password is incorrect');
+      throw const MessageException('Current password is incorrect.');
     }
     if (resp.statusCode != 200) {
-      throw Exception('Failed to change password: ${resp.statusCode}');
+      throw ApiException(resp.statusCode, 'Failed to change password');
     }
   }
 }

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:quark/models/photo_album.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/utils/error_text.dart';
 
 class AlbumService with AuthenticatedService {
   static final AlbumService _instance = AlbumService._();
@@ -17,7 +18,7 @@ class AlbumService with AuthenticatedService {
     ).replace(queryParameters: tree ? {'tree': 'true'} : null);
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode != 200) {
-      throw Exception('Failed to load albums: ${response.statusCode}');
+      throw ApiException(response.statusCode, 'Failed to load albums');
     }
     final List<dynamic> data = json.decode(response.body) as List<dynamic>;
     return data
@@ -28,7 +29,7 @@ class AlbumService with AuthenticatedService {
   static Future<PhotoAlbum> getAlbum(int id) async {
     final response = await instance.authenticatedGet(_apiUri('/albums/$id'));
     if (response.statusCode != 200) {
-      throw Exception('Album not found');
+      throw ApiException(response.statusCode, 'Album not found');
     }
     return PhotoAlbum.fromJson(
       json.decode(response.body) as Map<String, dynamic>,
@@ -44,7 +45,7 @@ class AlbumService with AuthenticatedService {
       body: json.encode(body),
     );
     if (response.statusCode != 201) {
-      throw Exception('Failed to create album: ${response.statusCode}');
+      throw ApiException(response.statusCode, 'Failed to create album');
     }
     return PhotoAlbum.fromJson(
       json.decode(response.body) as Map<String, dynamic>,
@@ -58,7 +59,7 @@ class AlbumService with AuthenticatedService {
       body: json.encode({'name': name}),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to rename album');
+      throw ApiException(response.statusCode, 'Failed to rename album');
     }
     return PhotoAlbum.fromJson(
       json.decode(response.body) as Map<String, dynamic>,
@@ -72,7 +73,7 @@ class AlbumService with AuthenticatedService {
       body: json.encode({'parentId': parentId}),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to move album');
+      throw ApiException(response.statusCode, 'Failed to move album');
     }
     return PhotoAlbum.fromJson(
       json.decode(response.body) as Map<String, dynamic>,
@@ -82,7 +83,7 @@ class AlbumService with AuthenticatedService {
   static Future<void> deleteAlbum(int id) async {
     final response = await instance.authenticatedDelete(_apiUri('/albums/$id'));
     if (response.statusCode != 204) {
-      throw Exception('Failed to delete album');
+      throw ApiException(response.statusCode, 'Failed to delete album');
     }
   }
 
@@ -91,7 +92,7 @@ class AlbumService with AuthenticatedService {
       _apiUri('/albums/$albumId/items'),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to load album items');
+      throw ApiException(response.statusCode, 'Failed to load album items');
     }
     final List<dynamic> data = json.decode(response.body) as List<dynamic>;
     return data
@@ -110,7 +111,7 @@ class AlbumService with AuthenticatedService {
       body: json.encode({'deviceSerial': deviceSerial, 'relPath': relPath}),
     );
     if (response.statusCode != 201) {
-      throw Exception('Failed to add photo to album');
+      throw ApiException(response.statusCode, 'Failed to add photo to album');
     }
     return PhotoAlbumItem.fromJson(
       json.decode(response.body) as Map<String, dynamic>,
@@ -128,7 +129,10 @@ class AlbumService with AuthenticatedService {
       body: json.encode({'deviceSerial': deviceSerial, 'relPath': relPath}),
     );
     if (response.statusCode != 204) {
-      throw Exception('Failed to remove photo from album');
+      throw ApiException(
+        response.statusCode,
+        'Failed to remove photo from album',
+      );
     }
   }
 }

@@ -23,6 +23,7 @@ import 'package:quark/services/local_media_proxy_stub.dart'
     if (dart.library.io) 'package:quark/services/local_media_proxy_io.dart'
     as impl;
 import 'package:quark/services/local_trust.dart';
+import 'package:quark/utils/error_text.dart';
 
 /// Thrown when the upstream quark answers a media request with a non-2xx
 /// status.
@@ -38,21 +39,8 @@ class MediaUpstreamException implements Exception {
 
   /// A message safe to show the user, phrased in terms of the server's answer
   /// rather than the file's contents.
-  String get userMessage {
-    switch (statusCode) {
-      case 401:
-      case 403:
-        return 'The quark rejected this request (HTTP $statusCode). '
-            'Your session may have expired — try logging in again.';
-      case 404:
-        return 'The quark could not find this file (HTTP 404). '
-            'It may have been moved or deleted.';
-      default:
-        return 'The quark returned HTTP $statusCode '
-            '${reasonPhrase.isEmpty ? '' : '($reasonPhrase)'} '
-            'for this file.';
-    }
-  }
+  String get userMessage =>
+      Errors.message(ApiException(statusCode, reasonPhrase), 'play this file');
 
   @override
   String toString() => 'MediaUpstreamException($statusCode $reasonPhrase)';

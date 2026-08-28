@@ -1,5 +1,6 @@
 import 'package:quark/models/file_node.dart';
 import 'package:quark/services/files_service.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/safe_set_state_mixin.dart';
 import 'package:quark/widgets/core/quark_file_icon.dart';
@@ -419,7 +420,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
           }
           return Center(
             child: Text(
-              'Unable to load files',
+              Errors.message(error, 'load your files'),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           );

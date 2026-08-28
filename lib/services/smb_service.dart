@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/utils/error_text.dart';
 
 class SmbStatus {
   const SmbStatus({
@@ -40,7 +41,7 @@ class SmbService with AuthenticatedService {
     final uri = apiBaseUri.resolve('/api/v0/smb/status');
     final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to get SMB status (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to get SMB status');
     }
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return SmbStatus.fromJson(json['data'] as Map<String, dynamic>);
@@ -55,9 +56,7 @@ class SmbService with AuthenticatedService {
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
-      final msg =
-          body?['error'] as String? ?? 'Setup failed (${response.statusCode})';
-      throw Exception(msg);
+      throwApiError(response.statusCode, body?['error'], 'Setup failed');
     }
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return SmbStatus.fromJson(json['data'] as Map<String, dynamic>);
@@ -68,10 +67,7 @@ class SmbService with AuthenticatedService {
     final response = await http.delete(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
-      final msg =
-          body?['error'] as String? ??
-          'Teardown failed (${response.statusCode})';
-      throw Exception(msg);
+      throwApiError(response.statusCode, body?['error'], 'Teardown failed');
     }
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return SmbStatus.fromJson(json['data'] as Map<String, dynamic>);

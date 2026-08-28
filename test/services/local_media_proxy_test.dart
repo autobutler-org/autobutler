@@ -356,7 +356,7 @@ void main() {
       final error = proxy.lastUpstreamError;
       expect(error, isA<MediaUpstreamException>());
       expect(error!.statusCode, 404);
-      expect(error.userMessage, contains('404'));
+      expect(error.userMessage, contains('no longer there'));
       expect(error.userMessage, isNot(contains('codec')));
     });
 
@@ -443,12 +443,14 @@ void main() {
   });
 
   group('MediaUpstreamException', () {
-    test('never blames the codec', () {
+    test('never blames the codec, and never shows the status code', () {
       for (final status in const [400, 401, 403, 404, 500, 502]) {
         final message = MediaUpstreamException(status, '').userMessage;
-        expect(message, contains('$status'));
+        expect(message, isNotEmpty);
         expect(message.toLowerCase(), isNot(contains('codec')));
         expect(message.toLowerCase(), isNot(contains('format')));
+        // The status belongs in the log, not in front of the user (#1622).
+        expect(message, isNot(contains('$status')));
       }
     });
 

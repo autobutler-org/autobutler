@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:quark/router.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/utils/connection_error.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
@@ -119,9 +120,9 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'save the file'))),
+      );
     }
   }
 
@@ -186,7 +187,10 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
               color: Theme.of(context).colorScheme.error,
             ),
             const SizedBox(height: 12),
-            Text('Failed to load file: $error', textAlign: TextAlign.center),
+            Text(
+              Errors.message(error, 'load the file'),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 12),
             FilledButton(onPressed: _loadFile, child: const Text('Retry')),
           ],

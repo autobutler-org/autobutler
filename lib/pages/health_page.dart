@@ -5,6 +5,7 @@ import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/health_service.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
 import 'package:quark/utils/connection_error.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/layout/quark_app_bar.dart';
 import 'package:quark/widgets/quark_drawer.dart';
@@ -134,12 +135,12 @@ class _HealthPageState extends State<HealthPage>
               ),
               const SizedBox(height: 16),
               Text(
-                'Failed to load health data',
+                Errors.somethingWentWrong,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
               Text(
-                '$error',
+                Errors.message(error, 'load health info'),
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
                 textAlign: TextAlign.center,
               ),

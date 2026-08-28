@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/utils/error_text.dart';
 
 class SettingsService with AuthenticatedService {
   static final SettingsService _instance = SettingsService._();
@@ -12,7 +13,7 @@ class SettingsService with AuthenticatedService {
     final uri = apiBaseUri.resolve('/api/v0/settings');
     final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to fetch settings (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to fetch settings');
     }
     final decoded = jsonDecode(response.body);
     if (decoded is! Map<String, dynamic>) {
@@ -32,7 +33,7 @@ class SettingsService with AuthenticatedService {
       body: body,
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to update settings (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to update settings');
     }
   }
 }

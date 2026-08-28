@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/utils/error_text.dart';
 
 class StorageDevice {
   const StorageDevice({
@@ -137,9 +138,7 @@ class StorageService with AuthenticatedService {
     final uri = apiBaseUri.resolve('/api/v0/storage/devices/status');
     final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        'Failed to list storage devices (${response.statusCode})',
-      );
+      throw ApiException(response.statusCode, 'Failed to list storage devices');
     }
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final devices = body['devices'];
@@ -156,9 +155,7 @@ class StorageService with AuthenticatedService {
     final response = await http.post(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
-      final msg =
-          body?['error'] as String? ?? 'Mount failed (${response.statusCode})';
-      throw Exception(msg);
+      throwApiError(response.statusCode, body?['error'], 'Mount failed');
     }
     // Device state changed — invalidate the cache so the next listDevices()
     // returns fresh data.
@@ -178,9 +175,7 @@ class StorageService with AuthenticatedService {
       body: jsonEncode({'name': name}),
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        'Failed to rename device (${response.statusCode}): ${response.body}',
-      );
+      throw ApiException(response.statusCode, 'Failed to rename device');
     }
     invalidateDeviceCache();
   }
@@ -204,9 +199,7 @@ class StorageService with AuthenticatedService {
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
-      throw Exception(
-        body?['error'] ?? 'Failed to set role (${response.statusCode})',
-      );
+      throwApiError(response.statusCode, body?['error'], 'Failed to set role');
     }
     invalidateDeviceCache();
   }
@@ -230,8 +223,10 @@ class StorageService with AuthenticatedService {
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final data = jsonDecode(response.body) as Map<String, dynamic>?;
-      throw Exception(
-        data?['error'] ?? 'Failed to start backup (${response.statusCode})',
+      throwApiError(
+        response.statusCode,
+        data?['error'],
+        'Failed to start backup',
       );
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -244,7 +239,7 @@ class StorageService with AuthenticatedService {
     );
     final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to get backup status (${response.statusCode})');
+      throw ApiException(response.statusCode, 'Failed to get backup status');
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return BackupJobStatus.fromJson(data['data'] as Map<String, dynamic>);
@@ -264,9 +259,7 @@ class StorageService with AuthenticatedService {
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final data = jsonDecode(response.body) as Map<String, dynamic>?;
-      throw Exception(
-        data?['error'] ?? 'Verify failed (${response.statusCode})',
-      );
+      throwApiError(response.statusCode, data?['error'], 'Verify failed');
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return VerifyResult.fromJson(data['data'] as Map<String, dynamic>);

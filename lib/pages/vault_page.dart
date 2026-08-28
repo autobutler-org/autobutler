@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/vault_service.dart';
 import 'package:quark/utils/connection_error.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/quark_widget.dart';
 import 'package:quark/utils/web_download_stub.dart'
     if (dart.library.html) 'package:quark/utils/web_download_web.dart'
@@ -222,7 +223,10 @@ class _VaultPageState extends State<VaultPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('$error', style: const TextStyle(color: Colors.red)),
+            Text(
+              Errors.message(error, 'load your vault'),
+              style: const TextStyle(color: Colors.red),
+            ),
             const SizedBox(height: 16),
             ElevatedButton(onPressed: _loadStatus, child: const Text('Retry')),
           ],
@@ -304,9 +308,10 @@ class _VaultPageState extends State<VaultPage> {
                       _loadStatus();
                     } catch (e) {
                       setState(
-                        () => _setupError = isQuarkUnreachableError(e)
-                            ? quarkDisconnectedInline
-                            : e.toString(),
+                        () => _setupError = Errors.message(
+                          e,
+                          'create your vault',
+                        ),
                       );
                     }
                   },
@@ -437,9 +442,7 @@ class _VaultPageState extends State<VaultPage> {
       _loadStatus();
     } catch (e) {
       setState(() {
-        _unlockError = isQuarkUnreachableError(e)
-            ? quarkDisconnectedInline
-            : e.toString();
+        _unlockError = Errors.message(e, 'unlock your vault');
         _unlocking = false;
       });
     }
@@ -451,9 +454,9 @@ class _VaultPageState extends State<VaultPage> {
       _loadStatus();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to lock: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'lock your vault'))),
+        );
       }
     }
   }
@@ -605,7 +608,9 @@ class _VaultPageState extends State<VaultPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context, // ignore: use_build_context_synchronously
-        ).showSnackBar(SnackBar(content: Text('Import failed: $e')));
+        ).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'import your entries'))),
+        );
       }
     }
   }
@@ -626,9 +631,9 @@ class _VaultPageState extends State<VaultPage> {
       _loadStatus();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Export failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'export your vault'))),
+        );
       }
     }
   }
@@ -670,7 +675,9 @@ class _VaultPageState extends State<VaultPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context, // ignore: use_build_context_synchronously
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'delete the entry'))),
+        );
       }
     }
   }
@@ -902,9 +909,9 @@ class _EntryDetailPageState extends State<_EntryDetailPage> {
       setState(() => _showPassword = true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to generate: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'generate a password'))),
+        );
       }
     }
   }
@@ -928,9 +935,9 @@ class _EntryDetailPageState extends State<_EntryDetailPage> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'save the entry'))),
+        );
       }
     }
   }
@@ -1151,9 +1158,9 @@ class _EntryEditorPageState extends State<_EntryEditorPage> {
       setState(() => _showPassword = true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to generate: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'generate a password'))),
+        );
       }
     }
   }
@@ -1179,9 +1186,9 @@ class _EntryEditorPageState extends State<_EntryEditorPage> {
     } catch (e) {
       setState(() => _saving = false);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'save the entry'))),
+        );
       }
     }
   }

@@ -8,6 +8,7 @@ import 'package:quark/services/storage_service.dart';
 import 'package:quark/services/vault_service.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
 import 'package:quark/utils/connection_error.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/quark_widget.dart';
 import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/core/quark_storage_bar.dart';
@@ -82,9 +83,9 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
       await refresh();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Mount failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'mount the drive'))),
+      );
     } finally {
       if (mounted) setState(() => _mounting.remove(device.serial));
     }
@@ -114,9 +115,9 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
       await refresh();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'set the drive role'))),
+      );
     }
   }
 
@@ -236,9 +237,9 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
     } catch (e) {
       recoveryCtrl.dispose();
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Backup failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'start the backup'))),
+      );
     }
   }
 
@@ -302,9 +303,9 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Verify failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'verify the backup'))),
+      );
     }
   }
 
@@ -363,7 +364,7 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'Error: $error',
+            Errors.message(error, 'load your drives'),
             style: const TextStyle(color: Colors.red),
           ),
         ),

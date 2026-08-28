@@ -8,6 +8,7 @@ import 'package:quark/router.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/services/content_search_service.dart';
 import 'package:quark/utils/connection_error.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_dialog_utils.dart';
 import 'package:quark/utils/safe_set_state_mixin.dart';
 import 'package:quark/widgets/core/quark_disconnected_state.dart';
@@ -137,9 +138,9 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
       _load();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to create sheet: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'create the sheet'))),
+        );
       }
     }
   }
@@ -242,7 +243,10 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
           children: [
             Icon(QuarkIcons.error_outline, size: 40, color: colorScheme.error),
             const SizedBox(height: 12),
-            Text('$error', textAlign: TextAlign.center),
+            Text(
+              Errors.message(error, 'load your sheets'),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 12),
             FilledButton(onPressed: _load, child: const Text('Retry')),
           ],

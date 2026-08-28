@@ -7,6 +7,7 @@ import 'package:quark/models/upload_session.dart';
 import 'package:quark/services/resumable_upload_service.dart';
 import 'package:quark/services/upload_chunk_source.dart';
 import 'package:quark/services/upload_manager.dart';
+import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/utils/upload_session_record.dart';
 import 'package:quark/utils/upload_tree_utils.dart';
 
@@ -369,7 +370,7 @@ void main() {
         final result = await done;
 
         expect(result.failed, 1);
-        expect(result.firstError, contains('no response'));
+        expect(result.firstError, quarkDisconnectedInline);
         expect(manager.isUploading, isFalse, reason: 'the UI unlocks');
       },
     );
@@ -398,7 +399,7 @@ void main() {
       expect(result.total, 50);
       expect(result.completed, 3);
       expect(result.skipped, 47);
-      expect(result.firstError, contains('disk full'));
+      expect(result.firstError, "Couldn't upload f0.txt.");
       expect(manager.isUploading, isFalse);
     });
 
@@ -884,7 +885,7 @@ void main() {
       final result = await done;
 
       expect(result.failed, 1);
-      expect(result.firstError, contains('bad range'));
+      expect(result.firstError, "Couldn't upload big.bin.");
       expect(sentWhole, ['small.bin'], reason: 'the other file still went');
     });
 
@@ -904,7 +905,7 @@ void main() {
       expect(result.failed, 2);
       expect(result.total, 6);
       expect(result.skipped, 4);
-      expect(result.firstError, contains('disk full'));
+      expect(result.firstError, "Couldn't upload f0.bin.");
       expect(manager.isUploading, isFalse, reason: 'the UI unlocks');
     });
 
@@ -926,7 +927,7 @@ void main() {
         final result = await done;
 
         expect(result.failed, 1);
-        expect(result.firstError, contains('no response'));
+        expect(result.firstError, quarkDisconnectedInline);
         expect(manager.isUploading, isFalse);
       },
     );

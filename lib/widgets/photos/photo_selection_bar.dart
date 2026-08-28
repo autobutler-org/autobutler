@@ -3,6 +3,7 @@ import 'package:quark/services/album_service.dart';
 import 'package:quark/theme/quark_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
+import 'package:quark/utils/error_text.dart';
 
 /// Sticky bottom bar shown during photo selection mode.
 /// Shows count + "Add to Album" button.
@@ -88,7 +89,7 @@ class AlbumPickerSheet extends StatefulWidget {
 class _AlbumPickerSheetState extends State<AlbumPickerSheet> {
   List<PhotoAlbum> _albums = [];
   bool _loading = true;
-  bool _error = false;
+  String? _error;
 
   @override
   void initState() {
@@ -99,7 +100,7 @@ class _AlbumPickerSheetState extends State<AlbumPickerSheet> {
   Future<void> _load() async {
     setState(() {
       _loading = true;
-      _error = false;
+      _error = null;
     });
     try {
       final albums = await AlbumService.listAlbums(tree: true);
@@ -108,11 +109,11 @@ class _AlbumPickerSheetState extends State<AlbumPickerSheet> {
         _albums = albums;
         _loading = false;
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = true;
+        _error = Errors.message(e, 'load your albums');
       });
     }
   }
@@ -144,12 +145,12 @@ class _AlbumPickerSheetState extends State<AlbumPickerSheet> {
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
-                : _error
+                : _error != null
                 ? Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text('Failed to load albums'),
+                        Text(_error!, textAlign: TextAlign.center),
                         const SizedBox(height: 8),
                         TextButton(
                           onPressed: _load,

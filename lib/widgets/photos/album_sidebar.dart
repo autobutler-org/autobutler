@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quark/models/photo_album.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/services/album_service.dart';
 import 'package:quark/theme/quark_colors.dart';
 import 'package:quark/widgets/photos/album_tree_tile.dart';
@@ -63,11 +64,11 @@ class AlbumSidebarState extends State<AlbumSidebar> {
     try {
       await AlbumService.createAlbum(name, parentId: parentId);
       await _load();
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to create album')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'create the album'))),
+      );
     }
   }
 
@@ -81,11 +82,11 @@ class AlbumSidebarState extends State<AlbumSidebar> {
     try {
       await AlbumService.renameAlbum(album.id, name);
       await _load();
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to rename album')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'rename the album'))),
+      );
     }
   }
 
@@ -117,11 +118,11 @@ class AlbumSidebarState extends State<AlbumSidebar> {
         widget.onAlbumSelected(null);
       }
       await _load();
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to delete album')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Errors.message(e, 'delete the album'))),
+      );
     }
   }
 

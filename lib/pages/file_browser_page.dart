@@ -26,6 +26,7 @@ import 'package:quark/services/storage_service.dart';
 import 'package:quark/services/upload_chunk_source.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
 import 'package:quark/utils/connection_error.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/files_route_path_utils.dart';
 import 'package:quark/utils/file_browser_dialog_utils.dart';
 import 'package:quark/utils/file_browser_drag_config.dart';
@@ -595,7 +596,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       _showMessage('File picker plugin not available. Fully restart the app.');
     } catch (e) {
       debugPrint('[file_browser_page.dart] Folder upload failed: $e');
-      _showMessage('Unable to read the selected folder');
+      _showMessage(Errors.message(e, 'read the selected folder'));
     }
   }
 
@@ -664,9 +665,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         uploadPath,
         note: _capNote(flattened),
       );
-    } catch (_) {
-      debugPrint('[file_browser_page.dart] Error in catch block');
-      _showMessage('Unable to read dropped files');
+    } catch (e) {
+      debugPrint('[file_browser_page.dart] Error in catch block: $e');
+      _showMessage(Errors.message(e, 'read the dropped files'));
     }
   }
 
@@ -823,8 +824,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       Future.delayed(const Duration(seconds: 3), () {
         if (mounted) _refreshFileState();
       });
-    } catch (_) {
-      debugPrint('[file_browser_page.dart] Error in catch block');
+    } catch (e) {
+      debugPrint('[file_browser_page.dart] Error in catch block: $e');
       if (!mounted) {
         return;
       }
@@ -832,7 +833,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       // Roll back optimistic folder
       if (snapshot != null) setState(() => _cachedFiles = snapshot);
 
-      _showMessage('Failed to create folder');
+      _showMessage(Errors.message(e, 'create the folder'));
     } finally {
       if (mounted) {
         setState(() {
@@ -917,7 +918,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       }
     } catch (e) {
       if (!mounted) return;
-      _showMessage('Failed to create file: $e');
+      _showMessage(Errors.message(e, 'create the file'));
     }
   }
 
@@ -1053,7 +1054,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       );
       if (!mounted) return;
       if (bytes == null || bytes.isEmpty) {
-        _showMessage('Failed to read ${node.name}');
+        _showMessage(Errors.couldNot('read ${node.name}'));
         return;
       }
 
@@ -1105,7 +1106,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       _openFileViaRoute(absheetPath);
     } catch (e) {
       if (!mounted) return;
-      _showMessage('Conversion failed: $e');
+      _showMessage(Errors.message(e, 'convert the file'));
     }
   }
 
@@ -1225,7 +1226,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       await FilesService.saveBytesToFile(bytes, node.name);
       if (mounted) _showMessage('Downloaded ${node.name}');
     } catch (e) {
-      if (mounted) _showMessage('Failed to open file: $e');
+      if (mounted) _showMessage(Errors.message(e, 'open the file'));
     }
   }
 
@@ -1586,7 +1587,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         if (navigator.canPop()) {
           navigator.pop();
         }
-        _showMessage('Unable to update the file route');
+        _showMessage(Errors.couldNot('update the file route'));
       }
     }
 

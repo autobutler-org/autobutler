@@ -5,6 +5,7 @@ import 'package:quark/pages/generic_file_viewer_open_stub.dart'
     if (dart.library.io) 'package:quark/pages/generic_file_viewer_open_native.dart'
     as native_open;
 import 'package:quark/services/files_service.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/widgets/core/quark_file_icon.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 
@@ -51,9 +52,9 @@ class _GenericFileViewerPageState extends State<GenericFileViewerPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Download failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'download the file'))),
+        );
       }
     } finally {
       if (mounted) setState(() => _downloading = false);
@@ -82,9 +83,9 @@ class _GenericFileViewerPageState extends State<GenericFileViewerPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Could not open file: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'open the file'))),
+        );
       }
     } finally {
       if (mounted) setState(() => _opening = false);
