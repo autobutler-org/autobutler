@@ -16,5 +16,8 @@ func (r *router) Routes() []*serverutil.Route {
 		getVideoMetadataRoute,
 		extractVideoFrameRoute,
 		trimVideoRoute,
+		queueTranscodeRoute,
+		getVideoJobRoute,
+		listVideoJobsRoute,
 	}
 }
