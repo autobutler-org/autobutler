@@ -174,6 +174,10 @@ void main() {
             builder: (_, _) => const Scaffold(body: Text('settings')),
           ),
           GoRoute(
+            path: AppRoutes.login,
+            builder: (_, _) => const Scaffold(body: Text('login')),
+          ),
+          GoRoute(
             path: AppRoutes.terms,
             builder: (_, _) => const Scaffold(body: Text('terms')),
           ),
@@ -184,19 +188,36 @@ void main() {
       return router;
     }
 
-    testWidgets('no host configured leaves the first-run browser up', (
-      tester,
-    ) async {
+    // #1639: with no Quark configured there is nothing any other route can
+    // do, and Settings — where hosts used to be managed — is behind the gate.
+    // Login owns host management now, so that is where the user lands.
+    testWidgets('no host configured sends the user to login', (tester) async {
       await pumpGatedRouter(tester);
 
-      expect(find.text('files'), findsOneWidget);
+      expect(find.text('login'), findsOneWidget);
+      expect(find.text('files'), findsNothing);
     });
 
+    testWidgets('a deep link with no host configured still lands on login', (
+      tester,
+    ) async {
+      final router = await pumpGatedRouter(tester);
+
+      router.go(AppRoutes.settings);
+      await tester.pumpAndSettle();
+
+      expect(find.text('login'), findsOneWidget);
+      expect(find.text('settings'), findsNothing);
+    });
+
+    // Connecting a Quark must show terms straight away even though the user is
+    // sitting on a public route (#1631) — the terms gate runs ahead of the
+    // public-route allowance for exactly this.
     testWidgets('adding the first host shows terms without any navigation', (
       tester,
     ) async {
       await pumpGatedRouter(tester);
-      expect(find.text('files'), findsOneWidget);
+      expect(find.text('login'), findsOneWidget);
 
       await settings.addHost(
         HostEntry(name: 'My Quark', hostAddress: 'http://quark.local'),
@@ -204,7 +225,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('terms'), findsOneWidget);
-      expect(find.text('files'), findsNothing);
+      expect(find.text('login'), findsNothing);
     });
 
     // The reported repro: terms already accepted for the Quark you're on,
