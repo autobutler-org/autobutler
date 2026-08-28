@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
@@ -22,6 +23,71 @@ import 'package:quark/widgets/refresh_icon_button.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// The commit a `make serve/...` or `make watch/frontend` run was built from.
+///
+/// Empty in a released build, which is identified by its tag instead. Const
+/// because `--dart-define` is a compile-time constant, so a release build
+/// drops the branch that reads it.
+const gitSha = String.fromEnvironment('GIT_SHA');
+
+/// How one build identifies itself — this app's, or the Quark's (#1606).
+///
+/// Both sit in Settings and a bug report quotes both, so they must not
+/// describe the same situation two different ways. The Quark's used to read
+/// `dev (untagged)` where the app read `Development build`.
+///
+/// [version] arrives empty more often than it looks like it would. On this
+/// app, `pubspec.yaml` deliberately carries no `version:` — the Makefile
+/// derives it from the git tag instead — so nothing is stamped unless the
+/// build passed `--build-name`; web is emptier still, its `version.json`
+/// omitting the keys outright rather than defaulting them. On the Quark, the
+/// `NOSEMVER` sentinel means the same thing.
+///
+/// Which build the reader is holding decides what identifies it:
+///
+/// - One built from a tag is that tag, plus a build number when one was
+///   stamped — only the iOS release asks App Store Connect for one.
+/// - A dev build has no tag on purpose, since something built from a dirty
+///   tree reporting a released version is the ambiguity this is meant to
+///   remove. It names its commit, the only thing telling it from any other.
+String buildVersionLabel({
+  required String version,
+  String buildNumber = '',
+  String sha = '',
+}) {
+  if (version.isEmpty) {
+    return sha.isEmpty
+        ? 'Development build — no version stamped'
+        : 'Development build ($sha)';
+  }
+  if (buildNumber.isEmpty) return version;
+  return '$version ($buildNumber)';
+}
+
+/// The app's own row, which has to name what it is reporting — the Quark's
+/// version sits under its own "Installed version" heading and does not.
+///
+/// Prefixed only when there is a version to prefix: "App version Development
+/// build" reads like a bug.
+String appVersionLabel({
+  required String version,
+  required String buildNumber,
+  String sha = gitSha,
+}) {
+  final label = buildVersionLabel(
+    version: version,
+    buildNumber: buildNumber,
+    sha: sha,
+  );
+  return version.isEmpty ? label : 'App version $label';
+}
+
+/// The Quark reports a full commit, and the `NOCOMMIT` sentinel when its build
+/// carried none. Seven characters is what the rest of the tooling shows.
+String shortGitSha(String commit) => (commit.isEmpty || commit == 'NOCOMMIT')
+    ? ''
+    : commit.substring(0, commit.length.clamp(0, 7));
+
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
@@ -31,6 +97,15 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   ThemeMode _theme = ThemeMode.system;
+
+  /// How this app's own version reads, per [appVersionLabel] (#1606).
+  ///
+  /// Distinct from [_installedVersion], which is the Quark server's — a bug
+  /// report needs to name both. Null until read, and stays null where no
+  /// bundle answers at all (a unit test, a shell that was never packaged), in
+  /// which case the row simply doesn't render.
+  String? _appVersion;
+
   String? _installedVersion;
   List<String> _availableVersions = [];
   String? _selectedUpdateVersion;
@@ -99,12 +174,30 @@ class _SettingsPageState extends State<SettingsPage> {
     // host every loader below returns early and none would ever clear it.
     _disconnected = false;
     setState(() {});
+    _loadAppVersion();
     _loadVersionInfo();
     _loadSettings();
     _loadSbom();
     _loadDevices();
     _loadStorageDevices();
     _loadRemoteAccess();
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (!mounted) return;
+      setState(() {
+        _appVersion = appVersionLabel(
+          version: info.version,
+          buildNumber: info.buildNumber,
+        );
+      });
+    } catch (_) {
+      // Nothing to report and nothing to retry: without a bundle to read there
+      // is no app version, so the row stays hidden rather than showing an error
+      // about a number the user cannot act on.
+    }
   }
 
   Future<void> _loadRemoteAccess() async {
@@ -426,19 +519,16 @@ class _SettingsPageState extends State<SettingsPage> {
       final versions = await FilesService.listAvailableVersions();
       if (!mounted) return;
 
-      var installedVersion =
-          (installed['semver'] as String?) ??
-          (installed['version'] as String?) ??
-          'Unknown';
-      // When running an untagged dev build, show the short commit hash instead.
-      if (installedVersion == 'NOSEMVER') {
-        final commit = (installed['gitCommit'] as String?) ?? '';
-        if (commit.isNotEmpty && commit != 'NOCOMMIT') {
-          installedVersion = commit.substring(0, commit.length.clamp(0, 7));
-        } else {
-          installedVersion = 'dev (untagged)';
-        }
-      }
+      // A missing field is not a dev build — it is a Quark that answered with
+      // something this app cannot read, and saying so beats guessing.
+      final semver =
+          (installed['semver'] as String?) ?? (installed['version'] as String?);
+      final installedVersion = semver == null
+          ? 'Unknown'
+          : buildVersionLabel(
+              version: semver == 'NOSEMVER' ? '' : semver,
+              sha: shortGitSha((installed['gitCommit'] as String?) ?? ''),
+            );
       final availableVersions = versions
           .map((m) => (m['version'] as String?) ?? '')
           .where((v) => v.isNotEmpty)
@@ -542,6 +632,8 @@ class _SettingsPageState extends State<SettingsPage> {
             'Quark',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
+          if (_appVersion != null)
+            Text(_appVersion!, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 8),
           // Sign out — only show if there's an active session
           if (AppSettings.instance.sessionToken != null) ...[
