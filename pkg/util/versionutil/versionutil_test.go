@@ -228,3 +228,26 @@ func TestCompareVersions_InvalidVersions(t *testing.T) {
 		})
 	}
 }
+
+// A binary built from a source tarball, in a container without .git, or with
+// -buildvcs=false gets no vcs.revision from the toolchain, and used to report
+// NOCOMMIT with no way to say which build it was. The Makefile stamps the
+// commit with -ldflags so the value survives that.
+func TestGetVersion_PrefersStampedCommit(t *testing.T) {
+	const stamped = "a1b2c3d"
+
+	original := versionutil.GitCommit
+	t.Cleanup(func() { versionutil.GitCommit = original })
+
+	versionutil.GitCommit = stamped
+	if got := versionutil.GetVersion().GitCommit; got != stamped {
+		t.Errorf("GetVersion().GitCommit = %q; want the stamped %q", got, stamped)
+	}
+
+	// Unstamped, the build info still names the build when it can. This test
+	// binary is built from a checkout, so a real revision is there to find.
+	versionutil.GitCommit = versionutil.NoCommit
+	if got := versionutil.GetVersion().GitCommit; got == "" {
+		t.Error("GetVersion().GitCommit is empty with no stamp; want the build info's revision")
+	}
+}
