@@ -25,6 +25,10 @@ func (r *router) Routes() []*serverutil.Route {
 		statFileRoute,
 		uploadFilesRoute,
 		uploadFilesNestedRoute,
+		createUploadSessionRoute,
+		uploadSessionChunkRoute,
+		getUploadSessionRoute,
+		deleteUploadSessionRoute,
 	}
 
 	// TODO(pre-v1.0.0, #1601): delete these two lines and return canonical.

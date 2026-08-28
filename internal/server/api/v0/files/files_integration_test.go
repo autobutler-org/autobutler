@@ -14,11 +14,8 @@ import (
 	"strings"
 	"testing"
 
-	v1_files "github.com/autobutler-org/quark/internal/server/api/v0/files"
-	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
-	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 	"github.com/gin-gonic/gin"
 )
@@ -56,18 +53,13 @@ func newTestEngine(t *testing.T) (*gin.Engine, string) {
 	// Build a deps with a fake StorageService so handlers get a real-looking
 	// device list pointing at our temp dir — no real device detection happens.
 	svc := storageutil.NewStorageService(&fakeDetector{mountPoint: mountPoint})
-	deps := deputil.NewDependencies().WithStorageService(svc).WithEventBus(eventbus.New())
+	deps := deputil.NewDependencies().
+		WithStorageService(svc).
+		WithEventBus(eventbus.New()).
+		WithUploadSessions(newTestSessionStore(mountPoint))
 
-	gin.SetMode(gin.TestMode)
-	engine := gin.New()
 	// Inject deps so handlers can call deps.StorageService().GetManagedDevices().
-	engine.Use(func(c *gin.Context) {
-		c = ctxutil.With(c, "deps", deps)
-		c.Next()
-	})
-	group := engine.Group("/api/v0")
-	serverutil.RegisterRouterWithGroup(group, v1_files.NewRouter())
-	return engine, filesDir
+	return newEngineForDeps(deps), filesDir
 }
 
 // doRequest fires an HTTP request against the test engine.

@@ -26,6 +26,7 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/settingsutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 	"github.com/autobutler-org/quark/pkg/util/tlsutil"
+	"github.com/autobutler-org/quark/pkg/util/uploadutil"
 	"github.com/autobutler-org/quark/pkg/util/workerutil"
 
 	"github.com/gin-gonic/gin"
@@ -93,6 +94,14 @@ func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 			purge()
 		}
 	}()
+
+	// Give the resumable upload sessions their heartbeat. The store itself is
+	// built in deputil.NewDependencies so every dependency graph has one, but
+	// only a real server should be running a goroutine over it — an abandoned
+	// chunked upload leaks its staged bytes until this sweeps them (#1629).
+	if sessions := deps.UploadSessions(); sessions != nil {
+		sessions.StartSweeper(context.Background(), uploadutil.DefaultSweepInterval)
+	}
 
 	return syncWorker, nil
 }

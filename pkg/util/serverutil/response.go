@@ -31,6 +31,14 @@ func InternalServerError(err error) *Response {
 	return NewResponse().WithStatusCode(http.StatusInternalServerError).WithError(err)
 }
 
+// Conflict reports a request that cannot proceed against the current state —
+// a chunk offered at the wrong offset of an upload session, for instance
+// (#1629). Callers that want the client to resync set the headers carrying the
+// true state before returning this.
+func Conflict(err error) *Response {
+	return NewResponse().WithStatusCode(http.StatusConflict).WithError(err)
+}
+
 func NotFound(err error) *Response {
 	return NewResponse().WithStatusCode(http.StatusNotFound).WithError(err)
 }

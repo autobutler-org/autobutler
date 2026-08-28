@@ -8,6 +8,7 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
 	"github.com/autobutler-org/quark/pkg/util/iosemutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/util/uploadutil"
 	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
 	"github.com/autobutler-org/quark/pkg/util/workerutil"
 	"github.com/autobutler-org/quark/pkg/vfs"
@@ -20,6 +21,7 @@ type Dependencies interface {
 	HealthDatabase() *db.DatabaseRaw
 	IOSemaphore() *iosemutil.Semaphore
 	StorageService() *storageutil.StorageService
+	UploadSessions() *uploadutil.SessionStore
 	VaultDB() *db.DatabaseSqlc
 	VaultSession() *vaultcrypto.VaultSession
 	Worker() workerutil.Worker
@@ -32,6 +34,7 @@ type Dependencies interface {
 	VFSRegistry() vfs.Registry
 	WithMetadataStore(s vfs.MetadataStore) Dependencies
 	WithStorageService(s *storageutil.StorageService) Dependencies
+	WithUploadSessions(store *uploadutil.SessionStore) Dependencies
 	WithVFSRegistry(r vfs.Registry) Dependencies
 	SetVaultDB(database *db.DatabaseSqlc)
 	ClearVaultDB()
@@ -46,6 +49,7 @@ type dependencies struct {
 	healthDatabase *db.DatabaseRaw
 	ioSemaphore    *iosemutil.Semaphore
 	storageService *storageutil.StorageService
+	uploadSessions *uploadutil.SessionStore
 	vaultDB        *db.DatabaseSqlc
 	vaultDBMu      sync.RWMutex
 	vaultSession   *vaultcrypto.VaultSession
@@ -55,7 +59,14 @@ type dependencies struct {
 }
 
 func NewDependencies() Dependencies {
-	return &dependencies{}
+	// The upload session store is built here rather than in
+	// DefaultDependencies so every dependency graph — every test engine
+	// included — has a non-nil store. It allocates a map and nothing else:
+	// no goroutine, no directory. StartSweeper, called once from server
+	// startup, is what gives it a heartbeat (#1629).
+	return &dependencies{
+		uploadSessions: uploadutil.NewSessionStore(uploadutil.NewSessionStoreParams{}),
+	}
 }
 
 func DefaultDependencies() (Dependencies, error) {
@@ -142,6 +153,15 @@ func (d *dependencies) WithIOSemaphore(sem *iosemutil.Semaphore) Dependencies {
 
 func (d *dependencies) StorageService() *storageutil.StorageService {
 	return d.storageService
+}
+
+func (d *dependencies) UploadSessions() *uploadutil.SessionStore {
+	return d.uploadSessions
+}
+
+func (d *dependencies) WithUploadSessions(store *uploadutil.SessionStore) Dependencies {
+	d.uploadSessions = store
+	return d
 }
 
 func (d *dependencies) VaultDB() *db.DatabaseSqlc {

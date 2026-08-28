@@ -10,10 +10,23 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/util/uploadutil"
 	"github.com/autobutler-org/quark/pkg/vfs"
 
 	"github.com/gin-gonic/gin"
 )
+
+// uploadDestination is where an upload lands, for both this endpoint and the
+// chunked sessions in upload_session.go. Both have to make the same choice
+// between the VFS namespace and the StorageService, so the choice lives in one
+// place (#1629).
+func uploadDestination(deps deputil.Dependencies) uploadutil.Destination {
+	return uploadutil.Destination{
+		Registry: deps.VFSRegistry(),
+		Storage:  deps.StorageService(),
+		EventBus: deps.EventBus(),
+	}
+}
 
 // uploadFiles godoc
 // @Summary Upload files to the top-level directory
@@ -53,55 +66,52 @@ func uploadFilesNested(c *gin.Context, rootDir string) *serverutil.Response {
 	if err != nil {
 		return serverutil.BadRequest(err)
 	}
+	dest := uploadDestination(deps)
 
 	// VFS path: only when no serial is provided (VFS handles the local namespace).
-	if serial == "" {
-		if reg := deps.VFSRegistry(); reg != nil {
-			if fsys, ok := reg.Get("files"); ok {
-				ctx := c.Request.Context()
+	if fsys := dest.FilesVFS(serial); fsys != nil {
+		ctx := c.Request.Context()
 
-				// Ensure the destination directory exists.
-				if rootDir != "" {
-					if err := fsys.MkdirAll(ctx, rootDir); err != nil {
-						return serverutil.InternalServerError(err)
-					}
-				}
-
-				for {
-					part, err := reader.NextPart()
-					if err != nil {
-						break // io.EOF or end of parts
-					}
-
-					fileName := part.FileName()
-					if part.FormName() != "files" || fileName == "" {
-						part.Close()
-						continue
-					}
-
-					destPath := path.Join(rootDir, filepath.Base(fileName))
-					opts := vfs.WriteOptions{}
-					if !overwrite {
-						opts.IfNoneMatch = "*"
-					}
-
-					if err := fsys.Write(ctx, destPath, part, opts); err != nil {
-						part.Close()
-						if errors.Is(err, vfs.ErrConflict) {
-							return serverutil.BadRequest(err)
-						}
-						return serverutil.InternalServerError(err)
-					}
-					part.Close()
-				}
-
-				deps.EventBus().Publish(eventbus.Event{
-					Kind: eventbus.EventUpload,
-					Path: rootDir,
-				})
-				return serverutil.Ok()
+		// Ensure the destination directory exists.
+		if rootDir != "" {
+			if err := fsys.MkdirAll(ctx, rootDir); err != nil {
+				return serverutil.InternalServerError(err)
 			}
 		}
+
+		for {
+			part, err := reader.NextPart()
+			if err != nil {
+				break // io.EOF or end of parts
+			}
+
+			fileName := part.FileName()
+			if part.FormName() != "files" || fileName == "" {
+				part.Close()
+				continue
+			}
+
+			destPath := path.Join(rootDir, filepath.Base(fileName))
+			opts := vfs.WriteOptions{}
+			if !overwrite {
+				opts.IfNoneMatch = "*"
+			}
+
+			if err := fsys.Write(ctx, destPath, part, opts); err != nil {
+				part.Close()
+				if errors.Is(err, vfs.ErrConflict) {
+					return serverutil.BadRequest(err)
+				}
+				return serverutil.InternalServerError(err)
+			}
+			part.Close()
+		}
+
+		deps.EventBus().Publish(eventbus.Event{
+			Kind: eventbus.EventUpload,
+			Path: rootDir,
+		})
+		return serverutil.Ok()
 	}
 
 	// StorageService fallback (serial routing, etc.)
