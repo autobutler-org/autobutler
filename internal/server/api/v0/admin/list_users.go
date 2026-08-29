@@ -12,13 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type userSummary struct {
-	ID        int64  `json:"id"`
-	Username  string `json:"username"`
-	IsAdmin   bool   `json:"isAdmin"`
-	CreatedAt string `json:"createdAt"`
-}
-
 // listUsers godoc
 // @Summary List all users
 // @Description Returns all registered users. Admin-only.

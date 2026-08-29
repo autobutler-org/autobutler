@@ -1,6 +1,9 @@
 package v0_version
 
-import "github.com/autobutler-org/quark/pkg/util/updateutil"
+import (
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/updateutil"
+)
 
 // UpdateParams defines the parameters for updating to a specific version
 type UpdateParams struct {
@@ -37,4 +40,15 @@ type SbomJSON struct {
 	GoVersion    string               `json:"goVersion"`
 	Main         SbomModuleJSON       `json:"main"`
 	Dependencies []SbomDependencyJSON `json:"dependencies"`
+}
+
+type router struct{}
+
+func (r *router) Routes() []*serverutil.Route {
+	return []*serverutil.Route{
+		doUpdateRoute,
+		getInstalledVersionRoute,
+		getSbomRoute,
+		listVersionsRoute,
+	}
 }

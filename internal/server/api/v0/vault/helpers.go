@@ -1,6 +1,7 @@
 package v0_vault
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/url"
@@ -89,4 +90,50 @@ type customField struct {
 // vaultKey returns the encryption key from the vault session, or nil if locked.
 func vaultKey(session *vaultcrypto.VaultSession) ([]byte, bool) {
 	return session.Key()
+}
+
+type entryListItem struct {
+	ID        int64  `json:"id"`
+	Name      string `json:"name"`
+	URLHost   string `json:"urlHost"`
+	FolderID  *int64 `json:"folderId"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
+}
+
+type entryDetail struct {
+	ID           int64         `json:"id"`
+	Name         string        `json:"name"`
+	URL          string        `json:"url"`
+	URLHost      string        `json:"urlHost"`
+	Username     string        `json:"username"`
+	Password     string        `json:"password"`
+	Notes        string        `json:"notes,omitempty"`
+	TOTPSecret   string        `json:"totpSecret,omitempty"`
+	CustomFields []customField `json:"customFields,omitempty"`
+	FolderID     *int64        `json:"folderId"`
+	CreatedAt    string        `json:"createdAt"`
+	UpdatedAt    string        `json:"updatedAt"`
+}
+
+func nullableInt64(v *int64) sql.NullInt64 {
+	if v == nil {
+		return sql.NullInt64{}
+	}
+	return sql.NullInt64{Int64: *v, Valid: true}
+}
+
+func fromNullInt64(v sql.NullInt64) *int64 {
+	if !v.Valid {
+		return nil
+	}
+	return &v.Int64
+}
+
+type folderJSON struct {
+	ID        int64  `json:"id"`
+	Name      string `json:"name"`
+	ParentID  *int64 `json:"parentId"`
+	SortOrder int64  `json:"sortOrder"`
+	CreatedAt string `json:"createdAt"`
 }

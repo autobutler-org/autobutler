@@ -1,0 +1,42 @@
+package v0_favorites
+
+import (
+	"github.com/autobutler-org/quark/pkg/util/ctxutil"
+	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/sqlutil"
+	"github.com/gin-gonic/gin"
+)
+
+// listFavorites godoc
+// @Summary List all favorited photos
+// @Description Returns all photos the user has favorited, newest first.
+// @Tags favorites
+// @Produce json
+// @Success 200 {array} favoriteItemJSON
+// @Failure 500 {object} serverutil.Response "Internal Server Error"
+// @Router /photos/favorites [get]
+func listFavorites(c *gin.Context) *serverutil.Response {
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		return serverutil.InternalServerError(nil)
+	}
+
+	items, err := deps.Database().Queries.ListFavorites(c.Request.Context())
+	if err != nil {
+		return serverutil.InternalServerError(err)
+	}
+
+	result := make([]favoriteItemJSON, 0, len(items))
+	for _, item := range items {
+		result = append(result, favoriteItemJSON{
+			DeviceSerial: item.DeviceSerial,
+			RelPath:      item.RelPath,
+			CreatedAt:    sqlutil.FormatTime(item.CreatedAt),
+		})
+	}
+
+	return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(result)
+}
+
+var listFavoritesRoute = serverutil.ApiRoute("GET", "/photos/favorites", listFavorites)

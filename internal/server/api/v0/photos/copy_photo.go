@@ -14,15 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type copyPhotoRequest struct {
-	RelPath string `json:"relPath" binding:"required"`
-	Serial  string `json:"serial"`
-}
-
-type copyPhotoResponse struct {
-	RelPath string `json:"relPath"`
-}
-
 // copyPhoto godoc
 // @Summary Duplicate a photo file
 // @Description Creates a copy of the photo in the same directory with a non-conflicting name (e.g. photo_copy.jpg).

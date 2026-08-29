@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -36,12 +35,7 @@ type VideoMetadataJSON struct {
 	Albums     []albumRefJSON `json:"albums"`
 }
 
-type albumRefJSON struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
-}
-
-// getVideoMetadata godoc
+// getMetadata godoc
 // @Summary Get metadata for a single video file
 // @Description Returns duration, resolution, codec, bitrate, framerate, rotation, and album membership for the specified video.
 // @Tags videos
@@ -54,7 +48,7 @@ type albumRefJSON struct {
 // @Failure 501 {object} serverutil.Response "Not Implemented — ffprobe not available"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /videos/metadata [get]
-func getVideoMetadata(c *gin.Context) *serverutil.Response {
+func getMetadata(c *gin.Context) *serverutil.Response {
 	if !videoutil.Available() {
 		return serverutil.NewResponse().
 			WithStatusCode(http.StatusNotImplemented).
@@ -152,11 +146,6 @@ func getVideoMetadata(c *gin.Context) *serverutil.Response {
 	})
 }
 
-func roundTo(v float64, decimals int) float64 {
-	factor := math.Pow(10, float64(decimals))
-	return math.Round(v*factor) / factor
-}
-
-var getVideoMetadataRoute = serverutil.ApiRoute(
-	"GET", "/videos/metadata", getVideoMetadata,
+var getMetadataRoute = serverutil.ApiRoute(
+	"GET", "/videos/metadata", getMetadata,
 )

@@ -43,6 +43,34 @@
   - Service functions are reusable across different parts of the codebase (API, CLI, background jobs)
   - Clear separation of concerns between HTTP layer and domain logic
 
+### API package layout
+
+Every handler package under `internal/server/api/v0/` has the same shape, so a route can be found from
+its URL without grepping.
+
+- **Directory name matches the URL path segment.** `/api/v0/version/*` lives in `version/`, `/api/v0/albums/*`
+  in `albums/`. The segment wins over grammar — no singular/plural normalization, because renaming a
+  directory to read better would mean renaming the route.
+- **`<pkg>.go` is the interface file**, named after its own directory (`albums/albums.go`), and it is strictly
+  public: exported types and functions only, `NewRouter()` among them. Nothing private goes in it — not the
+  `router` struct, not a request DTO, not a helper. A reader who opens `albums/albums.go` should see the
+  package's whole exported surface and nothing they are not allowed to call.
+- **`types.go` holds every private type**, the `router` struct included. A method belongs to its type, so
+  `Routes()` — a method on the private `router` — moves into `types.go` with it. Exported types may live here
+  too when `<pkg>.go` would otherwise sprawl.
+- **`helpers.go` holds every other private function**, whatever it is shared with. Two helpers files split by
+  topic (`upload_session_helpers.go` next to `helpers.go`) is the layout this convention replaced.
+- **One handler per file, named `verb_noun.go`** after what the handler does: `list_albums.go`,
+  `delete_device.go`, `setup_smb.go`. Never a file named after the resource alone (`albums.go` holding all
+  five CRUD routes) — that is the layout this convention replaced. **The handler itself is the one private
+  function exempt from `helpers.go`**: it stays in its own file along with the
+  `var xxxRoute = serverutil.ApiRoute(...)` that registers it, because splitting a route from its handler is
+  what makes a route hard to find. Anything else private in that file — a DTO, a shared subroutine — moves out
+  to `types.go` or `helpers.go`.
+- A private const or var used across files goes to `types.go` or `helpers.go`, whichever fits; one used by a
+  single handler stays in that handler's file.
+- Neither `types.go` nor `helpers.go` may hold a route.
+
 ## Flutter Development
 
 ### Purpose

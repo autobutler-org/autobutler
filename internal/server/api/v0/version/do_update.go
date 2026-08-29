@@ -2,9 +2,6 @@ package v0_version
 
 import (
 	"errors"
-	"fmt"
-	"os"
-	"time"
 
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/updateutil"
@@ -49,9 +46,3 @@ func doUpdate(c *gin.Context) *serverutil.Response {
 var doUpdateRoute = serverutil.ApiRoute(
 	"POST", "/version/update", doUpdate,
 )
-
-func restartQuark() {
-	fmt.Println("Update complete. Exiting to allow process manager (launchctl/systemd) to restart...")
-	time.Sleep(time.Second * 2)
-	os.Exit(0)
-}

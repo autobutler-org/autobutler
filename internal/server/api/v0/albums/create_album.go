@@ -15,11 +15,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type createAlbumRequest struct {
-	Name     string `json:"name" binding:"required"`
-	ParentID *int64 `json:"parentId"`
-}
-
 // createAlbum godoc
 // @Summary Create a photo album
 // @Description Creates a new photo album, optionally nested under a parent.

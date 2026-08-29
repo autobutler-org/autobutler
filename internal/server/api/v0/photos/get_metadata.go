@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
 	"os"
 	"path"
 	"path/filepath"
@@ -58,7 +57,7 @@ type PhotoMetadataJSON struct {
 	LivePhotoVideoPath string         `json:"livePhotoVideoPath,omitempty"`
 }
 
-// getPhotoMetadata godoc
+// getMetadata godoc
 // @Summary Get metadata for a single photo
 // @Description Returns EXIF, file info, and album membership for the specified photo.
 // @Tags photos
@@ -70,7 +69,7 @@ type PhotoMetadataJSON struct {
 // @Failure 404 {object} serverutil.Response "Not Found"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /photos/metadata [get]
-func getPhotoMetadata(c *gin.Context) *serverutil.Response {
+func getMetadata(c *gin.Context) *serverutil.Response {
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	if !ok {
 		return serverutil.InternalServerError(nil)
@@ -345,11 +344,6 @@ func exifDataToJSON(data *photoutil.ExifData) *ExifJSON {
 	return e
 }
 
-func roundTo(v float64, decimals int) float64 {
-	factor := math.Pow(10, float64(decimals))
-	return math.Round(v*factor) / factor
-}
-
-var getPhotoMetadataRoute = serverutil.ApiRoute(
-	"GET", "/photos/metadata", getPhotoMetadata,
+var getMetadataRoute = serverutil.ApiRoute(
+	"GET", "/photos/metadata", getMetadata,
 )

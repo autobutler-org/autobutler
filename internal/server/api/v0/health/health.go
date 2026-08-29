@@ -5,16 +5,6 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 )
 
-type router struct {
-	collector *healthutil.Collector
-}
-
 func NewRouter(collector *healthutil.Collector) serverutil.Router {
 	return &router{collector: collector}
-}
-
-func (r *router) Routes() []*serverutil.Route {
-	return []*serverutil.Route{
-		r.getHealthRoute(),
-	}
 }
