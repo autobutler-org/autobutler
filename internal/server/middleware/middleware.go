@@ -20,17 +20,6 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
-// authRateLimiter protects auth endpoints (login, setup, recover) from
-// brute-force attacks. Shared across all requests — 5 req/s per IP, burst 10.
-var authRateLimiter = ratelimitutil.New()
-
-// vaultRateLimiter protects /vault/unlock from master-password brute-force.
-// Tighter than the general auth limiter: 1 req/2s per IP, burst 5.
-// After exhausting the burst, the steady-state cap is 0.5 req/s (one every 2s).
-// Combined with Argon2id (~300 ms/attempt), sustained guessing is limited to
-// ≈ 30 attempts/minute per IP — well below what any offline attack would need.
-var vaultRateLimiter = ratelimitutil.NewWithRate(0.5, 5)
-
 // authRateLimitedPaths are the API paths that require rate limiting.
 var authRateLimitedPaths = map[string]bool{
 	"/api/v0/auth/login":           true,
@@ -45,12 +34,14 @@ var vaultRateLimitedPaths = map[string]bool{
 }
 
 // rateLimit is a middleware that enforces per-IP rate limiting on auth endpoints.
-func rateLimit() gin.HandlerFunc {
+// The two limiters live on Dependencies, so they are constructed once with the
+// dependency graph and shared by every request the server handles (#1674).
+func rateLimit(deps deputil.Dependencies) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := ratelimitutil.ExtractIP(c.ClientIP())
 		path := c.Request.URL.Path
 		if vaultRateLimitedPaths[path] {
-			if !vaultRateLimiter.Allow(ip) {
+			if !deps.VaultRateLimiter().Allow(ip) {
 				c.JSON(http.StatusTooManyRequests, gin.H{"error": "too many requests, please slow down"})
 				c.Abort()
 				return
@@ -62,7 +53,7 @@ func rateLimit() gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		if !authRateLimiter.Allow(ip) {
+		if !deps.AuthRateLimiter().Allow(ip) {
 			c.JSON(http.StatusTooManyRequests, gin.H{"error": "too many requests, please slow down"})
 			c.Abort()
 			return
@@ -271,7 +262,7 @@ func Use(router *gin.Engine, deps deputil.Dependencies) {
 	router.Use(cors.New(config))
 	router.Use(inject(deps))
 	router.Use(trackDevice(deps))
-	router.Use(rateLimit())
+	router.Use(rateLimit(deps))
 	router.Use(requireAuth(deps))
 }
 

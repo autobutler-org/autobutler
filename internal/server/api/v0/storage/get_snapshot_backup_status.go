@@ -3,6 +3,8 @@ package v0_storage
 import (
 	"fmt"
 
+	"github.com/autobutler-org/quark/pkg/util/ctxutil"
+	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/gin-gonic/gin"
 )
@@ -17,8 +19,13 @@ import (
 // @Failure 404 {object} serverutil.Response
 // @Router /storage/devices/snapshot-backup/status/{jobId} [get]
 func getSnapshotBackupStatus(c *gin.Context) *serverutil.Response {
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		return serverutil.InternalServerError(nil)
+	}
+
 	jobID := c.Param("jobId")
-	job, err := snapshotStore.Get(c.Request.Context(), jobID)
+	job, err := deps.BackupJobStore().Get(c.Request.Context(), jobID)
 	if err != nil {
 		return serverutil.NotFound(fmt.Errorf("job not found: %w", err))
 	}

@@ -4,8 +4,10 @@ import (
 	"sync"
 
 	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/pkg/backup"
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
 	"github.com/autobutler-org/quark/pkg/util/iosemutil"
+	"github.com/autobutler-org/quark/pkg/util/ratelimitutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 	"github.com/autobutler-org/quark/pkg/util/uploadutil"
 	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
@@ -14,6 +16,10 @@ import (
 )
 
 type dependencies struct {
+	authRateLimiter  *ratelimitutil.Limiter
+	backupJobStore   backup.BackupJobStore
+	vaultRateLimiter *ratelimitutil.Limiter
+
 	database       *db.DatabaseSqlc
 	eventBus       *eventbus.Bus
 	fileIndex      *storageutil.FileIndex
@@ -57,6 +63,18 @@ func (d *dependencies) WithStorageService(s *storageutil.StorageService) Depende
 func (d *dependencies) WithWorker(worker workerutil.Worker) Dependencies {
 	d.worker = worker
 	return d
+}
+
+func (d *dependencies) AuthRateLimiter() *ratelimitutil.Limiter {
+	return d.authRateLimiter
+}
+
+func (d *dependencies) BackupJobStore() backup.BackupJobStore {
+	return d.backupJobStore
+}
+
+func (d *dependencies) VaultRateLimiter() *ratelimitutil.Limiter {
+	return d.vaultRateLimiter
 }
 
 func (d *dependencies) Database() *db.DatabaseSqlc {
