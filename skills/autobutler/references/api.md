@@ -56,10 +56,8 @@ Base URL: configured in `TOOLS.md`. All endpoints require `Authorization: Bearer
 | Method | Path                                      | Description                                    |
 | ------ | ----------------------------------------- | ---------------------------------------------- |
 | GET    | `/api/v0/storage/devices/status`          | List all devices. Returns `{count, devices[]}` |
-| GET    | `/api/v0/storage/devices/status/{serial}` | Single device status                           |
 | POST   | `/api/v0/storage/devices/usb/{serial}`    | Enable USB device                              |
 | DELETE | `/api/v0/storage/devices/usb/{serial}`    | Disable/unmount USB device                     |
-| POST   | `/api/v0/storage/devices/backup`          | Trigger backup to device. Body: `{serial}`     |
 
 ### Device shape
 
@@ -85,7 +83,6 @@ Base URL: configured in `TOOLS.md`. All endpoints require `Authorization: Bearer
 | ------ | --------------------------- | ------------------------------------------------------------------------------------------ |
 | GET    | `/api/v0/version`           | Installed version. Returns `{semver, gitCommit, goVersion, buildDate}`                     |
 | GET    | `/api/v0/version/available` | List available versions. Returns `[{version, url}]`. Query param: `all=true` for full list |
-| POST   | `/api/v0/version/latest`    | Update to latest version                                                                   |
 | POST   | `/api/v0/version/update`    | Update to specific version. Body: `{version}`                                              |
 
 ## SBOM

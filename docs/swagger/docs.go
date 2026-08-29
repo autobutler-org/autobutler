@@ -2382,49 +2382,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/storage/devices/backup": {
-            "post": {
-                "description": "Begin a backup to a device",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "storage"
-                ],
-                "summary": "Do a one-time backup to a device",
-                "parameters": [
-                    {
-                        "description": "Backup parameters",
-                        "name": "backupParams",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/storageutil.BackupToDeviceParams"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/storage/devices/rename": {
             "patch": {
                 "description": "Sets a custom display name for a storage device identified by its serial number",
@@ -2689,53 +2646,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/storage/devices/status/{serial}": {
-            "get": {
-                "description": "Returns status for a single storage device identified by serial",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "storage"
-                ],
-                "summary": "Get storage device status by serial",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Device serial",
-                        "name": "serial",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/storage/devices/usb/{serial}": {
             "post": {
                 "description": "Mounts a USB storage device identified by serial and returns mount info",
@@ -2880,56 +2790,6 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/updateutil.UpdateVersion"
                             }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/version/latest": {
-            "get": {
-                "description": "Retrieves the latest available version of the application",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "version"
-                ],
-                "summary": "Get latest version",
-                "responses": {
-                    "200": {
-                        "description": "Latest version information",
-                        "schema": {
-                            "$ref": "#/definitions/updateutil.UpdateVersion"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Finds and installs the latest version",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "version"
-                ],
-                "summary": "Update to the latest version",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v0_version.UpdateRequest"
                         }
                     },
                     "500": {
@@ -3505,17 +3365,6 @@ const docTemplate = `{
                 "error": {},
                 "statusCode": {
                     "type": "integer"
-                }
-            }
-        },
-        "storageutil.BackupToDeviceParams": {
-            "type": "object",
-            "properties": {
-                "sourceDeviceSerial": {
-                    "type": "string"
-                },
-                "targetDeviceSerial": {
-                    "type": "string"
                 }
             }
         },
