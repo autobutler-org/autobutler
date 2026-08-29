@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -137,6 +138,21 @@ type WriteFileParams struct {
 // WriteFileResult reports where the file ended up, API-relative.
 type WriteFileResult struct {
 	Path string
+}
+
+// WriteMultipartParams is a whole multipart body on its way into the
+// namespace: however many files the client attached, streamed part by part
+// rather than buffered.
+type WriteMultipartParams struct {
+	Ctx context.Context
+	// FS is the namespace the parts are written into.
+	FS vfs.VFS
+	// Reader is the request's multipart body, read to its last part.
+	Reader *multipart.Reader
+	// RootDir is the directory the files land in; it is created if missing.
+	RootDir string
+	// Overwrite lets a part replace a file that is already there.
+	Overwrite bool
 }
 
 // OffsetMismatchError is the resync signal. The client asked to append at a

@@ -1,4 +1,4 @@
-package v0_files
+package fileutil
 
 import (
 	"os"
@@ -30,9 +30,9 @@ func makeManagedDevice(t *testing.T, name string) storageutil.ManagedDevice {
 
 func TestListFilesImpl_EmptyDevice(t *testing.T) {
 	device := makeManagedDevice(t, "test-device")
-	result, err := listFilesImpl("", []storageutil.ManagedDevice{device})
+	result, err := listFilesOnDevices("", []storageutil.ManagedDevice{device})
 	if err != nil {
-		t.Fatalf("listFilesImpl failed: %v", err)
+		t.Fatalf("listFilesOnDevices failed: %v", err)
 	}
 	if len(result) != 0 {
 		t.Errorf("Expected 0 files in empty device, got %d", len(result))
@@ -50,9 +50,9 @@ func TestListFilesImpl_WithFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, err := listFilesImpl("", []storageutil.ManagedDevice{device})
+	result, err := listFilesOnDevices("", []storageutil.ManagedDevice{device})
 	if err != nil {
-		t.Fatalf("listFilesImpl failed: %v", err)
+		t.Fatalf("listFilesOnDevices failed: %v", err)
 	}
 	if len(result) != 2 {
 		t.Errorf("Expected 2 files, got %d", len(result))
@@ -87,9 +87,9 @@ func TestListFilesImpl_WithSubdirectory(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, err := listFilesImpl("", []storageutil.ManagedDevice{device})
+	result, err := listFilesOnDevices("", []storageutil.ManagedDevice{device})
 	if err != nil {
-		t.Fatalf("listFilesImpl failed: %v", err)
+		t.Fatalf("listFilesOnDevices failed: %v", err)
 	}
 	if len(result) != 1 {
 		t.Fatalf("Expected 1 entry (the docs dir), got %d", len(result))
@@ -99,9 +99,9 @@ func TestListFilesImpl_WithSubdirectory(t *testing.T) {
 	}
 
 	// Now list inside the subdir
-	result, err = listFilesImpl("docs", []storageutil.ManagedDevice{device})
+	result, err = listFilesOnDevices("docs", []storageutil.ManagedDevice{device})
 	if err != nil {
-		t.Fatalf("listFilesImpl for subdir failed: %v", err)
+		t.Fatalf("listFilesOnDevices for subdir failed: %v", err)
 	}
 	if len(result) != 1 || result[0].Name != "readme.txt" {
 		t.Errorf("Expected readme.txt in docs/, got %+v", result)
@@ -119,9 +119,9 @@ func TestListFilesImpl_DeduplicateFolders(t *testing.T) {
 		}
 	}
 
-	result, err := listFilesImpl("", []storageutil.ManagedDevice{device1, device2})
+	result, err := listFilesOnDevices("", []storageutil.ManagedDevice{device1, device2})
 	if err != nil {
-		t.Fatalf("listFilesImpl failed: %v", err)
+		t.Fatalf("listFilesOnDevices failed: %v", err)
 	}
 	if len(result) != 1 {
 		t.Errorf("Expected 1 deduplicated 'photos' folder, got %d results", len(result))
@@ -142,9 +142,9 @@ func TestListFilesImpl_FilesNotDeduplicatedAcrossDevices(t *testing.T) {
 		}
 	}
 
-	result, err := listFilesImpl("", []storageutil.ManagedDevice{device1, device2})
+	result, err := listFilesOnDevices("", []storageutil.ManagedDevice{device1, device2})
 	if err != nil {
-		t.Fatalf("listFilesImpl failed: %v", err)
+		t.Fatalf("listFilesOnDevices failed: %v", err)
 	}
 	if len(result) != 2 {
 		t.Errorf("Expected 2 entries (same filename on two devices), got %d", len(result))
@@ -152,9 +152,9 @@ func TestListFilesImpl_FilesNotDeduplicatedAcrossDevices(t *testing.T) {
 }
 
 func TestListFilesImpl_NoDevices(t *testing.T) {
-	result, err := listFilesImpl("", []storageutil.ManagedDevice{})
+	result, err := listFilesOnDevices("", []storageutil.ManagedDevice{})
 	if err != nil {
-		t.Fatalf("listFilesImpl failed: %v", err)
+		t.Fatalf("listFilesOnDevices failed: %v", err)
 	}
 	if len(result) != 0 {
 		t.Errorf("Expected empty result for no devices, got %d", len(result))
@@ -166,7 +166,7 @@ func TestListFilesImpl_NonExistentSubdir(t *testing.T) {
 
 	// Listing a subdir that doesn't exist should fail so the client can render
 	// an explicit invalid-folder state instead of an empty listing.
-	result, err := listFilesImpl("nonexistent", []storageutil.ManagedDevice{device})
+	result, err := listFilesOnDevices("nonexistent", []storageutil.ManagedDevice{device})
 	if err == nil {
 		t.Fatal("expected an error for a nonexistent subdir")
 	}
@@ -181,9 +181,9 @@ func TestFileNodeJSON_Fields(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, err := listFilesImpl("", []storageutil.ManagedDevice{device})
+	result, err := listFilesOnDevices("", []storageutil.ManagedDevice{device})
 	if err != nil {
-		t.Fatalf("listFilesImpl failed: %v", err)
+		t.Fatalf("listFilesOnDevices failed: %v", err)
 	}
 	if len(result) != 1 {
 		t.Fatalf("Expected 1 file, got %d", len(result))

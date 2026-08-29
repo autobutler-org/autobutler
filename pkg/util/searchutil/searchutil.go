@@ -17,6 +17,7 @@ import (
 	"context"
 	"database/sql"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -29,6 +30,25 @@ const MaxExtractBytes = 512 * 1024 // 512 KB
 // DefaultLimit is the maximum number of results returned by Search when the
 // caller does not specify a limit.
 const DefaultLimit = 50
+
+// MaxLimit is the largest page a caller may ask for. A search that wants more
+// hits than this wants a different query.
+const MaxLimit = 200
+
+// ParseLimit reads a requested result limit, falling back to DefaultLimit for
+// anything missing or unparseable and clamping the page to MaxLimit.
+func ParseLimit(raw string) int {
+	limit := DefaultLimit
+	if raw != "" {
+		if n, err := strconv.Atoi(raw); err == nil && n > 0 {
+			if n > MaxLimit {
+				n = MaxLimit
+			}
+			limit = n
+		}
+	}
+	return limit
+}
 
 // BackfillResult reports what a BackfillTree pass did.
 type BackfillResult struct {

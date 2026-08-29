@@ -2,14 +2,13 @@ package v0_files
 
 import (
 	"errors"
-	"path"
-	"path/filepath"
 
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/util/uploadutil"
 	"github.com/autobutler-org/quark/pkg/vfs"
 
 	"github.com/gin-gonic/gin"
@@ -57,41 +56,17 @@ func uploadFilesNested(c *gin.Context, rootDir string) *serverutil.Response {
 
 	// VFS path: only when no serial is provided (VFS handles the local namespace).
 	if fsys := dest.FilesVFS(serial); fsys != nil {
-		ctx := c.Request.Context()
-
-		// Ensure the destination directory exists.
-		if rootDir != "" {
-			if err := fsys.MkdirAll(ctx, rootDir); err != nil {
-				return serverutil.InternalServerError(err)
+		if err := uploadutil.WriteMultipartVFS(uploadutil.WriteMultipartParams{
+			Ctx:       c.Request.Context(),
+			FS:        fsys,
+			Reader:    reader,
+			RootDir:   rootDir,
+			Overwrite: overwrite,
+		}); err != nil {
+			if errors.Is(err, vfs.ErrConflict) {
+				return serverutil.BadRequest(err)
 			}
-		}
-
-		for {
-			part, err := reader.NextPart()
-			if err != nil {
-				break // io.EOF or end of parts
-			}
-
-			fileName := part.FileName()
-			if part.FormName() != "files" || fileName == "" {
-				part.Close()
-				continue
-			}
-
-			destPath := path.Join(rootDir, filepath.Base(fileName))
-			opts := vfs.WriteOptions{}
-			if !overwrite {
-				opts.IfNoneMatch = "*"
-			}
-
-			if err := fsys.Write(ctx, destPath, part, opts); err != nil {
-				part.Close()
-				if errors.Is(err, vfs.ErrConflict) {
-					return serverutil.BadRequest(err)
-				}
-				return serverutil.InternalServerError(err)
-			}
-			part.Close()
+			return serverutil.InternalServerError(err)
 		}
 
 		deps.EventBus().Publish(eventbus.Event{

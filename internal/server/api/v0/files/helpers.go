@@ -1,77 +1,59 @@
 package v0_files
 
 import (
-	"archive/zip"
 	"errors"
 	"fmt"
-	"image"
-	"image/jpeg"
 	"io"
 	"log/slog"
 	"net/http"
-	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/fileutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/uploadutil"
 	"github.com/autobutler-org/quark/pkg/vfs"
 	"github.com/gin-gonic/gin"
 )
 
+// fileError maps what fileutil reports onto the status codes the client
+// contract is written against. A path none of the sources could produce is the
+// only failure that is not the server's fault; the message travels unchanged
+// either way, so the client keeps reading the same sentences it always has.
+func fileError(err error) *serverutil.Response {
+	var notFound *fileutil.NotFoundError
+	if errors.As(err, &notFound) {
+		return serverutil.NotFound(err)
+	}
+	return serverutil.InternalServerError(err)
+}
+
 // downloadFileVFS handles file downloads via the VFS layer.
 // RAW files (needing OS path for dcraw/LibRaw) are excluded before calling this.
 func downloadFileVFS(c *gin.Context, deps deputil.Dependencies, fsys vfs.VFS, filePath string, wantsJPEG bool) *serverutil.Response {
 	ctx := c.Request.Context()
 
-	fi, err := fsys.Stat(ctx, filePath)
+	opened, err := fileutil.OpenVFSDownload(fileutil.OpenVFSDownloadParams{
+		Ctx:       ctx,
+		FS:        fsys,
+		FilePath:  filePath,
+		WantsJPEG: wantsJPEG,
+	})
 	if err != nil {
-		return serverutil.NotFound(err)
+		return fileError(err)
 	}
 
-	if fi.IsDir {
+	switch opened.Kind {
+	case fileutil.DownloadFolder:
 		// Zip and stream the directory contents.
-		c.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip", fi.Name))
+		c.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", opened.FileName))
 		c.Writer.Header().Set("Content-Type", "application/octet-stream")
-		zipWriter := zip.NewWriter(c.Writer)
-		defer zipWriter.Close()
-
-		entries, err := fsys.List(ctx, filePath, &vfs.ListFilter{Recursive: true})
-		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("failed to list folder: %w", err))
-		}
-		for _, entry := range entries {
-			if entry.IsDir {
-				continue
-			}
-			r, err := fsys.Open(ctx, entry.Path)
-			if err != nil {
-				return serverutil.InternalServerError(fmt.Errorf("failed to open %s: %w", entry.Path, err))
-			}
-			// Compute a relative path inside the zip (trim the base filePath prefix).
-			rel := strings.TrimPrefix(entry.Path, filePath)
-			rel = strings.TrimPrefix(rel, "/")
-			w, err := zipWriter.Create(rel)
-			if err != nil {
-				r.Close()
-				return serverutil.InternalServerError(fmt.Errorf("failed to create zip entry %s: %w", rel, err))
-			}
-			if _, err := io.Copy(w, r); err != nil {
-				r.Close()
-				return serverutil.InternalServerError(fmt.Errorf("failed to write zip entry %s: %w", rel, err))
-			}
-			r.Close()
+		if err := fileutil.ZipVFSDir(ctx, fsys, filePath, c.Writer); err != nil {
+			return serverutil.InternalServerError(err)
 		}
 		return nil
-	}
 
-	mimeType := fi.MimeType
-	if mimeType == "" {
-		mimeType = "application/octet-stream"
-	}
-
-	if wantsJPEG && strings.HasPrefix(mimeType, "image/") {
+	case fileutil.DownloadJPEG:
 		// Acquire IO semaphore for JPEG conversion.
 		if sem := deps.IOSemaphore(); sem != nil {
 			if !sem.AcquireDefault(ctx) {
@@ -93,17 +75,15 @@ func downloadFileVFS(c *gin.Context, deps deputil.Dependencies, fsys vfs.VFS, fi
 		}
 		defer r.Close()
 
-		img, _, err := image.Decode(r)
+		img, err := fileutil.DecodeImage(r)
 		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("failed to decode image: %w", err))
+			return serverutil.InternalServerError(err)
 		}
 
-		ext := strings.ToLower(filepath.Ext(filePath))
-		baseName := strings.TrimSuffix(filepath.Base(filePath), ext) + ".jpg"
-		c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", baseName))
-		c.Header("Content-Type", "image/jpeg")
+		c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", opened.FileName))
+		c.Header("Content-Type", opened.ContentType)
 		c.Status(http.StatusOK)
-		if err := jpeg.Encode(c.Writer, img, &jpeg.Options{Quality: 92}); err != nil {
+		if err := fileutil.EncodeJPEG(c.Writer, img); err != nil {
 			slog.Error("download: VFS JPEG stream encode failed", "path", filePath, "err", err)
 		}
 		return nil
@@ -115,19 +95,19 @@ func downloadFileVFS(c *gin.Context, deps deputil.Dependencies, fsys vfs.VFS, fi
 	}
 	defer r.Close()
 
-	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", fi.Name))
-	c.Header("Content-Type", mimeType)
+	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", opened.FileName))
+	c.Header("Content-Type", opened.ContentType)
 
 	// If the underlying VFS returns an io.ReadSeeker (e.g. *os.File from LocalVFS
 	// or StorageServiceVFS), use http.ServeContent so the response honours HTTP
 	// range requests (RFC 7233) — required for video seeking and resumable
 	// downloads. Falls back to sequential streaming via DataFromReader otherwise.
 	if rs, ok := r.(io.ReadSeeker); ok {
-		http.ServeContent(c.Writer, c.Request, fi.Name, fi.ModTime, rs)
+		http.ServeContent(c.Writer, c.Request, opened.Info.Name, opened.Info.ModTime, rs)
 		return nil
 	}
 
-	c.DataFromReader(http.StatusOK, fi.Size, mimeType, r, nil)
+	c.DataFromReader(http.StatusOK, opened.Info.Size, opened.ContentType, r, nil)
 	return nil
 }
 

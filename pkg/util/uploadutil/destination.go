@@ -36,6 +36,47 @@ func (d Destination) Writable(serial string) bool {
 	return d.FilesVFS(serial) != nil || d.Storage != nil
 }
 
+// WriteMultipartVFS streams every file part of a multipart body into the VFS
+// namespace. Parts that are not files under the "files" form name are skipped,
+// and each one is written straight from the wire — the body is never buffered.
+// The caller publishes the upload event once, after the last part lands.
+func WriteMultipartVFS(params WriteMultipartParams) error {
+	// Ensure the destination directory exists.
+	if params.RootDir != "" {
+		if err := params.FS.MkdirAll(params.Ctx, params.RootDir); err != nil {
+			return err
+		}
+	}
+
+	for {
+		part, err := params.Reader.NextPart()
+		if err != nil {
+			break // io.EOF or end of parts
+		}
+
+		fileName := part.FileName()
+		if part.FormName() != "files" || fileName == "" {
+			part.Close()
+			continue
+		}
+
+		// The client-supplied name never carries structure; rootDir does (#1603).
+		destPath := path.Join(params.RootDir, filepath.Base(fileName))
+		opts := vfs.WriteOptions{}
+		if !params.Overwrite {
+			opts.IfNoneMatch = "*"
+		}
+
+		if err := params.FS.Write(params.Ctx, destPath, part, opts); err != nil {
+			part.Close()
+			return err
+		}
+		part.Close()
+	}
+
+	return nil
+}
+
 // WriteFile streams one file into the destination and publishes the upload
 // event the file index and the clients listen for.
 func (d Destination) WriteFile(params WriteFileParams) (WriteFileResult, error) {

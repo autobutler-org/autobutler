@@ -8,7 +8,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/autobutler-org/quark/internal/server/api/v0/files"
+	v0_files "github.com/autobutler-org/quark/internal/server/api/v0/files"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
