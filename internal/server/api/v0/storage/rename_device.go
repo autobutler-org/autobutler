@@ -1,18 +1,15 @@
 package v0_storage
 
 import (
-	"strings"
-	"unicode"
+	"errors"
 
-	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/deviceutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 
 	"github.com/gin-gonic/gin"
 )
-
-const maxDeviceNameLength = 64
 
 // renameDevice godoc
 // @Summary Rename a storage device
@@ -41,27 +38,21 @@ func renameDevice(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(err)
 	}
 
-	name := strings.TrimSpace(req.Name)
-	if name == "" {
+	result, err := deviceutil.Rename(deviceutil.RenameParams{
+		Ctx:     c.Request.Context(),
+		Queries: deps.Database().Queries,
+		Serial:  serial,
+		Name:    req.Name,
+	})
+	switch {
+	case errors.Is(err, deviceutil.ErrInvalidDeviceName):
+		// The endpoint has never said which rule the name broke; keep it that way.
 		return serverutil.BadRequest(nil)
-	}
-	if len([]rune(name)) > maxDeviceNameLength {
-		return serverutil.BadRequest(nil)
-	}
-	for _, r := range name {
-		if unicode.IsControl(r) {
-			return serverutil.BadRequest(nil)
-		}
-	}
-
-	if err := deps.Database().Queries.UpsertDeviceName(c.Request.Context(), db.UpsertDeviceNameParams{
-		DeviceSerial: serial,
-		DisplayName:  name,
-	}); err != nil {
+	case err != nil:
 		return serverutil.InternalServerError(err)
 	}
 
-	return serverutil.Ok().WithData(gin.H{"serial": serial, "name": name})
+	return serverutil.Ok().WithData(gin.H{"serial": serial, "name": result.Name})
 }
 
 var renameDeviceRoute = serverutil.ApiRoute(
